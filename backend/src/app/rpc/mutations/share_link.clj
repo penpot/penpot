@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc.commands.files :as files]
+   [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
@@ -35,8 +36,9 @@
 
   Share links are resources that allows external users access to specific
   pages of a file with specific permissions (who-comment and who-inspect)."
-
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  {::doc/added "1.5"
+   ::doc/deprecated "1.18"}
+  [{:keys [::db/pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (create-share-link conn params)))
@@ -51,18 +53,17 @@
                            :who-inspect who-inspect
                            :pages pages
                            :owner-id profile-id})]
-    (-> slink
-        (update :pages db/decode-pgarray #{}))))
+    (update slink :pages db/decode-pgarray #{})))
 
 ;; --- Mutation: Delete Share Link
-
-(declare delete-share-link)
 
 (s/def ::delete-share-link
   (s/keys :req-un [::profile-id ::id]))
 
 (sv/defmethod ::delete-share-link
-  [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
+  {::doc/added "1.5"
+   ::doc/deprecated "1.18"}
+  [{:keys [::db/pool] :as cfg} {:keys [profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [slink (db/get-by-id conn :share-link id)]
       (files/check-edition-permissions! conn profile-id (:file-id slink))

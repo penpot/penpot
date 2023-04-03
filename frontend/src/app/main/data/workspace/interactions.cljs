@@ -112,7 +112,7 @@
      (watch [_ state _]
        (let [page-id  (:current-page-id state)
              objects  (wsh/lookup-page-objects state page-id)
-             frame    (cph/get-frame objects shape)
+             frame    (cph/get-root-frame objects (:id shape))
              flows    (get-in state [:workspace-data
                                      :pages-index
                                      page-id

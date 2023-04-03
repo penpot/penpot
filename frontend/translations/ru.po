@@ -1278,6 +1278,7 @@ msgid "labels.no-invitations"
 msgstr "Приглашений нет."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr ""
 "Нажмите кнопку «Пригласить в команду», чтобы пригласить в эту команду "
@@ -2688,19 +2689,19 @@ msgstr "Выравнивание по центру"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "Выравнивание по ширине"
+msgstr "Выравнивание по ширине (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "Выравнивание по левому краю"
+msgstr "Выравнивание по левому краю (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Выравнивание по центру"
+msgstr "Выравнивание по центру (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "Выравнивание по правому краю"
+msgstr "Выравнивание по правому краю (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -2744,7 +2745,7 @@ msgstr "Не задано"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "Перечеркнутый"
+msgstr "Перечеркнутый (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -2764,7 +2765,7 @@ msgstr "Каждое слово с заглавной буквы"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "Подчеркнутый"
+msgstr "Подчеркнутый (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"

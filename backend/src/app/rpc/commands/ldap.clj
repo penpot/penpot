@@ -14,10 +14,10 @@
    [app.loggers.audit :as-alias audit]
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.auth :as cmd.auth]
+   [app.rpc.commands.auth :as auth]
+   [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.rpc.queries.profile :as profile]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -39,7 +39,7 @@
   is properly configured and enabled with `login-with-ldap` flag."
   {::rpc/auth false
    ::doc/added "1.15"}
-  [{:keys [::main/props ::ldap/provider session] :as cfg} params]
+  [{:keys [::main/props ::ldap/provider] :as cfg} params]
   (when-not provider
     (ex/raise :type :restriction
               :code :ldap-not-initialized
@@ -67,24 +67,23 @@
                             :member-email (:email profile))
               token  (tokens/generate props claims)]
           (-> {:invitation-token token}
-              (rph/with-transform (session/create-fn session (:id profile)))
+              (rph/with-transform (session/create-fn cfg (:id profile)))
               (rph/with-meta {::audit/props (:props profile)
                               ::audit/profile-id (:id profile)})))
 
         (-> profile
-            (rph/with-transform (session/create-fn session (:id profile)))
+            (rph/with-transform (session/create-fn cfg (:id profile)))
             (rph/with-meta {::audit/props (:props profile)
                             ::audit/profile-id (:id profile)}))))))
 
 (defn- login-or-register
-  [{:keys [pool] :as cfg} info]
+  [{:keys [::db/pool] :as cfg} info]
   (db/with-atomic [conn pool]
     (or (some->> (:email info)
-                 (profile/retrieve-profile-data-by-email conn)
-                 (profile/populate-additional-data conn)
-                 (profile/decode-profile-row))
+                 (profile/get-profile-by-email conn)
+                 (profile/decode-row))
         (->> (assoc info :is-active true :is-demo false)
-             (cmd.auth/create-profile conn)
-             (cmd.auth/create-profile-relations conn)
+             (auth/create-profile! conn)
+             (auth/create-profile-rels! conn)
              (profile/strip-private-attrs)))))
 

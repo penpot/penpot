@@ -14,6 +14,7 @@ $fs13: 0.8125rem;
 $fs14: 0.875rem;
 $fs15: 0.9375rem;
 $fs16: 1rem;
+$fs17: 1.0625rem;
 $fs18: 1.125rem;
 $fs19: 1.1875rem;
 $fs20: 1.25rem;
@@ -30,8 +31,19 @@ $fs38: 2.375rem;
 $fs40: 2.5rem;
 $fs42: 2.675rem;
 $fs44: 2.75rem;
+$fs80: 5rem;
 
-$extrabold: 900;
+// Font weight
+// Taken from https://fonts.google.com/specimen/Work+Sans
+$fw100: 100; // Thin
+$fw200: 200; // Extra Light
+$fw300: 300; // Light
+$fw400: 400; // Regular (CSS value: 'normal')
+$fw500: 500; // Medium
+$fw600: 600; // Semi Bold
+$fw700: 700; // Bold (CSS value: 'bold')
+$fw800: 800; // Extra Bold
+$fw900: 900; // Black
 
 // Line height
 $base-lh: 1.43;

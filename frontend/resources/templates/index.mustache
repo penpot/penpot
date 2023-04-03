@@ -16,7 +16,7 @@
     <meta name="twitter:site" content="@penpotapp">
     <meta name="twitter:creator" content="@penpotapp">
     <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
-    <link id="theme" href="css/main-{{& th}}.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
+    <link id="theme" href="css/main.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
 
     <link rel="icon" href="images/favicon.png" />
 
@@ -37,7 +37,7 @@
   <body>
     {{>../public/images/sprites/symbol/icons.svg}}
     {{>../public/images/sprites/symbol/cursors.svg}}
-    <div id="app" tabindex="0"></div>
+    <div id="app"></div>
     <section id="modal"></section>
     {{# manifest}}
     <script src="{{& shared}}"></script>

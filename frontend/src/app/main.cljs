@@ -30,9 +30,7 @@
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
-(log/initialize!)
-(log/set-level! :root :warn)
-(log/set-level! :app :info)
+(log/setup! {:app :info})
 
 (when (= :browser @cf/target)
   (log/info :message "Welcome to penpot"

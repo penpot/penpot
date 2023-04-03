@@ -277,7 +277,7 @@
 
         (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
                      (rp/cmd! :get-file-object-thumbnails {:file-id file-id})
-                     (rp/query! :project {:id project-id})
+                     (rp/cmd! :get-project {:id project-id})
                      (rp/cmd! :get-team-users {:file-id file-id})
                      (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id}))
              (rx/take 1)
@@ -659,6 +659,14 @@
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
 
+        ;; Remove layout-item properties when moving a shape outside a layout
+        (cond-> (not (ctl/any-layout? objects parent-id))
+          (pcb/update-shapes ordered-indexes ctl/remove-layout-item-data))
+
+        ;; Remove the hide in viewer flag
+        (cond-> (and (not= uuid/zero parent-id) (cph/frame-shape? objects parent-id))
+          (pcb/update-shapes ordered-indexes #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true))))
+
         ;; Move the shapes
         (pcb/change-parent parent-id
                            shapes
@@ -710,7 +718,7 @@
         ;; Fix the sizing when moving a shape
         (pcb/update-shapes parents
                            (fn [parent]
-                             (if (ctl/layout? parent)
+                             (if (ctl/flex-layout? parent)
                                (cond-> parent
                                  (ctl/change-h-sizing? (:id parent) objects (:shapes parent))
                                  (assoc :layout-item-h-sizing :fix)
@@ -1004,6 +1012,13 @@
 ;; Navigation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn workspace-focus-lost
+  []
+  (ptk/reify ::workspace-focus-lost
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :show-distances?] false))))
+
 (defn navigate-to-project
   [project-id]
   (ptk/reify ::navigate-to-project
@@ -1290,8 +1305,8 @@
           ;; Prepare the shape object. Mainly needed for image shapes
           ;; for retrieve the image data and convert it to the
           ;; data-url.
-          (prepare-object [objects selected+children {:keys [type] :as obj}]
-            (let [obj (maybe-translate obj objects selected+children)]
+          (prepare-object [objects parent-frame-id {:keys [type] :as obj}]
+            (let [obj (maybe-translate obj objects parent-frame-id)]
               (if (= type :image)
                 (let [url (cf/resolve-file-media (:metadata obj))]
                   (->> (http/send! {:method :get
@@ -1314,15 +1329,11 @@
                   (update res :images conj img-part))
                 res)))
 
-          (maybe-translate [shape objects selected+children]
-            (let [root-frame-id (cph/get-shape-id-root-frame objects (:id shape))]
-              (if (and (not (cph/root-frame? shape))
-                       (not (contains? selected+children root-frame-id)))
-                ;; When the parent frame is not selected we change to relative
-                ;; coordinates
-                (let [frame (get objects root-frame-id)]
-                  (gsh/translate-to-frame shape frame))
-                shape)))
+          (maybe-translate [shape objects parent-frame-id]
+            (if (= parent-frame-id uuid/zero)
+              shape
+              (let [frame (get objects parent-frame-id)]
+                (gsh/translate-to-frame shape frame))))
 
           (on-copy-error [error]
             (js/console.error "Clipboard blocked:" error)
@@ -1335,7 +1346,7 @@
               selected (->> (wsh/lookup-selected state)
                             (cph/clean-loops objects))
 
-              selected+children (cph/selected-with-children objects selected)
+              parent-frame-id (cph/common-parent-frame objects selected)
               pdata    (reduce (partial collect-object-ids objects) {} selected)
               initial  {:type :copied-shapes
                         :file-id (:current-file-id state)
@@ -1350,7 +1361,7 @@
               (catch :default e
                 (on-copy-error e)))
             (->> (rx/from (seq (vals pdata)))
-                 (rx/merge-map (partial prepare-object objects selected+children))
+                 (rx/merge-map (partial prepare-object objects parent-frame-id))
                  (rx/reduce collect-data initial)
                  (rx/map (partial sort-selected state))
                  (rx/map t/encode-str)
@@ -1488,7 +1499,7 @@
                      :file-id file-id
                      :content blob
                      :is-local true}))
-                 (rx/mapcat #(rp/mutation! :upload-file-media-object %))
+                 (rx/mapcat #(rp/cmd! :upload-file-media-object %))
                  (rx/map (fn [media]
                            (assoc media :prev-id (:id imgpart))))))
 
@@ -1926,6 +1937,32 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Measurements
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn set-paddings-selected
+  [paddings-selected]
+  (ptk/reify ::set-paddings-selected
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :paddings-selected] paddings-selected))))
+
+(defn set-gap-selected
+  [gap-selected]
+  (ptk/reify ::set-gap-selected
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :gap-selected] gap-selected))))
+
+(defn set-margins-selected
+  [margins-selected]
+  (ptk/reify ::set-margins-selected
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :margins-selected] margins-selected))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Orphan Shapes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2009,6 +2046,8 @@
 (dm/export dws/select-all)
 (dm/export dws/select-inside-group)
 (dm/export dws/select-shape)
+(dm/export dws/select-prev-shape)
+(dm/export dws/select-next-shape)
 (dm/export dws/shift-select-shapes)
 
 ;; Highlight

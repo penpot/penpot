@@ -66,7 +66,8 @@
     (when (contains? #{:auto-height :auto-width} grow-type)
       (let [{:keys [width height]}
             (-> (dom/query node ".paragraph-set")
-                (dom/get-client-size))
+                (dom/get-bounding-rect))
+
             width (mth/ceil width)
             height (mth/ceil height)]
         (when (and (not (mth/almost-zero? width))
@@ -234,10 +235,11 @@
 
         ;; When we have a text with grow-type :auto-height or :auto-height we need to check the correct height
         ;; otherwise the center alignment will break
-        tr-shape (when text-modifier (dwt/apply-text-modifier shape text-modifier))
-        shape (cond-> shape
-                (and (some? text-modifier) (#{:auto-height :auto-width} (:grow-type shape)))
-                (assoc :width (:width tr-shape) :height (:height tr-shape)))
+        shape
+        (if (some? text-modifier)
+          (let [{:keys [width height]} (dwt/apply-text-modifier shape text-modifier)]
+            (assoc shape :width width :height height))
+          shape)
 
         shape (hooks/use-equal-memo shape)
 

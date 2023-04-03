@@ -7,16 +7,15 @@
 (ns app.http.errors
   "A errors handling for the http server."
   (:require
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.http :as-alias http]
+   [app.http.access-token :as-alias actoken]
+   [app.http.session :as-alias session]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [yetti.request :as yrq]
    [yetti.response :as yrs]))
-
-(def ^:dynamic *context* {})
 
 (defn- parse-client-ip
   [request]
@@ -24,20 +23,20 @@
       (yrq/get-header request "x-real-ip")
       (yrq/remote-addr request)))
 
-(defn get-context
+(defn request->context
+  "Extracts error report relevant context data from request."
   [request]
-  (let [claims (:session-token-claims request)]
-    (merge
-     *context*
-     {:path          (:path request)
-      :method        (:method request)
-      :params        (:params request)
-      :ip-addr       (parse-client-ip request)}
-     (d/without-nils
-      {:user-agent (yrq/get-header request "user-agent")
-       :frontend-version (or (yrq/get-header request "x-frontend-version")
-                             "unknown")
-       :profile-id   (:uid claims)}))))
+  (let [claims (-> {}
+                   (into (::session/token-claims request))
+                   (into (::actoken/token-claims request)))]
+    {:path       (:path request)
+     :method     (:method request)
+     :params     (:params request)
+     :ip-addr    (parse-client-ip request)
+     :user-agent (yrq/get-header request "user-agent")
+     :profile-id (:uid claims)
+     :version    (or (yrq/get-header request "x-frontend-version")
+                     "unknown")}))
 
 (defmulti handle-exception
   (fn [err & _rest]
@@ -48,6 +47,10 @@
 (defmethod handle-exception :authentication
   [err _]
   (yrs/response 401 (ex-data err)))
+
+(defmethod handle-exception :authorization
+  [err _]
+  (yrs/response 403 (ex-data err)))
 
 (defmethod handle-exception :restriction
   [err _]
@@ -79,15 +82,14 @@
   [error request]
   (let [edata   (ex-data error)
         explain (ex/explain edata)]
-    (l/error :hint (ex-message error)
-             :cause error
-             ::l/context (get-context request))
-    (yrs/response :status 500
-                  :body   {:type :server-error
-                           :code :assertion
-                           :data (-> edata
-                                     (dissoc ::s/problems ::s/value ::s/spec)
-                                     (cond-> explain (assoc :explain explain)))})))
+    (binding [l/*context* (request->context request)]
+      (l/error :hint "Assertion error" :message (ex-message error) :cause error)
+      (yrs/response :status 500
+                    :body   {:type :server-error
+                             :code :assertion
+                             :data (-> edata
+                                       (dissoc ::s/problems ::s/value ::s/spec)
+                                       (cond-> explain (assoc :explain explain)))}))))
 
 (defmethod handle-exception :not-found
   [err _]
@@ -101,10 +103,8 @@
       (yrs/response 429)
 
       :else
-      (do
-        (l/error :hint (ex-message error)
-                 :cause error
-                 ::l/context (get-context request))
+      (binding [l/*context* (request->context request)]
+        (l/error :hint "Internal error" :message (ex-message error) :cause error)
         (yrs/response 500 {:type :server-error
                            :code :unhandled
                            :hint (ex-message error)
@@ -113,25 +113,24 @@
 (defmethod handle-exception org.postgresql.util.PSQLException
   [error request]
   (let [state (.getSQLState ^java.sql.SQLException error)]
-    (l/error :hint (ex-message error)
-             :cause error
-             ::l/context (get-context request))
-    (cond
-      (= state "57014")
-      (yrs/response 504 {:type :server-error
-                         :code :statement-timeout
-                         :hint (ex-message error)})
+    (binding [l/*context* (request->context request)]
+      (l/error :hint "PSQL error" :message (ex-message error) :cause error)
+      (cond
+        (= state "57014")
+        (yrs/response 504 {:type :server-error
+                           :code :statement-timeout
+                           :hint (ex-message error)})
 
-      (= state "25P03")
-      (yrs/response 504 {:type :server-error
-                         :code :idle-in-transaction-timeout
-                         :hint (ex-message error)})
+        (= state "25P03")
+        (yrs/response 504 {:type :server-error
+                           :code :idle-in-transaction-timeout
+                           :hint (ex-message error)})
 
-      :else
-      (yrs/response 500 {:type :server-error
-                         :code :unexpected
-                         :hint (ex-message error)
-                         :state state}))))
+        :else
+        (yrs/response 500 {:type :server-error
+                           :code :unexpected
+                           :hint (ex-message error)
+                           :state state})))))
 
 (defmethod handle-exception :default
   [error request]
@@ -139,10 +138,8 @@
     (cond
       ;; This means that exception is not a controlled exception.
       (nil? edata)
-      (do
-        (l/error :hint (ex-message error)
-                 :cause error
-                 ::l/context (get-context request))
+      (binding [l/*context* (request->context request)]
+        (l/error :hint "Unexpected error" :message (ex-message error) :cause error)
         (yrs/response 500 {:type :server-error
                            :code :unexpected
                            :hint (ex-message error)}))
@@ -157,10 +154,8 @@
       (handle-exception (:handling edata) request)
 
       :else
-      (do
-        (l/error :hint (ex-message error)
-                 :cause error
-                 ::l/context (get-context request))
+      (binding [l/*context* (request->context request)]
+        (l/error :hint "Unhandled error" :message (ex-message error) :cause error)
         (yrs/response 500 {:type :server-error
                            :code :unhandled
                            :hint (ex-message error)
@@ -168,16 +163,7 @@
 
 (defn handle
   [cause request]
-  (cond
-    (or (instance? java.util.concurrent.CompletionException cause)
-        (instance? java.util.concurrent.ExecutionException cause))
-    (handle-exception (.getCause ^Throwable cause) request)
-
-    (ex/wrapped? cause)
-    (let [context (meta cause)
-          cause   (deref cause)]
-      (binding [*context* context]
-        (handle-exception cause request)))
-
-    :else
+  (if (or (instance? java.util.concurrent.CompletionException cause)
+          (instance? java.util.concurrent.ExecutionException cause))
+    (handle-exception (ex-cause cause) request)
     (handle-exception cause request)))

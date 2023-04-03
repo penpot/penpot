@@ -29,6 +29,6 @@
                          (throw cause#))))]
        (if (= ::retry result#)
          (do
-           (l/warn :hint "retrying operation" :label ~label)
+           (l/warn :hint "retrying operation" :label ~label :retry tnum#)
            (recur (inc tnum#)))
          result#))))

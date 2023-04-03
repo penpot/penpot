@@ -1150,29 +1150,13 @@
                        (:color color) (:color color)
                        :else (:value color))
 
-        ;; TODO: looks like the first argument is not necessary
-        ;; TODO: this code should be out of this UI component
         apply-color
-        (fn [_ event]
-          (let [objects  (wsh/lookup-page-objects @st/state)
-                selected (->> (wsh/lookup-selected @st/state)
-                              (cph/clean-loops objects))
-                selected-obj (keep (d/getf objects) selected)
-                select-shapes-for-color (fn [shape objects]
-                                          (let [shapes (case (:type shape)
-                                                         :group (cph/get-children objects (:id shape))
-                                                         [shape])]
-                                            (->> shapes
-                                                 (remove cph/group-shape?)
-                                                 (map :id))))
-                ids (mapcat #(select-shapes-for-color % objects) selected-obj)]
-            (if (kbd/alt? event)
-              (st/emit! (dc/change-stroke ids (merge uc/empty-color color) 0))
-              (st/emit! (dc/change-fill ids (merge uc/empty-color color) 0)))))
+        (fn [event]
+          (st/emit! (dc/apply-color-from-palette (merge uc/empty-color color) (kbd/alt? event))))
 
         rename-color
         (fn [name]
-          (st/emit! (dwl/update-color (assoc color :name name) file-id)))
+          (st/emit! (dwl/rename-color file-id (:id color) name)))
 
         edit-color
         (fn [new-color]
@@ -1277,8 +1261,7 @@
                                         :selected (contains? selected-colors (:id color)))
                            :on-context-menu on-context-menu
                            :on-click (when-not (:editing @state)
-                                       #(on-asset-click % (:id color)
-                                                        (partial apply-color (:id color))))
+                                       #(on-asset-click % (:id color) apply-color))
                            :ref item-ref
                            :draggable (and (not workspace-read-only?) (not (:editing @state)))
                            :on-drag-start on-color-drag-start

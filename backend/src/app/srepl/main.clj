@@ -12,8 +12,8 @@
    [app.common.pprint :as p]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.rpc.commands.auth :as cmd.auth]
-   [app.rpc.queries.profile :as profile]
+   [app.rpc.commands.auth :as auth]
+   [app.rpc.commands.profile :as profile]
    [app.srepl.fixes :as f]
    [app.srepl.helpers :as h]
    [app.util.blob :as blob]
@@ -58,7 +58,7 @@
    :expr (string? destination)
    :hint "destination should be provided")
 
-  (let [handler (:app.emails/sendmail system)]
+  (let [handler (:app.email/sendmail system)]
     (handler {:body "test email"
               :subject "test email"
               :to [destination]})))
@@ -71,9 +71,9 @@
 
   (let [sprops  (:app.setup/props system)
         pool    (:app.db/pool system)
-        profile (profile/retrieve-profile-data-by-email pool email)]
+        profile (profile/get-profile-by-email pool email)]
 
-    (cmd.auth/send-email-verification! pool sprops profile)
+    (auth/send-email-verification! pool sprops profile)
     :email-sent))
 
 (defn mark-profile-as-active!
@@ -81,10 +81,9 @@
   associated with the profile-id."
   [system email]
   (db/with-atomic [conn (:app.db/pool system)]
-    (when-let [profile (db/get-by-params conn :profile
-                                         {:email (str/lower email)}
-                                         {:columns [:id :email]
-                                          :check-not-found false})]
+    (when-let [profile (db/get* conn :profile
+                                {:email (str/lower email)}
+                                {:columns [:id :email]})]
       (when-not (:is-blocked profile)
         (db/update! conn :profile {:is-active true} {:id (:id profile)})
         :activated))))
@@ -94,10 +93,9 @@
   associated with the profile-id."
   [system email]
   (db/with-atomic [conn (:app.db/pool system)]
-    (when-let [profile (db/get-by-params conn :profile
-                                         {:email (str/lower email)}
-                                         {:columns [:id :email]
-                                          :check-not-found false})]
+    (when-let [profile (db/get* conn :profile
+                                {:email (str/lower email)}
+                                {:columns [:id :email]})]
       (when-not (:is-blocked profile)
         (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
         (db/delete! conn :http-session {:profile-id (:id profile)})
@@ -146,3 +144,23 @@
   [system & {:as params}]
   (enable-objects-map-feature-on-file! system params)
   (enable-pointer-map-feature-on-file! system params))
+
+(defn instrument-var
+  [var]
+  (alter-var-root var (fn [f]
+                        (let [mf (meta f)]
+                          (if (::original mf)
+                            f
+                            (with-meta
+                              (fn [& params]
+                                (tap> params)
+                                (let [result (apply f params)]
+                                  (tap> result)
+                                  result))
+                              {::original f}))))))
+
+(defn uninstrument-var
+  [var]
+  (alter-var-root var (fn [f]
+                        (or (::original (meta f)) f))))
+

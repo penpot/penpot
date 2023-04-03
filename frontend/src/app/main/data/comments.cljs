@@ -105,7 +105,7 @@
 (defn created-thread-on-viewer
   [{:keys [id comment page-id] :as thread}]
 
-  (ptk/reify ::created-thread-on-workspace
+  (ptk/reify ::created-thread-on-viewer
     ptk/UpdateEvent
     (update [_ state]
       (-> state
@@ -279,15 +279,19 @@
                 (->
                  (assoc-in (conj path :position) (:position comment-thread))
                  (assoc-in (conj path :frame-id) (:frame-id comment-thread))))))
-           (fetched [data state]
-             (let [state (assoc state :comment-threads (d/index-by :id data))]
-               (reduce set-comment-threds state data)))]
+           (fetched [[users comments] state]
+             (let [state (-> state
+                             (assoc :comment-threads (d/index-by :id comments))
+                             (assoc :current-file-comments-users (d/index-by :id users)))]
+               (reduce set-comment-threds state comments)))]
 
     (ptk/reify ::retrieve-comment-threads
       ptk/WatchEvent
       (watch [_ state _]
         (let [share-id (-> state :viewer-local :share-id)]
-          (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
+          (->> (rx/zip (rp/cmd! :get-team-users {:file-id file-id})
+                       (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id}))
+               (rx/take 1)
                (rx/map #(partial fetched %))
                (rx/catch #(rx/throw {:type :comment-error}))))))))
 

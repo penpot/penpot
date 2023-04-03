@@ -82,7 +82,9 @@
         grid-y-data (get-grids-snap-points frame :y)]
 
     (cond-> page-data
-      (not (ctl/layout-descent? objects frame))
+      (and (not (ctl/any-layout-descent? objects frame))
+           (not (:hidden frame))
+           (not (cph/hidden-parent? objects frame-id)))
 
       (-> ;; Update root frame information
        (assoc-in [uuid/zero :objects-data frame-id] frame-data)
@@ -106,7 +108,9 @@
                                  :id (:id shape)
                                  :pt %)))]
     (cond-> page-data
-      (not (ctl/layout-descent? objects shape))
+      (and (not (ctl/any-layout-descent? objects shape))
+           (not (:hidden shape))
+           (not (cph/hidden-parent? objects (:id shape))))
       (-> (assoc-in [frame-id :objects-data (:id shape)] shape-data)
           (update-in [frame-id :x] (make-insert-tree-data shape-data :x))
           (update-in [frame-id :y] (make-insert-tree-data shape-data :y))))))
@@ -124,9 +128,11 @@
                                 :pt %)))]
     (if-let [frame-id (:frame-id guide)]
       ;; Guide inside frame, we add the information only on that frame
-      (-> page-data
-          (assoc-in [frame-id :objects-data (:id guide)] guide-data)
-          (update-in [frame-id (:axis guide)] (make-insert-tree-data guide-data (:axis guide))))
+      (cond-> page-data
+        (and (not (:hidden frame))
+             (not (cph/hidden-parent? objects frame-id)))
+        (-> (assoc-in [frame-id :objects-data (:id guide)] guide-data)
+            (update-in [frame-id (:axis guide)] (make-insert-tree-data guide-data (:axis guide)))))
 
       ;; Guide outside the frame. We add the information in the global guides data
       (-> page-data

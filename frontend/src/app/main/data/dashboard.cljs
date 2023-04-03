@@ -186,7 +186,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/query! :projects {:team-id team-id})
+        (->> (rp/cmd! :get-projects {:team-id team-id})
              (rx/map projects-fetched))))))
 
 ;; --- EVENT: search
@@ -674,7 +674,7 @@
             {:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
-        (->> (rp/mutation! :create-project params)
+        (->> (rp/cmd! :create-project params)
              (rx/tap on-success)
              (rx/map project-created)
              (rx/catch on-error))))))
@@ -736,7 +736,7 @@
     (watch [_ state _]
       (let [project (get-in state [:dashboard-projects id])
             params  (select-keys project [:id :is-pinned :team-id])]
-        (->> (rp/mutation :update-project-pin params)
+        (->> (rp/cmd! :update-project-pin params)
              (rx/ignore))))))
 
 ;; --- EVENT: rename-project
@@ -754,7 +754,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [params {:id id :name name}]
-        (->> (rp/mutation :rename-project params)
+        (->> (rp/cmd! :rename-project params)
              (rx/ignore))))))
 
 ;; --- EVENT: delete-project
@@ -769,7 +769,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/mutation :delete-project {:id id})
+      (->> (rp/cmd! :delete-project {:id id})
            (rx/ignore)))))
 
 ;; --- EVENT: delete-file
@@ -924,6 +924,13 @@
     (-deref [_]
       {:num-files (count ids)
        :project-id project-id})
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [origin-project (get-in state [:dashboard-files (first ids) :project-id])]
+        (-> state
+            (update-in [:dashboard-projects origin-project :count] #(- % (count ids)))
+            (update-in [:dashboard-projects project-id :count] #(+ % (count ids))))))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -1086,7 +1093,7 @@
             action-name   (if in-project? :create-file :create-project)
             action        (if in-project? file-created project-created)]
 
-        (->> (rp/mutation! action-name params)
+        (->> (rp/cmd! action-name params)
              (rx/map action))))))
 
 (defn open-selected-file

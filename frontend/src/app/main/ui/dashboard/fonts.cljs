@@ -94,7 +94,7 @@
          (mf/deps team)
          (fn [item]
            (swap! uploading conj (:id item))
-           (->> (rp/mutation! :create-font-variant item)
+           (->> (rp/cmd! :create-font-variant item)
                 (rx/delay-at-least 2000)
                 (rx/subs (fn [font]
                            (swap! fonts dissoc (:id item))

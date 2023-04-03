@@ -29,9 +29,7 @@
 ;; SETUP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(l/initialize!)
-(l/set-level! :root :warn)
-(l/set-level! :app :info)
+(l/setup! {:app :info})
 
 (declare ^:private render-single-object)
 (declare ^:private render-components)

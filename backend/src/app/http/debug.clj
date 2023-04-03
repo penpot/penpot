@@ -16,8 +16,8 @@
    [app.http.middleware :as mw]
    [app.http.session :as session]
    [app.rpc.commands.binfile :as binf]
-   [app.rpc.commands.files.create :refer [create-file]]
-   [app.rpc.queries.profile :as profile]
+   [app.rpc.commands.files-create :refer [create-file]]
+   [app.rpc.commands.profile :as profile]
    [app.util.blob :as blob]
    [app.util.template :as tmpl]
    [app.util.time :as dt]
@@ -39,9 +39,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn authorized?
-  [pool {:keys [profile-id]}]
+  [pool {:keys [::session/profile-id]}]
   (or (= "devenv" (cf/get :host))
-      (let [profile (ex/ignoring (profile/retrieve-profile-data pool profile-id))
+      (let [profile (ex/ignoring (profile/get-profile pool profile-id))
             admins  (or (cf/get :admins) #{})]
         (contains? admins (:email profile)))))
 
@@ -61,7 +61,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn index-handler
-  [{:keys [pool]} request]
+  [{:keys [::db/pool]} request]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
@@ -81,7 +81,7 @@
   "select revn, changes, data from file_change where file_id=? and revn = ?")
 
 (defn- retrieve-file-data
-  [{:keys [pool]} {:keys [params profile-id] :as request}]
+  [{:keys [::db/pool]} {:keys [params ::session/profile-id] :as request}]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
@@ -107,8 +107,9 @@
         (prepare-download-response data filename)
 
         (contains? params :clone)
-        (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)
-              data       (some-> data blob/decode)]
+        (let [profile    (profile/get-profile pool profile-id)
+              project-id (:default-project-id profile)
+              data       (blob/decode data)]
           (create-file pool {:id (uuid/next)
                              :name (str "Cloned file: " filename)
                              :project-id project-id
@@ -117,7 +118,7 @@
           (yrs/response 201 "OK CREATED"))
 
         :else
-        (prepare-response (some-> data blob/decode))))))
+        (prepare-response (blob/decode data))))))
 
 (defn- is-file-exists?
   [pool id]
@@ -125,8 +126,9 @@
     (-> (db/exec-one! pool [sql id]) :exists)))
 
 (defn- upload-file-data
-  [{:keys [pool]} {:keys [profile-id params] :as request}]
-  (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)
+  [{:keys [::db/pool]} {:keys [::session/profile-id params] :as request}]
+  (let [profile    (profile/get-profile pool profile-id)
+        project-id (:default-project-id profile)
         data       (some-> params :file :path io/read-as-bytes blob/decode)]
 
     (if (and data project-id)
@@ -162,7 +164,7 @@
               :code :method-not-found)))
 
 (defn file-changes-handler
-  [{:keys [pool]} {:keys [params] :as request}]
+  [{:keys [::db/pool]} {:keys [params] :as request}]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
@@ -202,46 +204,48 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn error-handler
-  [{:keys [pool]} request]
-  (letfn [(parse-id [request]
-            (let [id (get-in request [:path-params :id])
-                  id (parse-uuid id)]
-              (when (uuid? id)
-                id)))
-
-          (retrieve-report [id]
+  [{:keys [::db/pool]} request]
+  (letfn [(get-report [{:keys [path-params]}]
             (ex/ignoring
-             (some-> (db/get-by-id pool :server-error-report id) :content db/decode-transit-pgobject)))
+             (let [report-id (some-> path-params :id parse-uuid)]
+               (some-> (db/get-by-id pool :server-error-report report-id)
+                       (update :content db/decode-transit-pgobject)))))
 
-          (render-template [report]
-            (let [context (dissoc report
+          (render-template-v1 [{:keys [content]}]
+            (let [context (dissoc content
                                   :trace :cause :params :data :spec-problems :message
                                   :spec-explain :spec-value :error :explain :hint)
                   params  {:context       (pp/pprint-str context :width 200)
-                           :hint          (:hint report)
-                           :spec-explain  (:spec-explain report)
-                           :spec-problems (:spec-problems report)
-                           :spec-value    (:spec-value report)
-                           :data          (:data report)
-                           :trace         (or (:trace report)
-                                              (some-> report :error :trace))
-                           :params        (:params report)}]
+                           :hint          (:hint content)
+                           :spec-explain  (:spec-explain content)
+                           :spec-problems (:spec-problems content)
+                           :spec-value    (:spec-value content)
+                           :data          (:data content)
+                           :trace         (or (:trace content)
+                                              (some-> content :error :trace))
+                           :params        (:params content)}]
               (-> (io/resource "app/templates/error-report.tmpl")
-                  (tmpl/render params))))]
+                  (tmpl/render params))))
+
+          (render-template-v2 [{report :content}]
+            (-> (io/resource "app/templates/error-report.v2.tmpl")
+                (tmpl/render report)))
+
+          ]
 
     (when-not (authorized? pool request)
       (ex/raise :type :authentication
                 :code :only-admins-allowed))
 
-    (let [result (some-> (parse-id request)
-                         (retrieve-report)
-                         (render-template))]
-      (if result
+    (if-let [report (get-report request)]
+      (let [result (if (= 1 (:version report))
+                     (render-template-v1 report)
+                     (render-template-v2 report))]
         (yrs/response :status 200
                       :body result
                       :headers {"content-type" "text/html; charset=utf-8"
-                                "x-robots-tag" "noindex"})
-        (yrs/response 404 "not found")))))
+                                "x-robots-tag" "noindex"}))
+      (yrs/response 404 "not found"))))
 
 (def sql:error-reports
   "SELECT id, created_at,
@@ -251,7 +255,7 @@
     LIMIT 100")
 
 (defn error-list-handler
-  [{:keys [pool]} request]
+  [{:keys [::db/pool]} request]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
@@ -268,7 +272,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn export-handler
-  [{:keys [pool] :as cfg} {:keys [params profile-id] :as request}]
+  [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]
 
   (let [file-ids (->> (:file-ids params)
                       (remove empty?)
@@ -287,7 +291,8 @@
                    (assoc ::binf/include-libraries? libs?)
                    (binf/export-to-tmpfile!))]
       (if clone?
-        (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)]
+        (let [profile    (profile/get-profile pool profile-id)
+              project-id (:default-project-id profile)]
           (binf/import!
            (assoc cfg
                   ::binf/input path
@@ -309,15 +314,16 @@
 
 
 (defn import-handler
-  [{:keys [pool] :as cfg} {:keys [params profile-id] :as request}]
+  [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]
   (when-not (contains? params :file)
     (ex/raise :type :validation
               :code :missing-upload-file
               :hint "missing upload file"))
 
-  (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)
+  (let [profile    (profile/get-profile pool profile-id)
+        project-id (:default-project-id profile)
         overwrite? (contains? params :overwrite)
-        migrate? (contains? params :migrate)
+        migrate?   (contains? params :migrate)
         ignore-index-errors? (contains? params :ignore-index-errors)]
 
     (when-not project-id
@@ -345,15 +351,14 @@
 
 (defn health-handler
   "Mainly a task that performs a health check."
-  [{:keys [pool]} _]
-  (db/with-atomic [conn pool]
-    (try
-      (db/exec-one! conn ["select count(*) as count from server_prop;"])
-      (yrs/response 200 "OK")
-      (catch Throwable cause
-        (l/warn :hint "unable to execute query on health handler"
-                :cause cause)
-        (yrs/response 503 "KO")))))
+  [{:keys [::db/pool]} _]
+  (try
+    (db/exec-one! pool ["select count(*) as count from server_prop;"])
+    (yrs/response 200 "OK")
+    (catch Throwable cause
+      (l/warn :hint "unable to execute query on health handler"
+              :cause cause)
+      (yrs/response 503 "KO"))))
 
 (defn changelog-handler
   [_ _]
@@ -381,16 +386,17 @@
            (raise (ex/error :type :authentication
                             :code :only-admins-allowed))))))})
 
-
 (defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req-un [::db/pool ::wrk/executor ::session/session]))
+  (s/keys :req [::db/pool
+                ::wrk/executor
+                ::session/manager]))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [session pool executor] :as cfg}]
+  [_ {:keys [::db/pool ::wrk/executor] :as cfg}]
   [["/readyz" {:middleware [[mw/with-dispatch executor]
                             [mw/with-config cfg]]
                :handler health-handler}]
-   ["/dbg" {:middleware [[session/middleware-2 session]
+   ["/dbg" {:middleware [[session/authz cfg]
                          [with-authorization pool]
                          [mw/with-dispatch executor]
                          [mw/with-config cfg]]}

@@ -36,9 +36,10 @@
         layout-item-values (select-keys shape layout-item-attrs)
         [comp-ids comp-values] [[(:id shape)] (select-keys shape component-attrs)]
 
-        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
-        is-layout-child? (mf/deref is-layout-child-ref)
-        is-layout-container? (ctl/layout? shape)]
+        is-flex-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-flex-layout-child? ids))
+        is-flex-layout-child? (mf/deref is-flex-layout-child-ref)
+        is-flex-layout-container? (ctl/flex-layout? shape)
+        is-layout-child-absolute? (ctl/layout-absolute? shape)]
     [:*
      [:& measures-menu {:ids [(:id shape)]
                         :values measure-values
@@ -47,18 +48,18 @@
      [:& component-menu {:ids comp-ids
                          :values comp-values
                          :shape-name (:name shape)}]
-     (when (not is-layout-child?)
+     (when (or (not is-flex-layout-child?) is-layout-child-absolute?)
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
      [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
 
-     (when (or is-layout-child? is-layout-container?)
+     (when (or is-flex-layout-child? is-flex-layout-container?)
        [:& layout-item-menu
         {:ids ids
          :type type
          :values layout-item-values
-         :is-layout-child? is-layout-child?
-         :is-layout-container? is-layout-container?
+         :is-layout-child? is-flex-layout-child?
+         :is-layout-container? is-flex-layout-container?
          :shape shape}])
 
      [:& layer-menu {:ids ids

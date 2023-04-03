@@ -56,12 +56,16 @@ svg {
 
 a {
   cursor: pointer;
-  font-weight: 500;
+  font-weight: $fw500;
   color: $color-gray-50;
 
   &:hover {
     text-decoration: underline;
   }
+}
+
+button {
+  font-family: "worksans", sans-serif;
 }
 
 p {
@@ -88,7 +92,7 @@ ul {
 }
 
 strong {
-  font-weight: bold;
+  font-weight: $fw700;
 }
 
 .relative {
@@ -97,7 +101,7 @@ strong {
 
 h1 {
   font-size: $fs34;
-  font-weight: 500;
+  font-weight: $fw500;
   line-height: $title-lh-sm;
 
   @include bp(baby-bear) {
@@ -107,7 +111,7 @@ h1 {
 
   &.supertitle {
     font-size: $fs44;
-    font-weight: 300;
+    font-weight: $fw300;
     line-height: $title-lh-sm;
 
     @include bp(baby-bear) {
@@ -118,7 +122,7 @@ h1 {
 }
 h2 {
   font-size: $fs24;
-  font-weight: 300;
+  font-weight: $fw300;
   line-height: $title-lh-sm;
 
   @include bp(baby-bear) {
@@ -129,13 +133,13 @@ h2 {
 
 h3 {
   font-size: $fs24;
-  font-weight: 300;
+  font-weight: $fw300;
   padding: 0.5rem 0;
 }
 
 h4 {
   font-size: $fs18;
-  font-weight: 300;
+  font-weight: $fw300;
 }
 
 @-webkit-keyframes rotation {
@@ -225,7 +229,7 @@ h4 {
 }
 
 .bold {
-  font-weight: bold !important;
+  font-weight: $fw700 !important;
 }
 
 .nopd {

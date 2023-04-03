@@ -9,6 +9,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
+   [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -31,14 +32,14 @@
                       io/read-as-bytes)
 
           params  {::th/type :create-font-variant
-                   :profile-id (:id prof)
+                   ::rpc/profile-id (:id prof)
                    :team-id team-id
                    :font-id font-id
                    :font-family "somefont"
                    :font-weight 400
                    :font-style "normal"
                    :data {"font/ttf" ttfdata}}
-          out     (th/mutation! params)]
+          out     (th/command! params)]
 
       (t/is (= 1 (:call-count @mock)))
 
@@ -68,14 +69,14 @@
                     io/read-as-bytes)
 
         params  {::th/type :create-font-variant
-                 :profile-id (:id prof)
+                 ::rpc/profile-id (:id prof)
                  :team-id team-id
                  :font-id font-id
                  :font-family "somefont"
                  :font-weight 400
                  :font-style "normal"
                  :data {"font/woff" data}}
-        out     (th/mutation! params)]
+        out     (th/command! params)]
 
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
@@ -91,8 +92,3 @@
         :font-family
         :font-weight
         :font-style))))
-
-
-
-
-

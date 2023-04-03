@@ -113,7 +113,8 @@
                         :y y
                         :disable-gradient disable-gradient
                         :disable-opacity disable-opacity
-                        :on-change #(on-change (merge uc/empty-color %))
+                        ;; on-change second parameter means if the source is the color-picker
+                        :on-change #(on-change (merge uc/empty-color %) true)
                         :on-close (fn [value opacity id file-id]
                                     (when on-close
                                       (on-close value opacity id file-id)))
@@ -167,8 +168,8 @@
          [:div.color-name (str color-name)]]
         (when on-detach
           [:div.element-set-actions-button
-           {:on-mouse-enter #(reset! hover-detach true)
-            :on-mouse-leave #(reset! hover-detach false)
+           {:on-pointer-enter #(reset! hover-detach true)
+            :on-pointer-leave #(reset! hover-detach false)
             :on-click detach-value}
            (if @hover-detach i/unchain i/chain)])
 
@@ -196,7 +197,7 @@
                                    ""
                                    (-> color :color uc/remove-hash))
                           :placeholder (tr "settings.multiple")
-                          :on-click select-all
+                          :on-focus select-all
                           :on-blur on-blur
                           :on-change handle-value-change}]]
 
@@ -206,7 +207,7 @@
            {:class (dom/classnames :percentail (not= (:opacity color) :multiple))}
            [:> numeric-input {:value (-> color :opacity opacity->string)
                               :placeholder (tr "settings.multiple")
-                              :on-click select-all
+                              :on-focus select-all
                               :on-blur on-blur
                               :on-change handle-opacity-change
                               :min 0

@@ -7,6 +7,7 @@
 (ns app.db.sql
   (:refer-clojure :exclude [update])
   (:require
+   [app.db :as-alias db]
    [clojure.string :as str]
    [next.jdbc.optional :as jdbc-opt]
    [next.jdbc.sql.builder :as sql]))
@@ -43,8 +44,10 @@
   ([table where-params opts]
    (let [opts (merge default-opts opts)
          opts (cond-> opts
-                (:for-update opts)    (assoc :suffix "FOR UPDATE")
-                (:for-key-share opts) (assoc :suffix "FOR KEY SHARE"))]
+                (::db/for-update? opts) (assoc :suffix "FOR UPDATE")
+                (::db/for-share? opts)  (assoc :suffix "FOR KEY SHARE")
+                (:for-update opts)      (assoc :suffix "FOR UPDATE")
+                (:for-key-share opts)   (assoc :suffix "FOR KEY SHARE"))]
      (sql/for-query table where-params opts))))
 
 (defn update

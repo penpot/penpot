@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.path
   (:require
+   [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
@@ -31,8 +32,9 @@
         layout-item-values (select-keys shape layout-item-attrs)
         layout-container-values (select-keys shape layout-container-flex-attrs)
 
-        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
-        is-layout-child? (mf/deref is-layout-child-ref)]
+        is-flex-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-flex-layout-child? ids))
+        is-flex-layout-child? (mf/deref is-flex-layout-child-ref)
+        is-layout-child-absolute? (ctl/layout-absolute? shape)]
     [:*
      [:& measures-menu {:ids ids
                         :type type
@@ -40,14 +42,14 @@
                         :shape shape}]
      [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
 
-     (when is-layout-child?
+     (when is-flex-layout-child?
        [:& layout-item-menu {:ids ids
                              :type type
                              :values layout-item-values
                              :is-layout-child? true
                              :is-layout-container? false
                              :shape shape}])
-     (when (not is-layout-child?)
+     (when (or (not is-flex-layout-child?) is-layout-child-absolute?)
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
      [:& layer-menu {:ids ids

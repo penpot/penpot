@@ -12,7 +12,7 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu :refer [context-menu]]
+   [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.import :as udi]
    [app.util.dom :as dom]
@@ -67,7 +67,7 @@
           (let [data  {:id (:id project) :team-id team-id}
                 mdata {:on-success #(on-move-success team-id)}]
             #(st/emit! (dm/success (tr "dashboard.success-move-project"))
-                      (dd/move-project (with-meta data mdata)))))
+                       (dd/move-project (with-meta data mdata)))))
 
         delete-fn
         (fn [_]
@@ -77,12 +77,12 @@
 
         on-delete
         #(st/emit!
-         (modal/show
-          {:type :confirm
-           :title (tr "modals.delete-project-confirm.title")
-           :message (tr "modals.delete-project-confirm.message")
-           :accept-label (tr "modals.delete-project-confirm.accept")
-           :on-accept delete-fn}))
+          (modal/show
+           {:type :confirm
+            :title (tr "modals.delete-project-confirm.title")
+            :message (tr "modals.delete-project-confirm.message")
+            :accept-label (tr "modals.delete-project-confirm.accept")
+            :on-accept delete-fn}))
 
         file-input (mf/use-ref nil)
 
@@ -94,34 +94,54 @@
         on-finish-import
         (mf/use-callback
          (fn []
-           (when (fn? on-import) (on-import))))]
+           (when (fn? on-import) (on-import))))
+
+        options [(when-not (:is-default project)
+                     {:option-name    (tr "labels.rename")
+                      :id             "project-menu-rename"
+                      :option-handler on-edit
+                      :data-test      "project-rename"})
+                   (when-not (:is-default project)
+                     {:option-name    (tr "dashboard.duplicate")
+                      :id             "project-menu-duplicated"
+                      :option-handler on-duplicate
+                      :data-test      "project-duplicate"})
+                   (when-not (:is-default project)
+                     {:option-name    (tr "dashboard.pin-unpin")
+                      :id             "project-menu-pin"
+                      :option-handler toggle-pin})
+
+                   (when (and (seq teams) (not (:is-default project)))
+                     {:option-name    (tr "dashboard.move-to")
+                      :id             "project-menu-move-to"
+                      :sub-options     (for [team teams]
+                                         {:option-name    (:name team)
+                                          :id             (:name team)
+                                          :option-handler (on-move (:id team))})
+                      :data-test      "project-move-to"})
+                   (when (some? on-import)
+                     {:option-name    (tr "dashboard.import")
+                      :id             "project-menu-import"
+                      :option-handler on-import-files
+                      :data-test      "file-import"})
+                   (when-not (:is-default project)
+                     {:option-name    :separator})
+                   (when-not (:is-default project)
+                     {:option-name    (tr "labels.delete")
+                      :id             "project-menu-delete"
+                      :option-handler on-delete
+                      :data-test      "project-delete"})]]
 
     [:*
      [:& udi/import-form {:ref file-input
                           :project-id (:id project)
                           :on-finish-import on-finish-import}]
-     [:& context-menu
+     [:& context-menu-a11y
       {:on-close on-menu-close
        :show show?
        :fixed? (or (not= top 0) (not= left 0))
        :min-width? true
        :top top
        :left left
-       :options [(when-not (:is-default project)
-                   [(tr "labels.rename") on-edit nil "project-rename"])
-                 (when-not (:is-default project)
-                   [(tr "dashboard.duplicate") on-duplicate nil "project-duplicate"])
-                 (when-not (:is-default project)
-                   [(tr "dashboard.pin-unpin") toggle-pin])
-                 (when (and (seq teams) (not (:is-default project)))
-                   [(tr "dashboard.move-to") nil
-                    (for [team teams]
-                      [(:name team) (on-move (:id team))])
-                    "project-move-to"])
-                 (when (some? on-import)
-                   [(tr "dashboard.import") on-import-files nil "file-import"])
-                 (when-not (:is-default project)
-                   [:separator])
-                 (when-not (:is-default project)
-                   [(tr "labels.delete") on-delete nil "project-delete"])]}]]))
+       :options options}]]))
 

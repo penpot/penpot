@@ -23,7 +23,7 @@
 ;; PUBLIC API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::conn ::db/conn-or-pool)
+(s/def ::conn ::db/pool-or-conn)
 (s/def ::file-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 (s/def ::project-id ::us/uuid)
@@ -53,7 +53,7 @@
 
 (defn check-quote!
   [conn quote]
-  (us/assert! ::db/conn-or-pool conn)
+  (us/assert! ::db/pool-or-conn conn)
   (us/assert! ::quote quote)
   (when (contains? cf/flags :quotes)
     (when @enabled
@@ -158,6 +158,28 @@
       (assoc ::default (cf/get :quotes-teams-per-profile Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-1 target profile-id])
       (assoc ::count-sql [sql:get-teams-per-profile profile-id])
+      (generic-check!)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; QUOTE: ACCESS-TOKENS-PER-PROFILE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private sql:get-access-tokens-per-profile
+  "select count(*) as total
+     from access_token
+    where profile_id = ?")
+
+(s/def ::access-tokens-per-profile
+  (s/keys :req [::profile-id ::target]))
+
+(defmethod check-quote ::access-tokens-per-profile
+  [{:keys [::profile-id ::target] :as quote}]
+  (us/assert! ::access-tokens-per-profile quote)
+  (-> quote
+      (assoc ::default (cf/get :quotes-access-tokens-per-profile Integer/MAX_VALUE))
+      (assoc ::quote-sql [sql:get-quotes-1 target profile-id])
+      (assoc ::count-sql [sql:get-access-tokens-per-profile profile-id])
       (generic-check!)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -278,7 +300,6 @@
       (assoc ::quote-sql [sql:get-quotes-3 target project-id profile-id team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-files-per-project project-id])
       (generic-check!)))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: COMMENT-THREADS-PER-FILE

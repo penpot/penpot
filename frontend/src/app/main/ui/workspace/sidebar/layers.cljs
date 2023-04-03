@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.collapse :as dwc]
@@ -101,6 +102,7 @@
         selected?            (contains? selected id)
         container?           (or (cph/frame-shape? item)
                                  (cph/group-shape? item))
+        absolute?            (ctl/layout-absolute? item)
 
         components-v2        (mf/use-ctx ctx/components-v2)
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
@@ -253,9 +255,11 @@
                               :on-pointer-enter on-pointer-enter
                               :on-pointer-leave on-pointer-leave
                               :on-double-click #(dom/stop-propagation %)}
-      [:div {:on-double-click #(do (dom/stop-propagation %)
-                                   (dom/prevent-default %)
-                                   (st/emit! dw/zoom-to-selected-shape))}
+      [:div.icon {:on-double-click #(do (dom/stop-propagation %)
+                                        (dom/prevent-default %)
+                                        (st/emit! dw/zoom-to-selected-shape))}
+       (when absolute?
+         [:div.absolute i/position-absolute])
        [:& si/element-icon {:shape item
                             :main-instance? main-instance?}]]
       [:& layer-name {:shape item

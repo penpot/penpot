@@ -29,6 +29,7 @@
    [app.main.ui.workspace.viewport.drawarea :as drawarea]
    [app.main.ui.workspace.viewport.frame-grid :as frame-grid]
    [app.main.ui.workspace.viewport.gradients :as gradients]
+   [app.main.ui.workspace.viewport.grid-layout-editor :as grid-layout]
    [app.main.ui.workspace.viewport.guides :as guides]
    [app.main.ui.workspace.viewport.hooks :as hooks]
    [app.main.ui.workspace.viewport.interactions :as interactions]
@@ -51,17 +52,20 @@
 
 (defn apply-modifiers-to-selected
   [selected objects text-modifiers modifiers]
-  (into []
-        (comp
-         (keep (d/getf objects))
-         (map (fn [{:keys [id] :as shape}]
-                (cond-> shape
-                  (and (cph/text-shape? shape) (contains? text-modifiers id))
-                  (dwm/apply-text-modifier (get text-modifiers id))
+  (reduce
+   (fn [objects id]
+     (update
+      objects id
+      (fn [shape]
+        (cond-> shape
+          (and (cph/text-shape? shape) (contains? text-modifiers id))
+          (dwm/apply-text-modifier (get text-modifiers id))
 
-                  (contains? modifiers id)
-                  (gsh/transform-shape (dm/get-in modifiers [id :modifiers]))))))
-        selected))
+          (contains? modifiers id)
+          (gsh/transform-shape (dm/get-in modifiers [id :modifiers]))))))
+
+   objects
+   selected))
 
 (mf/defc viewport
   [{:keys [wlocal wglobal selected layout file] :as props}]
@@ -97,13 +101,17 @@
         modifiers         (mf/deref refs/workspace-modifiers)
         text-modifiers    (mf/deref refs/workspace-text-modifier)
 
-        objects-modified  (mf/with-memo [base-objects modifiers]
-                            (gsh/apply-objects-modifiers base-objects modifiers selected))
+        objects-modified  (mf/with-memo
+                            [base-objects text-modifiers modifiers]
+                            (apply-modifiers-to-selected selected base-objects text-modifiers modifiers))
+
+        selected-shapes   (->> selected (keep (d/getf objects-modified)))
 
         background        (get options :background clr/canvas)
 
         ;; STATE
         alt?              (mf/use-state false)
+        shift?            (mf/use-state false)
         mod?              (mf/use-state false)
         space?            (mf/use-state false)
         z?                (mf/use-state false)
@@ -126,18 +134,19 @@
         ;; STREAMS
         move-stream       (mf/use-memo #(rx/subject))
 
-        frame-parent      (mf/use-memo
+        guide-frame       (mf/use-memo
                            (mf/deps @hover-ids base-objects)
                            (fn []
-                             (let [parent (get base-objects (last @hover-ids))]
-                               (when (= :frame (:type parent))
-                                 parent))))
+                             (let [parent-id
+                                   (->> @hover-ids
+                                        (d/seek (partial cph/root-frame? base-objects)))]
+                               (when (some? parent-id)
+                                 (get base-objects parent-id)))))
 
         zoom              (d/check-num zoom 1)
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
 
-        selected-shapes   (apply-modifiers-to-selected selected base-objects text-modifiers modifiers)
 
         selected-frames   (into #{} (map :frame-id) selected-shapes)
 
@@ -151,6 +160,7 @@
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
         node-editing?     (and edition (not= :text (get-in base-objects [edition :type])))
         text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
+        grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
         mode-inspect?       (= options-mode :inspect)
@@ -161,14 +171,14 @@
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file)
-        on-mouse-down     (actions/on-mouse-down @hover selected edition drawing-tool text-editing? node-editing?
-                                                 drawing-path? create-comment? space? panning z? workspace-read-only?)
-        on-mouse-up       (actions/on-mouse-up disable-paste)
-        on-pointer-down   (actions/on-pointer-down)
+        on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? node-editing? grid-editing?
+                                                   drawing-path? create-comment? space? panning z? workspace-read-only?)
+
+        on-pointer-up     (actions/on-pointer-up disable-paste)
+
         on-pointer-enter  (actions/on-pointer-enter in-viewport?)
         on-pointer-leave  (actions/on-pointer-leave in-viewport?)
         on-pointer-move   (actions/on-pointer-move move-stream)
-        on-pointer-up     (actions/on-pointer-up)
         on-move-selected  (actions/on-move-selected hover hover-ids selected space? z? workspace-read-only?)
         on-menu-selected  (actions/on-menu-selected hover hover-ids selected workspace-read-only?)
 
@@ -192,6 +202,7 @@
         show-pixel-grid?         (and (contains? layout :show-pixel-grid)
                                       (>= zoom 8))
         show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
+        show-grid-editor?        (and editing-shape (ctl/grid-layout? editing-shape))
         show-presence?           page-id
         show-prototypes?         (= options-mode :prototype)
         show-selection-handlers? (and (seq selected) (not show-text-editor?))
@@ -209,12 +220,24 @@
         show-rules?              (and (contains? layout :rules) (not (contains? layout :hide-ui)))
 
 
-        disabled-guides?         (or drawing-tool transform)]
+        disabled-guides?         (or drawing-tool transform)
 
-    (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport? workspace-read-only?)
-    (hooks/setup-viewport-size viewport-ref)
+        show-padding? (and (nil? transform)
+                           (= (count selected-shapes) 1)
+                           (= (:type (first selected-shapes)) :frame)
+                           (= (:layout (first selected-shapes)) :flex)
+                           (zero? (:rotation (first selected-shapes))))
+
+
+        show-margin? (and (nil? transform)
+                          (= (count selected-shapes) 1)
+                          (= (:layout selected-frame) :flex)
+                          (zero? (:rotation (first selected-shapes))))]
+
+    (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only?)
+    (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? workspace-read-only?)
-    (hooks/setup-keyboard alt? mod? space? z?)
+    (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path? text-editing?)
@@ -292,7 +315,7 @@
        :view-box (utils/format-viewbox vbox)
        :ref on-viewport-ref
        :class (when drawing-tool "drawing")
-       :style {:cursor @cursor}
+       :style {:cursor @cursor :touch-action "none"}
        :fill "none"
 
        :on-click         on-click
@@ -301,8 +324,6 @@
        :on-drag-enter    on-drag-enter
        :on-drag-over     on-drag-over
        :on-drop          on-drop
-       :on-mouse-down    on-mouse-down
-       :on-mouse-up      on-mouse-up
        :on-pointer-down  on-pointer-down
        :on-pointer-enter on-pointer-enter
        :on-pointer-leave on-pointer-leave
@@ -328,7 +349,7 @@
               :zoom zoom
               :modifiers modifiers}]
 
-            (when (ctl/layout? outlined-frame)
+            (when (ctl/any-layout? outlined-frame)
               [:g.ghost-outline
                [:& outline/shape-outlines
                 {:objects base-objects
@@ -367,6 +388,31 @@
            :frame selected-frame
            :hover-shape @hover
            :zoom zoom}])
+
+       (when show-padding?
+         [:*
+          [:& msr/padding
+           {:frame (first selected-shapes)
+            :hover @frame-hover
+            :zoom zoom
+            :alt? @alt?
+            :shift? @shift?}]
+
+          [:& msr/gap
+           {:frame (first selected-shapes)
+            :hover @frame-hover
+            :zoom zoom
+            :alt? @alt?
+            :shift? @shift?}]])
+
+       (when show-margin?
+         [:& msr/margin
+          {:shape (first selected-shapes)
+           :parent selected-frame
+           :hover @frame-hover
+           :zoom zoom
+           :alt? @alt?
+           :shift? @shift?}])
 
        [:& widgets/frame-titles
         {:objects base-objects
@@ -454,7 +500,7 @@
          [:& guides/viewport-guides
           {:zoom zoom
            :vbox vbox
-           :hover-frame frame-parent
+           :hover-frame guide-frame
            :disabled-guides? disabled-guides?
            :modifiers modifiers}])
 
@@ -482,6 +528,12 @@
                                       :objects base-objects
                                       :hover-top-frame-id @hover-top-frame-id
                                       :zoom zoom}])
+
+       (when (debug? :grid-layout)
+         [:& wvd/debug-grid-layout {:selected-shapes selected-shapes
+                                    :objects base-objects
+                                    :hover-top-frame-id @hover-top-frame-id
+                                    :zoom zoom}])
 
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
@@ -513,4 +565,11 @@
        (when show-gradient-handlers?
          [:& gradients/gradient-handlers
           {:id (first selected)
-           :zoom zoom}])]]]))
+           :zoom zoom}])
+
+       (when show-grid-editor?
+         [:& grid-layout/editor
+          {:zoom zoom
+           :objects base-objects
+           :shape (get base-objects edition)}])
+       ]]]))

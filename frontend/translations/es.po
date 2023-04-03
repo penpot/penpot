@@ -450,7 +450,9 @@ msgid "dashboard.import.import-error"
 msgstr "Hubo un problema importando el fichero. No ha podido ser importado."
 
 msgid "dashboard.import.import-message"
-msgstr "%s files have been imported succesfully."
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "1 fichero se ha importado correctamente."
+msgstr[1] "%s ficheros se han importado correctamente."
 
 msgid "dashboard.import.import-warning"
 msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
@@ -1450,6 +1452,7 @@ msgid "labels.no-invitations"
 msgstr "No hay invitaciones."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr "Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
 
@@ -1806,21 +1809,21 @@ msgstr[1] "Borrar archivos"
 msgid "modals.delete-shared-confirm.hint"
 msgid_plural "modals.delete-shared-confirm.hint"
 msgstr[0] ""
-"Si lo borras, esos elementos pasarán a formar parte de la biblioteca local "
-"de este archivo. Cualquier elemento en desuso se perderá."
+"Si lo borras, sus elementos no estarán disponibles para otros archivos. "
+"Los elementos que hayan sido utilizados permanecerán en el archivo (¡ningún diseño se romperá!)."
 msgstr[1] ""
-"Si los borras, esos elementos pasarán a formar parte de la biblioteca local "
-"de este archivo. Cualquier elemento en desuso se perderá."
+"Si los borras, sus elementos no estarán disponibles para otros archivos. "
+"Los elementos que hayan sido utilizados permanecerán en el archivo (¡ningún diseño se romperá!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint-many"
 msgid_plural "modals.delete-shared-confirm.hint-many"
 msgstr[0] ""
-"Si lo borras, esos elementos pasarán a formar parte de las bibliotecas "
-"locales de estos archivos. Cualquier elemento en desuso se perderá."
+"Si lo borras, sus elementos no estarán disponibles para otros archivos. "
+"Los elementos que hayan sido utilizados permanecerán en los archivo (¡ningún diseño se romperá!)."
 msgstr[1] ""
-"Si los borras, esos elementos pasarán a formar parte de las bibliotecas "
-"locales de estos archivos. Cualquier elemento en desuso se perderá."
+"Si los borras, sus elementos no estarán disponibles para otros archivos. "
+"Los elementos que hayan sido utilizados permanecerán en los archivo (¡ningún diseño se romperá!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
@@ -1903,6 +1906,9 @@ msgstr "Enviar invitacion"
 
 msgid "modals.invite-member.emails"
 msgstr "Emails, separados por coma"
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr "Algunas direcciones de correo ya se encuentran entre los miembros. Estas invitaciones no serán enviadas."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
@@ -2008,21 +2014,22 @@ msgstr[1] "Despublicar"
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] ""
-"Si la despublicas, esos elementos pasarán a formar parte de la biblioteca "
-"local de este archivo."
+"Si la despublicas, sus elementos no estarán disponibles para otros archivos. "
+"Los elementos que hayan sido utilizados permanecerán en el archivo (¡ningún diseño se romperá!)."
+
 msgstr[1] ""
-"Si las despublicas, esos elementos pasarán a formar parte de la biblioteca "
-"local de este archivo."
+"Si las despublicas, sus elementos no estarán disponibles para otros archivos. "
+"Los elementos que hayan sido utilizados permanecerán en el archivo (¡ningún diseño se romperá!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint-many"
 msgid_plural "modals.unpublish-shared-confirm.hint-many"
 msgstr[0] ""
-"Si la despublicas, esos elementos pasarán a formar parte de las bibliotecas "
-"locales de estos archivos."
+"Si la despublicas, sus elementos no estarán disponibles para otros archivos. "
+"Los elementos que hayan sido utilizados permanecerán en los archivo (¡ningún diseño se romperá!)."
 msgstr[1] ""
-"Si las despublicas, esos elementos pasarán a formar parte de las "
-"bibliotecas locales de estos archivos."
+"Si las despublicas, sus elementos no estarán disponibles para otros archivos. "
+"Los elementos que hayan sido utilizados permanecerán en los archivo (¡ningún diseño se romperá!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -2602,6 +2609,12 @@ msgstr "Comentarios"
 
 msgid "shortcuts.open-dashboard"
 msgstr "Ir al dashboard"
+
+msgid "shortcuts.select-next"
+msgstr "Seleccionar capa siguiente"
+
+msgid "shortcuts.select-prev"
+msgstr "Seleccionar capa anterior"
 
 msgid "shortcuts.open-inspect"
 msgstr "Ir al inspector"
@@ -3202,6 +3215,18 @@ msgstr "Mostrar reglas"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Mostrar paleta de textos"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Activar escala proporcional"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Desactivar escala proporcional"
+
+msgid "workspace.header.menu.undo"
+msgstr "Deshacer"
+
+msgid "workspace.header.menu.redo"
+msgstr "Rehacer"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
@@ -4187,19 +4212,19 @@ msgstr "Aliniear al centro"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "Justificar"
+msgstr "Justificar (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "Alinear a la izquierda"
+msgstr "Alinear a la izquierda (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Alinear al centro"
+msgstr "Alinear al centro (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "Alinear a la derecha"
+msgstr "Alinear a la derecha (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -4244,7 +4269,7 @@ msgstr "Nada"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "Tachado"
+msgstr "Tachado (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -4264,7 +4289,7 @@ msgstr "Título"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "Subrayado"
+msgstr "Subrayado (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"

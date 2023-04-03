@@ -49,7 +49,7 @@
       padding: 0;
       margin: 0;
       border: 1px solid $color-gray-20;
-      border-radius: 2px;
+      border-radius: $br2;
       margin-left: $size-1;
     }
 
@@ -97,7 +97,7 @@
       position: absolute;
       width: 15px;
       height: 15px;
-      border-radius: 2px;
+      border-radius: $br2;
       border: 1px solid $color-gray-20;
       margin-top: -2px;
       margin-left: -7px;
@@ -120,7 +120,7 @@
       width: 14px;
       height: 14px;
       border: 2px solid $color-white;
-      border-radius: 8px;
+      border-radius: $br8;
       position: absolute;
       left: 50%;
       top: 50%;
@@ -211,7 +211,7 @@
       position: absolute;
       width: 12px;
       height: 12px;
-      border-radius: 6px;
+      border-radius: $br6;
       z-index: 1;
     }
 
@@ -230,7 +230,7 @@
       position: absolute;
       width: 12px;
       height: 12px;
-      border-radius: 6px;
+      border-radius: $br6;
       z-index: 1;
       border: 1px solid $color-white;
       box-shadow: rgb(255, 255, 255) 0px 0px 0px 1px inset, rgb(0 0 0 / 0.25) 0px 4px 4px inset,
@@ -296,7 +296,7 @@
       width: 100%;
       margin: 0;
       border: 1px solid $color-gray-10;
-      border-radius: 2px;
+      border-radius: $br2;
       font-size: $fs12;
       height: 1.5rem;
       padding: 0 $size-1;
@@ -323,11 +323,11 @@
       margin-bottom: $size-2;
       width: 100%;
       padding: $size-1 0.25rem;
-      font-size: 0.75rem;
+      font-size: $fs12;
       color: $color-gray-40;
       cursor: pointer;
       border: 1px solid $color-gray-10;
-      border-radius: 2px;
+      border-radius: $br2;
 
       option {
         padding: 0;
@@ -379,7 +379,7 @@
         position: absolute;
         width: 12px;
         height: 12px;
-        border-radius: 6px;
+        border-radius: $br6;
         z-index: 1;
         border: 1px solid $color-white;
         box-shadow: rgb(255, 255, 255) 0px 0px 0px 1px inset, rgb(0 0 0 / 0.25) 0px 4px 4px inset,
@@ -421,7 +421,7 @@
     .saturation,
     .value,
     .opacity {
-      border-radius: 10px;
+      border-radius: $br10;
     }
 
     .hsva-selector-label {
@@ -432,7 +432,7 @@
 }
 
 .colorpicker-tooltip {
-  border-radius: $br-small;
+  border-radius: $br3;
   display: flex;
   flex-direction: column;
   left: 1400px;
@@ -459,7 +459,7 @@
   .colorpicker-tabs {
     display: flex;
     margin-bottom: $size-2;
-    border-radius: 5px;
+    border-radius: $br5;
     border: 1px solid $color-gray-10;
     height: 2rem;
 
@@ -511,7 +511,7 @@
     input {
       background-color: $color-gray-50;
       border: 1px solid $color-gray-30;
-      border-radius: $br-small;
+      border-radius: $br3;
       color: $color-white;
       height: 20px;
       margin: 5px 0 0 0;

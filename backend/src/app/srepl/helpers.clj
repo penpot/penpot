@@ -70,7 +70,7 @@
   [system & {:keys [update-fn id save? migrate? inc-revn?]
              :or {save? false migrate? true inc-revn? true}}]
   (db/with-atomic [conn (:app.db/pool system)]
-    (let [file (-> (db/get-by-id conn :file id {:for-update true})
+    (let [file (-> (db/get-by-id conn :file id {::db/for-update? true})
                    (update :features db/decode-pgarray #{}))]
       (binding [*conn* conn
                 pmap/*tracked* (atom {})

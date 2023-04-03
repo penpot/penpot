@@ -57,8 +57,8 @@
                    {node-height :height node-width :width} bounding_rect
                    {window-height :height window-width :width} window_size
                    target-offset-y (if (> (+ top node-height) window-height)
-                                   (- node-height)
-                                   0)
+                                     (- node-height)
+                                     0)
                    target-offset-x (if (> (+ left node-width) window-width)
                                      (- node-width)
                                      0)]
@@ -85,9 +85,9 @@
         props (obj/merge props #js {:on-close on-local-close})]
 
     (mf/use-effect
-      (mf/deps options)
-      #(swap! local assoc :levels [{:parent-option nil
-                                    :options options}]))
+     (mf/deps options)
+     #(swap! local assoc :levels [{:parent-option nil
+                                   :options options}]))
 
     (when (and open? (some? (:levels @local)))
       [:> dropdown' props

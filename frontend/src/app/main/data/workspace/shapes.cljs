@@ -95,6 +95,7 @@
                     selected)
 
              index (:index (meta attrs))
+
              changes  (-> (pcb/empty-changes it page-id)
                           (pcb/with-objects objects)
                           (cond-> (some? index)
@@ -102,7 +103,10 @@
                           (cond-> (nil? index)
                             (pcb/add-object shape))
                           (cond-> (some? (:parent-id attrs))
-                            (pcb/change-parent (:parent-id attrs) [shape])))
+                            (pcb/change-parent (:parent-id attrs) [shape]))
+                          (cond-> (ctl/grid-layout? objects (:parent-id shape))
+                            (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells))
+                          )
              undo-id (js/Symbol)]
 
          (rx/concat
@@ -131,7 +135,12 @@
             (when (d/not-empty? to-move-shapes)
               (-> (pcb/empty-changes it page-id)
                   (pcb/with-objects objects)
-                  (pcb/change-parent frame-id to-move-shapes 0)))]
+                  (cond-> (not (ctl/any-layout? objects frame-id))
+                    (pcb/update-shapes ordered-indexes  ctl/remove-layout-item-data))
+                  (pcb/update-shapes ordered-indexes #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true)))
+                  (pcb/change-parent frame-id to-move-shapes 0)
+                  (cond-> (ctl/grid-layout? objects frame-id)
+                    (pcb/update-shapes [frame-id] ctl/assign-cells))))]
 
         (if (some? changes)
           (rx/of (dch/commit-changes changes))
@@ -191,10 +200,6 @@
 (defn- real-delete-shapes
   [file page objects ids it components-v2]
   (let [lookup  (d/getf objects)
-
-        layout-ids (->> ids
-                        (mapcat (partial cph/get-parent-ids objects))
-                        (filter (partial ctl/layout? objects)))
 
         groups-to-unmask
         (reduce (fn [group-ids id]
@@ -317,7 +322,6 @@
            (dc/detach-comment-thread ids)
            (ptk/data-event :layout/update all-parents)
            (dch/commit-changes changes)
-           (ptk/data-event :layout/update layout-ids)
            (dwu/commit-undo-transaction undo-id))))
 
 (defn create-and-add-shape

@@ -12,7 +12,8 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.flex-layout :as gsl]
+   [app.common.geom.shapes.flex-layout :as gslf]
+   [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
@@ -103,7 +104,8 @@
 (defn start-resize
   "Enter mouse resize mode, until mouse button is released."
   [handler ids shape]
-  (letfn [(resize [shape initial layout [point lock? center? point-snap]]
+  (letfn [(resize
+           [shape initial layout [point lock? center? point-snap]]
             (let [{:keys [width height]} (:selrect shape)
                   {:keys [rotation]} shape
 
@@ -182,16 +184,16 @@
                       (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
 
                       (cond-> set-fix-width?
-                        (ctm/change-parent-property :layout-item-h-sizing :fix))
+                        (ctm/change-property :layout-item-h-sizing :fix))
 
                       (cond-> set-fix-height?
-                        (ctm/change-parent-property :layout-item-v-sizing :fix))
+                        (ctm/change-property :layout-item-v-sizing :fix))
 
                       (cond-> scale-text
                         (ctm/scale-content (:x scalev))))
 
                   modif-tree (dwm/create-modif-tree ids modifiers)]
-              (rx/of (dwm/set-modifiers modif-tree))))
+              (rx/of (dwm/set-modifiers modif-tree scale-text))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Shift key and the shapes own proportion
@@ -208,7 +210,7 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [initial-position @ms/mouse-position
-              stoper  (rx/filter ms/mouse-up? stream)
+              stopper (rx/filter ms/mouse-up? stream)
               layout  (:workspace-layout state)
               page-id (:current-page-id state)
               focus   (:workspace-focus-selected state)
@@ -225,7 +227,7 @@
                                  (->> (snap/closest-snap-point page-id resizing-shapes objects layout zoom focus point)
                                       (rx/map #(conj current %)))))
                 (rx/mapcat (partial resize shape initial-position layout))
-                (rx/take-until stoper))
+                (rx/take-until stopper))
            (rx/of (dwm/apply-modifiers)
                   (finish-transform))))))))
 
@@ -440,7 +442,7 @@
              exclude-frames-siblings
              (into exclude-frames
                    (comp (mapcat (partial cph/get-siblings-ids objects))
-                         (filter (partial ctl/layout-immediate-child-id? objects)))
+                         (filter (partial ctl/any-layout-immediate-child-id? objects)))
                    selected)
 
              position (->> ms/mouse-position
@@ -469,11 +471,14 @@
 
                       (rx/map
                        (fn [[move-vector mod?]]
-                         (let [position     (gpt/add from-position move-vector)
+                         (let [position       (gpt/add from-position move-vector)
                                exclude-frames (if mod? exclude-frames exclude-frames-siblings)
-                               target-frame (ctst/top-nested-frame objects position exclude-frames)
-                               layout?      (ctl/layout? objects target-frame)
-                               drop-index   (when layout? (gsl/get-drop-index target-frame objects position))]
+                               target-frame   (ctst/top-nested-frame objects position exclude-frames)
+                               flex-layout?   (ctl/flex-layout? objects target-frame)
+                               grid-layout?   (ctl/grid-layout? objects target-frame)
+                               drop-index     (cond
+                                                flex-layout? (gslf/get-drop-index target-frame objects position)
+                                                grid-layout? (gslg/get-drop-index target-frame objects position))]
                            [move-vector target-frame drop-index])))
 
                       (rx/take-until stopper))]
@@ -529,7 +534,8 @@
             get-new-position
             (fn [parent-id position]
               (let [parent (get objects parent-id)]
-                (when (ctl/layout? parent)
+                (cond
+                  (ctl/flex-layout? parent)
                   (if (or
                        (and (ctl/reverse? parent)
                             (or (= direction :left)
@@ -538,7 +544,12 @@
                             (or (= direction :right)
                                 (= direction :down))))
                     (dec position)
-                    (+ position 2)))))
+                    (+ position 2))
+
+                  ;; TODO: GRID
+                  (ctl/grid-layout? parent)
+                  nil
+                  )))
 
             add-children-position
             (fn [[parent-id children]]
@@ -643,7 +654,9 @@
       (let [objects (wsh/lookup-page-objects state)
             selected (wsh/lookup-selected state {:omit-blocked? true})
             selected-shapes (->> selected (map (d/getf objects)))]
-        (if (every? (partial ctl/layout-immediate-child? objects) selected-shapes)
+        (if (every? #(and (ctl/any-layout-immediate-child? objects %)
+                          (not (ctl/layout-absolute? %)))
+                    selected-shapes)
           (rx/of (reorder-selected-layout-child direction))
           (rx/of (nudge-selected-shapes direction shift?)))))))
 
@@ -726,16 +739,28 @@
               #{}
               (into (d/ordered-set) (find-all-empty-parents #{})))
 
+            ;; Not move absolute shapes that won't change parent
+            moving-shapes
+            (->> moving-shapes
+                 (remove (fn [shape]
+                           (and (ctl/layout-absolute? shape)
+                                (= frame-id (:parent-id shape))))))
+            moving-shapes-ids
+            (map :id moving-shapes)
+
             changes
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
+                ;; Remove layout-item properties when moving a shape outside a layout
+                (cond-> (not (ctl/any-layout? objects frame-id))
+                  (pcb/update-shapes moving-shapes-ids ctl/remove-layout-item-data))
+                (pcb/update-shapes moving-shapes-ids #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true)))
                 (pcb/change-parent frame-id moving-shapes drop-index)
                 (pcb/remove-objects empty-parents))]
 
         (when (and (some? frame-id) (d/not-empty? changes))
           (rx/of (dch/commit-changes changes)
                  (dwc/expand-collapse frame-id)))))))
-
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the
   provided direction speed and distances thresholds."

@@ -1197,6 +1197,7 @@ msgid "labels.no-invitations"
 msgstr "Nejsou žádné pozvánky."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr ""
 "Chcete-li do tohoto týmu pozvat další členy, stiskněte tlačítko „Pozvat do "
@@ -3688,19 +3689,19 @@ msgstr "Zarovnat doprostřed"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "Zarovnat"
+msgstr "Zarovnat (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "Zarovnat vlevo"
+msgstr "Zarovnat vlevo (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Zarovnat na střed"
+msgstr "Zarovnat na střed (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "Zarovnat vpravo"
+msgstr "Zarovnat vpravo (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -3744,7 +3745,7 @@ msgstr "Žádné"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "Přeškrtnutí"
+msgstr "Přeškrtnutí (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -3764,7 +3765,7 @@ msgstr "První písmeno velké"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "Podtrhnout"
+msgstr "Podtrhnout (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"

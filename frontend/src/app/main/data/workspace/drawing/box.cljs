@@ -82,8 +82,9 @@
             focus      (:workspace-focus-selected state)
 
             fid        (ctst/top-nested-frame objects initial)
-            layout?    (ctl/layout? objects fid)
-            drop-index (when layout? (gsl/get-drop-index fid objects initial))
+
+            flex-layout? (ctl/flex-layout? objects fid)
+            drop-index   (when flex-layout? (gsl/get-drop-index fid objects initial))
 
             shape   (get-in state [:workspace-drawing :object])
             shape   (-> shape

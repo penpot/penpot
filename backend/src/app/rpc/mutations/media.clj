@@ -11,6 +11,7 @@
    [app.rpc.commands.files :as files]
    [app.rpc.commands.media :as cmd.media]
    [app.rpc.doc :as-alias doc]
+   [app.storage :as-alias sto]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
@@ -20,9 +21,9 @@
 
 (sv/defmethod ::upload-file-media-object
   {::doc/added "1.2"
-   ::doc/deprecated "1.17"}
+   ::doc/deprecated "1.18"}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id content] :as params}]
-  (let [cfg (update cfg :storage media/configure-assets-storage)]
+  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (files/check-edition-permissions! pool profile-id file-id)
     (media/validate-media-type! content)
     (cmd.media/validate-content-size! content)
@@ -34,9 +35,9 @@
 
 (sv/defmethod ::create-file-media-object-from-url
   {::doc/added "1.3"
-   ::doc/deprecated "1.17"}
+   ::doc/deprecated "1.18"}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
-  (let [cfg (update cfg :storage media/configure-assets-storage)]
+  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (files/check-edition-permissions! pool profile-id file-id)
     (#'cmd.media/create-file-media-object-from-url cfg params)))
 
@@ -46,7 +47,7 @@
 
 (sv/defmethod ::clone-file-media-object
   {::doc/added "1.2"
-   ::doc/deprecated "1.17"}
+   ::doc/deprecated "1.18"}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)

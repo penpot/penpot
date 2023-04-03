@@ -39,7 +39,7 @@
         on-menu-click
         (mf/use-fn
          (fn [event]
-           (let [position (dom/get-client-position event)]
+           (let [position (dom/get-client-position event)] 
              (dom/prevent-default event)
              (swap! local assoc :menu-open true :menu-pos position))))
 
@@ -144,6 +144,7 @@
 
         create-file
         (mf/use-fn
+         (mf/deps project)
          (fn [origin]
            (st/emit! (with-meta (dd/create-file {:project-id (:id project)})
                        {::ev/origin origin}))))]

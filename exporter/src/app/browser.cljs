@@ -100,7 +100,8 @@
 
 (def browser-pool-factory
   (letfn [(create []
-            (p/let [browser (.launch pw/chromium)
+            (p/let [opts    #js {:args #js ["--font-render-hinting=none"]}
+                    browser (.launch pw/chromium opts)
                     id      (swap! pool-browser-id inc)]
               (l/info :origin "factory" :action "create" :browser-id id)
               (unchecked-set browser "__id" id)

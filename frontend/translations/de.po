@@ -1337,6 +1337,7 @@ msgid "labels.no-invitations"
 msgstr "Es gibt keine Einladungen."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr ""
 "Drücken Sie die Schaltfläche \"Zum Team einladen\", um weitere Mitglieder "
@@ -3907,19 +3908,19 @@ msgstr "Zentrieren"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "Ausrichtung in der Breite"
+msgstr "Ausrichtung in der Breite (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "Linksbündig ausrichten"
+msgstr "Linksbündig ausrichten (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "An Mitte ausrichten"
+msgstr "An Mitte ausrichten (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "Rechtsbündig ausrichten"
+msgstr "Rechtsbündig ausrichten (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -3964,7 +3965,7 @@ msgstr "Keine"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "Durchgestrichen"
+msgstr "Durchgestrichen (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -3984,7 +3985,7 @@ msgstr "Kapitälchen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "Unterstrichen"
+msgstr "Unterstrichen (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"

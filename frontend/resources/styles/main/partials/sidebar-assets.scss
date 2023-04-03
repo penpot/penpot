@@ -265,7 +265,7 @@
 
     .grid-cell {
       background-color: $color-canvas;
-      border-radius: 4px;
+      border-radius: $br4;
       border: 2px solid transparent;
       overflow: hidden;
       display: flex;
@@ -303,7 +303,7 @@
 
       .editable-label-input {
         border: 1px solid $color-gray-20;
-        border-radius: 3px;
+        border-radius: $br3;
         font-size: $fs12;
         padding: 2px;
         margin: 0;
@@ -330,7 +330,7 @@
 
     .grid-placeholder {
       border: 2px solid $color-gray-20;
-      border-radius: 4px;
+      border-radius: $br4;
     }
 
     .drop-space {
@@ -339,6 +339,10 @@
 
     .typography-container {
       position: relative;
+
+      &:last-child {
+        padding-bottom: 0.5em;
+      }
     }
 
     .drag-counter {
@@ -371,7 +375,7 @@
         & > svg,
         & > img {
           background-color: $color-canvas;
-          border-radius: 4px;
+          border-radius: $br4;
           border: 2px solid transparent;
           height: 24px;
           width: 24px;
@@ -422,7 +426,7 @@
       display: flex;
       align-items: center;
       border: 1px solid transparent;
-      border-radius: $br-small;
+      border-radius: $br3;
       margin-top: $size-1;
       padding: 2px;
       font-size: $fs12;
@@ -481,7 +485,7 @@
   .chrome-picker {
     box-shadow: none !important;
     border: 1px solid $color-gray-10 !important;
-    border-radius: 0 !important;
+    border-radius: $br0 !important;
 
     & input {
       background-color: $color-white;
@@ -514,8 +518,8 @@
 
 .modal-create-color-title {
   color: $color-black;
-  font-size: 24px;
-  font-weight: normal;
+  font-size: $fs24;
+  font-weight: $fw400;
 }
 
 .libraries-wrapper {

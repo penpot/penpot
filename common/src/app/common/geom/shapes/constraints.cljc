@@ -288,25 +288,25 @@
 
         constraints-h
         (cond
-          (ctl/layout? parent)
+          ignore-constraints
+          :scale
+
+          (and (ctl/any-layout? parent) (not (ctl/layout-absolute? child)))
           :left
 
-          (not ignore-constraints)
-          (:constraints-h child (default-constraints-h child))
-
           :else
-          :scale)
+          (:constraints-h child (default-constraints-h child)))
 
         constraints-v
         (cond
-          (ctl/layout? parent)
+          ignore-constraints
+          :scale
+
+          (and (ctl/any-layout? parent) (not (ctl/layout-absolute? child)))
           :top
 
-          (not ignore-constraints)
-          (:constraints-v child (default-constraints-v child))
-
           :else
-          :scale)]
+          (:constraints-v child (default-constraints-v child)))]
 
     (if (and (= :scale constraints-h) (= :scale constraints-v))
       modifiers

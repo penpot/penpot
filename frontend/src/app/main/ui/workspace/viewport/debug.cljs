@@ -11,6 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.flex-layout :as gsl]
+   [app.common.geom.shapes.grid-layout :as gsg]
    [app.common.geom.shapes.points :as gpo]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
@@ -68,7 +69,7 @@
 
         shape (or selected-frame (get objects hover-top-frame-id))]
 
-    (when (and shape (ctl/layout? shape))
+    (when (and shape (ctl/flex-layout? shape))
       (let [row? (ctl/row? shape)
             col? (ctl/col? shape)
 
@@ -195,3 +196,55 @@
                           :cy (:y point)
                           :r (/ 2 zoom)
                           :style {:fill "red"}}]))])]))))
+
+(mf/defc debug-grid-layout
+  {::mf/wrap-props false}
+  [props]
+
+  (let [objects            (unchecked-get props "objects")
+        zoom               (unchecked-get props "zoom")
+        selected-shapes    (unchecked-get props "selected-shapes")
+        hover-top-frame-id (unchecked-get props "hover-top-frame-id")
+
+        selected-frame
+        (when (and (= (count selected-shapes) 1) (= :frame (-> selected-shapes first :type)))
+          (first selected-shapes))
+
+        parent (or selected-frame (get objects hover-top-frame-id))
+        parent-bounds (:points parent)]
+
+    (when (and (some? parent) (not= uuid/zero (:id parent)))
+      (let [children (->> (cph/get-immediate-children objects (:id parent))
+                          (remove :hidden)
+                          (map #(vector (gpo/parent-coords-bounds (:points %) (:points parent)) %)))
+
+            hv   #(gpo/start-hv parent-bounds %)
+            vv   #(gpo/start-vv parent-bounds %)
+
+            width (gpo/width-points parent-bounds)
+            height (gpo/height-points parent-bounds)
+            origin (gpo/origin parent-bounds)
+
+            {:keys [row-tracks column-tracks]}
+            (gsg/calc-layout-data parent children parent-bounds)]
+
+        [:*
+         (for [row-data row-tracks]
+           (let [start-p (gpt/add origin (vv (:distance row-data)))
+                 end-p (gpt/add start-p (hv width))]
+             [:line {:x1 (:x start-p)
+                     :y1 (:y start-p)
+                     :x2 (:x end-p)
+                     :y2 (:y end-p)
+                     :style {:stroke "red"
+                             :stroke-width (/ 1 zoom)}}]))
+
+         (for [column-data column-tracks]
+           (let [start-p (gpt/add origin (hv (:distance column-data)))
+                 end-p (gpt/add start-p (vv height))]
+             [:line {:x1 (:x start-p)
+                     :y1 (:y start-p)
+                     :x2 (:x end-p)
+                     :y2 (:y end-p)
+                     :style {:stroke "red"
+                             :stroke-width (/ 1 zoom)}}]))]))))

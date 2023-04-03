@@ -76,7 +76,7 @@
   (ptk/reify ::load-team-fonts
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/query :font-variants {:team-id team-id})
+      (->> (rp/cmd! :get-font-variants {:team-id team-id})
            (rx/map fonts-fetched)))))
 
 (defn process-upload
@@ -264,7 +264,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/mutation! :update-font {:id id :name name :team-id team-id})
+        (->> (rp/cmd! :update-font {:id id :name name :team-id team-id})
              (rx/ignore))))))
 
 (defn delete-font
@@ -281,7 +281,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/mutation! :delete-font {:id font-id :team-id team-id})
+        (->> (rp/cmd! :delete-font {:id font-id :team-id team-id})
              (rx/ignore))))))
 
 (defn delete-font-variant
@@ -298,7 +298,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/mutation! :delete-font-variant {:id id :team-id team-id})
+        (->> (rp/cmd! :delete-font-variant {:id id :team-id team-id})
              (rx/ignore))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -21,9 +21,9 @@
    [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.projects :as projects]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.rpc.queries.projects :as projects]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.tasks.file-gc]
@@ -109,20 +109,20 @@
 
 (defn write-byte!
   [^DataOutputStream output data]
-  (l/trace :fn "write-byte!" :data data :position @*position* ::l/async false)
+  (l/trace :fn "write-byte!" :data data :position @*position* ::l/sync? true)
   (.writeByte output (byte data))
   (swap! *position* inc))
 
 (defn read-byte!
   [^DataInputStream input]
   (let [v (.readByte input)]
-    (l/trace :fn "read-byte!" :val v :position @*position* ::l/async false)
+    (l/trace :fn "read-byte!" :val v :position @*position* ::l/sync? true)
     (swap! *position* inc)
     v))
 
 (defn write-long!
   [^DataOutputStream output data]
-  (l/trace :fn "write-long!" :data data :position @*position* ::l/async false)
+  (l/trace :fn "write-long!" :data data :position @*position* ::l/sync? true)
   (.writeLong output (long data))
   (swap! *position* + 8))
 
@@ -130,14 +130,14 @@
 (defn read-long!
   [^DataInputStream input]
   (let [v (.readLong input)]
-    (l/trace :fn "read-long!" :val v :position @*position* ::l/async false)
+    (l/trace :fn "read-long!" :val v :position @*position* ::l/sync? true)
     (swap! *position* + 8)
     v))
 
 (defn write-bytes!
   [^DataOutputStream output ^bytes data]
   (let [size (alength data)]
-    (l/trace :fn "write-bytes!" :size size :position @*position* ::l/async false)
+    (l/trace :fn "write-bytes!" :size size :position @*position* ::l/sync? true)
     (.write output data 0 size)
     (swap! *position* + size)))
 
@@ -145,7 +145,7 @@
   [^InputStream input ^bytes buff]
   (let [size   (alength buff)
         readed (.readNBytes input buff 0 size)]
-    (l/trace :fn "read-bytes!" :expected (alength buff) :readed readed :position @*position* ::l/async false)
+    (l/trace :fn "read-bytes!" :expected (alength buff) :readed readed :position @*position* ::l/sync? true)
     (swap! *position* + readed)
     readed))
 
@@ -153,7 +153,7 @@
 
 (defn write-uuid!
   [^DataOutputStream output id]
-  (l/trace :fn "write-uuid!" :position @*position* :WRITTEN? (.size output) ::l/async false)
+  (l/trace :fn "write-uuid!" :position @*position* :WRITTEN? (.size output) ::l/sync? true)
 
   (doto output
     (write-byte! (get-mark :uuid))
@@ -162,7 +162,7 @@
 
 (defn read-uuid!
   [^DataInputStream input]
-  (l/trace :fn "read-uuid!" :position @*position* ::l/async false)
+  (l/trace :fn "read-uuid!" :position @*position* ::l/sync? true)
   (let [m (read-byte! input)]
     (assert-mark m :uuid)
     (let [a (read-long! input)
@@ -171,7 +171,7 @@
 
 (defn write-obj!
   [^DataOutputStream output data]
-  (l/trace :fn "write-obj!" :position @*position* ::l/async false)
+  (l/trace :fn "write-obj!" :position @*position* ::l/sync? true)
   (let [^bytes data (fres/encode data)]
     (doto output
       (write-byte! (get-mark :obj))
@@ -180,7 +180,7 @@
 
 (defn read-obj!
   [^DataInputStream input]
-  (l/trace :fn "read-obj!" :position @*position* ::l/async false)
+  (l/trace :fn "read-obj!" :position @*position* ::l/sync? true)
   (let [m (read-byte! input)]
     (assert-mark m :obj)
     (let [size (read-long! input)]
@@ -191,14 +191,14 @@
 
 (defn write-label!
   [^DataOutputStream output label]
-  (l/trace :fn "write-label!" :label label :position @*position* ::l/async false)
+  (l/trace :fn "write-label!" :label label :position @*position* ::l/sync? true)
   (doto output
     (write-byte! (get-mark :label))
     (write-obj! label)))
 
 (defn read-label!
   [^DataInputStream input]
-  (l/trace :fn "read-label!" :position @*position* ::l/async false)
+  (l/trace :fn "read-label!" :position @*position* ::l/sync? true)
   (let [m (read-byte! input)]
     (assert-mark m :label)
     (read-obj! input)))
@@ -208,7 +208,7 @@
   (l/trace :fn "write-header!"
            :version version
            :position @*position*
-           ::l/async false)
+           ::l/sync? true)
   (let [vers   (-> version name (subs 1) parse-long)
         output (io/data-output-stream output)]
     (doto output
@@ -218,7 +218,7 @@
 
 (defn read-header!
   [^InputStream input]
-  (l/trace :fn "read-header!" :position @*position* ::l/async false)
+  (l/trace :fn "read-header!" :position @*position* ::l/sync? true)
   (let [input (io/data-input-stream input)
         mark  (read-byte! input)
         mnum  (read-long! input)
@@ -235,13 +235,13 @@
 (defn copy-stream!
   [^OutputStream output ^InputStream input ^long size]
   (let [written (io/copy! input output :size size)]
-    (l/trace :fn "copy-stream!" :position @*position* :size size :written written ::l/async false)
+    (l/trace :fn "copy-stream!" :position @*position* :size size :written written ::l/sync? true)
     (swap! *position* + written)
     written))
 
 (defn write-stream!
   [^DataOutputStream output stream size]
-  (l/trace :fn "write-stream!" :position @*position* ::l/async false :size size)
+  (l/trace :fn "write-stream!" :position @*position* ::l/sync? true :size size)
   (doto output
     (write-byte! (get-mark :stream))
     (write-long! size))
@@ -250,7 +250,7 @@
 
 (defn read-stream!
   [^DataInputStream input]
-  (l/trace :fn "read-stream!" :position @*position* ::l/async false)
+  (l/trace :fn "read-stream!" :position @*position* ::l/sync? true)
   (let [m (read-byte! input)
         s (read-long! input)
         p (tmp/tempfile :prefix "penpot.binfile.")]
@@ -264,7 +264,7 @@
     (if (> s temp-file-threshold)
       (with-open [^OutputStream output (io/output-stream p)]
         (let [readed (io/copy! input output :offset 0 :size s)]
-          (l/trace :fn "read-stream*!" :expected s :readed readed :position @*position* ::l/async false)
+          (l/trace :fn "read-stream*!" :expected s :readed readed :position @*position* ::l/sync? true)
           (swap! *position* + readed)
           [s p]))
       [s (io/read-as-bytes input :size s)])))
@@ -438,9 +438,8 @@
 (s/def ::embed-assets? (s/nilable ::us/boolean))
 
 (s/def ::write-export-options
-  (s/keys :req-un [::db/pool ::sto/storage]
-          :req    [::output ::file-ids]
-          :opt    [::include-libraries? ::embed-assets?]))
+  (s/keys :req [::db/pool ::sto/storage ::output ::file-ids]
+          :opt [::include-libraries? ::embed-assets?]))
 
 (defn write-export!
   "Do the exportation of a specified file in custom penpot binary
@@ -453,6 +452,7 @@
   `::embed-assets?`: instead of including the libraries, embed in the
   same file library all assets used from external libraries."
   [{:keys [::include-libraries? ::embed-assets?] :as options}]
+
   (us/assert! ::write-export-options options)
   (us/verify!
    :expr (not (and include-libraries? embed-assets?))
@@ -466,7 +466,7 @@
     (with-open [output (io/data-output-stream output)]
       (binding [*state* (volatile! {})]
         (run! (fn [section]
-                (l/debug :hint "write section" :section section ::l/async false)
+                (l/debug :hint "write section" :section section ::l/sync? true)
                 (write-label! output section)
                 (let [options (-> options
                                   (assoc ::output output)
@@ -477,7 +477,7 @@
               [:v1/metadata :v1/files :v1/rels :v1/sobjects])))))
 
 (defmethod write-section :v1/metadata
-  [{:keys [pool ::output ::file-ids ::include-libraries?]}]
+  [{:keys [::db/pool ::output ::file-ids ::include-libraries?]}]
   (let [libs  (when include-libraries?
                 (retrieve-libraries pool file-ids))
         files (into file-ids libs)]
@@ -485,7 +485,7 @@
     (vswap! *state* assoc :files files)))
 
 (defmethod write-section :v1/files
-  [{:keys [pool ::output ::embed-assets?]}]
+  [{:keys [::db/pool ::output ::embed-assets?]}]
 
   ;; Initialize SIDS with empty vector
   (vswap! *state* assoc :sids [])
@@ -500,7 +500,7 @@
       (l/debug :hint "write penpot file"
                :id file-id
                :media (count media)
-               ::l/async false)
+               ::l/sync? true)
 
       (doto output
         (write-obj! file)
@@ -509,26 +509,26 @@
       (vswap! *state* update :sids into storage-object-id-xf media))))
 
 (defmethod write-section :v1/rels
-  [{:keys [pool  ::output ::include-libraries?]}]
+  [{:keys [::db/pool ::output ::include-libraries?]}]
   (let [rels  (when include-libraries?
                 (retrieve-library-relations pool (-> *state* deref :files)))]
-    (l/debug :hint "found rels" :total (count rels) ::l/async false)
+    (l/debug :hint "found rels" :total (count rels) ::l/sync? true)
     (write-obj! output rels)))
 
 (defmethod write-section :v1/sobjects
-  [{:keys [storage ::output]}]
+  [{:keys [::sto/storage ::output]}]
   (let [sids    (-> *state* deref :sids)
         storage (media/configure-assets-storage storage)]
     (l/debug :hint "found sobjects"
              :items (count sids)
-             ::l/async false)
+             ::l/sync? true)
 
     ;; Write all collected storage objects
     (write-obj! output sids)
 
     (doseq [id sids]
       (let [{:keys [size] :as obj} @(sto/get-object storage id)]
-        (l/debug :hint "write sobject" :id id ::l/async false)
+        (l/debug :hint "write sobject" :id id ::l/sync? true)
         (doto output
           (write-uuid! id)
           (write-obj! (meta obj)))
@@ -557,9 +557,8 @@
 (s/def ::ignore-index-errors? (s/nilable ::us/boolean))
 
 (s/def ::read-import-options
-  (s/keys :req-un [::db/pool ::sto/storage]
-          :req    [::project-id ::input]
-          :opt    [::overwrite? ::migrate? ::ignore-index-errors?]))
+  (s/keys :req [::db/pool ::sto/storage ::project-id ::input]
+          :opt [::overwrite? ::migrate? ::ignore-index-errors?]))
 
 (defn read-import!
   "Do the importation of the specified resource in penpot custom binary
@@ -582,14 +581,14 @@
     (read-import (assoc options ::version version ::timestamp timestamp))))
 
 (defmethod read-import :v1
-  [{:keys [pool ::input] :as options}]
+  [{:keys [::db/pool ::input] :as options}]
   (with-open [input (zstd-input-stream input)]
     (with-open [input (io/data-input-stream input)]
       (db/with-atomic [conn pool]
         (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED;"])
         (binding [*state* (volatile! {:media [] :index {}})]
           (run! (fn [section]
-                  (l/debug :hint "reading section" :section section ::l/async false)
+                  (l/debug :hint "reading section" :section section ::l/sync? true)
                   (assert-read-label! input section)
                   (let [options (-> options
                                     (assoc ::section section)
@@ -607,7 +606,7 @@
 (defmethod read-section :v1/metadata
   [{:keys [::input]}]
   (let [{:keys [version files]} (read-obj! input)]
-    (l/debug :hint "metadata readed" :version (:full version) :files files ::l/async false)
+    (l/debug :hint "metadata readed" :version (:full version) :files files ::l/sync? true)
     (vswap! *state* update :index update-index files)
     (vswap! *state* assoc :version version :files files)))
 
@@ -635,14 +634,14 @@
                   :hint "the penpot file seems corrupt, found unexpected uuid (file-id)"))
 
       ;; Update index using with media
-      (l/debug :hint "update index with media" ::l/async false)
+      (l/debug :hint "update index with media" ::l/sync? true)
       (vswap! *state* update :index update-index (map :id media'))
 
       ;; Store file media for later insertion
-      (l/debug :hint "update media references" ::l/async false)
+      (l/debug :hint "update media references" ::l/sync? true)
       (vswap! *state* update :media into (map #(update % :id lookup-index)) media')
 
-      (l/debug :hint "processing file" :file-id file-id ::features features ::l/async false)
+      (l/debug :hint "processing file" :file-id file-id ::features features ::l/sync? true)
 
       (binding [ffeat/*current* features
                 ffeat/*wrap-with-objects-map-fn* (if (features "storage/objects-map") omap/wrap identity)
@@ -668,7 +667,7 @@
                        :created-at timestamp
                        :modified-at timestamp}]
 
-          (l/debug :hint "create file" :id file-id' ::l/async false)
+          (l/debug :hint "create file" :id file-id' ::l/sync? true)
 
           (if overwrite?
             (create-or-update-file conn params)
@@ -691,11 +690,11 @@
         (l/debug :hint "create file library link"
                  :file-id (:file-id rel)
                  :lib-id (:library-file-id rel)
-                 ::l/async false)
+                 ::l/sync? true)
         (db/insert! conn :file-library-rel rel)))))
 
 (defmethod read-section :v1/sobjects
-  [{:keys [storage conn ::input ::overwrite?]}]
+  [{:keys [::sto/storage conn ::input ::overwrite?]}]
   (let [storage (media/configure-assets-storage storage)
         ids     (read-obj! input)]
 
@@ -708,7 +707,7 @@
                     :code :inconsistent-penpot-file
                     :hint "the penpot file seems corrupt, found unexpected uuid (storage-object-id)"))
 
-        (l/debug :hint "readed storage object" :id id ::l/async false)
+        (l/debug :hint "readed storage object" :id id ::l/sync? true)
 
         (let [[size resource] (read-stream! input)
               hash            (sto/calculate-hash resource)
@@ -722,18 +721,18 @@
 
               sobject         @(sto/put-object! storage params)]
 
-          (l/debug :hint "persisted storage object" :id id :new-id (:id sobject) ::l/async false)
+          (l/debug :hint "persisted storage object" :id id :new-id (:id sobject) ::l/sync? true)
           (vswap! *state* update :index assoc id (:id sobject)))))
 
     (doseq [item (:media @*state*)]
       (l/debug :hint "inserting file media object"
                :id (:id item)
                :file-id (:file-id item)
-               ::l/async false)
+               ::l/sync? true)
 
       (let [file-id (lookup-index (:file-id item))]
         (if (= file-id (:file-id item))
-          (l/warn :hint "ignoring file media object" :file-id (:file-id item) ::l/async false)
+          (l/warn :hint "ignoring file media object" :file-id (:file-id item) ::l/sync? true)
           (db/insert! conn :file-media-object
                       (-> item
                           (assoc :file-id file-id)
@@ -744,7 +743,7 @@
 (defn- lookup-index
   [id]
   (let [val (get-in @*state* [:index id])]
-    (l/trace :fn "lookup-index" :id id :val val ::l/async false)
+    (l/trace :fn "lookup-index" :id id :val val ::l/sync? true)
     (when (and (not (::ignore-index-errors? *options*)) (not val))
       (ex/raise :type :validation
                 :code :incomplete-index
@@ -757,7 +756,7 @@
          index index]
     (if-let [id (first items)]
       (let [new-id (if (::overwrite? *options*) id (uuid/next))]
-        (l/trace :fn "update-index" :id id :new-id new-id ::l/async false)
+        (l/trace :fn "update-index" :id id :new-id new-id ::l/sync? true)
         (recur (rest items)
                (assoc index id new-id)))
       index)))
@@ -805,7 +804,7 @@
                        (try
                          (process-map-form form)
                          (catch Throwable cause
-                           (l/warn :hint "failed form" :form (pr-str form) ::l/async false)
+                           (l/warn :hint "failed form" :form (pr-str form) ::l/sync? true)
                            (throw cause)))
                        form))
                    data)))
@@ -893,13 +892,14 @@
 (s/def ::embed-assets? ::us/boolean)
 
 (s/def ::export-binfile
-  (s/keys :req [::rpc/profile-id] :req-un [::file-id ::include-libraries? ::embed-assets?]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::include-libraries? ::embed-assets?]))
 
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
   {::doc/added "1.15"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id include-libraries? embed-assets?] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id include-libraries? embed-assets?] :as params}]
   (files/check-read-permissions! pool profile-id file-id)
   (let [body (reify yrs/StreamableResponseBody
                (-write-body-to-stream [_ _ output-stream]
@@ -914,13 +914,14 @@
 
 (s/def ::file ::media/upload)
 (s/def ::import-binfile
-  (s/keys :req [::rpc/profile-id] :req-un [::project-id ::file]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::project-id ::file]))
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format."
   {::doc/added "1.15"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id file] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id file] :as params}]
   (db/with-atomic [conn pool]
     (projects/check-read-permissions! conn profile-id project-id)
     (let [ids (import! (assoc cfg

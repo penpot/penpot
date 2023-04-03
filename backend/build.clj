@@ -16,16 +16,11 @@
    {:src-dirs ["src" "resources"]
     :target-dir class-dir})
 
-  (b/compile-clj
-   {:basis basis
-    :src-dirs ["src"]
-    :class-dir class-dir})
-
   (b/uber
    {:class-dir class-dir
     :uber-file jar-file
     :main 'clojure.main
-    :exclude [#"goog.*" #"^javasist.*"]
+    :exclude [#".*Log4j2Plugins\.dat$"]
     :basis basis}))
 
 (defn compile [_]

@@ -12,10 +12,14 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
+   [app.common.geom.shapes.corners :as gsc]
+   [app.common.geom.shapes.effects :as gse]
+   [app.common.geom.shapes.strokes :as gss]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.text :as txt]
+   [app.common.types.shape.layout :as ctl]
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])))
 
@@ -252,7 +256,7 @@
 
 (defn resize
   ([modifiers vector origin]
-   (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
+   (assert (valid-vector? vector) (dm/str "Invalid resize vector: " (:x vector) "," (:y vector)))
    (let [modifiers (or modifiers (empty))
          order     (inc (dm/get-prop modifiers :last-order))
          modifiers (assoc modifiers :last-order order)]
@@ -260,12 +264,12 @@
        (resize-vec? vector)
        (update :geometry-child maybe-add-resize (resize-op order vector origin)))))
 
-  ([modifiers vector origin transform transform-inverse]
+  ([modifiers vector origin transform transform-inverse] 
    (resize modifiers vector origin transform transform-inverse nil))
 
   ;; `precise?` works so we don't remove almost empty resizes. This will be used in the pixel-precision
   ([modifiers vector origin transform transform-inverse {:keys [precise?]}]
-   (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
+   (assert (valid-vector? vector) (dm/str "Invalid resize vector: " (:x vector) "," (:y vector)))
    (let [modifiers (or modifiers (empty))
          order     (inc (dm/get-prop modifiers :last-order))
          modifiers (assoc modifiers :last-order order)]
@@ -305,12 +309,12 @@
   (-> (or modifiers (empty))
       (update :structure-child conj (scale-content-op value))))
 
-(defn change-property
+(defn change-recursive-property
   [modifiers property value]
   (-> (or modifiers (empty))
       (update :structure-child conj (change-property-op property value))))
 
-(defn change-parent-property
+(defn change-property
   [modifiers property value]
   (-> (or modifiers (empty))
       (update :structure-parent conj (change-property-op property value))))
@@ -539,6 +543,10 @@
   (or (d/not-empty? structure-parent)
       (d/not-empty? structure-child)))
 
+(defn has-structure-child?
+  [modifiers]
+  (d/not-empty? (dm/get-prop modifiers :structure-child)))
+
 ;; Extract subsets of modifiers
 
 (defn select-child
@@ -560,6 +568,10 @@
 (defn select-child-geometry-modifiers
   [modifiers]
   (-> modifiers select-child select-geometry))
+
+(defn select-child-structre-modifiers
+  [modifiers]
+  (-> modifiers select-child select-structure))
 
 (defn added-children-frames
   "Returns the frames that have an 'add-children' operation"
@@ -632,28 +644,53 @@
                    matrix)))]
           (recur matrix (next modifiers)))))))
 
+(defn transform-text-node [value attrs]
+  (let [font-size   (-> (get attrs :font-size 14) d/parse-double (* value) str)
+        letter-spacing (-> (get attrs :letter-spacing 0) d/parse-double (* value) str)]
+    (d/txt-merge attrs {:font-size font-size
+                        :letter-spacing letter-spacing})))
+
+(defn transform-paragraph-node [value attrs]
+  (let [font-size   (-> (get attrs :font-size 14) d/parse-double (* value) str)]
+    (d/txt-merge attrs {:font-size font-size})))
+
+
+(defn update-text-content
+  [shape scale-text-content value]
+  (update shape :content scale-text-content value))
+
 (defn apply-structure-modifiers
   "Apply structure changes to a shape"
   [shape modifiers]
   (letfn [(scale-text-content
             [content value]
-
             (->> content
-                 (txt/transform-nodes
-                  txt/is-text-node?
-                  (fn [attrs]
-                    (let [font-size (-> (get attrs :font-size 14)
-                                        (d/parse-double)
-                                        (* value)
-                                        (str)) ]
-                      (d/txt-merge attrs {:font-size font-size}))))))
+                 (txt/transform-nodes txt/is-text-node? (partial transform-text-node value))
+                 (txt/transform-nodes txt/is-paragraph-node? (partial transform-paragraph-node value))))
 
           (apply-scale-content
             [shape value]
-
             (cond-> shape
               (cph/text-shape? shape)
-              (update :content scale-text-content value)))]
+              (update-text-content scale-text-content value) 
+              
+              :always
+              (gsc/update-corners-scale value)
+              
+              (d/not-empty? (:strokes shape))
+              (gss/update-strokes-width value)
+                    
+              (d/not-empty? (:shadow shape))
+              (gse/update-shadows-scale value)
+              
+              (some? (:blur shape))
+              (gse/update-blur-scale value)
+
+              (ctl/flex-layout? shape)
+              (ctl/update-flex-scale value)
+
+              :always
+              (ctl/update-flex-child value)))]
 
     (let [remove-children
           (fn [shapes children-to-remove]
@@ -682,7 +719,6 @@
                 :remove-children
                 (let [value (dm/get-prop operation :value)]
                   (update shape :shapes remove-children value))
-
 
                 :scale-content
                 (let [value (dm/get-prop operation :value)]

@@ -43,9 +43,9 @@
 (defn req!
   "A convencience toplevel function for gradual migration to a new API
   convention."
-  ([{:keys [::client] :as holder} request]
-   (us/assert! ::client-holder holder)
+  ([{:keys [::client]} request]
+   (us/assert! ::client client)
    (send! client request {}))
-  ([{:keys [::client] :as holder} request options]
-   (us/assert! ::client-holder holder)
+  ([{:keys [::client]} request options]
+   (us/assert! ::client client)
    (send! client request options)))

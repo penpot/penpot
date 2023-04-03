@@ -17,6 +17,7 @@ function print-current-version {
 }
 
 function build-devenv {
+    set +e;
     echo "Building development image $DEVENV_IMGNAME:latest..."
 
     pushd docker/devenv;

@@ -13,21 +13,21 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.emails :as eml]
+   [app.email :as eml]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
    [app.rpc :as-alias rpc]
-   [app.rpc.climit :as climit]
+   [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
-   [app.rpc.queries.profile :as profile]
    [app.rpc.quotes :as quotes]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [promesa.core :as p]
@@ -62,11 +62,17 @@
         :can-edit (or is-owner is-admin can-edit)
         :can-read true})))
 
+(def has-admin-permissions?
+  (perms/make-admin-predicate-fn get-permissions))
+
 (def has-edit-permissions?
   (perms/make-edition-predicate-fn get-permissions))
 
 (def has-read-permissions?
   (perms/make-read-predicate-fn get-permissions))
+
+(def check-admin-permissions!
+  (perms/make-check-fn has-admin-permissions?))
 
 (def check-edition-permissions!
   (perms/make-check-fn has-edit-permissions?))
@@ -83,7 +89,7 @@
 
 (sv/defmethod ::get-teams
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (with-open [conn (db/open pool)]
     (retrieve-teams conn profile-id)))
 
@@ -114,8 +120,8 @@
 
 (defn retrieve-teams
   [conn profile-id]
-  (let [defaults (profile/retrieve-additional-data conn profile-id)]
-    (->> (db/exec! conn [sql:teams (:default-team-id defaults) profile-id])
+  (let [profile (profile/get-profile conn profile-id)]
+    (->> (db/exec! conn [sql:teams (:default-team-id profile) profile-id])
          (mapv process-permissions))))
 
 ;; --- Query: Team (by ID)
@@ -128,20 +134,21 @@
 
 (sv/defmethod ::get-team
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id]}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
   (with-open [conn (db/open pool)]
     (retrieve-team conn profile-id id)))
 
 (defn retrieve-team
   [conn profile-id team-id]
-  (let [defaults (profile/retrieve-additional-data conn profile-id)
-        sql      (str "WITH teams AS (" sql:teams ") SELECT * FROM teams WHERE id=?")
-        result   (db/exec-one! conn [sql (:default-team-id defaults) profile-id team-id])]
+  (let [profile (profile/get-profile conn profile-id)
+        sql     (str "WITH teams AS (" sql:teams ") SELECT * FROM teams WHERE id=?")
+        result  (db/exec-one! conn [sql (:default-team-id profile) profile-id team-id])]
+
     (when-not result
       (ex/raise :type :not-found
                 :code :team-does-not-exist))
-    (process-permissions result)))
 
+    (process-permissions result)))
 
 ;; --- Query: Team Members
 
@@ -439,7 +446,7 @@
 
 (sv/defmethod ::leave-team
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (leave-team conn (assoc params :profile-id profile-id))))
 
@@ -455,7 +462,7 @@
 
 (sv/defmethod ::delete-team
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [perms (get-permissions conn profile-id id)]
       (when-not (:is-owner perms)
@@ -551,7 +558,7 @@
 
 (sv/defmethod ::delete-team-member
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
   (db/with-atomic [conn pool]
     (let [perms (get-permissions conn profile-id team-id)]
       (when-not (or (:is-owner perms)
@@ -570,7 +577,7 @@
 
 ;; --- Mutation: Update Team Photo
 
-(declare ^:private upload-photo)
+(declare upload-photo)
 (declare ^:private update-team-photo)
 
 (s/def ::file ::media/upload)
@@ -583,57 +590,28 @@
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (let [cfg (update cfg :storage media/configure-assets-storage)]
+  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (update-team-photo cfg (assoc params :profile-id profile-id))))
 
 (defn update-team-photo
-  [{:keys [pool storage executor] :as cfg} {:keys [profile-id team-id] :as params}]
+  [{:keys [::db/pool ::sto/storage ::wrk/executor] :as cfg} {:keys [profile-id team-id] :as params}]
   (p/let [team  (px/with-dispatch executor
                   (retrieve-team pool profile-id team-id))
-          photo (upload-photo cfg params)]
+          photo (profile/upload-photo cfg params)]
 
-    ;; Mark object as touched for make it ellegible for tentative
-    ;; garbage collection.
-    (when-let [id (:photo-id team)]
-      (sto/touch-object! storage id))
+    (db/with-atomic [conn pool]
+      (check-admin-permissions! conn profile-id team-id)
+      ;; Mark object as touched for make it ellegible for tentative
+      ;; garbage collection.
+      (when-let [id (:photo-id team)]
+        (sto/touch-object! storage id))
 
-    ;; Save new photo
-    (db/update! pool :team
-                {:photo-id (:id photo)}
-                {:id team-id})
+      ;; Save new photo
+      (db/update! pool :team
+        {:photo-id (:id photo)}
+        {:id team-id})
 
-    (assoc team :photo-id (:id photo))))
-
-(defn upload-photo
-  [{:keys [storage executor climit] :as cfg} {:keys [file]}]
-  (letfn [(get-info [content]
-            (climit/with-dispatch (:process-image climit)
-              (media/run {:cmd :info :input content})))
-
-          (generate-thumbnail [info]
-            (climit/with-dispatch (:process-image climit)
-              (media/run {:cmd :profile-thumbnail
-                          :format :jpeg
-                          :quality 85
-                          :width 256
-                          :height 256
-                          :input info})))
-
-          ;; Function responsible of calculating cryptographyc hash of
-          ;; the provided data.
-          (calculate-hash [data]
-            (px/with-dispatch executor
-              (sto/calculate-hash data)))]
-
-    (p/let [info    (get-info file)
-            thumb   (generate-thumbnail info)
-            hash    (calculate-hash (:data thumb))
-            content (-> (sto/content (:data thumb) (:size thumb))
-                        (sto/wrap-with-hash hash))]
-      (sto/put-object! storage {::sto/content content
-                                ::sto/deduplicate? true
-                                :bucket "profile"
-                                :content-type (:mtype thumb)}))))
+      (assoc team :photo-id (:id photo)))))
 
 ;; --- Mutation: Create Team Invitation
 
@@ -664,7 +642,7 @@
 
 (defn- create-invitation
   [{:keys [::db/conn] :as cfg} {:keys [team profile role email] :as params}]
-  (let [member (profile/retrieve-profile-data-by-email conn email)]
+  (let [member (profile/get-profile-by-email conn email)]
 
     (when (and member (not (eml/allow-send-emails? conn member)))
       (ex/raise :type :validation
@@ -753,13 +731,18 @@
   "A rpc call that allow to send a single or multiple invitations to
   join the team."
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id email emails role] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email emails role] :as params}]
   (db/with-atomic [conn pool]
     (let [perms    (get-permissions conn profile-id team-id)
           profile  (db/get-by-id conn :profile profile-id)
           team     (db/get-by-id conn :team team-id)
-          emails   (cond-> (or emails #{}) (string? email) (conj email))]
 
+          ;; Members emails. We don't re-send inviation to already existing members
+          member?  (into #{}
+                         (map :email)
+                         (db/exec! conn [sql:team-members team-id]))
+
+          emails   (cond-> (or emails #{}) (string? email) (conj email))]
 
       (run! (partial quotes/check-quote! conn)
             (list {::quotes/id ::quotes/invitations-per-team
@@ -783,6 +766,7 @@
 
       (let [cfg         (assoc cfg ::db/conn conn)
             invitations (->> emails
+                             (remove member?)
                              (map (fn [email]
                                     {:email (str/lower email)
                                      :team team
@@ -802,7 +786,7 @@
 
 (sv/defmethod ::create-team-with-invitations
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id emails role] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id emails role] :as params}]
   (db/with-atomic [conn pool]
     (let [params   (assoc params :profile-id profile-id)
           team     (create-team conn params)
@@ -855,7 +839,7 @@
                           {:team-id team-id
                            :email-to (str/lower email)})
                   (update :role keyword))
-        member (profile/retrieve-profile-data-by-email pool (:email-to invit))
+        member (profile/get-profile-by-email pool (:email-to invit))
         token  (create-invitation-token cfg {:team-id (:team-id invit)
                                              :profile-id profile-id
                                              :valid-until (:valid-until invit)
@@ -872,7 +856,7 @@
 
 (sv/defmethod ::update-team-invitation-role
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id email role] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email role] :as params}]
   (db/with-atomic [conn pool]
     (let [perms    (get-permissions conn profile-id team-id)]
 
@@ -893,7 +877,7 @@
 
 (sv/defmethod ::delete-team-invitation
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
   (db/with-atomic [conn pool]
     (let [perms (get-permissions conn profile-id team-id)]
 

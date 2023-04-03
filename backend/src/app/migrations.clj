@@ -6,8 +6,12 @@
 
 (ns app.migrations
   (:require
+   [app.common.data.macros :as dm]
+   [app.common.logging :as l]
+   [app.db :as db]
    [app.migrations.clj.migration-0023 :as mg0023]
    [app.util.migrations :as mg]
+   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (def migrations
@@ -302,7 +306,29 @@
    {:name "0098-add-quotes-table"
     :fn (mg/resource "app/migrations/sql/0098-add-quotes-table.sql")}
 
+   {:name "0099-add-access-token-table"
+    :fn (mg/resource "app/migrations/sql/0099-add-access-token-table.sql")}
+
+   {:name "0100-mod-profile-indexes"
+    :fn (mg/resource "app/migrations/sql/0100-mod-profile-indexes.sql")}
+
+   {:name "0101-mod-server-error-report-table"
+    :fn (mg/resource "app/migrations/sql/0101-mod-server-error-report-table.sql")}
+
   ])
 
+(defn apply-migrations!
+  [pool name migrations]
+  (dm/with-open [conn (db/open pool)]
+    (mg/setup! conn)
+    (mg/migrate! conn {:name name :steps migrations})))
 
-(defmethod ig/init-key ::migrations [_ _] migrations)
+(defmethod ig/pre-init-spec ::migrations
+  [_]
+  (s/keys :req [::db/pool]))
+
+(defmethod ig/init-key ::migrations
+  [module {:keys [::db/pool]}]
+  (when-not (db/read-only? pool)
+    (l/info :hint "running migrations" :module module)
+    (some->> (seq migrations) (apply-migrations! pool "main"))))

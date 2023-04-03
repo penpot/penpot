@@ -8,23 +8,26 @@
   "A collection if helpers for working with data structures and other
   data resources."
   (:refer-clojure :exclude [read-string hash-map merge name update-vals
-                            parse-double group-by iteration concat mapcat])
+                            parse-double group-by iteration concat mapcat
+                            parse-uuid])
   #?(:cljs
      (:require-macros [app.common.data]))
 
   (:require
-   [app.common.math :as mth]
-   [clojure.set :as set]
-   [cuerdas.core :as str]
    #?(:cljs [cljs.reader :as r]
       :clj [clojure.edn :as r])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
+   [app.common.exceptions :as ex]
+   [app.common.math :as mth]
+   [clojure.set :as set]
+   [cuerdas.core :as str]
+   [linked.map :as lkm]
    [linked.set :as lks])
-
   #?(:clj
      (:import
       linked.set.LinkedSet
+      linked.map.LinkedMap
       java.lang.AutoCloseable)))
 
 (def boolean-or-nil?
@@ -39,10 +42,20 @@
   ([a] (conj lks/empty-linked-set a))
   ([a & xs] (apply conj lks/empty-linked-set a xs)))
 
+(defn ordered-map
+  ([] lkm/empty-linked-map)
+  ([a] (conj lkm/empty-linked-map a))
+  ([a & xs] (apply conj lkm/empty-linked-map a xs)))
+
 (defn ordered-set?
   [o]
   #?(:cljs (instance? lks/LinkedSet o)
      :clj (instance? LinkedSet o)))
+
+(defn ordered-map?
+  [o]
+  #?(:cljs (instance? lkm/LinkedMap o)
+     :clj (instance? LinkedMap o)))
 
 #?(:clj
    (defmethod print-method clojure.lang.PersistentQueue [q, w]
@@ -507,6 +520,10 @@
      (if (or (nil? v) (nan? v))
        default
        v))))
+
+(defn parse-uuid
+  [v]
+  (ex/ignoring (c/parse-uuid v)))
 
 (defn num-string? [v]
   ;; https://stackoverflow.com/questions/175739/built-in-way-in-javascript-to-check-if-a-string-is-a-valid-number

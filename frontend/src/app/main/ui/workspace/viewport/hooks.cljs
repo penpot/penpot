@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.hooks
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
@@ -33,25 +34,14 @@
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
-(defn setup-dom-events [viewport-ref zoom disable-paste in-viewport? workspace-read-only?]
+(defn setup-dom-events [zoom disable-paste in-viewport? workspace-read-only?]
   (let [on-key-down       (actions/on-key-down)
         on-key-up         (actions/on-key-up)
-        on-mouse-move     (actions/on-mouse-move)
         on-mouse-wheel    (actions/on-mouse-wheel zoom)
         on-paste          (actions/on-paste disable-paste in-viewport? workspace-read-only?)]
 
-    ;; We use the DOM listener because the goog.closure one forces reflow to generate its internal
-    ;; structure. As we don't need currently nothing from BrowserEvent we optimize by using the basic event
     (mf/use-layout-effect
-     (mf/deps on-mouse-move)
-     (fn []
-       (let [node (mf/ref-val viewport-ref)]
-         (.addEventListener node "mousemove" on-mouse-move)
-         (fn []
-           (.removeEventListener node "mousemove" on-mouse-move)))))
-
-    (mf/use-layout-effect
-     (mf/deps on-key-down on-key-up on-mouse-move on-mouse-wheel on-paste workspace-read-only?)
+     (mf/deps on-key-down on-key-up on-mouse-wheel on-paste workspace-read-only?)
      (fn []
        (let [keys [(events/listen js/document EventType.KEYDOWN on-key-down)
                    (events/listen js/document EventType.KEYUP on-key-up)
@@ -63,14 +53,16 @@
            (doseq [key keys]
              (events/unlistenByKey key))))))))
 
-(defn setup-viewport-size [viewport-ref]
+(defn setup-viewport-size [vport viewport-ref]
   (mf/use-layout-effect
+   (mf/deps vport)
    (fn []
-     (let [node (mf/ref-val viewport-ref)
-           prnt (dom/get-parent node)
-           size (dom/get-client-size prnt)]
-       ;; We schedule the event so it fires after `initialize-page` event
-       (timers/schedule #(st/emit! (dw/initialize-viewport size)))))))
+     (when-not vport
+       (let [node (mf/ref-val viewport-ref)
+             prnt (dom/get-parent node)
+             size (dom/get-client-size prnt)]
+         ;; We schedule the event so it fires after `initialize-page` event
+         (timers/schedule #(st/emit! (dw/initialize-viewport size))))))))
 
 (defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only?]
   (mf/use-effect
@@ -107,12 +99,13 @@
        (when (not= @cursor new-cursor)
          (reset! cursor new-cursor))))))
 
-(defn setup-keyboard [alt? mod? space? z?]
+(defn setup-keyboard [alt? mod? space? z? shift?]
   (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
   (hooks/use-stream ms/keyboard-mod #((reset! mod? %)
                                       (when-not % (reset! z? false)))) ;; In mac after command+z there is no event for the release of the z key
   (hooks/use-stream ms/keyboard-space #(reset! space? %))
-  (hooks/use-stream ms/keyboard-z #(reset! z? %)))
+  (hooks/use-stream ms/keyboard-z #(reset! z? %))
+  (hooks/use-stream ms/keyboard-shift #(reset! shift? %)))
 
 (defn group-empty-space?
   "Given a group `group-id` check if `hover-ids` contains any of its children. If it doesn't means
@@ -166,7 +159,8 @@
              ;; but the mouse has not been moved from its position.
              (->> mod-str
                   (rx/observe-on :async)
-                  (rx/map #(deref last-point-ref)))
+                  (rx/map #(deref last-point-ref))
+                  (rx/merge-map query-point))
 
              (->> move-stream
                   (rx/tap #(reset! last-point-ref %))
@@ -238,9 +232,17 @@
              remove-id?
              (into selected-with-parents remove-id-xf ids)
 
+             no-fill-nested-frames?
+             (fn [id]
+               (and (cph/frame-shape? objects id)
+                    (not (cph/root-frame? objects id))
+                    (empty? (dm/get-in objects [id :fills]))))
+
              hover-shape
              (->> ids
                   (remove remove-id?)
+                  (remove (partial cph/hidden-parent? objects))
+                  (remove #(and mod? (no-fill-nested-frames? %)))
                   (filter #(or (empty? focus) (cp/is-in-focus? objects focus %)))
                   (first)
                   (get objects))]

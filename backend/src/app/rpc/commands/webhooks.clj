@@ -148,7 +148,7 @@
    from webhook where team_id = ? order by uri")
 
 (sv/defmethod ::get-webhooks
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (->> (db/exec! conn [sql:get-webhooks team-id])

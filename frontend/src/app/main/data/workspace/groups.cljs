@@ -7,11 +7,13 @@
 (ns app.main.data.workspace.groups
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -98,6 +100,7 @@
         changes   (-> (pcb/empty-changes it page-id)
                       (pcb/with-objects objects)
                       (pcb/add-object group {:index group-idx})
+                      (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
                       (pcb/change-parent (:id group) (reverse shapes))
                       (pcb/update-shapes (map :id shapes-to-detach) ctk/detach-shape)
                       (pcb/remove-objects ids-to-delete))]
@@ -142,6 +145,8 @@
 
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
+        (cond-> (ctl/any-layout? frame)
+          (pcb/update-shapes (:shapes frame) ctl/remove-layout-item-data))
         (pcb/change-parent parent-id children idx-in-parent)
         (pcb/remove-objects [(:id frame)]))))
 
@@ -191,6 +196,11 @@
                                 (keep :id))
                           selected)
 
+            child-ids
+            (into (d/ordered-set)
+                  (mapcat #(dm/get-in objects [% :shapes]))
+                  selected)
+
             changes {:redo-changes (vec (mapcat :redo-changes changes-list))
                      :undo-changes (vec (mapcat :undo-changes changes-list))
                      :origin it}
@@ -199,7 +209,8 @@
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
                (ptk/data-event :layout/update parents)
-               (dwu/commit-undo-transaction undo-id))))))
+               (dwu/commit-undo-transaction undo-id)
+               (dws/select-shapes child-ids))))))
 
 (def mask-group
   (ptk/reify ::mask-group

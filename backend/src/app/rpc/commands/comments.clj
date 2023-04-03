@@ -54,8 +54,8 @@
                 :hint "file not found"))))
 
 (defn- get-comment-thread
-  [conn thread-id & {:keys [for-update?]}]
-  (-> (db/get-by-id conn :comment-thread thread-id {:for-update for-update?})
+  [conn thread-id & {:as opts}]
+  (-> (db/get-by-id conn :comment-thread thread-id opts)
       (decode-row)))
 
 (defn- get-comment
@@ -100,7 +100,7 @@
 
 (sv/defmethod ::get-comment-threads
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id share-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (get-comment-threads conn profile-id file-id)))
@@ -143,7 +143,7 @@
 
 (sv/defmethod ::get-unread-comment-threads
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
   (with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (get-unread-comment-threads conn profile-id team-id)))
@@ -190,7 +190,7 @@
 
 (sv/defmethod ::get-comment-thread
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id id share-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (let [sql (str "with threads as (" sql:comment-threads ")"
@@ -210,7 +210,7 @@
 
 (sv/defmethod ::get-comments
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id thread-id share-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id thread-id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (let [{:keys [file-id] :as thread} (get-comment-thread conn thread-id)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
@@ -262,7 +262,7 @@
   participants on comment threads of the file."
   {::doc/added "1.15"
    ::doc/changes ["1.15" "Imported from queries and renamed."]}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id share-id]}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id share-id]}]
   (with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (get-file-comments-users conn file-id profile-id)))
@@ -372,9 +372,9 @@
 
 (sv/defmethod ::update-comment-thread-status
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id share-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id share-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [file-id] :as thread} (get-comment-thread conn id :for-update? true)]
+    (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::db/for-update? true)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (upsert-comment-thread-status! conn profile-id id))))
 
@@ -389,9 +389,9 @@
 
 (sv/defmethod ::update-comment-thread
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id is-resolved share-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id is-resolved share-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [file-id] :as thread} (get-comment-thread conn id :for-update? true)]
+    (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::db/for-update? true)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (db/update! conn :comment-thread
                   {:is-resolved is-resolved}
@@ -412,9 +412,9 @@
 (sv/defmethod ::create-comment
   {::doc/added "1.15"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at thread-id share-id content] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at thread-id share-id content] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [file-id page-id] :as thread} (get-comment-thread conn thread-id :for-update? true)
+    (let [{:keys [file-id page-id] :as thread} (get-comment-thread conn thread-id ::db/for-update? true)
           {:keys [team-id project-id page-name] :as file} (get-file conn file-id page-id)]
 
       (files/check-comment-permissions! conn profile-id (:id file) share-id)
@@ -465,10 +465,10 @@
 
 (sv/defmethod ::update-comment
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at id share-id content] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at id share-id content] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [thread-id] :as comment} (get-comment conn id :for-update? true)
-          {:keys [file-id page-id owner-id] :as thread} (get-comment-thread conn thread-id :for-update? true)]
+    (let [{:keys [thread-id] :as comment} (get-comment conn id ::db/for-update? true)
+          {:keys [file-id page-id owner-id] :as thread} (get-comment-thread conn thread-id ::db/for-update? true)]
 
       (files/check-comment-permissions! conn profile-id file-id share-id)
 
@@ -498,9 +498,9 @@
 
 (sv/defmethod ::delete-comment-thread
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id share-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id share-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [owner-id file-id] :as thread} (get-comment-thread conn id :for-update? true)]
+    (let [{:keys [owner-id file-id] :as thread} (get-comment-thread conn id ::db/for-update? true)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (when-not (= owner-id profile-id)
         (ex/raise :type :validation
@@ -518,9 +518,9 @@
 
 (sv/defmethod ::delete-comment
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id share-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id share-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [owner-id thread-id] :as comment} (get-comment conn id :for-update? true)
+    (let [{:keys [owner-id thread-id] :as comment} (get-comment conn id ::db/for-update? true)
           {:keys [file-id] :as thread} (get-comment-thread conn thread-id)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (when-not (= owner-id profile-id)
@@ -538,9 +538,9 @@
 
 (sv/defmethod ::update-comment-thread-position
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id position frame-id share-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id position frame-id share-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [file-id] :as thread} (get-comment-thread conn id :for-update? true)]
+    (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::db/for-update? true)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (db/update! conn :comment-thread
                   {:modified-at (::rpc/request-at params)
@@ -558,9 +558,9 @@
 
 (sv/defmethod ::update-comment-thread-frame
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id frame-id share-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id frame-id share-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [file-id] :as thread} (get-comment-thread conn id :for-update? true)]
+    (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::db/for-update? true)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (db/update! conn :comment-thread
                   {:modified-at (::rpc/request-at params)

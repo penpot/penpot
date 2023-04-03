@@ -187,20 +187,28 @@
 
 (defn scale-matrix
   ([pt center]
-   (-> (matrix)
-       (multiply! (translate-matrix center))
-       (multiply! (scale-matrix pt))
-       (multiply! (translate-matrix (gpt/negate center)))))
+   (let [sx (dm/get-prop pt :x)
+         sy (dm/get-prop pt :y)
+         cx (dm/get-prop center :x)
+         cy (dm/get-prop center :y)]
+     (Matrix. sx 0 0 sy (- cx (* cx sx)) (- cy (* cy sy)))))
   ([pt]
    (assert (gpt/point? pt))
    (Matrix. (dm/get-prop pt :x) 0 0 (dm/get-prop pt :y) 0 0)))
 
 (defn rotate-matrix
   ([angle point]
-   (-> (matrix)
-       (multiply! (translate-matrix point))
-       (multiply! (rotate-matrix angle))
-       (multiply! (translate-matrix (gpt/negate point)))))
+   (let [cx (dm/get-prop point :x)
+         cy (dm/get-prop point :y)
+         nx (- cx)
+         ny (- cy)
+         a (mth/radians angle)
+         c (mth/cos a)
+         s (mth/sin a)
+         ns (- s)
+         tx (+ (* c nx) (* ns ny) cx)
+         ty (+ (* s nx) (*  c ny) cy)]
+     (Matrix. c s ns c tx ty)))
   ([angle]
    (let [a (mth/radians angle)]
      (Matrix. (mth/cos a)

@@ -13,11 +13,10 @@
    [app.rpc.commands.files :as files]
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.share-link :as slnk]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
-;; --- Query: View Only Bundle
+;; --- QUERY: View Only Bundle
 
 (defn- get-project
   [conn id]
@@ -31,7 +30,15 @@
         users   (comments/get-file-comments-users conn file-id profile-id)
 
         links   (->> (db/query conn :share-link {:file-id file-id})
-                     (mapv slnk/decode-share-link-row))
+                     (mapv (fn [row]
+                             (-> row
+                                 (update :pages db/decode-pgarray #{})
+                                 ;; NOTE: the flags are deprecated but are still present
+                                 ;; on the table on old rows. The flags are pgarray and
+                                 ;; for avoid decoding it (because they are no longer used
+                                 ;; on frontend) we just dissoc the column attribute from
+                                 ;; row.
+                                 (dissoc :flags)))))
 
         fonts   (db/query conn :team-font-variant
                           {:team-id (:team-id project)
@@ -84,6 +91,6 @@
    ::cond/key-fn files/get-file-etag
    ::cond/reuse-key? true
    ::doc/added "1.17"}
-  [{:keys [pool]} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id] :as params}]
   (with-open [conn (db/open pool)]
     (get-view-only-bundle conn (assoc params :profile-id profile-id))))

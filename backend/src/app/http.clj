@@ -6,13 +6,22 @@
 
 (ns app.http
   (:require
+   [app.auth.oidc :as-alias oidc]
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.transit :as t]
+   [app.db :as-alias db]
+   [app.http.access-token :as actoken]
+   [app.http.assets :as-alias assets]
+   [app.http.awsns :as-alias awsns]
+   [app.http.debug :as-alias debug]
    [app.http.errors :as errors]
    [app.http.middleware :as mw]
    [app.http.session :as session]
+   [app.http.websocket :as-alias ws]
    [app.metrics :as mtx]
+   [app.rpc :as-alias rpc]
+   [app.rpc.doc :as-alias rpc.doc]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
@@ -37,47 +46,53 @@
 (s/def ::max-body-size integer?)
 (s/def ::max-multipart-body-size integer?)
 (s/def ::io-threads integer?)
-(s/def ::worker-threads integer?)
 
 (defmethod ig/prep-key ::server
   [_ cfg]
-  (merge {:name "http"
-          :port 6060
-          :host "0.0.0.0"
-          :max-body-size (* 1024 1024 30)             ; 30 MiB
-          :max-multipart-body-size (* 1024 1024 120)} ; 120 MiB
+  (merge {::port 6060
+          ::host "0.0.0.0"
+          ::max-body-size (* 1024 1024 30)             ; 30 MiB
+          ::max-multipart-body-size (* 1024 1024 120)} ; 120 MiB
          (d/without-nils cfg)))
 
 (defmethod ig/pre-init-spec ::server [_]
-  (s/and
-   (s/keys :req-un [::port ::host ::name ::max-body-size ::max-multipart-body-size]
-           :opt-un [::router ::handler ::io-threads ::worker-threads ::wrk/executor])
-   (fn [cfg]
-     (or (contains? cfg :router)
-         (contains? cfg :handler)))))
+  (s/keys :req [::port ::host]
+          :opt [::max-body-size
+                ::max-multipart-body-size
+                ::router
+                ::handler
+                ::io-threads
+                ::wrk/executor]))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [handler router port name host] :as cfg}]
-  (l/info :hint "starting http server" :port port :host host :name name)
+  [_ {:keys [::handler ::router ::host ::port] :as cfg}]
+  (l/info :hint "starting http server" :port port :host host)
   (let [options {:http/port port
                  :http/host host
-                 :http/max-body-size (:max-body-size cfg)
-                 :http/max-multipart-body-size (:max-multipart-body-size cfg)
-                 :xnio/io-threads (:io-threads cfg)
-                 :xnio/worker-threads (:worker-threads cfg)
-                 :xnio/dispatch (:executor cfg)
+                 :http/max-body-size (::max-body-size cfg)
+                 :http/max-multipart-body-size (::max-multipart-body-size cfg)
+                 :xnio/io-threads (::io-threads cfg)
+                 :xnio/dispatch (::wrk/executor cfg)
                  :ring/async true}
 
-        handler (if (some? router)
+        handler (cond
+                  (some? router)
                   (wrap-router router)
 
-                  handler)
-        server  (yt/server handler (d/without-nils options))]
-    (assoc cfg :server (yt/start! server))))
+                  (some? handler)
+                  handler
+
+                  :else
+                  (throw (UnsupportedOperationException. "handler or router are required")))
+
+        options (d/without-nils options)
+        server  (yt/server handler options)]
+
+    (assoc cfg ::server (yt/start! server))))
 
 (defmethod ig/halt-key! ::server
-  [_ {:keys [server name port] :as cfg}]
-  (l/info :msg "stopping http server" :name name :port port)
+  [_ {:keys [::server ::port] :as cfg}]
+  (l/info :msg "stopping http server" :port port)
   (yt/stop! server))
 
 (defn- not-found-handler
@@ -113,64 +128,41 @@
 ;; HTTP ROUTER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::assets map?)
-(s/def ::awsns-handler fn?)
-(s/def ::debug-routes (s/nilable vector?))
-(s/def ::doc-routes (s/nilable vector?))
-(s/def ::feedback fn?)
-(s/def ::oauth map?)
-(s/def ::oidc-routes (s/nilable vector?))
-(s/def ::rpc-routes (s/nilable vector?))
-(s/def ::session ::session/session)
-(s/def ::storage map?)
-(s/def ::ws fn?)
-
 (defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req-un [::mtx/metrics
-                   ::ws
-                   ::storage
-                   ::assets
-                   ::session
-                   ::feedback
-                   ::awsns-handler
-                   ::debug-routes
-                   ::oidc-routes
-                   ::rpc-routes
-                   ::doc-routes]))
+  (s/keys :req [::session/manager
+                ::actoken/manager
+                ::ws/routes
+                ::rpc/routes
+                ::rpc.doc/routes
+                ::oidc/routes
+                ::assets/routes
+                ::debug/routes
+                ::db/pool
+                ::mtx/routes
+                ::awsns/routes]))
 
 (defmethod ig/init-key ::router
-  [_ {:keys [ws session metrics assets feedback] :as cfg}]
+  [_ cfg]
   (rr/router
    [["" {:middleware [[mw/server-timing]
                       [mw/format-response]
                       [mw/params]
                       [mw/parse-request]
-                      [session/middleware-1 session]
+                      [session/soft-auth cfg]
+                      [actoken/soft-auth cfg]
                       [mw/errors errors/handle]
                       [mw/restrict-methods]]}
 
-     ["/metrics" {:handler (::mtx/handler metrics)
-                  :allowed-methods #{:get}}]
-
-     ["/assets" {:middleware [[session/middleware-2 session]]}
-      ["/by-id/:id" {:handler (:objects-handler assets)}]
-      ["/by-file-media-id/:id" {:handler (:file-objects-handler assets)}]
-      ["/by-file-media-id/:id/thumbnail" {:handler (:file-thumbnails-handler assets)}]]
-
-     (:debug-routes cfg)
+     (::mtx/routes cfg)
+     (::assets/routes cfg)
+     (::debug/routes cfg)
 
      ["/webhooks"
-      ["/sns" {:handler (:awsns-handler cfg)
-               :allowed-methods #{:post}}]]
+      (::awsns/routes cfg)]
 
-     ["/ws/notifications" {:middleware [[session/middleware-2 session]]
-                           :handler ws
-                           :allowed-methods #{:get}}]
+     (::ws/routes cfg)
 
-     ["/api" {:middleware [[mw/cors]
-                           [session/middleware-2 session]]}
-      ["/feedback" {:handler feedback
-                    :allowed-methods #{:post}}]
-      (:doc-routes cfg)
-      (:oidc-routes cfg)
-      (:rpc-routes cfg)]]]))
+     ["/api" {:middleware [[mw/cors]]}
+      (::oidc/routes cfg)
+      (::rpc.doc/routes cfg)
+      (::rpc/routes cfg)]]]))

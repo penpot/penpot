@@ -196,7 +196,7 @@
            :content blob
            :is-local true}))
        (rx/tap #(progress! context :upload-media name))
-       (rx/flat-map #(rp/mutation! :upload-file-media-object %))))
+       (rx/flat-map #(rp/cmd! :upload-file-media-object %))))
 
 (defn resolve-text-content [node context]
   (let [resolve (:resolve context)]
@@ -513,7 +513,7 @@
                                   :content content
                                   :is-local false})))
                      (rx/tap #(progress! context :upload-media (:name %)))
-                     (rx/merge-map #(rp/mutation! :upload-file-media-object %))
+                     (rx/merge-map #(rp/cmd! :upload-file-media-object %))
                      (rx/map (constantly media))
                      (rx/catch #(do (.error js/console (str "Error uploading media: " (:name media)) )
                                     (rx/empty)))))))

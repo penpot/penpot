@@ -73,6 +73,40 @@
 
     form {
       margin: 2rem 0 0.5rem 0;
+      .accept-terms-and-privacy-wrapper {
+        position: relative;
+        .input-checkbox {
+          margin-bottom: 0;
+        }
+        .input-checkbox input[type="checkbox"] {
+          position: absolute;
+          display: block;
+          width: 20px;
+          height: 20px;
+          opacity: 0;
+          top: 22px;
+        }
+        label {
+          margin-left: 40px;
+        }
+        label:before {
+          position: absolute;
+          top: 15px;
+          left: -36px;
+        }
+        label:after {
+          position: absolute;
+          top: 15px;
+          left: -33px;
+        }
+        .input-checkbox input[type="checkbox"]:focus {
+          opacity: 100%;
+        }
+        .auth-links {
+          margin-left: 40px;
+          font-size: 0.75rem;
+        }
+      }
     }
   }
 
@@ -92,9 +126,9 @@
 
   .btn-large {
     flex-grow: 1;
-    font-size: 14px;
+    font-size: $fs14;
     font-style: normal;
-    font-weight: normal;
+    font-weight: $fw400;
   }
 
   .btn-google-auth {
@@ -194,7 +228,7 @@
       margin-bottom: 10px;
       a {
         font-size: $fs14;
-        font-weight: 500;
+        font-weight: $fw500;
         color: $color-gray-50;
         &:hover,
         &:focus {

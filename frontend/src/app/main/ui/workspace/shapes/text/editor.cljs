@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gsht]
    [app.common.text :as txt]
+   [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
@@ -200,7 +201,7 @@
              (st/emit! (dwt/update-editor-state shape state)))
            "handled"))
 
-        on-mouse-down
+        on-pointer-down
         (mf/use-callback
          (fn [event]
            (when (dom/class? (dom/get-target event) "DraftEditor-root")
@@ -228,7 +229,7 @@
               ;; the underlying text. Use opacity because display or visibility won't allow to recover
               ;; focus afterwards.
               :opacity (when @blurred 0)}
-      :on-mouse-down on-mouse-down
+      :on-pointer-down on-pointer-down
       :class (dom/classnames
               :align-top    (= (:vertical-align content "top") "top")
               :align-center (= (:vertical-align content) "center")
@@ -271,6 +272,12 @@
         text-modifier
         (mf/deref text-modifier-ref)
 
+        ;; For Safari It's necesary to scale the editor with the zoom level to fix
+        ;; a problem with foreignObjects not scaling correctly with the viewbox
+        maybe-zoom
+        (when (cf/check-browser? :safari)
+          (mf/deref refs/selected-zoom))
+
         shape (cond-> shape
                 (some? text-modifier)
                 (dwt/apply-text-modifier text-modifier)
@@ -299,5 +306,7 @@
       [:div {:style {:position "fixed"
                      :left 0
                      :top  (- (:y shape) y)
-                     :pointer-events "all"}}
+                     :pointer-events "all"
+                     :transform-origin "top left"
+                     :transform (when maybe-zoom (dm/fmt "scale(%)" maybe-zoom))}}
        [:& text-shape-edit-html {:shape shape :key (str (:id shape))}]]]]))

@@ -1289,6 +1289,7 @@ msgid "labels.no-invitations"
 msgstr "Nema pozivnica."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr "Pritisni gumb \"Pozovi u tim\" da pozoveš više članova u ovaj tim."
 
@@ -3812,19 +3813,19 @@ msgstr "Poravnaj sredinu"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 #, fuzzy
 msgid "workspace.options.text-options.align-justify"
-msgstr "Složi u blok"
+msgstr "Složi u blok (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "Poravnaj lijevo"
+msgstr "Poravnaj lijevo (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Poravnaj sredinu"
+msgstr "Poravnaj sredinu (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "Poravnaj desno"
+msgstr "Poravnaj desno (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -3869,7 +3870,7 @@ msgstr "Nijedan"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "Precrtanko"
+msgstr "Precrtanko (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -3889,7 +3890,7 @@ msgstr "Velika i mala slova"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "Podcrtano"
+msgstr "Podcrtano (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"

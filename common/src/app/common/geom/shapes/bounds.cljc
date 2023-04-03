@@ -133,27 +133,38 @@
           (-> (get-shape-filter-bounds shape)
               (add-padding (calculate-padding shape true))))
 
-        bounds (if (or (:masked-group? shape) (cph/frame-shape? shape))
-                 [(calculate-base-bounds shape)]
-                 (cph/reduce-objects
-                  objects
-                  (fn [shape]
-                    (and (d/not-empty? (:shapes shape))
-                         (or (not (cph/frame-shape? shape))
-                             (:show-content shape))
+        bounds
+        (cond
+          (empty? (:shapes shape))
+          [(calculate-base-bounds shape)]
 
-                         (or (not (cph/group-shape? shape))
-                             (not (:masked-group? shape)))))
+          (:masked-group? shape)
+          [(calculate-base-bounds shape)]
 
-                  (:id shape)
+          (and (cph/frame-shape? shape) (not (:show-content shape)))
+          [(calculate-base-bounds shape)]
 
-                  (fn [result shape]
-                    (conj result (get-object-bounds objects shape)))
+          :else
+          (cph/reduce-objects
+           objects
+           (fn [shape]
+             (and (d/not-empty? (:shapes shape))
+                  (or (not (cph/frame-shape? shape))
+                      (:show-content shape))
 
-                  [(calculate-base-bounds shape)]))
+                  (or (not (cph/group-shape? shape))
+                      (not (:masked-group? shape)))))
 
-        children-bounds (cond->> (gsr/join-selrects bounds)
-                          (not (cph/frame-shape? shape)) (or (:children-bounds shape)))
+           (:id shape)
+
+           (fn [result child]
+             (conj result (calculate-base-bounds child)))
+
+           [(calculate-base-bounds shape)]))
+
+        children-bounds
+        (cond->> (gsr/join-selrects bounds)
+          (not (cph/frame-shape? shape)) (or (:children-bounds shape)))
 
         filters (shape->filters shape)
         blur-value (or (-> shape :blur :value) 0)]

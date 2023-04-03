@@ -1301,6 +1301,7 @@ msgid "labels.no-invitations"
 msgstr "אין הזמנות."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr "לחיצה על הכפתור „הזמנה לצוות” תאפשר להזמין חברים נוספים לצוות הזה."
 
@@ -3863,19 +3864,19 @@ msgstr "יישור למרכז"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "יישור לשני הצדדים"
+msgstr "יישור לשני הצדדים (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "יישור שמאלה"
+msgstr "יישור שמאלה (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "יישור לאמצע"
+msgstr "יישור לאמצע (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "יישור ימינה"
+msgstr "יישור ימינה (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -3920,7 +3921,7 @@ msgstr "ללא"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "קו חוצה"
+msgstr "קו חוצה (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -3940,7 +3941,7 @@ msgstr "רישיות כותרת"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "קו תחתי"
+msgstr "קו תחתי (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"

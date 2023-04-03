@@ -6,12 +6,12 @@
 
 (ns backend-tests.bounce-handling-test
   (:require
-   [backend-tests.helpers :as th]
    [app.db :as db]
-   [app.emails :as emails]
+   [app.email :as email]
    [app.http.awsns :as awsns]
    [app.tokens :as tokens]
    [app.util.time :as dt]
+   [backend-tests.helpers :as th]
    [clojure.pprint :refer [pprint]]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]))
@@ -261,11 +261,11 @@
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
 
-      (t/is (true? (emails/allow-send-emails? pool profile)))
+      (t/is (true? (email/allow-send-emails? pool profile)))
       (t/is (= 4 (:call-count @mock)))
 
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
-      (t/is (false? (emails/allow-send-emails? pool profile))))))
+      (t/is (false? (email/allow-send-emails? pool profile))))))
 
 
 (t/deftest test-allow-send-messages-predicate-with-complaints
@@ -281,32 +281,32 @@
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
       (th/create-complaint-for pool {:type :complaint :id (:id profile)})
 
-      (t/is (true? (emails/allow-send-emails? pool profile)))
+      (t/is (true? (email/allow-send-emails? pool profile)))
       (t/is (= 4 (:call-count @mock)))
 
       (th/create-complaint-for pool {:type :complaint :id (:id profile)})
-      (t/is (false? (emails/allow-send-emails? pool profile))))))
+      (t/is (false? (email/allow-send-emails? pool profile))))))
 
 (t/deftest test-has-complaint-reports-predicate
   (let [profile (th/create-profile* 1)
         pool    (:app.db/pool th/*system*)]
 
-    (t/is (false? (emails/has-complaint-reports? pool (:email profile))))
+    (t/is (false? (email/has-complaint-reports? pool (:email profile))))
 
     (th/create-global-complaint-for pool {:type :bounce :email (:email profile)})
-    (t/is (false? (emails/has-complaint-reports? pool (:email profile))))
+    (t/is (false? (email/has-complaint-reports? pool (:email profile))))
 
     (th/create-global-complaint-for pool {:type :complaint :email (:email profile)})
-    (t/is (true? (emails/has-complaint-reports? pool (:email profile))))))
+    (t/is (true? (email/has-complaint-reports? pool (:email profile))))))
 
 (t/deftest test-has-bounce-reports-predicate
   (let [profile (th/create-profile* 1)
         pool    (:app.db/pool th/*system*)]
 
-    (t/is (false? (emails/has-bounce-reports? pool (:email profile))))
+    (t/is (false? (email/has-bounce-reports? pool (:email profile))))
 
     (th/create-global-complaint-for pool {:type :complaint :email (:email profile)})
-    (t/is (false? (emails/has-bounce-reports? pool (:email profile))))
+    (t/is (false? (email/has-bounce-reports? pool (:email profile))))
 
     (th/create-global-complaint-for pool {:type :bounce :email (:email profile)})
-    (t/is (true? (emails/has-bounce-reports? pool (:email profile))))))
+    (t/is (true? (email/has-bounce-reports? pool (:email profile))))))

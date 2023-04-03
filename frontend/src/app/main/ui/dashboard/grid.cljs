@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.features :as ffeat]
+   [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as msg]
@@ -251,7 +252,14 @@
                (st/emit! (dd/clear-selected-files)))
              (st/emit! (dd/toggle-file-select file)))
 
-           (let [position (dom/get-client-position event)]
+           (let [client-position (dom/get-client-position event)
+                 position (if (and (nil? (:y client-position)) (nil? (:x client-position)))
+                            (let [target-element (dom/get-target event)
+                                  points         (dom/get-bounding-rect target-element)
+                                  y              (:top points)
+                                  x              (:left points)]
+                              (gpt/point x y))
+                            client-position)]
              (swap! local assoc
                     :menu-open true
                     :menu-pos position))))
@@ -260,7 +268,9 @@
         (mf/use-fn
          (mf/deps file)
          (fn [name]
-           (st/emit! (dd/rename-file (assoc file :name name)))
+           (let [name (str/trim name)]
+             (when (not= name "")
+               (st/emit! (dd/rename-file (assoc file :name name)))))
            (swap! local assoc :edition false)))
 
         on-edit
@@ -277,7 +287,7 @@
         (swap! local assoc :menu-open false)))
 
     [:li.grid-item.project-th
-     [:a
+     [:button
       {:tab-index "0"
        :class (dom/classnames :selected selected?
                               :library library-view?)
@@ -314,9 +324,11 @@
         [:div.project-th-icon.menu
          {:tab-index "0"
           :ref menu-ref
+          :id (str file-id "-action-menu")
           :on-click on-menu-click
           :on-key-down (fn [event]
                          (when (kbd/enter? event)
+                           (dom/stop-propagation event)
                            (on-menu-click event)))}
          i/actions
          (when selected?
@@ -328,8 +340,8 @@
                           :on-edit on-edit
                           :on-menu-close on-menu-close
                           :origin origin
-                          :dashboard-local dashboard-local}])]]]]]))
-
+                          :dashboard-local dashboard-local
+                          :parent-id (str file-id "-action-menu")}])]]]]]))
 
 (mf/defc grid
   [{:keys [files project origin limit library-view? create-fn] :as props}]

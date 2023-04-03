@@ -52,7 +52,7 @@
    [app.config :as cf]
    [app.http :as-alias http]
    [app.loggers.audit :refer [parse-client-ip]]
-   [app.redis :as redis]
+   [app.redis :as rds]
    [app.redis.script :as-alias rscript]
    [app.rpc :as-alias rpc]
    [app.rpc.rlimit.result :as-alias lresult]
@@ -71,7 +71,7 @@
   (dt/duration 400))
 
 (def ^:private default-options
-  {:codec redis/string-codec
+  {:codec rds/string-codec
    :timeout default-timeout})
 
 (def ^:private bucket-rate-limit-script
@@ -141,23 +141,23 @@
   (let [script (-> bucket-rate-limit-script
                    (assoc ::rscript/keys [(str key "." service "." user-id)])
                    (assoc ::rscript/vals (conj params (dt/->seconds now))))]
-    (-> (redis/eval! redis script)
-        (p/then (fn [result]
-                  (let [allowed?  (boolean (nth result 0))
-                        remaining (nth result 1)
-                        reset     (* (/ (inst-ms interval) rate)
-                                     (- capacity remaining))]
-                    (l/trace :hint "limit processed"
-                             :service service
-                             :limit (name (::name limit))
-                             :strategy (name (::strategy limit))
-                             :opts (::opts limit)
+    (->> (rds/eval! redis script)
+         (p/fmap (fn [result]
+                   (let [allowed?  (boolean (nth result 0))
+                         remaining (nth result 1)
+                         reset     (* (/ (inst-ms interval) rate)
+                                      (- capacity remaining))]
+                     (l/trace :hint "limit processed"
+                              :service service
+                              :limit (name (::name limit))
+                              :strategy (name (::strategy limit))
+                              :opts (::opts limit)
                              :allowed? allowed?
                              :remaining remaining)
-                    (-> limit
-                        (assoc ::lresult/allowed? allowed?)
-                        (assoc ::lresult/reset (dt/plus now reset))
-                        (assoc ::lresult/remaining remaining))))))))
+                     (-> limit
+                         (assoc ::lresult/allowed? allowed?)
+                         (assoc ::lresult/reset (dt/plus now reset))
+                         (assoc ::lresult/remaining remaining))))))))
 
 (defmethod process-limit :window
   [redis user-id now {:keys [::nreq ::unit ::key ::service] :as limit}]
@@ -166,21 +166,21 @@
         script (-> window-rate-limit-script
                    (assoc ::rscript/keys [(str key "." service "." user-id "." (dt/format-instant ts))])
                    (assoc ::rscript/vals [nreq (dt/->seconds ttl)]))]
-    (-> (redis/eval! redis script)
-        (p/then (fn [result]
-                  (let [allowed?  (boolean (nth result 0))
-                        remaining (nth result 1)]
-                    (l/trace :hint "limit processed"
-                             :service service
-                             :limit (name (::name limit))
-                             :strategy (name (::strategy limit))
-                             :opts (::opts limit)
-                             :allowed? allowed?
+    (->> (rds/eval! redis script)
+         (p/fmap (fn [result]
+                   (let [allowed?  (boolean (nth result 0))
+                         remaining (nth result 1)]
+                     (l/trace :hint "limit processed"
+                              :service service
+                              :limit (name (::name limit))
+                              :strategy (name (::strategy limit))
+                              :opts (::opts limit)
+                              :allowed? allowed?
                              :remaining remaining)
-                    (-> limit
-                        (assoc ::lresult/allowed? allowed?)
-                        (assoc ::lresult/remaining remaining)
-                        (assoc ::lresult/reset (dt/plus ts {unit 1})))))))))
+                     (-> limit
+                         (assoc ::lresult/allowed? allowed?)
+                         (assoc ::lresult/remaining remaining)
+                         (assoc ::lresult/reset (dt/plus ts {unit 1})))))))))
 
 (defn- process-limits!
   [redis user-id limits now]
@@ -237,7 +237,10 @@
       uuid/zero))
 
 (defn wrap
-  [{:keys [rlimit redis] :as cfg} f mdata]
+  [{:keys [::rpc/rlimit ::rds/redis] :as cfg} f mdata]
+  (us/assert! ::rpc/rlimit rlimit)
+  (us/assert! ::rds/redis redis)
+
   (if rlimit
     (let [skey  (keyword (::rpc/type cfg) (->> mdata ::sv/spec name))
           sname (str (::rpc/type cfg) "." (->> mdata ::sv/spec name))]
@@ -247,7 +250,7 @@
           (try
             (let [uid (get-uid params)
                   rsp (when-let [limits (get-limits rlimit skey sname)]
-                        (let [redis (redis/get-or-connect redis ::rpc/rlimit default-options)
+                        (let [redis (rds/get-or-connect redis ::rpc/rlimit default-options)
                               rsp   (->> (process-limits! redis uid limits (dt/now))
                                          (p/merr (fn [cause]
                                                    ;; If we have an error on processing the rate-limit we just skip
@@ -305,8 +308,9 @@
          (s/keys :req [::nreq
                        ::unit]))))
 
-(s/def ::rlimit
-  #(instance? clojure.lang.Agent %))
+(s/def ::rpc/rlimit
+  (s/nilable
+   #(instance? clojure.lang.Agent %)))
 
 (s/def ::config
   (s/map-of (s/or :kw keyword? :set set?)
@@ -348,7 +352,7 @@
          ::limits limits}))))
 
 (defn- refresh-config
-  [{:keys [state path executor scheduled-executor] :as params}]
+  [{:keys [::state ::path ::wrk/executor ::wrk/scheduled-executor] :as cfg}]
   (letfn [(update-config [{:keys [::updated-at] :as state}]
             (let [updated-at' (fs/last-modified-time path)]
               (merge state
@@ -359,13 +363,13 @@
                        (let [state (read-config path)]
                          (l/info :hint "config refreshed"
                                  :loaded-limits (count (::limits state))
-                                 ::l/async false)
+                                 ::l/sync? true)
                          state)))))
 
           (schedule-next [state]
             (px/schedule! scheduled-executor
                           (inst-ms (::refresh state))
-                          (partial refresh-config params))
+                          (partial refresh-config cfg))
             state)]
 
     (send-via executor state update-config)
@@ -376,10 +380,10 @@
   (when-not (instance? java.util.concurrent.RejectedExecutionException cause)
     (if-let [explain (-> cause ex-data ex/explain)]
       (l/warn ::l/raw (str "unable to refresh config, invalid format:\n" explain)
-              ::l/async false)
+              ::l/sync? true)
       (l/warn :hint "unexpected exception on loading config"
               :cause cause
-              ::l/async false))))
+              ::l/sync? true))))
 
 (defn- get-config-path
   []
@@ -387,10 +391,11 @@
     (and (fs/exists? path) (fs/regular-file? path) path)))
 
 (defmethod ig/pre-init-spec :app.rpc/rlimit [_]
-  (s/keys :req-un [::wrk/executor ::wrk/scheduled-executor]))
+  (s/keys :req [::wrk/executor
+                ::wrk/scheduled-executor]))
 
 (defmethod ig/init-key ::rpc/rlimit
-  [_ {:keys [executor] :as params}]
+  [_ {:keys [::wrk/executor] :as cfg}]
   (when (contains? cf/flags :rpc-rlimit)
     (let [state (agent {})]
       (set-error-handler! state on-refresh-error)
@@ -403,6 +408,6 @@
         (send-via executor state (constantly {::refresh (dt/duration "5s")}))
 
         ;; Force a refresh
-        (refresh-config (assoc params :path path :state state)))
+        (refresh-config (assoc cfg ::path path ::state state)))
 
       state)))

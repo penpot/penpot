@@ -29,8 +29,10 @@
 ;; Storage Module State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/def ::id #{:assets-fs :assets-s3})
 (s/def ::s3 ::ss3/backend)
 (s/def ::fs ::sfs/backend)
+(s/def ::type #{:fs :s3})
 
 (s/def ::backends
   (s/map-of ::us/keyword
@@ -39,33 +41,25 @@
                    :fs ::sfs/backend))))
 
 (defmethod ig/pre-init-spec ::storage [_]
-  (s/keys :req-un [::db/pool ::wrk/executor ::backends]))
-
-(defmethod ig/prep-key ::storage
-  [_ {:keys [backends] :as cfg}]
-  (-> (d/without-nils cfg)
-      (assoc :backends (d/without-nils backends))))
+  (s/keys :req [::db/pool ::wrk/executor ::backends]))
 
 (defmethod ig/init-key ::storage
-  [_ {:keys [backends] :as cfg}]
+  [_ {:keys [::backends ::db/pool] :as cfg}]
   (-> (d/without-nils cfg)
-      (assoc :backends (d/without-nils backends))))
+      (assoc ::backends (d/without-nils backends))
+      (assoc ::db/pool-or-conn pool)))
 
+(s/def ::backend keyword?)
 (s/def ::storage
-  (s/keys :req-un [::backends ::db/pool]))
+  (s/keys :req [::backends ::db/pool ::db/pool-or-conn]
+          :opt [::backend]))
+
+(s/def ::storage-with-backend
+  (s/and ::storage #(contains? % ::backend)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Database Objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defrecord StorageObject [id size created-at expired-at touched-at backend])
-
-(defn storage-object?
-  [v]
-  (instance? StorageObject v))
-
-(s/def ::storage-object storage-object?)
-(s/def ::storage-content impl/content?)
 
 (defn get-metadata
   [params]
@@ -74,19 +68,18 @@
         params))
 
 (defn- get-database-object-by-hash
-  [conn backend bucket hash]
+  [pool-or-conn backend bucket hash]
   (let [sql (str "select * from storage_object "
                  " where (metadata->>'~:hash') = ? "
                  "   and (metadata->>'~:bucket') = ? "
                  "   and backend = ?"
                  "   and deleted_at is null"
                  " limit 1")]
-    (some-> (db/exec-one! conn [sql hash bucket (name backend)])
+    (some-> (db/exec-one! pool-or-conn [sql hash bucket (name backend)])
             (update :metadata db/decode-transit-pgobject))))
 
 (defn- create-database-object
-  [{:keys [conn backend executor]} {:keys [::content ::expired-at ::touched-at] :as params}]
-  (us/assert ::storage-content content)
+  [{:keys [::backend ::wrk/executor ::db/pool-or-conn]} {:keys [::content ::expired-at ::touched-at] :as params}]
   (px/with-dispatch executor
     (let [id     (uuid/random)
 
@@ -101,10 +94,10 @@
           result (when (and (::deduplicate? params)
                             (:hash mdata)
                             (:bucket mdata))
-                   (get-database-object-by-hash conn backend (:bucket mdata) (:hash mdata)))
+                   (get-database-object-by-hash pool-or-conn backend (:bucket mdata) (:hash mdata)))
 
           result (or result
-                     (-> (db/insert! conn :storage-object
+                     (-> (db/insert! pool-or-conn :storage-object
                                      {:id id
                                       :size (impl/get-size content)
                                       :backend (name backend)
@@ -114,33 +107,33 @@
                          (update :metadata db/decode-transit-pgobject)
                          (update :metadata assoc ::created? true)))]
 
-      (StorageObject. (:id result)
-                      (:size result)
-                      (:created-at result)
-                      (:deleted-at result)
-                      (:touched-at result)
-                      backend
-                      (:metadata result)
-                      nil))))
+      (impl/storage-object
+       (:id result)
+       (:size result)
+       (:created-at result)
+       (:deleted-at result)
+       (:touched-at result)
+       backend
+       (:metadata result)))))
 
 (def ^:private sql:retrieve-storage-object
   "select * from storage_object where id = ? and (deleted_at is null or deleted_at > now())")
 
 (defn row->storage-object [res]
   (let [mdata (or (some-> (:metadata res) (db/decode-transit-pgobject)) {})]
-    (StorageObject. (:id res)
-                    (:size res)
-                    (:created-at res)
-                    (:deleted-at res)
-                    (:touched-at res)
-                    (keyword (:backend res))
-                    mdata
-                    nil)))
+    (impl/storage-object
+     (:id res)
+     (:size res)
+     (:created-at res)
+     (:deleted-at res)
+     (:touched-at res)
+     (keyword (:backend res))
+     mdata)))
 
 (defn- retrieve-database-object
-  [{:keys [conn] :as storage} id]
-  (when-let [res (db/exec-one! conn [sql:retrieve-storage-object id])]
-    (row->storage-object res)))
+  [conn id]
+  (some-> (db/exec-one! conn [sql:retrieve-storage-object id])
+          (row->storage-object)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
@@ -152,103 +145,99 @@
 
 (defn file-url->path
   [url]
-  (fs/path (java.net.URI. (str url))))
+  (when url
+    (fs/path (java.net.URI. (str url)))))
 
 (dm/export impl/content)
 (dm/export impl/wrap-with-hash)
+(dm/export impl/object?)
 
 (defn get-object
-  [{:keys [conn pool] :as storage} id]
-  (us/assert ::storage storage)
-  (p/do
-    (-> (assoc storage :conn (or conn pool))
-        (retrieve-database-object id))))
+  [{:keys [::db/pool-or-conn ::wrk/executor] :as storage} id]
+  (us/assert! ::storage storage)
+  (px/with-dispatch executor
+    (retrieve-database-object pool-or-conn id)))
 
 (defn put-object!
   "Creates a new object with the provided content."
-  [{:keys [pool conn backend] :as storage} {:keys [::content] :as params}]
-  (us/assert ::storage storage)
-  (us/assert ::storage-content content)
-  (us/assert ::us/keyword backend)
-  (p/let [storage (assoc storage :conn (or conn pool))
-          object  (create-database-object storage params)]
-
-    (when (::created? (meta object))
-      ;; Store the data finally on the underlying storage subsystem.
-      (-> (impl/resolve-backend storage backend)
-          (impl/put-object object content)))
-
-    object))
+  [{:keys [::backend] :as storage} {:keys [::content] :as params}]
+  (us/assert! ::storage-with-backend storage)
+  (us/assert! ::impl/content content)
+  (->> (create-database-object storage params)
+       (p/mcat (fn [object]
+                 (if (::created? (meta object))
+                   ;; Store the data finally on the underlying storage subsystem.
+                   (-> (impl/resolve-backend storage backend)
+                       (impl/put-object object content))
+                   (p/resolved object))))))
 
 (defn touch-object!
   "Mark object as touched."
-  [{:keys [pool conn] :as storage} object-or-id]
-  (p/do
-    (let [id  (if (storage-object? object-or-id) (:id object-or-id) object-or-id)
-          res (db/update! (or conn pool) :storage-object
-                          {:touched-at (dt/now)}
-                          {:id id}
-                          {:return-keys false})]
-      (pos? (:next.jdbc/update-count res)))))
+  [{:keys [::db/pool-or-conn ::wrk/executor] :as storage} object-or-id]
+  (us/assert! ::storage storage)
+  (px/with-dispatch executor
+    (let [id (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
+          rs (db/update! pool-or-conn :storage-object
+                         {:touched-at (dt/now)}
+                         {:id id}
+                         {::db/return-keys? false})]
+      (pos? (db/get-update-count rs)))))
 
 (defn get-object-data
   "Return an input stream instance of the object content."
-  [{:keys [pool conn] :as storage} object]
-  (us/assert ::storage storage)
-  (p/do
-    (when (or (nil? (:expired-at object))
-              (dt/is-after? (:expired-at object) (dt/now)))
-      (-> (assoc storage :conn (or conn pool))
-          (impl/resolve-backend (:backend object))
-          (impl/get-object-data object)))))
+  [storage object]
+  (us/assert! ::storage storage)
+  (if (or (nil? (:expired-at object))
+          (dt/is-after? (:expired-at object) (dt/now)))
+    (-> (impl/resolve-backend storage (:backend object))
+        (impl/get-object-data object))
+    (p/resolved nil)))
 
 (defn get-object-bytes
   "Returns a byte array of object content."
-  [{:keys [pool conn] :as storage} object]
-  (us/assert ::storage storage)
-  (p/do
-    (when (or (nil? (:expired-at object))
-              (dt/is-after? (:expired-at object) (dt/now)))
-      (-> (assoc storage :conn (or conn pool))
-          (impl/resolve-backend (:backend object))
-          (impl/get-object-bytes object)))))
+  [storage object]
+  (us/assert! ::storage storage)
+  (if (or (nil? (:expired-at object))
+          (dt/is-after? (:expired-at object) (dt/now)))
+    (-> (impl/resolve-backend storage (:backend object))
+        (impl/get-object-bytes object))
+    (p/resolved nil)))
 
 (defn get-object-url
   ([storage object]
    (get-object-url storage object nil))
-  ([{:keys [conn pool] :as storage} object options]
-   (us/assert ::storage storage)
-   (p/do
-     (when (or (nil? (:expired-at object))
-               (dt/is-after? (:expired-at object) (dt/now)))
-       (-> (assoc storage :conn (or conn pool))
-           (impl/resolve-backend (:backend object))
-           (impl/get-object-url object options))))))
+  ([storage object options]
+   (us/assert! ::storage storage)
+   (if (or (nil? (:expired-at object))
+           (dt/is-after? (:expired-at object) (dt/now)))
+     (-> (impl/resolve-backend storage (:backend object))
+         (impl/get-object-url object options))
+     (p/resolved nil))))
 
 (defn get-object-path
   "Get the Path to the object. Only works with `:fs` type of
   storages."
   [storage object]
-  (p/do
-    (let [backend (impl/resolve-backend storage (:backend object))]
-      (when (not= :fs (:type backend))
-        (ex/raise :type :internal
-                  :code :operation-not-allowed
-                  :hint "get-object-path only works with fs type backends"))
-      (when (or (nil? (:expired-at object))
-                (dt/is-after? (:expired-at object) (dt/now)))
-        (p/-> (impl/get-object-url backend object nil) file-url->path)))))
+  (us/assert! ::storage storage)
+  (let [backend (impl/resolve-backend storage (:backend object))]
+    (if (not= :fs (::type backend))
+      (p/resolved nil)
+      (if (or (nil? (:expired-at object))
+              (dt/is-after? (:expired-at object) (dt/now)))
+        (->> (impl/get-object-url backend object nil)
+             (p/fmap file-url->path))
+        (p/resolved nil)))))
 
 (defn del-object!
-  [{:keys [conn pool] :as storage} object-or-id]
-  (us/assert ::storage storage)
-  (p/do
-    (let [id  (if (storage-object? object-or-id) (:id object-or-id) object-or-id)
-          res (db/update! (or conn pool) :storage-object
+  [{:keys [::db/pool-or-conn ::wrk/executor] :as storage} object-or-id]
+  (us/assert! ::storage storage)
+  (px/with-dispatch executor
+    (let [id  (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
+          res (db/update! pool-or-conn :storage-object
                           {:deleted-at (dt/now)}
                           {:id id}
-                          {:return-keys false})]
-      (pos? (:next.jdbc/update-count res)))))
+                          {::db/return-keys? false})]
+      (pos? (db/get-update-count res)))))
 
 (dm/export impl/resolve-backend)
 (dm/export impl/calculate-hash)
@@ -265,18 +254,15 @@
 
 (declare sql:retrieve-deleted-objects-chunk)
 
-(s/def ::min-age ::dt/duration)
-
 (defmethod ig/pre-init-spec ::gc-deleted-task [_]
-  (s/keys :req-un [::storage ::db/pool ::min-age ::wrk/executor]))
+  (s/keys :req [::storage ::db/pool]))
 
 (defmethod ig/prep-key ::gc-deleted-task
   [_ cfg]
-  (merge {:min-age (dt/duration {:hours 2})}
-         (d/without-nils cfg)))
+  (assoc cfg ::min-age (dt/duration {:hours 2})))
 
 (defmethod ig/init-key ::gc-deleted-task
-  [_ {:keys [pool storage] :as cfg}]
+  [_ {:keys [::db/pool ::storage ::min-age]}]
   (letfn [(retrieve-deleted-objects-chunk [conn min-age cursor]
             (let [min-age (db/interval min-age)
                   rows    (db/exec! conn [sql:retrieve-deleted-objects-chunk min-age cursor])]
@@ -289,27 +275,26 @@
                          :vf second
                          :kf first))
 
-          (delete-in-bulk [conn backend-name ids]
-            (let [backend (impl/resolve-backend storage backend-name)
-                  backend (assoc backend :conn conn)]
+          (delete-in-bulk [backend-id ids]
+            (let [backend (impl/resolve-backend storage backend-id)]
 
               (doseq [id ids]
-                (l/debug :hint "permanently delete storage object" :task "gc-deleted" :backend backend-name :id id))
+                (l/debug :hint "gc-deleted: permanently delete storage object" :backend backend-id :id id))
 
               @(impl/del-objects-in-bulk backend ids)))]
 
     (fn [params]
-      (let [min-age (or (:min-age params) (:min-age cfg))]
+      (let [min-age (or (:min-age params) min-age)]
         (db/with-atomic [conn pool]
           (loop [total  0
                  groups (retrieve-deleted-objects conn min-age)]
-            (if-let [[backend ids] (first groups)]
+            (if-let [[backend-id ids] (first groups)]
               (do
-                (delete-in-bulk conn backend ids)
+                (delete-in-bulk backend-id ids)
                 (recur (+ total (count ids))
                        (rest groups)))
               (do
-                (l/info :hint "task finished" :min-age (dt/format-duration min-age) :task "gc-deleted" :total total)
+                (l/info :hint "gc-deleted: task finished" :min-age (dt/format-duration min-age) :total total)
                 {:deleted total}))))))))
 
 (def sql:retrieve-deleted-objects-chunk
@@ -349,10 +334,10 @@
 (declare sql:retrieve-profile-nrefs)
 
 (defmethod ig/pre-init-spec ::gc-touched-task [_]
-  (s/keys :req-un [::db/pool]))
+  (s/keys :req [::db/pool]))
 
 (defmethod ig/init-key ::gc-touched-task
-  [_ {:keys [pool] :as cfg}]
+  [_ {:keys [::db/pool]}]
   (letfn [(get-team-font-variant-nrefs [conn id]
             (-> (db/exec-one! conn [sql:retrieve-team-font-variant-nrefs id id id id]) :nrefs))
 
@@ -409,13 +394,13 @@
                 (let [nrefs (get-fn conn id)]
                   (if (pos? nrefs)
                     (do
-                      (l/debug :hint "processing storage object"
-                               :task "gc-touched" :id id :status "freeze"
+                      (l/debug :hint "gc-touched: processing storage object"
+                               :id id :status "freeze"
                                :bucket bucket :refs nrefs)
                       (recur (conj to-freeze id) to-delete (rest ids)))
                     (do
-                      (l/debug :hint "processing storage object"
-                               :task "gc-touched" :id id :status "delete"
+                      (l/debug :hint "gc-touched: processing storage object"
+                               :id id :status "delete"
                                :bucket bucket :refs nrefs)
                       (recur to-freeze (conj to-delete id) (rest ids)))))
                 (do
@@ -441,7 +426,7 @@
                      (+ to-delete d)
                      (rest groups)))
             (do
-              (l/info :hint "task finished" :task "gc-touched" :to-freeze to-freeze :to-delete to-delete)
+              (l/info :hint "gc-touched: task finished" :to-freeze to-freeze :to-delete to-delete)
               {:freeze to-freeze :delete to-delete})))))))
 
 (def sql:retrieve-touched-objects-chunk

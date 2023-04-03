@@ -45,7 +45,7 @@
 
 (defmethod ig/init-key ::executor
   [skey {:keys [::parallelism]}]
-  (let [prefix  (if (vector? skey) (-> skey first name keyword) :default)
+  (let [prefix  (if (vector? skey) (-> skey first name) "default")
         tname   (str "penpot/" prefix "/%s")
         factory (px/forkjoin-thread-factory :name tname)]
     (px/forkjoin-executor
@@ -90,10 +90,10 @@
 (s/def ::registry (s/map-of ::us/string fn?))
 
 (defmethod ig/pre-init-spec ::registry [_]
-  (s/keys :req-un [::mtx/metrics ::tasks]))
+  (s/keys :req [::mtx/metrics ::tasks]))
 
 (defmethod ig/init-key ::registry
-  [_ {:keys [metrics tasks]}]
+  [_ {:keys [::mtx/metrics ::tasks]}]
   (l/info :hint "registry initialized" :tasks (count tasks))
   (reduce-kv (fn [registry k v]
                (let [tname (name k)]

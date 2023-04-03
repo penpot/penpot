@@ -8,7 +8,7 @@
   (:require
    [backend-tests.helpers :as th]
    [app.db :as db]
-   [app.emails :as emails]
+   [app.email :as emails]
    [clojure.test :as t]
    [promesa.core :as p]))
 

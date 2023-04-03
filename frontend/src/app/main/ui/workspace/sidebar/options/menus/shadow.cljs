@@ -150,7 +150,7 @@
         [:> numeric-input {:ref adv-offset-x-ref
                            :no-validate true
                            :placeholder "--"
-                           :on-click (select-text adv-offset-x-ref)
+                           :on-focus (select-text adv-offset-x-ref)
                            :on-change (update-attr index :offset-x valid-number? basic-offset-x-ref)
                            :value (:offset-x value)}]
         [:span.after (tr "workspace.options.shadow-options.offsetx")]]
@@ -159,7 +159,7 @@
         [:> numeric-input {:ref adv-offset-y-ref
                            :no-validate true
                            :placeholder "--"
-                           :on-click (select-text adv-offset-y-ref)
+                           :on-focus (select-text adv-offset-y-ref)
                            :on-change (update-attr index :offset-y valid-number? basic-offset-y-ref)
                            :value (:offset-y value)}]
         [:span.after (tr "workspace.options.shadow-options.offsety")]]]
@@ -169,7 +169,7 @@
         [:> numeric-input {:ref adv-blur-ref
                            :no-validate true
                            :placeholder "--"
-                           :on-click (select-text adv-blur-ref)
+                           :on-focus (select-text adv-blur-ref)
                            :on-change (update-attr index :blur valid-number? basic-blur-ref)
                            :min 0
                            :value (:blur value)}]
@@ -179,9 +179,8 @@
         [:> numeric-input {:ref adv-spread-ref
                            :no-validate true
                            :placeholder "--"
-                           :on-click (select-text adv-spread-ref)
+                           :on-focus (select-text adv-spread-ref)
                            :on-change (update-attr index :spread valid-number?)
-                           :min 0
                            :value (:spread value)}]
         [:span.after (tr "workspace.options.shadow-options.spread")]]]
 

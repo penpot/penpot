@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.text
   (:require
    [app.common.data :as d]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.texts :as dwt :refer [text-fill-attrs root-attrs paragraph-attrs text-attrs]]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
@@ -27,9 +28,10 @@
   (let [ids    [(:id shape)]
         type   (:type shape)
 
-        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
-        is-layout-child? (mf/deref is-layout-child-ref)
+        is-flex-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-flex-layout-child? ids))
+        is-flex-layout-child? (mf/deref is-flex-layout-child-ref)
         layout-container-values (select-keys shape layout-container-flex-attrs)
+        is-layout-child-absolute? (ctl/layout-absolute? shape)
         state-map    (mf/deref refs/workspace-editor-state)
         shared-libs  (mf/deref refs/workspace-libraries)
 
@@ -74,7 +76,7 @@
        :shape shape}]
      [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
 
-     (when is-layout-child?
+     (when is-flex-layout-child?
        [:& layout-item-menu
         {:ids ids
          :type type
@@ -82,7 +84,7 @@
          :is-layout-child? true
          :shape shape}])
 
-     (when (not is-layout-child?)
+     (when (or (not is-flex-layout-child?) is-layout-child-absolute?)
        [:& constraints-menu
         {:ids ids
          :values (select-keys shape constraint-attrs)}])

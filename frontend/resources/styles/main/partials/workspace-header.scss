@@ -149,7 +149,7 @@
       &:focus,
       &:focus-within {
         outline: none;
-        border-radius: 3px;
+        border-radius: $br3;
         border: 1px solid $color-primary;
       }
     }
@@ -163,17 +163,17 @@
     z-index: 12;
 
     background-color: $color-white;
-    border-radius: $br-small;
+    border-radius: $br3;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
 
     :first-child {
       &:hover {
-        border-radius: $br-small $br-small 0px 0px;
+        border-radius: $br3 $br3 0 0;
       }
     }
     :last-child {
       &:hover {
-        border-radius: 0px 0px $br-small $br-small;
+        border-radius: 0 0 $br3 $br3;
       }
     }
 
@@ -211,17 +211,17 @@
     width: 270px;
     z-index: 12;
     background-color: $color-white;
-    border-radius: $br-small;
+    border-radius: $br3;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
 
     :first-child {
       &:hover {
-        border-radius: $br-small $br-small 0px 0px;
+        border-radius: $br3 $br3 0 0;
       }
     }
     :last-child {
       &:hover {
-        border-radius: 0px 0px $br-small $br-small;
+        border-radius: 0 0 $br3 $br3;
       }
     }
 
@@ -294,7 +294,7 @@
 
   & button.document-history {
     background: $color-gray-60;
-    border-radius: 3px;
+    border-radius: $br3;
     border: none;
     cursor: pointer;
     height: 24px;

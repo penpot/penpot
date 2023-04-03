@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.undo
   (:require
+   [app.common.data :as d]
    [app.common.pages.changes-spec :as pcs]
    [app.common.spec :as us]
    [cljs.spec.alpha :as s]
@@ -54,6 +55,17 @@
                                                     (dec MAX-UNDO-SIZE)))))
     state))
 
+(defn- stack-undo-entry
+  [state {:keys [undo-changes redo-changes] :as entry}]
+    (let [index (get-in state [:workspace-undo :index] -1)]
+    (if (>= index 0)
+      (update-in state [:workspace-undo :items index]
+                 (fn [item]
+                   (-> item
+                       (update :undo-changes #(into undo-changes %))
+                       (update :redo-changes #(into % redo-changes)))))
+      (add-undo-entry state entry))))
+
 (defn- accumulate-undo-entry
   [state {:keys [undo-changes redo-changes group-id]}]
   (-> state
@@ -62,13 +74,22 @@
       (assoc-in [:workspace-undo :transaction :group-id] group-id)))
 
 (defn append-undo
-  [entry]
+  [entry stack?]
   (us/assert ::undo-entry entry)
   (ptk/reify ::append-undo
     ptk/UpdateEvent
     (update [_ state]
-      (if (get-in state [:workspace-undo :transaction])
+      (cond
+        (and (get-in state [:workspace-undo :transaction])
+             (or (not stack?)
+                 (d/not-empty? (get-in state [:workspace-undo :transaction :undo-changes]))
+                 (d/not-empty? (get-in state [:workspace-undo :transaction :redo-changes]))))
         (accumulate-undo-entry state entry)
+
+        stack?
+        (stack-undo-entry state entry)
+
+        :else
         (add-undo-entry state entry)))))
 
 (def empty-tx
@@ -102,16 +123,6 @@
               (add-undo-entry (get-in state [:workspace-undo :transaction]))
               (update :workspace-undo dissoc :transaction))
           state)))))
-
-(def pop-undo-into-transaction
-  (ptk/reify ::last-undo-into-transaction
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [index (get-in state [:workspace-undo :index] -1)]
-
-        (cond-> state
-          (>= index 0) (accumulate-undo-entry (get-in state [:workspace-undo :items index]))
-          (>= index 0) (update-in [:workspace-undo :index] dec))))))
 
 (def reinitialize-undo
   (ptk/reify ::reset-undo

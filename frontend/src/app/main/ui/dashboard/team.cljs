@@ -39,7 +39,9 @@
         go-webhooks          (mf/use-fn #(st/emit! (dd/go-to-team-webhooks)))
         invite-member        (mf/use-fn
                               (mf/deps team)
-                              #(st/emit! (modal/show {:type :invite-members :team team :origin :team})))
+                              #(st/emit! (modal/show {:type :invite-members
+                                                      :team team
+                                                      :origin :team})))
 
         members-section?     (= section :dashboard-team-members)
         settings-section?    (= section :dashboard-team-settings)
@@ -98,7 +100,10 @@
   {::mf/register modal/components
    ::mf/register-as :invite-members}
   [{:keys [team origin]}]
-  (let [perms   (:permissions team)
+  (let [members-map (mf/deref refs/dashboard-team-members)
+
+        perms   (:permissions team)
+
         roles   (mf/use-memo (mf/deps perms) #(get-available-roles perms))
         initial (mf/use-memo (constantly {:role "editor" :team-id (:id team)}))
         form    (fm/use-form :spec ::invite-member-form
@@ -110,6 +115,9 @@
           (st/emit! (msg/success (tr "notifications.invitation-email-sent"))
                     (modal/hide)
                     (dd/fetch-team-invitations)))
+
+        current-data-emails (into #{} (dm/get-in @form [:clean-data :emails]))
+        current-members-emails (into #{} (map (comp :email second)) members-map)
 
         on-error
         (fn [{:keys [type code] :as error}]
@@ -148,22 +156,30 @@
         [:div.error
          [:span.icon i/msg-error]
          [:span.text @error-text]])
+
+      (when (some current-data-emails current-members-emails)
+        [:div.warning
+         [:span.icon i/msg-warning]
+         [:span.text (tr "modals.invite-member.repeated-invitation")]])
+
       [:div.form-row
        [:p.label (tr "onboarding.choice.team-up.roles")]
        [:& fm/select {:name :role :options roles}]]
+
       [:div.form-row
-
-
        [:& fm/multi-input {:type "email"
                            :name :emails
                            :auto-focus? true
                            :trim true
                            :valid-item-fn us/parse-email
+                           :caution-item-fn current-members-emails
                            :label (tr "modals.invite-member.emails")
                            :on-submit  on-submit}]]
 
       [:div.action-buttons
-       [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")}]]]]))
+       [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")
+                             :disabled (and (boolean (some current-data-emails current-members-emails))
+                                            (empty? (remove current-members-emails current-data-emails)))}]]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MEMBERS SECTION
@@ -572,7 +588,8 @@
   [:div.empty-invitations
    [:span (tr "labels.no-invitations")]
    (when can-invite?
-     [:span (tr "labels.no-invitations-hint")])])
+     [:& i18n/tr-html {:label "labels.no-invitations-hint"
+                       :tag-name "span"}])])
 
 (mf/defc invitation-section
   [{:keys [team invitations] :as props}]
@@ -883,6 +900,10 @@
 
         stats       (mf/deref refs/dashboard-team-stats)
 
+        you-owner?  (get-in team [:permissions :is-owner])
+        you-admin?  (get-in team [:permissions :is-admin])
+        can-edit?   (or you-owner? you-admin?)
+
         on-image-click
         (mf/use-callback #(dom/click (mf/ref-val finput)))
 
@@ -914,12 +935,14 @@
          [:div.label (tr "dashboard.team-info")]
          [:div.name (:name team)]
          [:div.icon
-          [:span.update-overlay {:on-click on-image-click} i/image]
+          (when can-edit?
+            [:span.update-overlay {:on-click on-image-click} i/image])
           [:img {:src (cfg/resolve-team-photo-url team)}]
-          [:& file-uploader {:accept "image/jpeg,image/png"
-                             :multi false
-                             :ref finput
-                             :on-selected on-file-selected}]]]
+          (when can-edit?
+            [:& file-uploader {:accept "image/jpeg,image/png"
+                               :multi false
+                               :ref finput
+                               :on-selected on-file-selected}])]]
 
         [:div.block.owner-block
          [:div.label (tr "dashboard.team-members")]

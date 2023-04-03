@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.projects
   (:require
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -142,7 +143,7 @@
      [:div.text
       [:h2.title (tr "dasboard.walkthrough-hero.title")]
       [:p.info (tr "dasboard.walkthrough-hero.info")]
-      [:a.btn-primary.action 
+      [:a.btn-primary.action
        {:href " https://design.penpot.app/walkthrough"
         :target "_blank"
         :on-click handle-walkthrough-link}
@@ -187,13 +188,23 @@
         toggle-pin
         (mf/use-fn
          (mf/deps project)
-         #(st/emit! (dd/toggle-project-pin project)))
+          (fn [event]
+            (dom/stop-propagation event)
+            (st/emit! (dd/toggle-project-pin project))))
 
         on-menu-click
         (mf/use-fn
          (fn [event]
-           (let [position (dom/get-client-position event)]
-             (dom/prevent-default event)
+           (dom/prevent-default event) 
+
+           (let [client-position (dom/get-client-position event)
+                 position (if (and (nil? (:y client-position)) (nil? (:x client-position)))
+                            (let [target-element (dom/get-target event)
+                                  points         (dom/get-bounding-rect target-element)
+                                  y              (:top points)
+                                  x              (:left points)]
+                              (gpt/point x y))
+                            client-position)]
              (swap! local assoc
                     :menu-open true
                     :menu-pos position))))
@@ -276,7 +287,7 @@
        [:& project-menu
         {:project project
          :show? (:menu-open @local)
-         :left (:x (:menu-pos @local))
+         :left (+ 24 (:x (:menu-pos @local)))
          :top (:y (:menu-pos @local))
          :on-edit on-edit-open
          :on-menu-close on-menu-close
@@ -291,12 +302,9 @@
         (when-not (:is-default project)
           [:button.pin-icon.tooltip.tooltip-bottom
            {:class (when (:is-pinned project) "active")
-            :on-click toggle-pin 
+            :on-click toggle-pin
             :alt (tr "dashboard.pin-unpin")
             :aria-label (tr "dashboard.pin-unpin")
-            :on-key-down (fn [event]
-                           (when (kbd/enter? event)
-                             (toggle-pin event)))
             :tab-index "0"}
            (if (:is-pinned project)
              i/pin-fill
@@ -321,22 +329,27 @@
           :tab-index "0"
           :on-key-down (fn [event]
                          (when (kbd/enter? event)
+                           (dom/stop-propagation event)
                            (on-menu-click event)))}
-         i/actions]]]
-
-      (when (and (> limit 0)
-                 (> file-count limit))
-        [:div.show-more {:on-click on-nav}
-         [:div.placeholder-label
-          (tr "dashboard.show-all-files")]
-         [:div.placeholder-icon i/arrow-down]])]
+         i/actions]]]]
 
      [:& line-grid
       {:project project
        :team team
        :files files
        :create-fn create-file
-       :limit limit}]]))
+       :limit limit}]
+
+     (when (and (> limit 0)
+                (> file-count limit))
+       [:button.show-more {:on-click on-nav
+                           :tab-index "0"
+                           :on-key-down (fn [event]
+                                          (when (kbd/enter? event)
+                                            (on-nav)))}
+        [:div.placeholder-label
+         (tr "dashboard.show-all-files")]
+        [:div.placeholder-icon i/arrow-down]])]))
 
 
 (def recent-files-ref
@@ -349,8 +362,13 @@
                                  (reverse))
         recent-map          (mf/deref recent-files-ref)
         props               (some-> profile (get :props {}))
-        team-hero?          (and (:team-hero? props true)
-                                 (not (:is-default team)))
+        you-owner?          (get-in team [:permissions :is-owner])
+        you-admin?          (get-in team [:permissions :is-admin])
+        can-invite?         (or you-owner? you-admin?)
+        team-hero?          (and can-invite?
+                              (:team-hero? props true)
+                              (not (:is-default team)))
+
         tutorial-viewed?    (:viewed-tutorial? props true)
         walkthrough-viewed? (:viewed-walkthrough? props true)
 

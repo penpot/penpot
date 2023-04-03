@@ -95,6 +95,9 @@
 
     ;; Show shape name and id
     :shape-titles
+
+    ;;
+    :grid-layout
     })
 
 ;; These events are excluded when we activate the :events flag

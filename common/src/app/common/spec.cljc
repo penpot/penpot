@@ -201,18 +201,18 @@
 
 (letfn [(conformer-fn [dest v]
           (cond
-            (coll? v) (into dest non-empty-strings-xf v)
+            (coll? v)   (into dest non-empty-strings-xf v)
             (string? v) (into dest non-empty-strings-xf (str/split v #"[\s,]+"))
             :else       ::s/invalid))
         (unformer-fn [v]
           (str/join "," v))]
   (s/def ::set-of-strings
-    (s/with-gen (s/conformer (partial conformer-fn #{}) unformer-fn)
-      #(tgen/set (s/gen ::not-empty-string))))
+    (-> (s/conformer (partial conformer-fn #{}) unformer-fn)
+        (s/with-gen #(tgen/set (s/gen ::not-empty-string)))))
 
   (s/def ::vector-of-strings
-    (s/with-gen (s/conformer (partial conformer-fn []) unformer-fn)
-      #(tgen/vector (s/gen ::not-empty-string)))))
+    (-> (s/conformer (partial conformer-fn []) unformer-fn)
+        (s/with-gen #(tgen/vector (s/gen ::not-empty-string))))))
 
 ;; --- SPEC: set-of-valid-emails
 
@@ -435,6 +435,6 @@
   [cause]
   (if (and (map? cause) (= :spec-validation (:type cause)))
     cause
-    (when (ex/ex-info? cause)
+    (when (ex/error? cause)
       (validation-error? (ex-data cause)))))
 

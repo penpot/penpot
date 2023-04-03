@@ -11,11 +11,12 @@
    [app.db :as db]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
+   [app.main :as-alias main]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.rpc.queries.profile :as profile]
    [app.rpc.quotes :as quotes]
    [app.tokens :as tokens]
    [app.tokens.spec.team-invitation :as-alias spec.team-invitation]
@@ -34,15 +35,15 @@
 (sv/defmethod ::verify-token
   {::rpc/auth false
    ::doc/added "1.15"}
-  [{:keys [pool sprops] :as cfg} {:keys [token] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [token] :as params}]
   (db/with-atomic [conn pool]
-    (let [claims (tokens/verify sprops {:token token})
+    (let [claims (tokens/verify (::main/props cfg) {:token token})
           cfg    (assoc cfg :conn conn)]
       (process-token cfg params claims))))
 
 (defmethod process-token :change-email
   [{:keys [conn] :as cfg} _params {:keys [profile-id email] :as claims}]
-  (when (profile/retrieve-profile-data-by-email conn email)
+  (when (profile/get-profile-by-email conn email)
     (ex/raise :type :validation
               :code :email-already-exists))
 
@@ -56,8 +57,8 @@
      ::audit/profile-id profile-id}))
 
 (defmethod process-token :verify-email
-  [{:keys [conn session] :as cfg} _ {:keys [profile-id] :as claims}]
-  (let [profile (profile/retrieve-profile conn profile-id)
+  [{:keys [conn] :as cfg} _ {:keys [profile-id] :as claims}]
+  (let [profile (profile/get-profile conn profile-id)
         claims  (assoc claims :profile profile)]
 
     (when-not (:is-active profile)
@@ -71,14 +72,14 @@
                   {:id (:id profile)}))
 
     (-> claims
-        (rph/with-transform (session/create-fn session profile-id))
+        (rph/with-transform (session/create-fn cfg profile-id))
         (rph/with-meta {::audit/name "verify-profile-email"
                         ::audit/props (audit/profile->props profile)
                         ::audit/profile-id (:id profile)}))))
 
 (defmethod process-token :auth
   [{:keys [conn] :as cfg} _params {:keys [profile-id] :as claims}]
-  (let [profile (profile/retrieve-profile conn profile-id)]
+  (let [profile (profile/get-profile conn profile-id)]
     (assoc claims :profile profile)))
 
 ;; --- Team Invitation

@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -55,8 +56,12 @@
         drawing     (mf/deref refs/workspace-drawing)
         drawing-obj (:object drawing)
         shape       (or drawing-obj (-> selected first))]
-    (when (or (and (= (count selected) 1) (= (:id shape) edition) (not= :text (:type shape)))
-              (and (some? drawing-obj) (= :path (:type drawing-obj))
+    (when (or (and (= (count selected) 1)
+                   (= (:id shape) edition)
+                   (and (not (cph/text-shape? shape))
+                        (not (cph/frame-shape? shape))))
+              (and (some? drawing-obj)
+                   (cph/path-shape? drawing-obj)
                    (not= :curve (:tool drawing))))
       [:div.viewport-actions
        [:& path-actions {:shape shape}]])))
@@ -93,7 +98,7 @@
               #(mf/deferred % ts/raf)]}
   [{:keys [frame selected? zoom show-artboard-names? show-id? on-frame-enter on-frame-leave on-frame-select]}]
   (let [workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
-        on-mouse-down
+        on-pointer-down
         (mf/use-callback
          (mf/deps (:id frame) on-frame-select workspace-read-only?)
          (fn [bevent]
@@ -151,7 +156,7 @@
                :class "workspace-frame-label"
                :style {:fill (when selected? "var(--color-primary-dark)")}
                :visibility (if show-artboard-names? "visible" "hidden")
-               :on-mouse-down on-mouse-down
+               :on-pointer-down on-pointer-down
                :on-double-click on-double-click
                :on-context-menu on-context-menu
                :on-pointer-enter on-pointer-enter
@@ -200,7 +205,7 @@
   (let [{:keys [x y]} frame
         flow-pos (gpt/point x (- y (/ 35 zoom)))
 
-        on-mouse-down
+        on-pointer-down
         (mf/use-callback
          (mf/deps (:id frame) on-frame-select)
          (fn [bevent]
@@ -233,7 +238,7 @@
                      :height 24
                      :transform (vwu/text-transform flow-pos zoom)}
      [:div.flow-badge {:class (dom/classnames :selected selected?)}
-      [:div.content {:on-mouse-down on-mouse-down
+      [:div.content {:on-pointer-down on-pointer-down
                      :on-double-click on-double-click
                      :on-pointer-enter on-pointer-enter
                      :on-pointer-leave on-pointer-leave}

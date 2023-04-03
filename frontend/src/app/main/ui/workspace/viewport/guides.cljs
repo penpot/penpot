@@ -93,7 +93,7 @@
            (mf/set-ref-val! start-pos-ref nil)
            (swap! state assoc :new-position nil)))
 
-        on-mouse-move
+        on-pointer-move
         (mf/use-callback
          (mf/deps position zoom snap-pixel?)
          (fn [event]
@@ -120,7 +120,7 @@
      :on-pointer-down on-pointer-down
      :on-pointer-up on-pointer-up
      :on-lost-pointer-capture on-lost-pointer-capture
-     :on-mouse-move on-mouse-move
+     :on-pointer-move on-pointer-move
      :state state
      :frame frame}))
 
@@ -274,7 +274,7 @@
                 on-pointer-down
                 on-pointer-up
                 on-lost-pointer-capture
-                on-mouse-move
+                on-pointer-move
                 state
                 frame]} (use-guide handle-change-position get-hover-frame zoom guide)
 
@@ -310,7 +310,7 @@
                    :on-pointer-down on-pointer-down
                    :on-pointer-up on-pointer-up
                    :on-lost-pointer-capture on-lost-pointer-capture
-                   :on-mouse-move on-mouse-move}]))
+                   :on-pointer-move on-pointer-move}]))
 
        (if (some? frame)
          (let [{:keys [l1-x1 l1-y1 l1-x2 l1-y2
@@ -399,7 +399,7 @@
                 on-pointer-down
                 on-pointer-up
                 on-lost-pointer-capture
-                on-mouse-move
+                on-pointer-move
                 state
                 frame]} (use-guide on-guide-change get-hover-frame zoom {:axis axis})]
 
@@ -415,7 +415,7 @@
                  :on-pointer-down on-pointer-down
                  :on-pointer-up on-pointer-up
                  :on-lost-pointer-capture on-lost-pointer-capture
-                 :on-mouse-move on-mouse-move
+                 :on-pointer-move on-pointer-move
                  :style {:fill "none"
                          :pointer-events "fill"
                          :cursor (if (= axis :x) (cur/resize-ew 0) (cur/resize-ns 0))}}]))

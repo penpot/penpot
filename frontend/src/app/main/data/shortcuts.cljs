@@ -7,7 +7,7 @@
 (ns app.main.data.shortcuts
   (:refer-clojure :exclude [meta reset!])
   (:require
-   ["mousetrap" :as mousetrap]
+   ["./shortcuts_impl.js$default" :as mousetrap]
    [app.common.logging :as log]
    [app.common.spec :as us]
    [app.config :as cf]
@@ -32,6 +32,7 @@
 (def up-arrow    "\u2191")
 (def right-arrow "\u2192")
 (def down-arrow  "\u2193")
+(def tab         "tab")
 
 (defn c-mod
   "Adds the control/command modifier to a shortcuts depending on the

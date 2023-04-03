@@ -194,47 +194,43 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn ensure-loaded!
-  ([id]
-   (p/create (fn [resolve]
-               (ensure-loaded! id resolve))))
-  ([id on-loaded]
-   (log/debug :action "try-ensure-loaded!" :font-id id)
-   (if-not (exists? js/window)
-     ;; If we are in the worker environment, we just mark it as loaded
-     ;; without really loading it.
-     (do
-       (swap! loaded conj id)
-       (p/resolved id))
+  [id]
+  (log/debug :action "try-ensure-loaded!" :font-id id)
+  (if-not (exists? js/window)
+    ;; If we are in the worker environment, we just mark it as loaded
+    ;; without really loading it.
+    (do
+      (swap! loaded conj id)
+      (p/resolved id))
 
-     (when-let [font (get @fontsdb id)]
-       (cond
-         ;; Font already loaded, we just continue
-         (contains? @loaded id)
-         (p/do
-           (on-loaded id)
-           id)
+    (let [font (get @fontsdb id)]
+      (cond
+        (nil? font)
+        (p/resolved id)
 
-         ;; Font is currently downloading. We attach the caller to the promise
-         (contains? @loading id)
-         (-> (get @loading id)
-             (p/then #(do (on-loaded id) id)))
+        ;; Font already loaded, we just continue
+        (contains? @loaded id)
+        (p/resolved id)
 
-         ;; First caller, we create the promise and then wait
-         :else
-         (let [on-load (fn [resolve]
-                         (swap! loaded conj id)
-                         (swap! loading dissoc id)
-                         (on-loaded id)
-                         (resolve id))
+        ;; Font is currently downloading. We attach the caller to the promise
+        (contains? @loading id)
+        (p/resolved (get @loading id))
 
-               load-p (p/create
-                       (fn [resolve _]
-                         (-> font
-                             (assoc ::on-loaded (partial on-load resolve))
-                             (load-font))))]
+        ;; First caller, we create the promise and then wait
+        :else
+        (let [on-load (fn [resolve]
+                        (swap! loaded conj id)
+                        (swap! loading dissoc id)
+                        (resolve id))
 
-           (swap! loading assoc id load-p)
-           load-p))))))
+              load-p (p/create
+                      (fn [resolve _]
+                        (-> font
+                            (assoc ::on-loaded (partial on-load resolve))
+                            (load-font))))]
+
+          (swap! loading assoc id load-p)
+          load-p)))))
 
 (defn ready
   [cb]

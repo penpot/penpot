@@ -131,7 +131,10 @@
 
                (or (not full-frame?)
                    (not= :frame (:type shape))
-                   (gsh/rect-contains-shape? rect shape))))
+                   (and (d/not-empty? (:shapes shape))
+                        (gsh/rect-contains-shape? rect shape))
+                   (and (empty? (:shapes shape))
+                        (gsh/overlaps? shape rect)))))
 
         overlaps?
         (fn [shape]

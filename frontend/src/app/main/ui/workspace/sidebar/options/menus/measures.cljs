@@ -83,13 +83,22 @@
         selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)
 
-        flex-child? (->> selection-parents (some ctl/layout?))
-
-        flex-container? (ctl/layout? shape)
+        flex-child? (->> selection-parents (some ctl/flex-layout?))
+        absolute? (ctl/layout-absolute? shape)
+        flex-container? (ctl/flex-layout? shape)
         flex-auto-width? (ctl/auto-width? shape)
         flex-fill-width? (ctl/fill-width? shape)
         flex-auto-height? (ctl/auto-height? shape)
         flex-fill-height? (ctl/fill-height? shape)
+
+        disabled-position-x? (and flex-child? (not absolute?))
+        disabled-position-y? (and flex-child? (not absolute?))
+        disabled-width-sizing? (and (or flex-child? flex-container?)
+                                    (or flex-auto-width? flex-fill-width?)
+                                    (not absolute?))
+        disabled-height-sizing? (and (or flex-child? flex-container?)
+                                     (or flex-auto-height? flex-fill-height?)
+                                     (not absolute?))
 
         ;; To show interactively the measures while the user is manipulating
         ;; the shape with the mouse, generate a copy of the shapes applying
@@ -307,18 +316,18 @@
            [:> numeric-input {:min 0.01
                               :no-validate true
                               :placeholder "--"
-                              :on-click select-all
+                              :on-focus select-all
                               :on-change on-width-change
-                              :disabled (and (or flex-child? flex-container?) (or flex-auto-width? flex-fill-width?))
+                              :disabled disabled-width-sizing?
                               :value (:width values)}]]
 
           [:div.input-element.height {:title (tr "workspace.options.height")}
            [:> numeric-input {:min 0.01
                               :no-validate true
                               :placeholder "--"
-                              :on-click select-all
+                              :on-focus select-all
                               :on-change on-height-change
-                              :disabled (and (or flex-child? flex-container?) (or flex-auto-height? flex-fill-height?))
+                              :disabled disabled-height-sizing?
                               :value (:height values)}]]
 
           [:div.lock-size {:class (dom/classnames
@@ -336,15 +345,15 @@
           [:div.input-element.Xaxis {:title (tr "workspace.options.x")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
-                              :on-click select-all
+                              :on-focus select-all
                               :on-change on-pos-x-change
-                              :disabled flex-child?
+                              :disabled disabled-position-x?
                               :value (:x values)}]]
           [:div.input-element.Yaxis {:title (tr "workspace.options.y")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
-                              :on-click select-all
-                              :disabled flex-child?
+                              :on-focus select-all
+                              :disabled disabled-position-y?
                               :on-change on-pos-y-change
                               :value (:y values)}]]])
 
@@ -359,7 +368,7 @@
              :max 359
              :data-wrap true
              :placeholder "--"
-             :on-click select-all
+             :on-focus select-all
              :on-change on-rotation-change
              :value (:rotation values)}]]])
 
@@ -387,7 +396,7 @@
               {:placeholder "--"
                :ref radius-input-ref
                :min 0
-               :on-click select-all
+               :on-focus select-all
                :on-change on-radius-1-change
                :value (:rx values)}]]
 
@@ -397,7 +406,7 @@
               {:type "number"
                :placeholder "--"
                :min 0
-               :on-click select-all
+               :on-focus select-all
                :on-change on-radius-multi-change
                :value ""}]]
 
@@ -407,7 +416,7 @@
               [:> numeric-input
                {:placeholder "--"
                 :min 0
-                :on-click select-all
+                :on-focus select-all
                 :on-change on-radius-r1-change
                 :value (:r1 values)}]]
 
@@ -415,7 +424,7 @@
               [:> numeric-input
                {:placeholder "--"
                 :min 0
-                :on-click select-all
+                :on-focus select-all
                 :on-change on-radius-r2-change
                 :value (:r2 values)}]]
 
@@ -423,7 +432,7 @@
               [:> numeric-input
                {:placeholder "--"
                 :min 0
-                :on-click select-all
+                :on-focus select-all
                 :on-change on-radius-r3-change
                 :value (:r3 values)}]]
 
@@ -431,7 +440,7 @@
               [:> numeric-input
                {:placeholder "--"
                 :min 0
-                :on-click select-all
+                :on-focus select-all
                 :on-change on-radius-r4-change
                 :value (:r4 values)}]]])])
 

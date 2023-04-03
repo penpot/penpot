@@ -70,6 +70,8 @@
       (respond (yrs/response 404)))))
 
 
+(s/def ::routes vector?)
+
 (defmethod ig/pre-init-spec ::routes [_]
   (s/keys :req-un [::rpc/methods]))
 

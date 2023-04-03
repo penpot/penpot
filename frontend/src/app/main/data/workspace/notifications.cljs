@@ -14,6 +14,8 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.streams :as ms]
+   [app.util.globals :refer [global]]
+   [app.util.object :as obj]
    [app.util.time :as dt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -37,7 +39,8 @@
             profile-id (:profile-id state)
 
             initmsg    [{:type :subscribe-file
-                         :file-id file-id}
+                         :file-id file-id
+                         :version (obj/get global "penpotVersion")}
                         {:type :subscribe-team
                          :team-id team-id}]
 
@@ -130,7 +133,7 @@
     })
 
 (defn handle-presence
-  [{:keys [type session-id profile-id] :as message}]
+  [{:keys [type session-id profile-id version] :as message}]
   (letfn [(get-next-color [presence]
             (let [xfm   (comp (map second)
                               (map :color)
@@ -149,6 +152,7 @@
                 (assoc :id session-id)
                 (assoc :profile-id profile-id)
                 (assoc :updated-at (dt/now))
+                (assoc :version version)
                 (update :color update-color presence)
                 (assoc :text-color (if (contains? ["#00fa9a" "#ffd700" "#dda0dd" "#ffafda"]
                                                   (update-color (:color presence) presence))
@@ -197,29 +201,38 @@
     (-deref [_] {:changes changes})
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [position-data-operation?
+    (watch [_ state _]
+      (let [page-id (:current-page-id state)
+            position-data-operation?
             (fn [{:keys [type attr]}]
               (and (= :set type) (= attr :position-data)))
 
-            add-origin-session-id
-            (fn [{:keys [] :as op}]
-              (cond-> op
-                (position-data-operation? op)
-                (update :val with-meta {:session-id (:session-id msg)})))
+            ;;add-origin-session-id
+            ;;(fn [{:keys [] :as op}]
+            ;;  (cond-> op
+            ;;    (position-data-operation? op)
+            ;;    (update :val with-meta {:session-id (:session-id msg)})))
 
             update-position-data
             (fn [change]
+              ;; Remove the position data from remote operations. Will be changed localy, otherwise
+              ;; creates a strange "out-of-sync" behaviour.
               (cond-> change
-                (= :mod-obj (:type change))
-                (update :operations #(mapv add-origin-session-id %))))
+                (and (= page-id (:page-id change))
+                     (= :mod-obj (:type change)))
+                (update :operations #(d/removev position-data-operation? %))))
 
             process-page-changes
             (fn [[page-id changes]]
               (dch/update-indices page-id changes))
 
             ;; We update `position-data` from the incoming message
-            changes (->> changes (mapv update-position-data))
+            changes (->> changes
+                         (mapv update-position-data)
+                         (d/removev (fn [change]
+                                      (and (= page-id (:page-id change))
+                                           (:ignore-remote? change)))))
+
             changes-by-pages (group-by :page-id changes)]
 
         (rx/merge

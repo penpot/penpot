@@ -67,8 +67,8 @@
    :cut                  {:tooltip (ds/meta "X")
                           :command (ds/c-mod "x")
                           :subsections [:edit]
-                          :fn #(emit-when-no-readonly (dw/copy-selected)
-                                                      (dw/delete-selected))}
+                          :fn #(emit-when-no-readonly (dw/copy-selected) 
+                                 (dw/delete-selected))}
 
    :paste                {:tooltip (ds/meta "V")
                           :disabled true
@@ -110,7 +110,7 @@
 
 
    ;; MODIFY LAYERS
-
+   
 
    :group                {:tooltip (ds/meta "G")
                           :command (ds/c-mod "g")
@@ -222,7 +222,7 @@
                           :fn #(emit-when-no-readonly (dwsl/toggle-layout-flex))}
 
    ;; TOOLS
-
+   
    :draw-frame           {:tooltip "B"
                           :command ["b" "a"]
                           :subsections [:tools :basics]
@@ -247,7 +247,7 @@
                           :command "t"
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly dwtxt/start-edit-if-selected
-                                                      (dwd/select-for-drawing :text))}
+                                 (dwd/select-for-drawing :text))}
 
    :draw-path            {:tooltip "P"
                           :command "p"
@@ -300,7 +300,7 @@
                           :fn #(emit-when-no-readonly (dw/toggle-focus-mode))}
 
    ;; ITEM ALIGNMENT
-
+   
    :align-left           {:tooltip (ds/alt "A")
                           :command "alt+a"
                           :subsections [:alignment]
@@ -342,7 +342,7 @@
                           :fn #(emit-when-no-readonly (dw/distribute-objects :vertical))}
 
    ;; MAIN MENU
-
+   
    :toggle-rules         {:tooltip (ds/meta-shift "R")
                           :command (ds/c-mod "shift+r")
                           :subsections [:main-menu]
@@ -354,12 +354,14 @@
                           :fn #(st/emit! (dw/select-all))}
 
    :toggle-grid          {:tooltip (ds/meta "'")
-                          :command (ds/c-mod "'")
+                          ;;https://github.com/ccampbell/mousetrap/issues/85                          
+                          :command [(ds/c-mod "'") (ds/c-mod "219")]
                           :subsections [:main-menu]
                           :fn #(st/emit! (toggle-layout-flag :display-grid))}
 
    :toggle-snap-grid     {:tooltip (ds/meta-shift "'")
-                          :command (ds/c-mod "shift+'")
+                          ;;https://github.com/ccampbell/mousetrap/issues/85
+                          :command [(ds/c-mod "shift+'") (ds/c-mod "shift+219")]
                           :subsections [:main-menu]
                           :fn #(st/emit! (toggle-layout-flag :snap-grid))}
 
@@ -387,7 +389,7 @@
                           :command (ds/c-mod "shift+e")
                           :subsections [:basics :main-menu]
                           :fn #(st/emit!
-                                (de/show-workspace-export-dialog))}
+                                 (de/show-workspace-export-dialog))}
 
    :toggle-snap-guide    {:tooltip (ds/meta-shift "G")
                           :command (ds/c-mod "shift+g")
@@ -400,7 +402,7 @@
                           :fn #(st/emit! (toggle-layout-flag :shortcuts))}
 
    ;; PANELS
-
+   
    :toggle-layers       {:tooltip (ds/alt "L")
                          :command (ds/a-mod "l")
                          :subsections [:panels]
@@ -420,15 +422,15 @@
                          :command (ds/a-mod "p")
                          :subsections [:panels]
                          :fn #(do (r/set-resize-type! :bottom)
-                                  (emit-when-no-readonly (dw/remove-layout-flag :textpalette)
-                                                         (toggle-layout-flag :colorpalette)))}
+                                (emit-when-no-readonly (dw/remove-layout-flag :textpalette)
+                                  (toggle-layout-flag :colorpalette)))}
 
    :toggle-textpalette  {:tooltip (ds/alt "T")
                          :command (ds/a-mod "t")
                          :subsections [:panels]
                          :fn #(do (r/set-resize-type! :bottom)
-                                  (emit-when-no-readonly (dw/remove-layout-flag :colorpalette)
-                                                         (toggle-layout-flag :textpalette)))}
+                                (emit-when-no-readonly (dw/remove-layout-flag :colorpalette)
+                                  (toggle-layout-flag :textpalette)))}
 
    :hide-ui              {:tooltip "\\"
                           :command "\\"
@@ -436,16 +438,16 @@
                           :fn #(st/emit! (toggle-layout-flag :hide-ui))}
 
    ;; ZOOM-WORKSPACE
-
+   
    :increase-zoom        {:tooltip "+"
                           :command ["+" "="]
                           :subsections [:zoom-workspace]
-                          :fn #(st/emit! (dw/increase-zoom nil))}
+                          :fn #(st/emit! (dw/increase-zoom))}
 
    :decrease-zoom        {:tooltip "-"
                           :command ["-" "_"]
                           :subsections [:zoom-workspace]
-                          :fn #(st/emit! (dw/decrease-zoom nil))}
+                          :fn #(st/emit! (dw/decrease-zoom))}
 
    :reset-zoom           {:tooltip (ds/shift "0")
                           :command "shift+0"
@@ -473,7 +475,7 @@
                          :fn identity}
 
    ;; NAVIGATION
-
+   
 
    :open-viewer          {:tooltip "G V"
                           :command "g v"
@@ -495,7 +497,18 @@
                           :subsections [:navigation-workspace]
                           :fn #(st/emit! (dw/go-to-dashboard))}
 
+   :select-prev          {:tooltip (ds/shift "tab")
+                          :command "shift+tab"
+                          :subsections [:navigation-workspace]
+                          :fn #(st/emit! (dw/select-prev-shape))}
+   
+   :select-next          {:tooltip ds/tab
+                          :command "tab"
+                          :subsections [:navigation-workspace]
+                          :fn #(st/emit! (dw/select-next-shape))}
+
    ;; SHAPE
+   
 
    :bool-union           {:tooltip (ds/meta (ds/alt "U"))
                           :command (ds/c-mod "alt+u")

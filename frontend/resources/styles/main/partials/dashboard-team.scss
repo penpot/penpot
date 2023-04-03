@@ -3,7 +3,7 @@
   right: 13px;
   padding: 32px;
   box-shadow: 0px 4px 8px rgba($color-black, 0.25);
-  border-radius: 8px;
+  border-radius: $br8;
   width: 400px;
   position: fixed;
   z-index: 16;
@@ -79,12 +79,12 @@
 
   .title {
     color: $color-black;
-    font-weight: bold;
+    font-weight: $fw700;
     margin-bottom: 16px;
   }
 
   .hint {
-    font-size: 12px;
+    font-size: $fs12;
 
     &.hidden {
       display: none;
@@ -97,12 +97,11 @@
     fill: $color-gray-20;
   }
 
-  .error {
-    background-color: #ffd9e0;
+  .error,
+  .warning {
     width: 100%;
     display: flex;
     .icon {
-      background-color: $color-danger;
       text-align: center;
       padding: 5px;
       svg {
@@ -115,7 +114,23 @@
     .text {
       color: $color-black;
       padding: 5px;
-      font-size: 12px;
+      font-size: $fs12;
+    }
+  }
+
+  .error {
+    background-color: #ffd9e0;
+
+    .icon {
+      background-color: $color-danger;
+    }
+  }
+
+  .warning {
+    background-color: #ffeaca;
+
+    .icon {
+      background-color: $color-warning;
     }
   }
 }
@@ -194,7 +209,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-radius: 2px;
+        border-radius: $br2;
         padding: 3px 8px;
         font-size: $fs14;
       }
@@ -211,7 +226,7 @@
     &.status {
       .status-badge {
         color: $color-white;
-        border-radius: 12px;
+        border-radius: $br12;
         min-width: 74px;
         height: 24px;
         display: flex;
@@ -276,7 +291,7 @@
       text-align: center;
 
       .label {
-        border-radius: 3px;
+        border-radius: $br3;
         color: $color-white;
         background-color: $color-black;
         white-space: nowrap;
@@ -305,7 +320,7 @@
     max-height: 30rem;
     overflow-y: auto;
     background-color: $color-white;
-    border-radius: 4px;
+    border-radius: $br4;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
     z-index: 12;
     top: 30px;
@@ -327,7 +342,7 @@
       padding: 5px 16px;
 
       &.title {
-        font-weight: 600;
+        font-weight: $fw600;
         cursor: default;
       }
 
@@ -365,7 +380,7 @@
       padding: 12px;
 
       .label {
-        font-size: 13px;
+        font-size: $fs13;
         color: $color-gray-30;
       }
     }
@@ -535,7 +550,7 @@
       width: 80%;
       color: $color-gray-40;
       p {
-        font-size: 16px;
+        font-size: $fs16;
       }
     }
 
@@ -567,7 +582,7 @@
     .cancel-button {
       border: 1px solid $color-gray-30;
       background: $color-canvas;
-      border-radius: 3px;
+      border-radius: $br3;
       padding: 0.5rem 1rem;
       cursor: pointer;
       margin-right: 8px;
@@ -578,12 +593,12 @@
     }
   }
   .input-checkbox label {
-    font-size: 14px;
+    font-size: $fs14;
     color: $color-black;
   }
 
   .explain {
-    font-size: 12px;
+    font-size: $fs12;
     color: $color-gray-40;
   }
 }

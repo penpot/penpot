@@ -161,27 +161,37 @@
 
         on-change
         (mf/use-fn
-         (fn [new-color old-color]
+         (fn [new-color old-color from-picker?]
            (let [old-color       (-> old-color
                                      (dissoc :name)
                                      (dissoc :path)
                                      (d/without-nils))
 
-                 prev-color       (-> @prev-color*
-                                      (dissoc :name)
-                                      (dissoc :path)
-                                      (d/without-nils))
+                 prev-color       (when @prev-color*
+                                    (-> @prev-color*
+                                        (dissoc :name)
+                                        (dissoc :path)
+                                        (d/without-nils)))
 
                  ;; When dragging on the color picker sometimes all the shapes hasn't updated the color to the prev value so we need this extra calculation
                  shapes-by-old-color  (get @grouped-colors* old-color)
                  shapes-by-prev-color (get @grouped-colors* prev-color)
                  shapes-by-color (or shapes-by-prev-color shapes-by-old-color)]
-             (reset! prev-color* new-color)
-             (st/emit! (dc/change-color-in-selected new-color shapes-by-color old-color)))))
 
-        on-open (mf/use-fn
-                 (fn [color]
-                   (reset! prev-color* color)))
+             (when from-picker?
+               (reset! prev-color* new-color))
+
+             (st/emit! (dc/change-color-in-selected new-color shapes-by-color (or prev-color old-color))))))
+
+        on-open
+        (mf/use-fn
+         (fn []
+           (reset! prev-color* nil)))
+
+        on-close
+        (mf/use-fn
+         (fn []
+           (reset! prev-color* nil)))
 
         on-detach
         (mf/use-fn
@@ -212,8 +222,9 @@
                           :index index
                           :on-detach on-detach
                           :select-only select-only
-                          :on-change #(on-change % color)
-                          :on-open on-open}])
+                          :on-change #(on-change %1 color %2)
+                          :on-open on-open
+                          :on-close on-close}])
          (when (and (false? @expand-lib-color) (< 3 (count library-colors)))
            [:div.expand-colors  {:on-click #(reset! expand-lib-color true)}
             [:span i/actions]
@@ -225,8 +236,9 @@
                             :index index
                             :on-detach on-detach
                             :select-only select-only
-                            :on-change #(on-change % color)
-                            :on-open on-open}]))]
+                            :on-change #(on-change %1 color %2)
+                            :on-open on-open
+                            :on-close on-close}]))]
 
         [:div.selected-colors
          (for [[index color] (d/enumerate (take 3 colors))]
@@ -234,8 +246,9 @@
                           :color color
                           :index index
                           :select-only select-only
-                          :on-change #(on-change % color)
-                          :on-open on-open}])
+                          :on-change #(on-change %1 color %2)
+                          :on-open on-open
+                          :on-close on-close}])
          (when (and (false? @expand-color) (< 3 (count colors)))
            [:div.expand-colors  {:on-click #(reset! expand-color true)}
             [:span i/actions]
@@ -246,5 +259,6 @@
                             :color color
                             :index index
                             :select-only select-only
-                            :on-change #(on-change % color)
-                            :on-open on-open}]))]]])))
+                            :on-change #(on-change %1 color %2)
+                            :on-open on-open
+                            :on-close on-close}]))]]])))

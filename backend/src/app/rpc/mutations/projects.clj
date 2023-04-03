@@ -10,10 +10,10 @@
    [app.db :as db]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.rpc.queries.projects :as proj]
    [app.rpc.quotes :as quotes]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -34,6 +34,7 @@
 
 (sv/defmethod ::create-project
   {::doc/added "1.0"
+   ::doc/deprecated "1.18"
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
   (db/with-atomic [conn pool]
@@ -70,12 +71,13 @@
 
 (sv/defmethod ::update-project-pin
   {::doc/added "1.0"
+   ::doc/deprecated "1.18"
    ::webhooks/batch-timeout (dt/duration "5s")
    ::webhooks/batch-key :id
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id profile-id team-id is-pinned] :as params}]
   (db/with-atomic [conn pool]
-    (proj/check-edition-permissions! conn profile-id id)
+    (projects/check-edition-permissions! conn profile-id id)
     (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
     nil))
 
@@ -88,10 +90,11 @@
 
 (sv/defmethod ::rename-project
   {::doc/added "1.0"
+   ::doc/deprecated "1.18"
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id profile-id name] :as params}]
   (db/with-atomic [conn pool]
-    (proj/check-edition-permissions! conn profile-id id)
+    (projects/check-edition-permissions! conn profile-id id)
     (let [project (db/get-by-id conn :project id)]
       (db/update! conn :project
                   {:name name}
@@ -112,10 +115,11 @@
 
 (sv/defmethod ::delete-project
   {::doc/added "1.0"
+   ::doc/deprecated "1.18"
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (proj/check-edition-permissions! conn profile-id id)
+    (projects/check-edition-permissions! conn profile-id id)
     (let [project (db/update! conn :project
                               {:deleted-at (dt/now)}
                               {:id id :is-default false})]

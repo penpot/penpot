@@ -133,7 +133,7 @@
 .collapse-pages {
   align-items: center;
   background-color: transparent;
-  border-radius: $br-small;
+  border-radius: $br3;
   border: 1px solid transparent;
   cursor: pointer;
   display: flex;
@@ -180,7 +180,7 @@
   }
   button {
     background-color: transparent;
-    border-radius: $br-small;
+    border-radius: $br3;
     border: 1px solid transparent;
     cursor: pointer;
     color: $color-gray-20;

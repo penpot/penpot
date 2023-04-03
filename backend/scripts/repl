@@ -45,11 +45,12 @@ export PENPOT_STORAGE_ASSETS_S3_BUCKET=penpot
 export OPTIONS="
        -A:jmx-remote -A:dev \
        -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
-       -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
-       -J-XX:+UseG1GC \
-       -J-XX:-OmitStackTraceInFastThrow \
-       -J-Xms50m -J-Xmx1024m \
        -J-Djdk.attach.allowAttachSelf \
+       -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
+       -J-Xms50m \
+       -J-Xmx1024m \
+       -J-XX:+UseZGC \
+       -J-XX:-OmitStackTraceInFastThrow \
        -J-XX:+UnlockDiagnosticVMOptions \
        -J-XX:+DebugNonSafepoints";
 

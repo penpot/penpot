@@ -42,8 +42,8 @@
                      :is-active is-active
                      :password password
                      :props {}}]
-        (->> (cmd.auth/create-profile conn params)
-             (cmd.auth/create-profile-relations conn))))))
+        (->> (cmd.auth/create-profile! conn params)
+             (cmd.auth/create-profile-rels! conn))))))
 
 (defmethod run-json-cmd* :update-profile
   [{:keys [fullname email password is-active]}]

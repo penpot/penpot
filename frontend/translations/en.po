@@ -313,11 +313,11 @@ msgid "dashboard.export-binary-multi"
 msgstr "Download %s Penpot files (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Export boards to PDF"
+msgstr "Export boards as PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
-msgstr "Export to PDF"
+msgstr "Export as PDF"
 
 msgid "dashboard.export-multi"
 msgstr "Export Penpot %s files"
@@ -443,7 +443,9 @@ msgid "dashboard.import.import-error"
 msgstr "There was a problem importing the file. The file wasn't imported."
 
 msgid "dashboard.import.import-message"
-msgstr "%s files have been imported successfully."
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "1 file has been imported successfully."
+msgstr[1] "%s files have been imported successfully."
 
 msgid "dashboard.import.import-warning"
 msgstr "Some files containted invalid objects that have been removed."
@@ -709,57 +711,6 @@ msgstr "Your name"
 #: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
-
-msgid "dashboard.webhooks.description"
-msgstr "Webhooks are a simple way to allow other websites and apps to be notified when certain events happen at Penpot. We’ll send a POST request to each of the URLs you provide."
-
-msgid "dashboard.webhooks.create"
-msgstr "Create webhook"
-
-msgid "dashboard.webhooks.empty.no-webhooks"
-msgstr "No webhooks created so far."
-
-msgid "dashboard.webhooks.empty.add-one"
-msgstr "Press the button \"Add webhook\" to add one."
-
-msgid "dashboard.webhooks.content-type"
-msgstr "Content type"
-
-msgid "dashboard.webhooks.active"
-msgstr "Is active"
-
-msgid "dashboard.webhooks.active.explain"
-msgstr "When this hook is triggered event details will be delivered"
-
-msgid "dashboard.webhooks.update.success"
-msgstr "Webhook updated successfully."
-
-msgid "dashboard.webhooks.create.success"
-msgstr "Webhook created successfully."
-
-msgid "webhooks.last-delivery.success"
-msgstr "Last delivery was successfull."
-
-msgid "errors.webhooks.unexpected"
-msgstr "Unexpected error on validating"
-
-msgid "errors.webhooks.timeout"
-msgstr "Timeout"
-
-msgid "errors.webhooks.connection"
-msgstr "Connection error, url not reacheable"
-
-msgid "errors.webhooks.last-delivery"
-msgstr "Last delivery was not successfull."
-
-msgid "errors.webhooks.ssl-validation"
-msgstr "Error on SSL validation."
-
-msgid "errors.webhooks.invalid-uri"
-msgstr "URL does not pass validation."
-
-msgid "errors.webhooks.unexpected-status"
-msgstr "Unexpected status %s"
 
 #: src/app/main/ui/alert.cljs
 msgid "ds.alert-ok"
@@ -1107,7 +1058,7 @@ msgid "inspect.attributes.typography.font-size"
 msgstr "Font Size"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.font-size"
+msgid "inspect.attributes.typography.font-weight"
 msgstr "Font Weight"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
@@ -1430,6 +1381,7 @@ msgid "labels.no-invitations"
 msgstr "No pending invitations."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr "Click the **Invite people** button to invite people to this team."
 
@@ -1774,21 +1726,22 @@ msgstr[1] "Delete files"
 msgid "modals.delete-shared-confirm.hint"
 msgid_plural "modals.delete-shared-confirm.hint"
 msgstr[0] ""
-"If you delete it, those assets will move to the local library of this file. "
-"Any unused assets will be lost."
+"If you delete it, those assets will no longer be available from other files. "
+"Assets that have already been used will remain in this file (no design will be broken!)."
+
 msgstr[1] ""
-"If you delete them, those assets will move to the local library of this "
-"file. Any unused assets will be lost."
+"If you delete them, those assets will no longer be available from other files. "
+"Assets that have already been used will remain in this file (no design will be broken!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint-many"
 msgid_plural "modals.delete-shared-confirm.hint-many"
 msgstr[0] ""
-"If you delete it, those assets will move to the local libraries of these "
-"files. Any unused assets will be lost."
+"If you delete it, those assets will no longer be available from other files. "
+"Assets that have already been used will remain in these files (no design will be broken!)."
 msgstr[1] ""
-"If you delete them, those assets will move to the local libraries of these "
-"files. Any unused assets will be lost."
+"If you delete them, those assets will no longer be available from other files. "
+"Assets that have already been used will remain in these file (no design will be broken!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
@@ -1871,6 +1824,9 @@ msgstr "Send invitation"
 
 msgid "modals.invite-member.emails"
 msgstr "Emails, comma separated"
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr "Some emails are from current team members. Their invitations will not be sent."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
@@ -1973,21 +1929,21 @@ msgstr[1] "Unpublish"
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] ""
-"If you unpublish it, those assets will move to the local library of this "
-"file."
+"If you unpublish it, those assets will no longer be available from other files. "
+"Assets that have already been used will remain in this file (no design will be broken!)."
 msgstr[1] ""
-"If you unpublish them, those assets will move to the local library of this "
-"file."
+"If you unpublish them, those assets will no longer be available from other files. "
+"Assets that have already been used will remain in this file (no design will be broken!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint-many"
 msgid_plural "modals.unpublish-shared-confirm.hint-many"
 msgstr[0] ""
-"If you unpublish it, those assets will move to the local libraries of these "
-"files."
+"If you unpublish it, those assets will no longer be available from other files. "
+"Assets that have already been used will remain in these files (no design will be broken!)."
 msgstr[1] ""
-"If you unpublish them, those assets will move to the local libraries of "
-"these files."
+"If you unpublish them, those assets will no longer be available from other files. "
+"Assets that have already been used will remain in these file (no design will be broken!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -2508,6 +2464,12 @@ msgstr "Go to viewer comment section"
 
 msgid "shortcuts.open-dashboard"
 msgstr "Go to dashboard"
+
+msgid "shortcuts.select-next"
+msgstr "Select next layer"
+
+msgid "shortcuts.select-prev"
+msgstr "Select previous layer"
 
 msgid "shortcuts.open-inspect"
 msgstr "Go to viewer inspect section"
@@ -3091,6 +3053,18 @@ msgstr "Show rulers"
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Show fonts palette"
 
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Enable proportional scale"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Disable proportional scale"
+
+msgid "workspace.header.menu.undo"
+msgstr "Undo"
+
+msgid "workspace.header.menu.redo"
+msgstr "Redo"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
 msgstr "Reset"
@@ -3582,7 +3556,7 @@ msgstr "Open overlay: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-url"
-msgstr "Open url"
+msgstr "Open URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-out"
@@ -3880,7 +3854,7 @@ msgstr "All corners"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.single-corners"
-msgstr "Individual corners"
+msgstr "Independent corners"
 
 msgid "workspace.options.recent-fonts"
 msgstr "Recent"
@@ -4046,19 +4020,19 @@ msgstr "Align center"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "Justify"
+msgstr "Justify (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "Align left"
+msgstr "Align left (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Align middle"
+msgstr "Align middle (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "Align right"
+msgstr "Align right (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -4102,7 +4076,7 @@ msgstr "None"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "Strikethrough"
+msgstr "Strikethrough (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -4118,11 +4092,11 @@ msgstr "Selection text"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.titlecase"
-msgstr "Title Case"
+msgstr "Title case"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "Underline"
+msgstr "Underline (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"

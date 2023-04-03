@@ -27,9 +27,14 @@
     margin: $size-3 $size-4 $size-4 $size-2;
     position: relative;
     text-align: center;
-    a {
+    a,
+    button {
       width: 100%;
-      font-weight: normal;
+      font-weight: $fw400;
+    }
+    button {
+      background-color: transparent;
+      border: none;
     }
     @media #{$bp-max-1366} {
       height: 200px;
@@ -43,13 +48,13 @@
     }
 
     .grid-item-th {
-      border-radius: $br-small;
+      border-radius: $br3;
       border: 2px solid lighten($color-gray-20, 15%);
       text-align: initial;
     }
 
     &.dragged {
-      border-radius: $br-small;
+      border-radius: $br3;
       border: 2px solid lighten($color-gray-20, 15%);
       text-align: initial;
       max-height: 160px;
@@ -78,7 +83,7 @@
     }
 
     &.overlay {
-      border-radius: 4px;
+      border-radius: $br4;
       border: 2px solid $color-primary;
       height: 100%;
       opacity: 0;
@@ -120,7 +125,7 @@
         border: 1px solid transparent;
         color: $color-gray-60;
         font-size: $fs14;
-        font-weight: 500;
+        font-weight: $fw500;
         overflow: hidden;
         padding: 0;
         height: 27px;
@@ -156,7 +161,7 @@
           height: 25px;
           color: $color-gray-60;
           font-size: $fs14;
-          font-weight: 400;
+          font-weight: $fw400;
         }
       }
     }
@@ -164,7 +169,7 @@
     .item-badge {
       background-color: $color-white;
       border: 1px solid $color-gray-20;
-      border-radius: 2px;
+      border-radius: $br2;
       position: absolute;
       top: $size-2;
       right: $size-2;
@@ -289,8 +294,8 @@
     }
 
     .color-swatch {
-      border-top-left-radius: $br-medium;
-      border-top-right-radius: $br-medium;
+      border-top-left-radius: $br5;
+      border-top-right-radius: $br5;
       height: 25%;
       left: 0;
       position: absolute;
@@ -323,8 +328,8 @@
     background-position: center;
     background-size: auto 80%;
     background-repeat: no-repeat;
-    border-top-left-radius: $br-small;
-    border-top-right-radius: $br-small;
+    border-top-left-radius: $br3;
+    border-top-right-radius: $br3;
     height: 230px;
     max-height: 160px;
     overflow: hidden;
@@ -389,7 +394,7 @@
         display: flex;
         align-items: center;
         border: 1px solid transparent;
-        border-radius: $br-small;
+        border-radius: $br3;
         margin-top: $size-1;
         padding: 2px;
         font-size: $fs12;
@@ -410,7 +415,7 @@
 
         & svg {
           background-color: $color-canvas;
-          border-radius: 4px;
+          border-radius: $br4;
           border: 2px solid transparent;
           height: 24px;
           width: 24px;
@@ -438,7 +443,7 @@
 }
 
 .grid-empty-placeholder {
-  border-radius: $br-huge;
+  border-radius: $br12;
   display: grid;
   background-color: rgba(227, 227, 227, 0.3);
   padding: 13px;
@@ -458,7 +463,7 @@
     background-repeat: no-repeat;
     align-items: center;
     border: 1px dashed #b1b2b5;
-    border-radius: 3px;
+    border-radius: $br3;
     display: flex;
     flex-direction: column;
     height: 200px;
@@ -476,7 +481,7 @@
   .create-new {
     background-color: white;
     border: 2px solid $color-gray-10;
-    border-radius: 3px;
+    border-radius: $br3;
     color: $color-black;
     cursor: pointer;
     height: 158px;
@@ -495,7 +500,7 @@
     height: 200px;
     background: $color-white;
     border: 1px dashed #e3e3e3;
-    border-radius: 0;
+    border-radius: $br0;
   }
 
   svg {

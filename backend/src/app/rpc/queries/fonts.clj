@@ -9,9 +9,9 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.projects :as projects]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 

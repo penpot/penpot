@@ -104,8 +104,10 @@
 
           (if (and (some? line-data)
                    (or (not wrap?)
-                       (and row? (<= next-line-min-width layout-width))
-                       (and col? (<= next-line-min-height layout-height))))
+                       (and row? (or (< next-line-min-width layout-width)
+                                     (mth/close? next-line-min-width layout-width 0.5)))
+                       (and col? (or (< next-line-min-height layout-height)
+                                     (mth/close? next-line-min-height layout-height 0.5)))))
 
             (recur {:line-min-width  (if row? (+ line-min-width next-min-width) (max line-min-width next-min-width))
                     :line-max-width  (if row? (+ line-max-width next-max-width) (max line-max-width next-max-width))

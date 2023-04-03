@@ -9,9 +9,13 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.db :as-alias db]
+   [app.storage :as-alias sto]
+   [app.worker :as-alias wrk]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
    [clojure.java.io :as jio]
+   [clojure.spec.alpha :as s]
    [datoteka.io :as io])
   (:import
    java.nio.ByteBuffer
@@ -21,7 +25,7 @@
 
 ;; --- API Definition
 
-(defmulti put-object (fn [cfg _ _] (:type cfg)))
+(defmulti put-object (fn [cfg _ _] (::sto/type cfg)))
 
 (defmethod put-object :default
   [cfg _ _]
@@ -29,7 +33,7 @@
             :code :invalid-storage-backend
             :context cfg))
 
-(defmulti get-object-data (fn [cfg _] (:type cfg)))
+(defmulti get-object-data (fn [cfg _] (::sto/type cfg)))
 
 (defmethod get-object-data :default
   [cfg _]
@@ -37,7 +41,7 @@
             :code :invalid-storage-backend
             :context cfg))
 
-(defmulti get-object-bytes (fn [cfg _] (:type cfg)))
+(defmulti get-object-bytes (fn [cfg _] (::sto/type cfg)))
 
 (defmethod get-object-bytes :default
   [cfg _]
@@ -45,7 +49,7 @@
             :code :invalid-storage-backend
             :context cfg))
 
-(defmulti get-object-url (fn [cfg _ _] (:type cfg)))
+(defmulti get-object-url (fn [cfg _ _] (::sto/type cfg)))
 
 (defmethod get-object-url :default
   [cfg _ _]
@@ -54,7 +58,7 @@
             :context cfg))
 
 
-(defmulti del-object (fn [cfg _] (:type cfg)))
+(defmulti del-object (fn [cfg _] (::sto/type cfg)))
 
 (defmethod del-object :default
   [cfg _]
@@ -62,7 +66,7 @@
             :code :invalid-storage-backend
             :context cfg))
 
-(defmulti del-objects-in-bulk (fn [cfg _] (:type cfg)))
+(defmulti del-objects-in-bulk (fn [cfg _] (::sto/type cfg)))
 
 (defmethod del-objects-in-bulk :default
   [cfg _]
@@ -189,10 +193,6 @@
     (make-output-stream [_ opts]
       (jio/make-output-stream content opts))))
 
-(defn content?
-  [v]
-  (satisfies? IContentObject v))
-
 (defn calculate-hash
   [resource]
   (let [result (with-open [input (io/input-stream resource)]
@@ -201,13 +201,37 @@
     (str "blake2b:" result)))
 
 (defn resolve-backend
-  [{:keys [conn pool executor] :as storage} backend-id]
-  (let [backend (get-in storage [:backends backend-id])]
+  [{:keys [::db/pool ::wrk/executor] :as storage} backend-id]
+  (let [backend (get-in storage [::sto/backends backend-id])]
     (when-not backend
       (ex/raise :type :internal
                 :code :backend-not-configured
                 :hint (dm/fmt "backend '%' not configured" backend-id)))
-    (assoc backend
-           :executor executor
-           :conn (or conn pool)
-           :id backend-id)))
+    (-> backend
+        (assoc ::sto/id backend-id)
+        (assoc ::wrk/executor executor)
+        (assoc ::db/pool pool))))
+
+(defrecord StorageObject [id size created-at expired-at touched-at backend])
+
+(ns-unmap *ns* '->StorageObject)
+(ns-unmap *ns* 'map->StorageObject)
+
+(defn storage-object
+  ([id size created-at expired-at touched-at backend]
+   (StorageObject. id size created-at expired-at touched-at backend))
+  ([id size created-at expired-at touched-at backend mdata]
+   (StorageObject. id size created-at expired-at touched-at backend mdata nil)))
+
+(defn object?
+  [v]
+  (instance? StorageObject v))
+
+(defn content?
+  [v]
+  (satisfies? IContentObject v))
+
+(s/def ::object object?)
+(s/def ::content content?)
+
+

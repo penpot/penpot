@@ -93,7 +93,7 @@
                (on-right-arrow-click)
                (on-left-arrow-click)))))
 
-        {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
+        {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move parent-ref size]}
         (use-resize-hook :palette 72 54 80 :y true :bottom)]
 
     [:div.color-palette {:ref parent-ref
@@ -101,7 +101,7 @@
                          :style #js {"--height" (str size "px")}}
      [:div.resize-area {:on-pointer-down on-pointer-down
                         :on-lost-pointer-capture on-lost-pointer-capture
-                        :on-mouse-move on-mouse-move}]
+                        :on-pointer-move on-pointer-move}]
      [:& dropdown {:show (:show-menu @state)
                    :on-close #(swap! state assoc :show-menu false)}
 

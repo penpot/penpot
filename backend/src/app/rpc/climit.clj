@@ -32,7 +32,7 @@
 
 (defn- capacity-exception?
   [o]
-  (and (ex/ex-info? o)
+  (and (ex/error? o)
        (let [data (ex-data o)]
          (and (= :bulkhead-error (:type data))
               (= :capacity-limit-reached (:code data))))))
@@ -46,7 +46,7 @@
                    (p/rejected
                     (ex/error :type :internal
                               :code :concurrency-limit-reached
-                              :queue (-> limiter meta :bkey name)
+                              :queue (-> limiter meta ::bkey name)
                               :cause cause))
 
                    (some? cause)
@@ -56,7 +56,7 @@
                    (p/resolved result))))))
 
 (defn- create-limiter
-  [{:keys [executor metrics concurrency queue-size bkey skey]}]
+  [{:keys [::wrk/executor ::mtx/metrics ::bkey ::skey concurrency queue-size]}]
   (let [labels   (into-array String [(name bkey)])
         on-queue (fn [instance]
                    (l/trace :hint "enqueued"
@@ -100,10 +100,10 @@
                   :on-run on-run}]
 
     (-> (pxb/create options)
-        (vary-meta assoc :bkey bkey :skey skey))))
+        (vary-meta assoc ::bkey bkey ::skey skey))))
 
 (defn- create-cache
-  [{:keys [executor] :as params} config]
+  [{:keys [::wrk/executor] :as params} config]
   (let [listener (reify RemovalListener
                    (onRemoval [_ key _val cause]
                      (l/trace :hint "cache: remove" :key key :reason (str cause))))
@@ -113,8 +113,8 @@
                      (let [[bkey skey] key]
                        (when-let [config (get config bkey)]
                          (-> (merge params config)
-                             (assoc :bkey bkey)
-                             (assoc :skey skey)
+                             (assoc ::bkey bkey)
+                             (assoc ::skey skey)
                              (create-limiter))))))]
 
   (.. (Caffeine/newBuilder)
@@ -134,14 +134,16 @@
 
 (defmethod ig/prep-key ::rpc/climit
   [_ cfg]
-  (merge {:path (cf/get :rpc-climit-config)}
+  (merge {::path (cf/get :rpc-climit-config)}
          (d/without-nils cfg)))
 
+(s/def ::path ::fs/path)
+
 (defmethod ig/pre-init-spec ::rpc/climit [_]
-  (s/keys :req-un [::wrk/executor ::mtx/metrics ::fs/path]))
+  (s/keys :req [::wrk/executor ::mtx/metrics ::path]))
 
 (defmethod ig/init-key ::rpc/climit
-  [_ {:keys [path] :as params}]
+  [_ {:keys [::path] :as params}]
   (when (contains? cf/flags :rpc-climit)
     (if-let [config (some->> path slurp edn/read-string)]
       (do
@@ -163,7 +165,8 @@
       (l/warn :hint "unable to load configuration" :config (str path)))))
 
 
-(s/def ::climit #(satisfies? IConcurrencyManager %))
+(s/def ::rpc/climit
+  (s/nilable #(satisfies? IConcurrencyManager %)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API
@@ -176,7 +179,7 @@
      (p/wrap (do ~@body))))
 
 (defn wrap
-  [{:keys [climit]} f {:keys [::queue ::key-fn] :as mdata}]
+  [{:keys [::rpc/climit]} f {:keys [::queue ::key-fn] :as mdata}]
   (if (and (some? climit)
            (some? queue))
     (if-let [config (get @climit queue)]
@@ -192,7 +195,6 @@
             (let [key [queue (key-fn params)]
                   lim (get climit key)]
               (invoke! lim (partial f cfg params))))
-
           (let [lim (get climit queue)]
             (fn [cfg params]
               (invoke! lim (partial f cfg params))))))

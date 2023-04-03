@@ -45,7 +45,7 @@
         :width width
         :height height
         :transform (str transform)
-        :on-mouse-down on-move-selected
+        :on-pointer-down on-move-selected
         :on-context-menu on-context-menu
         :style {:stroke color
                 :stroke-width (/ selection-rect-width zoom)
@@ -172,12 +172,15 @@
             :fill (if (debug? :handlers) "blue" "none")
             :stroke-width 0
             :transform (dm/str transform)
-            :on-mouse-down on-rotate}]))
+            :on-pointer-down on-rotate}]))
 
 (mf/defc resize-point-handler
   [{:keys [cx cy zoom position on-resize transform rotation color align]}]
-  (let [cursor (if (#{:top-left :bottom-right} position)
-                 (cur/resize-nesw rotation) (cur/resize-nwse rotation))
+  (let [layout (mf/deref refs/workspace-layout)
+        scale-text (:scale-text layout)
+        cursor (if (#{:top-left :bottom-right} position)
+                 (if scale-text (cur/scale-nesw rotation) (cur/resize-nesw rotation)) 
+                 (if scale-text (cur/scale-nwse rotation) (cur/resize-nwse rotation)))
         {cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)]
 
     [:g.resize-handler
@@ -205,9 +208,9 @@
                  :style {:fill (if (debug? :handlers) "red" "none")
                          :stroke-width 0
                          :cursor cursor}
-                 :on-mouse-down #(on-resize {:x cx' :y cy'} %)}])
+                 :on-pointer-down #(on-resize {:x cx' :y cy'} %)}])
 
-       [:circle {:on-mouse-down #(on-resize {:x cx' :y cy'} %)
+       [:circle {:on-pointer-down #(on-resize {:x cx' :y cy'} %)
                  :r (/ resize-point-circle-radius zoom)
                  :cx cx'
                  :cy cy'
@@ -221,7 +224,8 @@
   (let [res-point (if (#{:top :bottom} position)
                     {:y y}
                     {:x x})
-
+        layout (mf/deref refs/workspace-layout)
+        scale-text (:scale-text layout)
         height (/ resize-side-height zoom)
         offset-y (if (= align :outside) (- height) (- (/ height 2)))
         target-y (+ y offset-y)
@@ -242,12 +246,12 @@
              :width length
              :height height
              :transform transform-str
-             :on-mouse-down #(on-resize res-point %)
+             :on-pointer-down #(on-resize res-point %)
              :style {:fill (if (debug? :handlers) "yellow" "none")
                      :stroke-width 0
                      :cursor (if (#{:left :right} position)
-                               (cur/resize-ew rotation)
-                               (cur/resize-ns rotation)) }}]]))
+                               (if scale-text (cur/scale-ew rotation) (cur/resize-ew rotation))
+                               (if scale-text (cur/scale-ns rotation) (cur/resize-ns rotation))) }}]]))
 
 (defn minimum-selrect [{:keys [x y width height] :as selrect}]
   (let [final-width (max width min-selrect-side)

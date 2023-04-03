@@ -81,10 +81,10 @@ textarea {
 
   .notification-text-email {
     background: $color-gray-10;
-    border-radius: $br-small;
+    border-radius: $br3;
     color: $color-gray-60;
     font-size: $fs18;
-    font-weight: 500;
+    font-weight: $fw500;
     margin: 1.5rem 0 2.5rem 0;
     padding: 1rem;
     text-align: center;
@@ -121,7 +121,7 @@ textarea {
   input,
   textarea {
     background-color: $color-white;
-    border-radius: 2px;
+    border-radius: $br2;
     border: 1px solid $color-gray-20;
     color: $color-gray-60;
     font-size: $fs14;
@@ -231,7 +231,7 @@ textarea {
 }
 
 .custom-multi-input {
-  border-radius: 2px;
+  border-radius: $br2;
   border: 1px solid $color-gray-20;
   max-height: 300px;
   overflow-y: auto;
@@ -267,9 +267,12 @@ textarea {
     .around {
       border: 1px solid $color-gray-20;
       padding-left: 5px;
-      border-radius: 4px;
+      border-radius: $br4;
       &.invalid {
         border: 1px solid $color-danger;
+      }
+      &.caution {
+        border: 1px solid $color-warning;
       }
 
       .text {
@@ -278,7 +281,7 @@ textarea {
         overflow: hidden;
         text-overflow: ellipsis;
         line-height: 16px;
-        font-size: 14px;
+        font-size: $fs14;
         color: $color-black;
       }
       .icon {
@@ -331,7 +334,7 @@ textarea {
     flex-direction: row;
 
     background-color: $color-white;
-    border-radius: 2px;
+    border-radius: $br2;
     border: 1px solid $color-gray-20;
     height: 40px;
 
