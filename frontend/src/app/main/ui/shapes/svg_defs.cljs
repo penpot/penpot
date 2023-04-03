@@ -64,6 +64,16 @@
                   (or transform-filter?
                       transform-mask?)  (merge bounds)))
 
+          ;; Fixes race condition with dynamic modifiers forcing redraw this properties before
+          ;; the effect triggers
+          attrs
+          (cond-> attrs
+            (or (= tag :filter) (= tag :mask))
+            (merge {:data-old-x (:x attrs)
+                    :data-old-y (:y attrs)
+                    :data-old-width (:width attrs)
+                    :data-old-height (:height attrs)}))
+
           [wrapper wrapper-props] (if (= tag :mask)
                                     ["g" #js {:className "svg-mask-wrapper"
                                               :transform (str transform)}]
