@@ -1324,6 +1324,7 @@ msgid "labels.no-invitations"
 msgstr "Davet yok."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr ""
 "Bu takıma daha fazla üye davet etmek için \"Takıma davet et\" düğmesine "

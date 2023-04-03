@@ -269,7 +269,8 @@
                          {:option-name    (tr "labels.rename")
                           :id             "file-rename"
                           :option-handler on-edit
-                          :data-test      "file-rename"}
+                          :data-test      "file-rename"})
+                       (when (not is-search-page?)
                          {:option-name    (tr "dashboard.duplicate")
                           :id             "file-duplicate"
                           :option-handler on-duplicate

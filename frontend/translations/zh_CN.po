@@ -1252,6 +1252,7 @@ msgid "labels.no-invitations"
 msgstr "没有邀请。"
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr "点击\"邀请加入团队\"，邀请更多成员加入这个团队。"
 

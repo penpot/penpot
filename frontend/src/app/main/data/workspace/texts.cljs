@@ -377,7 +377,7 @@
           (assoc-in [:workspace-local :edition] (-> selected first :id)))))))
 
 (defn not-changed? [old-dim new-dim]
-  (> (mth/abs (- old-dim new-dim)) 1))
+  (> (mth/abs (- old-dim new-dim)) 0.1))
 
 (defn commit-resize-text
   []

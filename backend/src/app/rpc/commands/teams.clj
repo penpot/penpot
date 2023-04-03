@@ -60,11 +60,17 @@
         :can-edit (or is-owner is-admin can-edit)
         :can-read true})))
 
+(def has-admin-permissions?
+  (perms/make-admin-predicate-fn get-permissions))
+
 (def has-edit-permissions?
   (perms/make-edition-predicate-fn get-permissions))
 
 (def has-read-permissions?
   (perms/make-read-predicate-fn get-permissions))
+
+(def check-admin-permissions!
+  (perms/make-check-fn has-admin-permissions?))
 
 (def check-edition-permissions!
   (perms/make-check-fn has-edit-permissions?))
@@ -592,18 +598,19 @@
   (let [team  (retrieve-team pool profile-id team-id)
         photo (profile/upload-photo cfg params)]
 
-    ;; Mark object as touched for make it ellegible for tentative
-    ;; garbage collection.
-    (when-let [id (:photo-id team)]
-      (sto/touch-object! storage id))
+    (db/with-atomic [conn pool]
+      (check-admin-permissions! conn profile-id team-id)
+      ;; Mark object as touched for make it ellegible for tentative
+      ;; garbage collection.
+      (when-let [id (:photo-id team)]
+        (sto/touch-object! storage id))
 
-    ;; Save new photo
-    (db/update! pool :team
-                {:photo-id (:id photo)}
-                {:id team-id})
+      ;; Save new photo
+      (db/update! pool :team
+        {:photo-id (:id photo)}
+        {:id team-id})
 
-    (assoc team :photo-id (:id photo))))
-
+      (assoc team :photo-id (:id photo)))))
 
 ;; --- Mutation: Create Team Invitation
 
@@ -728,8 +735,13 @@
     (let [perms    (get-permissions conn profile-id team-id)
           profile  (db/get-by-id conn :profile profile-id)
           team     (db/get-by-id conn :team team-id)
-          emails   (cond-> (or emails #{}) (string? email) (conj email))]
 
+          ;; Members emails. We don't re-send inviation to already existing members
+          member?  (into #{}
+                         (map :email)
+                         (db/exec! conn [sql:team-members team-id]))
+
+          emails   (cond-> (or emails #{}) (string? email) (conj email))]
 
       (run! (partial quotes/check-quote! conn)
             (list {::quotes/id ::quotes/invitations-per-team
@@ -753,6 +765,7 @@
 
       (let [cfg         (assoc cfg ::db/conn conn)
             invitations (->> emails
+                             (remove member?)
                              (map (fn [email]
                                     {:email (str/lower email)
                                      :team team

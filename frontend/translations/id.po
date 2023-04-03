@@ -1195,6 +1195,7 @@ msgid "labels.no-invitations"
 msgstr "Tidak ada undangan."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr ""
 "Tekan tombol \"Undang ke tim\" untuk mengundang lebih banyak anggota ke tim "

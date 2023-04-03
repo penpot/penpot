@@ -185,8 +185,10 @@
 
 (defn close?
   "Equality for float numbers. Check if the difference is within a range"
-  [num1 num2]
-  (<= (abs (- num1 num2)) float-equal-precision))
+  ([num1 num2]
+   (close? num1 num2 float-equal-precision))
+  ([num1 num2 precision]
+   (<= (abs (- num1 num2)) precision)))
 
 (defn lerp
   "Calculates a the linear interpolation between two values and a given percent"

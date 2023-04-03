@@ -155,8 +155,18 @@
   (.isClosed ^HikariDataSource pool))
 
 (defn read-only?
-  [pool]
-  (.isReadOnly ^HikariDataSource pool))
+  [pool-or-conn]
+  (cond
+    (instance? HikariDataSource pool-or-conn)
+    (.isReadOnly ^HikariDataSource pool-or-conn)
+
+    (instance? Connection pool-or-conn)
+    (.isReadOnly ^Connection pool-or-conn)
+
+    :else
+    (ex/raise :type :internal
+              :code :invalid-connection
+              :hint "invalid connection provided")))
 
 (defn create-pool
   [cfg]

@@ -113,7 +113,8 @@
                         :y y
                         :disable-gradient disable-gradient
                         :disable-opacity disable-opacity
-                        :on-change #(on-change (merge uc/empty-color %))
+                        ;; on-change second parameter means if the source is the color-picker
+                        :on-change #(on-change (merge uc/empty-color %) true)
                         :on-close (fn [value opacity id file-id]
                                     (when on-close
                                       (on-close value opacity id file-id)))

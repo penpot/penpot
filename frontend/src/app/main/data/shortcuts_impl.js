@@ -9,6 +9,12 @@
 
 import Mousetrap from 'mousetrap'
 
+if (Mousetrap.addKeycodes) {
+  Mousetrap.addKeycodes({
+    219: '219'
+  });
+}
+
 const target = Mousetrap.prototype || Mousetrap;
 target.stopCallback = function(e, element, combo) {
   // if the element has the class "mousetrap" then no need to stop
@@ -20,7 +26,7 @@ target.stopCallback = function(e, element, combo) {
   return element.tagName == 'INPUT' || 
          element.tagName == 'SELECT' || 
          element.tagName == 'TEXTAREA' || 
-         element.tagName == 'BUTTON' || 
+         (element.tagName == 'BUTTON' && combo.includes("tab")) ||
          (element.contentEditable && element.contentEditable == 'true');
 }
 

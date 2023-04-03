@@ -15,6 +15,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
@@ -32,6 +33,7 @@
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [beicon.core :as rx]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
@@ -149,10 +151,12 @@
                        :on-accept #(st/emit! (dwl/set-file-shared (:id file) false))
                        :count-libraries 1}))))
 
-        handle-blur (fn [_]
-                      (let [value (-> edit-input-ref mf/ref-val dom/get-value)]
-                        (st/emit! (dw/rename-file (:id file) value)))
-                      (reset! editing? false))
+        handle-blur
+        (fn [_]
+          (let [value (str/trim (-> edit-input-ref mf/ref-val dom/get-value))]
+            (when (not= value "")
+              (st/emit! (dw/rename-file (:id file) value))))
+          (reset! editing? false))
 
         handle-name-keydown (fn [event]
                               (when (kbd/enter? event)
@@ -306,12 +310,14 @@
        [:li {:on-click #(st/emit! (dw/select-all))}
         [:span (tr "workspace.header.menu.select-all")]
         [:span.shortcut (sc/get-tooltip :select-all)]]
-       [:li {:on-click #(st/emit! (toggle-flag :scale-text))}
-        [:span
-         (if (contains? layout :scale-text)
-           (tr "workspace.header.menu.disable-scale-text")
-           (tr "workspace.header.menu.enable-scale-text"))]
-        [:span.shortcut (sc/get-tooltip :toggle-scale-text)]]]]
+
+       [:li {:on-click #(st/emit! dwc/undo)}
+        [:span (tr "workspace.header.menu.undo")]
+        [:span.shortcut (sc/get-tooltip :undo)]]
+
+       [:li {:on-click #(st/emit! dwc/redo)}
+        [:span (tr "workspace.header.menu.redo")]
+        [:span.shortcut (sc/get-tooltip :redo)]]]]
 
      [:& dropdown {:show (= @show-sub-menu? :view)
                    :on-close #(reset! show-sub-menu? false)}
@@ -374,6 +380,13 @@
      [:& dropdown {:show (= @show-sub-menu? :preferences)
                    :on-close #(reset! show-sub-menu? false)}
       [:ul.sub-menu.preferences
+       [:li {:on-click #(st/emit! (toggle-flag :scale-text))}
+        [:span
+         (if (contains? layout :scale-text)
+           (tr "workspace.header.menu.disable-scale-content")
+           (tr "workspace.header.menu.enable-scale-content"))]
+        [:span.shortcut (sc/get-tooltip :toggle-scale-text)]]
+
        [:li {:on-click #(st/emit! (toggle-flag :snap-guides))}
         [:span
          (if (contains? layout :snap-guides)

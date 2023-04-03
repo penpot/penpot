@@ -138,6 +138,7 @@
                   (pcb/with-objects objects)
                   (cond-> (not (ctl/any-layout? objects frame-id))
                     (pcb/update-shapes ordered-indexes  ctl/remove-layout-item-data))
+                  (pcb/update-shapes ordered-indexes #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true)))
                   (pcb/change-parent frame-id to-move-shapes 0)
                   (cond-> (ctl/grid-layout? objects frame-id)
                     (pcb/update-shapes [frame-id] ctl/assign-cells))))]

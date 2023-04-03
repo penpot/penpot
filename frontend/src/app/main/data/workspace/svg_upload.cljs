@@ -164,11 +164,13 @@
   (cond-> shape
     (get-in shape [:svg-attrs :opacity])
     (-> (update :svg-attrs dissoc :opacity)
-        (assoc :opacity (get-in shape [:svg-attrs :opacity])))
+        (assoc :opacity (-> (get-in shape [:svg-attrs :opacity])
+                            (d/parse-double))))
 
     (get-in shape [:svg-attrs :style :opacity])
     (-> (update-in [:svg-attrs :style] dissoc :opacity)
-        (assoc :opacity (get-in shape [:svg-attrs :style :opacity])))
+        (assoc :opacity (-> (get-in shape [:svg-attrs :style :opacity])
+                            (d/parse-double))))
 
 
     (get-in shape [:svg-attrs :mix-blend-mode])
@@ -410,7 +412,8 @@
                           (assoc :strokes [])
                           (assoc :svg-defs (select-keys (:defs svg-data) references))
                           (setup-fill)
-                          (setup-stroke))
+                          (setup-stroke)
+                          (setup-opacity))
 
                 shape (cond-> shape
                         hidden (assoc :hidden true))

@@ -152,10 +152,10 @@
     profile))
 
 (defn update-profile-password!
-  [{:keys [::db/conn] :as cfg} {:keys [id password] :as profile}]
-  (let [password (derive-password cfg password)]
+  [conn {:keys [id password] :as profile}]
+  (when-not (db/read-only? conn)
     (db/update! conn :profile
-                {:password password}
+                {:password (auth/derive-password password)}
                 {:id id})))
 
 ;; --- MUTATION: Update Photo

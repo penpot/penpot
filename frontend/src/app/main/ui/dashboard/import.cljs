@@ -22,6 +22,7 @@
    [app.util.keyboard :as kbd]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
+   [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -61,9 +62,11 @@
   (->> files
        (mapv
         (fn [file]
-          (cond-> file
-            (= (:file-id file) file-id)
-            (assoc :name new-name))))))
+          (let [new-name (str/trim new-name)]
+            (cond-> file
+              (and (= (:file-id file) file-id)
+                   (not= "" new-name))
+              (assoc :name new-name)))))))
 
 (defn remove-file [files file-id]
   (->> files
@@ -378,7 +381,7 @@
 
            [:div.feedback-banner
             [:div.icon i/checkbox-checked]
-            [:div.message (tr "dashboard.import.import-message" (if (some? template) 1 success-files))]]))
+            [:div.message (tr "dashboard.import.import-message" (i18n/c (if (some? template) 1 success-files)))]]))
 
        (for [file files]
          (let [editing? (and (some? (:file-id file))

@@ -526,19 +526,22 @@
 
        (loop [current-val init-val
               current-id  (first root-children)
-              pending-ids (rest root-children)]
+              pending-ids (rest root-children)
+              processed   #{}]
 
+         (if (contains? processed current-id)
+           (recur current-val (first pending-ids) (rest pending-ids) processed)
+           (let [current-shape (get objects current-id)
+                 processed (conj processed current-id)
+                 next-val (reducer-fn current-val current-shape)
+                 next-pending-ids
+                 (if (or (nil? check-children?) (check-children? current-shape))
+                   (concat (or (:shapes current-shape) []) pending-ids)
+                   pending-ids)]
 
-         (let [current-shape (get objects current-id)
-               next-val (reducer-fn current-val current-shape)
-               next-pending-ids
-               (if (or (nil? check-children?) (check-children? current-shape))
-                 (concat (or (:shapes current-shape) []) pending-ids)
-                 pending-ids)]
-
-           (if (empty? next-pending-ids)
-             next-val
-             (recur next-val (first next-pending-ids) (rest next-pending-ids)))))))))
+             (if (empty? next-pending-ids)
+               next-val
+               (recur next-val (first next-pending-ids) (rest next-pending-ids) processed)))))))))
 
 (defn selected-with-children
   [objects selected]
@@ -569,3 +572,25 @@
        (d/enumerate)
        (sort comparator-layout-z-index)
        (mapv second)))
+
+(defn common-parent-frame
+  "Search for the common frame for the selected shapes. Otherwise returns the root frame"
+  [objects selected]
+
+  (loop [frame-id (get-in objects [(first selected) :frame-id])
+         frame-parents (get-parent-ids objects frame-id)
+         selected (rest selected)]
+    (if (empty? selected)
+      frame-id
+
+      (let [current (first selected)
+            parent? (into #{} (get-parent-ids objects current))
+
+            [frame-id frame-parents]
+            (if (parent? frame-id)
+              [frame-id frame-parents]
+
+              (let [frame-id (d/seek parent? frame-parents)]
+                [frame-id (get-parent-ids objects frame-id)]))]
+
+        (recur frame-id frame-parents (rest selected))))))

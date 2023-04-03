@@ -46,6 +46,7 @@
 
 (defn- activate-interaction
   [interaction shape base-frame frame-offset objects overlays]
+
   (case (:action-type interaction)
     :navigate
     (when-let [frame-id (:destination interaction)]
@@ -69,6 +70,7 @@
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
           position                   (ctsi/calc-overlay-position interaction
+                                                                 shape
                                                                  viewer-objects
                                                                  relative-to-shape
                                                                  relative-to-base-frame
@@ -91,6 +93,7 @@
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
           position                   (ctsi/calc-overlay-position interaction
+                                                                 shape
                                                                  objects
                                                                  relative-to-shape
                                                                  relative-to-base-frame
@@ -156,6 +159,7 @@
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
           position                   (ctsi/calc-overlay-position interaction
+                                                                 shape
                                                                  objects
                                                                  relative-to-shape
                                                                  relative-to-base-frame
