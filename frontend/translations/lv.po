@@ -1,2 +1,624 @@
 msgid ""
-msgstr "X-Generator: Weblate\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit"
+msgstr ""
+"PO-Revision-Date: 2023-04-03 12:21+0000\n"
+"Last-Translator: \"Ņikita K.\" <nikita.kozlovs@gmail.com>\n"
+"Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
+"lv/>\n"
+"Language: lv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
+"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 4.17-dev\n"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Apstipriniet paroli"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Izveidot demonstrācijas kontu"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Gribat tikai pamēģināt?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Šis ir DEMO pakalpojums, NEIZMANTOJIET reāliem darbiem, projektus tiks "
+"periodiski dzēsti."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "E-pasts"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Ienākt šeit"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Ienākt"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Prieks Jūs atkal redzēt!"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Vārds un Uzvārds"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Ierakstiet jaunu paroli"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "Atkopšanas marķieris nav derīgs."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Parole ir veiksmīgi nomainīta"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Uz Jūsu e-pastu nosūtīta paroles atkopšanas saite."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Jūs esat veiksmīgi pievienojies komandai"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Parole"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Vismaz 8 rakstzīmes"
+
+msgid "auth.privacy-policy"
+msgstr "Privātuma politika"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Atkopt paroli"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Mēs nosūtīsim jums e-pasta ziņojumu ar norādījumiem"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Nomainīt paroli"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Vēl nav konta?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Izveidot kontu"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Tas ir bezmaksas, tā ir atvērtā pirmkoda programmatūra"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Izveidot kontu"
+
+msgid "auth.terms-of-service"
+msgstr "Pakalpojumu sniegšanas noteikumi"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Mēs esam nosūtījuši apstiprinājuma e-pasta ziņojumu uz"
+
+msgid "common.publish"
+msgstr "Publicēt"
+
+msgid "common.share-link.all-users"
+msgstr "Visi Penpot lietotāji"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Vai tiešām vēlaties noņemt šo saiti? Noņemot saiti, tā vairs nebūs pieejama "
+"nevienam"
+
+msgid "common.share-link.current-tag"
+msgstr "(pašreizējais)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Iznīcināt saiti"
+
+msgid "common.share-link.get-link"
+msgstr "Iegūt saiti"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Saite ir veiksmīgi nokopēta"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "Nav koplietoto lapu"
+msgstr[1] "1 lapa koplietota"
+msgstr[2] "%s lapas koplietotas"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Var komentēt"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Koplietotas lapas"
+
+msgid "common.share-link.title"
+msgstr "Prototipu koplietošana"
+
+msgid "common.share-link.view-all"
+msgstr "Atlasīt visu"
+
+msgid "common.unpublish"
+msgstr "Atcelt publikāciju"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Komandas vadība"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot ir paredzēts komandām. Uzaiciniet dalībniekus strādāt kopā ar "
+"projektiem un failiem"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Apvienojaties!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "Apgūstiet Penpot pamatus, izmantojot šo apmācību un gūstiet prieku."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Sākt apmācību"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Praktiskā apmācība"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Sākt iepazīšanos"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Saskarnes caurskate"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Caurskatiet Penpot un iepazīstieties ar tā galvenajām funkcijām."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Pievienot kā koplietojamu bibliotēku"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "Mainīt e-pastu"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(kopija)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Jūsu Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "Dzēst komandu"
+
+msgid "dashboard.download-binary-file"
+msgstr "Lejupielādēt Penpot failu (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Lejupielādēt standarta failu (.svg + .json)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Lejupielādēt %s Penpot failus (.penpot)"
+
+msgid "dashboard.export-frames"
+msgstr "Eksportējiet dēļus PDF formātā"
+
+msgid "dashboard.export-multi"
+msgstr "Penpot %s failu eksportēšana"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "Atlasīti elementi - %s no %s"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Eksportēt"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Informācija par to, kā iestatīt eksportu Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Nav elementu ar eksportēšanas iestatījumiem."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Atlases eksportēša"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Lejupielādēt %s standarta failus (. svg +. json)"
+
+msgid "dashboard.export.detail"
+msgstr "* var ietvert komponentus, grafikas, krāsas un/vai tipogrāfijas."
+
+msgid "dashboard.export.options.all.title"
+msgstr "Koplietojamo bibliotēku eksportēšana"
+
+msgid "dashboard.export.title"
+msgstr "Eksportēt failus"
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Fonts izdzēsts"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Noraidīt visu"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Šeit tiks parādīti jūsu augšupielādētie pielāgotie fonti."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "Nav pievienoti fonti"
+msgstr[1] "Fonts pievienots"
+msgstr[2] "%s fonti pievienoti"
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Augšupielādējiet tikai tos fontus, kuri jums pieder vai kuriem ir licence "
+"lietošanai Penpot. Uzziniet vairāk [Penpot pakalpojumu sniegšanas noteikumi] "
+"(https://penpot.app/terms.html). Iespējams, vēlēsities izlasīt arī par ["
+"fontu licencēšanu] (https://www.typography.com/faq)."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Augšupielādēt visu"
+
+msgid "dashboard.import"
+msgstr "Penpot failu importēšana"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Oopss! Šo failu nevarēja importēt"
+
+msgid "dashboard.import.import-error"
+msgstr "Importējot failu, radās problēma. Fails netika importēts."
+
+msgid "dashboard.import.import-message"
+msgstr "%s faili tika veiksmīgi importēti."
+
+msgid "dashboard.import.import-warning"
+msgstr "Dažos failos bija nederīgi objekti, kuri tika noņemti."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Krāsu apstrāde"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Komponenšu apstrāde"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Multivides apstrāde"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "%s lapas apstrāde"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Tipogrāfijas apstrāde"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Notiek datu augšupielāde serverī (%s/%s)"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Uzaicināt personas"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "Atstāt komandu"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Bibliotēkas un veidnes"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Izpētiet vairāk un uzziniet, kā dot ieguldījumu"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Importējot veidni, radās problēma. Veidne netika importēta."
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "Bibliotēkas"
+
+msgid "dashboard.loading-fonts"
+msgstr "notiek fontu ielāde …"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "notiek failu ielāde …"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Pārvietot uz"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Pārvietot %s failus uz"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Pārvietot uz citu komandu"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.new-file"
+msgstr "+ Jauns fails"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Jauns projekts"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.no-matches-for"
+msgstr "“%s” nav atrasta neviena atbilstība"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "Jūsu e-pasta adrese ir veiksmīgi atjaunināta"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "Jūsu e-pasta adrese ir veiksmīgi pārbaudīta"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "Dalībieki: %s"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Atvērt failu jaunā cilnē"
+
+msgid "dashboard.options"
+msgstr "Opcijas"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "Mainīt paroli"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Piespraust/Atspraust"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "Projekti"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "Vai vēlaties noņemt savu kontu?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.remove-shared"
+msgstr "Noņemt kā koplietojamo bibliotēku"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Saglabāt iestatījumus"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.search-placeholder"
+msgstr "Meklēt…"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.searching-for"
+msgstr "Meklē pēc “%s“…"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-language"
+msgstr "Atlasīt saskarnes valodu"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.show-all-files"
+msgstr "Rādīt visus failus"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-delete-project"
+msgstr "Jūsu projekts ir veiksmīgi izdzēsts"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Rādīt dēļu nosaukumus"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Vai jums jau ir konts?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Pārbaudiet savu e-pastu un noklikšķiniet uz saites, lai apstiprinātu un "
+"sāktu lietot Penpot."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Aizmirsāt paroli?"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr ""
+"Profils nav pārbaudīts, lūdzu, pirms turpiniet, veiciet profila verificēšanu."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Aizmirsat paroli?"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "Atvērtā pirmkoda risinājums projektēšanai un prototipizēšanai."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Veidojot jaunu kontu, jūs piekrītat mūsu pakalpojumu sniegšanas noteikumiem "
+"un konfidencialitātes politikai."
+
+msgid "common.share-link.permissions-hint"
+msgstr "Ikvienam, kam ir saite, būs piekļuve"
+
+msgid "common.share-link.placeholder"
+msgstr "Šeit tiks parādīta koplietojama saite"
+
+msgid "common.share-link.manage-ops"
+msgstr "Pārvaldīt atļaujas"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Var skatīties kodu"
+
+msgid "common.share-link.team-members"
+msgstr "Tikai komandas dalībnieki"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Dublēt"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "Izveidot jaunu komandu"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Dublēt failus (%s)"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Šeit tiks parādīti Bibliotēkām pievienotie faili. Mēģiniet koplietot failus "
+"vai pievienojiet tos no mūsu [Bibliotēkas un veidnes] (https://penpot.app/"
+"libraries-templates.html)."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Eksportēt kā PDF"
+
+msgid "labels.num-of-frames"
+msgid_plural "labels.num-of-frames"
+msgstr[0] "Nav dēļu"
+msgstr[1] "1 dēlis"
+msgstr[2] "%s dēļi"
+
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
+msgid "viewer.empty-state"
+msgstr "Lapā nav atrasts neviens dēlis."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Varat pievienot eksportēšanas iestatījumus elementiem no noformējuma "
+"rekvizītiem (labās sānjoslas apakšdaļā)."
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "Dēļi"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Jauns fails"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ Jauns projekts"
+
+msgid "dashboard.export.explain"
+msgstr ""
+"Viens vai vairāki faili, kurus vēlaties eksportēt, izmanto koplietojamās "
+"bibliotēkas. Ko jūs gribat darīt ar viņu līdzekļiem *?"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "Šeit būs redzami piesprausti projekti"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "Parole ir veiksmīgi saglabāta!"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"eksportēšanā tiks iekļauti faili ar koplietojamām bibliotēkām, saglabājot to "
+"sasaisti."
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Failu bibliotēkās iekļaut koplietojamos bibliotēkas līdzekļus"
+
+msgid "dashboard.export.options.detach.title"
+msgstr ""
+"Attiekties pret koplietojamo bibliotēku līdzekļiem, kā pret pamatobjektiem"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Koplietojamās bibliotēkas eksportēšanā netiks iekļautas, un bibliotēkai "
+"netiks pievienoti līdzekļi. "
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-theme"
+msgstr "Atlasīt dizainu"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Fails tiks eksportēts ar visiem ārējiem līdzekļiem, kas tiks sapludināti "
+"faila bibliotēkā."
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Visi šeit augšupielādētie tīmekļa fonti tiks pievienoti fontu saimes "
+"sarakstam, kas pieejams šīs grupas failu teksta rekvizītos. Fonti ar tādu "
+"pašu fontu saimes nosaukumu tiks grupēti kā **viena fonta saime**. Fontus "
+"var augšupielādēt šādos formātos: **TTF, OTF un WOFF** (būs nepieciešams "
+"tikai viens)."
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Neviens fails nav izdzēsts"
+msgstr[1] "Jūsu fails ir sekmīgi izdzēsts"
+msgstr[2] "Jūsu faili ir sekmīgi izdzēsti"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Notiek faila augšupielāde: %s"
