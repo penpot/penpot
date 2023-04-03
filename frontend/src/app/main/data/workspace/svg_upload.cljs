@@ -181,7 +181,7 @@
     (-> (update-in [:svg-attrs :style] dissoc :mix-blend-mode)
         (assoc :blend-mode (-> (get-in shape [:svg-attrs :style :mix-blend-mode]) keyword)))))
 
-(defn create-raw-svg [name frame-id svg-data {:keys [attrs] :as data}]
+(defn create-raw-svg [name frame-id svg-data {:keys [tag attrs] :as data}]
   (let [{:keys [x y width height offset-x offset-y]} svg-data]
     (-> {:id (uuid/next)
          :type :svg-raw
@@ -191,6 +191,7 @@
          :height height
          :x x
          :y y
+         :hidden (= tag :defs)
          :content (cond-> data
                     (map? data) (update :attrs usvg/clean-attrs))}
         (assoc :svg-attrs attrs)
@@ -388,7 +389,7 @@
             disp-matrix (str (gmt/translate-matrix displacement))
             element-data (-> element-data
                              (assoc :tag :g)
-                             (update :attrs dissoc :x :y :width :height :href :xlink:href)
+                             (update :attrs dissoc :x :y :width :height :href :xlink:href :transform)
                              (update :attrs usvg/add-transform disp-matrix)
                              (assoc :content [use-data]))]
         (parse-svg-element frame-id svg-data element-data unames))
@@ -419,7 +420,7 @@
                         hidden (assoc :hidden true))
 
                 children (cond->> (:content element-data)
-                           (or (= tag :g) (= tag :svg))
+                           (contains? usvg/parent-tags tag)
                            (mapv #(usvg/inherit-attributes attrs %)))]
             [shape children]))))))
 
@@ -469,12 +470,12 @@
        (rx/map (fn [uri]
                  (merge
                    {:file-id file-id
-                    :is-local true}
+                    :is-local true
+                    :url uri}
                    (if (str/starts-with? uri "data:")
                      {:name "image"
                       :content (data-uri->blob uri)}
-                     {:name (extract-name uri)
-                      :url uri}))))
+                     {:name (extract-name uri)}))))
        (rx/mapcat (fn [uri-data]
                     (->> (rp/command! (if (contains? uri-data :content)
                                         :upload-file-media-object
@@ -577,12 +578,9 @@
                             (pcb/add-object new-shape))
 
               changes
-              (reduce (fn [changes [index new-child]]
-                        (-> changes
-                            (pcb/add-object new-child)
-                            (pcb/change-parent (:parent-id new-child) [new-child] index)))
-                      changes
-                      (d/enumerate new-children))
+              (reduce (fn [changes new-child]
+                        (-> changes (pcb/add-object new-child)))
+                      changes new-children)
 
               changes (pcb/resize-parents changes
                                           (->> changes
