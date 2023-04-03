@@ -149,7 +149,7 @@
 
 (defn- wrap-metrics
   "Wrap service method with metrics measurement."
-  [{:keys [metrics ::metrics-id]} f mdata]
+  [{:keys [::mtx/metrics ::metrics-id]} f mdata]
   (let [labels (into-array String [(::sv/name mdata)])]
     (fn [cfg params]
       (let [tp (dt/tpoint)]
