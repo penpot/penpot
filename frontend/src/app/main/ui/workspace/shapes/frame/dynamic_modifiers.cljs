@@ -181,11 +181,14 @@
 
             (or (= (dom/get-tag-name node) "mask")
                 (= (dom/get-tag-name node) "filter"))
-            (do
-              (dom/set-attribute! node "x" (dom/get-attribute node "data-old-x"))
-              (dom/set-attribute! node "y" (dom/get-attribute node "data-old-y"))
-              (dom/set-attribute! node "width" (dom/get-attribute node "data-old-width"))
-              (dom/set-attribute! node "height" (dom/get-attribute node "data-old-height"))
+            (let [old-x      (dom/get-attribute node "data-old-x")
+                  old-y      (dom/get-attribute node "data-old-y")
+                  old-width  (dom/get-attribute node "data-old-width")
+                  old-height (dom/get-attribute node "data-old-height")]
+              (dom/set-attribute! node "x" old-x)
+              (dom/set-attribute! node "y" old-y)
+              (dom/set-attribute! node "width" old-width)
+              (dom/set-attribute! node "height" old-height)
 
               (dom/remove-attribute! node "data-old-x")
               (dom/remove-attribute! node "data-old-y")

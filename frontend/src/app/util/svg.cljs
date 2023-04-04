@@ -389,7 +389,8 @@
     :mask-type})
 
 (defonce inheritable-props
-  [:clip-rule
+  [:style
+   :clip-rule
    :color
    :color-interpolation
    :color-interpolation-filters
@@ -457,6 +458,12 @@
     :feSpecularLighting
     :feTile
     :feTurbulence})
+
+(def parent-tags
+  #{:g
+    :svg
+    :text
+    :tspan})
 
 ;; By spec: https://www.w3.org/TR/SVG11/single-page.html#struct-GElement
 (defonce svg-group-safe-tags
