@@ -172,7 +172,13 @@
              (cond-> new-shape
                :always
                (-> (gsh/move delta)
-                   (dissoc :touched :main-instance?))
+                   (dissoc :touched))
+
+               main-instance?
+               (assoc :main-instance? true)
+
+               (not main-instance?)
+               (dissoc :main-instance?)
 
                (and (not main-instance?) (nil? (:shape-ref original-shape)))
                (assoc :shape-ref (:id original-shape))

@@ -315,11 +315,13 @@
             objects  (wsh/lookup-page-objects state page-id)
             shapes   (dwg/shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
-          (let [[group _ changes]
-                (dwlh/generate-add-component it shapes objects page-id file-id components-v2 dwg/prepare-create-group)]
+          (let [[root _ changes]
+                (dwlh/generate-add-component it shapes objects page-id file-id components-v2
+                                             dwg/prepare-create-group
+                                             dwsh/prepare-create-artboard-from-selection)]
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
-                     (dws/select-shapes (d/ordered-set (:id group)))))))))))
+                     (dws/select-shapes (d/ordered-set (:id root)))))))))))
 
 (defn add-component
   "Add a new component to current file library, from the currently selected shapes.
