@@ -20,7 +20,7 @@ update_flags /var/www/app/js/config.js
 #########################################
 
 export PENPOT_BACKEND_URI=${PENPOT_BACKEND_URI:-http://penpot-backend:6060};
-export PENPOT_EXPORTER_URI=${PENPOT_EXPORTER_URI:-http://penpot-exporter};
+export PENPOT_EXPORTER_URI=${PENPOT_EXPORTER_URI:-http://penpot-exporter:6061};
 
 envsubst "\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI" < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
