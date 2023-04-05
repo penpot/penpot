@@ -1,6 +1,247 @@
 msgid ""
 msgstr ""
-"X-Generator: Weblate\n"
+"PO-Revision-Date: 2023-04-06 10:34+0000\n"
+"Last-Translator: Suhwan Kim <jgk9282@gmail.com>\n"
+"Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
+"ko/>\n"
+"Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 4.17-dev\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "이미 계정이 있으신가요?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "비밀번호 확인하기"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "이메일"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "데모 계정을 생성하세요"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "그냥 해볼까요?"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "로그인"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "다시 만나서 반가워요!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "비밀번호를 잊어버리셨나요?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "여기서 로그인하세요"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "구글"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "새 비밀번호를 입력하세요"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "비밀번호가 성공적으로 변경되었어요"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "비밀번호 복구를 위한 링크를 메일함으로 보냈어요"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "팀에 성공적으로 합류했어요"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "프로필이 검증되지 않았어요. 계속 하려면 검증절차를 완료해주세요."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "최소 8개의 문자"
+
+msgid "auth.privacy-policy"
+msgstr "개인 정보 정책"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "비밀번호 복구하기"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "이용지침을 메일로 전달해드릴거에요"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "아직 계정이 없으신가요?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "무료고 오픈소스에요"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "계정을 생성하세요"
+
+msgid "auth.terms-of-service"
+msgstr "서비스 정책"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "디자인과 프로토타이핑을 위한 오픈소스 솔루션"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "검증 메일을 ~에 보냈어요"
+
+msgid "common.share-link.all-users"
+msgstr "모든 펜팟 유저들"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr "정말로 링크를 제거하고 싶으세요? 제거하시면, 더이상 아무도 이용할 수 없어요"
+
+msgid "common.share-link.current-tag"
+msgstr "(현재)"
+
+msgid "common.share-link.get-link"
+msgstr "링크 얻기"
+
+msgid "common.share-link.link-copied-success"
+msgstr "링크를 성공적으로 복사했어요"
+
+msgid "common.share-link.manage-ops"
+msgstr "권한을 관리하세요"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "코멘트를 달 수 있어요"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "코드를 검사할 수 있어요"
+
+msgid "common.share-link.permissions-hint"
+msgstr "링크를 가진 누구나 접근할 수 있어요"
+
+msgid "common.share-link.permissions-pages"
+msgstr "페이지가 공유됐어요"
+
+msgid "common.share-link.placeholder"
+msgstr "공유할 수 있는 링크는 여기 나타날거에요"
+
+msgid "common.share-link.team-members"
+msgstr "오직 팀원들을 위해"
+
+msgid "common.share-link.title"
+msgstr "프로토타입을 공유해요"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "튜토리얼을 시작하세요"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "투어를 시작해요"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "이메일을 변경해요"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "팀을 해체해요"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "당신의 펜팟"
+
+msgid "dashboard.download-binary-file"
+msgstr "펜팟 파일(.penpot)을 다운로드해요"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "복제해요"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "%파일을 복제해요"
+
+msgid "dashboard.export-frames"
+msgstr "대지를 PDF로 내보내요"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "PDF로 내보내요"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "내보내요"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "비밀번호"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "비밀번호를 잊으셨나요?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "비밀번호를 바꾸세요"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "계정을 생성하세요"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr "새로운 계정을 생성하실 때, 서비스 정책과 개인 정보 정책에 동의해요"
+
+msgid "common.publish"
+msgstr "발행하기"
+
+msgid "common.share-link.view-all"
+msgstr "모두 선택해요"
+
+msgid "common.unpublish"
+msgstr "발행취소하기"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "팀 관리"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "팀을 이뤄요!"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(복사)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "새 팀을 생성해요"
+
+msgid "dashboard.download-standard-file"
+msgstr "표준 파일(.svg + .json)을 다운로드해요"
