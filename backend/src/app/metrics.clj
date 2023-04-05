@@ -89,12 +89,12 @@
 
 
 (defn- handler
-  [registry _ respond _]
+  [registry _]
   (let [samples  (.metricFamilySamples ^CollectorRegistry registry)
         writer   (StringWriter.)]
     (TextFormat/write004 writer samples)
-    (respond {:headers {"content-type" TextFormat/CONTENT_TYPE_004}
-              :body (.toString writer)})))
+    {:headers {"content-type" TextFormat/CONTENT_TYPE_004}
+              :body (.toString writer)}))
 
 
 
