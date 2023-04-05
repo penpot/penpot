@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.18.2
+
+- Fix problem with frame title rotation
+
 ## 1.18.1
 
 ### :bug: Bugs fixed

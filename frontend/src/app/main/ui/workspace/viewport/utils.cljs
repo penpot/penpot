@@ -44,7 +44,7 @@
 
 (defn left?
   [cur cand]
-  (let [closex? (mth/close? (:x cand) (:x cur))]
+  (let [closex? (mth/close? (:x cand) (:x cur) 0.01)]
     (cond
       (and closex? (< (:y cand) (:y cur))) cand
       closex?                              cur
