@@ -65,12 +65,12 @@
   [methods]
   (if (contains? cf/flags :backend-api-doc)
     (let [context (prepare-context methods)]
-      (fn [_ respond _]
-        (respond {::yrs/status 200
-                  ::yrs/body (-> (io/resource "app/templates/api-doc.tmpl")
-                                 (tmpl/render context))})))
-    (fn [_ respond _]
-      (respond {::yrs/status 404}))))
+      (fn [_]
+        {::yrs/status 200
+         ::yrs/body (-> (io/resource "app/templates/api-doc.tmpl")
+                        (tmpl/render context))}))
+    (fn [_]
+      {::yrs/status 404})))
 
 (s/def ::routes vector?)
 
