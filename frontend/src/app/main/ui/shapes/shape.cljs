@@ -67,6 +67,14 @@
         shape-without-blur (dissoc shape :blur)
         shape-without-shadows (assoc shape :shadow [])
 
+
+        filter-str
+        (when (and (or (cph/group-shape? shape)
+                       (cph/frame-shape? shape)
+                       (cph/svg-raw-shape? shape))
+                   (not disable-shadows?))
+          (filters/filter-str filter-id shape))
+
         wrapper-props
         (-> (obj/clone props)
             (obj/without ["shape" "children" "disable-shadows?"])
@@ -79,11 +87,8 @@
           (= :group type)
           (attrs/add-style-attrs shape render-id)
 
-          (and (or (cph/group-shape? shape)
-                   (cph/frame-shape? shape)
-                   (cph/svg-raw-shape? shape))
-               (not disable-shadows?))
-          (obj/set! "filter" (filters/filter-str filter-id shape)))
+          (some? filter-str)
+          (obj/set! "filter" filter-str))
 
         svg-group? (and (contains? shape :svg-attrs) (= :group type))
 

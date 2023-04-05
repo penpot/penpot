@@ -19,7 +19,7 @@
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]))
 
-(defonce enabled (atom false))
+(defonce enabled (atom true))
 
 (defn- send-mattermost-notification!
   [cfg {:keys [id public-uri] :as report}]

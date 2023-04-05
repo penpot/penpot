@@ -17,6 +17,7 @@
    [app.rpc.commands.binfile :as binf]
    [app.rpc.commands.files-create :refer [create-file]]
    [app.rpc.commands.profile :as profile]
+   [app.storage :as-alias sto]
    [app.util.blob :as blob]
    [app.util.template :as tmpl]
    [app.util.time :as dt]

@@ -100,10 +100,8 @@
 
         opts  #js {:shape shape :thumbnail? thumbnail?}
 
-        svg-leaf? (and (= :svg-raw (:type shape)) (string? (:content shape)))
-
         [wrapper wrapper-props]
-        (if svg-leaf?
+        (if (= :svg-raw (:type shape))
           [mf/Fragment nil]
           ["g" #js {:className "workspace-shape-wrapper"}])]
 

@@ -286,7 +286,8 @@
    :app.http.debug/routes
    {::db/pool         (ig/ref ::db/pool)
     ::wrk/executor    (ig/ref ::wrk/executor)
-    ::session/manager (ig/ref ::session/manager)}
+    ::session/manager (ig/ref ::session/manager)
+    ::sto/storage     (ig/ref ::sto/storage)}
 
    ::http.ws/routes
    {::db/pool         (ig/ref ::db/pool)
