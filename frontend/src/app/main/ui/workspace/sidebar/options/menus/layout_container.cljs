@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
@@ -441,7 +442,7 @@
                           :on-click toggle} generated-name]
       [:button.add-column {:on-click #(do
                                         (when-not expanded? (toggle))
-                                        (add-new-element type {:type :fixed :value 100}))} i/plus]]
+                                        (add-new-element type ctl/default-track-value))} i/plus]]
 
      (when expanded?
        [:div.columns-info-wrapper
@@ -489,12 +490,12 @@
           (st/emit! (dwsl/remove-layout ids))
           (reset! open? false))
 
-        _set-flex
+        set-flex
         (fn []
           (st/emit! (dwsl/remove-layout ids))
           (on-add-layout :flex))
 
-        _set-grid
+        set-grid
         (fn []
           (st/emit! (dwsl/remove-layout ids))
           (on-add-layout :grid))
@@ -637,7 +638,7 @@
        [:span "Layout"]
        (if (and (not multiple) (:layout values))
          [:div.title-actions
-          #_[:div.layout-btns
+          [:div.layout-btns
              [:button {:on-click set-flex
                        :class (dom/classnames
                                :active (= :flex layout-type))} "Flex"]

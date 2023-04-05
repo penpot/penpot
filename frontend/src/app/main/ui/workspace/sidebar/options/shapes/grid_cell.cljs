@@ -98,7 +98,7 @@
        (when (= :auto @position-mode)
          [:div.grid-auto
           [:div.grid-columns-auto
-           [:spam.icon i/layout-rows]
+           [:span.icon i/layout-rows]
            [:div.input-wrapper
             [:> numeric-input
              {:placeholder "--"
@@ -106,7 +106,7 @@
               :on-change (partial on-change :all :column) ;; TODO cambiar este on-change y el value
               :value column-start}]]]
           [:div.grid-rows-auto
-           [:spam.icon i/layout-columns]
+           [:span.icon i/layout-columns]
            [:div.input-wrapper
             [:> numeric-input
              {:placeholder "--"
@@ -129,7 +129,7 @@
        (when (or (= :manual @position-mode) (= :area @position-mode))
          [:div.grid-manual
           [:div.grid-columns-auto
-           [:spam.icon i/layout-rows]
+           [:span.icon i/layout-rows]
            [:div.input-wrapper
             [:> numeric-input
              {:placeholder "--"
@@ -142,7 +142,7 @@
               :on-change (partial on-change :end :column)
               :value column-end}]]]
           [:div.grid-rows-auto
-           [:spam.icon i/layout-columns]
+           [:span.icon i/layout-columns]
            [:div.input-wrapper
             [:> numeric-input
              {:placeholder "--"

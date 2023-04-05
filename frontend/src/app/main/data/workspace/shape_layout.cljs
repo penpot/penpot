@@ -63,6 +63,7 @@
    :layout-justify-content :start
    :layout-padding-type    :simple
    :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}
+   :layout-grid-cells      {}
    :layout-grid-rows       []
    :layout-grid-columns    []})
 
@@ -443,12 +444,13 @@
 (defn change-layout-track
   [ids type index props]
   (assert (#{:row :column} type))
-  (ptk/reify ::change-layout-column
+  (ptk/reify ::change-layout-track
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)
-            property (case :row :layout-grid-rows
-                           :column :layout-grid-columns)]
+            property (case type
+                       :row :layout-grid-rows
+                       :column :layout-grid-columns)]
         (rx/of (dwu/start-undo-transaction undo-id)
                (dwc/update-shapes
                 ids

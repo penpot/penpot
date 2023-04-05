@@ -121,7 +121,7 @@
      :shape-cells shape-cells}))
 
 (defn get-cell-data
-  [{:keys [row-tracks column-tracks shape-cells]} transformed-parent-bounds [_child-bounds child]]
+  [{:keys [row-tracks column-tracks shape-cells]} transformed-parent-bounds [_ child]]
 
   (let [origin (gpo/origin transformed-parent-bounds)
         hv     #(gpo/start-hv transformed-parent-bounds %)
