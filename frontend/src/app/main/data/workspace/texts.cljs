@@ -122,10 +122,14 @@
     ptk/WatchEvent
     (watch [_ state _]
       (when (dwc/initialized? state)
-        (let [objects (wsh/lookup-page-objects state)
-              shape   (get objects id)
-              content (-> (get-in state [:workspace-editor-state id])
-                          (ted/get-editor-current-content))]
+        (let [objects      (wsh/lookup-page-objects state)
+              shape        (get objects id)
+              editor-state (get-in state [:workspace-editor-state id])
+              content      (-> editor-state
+                               (ted/get-editor-current-content))
+              text         (-> (ted/get-editor-current-plain-text editor-state)
+                               (txt/generate-shape-name))
+              new-shape?   (nil? (:content shape))]
           (if (ted/content-has-text? content)
             (let [content (d/merge (ted/export-content content)
                                    (dissoc (:content shape) :children))
@@ -141,6 +145,8 @@
                      (let [{:keys [width height]} modifiers]
                        (-> shape
                            (assoc :content content)
+                           (cond-> new-shape?
+                             (assoc :name text))
                            (cond-> (or (some? width) (some? height))
                              (gsh/transform-shape (ctm/change-size shape width height)))))))
                   (dwu/commit-undo-transaction (:id shape))))))
