@@ -14,6 +14,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
+   [app.loggers.audit :as-alias audit]
    [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
@@ -72,8 +73,15 @@
     (files/check-edition-permissions! pool profile-id file-id)
     (media/validate-media-type! content)
     (validate-content-size! content)
-
-    (create-file-media-object cfg params)))
+    (->> (create-file-media-object cfg params)
+         (p/fmap (fn [object]
+                   (with-meta object
+                     {::audit/replace-props
+                      {:name (:name params)
+                       :file-id file-id
+                       :is-local (:is-local params)
+                       :size (:size content)
+                       :mtype (:mtype content)}}))))))
 
 (defn- big-enough-for-thumbnail?
   "Checks if the provided image info is big enough for
