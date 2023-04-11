@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.18.2
+
+- Fix problem with frame title rotation
+
+## 1.18.1
+
+### :bug: Bugs fixed
+
+- Fix problems with imported SVG shadows [Taiga #4922](https://tree.taiga.io/project/penpot/issue/4922)
+- Fix problems with imported SVG embedded images and transforms [Taiga #4639](https://tree.taiga.io/project/penpot/issue/4639)
+
 ## 1.18.0
 
 ### :sparkles: New features
