@@ -63,6 +63,10 @@
   [container shape-id f]
   (update-in container [:objects shape-id] f))
 
+(defn get-direct-children
+  [container shape]
+  (map #(get-shape container %) (:shapes shape)))
+
 (defn get-component-shape
   "Get the parent shape linked to a component for this shape, if any"
   [objects shape]

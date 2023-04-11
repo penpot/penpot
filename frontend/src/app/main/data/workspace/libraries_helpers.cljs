@@ -171,26 +171,26 @@
 
      [new-shape changes])))
 
+(declare generate-detach-recursive)
+
 (defn generate-detach-instance
   "Generate changes to remove the links between a shape and all its children
   with a component."
   [changes container shape-id]
   (log/debug :msg "Detach instance" :shape-id shape-id :container (:id container))
-  (let [shapes  (->> (cph/get-children-with-self (:objects container) shape-id)
-                     (map :id))
+  (generate-detach-recursive changes container shape-id true))
 
-        update-fn
-        (fn [shape]
-          (assoc shape
-                 :component-id nil
-                 :component-file nil
-                 :component-root? nil
-                 :remote-synced? nil
-                 :shape-ref nil
-                 :touched nil))]
-
-    (pcb/update-shapes changes shapes update-fn)))
-
+(defn- generate-detach-recursive
+  [changes container shape-id first]
+  (let [shape (ctn/get-shape container shape-id)]
+    (if (and (ctk/instance-root? shape) (not first))
+      ;; Subinstances are not detached, but converted in top instances
+      (pcb/update-shapes changes [(:id shape)] #(assoc % :component-root? true))
+      ;; Otherwise, detach the shape and all children
+      (let [children-ids (:shapes shape)]
+        (reduce #(generate-detach-recursive %1 container %2 false)
+                (pcb/update-shapes changes [(:id shape)] ctk/detach-shape)
+                children-ids)))))
 
 (defn prepare-restore-component
   ([library-data component-id it]
@@ -579,10 +579,8 @@
 
           component-container (ctf/get-component-container library component)
 
-          children-inst       (mapv #(ctn/get-shape container %)
-                                    (:shapes shape-inst))
-          children-main       (mapv #(ctn/get-shape component-container %)
-                                    (:shapes shape-main))
+          children-inst       (vec (ctn/get-direct-children container shape-inst))
+          children-main       (vec (ctn/get-direct-children component-container shape-main))
 
           only-inst (fn [changes child-inst]
                       (if-not (and omit-touched?
