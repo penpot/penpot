@@ -983,10 +983,12 @@
 
 (defn open-path?
   [shape]
-
-  (and (= :path (:type shape))
-       (not (->> shape
-                 :content
-                 (sp/close-subpaths)
-                 (sp/get-subpaths)
-                 (every? sp/is-closed?)))))
+  (let [svg? (contains? shape :svg-attrs)
+        ;; No close subpaths for svgs imported
+        maybe-close (if svg? identity sp/close-subpaths)]
+    (and (= :path (:type shape))
+         (not (->> shape
+                   :content
+                   (maybe-close)
+                   (sp/get-subpaths)
+                   (every? sp/is-closed?))))))
