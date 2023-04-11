@@ -1726,7 +1726,7 @@
 
             shape {:id id
                    :type :text
-                   :name "Text"
+                   :name (txt/generate-shape-name text)
                    :x x
                    :y y
                    :width width

@@ -43,6 +43,10 @@
       (js->clj :keywordize-keys true)
       (txt/convert-from-draft)))
 
+(defn get-editor-current-plain-text
+  [state]
+  (.getPlainText (.getCurrentContent ^js state)))
+
 (defn get-editor-current-content
   [state]
   (.getCurrentContent ^js state))

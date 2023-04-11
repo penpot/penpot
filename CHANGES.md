@@ -5,6 +5,7 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :sparkles: New features
+- Default naming of text layers [Taiga #2836](https://tree.taiga.io/project/penpot/us/2836)
 
 ### :bug: Bugs fixed
 

@@ -76,6 +76,10 @@
   [node]
   (= "root" (:type node)))
 
+(defn generate-shape-name
+  [text]
+  (subs text 0 (min 280 (count text))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DraftJS <-> Penpot Conversion
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
