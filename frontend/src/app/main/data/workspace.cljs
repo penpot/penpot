@@ -1895,7 +1895,7 @@
   [file-id file-name]
   (ptk/reify ::remove-graphics
     ptk/WatchEvent
-    (watch [it state _]
+    (watch [it state stream]
       (let [file-data (wsh/get-file state file-id)
 
             grid-gap 50
@@ -1915,7 +1915,9 @@
                  media)
 
             shape-grid
-            (ctst/generate-shape-grid media-points start-pos grid-gap)]
+            (ctst/generate-shape-grid media-points start-pos grid-gap)
+            
+            stoper (rx/filter (ptk/type? ::finalize-file) stream)]
 
         (rx/concat
          (rx/of (modal/show {:type :remove-graphics-dialog :file-name file-name})
@@ -1924,8 +1926,9 @@
            (rx/of (dch/commit-changes (-> (pcb/empty-changes it)
                                           (pcb/set-save-undo? false)
                                           (pcb/add-page (:id page) page)))))
-         (rx/mapcat (partial remove-graphic it file-data' page)
-                    (rx/from (d/enumerate (d/zip media shape-grid))))
+         (->> (rx/mapcat (partial remove-graphic it file-data' page)
+                         (rx/from (d/enumerate (d/zip media shape-grid))))
+              (rx/take-until stoper))
          (rx/of (complete-remove-graphics)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

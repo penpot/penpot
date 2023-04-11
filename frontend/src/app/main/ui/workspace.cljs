@@ -35,6 +35,7 @@
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
+   [app.util.router :as rt]
    [debug :refer [debug?]]
    [goog.events :as events]
    [okulary.core :as l]
@@ -199,8 +200,12 @@
    ::mf/register-as :remove-graphics-dialog}
   [{:keys [] :as ctx}]
   (let [remove-state (mf/deref refs/remove-graphics)
-        close #(modal/hide!)
-        reload-file #(dom/reload-current-window)]
+        project      (mf/deref refs/workspace-project)
+        close        #(modal/hide!)
+        reload-file  #(dom/reload-current-window)
+        nav-out      #(st/emit! (rt/navigate :dashboard-files
+                                             {:team-id (:team-id project)
+                                                               :project-id (:id project)}))]
     (mf/use-effect
       (fn []
         #(st/emit! (dw/clear-remove-graphics))))
@@ -209,9 +214,12 @@
       [:div.modal-header
        [:div.modal-header-title
         [:h2 (tr "workspace.remove-graphics.title" (:file-name ctx))]]
-       (when (and (:completed remove-state) (:error remove-state))
+       (if (and (:completed remove-state) (:error remove-state))
          [:div.modal-close-button
-          {:on-click close} i/close])]
+          {:on-click close} i/close]
+         [:div.modal-close-button
+          {:on-click nav-out}
+          i/close])]
       (if-not (and (:completed remove-state) (:error remove-state))
         [:div.modal-content
          [:p (tr "workspace.remove-graphics.text1")]
