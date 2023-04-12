@@ -221,8 +221,7 @@
              bound+child (first children)
              pending (rest children)]
         (if (some? bound+child)
-          (let [[_ child] bound+child
-                cell-data (gcgl/get-cell-data grid-data @transformed-parent-bounds bound+child)
+          (let [cell-data (gcgl/get-cell-data grid-data @transformed-parent-bounds bound+child)
                 modif-tree (cond-> modif-tree
                              (some? cell-data)
                              (set-child-modifiers cell-data bound+child))]

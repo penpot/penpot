@@ -298,6 +298,13 @@
         layout-gap-col (or (-> layout-gap :column-gap (mth/finite 0)) 0)]
     [layout-gap-row layout-gap-col]))
 
+(defn paddings
+  [{:keys [layout-padding-type layout-padding]}]
+  (let [{pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding]
+    (if (= :simple layout-padding-type)
+      [pad-top pad-right pad-top pad-right]
+      [pad-top pad-right pad-bottom pad-left])))
+
 (defn child-min-width
   [child]
   (if (and (fill-width? child)
@@ -556,8 +563,7 @@
 (declare assign-cells)
 
 (def default-track-value
-  {:type :fixed
-   :value 100})
+  {:type :auto})
 
 (def grid-cell-defaults
   {:row-span 1
@@ -740,21 +746,21 @@
 
             to-add-tracks
             (if (= (:layout-grid-dir parent) :row)
-              (mth/ceil (/ (- (count no-cell-shapes) (count free-cells)) (count (:layout-grid-columns parent))))
-              (mth/ceil (/ (- (count no-cell-shapes) (count free-cells)) (count (:layout-grid-rows parent)))))
+              (mth/ceil (/ (- (count no-cell-shapes) (count free-cells)) (count (:layout-grid-rows parent))))
+              (mth/ceil (/ (- (count no-cell-shapes) (count free-cells)) (count (:layout-grid-columns parent)))))
 
-            add-track (if (= (:layout-grid-dir parent) :row) add-grid-row add-grid-column)
+            add-track (if (= (:layout-grid-dir parent) :row) add-grid-column add-grid-row)
 
             parent
             (->> (range to-add-tracks)
-                 (reduce #(add-track %1 default-track-value) parent))
+                 (reduce (fn [parent _] (add-track parent default-track-value)) parent))
 
-            [pending-shapes cells]
+            cells
             (loop [cells (:layout-grid-cells parent)
                    free-cells (get-free-cells parent {:sort? true})
                    pending no-cell-shapes]
               (if (or (empty? free-cells) (empty? pending))
-                [pending cells]
+                cells
                 (let [next-free (first free-cells)
                       current (first pending)
                       cells (update-in cells [next-free :shapes] conj current)]
