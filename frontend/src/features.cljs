@@ -10,5 +10,9 @@
    [app.main.features :as features]))
 
 (defn ^:export components-v2 []
-  (features/toggle-feature! :components-v2))
+  (features/toggle-feature! :components-v2)
+  nil)
 
+(defn ^:export is-components-v2 []
+  (let [active? (features/active-feature :components-v2)]
+    @active?))
