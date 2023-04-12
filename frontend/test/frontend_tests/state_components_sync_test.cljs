@@ -6,17 +6,18 @@
   
 (ns frontend-tests.state-components-sync-test
   (:require
-    [app.common.colors :as clr]
-    [app.main.data.workspace :as dw]
-    [app.main.data.workspace.changes :as dch]
-    [app.main.data.workspace.libraries :as dwl]
-    [app.main.data.workspace.shapes :as dwsh]
-    [app.main.data.workspace.state-helpers :as wsh]
-    [cljs.test :as t :include-macros true]
-    [frontend-tests.helpers.events :as the]
-    [frontend-tests.helpers.libraries :as thl]
-    [frontend-tests.helpers.pages :as thp]
-    [potok.core :as ptk]))
+   [app.common.colors :as clr]
+   [app.common.types.file :as ctf]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.state-helpers :as wsh]
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.events :as the]
+   [frontend-tests.helpers.libraries :as thl]
+   [frontend-tests.helpers.pages :as thp]
+   [potok.core :as ptk]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -41,6 +42,11 @@
 
           store (the/prepare-store state done
                                    (fn [new-state]
+                                     ;; Uncomment to debug
+                                     ;; (ctf/dump-tree (get new-state :workspace-data)
+                                     ;;                (get new-state :current-page-id)
+                                     ;;                (get new-state :workspace-libraries)
+                                     ;;                false true)
                                      ; Expected shape tree:
                                      ;
                                      ; [Page]                                                                                                                                                                    
@@ -355,11 +361,11 @@
                                      {:name "Circle 1"
                                       :fill-color clr/black
                                       :fill-opacity 0})
-                   (thp/group-shapes :group1
+                   (thp/frame-shapes :frame1
                                      [(thp/id :instance1)
                                       (thp/id :shape2)])
                    (thp/make-component :main2 :component2
-                                       [(thp/id :group1)])
+                                       [(thp/id :frame1)])
                    (thp/instantiate-component :instance2
                                               (thp/id :component2)))
 
@@ -396,7 +402,7 @@
                                            new-state
                                            (thp/id :instance2))]
 
-                                      (t/is (= (:name instance2) "Group"))
+                                      (t/is (= (:name instance2) "Board"))
                                       (t/is (= (:touched instance2) nil))
                                       (t/is (= (:name instance1) "Rect 1"))
                                       (t/is (= (:touched instance1) nil))
@@ -409,7 +415,7 @@
                                       (t/is (= (:fill-color shape2) clr/white))
                                       (t/is (= (:fill-opacity shape2) 1))
 
-                                      (t/is (= (:name c-instance2) "Group"))
+                                      (t/is (= (:name c-instance2) "Board"))
                                       (t/is (= (:touched c-instance2) nil))
                                       (t/is (= (:name c-instance1) "Rect 1"))
                                       (t/is (= (:touched c-instance1) nil))
@@ -446,11 +452,11 @@
                                      {:name "Circle 1"
                                       :fill-color clr/black
                                       :fill-opacity 0})
-                   (thp/group-shapes :group1
+                   (thp/frame-shapes :frame1
                                      [(thp/id :instance1)
                                       (thp/id :shape2)])
                    (thp/make-component :instance2 :component2
-                                       [(thp/id :group1)])
+                                       [(thp/id :frame1)])
                    (thp/instantiate-component :instance2
                                               (thp/id :component2)))
 
@@ -487,7 +493,7 @@
                                            new-state
                                            (thp/id :instance2))]
 
-                                      (t/is (= (:name instance2) "Group"))
+                                      (t/is (= (:name instance2) "Board"))
                                       (t/is (= (:touched instance2) nil))
                                       (t/is (= (:name instance1) "Rect 1"))
                                       (t/is (= (:touched instance1) nil))
@@ -500,7 +506,7 @@
                                       (t/is (= (:fill-color shape2) clr/test))
                                       (t/is (= (:fill-opacity shape2) 0.5))
 
-                                      (t/is (= (:name c-instance2) "Group"))
+                                      (t/is (= (:name c-instance2) "Board"))
                                       (t/is (= (:touched c-instance2) nil))
                                       (t/is (= (:name c-instance1) "Rect 1"))
                                       (t/is (= (:touched c-instance1) nil))
@@ -537,11 +543,11 @@
                                      {:name "Circle 1"
                                       :fill-color clr/black
                                       :fill-opacity 0})
-                   (thp/group-shapes :group1
+                   (thp/frame-shapes :frame1
                                      [(thp/id :instance1)
                                       (thp/id :shape2)])
                    (thp/make-component :instance2 :component2
-                                       [(thp/id :group1)])
+                                       [(thp/id :frame1)])
                    (thp/instantiate-component :instance2
                                               (thp/id :component2)))
 
@@ -578,7 +584,7 @@
                                            new-state
                                            (thp/id :instance2))]
 
-                                      (t/is (= (:name instance2) "Group"))
+                                      (t/is (= (:name instance2) "Board"))
                                       (t/is (= (:touched instance2) nil))
                                       (t/is (= (:name instance1) "Rect 1"))
                                       (t/is (= (:touched instance1) nil))
@@ -591,7 +597,7 @@
                                       (t/is (= (:fill-color shape2) clr/test))
                                       (t/is (= (:fill-opacity shape2) 0.5))
 
-                                      (t/is (= (:name c-instance2) "Group"))
+                                      (t/is (= (:name c-instance2) "Board"))
                                       (t/is (= (:touched c-instance2) nil))
                                       (t/is (= (:name c-instance1) "Rect 1"))
                                       (t/is (= (:touched c-instance1) nil))
@@ -943,11 +949,11 @@
                                      {:name "Circle 1"
                                       :fill-color clr/black
                                       :fill-opacity 0})
-                   (thp/group-shapes :group1
+                   (thp/frame-shapes :frame1
                                      [(thp/id :instance1)
                                       (thp/id :shape2)])
                    (thp/make-component :main2 :component2
-                                       [(thp/id :group1)])
+                                       [(thp/id :frame1)])
                    (thp/instantiate-component :instance2
                                               (thp/id :component2)))
 
@@ -983,7 +989,7 @@
                                            new-state
                                            (thp/id :instance2))]
 
-                                      (t/is (= (:name instance2) "Group"))
+                                      (t/is (= (:name instance2) "Board"))
                                       (t/is (= (:touched instance2) nil))
                                       (t/is (= (:name instance1) "Rect 1"))
                                       (t/is (= (:touched instance1) nil))
@@ -996,7 +1002,7 @@
                                       (t/is (= (:fill-color shape2) clr/white))
                                       (t/is (= (:fill-opacity shape2) 1))
 
-                                      (t/is (= (:name c-instance2) "Group"))
+                                      (t/is (= (:name c-instance2) "Board"))
                                       (t/is (= (:touched c-instance2) nil))
                                       (t/is (= (:name c-instance1) "Rect 1"))
                                       (t/is (= (:touched c-instance1) nil))
@@ -1034,11 +1040,11 @@
                                      {:name "Circle 1"
                                       :fill-color clr/black
                                       :fill-opacity 0})
-                   (thp/group-shapes :group1
+                   (thp/frame-shapes :frame1
                                      [(thp/id :instance1)
                                       (thp/id :shape2)])
                    (thp/make-component :instance2 :component2
-                                       [(thp/id :group1)])
+                                       [(thp/id :frame1)])
                    (thp/instantiate-component :instance2
                                               (thp/id :component2)))
 
@@ -1074,7 +1080,7 @@
                                            new-state
                                            (thp/id :instance2))]
 
-                                      (t/is (= (:name instance2) "Group"))
+                                      (t/is (= (:name instance2) "Board"))
                                       (t/is (= (:touched instance2) nil))
                                       (t/is (= (:name instance1) "Rect 1"))
                                       (t/is (= (:touched instance1) nil))
@@ -1087,7 +1093,7 @@
                                       (t/is (= (:fill-color shape2) clr/white))
                                       (t/is (= (:fill-opacity shape2) 1))
 
-                                      (t/is (= (:name c-instance2) "Group"))
+                                      (t/is (= (:name c-instance2) "Board"))
                                       (t/is (= (:touched c-instance2) nil))
                                       (t/is (= (:name c-instance1) "Rect 1"))
                                       (t/is (= (:touched c-instance1) nil))
@@ -1126,11 +1132,11 @@
                                      {:name "Circle 1"
                                       :fill-color clr/black
                                       :fill-opacity 0})
-                   (thp/group-shapes :group1
+                   (thp/frame-shapes :frame1
                                      [(thp/id :instance1)
                                       (thp/id :shape2)])
                    (thp/make-component :instance2 :component2
-                                       [(thp/id :group1)])
+                                       [(thp/id :frame1)])
                    (thp/instantiate-component :instance2
                                               (thp/id :component2)))
 
@@ -1169,7 +1175,7 @@
                                            new-state
                                            (thp/id :instance2))]
 
-                                      (t/is (= (:name instance2) "Group"))
+                                      (t/is (= (:name instance2) "Board"))
                                       (t/is (= (:touched instance2) nil))
                                       (t/is (= (:name instance1) "Rect 1"))
                                       (t/is (= (:touched instance1) nil))
@@ -1182,7 +1188,7 @@
                                       (t/is (= (:fill-color shape2) clr/white))
                                       (t/is (= (:fill-opacity shape2) 1))
 
-                                      (t/is (= (:name c-instance2) "Group"))
+                                      (t/is (= (:name c-instance2) "Board"))
                                       (t/is (= (:touched c-instance2) nil))
                                       (t/is (= (:name c-instance1) "Rect 1"))
                                       (t/is (= (:touched c-instance1) nil))
@@ -1929,11 +1935,11 @@
                                      {:name "Circle 1"
                                       :fill-color clr/black
                                       :fill-opacity 0})
-                   (thp/group-shapes :group1
+                   (thp/frame-shapes :frame1
                                      [(thp/id :instance1)
                                       (thp/id :shape2)])
                    (thp/make-component :main2 :component2
-                                       [(thp/id :group1)])
+                                       [(thp/id :frame1)])
                    (thp/instantiate-component :instance2
                                               (thp/id :component2))
                    (thp/instantiate-component :instance3
@@ -1983,7 +1989,7 @@
                                            new-state
                                            (thp/id :instance3))]
 
-                                      (t/is (= (:name instance2) "Group"))
+                                      (t/is (= (:name instance2) "Board"))
                                       (t/is (= (:touched instance2) nil))
                                       (t/is (= (:name instance1) "Rect 1"))
                                       (t/is (= (:touched instance1) nil))
@@ -1996,7 +2002,7 @@
                                       (t/is (= (:fill-color shape2) clr/white))
                                       (t/is (= (:fill-opacity shape2) 1))
 
-                                      (t/is (= (:name c-instance2) "Group"))
+                                      (t/is (= (:name c-instance2) "Board"))
                                       (t/is (= (:touched c-instance2) nil))
                                       (t/is (= (:name c-instance1) "Rect 1"))
                                       (t/is (= (:touched c-instance1) nil))
@@ -2009,7 +2015,7 @@
                                       (t/is (= (:fill-color c-shape2) clr/white))
                                       (t/is (= (:fill-opacity c-shape2) 1))
 
-                                      (t/is (= (:name instance4) "Group"))
+                                      (t/is (= (:name instance4) "Board"))
                                       (t/is (= (:touched instance4) nil))
                                       (t/is (= (:name instance3) "Rect 1"))
                                       (t/is (= (:touched instance3) nil))
@@ -2047,11 +2053,11 @@
                                      {:name "Circle 1"
                                       :fill-color clr/black
                                       :fill-opacity 0})
-                   (thp/group-shapes :group1
+                   (thp/frame-shapes :frame1
                                      [(thp/id :instance1)
                                       (thp/id :shape2)])
                    (thp/make-component :main2 :component2
-                                       [(thp/id :group1)])
+                                       [(thp/id :frame1)])
                    (thp/instantiate-component :instance2
                                               (thp/id :component2))
                    (thp/instantiate-component :instance3
@@ -2101,7 +2107,7 @@
                                            new-state
                                            (thp/id :instance3))]
 
-                                      (t/is (= (:name instance2) "Group"))
+                                      (t/is (= (:name instance2) "Board"))
                                       (t/is (= (:touched instance2) nil))
                                       (t/is (= (:name instance1) "Rect 1"))
                                       (t/is (= (:touched instance1) nil))
@@ -2114,7 +2120,7 @@
                                       (t/is (= (:fill-color shape2) clr/test))
                                       (t/is (= (:fill-opacity shape2) 0.5))
 
-                                      (t/is (= (:name c-instance2) "Group"))
+                                      (t/is (= (:name c-instance2) "Board"))
                                       (t/is (= (:touched c-instance2) nil))
                                       (t/is (= (:name c-instance1) "Rect 1"))
                                       (t/is (= (:touched c-instance1) nil))
@@ -2127,7 +2133,7 @@
                                       (t/is (= (:fill-color c-shape2) clr/test))
                                       (t/is (= (:fill-opacity c-shape2) 0.5))
 
-                                      (t/is (= (:name instance4) "Group"))
+                                      (t/is (= (:name instance4) "Board"))
                                       (t/is (= (:touched instance4) nil))
                                       (t/is (= (:name instance3) "Rect 1"))
                                       (t/is (= (:touched instance3) nil))
@@ -2166,11 +2172,11 @@
                                      {:name "Circle 1"
                                       :fill-color clr/black
                                       :fill-opacity 0})
-                   (thp/group-shapes :group1
+                   (thp/frame-shapes :frame1
                                      [(thp/id :instance1)
                                       (thp/id :shape2)])
                    (thp/make-component :main2 :component2
-                                       [(thp/id :group1)])
+                                       [(thp/id :frame1)])
                    (thp/instantiate-component :instance2
                                               (thp/id :component2))
                    (thp/instantiate-component :instance3
@@ -2222,7 +2228,7 @@
                                            new-state
                                            (thp/id :instance3))]
 
-                                      (t/is (= (:name instance2) "Group"))
+                                      (t/is (= (:name instance2) "Board"))
                                       (t/is (= (:touched instance2) nil))
                                       (t/is (= (:name instance1) "Rect 1"))
                                       (t/is (= (:touched instance1) nil))
@@ -2235,7 +2241,7 @@
                                       (t/is (= (:fill-color shape2) clr/test))
                                       (t/is (= (:fill-opacity shape2) 0.5))
 
-                                      (t/is (= (:name c-instance2) "Group"))
+                                      (t/is (= (:name c-instance2) "Board"))
                                       (t/is (= (:touched c-instance2) nil))
                                       (t/is (= (:name c-instance1) "Rect 1"))
                                       (t/is (= (:touched c-instance1) nil))
@@ -2248,7 +2254,7 @@
                                       (t/is (= (:fill-color c-shape2) clr/test))
                                       (t/is (= (:fill-opacity c-shape2) 0.5))
 
-                                      (t/is (= (:name instance4) "Group"))
+                                      (t/is (= (:name instance4) "Board"))
                                       (t/is (= (:touched instance4) nil))
                                       (t/is (= (:name instance3) "Rect 1"))
                                       (t/is (= (:touched instance3) nil))

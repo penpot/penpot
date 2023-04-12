@@ -6,6 +6,7 @@
 
 (ns frontend-tests.helpers.pages
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
@@ -15,6 +16,7 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries-helpers :as dwlh]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]))
 
 ;; ---- Helpers to manage pages and objects
@@ -102,6 +104,28 @@
          (update state :workspace-data
                  cp/process-changes (:redo-changes changes)))))))
 
+(defn frame-shapes
+  ([state label ids] (frame-shapes state label ids "Board"))
+  ([state label ids frame-name]
+   (let [page    (current-page state)
+         shapes  (dwg/shapes-for-grouping (:objects page) ids)
+         changes (pcb/empty-changes nil (:id page))]
+     (if (empty? shapes)
+       state
+       (let [[frame changes]
+             (dwsh/prepare-create-artboard-from-selection changes
+                                                          nil
+                                                          nil
+                                                          (:objects page)
+                                                          (map :id shapes)
+                                                          nil
+                                                          frame-name
+                                                          true)]
+
+         (swap! idmap assoc label (:id frame))
+         (update state :workspace-data
+                 cp/process-changes (:redo-changes changes)))))))
+
 (defn make-component
   [state instance-label component-label shape-ids]
   (let [page    (current-page state)
@@ -115,7 +139,8 @@
                                      (:id page)
                                      current-file-id
                                      true
-                                     dwg/prepare-create-group)]
+                                     dwg/prepare-create-group
+                                     dwsh/prepare-create-artboard-from-selection)]
 
     (swap! idmap assoc instance-label (:id group)
                        component-label component-id)

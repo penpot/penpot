@@ -152,7 +152,8 @@
     (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            changes (pcb/empty-changes it page-id)
+            changes (-> (pcb/empty-changes it page-id)
+                        (pcb/with-objects objects))
             changes (prepare-move-shapes-into-frame changes
                                                     frame-id
                                                     shapes
