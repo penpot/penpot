@@ -60,6 +60,23 @@
   (assert (blob? b) "invalid arguments")
   (js/URL.createObjectURL b))
 
+(defn data-uri?
+  [s]
+  (str/starts-with? s "data:"))
+
+(defn data-uri->blob
+  [data-uri]
+  (let [[mtype b64-data] (str/split data-uri ";base64,")
+        mtype   (subs mtype (inc (str/index-of mtype ":")))
+        decoded (.atob js/window b64-data)
+        size    (.-length ^js decoded)
+        content (js/Uint8Array. size)]
+
+    (doseq [i (range 0 size)]
+      (aset content i (.charCodeAt ^js decoded i)))
+
+    (create-blob content mtype)))
+
 (defn write-to-clipboard
   [data]
   (assert (string? data) "`data` should be string")
