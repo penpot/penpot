@@ -379,7 +379,8 @@
                     :style {:font-size (/ rules/font-size zoom)
                             :font-family rules/font-family
                             :fill colors/black}}
-             (fmt/format-number pos)]]))])))
+             ;; If the guide is associated to a frame we show the position relative to the frame
+             (fmt/format-number (- pos (if (= axis :x) (:x frame) (:y frame))))]]))])))
 
 (mf/defc new-guide-area
   [{:keys [vbox zoom axis get-hover-frame disabled-guides?]}]

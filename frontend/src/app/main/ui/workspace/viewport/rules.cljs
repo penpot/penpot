@@ -113,7 +113,7 @@
        :line-y2 val})))
 
 (mf/defc rules-axis
-  [{:keys [zoom vbox axis]}]
+  [{:keys [zoom vbox axis offset]}]
   (let [rules-width (/ rules-width zoom)
         step (calculate-step-size zoom)
         clip-id (str "clip-rule-" (d/name axis))]
@@ -133,8 +133,12 @@
             minv (max start -100000)
             minv (* (mth/ceil (/ minv step)) step)
             maxv (min end 100000)
-            maxv (* (mth/floor (/ maxv step)) step)]
-
+            maxv (* (mth/floor (/ maxv step)) step)
+            
+            ;; These extra operations ensure that we are selecting a frame its initial location is rendered in the rule
+            minv (+ minv (mod offset step))
+            maxv (+ maxv (mod offset step))]
+        
         (for [step-val (range minv (inc maxv) step)]
           (let [{:keys [text-x text-y line-x1 line-y1 line-x2 line-y2]}
                 (get-rule-axis step-val vbox zoom axis)]
@@ -147,7 +151,8 @@
                      :style {:font-size (/ font-size zoom)
                              :font-family font-family
                              :fill colors/gray-30}}
-              (fmt/format-number step-val)]
+              ;; If the guide is associated to a frame we show the position relative to the frame
+              (fmt/format-number (- step-val offset))]
 
              [:line {:key (str "line-" (d/name axis) "-"  step-val)
                      :x1 line-x1
@@ -158,7 +163,8 @@
                              :stroke-width rules-width}}]])))]]))
 
 (mf/defc selection-area
-  [{:keys [vbox zoom selection-rect]}]
+  [{:keys [vbox zoom selection-rect offset-x offset-y]}]
+  ;; When using the format-number callls we consider if the guide is associated to a frame and we show the position relative to it with the offset
   [:g.selection-area
    [:g
     [:rect {:x (:x selection-rect)
@@ -182,7 +188,7 @@
             :style {:font-size (/ font-size zoom)
                     :font-family font-family
                     :fill selection-area-color}}
-     (fmt/format-number (:x1 selection-rect))]
+     (fmt/format-number (- (:x1 selection-rect) offset-x))]
 
     [:rect {:x (:x2 selection-rect)
             :y (:y vbox)
@@ -198,7 +204,7 @@
             :style {:font-size (/ font-size zoom)
                     :font-family font-family
                     :fill selection-area-color}}
-     (fmt/format-number (:x2 selection-rect))]]
+     (fmt/format-number (- (:x2 selection-rect) offset-x))]]
 
    (let [center-x (+ (:x vbox) (/ rule-area-half-size zoom))
          center-y (- (+ (:y selection-rect) (/ (:height selection-rect) 2)) (/ rule-area-half-size zoom))]
@@ -232,7 +238,7 @@
               :style {:font-size (/ font-size zoom)
                       :font-family font-family
                       :fill selection-area-color}}
-       (fmt/format-number (:y2 selection-rect))]
+       (fmt/format-number (- (:y2 selection-rect) offset-y))]
 
       [:text {:x (+ center-x (/ (:height selection-rect) 2) )
               :y center-y
@@ -241,7 +247,7 @@
               :style {:font-size (/ font-size zoom)
                       :font-family font-family
                       :fill selection-area-color}}
-       (fmt/format-number (:y1 selection-rect))]])])
+       (fmt/format-number (- (:y1 selection-rect) offset-y))]])])
 
 (mf/defc rules
   {::mf/wrap-props false
@@ -249,6 +255,8 @@
   [props]
   (let [zoom            (obj/get props "zoom")
         vbox            (obj/get props "vbox")
+        offset-x        (obj/get props "offset-x")
+        offset-y        (obj/get props "offset-y")
         selected-shapes (-> (obj/get props "selected-shapes")
                             (hooks/use-equal-memo))
 
@@ -260,10 +268,12 @@
 
     (when (some? vbox)
       [:g.rules {:pointer-events "none"}
-       [:& rules-axis {:zoom zoom :vbox vbox :axis :x}]
-       [:& rules-axis {:zoom zoom :vbox vbox :axis :y}]
+       [:& rules-axis {:zoom zoom :vbox vbox :axis :x :offset offset-x}]
+       [:& rules-axis {:zoom zoom :vbox vbox :axis :y :offset offset-y}]
 
        (when (some? selection-rect)
          [:& selection-area {:zoom zoom
                              :vbox vbox
-                             :selection-rect selection-rect}])])))
+                             :selection-rect selection-rect
+                             :offset-x offset-x
+                             :offset-y offset-y}])])))
