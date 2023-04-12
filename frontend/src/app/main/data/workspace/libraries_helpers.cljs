@@ -61,28 +61,9 @@
 
 ;; ---- Components and instances creation ----
 
-(defn generate-add-component
-  "If there is exactly one id, and it's a group or a frame, and not already a component,
-  use it as root. Otherwise, create a group that contains all ids. Then, make a
-  component with it, and link all shapes to their corresponding one in the component."
-  [it shapes objects page-id file-id components-v2 prepare-create-group]
-  (let [[group changes]
-        (if (and (= (count shapes) 1)
-                 (or (= (:type (first shapes)) :group)
-                     (= (:type (first shapes)) :frame))
-                 (not (ctk/instance-root? (first shapes))))
-          [(first shapes) (-> (pcb/empty-changes it page-id)
-                              (pcb/with-objects objects))]
-          (let [group-name (if (= 1 (count shapes))
-                             (:name (first shapes))
-                             "Component 1")]
-            (prepare-create-group it            ; This function needs to be passed as argument
-                                  objects       ; to avoid a circular dependence
-                                  page-id
-                                  shapes
-                                  group-name
-                                  (not (ctk/instance-root? (first shapes))))))
-
+(defn generate-add-component-changes
+  [changes group objects file-id page-id components-v2]
+  (let [_ (prn "generate-add-component-changes" components-v2)
         name (:name group)
         [path name] (cph/parse-path-name name)
 
@@ -105,7 +86,32 @@
                                        new-shapes
                                        updated-shapes
                                        (:id group)
-                                        page-id))]
+                                       page-id))]
+    [root-shape changes]))
+
+(defn generate-add-component
+  "If there is exactly one id, and it's a group or a frame, and not already a component,
+  use it as root. Otherwise, create a group that contains all ids. Then, make a
+  component with it, and link all shapes to their corresponding one in the component."
+  [it shapes objects page-id file-id components-v2 prepare-create-group]
+  (let [[group changes]
+        (if (and (= (count shapes) 1)
+                 (or (= (:type (first shapes)) :group)
+                     (= (:type (first shapes)) :frame))
+                 (not (ctk/instance-root? (first shapes))))
+          [(first shapes) (-> (pcb/empty-changes it page-id)
+                              (pcb/with-objects objects))]
+          (let [group-name (if (= 1 (count shapes))
+                             (:name (first shapes))
+                             "Component 1")]
+            (prepare-create-group it            ; This function needs to be passed as argument
+                                  objects       ; to avoid a circular dependence
+                                  page-id
+                                  shapes
+                                  group-name
+                                  (not (ctk/instance-root? (first shapes))))))
+
+        [root-shape changes] (generate-add-component-changes changes group objects file-id page-id components-v2)]
     [group (:id root-shape) changes]))
 
 (defn duplicate-component

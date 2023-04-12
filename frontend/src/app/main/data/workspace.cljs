@@ -1638,13 +1638,14 @@
                   process-shape
                   (fn [_ shape]
                     (-> shape
-                        (assoc :frame-id frame-id)
-                        (assoc :parent-id parent-id)
+                        (assoc :frame-id frame-id :parent-id parent-id)
 
                         ;; if foreign instance, detach the shape
                         (cond-> (foreign-instance? shape paste-objects state)
-                          (dissoc :component-id :component-file :component-root?
-                                  :remote-synced? :shape-ref :touched))
+                          (->
+                             (assoc :foreign-component-root? (:component-root? shape))
+                             (dissoc :component-id :component-file :component-root?
+                                  :remote-synced? :shape-ref :touched)))
                         ;; if is a text, remove references to external typographies
                         (cond-> (= (:type shape) :text)
                           (ctt/remove-external-typographies file-id))))
@@ -1655,7 +1656,7 @@
 
                   library-data (wsh/get-file state file-id)
 
-                  changes  (-> (dws/prepare-duplicate-changes all-objects page selected delta it libraries library-data)
+                  changes  (-> (dws/prepare-duplicate-changes all-objects page selected delta it libraries library-data file-id)
                                (pcb/amend-changes (partial process-rchange media-idx))
                                (pcb/amend-changes (partial change-add-obj-index paste-objects selected index)))
 
@@ -1916,7 +1917,7 @@
 
             shape-grid
             (ctst/generate-shape-grid media-points start-pos grid-gap)
-            
+
             stoper (rx/filter (ptk/type? ::finalize-file) stream)]
 
         (rx/concat
