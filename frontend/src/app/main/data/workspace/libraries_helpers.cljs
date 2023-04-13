@@ -61,6 +61,33 @@
 
 ;; ---- Components and instances creation ----
 
+(defn generate-add-component-changes
+  [changes root objects file-id page-id components-v2]
+  (let [name (:name root)
+        [path name] (cph/parse-path-name name)
+
+        [root-shape new-shapes updated-shapes]
+        (if-not components-v2
+          (ctn/make-component-shape root objects file-id components-v2)
+          (let [new-id (uuid/next)]
+            [(assoc root :id new-id)
+             nil
+             [(assoc root
+                     :component-id new-id
+                     :component-file file-id
+                     :component-root? true
+                     :main-instance? true)]]))
+
+        changes (-> changes
+                    (pcb/add-component (:id root-shape)
+                                       path
+                                       name
+                                       new-shapes
+                                       updated-shapes
+                                       (:id root)
+                                       page-id))]
+    [root-shape changes]))
+
 (defn generate-add-component
   "If there is exactly one id, and it's a frame (or a group in v1), and not already a component,
   use it as root. Otherwise, create a frame (v2) or group (v1) that contains all ids. Then, make a
@@ -94,29 +121,7 @@
                                     root-name
                                     true))))
 
-        name (:name root)
-        [path name] (cph/parse-path-name name)
-
-        [root-shape new-shapes updated-shapes]
-        (if-not components-v2
-          (ctn/make-component-shape root objects file-id components-v2)
-          (let [new-id (uuid/next)]
-            [(assoc root :id new-id)
-             nil
-             [(assoc root
-                     :component-id new-id
-                     :component-file file-id
-                     :component-root? true
-                     :main-instance? true)]]))
-
-        changes (-> changes
-                    (pcb/add-component (:id root-shape)
-                                       path
-                                       name
-                                       new-shapes
-                                       updated-shapes
-                                       (:id root)
-                                        page-id))]
+        [root-shape changes] (generate-add-component-changes changes root objects file-id page-id components-v2)]
     [root (:id root-shape) changes]))
 
 (defn duplicate-component

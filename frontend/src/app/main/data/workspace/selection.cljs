@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.selection
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
@@ -14,7 +15,6 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.shape.interactions :as ctsi]
@@ -333,14 +333,14 @@
 (defn prepare-duplicate-changes
   "Prepare objects to duplicate: generate new id, give them unique names,
   move to the desired position, and recalculate parents and frames as needed."
-  ([all-objects page ids delta it libraries library-data]
+  ([all-objects page ids delta it libraries library-data file-id]
    (let [init-changes
          (-> (pcb/empty-changes it)
              (pcb/with-page page)
              (pcb/with-objects all-objects))]
-  (prepare-duplicate-changes all-objects page ids delta it libraries library-data init-changes)))
+  (prepare-duplicate-changes all-objects page ids delta it libraries library-data file-id init-changes)))
 
-  ([all-objects page ids delta it libraries library-data init-changes]
+  ([all-objects page ids delta it libraries library-data file-id init-changes]
    (let [shapes         (map (d/getf all-objects) ids)
          unames         (volatile! (cp/retrieve-used-names (:objects page)))
          update-unames! (fn [new-name] (vswap! unames conj new-name))
@@ -359,7 +359,8 @@
                                                        delta
                                                        libraries
                                                        library-data
-                                                       it)
+                                                       it
+                                                       file-id)
                       init-changes))]
 
      (-> changes
@@ -367,42 +368,42 @@
          (prepare-duplicate-guides shapes page ids-map delta)))))
 
 (defn- prepare-duplicate-component-change
-  ([changes page component-root delta libraries library-data it]
-   (let [component-id (:component-id component-root)
-         file-id (:component-file component-root)
-         main-component    (ctf/get-component libraries file-id component-id)
-         moved-component   (gsh/move component-root delta)
-         pos               (gpt/point (:x moved-component) (:y moved-component))
+  [changes page component-root delta libraries library-data it]
+  (let [component-id (:component-id component-root)
+        file-id (:component-file component-root)
+        main-component    (ctf/get-component libraries file-id component-id)
+        moved-component   (gsh/move component-root delta)
+        pos               (gpt/point (:x moved-component) (:y moved-component))
 
-         instantiate-component
-         #(dwlh/generate-instantiate-component changes
-                                               file-id
-                                               (:component-id component-root)
-                                               pos
-                                               page
-                                               libraries
-                                               (:id component-root))
+        instantiate-component
+        #(dwlh/generate-instantiate-component changes
+                                              file-id
+                                              (:component-id component-root)
+                                              pos
+                                              page
+                                              libraries
+                                              (:id component-root))
 
-         restore-component
-         #(let [restore (dwlh/prepare-restore-component library-data (:component-id component-root) it page delta (:id component-root) changes)]
-            [(:shape restore) (:changes restore)])
+        restore-component
+        #(let [restore (dwlh/prepare-restore-component library-data (:component-id component-root) it page delta (:id component-root) changes)]
+           [(:shape restore) (:changes restore)])
 
-         [_shape changes]
-         (if (nil? main-component)
-           (restore-component)
-           (instantiate-component))]
-     changes)))
+        [_shape changes]
+        (if (nil? main-component)
+          (restore-component)
+          (instantiate-component))]
+    changes))
 
 (defn- prepare-duplicate-shape-change
-  ([changes objects page unames update-unames! ids-map obj delta libraries library-data it]
-   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta libraries library-data it (:frame-id obj) (:parent-id obj)))
+  ([changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id]
+   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id (:frame-id obj) (:parent-id obj)))
 
-  ([changes objects page unames update-unames! ids-map obj delta libraries library-data it frame-id parent-id]
+  ([changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id frame-id parent-id]
    (cond
      (nil? obj)
      changes
 
-     (ctk/main-instance? obj)
+     (ctf/is-known-component? obj libraries)
      (prepare-duplicate-component-change changes page obj delta libraries library-data it)
 
      :else
@@ -410,6 +411,14 @@
            new-id      (ids-map (:id obj))
            parent-id   (or parent-id frame-id)
            name        (:name obj)
+
+           is-component-root? (:saved-component-root? obj)
+           is-component-main? (:main-instance? obj)
+           regenerate-component
+           (fn [changes shape]
+             (let [components-v2 (dm/get-in library-data [:options :components-v2])
+                   [_ changes] (dwlh/generate-add-component-changes changes shape objects file-id (:id page) components-v2)]
+               changes))
 
            new-obj     (-> obj
                            (assoc :id new-id
@@ -423,7 +432,11 @@
                            (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
 
            changes (-> (pcb/add-object changes new-obj {:ignore-touched true})
-                       (pcb/amend-last-change #(assoc % :old-id (:id obj))))]
+                       (pcb/amend-last-change #(assoc % :old-id (:id obj))))
+
+           changes (cond-> changes
+                     (and is-component-root? is-component-main?)
+                     (regenerate-component new-obj))]
 
        (reduce (fn [changes child]
                  (prepare-duplicate-shape-change changes
@@ -437,6 +450,7 @@
                                                  libraries
                                                  library-data
                                                  it
+                                                 file-id
                                                  (if frame? new-id frame-id)
                                                  new-id))
                changes
@@ -593,7 +607,7 @@
                   libraries       (wsh/get-libraries state)
                   library-data    (wsh/get-file state file-id)
 
-                  changes         (->> (prepare-duplicate-changes objects page selected delta it libraries library-data)
+                  changes         (->> (prepare-duplicate-changes objects page selected delta it libraries library-data file-id)
                                        (duplicate-changes-update-indices objects selected))
 
                   changes         (cond-> changes add-undo-group? (assoc :undo-group (uuid/random)))
