@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-11-29 14:48+0000\n"
-"Last-Translator: Dário <dariogomes@gmail.com>\n"
-"Language-Team: Chinese (Simplified) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"PO-Revision-Date: 2023-04-13 12:50+0000\n"
+"Last-Translator: 王世阳 <wangshiyangchina@gmail.com>\n"
+"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
+"penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 4.15-dev\n"
+"X-Generator: Weblate 4.17-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -294,13 +294,15 @@ msgstr "复制 %s 个文件"
 #: src/app/main/ui/dashboard/grid.cljs
 #, markdown
 msgid "dashboard.empty-placeholder-drafts"
-msgstr "现在尚无文件。如果你想尝试一些模板，请点击[库和模板](https://penpot.app/libraries-templates.html)"
+msgstr ""
+"添加到库的文件将出现在这里。尝试分享你的文件或从我们的[库和模板](https://penp"
+"ot.app/libraries-templates.html)添加。"
 
 msgid "dashboard.export-binary-multi"
 msgstr "下载 %s Penpot文件 (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "导出画板到PDF"
+msgstr "将画板导出为 PDF 格式"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
@@ -371,7 +373,7 @@ msgid "dashboard.fonts.dismiss-all"
 msgstr "全部取消"
 
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "您仍然没有已安装的字体。"
+msgstr "您上传的自定义字体将显示在此处。"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.fonts-added"
@@ -568,7 +570,9 @@ msgstr "显示全部文档"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-delete-file"
-msgstr "成功删除了文件"
+msgid_plural ""
+msgstr[0] "您的文件已成功删除"
+msgstr[1] "您的文件已成功删除"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
@@ -576,7 +580,9 @@ msgstr "成功删除了项目"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-duplicate-file"
-msgstr "成功创建了文件副本"
+msgid_plural ""
+msgstr[0] "您的文件已成功复制"
+msgstr[1] "您的文件已成功复制"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
@@ -620,7 +626,7 @@ msgstr "输入关键词进行搜索"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
-msgstr "未发布库"
+msgstr "取消发布库"
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
@@ -1245,7 +1251,7 @@ msgstr "新密码"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "没有待表决的评论通知"
+msgstr "你们都赶上了! 新的评论通知将出现在这里。"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
@@ -1691,7 +1697,9 @@ msgstr "小幅微调"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.accept"
-msgstr "取消发布"
+msgid_plural ""
+msgstr[0] "取消发布"
+msgstr[1] "取消发布"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint"
@@ -2963,7 +2971,9 @@ msgstr "导出已选择"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "导出 1 个元素"
+msgid_plural ""
+msgstr[0] "导出 1 个元素"
+msgstr[1] "导出 %s 元素"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -4198,3 +4208,23 @@ msgstr "更新"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+msgid "dashboard.webhooks.active"
+msgstr "处于活跃状态"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "当这个钩子被触发时事件的细节将被传递"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "内容类型"
+
+msgid "dashboard.webhooks.create"
+msgstr "创建webhook"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhook创建成功。"
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Webhooks是一种简单的方式，允许其他网站和应用程序在Penpot的某些事件发生时得到"
+"通知。我们将发送一个POST请求到你提供的每个URL。"
