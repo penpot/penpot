@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.18.3
+
+### :bug: Bugs fixed
+
+- Fix problem with rulers not placing correctly [Taiga #5093](https://tree.taiga.io/project/penpot/issue/5093)
+
 ## 1.18.2
 
 ### :bug: Bugs fixed
