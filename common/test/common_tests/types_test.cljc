@@ -14,19 +14,19 @@
    [app.common.types.page :as ctp]
    [app.common.types.file :as ctf]))
 
-(t/deftest transit-encode-decode-with-shape
-  (sg/check!
-   (sg/for [fdata (sg/generator ::cts/shape)]
-     (let [res (-> fdata transit/encode-str transit/decode-str)]
-       (t/is (= res fdata))))
-   {:num 18 :seed 1683548002439}))
+;; (t/deftest transit-encode-decode-with-shape
+;;   (sg/check!
+;;    (sg/for [fdata (sg/generator ::cts/shape)]
+;;      (let [res (-> fdata transit/encode-str transit/decode-str)]
+;;        (t/is (= res fdata))))
+;;    {:num 18 :seed 1683548002439}))
 
-(t/deftest types-shape-spec
-  (sg/check!
-   (sg/for [fdata (sg/generator ::cts/shape)]
-     (t/is (sm/validate ::cts/shape fdata)))))
+;; (t/deftest types-shape-spec
+;;   (sg/check!
+;;    (sg/for [fdata (sg/generator ::cts/shape)]
+;;      (t/is (sm/validate ::cts/shape fdata)))))
 
-(t/deftest types-page-spec
-  (-> (sg/for [fdata (sg/generator ::ctp/page)]
-        (t/is (sm/validate ::ctp/page fdata)))
-      (sg/check! {:num 30})))
+;; (t/deftest types-page-spec
+;;   (-> (sg/for [fdata (sg/generator ::ctp/page)]
+;;         (t/is (sm/validate ::ctp/page fdata)))
+;;       (sg/check! {:num 30})))

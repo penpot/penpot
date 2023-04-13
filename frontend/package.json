@@ -12,18 +12,18 @@
     "defaults"
   ],
   "scripts": {
-    "compile-test": "clojure -M:dev:shadow-cljs compile test --config-merge '{:autorun false}'",
+    "test:compile": "clojure -M:dev:shadow-cljs compile test --config-merge '{:autorun false}'",
     "lint": "clj-kondo --parallel --lint src/",
-    "lint-scss": "yarn run prettier -c resources/styles -c src/**/*.scss",
-    "run-test": "node target/tests.js",
+    "lint:scss": "yarn run prettier -c resources/styles -c src/**/*.scss",
+    "test:run": "node target/tests.js",
     "test": "yarn run compile-test && yarn run run-test",
-    "watch-gulp": "gulp watch",
-    "watch-main": "shadow-cljs watch main",
-    "watch-test": "clojure -M:dev:shadow-cljs watch test",
+    "watch:gulp": "gulp watch",
+    "watch:main": "clojure -M:dev:shadow-cljs watch main",
+    "watch:test": "clojure -M:dev:shadow-cljs watch test",
     "validate-translations": "node ./scripts/validate-translations.js",
     "find-unused-translations": "node ./scripts/find-unused-translations.js",
-    "test-e2e": "cypress run",
-    "test-e2e-gui": "cypress open"
+    "test:e2e": "cypress run",
+    "test:e2e-gui": "cypress open"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.13",

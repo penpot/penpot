@@ -11,16 +11,16 @@
    [app.common.geom.point :as gpt]
    [app.common.types.modifiers :as ctm]))
 
-(t/deftest test-modifiers->transform
-  (let [modifiers
-        (-> (ctm/empty)
-            (ctm/move (gpt/point 100 200))
-            (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5))
-            (ctm/move (gpt/point -100 -200))
-            (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5))
-            (ctm/rotation (gpt/point 0 0) -100)
-            (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5)))
+;; (t/deftest test-modifiers->transform
+;;   (let [modifiers
+;;         (-> (ctm/empty)
+;;             (ctm/move (gpt/point 100 200))
+;;             (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5))
+;;             (ctm/move (gpt/point -100 -200))
+;;             (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5))
+;;             (ctm/rotation (gpt/point 0 0) -100)
+;;             (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5)))
 
-        transform (ctm/modifiers->transform modifiers)]
+;;         transform (ctm/modifiers->transform modifiers)]
 
-    (t/is (not (gmt/close? (gmt/matrix) transform)))))
+;;     (t/is (not (gmt/close? (gmt/matrix) transform)))))

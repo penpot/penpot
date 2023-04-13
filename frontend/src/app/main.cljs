@@ -25,10 +25,12 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
    [app.util.theme :as theme]
+   [app.wasm :as wasm]
    [beicon.core :as rx]
    [debug]
    [features]
    [potok.core :as ptk]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (log/setup! {:app :info})
@@ -75,18 +77,23 @@
 
 (defn ^:export init
   []
-  (worker/init!)
-  (i18n/init! cf/translations)
-  (theme/init! cf/themes)
-  (init-ui)
-  (st/emit! (initialize)))
+  (->> (wasm/init!)
+       (p/fmap (fn [_]
+                 (worker/init!)
+                 (i18n/init! cf/translations)
+                 (theme/init! cf/themes)
+                 (init-ui)
+                 (st/emit! (initialize))))))
 
 (defn ^:export reinit
   []
-  (mf/unmount (dom/get-element "app"))
-  (mf/unmount (dom/get-element "modal"))
-  (st/emit! (ev/initialize))
-  (init-ui))
+  (->> (wasm/init!)
+       (p/fmap (fn [_]
+                 (wasm/init!)
+                 (mf/unmount (dom/get-element "app"))
+                 (mf/unmount (dom/get-element "modal"))
+                 (st/emit! (ev/initialize))
+                 (init-ui)))))
 
 (defn ^:dev/after-load after-load
   []

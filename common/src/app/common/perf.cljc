@@ -66,15 +66,15 @@
       :as options}]
   #?(:cljs
      (let [max-iterations (or (:max-iterations options) 100000)
+           void           (volatile! nil)
 
            exec-and-measure
            (fn []
              (let [t0 (js/performance.now)
                    x  (f)
                    t1 (js/performance.now)]
-               (when-not x
-                 (throw (ex-info "missing return value" {})))
 
+               (vreset! void x)
                (/ (- t1 t0) 1000)))
 
            calculate-iterations

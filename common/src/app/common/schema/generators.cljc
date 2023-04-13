@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema.generators
-  (:refer-clojure :exclude [set subseq uuid for])
+  (:refer-clojure :exclude [set subseq uuid for let])
   #?(:cljs (:require-macros [app.common.schema.generators]))
   (:require
    [app.common.schema.registry :as sr]
@@ -35,6 +35,14 @@
 (defmacro for
   [& params]
   `(tp/for-all ~@params))
+
+(defmacro let
+  [& params]
+  `(tg/let ~@params))
+
+(defmacro one-of
+  [& params]
+  `(tg/one-of [~@params]))
 
 (defn check!
   [p & {:keys [num] :or {num 20} :as options}]

@@ -7,8 +7,10 @@
 (ns debug
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.logging :as l]
    [app.common.math :as mth]
+   [app.common.perf :as perf]
    [app.common.transit :as t]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
@@ -22,6 +24,8 @@
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.util.timers :as timers]
+   [app.wasm.resize :as wasm-resize]
+   [app.wasm.transform :as wasm-transform]
    [beicon.core :as rx]
    [cljs.pprint :refer [pprint]]
    [cuerdas.core :as str]
@@ -224,6 +228,20 @@
 
 (defn ^:export dump-buffer []
   (logjs "last-events" @st/last-events)
+  nil)
+
+(defn ^:export dump-resize-wasm []
+  (logjs "wasm-resize-instance" @wasm-resize/instance)
+  (logjs "wasm-resize-memory" @wasm-resize/memory)
+  (logjs "wasm-resize-resize-input" @wasm-resize/resize-input)
+  (logjs "wasm-resize-resize-output" @wasm-resize/resize-output)
+  nil)
+
+(defn ^:export dump-transform-wasm []
+  (logjs "wasm-transform-instance" @wasm-transform/instance)
+  (logjs "wasm-transform-memory" @wasm-transform/memory)
+  (logjs "wasm-transform-transform-input" @wasm-transform/transform-input)
+  (logjs "wasm-transform-transform-output" @wasm-transform/transform-output)
   nil)
 
 (defn ^:export get-state [str-path]

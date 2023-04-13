@@ -276,6 +276,22 @@ gulp.task("dev:dirs", async function(next) {
   next();
 });
 
+// Why not use require? Well, assemblyscript exports an ESM module
+// so require fails when requiring 'assemblyscript/asc'. We instead
+// use `import` as it is now implemented in `node` natively and works
+// with `require`.
+const getAssemblyScriptCompiler = (() => {
+  let mod = null
+  return async function importAssemblyScriptCompiler() {
+    if (mod) {
+      return mod
+    }
+    mod = await import('assemblyscript/dist/asc.js')
+    // console.log(mod.main)
+    return mod
+  }
+})();
+
 gulp.task("watch:main", function() {
   gulp.watch("src/**/**.scss", gulp.series("scss"));
   gulp.watch(paths.resources + "styles/**/**.scss", gulp.series("scss"));
