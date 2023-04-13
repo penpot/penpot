@@ -59,10 +59,9 @@
    (fn []
      (when-not vport
        (let [node (mf/ref-val viewport-ref)
-             prnt (dom/get-parent node)
-             size (dom/get-client-size prnt)]
+             prnt (dom/get-parent node)]
          ;; We schedule the event so it fires after `initialize-page` event
-         (timers/schedule #(st/emit! (dw/initialize-viewport size))))))))
+         (timers/schedule #(st/emit! (dw/initialize-viewport (dom/get-client-size prnt)))))))))
 
 (defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only?]
   (mf/use-effect
