@@ -2,7 +2,10 @@
 
 ## 1.18.2
 
+### :bug: Bugs fixed
+
 - Fix problem with frame title rotation
+- Fix first level board "Show in view mode" is automatically unchecked [Taiga #5136](https://tree.taiga.io/project/penpot/issue/5136)
 
 ## 1.18.1
 
