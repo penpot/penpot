@@ -61,10 +61,14 @@
                      (assoc :objects objects)))))))
 
 (defn get-component
-  [file-data component-id]
+  ([file-data component-id]
+   (get-component file-data component-id false))
+
+  ([file-data component-id include-deleted?]
   (let [component (get-in file-data [:components component-id])]
-    (when-not (:deleted component)
-      component)))
+    (when (or include-deleted?
+              (not (:deleted component)))
+      component))))
 
 (defn get-deleted-component
   [file-data component-id]

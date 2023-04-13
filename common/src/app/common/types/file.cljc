@@ -171,6 +171,16 @@
         (cph/get-children-with-self (:objects instance-page) (:main-instance-id component)))
       (vals (:objects component)))))
 
+;; Return true if the object is a component that exists on the file or its libraries (even a deleted one)
+(defn is-known-component?
+  [shape libraries]
+  (let [main-instance?  (ctk/main-instance? shape)
+        component-id    (:component-id shape)
+        file-id         (:component-file shape)
+        component       (ctkl/get-component (dm/get-in libraries [file-id :data]) component-id true)]
+    (and main-instance?
+         component)))
+
 (defn load-component-objects
   "Add an :objects property to the component, with only the shapes that belong to it"
   [file-data component]
@@ -356,7 +366,7 @@
                       (recur (add-main-instance file-data component position)
                              (rest components-seq)
                              (rest position-seq)))))))
-            
+
             root-to-board
             (fn [shape]
               (cond-> shape
