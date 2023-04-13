@@ -25,7 +25,8 @@
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [datoteka.io :as io]))
+   [datoteka.io :as io]
+   [promesa.core :as p]))
 
 (def default-max-file-size
   (* 1024 1024 10)) ; 10 MiB
