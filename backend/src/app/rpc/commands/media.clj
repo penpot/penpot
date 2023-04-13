@@ -25,8 +25,7 @@
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [datoteka.io :as io]
-   [promesa.core :as p]))
+   [datoteka.io :as io]))
 
 (def default-max-file-size
   (* 1024 1024 10)) ; 10 MiB
@@ -70,15 +69,14 @@
     (files/check-edition-permissions! pool profile-id file-id)
     (media/validate-media-type! content)
     (validate-content-size! content)
-    (->> (create-file-media-object cfg params)
-         (p/fmap (fn [object]
-                   (with-meta object
-                     {::audit/replace-props
-                      {:name (:name params)
-                       :file-id file-id
-                       :is-local (:is-local params)
-                       :size (:size content)
-                       :mtype (:mtype content)}}))))))
+    (let [object (create-file-media-object cfg params)
+          props  {:name (:name params)
+                  :file-id file-id
+                  :is-local (:is-local params)
+                  :size (:size content)
+                  :mtype (:mtype content)}]
+      (with-meta object
+        {::audit/replace-props props}))))
 
 (defn- big-enough-for-thumbnail?
   "Checks if the provided image info is big enough for
