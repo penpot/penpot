@@ -20,6 +20,7 @@
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.types.shape.layout :as ctl]
+   #?(:cljs [app.wasm.transform :as wasm-transform])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])))
 
@@ -651,14 +652,15 @@
   (let [modifiers (->> (concat (dm/get-prop modifiers :geometry-parent)
                                (dm/get-prop modifiers :geometry-child))
                        (sort-by :order))]
-    (loop [matrix    (gmt/matrix)
-           modifiers (seq modifiers)]
-      (if (c/empty? modifiers)
-        matrix
-        (let [modifier (first modifiers)
-              matrix (transform! matrix modifier)]
-          (recur matrix (next modifiers))))))
-    )
+    #?(:cljs (wasm-transform/modifiers->transform modifiers)
+       :clj (loop [matrix    (gmt/matrix)
+                   modifiers (seq modifiers)]
+              (if (c/empty? modifiers)
+                matrix
+                (let [modifier (first modifiers)
+                      matrix (transform! matrix modifier)]
+                  (recur matrix (next modifiers))))))
+    ))
 
 (defn transform-text-node [value attrs]
   (let [font-size   (-> (get attrs :font-size 14) d/parse-double (* value) str)

@@ -1,0 +1,23 @@
+{
+  "extends": "./asconfig.json",
+  "targets": {
+    "debug": {
+      "outFile": "resources/public/wasm/transform.debug.wasm",
+      "textFile": "resources/public/wasm/transform.debug.wat",
+      "runtime": "stub",
+      "sourceMap": true,
+      "debug": true
+    },
+    "release": {
+      "outFile": "resources/public/wasm/transform.release.wasm",
+      "textFile": "resources/public/wasm/transform.release.wat",
+      "runtime": "stub",
+      "sourceMap": true,
+      "optimize": "speed",
+      "optimizeLevel": 3,
+      "shrinkLevel": 0,
+      "converge": true,
+      "noAssert": false
+    }
+  }
+}

@@ -301,7 +301,21 @@ gulp.task("wasm:resize", async function(next) {
   }
 })
 
-gulp.task("wasm", gulp.parallel("wasm:resize"))
+gulp.task("wasm:transform", async function(next) {
+  const asc = await getAssemblyScriptCompiler()
+  const { error, stdout, stderr, stats } = await asc.main([
+    "wasm/transform.ts",
+    "--config", "asconfig.transform.json",
+    "--target", "debug"
+  ])
+  if (error) {
+    return next(error)
+  } else {
+    return next()
+  }
+})
+
+gulp.task("wasm", gulp.parallel("wasm:resize", "wasm:transform"))
 
 gulp.task("watch:main", function() {
   gulp.watch("wasm/*.ts", gulp.series("wasm"));
