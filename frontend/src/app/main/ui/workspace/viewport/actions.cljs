@@ -26,6 +26,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.timers :as timers]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -434,7 +435,9 @@
                                                 (:id component)
                                                 (gpt/point final-x final-y))))
 
-         ;; Will trigger when the user drags an image from a browser to the viewport (firefox and chrome do it a bit different depending on the origin)
+         ;; Will trigger when the user drags an image from a browser
+         ;; to the viewport (firefox and chrome do it a bit different
+         ;; depending on the origin)
          (dnd/has-type? event "Files")
          (let [files  (dnd/get-files event)
                params {:file-id (:id file)
@@ -442,16 +445,19 @@
                        :blobs (seq files)}]
            (st/emit! (dwm/upload-media-workspace params)))
 
-         ;; Will trigger when the user drags an image from a browser to the viewport (firefox and chrome do it a bit different depending on the origin)
+         ;; Will trigger when the user drags an image (usually rendered as datauri) from a
+         ;; browser to the viewport (mainly on firefox, all depending on the origin of the
+         ;; drag event).
          (dnd/has-type? event "text/uri-list")
-         (let [data  (dnd/get-data event "text/uri-list")
-               lines (str/lines data)
-               uris  (filter #(and (not (str/blank? %))
-                                   (not (str/starts-with? % "#")))
-                             lines)
+         (let [data   (dnd/get-data event "text/uri-list")
+               lines  (str/lines data)
+               uris   (->> lines (filter #(str/starts-with? % "http")))
+               data   (->> lines (filter #(str/starts-with? % "data:image/")))
                params {:file-id (:id file)
-                       :position viewport-coord
-                       :uris uris}]
+                       :position viewport-coord}
+               params (if (seq uris)
+                        (assoc params :uris uris)
+                        (assoc params :blobs (map wapi/data-uri->blob data)))]
            (st/emit! (dwm/upload-media-workspace params)))
 
          ;; Will trigger when the user drags an SVG asset from the assets panel
