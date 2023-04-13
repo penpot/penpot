@@ -129,6 +129,9 @@
             objects (wsh/lookup-page-objects state page-id)
 
             ordered-indexes (cph/order-by-indexed-shapes objects shapes)
+            parent-id (get-in objects [frame-id :parent-id])
+
+            ordered-indexes (->> ordered-indexes (remove #(= % parent-id)))
             to-move-shapes (map (d/getf objects) ordered-indexes)
 
             changes
@@ -137,9 +140,7 @@
                   (pcb/with-objects objects)
                   (cond-> (not (ctl/any-layout? objects frame-id))
                     (pcb/update-shapes ordered-indexes  ctl/remove-layout-item-data))
-                  (pcb/update-shapes ordered-indexes #(cond-> %
-                                                        (and (cph/frame-shape? %) (not= (:parent-id %) uuid/zero))
-                                                        (assoc :hide-in-viewer true)))
+                  (pcb/update-shapes ordered-indexes #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true)))
                   (pcb/change-parent frame-id to-move-shapes 0)
                   (cond-> (ctl/grid-layout? objects frame-id)
                     (pcb/update-shapes [frame-id] ctl/assign-cells))))]
