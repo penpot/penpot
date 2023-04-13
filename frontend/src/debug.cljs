@@ -22,6 +22,7 @@
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.util.timers :as timers]
+   [app.wasm.resize :as wasm-resize]
    [beicon.core :as rx]
    [cljs.pprint :refer [pprint]]
    [cuerdas.core :as str]
@@ -224,6 +225,13 @@
 
 (defn ^:export dump-buffer []
   (logjs "last-events" @st/last-events)
+  nil)
+
+(defn ^:export dump-resize-wasm []
+  (logjs "wasm-resize-instance" @wasm-resize/instance)
+  (logjs "wasm-resize-memory" @wasm-resize/memory)
+  (logjs "wasm-resize-resize-input" @wasm-resize/resize-input)
+  (logjs "wasm-resize-resize-output" @wasm-resize/resize-output)
   nil)
 
 (defn ^:export get-state [str-path]

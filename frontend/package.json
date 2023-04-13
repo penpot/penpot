@@ -12,6 +12,14 @@
     "defaults"
   ],
   "scripts": {
+    "wasm-build:resize:debug": "asc wasm/resize.ts --config asconfig.resize.json --target debug",
+    "wasm-build:resize:release": "asc wasm/resize.ts --config asconfig.resize.json --target release",
+    "wasm-build:resize": "yarn run wasm-build:resize:debug && yarn run wasm-build:resize:release",
+    "wasm-build:transform:debug": "asc wasm/transform.ts --config asconfig.transform.json --target debug",
+    "wasm-build:transform:release": "asc wasm/transform.ts --config asconfig.transform.json --target release",
+    "wasm-build:transform": "yarn run wasm-build:transform:debug && yarn run wasm-build:transform:release",
+    "wasm-build": "yarn run wasm-build:resize && yarn run wasm-build:transform",
+    "wasm-generate-types": "npx asc --transform ./scripts/wasm-generate-types.mjs wasm/resize.ts wasm/transform.ts",
     "compile-test": "clojure -M:dev:shadow-cljs compile test --config-merge '{:autorun false}'",
     "lint": "clj-kondo --parallel --lint src/",
     "lint-scss": "yarn run prettier -c resources/styles",
@@ -26,6 +34,7 @@
     "test-e2e-gui": "cypress open"
   },
   "devDependencies": {
+    "assemblyscript": "^0.27.1",
     "autoprefixer": "^10.4.13",
     "cypress": "^10.3.0",
     "cypress-file-upload": "^5.0.8",

@@ -592,57 +592,73 @@
 
 ;; Main transformation functions
 
+(defn transform-move!
+  "Transforms a matrix by the translation modifier"
+  [matrix modifier]
+  (-> (dm/get-prop modifier :vector)
+          (gmt/translate-matrix)
+          (gmt/multiply! matrix)))
+
+(defn transform-resize!
+  "Transforms a matrix by the resize modifier"
+  [matrix modifier]
+  (let [tf     (dm/get-prop modifier :transform)
+        tfi    (dm/get-prop modifier :transform-inverse)
+        vector (dm/get-prop modifier :vector)
+        origin (dm/get-prop modifier :origin)
+        origin (if ^boolean (some? tfi)
+                 (gpt/transform origin tfi)
+                 origin)]
+
+    (gmt/multiply!
+     (-> (gmt/matrix)
+         (cond-> ^boolean (some? tf)
+           (gmt/multiply! tf))
+         (gmt/translate! origin)
+         (gmt/scale! vector)
+         (gmt/translate! (gpt/negate origin))
+         (cond-> ^boolean (some? tfi)
+           (gmt/multiply! tfi)))
+     matrix)))
+
+(defn transform-rotate!
+  "Transforms a matrix by the rotation modifier"
+  [matrix modifier]
+  (let [center   (dm/get-prop modifier :center)
+        rotation (dm/get-prop modifier :rotation)]
+    (gmt/multiply!
+     (-> (gmt/matrix)
+         (gmt/translate! center)
+         (gmt/multiply! (gmt/rotate-matrix rotation))
+         (gmt/translate! (gpt/negate center)))
+     matrix)))
+
+(defn transform!
+  "Returns a matrix transformed by the modifier"
+  [matrix modifier]
+  (let [type (dm/get-prop modifier :type)]
+    (case type
+      :move (transform-move! matrix modifier)
+      :resize (transform-resize! matrix modifier)
+      :rotation (transform-rotate! matrix modifier))))
+
+;;
+;; Modifiers -> Transform
+;; 
 (defn modifiers->transform
   "Given a set of modifiers returns its transformation matrix"
   [modifiers]
   (let [modifiers (->> (concat (dm/get-prop modifiers :geometry-parent)
                                (dm/get-prop modifiers :geometry-child))
                        (sort-by :order))]
-
     (loop [matrix    (gmt/matrix)
            modifiers (seq modifiers)]
       (if (c/empty? modifiers)
         matrix
         (let [modifier (first modifiers)
-              type   (dm/get-prop modifier :type)
-
-              matrix
-              (case type
-                :move
-                (-> (dm/get-prop modifier :vector)
-                    (gmt/translate-matrix)
-                    (gmt/multiply! matrix))
-
-                :resize
-                (let [tf     (dm/get-prop modifier :transform)
-                      tfi    (dm/get-prop modifier :transform-inverse)
-                      vector (dm/get-prop modifier :vector)
-                      origin (dm/get-prop modifier :origin)
-                      origin (if ^boolean (some? tfi)
-                               (gpt/transform origin tfi)
-                               origin)]
-
-                  (gmt/multiply!
-                   (-> (gmt/matrix)
-                       (cond-> ^boolean (some? tf)
-                         (gmt/multiply! tf))
-                       (gmt/translate! origin)
-                       (gmt/scale! vector)
-                       (gmt/translate! (gpt/negate origin))
-                       (cond-> ^boolean (some? tfi)
-                         (gmt/multiply! tfi)))
-                   matrix))
-
-                :rotation
-                (let [center   (dm/get-prop modifier :center)
-                      rotation (dm/get-prop modifier :rotation)]
-                  (gmt/multiply!
-                   (-> (gmt/matrix)
-                       (gmt/translate! center)
-                       (gmt/multiply! (gmt/rotate-matrix rotation))
-                       (gmt/translate! (gpt/negate center)))
-                   matrix)))]
-          (recur matrix (next modifiers)))))))
+              matrix (transform! matrix modifier)]
+          (recur matrix (next modifiers))))))
+    )
 
 (defn transform-text-node [value attrs]
   (let [font-size   (-> (get attrs :font-size 14) d/parse-double (* value) str)

@@ -271,7 +271,40 @@ gulp.task("dev:dirs", async function(next) {
   next();
 });
 
+// Why not use require? Well, assemblyscript exports an ESM module
+// so require fails when requiring 'assemblyscript/asc'. We instead
+// use `import` as it is now implemented in `node` natively and works
+// with `require`.
+const getAssemblyScriptCompiler = (() => {
+  let mod = null
+  return async function importAssemblyScriptCompiler() {
+    if (mod) {
+      return mod
+    }
+    mod = await import('assemblyscript/dist/asc.js')
+    // console.log(mod.main)
+    return mod
+  }
+})();
+
+gulp.task("wasm:resize", async function(next) {
+  const asc = await getAssemblyScriptCompiler()
+  const { error, stdout, stderr, stats } = await asc.main([
+    "wasm/resize.ts",
+    "--config", "asconfig.resize.json",
+    "--target", "debug"
+  ])
+  if (error) {
+    return next(error)
+  } else {
+    return next()
+  }
+})
+
+gulp.task("wasm", gulp.parallel("wasm:resize"))
+
 gulp.task("watch:main", function() {
+  gulp.watch("wasm/*.ts", gulp.series("wasm"));
   gulp.watch("src/**/**.scss", gulp.series("scss"));
   gulp.watch(paths.resources + "styles/**/**.scss", gulp.series("scss"));
   gulp.watch(paths.resources + "images/**/*", gulp.series("copy:assets:images"));
@@ -281,7 +314,7 @@ gulp.task("watch:main", function() {
              gulp.series("templates"));
 });
 
-gulp.task("build", gulp.parallel("polyfills", "scss", "templates", "copy:assets"));
+gulp.task("build", gulp.parallel("polyfills", "scss", "templates", "copy:assets", "wasm"));
 gulp.task("watch", gulp.series("dev:dirs", "build", "watch:main"));
 
 /***********************************************

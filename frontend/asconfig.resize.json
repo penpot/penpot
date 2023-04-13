@@ -1,0 +1,22 @@
+{
+  "extends": "./asconfig.json",
+  "targets": {
+    "debug": {
+      "outFile": "resources/public/wasm/resize.debug.wasm",
+      "textFile": "resources/public/wasm/resize.debug.wat",
+      "runtime": "stub",
+      "sourceMap": true,
+      "debug": true
+    },
+    "release": {
+      "outFile": "resources/public/wasm/resize.release.wasm",
+      "textFile": "resources/public/wasm/resize.release.wat",
+      "runtime": "stub",
+      "sourceMap": true,
+      "optimizeLevel": 3,
+      "shrinkLevel": 0,
+      "converge": false,
+      "noAssert": false
+    }
+  }
+}
