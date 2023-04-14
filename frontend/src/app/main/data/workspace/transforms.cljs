@@ -179,8 +179,10 @@
 
                   modifiers
                   (-> (ctm/empty)
+
                       (cond-> displacement
                         (ctm/move displacement))
+
                       (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
 
                       (cond-> set-fix-width?

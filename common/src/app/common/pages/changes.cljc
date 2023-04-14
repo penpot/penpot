@@ -181,7 +181,9 @@
                              ;; incoming shapes to the parent.
                              (update :shapes d/vec-without-nils))]
               (cond-> parent
-                (and (:shape-ref parent) (= (:type parent) :group) (not ignore-touched))
+                (and (:shape-ref parent)
+                     (#{:group :frame} (:type parent))
+                     (not ignore-touched))
                 (-> (update :touched cph/set-touched-group :shapes-group)
                     (dissoc :remote-synced?)))))
 

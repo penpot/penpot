@@ -13,6 +13,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
+   [app.common.uuid :as uuid]
    [clojure.spec.alpha :as s]))
 
 (s/def ::type #{:page :component})
@@ -147,7 +148,8 @@
                            (ctpl/get-page library-data (:main-instance-page component)))
          component-shape (if components-v2
                            (-> (get-shape component-page (:main-instance-id component))
-                               (assoc :parent-id nil))
+                               (assoc :parent-id nil)
+                               (assoc :frame-id uuid/zero))
                            (get-shape component (:id component)))
 
          orig-pos        (gpt/point (:x component-shape) (:y component-shape))
@@ -156,8 +158,10 @@
          objects         (:objects container)
          unames          (volatile! (common/retrieve-used-names objects))
 
-         frame-id        (ctst/frame-id-by-position objects (gpt/add orig-pos delta))
-         frame-ids-map   (volatile! {})
+         frame-id        (ctst/frame-id-by-position objects
+                                                    (gpt/add orig-pos delta)
+                                                    {:skip-components? true}) ; It'd be weird to make an instance
+         frame-ids-map   (volatile! {})                                       ; inside other component
 
          update-new-shape
          (fn [new-shape original-shape]
@@ -172,7 +176,13 @@
              (cond-> new-shape
                :always
                (-> (gsh/move delta)
-                   (dissoc :touched :main-instance?))
+                   (dissoc :touched))
+
+               main-instance?
+               (assoc :main-instance? true)
+
+               (not main-instance?)
+               (dissoc :main-instance?)
 
                (and (not main-instance?) (nil? (:shape-ref original-shape)))
                (assoc :shape-ref (:id original-shape))
@@ -205,5 +215,6 @@
                             (update $ :frame-id #(get @frame-ids-map % frame-id))
                             (update $ :parent-id #(or % (:frame-id $)))))]
 
-     [new-shape (map remap-frame-id new-shapes)])))
+     [(remap-frame-id new-shape)
+      (map remap-frame-id new-shapes)])))
 

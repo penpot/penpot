@@ -13,6 +13,7 @@
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -108,20 +109,24 @@
 
 (defn get-frames
   "Retrieves all frame objects as vector"
-  [objects]
-  (or (-> objects meta ::index-frames)
-      (let [lookup (d/getf objects)
-            xform  (comp (remove #(= uuid/zero %))
-                         (keep lookup)
-                         (filter cph/frame-shape?))]
-        (->> (keys objects)
-             (into [] xform)))))
+  ([objects] (get-frames objects nil))
+  ([objects {:keys [skip-components?] :or {skip-components? false}}]
+   (->> (or (-> objects meta ::index-frames)
+            (let [lookup (d/getf objects)
+                  xform  (comp (remove #(= uuid/zero %))
+                               (keep lookup)
+                               (filter cph/frame-shape?))]
+              (->> (keys objects)
+                   (into [] xform))))
+        (filter #(or (not skip-components?)
+                     (not (ctk/instance-root? %)))))))
 
 (defn get-frames-ids
   "Retrieves all frame ids as vector"
-  [objects]
-  (->> (get-frames objects)
-       (mapv :id)))
+  ([objects] (get-frames-ids objects nil))
+  ([objects options]
+   (->> (get-frames objects options)
+        (mapv :id))))
 
 (defn get-nested-frames
   [objects frame-id]
@@ -228,24 +233,27 @@
      (sort comp ids))))
 
 (defn frame-id-by-position
-  [objects position]
-  (assert (gpt/point? position))
-  (let [top-frame
-        (->> (get-frames-ids objects)
-             (sort-z-index objects)
-             (d/seek #(and position (gsh/has-point? (get objects %) position))))]
-    (or top-frame uuid/zero)))
+  ([objects position] (frame-id-by-position objects position nil))
+  ([objects position options]
+   (assert (gpt/point? position))
+   (let [top-frame
+         (->> (get-frames-ids objects options)
+              (sort-z-index objects)
+              (d/seek #(and position (gsh/has-point? (get objects %) position))))]
+     (or top-frame uuid/zero))))
 
 (defn frame-by-position
-  [objects position]
-  (let [frame-id (frame-id-by-position objects position)]
-    (get objects frame-id)))
+  ([objects position] (frame-by-position objects position nil))
+  ([objects position options]
+   (let [frame-id (frame-id-by-position objects position options)]
+     (get objects frame-id))))
 
 (defn all-frames-by-position
-  [objects position]
-  (->> (get-frames-ids objects)
-       (filter #(and position (gsh/has-point? (get objects %) position)))
-       (sort-z-index objects)))
+  ([objects position] (all-frames-by-position objects position nil))
+  ([objects position options]
+   (->> (get-frames-ids objects options)
+        (filter #(and position (gsh/has-point? (get objects %) position)))
+        (sort-z-index objects))))
 
 (defn top-nested-frame
   "Search for the top nested frame for positioning shapes when moving or creating.

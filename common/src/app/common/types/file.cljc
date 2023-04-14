@@ -346,7 +346,7 @@
                                   (map (partial get-component-root file-data) components)
                                   start-pos
                                   grid-gap)]
-                (loop [file-data           file-data
+                (loop [file-data      file-data
                        components-seq (seq components)
                        position-seq   position-seq]
                   (let [component (first components-seq)
@@ -355,10 +355,26 @@
                       file-data
                       (recur (add-main-instance file-data component position)
                              (rest components-seq)
-                             (rest position-seq)))))))]
+                             (rest position-seq)))))))
+            
+            root-to-board
+            (fn [shape]
+              (cond-> shape
+                (and (ctk/instance-root? shape)
+                     (not= (:type shape) :frame))
+                (assoc :type :frame
+                       :fills []
+                       :hide-in-viewer true
+                       :rx 0
+                       :ry 0)))
+
+            roots-to-board
+            (fn [page]
+              (update page :objects update-vals root-to-board))]
 
         (-> file-data
             (add-instance-grid (sort-by :name components))
+            (update :pages-index update-vals roots-to-board)
             (assoc-in [:options :components-v2] true))))))
 
 (defn- absorb-components

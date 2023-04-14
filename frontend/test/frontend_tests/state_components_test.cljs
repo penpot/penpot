@@ -5,8 +5,8 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.events :as the]
@@ -119,7 +119,7 @@
        (dwl/add-component)
        :the/end))))
 
-(t/deftest test-add-component-from-group
+(t/deftest test-add-component-from-frame
   (t/async
    done
    (let [state (-> thp/initial-state
@@ -128,7 +128,7 @@
                                      {:name "Rect 1"})
                    (thp/sample-shape :shape2 :rect
                                      {:name "Rect-2"})
-                   (thp/group-shapes :group1
+                   (thp/frame-shapes :frame1
                                      [(thp/id :shape1)
                                       (thp/id :shape2)]))
 
@@ -150,23 +150,23 @@
                          component]
                         (thl/resolve-instance-and-main
                          new-state
-                         (thp/id :group1))
+                         (thp/id :frame1))
 
                         file   (wsh/get-local-file new-state)]
 
                     (t/is (= (:name shape1) "Rect 1"))
                     (t/is (= (:name shape2) "Rect-2"))
-                    (t/is (= (:name group) "Group"))
-                    (t/is (= (:name component) "Group"))
+                    (t/is (= (:name group) "Board"))
+                    (t/is (= (:name component) "Board"))
                     (t/is (= (:name c-shape1) "Rect 1"))
                     (t/is (= (:name c-shape2) "Rect-2"))
-                    (t/is (= (:name c-group) "Group"))
+                    (t/is (= (:name c-group) "Board"))
 
                     (thl/is-from-file group file))))]
 
      (ptk/emit!
        store
-       (dw/select-shape (thp/id :group1))
+       (dw/select-shape (thp/id :frame1))
        (dwl/add-component)
        :the/end))))
 
@@ -621,11 +621,11 @@
                             new-state
                             (:parent-id parent1))]
 
-                      (t/is (= (:name group) "Group"))
+                      (t/is (= (:name group) "Board"))
                       (t/is (= (:name shape1) "Rect 1"))
                       (t/is (= (:name shape2) "Rect 1"))
-                      (t/is (= (:name component) "Group"))
-                      (t/is (= (:name c-group) "Group"))
+                      (t/is (= (:name component) "Board"))
+                      (t/is (= (:name c-group) "Board"))
                       (t/is (= (:name c-shape1) "Rect 1"))
                       (t/is (= (:name c-shape2) "Rect 1")))))]
 
@@ -633,7 +633,7 @@
         store
         (dw/select-shape (thp/id :shape1))
         (dwl/add-component)
-        dwg/group-selected
+        (dwsh/create-artboard-from-selection)
         (dwl/add-component)
         :the/end))))
 
@@ -740,10 +740,10 @@
                            new-state
                            (:parent-id instance1))]
 
-                     (t/is (= (:name group1) "Group"))
+                     (t/is (= (:name group1) "Board"))
                      (t/is (= (:name shape1) "Rect 1"))
                      (t/is (= (:name shape2) "Rect 1"))
-                     (t/is (= (:name c-group1) "Group"))
+                     (t/is (= (:name c-group1) "Board"))
                      (t/is (= (:name c-shape1) "Rect 1"))
                      (t/is (= (:name c-shape2) "Rect 1"))
                      (t/is (= (:component-file group1) thp/current-file-id))
@@ -756,6 +756,6 @@
         (ptk/emit!
           store
           (dw/select-shape (thp/id :instance1))
-          dwg/group-selected
+          (dwsh/create-artboard-from-selection)
           (dwl/add-component)
           :the/end))))
