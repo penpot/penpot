@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-04-13 12:50+0000\n"
+"PO-Revision-Date: 2023-04-15 13:47+0000\n"
 "Last-Translator: 王世阳 <wangshiyangchina@gmail.com>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hans/>\n"
@@ -435,7 +435,7 @@ msgstr "文件上传中"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "邀请加入团队"
+msgstr "邀请people"
 
 #: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
@@ -488,10 +488,6 @@ msgstr "+ 新项目"
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "新建项目"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "订阅通知"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
@@ -568,21 +564,9 @@ msgstr "选择界面主题"
 msgid "dashboard.show-all-files"
 msgstr "显示全部文档"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-delete-file"
-msgid_plural ""
-msgstr[0] "您的文件已成功删除"
-msgstr[1] "您的文件已成功删除"
-
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
 msgstr "成功删除了项目"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-duplicate-file"
-msgid_plural ""
-msgstr[0] "您的文件已成功复制"
-msgstr[1] "您的文件已成功复制"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
@@ -784,15 +768,11 @@ msgstr "未知的令牌"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
-msgstr "用户名或密码错误。"
+msgstr "邮箱或密码错误。"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
 msgstr "旧密码不正确"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "想说两句？来Gitter和我们聊聊"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
@@ -905,10 +885,6 @@ msgstr "宽"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "阴影"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1204,9 +1180,6 @@ msgstr "帮助中心"
 msgid "labels.hide-resolved-comments"
 msgstr "隐藏已决定的评论"
 
-msgid "labels.images"
-msgstr "图片"
-
 msgid "labels.installed-fonts"
 msgstr "已安装字体"
 
@@ -1255,11 +1228,11 @@ msgstr "你们都赶上了! 新的评论通知将出现在这里。"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
-msgstr "没有邀请。"
+msgstr "没有待处理的邀请。"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
-msgstr "点击\"邀请加入团队\"，邀请更多成员加入这个团队。"
+msgstr "单击“**邀请他人**”按钮以邀请人员加入此团队。"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1392,9 +1365,6 @@ msgstr "显示评论列表"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "只显示你的评论"
-
-msgid "labels.skip"
-msgstr "跳过"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1576,8 +1546,8 @@ msgstr[1] "你是否确认要删除这些文件?"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "此文件中使用了以下库:"
-msgstr[1] "这些文件中使用了以下库:"
+msgstr[0] "此处使用此文件库中的某些资源："
+msgstr[1] "这些文件库中的一些资源正在这里使用："
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -1696,16 +1666,10 @@ msgid "modals.small-nudge"
 msgstr "小幅微调"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgid_plural ""
-msgstr[0] "取消发布"
-msgstr[1] "取消发布"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] "如果取消发布，则其中的资源将成为此文件的一个库。"
-msgstr[1] "如果取消发布，则其中的资源将成为这些文件的一个库。"
+msgstr[0] "如果取消发布它，这些资产将移动到此文件的本地库。"
+msgstr[1] "如果取消发布它们，这些资源将移动到此文件的本地库中。"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -1716,8 +1680,8 @@ msgstr[1] "你是否确认取消发布这些库?"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "在这个文件中被使用:"
-msgstr[1] "在这些文件中被使用:"
+msgstr[0] "此处使用此库中的某些资源："
+msgstr[1] "此处使用了这些库中的一些资源："
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
@@ -1755,7 +1719,7 @@ msgstr "成功发送邀请"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
-msgstr "你无法删除你的个人资料。请先转让你的团队。"
+msgstr "您无法删除您的个人资料。在继续之前重新分配您的团队。"
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -1843,14 +1807,8 @@ msgstr "创建团队并发送邀请"
 msgid "onboarding.choice.team-up.roles"
 msgstr "邀请角色:"
 
-msgid "onboarding.contrib.alt"
-msgstr "开源"
-
 msgid "onboarding.contrib.desc2.1"
 msgstr "您可以访问"
-
-msgid "onboarding.contrib.link"
-msgstr "Github的项目"
 
 msgid "onboarding.newsletter.accept"
 msgstr "是的，订阅"
@@ -1864,26 +1822,14 @@ msgstr "隐私策略。"
 msgid "onboarding.newsletter.title"
 msgstr "想要接收 Penpot 新闻？"
 
-msgid "onboarding.slide.0.desc1"
-msgstr "在协作项目中与团队成员们一起创作好看的用户界面。"
-
 msgid "onboarding.slide.0.title"
 msgstr "设计库、样式和组件"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "创建丰富的交互以模拟产品行为。"
 
 msgid "onboarding.slide.1.title"
 msgstr "通过交互使您的设计栩栩如生"
 
-msgid "onboarding.slide.2.desc1"
-msgstr "所有团队成员使用实时设计多人协同以及设计上的集中评论，想法和反馈。"
-
 msgid "onboarding.slide.3.alt"
 msgstr "协作且低代码"
-
-msgid "onboarding.slide.3.desc2"
-msgstr "获取并提供代码规范，如标记（SVG、HTML）或样式（CSS、Less、Stylus...）。"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "创建一个团队"
@@ -2441,10 +2387,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "复制链接"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "分享链接将会显示在这里"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "任何人都可以通过本链接访问"
 
@@ -2881,18 +2823,12 @@ msgstr "更新"
 msgid "workspace.libraries.updates"
 msgstr "更新"
 
-msgid "workspace.library.libraries"
-msgstr "库"
-
 msgid "workspace.library.store"
 msgstr "来自商店的库"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
 msgstr "单击 + 按钮以添加交互。"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "图层"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
@@ -2919,7 +2855,7 @@ msgstr "组件"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
-msgstr "约束"
+msgstr "限制条件"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.bottom"
@@ -2968,12 +2904,6 @@ msgstr "导出"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export-multiple"
 msgstr "导出已选择"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
-msgid "workspace.options.export-object"
-msgid_plural ""
-msgstr[0] "导出 1 个元素"
-msgstr[1] "导出 %s 元素"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3434,10 +3364,6 @@ msgid "workspace.options.layout.bottom"
 msgstr "底部"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
-msgstr "行"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.top"
 msgstr "倒排列"
 
@@ -3695,7 +3621,7 @@ msgstr "靠左对齐"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "中间对齐"
+msgstr "居中对齐"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
@@ -3777,10 +3703,10 @@ msgid "workspace.options.width"
 msgstr "宽度"
 
 msgid "workspace.options.x"
-msgstr "X"
+msgstr "X轴"
 
 msgid "workspace.options.y"
-msgstr "Y"
+msgstr "Y轴"
 
 msgid "workspace.path.actions.add-node"
 msgstr "添加节点（%s）"
@@ -4228,3 +4154,237 @@ msgid "dashboard.webhooks.description"
 msgstr ""
 "Webhooks是一种简单的方式，允许其他网站和应用程序在Penpot的某些事件发生时得到"
 "通知。我们将发送一个POST请求到你提供的每个URL。"
+
+msgid "inspect.empty.more-info"
+msgstr "有关检查的详细信息"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "取消发布%s文件"
+
+msgid "labels.view-only"
+msgstr "仅查看"
+
+msgid "modals.create-webhook.title"
+msgstr "创建webhook"
+
+msgid "modals.create-webhook.url.label"
+msgstr "有效负载网址"
+
+msgid "modals.delete-webhook.message"
+msgstr "你确定要删除这个webhook吗？"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "编辑webhook"
+
+msgid "modals.edit-webhook.title"
+msgstr "编辑webhook"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.no-files-message"
+msgid_plural "modals.delete-shared-confirm.no-files-message"
+msgstr[0] "此文件库中的任何资源均未在使用中。它们将与文件一起删除。"
+msgstr[1] "这些文件库中的所有资源均未在使用中。它们将与文件一起删除。"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-many"
+msgid_plural "modals.delete-shared-confirm.scd-message-many"
+msgstr[0] "此处使用此文件库中的某些资源："
+msgstr[1] "这些文件库中的一些资源正在这里使用："
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "邀请链接已复制"
+
+msgid "shortcuts.open-inspect"
+msgstr "转到查看器检查部分"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "添加/删除布局弹性"
+
+msgid "title.team-webhooks"
+msgstr "Webhooks - %s - Penpot"
+
+msgid "viewer.header.inspect-section"
+msgstr "检查 （%s）"
+
+msgid "webhooks.last-delivery.success"
+msgstr "上次交付成功。"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "相对于"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column"
+msgstr "列"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.reverse-column"
+msgstr "反向列"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.reverse-row"
+msgstr "反转行"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.progress"
+msgstr "转换%s/%s"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text1"
+msgstr "从现在开始，库图形是组件，这将使它们更加强大。"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text2"
+msgstr "此更新是一次性操作。"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.title"
+msgstr "正在更新 %s..."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message-many"
+msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
+msgstr[0] "此处使用此库中的某些资源："
+msgstr[1] "此处使用了这些库中的一些资源："
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "添加布局弹性"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "删除布局弹性"
+
+msgid "errors.webhooks.unexpected"
+msgstr "验证时出现意外错误"
+
+msgid "inspect.empty.select"
+msgstr "选择形状、板或组以检查其属性和代码"
+
+msgid "labels.webhooks"
+msgstr "Webhooks"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint"
+msgid_plural "modals.delete-shared-confirm.hint"
+msgstr[0] "如果将其删除，这些资源将移动到此文件的本地库中。任何未使用的资产都将丢失。"
+msgstr[1] "如果删除它们，这些资源将移动到此文件的本地库中。任何未使用的资产都将丢失。"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "创建webhook"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
+msgstr[0] "如果将其删除，这些资源将移动到这些文件的本地库中。任何未使用的资产都将丢失。"
+msgstr[1] "如果删除它们，这些资源将移动到这些文件的本地库中。任何未使用的资产都将丢失。"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.hint-many"
+msgstr[0] "如果取消发布，这些资源将移动到这些文件的本地库中。"
+msgstr[1] "如果取消发布它们，这些资源将移动到这些文件的本地库中。"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.no-files-message"
+msgstr[0] "此库中的所有资源均未在使用中。"
+msgstr[1] "这些库中的所有资源均未在使用中。"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row"
+msgstr "行"
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "按“添加webhook”按钮添加一个。"
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "到目前为止还没有创建webhook。"
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook成功更新。"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "请输入有效的电子邮件"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr "看起来您正在打开一个启用了“%s”功能的文件，您的 penpot "
+"前端不支持它或已禁用它。"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "不支持功能“%s”。"
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "您已达到“%s”报价。与支持人员联系。"
+
+msgid "errors.webhooks.connection"
+msgstr "连接错误，无法访问 URL"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "网址未通过验证。"
+
+msgid "errors.webhooks.last-delivery"
+msgstr "上次交付不成功。"
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "SSL 验证时出错。"
+
+msgid "errors.webhooks.timeout"
+msgstr "超时"
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "意外状态%s"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "尺寸和位置"
+
+msgid "inspect.empty.help"
+msgstr "如果您想了解有关设计检查的更多信息，请访问Penpot的帮助中心"
+
+msgid "labels.active"
+msgstr "激活"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "复制链接"
+
+msgid "labels.inactive"
+msgstr "未激活"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "重新加载文件"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://example.com/postreceive"
+
+msgid "modals.delete-webhook.accept"
+msgstr "删除webhook"
+
+msgid "modals.delete-webhook.title"
+msgstr "删除webhook"
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "文本样式"
+
+msgid "workspace.options.inspect"
+msgstr "检查"
+
+msgid "workspace.options.interaction-auto"
+msgstr "自动"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-hint"
+msgstr "要重试，您可以重新加载此文件。如果问题仍然存在，我们建议您查看列表并考虑删除"
+"损坏的图形。"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-msg"
+msgstr "某些图形无法更新。"
