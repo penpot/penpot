@@ -30,7 +30,7 @@
   :name "Whiteboarding Kit"
   :thumbnail-uri "https://penpot.app/images/libraries/cover-whiteboards.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Whiteboarding-mapping-kit.penpot"}
- {:id "material-design-baseline"
-  :name "Material Design (baseline)"
-  :thumbnail-uri "https://penpot.app/images/libraries/cover-material.jpg"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Material-Design-Kit.penpot"}]
+ {:id "material-design-3"
+  :name "Material Design 3"
+  :thumbnail-uri "https://penpot.app/images/libraries/cover-md3.jpg"
+  :file-uri "https://github.com/penpot/penpot-files/raw/main/Material%20Design%203.penpot"}]
