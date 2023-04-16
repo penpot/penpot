@@ -14,7 +14,8 @@
 ### :arrow_up: Deps updates
 
 ### :heart: Community contributions by (Thank you!)
-- Update Typography palette order #3156 (by @akshay-gupta7) [#3156](https://github.com/penpot/penpot/pull/3156)
+- Update Typography palette order (by @akshay-gupta7) [Github #3156](https://github.com/penpot/penpot/pull/3156)
+- Duplicate objects via drag + alt [Github #3147](https://github.com/penpot/penpot/pull/3147)
 
 ## 1.18.3
 
