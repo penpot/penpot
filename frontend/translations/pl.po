@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-04 18:22+0000\n"
-"Last-Translator: Kevin Nowald <kevin@nowald.pl>\n"
-"Language-Team: Polish "
-"<https://hosted.weblate.org/projects/penpot/frontend/pl/>\n"
+"PO-Revision-Date: 2023-04-20 15:52+0000\n"
+"Last-Translator: Radek Sawicki <radek@sqrc.pl>\n"
+"Language-Team: Polish <https://hosted.weblate.org/projects/penpot/frontend/"
+"pl/>\n"
 "Language: pl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 4.18-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -258,7 +258,6 @@ msgid "dasboard.walkthrough-hero.info"
 msgstr "Wybierz się na spacer po Penpot i poznaj jego główne funkcje."
 
 #: src/app/main/ui/dashboard/projects.cljs
-#, fuzzy
 msgid "dasboard.walkthrough-hero.title"
 msgstr "Przewodnik po interfejsie"
 
@@ -304,19 +303,19 @@ msgstr "Zduplikuj %s pliki"
 #, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"O nie! Nie masz jeszcze plików! Jeśli chcesz wypróbować niektóre szablony, "
-"przejdź do [Biblioteki i "
-"szablony](https://penpot.app/libraries-templates.html)"
+"Tutaj pojawią się pliki dodane do Bibliotek. Spróbuj udostępnić swoje pliki "
+"lub dodać z naszych [Bibliotek i szablonów](https://penpot.app/libraries-"
+"templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Pobierz %s plików Penpot (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Eksportuj obszary kompozycji do PDF"
+msgstr "Eksportuj obszary kompozycji jako PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
-msgstr "Eksportuj do PDF"
+msgstr "Eksportuj jako PDF"
 
 msgid "dashboard.export-multi"
 msgstr "Eksportuj %s pliki Penpot"
@@ -393,7 +392,7 @@ msgid "dashboard.fonts.dismiss-all"
 msgstr "Odrzuć wszystko"
 
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "Nadal nie masz zainstalowanych fontów niestandardowych."
+msgstr "Niestandardowe fonty, które prześlesz, pojawią się tutaj."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.fonts-added"
@@ -462,7 +461,7 @@ msgstr "Przesyłanie pliku: %s"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "Zaproś do zespołu"
+msgstr "Zaproś ludzi"
 
 #: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
@@ -597,7 +596,10 @@ msgstr "Pokaż wszystkie pliki"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-delete-file"
-msgstr "Twój plik został pomyślnie usunięty"
+msgid_plural ""
+msgstr[0] "Twój plik został pomyślnie usunięty"
+msgstr[1] "Twoje pliki zostały pomyślnie usunięte"
+msgstr[2] "Twoje pliki zostały pomyślnie usunięte"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
@@ -605,7 +607,10 @@ msgstr "Twój projekt został pomyślnie usunięty"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-duplicate-file"
-msgstr "Twój plik został pomyślnie zduplikowany"
+msgid_plural ""
+msgstr[0] "Twój plik został pomyślnie zduplikowany"
+msgstr[1] "Twoje pliki zostały pomyślnie zduplikowane"
+msgstr[2] "Twoje pliki zostały pomyślnie zduplikowane"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
@@ -802,7 +807,7 @@ msgstr "Nieznany token"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
-msgstr "Wygląda na to, że nazwa użytkownika lub hasło jest nieprawidłowe."
+msgstr "Email lub hasło są niepoprawne."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
@@ -1273,17 +1278,17 @@ msgstr "Nowe hasło"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "Nie masz żadnych oczekujących powiadomień o komentarzach"
+msgstr ""
+"Wszyscy jesteście na bieżąco! Tutaj będą pojawiać się powiadomienia o nowych "
+"komentarzach."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
-msgstr "Brak zaproszeń."
+msgstr "Brak oczekujących zaproszeń."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
-msgstr ""
-"Naciśnij przycisk „Zaproś do zespołu”, aby zaprosić więcej członków do tego "
-"zespołu."
+msgstr "Kliknij przycisk **Zaproś osoby**, aby zaprosić osoby do tego zespołu."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1615,9 +1620,9 @@ msgstr[2] "Czy na pewno chcesz usunąć te pliki?"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Ten plik ma biblioteki używane w tym pliku:"
-msgstr[1] "Ten plik ma biblioteki używane w tych plikach:"
-msgstr[2] "Ten plik ma biblioteki używane w tych plikach:"
+msgstr[0] "Niektóre zasoby z biblioteki tego pliku są tutaj używane:"
+msgstr[1] "Niektóre zasoby z biblioteki tych plików są tutaj używane:"
+msgstr[2] "Niektóre zasoby z biblioteki tych plików są tutaj używane:"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.accept"
@@ -3105,23 +3110,23 @@ msgstr "Czas trwania"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing"
-msgstr "Easing"
+msgstr "Złagodzenie"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease"
-msgstr "Ease"
+msgstr "Złagódź"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease-in"
-msgstr "Ease in"
+msgstr "Łagodne wejście"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease-in-out"
-msgstr "Ease in out"
+msgstr "Łagodne wejście wyjście"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease-out"
-msgstr "Ease out"
+msgstr "Łagodne wyjście"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-linear"
@@ -3173,7 +3178,7 @@ msgstr "Otwórz nakładkę: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-url"
-msgstr "Otwórz url"
+msgstr "Otwórz URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-out"
@@ -3369,7 +3374,7 @@ msgstr "Margines"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.padding"
-msgstr "Padding"
+msgstr "Dopełnienie"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.right"
@@ -3407,7 +3412,7 @@ msgstr "Wszystkie rogi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.single-corners"
-msgstr "Pojedynczy róg"
+msgstr "Poszczególne narożniki"
 
 msgid "workspace.options.recent-fonts"
 msgstr "Bieżące"
@@ -3644,7 +3649,7 @@ msgstr "Tekst zaznaczony"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.titlecase"
-msgstr "Nazwy Własne"
+msgstr "Nazwy własne"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
@@ -3662,10 +3667,10 @@ msgid "workspace.options.width"
 msgstr "Szerokość"
 
 msgid "workspace.options.x"
-msgstr "X"
+msgstr "Oś X"
 
 msgid "workspace.options.y"
-msgstr "Y"
+msgstr "Oś Y"
 
 msgid "workspace.path.actions.add-node"
 msgstr "Dodaj węzeł (%s)"
@@ -4083,3 +4088,236 @@ msgstr "Aktualizuj"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Kliknij, aby zamknąć ścieżkę"
+
+msgid "errors.bad-font"
+msgstr "Nie można załadować fontu %s"
+
+msgid "errors.bad-font-plural"
+msgstr "Nie można załadować fontów %s"
+
+msgid "errors.profile-blocked"
+msgstr "Profil jest zablokowany"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "Konto wsparcia na Twitterze"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "Usuwanie pliku"
+msgstr[1] "Usuwanie plików"
+msgstr[2] "Usuwanie plików"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "Zaproś członków do zespołu"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Cofnij publikację"
+msgstr[1] "Cofnij publikacje"
+msgstr[2] "Cofnij publikacje"
+
+msgid "dashboard.webhooks.active"
+msgstr "Jest aktywny"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "Po wywołaniu tego haka zostaną dostarczone szczegóły zdarzenia"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "Typ treści"
+
+msgid "dashboard.webhooks.create"
+msgstr "Utwórz webhooka"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Pomyślnie utworzono webhook."
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Webhook to prosty sposób na powiadamianie innych stron internetowych i "
+"aplikacji o określonych zdarzeniach w Penpot. Wyślemy żądanie POST do "
+"każdego podanego przez Ciebie adresu URL."
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Naciśnij przycisk „Dodaj webhook”, aby go dodać."
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Do tej pory nie utworzono żadnych webhooków."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook został pomyślnie zaktualizowany."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Dostawca uwierzytelniania nie został skonfigurowany."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Podaj prawidłowy adres e-mail"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Funkcja '%s' nie jest obsługiwana."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"Wygląda na to, że otwierasz plik, który ma włączoną funkcję '%s'. Twój "
+"interfejs użytkownika penpota jej nie obsługuje lub ma ją wyłączoną."
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "Osiągnąłeś limit '%s'. Skontaktuj się z pomocą techniczną."
+
+msgid "errors.webhooks.connection"
+msgstr "Błąd połączenia, adres URL nieosiągalny"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "Adres URL nie przechodzi weryfikacji."
+
+msgid "errors.webhooks.last-delivery"
+msgstr "Ostatnia wysyłka nie powiodła się."
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Błąd podczas sprawdzania poprawności SSL."
+
+msgid "errors.webhooks.timeout"
+msgstr "Koniec czasu"
+
+msgid "errors.webhooks.unexpected"
+msgstr "Nieoczekiwany błąd podczas sprawdzania poprawności"
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "Nieoczekiwany status %s"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Rozmiar i położenie"
+
+msgid "inspect.empty.help"
+msgstr ""
+"Jeśli chcesz dowiedzieć się więcej o inspekcji projektu, odwiedź centrum "
+"pomocy Penpot"
+
+msgid "inspect.empty.more-info"
+msgstr "Więcej informacji o inspekcji"
+
+msgid "inspect.empty.select"
+msgstr "Wybierz kształt, tablicę lub grupę, aby sprawdzić ich właściwości i kod"
+
+msgid "labels.active"
+msgstr "Aktywny"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Kopiuj link"
+
+msgid "labels.inactive"
+msgstr "Nieaktywny"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Przeładuj plik"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "Cofnij publikację plików %s"
+
+msgid "labels.view-only"
+msgstr "TYLKO PODGLĄD"
+
+msgid "labels.webhooks"
+msgstr "Webhooki"
+
+msgid "modals.create-webhook.url.label"
+msgstr "Ładowność URL"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://example.com/postreceive"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
+msgstr[0] ""
+"Jeśli go usuniesz, te zasoby zostaną przeniesione do lokalnych bibliotek "
+"tych plików. Wszelkie niewykorzystane zasoby zostaną utracone."
+msgstr[1] ""
+"Jeśli je usuniesz, te zasoby zostaną przeniesione do lokalnych bibliotek "
+"tych plików. Wszelkie niewykorzystane zasoby zostaną utracone."
+msgstr[2] ""
+"Jeśli je usuniesz, te zasoby zostaną przeniesione do lokalnych bibliotek "
+"tych plików. Wszelkie niewykorzystane zasoby zostaną utracone."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-many"
+msgid_plural "modals.delete-shared-confirm.scd-message-many"
+msgstr[0] "Niektóre zasoby z biblioteki tego pliku są tutaj używane:"
+msgstr[1] "Niektóre zasoby w bibliotekach tych plików są tutaj używane:"
+msgstr[2] "Niektóre zasoby w bibliotekach tych plików są tutaj używane:"
+
+msgid "modals.delete-webhook.title"
+msgstr "Usuwanie webhooka"
+
+msgid "modals.edit-webhook.title"
+msgstr "Edytuj webhook"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Edytuj webhook"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] ""
+"Jeśli cofniesz publikację, te zasoby zostaną przeniesione do lokalnej "
+"biblioteki tego pliku."
+msgstr[1] ""
+"Jeśli cofniesz ich publikację, te zasoby zostaną przeniesione do lokalnej "
+"biblioteki tego pliku."
+msgstr[2] ""
+"Jeśli cofniesz ich publikację, te zasoby zostaną przeniesione do lokalnej "
+"biblioteki tego pliku."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Rozpocznij wycieczkę"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "Utwórz webhook"
+
+msgid "modals.create-webhook.title"
+msgstr "Utwórz webhook"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint"
+msgid_plural "modals.delete-shared-confirm.hint"
+msgstr[0] ""
+"Jeśli go usuniesz, te zasoby zostaną przeniesione do lokalnej biblioteki "
+"tego pliku. Wszelkie niewykorzystane zasoby zostaną utracone."
+msgstr[1] ""
+"Jeśli je usuniesz, te zasoby zostaną przeniesione do lokalnej biblioteki "
+"tego pliku. Wszelkie niewykorzystane zasoby zostaną utracone."
+msgstr[2] ""
+"Jeśli je usuniesz, te zasoby zostaną przeniesione do lokalnej biblioteki "
+"tego pliku. Wszelkie niewykorzystane zasoby zostaną utracone."
+
+msgid "modals.delete-webhook.message"
+msgstr "Czy na pewno chcesz usunąć ten webhook?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.no-files-message"
+msgid_plural "modals.delete-shared-confirm.no-files-message"
+msgstr[0] ""
+"Żaden z zasobów w bibliotece tego pliku nie jest używany. Zostaną one "
+"usunięte wraz z plikiem."
+msgstr[1] ""
+"Żaden z zasobów w bibliotekach tych plików nie jest używany. Zostaną one "
+"usunięte wraz z plikami."
+msgstr[2] ""
+"Żaden z zasobów w bibliotekach tych plików nie jest używany. Zostaną one "
+"usunięte wraz z plikami."
+
+msgid "modals.delete-webhook.accept"
+msgstr "Usuń webhook"
