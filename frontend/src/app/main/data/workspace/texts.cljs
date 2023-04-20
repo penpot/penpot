@@ -156,7 +156,9 @@
                                                     (apply str)))]
                        (-> shape
                            (assoc :content content)
-                           (assoc :name (subs concatenated-text 0 (min 25 (count concatenated-text))))
+                           (assoc :name (if (> (count concatenated-text) 22)
+                                          (str (subs concatenated-text 0 22) "...")
+                                          concatenated-text))
                            (cond-> new-shape?
                              (assoc :name text))
                            (cond-> (or (some? width) (some? height))
