@@ -142,9 +142,21 @@
                   (dch/update-shapes
                    [id]
                    (fn [shape]
-                     (let [{:keys [width height]} modifiers]
+                     (let [{:keys [width height]} modifiers
+                           concatenated-text (letfn [(find-text-properties [node]
+                                                       (if (map? node)
+                                                         (if-let [text (get node :text)]
+                                                           [text]
+                                                           (mapcat find-text-properties (vals node)))
+                                                         (if (sequential? node)
+                                                           (mapcat find-text-properties node)
+                                                           [])))]
+                                               (->> content
+                                                    find-text-properties
+                                                    (apply str)))]
                        (-> shape
                            (assoc :content content)
+                           (assoc :name (subs concatenated-text 0 (min 25 (count concatenated-text))))
                            (cond-> new-shape?
                              (assoc :name text))
                            (cond-> (or (some? width) (some? height))
