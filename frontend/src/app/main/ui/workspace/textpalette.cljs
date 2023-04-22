@@ -68,8 +68,8 @@
         current-typographies
         (case @selected
           :recent []
-          :file (vals file-typographies)
-          (vals (get-in shared-libs [@selected :data :typographies])))
+          :file (sort-by #(str/lower (:name %)) (vals file-typographies))
+          (sort-by #(str/lower (:name %)) (vals (get-in shared-libs [@selected :data :typographies]))))
 
         container (mf/use-ref nil)
 
