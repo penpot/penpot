@@ -3235,6 +3235,14 @@ msgstr "HSV"
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "Colores recientes"
 
+#: src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "Todavía no hay estilos de color en tu biblioteca"
+
+#: src/app/main/ui/workspace/textpalette.cljs
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "Todavía no hay tipografías en tu biblioteca"
+
 #: src/app/main/ui/workspace/colorpicker.cljs
 msgid "workspace.libraries.colors.rgb-complementary"
 msgstr "RGB Complementario"

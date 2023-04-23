@@ -129,13 +129,19 @@
      [:span.left-arrow {:on-click on-left-arrow-click} i/arrow-slide]
 
      [:div.color-palette-content {:ref container :on-wheel on-wheel}
-      [:div.color-palette-inside
-       (for [[idx item] (map-indexed vector current-typographies)]
-         [:& typography-item
-          {:key idx
-           :file-id file-id
-           :selected-ids selected-ids
-           :typography item}])]]
+     (if (empty? current-typographies)
+        [:div.color-palette-empty {:style {:position "absolute"
+                                           :left "50%"
+                                           :top "50%"
+                                           :transform "translate(-50%, -50%)"}} 
+              (tr "workspace.libraries.colors.empty-typography-palette")]
+        [:div.color-palette-inside
+        (for [[idx item] (map-indexed vector current-typographies)]
+          [:& typography-item
+            {:key idx
+            :file-id file-id
+            :selected-ids selected-ids
+            :typography item}])])]
 
      [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]]))
 
