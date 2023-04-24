@@ -522,10 +522,6 @@ msgstr "+ Projecte nou"
 msgid "dashboard.new-project-prefix"
 msgstr "Projecte nou"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Subscripció al butlletí"
-
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "No s'ha trobat cap coincidència amb “%s“"
@@ -824,10 +820,6 @@ msgid "errors.wrong-old-password"
 msgstr "La contrasenya anterior no és correcta"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Voleu parlar? Xategeu amb nosaltres a Gitter"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Descripció"
 
@@ -941,10 +933,6 @@ msgstr "Amplada"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Ombra"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1242,9 +1230,6 @@ msgstr "Centre d'ajuda"
 msgid "labels.hide-resolved-comments"
 msgstr "Amaga els comentaris resolts"
 
-msgid "labels.images"
-msgstr "Imatges"
-
 msgid "labels.installed-fonts"
 msgstr "Tipografies instal·lades"
 
@@ -1437,9 +1422,6 @@ msgstr "Mostra la llista de comentaris"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Mostra només els meus comentaris"
-
-msgid "labels.skip"
-msgstr "Omet"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1821,14 +1803,8 @@ msgstr "Crea l'equip ara i convida membres en un altre moment"
 msgid "onboarding.choice.team-up.invite-members-submit"
 msgstr "Crea l'equip i envia les invitacions"
 
-msgid "onboarding.contrib.alt"
-msgstr "Codi obert"
-
 msgid "onboarding.contrib.desc2.1"
 msgstr "Podeu accedir al"
-
-msgid "onboarding.contrib.link"
-msgstr "projecte a github"
 
 msgid "onboarding.newsletter.accept"
 msgstr "Sí, subscriu-m'hi"
@@ -1844,32 +1820,14 @@ msgstr "Política de privacitat."
 msgid "onboarding.newsletter.title"
 msgstr "Voleu rebre les novetats de Penpot?"
 
-msgid "onboarding.slide.0.desc1"
-msgstr ""
-"Creeu interfícies d'usuari boniques en col·laboració amb tots els membres "
-"de l'equip."
-
 msgid "onboarding.slide.0.title"
 msgstr "Biblioteques de disseny, estils i components"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "Creeu interaccions enriquides per a imitar el comportament del producte."
 
 msgid "onboarding.slide.1.title"
 msgstr "Doneu vida als vostres dissenys amb interaccions"
 
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"Tot l'equip treballant simultàniament amb disseny en temps real i "
-"comentaris, idees i opinions sobre els dissenys de forma centralitzada."
-
 msgid "onboarding.slide.3.alt"
 msgstr "Lliurament i codi baix"
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"Obteniu i proporcioneu especificacions de codi d'etiquetatge (SVG, HTML) o "
-"d'estils (CSS, Less, Stylus...)."
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Crea un equip"
@@ -2411,10 +2369,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Copia l'enllaç"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "L'enllaç compartit apareixerà aquí"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Qualsevol persona amb l'enllaç hi tindrà accés"
 
@@ -2850,18 +2804,12 @@ msgstr "Actualitza"
 msgid "workspace.libraries.updates"
 msgstr "ACTUALITZACIONS"
 
-msgid "workspace.library.libraries"
-msgstr "Biblioteques"
-
 msgid "workspace.library.store"
 msgstr "Predeterminades"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
 msgstr "Feu clic en el botó de + per a afegir interaccions."
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Capa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"

@@ -950,10 +950,6 @@ msgstr "宽"
 msgid "inspect.attributes.shadow"
 msgstr "阴影"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
-
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.size"
 msgstr "尺寸和位置"
@@ -1982,9 +1978,6 @@ msgstr "创建团队并发送邀请"
 msgid "onboarding.choice.team-up.roles"
 msgstr "邀请角色:"
 
-msgid "onboarding.contrib.desc2.1"
-msgstr "您可以访问"
-
 msgid "onboarding.newsletter.accept"
 msgstr "是的，订阅"
 
@@ -1997,14 +1990,8 @@ msgstr "隐私策略。"
 msgid "onboarding.newsletter.title"
 msgstr "想要接收 Penpot 新闻？"
 
-msgid "onboarding.slide.0.title"
-msgstr "设计库、样式和组件"
-
 msgid "onboarding.slide.1.title"
 msgstr "通过交互使您的设计栩栩如生"
-
-msgid "onboarding.slide.3.alt"
-msgstr "协作且低代码"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "创建一个团队"
@@ -2574,10 +2561,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "复制链接"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "任何人都可以通过本链接访问"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "显示交互"
 
@@ -3015,9 +2998,6 @@ msgstr "更新"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "更新"
-
-msgid "workspace.library.store"
-msgstr "来自商店的库"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
@@ -3571,20 +3551,12 @@ msgid "workspace.options.layout.direction.column"
 msgstr "列"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "反向列"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.reverse-row"
 msgstr "反转行"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
 msgstr "行"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "倒排列"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"

@@ -3722,10 +3722,6 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Kolona"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Apvērst kolonu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.reverse-row"
 msgstr "Apvērst rindu"
 

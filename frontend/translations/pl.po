@@ -997,10 +997,6 @@ msgstr "Szerokość"
 msgid "inspect.attributes.shadow"
 msgstr "Cień"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
-
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.size"
 msgstr "Rozmiar i położenie"
@@ -2144,9 +2140,6 @@ msgstr "Utwórz zespół i wyślij zaproszenia"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Zaproś z rolą:"
 
-msgid "onboarding.contrib.desc2.1"
-msgstr "Możesz uzyskać dostęp do"
-
 msgid "onboarding.newsletter.accept"
 msgstr "Tak, zasubskrybuj"
 
@@ -2161,14 +2154,8 @@ msgstr "Polityka prywatności."
 msgid "onboarding.newsletter.title"
 msgstr "Chcesz otrzymywać informacje o Penpot?"
 
-msgid "onboarding.slide.0.title"
-msgstr "Biblioteki projektowe, style i komponenty"
-
 msgid "onboarding.slide.1.title"
 msgstr "Ożyw swoje projekty dzięki interakcjom"
-
-msgid "onboarding.slide.3.alt"
-msgstr "Wymiana i lowcode"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Utwórz zespół"
@@ -2742,10 +2729,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Kopiuj link"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Każda osoba mająca link będzie miała dostęp"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Pokaż interakcje"
 
@@ -3186,9 +3169,6 @@ msgstr "Aktualizuj"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "AKTUALIZACJE"
-
-msgid "workspace.library.store"
-msgstr "Przechowaj biblioteki"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
@@ -3747,10 +3727,6 @@ msgstr "Dół"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.column"
 msgstr "Kolumna"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Odwrć kolumny"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.reverse-row"

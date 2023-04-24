@@ -2144,9 +2144,6 @@ msgstr "Politica de Confidențialitate."
 msgid "onboarding.newsletter.title"
 msgstr "Vrei să primești știri Penpot?"
 
-msgid "onboarding.slide.1.title"
-msgstr "Dați viață designurilor dvs. prin interacțiuni"
-
 msgid "onboarding.team-modal.create-team"
 msgstr "Creați o echipă"
 
@@ -3701,10 +3698,6 @@ msgstr "Înălțime minimă"
 msgid "workspace.options.layout-item.title.layout-item-min-w"
 msgstr "Lățime minimă"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-h"
-msgstr "Înălțime minimă"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Jos"
@@ -3712,10 +3705,6 @@ msgstr "Jos"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.column"
 msgstr "Coloană"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Coloană inversă"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.reverse-row"

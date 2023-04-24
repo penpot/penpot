@@ -351,10 +351,6 @@ msgstr "+ 新規プロジェクト"
 msgid "dashboard.new-project-prefix"
 msgstr "新規プロジェクト"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "ニュースレターに登録"
-
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "\"%s\"が見つかりませんでした"
@@ -603,10 +599,6 @@ msgid "errors.wrong-old-password"
 msgstr "以前のパスワードが正しくありません"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "おしゃべりしたい気分ですか？Gitterで私たちとチャットする"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "記述"
 
@@ -845,9 +837,6 @@ msgstr "ヘルプセンター"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "解決済みのコメントを非表示"
-
-msgid "labels.images"
-msgstr "画像"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"

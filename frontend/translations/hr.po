@@ -516,10 +516,6 @@ msgstr "+ Novi projekt"
 msgid "dashboard.new-project-prefix"
 msgstr "Novi projekt"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Pretplata na newsletter"
-
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "Nisu pronađeni rezultati za “%s”"
@@ -810,10 +806,6 @@ msgid "errors.wrong-old-password"
 msgstr "Stara lozinka je netočna"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Imaš želju za razgovorom? Razgovaraj s nama na Gitteru"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Opis"
 
@@ -926,10 +918,6 @@ msgstr "Širina"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Sjena"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1233,9 +1221,6 @@ msgstr "Centar za pomoć"
 msgid "labels.hide-resolved-comments"
 msgstr "Sakrij riješene komentare"
 
-msgid "labels.images"
-msgstr "Slike"
-
 msgid "labels.installed-fonts"
 msgstr "Instalirani fontovi"
 
@@ -1428,9 +1413,6 @@ msgstr "Prikaži listu komentara"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Prikaži samo tvoje komentare"
-
-msgid "labels.skip"
-msgstr "Preskoči"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1911,14 +1893,8 @@ msgstr "Stvori tim i pošalji pozivnice"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Pozovi s ulogom:"
 
-msgid "onboarding.contrib.alt"
-msgstr "Open Source"
-
 msgid "onboarding.contrib.desc2.1"
 msgstr "Možeš pristupiti"
-
-msgid "onboarding.contrib.link"
-msgstr "projekt na githubu"
 
 msgid "onboarding.newsletter.accept"
 msgstr "Da, pretplati se"
@@ -1932,32 +1908,14 @@ msgstr "Politika privatnosti."
 msgid "onboarding.newsletter.title"
 msgstr "Želiš primati Penpot novostii?"
 
-msgid "onboarding.slide.0.desc1"
-msgstr "Stvaraj prekrasna korisnička sučelja u suradnji sa svim članovima tima."
-
 msgid "onboarding.slide.0.title"
 msgstr "Dizajniraj biblioteke, stilove i komponente"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "Stvaraj bogate interakcije kako bi oponašao/la ponašanje proizvoda."
 
 msgid "onboarding.slide.1.title"
 msgstr "Oživi vlastite dizajne interakcijama"
 
-#, fuzzy
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"Svi članovi tima rade istovremeno s multiplayer dizajnom u stvarnom vremenu "
-"i centraliziranim komentarima, idejama i povratnim informacijama izravno "
-"preko dizajna."
-
 msgid "onboarding.slide.3.alt"
 msgstr "Inspect i lowcode"
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"Dobij i pruži specifikacije koda kao što su oznake (SVG, HTML) ili stilovi "
-"(CSS, Less, Stylus…)."
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Kreiraj tim"
@@ -2530,10 +2488,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Kopiraj poveznicu"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "Ovdje će se pojaviti poveznica za dijeljenje"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Svatko s poveznicom imat će pristup"
 
@@ -2980,19 +2934,12 @@ msgstr "Ažuriranje"
 msgid "workspace.libraries.updates"
 msgstr "AŽURIRANJA"
 
-msgid "workspace.library.libraries"
-msgstr "Biblioiteke"
-
 msgid "workspace.library.store"
 msgstr "Pohrani biblioteke"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
 msgstr "Klikni gumb + za dodavanje interakcija."
-
-#, fuzzy
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Layer"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
@@ -3551,10 +3498,6 @@ msgstr "Minimalna širina"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Dno"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
-msgstr "Red"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.top"

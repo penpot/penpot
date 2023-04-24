@@ -2029,9 +2029,6 @@ msgstr "Politique de confidentialité."
 msgid "onboarding.newsletter.title"
 msgstr "Vous souhaitez recevoir les actualités de Penpot ?"
 
-msgid "onboarding.slide.1.title"
-msgstr "Donnez vie à vos conceptions avec des interactions"
-
 msgid "onboarding.team-modal.create-team"
 msgstr "Créer une équipe"
 

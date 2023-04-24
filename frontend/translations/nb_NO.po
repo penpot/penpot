@@ -361,9 +361,6 @@ msgstr "Skrifttilbydere"
 msgid "labels.fonts"
 msgstr "Skrifter"
 
-msgid "labels.images"
-msgstr "Bilder"
-
 msgid "labels.installed-fonts"
 msgstr "Installerte skrifter"
 
@@ -554,10 +551,6 @@ msgstr "Innstillinger - %s - Penpot"
 msgid "title.workspace"
 msgstr "%s - Penpot"
 
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.remove-link"
-msgstr "Fjern lenke"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.colors"
 msgstr "Farger"
@@ -649,9 +642,6 @@ msgstr "%s komponenter"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.file-library"
 msgstr "Filbibliotek"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Lag"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"

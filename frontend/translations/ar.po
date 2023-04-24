@@ -515,10 +515,6 @@ msgstr "+ مشروع جديد"
 msgid "dashboard.new-project-prefix"
 msgstr "مشروع جديد"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "الإشتراك في"
-
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "لم يتم العثور على مطابقات ل \"%s\""
@@ -826,10 +822,6 @@ msgid "errors.wrong-old-password"
 msgstr "كلمة المرور القديمة غير صحيحة"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "ترغب في الكلام؟ تحدث معنا في Gitter"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "وصف"
 
@@ -943,10 +935,6 @@ msgstr "عرض"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "ظل"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1248,9 +1236,6 @@ msgstr "مركز المساعدة"
 msgid "labels.hide-resolved-comments"
 msgstr "إخفاء التعليقات التي تم حلها"
 
-msgid "labels.images"
-msgstr "الصور"
-
 msgid "labels.installed-fonts"
 msgstr "الخطوط المتوفرة"
 
@@ -1457,9 +1442,6 @@ msgstr "قائمة التعليقات"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "إظهار تعليقاتك فقط"
-
-msgid "labels.skip"
-msgstr "تخطي"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1884,14 +1866,8 @@ msgstr "أنشئ فريقًا وأرسل الدعوات"
 msgid "onboarding.choice.team-up.roles"
 msgstr "دعوة مع الدور:"
 
-msgid "onboarding.contrib.alt"
-msgstr "مصدر مفتوح"
-
 msgid "onboarding.contrib.desc2.1"
 msgstr "يمكنك الوصول إلى"
-
-msgid "onboarding.contrib.link"
-msgstr "مشروع على github"
 
 msgid "onboarding.newsletter.accept"
 msgstr "نعم ، اشترك"
@@ -1905,22 +1881,11 @@ msgstr "سياسة الخصوصية."
 msgid "onboarding.newsletter.title"
 msgstr "هل تريد تلقي أخبار Penpot؟"
 
-msgid "onboarding.slide.0.desc1"
-msgstr "قم بإنشاء واجهات مستخدم جميلة بالتعاون مع جميع أعضاء الفريق."
-
 msgid "onboarding.slide.0.title"
 msgstr "مكتبات التصميم والأنماط والمكونات"
 
-msgid "onboarding.slide.1.desc1"
-msgstr "أنشئ تفاعلات غنية لتقليد سلوك المنتج."
-
 msgid "onboarding.slide.1.title"
 msgstr "اجعل تصميماتك تنبض بالحياة من خلال التفاعلات"
-
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"يعمل جميع أعضاء الفريق في وقت واحد مع تصميمات متعددة اللاعبين في الوقت "
-"الفعلي وتعليقات وأفكار وتعليقات مركزية مباشرة على التصميمات."
 
 msgid "onboarding.slide.3.desc1"
 msgstr ""
@@ -2344,10 +2309,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "نسخ الرابط"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "سيظهر رابط المشاركة هنا"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "أي شخص لديه الرابط سيكون لديه حق الوصول"
 
@@ -2697,14 +2658,8 @@ msgstr "تحديث"
 msgid "workspace.libraries.updates"
 msgstr "التحديثات"
 
-msgid "workspace.library.libraries"
-msgstr "المكتبات"
-
 msgid "workspace.library.store"
 msgstr "المكتبات المخزنة"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "طبقة"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"

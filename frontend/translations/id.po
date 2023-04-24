@@ -924,30 +924,16 @@ msgstr "Akun dukungan Twitter"
 msgid "generic.error"
 msgstr "Sebuah kesalahan telah terjadi"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.height"
-msgstr "Tinggi"
-
 #: src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.width"
 msgstr "Lebar"
-
-#, permanent
-msgid "handoff.attributes.stroke.alignment.inner"
-msgstr "Dalam"
 
 #: src/app/main/ui/handoff/attributes/text.cljs
 msgid "handoff.attributes.typography.font-family"
 msgstr "Keluarga Fon"
 
-msgid "handoff.attributes.typography.text-decoration.underline"
-msgstr "Garis Bawah"
-
 msgid "handoff.tabs.code.selected.component"
 msgstr "Komponen"
-
-msgid "handoff.tabs.code.selected.rect"
-msgstr "Persegi Panjang"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -2113,9 +2099,6 @@ msgstr "Kebijakan Privasi kami."
 
 msgid "onboarding.newsletter.title"
 msgstr "Ingin menerima berita Penpot?"
-
-msgid "onboarding.slide.1.title"
-msgstr "Buat desain Anda nyata dengan interaksi"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Buat sebuah tim"
@@ -3674,10 +3657,6 @@ msgstr "Tinggi minimum"
 msgid "workspace.options.layout-item.title.layout-item-min-w"
 msgstr "Lebar minimum"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-h"
-msgstr "Tinggi minimum"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Bawah"
@@ -3685,10 +3664,6 @@ msgstr "Bawah"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.column"
 msgstr "Kolom"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Kolom terbalik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.reverse-row"
