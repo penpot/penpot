@@ -194,7 +194,7 @@
 
               ;; Additional hooks for provider specific way of
               ;; retrieve emails.
-              :get-email-fn           (partial retrieve-github-email cfg)}]
+              :get-email-fn  (partial retrieve-github-email cfg)}]
 
     (when (contains? cf/flags :login-with-github)
       (if (and (string? (:client-id opts))
@@ -367,6 +367,11 @@
                    ::fullname
                    ::props]))
 
+(defn- parse-oidc-role-attrs
+  [path]
+  (let [[fitem & items] (str/split path "__")]
+    (into [(keyword "oidc" fitem)] (map keyword) items)))
+
 (defn get-info
   [{:keys [provider] :as cfg} {:keys [params] :as request}]
   (when-let [error (get params :error)]
@@ -385,16 +390,18 @@
     ;; roles if they are defined.
     (when (and (= "oidc" (:name provider))
                (seq (:roles provider)))
-      (let [provider-roles (into #{} (:roles provider))
-            profile-roles  (let [attr  (cf/get :oidc-roles-attr :roles)
-                                 roles (get info attr)]
+
+      (let [expected-roles (into #{} (:roles provider))
+            current-roles  (let [roles (->> (cf/get :oidc-roles-attr "roles")
+                                            (parse-oidc-role-attrs)
+                                            (get-in info))]
                              (cond
                                (string? roles) (into #{} (str/words roles))
                                (vector? roles) (into #{} roles)
                                :else #{}))]
 
         ;; check if profile has a configured set of roles
-        (when-not (set/subset? provider-roles profile-roles)
+        (when-not (set/subset? expected-roles current-roles)
           (ex/raise :type :internal
                     :code :unable-to-auth
                     :hint "not enough permissions"))))
