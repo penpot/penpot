@@ -575,6 +575,30 @@
                        :shortcut (sc/get-tooltip :toggle-focus-mode)
                        :on-click do-toggle-focus-mode}])]))
 
+(mf/defc page-item-context-menu
+  [{:keys [mdata] :as props}]
+  (let [page (:page mdata)
+        deletable? (:deletable? mdata)
+        id (:id page)
+        delete-fn #(st/emit! (dw/delete-page id))
+        do-delete #(st/emit! (modal/show 
+                     {:type :confirm
+                      :title (tr "modals.delete-page.title")
+                      :message (tr "modals.delete-page.body")
+                      :on-accept delete-fn}))
+        do-duplicate #(st/emit! (dw/duplicate-page id))
+        do-rename #(st/emit! (dw/start-rename-page-item id))]
+  
+  [:*
+   (when deletable?
+     [:& menu-entry {:title (tr "workspace.assets.delete")
+                     :on-click do-delete}])
+
+   [:& menu-entry {:title (tr "workspace.assets.rename")
+                   :on-click do-rename}]
+   [:& menu-entry {:title (tr "workspace.assets.duplicate")
+                   :on-click do-duplicate}]]))
+
 (mf/defc context-menu
   []
   (let [mdata (mf/deref menu-ref)
@@ -602,8 +626,9 @@
        :style {:top top :left left}
        :on-context-menu prevent-default}
 
-      (if (contains? mdata :selected)
-        [:& shape-context-menu {:mdata mdata}]
+      (case (:kind mdata)
+        :shape [:& shape-context-menu {:mdata mdata}]
+        :page [:& page-item-context-menu {:mdata mdata}]
         [:& viewport-context-menu {:mdata mdata}])]]))
 
 

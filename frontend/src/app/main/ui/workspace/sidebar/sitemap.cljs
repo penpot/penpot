@@ -11,7 +11,6 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
@@ -26,28 +25,13 @@
 ;; --- Page Item
 
 (mf/defc page-item
-  [{:keys [page index deletable? selected?] :as props}]
-  (let [local                (mf/use-state {})
-        input-ref            (mf/use-ref)
+  [{:keys [page index deletable? selected? editing?] :as props}]
+  (let [input-ref            (mf/use-ref)
         id                   (:id page)
-        state                (mf/use-state {:menu-open false})
 
         delete-fn            (mf/use-callback (mf/deps id) #(st/emit! (dw/delete-page id)))
         navigate-fn          (mf/use-callback (mf/deps id) #(st/emit! :interrupt (dw/go-to-page id)))
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
-
-        on-context-menu
-        (mf/use-callback
-         (mf/deps id workspace-read-only?)
-         (fn [event]
-           (dom/prevent-default event)
-           (dom/stop-propagation event)
-           (when-not workspace-read-only?
-             (let [pos (dom/get-client-position event)]
-               (swap! state assoc
-                      :menu-open true
-                      :top (:y pos)
-                      :left (:x pos))))))
 
         on-delete
         (mf/use-callback
@@ -65,8 +49,8 @@
            (dom/prevent-default event)
            (dom/stop-propagation event)
            (when-not workspace-read-only?
-             (swap! local assoc :edition true)
-             (swap! state assoc :menu-open false))))
+             (st/emit! (dw/start-rename-page-item id))
+             (st/emit! (dw/hide-context-menu)))))
 
         on-blur
         (mf/use-callback
@@ -75,7 +59,7 @@
                  name   (str/trim (dom/get-value target))]
              (when-not (str/empty? name)
                (st/emit! (dw/rename-page id name)))
-             (swap! local assoc :edition false))))
+             (st/emit! (dw/stop-rename-page-item)))))
 
         on-key-down
         (mf/use-callback
@@ -85,7 +69,7 @@
              (on-blur event)
 
              (kbd/esc? event)
-             (swap! local assoc :edition false))))
+             (st/emit! (dw/stop-rename-page-item)))))
 
         on-drop
         (mf/use-callback
@@ -94,10 +78,6 @@
            (let [index (if (= :bot side) (inc index) index)]
              (st/emit! (dw/relocate-page id index)))))
 
-        on-duplicate
-        (fn [_]
-          (st/emit! (dw/duplicate-page id)))
-
         [dprops dref]
         (hooks/use-sortable
          :data-type "penpot/page"
@@ -105,7 +85,20 @@
          :data {:id id
                 :index index
                 :name (:name page)}
-         :draggable? (not workspace-read-only?))]
+         :draggable? (not workspace-read-only?))
+
+        on-context-menu
+        (mf/use-callback
+         (mf/deps id workspace-read-only?)
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (when-not workspace-read-only?
+             (let [position (dom/get-client-position event)]
+               (st/emit! (dw/show-page-item-context-menu 
+                          {:position position 
+                           :page page 
+                           :deletable? deletable?}))))))]
 
     (mf/use-effect
       (mf/deps selected?)
@@ -115,9 +108,9 @@
             (dom/scroll-into-view-if-needed! node)))))
 
     (mf/use-layout-effect
-     (mf/deps (:edition @local))
+     (mf/deps editing?)
      (fn []
-       (when (:edition @local)
+       (when editing?
          (let [edit-input (mf/ref-val input-ref)]
            (dom/select-text! edit-input))
          nil)))
@@ -135,7 +128,7 @@
         :on-double-click on-double-click
         :on-context-menu on-context-menu}
        [:div.page-icon i/file-html]
-       (if (:edition @local)
+       (if editing?
          [:*
           [:input.element-name {:type "text"
                                 :ref input-ref
@@ -147,22 +140,7 @@
           [:span (:name page)]
           [:div.page-actions
            (when (and deletable? (not workspace-read-only?))
-             [:a {:on-click on-delete} i/trash])]])]]
-
-     (when-not workspace-read-only?
-       [:& context-menu
-        {:selectable false
-         :show (:menu-open @state)
-         :on-close #(swap! state assoc :menu-open false)
-         :top (:top @state)
-         :left (:left @state)
-         :options (cond-> []
-                    deletable?
-                    (conj [(tr "workspace.assets.delete") on-delete])
-
-                    :always
-                    (-> (conj [(tr "workspace.assets.rename") on-double-click])
-                        (conj [(tr "workspace.assets.duplicate") on-duplicate])))}])]))
+             [:a {:on-click on-delete} i/trash])]])]]]))
 
 
 ;; --- Page Item Wrapper
@@ -175,13 +153,14 @@
               st/state =))
 
 (mf/defc page-item-wrapper
-  [{:keys [page-id index deletable? selected?] :as props}]
+  [{:keys [page-id index deletable? selected? editing?] :as props}]
   (let [page-ref (mf/use-memo (mf/deps page-id) #(make-page-ref page-id))
         page     (mf/deref page-ref)]
     [:& page-item {:page page
                    :index index
                    :deletable? deletable?
-                   :selected? selected?}]))
+                   :selected? selected?
+                   :editing? editing?}]))
 
 ;; --- Pages List
 
@@ -189,6 +168,7 @@
   [{:keys [file] :as props}]
   (let [pages           (:pages file)
         deletable?      (> (count pages) 1)
+        editing-page-id (mf/deref refs/editing-page-item)
         current-page-id (mf/use-ctx ctx/current-page-id)]
     [:ul.element-list.pages-list
      [:& hooks/sortable-container {}
@@ -198,6 +178,7 @@
           :index index
           :deletable? deletable?
           :selected? (= page-id current-page-id)
+          :editing? (= page-id editing-page-id)
           :key page-id}])]]))
 
 ;; --- Sitemap Toolbox

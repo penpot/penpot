@@ -5,6 +5,10 @@
 ### :bug: Bugs fixed
 
 - Fix problem with rulers not placing correctly [Taiga #5093](https://tree.taiga.io/project/penpot/issue/5093)
+- Fix page context menu [Taiga #5145](https://tree.taiga.io/project/penpot/issue/5145)
+- Fix project file count [Taiga #5148](https://tree.taiga.io/project/penpot/issue/5148)
+
+### :arrow_up: Deps updates
 
 ## 1.18.2
 
