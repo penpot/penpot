@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-23 20:54+0000\n"
-"Last-Translator: Dário <dariogomes@gmail.com>\n"
-"Language-Team: Spanish "
-"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
+"PO-Revision-Date: 2023-03-07 11:37+0000\n"
+"Last-Translator: Alvaro Araoz <alvaroaraoz_92@hotmail.com>\n"
+"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
+"es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 4.16.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -54,7 +54,7 @@ msgstr "Nombre completo"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
-msgstr "Entra aquí"
+msgstr "Inicia sesión aquí"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -311,18 +311,19 @@ msgstr "Duplicar %s archivos"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"¡Oh, no! ¡Aún no tienes archivos! Si quieres probar con alguna plantilla ve "
-"a [Bibliotecas y plantillas](https://penpot.app/libraries-templates.html)"
+"Los archivos agregados a las bibliotecas aparecerán aquí. Si quieres probar "
+"con alguna plantilla ve a [Bibliotecas y plantillas](https://penpot.app/"
+"libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Descargar %s archivos Penpot (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Exportar tableros a PDF"
+msgstr "Exportar tableros como PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
-msgstr "Exportar a PDF"
+msgstr "Exportar como PDF"
 
 msgid "dashboard.export-multi"
 msgstr "Exportar %s archivos Penpot"
@@ -399,7 +400,7 @@ msgid "dashboard.fonts.dismiss-all"
 msgstr "Ignorar todas"
 
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "Aun no tienes fuentes personalizadas."
+msgstr "Las fuentes personalizadas que subas aparecerán aquí."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.fonts-added"
@@ -480,7 +481,7 @@ msgstr "Enviando fichero: %s"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "Invitar al equipo"
+msgstr "Invitar a la gente"
 
 #: src/app/main/ui/dashboard/sidebar.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs
@@ -536,10 +537,6 @@ msgstr "+ Nuevo proyecto"
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "Nuevo Proyecto"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Suscripción a newsletter"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
@@ -697,7 +694,7 @@ msgid "dashboard.webhooks.create"
 msgstr "Crear webhook"
 
 msgid "dashboard.webhooks.create.success"
-msgstr "Webhook creado con éxito"
+msgstr "Webhook creado con éxito."
 
 msgid "dashboard.webhooks.description"
 msgstr ""
@@ -712,7 +709,7 @@ msgid "dashboard.webhooks.empty.no-webhooks"
 msgstr "No hay ningún webhook aún."
 
 msgid "dashboard.webhooks.update.success"
-msgstr "Webhook modificado con éxito"
+msgstr "Webhook modificado con éxito."
 
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
@@ -929,15 +926,11 @@ msgstr "Estado inesperado %s"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
-msgstr "El nombre o la contraseña parece incorrecto."
+msgstr "El email o la contraseña son incorrectos."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
 msgstr "La contraseña anterior no es correcta"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "¿Deseas conversar? Entra al nuestro chat de la comunidad en Gitter"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
@@ -956,10 +949,6 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-title"
 msgstr "Comunidad de Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "Debates de equipo"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
@@ -1060,14 +1049,6 @@ msgstr "Ancho"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Sombra"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.size"
@@ -1391,9 +1372,6 @@ msgstr "Centro de ayuda"
 msgid "labels.hide-resolved-comments"
 msgstr "Ocultar comentarios resueltos"
 
-msgid "labels.images"
-msgstr "Imágenes"
-
 msgid "labels.inactive"
 msgstr "Inactivo"
 
@@ -1445,16 +1423,17 @@ msgstr "Nueva contraseña"
 #: src/app/main/ui/workspace/comments.cljs,
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "No tienes notificaciones de comentarios pendientes"
+msgstr "¡Ya estás al día! Nuevas notificaciones de comentarios aparecerán aquí."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
-msgstr "No hay invitaciones."
+msgstr "No hay invitaciones pendientes."
 
 #: src/app/main/ui/dashboard/team.cljs
 #, markdown
 msgid "labels.no-invitations-hint"
-msgstr "Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
+msgstr ""
+"Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1597,9 +1576,6 @@ msgstr "Mostrar lista de comentarios"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Mostrar sólo tus comentarios"
-
-msgid "labels.skip"
-msgstr "Omitir"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -2214,15 +2190,6 @@ msgstr "Crear equipo y enviar invitaciones"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Invitar con el rol:"
 
-msgid "onboarding.contrib.alt"
-msgstr "Código Abierto"
-
-msgid "onboarding.contrib.desc2.1"
-msgstr "Puedes acceder al"
-
-msgid "onboarding.contrib.link"
-msgstr "proyecto en github"
-
 msgid "onboarding.newsletter.accept"
 msgstr "Si, suscribirme"
 
@@ -2236,32 +2203,6 @@ msgstr "Política de Privacidad."
 
 msgid "onboarding.newsletter.title"
 msgstr "¿Quieres recibir noticias sobre Penpot?"
-
-msgid "onboarding.slide.0.desc1"
-msgstr "Crea bellos interfaces en colaboración con todas las personas del equipo."
-
-msgid "onboarding.slide.0.title"
-msgstr "Bibliotecas de diseño, estilos y componentes"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "Crea interacciones completas para imitar el comportamiento del producto."
-
-msgid "onboarding.slide.1.title"
-msgstr "Lleva tus diseños a la vida con interacciones"
-
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"Todas las personas del equipo trabajando simultáneamente en archivos de "
-"diseño con edición conjunta en tiempo real y herramientas para comentar "
-"directamente sobre los diseños."
-
-msgid "onboarding.slide.3.alt"
-msgstr "Especificaciones de código"
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"Obtén y entrega especificaciones de código para marcado (SVG, HTML) y "
-"estilos (CSS, Less, Stylus…)."
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Crea un equipo"
@@ -2286,12 +2227,6 @@ msgstr "Sin límite de integrantes"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "¡100% gratis!"
 
-msgid "onboarding.team.create.title"
-msgstr "Crear equipo"
-
-msgid "onboarding.team.start.title"
-msgstr "Comienza a diseñar"
-
 msgid "onboarding.templates.subtitle"
 msgstr "Aquí tienes algunas plantillas."
 
@@ -2300,9 +2235,6 @@ msgstr "Empezar a diseñar"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.title"
-msgstr "Te damos la bienvenida a Penpot"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
@@ -2894,14 +2826,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Copiar enlace"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "El enlace para compartir aparecerá aquí"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Cualquiera con el enlace podrá acceder"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Mostrar interacciones"
 
@@ -3376,18 +3300,9 @@ msgstr "Actualizar"
 msgid "workspace.libraries.updates"
 msgstr "ACTUALIZACIONES"
 
-msgid "workspace.library.libraries"
-msgstr "Bibliotecas"
-
-msgid "workspace.library.store"
-msgstr "Predefinidas"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
 msgstr "Pulsa el botón + para añadir interacciones."
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Capa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
@@ -3743,7 +3658,7 @@ msgstr "Superposición: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-url"
-msgstr "Abrir url"
+msgstr "Abrir URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-out"
@@ -4303,10 +4218,10 @@ msgid "workspace.options.width"
 msgstr "Ancho"
 
 msgid "workspace.options.x"
-msgstr "X"
+msgstr "eje X"
 
 msgid "workspace.options.y"
-msgstr "Y"
+msgstr "eje Y"
 
 msgid "workspace.path.actions.add-node"
 msgstr "Añadir nodo (%s)"
