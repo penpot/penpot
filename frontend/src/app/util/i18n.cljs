@@ -34,6 +34,7 @@
    {:label "Polski (community)" :value "pl"}
    {:label "Portuguese - Brazil (community)" :value "pt_br"}
    {:label "Portuguese - Portugal (community)" :value "pt_pt"}
+   {:label "Bahasa Indonesia (community)" :value "id"}
    {:label "Rumanian (community)" :value "ro"}
    {:label "Türkçe (community)" :value "tr"}
    {:label "Ελληνική γλώσσα (community)" :value "el"}
