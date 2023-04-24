@@ -1,12 +1,14 @@
 # CHANGELOG
 
-## 1.18.3
+## 1.18.3 (Unreleased)
 
 ### :bug: Bugs fixed
 
 - Fix problem with rulers not placing correctly [Taiga #5093](https://tree.taiga.io/project/penpot/issue/5093)
 - Fix page context menu [Taiga #5145](https://tree.taiga.io/project/penpot/issue/5145)
 - Fix project file count [Taiga #5148](https://tree.taiga.io/project/penpot/issue/5148)
+- Fix OIDC roles checking mechanism [GH #3152](https://github.com/penpot/penpot/issues/3152)
+- Import updated translation strings from weblate
 
 ### :arrow_up: Deps updates
 

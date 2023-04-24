@@ -1,6 +1,680 @@
 msgid ""
 msgstr ""
-"X-Generator: Weblate\n"
+"PO-Revision-Date: 2023-04-13 12:50+0000\n"
+"Last-Translator: Suhwan Kim <jgk9282@gmail.com>\n"
+"Language-Team: Korean "
+"<https://hosted.weblate.org/projects/penpot/frontend/ko/>\n"
+"Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 4.17-dev\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "이미 계정이 있으신가요?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "비밀번호 확인하기"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "데모 계정을 생성하세요"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "그냥 해볼까요?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "이메일"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "비밀번호를 잊어버리셨나요?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "여기서 로그인하세요"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "로그인"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "다시 만나서 반가워요!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "구글"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "새 비밀번호를 입력하세요"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "비밀번호가 성공적으로 변경되었어요"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "프로필이 검증되지 않았어요. 계속 하려면 검증절차를 완료해주세요."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "비밀번호 복구를 위한 링크를 메일함으로 보냈어요"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "팀에 성공적으로 합류했어요"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "비밀번호"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "최소 8개의 문자"
+
+msgid "auth.privacy-policy"
+msgstr "개인 정보 정책"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "비밀번호 복구하기"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "이용지침을 메일로 전달해드릴거에요"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "비밀번호를 잊으셨나요?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "비밀번호를 바꾸세요"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "아직 계정이 없으신가요?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "계정을 생성하세요"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "무료고 오픈소스에요"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "계정을 생성하세요"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "디자인과 프로토타이핑을 위한 오픈소스 솔루션"
+
+msgid "auth.terms-of-service"
+msgstr "서비스 정책"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr "새로운 계정을 생성하실 때, 서비스 정책과 개인 정보 정책에 동의해요"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "검증 메일을 ~에 보냈어요"
+
+msgid "common.publish"
+msgstr "발행하기"
+
+msgid "common.share-link.all-users"
+msgstr "모든 펜팟 유저들"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr "정말로 링크를 제거하고 싶으세요? 제거하시면, 더이상 아무도 이용할 수 없어요"
+
+msgid "common.share-link.current-tag"
+msgstr "(현재)"
+
+msgid "common.share-link.get-link"
+msgstr "링크 얻기"
+
+msgid "common.share-link.link-copied-success"
+msgstr "링크를 성공적으로 복사했어요"
+
+msgid "common.share-link.manage-ops"
+msgstr "권한을 관리하세요"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "코멘트를 달 수 있어요"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "코드를 검사할 수 있어요"
+
+msgid "common.share-link.permissions-hint"
+msgstr "링크를 가진 누구나 접근할 수 있어요"
+
+msgid "common.share-link.permissions-pages"
+msgstr "페이지가 공유됐어요"
+
+msgid "common.share-link.placeholder"
+msgstr "공유할 수 있는 링크는 여기 나타날거에요"
+
+msgid "common.share-link.team-members"
+msgstr "오직 팀원들을 위해"
+
+msgid "common.share-link.title"
+msgstr "프로토타입을 공유해요"
+
+msgid "common.share-link.view-all"
+msgstr "모두 선택해요"
+
+msgid "common.unpublish"
+msgstr "발행취소하기"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "팀 관리"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "팀을 이뤄요!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "튜토리얼을 시작하세요"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "투어를 시작해요"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "이메일을 변경해요"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(복사)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "새 팀을 생성해요"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "당신의 펜팟"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "팀을 해체해요"
+
+msgid "dashboard.download-binary-file"
+msgstr "펜팟 파일(.penpot)을 다운로드해요"
+
+msgid "dashboard.download-standard-file"
+msgstr "표준 파일(.svg + .json)을 다운로드해요"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "복제해요"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "%파일을 복제해요"
+
+msgid "dashboard.export-frames"
+msgstr "대지를 PDF로 내보내요"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "PDF로 내보내요"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "내보내요"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur"
+msgstr "흐림"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur.value"
+msgstr "값"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hex"
+msgstr "HEX"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/inspect/attributes/fill.cljs
+msgid "inspect.attributes.fill"
+msgstr "채우기"
+
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.download"
+msgstr "소스 이미지 다운로드"
+
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.height"
+msgstr "높이"
+
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.width"
+msgstr "폭"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout"
+msgstr "레이아웃"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.height"
+msgstr "높이"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.left"
+msgstr "왼쪽"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs, src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.radius"
+msgstr "반지름"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.rotation"
+msgstr "회전"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.top"
+msgstr "위"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.width"
+msgstr "폭"
+
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow"
+msgstr "그림자"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "사이즈와 위치"
+
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke"
+msgstr "선"
+
+#, permanent
+msgid "inspect.attributes.stroke.alignment.center"
+msgstr "중앙"
+
+#, permanent
+msgid "inspect.attributes.stroke.alignment.inner"
+msgstr "안쪽"
+
+#, permanent
+msgid "inspect.attributes.stroke.alignment.outer"
+msgstr "바깥쪽"
+
+msgid "inspect.attributes.stroke.style.dotted"
+msgstr "점선"
+
+msgid "inspect.attributes.stroke.style.mixed"
+msgstr "혼합"
+
+msgid "inspect.attributes.stroke.style.solid"
+msgstr "단색"
+
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke.width"
+msgstr "폭"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography"
+msgstr "타이포그래피"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-family"
+msgstr "폰트 패밀리"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-size"
+msgstr "폰트 사이즈"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-style"
+msgstr "폰트 스타일"
+
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
+msgstr "취소선"
+
+msgid "inspect.attributes.typography.text-decoration.underline"
+msgstr "밑줄"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.text-transform"
+msgstr "텍스트 변형"
+
+msgid "inspect.attributes.typography.text-transform.lowercase"
+msgstr "소문자"
+
+msgid "inspect.attributes.typography.text-transform.uppercase"
+msgstr "대문자"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code"
+msgstr "코드"
+
+msgid "inspect.tabs.code.selected.circle"
+msgstr "원"
+
+msgid "inspect.tabs.code.selected.component"
+msgstr "컴포넌트"
+
+msgid "inspect.tabs.code.selected.curve"
+msgstr "커브"
+
+msgid "inspect.tabs.code.selected.frame"
+msgstr "보드"
+
+msgid "inspect.tabs.code.selected.group"
+msgstr "그룹"
+
+msgid "inspect.tabs.code.selected.image"
+msgstr "이미지"
+
+msgid "inspect.tabs.code.selected.mask"
+msgstr "마스크"
+
+msgid "inspect.tabs.code.selected.path"
+msgstr "패스"
+
+msgid "inspect.tabs.code.selected.rect"
+msgstr "사각형"
+
+msgid "inspect.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "inspect.tabs.code.selected.text"
+msgstr "텍스트"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.info"
+msgstr "정보"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "단축키"
+
+msgid "labels.accept"
+msgstr "허가"
+
+msgid "labels.active"
+msgstr "활성화"
+
+msgid "labels.add-custom-font"
+msgstr "커스텀 폰트 추가"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "관리자"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.all"
+msgstr "전체"
+
+msgid "labels.and"
+msgstr "그리고"
+
+msgid "labels.back"
+msgstr "뒤로"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.main-message"
+msgstr "잘못된 경로"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.cancel"
+msgstr "취소"
+
+msgid "labels.close"
+msgstr "닫기"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "labels.comments"
+msgstr "코멘트"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "커뮤니티"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.confirm-password"
+msgstr "비밀번호 확인하기"
+
+msgid "labels.continue"
+msgstr "계속하기"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "링크 복사하기"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "생성하기"
+
+#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team"
+msgstr "새로운 팀 만들기"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "새로운 팀명 입력하세요"
+
+msgid "labels.custom-fonts"
+msgstr "커스텀 폰트"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.dashboard"
+msgstr "대시보드"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete"
+msgstr "삭제하기"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment"
+msgstr "코멘트 삭제하기"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment-thread"
+msgstr "스레드 제거하기"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "초대장 제거하기"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.drafts"
+msgstr "초안"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.edit"
+msgstr "편집"
+
+msgid "labels.edit-file"
+msgstr "파일 편집"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.editor"
+msgstr "작성자"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "기한이 만료된"
+
+msgid "labels.export"
+msgstr "내보내기"
+
+msgid "labels.font-family"
+msgstr "폰트 패밀리"
+
+msgid "labels.font-providers"
+msgstr "폰트 공급자"
+
+msgid "labels.font-variants"
+msgstr "스타일"
+
+msgid "labels.fonts"
+msgstr "폰트"
+
+msgid "labels.go-back"
+msgstr "뒤로 가기"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "고객센터"
+
+msgid "labels.inactive"
+msgstr "비활성화"
+
+msgid "labels.view-only"
+msgstr "보기 전용"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.viewer"
+msgstr "뷰어"
+
+msgid "labels.webhooks"
+msgstr "웹훅"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.write-new-comment"
+msgstr "새 코멘트 쓰기"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "media.loading"
+msgstr "이미지 로딩중…"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.accept"
+msgstr "공유된 라이브러리로 추가"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.message"
+msgstr " "
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.confirm-email"
+msgstr "새 이메일 인증하기"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.new-email"
+msgstr "새 이메일"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.submit"
+msgstr "이메일 변경하기"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.title"
+msgstr "이메일을 변경하세요"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "웹훅 만들기"
+
+msgid "modals.create-webhook.title"
+msgstr "웹훅 생성하기"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.accept"
+msgstr "대회 지우기"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.title"
+msgstr "대화 지우기"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.accept"
+msgstr "파일 지우기"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.message"
+msgstr "이 파일을 정말로 지우시겠습니까?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.title"
+msgstr "파일 삭제중"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.accept"
+msgstr "여러 파일 지우기"
+
+msgid "modals.delete-font-variant.title"
+msgstr "폰트 스타일 지우는 중"
+
+msgid "modals.delete-font.title"
+msgstr "폰트 지우는 중"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.body"
+msgstr "정말로 해당 페이지를 지우시겠습니까?"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.title"
+msgstr "페이지 삭제"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.accept"
+msgstr "프로젝트 제거"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.message"
+msgstr "정말로 해당 프로젝트를 지우시겠습니까?"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.title"
+msgstr "프로젝트 제거"
+
+#: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
+msgid "notifications.profile-saved"
+msgstr "프로필이 성공적으로 저장되었습니다!"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "가로로 뒤집기"
+
+msgid "shortcuts.flip-vertical"
+msgstr "세로로 뒤집기"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "초안으로 가기"
+
+msgid "shortcuts.go-to-libs"
+msgstr "공유된 라이브러리로 가기"
+
+msgid "shortcuts.go-to-search"
+msgstr "찾기"
+
+msgid "shortcuts.group"
+msgstr "그룹"
+
+msgid "shortcuts.h-distribute"
+msgstr "가로로 분배하기"
