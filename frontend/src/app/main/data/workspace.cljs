@@ -1244,6 +1244,7 @@
 
 (s/def ::point gpt/point?)
 
+
 (defn show-context-menu
   [{:keys [position] :as params}]
   (us/verify ::point position)
@@ -1272,9 +1273,19 @@
          (rx/of (show-context-menu
                  (-> params
                      (assoc
+                      :kind :shape
                       :disable-booleans? (or no-bool-shapes? not-group-like?)
                       :disable-flatten? no-bool-shapes?
                       :selected (conj selected (:id shape)))))))))))
+
+(defn show-page-item-context-menu
+  [{:keys [position page] :as params}]
+  (us/verify ::point position)
+  (ptk/reify ::show-page-item-context-menu
+    ptk/WatchEvent
+    (watch [_ _ _]
+           (rx/of (show-context-menu
+                   (-> params (assoc :kind :page :selected (:id page))))))))
 
 (def hide-context-menu
   (ptk/reify ::hide-context-menu
@@ -2006,7 +2017,25 @@
     (update [_ state]
       (assoc-in state [:workspace-local :inspect-expanded] expanded?))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Sitemap
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn start-rename-page-item
+  [id]
+  (ptk/reify ::start-rename-page-item
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :page-item] id))))
+
+(defn stop-rename-page-item
+  []
+  (ptk/reify ::stop-rename-page-item
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [local (-> (:workspace-local state)
+                      (dissoc :page-item))]
+        (assoc state :workspace-local local)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; File Library persistent settings
