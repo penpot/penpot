@@ -101,7 +101,7 @@
                         (fn []
                           (let [features (cond-> #{} components-v2 (conj "components/v2"))]
                             (->> (rx/zip
-                                  (repo/query! :font-variants {:file-id file-id})
+                                  (repo/cmd! :get-font-variants {:file-id file-id})
                                   (repo/cmd! :get-page {:file-id file-id
                                                         :page-id page-id
                                                         :object-id object-id
@@ -141,7 +141,7 @@
                        (fn []
                          (let [features (cond-> #{} components-v2 (conj "components/v2"))]
                            (->> (rx/zip
-                                 (repo/query! :font-variants {:file-id file-id})
+                                 (repo/cmd! :get-font-variants {:file-id file-id})
                                  (repo/cmd! :get-page {:file-id file-id
                                                        :page-id page-id
                                                        :features features}))
