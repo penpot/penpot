@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-02-22 18:37+0000\n"
 "Last-Translator: Alex Howell <alextec70@outlook.com>\n"
-"Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
-"ro/>\n"
+"Language-Team: Romanian "
+"<https://hosted.weblate.org/projects/penpot/frontend/ro/>\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -312,8 +312,8 @@ msgstr "Duplicați %s fișiere"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Fișierele adăugate la Biblioteci vor apărea aici. Încercați să partajați "
-"fișierele dvs. sau adăugați-le din [Biblioteci și șabloane](https://penpot."
-"app/libraries-templates.html)."
+"fișierele dvs. sau adăugați-le din [Biblioteci și "
+"șabloane](https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Descărcați %s fișiere Penpot (.penpot)"
@@ -649,6 +649,37 @@ msgstr "Anulați publicarea bibliotecii"
 msgid "dashboard.update-settings"
 msgstr "Actualizare setări"
 
+msgid "dashboard.webhooks.active"
+msgstr "Este activ"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "Când acest hook este declanșat, se vor furniza detalii despre eveniment"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "Tip de conținut"
+
+msgid "dashboard.webhooks.create"
+msgstr "Creați webhook"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhook creat cu succes."
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Webhook-urile sunt o modalitate simplă de a permite altor site-uri web și "
+"aplicații să fie notificate atunci când au loc anumite evenimente la "
+"Penpot. Vom trimite o solicitare POST la fiecare dintre adresele URL pe "
+"care le furnizați."
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Apăsați butonul \"Adăugați webhook\" pentru a adăuga unul."
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Niciun webhook creat până acum."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook actualizat cu succes."
+
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
 msgstr "Contul tău"
@@ -721,12 +752,26 @@ msgstr "Nu vă puteți folosi e-mailul ca parolă"
 msgid "errors.email-has-permanent-bounces"
 msgstr "Adresa de email «%s» are multe rapoarte permanente de respingere."
 
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Vă rugăm să introduceți un e-mail valid"
+
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "E-mailul de confirmare trebuie să se potrivească"
 
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "E-mailul «%s» a fost raportat ca spam sau respins permanent."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"Se pare că deschideți un fișier care are activată funcția \"%s\", dar "
+"frontend-ul dumneavoastră penpot nu o acceptă sau o are dezactivată."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Funcția \"%s\" nu este acceptată."
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
@@ -746,6 +791,10 @@ msgstr "Această invitație poate fi anulată sau expirată."
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "Autentificarea cu LDAP este dezactivată."
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "Ați ajuns la cota \"%s\". Luați legătura cu serviciul de asistență."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
@@ -807,6 +856,27 @@ msgstr "A apărut o eroare neașteptată."
 msgid "errors.unexpected-token"
 msgstr "Cod necunoscut"
 
+msgid "errors.webhooks.connection"
+msgstr "Eroare de conexiune, URL-ul nu poate fi accesat"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "URL-ul nu a trecut validarea."
+
+msgid "errors.webhooks.last-delivery"
+msgstr "Ultima livrare nu a avut succes."
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Eroare la validarea SSL."
+
+msgid "errors.webhooks.timeout"
+msgstr "Timeout"
+
+msgid "errors.webhooks.unexpected"
+msgstr "Eroare neașteptată la validare"
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "Stare neașteptată %s"
+
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
 msgstr "E-mailul sau parola sunt incorecte."
@@ -864,6 +934,10 @@ msgid "generic.error"
 msgstr "Am întâmpinat o eroare"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur"
+msgstr "Estompare"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur.value"
 msgstr "Valoare"
 
@@ -878,6 +952,10 @@ msgstr "HSLA"
 #: src/app/main/ui/inspect/attributes/common.cljs
 msgid "inspect.attributes.color.rgba"
 msgstr "RGBA"
+
+#: src/app/main/ui/inspect/attributes/fill.cljs
+msgid "inspect.attributes.fill"
+msgstr "Umple"
 
 #: src/app/main/ui/inspect/attributes/image.cljs
 msgid "inspect.attributes.image.download"
@@ -922,6 +1000,10 @@ msgstr "Lățime"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Umbră"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Dimensiune și poziție"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
@@ -986,6 +1068,9 @@ msgstr "Decorare Text"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Niciunul"
 
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
+msgstr "Barat"
+
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Subliniat"
 
@@ -999,8 +1084,24 @@ msgstr "Minuscule"
 msgid "inspect.attributes.typography.text-transform.none"
 msgstr "Niciunul"
 
+msgid "inspect.attributes.typography.text-transform.titlecase"
+msgstr "Majuscule Titlu"
+
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Majuscule"
+
+msgid "inspect.empty.help"
+msgstr ""
+"Dacă doriți să aflați mai multe despre inspectorul de design, vizitați "
+"centrul de ajutor Penpot"
+
+msgid "inspect.empty.more-info"
+msgstr "Mai multe informații despre inspector"
+
+msgid "inspect.empty.select"
+msgstr ""
+"Selectați o formă, o placă sau un grup pentru a le inspecta proprietățile "
+"și codul"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.code"
@@ -1008,6 +1109,9 @@ msgstr "Cod"
 
 msgid "inspect.tabs.code.selected.circle"
 msgstr "Cerc"
+
+msgid "inspect.tabs.code.selected.component"
+msgstr "Componentă"
 
 msgid "inspect.tabs.code.selected.curve"
 msgstr "Curbat"
@@ -1020,6 +1124,9 @@ msgstr "Grup"
 
 msgid "inspect.tabs.code.selected.image"
 msgstr "Imagine"
+
+msgid "inspect.tabs.code.selected.mask"
+msgstr "Mască"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.code.selected.multiple"
@@ -1047,6 +1154,9 @@ msgstr "Comenzi rapide"
 
 msgid "labels.accept"
 msgstr "Acceptă"
+
+msgid "labels.active"
+msgstr "Activ"
 
 msgid "labels.add-custom-font"
 msgstr "Adăugați font personalizat"
@@ -1100,6 +1210,10 @@ msgstr "Continuă cu"
 
 msgid "labels.continue-with-penpot"
 msgstr "Poți continua cu un cont Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Copiați link-ul"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -1200,6 +1314,9 @@ msgstr "Centru Ajutor"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "Ascunde comentariile rezolvate"
+
+msgid "labels.inactive"
+msgstr "Inactiv"
 
 msgid "labels.installed-fonts"
 msgstr "Fonturi instalate"
@@ -1323,6 +1440,10 @@ msgstr "Proiecte"
 msgid "labels.release-notes"
 msgstr "Mențiuni"
 
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Reîncărcați fișierul"
+
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
 msgstr "Elimină"
@@ -1404,6 +1525,10 @@ msgstr "Stare"
 msgid "labels.tutorials"
 msgstr "Tutoriale"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "Depublicați %s fișiere"
+
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
 msgstr "Actualizare"
@@ -1421,9 +1546,15 @@ msgstr "Încarcă fonturi personalizate"
 msgid "labels.uploading"
 msgstr "Se încarcă…"
 
+msgid "labels.view-only"
+msgstr "NUMAI VIZUALIZARE"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "Vizitator"
+
+msgid "labels.webhooks"
+msgstr "Webhook-uri"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
@@ -1478,6 +1609,18 @@ msgstr "Schimbă adresa de e-mail"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.title"
 msgstr "Schimbă-ți adresa de E-mail"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "Creați webhook"
+
+msgid "modals.create-webhook.title"
+msgstr "Creați webhook"
+
+msgid "modals.create-webhook.url.label"
+msgstr "URL a încărcăturii"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://example.com/postreceive"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1577,6 +1720,32 @@ msgstr[1] "Șterge fișiere"
 msgstr[2] "Șterge fișierele"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint"
+msgid_plural "modals.delete-shared-confirm.hint"
+msgstr[0] ""
+"Dacă îl ștergeți, acele materiale se vor muta în biblioteca locală a "
+"acestui fișier. Orice bunuri neutilizate vor fi pierdute."
+msgstr[1] ""
+"Dacă le ștergeți, acele materiale se vor muta în biblioteca locală a "
+"acestui fișier. Orice bunuri neutilizate vor fi pierdute."
+msgstr[2] ""
+"Dacă le ștergeți, acele materiale se vor muta în biblioteca locală a "
+"acestui fișier. Orice bunuri neutilizate vor fi pierdute."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
+msgstr[0] ""
+"Dacă îl ștergeți, acele elemente se vor muta în bibliotecile locale ale "
+"acestor fișiere. Orice bunuri neutilizate vor fi pierdute."
+msgstr[1] ""
+"Dacă le ștergeți, acele elemente se vor muta în bibliotecile locale ale "
+"acestor fișiere. Orice bunuri neutilizate vor fi pierdute."
+msgstr[2] ""
+"Dacă le ștergeți, acele elemente se vor muta în bibliotecile locale ale "
+"acestor fișiere. Orice bunuri neutilizate vor fi pierdute."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Ești sigur că vrei sa ștergi acest fișier?"
@@ -1584,11 +1753,31 @@ msgstr[1] "Ești sigur că vrei sa ștergi aceste fișiere?"
 msgstr[2] "Ești sigur că vrei sa ștergi aceste fișiere?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.no-files-message"
+msgid_plural "modals.delete-shared-confirm.no-files-message"
+msgstr[0] ""
+"Niciunul dintre elementele din biblioteca acestui fișier nu este în uz. Ele "
+"vor fi șterse împreună cu fișierul."
+msgstr[1] ""
+"Niciunul dintre elementele din biblioteca acestor fișiere nu este în uz. "
+"Ele vor fi șterse împreună cu fișierele."
+msgstr[2] ""
+"Niciunul dintre elementele din biblioteca acestor fișiere nu este în uz. "
+"Ele vor fi șterse împreună cu fișierele."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
 msgstr[0] "Unele elemente din biblioteca acestui fișier sunt în uz aici:"
 msgstr[1] "Unele elemente din biblioteca acestor fișiere sunt în uz aici:"
 msgstr[2] "Unele elemente din biblioteca acestor fișiere sunt în uz aici:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-many"
+msgid_plural "modals.delete-shared-confirm.scd-message-many"
+msgstr[0] "Unele dintre elementele din biblioteca acestui fișier sunt utilizate aici:"
+msgstr[1] "Unele dintre elementele din biblioteca acestor fișiere sunt utilizate aici:"
+msgstr[2] "Unele dintre elementele din biblioteca acestor fișiere sunt utilizate aici:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -1622,6 +1811,21 @@ msgstr "Ești sigur că dorești să elimini acest membru din echipă?"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Elimină un membru al echipei"
+
+msgid "modals.delete-webhook.accept"
+msgstr "Ștergeți webhook"
+
+msgid "modals.delete-webhook.message"
+msgstr "Sunteți sigur că doriți să ștergeți acest webhook?"
+
+msgid "modals.delete-webhook.title"
+msgstr "Ștergerea webhook-ului"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Editați webhook"
+
+msgid "modals.edit-webhook.title"
+msgstr "Editați webhook"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member-confirm.accept"
@@ -1731,6 +1935,19 @@ msgstr[2] ""
 "locală a acestor fișiere."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.hint-many"
+msgstr[0] ""
+"Dacă îl anulați, acele materiale se vor muta în bibliotecile locale ale "
+"acestor fișiere."
+msgstr[1] ""
+"Dacă le anulați, acele materiale se vor muta în bibliotecile locale ale "
+"acestor fișiere."
+msgstr[2] ""
+"Dacă le anulați, acele materiale se vor muta în bibliotecile locale ale "
+"acestor fișiere."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Sigur doriți să anulați publicarea acestei biblioteci?"
@@ -1738,11 +1955,25 @@ msgstr[1] "Sigur doriți să anulați publicarea acestor biblioteci?"
 msgstr[2] "Sigur doriți să anulați publicarea acestor biblioteci?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.no-files-message"
+msgstr[0] "Niciunul dintre materialele din această bibliotecă nu este utilizat."
+msgstr[1] "Niciunul dintre materialele din aceste biblioteci nu este utilizat."
+msgstr[2] "Niciunul dintre materialele din aceste biblioteci nu este utilizat."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
 msgstr[0] "Unele dintre elementele din această bibliotecă sunt în uz aici:"
 msgstr[1] "Unele dintre elementele din aceste biblioteci sunt în uz aici:"
 msgstr[2] "Unele dintre elementele din aceste biblioteci sunt în uz aici:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message-many"
+msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
+msgstr[0] "Unele dintre materialele din această bibliotecă sunt utilizate aici:"
+msgstr[1] "Unele dintre materialele din aceste biblioteci sunt utilizate aici:"
+msgstr[2] "Unele dintre materialele din aceste biblioteci sunt utilizate aici:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
@@ -1783,10 +2014,13 @@ msgstr "Actualizaţi o componentă dintr-o colecţie distribuită"
 msgid "notifications.invitation-email-sent"
 msgstr "Invitaţie trimisă cu succes"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Link de invitație copiat"
+
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
-msgstr ""
-"Nu vă puteți șterge profilul. Reatribuiți-vă echipele înainte de a continua."
+msgstr "Nu vă puteți șterge profilul. Reatribuiți-vă echipele înainte de a continua."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -2243,6 +2477,9 @@ msgstr "Accesați secțiunea de comentarii ale spectatorului"
 msgid "shortcuts.open-dashboard"
 msgstr "Accesați tabloul de bord"
 
+msgid "shortcuts.open-inspect"
+msgstr "Mergeți la secțiunea de inspecție a vizualizatorului"
+
 msgid "shortcuts.open-interactions"
 msgstr "Accesați secțiunea de interacțiuni ale spectatorului"
 
@@ -2316,6 +2553,9 @@ msgstr "Comutați paleta de culori"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Comutați modul de focus"
 
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Comutați la ecran complet"
+
 msgid "shortcuts.toggle-grid"
 msgstr "Afișați/ascundeți grila"
 
@@ -2324,6 +2564,9 @@ msgstr "Comutați istoricul"
 
 msgid "shortcuts.toggle-layers"
 msgstr "Comutați straturile"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Adăugați/eliminați layout flex"
 
 msgid "shortcuts.toggle-lock"
 msgstr "Blocați selecția"
@@ -2423,6 +2666,9 @@ msgstr "Membri - %s - Penpot"
 msgid "title.team-settings"
 msgstr "Setări - %s - Penpot"
 
+msgid "title.team-webhooks"
+msgstr "Webhooks - %s - Penpot"
+
 #: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "title.viewer"
 msgstr "%s - Vizualizare - Penpot"
@@ -2458,6 +2704,9 @@ msgstr "Nu afişa interacţiunile"
 msgid "viewer.header.fullscreen"
 msgstr "Ecran complet"
 
+msgid "viewer.header.inspect-section"
+msgstr "Inspectați (%s)"
+
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
 msgstr "Interacţiunile"
@@ -2480,6 +2729,9 @@ msgstr "Afişează interacţiunile la click"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.sitemap"
 msgstr "Harta site-ului"
+
+msgid "webhooks.last-delivery.success"
+msgstr "Ultima livrare a fost cu succes."
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
@@ -2626,6 +2878,9 @@ msgstr "Înălţime linie"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/inspect/attributes/text.cljs, src/app/main/ui/inspect/attributes/text.cljs
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "Stiluri de text"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.text-transform"
@@ -3116,6 +3371,9 @@ msgstr "Conturare grup"
 msgid "workspace.options.height"
 msgstr "Înălțime"
 
+msgid "workspace.options.inspect"
+msgstr "Inspectați"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-action"
 msgstr "Acțiune"
@@ -3144,6 +3402,9 @@ msgstr "Împinge"
 msgid "workspace.options.interaction-animation-slide"
 msgstr "Alunecă"
 
+msgid "workspace.options.interaction-auto"
+msgstr "auto"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
 msgstr "Adăugați suprapunere de fundal"
@@ -3171,6 +3432,26 @@ msgstr "Destinație"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-duration"
 msgstr "Durată"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing"
+msgstr "Easing"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease"
+msgstr "Ease"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in"
+msgstr "Ease in"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in-out"
+msgstr "Ease in out"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "Ease out"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-linear"
@@ -3271,6 +3552,10 @@ msgstr "Păstrați poziția derulării"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-prev-screen"
 msgstr "Ecranul anterior"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Relativ la"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-self"
@@ -3385,12 +3670,60 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Opțiuni avansate"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-max-h"
+msgstr "Înălțime maximă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-max-w"
+msgstr "Lățime maximă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-min-h"
+msgstr "Înălțime minimă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-min-w"
+msgstr "Lățime minimă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-max-h"
+msgstr "Înălțime maximă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-max-w"
+msgstr "Lățime maximă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-min-h"
+msgstr "Înălțime minimă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-min-w"
+msgstr "Lățime minimă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-min-h"
 msgstr "Înălțime minimă"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Jos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column"
+msgstr "Coloană"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.reverse-column"
+msgstr "Coloană inversă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.reverse-row"
+msgstr "Rând invers"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row"
+msgstr "Rând"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
@@ -3763,6 +4096,39 @@ msgstr "Separă noduri (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Trage noduri (%s)"
 
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-hint"
+msgstr ""
+"Pentru a încerca din nou, puteți reîncărca acest fișier. Dacă problema "
+"persistă, vă sugerăm să aruncați o privire pe listă și să luați în "
+"considerare ștergerea graficii rupte."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-msg"
+msgstr "Unele elemente grafice nu au putut fi actualizate."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.progress"
+msgstr "Se convertește %s/%s"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text1"
+msgstr ""
+"Bibliotecile Grafice sunt Componente de acum înainte, ceea ce le va face "
+"mult mai puternice."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text2"
+msgstr "Această actualizare este o acțiune unică."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.title"
+msgstr "Actualizare %s..."
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "Adăugați layout flex"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
 msgstr "Trimite înapoi"
@@ -3872,6 +4238,10 @@ msgstr "Lipeşte"
 
 msgid "workspace.shape.menu.path"
 msgstr "Drum"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Îndepărtați layout flex"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
@@ -4159,377 +4529,3 @@ msgstr "Actualizează"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click pentru a închide calea"
-
-msgid "dashboard.webhooks.active"
-msgstr "Este activ"
-
-msgid "dashboard.webhooks.active.explain"
-msgstr "Când acest hook este declanșat, se vor furniza detalii despre eveniment"
-
-#: src/app/main/ui/inspect/attributes/blur.cljs
-msgid "inspect.attributes.blur"
-msgstr "Estompare"
-
-msgid "dashboard.webhooks.description"
-msgstr ""
-"Webhook-urile sunt o modalitate simplă de a permite altor site-uri web și "
-"aplicații să fie notificate atunci când au loc anumite evenimente la Penpot. "
-"Vom trimite o solicitare POST la fiecare dintre adresele URL pe care le "
-"furnizați."
-
-msgid "errors.webhooks.ssl-validation"
-msgstr "Eroare la validarea SSL."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"Dacă îl ștergeți, acele elemente se vor muta în bibliotecile locale ale "
-"acestor fișiere. Orice bunuri neutilizate vor fi pierdute."
-msgstr[1] ""
-"Dacă le ștergeți, acele elemente se vor muta în bibliotecile locale ale "
-"acestor fișiere. Orice bunuri neutilizate vor fi pierdute."
-msgstr[2] ""
-"Dacă le ștergeți, acele elemente se vor muta în bibliotecile locale ale "
-"acestor fișiere. Orice bunuri neutilizate vor fi pierdute."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] ""
-"Dacă îl anulați, acele materiale se vor muta în bibliotecile locale ale "
-"acestor fișiere."
-msgstr[1] ""
-"Dacă le anulați, acele materiale se vor muta în bibliotecile locale ale "
-"acestor fișiere."
-msgstr[2] ""
-"Dacă le anulați, acele materiale se vor muta în bibliotecile locale ale "
-"acestor fișiere."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-item-min-h"
-msgstr "Înălțime minimă"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-ease-in"
-msgstr "Ease in"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-ease"
-msgstr "Ease"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-ease-out"
-msgstr "Ease out"
-
-msgid "dashboard.webhooks.content-type"
-msgstr "Tip de conținut"
-
-msgid "dashboard.webhooks.create"
-msgstr "Creați webhook"
-
-msgid "dashboard.webhooks.create.success"
-msgstr "Webhook creat cu succes."
-
-msgid "dashboard.webhooks.empty.add-one"
-msgstr "Apăsați butonul \"Adăugați webhook\" pentru a adăuga unul."
-
-msgid "dashboard.webhooks.empty.no-webhooks"
-msgstr "Niciun webhook creat până acum."
-
-msgid "dashboard.webhooks.update.success"
-msgstr "Webhook actualizat cu succes."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
-msgstr "Vă rugăm să introduceți un e-mail valid"
-
-#: src/app/main/errors.cljs
-msgid "errors.feature-mismatch"
-msgstr ""
-"Se pare că deschideți un fișier care are activată funcția \"%s\", dar "
-"frontend-ul dumneavoastră penpot nu o acceptă sau o are dezactivată."
-
-#: src/app/main/errors.cljs
-msgid "errors.feature-not-supported"
-msgstr "Funcția \"%s\" nu este acceptată."
-
-#: src/app/main/errors.cljs
-msgid "errors.max-quote-reached"
-msgstr "Ați ajuns la cota \"%s\". Luați legătura cu serviciul de asistență."
-
-msgid "errors.webhooks.connection"
-msgstr "Eroare de conexiune, URL-ul nu poate fi accesat"
-
-msgid "errors.webhooks.invalid-uri"
-msgstr "URL-ul nu a trecut validarea."
-
-msgid "errors.webhooks.last-delivery"
-msgstr "Ultima livrare nu a avut succes."
-
-msgid "errors.webhooks.timeout"
-msgstr "Timeout"
-
-msgid "errors.webhooks.unexpected"
-msgstr "Eroare neașteptată la validare"
-
-msgid "errors.webhooks.unexpected-status"
-msgstr "Stare neașteptată %s"
-
-#: src/app/main/ui/inspect/attributes/fill.cljs
-msgid "inspect.attributes.fill"
-msgstr "Umple"
-
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.size"
-msgstr "Dimensiune și poziție"
-
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Barat"
-
-msgid "inspect.attributes.typography.text-transform.titlecase"
-msgstr "Majuscule Titlu"
-
-msgid "inspect.empty.help"
-msgstr ""
-"Dacă doriți să aflați mai multe despre inspectorul de design, vizitați "
-"centrul de ajutor Penpot"
-
-msgid "inspect.empty.more-info"
-msgstr "Mai multe informații despre inspector"
-
-msgid "inspect.empty.select"
-msgstr ""
-"Selectați o formă, o placă sau un grup pentru a le inspecta proprietățile și "
-"codul"
-
-msgid "inspect.tabs.code.selected.component"
-msgstr "Componentă"
-
-msgid "inspect.tabs.code.selected.mask"
-msgstr "Mască"
-
-msgid "labels.active"
-msgstr "Activ"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.copy-invitation-link"
-msgstr "Copiați link-ul"
-
-msgid "labels.inactive"
-msgstr "Inactiv"
-
-#: src/app/main/ui/workspace.cljs
-msgid "labels.reload-file"
-msgstr "Reîncărcați fișierul"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "labels.unpublish-multi-files"
-msgstr "Depublicați %s fișiere"
-
-msgid "labels.view-only"
-msgstr "NUMAI VIZUALIZARE"
-
-msgid "labels.webhooks"
-msgstr "Webhook-uri"
-
-msgid "modals.create-webhook.submit-label"
-msgstr "Creați webhook"
-
-msgid "modals.create-webhook.title"
-msgstr "Creați webhook"
-
-msgid "modals.create-webhook.url.label"
-msgstr "URL a încărcăturii"
-
-msgid "modals.create-webhook.url.placeholder"
-msgstr "https://example.com/postreceive"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"Dacă îl ștergeți, acele materiale se vor muta în biblioteca locală a acestui "
-"fișier. Orice bunuri neutilizate vor fi pierdute."
-msgstr[1] ""
-"Dacă le ștergeți, acele materiale se vor muta în biblioteca locală a acestui "
-"fișier. Orice bunuri neutilizate vor fi pierdute."
-msgstr[2] ""
-"Dacă le ștergeți, acele materiale se vor muta în biblioteca locală a acestui "
-"fișier. Orice bunuri neutilizate vor fi pierdute."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] ""
-"Niciunul dintre elementele din biblioteca acestui fișier nu este în uz. Ele "
-"vor fi șterse împreună cu fișierul."
-msgstr[1] ""
-"Niciunul dintre elementele din biblioteca acestor fișiere nu este în uz. Ele "
-"vor fi șterse împreună cu fișierele."
-msgstr[2] ""
-"Niciunul dintre elementele din biblioteca acestor fișiere nu este în uz. Ele "
-"vor fi șterse împreună cu fișierele."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] ""
-"Unele dintre elementele din biblioteca acestui fișier sunt utilizate aici:"
-msgstr[1] ""
-"Unele dintre elementele din biblioteca acestor fișiere sunt utilizate aici:"
-msgstr[2] ""
-"Unele dintre elementele din biblioteca acestor fișiere sunt utilizate aici:"
-
-msgid "modals.delete-webhook.accept"
-msgstr "Ștergeți webhook"
-
-msgid "modals.delete-webhook.message"
-msgstr "Sunteți sigur că doriți să ștergeți acest webhook?"
-
-msgid "modals.delete-webhook.title"
-msgstr "Ștergerea webhook-ului"
-
-msgid "modals.edit-webhook.submit-label"
-msgstr "Editați webhook"
-
-msgid "modals.edit-webhook.title"
-msgstr "Editați webhook"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Niciunul dintre materialele din această bibliotecă nu este utilizat."
-msgstr[1] "Niciunul dintre materialele din aceste biblioteci nu este utilizat."
-msgstr[2] "Niciunul dintre materialele din aceste biblioteci nu este utilizat."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Unele dintre materialele din această bibliotecă sunt utilizate aici:"
-msgstr[1] "Unele dintre materialele din aceste biblioteci sunt utilizate aici:"
-msgstr[2] "Unele dintre materialele din aceste biblioteci sunt utilizate aici:"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "notifications.invitation-link-copied"
-msgstr "Link de invitație copiat"
-
-msgid "shortcuts.open-inspect"
-msgstr "Mergeți la secțiunea de inspecție a vizualizatorului"
-
-msgid "shortcuts.toggle-fullscreen"
-msgstr "Comutați la ecran complet"
-
-msgid "shortcuts.toggle-layout-flex"
-msgstr "Adăugați/eliminați layout flex"
-
-msgid "title.team-webhooks"
-msgstr "Webhooks - %s - Penpot"
-
-msgid "viewer.header.inspect-section"
-msgstr "Inspectați (%s)"
-
-msgid "webhooks.last-delivery.success"
-msgstr "Ultima livrare a fost cu succes."
-
-msgid "workspace.assets.typography.text-styles"
-msgstr "Stiluri de text"
-
-msgid "workspace.options.inspect"
-msgstr "Inspectați"
-
-msgid "workspace.options.interaction-auto"
-msgstr "auto"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing"
-msgstr "Easing"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-ease-in-out"
-msgstr "Ease in out"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-relative-to"
-msgstr "Relativ la"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-item-max-h"
-msgstr "Înălțime maximă"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-item-max-w"
-msgstr "Lățime maximă"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-item-min-h"
-msgstr "Înălțime minimă"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-item-min-w"
-msgstr "Lățime minimă"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-item-max-h"
-msgstr "Înălțime maximă"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-item-max-w"
-msgstr "Lățime maximă"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-item-min-w"
-msgstr "Lățime minimă"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.column"
-msgstr "Coloană"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Coloană inversă"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-row"
-msgstr "Rând invers"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row"
-msgstr "Rând"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Pentru a încerca din nou, puteți reîncărca acest fișier. Dacă problema "
-"persistă, vă sugerăm să aruncați o privire pe listă și să luați în "
-"considerare ștergerea graficii rupte."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Unele elemente grafice nu au putut fi actualizate."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Se convertește %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Bibliotecile Grafice sunt Componente de acum înainte, ceea ce le va face "
-"mult mai puternice."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Această actualizare este o acțiune unică."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Actualizare %s..."
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.add-flex"
-msgstr "Adăugați layout flex"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.remove-flex"
-msgstr "Îndepărtați layout flex"

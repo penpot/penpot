@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-02-06 15:38+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
-"he/>\n"
+"Language-Team: Hebrew "
+"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -637,6 +637,35 @@ msgstr "ביטול פרסום ספרייה"
 msgid "dashboard.update-settings"
 msgstr "עדכון הגדרות"
 
+msgid "dashboard.webhooks.active"
+msgstr "פעילה"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "כאשר ההתליה הזאת מופעלת פרטי האירוע יישלחו"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "סוג תוכן"
+
+msgid "dashboard.webhooks.create"
+msgstr "יצירת התליית רשת"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "התליית הרשת נוצרה בהצלחה."
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"התליות רשת הן דרך פשוטה לאפשר לאתרים אחרים לקבל הודעות כשאירועים מסוימים "
+"מתרחשים ב־Penpot. אנו נשלח בקשת POST לכל אחת מהכתובות שתצויינה."
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "לחיצה על הכפתור „הוספת התליית רשת” תוסיף אחת."
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "לא נוצרו התליות רשת עדיין."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "התליות הרשת עודכנו בהצלחה."
+
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
 msgstr "החשבון שלך"
@@ -717,12 +746,26 @@ msgstr "אין לך אפשרות להשתמש בכתובת הדוא״ל שלך �
 msgid "errors.email-has-permanent-bounces"
 msgstr "לכתובת הדוא״ל „%s” יש יותר מדי דוחות החזרה קבועים."
 
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "נא למלא כתובת דוא״ל תקפה בבקשה"
+
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "כתובת הדוא״ל לאימות חייבת להיות תואמת"
 
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "כתובת הדוא״ל „%s” דווחה כספאם או שההודעות תוקפצנה לצמיתות."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"נראה שניסית לפתוח קובץ בו פעילה היכולת ‚%s’ אבל מנשק ה־Penpot שלך לא תומך "
+"בה או שהיא מושבתת."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "אין תמיכה ביכולת ‚%s’."
 
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
@@ -743,6 +786,10 @@ msgstr "ההזמנה כנראה בוטלה או שתוקפה פג."
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "אימות מול LDAP הושבת."
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "הגעת למיכסת ה־‚%s’. נא ליצור קשר עם התמיכה."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
@@ -799,6 +846,27 @@ msgstr "אירעה שגיאה בלתי צפויה."
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "אסימון בלתי ידוע"
+
+msgid "errors.webhooks.connection"
+msgstr "שגיאת תקשורת, הכתובת אינה נגישה"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "הכתובת לא מעבירה תיקוף."
+
+msgid "errors.webhooks.last-delivery"
+msgstr "ההעברה האחרונה לא הצליחה."
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "שגיאה בתיקוף SSL."
+
+msgid "errors.webhooks.timeout"
+msgstr "תום זמן המתנה"
+
+msgid "errors.webhooks.unexpected"
+msgstr "שגיאה לא צפויה בעת תיקוף"
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "המצב %s לא צפוי"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
@@ -923,6 +991,10 @@ msgstr "רוחב"
 msgid "inspect.attributes.shadow"
 msgstr "צל"
 
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "גודל ומיקום"
+
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
 msgstr "מתאר"
@@ -1005,6 +1077,15 @@ msgstr "ראשונות גדולות"
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "אותיות גדולות"
 
+msgid "inspect.empty.help"
+msgstr "למידע נוסף על חקירת עיצוב אפשר לבקר במרכז העזרה של Penpot"
+
+msgid "inspect.empty.more-info"
+msgstr "מידע נוסף על חקירה"
+
+msgid "inspect.empty.select"
+msgstr "ניתן לבחור צורה, לוח או קבוצה ולראות את המאפיינים והקוד שלהם"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.code"
 msgstr "קוד"
@@ -1056,6 +1137,9 @@ msgstr "קיצורי דרך"
 
 msgid "labels.accept"
 msgstr "מקובל"
+
+msgid "labels.active"
+msgstr "פעיל"
 
 msgid "labels.add-custom-font"
 msgstr "הוספת גופן משלך"
@@ -1111,6 +1195,10 @@ msgstr "להמשיך עם"
 
 msgid "labels.continue-with-penpot"
 msgstr "אפשר להמשיך עם חשבון Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "העתקת קישור"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -1218,6 +1306,9 @@ msgstr "מרכז העזרה"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "הסתרת הערות שנפתרו"
+
+msgid "labels.inactive"
+msgstr "בלתי פעיל"
 
 msgid "labels.installed-fonts"
 msgstr "גופנים מותקנים"
@@ -1346,6 +1437,10 @@ msgstr "מיזמים"
 msgid "labels.release-notes"
 msgstr "הודעות מהדורה"
 
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "רענון קובץ"
+
 #: src/app/main/ui/workspace/libraries.cljs,
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
@@ -1430,6 +1525,10 @@ msgstr "מצב"
 msgid "labels.tutorials"
 msgstr "מדריכים"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "ביטול פרסום קובצי %s"
+
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
 msgstr "עדכון"
@@ -1447,9 +1546,15 @@ msgstr "העלאת גופנים משלך"
 msgid "labels.uploading"
 msgstr "מתבצעת העלאה…"
 
+msgid "labels.view-only"
+msgstr "תצוגה בלבד"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "מציג"
+
+msgid "labels.webhooks"
+msgstr "התליות"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
@@ -1507,6 +1612,18 @@ msgstr "החלפת כתובת דוא״ל"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.title"
 msgstr "החלפת כתובת הדוא״ל שלך"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "יצירת התליה"
+
+msgid "modals.create-webhook.title"
+msgstr "יצירת התליה"
+
+msgid "modals.create-webhook.url.label"
+msgstr "כתובת מטען"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://example.com/postreceive"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1601,6 +1718,38 @@ msgstr[1] "מחיקת קבצים"
 msgstr[2] "מחיקת קבצים"
 msgstr[3] "מחיקת קבצים"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint"
+msgid_plural "modals.delete-shared-confirm.hint"
+msgstr[0] ""
+"מחיקה תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
+"בשימוש יאבדו."
+msgstr[1] ""
+"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
+"בשימוש יאבדו."
+msgstr[2] ""
+"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
+"בשימוש יאבדו."
+msgstr[3] ""
+"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
+"בשימוש יאבדו."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
+msgstr[0] ""
+"מחיקה תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים שאינם "
+"בשימוש יאבדו."
+msgstr[1] ""
+"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים "
+"שאינם בשימוש יאבדו."
+msgstr[2] ""
+"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים "
+"שאינם בשימוש יאבדו."
+msgstr[3] ""
+"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים "
+"שאינם בשימוש יאבדו."
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
@@ -1610,10 +1759,26 @@ msgstr[1] "למחוק את הקבצים?"
 msgstr[2] "למחוק את הקבצים?"
 msgstr[3] "למחוק את הקבצים?"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.no-files-message"
+msgid_plural "modals.delete-shared-confirm.no-files-message"
+msgstr[0] "אף אחד מהמשאבים שבספרייה של הקובץ הזה בשימוש. הם יימחקו יחד עם הקובץ."
+msgstr[1] "אף אחד מהמשאבים שבספרייה של הקבצים האלה בשימוש. הם יימחקו יחד עם הקבצים."
+msgstr[2] "אף אחד מהמשאבים שבספרייה של הקבצים האלה בשימוש. הם יימחקו יחד עם הקבצים."
+msgstr[3] "אף אחד מהמשאבים שבספרייה של הקבצים האלה בשימוש. הם יימחקו יחד עם הקבצים."
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "בחלק מהמשאבים בספרייה של הקובץ הזה נעשה שימוש כאן:"
+msgstr[1] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
+msgstr[2] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
+msgstr[3] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-many"
+msgid_plural "modals.delete-shared-confirm.scd-message-many"
 msgstr[0] "בחלק מהמשאבים בספרייה של הקובץ הזה נעשה שימוש כאן:"
 msgstr[1] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
 msgstr[2] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
@@ -1651,6 +1816,21 @@ msgstr "למחוק את החבר הזה מהצוות?"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
 msgstr "למחוק חבר בצוות"
+
+msgid "modals.delete-webhook.accept"
+msgstr "מחיקת התליה"
+
+msgid "modals.delete-webhook.message"
+msgstr "למחוק את ההתליה?"
+
+msgid "modals.delete-webhook.title"
+msgstr "מחיקת התליה"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "עריכת התליה"
+
+msgid "modals.edit-webhook.title"
+msgstr "עריכת התליה"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member-confirm.accept"
@@ -1756,6 +1936,14 @@ msgstr[1] "ביטול הפרסומים יעביר את המשאבים לספרי
 msgstr[2] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
 msgstr[3] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.hint-many"
+msgstr[0] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
+msgstr[1] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
+msgstr[2] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
+msgstr[3] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -1765,10 +1953,26 @@ msgstr[1] "לבטל את פרסום הספריות האלו?"
 msgstr[2] "לבטל את פרסום הספריות האלו?"
 msgstr[3] "לבטל את פרסום הספריות האלו?"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.no-files-message"
+msgstr[0] "אף אחד מהמשאבים שבספרייה הזאת נמצא בשימוש."
+msgstr[1] "אף אחד מהמשאבים שבספריות האלה נמצא בשימוש."
+msgstr[2] "אף אחד מהמשאבים שבספריות האלה נמצא בשימוש."
+msgstr[3] "אף אחד מהמשאבים שבספריות האלה נמצא בשימוש."
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "בחלק מהמשאבים בספרייה הזאת נעשה שימוש כאן:"
+msgstr[1] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
+msgstr[2] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
+msgstr[3] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message-many"
+msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
 msgstr[0] "בחלק מהמשאבים בספרייה הזאת נעשה שימוש כאן:"
 msgstr[1] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
 msgstr[2] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
@@ -1821,10 +2025,15 @@ msgstr "עדכון רכיב בספריה משותפת"
 msgid "notifications.invitation-email-sent"
 msgstr "ההזמנה נשלחה בהצלחה"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "קישור ההזמנה הועתק"
+
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
 msgstr ""
-"אי אפשר למחוק את הפרופיל שלך. יש להקצות את הצוותים שלך מחדש בטרם המשך בתהליך."
+"אי אפשר למחוק את הפרופיל שלך. יש להקצות את הצוותים שלך מחדש בטרם המשך "
+"בתהליך."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -2271,6 +2480,9 @@ msgstr "מעבר לסעיף הערות צופים"
 msgid "shortcuts.open-dashboard"
 msgstr "מעבר ללוח בקרה"
 
+msgid "shortcuts.open-inspect"
+msgstr "מעבר לסעיף חקירת צופה"
+
 msgid "shortcuts.open-interactions"
 msgstr "מעבר לסעיף תפעול משתמש"
 
@@ -2355,6 +2567,9 @@ msgstr "החלפת הצגת היסטוריה"
 
 msgid "shortcuts.toggle-layers"
 msgstr "החלפת הצגת שכבות"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "הוספת/הסרת flex פריסה"
 
 msgid "shortcuts.toggle-lock"
 msgstr "נעילת הנבחרים"
@@ -2454,6 +2669,9 @@ msgstr "חברים - %s‏ - Penpot"
 msgid "title.team-settings"
 msgstr "הגדרות - %s‏ - Penpot"
 
+msgid "title.team-webhooks"
+msgstr "התליות - %s‏ - Penpot"
+
 #: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "title.viewer"
 msgstr "%s - מצב תצוגה - Penpot"
@@ -2489,6 +2707,9 @@ msgstr "לא להציג אינטראקציות"
 msgid "viewer.header.fullscreen"
 msgstr "מסך מלא"
 
+msgid "viewer.header.inspect-section"
+msgstr "חקירה (%s)"
+
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
 msgstr "אינטראקציות"
@@ -2511,6 +2732,9 @@ msgstr "הצגת פעילויות בקליק"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.sitemap"
 msgstr "מפת אתר"
+
+msgid "webhooks.last-delivery.success"
+msgstr "ההעברה האחרונה הצליחה."
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
@@ -2670,6 +2894,9 @@ msgstr "גובה שורה"
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "workspace.assets.typography.sample"
 msgstr "שצ"
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "סגנונות טקסט"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.text-transform"
@@ -3170,6 +3397,9 @@ msgstr "מתאר קבוצה"
 msgid "workspace.options.height"
 msgstr "גובה"
 
+msgid "workspace.options.inspect"
+msgstr "חקירה"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-action"
 msgstr "פעולה"
@@ -3197,6 +3427,9 @@ msgstr "דחיפה"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-slide"
 msgstr "גלישה"
+
+msgid "workspace.options.interaction-auto"
+msgstr "אוטו"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
@@ -3345,6 +3578,10 @@ msgstr "שימור מיקום גלילה"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-prev-screen"
 msgstr "המסך הקודם"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "יחסי אל"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-self"
@@ -3503,12 +3740,12 @@ msgid "workspace.options.layout.direction.column-reverse"
 msgstr "היפוך עמודה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row-reverse"
-msgstr "היפוך שורה"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
 msgstr "שורה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "היפוך שורה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
@@ -3557,6 +3794,10 @@ msgstr "רווח מסביב"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.space-between"
 msgstr "רווח בין לבין"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "עליון"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
@@ -3881,6 +4122,36 @@ msgstr "הפרדת מפרקים (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "הצמדת מפרקים (%s)"
 
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-hint"
+msgstr ""
+"כדי לנסות שוב, אפשר לרענן את הקובץ הזה. אם הבעיה נמשכת, אנו ממליצים לך "
+"להביט ברשימה ולשקול למחוק גרפיקה פגומה."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-msg"
+msgstr "לא ניתן לעדכן חלק מהגרפיקה."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.progress"
+msgstr "מתבצעת המרה %s/%s"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text1"
+msgstr "גרפיקות ספרייה הן רכיבים מעתה ואילך, מה שהופך אותן להרבה יותר עוצמתיות."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text2"
+msgstr "העדכון הזה הוא חד־פעמי."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.title"
+msgstr "%s מתעדכן…"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "הוספת flex פריסה"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
 msgstr "הרחקה"
@@ -3997,6 +4268,10 @@ msgstr "הדבקה"
 
 msgid "workspace.shape.menu.path"
 msgstr "נתיב"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "הסרת flex פריסה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,
@@ -4293,280 +4568,3 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
-
-msgid "dashboard.webhooks.active"
-msgstr "פעילה"
-
-msgid "dashboard.webhooks.active.explain"
-msgstr "כאשר ההתליה הזאת מופעלת פרטי האירוע יישלחו"
-
-msgid "dashboard.webhooks.content-type"
-msgstr "סוג תוכן"
-
-msgid "dashboard.webhooks.create"
-msgstr "יצירת התליית רשת"
-
-msgid "dashboard.webhooks.create.success"
-msgstr "התליית הרשת נוצרה בהצלחה."
-
-msgid "dashboard.webhooks.update.success"
-msgstr "התליות הרשת עודכנו בהצלחה."
-
-msgid "dashboard.webhooks.description"
-msgstr ""
-"התליות רשת הן דרך פשוטה לאפשר לאתרים אחרים לקבל הודעות כשאירועים מסוימים "
-"מתרחשים ב־Penpot. אנו נשלח בקשת POST לכל אחת מהכתובות שתצויינה."
-
-msgid "dashboard.webhooks.empty.add-one"
-msgstr "לחיצה על הכפתור „הוספת התליית רשת” תוסיף אחת."
-
-msgid "dashboard.webhooks.empty.no-webhooks"
-msgstr "לא נוצרו התליות רשת עדיין."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
-msgstr "נא למלא כתובת דוא״ל תקפה בבקשה"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.add-flex"
-msgstr "הוספת flex פריסה"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "לא ניתן לעדכן חלק מהגרפיקה."
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.remove-flex"
-msgstr "הסרת flex פריסה"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "%s מתעדכן…"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "העדכון הזה הוא חד־פעמי."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr "גרפיקות ספרייה הן רכיבים מעתה ואילך, מה שהופך אותן להרבה יותר עוצמתיות."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "מתבצעת המרה %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"כדי לנסות שוב, אפשר לרענן את הקובץ הזה. אם הבעיה נמשכת, אנו ממליצים לך להביט "
-"ברשימה ולשקול למחוק גרפיקה פגומה."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.top"
-msgstr "עליון"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-relative-to"
-msgstr "יחסי אל"
-
-msgid "workspace.options.interaction-auto"
-msgstr "אוטו"
-
-msgid "workspace.options.inspect"
-msgstr "חקירה"
-
-msgid "webhooks.last-delivery.success"
-msgstr "ההעברה האחרונה הצליחה."
-
-msgid "title.team-webhooks"
-msgstr "התליות - %s‏ - Penpot"
-
-msgid "modals.edit-webhook.title"
-msgstr "עריכת התליה"
-
-msgid "modals.delete-webhook.message"
-msgstr "למחוק את ההתליה?"
-
-msgid "modals.delete-webhook.accept"
-msgstr "מחיקת התליה"
-
-msgid "modals.create-webhook.url.label"
-msgstr "כתובת מטען"
-
-msgid "modals.create-webhook.title"
-msgstr "יצירת התליה"
-
-msgid "modals.create-webhook.submit-label"
-msgstr "יצירת התליה"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "labels.unpublish-multi-files"
-msgstr "ביטול פרסום קובצי %s"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.copy-invitation-link"
-msgstr "העתקת קישור"
-
-msgid "modals.edit-webhook.submit-label"
-msgstr "עריכת התליה"
-
-msgid "modals.delete-webhook.title"
-msgstr "מחיקת התליה"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] "אף אחד מהמשאבים שבספרייה של הקובץ הזה בשימוש. הם יימחקו יחד עם הקובץ."
-msgstr[1] ""
-"אף אחד מהמשאבים שבספרייה של הקבצים האלה בשימוש. הם יימחקו יחד עם הקבצים."
-msgstr[2] ""
-"אף אחד מהמשאבים שבספרייה של הקבצים האלה בשימוש. הם יימחקו יחד עם הקבצים."
-msgstr[3] ""
-"אף אחד מהמשאבים שבספרייה של הקבצים האלה בשימוש. הם יימחקו יחד עם הקבצים."
-
-#: src/app/main/errors.cljs
-msgid "errors.max-quote-reached"
-msgstr "הגעת למיכסת ה־‚%s’. נא ליצור קשר עם התמיכה."
-
-#: src/app/main/errors.cljs
-msgid "errors.feature-mismatch"
-msgstr ""
-"נראה שניסית לפתוח קובץ בו פעילה היכולת ‚%s’ אבל מנשק ה־Penpot שלך לא תומך בה "
-"או שהיא מושבתת."
-
-msgid "errors.webhooks.connection"
-msgstr "שגיאת תקשורת, הכתובת אינה נגישה"
-
-#: src/app/main/errors.cljs
-msgid "errors.feature-not-supported"
-msgstr "אין תמיכה ביכולת ‚%s’."
-
-msgid "errors.webhooks.invalid-uri"
-msgstr "הכתובת לא מעבירה תיקוף."
-
-msgid "errors.webhooks.last-delivery"
-msgstr "ההעברה האחרונה לא הצליחה."
-
-msgid "errors.webhooks.timeout"
-msgstr "תום זמן המתנה"
-
-msgid "errors.webhooks.unexpected"
-msgstr "שגיאה לא צפויה בעת תיקוף"
-
-msgid "errors.webhooks.unexpected-status"
-msgstr "המצב %s לא צפוי"
-
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.size"
-msgstr "גודל ומיקום"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"מחיקה תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם בשימוש "
-"יאבדו."
-msgstr[1] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
-"בשימוש יאבדו."
-msgstr[2] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
-"בשימוש יאבדו."
-msgstr[3] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
-"בשימוש יאבדו."
-
-msgid "inspect.empty.help"
-msgstr "למידע נוסף על חקירת עיצוב אפשר לבקר במרכז העזרה של Penpot"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "אף אחד מהמשאבים שבספרייה הזאת נמצא בשימוש."
-msgstr[1] "אף אחד מהמשאבים שבספריות האלה נמצא בשימוש."
-msgstr[2] "אף אחד מהמשאבים שבספריות האלה נמצא בשימוש."
-msgstr[3] "אף אחד מהמשאבים שבספריות האלה נמצא בשימוש."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"מחיקה תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים שאינם "
-"בשימוש יאבדו."
-msgstr[1] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים שאינם "
-"בשימוש יאבדו."
-msgstr[2] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים שאינם "
-"בשימוש יאבדו."
-msgstr[3] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים שאינם "
-"בשימוש יאבדו."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "בחלק מהמשאבים בספרייה של הקובץ הזה נעשה שימוש כאן:"
-msgstr[1] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
-msgstr[2] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
-msgstr[3] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "בחלק מהמשאבים בספרייה הזאת נעשה שימוש כאן:"
-msgstr[1] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
-msgstr[2] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
-msgstr[3] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
-
-msgid "errors.webhooks.ssl-validation"
-msgstr "שגיאה בתיקוף SSL."
-
-msgid "inspect.empty.more-info"
-msgstr "מידע נוסף על חקירה"
-
-msgid "inspect.empty.select"
-msgstr "ניתן לבחור צורה, לוח או קבוצה ולראות את המאפיינים והקוד שלהם"
-
-msgid "labels.active"
-msgstr "פעיל"
-
-msgid "labels.inactive"
-msgstr "בלתי פעיל"
-
-#: src/app/main/ui/workspace.cljs
-msgid "labels.reload-file"
-msgstr "רענון קובץ"
-
-msgid "labels.webhooks"
-msgstr "התליות"
-
-msgid "labels.view-only"
-msgstr "תצוגה בלבד"
-
-msgid "modals.create-webhook.url.placeholder"
-msgstr "https://example.com/postreceive"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
-msgstr[1] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
-msgstr[2] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
-msgstr[3] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "notifications.invitation-link-copied"
-msgstr "קישור ההזמנה הועתק"
-
-msgid "shortcuts.open-inspect"
-msgstr "מעבר לסעיף חקירת צופה"
-
-msgid "shortcuts.toggle-layout-flex"
-msgstr "הוספת/הסרת flex פריסה"
-
-msgid "viewer.header.inspect-section"
-msgstr "חקירה (%s)"
-
-msgid "workspace.assets.typography.text-styles"
-msgstr "סגנונות טקסט"

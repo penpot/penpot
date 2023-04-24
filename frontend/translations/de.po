@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-02-08 14:36+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
-"de/>\n"
+"Language-Team: German "
+"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -665,6 +665,38 @@ msgstr "Veröffentlichung der Bibliothek aufheben"
 msgid "dashboard.update-settings"
 msgstr "Einstellungen aktualisieren"
 
+msgid "dashboard.webhooks.active"
+msgstr "Aktiv"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "Wenn dieser Hook ausgelöst wird, dann werden die Eventdetails übermittelt"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "Inhaltstyp"
+
+msgid "dashboard.webhooks.create"
+msgstr "Webhook erstellen"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhook wurde erfolgreich erstellt."
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Webhooks ermöglichen es, andere Websites und Anwendungen automatisch über "
+"bestimmte Ereignisse bei Penpot zu informieren. Dies geschieht durch das "
+"Versenden einer POST-Anfrage an die von Ihnen festgelegten URLs."
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr ""
+"Um einen Webhook hinzuzufügen, drücken Sie auf die Schaltfläche \"Webhook "
+"hinzufügen\"."
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Bisher wurden noch keine Webhooks erstellt."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook wurde erfolgreich aktualisiert."
+
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
 msgstr "Ihr Konto"
@@ -745,12 +777,27 @@ msgstr "Sie können Ihre E-Mail-Adresse nicht als Passwort verwenden"
 msgid "errors.email-has-permanent-bounces"
 msgstr "Die E-Mail-Adresse «%s» hat viele permanente Unzustellbarkeitsberichte."
 
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Geben Sie bitte eine gültige E-Mail-Adresse ein"
+
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "Bestätigungs-E-Mail muss übereinstimmen"
 
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "Die E-Mail \"%s\" wurde als Spam oder dauerhaft abgelehnt gemeldet."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"Es scheint als würden Sie eine Datei öffnen, bei der die Funktion '%s' "
+"aktiviert ist. Ihr Penpot-Frontend unterstützt es aber nicht oder hat die "
+"Funktion deaktiviert."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Die Funktion '%s' wird nicht unterstützt."
 
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
@@ -771,6 +818,10 @@ msgstr "Diese Einladung wurde möglicherweise abgebrochen oder ist abgelaufen."
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "Die LDAP-Authentifizierung ist deaktiviert."
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "Sie haben das Limit von '%s' erreicht. Kontaktieren Sie den Support."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
@@ -837,6 +888,27 @@ msgstr "Ein unerwarteter Fehler ist aufgetreten."
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "Unbekannter Token"
+
+msgid "errors.webhooks.connection"
+msgstr "Verbindungsfehler, URL ist nicht erreichbar"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "Die URL erfüllt nicht die Validierungskriterien."
+
+msgid "errors.webhooks.last-delivery"
+msgstr "Die letzte Übertragung war nicht erfolgreich."
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Fehler bei der SSL-Validierung."
+
+msgid "errors.webhooks.timeout"
+msgstr "Zeitüberschreitung"
+
+msgid "errors.webhooks.unexpected"
+msgstr "Unerwarteter Fehler bei der Validierung"
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "Unerwarteter Status %s"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
@@ -964,6 +1036,10 @@ msgstr "Breite"
 msgid "inspect.attributes.shadow"
 msgstr "Schatten"
 
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Größe und Position"
+
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
 msgstr "Rahmen"
@@ -986,6 +1062,9 @@ msgstr "Mehrere"
 msgid "inspect.attributes.stroke.style.none"
 msgstr "Keine"
 
+msgid "inspect.attributes.stroke.style.solid"
+msgstr "Durchgezogen"
+
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke.width"
 msgstr "Breite"
@@ -1001,6 +1080,10 @@ msgstr "Schriftart"
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.font-size"
 msgstr "Schriftgröße"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-style"
+msgstr "Schriftschnitt"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.letter-spacing"
@@ -1038,6 +1121,19 @@ msgstr "Kapitälchen"
 
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Großbuchstaben"
+
+msgid "inspect.empty.help"
+msgstr ""
+"Für weitere Informationen zum Thema \"Auswerten von "
+"Design-Spezifikationen\", besuchen Sie bitte das Penpot-Hilfezentrum"
+
+msgid "inspect.empty.more-info"
+msgstr "Weitere Informationen zur Inspektion"
+
+msgid "inspect.empty.select"
+msgstr ""
+"Wählen Sie eine Form, ein Board oder eine Gruppe aus, um deren "
+"Eigenschaften und Code zu überprüfen"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.code"
@@ -1090,6 +1186,9 @@ msgstr "Tastenkürzel"
 
 msgid "labels.accept"
 msgstr "Akzeptieren"
+
+msgid "labels.active"
+msgstr "Aktiv"
 
 msgid "labels.add-custom-font"
 msgstr "Eigene Schriftart hinzufügen"
@@ -1145,6 +1244,10 @@ msgstr "Weiter mit"
 
 msgid "labels.continue-with-penpot"
 msgstr "Sie können mit einem Penpot-Konto fortfahren"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Link kopieren"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -1252,6 +1355,9 @@ msgstr "Hilfezentrum"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "Erledigte Kommentare ausblenden"
+
+msgid "labels.inactive"
+msgstr "Inaktiv"
 
 msgid "labels.installed-fonts"
 msgstr "Installierte Schriftarten"
@@ -1380,6 +1486,10 @@ msgstr "Projekte"
 msgid "labels.release-notes"
 msgstr "Versionshinweise"
 
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Datei neu laden"
+
 #: src/app/main/ui/workspace/libraries.cljs,
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
@@ -1465,6 +1575,10 @@ msgstr "Status"
 msgid "labels.tutorials"
 msgstr "Tutorials"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "Veröffentlichung von %s-Dateien aufheben"
+
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
 msgstr "Aktualisieren"
@@ -1482,9 +1596,15 @@ msgstr "Eigene Schriftarten hochladen"
 msgid "labels.uploading"
 msgstr "Hochladen…"
 
+msgid "labels.view-only"
+msgstr "NUR ANSEHEN"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "Zuschauer"
+
+msgid "labels.webhooks"
+msgstr "Webhooks"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
@@ -1544,6 +1664,18 @@ msgstr "E-Mail-Adresse ändern"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.title"
 msgstr "Ihre E-Mail-Adresse ändern"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "Webhook erstellen"
+
+msgid "modals.create-webhook.title"
+msgstr "Webhook erstellen"
+
+msgid "modals.create-webhook.url.label"
+msgstr "Payload-URL"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://example.com/postreceive"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1644,6 +1776,26 @@ msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Datei löschen"
 msgstr[1] "Dateien löschen"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint"
+msgid_plural "modals.delete-shared-confirm.hint"
+msgstr[0] ""
+"Wenn Sie es löschen, werden diese Assets in die lokale Bibliothek dieser "
+"Datei verschoben. Unbenutzte Assets gehen verloren."
+msgstr[1] ""
+"Wenn Sie sie löschen, werden diese Assets in die lokale Bibliothek dieser "
+"Datei verschoben. Unbenutzte Assets gehen verloren."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
+msgstr[0] ""
+"Wenn Sie es löschen, werden diese Assets in die lokalen Bibliotheken dieser "
+"Dateien verschoben. Unbenutzte Assets gehen verloren."
+msgstr[1] ""
+"Wenn Sie sie löschen, werden diese Assets in die lokalen Bibliotheken "
+"dieser Dateien verschoben. Unbenutzte Assets gehen verloren."
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
@@ -1651,12 +1803,28 @@ msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Möchten Sie diese Datei wirklich löschen?"
 msgstr[1] "Möchten Sie diese Dateien wirklich löschen?"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.no-files-message"
+msgid_plural "modals.delete-shared-confirm.no-files-message"
+msgstr[0] ""
+"Keines der Assets in der Bibliothek dieser Datei ist in Gebrauch. Sie "
+"werden zusammen mit der Datei gelöscht."
+msgstr[1] ""
+"Keines der Assets in den Bibliotheken dieser Datei ist in Gebrauch. Sie "
+"werden zusammen mit der Datei gelöscht."
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
 msgstr[0] "Einige Assets aus der Bibliothek dieser Datei werden hier verwendet:"
 msgstr[1] "Einige Assets aus den Bibliotheken dieser Datei werden hier verwendet:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-many"
+msgid_plural "modals.delete-shared-confirm.scd-message-many"
+msgstr[0] "Einige Assets aus der Bibliothek dieser Datei werden hier verwendet:"
+msgstr[1] "Einige der Assets aus den Bibliotheken dieser Datei werden hier verwendet:"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1690,6 +1858,21 @@ msgstr "Sind Sie sicher, dass Sie dieses Mitglied aus dem Team löschen möchten
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Teammitglied löschen"
+
+msgid "modals.delete-webhook.accept"
+msgstr "Webhook löschen"
+
+msgid "modals.delete-webhook.message"
+msgstr "Möchten Sie diesen Webhook wirklich löschen?"
+
+msgid "modals.delete-webhook.title"
+msgstr "Webhook löschen"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Webhook bearbeiten"
+
+msgid "modals.edit-webhook.title"
+msgstr "Webhook bearbeiten"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member-confirm.accept"
@@ -1800,6 +1983,16 @@ msgstr[1] ""
 "Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokale "
 "Bibliothek dieser Datei verschoben."
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.hint-many"
+msgstr[0] ""
+"Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokalen "
+"Bibliotheken dieser Dateien verschoben."
+msgstr[1] ""
+"Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokalen "
+"Bibliotheken dieser Dateien verschoben."
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -1807,10 +2000,22 @@ msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Möchten Sie die Veröffentlichung dieser Bibliothek wirklich aufheben?"
 msgstr[1] "Möchten Sie die Veröffentlichung dieser Bibliotheken wirklich aufheben?"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.no-files-message"
+msgstr[0] "Keines der Assets in dieser Bibliothek wird verwendet."
+msgstr[1] "Keines der Assets in diesen Bibliotheken wird verwendet."
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "Einige Assets in dieser Bibliothek werden hier verwendet:"
+msgstr[1] "Einige Assets in diesen Bibliotheken werden hier verwendet:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message-many"
+msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
 msgstr[0] "Einige Assets in dieser Bibliothek werden hier verwendet:"
 msgstr[1] "Einige Assets in diesen Bibliotheken werden hier verwendet:"
 
@@ -1861,11 +2066,15 @@ msgstr "Komponente aus einer geteilten Bibliothek aktualiseren"
 msgid "notifications.invitation-email-sent"
 msgstr "Einladung erfolgreich gesendet"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Einladungslink kopiert"
+
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
 msgstr ""
-"Sie können Ihr Profil nicht löschen. Weisen Sie Ihre Teams neu zu, bevor Sie "
-"fortfahren."
+"Sie können Ihr Profil nicht löschen. Weisen Sie Ihre Teams neu zu, bevor "
+"Sie fortfahren."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -2326,6 +2535,9 @@ msgstr "Zum Kommentarbereich im Ansichtsmodus"
 msgid "shortcuts.open-dashboard"
 msgstr "Zum Dashboard"
 
+msgid "shortcuts.open-inspect"
+msgstr "Zur Spezifikation im Ansichtsmodus"
+
 msgid "shortcuts.open-interactions"
 msgstr "Zum Ansichtsmodus"
 
@@ -2410,6 +2622,9 @@ msgstr "Verlauf ein-/ausblenden"
 
 msgid "shortcuts.toggle-layers"
 msgstr "Ebenen ein-/ausblenden"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Flex-Layout hinzufügen/entfernen"
 
 msgid "shortcuts.toggle-lock"
 msgstr "Auswahl sperren"
@@ -2509,6 +2724,9 @@ msgstr "Mitglieder - %s - Penpot"
 msgid "title.team-settings"
 msgstr "Einstellungen - %s - Penpot"
 
+msgid "title.team-webhooks"
+msgstr "Webhooks - %s - Penpot"
+
 #: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "title.viewer"
 msgstr "%s - Ansichtsmodus - Penpot"
@@ -2544,6 +2762,9 @@ msgstr "Interaktionen nicht anzeigen"
 msgid "viewer.header.fullscreen"
 msgstr "Vollbildmodus"
 
+msgid "viewer.header.inspect-section"
+msgstr "Spezifikation (%s)"
+
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
 msgstr "Interaktionen"
@@ -2566,6 +2787,9 @@ msgstr "Interaktionen beim Klicken anzeigen"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.sitemap"
 msgstr "Sitemap"
+
+msgid "webhooks.last-delivery.success"
+msgstr "Die letzte Übertragung war erfolgreich."
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
@@ -2725,6 +2949,9 @@ msgstr "Zeilenabstand"
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "Textstile"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.text-transform"
@@ -3089,6 +3316,12 @@ msgstr "Exportieren"
 msgid "workspace.options.export-multiple"
 msgstr "Auswahl exportieren"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "Ein Element exportieren"
+msgstr[1] "%s Elemente exportieren"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
 msgstr "Suffix"
@@ -3227,6 +3460,9 @@ msgstr "Gruppe einrahmen"
 msgid "workspace.options.height"
 msgstr "Höhe"
 
+msgid "workspace.options.inspect"
+msgstr "Spezifikation"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-action"
 msgstr "Aktion"
@@ -3254,6 +3490,9 @@ msgstr "Push"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-slide"
 msgstr "Reinfahren"
+
+msgid "workspace.options.interaction-auto"
+msgstr "Automatisch"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
@@ -3402,6 +3641,10 @@ msgstr "Scrollposition beibehalten"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-prev-screen"
 msgstr "Zum vorherigen Screen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Relativ zu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-self"
@@ -3560,12 +3803,12 @@ msgid "workspace.options.layout.direction.column-reverse"
 msgstr "Spalte-umgekehrt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row-reverse"
-msgstr "Reihe-umgekehrt"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
 msgstr "Reihe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "Reihe-umgekehrt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
@@ -3946,6 +4189,39 @@ msgstr "Ankerpunkte trennen (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "An Ankerpunkten ausrichten (%s)"
 
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-hint"
+msgstr ""
+"Um es erneut zu versuchen, können Sie diese Datei neu laden. Wenn das "
+"Problem weiterhin besteht, empfehlen wir Ihnen, einen Blick auf die Liste "
+"zu werfen und zu überlegen, ob Sie defekte Grafiken löschen wollen."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-msg"
+msgstr "Einige Grafiken konnten nicht aktualisiert werden."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.progress"
+msgstr "Konvertieren von %s/%s"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text1"
+msgstr ""
+"Von nun an sind Grafiken in der Bibliothek auch Komponenten. Das macht sie "
+"viel leistungsfähiger."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text2"
+msgstr "Diese Aktualisierung ist eine einmalige Aktion."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.title"
+msgstr "Aktualisierung von %s..."
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "Flex-Layout hinzufügen"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
 msgstr "In den Hintergrund"
@@ -4062,6 +4338,10 @@ msgstr "Einfügen"
 
 msgid "workspace.shape.menu.path"
 msgstr "Pfad"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Flex-Layout entfernen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,
@@ -4358,285 +4638,3 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"Wenn Sie es löschen, werden diese Assets in die lokale Bibliothek dieser "
-"Datei verschoben. Unbenutzte Assets gehen verloren."
-msgstr[1] ""
-"Wenn Sie sie löschen, werden diese Assets in die lokale Bibliothek dieser "
-"Datei verschoben. Unbenutzte Assets gehen verloren."
-
-msgid "dashboard.webhooks.active"
-msgstr "Aktiv"
-
-msgid "dashboard.webhooks.content-type"
-msgstr "Inhaltstyp"
-
-msgid "dashboard.webhooks.create"
-msgstr "Webhook erstellen"
-
-msgid "dashboard.webhooks.create.success"
-msgstr "Webhook wurde erfolgreich erstellt."
-
-msgid "dashboard.webhooks.empty.add-one"
-msgstr ""
-"Um einen Webhook hinzuzufügen, drücken Sie auf die Schaltfläche \"Webhook "
-"hinzufügen\"."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
-msgstr "Geben Sie bitte eine gültige E-Mail-Adresse ein"
-
-msgid "errors.webhooks.connection"
-msgstr "Verbindungsfehler, URL ist nicht erreichbar"
-
-msgid "errors.webhooks.ssl-validation"
-msgstr "Fehler bei der SSL-Validierung."
-
-msgid "errors.webhooks.timeout"
-msgstr "Zeitüberschreitung"
-
-msgid "labels.active"
-msgstr "Aktiv"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.copy-invitation-link"
-msgstr "Link kopieren"
-
-#: src/app/main/ui/workspace.cljs
-msgid "labels.reload-file"
-msgstr "Datei neu laden"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "labels.unpublish-multi-files"
-msgstr "Veröffentlichung von %s-Dateien aufheben"
-
-msgid "modals.delete-webhook.accept"
-msgstr "Webhook löschen"
-
-msgid "modals.delete-webhook.message"
-msgstr "Möchten Sie diesen Webhook wirklich löschen?"
-
-msgid "workspace.assets.typography.text-styles"
-msgstr "Textstile"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
-msgid "workspace.options.export-object"
-msgid_plural "workspace.options.export-object"
-msgstr[0] "Ein Element exportieren"
-msgstr[1] "%s Elemente exportieren"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-relative-to"
-msgstr "Relativ zu"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.remove-flex"
-msgstr "Flex-Layout entfernen"
-
-msgid "dashboard.webhooks.empty.no-webhooks"
-msgstr "Bisher wurden noch keine Webhooks erstellt."
-
-msgid "dashboard.webhooks.update.success"
-msgstr "Webhook wurde erfolgreich aktualisiert."
-
-#: src/app/main/errors.cljs
-msgid "errors.feature-mismatch"
-msgstr ""
-"Es scheint als würden Sie eine Datei öffnen, bei der die Funktion '%s' "
-"aktiviert ist. Ihr Penpot-Frontend unterstützt es aber nicht oder hat die "
-"Funktion deaktiviert."
-
-#: src/app/main/errors.cljs
-msgid "errors.feature-not-supported"
-msgstr "Die Funktion '%s' wird nicht unterstützt."
-
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.font-style"
-msgstr "Schriftschnitt"
-
-#: src/app/main/errors.cljs
-msgid "errors.max-quote-reached"
-msgstr "Sie haben das Limit von '%s' erreicht. Kontaktieren Sie den Support."
-
-msgid "errors.webhooks.unexpected"
-msgstr "Unerwarteter Fehler bei der Validierung"
-
-msgid "errors.webhooks.unexpected-status"
-msgstr "Unerwarteter Status %s"
-
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.size"
-msgstr "Größe und Position"
-
-msgid "inspect.attributes.stroke.style.solid"
-msgstr "Durchgezogen"
-
-msgid "inspect.empty.select"
-msgstr ""
-"Wählen Sie eine Form, ein Board oder eine Gruppe aus, um deren Eigenschaften "
-"und Code zu überprüfen"
-
-msgid "inspect.empty.more-info"
-msgstr "Weitere Informationen zur Inspektion"
-
-msgid "labels.inactive"
-msgstr "Inaktiv"
-
-msgid "labels.view-only"
-msgstr "NUR ANSEHEN"
-
-msgid "modals.create-webhook.url.label"
-msgstr "Payload-URL"
-
-msgid "modals.delete-webhook.title"
-msgstr "Webhook löschen"
-
-msgid "labels.webhooks"
-msgstr "Webhooks"
-
-msgid "modals.create-webhook.submit-label"
-msgstr "Webhook erstellen"
-
-msgid "modals.create-webhook.title"
-msgstr "Webhook erstellen"
-
-msgid "modals.create-webhook.url.placeholder"
-msgstr "https://example.com/postreceive"
-
-msgid "modals.edit-webhook.submit-label"
-msgstr "Webhook bearbeiten"
-
-msgid "modals.edit-webhook.title"
-msgstr "Webhook bearbeiten"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "notifications.invitation-link-copied"
-msgstr "Einladungslink kopiert"
-
-msgid "shortcuts.toggle-layout-flex"
-msgstr "Flex-Layout hinzufügen/entfernen"
-
-msgid "title.team-webhooks"
-msgstr "Webhooks - %s - Penpot"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Einige Grafiken konnten nicht aktualisiert werden."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Von nun an sind Grafiken in der Bibliothek auch Komponenten. Das macht sie "
-"viel leistungsfähiger."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Konvertieren von %s/%s"
-
-msgid "workspace.options.inspect"
-msgstr "Spezifikation"
-
-msgid "workspace.options.interaction-auto"
-msgstr "Automatisch"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Aktualisierung von %s..."
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.add-flex"
-msgstr "Flex-Layout hinzufügen"
-
-msgid "dashboard.webhooks.description"
-msgstr ""
-"Webhooks ermöglichen es, andere Websites und Anwendungen automatisch über "
-"bestimmte Ereignisse bei Penpot zu informieren. Dies geschieht durch das "
-"Versenden einer POST-Anfrage an die von Ihnen festgelegten URLs."
-
-msgid "errors.webhooks.invalid-uri"
-msgstr "Die URL erfüllt nicht die Validierungskriterien."
-
-msgid "errors.webhooks.last-delivery"
-msgstr "Die letzte Übertragung war nicht erfolgreich."
-
-msgid "inspect.empty.help"
-msgstr ""
-"Für weitere Informationen zum Thema \"Auswerten von Design-Spezifikationen\""
-", besuchen Sie bitte das Penpot-Hilfezentrum"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"Wenn Sie es löschen, werden diese Assets in die lokalen Bibliotheken dieser "
-"Dateien verschoben. Unbenutzte Assets gehen verloren."
-msgstr[1] ""
-"Wenn Sie sie löschen, werden diese Assets in die lokalen Bibliotheken dieser "
-"Dateien verschoben. Unbenutzte Assets gehen verloren."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Diese Aktualisierung ist eine einmalige Aktion."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] ""
-"Keines der Assets in der Bibliothek dieser Datei ist in Gebrauch. Sie werden "
-"zusammen mit der Datei gelöscht."
-msgstr[1] ""
-"Keines der Assets in den Bibliotheken dieser Datei ist in Gebrauch. Sie "
-"werden zusammen mit der Datei gelöscht."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Um es erneut zu versuchen, können Sie diese Datei neu laden. Wenn das "
-"Problem weiterhin besteht, empfehlen wir Ihnen, einen Blick auf die Liste zu "
-"werfen und zu überlegen, ob Sie defekte Grafiken löschen wollen."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "Einige Assets aus der Bibliothek dieser Datei werden hier verwendet:"
-msgstr[1] ""
-"Einige der Assets aus den Bibliotheken dieser Datei werden hier verwendet:"
-
-msgid "dashboard.webhooks.active.explain"
-msgstr ""
-"Wenn dieser Hook ausgelöst wird, dann werden die Eventdetails übermittelt"
-
-msgid "shortcuts.open-inspect"
-msgstr "Zur Spezifikation im Ansichtsmodus"
-
-msgid "webhooks.last-delivery.success"
-msgstr "Die letzte Übertragung war erfolgreich."
-
-msgid "viewer.header.inspect-section"
-msgstr "Spezifikation (%s)"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] ""
-"Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokalen "
-"Bibliotheken dieser Dateien verschoben."
-msgstr[1] ""
-"Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokalen "
-"Bibliotheken dieser Dateien verschoben."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Einige Assets in dieser Bibliothek werden hier verwendet:"
-msgstr[1] "Einige Assets in diesen Bibliotheken werden hier verwendet:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Keines der Assets in dieser Bibliothek wird verwendet."
-msgstr[1] "Keines der Assets in diesen Bibliotheken wird verwendet."

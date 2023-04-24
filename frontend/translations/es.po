@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-03-07 11:37+0000\n"
 "Last-Translator: Alvaro Araoz <alvaroaraoz_92@hotmail.com>\n"
-"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
-"es/>\n"
+"Language-Team: Spanish "
+"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -312,8 +312,8 @@ msgstr "Duplicar %s archivos"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Los archivos agregados a las bibliotecas aparecerán aquí. Si quieres probar "
-"con alguna plantilla ve a [Bibliotecas y plantillas](https://penpot.app/"
-"libraries-templates.html)."
+"con alguna plantilla ve a [Bibliotecas y "
+"plantillas](https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Descargar %s archivos Penpot (.penpot)"
@@ -427,19 +427,19 @@ msgstr ""
 "más sobre licencias tipográficas: [font "
 "licensing](https://www.typography.com/faq)."
 
-#, markdown
-msgid "dashboard.fonts.warning-text"
-msgstr ""
-"Hemos detectado un posible problema en tus fuentes "
-"relacionado con las métricas verticales en diferentes sistemas operativos. "
-"Puedes comprobar la visualización de tu fuente utilizando servicios "
-"[como este](https://vertical-metrics.netlify.app/). "
-"Además, recomendamos usar [Transfonter](https://transfonter.org/) "
-"para generar fuentes web y corregir posibles errores."
-
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
 msgstr "Cargar todas"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Hemos detectado un posible problema en tus fuentes relacionado con las "
+"métricas verticales en diferentes sistemas operativos. Puedes comprobar la "
+"visualización de tu fuente utilizando servicios [como "
+"este](https://vertical-metrics.netlify.app/). Además, recomendamos usar "
+"[Transfonter](https://transfonter.org/) para generar fuentes web y corregir "
+"posibles errores."
 
 msgid "dashboard.import"
 msgstr "Importar archivos Penpot"
@@ -1096,12 +1096,12 @@ msgid "inspect.attributes.typography.font-size"
 msgstr "Tamaño de fuente"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.font-weight"
-msgstr "Grosor de fuente"
-
-#: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.font-style"
 msgstr "Estilo de fuente"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Grosor de fuente"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.letter-spacing"
@@ -1432,8 +1432,7 @@ msgstr "No hay invitaciones pendientes."
 #: src/app/main/ui/dashboard/team.cljs
 #, markdown
 msgid "labels.no-invitations-hint"
-msgstr ""
-"Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
+msgstr "Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1785,21 +1784,25 @@ msgstr[1] "Borrar archivos"
 msgid "modals.delete-shared-confirm.hint"
 msgid_plural "modals.delete-shared-confirm.hint"
 msgstr[0] ""
-"Si lo borras, sus elementos no estarán disponibles para otros archivos. "
-"Los elementos que hayan sido utilizados permanecerán en el archivo (¡ningún diseño se romperá!)."
+"Si lo borras, sus elementos no estarán disponibles para otros archivos. Los "
+"elementos que hayan sido utilizados permanecerán en el archivo (¡ningún "
+"diseño se romperá!)."
 msgstr[1] ""
 "Si los borras, sus elementos no estarán disponibles para otros archivos. "
-"Los elementos que hayan sido utilizados permanecerán en el archivo (¡ningún diseño se romperá!)."
+"Los elementos que hayan sido utilizados permanecerán en el archivo (¡ningún "
+"diseño se romperá!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint-many"
 msgid_plural "modals.delete-shared-confirm.hint-many"
 msgstr[0] ""
-"Si lo borras, sus elementos no estarán disponibles para otros archivos. "
-"Los elementos que hayan sido utilizados permanecerán en los archivo (¡ningún diseño se romperá!)."
+"Si lo borras, sus elementos no estarán disponibles para otros archivos. Los "
+"elementos que hayan sido utilizados permanecerán en los archivo (¡ningún "
+"diseño se romperá!)."
 msgstr[1] ""
 "Si los borras, sus elementos no estarán disponibles para otros archivos. "
-"Los elementos que hayan sido utilizados permanecerán en los archivo (¡ningún diseño se romperá!)."
+"Los elementos que hayan sido utilizados permanecerán en los archivo "
+"(¡ningún diseño se romperá!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
@@ -1884,7 +1887,9 @@ msgid "modals.invite-member.emails"
 msgstr "Emails, separados por coma"
 
 msgid "modals.invite-member.repeated-invitation"
-msgstr "Algunas direcciones de correo ya se encuentran entre los miembros. Estas invitaciones no serán enviadas."
+msgstr ""
+"Algunas direcciones de correo ya se encuentran entre los miembros. Estas "
+"invitaciones no serán enviadas."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
@@ -1990,22 +1995,25 @@ msgstr[1] "Despublicar"
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] ""
-"Si la despublicas, sus elementos no estarán disponibles para otros archivos. "
-"Los elementos que hayan sido utilizados permanecerán en el archivo (¡ningún diseño se romperá!)."
-
+"Si la despublicas, sus elementos no estarán disponibles para otros "
+"archivos. Los elementos que hayan sido utilizados permanecerán en el "
+"archivo (¡ningún diseño se romperá!)."
 msgstr[1] ""
-"Si las despublicas, sus elementos no estarán disponibles para otros archivos. "
-"Los elementos que hayan sido utilizados permanecerán en el archivo (¡ningún diseño se romperá!)."
+"Si las despublicas, sus elementos no estarán disponibles para otros "
+"archivos. Los elementos que hayan sido utilizados permanecerán en el "
+"archivo (¡ningún diseño se romperá!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint-many"
 msgid_plural "modals.unpublish-shared-confirm.hint-many"
 msgstr[0] ""
-"Si la despublicas, sus elementos no estarán disponibles para otros archivos. "
-"Los elementos que hayan sido utilizados permanecerán en los archivo (¡ningún diseño se romperá!)."
+"Si la despublicas, sus elementos no estarán disponibles para otros "
+"archivos. Los elementos que hayan sido utilizados permanecerán en los "
+"archivo (¡ningún diseño se romperá!)."
 msgstr[1] ""
-"Si las despublicas, sus elementos no estarán disponibles para otros archivos. "
-"Los elementos que hayan sido utilizados permanecerán en los archivo (¡ningún diseño se romperá!)."
+"Si las despublicas, sus elementos no estarán disponibles para otros "
+"archivos. Los elementos que hayan sido utilizados permanecerán en los "
+"archivo (¡ningún diseño se romperá!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -2320,8 +2328,14 @@ msgstr "Añadir nodo"
 msgid "shortcuts.align-bottom"
 msgstr "Alinear abajo"
 
+msgid "shortcuts.align-center"
+msgstr "Alinear al centro"
+
 msgid "shortcuts.align-hcenter"
 msgstr "Alinear al centro horizontalmente"
+
+msgid "shortcuts.align-justify"
+msgstr "Alinear justificado"
 
 msgid "shortcuts.align-left"
 msgstr "Alinear a la izquierda"
@@ -2337,6 +2351,9 @@ msgstr "Alinear al centro verticalmente"
 
 msgid "shortcuts.artboard-selection"
 msgstr "Crear tablero desde la selección"
+
+msgid "shortcuts.bold"
+msgstr "Alternar negrita"
 
 msgid "shortcuts.bool-difference"
 msgstr "Diferencia"
@@ -2428,6 +2445,12 @@ msgstr "Voltear horizontalmente"
 msgid "shortcuts.flip-vertical"
 msgstr "Voltear verticalmente"
 
+msgid "shortcuts.font-size-dec"
+msgstr "Decrementar el tamaño de fuente"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Incrementar el tamaño de fuente"
+
 msgid "shortcuts.go-to-drafts"
 msgstr "Ir a borradores"
 
@@ -2452,8 +2475,26 @@ msgstr "Aumentar zoom"
 msgid "shortcuts.insert-image"
 msgstr "Insertar imagen"
 
+msgid "shortcuts.italic"
+msgstr "Alternar cursiva"
+
 msgid "shortcuts.join-nodes"
 msgstr "Unir nodos"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Decrementar el espaciado de letras"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Incrementar el espaciado de letras"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Decrementar el interlineado"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Incrementar el interlineado"
+
+msgid "shortcuts.line-through"
+msgstr "Alternar tachado"
 
 msgid "shortcuts.make-corner"
 msgstr "Convertir en esquina"
@@ -2542,12 +2583,6 @@ msgstr "Comentarios"
 msgid "shortcuts.open-dashboard"
 msgstr "Ir al dashboard"
 
-msgid "shortcuts.select-next"
-msgstr "Seleccionar capa siguiente"
-
-msgid "shortcuts.select-prev"
-msgstr "Seleccionar capa anterior"
-
 msgid "shortcuts.open-inspect"
 msgstr "Ir al inspector"
 
@@ -2580,6 +2615,12 @@ msgstr "Buscar atajos"
 
 msgid "shortcuts.select-all"
 msgstr "Seleccionar todo"
+
+msgid "shortcuts.select-next"
+msgstr "Seleccionar capa siguiente"
+
+msgid "shortcuts.select-prev"
+msgstr "Seleccionar capa anterior"
 
 msgid "shortcuts.separate-nodes"
 msgstr "Separar nodos"
@@ -2666,6 +2707,9 @@ msgstr "Mostrar/ocultar elemento"
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Alternar estilo de zoom"
 
+msgid "shortcuts.underline"
+msgstr "Alternar subrayado"
+
 msgid "shortcuts.undo"
 msgstr "Deshacer"
 
@@ -2678,44 +2722,14 @@ msgstr "Deshacer máscara"
 msgid "shortcuts.v-distribute"
 msgstr "Distribuir verticalmente"
 
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Decrementar zoom a objetivo"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Incrementar zoom a objetivo"
+
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom a selección"
-
-msgid "shortcuts.align-center"
-msgstr "Alinear al centro"
-
-msgid "shortcuts.align-justify"
-msgstr "Alinear justificado"
-
-msgid "shortcuts.bold"
-msgstr "Alternar negrita"
-
-msgid "shortcuts.italic"
-msgstr "Alternar cursiva"
-
-msgid "shortcuts.font-size-dec"
-msgstr "Decrementar el tamaño de fuente"
-
-msgid "shortcuts.font-size-inc"
-msgstr "Incrementar el tamaño de fuente"
-
-msgid "shortcuts.letter-spacing-dec"
-msgstr "Decrementar el espaciado de letras"
-
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Incrementar el espaciado de letras"
-
-msgid "shortcuts.line-height-dec"
-msgstr "Decrementar el interlineado"
-
-msgid "shortcuts.line-height-inc"
-msgstr "Incrementar el interlineado"
-
-msgid "shortcuts.line-through"
-msgstr "Alternar tachado"
-
-msgid "shortcuts.underline"
-msgstr "Alternar subrayado"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
@@ -3036,6 +3050,9 @@ msgstr "Degradado radial"
 msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Desactivar alineamiento dinámico"
 
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Desactivar escala proporcional"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-scale-text"
 msgstr "Desactivar escalar texto"
@@ -3054,6 +3071,9 @@ msgstr "Desactivar ajuste al pixel"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Activar alineamiento dinámico"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Activar escala proporcional"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-scale-text"
@@ -3113,6 +3133,9 @@ msgstr "Preferencias"
 msgid "workspace.header.menu.option.view"
 msgstr "Ver"
 
+msgid "workspace.header.menu.redo"
+msgstr "Rehacer"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
 msgstr "Seleccionar todo"
@@ -3140,17 +3163,8 @@ msgstr "Mostrar reglas"
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Mostrar paleta de textos"
 
-msgid "workspace.header.menu.enable-scale-content"
-msgstr "Activar escala proporcional"
-
-msgid "workspace.header.menu.disable-scale-content"
-msgstr "Desactivar escala proporcional"
-
 msgid "workspace.header.menu.undo"
 msgstr "Deshacer"
-
-msgid "workspace.header.menu.redo"
-msgstr "Rehacer"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
@@ -3195,12 +3209,6 @@ msgstr "Pantalla completa"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom a selección"
-
-msgid "shortcuts.zoom-lense-increase"
-msgstr "Incrementar zoom a objetivo"
-
-msgid "shortcuts.zoom-lense-decrease"
-msgstr "Decrementar zoom a objetivo"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -3869,12 +3877,12 @@ msgid "workspace.options.layout.direction.column-reverse"
 msgstr "Columna invertida"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row-reverse"
-msgstr "Fila invertida"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
 msgstr "Fila"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "Fila invertida"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"

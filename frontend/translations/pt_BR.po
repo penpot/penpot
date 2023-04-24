@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-04-24 03:54+0000\n"
 "Last-Translator: Ally Tiago <allytiagomail@gmail.com>\n"
-"Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
-"penpot/frontend/pt_BR/>\n"
+"Language-Team: Portuguese (Brazil) "
+"<https://hosted.weblate.org/projects/penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -382,7 +382,8 @@ msgstr ""
 
 msgid "dashboard.export.options.merge.title"
 msgstr ""
-"Incluir ativos da biblioteca compartilhada na biblioteca de ativos do arquivo"
+"Incluir ativos da biblioteca compartilhada na biblioteca de ativos do "
+"arquivo"
 
 msgid "dashboard.export.title"
 msgstr "Exportar arquivos"
@@ -408,18 +409,18 @@ msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Qualquer fonte da web que você carregar aqui será adicionada a lista de "
 "fontes tipográficas disponível nas propriedades de texto dos arquivos desta "
-"equipe. As fontes com o mesmo nome de família de fontes serão agrupadas como "
-"uma **única família de fontes**. Você pode fazer upload de fontes com os "
-"seguintes formatos: **TTF, OTF e WOFF** (apenas uma será necessária)."
+"equipe. As fontes com o mesmo nome de família de fontes serão agrupadas "
+"como uma **única família de fontes**. Você pode fazer upload de fontes com "
+"os seguintes formatos: **TTF, OTF e WOFF** (apenas uma será necessária)."
 
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"Envie somente fontes que você possui os direitos ou tem licença para usar no "
-"Penpot. Descubra mais na seção de Direitos de conteúdo nos [Termos de "
+"Envie somente fontes que você possui os direitos ou tem licença para usar "
+"no Penpot. Descubra mais na seção de Direitos de conteúdo nos [Termos de "
 "Serviço do Penpot](https://penpot.app/terms.html). Caso queira saber mais, "
-"veja esta leitura sobre [licenciamento de fontes](https://www.typography.com/"
-"faq)."
+"veja esta leitura sobre [licenciamento de "
+"fontes](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -644,6 +645,36 @@ msgstr "Cancelar publicação da biblioteca"
 msgid "dashboard.update-settings"
 msgstr "Atualizar configurações"
 
+msgid "dashboard.webhooks.active"
+msgstr "Está ativo"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "Quando esse hook é invocado detalhes de eventos vão ser enviados"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "Tipo de conteúdo"
+
+msgid "dashboard.webhooks.create"
+msgstr "Criar webhook"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhook criado com sucesso."
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Webhooks são uma forma simples de permitir que outros websites e "
+"aplicativos sejam notificados quando certos eventos acontecem no Penpot. "
+"Nós enviaremos uma solicitação POST para todas as URLs que você digite."
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Clique em \"Adicionar Webhook\" para adicionar um Webhook."
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Nenhum Webhook criado ainda."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook atualizado com sucesso."
+
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
 msgstr "Sua conta"
@@ -716,12 +747,27 @@ msgstr "Você não pode usar seu e-mail como senha"
 msgid "errors.email-has-permanent-bounces"
 msgstr "O e-mail «%s» tem muitos relatórios de devolução permanentes."
 
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Por favor, insira um email válido"
+
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "E-mail de confirmação deve ser o mesmo"
 
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "O e-mail «%s» foi denunciado como spam ou devolvido permanentemente."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"Parece que você está abrindo um arquivo que tem a funcionalidade '%s' "
+"habilitada, mas o seu frontend no penpot não a suporta ou ela está "
+"desabilitada."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Recurso '%s' não é suportado."
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
@@ -741,6 +787,10 @@ msgstr "Este convite pode ter sido cancelado ou expirou."
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "Autenticação por LDAP está desativada."
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "Você atingiu a cota de '%s'. Entre em contato com o suporte."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
@@ -799,6 +849,27 @@ msgstr "Um erro inesperado ocorreu."
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "Token desconhecido"
+
+msgid "errors.webhooks.connection"
+msgstr "Erro de conexão, URL não acessível"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "A URL não passa na validação."
+
+msgid "errors.webhooks.last-delivery"
+msgstr "O último envio não foi bem-sucedido."
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Erro na validação SSL."
+
+msgid "errors.webhooks.timeout"
+msgstr "O tempo se esgotou"
+
+msgid "errors.webhooks.unexpected"
+msgstr "Erro inesperado durante a validação"
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "Status inesperado %s"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
@@ -925,6 +996,10 @@ msgstr "Largura"
 msgid "inspect.attributes.shadow"
 msgstr "Sombra"
 
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Tamanho e posição"
+
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
 msgstr "Traçado"
@@ -1010,6 +1085,19 @@ msgstr "Iniciais em maiúsculas"
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Maiúsculo"
 
+msgid "inspect.empty.help"
+msgstr ""
+"Se quiser saber mais sobre inspecionar o design, visite a central de ajuda "
+"do Penpot"
+
+msgid "inspect.empty.more-info"
+msgstr "Mais informações sobre inspecionar"
+
+msgid "inspect.empty.select"
+msgstr ""
+"Selecione uma forma, board ou grupo para inspecionar suas propriedades e "
+"código"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.code"
 msgstr "Código"
@@ -1061,6 +1149,9 @@ msgstr "Atalhos"
 
 msgid "labels.accept"
 msgstr "Aceitar"
+
+msgid "labels.active"
+msgstr "Ativo"
 
 msgid "labels.add-custom-font"
 msgstr "Adicionar fonte personalizada"
@@ -1116,6 +1207,10 @@ msgstr "Continue com"
 
 msgid "labels.continue-with-penpot"
 msgstr "Você pode continuar com uma conta do Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Copiar link"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -1217,14 +1312,17 @@ msgstr "Central de Ajuda"
 msgid "labels.hide-resolved-comments"
 msgstr "Ocultar comentários resolvidos"
 
+msgid "labels.inactive"
+msgstr "Inativo"
+
 msgid "labels.installed-fonts"
 msgstr "Fontes instaladas"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
 msgstr ""
-"Algo errado aconteceu. Por favor, tente novamente e se o problema persistir, "
-"entre em contato com o suporte."
+"Algo errado aconteceu. Por favor, tente novamente e se o problema "
+"persistir, entre em contato com o suporte."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"
@@ -1263,8 +1361,7 @@ msgstr "Nova senha"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr ""
-"Nada de novo por aqui! Novas notificações de comentários irão aparecer aqui."
+msgstr "Nada de novo por aqui! Novas notificações de comentários irão aparecer aqui."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
@@ -1273,8 +1370,7 @@ msgstr "Não há convites pendentes."
 #: src/app/main/ui/dashboard/team.cljs
 #, markdown
 msgid "labels.no-invitations-hint"
-msgstr ""
-"Clique no botão **Convidar pessoas** para convidar membros para esta equipe."
+msgstr "Clique no botão **Convidar pessoas** para convidar membros para esta equipe."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1335,6 +1431,10 @@ msgstr "Projetos"
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.release-notes"
 msgstr "Notas de atualização"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Recarregar arquivo"
 
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
@@ -1416,6 +1516,10 @@ msgstr "Status"
 msgid "labels.tutorials"
 msgstr "Tutorial"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "Despublicar arquivos %s"
+
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
 msgstr "Atualizar"
@@ -1433,9 +1537,15 @@ msgstr "Enviar fontes personalizadas"
 msgid "labels.uploading"
 msgstr "Enviando…"
 
+msgid "labels.view-only"
+msgstr "SOMENTE VISUALIZAÇÃO"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "Visualizador"
+
+msgid "labels.webhooks"
+msgstr "Webhooks"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
@@ -1494,6 +1604,18 @@ msgstr "Alterar e-mail"
 msgid "modals.change-email.title"
 msgstr "Alterar seu e-mail"
 
+msgid "modals.create-webhook.submit-label"
+msgstr "Criar webhook"
+
+msgid "modals.create-webhook.title"
+msgstr "Criar webhook"
+
+msgid "modals.create-webhook.url.label"
+msgstr "URL do payload"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://exemplo.com.br/postreceive"
+
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
 msgstr "Cancelar e manter minha conta"
@@ -1504,8 +1626,7 @@ msgstr "Sim, exclua minha conta"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.info"
-msgstr ""
-"Ao excluir sua conta, você perderá todos os seus projetos e arquivos atuais."
+msgstr "Ao excluir sua conta, você perderá todos os seus projetos e arquivos atuais."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.title"
@@ -1592,14 +1713,50 @@ msgstr[0] "Excluir arquivo"
 msgstr[1] "Excluir arquivos"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint"
+msgid_plural "modals.delete-shared-confirm.hint"
+msgstr[0] ""
+"Se você deletar, este item será movido para a biblioteca local deste "
+"arquivo. Itens não utilizados serão perdidos."
+msgstr[1] ""
+"Se você deletar, estes itens serão movidos para a biblioteca local deste "
+"arquivo. Itens não utilizados serão perdidos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
+msgstr[0] ""
+"Se você deletar, este item será movido para as bibliotecas locais deste "
+"arquivo. Itens não utilizados serão perdidos."
+msgstr[1] ""
+"Se você deletar, estes itens serão movidos para as bibliotecas locais deste "
+"arquivo. Itens não utilizados serão perdidos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Tem certeza de que deseja excluir este arquivo?"
 msgstr[1] "Tem certeza de que deseja excluir estes arquivos?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.no-files-message"
+msgid_plural "modals.delete-shared-confirm.no-files-message"
+msgstr[0] ""
+"Nenhum item da biblioteca deste arquivo está em uso. Eles serão deletados "
+"junto com o arquivo."
+msgstr[1] ""
+"Nenhum item das bibliotecas destes arquivos estão em uso. Eles serão "
+"deletados junto com os arquivos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "Alguns itens da biblioteca deste arquivo estão sendo usados aqui:"
+msgstr[1] "Alguns itens das bibliotecas deste arquivo estão sendo usados aqui:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-many"
+msgid_plural "modals.delete-shared-confirm.scd-message-many"
 msgstr[0] "Alguns itens da biblioteca deste arquivo estão sendo usados aqui:"
 msgstr[1] "Alguns itens das bibliotecas deste arquivo estão sendo usados aqui:"
 
@@ -1634,6 +1791,21 @@ msgstr "Tem certeza de que deseja excluir este membro da equipe?"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Excluir membro da equipe"
+
+msgid "modals.delete-webhook.accept"
+msgstr "Excluir webhook"
+
+msgid "modals.delete-webhook.message"
+msgstr "Tem certeza que deseja excluir este webhook?"
+
+msgid "modals.delete-webhook.title"
+msgstr "Excluindo webhook"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Editar webhook"
+
+msgid "modals.edit-webhook.title"
+msgstr "Editar webhook"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member-confirm.accept"
@@ -1720,8 +1892,9 @@ msgstr "Remover da Biblioteca Compartilhada"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
-"Depois de removido da Biblioteca Compartilhada, os Componentes deste arquivo "
-"deixarão de estar disponível para serem usados com o resto de seus arquivos."
+"Depois de removido da Biblioteca Compartilhada, os Componentes deste "
+"arquivo deixarão de estar disponível para serem usados com o resto de seus "
+"arquivos."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
@@ -1732,14 +1905,30 @@ msgid "modals.small-nudge"
 msgstr "Pequeno deslocamento"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Despublicar"
+msgstr[1] "Despublicar"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] ""
 "Se você cancelar a publicação, os recursos serão movidos para a biblioteca "
 "desse arquivo."
 msgstr[1] ""
-"Se você cancelar as publicações, os recursos serão movidos para a biblioteca "
-"desse arquivo."
+"Se você cancelar as publicações, os recursos serão movidos para a "
+"biblioteca desse arquivo."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.hint-many"
+msgstr[0] ""
+"Se você cancelar a publicação deste item, os componentes dele serão movidos "
+"para a biblioteca local deste arquivo."
+msgstr[1] ""
+"Se você cancelar a publicação destes itens, os componentes dele serão "
+"movidos para a biblioteca local destes arquivos."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -1748,10 +1937,22 @@ msgstr[0] "Tem certeza de que deseja cancelar a publicação desta biblioteca?"
 msgstr[1] "Tem certeza de que deseja cancelar a publicação dessas bibliotecas?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.no-files-message"
+msgstr[0] "Nenhum dos itens desta biblioteca está em uso."
+msgstr[1] "Nenhum dos itens destas bibliotecas estão em uso."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
 msgstr[0] "Alguns dos recursos dessa biblioteca estão em uso aqui:"
 msgstr[1] "Alguns dos recursos dessas bibliotecas estão em uso aqui:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message-many"
+msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
+msgstr[0] "Alguns itens nesta biblioteca estão em uso aqui:"
+msgstr[1] "Alguns itens nestas bibliotecas estão em uso aqui:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
@@ -1791,6 +1992,10 @@ msgstr "Atualizar componente em uma biblioteca compartilhada"
 msgid "notifications.invitation-email-sent"
 msgstr "Convite enviado com sucesso"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Link do convite copiado"
+
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
 msgstr ""
@@ -1807,8 +2012,8 @@ msgstr "E-mail de verificação enviado para %s. Verifique seu e-mail!"
 
 msgid "onboarding-v2.before-start.desc1"
 msgstr ""
-"Saiba que existem muitos recursos disponíveis para ajudá-lo a começar a usar "
-"o Penpot, como o Guia do Usuário e nosso canal no Youtube."
+"Saiba que existem muitos recursos disponíveis para ajudá-lo a começar a "
+"usar o Penpot, como o Guia do Usuário e nosso canal no Youtube."
 
 msgid "onboarding-v2.before-start.desc2"
 msgstr ""
@@ -1845,8 +2050,8 @@ msgstr "Sua privacidade é importante para nós, saiba mais aqui "
 msgid "onboarding-v2.newsletter.privacy2"
 msgstr ""
 "Enviaremos apenas e-mails relevantes para você e você pode cancelar a "
-"inscrição a qualquer momento através do link de cancelamento em qualquer uma "
-"das newsletters."
+"inscrição a qualquer momento através do link de cancelamento em qualquer "
+"uma das newsletters."
 
 msgid "onboarding-v2.newsletter.updates"
 msgstr ""
@@ -1855,8 +2060,8 @@ msgstr ""
 
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
-"O Penpot é Código Aberto (open-source) e é feito pela Kaleidos e também pela "
-"comunidade, onde muitas pessoas já se ajudam. Todos podem colaborar:"
+"O Penpot é Código Aberto (open-source) e é feito pela Kaleidos e também "
+"pela comunidade, onde muitas pessoas já se ajudam. Todos podem colaborar:"
 
 msgid "onboarding-v2.welcome.desc2"
 msgstr ""
@@ -2250,6 +2455,9 @@ msgstr "Ir para seção de comentários"
 msgid "shortcuts.open-dashboard"
 msgstr "Ir para o dashboard"
 
+msgid "shortcuts.open-inspect"
+msgstr "Ir para seção de inspeção"
+
 msgid "shortcuts.open-interactions"
 msgstr "Ir para seção de interação"
 
@@ -2334,6 +2542,9 @@ msgstr "Mostrar/Esconder histórico"
 
 msgid "shortcuts.toggle-layers"
 msgstr "Mostrar/Esconder camadas"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Adicionar/remover Flex Layout"
 
 msgid "shortcuts.toggle-lock"
 msgstr "Bloquear selecionado"
@@ -2433,6 +2644,9 @@ msgstr "Membros - %s - Penpot"
 msgid "title.team-settings"
 msgstr "Configurações - %s - Penpot"
 
+msgid "title.team-webhooks"
+msgstr "Webhooks - %s - Penpot"
+
 #: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "title.viewer"
 msgstr "%s - Modo protótipo - Penpot"
@@ -2468,6 +2682,9 @@ msgstr "Não mostrar interações"
 msgid "viewer.header.fullscreen"
 msgstr "Tela cheia"
 
+msgid "viewer.header.inspect-section"
+msgstr "Inspeção (%s)"
+
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
 msgstr "Interações"
@@ -2490,6 +2707,9 @@ msgstr "Mostrar interações ao clicar"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.sitemap"
 msgstr "Mapa do site"
+
+msgid "webhooks.last-delivery.success"
+msgstr "O último envio foi bem-sucedido."
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
@@ -2637,6 +2857,9 @@ msgstr "Altura da linha"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/inspect/attributes/text.cljs, src/app/main/ui/inspect/attributes/text.cljs
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "Estilos de texto"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.text-transform"
@@ -3127,6 +3350,9 @@ msgstr "Traçado do grupo"
 msgid "workspace.options.height"
 msgstr "Altura"
 
+msgid "workspace.options.inspect"
+msgstr "Inspecionar"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-action"
 msgstr "Ação"
@@ -3154,6 +3380,9 @@ msgstr "Empurrar"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-slide"
 msgstr "Deslizar"
+
+msgid "workspace.options.interaction-auto"
+msgstr "automático"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
@@ -3304,6 +3533,10 @@ msgid "workspace.options.interaction-prev-screen"
 msgstr "Tela anterior"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Relativo a"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-self"
 msgstr "Si próprio"
 
@@ -3452,6 +3685,22 @@ msgid "workspace.options.layout.bottom"
 msgstr "Inferior"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column"
+msgstr "Coluna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.reverse-column"
+msgstr "Coluna invertida"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.reverse-row"
+msgstr "Linha invertida"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row"
+msgstr "Linha"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
 msgstr "Espaço"
 
@@ -3550,7 +3799,8 @@ msgstr "Procurar fonte"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-a-shape"
 msgstr ""
-"Selecione uma forma, tela ou grupo para arrastar uma conexão para outra tela."
+"Selecione uma forma, tela ou grupo para arrastar uma conexão para outra "
+"tela."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.selection-color"
@@ -3823,6 +4073,39 @@ msgstr "Separar pontos (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Aderir aos pontos (%s)"
 
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-hint"
+msgstr ""
+"Para tentar novamente, recarregue este arquivo. Se o problema persistir, "
+"sugerimos olhar a lista e considerar excluir gráficos que não estejam "
+"funcionando."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-msg"
+msgstr "Alguns gráficos não puderam ser atualizados."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.progress"
+msgstr "Convertendo %s/%s"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text1"
+msgstr ""
+"A partir de agora os gráficos da biblioteca são Componentes, o que os "
+"tornarão bem mais poderosos."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text2"
+msgstr "Essa atualização acontecerá apenas uma vez."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.title"
+msgstr "Atualizando %s..."
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "Adicionar Flex Layout"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
 msgstr "Enviar para o fundo"
@@ -3932,6 +4215,10 @@ msgstr "Colar"
 
 msgid "workspace.shape.menu.path"
 msgstr "Caminho"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Excluir Flex Layout"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
@@ -4219,290 +4506,3 @@ msgstr "Atualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Clique para fechar o caminho"
-
-msgid "dashboard.webhooks.active"
-msgstr "Está ativo"
-
-msgid "dashboard.webhooks.active.explain"
-msgstr "Quando esse hook é invocado detalhes de eventos vão ser enviados"
-
-msgid "dashboard.webhooks.content-type"
-msgstr "Tipo de conteúdo"
-
-msgid "dashboard.webhooks.create"
-msgstr "Criar webhook"
-
-msgid "dashboard.webhooks.create.success"
-msgstr "Webhook criado com sucesso."
-
-msgid "dashboard.webhooks.description"
-msgstr ""
-"Webhooks são uma forma simples de permitir que outros websites e aplicativos "
-"sejam notificados quando certos eventos acontecem no Penpot. Nós enviaremos "
-"uma solicitação POST para todas as URLs que você digite."
-
-msgid "dashboard.webhooks.empty.add-one"
-msgstr "Clique em \"Adicionar Webhook\" para adicionar um Webhook."
-
-msgid "dashboard.webhooks.empty.no-webhooks"
-msgstr "Nenhum Webhook criado ainda."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
-msgstr "Por favor, insira um email válido"
-
-#: src/app/main/errors.cljs
-msgid "errors.max-quote-reached"
-msgstr "Você atingiu a cota de '%s'. Entre em contato com o suporte."
-
-msgid "inspect.empty.more-info"
-msgstr "Mais informações sobre inspecionar"
-
-msgid "dashboard.webhooks.update.success"
-msgstr "Webhook atualizado com sucesso."
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.copy-invitation-link"
-msgstr "Copiar link"
-
-#: src/app/main/errors.cljs
-msgid "errors.feature-not-supported"
-msgstr "Recurso '%s' não é suportado."
-
-msgid "errors.webhooks.connection"
-msgstr "Erro de conexão, URL não acessível"
-
-msgid "errors.webhooks.invalid-uri"
-msgstr "A URL não passa na validação."
-
-msgid "errors.webhooks.ssl-validation"
-msgstr "Erro na validação SSL."
-
-msgid "errors.webhooks.timeout"
-msgstr "O tempo se esgotou"
-
-msgid "errors.webhooks.unexpected"
-msgstr "Erro inesperado durante a validação"
-
-msgid "errors.webhooks.unexpected-status"
-msgstr "Status inesperado %s"
-
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.size"
-msgstr "Tamanho e posição"
-
-msgid "inspect.empty.select"
-msgstr ""
-"Selecione uma forma, board ou grupo para inspecionar suas propriedades e "
-"código"
-
-msgid "labels.active"
-msgstr "Ativo"
-
-msgid "labels.inactive"
-msgstr "Inativo"
-
-#: src/app/main/ui/workspace.cljs
-msgid "labels.reload-file"
-msgstr "Recarregar arquivo"
-
-msgid "labels.webhooks"
-msgstr "Webhooks"
-
-msgid "modals.create-webhook.submit-label"
-msgstr "Criar webhook"
-
-msgid "modals.create-webhook.title"
-msgstr "Criar webhook"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] ""
-"Nenhum item da biblioteca deste arquivo está em uso. Eles serão deletados "
-"junto com o arquivo."
-msgstr[1] ""
-"Nenhum item das bibliotecas destes arquivos estão em uso. Eles serão "
-"deletados junto com os arquivos."
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "notifications.invitation-link-copied"
-msgstr "Link do convite copiado"
-
-msgid "title.team-webhooks"
-msgstr "Webhooks - %s - Penpot"
-
-msgid "viewer.header.inspect-section"
-msgstr "Inspeção (%s)"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"A partir de agora os gráficos da biblioteca são Componentes, o que os "
-"tornarão bem mais poderosos."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgid_plural "modals.unpublish-shared-confirm.accept"
-msgstr[0] "Despublicar"
-msgstr[1] "Despublicar"
-
-#: src/app/main/errors.cljs
-msgid "errors.feature-mismatch"
-msgstr ""
-"Parece que você está abrindo um arquivo que tem a funcionalidade '%s' "
-"habilitada, mas o seu frontend no penpot não a suporta ou ela está "
-"desabilitada."
-
-msgid "errors.webhooks.last-delivery"
-msgstr "O último envio não foi bem-sucedido."
-
-msgid "inspect.empty.help"
-msgstr ""
-"Se quiser saber mais sobre inspecionar o design, visite a central de ajuda "
-"do Penpot"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "labels.unpublish-multi-files"
-msgstr "Despublicar arquivos %s"
-
-msgid "labels.view-only"
-msgstr "SOMENTE VISUALIZAÇÃO"
-
-msgid "modals.create-webhook.url.label"
-msgstr "URL do payload"
-
-msgid "modals.create-webhook.url.placeholder"
-msgstr "https://exemplo.com.br/postreceive"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"Se você deletar, este item será movido para a biblioteca local deste "
-"arquivo. Itens não utilizados serão perdidos."
-msgstr[1] ""
-"Se você deletar, estes itens serão movidos para a biblioteca local deste "
-"arquivo. Itens não utilizados serão perdidos."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"Se você deletar, este item será movido para as bibliotecas locais deste "
-"arquivo. Itens não utilizados serão perdidos."
-msgstr[1] ""
-"Se você deletar, estes itens serão movidos para as bibliotecas locais deste "
-"arquivo. Itens não utilizados serão perdidos."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "Alguns itens da biblioteca deste arquivo estão sendo usados aqui:"
-msgstr[1] "Alguns itens das bibliotecas deste arquivo estão sendo usados aqui:"
-
-msgid "modals.delete-webhook.accept"
-msgstr "Excluir webhook"
-
-msgid "modals.delete-webhook.message"
-msgstr "Tem certeza que deseja excluir este webhook?"
-
-msgid "modals.delete-webhook.title"
-msgstr "Excluindo webhook"
-
-msgid "modals.edit-webhook.submit-label"
-msgstr "Editar webhook"
-
-msgid "modals.edit-webhook.title"
-msgstr "Editar webhook"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] ""
-"Se você cancelar a publicação deste item, os componentes dele serão movidos "
-"para a biblioteca local deste arquivo."
-msgstr[1] ""
-"Se você cancelar a publicação destes itens, os componentes dele serão "
-"movidos para a biblioteca local destes arquivos."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Nenhum dos itens desta biblioteca está em uso."
-msgstr[1] "Nenhum dos itens destas bibliotecas estão em uso."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Alguns itens nesta biblioteca estão em uso aqui:"
-msgstr[1] "Alguns itens nestas bibliotecas estão em uso aqui:"
-
-msgid "shortcuts.open-inspect"
-msgstr "Ir para seção de inspeção"
-
-msgid "shortcuts.toggle-layout-flex"
-msgstr "Adicionar/remover Flex Layout"
-
-msgid "webhooks.last-delivery.success"
-msgstr "O último envio foi bem-sucedido."
-
-msgid "workspace.assets.typography.text-styles"
-msgstr "Estilos de texto"
-
-msgid "workspace.options.inspect"
-msgstr "Inspecionar"
-
-msgid "workspace.options.interaction-auto"
-msgstr "automático"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-relative-to"
-msgstr "Relativo a"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.column"
-msgstr "Coluna"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Coluna invertida"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-row"
-msgstr "Linha invertida"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row"
-msgstr "Linha"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Para tentar novamente, recarregue este arquivo. Se o problema persistir, "
-"sugerimos olhar a lista e considerar excluir gráficos que não estejam "
-"funcionando."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Alguns gráficos não puderam ser atualizados."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Convertendo %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Essa atualização acontecerá apenas uma vez."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Atualizando %s..."
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.add-flex"
-msgstr "Adicionar Flex Layout"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.remove-flex"
-msgstr "Excluir Flex Layout"

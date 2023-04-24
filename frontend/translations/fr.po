@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-03-31 13:37+0000\n"
 "Last-Translator: Aimee <aimeeritleng@outlook.com>\n"
-"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
-"fr/>\n"
+"Language-Team: French "
+"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -309,8 +309,8 @@ msgstr "Dupliquer %s fichiers"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Oh non ! Vous n'avez pas encore de fichiers ! Si vous voulez essayer avec "
-"des modèles, allez sur [Bibliothèques et modèles] (https://penpot.app/"
-"libraries-templates.html)."
+"des modèles, allez sur [Bibliothèques et modèles] "
+"(https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Télécharger %s fichiers Penpot (.penpot)"
@@ -663,6 +663,24 @@ msgstr "Retirer la Bibliothèque"
 msgid "dashboard.update-settings"
 msgstr "Mettre à jour les paramètres"
 
+msgid "dashboard.webhooks.content-type"
+msgstr "Type de contenu"
+
+msgid "dashboard.webhooks.create"
+msgstr "Créer un webhook"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhook créé avec succès."
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Appuyez sur le bouton « Ajouter un webhook » pour en ajouter un."
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Aucun webhook créé jusqu’à présent."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook mis à jour avec succès."
+
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
 msgstr "Votre compte"
@@ -743,12 +761,20 @@ msgstr "Vous ne pouvez pas utiliser votre adresse e-mail comme mot de passe"
 msgid "errors.email-has-permanent-bounces"
 msgstr "L'adresse e-mail « %s » a un taux de rebond trop élevé."
 
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Veuillez entrer une adresse mail valide"
+
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "L’adresse e‑mail de confirmation doit correspondre"
 
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "L'e-mail \"%s\" a été signalé comme spam ou a été rejeté."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "La fonctionnalité '%s' n'est pas prise en charge."
 
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
@@ -835,6 +861,21 @@ msgstr "Une erreur inattendue s’est produite"
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "Jeton inconnu"
+
+msgid "errors.webhooks.connection"
+msgstr "Erreur de connexion, URL inaccessible"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "L'URL ne passe pas la validation."
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Erreur lors de la validation SSL."
+
+msgid "errors.webhooks.timeout"
+msgstr "Délai d'attente dépassé"
+
+msgid "errors.webhooks.unexpected"
+msgstr "Erreur inattendue lors de la validation"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
@@ -961,6 +1002,10 @@ msgstr "Largeur"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Ombre"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Taille et position"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
@@ -1655,10 +1700,8 @@ msgstr[1] "Êtes-vous sûr de vouloir supprimer ces fichiers ?"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] ""
-"Certaines ressources de la bibliothèque de ce fichier sont utilisées ici :"
-msgstr[1] ""
-"Certaines ressources des bibliothèques de ce fichier sont utilisées ici :"
+msgstr[0] "Certaines ressources de la bibliothèque de ce fichier sont utilisées ici :"
+msgstr[1] "Certaines ressources des bibliothèques de ce fichier sont utilisées ici :"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -4040,48 +4083,3 @@ msgstr "Actualiser"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
-
-msgid "dashboard.webhooks.content-type"
-msgstr "Type de contenu"
-
-msgid "dashboard.webhooks.create.success"
-msgstr "Webhook créé avec succès."
-
-msgid "dashboard.webhooks.empty.no-webhooks"
-msgstr "Aucun webhook créé jusqu’à présent."
-
-msgid "dashboard.webhooks.update.success"
-msgstr "Webhook mis à jour avec succès."
-
-#: src/app/main/errors.cljs
-msgid "errors.feature-not-supported"
-msgstr "La fonctionnalité '%s' n'est pas prise en charge."
-
-msgid "errors.webhooks.connection"
-msgstr "Erreur de connexion, URL inaccessible"
-
-msgid "errors.webhooks.ssl-validation"
-msgstr "Erreur lors de la validation SSL."
-
-msgid "errors.webhooks.timeout"
-msgstr "Délai d'attente dépassé"
-
-msgid "errors.webhooks.unexpected"
-msgstr "Erreur inattendue lors de la validation"
-
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.size"
-msgstr "Taille et position"
-
-msgid "dashboard.webhooks.create"
-msgstr "Créer un webhook"
-
-msgid "dashboard.webhooks.empty.add-one"
-msgstr "Appuyez sur le bouton « Ajouter un webhook » pour en ajouter un."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
-msgstr "Veuillez entrer une adresse mail valide"
-
-msgid "errors.webhooks.invalid-uri"
-msgstr "L'URL ne passe pas la validation."
