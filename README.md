@@ -124,7 +124,7 @@ You can ask and answer questions, have open-ended conversations, and follow alon
 
 ✏️ [Tutorials](https://www.youtube.com/playlist?list=PLgcCPfOv5v54WpXhHmNO7T-YC7AE-SRsr)
 
-🏘️ [Architecture](https://help.penpot.app/technical-guide/architecture/)
+🏘️ [Architecture](https://help.penpot.app/technical-guide/developer/architecture/)
 
 📚 [Dev Diaries](https://penpot.app/dev-diaries.html)
 
