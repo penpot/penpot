@@ -96,7 +96,7 @@
   (ptk/reify ::finish-transform
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-local dissoc :transform))))
+      (update state :workspace-local dissoc :transform :duplicate-move-started? false))))
 
 
 ;; -- Resize --------------------------------------------------------
@@ -398,7 +398,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-local :transform] :move)))
+          (assoc-in [:workspace-local :transform] :move)
+          (assoc-in [:workspace-local :duplicate-move-started?] true)))
 
     ptk/WatchEvent
     (watch [_ _ stream]
@@ -431,6 +432,7 @@
              selected (wsh/lookup-selected state {:omit-blocked? true})
              ids     (if (nil? ids) selected ids)
              shapes  (mapv #(get objects %) ids)
+             duplicate-move-started? (get-in state [:workspace-local :duplicate-move-started?] false)
              stopper (rx/filter ms/mouse-up? stream)
              layout  (get state :workspace-layout)
              zoom    (get-in state [:workspace-local :zoom] 1)
@@ -506,6 +508,17 @@
                         (-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
                             (dwm/build-change-frame-modifiers objects selected target-frame drop-index)
                             (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
+
+              (->> move-stream
+                      (rx/with-latest-from ms/mouse-position-alt)
+                      (rx/filter (fn [[_ alt?]] alt?))
+                      (rx/take 1)
+                      (rx/mapcat
+                        (fn [[_ alt?]]
+                          (if (and (not duplicate-move-started?) alt?)
+                            (rx/of (start-move-duplicate from-position)
+                                   (dws/duplicate-selected false true))
+                          (rx/empty)))))
 
               (->> move-stream
                    (rx/map (comp set-ghost-displacement first)))
