@@ -851,7 +851,7 @@
 (declare file-created)
 
 (defn file-created
-  [{:keys [id] :as file}]
+  [{:keys [id project-id] :as file}]
   (us/verify ::file file)
   (ptk/reify ::file-created
     IDeref
@@ -862,7 +862,8 @@
     (update [_ state]
       (-> state
           (assoc-in [:dashboard-files id] file)
-          (assoc-in [:dashboard-recent-files id] file)))))
+          (assoc-in [:dashboard-recent-files id] file)
+          (update-in [:dashboard-projects project-id :count] inc)))))
 
 (defn create-file
   [{:keys [project-id] :as params}]
