@@ -23,7 +23,6 @@
    [app.db.sql :as sql]
    [app.main :refer [system]]
    [app.rpc.commands.files :as files]
-   [app.rpc.queries.profile :as prof]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]

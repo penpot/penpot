@@ -26,11 +26,11 @@
                                    :is-shared false})
         url    "https://raw.githubusercontent.com/uxbox/uxbox/develop/sample_media/images/unsplash/anna-pelzer.jpg"
         params {::th/type :create-file-media-object-from-url
-                :profile-id (:id prof)
+                ::rpc/profile-id (:id prof)
                 :file-id    (:id file)
                 :is-local   true
                 :url        url}
-        out   (th/mutation! params)]
+        out   (th/command! params)]
 
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
@@ -66,12 +66,12 @@
                 :size 312043}
 
         params {::th/type :upload-file-media-object
-                :profile-id (:id prof)
+                ::rpc/profile-id (:id prof)
                 :file-id (:id file)
                 :is-local true
                 :name "testfile"
                 :content mfile}
-        out    (th/mutation! params)]
+        out    (th/command! params)]
 
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
@@ -105,7 +105,7 @@
                 :size 312043}
 
         params {::th/type :upload-file-media-object
-                :profile-id (:id prof)
+                ::rpc/profile-id (:id prof)
                 :file-id (:id file)
                 :is-local true
                 :name "testfile"
@@ -113,7 +113,7 @@
                 :id (uuid/next)}]
 
     ;; First try
-    (let [{:keys [result error] :as out} (th/mutation! params)]
+    (let [{:keys [result error] :as out} (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? error))
       (t/is (= (:id params) (:id result)))
@@ -125,7 +125,7 @@
       (t/is (uuid? (:thumbnail-id result))))
 
     ;; Second try
-    (let [{:keys [result error] :as out} (th/mutation! params)]
+    (let [{:keys [result error] :as out} (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? error))
       (t/is (= (:id params) (:id result)))

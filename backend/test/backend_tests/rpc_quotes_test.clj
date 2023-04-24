@@ -70,12 +70,12 @@
           profile-2  (th/create-profile* 2)
           team-id    (:default-team-id profile-1)
           data       {::th/type :create-project
-                      :profile-id (:id profile-1)
+                      ::rpc/profile-id (:id profile-1)
                       :team-id team-id}
 
           check-ok! (fn [name]
                       (let [data (assoc data :name (str "project" name))
-                            out  (th/mutation! data)]
+                            out  (th/command! data)]
                         ;; (th/print-result! out)
                         (t/is (nil? (:error out)))
                         (t/is (some? (:result out)))))
@@ -83,7 +83,7 @@
           check-ko! (fn [name]
                       ;; create second project
                       (let [data (assoc data :name (str "project" name))
-                            out  (th/mutation! data)]
+                            out  (th/command! data)]
                         ;; (th/print-result! out)
                         (t/is (not (th/success? out)))
                         (let [error (:error out)]

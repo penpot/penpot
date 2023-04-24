@@ -66,46 +66,7 @@
           (handle-response-transformation request mdata)
           (handle-before-comple-hook mdata)))))
 
-(defn- rpc-query-handler
-  "Ring handler that dispatches query requests and convert between
-  internal async flow into ring async flow."
-  [methods {:keys [params path-params] :as request}]
-  (let [type       (keyword (:type path-params))
-        profile-id (or (::session/profile-id request)
-                       (::actoken/profile-id request))
-
-        data       (-> params
-                       (assoc ::request-at (dt/now))
-                       (assoc ::http/request request))
-        data       (if profile-id
-                     (-> data
-                         (assoc :profile-id profile-id)
-                         (assoc ::profile-id profile-id))
-                     (dissoc data :profile-id ::profile-id))
-        method     (get methods type default-handler)
-        response   (method data)]
-    (handle-response request response)))
-
-(defn- rpc-mutation-handler
-  "Ring handler that dispatches mutation requests and convert between
-  internal async flow into ring async flow."
-  [methods {:keys [params path-params] :as request}]
-  (let [type       (keyword (:type path-params))
-        profile-id (or (::session/profile-id request)
-                       (::actoken/profile-id request))
-        data       (-> params
-                       (assoc ::request-at (dt/now))
-                       (assoc ::http/request request))
-        data       (if profile-id
-                     (-> data
-                         (assoc :profile-id profile-id)
-                         (assoc ::profile-id profile-id))
-                     (dissoc data :profile-id))
-        method     (get methods type default-handler)
-        response   (method data)]
-    (handle-response request response)))
-
-(defn- rpc-command-handler
+(defn- rpc-handler
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
   [methods {:keys [params path-params] :as request}]
@@ -209,29 +170,6 @@
   [cfg [vfn mdata]]
   [(keyword (::sv/name mdata)) [mdata (wrap cfg vfn mdata)]])
 
-(defn- resolve-query-methods
-  [cfg]
-  (let [cfg (assoc cfg ::type "query" ::metrics-id :rpc-query-timing)]
-    (->> (sv/scan-ns
-          'app.rpc.queries.projects
-          'app.rpc.queries.profile
-          'app.rpc.queries.viewer
-          'app.rpc.queries.fonts)
-         (map (partial process-method cfg))
-         (into {}))))
-
-(defn- resolve-mutation-methods
-  [cfg]
-  (let [cfg (assoc cfg ::type "mutation" ::metrics-id :rpc-mutation-timing)]
-    (->> (sv/scan-ns
-          'app.rpc.mutations.media
-          'app.rpc.mutations.profile
-          'app.rpc.mutations.projects
-          'app.rpc.mutations.fonts
-          'app.rpc.mutations.share-link)
-         (map (partial process-method cfg))
-         (into {}))))
-
 (defn- resolve-command-methods
   [cfg]
   (let [cfg (assoc cfg ::type "command" ::metrics-id :rpc-command-timing)]
@@ -279,23 +217,10 @@
 (defmethod ig/init-key ::methods
   [_ cfg]
   (let [cfg (d/without-nils cfg)]
-    {:mutations (resolve-mutation-methods cfg)
-     :queries   (resolve-query-methods cfg)
-     :commands  (resolve-command-methods cfg)}))
-
-(s/def ::mutations
-  (s/map-of keyword? (s/tuple map? fn?)))
-
-(s/def ::queries
-  (s/map-of keyword? (s/tuple map? fn?)))
-
-(s/def ::commands
-  (s/map-of keyword? (s/tuple map? fn?)))
+    (resolve-command-methods cfg)))
 
 (s/def ::methods
-  (s/keys :req-un [::mutations
-                   ::queries
-                   ::commands]))
+  (s/map-of keyword? (s/tuple map? fn?)))
 
 (s/def ::routes vector?)
 
@@ -308,14 +233,7 @@
 
 (defmethod ig/init-key ::routes
   [_ {:keys [::methods] :as cfg}]
-  (let [methods (-> methods
-                    (update :commands update-vals peek)
-                    (update :queries update-vals peek)
-                    (update :mutations update-vals peek))]
+  (let [methods (update-vals methods peek)]
     [["/rpc" {:middleware [[session/authz cfg]
                            [actoken/authz cfg]]}
-      ["/command/:type" {:handler (partial rpc-command-handler (:commands methods))}]
-      ["/query/:type" {:handler (partial rpc-query-handler (:queries methods))}]
-      ["/mutation/:type" {:handler (partial rpc-mutation-handler (:mutations methods))
-                          :allowed-methods #{:post}}]]]))
-
+      ["/command/:type" {:handler (partial rpc-handler methods)}]]]))
