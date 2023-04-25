@@ -97,7 +97,7 @@
 (defn- send-command!
   "A simple helper for a common case of sending and receiving transit
   data to the penpot mutation api."
-  [id params {:keys [response-type form-data? raw-transit?]}]
+  [id params {:keys [response-type form-data? raw-transit? forward-query-params]}]
   (let [decode-fn (if raw-transit?
                     http/conditional-error-decode-transit
                     http/conditional-decode-transit)
@@ -111,8 +111,11 @@
                               (if form-data?
                                 (http/form-data params)
                                 (http/transit-data params)))
-                      :query (when (= method :get)
-                               params)
+                      :query (if (= method :get)
+                               params
+                               (if forward-query-params
+                                 (select-keys params forward-query-params)
+                                 nil))
                       :response-type (or response-type :text)})
          (rx/map decode-fn)
          (rx/mapcat handle-response))))
@@ -138,6 +141,14 @@
 (defmethod command :default
   [id params]
   (send-command! id params nil))
+
+(defmethod command :update-file
+  [id params]
+  (send-command! id params {:forward-query-params [:id]}))
+
+(defmethod command :upsert-file-object-thumbnail
+  [id params]
+  (send-command! id params {:forward-query-params [:file-id :object-id]}))
 
 (defmethod command :export-binfile
   [id params]

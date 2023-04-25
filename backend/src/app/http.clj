@@ -78,6 +78,7 @@
                  :xnio/worker-threads (or (::worker-threads cfg)
                                           (max 6 (px/get-available-processors)))
                  :xnio/dispatch true
+                 :socket/backlog 4069
                  :ring/async true}
 
         handler (cond
