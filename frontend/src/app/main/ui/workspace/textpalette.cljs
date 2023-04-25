@@ -134,7 +134,7 @@
                                            :left "50%"
                                            :top "50%"
                                            :transform "translate(-50%, -50%)"}} 
-              "There are no Typography Styles in your Library yet"]
+              (tr "workspace.libraries.colors.empty-typography-palette")]
         [:div.color-palette-inside
         (for [[idx item] (map-indexed vector current-typographies)]
           [:& typography-item

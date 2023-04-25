@@ -165,7 +165,7 @@
                                            :left "50%"
                                            :top "50%"
                                            :transform "translate(-50%, -50%)"}} 
-              "There are no Color Styles in your Library yet"]
+              (tr "workspace.libraries.colors.empty-palette")]
         [:div.color-palette-inside {:style {:position "relative"
                                           :right (str (* 66 offset) "px")}}
           (for [[idx item] (map-indexed vector current-colors)]
