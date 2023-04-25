@@ -397,7 +397,6 @@
       (let [expected-roles (into #{} (:roles provider))
             current-roles  (let [roles-kw (cf/get :oidc-roles-attr "roles")
                                  roles-ph (parse-attr-path provider roles-kw)
-                                 props    (:props info)
                                  roles    (get-in (:props info) roles-ph)]
                              (cond
                                (string? roles) (into #{} (str/words roles))
