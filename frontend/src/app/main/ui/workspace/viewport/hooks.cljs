@@ -11,6 +11,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.shortcuts :as dsc]
@@ -221,7 +222,10 @@
 
              root-frame-with-data?
              #(as-> (get objects %) obj
-                (and (cph/root-frame? obj) (d/not-empty? (:shapes obj))))
+                (and (cph/root-frame? obj)
+                     (d/not-empty? (:shapes obj))
+                     (not (ctk/instance-root? obj))
+                     (not (ctk/main-instance? obj))))
 
              ;; Set with the elements to remove from the hover list
              remove-id-xf
