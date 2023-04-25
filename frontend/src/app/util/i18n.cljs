@@ -40,6 +40,7 @@
    {:label "Ελληνική γλώσσα (community)" :value "el"}
    {:label "Русский (community)" :value "ru"}
    {:label "Český jazyk (community)" :value "cs"}
+   {:label "Latviešu valoda (community)" :value "lv"}
    {:label "Føroyskt mál (community)" :value "fo"}
    {:label "Korean (community)" :value "ko"}
    {:label "עִבְרִית (community)" :value "he"}
