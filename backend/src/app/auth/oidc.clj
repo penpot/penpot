@@ -165,8 +165,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- retrieve-github-email
-  [cfg tdata info]
-  (or (some-> info :email p/resolved)
+  [cfg tdata props]
+  (or (some-> props :github/email p/resolved)
       (->> (http/req! cfg
                       {:uri "https://api.github.com/user/emails"
                        :headers {"Authorization" (dm/str (:type tdata) " " (:token tdata))}
@@ -246,6 +246,11 @@
 ;; HANDLERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- parse-attr-path
+  [provider path]
+  (let [[fitem & items] (str/split path "__")]
+    (into [(keyword (:name provider) fitem)] (map keyword) items)))
+
 (defn- build-redirect-uri
   [{:keys [provider] :as cfg}]
   (let [public (u/uri (cf/get :public-uri))]
@@ -316,6 +321,7 @@
                         :headers {"Authorization" (str (:type tdata) " " (:token tdata))}
                         :timeout 6000
                         :method :get}))
+
           (validate-response [response]
             (l/trace :hint "user info response"
                      :status (:status response)
@@ -328,26 +334,30 @@
                         :http-body (:body response)))
             response)
 
-          (get-email [info]
+          (get-email [props]
             ;; Allow providers hook into this for custom email
             ;; retrieval method.
+
             (if-let [get-email-fn (:get-email-fn provider)]
-              (get-email-fn tdata info)
-              (let [attr-kw (cf/get :oidc-email-attr :email)]
-                (p/resolved (get info attr-kw)))))
+              (get-email-fn tdata props)
+              (let [attr-kw (cf/get :oidc-email-attr "email")
+                    attr-ph (parse-attr-path provider attr-kw)]
+                (p/resolved (get-in props attr-ph)))))
 
           (get-name [info]
-            (let [attr-kw (cf/get :oidc-name-attr :name)]
-              (get info attr-kw)))
+            (let [attr-kw (cf/get :oidc-name-attr "name")
+                  attr-ph (parse-attr-path provider attr-kw)]
+              (get-in info attr-ph)))
 
           (process-response [response]
             (p/let [info  (-> response :body json/decode)
-                    email (get-email info)]
+                    props (qualify-props provider info)
+                    email (get-email props)]
+
               {:backend  (:name provider)
+               :fullname (or (get-name props) email)
                :email    email
-               :fullname (or (get-name info) email)
-               :props    (->> (dissoc info :name :email)
-                              (qualify-props provider))}))
+               :props    props}))
 
           (validate-info [info]
             (l/trace :hint "authentication info" :info info)
@@ -377,19 +387,15 @@
 
 (defn get-info
   [{:keys [provider] :as cfg} {:keys [params] :as request}]
-  (letfn [(parse-oidc-attrs-path [path]
-            (let [[fitem & items] (str/split path "__")]
-              (into [(keyword "oidc" fitem)] (map keyword) items)))
-
-          (validate-oidc [info]
+  (letfn [(validate-oidc [{:keys [props] :as info}]
             ;; If the provider is OIDC, we can proceed to check
             ;; roles if they are defined.
             (when (and (= "oidc" (:name provider))
                        (seq (:roles provider)))
               (let [expected-roles (into #{} (:roles provider))
-                    current-roles  (let [roles (->> (cf/get :oidc-roles-attr "roles")
-                                                    (parse-oidc-attrs-path)
-                                                    (get-in info))]
+                    current-roles  (let [roles-kw (cf/get :oidc-roles-attr "roles")
+                                         roles-ph (parse-attr-path provider roles-kw)
+                                         roles    (get-in props roles-ph)]
                                      (cond
                                        (string? roles) (into #{} (str/words roles))
                                        (vector? roles) (into #{} roles)
