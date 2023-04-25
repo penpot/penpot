@@ -110,7 +110,7 @@
 (defn get-frames
   "Retrieves all frame objects as vector"
   ([objects] (get-frames objects nil))
-  ([objects {:keys [skip-components?] :or {skip-components? false}}]
+  ([objects {:keys [skip-components? skip-copies?] :or {skip-components? false skip-copies? false}}]
    (->> (or (-> objects meta ::index-frames)
             (let [lookup (d/getf objects)
                   xform  (comp (remove #(= uuid/zero %))
@@ -118,8 +118,8 @@
                                (filter cph/frame-shape?))]
               (->> (keys objects)
                    (into [] xform))))
-        (filter #(or (not skip-components?)
-                     (not (ctk/instance-root? %)))))))
+        (remove #(or (and skip-components? (ctk/instance-root? %))
+                     (and skip-copies? (and (ctk/instance-root? %) (not (ctk/main-instance? %)))))))))
 
 (defn get-frames-ids
   "Retrieves all frame ids as vector"
