@@ -23,23 +23,9 @@
       </header>
       <section class="rpc-doc-content">
 
-        <h2>RPC COMMAND METHODS:</h2>
+        <h2>RPC METHODS:</h2>
         <ul class="rpc-items">
-          {% for item in command-methods %}
-            {% include "app/templates/api-doc-entry.tmpl" with item=item %}
-          {% endfor %}
-        </ul>
-
-        <h2>RPC QUERY METHODS:</h2>
-        <ul class="rpc-items">
-          {% for item in query-methods %}
-            {% include "app/templates/api-doc-entry.tmpl" with item=item %}
-          {% endfor %}
-        </ul>
-
-        <h2>RPC MUTATION METHODS:</h2>
-        <ul class="rpc-items">
-          {% for item in mutation-methods %}
+          {% for item in methods %}
             {% include "app/templates/api-doc-entry.tmpl" with item=item %}
           {% endfor %}
         </ul>

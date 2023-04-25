@@ -29,7 +29,6 @@
    [app.rpc.commands.files-update :as files.update]
    [app.rpc.commands.teams :as teams]
    [app.rpc.helpers :as rph]
-   [app.rpc.mutations.profile :as profile]
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -231,7 +230,7 @@
   ([pool i {:keys [profile-id project-id] :as params}]
    (us/assert uuid? profile-id)
    (us/assert uuid? project-id)
-   (dm/with-open [conn (db/open pool)]
+   (db/with-atomic [conn (db/open pool)]
      (files.create/create-file conn
                                (merge {:id (mk-uuid "file" i)
                                        :name (str "file" i)
@@ -367,7 +366,7 @@
 
 (defn command!
   [{:keys [::type] :as data}]
-  (let [[mdata method-fn] (get-in *system* [:app.rpc/methods :commands type])]
+  (let [[mdata method-fn] (get-in *system* [:app.rpc/methods type])]
     (when-not method-fn
       (ex/raise :type :assertion
                 :code :rpc-method-not-found
@@ -377,23 +376,6 @@
     (try-on! (method-fn (-> data
                             (dissoc ::type)
                             (assoc :app.rpc/request-at (dt/now)))))))
-
-(defn mutation!
-  [{:keys [::type profile-id] :as data}]
-  (let [[mdata method-fn] (get-in *system* [:app.rpc/methods :mutations type])]
-    (try-on! (method-fn (-> data
-                            (dissoc ::type)
-                            (assoc ::rpc/profile-id profile-id)
-                            (d/without-nils))))))
-
-(defn query!
-  [{:keys [::type profile-id] :as data}]
-  (let [[mdata method-fn] (get-in *system* [:app.rpc/methods :queries type])]
-    (try-on! (method-fn (-> data
-                            (dissoc ::type)
-                            (assoc ::rpc/profile-id profile-id)
-                            (d/without-nils))))))
-
 
 (defn run-task!
   ([name]

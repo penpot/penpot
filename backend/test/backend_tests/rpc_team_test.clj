@@ -321,10 +321,10 @@
       (t/is (= 0 (:processed result))))
 
     ;; query the list of projects after hard deletion
-    (let [data {::th/type :projects
-                :profile-id (:id profile1)
+    (let [data {::th/type :get-projects
+                ::rpc/profile-id (:id profile1)
                 :team-id (:id team)}
-          out  (th/query! data)]
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (t/is (not (th/success? out)))
       (let [edata (-> out :error ex-data)]
@@ -335,10 +335,10 @@
       (t/is (= 1 (:processed result))))
 
     ;; query the list of projects of a after hard deletion
-    (let [data {::th/type :projects
-                :profile-id (:id profile1)
+    (let [data {::th/type :get-projects
+                ::rpc/profile-id (:id profile1)
                 :team-id (:id team)}
-          out  (th/query! data)]
+          out  (th/command! data)]
       ;; (th/print-result! out)
 
       (t/is (not (th/success? out)))

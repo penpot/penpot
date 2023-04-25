@@ -6,12 +6,13 @@
 
 (ns backend-tests.storage-test
   (:require
-   [backend-tests.helpers :as th]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.util.time :as dt]
+   [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
@@ -134,14 +135,14 @@
                  :size 312043}
 
         params  {::th/type :upload-file-media-object
-                 :profile-id (:id prof)
+                 ::rpc/profile-id (:id prof)
                  :file-id (:id file)
                  :is-local true
                  :name "testfile"
                  :content mfile}
 
-        out1    (th/mutation! params)
-        out2    (th/mutation! params)]
+        out1    (th/command! params)
+        out2    (th/command! params)]
 
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
@@ -209,14 +210,14 @@
                  :size 312043}
 
         params1 {::th/type :upload-file-media-object
-                 :profile-id (:id prof)
+                 ::rpc/profile-id (:id prof)
                  :file-id (:id file)
                  :is-local true
                  :name "testfile"
                  :content mfile}
 
         params2 {::th/type :create-font-variant
-                 :profile-id (:id prof)
+                 ::rpc/profile-id (:id prof)
                  :team-id team-id
                  :font-id font-id
                  :font-family "somefont"
@@ -224,8 +225,8 @@
                  :font-style "normal"
                  :data {"font/ttf" ttfdata}}
 
-        out1     (th/mutation! params1)
-        out2     (th/mutation! params2)]
+        out1     (th/command! params1)
+        out2     (th/command! params2)]
 
     ;; (th/print-result! out)
 
@@ -275,14 +276,14 @@
                  :size 312043}
 
         params  {::th/type :upload-file-media-object
-                 :profile-id (:id prof)
+                 ::rpc/profile-id (:id prof)
                  :file-id (:id file)
                  :is-local true
                  :name "testfile"
                  :content mfile}
 
-        out1    (th/mutation! params)
-        out2    (th/mutation! params)]
+        out1    (th/command! params)
+        out2    (th/command! params)]
 
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))

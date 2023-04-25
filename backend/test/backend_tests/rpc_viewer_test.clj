@@ -9,6 +9,7 @@
    [backend-tests.helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.rpc :as-alias rpc]
    [clojure.test :as t]
    [datoteka.core :as fs]))
 
@@ -27,13 +28,13 @@
         share-id (atom nil)]
 
     (t/testing "authenticated with page-id"
-      (let [data {::th/type :view-only-bundle
-                  :profile-id (:id prof)
+      (let [data {::th/type :get-view-only-bundle
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :page-id (get-in file [:data :pages 0])
                   :components-v2 true}
 
-            out  (th/query! data)]
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -47,12 +48,12 @@
 
     (t/testing "generate share token"
       (let [data {::th/type :create-share-link
-                  :profile-id (:id prof)
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :pages #{(get-in file [:data :pages 0])}
                   :who-comment "team"
                   :who-inspect "all"}
-            out  (th/mutation! data)]
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -61,12 +62,12 @@
           (reset! share-id (:id result)))))
 
     (t/testing "not authenticated with page-id"
-      (let [data {::th/type :view-only-bundle
-                  :profile-id (:id prof2)
+      (let [data {::th/type :get-view-only-bundle
+                  ::rpc/profile-id (:id prof2)
                   :file-id (:id file)
                   :page-id (get-in file [:data :pages 0])
                   :components-v2 true}
-            out  (th/query! data)]
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (let [error      (:error out)
@@ -76,13 +77,13 @@
           (t/is (= (:code error-data) :object-not-found)))))
 
     (t/testing "authenticated with token & profile"
-      (let [data {::th/type :view-only-bundle
-                  :profile-id (:id prof2)
+      (let [data {::th/type :get-view-only-bundle
+                  ::rpc/profile-id (:id prof2)
                   :share-id @share-id
                   :file-id (:id file)
                   :page-id (get-in file [:data :pages 0])
                   :components-v2 true}
-            out  (th/query! data)]
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -92,12 +93,12 @@
           (t/is (contains? result :project)))))
 
     (t/testing "authenticated with token"
-      (let [data {::th/type :view-only-bundle
+      (let [data {::th/type :get-view-only-bundle
                   :share-id @share-id
                   :file-id (:id file)
                   :page-id (get-in file [:data :pages 0])
                   :components-v2 true}
-            out  (th/query! data)]
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))

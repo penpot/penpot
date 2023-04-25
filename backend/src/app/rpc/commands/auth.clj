@@ -63,17 +63,15 @@
               :hint "login is disabled in this instance"))
 
   (letfn [(check-password [conn profile password]
-            (when (= (:password profile) "!")
+            (if (= (:password profile) "!")
               (ex/raise :type :validation
                         :code :account-without-password
-                        :hint "the current account does not have password"))
-            (let [result (profile/verify-password cfg password (:password profile))]
-              (when (:update result)
-                (l/trace :hint "updating profile password" :id (:id profile) :email (:email profile))
-                (profile/update-profile-password! (assoc cfg ::db/conn conn)
-                                                  (assoc profile :password password)))
-              (:valid result)))
-
+                        :hint "the current account does not have password")
+              (let [result (profile/verify-password cfg password (:password profile))]
+                (when (:update result)
+                  (l/trace :hint "updating profile password" :id (:id profile) :email (:email profile))
+                  (profile/update-profile-password! conn (assoc profile :password password)))
+                (:valid result))))
 
           (validate-profile [conn profile]
             (when-not profile

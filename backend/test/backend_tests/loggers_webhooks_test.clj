@@ -23,7 +23,7 @@
           res  (th/run-task! :process-webhook-event
                              {:props
                               {:app.loggers.webhooks/event
-                               {:type "mutation"
+                               {:type "command"
                                 :name "create-project"
                                 :props {:team-id (:default-team-id prof)}}}})]
 
@@ -37,7 +37,7 @@
           res  (th/run-task! :process-webhook-event
                              {:props
                               {:app.loggers.webhooks/event
-                               {:type "mutation"
+                               {:type "command"
                                 :name "create-project"
                                 :props {:team-id (:default-team-id prof)}}}})]
 
@@ -48,7 +48,7 @@
   (with-mocks [http-mock {:target 'app.http.client/req! :return {:status 200}}]
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})
-          evt  {:type "mutation"
+          evt  {:type "command"
                 :name "create-project"
                 :props {:team-id (:default-team-id prof)}}
           res  (th/run-task! :run-webhook
@@ -73,7 +73,7 @@
   (with-mocks [http-mock {:target 'app.http.client/req! :return {:status 400}}]
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})
-          evt  {:type "mutation"
+          evt  {:type "command"
                 :name "create-project"
                 :props {:team-id (:default-team-id prof)}}
           res  (th/run-task! :run-webhook

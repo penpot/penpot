@@ -30,9 +30,8 @@
 
 (defn- prepare-context
   [methods]
-  (letfn [(gen-doc [type [{:keys [::sv/name] :as mdata} _f]]
-            {:type (d/name type)
-             :name (d/name name)
+  (letfn [(gen-doc [[{:keys [::sv/name] :as mdata} _f]]
+            {:name (d/name name)
              :module (-> (:ns mdata) (str/split ".") last)
              :auth (:auth mdata true)
              :webhook (::webhooks/event? mdata false)
@@ -43,22 +42,10 @@
              :spec (get-spec-str (::sv/spec mdata))})]
 
     {:version (:main cf/version)
-     :command-methods
-     (->> (:commands methods)
+     :methods
+     (->> methods
           (map val)
-          (map (partial gen-doc :command))
-          (sort-by (juxt :module :name)))
-
-     :query-methods
-     (->> (:queries methods)
-          (map val)
-          (map (partial gen-doc :query))
-          (sort-by (juxt :module :name)))
-
-     :mutation-methods
-     (->> (:mutations methods)
-          (map val)
-          (map (partial gen-doc :query))
+          (map gen-doc)
           (sort-by (juxt :module :name)))}))
 
 (defn- handler

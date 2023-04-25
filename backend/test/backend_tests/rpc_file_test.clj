@@ -129,12 +129,12 @@
                           :mtype "image/jpeg"
                           :size 312043}
                   params {::th/type :upload-file-media-object
-                          :profile-id profile-id
+                          ::rpc/profile-id profile-id
                           :file-id file-id
                           :is-local true
                           :name "testfile"
                           :content mfile}
-                  out    (th/mutation! params)]
+                  out    (th/command! params)]
 
               ;; (th/print-result! out)
               (t/is (nil? (:error out)))

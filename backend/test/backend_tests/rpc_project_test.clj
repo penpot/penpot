@@ -24,11 +24,11 @@
 
     ;; create project
     (let [data {::th/type :create-project
+                ::rpc/profile-id (:id profile)
                 :id project-id
-                :profile-id (:id profile)
                 :team-id (:id team)
                 :name "test project"}
-          out  (th/mutation! data)]
+          out  (th/command! data)]
         ;; (th/print-result! out)
 
       (t/is (nil? (:error out)))
@@ -36,10 +36,10 @@
         (t/is (= (:name data) (:name result)))))
 
     ;; query the list of projects of a team
-    (let [data {::th/type :projects
-                :team-id (:id team)
-                :profile-id (:id profile)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-projects
+                ::rpc/profile-id (:id profile)
+                :team-id (:id team)}
+          out  (th/command! data)]
       ;; (th/print-result! out)
 
       (t/is (nil? (:error out)))
@@ -49,9 +49,9 @@
         (t/is (= "test project" (get-in result [0 :name])))))
 
     ;; query all projects of a user
-    (let [data {::th/type :all-projects
-                :profile-id (:id profile)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-all-projects
+                ::rpc/profile-id (:id profile)}
+          out  (th/command! data)]
       ;; (th/print-result! out)
 
       (t/is (nil? (:error out)))
@@ -68,19 +68,19 @@
 
     ;; rename project
     (let [data {::th/type :rename-project
+                ::rpc/profile-id (:id profile)
                 :id project-id
-                :name "renamed project"
-                :profile-id (:id profile)}
-          out  (th/mutation! data)]
+                :name "renamed project"}
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
     ;; retrieve project
-    (let [data {::th/type :project
-                :id project-id
-                :profile-id (:id profile)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-project
+                ::rpc/profile-id (:id profile)
+                :id project-id}
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
@@ -88,19 +88,19 @@
 
     ;; delete project
     (let [data {::th/type :delete-project
-                :id project-id
-                :profile-id (:id profile)}
-          out  (th/mutation! data)]
+                ::rpc/profile-id (:id profile)
+                :id project-id}
+          out  (th/command! data)]
 
         ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
     ;; query a list of projects after delete
-    (let [data {::th/type :projects
-                :team-id (:id team)
-                :profile-id (:id profile)}
-          out (th/query! data)]
+    (let [data {::th/type :get-projects
+                ::rpc/profile-id (:id profile)
+                :team-id (:id team)}
+          out (th/command! data)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
@@ -112,10 +112,10 @@
         profile2 (th/create-profile* 2)
 
         data     {::th/type :create-project
-                  :profile-id (:id profile2)
+                  ::rpc/profile-id (:id profile2)
                   :team-id (:default-team-id profile1)
                   :name "test project"}
-        out      (th/mutation! data)
+        out      (th/command! data)
         error    (:error out)]
 
     ;; (th/print-result! out)
@@ -128,10 +128,10 @@
         project  (th/create-project* 1 {:team-id (:default-team-id profile1)
                                         :profile-id (:id profile1)})
         data     {::th/type :rename-project
+                  ::rpc/profile-id (:id profile2)
                   :id (:id project)
-                  :profile-id (:id profile2)
                   :name "foobar"}
-        out      (th/mutation! data)
+        out      (th/command! data)
         error    (:error out)]
 
     ;; (th/print-result! out)
@@ -144,9 +144,9 @@
         project  (th/create-project* 1 {:team-id (:default-team-id profile1)
                                         :profile-id (:id profile1)})
         data     {::th/type :delete-project
-                  :id (:id project)
-                  :profile-id (:id profile2)}
-        out      (th/mutation! data)
+                  ::rpc/profile-id (:id profile2)
+                  :id (:id project)}
+        out      (th/command! data)
         error    (:error out)]
 
     ;; (th/print-result! out)
@@ -159,12 +159,12 @@
         project  (th/create-project* 1 {:team-id (:default-team-id profile1)
                                         :profile-id (:id profile1)})
         data     {::th/type :update-project-pin
+                  ::rpc/profile-id (:id profile2)
                   :id (:id project)
                   :team-id (:default-team-id profile1)
-                  :profile-id (:id profile2)
                   :is-pinned true}
 
-        out      (th/mutation! data)
+        out      (th/command! data)
         error    (:error out)]
 
     ;; (th/print-result! out)
@@ -184,10 +184,10 @@
       (t/is (= 0 (:processed result))))
 
     ;; query the list of projects
-    (let [data {::th/type :projects
-                :team-id (:default-team-id profile1)
-                :profile-id (:id profile1)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-projects
+                ::rpc/profile-id (:id profile1)
+                :team-id (:default-team-id profile1)}
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
@@ -195,16 +195,16 @@
 
     ;; Request project to be deleted
     (let [params {::th/type :delete-project
-                  :id (:id project)
-                  :profile-id (:id profile1)}
-          out    (th/mutation! params)]
+                  ::rpc/profile-id (:id profile1)
+                  :id (:id project)}
+          out    (th/command! params)]
       (t/is (nil? (:error out))))
 
     ;; query the list of projects after soft deletion
-    (let [data {::th/type :projects
-                :team-id (:default-team-id profile1)
-                :profile-id (:id profile1)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-projects
+                ::rpc/profile-id (:id profile1)
+                :team-id (:default-team-id profile1)}
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
