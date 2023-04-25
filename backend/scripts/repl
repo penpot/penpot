@@ -4,6 +4,12 @@ export PENPOT_HOST=devenv
 export PENPOT_TENANT=dev
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
+       enable-registration
+       enable-login-with-password
+       enable-login-with-oidc \
+       enable-login-with-google \
+       enable-login-with-github \
+       enable-login-with-gitlab \
        enable-backend-asserts \
        enable-fdata-storage-pointer-map \
        enable-fdata-storage-objets-map \
@@ -46,6 +52,18 @@ export PENPOT_STORAGE_ASSETS_S3_BUCKET=penpot
 
 #-J-Djdk.virtualThreadScheduler.parallelism=16
 
+# export PENPOT_ERROR_REPORT_WEBHOOK=https://chat.kaleidos.net/hooks/r9o4gpyhbpnkuczbpg6xcz8enc
+
+export PENPOT_GOOGLE_CLIENT_ID=918240256800-jbmmeanksmmd0ocha7jfqrj36d59gfsa.apps.googleusercontent.com
+export PENPOT_GOOGLE_CLIENT_SECRET=u-11Tnc2XqpLSOwTLN_9XGlh
+export PENPOT_GITLAB_CLIENT_ID=6f63fd91e495349ba206148728c9aca64ae2605e9a95f2a1233b37c4f018b7a0
+export PENPOT_GITLAB_CLIENT_SECRET=c4d195795587187dc351190d8bd97a9c3c0a7cfe7d304af8fc0cde960efe2a7f
+export PENPOT_GITHUB_CLIENT_ID=eeba78a4acb5d752e39d
+export PENPOT_GITHUB_CLIENT_SECRET=d336f54eb1ceb2328f261ad9a4b449f67dbad38f
+
+export PENPOT_OIDC_BASE_URI=https://dev-t71ydmki.eu.auth0.com
+export PENPOT_OIDC_CLIENT_ID=lsg1unfacZi4Wac9C0RlsdpPnj6bP5wb
+export PENPOT_OIDC_CLIENT_SECRET=f_JONt992YoNjUqZIFTyLgCZ2Bc_1r74j2op_XT-KQEVQPJv2ebiH8IPZnViimOd
 
 export OPTIONS="
        -A:jmx-remote -A:dev \

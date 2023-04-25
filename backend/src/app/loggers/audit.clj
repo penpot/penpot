@@ -233,9 +233,8 @@
 
 (defn submit!
   "Submit audit event to the collector."
-  [{:keys [::wrk/executor] :as cfg} params]
+  [cfg params]
   (let [conn (or (::db/conn cfg) (::db/pool cfg))]
-    (us/assert! ::wrk/executor executor)
     (us/assert! ::db/pool-or-conn conn)
     (try
       (handle-event! conn (d/without-nils params))
