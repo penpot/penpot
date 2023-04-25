@@ -52,7 +52,8 @@ function readLocales() {
                  "cs", "fo", "ko", "lv",
                  // this happens when file does not matches correct
                  // iso code for the language.
-                 ["ja_jp", "jpn_JP"]
+                 ["ja_jp", "jpn_JP"],
+                 ["uk", "ukr_UA"]
                 ];
   const result = {};
 

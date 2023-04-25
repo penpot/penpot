@@ -39,6 +39,7 @@
    {:label "Türkçe (community)" :value "tr"}
    {:label "Ελληνική γλώσσα (community)" :value "el"}
    {:label "Русский (community)" :value "ru"}
+   {:label "Украї́нська мо́ва (community)" :value "uk"}
    {:label "Český jazyk (community)" :value "cs"}
    {:label "Latviešu valoda (community)" :value "lv"}
    {:label "Føroyskt mál (community)" :value "fo"}
