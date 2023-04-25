@@ -41,6 +41,7 @@
    {:label "Русский (community)" :value "ru"}
    {:label "Český jazyk (community)" :value "cs"}
    {:label "Føroyskt mál (community)" :value "fo"}
+   {:label "Korean (community)" :value "ko"}
    {:label "עִבְרִית (community)" :value "he"}
    {:label "عربي/عربى (community)" :value "ar"}
    {:label "فارسی (community)" :value "fa"}
