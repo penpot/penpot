@@ -575,7 +575,7 @@
 (defn duplicate-selected
   ([move-delta?]
    (duplicate-selected move-delta? false))
-  ([move-delta? add-undo-group?]
+  ([move-delta? alt-duplication?]
   (ptk/reify ::duplicate-selected
     ptk/WatchEvent
     (watch [it state _]
@@ -596,7 +596,9 @@
                   changes         (->> (prepare-duplicate-changes objects page selected delta it libraries library-data)
                                        (duplicate-changes-update-indices objects selected))
 
-                  changes         (cond-> changes add-undo-group? (assoc :undo-group (uuid/random)))
+                  tags            (or (:tags changes) #{})
+
+                  changes         (cond-> changes alt-duplication? (assoc :tags (conj tags :alt-duplication)))
 
                   id-original     (first selected)
 

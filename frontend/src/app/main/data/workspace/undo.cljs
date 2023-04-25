@@ -67,11 +67,12 @@
       (add-undo-entry state entry))))
 
 (defn- accumulate-undo-entry
-  [state {:keys [undo-changes redo-changes undo-group]}]
+  [state {:keys [undo-changes redo-changes undo-group tags]}]
   (-> state
       (update-in [:workspace-undo :transaction :undo-changes] #(into undo-changes %))
       (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))
-      (assoc-in [:workspace-undo :transaction :undo-group] undo-group)))
+      (assoc-in [:workspace-undo :transaction :undo-group] undo-group)
+      (assoc-in [:workspace-undo :transaction :tags] tags)))
 
 (defn append-undo
   [entry stack?]

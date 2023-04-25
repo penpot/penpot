@@ -87,7 +87,8 @@
   {:redo-changes (d/concat-vec (:redo-changes changes1) (:redo-changes changes2))
    :undo-changes (d/concat-vec (:undo-changes changes1) (:undo-changes changes2))
    :origin (:origin changes1)
-   :undo-group (:undo-group changes1)})
+   :undo-group (:undo-group changes1)
+   :tags (:tags changes1)})
 
 ; TODO: remove this when not needed
 (defn- assert-page-id

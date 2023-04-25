@@ -45,7 +45,8 @@
         add-undo-group? (and
                          (not (nil? undo-group))
                          (= (get-in changes [:redo-changes 0 :type]) :mod-obj)
-                         (= (get-in prev-item [:redo-changes 0 :type]) :add-obj))] ;; This is a copy-and-move with mouse+alt
+                         (= (get-in prev-item [:redo-changes 0 :type]) :add-obj)
+                         (contains? (:tags prev-item) :alt-duplication))] ;; This is a copy-and-move with mouse+alt
 
     (cond-> changes add-undo-group? (assoc :undo-group undo-group))))
 
@@ -165,15 +166,15 @@
 (defn commit-changes
   "Schedules a list of changes to execute now, and add the corresponding undo changes to
    the undo stack.
-   
+
    Options:
    - save-undo?: if set to false, do not add undo changes.
    - undo-group: if some consecutive changes (or even transactions) share the same
                  undo-group, they will be undone or redone in a single step
    "
   [{:keys [redo-changes undo-changes
-           origin save-undo? file-id undo-group stack-undo?]
-    :or {save-undo? true stack-undo? false undo-group (uuid/next)}}]
+           origin save-undo? file-id undo-group tags stack-undo?]
+    :or {save-undo? true stack-undo? false tags #{} undo-group (uuid/next)}}]
   (log/debug :msg "commit-changes"
              :js/undo-group (str undo-group)
              :js/redo-changes redo-changes
@@ -192,6 +193,7 @@
          :frames frames
          :save-undo? save-undo?
          :undo-group undo-group
+         :tags tags
          :stack-undo? stack-undo?})
 
       ptk/UpdateEvent
@@ -241,5 +243,6 @@
              (when (and save-undo? (seq undo-changes))
                (let [entry {:undo-changes undo-changes
                             :redo-changes redo-changes
-                            :undo-group undo-group}]
+                            :undo-group undo-group
+                            :tags tags}]
                  (rx/of (dwu/append-undo entry stack-undo?)))))))))))
