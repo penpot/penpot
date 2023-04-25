@@ -679,6 +679,22 @@
   [parent _cells]
   parent)
 
+(defn get-cells
+  ([parent]
+   (get-cells parent nil))
+
+  ([{:keys [layout-grid-cells layout-grid-dir]} {:keys [sort?] :or {sort? false}}]
+   (let [comp-fn (if (= layout-grid-dir :row)
+                   (juxt :row :column)
+                   (juxt :column :row))
+
+         maybe-sort?
+         (if sort? (partial sort-by (comp comp-fn second)) identity)]
+
+     (->> layout-grid-cells
+          (maybe-sort?)
+          (map (fn [[id cell]] (assoc cell :id id)))))))
+
 (defn get-free-cells
   ([parent]
    (get-free-cells parent nil))
@@ -700,7 +716,7 @@
   "Clean the cells whith shapes that are no longer in the layout"
   [parent]
 
-  (let [child? (into #{} (:shapes parent))
+  (let [child? (set (:shapes parent))
         cells (update-vals
                (:layout-grid-cells parent)
                (fn [cell] (update cell :shapes #(filterv child? %))))]
@@ -767,3 +783,63 @@
                   (recur cells (rest free-cells) (rest pending)))))]
 
         (assoc parent :layout-grid-cells cells)))))
+
+(defn free-cell-push
+  "Frees the cell at index and push the shapes in the order given by the `cells` attribute"
+  [parent cells index]
+
+  (let [start-cell (get cells index)]
+    (if (empty? (:shapes start-cell))
+      [parent cells]
+      (let [[parent result-cells]
+            (loop [parent parent
+                   result-cells cells
+                   idx index]
+
+              (if (> idx (- (count cells) 2))
+                [parent result-cells]
+
+                (let [cell-from (get cells idx)
+                      cell-to   (get cells (inc idx))
+                      cell (assoc cell-to :shapes (:shapes cell-from))
+                      parent (assoc-in parent [:layout-grid-cells (:id cell)] cell)
+                      result-cells (assoc result-cells (inc idx) cell)]
+
+                  (if (empty? (:shapes cell-to))
+                    ;; to-cell was empty, so we've finished and every cell allocated
+                    [parent result-cells]
+
+                    ;; otherwise keep pushing cells
+                    (recur parent result-cells (inc idx))))))]
+
+        [(assoc-in parent [:layout-grid-cells (get-in cells [index :id]) :shapes] [])
+         (assoc-in result-cells [index :shapes] [])]))))
+
+(defn seek-indexed-cell
+  [cells row column]
+  (let [cells+index (d/enumerate cells)]
+    (d/seek (fn [[_ {cell-row :row cell-column :column}]]
+              (and (= cell-row row)
+                   (= cell-column column))) cells+index)))
+
+(defn push-into-cell
+  "Push the shapes into the row/column cell and moves the rest"
+  [parent shape-ids row column]
+
+  (let [cells (vec (get-cells parent {:sort? true}))
+        cells+index (d/enumerate cells)
+
+        [start-index _] (seek-indexed-cell cells row column)
+
+        ;; start-index => to-index is the range where the shapes inserted will be added
+        to-index (min (+ start-index (count shape-ids)) (dec (count cells)))]
+
+    ;; Move shift the `shapes` attribute between cells
+    (->> (range start-index (inc to-index))
+         (map vector shape-ids)
+         (reduce (fn [[parent cells] [shape-id idx]]
+                   (let [[parent cells] (free-cell-push parent cells idx)]
+                     [(assoc-in parent [:layout-grid-cells (get-in cells [idx :id]) :shapes] [shape-id])
+                      cells]))
+                 [parent cells])
+         (first))))

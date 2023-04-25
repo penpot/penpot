@@ -490,10 +490,9 @@
                                target-frame   (ctst/top-nested-frame objects position exclude-frames)
                                flex-layout?   (ctl/flex-layout? objects target-frame)
                                grid-layout?   (ctl/grid-layout? objects target-frame)
-                               drop-index     (cond
-                                                flex-layout? (gslf/get-drop-index target-frame objects position)
-                                                grid-layout? (gslg/get-drop-index target-frame objects position))]
-                           [move-vector target-frame drop-index])))
+                               drop-index     (when flex-layout? (gslf/get-drop-index target-frame objects position))
+                               cell-data      (when grid-layout? (gslg/get-drop-cell target-frame objects position))]
+                           [move-vector target-frame drop-index cell-data])))
 
                       (rx/take-until stopper))]
 
@@ -502,7 +501,7 @@
               (->> move-stream
                    (rx/with-latest-from ms/mouse-position-shift)
                    (rx/map
-                    (fn [[[move-vector target-frame drop-index] shift?]]
+                    (fn [[[move-vector target-frame drop-index cell-data] shift?]]
                       (let [x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
                             [move-vector snap-ignore-axis]
                             (cond
@@ -516,7 +515,7 @@
                               [move-vector nil])]
 
                         (-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
-                            (dwm/build-change-frame-modifiers objects selected target-frame drop-index)
+                            (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data)
                             (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
 
               (->> move-stream

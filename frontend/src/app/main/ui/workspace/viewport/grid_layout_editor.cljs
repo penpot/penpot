@@ -17,6 +17,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -153,18 +154,20 @@
         (mf/use-callback
          (mf/deps on-drag-start)
          (fn [event]
-           (let [position (dom/get-client-position event)]
+           (let [raw-pt (dom/get-client-position event)
+                 position (uwvv/point->viewport raw-pt)]
              (dom/capture-pointer event)
              (mf/set-ref-val! dragging-ref true)
-             (mf/set-ref-val! start-pos-ref position)
-             (mf/set-ref-val! current-pos-ref position)
+             (mf/set-ref-val! start-pos-ref raw-pt)
+             (mf/set-ref-val! current-pos-ref raw-pt)
              (when on-drag-start (on-drag-start position)))))
 
         handle-lost-pointer-capture
         (mf/use-callback
          (mf/deps on-drag-end)
          (fn [event]
-           (let [position (mf/ref-val current-pos-ref)]
+           (let [raw-pt (mf/ref-val current-pos-ref)
+                 position (uwvv/point->viewport raw-pt)]
              (dom/release-pointer event)
              (mf/set-ref-val! dragging-ref false)
              (mf/set-ref-val! start-pos-ref nil)
@@ -175,10 +178,11 @@
          (fn [event]
            (when (mf/ref-val dragging-ref)
              (let [start (mf/ref-val start-pos-ref)
-                   pos   (dom/get-client-position event)]
+                   pos   (dom/get-client-position event)
+                   pt (uwvv/point->viewport pos)]
                (mf/set-ref-val! current-pos-ref pos)
                (when on-drag-delta (on-drag-delta (gpt/to-vec start pos)))
-               (when on-drag-position (on-drag-position pos))))))]
+               (when on-drag-position (on-drag-position pt))))))]
 
     {:handle-pointer-down handle-pointer-down
      :handle-lost-pointer-capture handle-lost-pointer-capture
@@ -192,15 +196,16 @@
         width (unchecked-get props "width")
         height (unchecked-get props "height")
         direction (unchecked-get props "direction")
+        layout-data (unchecked-get props "layout-data")
         cursor (if (= direction :row) (cur/scale-ns 0) (cur/scale-ew 0))
 
-        handle-drag-delta
+        handle-drag-position
         (mf/use-callback
-         (fn [delta]
-           (prn ">>>" delta)))
+         (fn [position]
+           (prn ">>>" (gsg/get-position-grid-coord layout-data position))))
 
         {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
-        (use-drag {:on-drag-delta handle-drag-delta})]
+        (use-drag {:on-drag-position handle-drag-position})]
 
     [:rect
      {:x x
@@ -218,7 +223,8 @@
   [props]
   (let [shape (unchecked-get props "shape")
 
-        {:keys [origin row-tracks column-tracks layout-bounds]} (unchecked-get props "layout-data")
+        {:keys [origin row-tracks column-tracks layout-bounds] :as layout-data}
+        (unchecked-get props "layout-data")
 
         zoom    (unchecked-get props "zoom")
 
@@ -278,7 +284,8 @@
                                      :y y
                                      :width width
                                      :height height
-                                     :direction dir}])]))]))
+                                     :direction dir
+                                     :layout-data layout-data}])]))]))
 
 (mf/defc resize-handler
   {::mf/wrap-props false}

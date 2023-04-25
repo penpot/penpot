@@ -13,7 +13,5 @@
 (dm/export glld/calc-layout-data)
 (dm/export glld/get-cell-data)
 (dm/export glp/child-modifiers)
-
-(defn get-drop-index
-  [frame objects _position]
-  (dec (count (get-in objects [frame :shapes]))))
+(dm/export glp/get-position-grid-coord)
+(dm/export glp/get-drop-cell)
