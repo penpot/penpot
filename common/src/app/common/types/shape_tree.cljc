@@ -179,34 +179,34 @@
         parents-a (cons id-a parents-a)
         parents-b (into #{id-b} parents-b)
 
-        ;; Search for the common frame in order
-        base (or (d/seek parents-b parents-a) uuid/zero)
+        ;; Search for the common parent (frame or group) in order
+        base-id (or (d/seek parents-b parents-a) uuid/zero)
 
-        idx-a (get parents-a-index base)
-        idx-b (get parents-b-index base)]
+        idx-a (get parents-a-index base-id)
+        idx-b (get parents-b-index base-id)]
 
-    [base idx-a idx-b]))
+    [base-id idx-a idx-b]))
 
 (defn is-shape-over-shape?
   [objects base-shape-id over-shape-id bottom-frames?]
 
-  (let [[base index-a index-b] (get-base objects base-shape-id over-shape-id)]
+  (let [[base-id index-a index-b] (get-base objects base-shape-id over-shape-id)]
     (cond
-      ;; The base the base shape, so the other item is bellow (if not bottom-frames)
-      (= base base-shape-id)
-      (and bottom-frames? (cph/frame-shape? objects base))
+      ;; The base the base shape, so the other item is below (if not bottom-frames)
+      (= base-id base-shape-id)
+      (and bottom-frames? (cph/frame-shape? objects base-id))
 
       ;; The base is the testing over, so it's over (if not bottom-frames)
-      (= base over-shape-id)
-      (or (not bottom-frames?) (not (cph/frame-shape? objects base)))
+      (= base-id over-shape-id)
+      (or (not bottom-frames?) (not (cph/frame-shape? objects base-id)))
 
       ;; Check which index is lower
       :else
       ;; If the base is a layout we should check if the z-index property is set
       (let [[z-index-a z-index-b]
-            (if (ctl/any-layout? objects base)
-              [(ctl/layout-z-index objects (dm/get-in objects [base :shapes index-a]))
-               (ctl/layout-z-index objects (dm/get-in objects [base :shapes index-b]))]
+            (if (ctl/any-layout? objects base-id)
+              [(ctl/layout-z-index objects (dm/get-in objects [base-id :shapes index-a]))
+               (ctl/layout-z-index objects (dm/get-in objects [base-id :shapes index-b]))]
               [0 0])]
 
         (if (= z-index-a z-index-b)
