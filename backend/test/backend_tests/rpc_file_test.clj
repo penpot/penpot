@@ -122,8 +122,111 @@
           (t/is (= 0 (count result))))))
     ))
 
-(t/deftest file-gc-task
-  (letfn [(create-file-media-object [{:keys [profile-id file-id]}]
+(t/deftest file-gc-with-fragments
+  (letfn [(update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
+            (let [params {::th/type :update-file
+                          ::rpc/profile-id profile-id
+                          :id file-id
+                          :session-id (uuid/random)
+                          :revn revn
+                          :components-v2 true
+                          :changes changes}
+                  out    (th/command! params)]
+              (t/is (nil? (:error out)))
+              (:result out)))]
+
+    (let [profile (th/create-profile* 1)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared false})
+
+          page-id  (uuid/random)
+          shape-id (uuid/random)]
+
+      ;; Preventive file-gc
+      (let [res (th/run-task! "file-gc" {:min-age 0})]
+        (t/is (= 1 (:processed res))))
+
+      ;; Check the number of fragments before adding the page
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
+        (t/is (= 1 (count rows))))
+
+      ;; Add page
+      (update-file!
+       :file-id (:id file)
+       :profile-id (:id profile)
+       :revn 0
+       :changes
+       [{:type :add-page
+         :name "test"
+         :id page-id}])
+
+      ;; Check the number of fragments
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
+        (t/is (= 2 (count rows))))
+
+
+      ;; Check the number of fragments
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
+        (t/is (= 2 (count rows))))
+
+      ;; The file-gc should remove unused fragments
+      (let [res (th/run-task! "file-gc" {:min-age 0})]
+        (t/is (= 1 (:processed res))))
+
+
+      ;; Add shape to page that should add a new fragment
+      (update-file!
+       :file-id (:id file)
+       :profile-id (:id profile)
+       :revn 0
+       :changes
+       [{:type :add-obj
+         :page-id page-id
+         :id shape-id
+         :parent-id uuid/zero
+         :frame-id uuid/zero
+         :components-v2 true
+         :obj {:id shape-id
+               :name "image"
+               :frame-id uuid/zero
+               :parent-id uuid/zero
+               :type :rect}}])
+
+      ;; Check the number of fragments
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
+        (t/is (= 3 (count rows))))
+
+      ;; The file-gc should remove unused fragments
+      (let [res (th/run-task! "file-gc" {:min-age 0})]
+        (t/is (= 1 (:processed res))))
+
+      ;; Check the number of fragments; should be 3 because changes
+      ;; are also holding pointers to fragments;
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
+        (t/is (= 3 (count rows))))
+
+      ;; Lets proceed to delete all changes
+      (th/db-delete! :file-change {:file-id (:id file)})
+      (th/db-update! :file
+                     {:has-media-trimmed false}
+                     {:id (:id file)})
+
+
+      ;; The file-gc should remove fragments related to changes
+      ;; snapshots previously deleted.
+      (let [res (th/run-task! "file-gc" {:min-age 0})]
+        (t/is (= 1 (:processed res))))
+
+      ;; Check the number of fragments;
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
+        (t/is (= 2 (count rows))))
+
+      )))
+
+
+(t/deftest file-gc-task-with-thumbnails
+  (letfn [(add-file-media-object [& {:keys [profile-id file-id]}]
             (let [mfile  {:filename "sample.jpg"
                           :path (th/tempfile "backend_tests/test_files/sample.jpg")
                           :mtype "image/jpeg"
@@ -140,7 +243,7 @@
               (t/is (nil? (:error out)))
               (:result out)))
 
-          (update-file [{:keys [profile-id file-id changes revn] :or {revn 0}}]
+          (update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
             (let [params {::th/type :update-file
                           ::rpc/profile-id profile-id
                           :id file-id
@@ -159,29 +262,31 @@
                                       :project-id (:default-project-id profile)
                                       :is-shared false})
 
-          fmo1    (create-file-media-object {:profile-id (:id profile)
-                                             :file-id (:id file)})
-          fmo2    (create-file-media-object {:profile-id (:id profile)
-                                             :file-id (:id file)})
+          fmo1    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
+          fmo2    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
           shid    (uuid/random)
 
-          ures    (update-file
-                   {:file-id (:id file)
-                    :profile-id (:id profile)
-                    :revn 0
-                    :changes
-                    [{:type :add-obj
-                      :page-id (first (get-in file [:data :pages]))
-                      :id shid
-                      :parent-id uuid/zero
-                      :frame-id uuid/zero
-                      :components-v2 true
-                      :obj {:id shid
-                            :name "image"
-                            :frame-id uuid/zero
-                            :parent-id uuid/zero
-                            :type :image
-                            :metadata {:id (:id fmo1)}}}]})]
+          page-id (first (get-in file [:data :pages]))]
+
+
+      ;; Update file inserting a new image object
+      (update-file!
+       :file-id (:id file)
+       :profile-id (:id profile)
+       :revn 0
+       :changes
+       [{:type :add-obj
+         :page-id page-id
+         :id shid
+                     :parent-id uuid/zero
+         :frame-id uuid/zero
+         :components-v2 true
+         :obj {:id shid
+               :name "image"
+               :frame-id uuid/zero
+               :parent-id uuid/zero
+               :type :image
+               :metadata {:id (:id fmo1)}}}])
 
       ;; Check that reference storage objects on filemediaobjects
       ;; are the same because of deduplication feature.
@@ -190,28 +295,27 @@
 
       ;; If we launch gc-touched-task, we should have 2 items to
       ;; freeze because of the deduplication (we have uploaded 2 times
-      ;; 2 two same files).
+      ;; the same files).
+
       (let [task (:app.storage/gc-touched-task th/*system*)
             res  (task {:min-age (dt/duration 0)})]
         (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
       ;; run the file-gc task immediately without forced min-age
-      (let [task  (:app.tasks.file-gc/handler th/*system*)
-            res   (task {})]
+      (let [res (th/run-task! "file-gc")]
         (t/is (= 0 (:processed res))))
 
       ;; run the task again
-      (let [task  (:app.tasks.file-gc/handler th/*system*)
-            res   (task {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! "file-gc" {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       ;; retrieve file and check trimmed attribute
-      (let [row (db/exec-one! th/*pool* ["select * from file where id = ?" (:id file)])]
+      (let [row (th/db-get :file {:id (:id file)})]
         (t/is (true? (:has-media-trimmed row))))
 
       ;; check file media objects
-      (let [rows (db/exec! th/*pool* ["select * from file_media_object where file_id = ?" (:id file)])]
+      (let [rows (th/db-exec! ["select * from file_media_object where file_id = ?" (:id file)])]
         (t/is (= 1 (count rows))))
 
       ;; The underlying storage objects are still available.
@@ -221,12 +325,13 @@
       (t/is (some? (sto/get-object storage (:thumbnail-id fmo1))))
 
       ;; proceed to remove usage of the file
-      (update-file {:file-id (:id file)
-                    :profile-id (:id profile)
-                    :revn 0
-                    :changes [{:type :del-obj
-                               :page-id (first (get-in file [:data :pages]))
-                               :id shid}]})
+      (update-file!
+       :file-id (:id file)
+       :profile-id (:id profile)
+       :revn 0
+       :changes [{:type :del-obj
+                  :page-id (first (get-in file [:data :pages]))
+                  :id shid}])
 
       ;; Now, we have deleted the usage of pointers to the
       ;; file-media-objects, if we paste file-gc, they should be marked

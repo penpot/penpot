@@ -44,7 +44,8 @@
     "storage/pointer-map"
     "components/v2"})
 
-(def default-features
+(defn get-default-features
+  []
   (cond-> #{}
     (contains? cf/flags :fdata-storage-pointer-map)
     (conj "storage/pointer-map")
@@ -233,6 +234,15 @@
                                         (if (pmap/pointer-map? val)
                                           (update-fn val)
                                           val)))))))
+
+
+(defn get-all-pointer-ids
+  "Given a file, return all pointer ids used in the data."
+  [fdata]
+  (->> (concat (vals fdata)
+               (vals (:pages-index fdata)))
+       (into #{} (comp (filter pmap/pointer-map?)
+                       (map pmap/get-id)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUERY COMMANDS

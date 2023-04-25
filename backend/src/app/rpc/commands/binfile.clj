@@ -625,7 +625,7 @@
     (let [file     (read-obj! input)
           media'   (read-obj! input)
           file-id  (:id file)
-          features files/default-features]
+          features (files/get-default-features)]
 
       (when (not= file-id expected-file-id)
         (ex/raise :type :validation
