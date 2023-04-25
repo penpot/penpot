@@ -49,6 +49,7 @@ function readLocales() {
   const langs = ["ar", "ca", "de", "el", "en", "eu", "it", "es",
                  "fa", "fr", "he", "nb_NO", "pl", "pt_BR", "ro", "id",
                  "ru", "tr", "zh_CN", "zh_Hant", "hr", "gl", "pt_PT",
+                 "cs",
                  // this happens when file does not matches correct
                  // iso code for the language.
                  ["ja_jp", "jpn_JP"]

@@ -39,6 +39,7 @@
    {:label "Türkçe (community)" :value "tr"}
    {:label "Ελληνική γλώσσα (community)" :value "el"}
    {:label "Русский (community)" :value "ru"}
+   {:label "Český jazyk (community)" :value "cs"}
    {:label "עִבְרִית (community)" :value "he"}
    {:label "عربي/عربى (community)" :value "ar"}
    {:label "فارسی (community)" :value "fa"}
