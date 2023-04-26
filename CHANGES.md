@@ -15,8 +15,8 @@
 
 ### :heart: Community contributions by (Thank you!)
 - Update Typography palette order (by @akshay-gupta7) [Github #3156](https://github.com/penpot/penpot/pull/3156)
-- Duplicate objects via drag + alt [Github #3147](https://github.com/penpot/penpot/pull/3147)
-
+- Palettes (color, typographies) empty state (by @akshay-gupta7) [Github #3160](https://github.com/penpot/penpot/pull/3160)
+- Duplicate objects via drag + alt (by @akshay-gupta7) [Github #3147](https://github.com/penpot/penpot/pull/3147)
 
 ## 1.18.3 (Unreleased)
 

@@ -160,10 +160,16 @@
 
      [:span.left-arrow {:on-click on-left-arrow-click} i/arrow-slide]
      [:div.color-palette-content {:ref container :on-wheel on-scroll}
-      [:div.color-palette-inside {:style {:position "relative"
+     (if (empty? current-colors)
+        [:div.color-palette-empty {:style {:position "absolute"
+                                           :left "50%"
+                                           :top "50%"
+                                           :transform "translate(-50%, -50%)"}} 
+              (tr "workspace.libraries.colors.empty-palette")]
+        [:div.color-palette-inside {:style {:position "relative"
                                           :right (str (* 66 offset) "px")}}
-       (for [[idx item] (map-indexed vector current-colors)]
-         [:& palette-item {:color item :key idx}])]]
+          (for [[idx item] (map-indexed vector current-colors)]
+            [:& palette-item {:color item :key idx}])])]
 
      [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]]))
 
