@@ -437,8 +437,22 @@
   (ptk/reify ::restore-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [library-data (wsh/get-file state library-id)
-            changes (:changes (dwlh/prepare-restore-component library-data component-id it))]
+      (let [page-id         (:current-page-id state)
+            objects         (wsh/lookup-page-objects state page-id)
+            library-data (wsh/get-file state library-id)
+            {:keys [changes shape]} (dwlh/prepare-restore-component library-data component-id it)
+            parent-id (:parent-id shape)
+            objects (cond-> (assoc objects (:id shape) shape)
+                      (not (nil? parent-id))
+                      (update-in [parent-id :shapes]
+                                 #(conj % (:id shape))))
+
+
+            ;; Adds a resize-parents operation so the groups are updated. We add all the new objects
+            new-objects-ids (->> changes :redo-changes (filter #(= (:type %) :add-obj)) (mapv :id))
+            changes (-> changes
+                        (pcb/with-objects objects)
+                        (pcb/resize-parents new-objects-ids))]
         (rx/of (dch/commit-changes changes))))))
 
 
