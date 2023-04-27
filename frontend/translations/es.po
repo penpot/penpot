@@ -321,7 +321,7 @@ msgstr "Crear token"
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.delete-acces-token.title"
 msgstr "Borrar token"
-                       
+
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.delete-acces-token.message"
 msgstr "¿Seguro que deseas borrar este token?"
@@ -2192,6 +2192,12 @@ msgstr ""
 msgid "modals.update-remote-component.message"
 msgstr "Actualizar un componente en biblioteca"
 
+msgid "modals.delete-component-annotation.message"
+msgstr "¿Seguro que quieres borrar esta nota?"
+
+msgid "modals.delete-component-annotation.title"
+msgstr "Borrar nota"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
 msgstr "Invitación enviada con éxito"
@@ -3463,6 +3469,15 @@ msgstr "Truncar contenido"
 msgid "workspace.options.component"
 msgstr "Componente"
 
+msgid "workspace.options.component.annotation"
+msgstr "Nota"
+
+msgid "workspace.options.component.create-annotation"
+msgstr "Crear una nota"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "Editar una nota"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
 msgstr "Restricciones"
@@ -4569,6 +4584,9 @@ msgstr "Ver en el panel de recursos"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
 msgstr "Ver componente principal"
+
+msgid "workspace.shape.menu.create-annotation"
+msgstr "Crear una nota"
 
 msgid "workspace.shape.menu.thumbnail-remove"
 msgstr "Quitar miniatura"

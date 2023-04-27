@@ -45,7 +45,7 @@
                  :main-instance-page main-instance-page))))
 
 (defn mod-component
-  [file-data {:keys [id name path objects]}]
+  [file-data {:keys [id name path objects annotation]}]
   (let [wrap-objects-fn feat/*wrap-with-objects-map-fn*]
     (update-in file-data [:components id]
                (fn [component]
@@ -58,7 +58,13 @@
                      (assoc :path path)
 
                      (some? objects)
-                     (assoc :objects objects)))))))
+                     (assoc :objects objects)
+
+                     (some? annotation)
+                     (assoc :annotation annotation)
+
+                     (nil? annotation)
+                     (dissoc :annotation)))))))
 
 (defn get-component
   ([file-data component-id]

@@ -142,6 +142,17 @@
                      (rx/map (fn [pages-index]
                                (update-in bundle [:file :data] assoc :pages-index pages-index))))))
              (rx/mapcat
+              (fn [bundle]
+                (->> (rx/from (-> bundle :file :data seq))
+                     (rx/merge-map
+                      (fn [[_ object :as kp]]
+                        (if (t/pointer? object)
+                          (resolve kp)
+                          (rx/of kp))))
+                     (rx/reduce conj {})
+                     (rx/map (fn [data]
+                               (update bundle :file assoc :data data))))))
+             (rx/mapcat
               (fn [{:keys [fonts] :as bundle}]
                 (rx/of (df/fonts-fetched fonts)
                        (bundle-fetched (merge bundle params))))))))))

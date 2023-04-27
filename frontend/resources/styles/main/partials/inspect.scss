@@ -383,3 +383,15 @@
 .element-options > :first-child {
   border-top: none;
 }
+
+.inspect-annotation {
+  .content {
+    background-color: $color-gray-60;
+    color: $color-white;
+    margin: 0 10px;
+    padding: 10px;
+    font-size: $fs14;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+}

@@ -78,7 +78,7 @@
                 (update :data remove-not-allowed-pages (:pages perms))
 
                 :always
-                (update :data select-keys [:id :options :pages :pages-index]))))))
+                (update :data select-keys [:id :options :pages :pages-index :components]))))))
 
 (s/def ::get-view-only-bundle
   (s/keys :req-un [::files/file-id]

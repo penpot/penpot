@@ -7,7 +7,9 @@
 (ns app.main.ui.viewer.inspect.attributes
   (:require
    [app.common.geom.shapes :as gsh]
+   [app.main.data.workspace.annotation-helpers :as dwah]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.viewer.inspect.annotation :refer [annotation]]
    [app.main.ui.viewer.inspect.attributes.blur :refer [blur-panel]]
    [app.main.ui.viewer.inspect.attributes.fill :refer [fill-panel]]
    [app.main.ui.viewer.inspect.attributes.image :refer [image-panel]]
@@ -32,12 +34,17 @@
    :text     [:layout :text :shadow :blur :stroke :layout-flex-item]})
 
 (mf/defc attributes
-  [{:keys [page-id file-id shapes frame from]}]
+  [{:keys [page-id file-id shapes frame from libraries]}]
   (let [shapes  (hooks/use-equal-memo shapes)
         shapes  (mf/with-memo [shapes]
                   (mapv #(gsh/translate-to-frame % frame) shapes))
         type    (if (= (count shapes) 1) (-> shapes first :type) :multiple)
-        options (type->options type)]
+        options (type->options type)
+        content (when (= (count shapes) 1)
+                  (if (= from :workspace)
+                    (dwah/get-main-annotation (first shapes) libraries)
+                    (dwah/get-main-annotation-viewer (first shapes) libraries)))]
+
     [:div.element-options
      (for [[idx option] (map-indexed vector options)]
        [:> (case option
@@ -55,6 +62,8 @@
          :shapes shapes
          :frame frame
          :from from}])
+     (when content
+       [:& annotation {:content content}])
      [:& exports
       {:shapes shapes
        :type type

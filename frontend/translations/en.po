@@ -314,7 +314,7 @@ msgstr "Create token"
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.delete-acces-token.title"
 msgstr "Delete token"
-                       
+
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.delete-acces-token.message"
 msgstr "Are you sure you want to delete this token?"
@@ -1337,6 +1337,9 @@ msgstr "Copy link"
 msgid "labels.create"
 msgstr "Create"
 
+msgid "labels.discard"
+msgstr "Discard"
+
 #: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
 msgstr "Create new team"
@@ -2123,6 +2126,12 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
 msgstr "Update a component in a shared library"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "Are you sure you want to delete this annotation?"
+
+msgid "modals.delete-component-annotation.title"
+msgstr "Delete annotation"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
@@ -3368,6 +3377,15 @@ msgstr "Clip content"
 msgid "workspace.options.component"
 msgstr "Component"
 
+msgid "workspace.options.component.annotation"
+msgstr "Annotation"
+
+msgid "workspace.options.component.create-annotation"
+msgstr "Create an annotation"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "Edit an annotation"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
 msgstr "Constraints"
@@ -4451,6 +4469,9 @@ msgstr "Show in assets panel"
 msgid "workspace.shape.menu.show-main"
 msgstr "Show main component"
 
+msgid "workspace.shape.menu.create-annotation"
+msgstr "Create annotation"
+
 msgid "workspace.shape.menu.thumbnail-remove"
 msgstr "Remove thumbnail"
 
@@ -4714,3 +4735,4 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+

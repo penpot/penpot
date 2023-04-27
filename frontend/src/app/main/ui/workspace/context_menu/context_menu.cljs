@@ -440,10 +440,9 @@
         is-component?       (and single? (-> shapes first :component-id some?))
         is-non-root?        (and single? (ctk/in-component-instance-not-root? (first shapes)))
 
-        shape-id            (-> shapes first :id)
-        component-id        (-> shapes first :component-id)
-        component-file      (-> shapes first :component-file)
-        main-component?     (-> shapes first :main-instance?)
+        first-shape         (first shapes)
+        {:keys [shape-id component-id component-file main-instance?]} first-shape
+        lacks-annotation?   (nil? (:annotation first-shape))
         component-shapes    (filter #(contains? % :component-id) shapes)
 
         components-v2       (features/use-feature :components-v2)
@@ -467,6 +466,9 @@
         do-show-in-assets #(st/emit! (if components-v2
                                        (dw/show-component-in-assets component-id)
                                        (dw/go-to-component component-id)))
+        create-annotation #(when components-v2
+                             (st/emit! (dw/set-annotations-id-for-create (:id first-shape))))
+
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file component-file))
         do-update-component #(st/emit! (dwl/update-component-sync shape-id component-file))
         do-update-component-in-bulk #(st/emit! (dwl/update-component-in-bulk component-shapes component-file))
@@ -518,9 +520,13 @@
        ;;          app/main/ui/workspace/sidebar/options/menus/component.cljs
        [:*
         [:& menu-separator]
-        (if main-component?
-          [:& menu-entry {:title (tr "workspace.shape.menu.show-in-assets")
-                          :on-click do-show-in-assets}]
+        (if main-instance?
+          [:*
+           [:& menu-entry {:title (tr "workspace.shape.menu.show-in-assets")
+                           :on-click do-show-in-assets}]
+           (when (and components-v2 lacks-annotation?)
+             [:& menu-entry {:title (tr "workspace.shape.menu.create-annotation")
+                             :on-click create-annotation}])]
           (if local-component?
             (if is-dangling?
               [:*

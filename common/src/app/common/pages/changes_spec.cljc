@@ -22,6 +22,8 @@
 (s/def ::page-id uuid?)
 (s/def ::component-id uuid?)
 (s/def ::name string?)
+(s/def ::path string?)
+(s/def ::annotation string?)
 
 (defmulti operation-spec :type)
 
@@ -158,7 +160,7 @@
 
 (defmethod change-spec :mod-component [_]
   (s/keys :req-un [::id]
-          :opt-un [::name :internal.changes.add-component/shapes]))
+          :opt-un [::name ::path ::annotation :internal.changes.add-component/shapes]))
 
 (s/def :internal.changes.del-component/skip-undelete? boolean?)
 
