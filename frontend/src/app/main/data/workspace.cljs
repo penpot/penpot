@@ -2060,6 +2060,58 @@
     (update [_ state]
       (assoc-in state [:workspace-global :file-library-reverse-sort] reverse-sort?))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Components annotations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn update-component-annotation
+  "Update the component with the given annotation"
+  [id annotation]
+  (us/assert ::us/uuid id)
+  (us/assert ::us/string annotation)
+  (ptk/reify ::update-component-annotation
+    ptk/WatchEvent
+    (watch [it state _]
+
+        (let [data (get state :workspace-data)
+
+              update-fn
+              (fn [component]
+                ;; NOTE: we need to ensure the component exists,
+                ;; because there are small possibilities of race
+                ;; conditions with component deletion.
+                (when component
+                  (if (nil? annotation)
+                    (dissoc component :annotation)
+                    (assoc component :annotation annotation))))
+
+              changes (-> (pcb/empty-changes it)
+                          (pcb/with-library-data data)
+                          (pcb/update-component id update-fn))]
+
+          (rx/of (dch/commit-changes changes))))))
+
+
+
+(defn set-annotations-expanded
+  [expanded?]
+  (ptk/reify ::set-annotations-expanded
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-annotations :expanded?] expanded?))))
+
+(defn set-annotations-id-for-create
+  [id]
+  (ptk/reify ::set-annotations-id-for-create
+    ptk/UpdateEvent
+    (update [_ state]
+      (if id
+        (-> (assoc-in state [:workspace-annotations :id-for-create] id)
+            (assoc-in [:workspace-annotations :expanded?] true))
+        (d/dissoc-in state [:workspace-annotations :id-for-create])))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

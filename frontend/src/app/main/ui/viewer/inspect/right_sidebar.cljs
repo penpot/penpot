@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.inspect.right-sidebar
   (:require
    [app.main.data.workspace :as dw]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.shape-icon :as si]
    [app.main.ui.components.tabs-container :refer [tabs-container tabs-element]]
@@ -18,6 +19,24 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
+(defn- get-libraries
+  "Retrieve all libraries, including the local file, on workspace or viewer"
+  [from]
+  (if (= from :workspace)
+    (let [workspace-data (deref refs/workspace-data)
+          {:keys [id] :as local} workspace-data
+          libraries (deref refs/workspace-libraries)]
+      (-> libraries
+          (assoc id {:id id
+                     :data local})))
+    (let [viewer-data     (deref refs/viewer-data)
+          local           (get-in viewer-data [:file :data])
+          id              (deref refs/current-file-id)
+          libraries (:libraries viewer-data)]
+      (-> libraries
+          (assoc id {:id id
+                     :data local})))))
+
 (mf/defc right-sidebar
   [{:keys [frame page file selected shapes page-id file-id from]
     :or {from :inspect}}]
@@ -28,7 +47,9 @@
 
         first-shape   (first shapes)
         page-id       (or page-id (:id page))
-        file-id       (or file-id (:id file))]
+        file-id       (or file-id (:id file))
+
+        libraries      (get-libraries from)]
 
     [:aside.settings-bar.settings-bar-right {:class (when @expanded "expanded")}
      [:div.settings-bar-inside
@@ -67,7 +88,8 @@
                             :file-id file-id
                             :frame frame
                             :shapes shapes
-                            :from from}]]
+                            :from from
+                            :libraries libraries}]]
 
            [:& tabs-element {:id :code :title (tr "inspect.tabs.code")}
             [:& code {:frame frame

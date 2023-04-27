@@ -544,3 +544,9 @@
   [id]
   (l/derived #(get % id) workspace-grid-edition))
 
+(def workspace-annotations
+  (l/derived #(get % :workspace-annotations {}) st/state))
+
+(def current-file-id
+  (l/derived :current-file-id st/state))
+

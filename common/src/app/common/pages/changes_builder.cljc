@@ -639,11 +639,13 @@
                                       :id id
                                       :name (:name new-component)
                                       :path (:path new-component)
+                                      :annotation (:annotation new-component)
                                       :objects (:objects new-component)}) ;; this won't exist in components-v2
           (update :undo-changes d/preconj {:type :mod-component
                                            :id id
                                            :name (:name prev-component)
                                            :path (:path prev-component)
+                                           :annotation (:annotation prev-component)
                                            :objects (:objects prev-component)}))
       changes)))
 
