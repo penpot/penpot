@@ -1,0 +1,308 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.layers {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  box-sizing: border-box;
+  .tool-window-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: $s-32;
+    min-height: $s-32;
+    margin-top: $s-2;
+    margin-bottom: $s-4;
+    .page-name {
+      @include tabTitleTipography;
+      padding: 0 $s-12;
+      color: var(--title-foreground-color);
+    }
+    .icon-search {
+      @extend .button-primary;
+      height: $s-32;
+      width: calc($s-24 + $s-4);
+      border-radius: $br-8;
+      margin-right: $s-8;
+      padding: 0;
+      svg {
+        @extend .button-icon;
+      }
+    }
+    &.search {
+      padding: 0 $s-8 0 $s-12;
+      .search-box {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: $s-2;
+        height: $s-32;
+        width: 100%;
+        margin-right: $s-4;
+        border-radius: $br-8;
+        background-color: var(--color-background-primary);
+        .filter-button {
+          @include flexCenter;
+          @include buttonStyle;
+          height: $s-32;
+          width: $s-32;
+          margin: 0;
+          border: 1px solid var(--color-background-tertiary);
+          border-radius: $br-8 $br-2 $br-2 $br-8;
+          background-color: var(--color-background-tertiary);
+          svg {
+            height: $s-16;
+            width: $s-16;
+            stroke: var(--icon-foreground);
+          }
+          &:focus {
+            border: 1px solid var(--input-border-color-focus);
+            outline: 0;
+            background-color: var(--input-background-color-active);
+            color: var(--input-foreground-color-active);
+            svg {
+              background-color: var(--input-background-color-active);
+            }
+          }
+          &:hover {
+            border: 1px solid var(--input-background-color-hover);
+            background-color: var(--input-background-color-hover);
+            svg {
+              background-color: var(--input-background-color-hover);
+              stroke: var(--button-foreground-hover);
+            }
+          }
+        }
+        .search-input-wrapper {
+          @include flexCenter;
+          height: $s-32;
+          width: 100%;
+          border: 1px solid var(--color-background-tertiary);
+          border-radius: $br-2 $br-8 $br-8 $br-2;
+          background-color: var(--color-background-tertiary);
+          input {
+            width: 100%;
+            margin: $s-8;
+            border: 0;
+            background-color: var(--input-background-color);
+            font-size: $fs-12;
+            color: var(--input-foreground-color);
+            &:focus {
+              outline: none;
+            }
+          }
+          &:hover {
+            border: 1px solid var(--input-background-color-hover);
+            background-color: var(--input-background-color-hover);
+            input {
+              background-color: var(--input-background-color-hover);
+            }
+          }
+          &:focus-within {
+            background-color: var(--input-background-color-active);
+            color: var(--input-foreground-color-active);
+            border: 1px solid var(--input-border-color-focus);
+            input {
+              background-color: var(--input-background-color-active);
+            }
+          }
+
+          .clear {
+            @extend .button-secondary;
+            border-radius: $br-8;
+            height: 100%;
+            svg {
+              @extend .button-icon-small;
+              color: transparent;
+            }
+          }
+        }
+      }
+      .close-search {
+        @extend .button-primary;
+        height: $s-32;
+        width: $s-28;
+        min-width: $s-28;
+        padding: 0;
+        border-radius: $br-8;
+        svg {
+          @extend .button-icon-small;
+        }
+      }
+    }
+    .focus-title {
+      @include buttonStyle;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      width: 100%;
+      padding: 0;
+      .back-button-icon {
+        @include flexCenter;
+        height: $s-32;
+        width: $s-24;
+        padding: 0 $s-4 0 $s-8;
+        svg {
+          @extend .button-icon-small;
+          transform: rotate(180deg);
+        }
+      }
+      .focus-name {
+        @include titleTipography;
+        display: flex;
+        align-items: center;
+        height: 100%;
+        padding-left: $s-4;
+        color: var(--title-foreground-color);
+      }
+      .focus-mode-tag-wrapper {
+        @include flexCenter;
+        height: 100%;
+        margin-right: $s-12;
+
+        .focus-mode-tag {
+          @include flexCenter;
+          @include titleTipography;
+          height: $s-20;
+          padding: $s-4 $s-6;
+          border: 1px solid var(--tag-background-color);
+          border-radius: $br-6;
+          color: var(--tag-background-color);
+        }
+      }
+    }
+  }
+  .active-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: $s-4;
+    margin: 0 $s-12;
+    .layer-filter {
+      @extend .button-secondary;
+      @include buttonStyle;
+      gap: $s-6;
+      height: $s-24;
+      margin: $s-2 0;
+      border-radius: $br-6;
+      background-color: var(--pill-background-color);
+      cursor: pointer;
+      .layer-filter-icon,
+      .layer-filter-close {
+        @extend .button-icon-small;
+        stroke: var(--pill-foreground-color);
+        svg {
+          height: $s-12;
+          width: $s-12;
+        }
+      }
+      .layer-filter-name {
+        @include flexCenter;
+        @include titleTipography;
+        color: var(--pill-foreground-color);
+      }
+    }
+  }
+  .filters-container {
+    position: absolute;
+    top: $s-44;
+    left: $s-12;
+    display: flex;
+    flex-direction: column;
+    gap: $s-4;
+    width: $s-192;
+    padding: $s-4;
+    border-radius: $br-8;
+    background-color: var(--menu-background-color);
+    z-index: $z-index-4;
+    box-shadow: 0px 0px 10px 0px var(--menu-shadow-color);
+    .filter-menu-item {
+      @include titleTipography;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: $s-6;
+      border-radius: $br-8;
+
+      .filter-menu-item-name-wrapper {
+        display: flex;
+        align-items: center;
+        gap: $s-8;
+        .filter-menu-item-icon {
+          svg {
+            @extend .button-icon-small;
+            stroke: var(--menu-foreground-color);
+          }
+        }
+        .filter-menu-item-name {
+          padding-top: $s-2;
+          color: var(--menu-foreground-color);
+        }
+      }
+      .filter-menu-item-tick {
+        svg {
+          @extend .button-icon-small;
+          stroke: var(--menu-foreground-color);
+        }
+      }
+
+      &.selected {
+        background-color: var(--menu-background-color-selected);
+        .filter-menu-item-name-wrapper {
+          .filter-menu-item-icon {
+            svg {
+              stroke: var(--menu-foreground-color-selected);
+            }
+          }
+          .filter-menu-item-name {
+            color: var(--menu-foreground-color-selected);
+          }
+        }
+        .filter-menu-item-tick {
+          svg {
+            stroke: var(--menu-foreground-color-selected);
+          }
+        }
+      }
+
+      &:hover {
+        background-color: var(--menu-background-color-hover);
+        .filter-menu-item-name-wrapper {
+          .filter-menu-item-icon {
+            svg {
+              stroke: var(--menu-foreground-color-hover);
+            }
+          }
+          .filter-menu-item-name {
+            color: var(--menu-foreground-color-hover);
+          }
+        }
+        .filter-menu-item-tick {
+          svg {
+            stroke: var(--menu-foreground-color-hover);
+          }
+        }
+      }
+    }
+  }
+  .tool-window-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    border-radius: $br-8;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    overflow-y: overlay;
+    .element-list {
+      width: 100%;
+    }
+  }
+}

@@ -5,17 +5,12 @@
 // Copyright (c) KALEIDOS INC
 
 // Border radius
-$br0: 0px;
-$br2: $s-2;
-$br3: 3px;
-$br4: 4px;
-$br5: 5px;
-$br6: 6px;
-$br7: 7px;
-$br8: 8px;
-$br10: 10px;
-$br12: 12px;
-$br25: 25px;
-$br50: 50px;
-$br99: 99px;
+$br-0: $s-0;
+$br-2: $s-2;
+$br-4: $s-4;
+$br-5: 0.313rem;
+$br-6: $s-6;
+$br-8: $s-8;
+$br-10: calc($s-8 + $s-2);
+$br-12: $s-12;
 $br-circle: 50%;

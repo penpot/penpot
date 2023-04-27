@@ -13,7 +13,7 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu-a11y.context-menu-a11y :refer [context-menu-a11y]]
+   [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.import :as udi]
    [app.util.dom :as dom]

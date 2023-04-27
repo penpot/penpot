@@ -1,0 +1,488 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.layer-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  background-color: var(--layer-row-background-color);
+
+  .element-list-body {
+    display: flex;
+    align-items: center;
+    height: $s-32;
+    width: calc(100% - (var(--depth) * var(--layer-indentation-size)));
+    padding-right: $s-12;
+
+    &.filtered {
+      width: calc(100% - $s-12);
+    }
+    .button-content {
+      display: flex;
+      height: 100%;
+      .toggle-content {
+        @include buttonStyle;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        height: 100%;
+        width: $s-24;
+        padding: 0 4px 0 8px;
+        svg {
+          @extend .button-icon-small;
+        }
+        &.inverse {
+          svg {
+            transform: rotate(90deg);
+          }
+          .icon-shape {
+            transform: rotate(-90deg);
+          }
+        }
+      }
+      .icon-shape {
+        @include flexCenter;
+        @include buttonStyle;
+        position: relative;
+        justify-self: flex-end;
+        width: $s-16;
+        height: 100%;
+        width: $s-24;
+        padding: 0 $s-8 0 $s-4;
+        svg {
+          @extend .button-icon-small;
+        }
+
+        .absolute {
+          position: absolute;
+          background-color: var(--layer-row-foreground-color);
+          opacity: $op-4;
+          width: $s-12;
+          height: $s-12;
+          border-radius: $br-2;
+        }
+      }
+    }
+    .element-actions {
+      display: none;
+      height: 100%;
+      .toggle-element,
+      .block-element {
+        @include buttonStyle;
+        @include flexCenter;
+        height: 100%;
+        width: $s-24;
+        margin: 0;
+        display: none;
+        svg {
+          @extend .button-icon-small;
+        }
+      }
+      &.selected {
+        display: flex;
+        .toggle-element,
+        .block-element {
+          display: flex;
+          opacity: $op-0;
+          &.selected {
+            opacity: $op-10;
+          }
+        }
+      }
+    }
+  }
+  .element-children {
+    width: 100%;
+    ul {
+      margin-bottom: 0;
+    }
+    &.parent-selected {
+      .layer-row {
+        background-color: var(--layer-child-row-background-color);
+      }
+    }
+  }
+  &.hidden {
+    .element-list-body {
+      .button-content {
+        .toggle-content {
+          svg {
+            opacity: $op-7;
+          }
+        }
+        .icon-shape {
+          svg {
+            opacity: $op-7;
+          }
+          .absolute {
+            opacity: $op-1;
+          }
+        }
+      }
+      .element-actions {
+        .toggle-element,
+        .block-element {
+          svg {
+            opacity: $op-7;
+          }
+        }
+      }
+    }
+  }
+  &:hover {
+    --context-hover-color: var(--layer-row-foreground-color-hover);
+    --context-hover-opacity: $op-10;
+    background-color: var(--layer-row-background-color-hover);
+    &.hidden {
+      opacity: $op-10;
+    }
+    .element-list-body {
+      .button-content {
+        .toggle-content {
+          background-color: var(--layer-row-background-color-hover);
+          svg {
+            opacity: $op-10;
+            stroke: var(--layer-row-foreground-color-hover);
+          }
+        }
+        .icon-shape {
+          opacity: $op-10;
+          svg {
+            stroke: var(--layer-row-foreground-color-hover);
+          }
+          & .absolute {
+            opacity: $op-4;
+            background-color: var(--layer-row-foreground-color-hover);
+          }
+        }
+      }
+      .element-actions {
+        display: flex;
+        .toggle-element,
+        .block-element {
+          display: flex;
+          svg {
+            opacity: $op-10;
+            stroke: var(--layer-row-foreground-color-hover);
+          }
+        }
+        &.selected {
+          .toggle-element,
+          .block-element {
+            opacity: $op-10;
+          }
+        }
+      }
+    }
+    .element-children {
+      .layer-row {
+        background-color: transparent;
+        color: var(--layer-row-foreground-color-hover);
+        &:hover {
+          background-color: var(--layer-row-background-color-hover);
+        }
+      }
+    }
+  }
+  &.selected {
+    background-color: var(--layer-row-background-color-selected);
+    .element-list-body {
+      .button-content {
+        .toggle-content {
+          background-color: var(--layer-row-background-color-selected);
+          svg {
+            stroke: var(--layer-row-foreground-color-selected);
+          }
+        }
+        .icon-shape {
+          svg {
+            stroke: var(--layer-row-foreground-color-selected);
+          }
+          .absolute {
+            background-color: var(--layer-row-foreground-color-selected);
+          }
+        }
+      }
+      .element-actions {
+        .toggle-element,
+        .block-element {
+          display: flex;
+          svg {
+            stroke: var(--layer-row-foreground-color-selected);
+          }
+        }
+        &.selected {
+          .toggle-element,
+          .block-element {
+            display: flex;
+            opacity: $op-10;
+            &.selected {
+              opacity: $op-10;
+            }
+          }
+        }
+      }
+    }
+    .element-children {
+      background-color: transparent;
+      color: var(--layer-row-foreground-color-selected);
+      &:hover {
+        background-color: var(--layer-row-background-color-selected);
+      }
+    }
+    &:hover {
+      background-color: var(--layer-row-background-color-selected);
+    }
+  }
+  &.type-comp {
+    .button-content {
+      .toggle-content {
+        svg {
+          stroke: var(--layer-row-component-foreground-color);
+        }
+      }
+      .icon-shape {
+        svg {
+          stroke: var(--layer-row-component-foreground-color);
+        }
+        .absolute {
+          background-color: var(--layer-row-component-foreground-color);
+        }
+      }
+    }
+    .element-actions {
+      .toggle-element,
+      .block-element {
+        svg {
+          stroke: var(--layer-row-component-foreground-color);
+        }
+      }
+    }
+    .element-children {
+      color: var(--layer-row-component-foreground-color);
+    }
+    &.hidden {
+      .element-list-body {
+        .button-content {
+          .toggle-content {
+            opacity: $op-7;
+          }
+          .icon-shape {
+            opacity: $op-7;
+            .absolute {
+              opacity: $op-1;
+            }
+          }
+        }
+        .element-actions {
+          .toggle-element,
+          .block-element {
+            svg {
+              opacity: $op-7;
+            }
+          }
+        }
+      }
+      &:hover {
+        .element-list-body {
+          .button-content {
+            .toggle-content {
+              opacity: $op-10;
+              svg {
+                stroke: var(--layer-row-foreground-color-hover);
+              }
+            }
+            .icon-shape {
+              opacity: $op-10;
+              svg {
+                stroke: var(--layer-row-foreground-color-hover);
+              }
+              & .absolute {
+                opacity: $op-4;
+              }
+            }
+          }
+          .element-actions {
+            .toggle-element,
+            .block-element {
+              svg {
+                opacity: $op-10;
+                stroke: var(--layer-row-foreground-color-hover);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  &.type-comp.selected {
+    .button-content {
+      .toggle-content {
+        svg {
+          stroke: var(--layer-row-component-foreground-color);
+        }
+      }
+      .icon-shape {
+        svg {
+          stroke: var(--layer-row-component-foreground-color);
+        }
+        .absolute {
+          background-color: var(--layer-row-component-foreground-color);
+        }
+      }
+    }
+    .element-actions {
+      .toggle-element,
+      .block-element {
+        svg {
+          stroke: var(--layer-row-component-foreground-color);
+        }
+      }
+    }
+    .element-children {
+      color: var(--layer-row-component-foreground-color);
+    }
+    &.hidden {
+      .element-list-body {
+        .button-content {
+          .toggle-content {
+            opacity: $op-7;
+          }
+          .icon-shape {
+            opacity: $op-7;
+            .absolute {
+              opacity: $op-1;
+            }
+          }
+        }
+        .element-actions {
+          .toggle-element,
+          .block-element {
+            svg {
+              opacity: $op-7;
+            }
+          }
+        }
+      }
+      &:hover {
+        .element-list-body {
+          .button-content {
+            .toggle-content {
+              opacity: $op-10;
+              svg {
+                stroke: var(--layer-row-foreground-color-hover);
+              }
+            }
+            .icon-shape {
+              opacity: $op-10;
+              & .absolute {
+                opacity: $op-4;
+              }
+            }
+          }
+          .element-actions {
+            .toggle-element,
+            .block-element {
+              svg {
+                opacity: $op-10;
+                stroke: var(--layer-row-foreground-color-hover);
+              }
+            }
+          }
+        }
+      }
+    }
+    &:hover {
+      .element-list-body {
+        .button-content {
+          .toggle-content {
+            svg {
+              stroke: var(--layer-row-foreground-color-hover);
+            }
+          }
+          .icon-shape {
+            svg {
+              stroke: var(--layer-row-foreground-color-hover);
+            }
+          }
+        }
+        .element-actions {
+          .toggle-element,
+          .block-element {
+            svg {
+              stroke: var(--layer-row-foreground-color-hover);
+            }
+          }
+        }
+      }
+    }
+  }
+  &:global(.sticky) {
+    position: sticky;
+    top: 0px;
+    z-index: 3;
+  }
+}
+.parent-selected .layer-row {
+  background-color: var(--layer-child-row-background-color);
+  &:hover {
+    background-color: var(--layer-row-background-color-hover);
+    &.hidden {
+      opacity: $op-10;
+    }
+    .element-list-body {
+      .button-content {
+        .toggle-content {
+          background-color: var(--layer-row-background-color-hover);
+          svg {
+            stroke: var(--layer-row-foreground-color-hover);
+          }
+        }
+        .icon-shape {
+          svg {
+            stroke: var(--layer-row-foreground-color-hover);
+          }
+          .absolute {
+            background-color: var(--layer-row-foreground-color-hover);
+          }
+        }
+      }
+      .element-actions {
+        .toggle-element,
+        .block-element {
+          display: flex;
+          svg {
+            stroke: var(--layer-row-foreground-color-hover);
+          }
+        }
+        &.selected {
+          .toggle-element,
+          .block-element {
+            opacity: $op-10;
+          }
+        }
+      }
+    }
+    .element-children :global(.layer-row) {
+      background-color: transparent;
+      color: var(--layer-row-foreground-color-hover);
+      &:hover {
+        background-color: var(--layer-row-background-color-hover);
+      }
+    }
+  }
+}
+.tab-indentation {
+  display: block;
+  height: $s-16;
+  min-width: calc(var(--depth) * var(--layer-indentation-size));
+}
+.filtered {
+  min-width: $s-12;
+}

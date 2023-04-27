@@ -7,6 +7,7 @@
 (ns app.util.color
   "Color conversion utils."
   (:require
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.strings :as ust]
    [cuerdas.core :as str]
@@ -129,6 +130,12 @@
       (str/fmt "linear-gradient(to bottom, %s)" stops-css)
       (str/fmt "radial-gradient(circle, %s)" stops-css))))
 
+(defn gradient-type->string [type]
+  (case type
+    :linear (tr "workspace.gradients.linear")
+    :radial (tr "workspace.gradients.radial")
+    nil))
+
 ;; TODO: REMOVE `VALUE` WHEN COLOR IS INTEGRATED
 (defn color->background [{:keys [color opacity gradient value]}]
   (let [color (or color value)
@@ -180,3 +187,10 @@
 
     :else
     [r g (inc b)]))
+
+(defn get-color-name
+  [color]
+  (or (:color-library-name color)
+      (:name color)
+      (:color color)
+      (gradient-type->string (:type (:gradient color)))))

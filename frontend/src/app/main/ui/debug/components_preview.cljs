@@ -10,7 +10,6 @@
             [app.main.data.users :as du]
             [app.main.refs :as refs]
             [app.main.store :as st]
-            [app.main.ui.components.tests.test-component :as tc]
             [app.util.dom :as dom]
             [rumext.v2 :as mf]))
 
@@ -55,6 +54,4 @@
             (d/name color)]))]]
      [:div {:class (css :components-row)}
       [:h2 {:class (css :title)} "Components"]
-      [:div {:class (css :component-wrapper)}
-       [:& tc/test-component
-        {:action #(prn "ey soy un botón") :name "Click me"}]]]]))
+      [:div {:class (css :component-wrapper)}]]]))

@@ -15,6 +15,7 @@
   --button-background-focus: var(--color-background-secondary);
   --button-foreground-focus: var(--color-foreground-primary);
   --button-border-focus: var(--color-accent-primary);
+  --button-foreground-color-disabled: var(--color-background-quaternary);
 
   --icon-foreground: var(--color-foreground-secondary);
   --icon-foreground-hover: var(--color-foreground-primary);
@@ -36,7 +37,6 @@
   --layer-row-foreground-color-hover: var(--color-accent-primary);
   --layer-row-foreground-color-selected: var(--color-accent-primary);
   --layer-row-foreground-color-drag: var(--color-accent-primary);
-  --layer-row-foreground-color-hidden: rgba(var(--color-foreground-secondary-rgb), 0.7);
   --layer-row-foreground-color-focus: var(--color-foreground-primary);
   --layer-row-border-color-focus: var(--color-accent-primary);
   --layer-child-row-background-color: var(--color-background-tertiary);
@@ -51,12 +51,9 @@
   --input-placeholder-color: var(--color-foreground-secondary);
   --input-foreground-color: var(--color-foreground-primary);
   --input-foreground-color-active: var(--color-foreground-primary);
-  --input-foreground-color-hover: var();
-  --input-foreground-color-focus: var();
   --input-border-color-active: var(--color-accent-primary);
   --input-border-outline-color-active: var(--color-accent-primary-muted);
   --input-border-color-focus: var(--color-accent-primary);
-  --input-border-color-disabled: var();
 
   --pill-background-color: var(--color-background-tertiary);
   --pill-foreground-color: var(--color-foreground-primary);
@@ -77,4 +74,24 @@
   --menu-shadow-color: var(--color-background-subtle);
 
   --tag-background-color: var(--color-accent-primary);
+
+  --palette-background-color: var(--color-background-primary);
+  --palette-btn-background-color-selected: var(--color-background-secondary);
+  --palette-btn-border-color-selected: var(--color-background-quaternary);
+  --palette-btn-foreground-color-selected: var(--color-accent-primary);
+  --palette-text-color: var(--color-foreground-secondary);
+  --palette-text-color-selected: var(--color-foreground-primary);
+  --palette-text-background-color: var(--color-background-tertiary);
+  --palette-text-background-color-hover: var(--color-background-quaternary);
+  --palette-button-shadow-initial: var(--color-background-primary);
+  --palette-button-shadow-final: transparent;
+
+  --context-menu-background-color: var(--color-background-tertiary);
+  --context-menu-foreground-color: var(--color-foreground-secondary);
+  --context-menu-background-color-selected: var(--color-background-quaternary);
+  --context-menu-foreground-color-selected: var(--color-foreground-primary);
+
+  --color-bullet-background-color: var(--white); // We don't want this color to change with palette
+  --color-bullet-border-color: var(--color-background-quaternary);
+  --palette-handler-background-color: var(--color-background-quaternary);
 }

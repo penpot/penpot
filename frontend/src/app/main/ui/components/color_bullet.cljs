@@ -8,14 +8,7 @@
   (:require
    [app.util.color :as uc]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
-
-(defn gradient-type->string [type]
-  (case type
-    :linear (tr "workspace.gradients.linear")
-    :radial (tr "workspace.gradients.radial")
-    nil))
 
 (mf/defc color-bullet
   {::mf/wrap [mf/memo]}
@@ -36,7 +29,7 @@
                                  :is-not-library-color (nil? (:id color))
                                  :is-gradient (some? (:gradient color)))
           :on-click on-click
-          :title (or (:color-library-name color) (:name color) (:color color) (gradient-type->string (:type (:gradient color))))}
+          :title (uc/get-color-name color)}
          (if  (:gradient color)
            [:div.color-bullet-wrapper {:style {:background (uc/color->background color)}}]
            [:div.color-bullet-wrapper
@@ -46,7 +39,7 @@
 (mf/defc color-name [{:keys [color size on-click on-double-click]}]
   (let [color (if (string? color) {:color color :opacity 1} color)
         {:keys [name color gradient]} color
-        color-str (or name color (gradient-type->string (:type gradient)))]
+        color-str (or name color (uc/gradient-type->string (:type gradient)))]
     (when (or (not size) (= size :big))
       [:span.color-text {:on-click #(when on-click (on-click %))
                          :on-double-click #(when on-double-click (on-double-click %))

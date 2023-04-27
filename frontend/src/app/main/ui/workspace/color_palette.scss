@@ -1,0 +1,96 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.color-palette {
+  height: 100%;
+  display: flex;
+
+  .left-arrow,
+  .right-arrow {
+    @include buttonStyle;
+    @include flexCenter;
+    position: relative;
+    height: 100%;
+    width: $s-24;
+    padding: 0;
+    z-index: $z-index-4;
+    svg {
+      @extend .button-icon;
+    }
+    &::after {
+      content: "";
+      position: absolute;
+      z-index: $z-index-1;
+      bottom: 0;
+      left: calc(-1 * $s-80);
+      height: 100%;
+      width: $s-80;
+      background-image: linear-gradient(
+        to left,
+        var(--palette-button-shadow-initial) 0%,
+        var(--palette-button-shadow-final) 100%
+      );
+      pointer-events: none;
+    }
+    &:hover {
+      svg {
+        stroke: var(--button-foreground-hover);
+      }
+    }
+    &:disabled {
+      svg {
+        stroke: var(--button-foreground-color-disabled);
+      }
+      &::after {
+        background-image: none;
+      }
+    }
+  }
+  .left-arrow {
+    &::after {
+      left: $s-24;
+      background-image: linear-gradient(
+        to right,
+        var(--palette-button-shadow-initial) 0%,
+        var(--palette-button-shadow-final) 100%
+      );
+    }
+    &.disabled ::after {
+      background-image: none;
+    }
+
+    svg {
+      transform: rotate(180deg);
+    }
+  }
+
+  .color-palette-content {
+    display: flex;
+    overflow: hidden;
+
+    .color-palette-inside {
+      display: flex;
+      gap: $s-8;
+    }
+    .color-cell {
+      display: grid;
+      grid-template-columns: 100%;
+      grid-template-rows: auto 1fr;
+      justify-items: center;
+      height: 100%;
+      width: $s-80;
+      &.is-not-library-color {
+        width: $s-64;
+      }
+      &.no-text {
+        @include flexCenter;
+        width: $s-32;
+      }
+    }
+  }
+}

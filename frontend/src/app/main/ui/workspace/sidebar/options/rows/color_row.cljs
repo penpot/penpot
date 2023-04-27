@@ -183,7 +183,7 @@
             (get-in color [:gradient :type]))
        [:*
         [:div.color-info
-         [:div.color-name (cb/gradient-type->string (get-in color [:gradient :type]))]]
+         [:div.color-name (uc/gradient-type->string (get-in color [:gradient :type]))]]
         (when select-only
           [:div.element-set-actions-button {:on-click handle-select}
            i/pointer-inner])]

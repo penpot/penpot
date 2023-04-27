@@ -1,0 +1,260 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.sitemap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  height: var(--height, 200px);
+
+  .pages-tool-bar {
+    display: flex;
+    align-items: center;
+    min-height: $s-32;
+    padding: 0 $s-8 0 0;
+    margin: $s-2 0;
+    .page-tool-bar-title {
+      @include flexCenter;
+      @include tabTitleTipography;
+      @include buttonStyle;
+      flex-grow: 1;
+      gap: $s-4;
+      justify-content: flex-start;
+      padding: 0;
+      margin: 0;
+      color: var(--title-foreground-color);
+      .collapsable-button {
+        @include flexCenter;
+        height: $s-24;
+        width: $s-24;
+        padding: 0 $s-4 0 $s-8;
+        border-radius: $br-8;
+        svg {
+          @extend .button-icon;
+          height: $s-12;
+          width: $s-12;
+          transform: rotate(90deg);
+        }
+      }
+      &:hover {
+        color: var(--title-foreground-color-hover);
+        svg {
+          stroke: var(--icon-foreground-hover);
+        }
+      }
+    }
+    .add-page {
+      @extend .button-primary;
+      height: $s-32;
+      width: calc($s-24 + $s-4);
+      padding: 0;
+      border-radius: $br-8;
+      svg {
+        @extend .button-icon;
+        transform: rotate(90deg);
+      }
+    }
+    .view-only-mode {
+      @include flexCenter;
+      @include titleTipography;
+      height: $s-20;
+      padding: $s-4 $s-6;
+      border: 1px solid var(--tag-background-color);
+      border-radius: $br-6;
+      color: var(--tag-background-color);
+    }
+  }
+  .resize-area {
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 100%;
+    height: $s-12;
+    border-top: 2px solid var(--color-background-secondary);
+    background-color: var(--color-background-primary);
+    cursor: ns-resize;
+    &:hover {
+      border-color: var(--color-background-quaternary);
+    }
+  }
+  .tool-window-content {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    overflow-y: overlay;
+    height: 100%;
+    width: 100%;
+
+    .pages-list {
+      width: 100%;
+      max-height: $s-152;
+      margin-bottom: $s-12;
+      .page-element {
+        @include titleTipography;
+        min-height: $s-32;
+        width: 100%;
+        cursor: pointer;
+        &.dnd-over-top {
+          border-top: 1px solid var(--layer-row-foreground-color-drag);
+        }
+        &.dnd-over-bot {
+          border-bottom: 1px solid var(--layer-row-foreground-color-drag);
+        }
+        .dnd-over > .element-list-body {
+          border: 1px solid var(--layer-row-foreground-color-drag);
+        }
+        .element-list-body {
+          display: flex;
+          align-items: center;
+          height: $s-32;
+          width: 100%;
+          padding: 0 $s-12 0 0;
+          transition: none;
+          color: var(--layer-row-foreground-color);
+          .page-name {
+            flex-grow: 1;
+            padding-left: $s-2;
+          }
+          .page-icon {
+            @include flexCenter;
+            height: $s-32;
+            width: $s-24;
+            padding: 0 $s-4 0 $s-8;
+            svg {
+              @extend .button-icon-small;
+              height: $s-12;
+              width: $s-12;
+              color: transparent;
+              fill: none;
+              stroke: var(--icon-foreground);
+            }
+          }
+          .page-actions {
+            height: $s-32;
+            button {
+              @include buttonStyle;
+              @include flexCenter;
+              width: $s-24;
+              height: 100%;
+              opacity: $op-0;
+              svg {
+                @extend .button-icon-small;
+                height: $s-12;
+                width: $s-12;
+                color: transparent;
+                fill: none;
+                stroke: var(--icon-foreground);
+              }
+            }
+          }
+          .element-name {
+            @include textEllipsis;
+            color: var(--color-foreground-primary);
+          }
+          input.element-name {
+            @include textEllipsis;
+            @include titleTipography;
+            flex-grow: 1;
+            height: $s-28;
+            max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
+            margin: 0;
+            padding-left: $s-6;
+            border-radius: $br-8;
+            border: 1px solid var(--input-border-color-focus);
+            outline: none;
+            background-color: transparent;
+            color: var(--layer-row-foreground-color);
+          }
+        }
+        &:active,
+        &.on-drag {
+          .element-list-body {
+            color: var(--layer-row-foreground-color-drag);
+            background-color: var(--layer-row-background-color-drag);
+            .page-actions button {
+              svg {
+                stroke: var(--layer-row-foreground-color-drag);
+              }
+            }
+            .page-icon svg {
+              stroke: var(--layer-row-foreground-color-drag);
+            }
+          }
+        }
+        &.selected,
+        &.selected:hover {
+          .element-list-body {
+            color: var(--layer-row-foreground-color-selected);
+            background-color: var(--layer-row-background-color-selected);
+            .page-actions button {
+              svg {
+                stroke: var(--layer-row-foreground-color-selected);
+              }
+            }
+            .page-icon svg {
+              stroke: var(--layer-row-foreground-color-selected);
+            }
+          }
+        }
+        &:hover {
+          .element-list-body {
+            color: var(--layer-row-foreground-color-hover);
+            background-color: var(--layer-row-background-color-hover);
+            .page-actions button {
+              opacity: $op-10;
+              svg {
+                stroke: var(--layer-row-foreground-color-hover);
+              }
+            }
+            .page-icon svg {
+              stroke: var(--layer-row-foreground-color-hover);
+            }
+          }
+        }
+        &:focus {
+          .element-list-body {
+            color: var(--layer-row-foreground-color-focus);
+            border: 1px solid var(--layer-row-border-color-focus);
+            outline: none;
+            .page-actions button {
+              opacity: $op-10;
+            }
+          }
+        }
+        &:focus-within {
+          .element-list-body {
+            outline: none;
+            .page-actions button {
+              opacity: $op-10;
+            }
+          }
+        }
+
+        &.hidden {
+          .element-list-body {
+            color: var(--layer-row-foreground-color-hidden);
+            background-color: var(--layer-row-background-color-hidden);
+            opacity: $op-7;
+            .page-actions button {
+              svg {
+                stroke: var(--layer-row-foreground-color-hidden);
+              }
+            }
+            .page-icon svg {
+              stroke: var(--layer-row-foreground-color-hidden);
+            }
+          }
+        }
+      }
+    }
+  }
+}

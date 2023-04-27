@@ -1,0 +1,41 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-name {
+  @include textEllipsis;
+  @include titleTipography;
+  flex-grow: 1;
+  color: var(--context-hover-color, var(--layer-row-foreground-color));
+  &.selected {
+    color: var(--layer-row-foreground-color-selected);
+  }
+
+  &.type-comp {
+    color: var(--context-hover-color, var(--layer-row-component-foreground-color));
+    &.hidden {
+      opacity: var(--context-hover-opacity, $op-7);
+    }
+  }
+  &.hidden {
+    opacity: var(--context-hover-opacity, $op-7);
+  }
+}
+.element-name-input {
+  @include textEllipsis;
+  @include titleTipography;
+  flex-grow: 1;
+  height: $s-28;
+  max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
+  margin: 0;
+  padding-left: $s-6;
+  border-radius: $br-8;
+  border: 1px solid var(--input-border-color-focus);
+  outline: none;
+  background-color: transparent;
+  color: var(--layer-row-foreground-color);
+}
