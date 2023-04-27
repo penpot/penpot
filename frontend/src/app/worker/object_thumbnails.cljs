@@ -14,5 +14,6 @@
   (p/let [canvas (js/OffscreenCanvas. (. ibpm -width) (. ibpm -height))
           ctx    (.getContext canvas "bitmaprenderer")
           _      (.transferFromImageBitmap ctx ibpm)
-          blob (.convertToBlob canvas #js {:type "image/png"})]
+          blob (.convertToBlob canvas #js {:type "image/png"})] 
+    (.close ibpm) ;; free imagebitmap data
     {:result (.createObjectURL js/URL blob)}))
