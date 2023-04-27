@@ -1,0 +1,133 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.palettes {
+  position: relative;
+  right: 0;
+  grid-area: color-palette;
+  display: grid;
+  grid-template-areas:
+    "resize resize resize"
+    "buttons actions palette";
+  grid-template-rows: $s-8 1fr;
+  grid-template-columns: $s-32 auto 1fr;
+  max-height: $s-80;
+  height: var(--height);
+  width: fit-content;
+  padding: $s-0 $s-0 $s-8 $s-8;
+  border-radius: $br-8;
+  background-color: var(--palette-background-color);
+  transition: right 1s ease, opacity 1s ease;
+  &.wide {
+    width: 100%;
+  }
+  &.mid-palette,
+  &.small-palette {
+    grid-template-columns: $s-64 auto 1fr;
+  }
+  .resize-area {
+    grid-area: resize;
+    height: $s-8;
+    z-index: $z-index-4;
+    width: calc(100% - $s-8);
+    border-radius: $br-circle;
+    cursor: ns-resize;
+    background-color: var(--palette-background-color);
+  }
+  .palette-btn-list {
+    grid-area: buttons;
+    background-color: var(--palette-background-color);
+    height: calc(var(--height) - $s-16);
+    width: $s-32;
+    margin: $s-0;
+    list-style: none;
+    z-index: $z-index-1;
+    &.mid-palette,
+    &.small-palette {
+      display: flex;
+    }
+    .palette-item {
+      @include flexCenter;
+      border-radius: $br-8;
+      opacity: $op-10;
+      transition: opacity 1s ease;
+      .palette-btn {
+        @extend .button-primary;
+        height: $s-32;
+        width: $s-32;
+        border-radius: $br-8;
+        border: $s-2 solid transparent;
+        background-clip: padding-box;
+        padding: 0;
+        svg {
+          @extend .button-icon-small;
+        }
+        &.selected {
+          border: $s-2 solid var(--palette-btn-border-color-selected);
+          background-color: var(--palette-btn-background-color-selected);
+          color: var(--palette-btn-foreground-color-selected);
+          svg {
+            stroke: var(--palette-btn-foreground-color-selected);
+          }
+        }
+        &:hover {
+          border: $s-2 solid transparent;
+        }
+      }
+    }
+  }
+  .palette-actions {
+    @extend .button-primary;
+    grid-area: actions;
+    height: calc(var(--height) - $s-16);
+    width: $s-32;
+    padding: 0;
+    margin-left: $s-4;
+    border-radius: $br-8;
+    background-color: var(--palette-background-color);
+    z-index: $z-index-1;
+    svg {
+      @extend .button-icon;
+    }
+  }
+  .palette {
+    grid-area: palette;
+    width: 100%;
+  }
+  .handler {
+    @include buttonStyle;
+    @include flexCenter;
+    width: $s-12;
+    height: 100%;
+
+    .handler-btn {
+      width: $s-4;
+      height: 100%;
+      max-height: $s-40;
+      margin: $s-8 $s-4;
+      padding: 0;
+      border-radius: $s-4;
+      background-color: var(--palette-handler-background-color);
+    }
+  }
+  &.hidden-bts {
+    right: $s-40;
+    z-index: 0;
+    &.small-palette,
+    &.mid-palette {
+      right: $s-72;
+    }
+    .palette-btn-list {
+      .palette-item {
+        opacity: $op-0;
+        visibility: hidden;
+        z-index: 0;
+      }
+    }
+  }
+}

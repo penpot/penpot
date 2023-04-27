@@ -11,6 +11,7 @@
 @import "common/refactor/fonts.scss";
 @import "common/refactor/spacing.scss";
 @import "common/refactor/borders.scss";
+@import "common/refactor/opacity.scss";
 @import "common/refactor/shadows.scss";
 @import "common/refactor/z-index.scss";
 @import "common/refactor/mixins.scss";
@@ -29,7 +30,7 @@
   background-color: rgba(170, 181, 186, 0.3);
   background-clip: content-box;
   border: $s-2 solid transparent;
-  border-radius: $br8;
+  border-radius: $br-8;
   &:hover {
     background-color: rgba(170, 181, 186, 0.7);
     outline: none;

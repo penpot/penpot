@@ -1,0 +1,127 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.context-menu {
+  position: relative;
+  visibility: hidden;
+  opacity: $op-0;
+  z-index: $z-index-2;
+
+  &.is-open {
+    position: relative;
+    display: block;
+    opacity: $op-10;
+    visibility: visible;
+  }
+  &.fixed {
+    position: fixed;
+  }
+
+  .context-menu-items {
+    position: absolute;
+    top: $s-12;
+    left: calc(-1 * $s-6);
+    max-height: $s-480;
+    min-width: $s-96;
+    margin: $s-0;
+    padding: $s-4;
+    border-radius: $br-8;
+    background-color: var(--menu-background-color);
+    box-shadow: 0px 0px $s-12 0px var(--menu-shadow-color);
+    overflow: auto;
+    & .separator {
+      height: $s-12;
+    }
+
+    &.min-width {
+      min-width: $s-192;
+    }
+
+    .context-menu-item {
+      display: flex;
+      .context-menu-action {
+        @include titleTipography;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        height: $s-28;
+        width: 100%;
+        padding: $s-6;
+        border-radius: $br-8;
+        white-space: nowrap;
+        color: var(--menu-foreground-color);
+        &.submenu {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          .submenu-icon {
+            margin-left: 0.5rem;
+            svg {
+              @extend .button-icon-small;
+              stroke: var(--menu-foreground-color);
+            }
+          }
+        }
+
+        &.submenu-back {
+          display: flex;
+          align-items: center;
+          font-weight: $fw700;
+          .submenu-icon-back svg {
+            @extend .button-icon-small;
+            stroke: var(--menu-foreground-color);
+            transform: rotate(180deg);
+          }
+        }
+      }
+      &:hover .context-menu-action {
+        background-color: var(--menu-background-color-hover);
+        text-decoration: none;
+        color: var(--menu-foreground-color-hover);
+        &.submenu .submenu-icon svg {
+          stroke: var(--menu-foreground-color-hover);
+        }
+        &.submenu-back .submenu-icon-back svg {
+          stroke: var(--menu-foreground-color-hover);
+        }
+      }
+      &:focus {
+        outline: none;
+      }
+      &:focus-visible {
+        outline: none;
+        .context-menu-action {
+          border: 1px solid var(--menu-border-color-focus);
+          background-color: var(--menu-background-color-focus);
+          text-decoration: none;
+          color: var(--menu-foreground-color-focus);
+          &.submenu .submenu-icon svg {
+            stroke: var(--menu-foreground-color-focus);
+          }
+
+          &.submenu-back .submenu-icon-back svg {
+            stroke: var(--menu-foreground-color-focus);
+          }
+        }
+      }
+    }
+    .is-selected .context-menu-action {
+      padding-left: $s-28;
+      background-image: url(/images/icons/tick.svg);
+      background-repeat: no-repeat;
+      background-position: 5% 48%;
+      background-size: $s-12;
+      font-weight: $fw700;
+    }
+  }
+  &.is-selectable {
+    .context-menu-action {
+      padding-left: 1.5rem;
+    }
+  }
+}

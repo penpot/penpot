@@ -21,15 +21,16 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpalette :refer [colorpalette]]
    [app.main.ui.workspace.colorpicker]
-   [app.main.ui.workspace.context-menu.context-menu :refer [context-menu]]
+   [app.main.ui.workspace.context-menu :refer [context-menu]]
    [app.main.ui.workspace.coordinates :as coordinates]
    [app.main.ui.workspace.header :refer [header]]
    [app.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.nudge]
-   [app.main.ui.workspace.sidebar.collapsable-button.collapsable-button :refer [collapsed-button]]
-   [app.main.ui.workspace.sidebar.component.sidebar :refer [left-sidebar right-sidebar]]
+   [app.main.ui.workspace.palette :refer [palette]]
+   [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
+   [app.main.ui.workspace.sidebar.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.textpalette :refer [textpalette]]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.dom :as dom]
@@ -58,6 +59,7 @@
         colorpalette? (:colorpalette layout)
         textpalette?  (:textpalette layout)
         hide-ui?      (:hide-ui layout)
+        new-css-system (mf/use-ctx ctx/new-css-system)
 
         on-resize
         (mf/use-callback
@@ -68,11 +70,14 @@
 
         node-ref (use-resize-observer on-resize)]
     [:*
-     (when (and colorpalette? (not hide-ui?))
+     (if new-css-system
+      [:& palette {:layout layout}]
+      [:*
+       (when (and colorpalette? (not hide-ui?))
        [:& colorpalette])
 
      (when (and textpalette? (not hide-ui?))
-       [:& textpalette])
+       [:& textpalette])])
 
      [:section.workspace-content {:key (dm/str "workspace-" page-id)
                                   :ref node-ref}
@@ -179,22 +184,22 @@
         [:& (mf/provider ctx/components-v2) {:value components-v2}
          [:& (mf/provider ctx/new-css-system) {:value new-css-system}
           [:& (mf/provider ctx/workspace-read-only?) {:value workspace-read-only?}
-          [:section#workspace {:style {:background-color background-color
-                                       :touch-action "none"}}
-           (when (not (:hide-ui layout))
-             [:& header {:file file
-                         :page-id page-id
-                         :project project
-                         :layout layout}])
+           [:section#workspace {:style {:background-color background-color
+                                        :touch-action "none"}}
+            (when (not (:hide-ui layout))
+              [:& header {:file file
+                          :page-id page-id
+                          :project project
+                          :layout layout}])
 
-           [:& context-menu]
+            [:& context-menu]
 
-          (if ready?
-            [:& workspace-page {:page-id page-id
-                                :file file
-                                :wglobal wglobal
-                                :layout layout}]
-             [:& workspace-loader])]]]]]]]]))
+            (if ready?
+              [:& workspace-page {:page-id page-id
+                                  :file file
+                                  :wglobal wglobal
+                                  :layout layout}]
+              [:& workspace-loader])]]]]]]]]))
 
 (mf/defc remove-graphics-dialog
   {::mf/register modal/components
@@ -206,10 +211,10 @@
         reload-file  #(dom/reload-current-window)
         nav-out      #(st/emit! (rt/navigate :dashboard-files
                                              {:team-id (:team-id project)
-                                                               :project-id (:id project)}))]
+                                              :project-id (:id project)}))]
     (mf/use-effect
-      (fn []
-        #(st/emit! (dw/clear-remove-graphics))))
+     (fn []
+       #(st/emit! (dw/clear-remove-graphics))))
     [:div.modal-overlay
      [:div.modal-container.remove-graphics-dialog
       [:div.modal-header

@@ -1182,7 +1182,7 @@
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
 
         default-name (cond
-                       (:gradient color) (bc/gradient-type->string (get-in color [:gradient :type]))
+                       (:gradient color) (uc/gradient-type->string (get-in color [:gradient :type]))
                        (:color color) (:color color)
                        :else (:value color))
 

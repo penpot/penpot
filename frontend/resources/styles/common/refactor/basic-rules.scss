@@ -22,7 +22,12 @@
     }
   }
   &:active {
+    border: 1px solid var(--button-border-focus);
+    outline: none;
+  }
+  &:focus-visible {
     border: none;
+    outline: none;
   }
 }
 
@@ -46,6 +51,10 @@
     border: none;
     background-color: transparent;
   }
+  &:focus-visible {
+    border: none;
+    outline: none;
+  }
 }
 
 .button-icon {
@@ -55,10 +64,12 @@
   color: transparent;
   fill: none;
   stroke: var(--icon-foreground);
+  stroke-width: 1px;
 }
 
 .button-icon-small {
   @extend .button-icon;
   height: $s-12;
   width: $s-12;
+  stroke-width: 1.33px;
 }

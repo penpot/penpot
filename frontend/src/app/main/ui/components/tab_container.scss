@@ -1,0 +1,89 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+@import "refactor/common-refactor.scss";
+
+.tab-container {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 100%;
+  height: 100%;
+
+  .tab-container-content {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .tab-element {
+    height: 100%;
+  }
+}
+.tab-container-tabs {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: $s-2;
+  height: $s-32;
+  margin: $s-4 $s-4 0 $s-4;
+  padding: $s-2 $s-2 $s-2 0;
+  border-radius: $br-8;
+  background: var(--color-background-secondary);
+  cursor: pointer;
+  font-size: $fs12;
+  .tab-container-tab-wrapper {
+    @include flexCenter;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+    gap: $s-2;
+    .tab-container-tab-title {
+      @include flexCenter;
+      @include tabTitleTipography;
+      height: $s-28;
+      width: 100%;
+      margin: 0;
+      border-radius: $br-5;
+      background-color: transparent;
+      color: var(--tab-foreground-color);
+
+      &.current,
+      &.current:hover {
+        background: var(--tab-background-color-selected);
+        color: var(--tab-foreground-color-selected);
+      }
+      &:hover {
+        color: var(--tab-foreground-color-hover);
+      }
+    }
+  }
+  .collapse-sidebar {
+    @include flexCenter;
+    @include buttonStyle;
+    height: 100%;
+    width: $s-24;
+    padding: 0;
+    border-radius: $br-5;
+    svg {
+      @include flexCenter;
+      height: 12px;
+      width: 16px;
+      stroke: var(--icon-foreground);
+      transform: rotate(180deg);
+      fill: none;
+      color: transparent;
+    }
+    &:hover {
+      svg {
+        stroke: var(--icon-foreground-hover);
+      }
+    }
+
+    &.collapsed {
+      svg {
+        transform: rotate(0deg);
+      }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.color-bullet {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  width: var(--bullet-size);
+  height: var(--bullet-size);
+  margin-top: $s-4;
+  border: $s-2 solid var(--color-bullet-border-color);
+  border-radius: $br-circle;
+  &.mini {
+    border: 1px solid var(--color-bullet-border-color);
+  }
+
+  &.is-not-library-color {
+    overflow: hidden;
+    border-radius: $br-8;
+
+    & .color-bullet-wrapper {
+      clip-path: none;
+    }
+    &.mini {
+      border-radius: $br-4;
+    }
+  }
+  &.is-gradient {
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
+      left center;
+    background-color: var(--color-bullet-background-color);
+    transform: rotate(-90deg);
+  }
+  &.is-transparent {
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
+      left center;
+    background-color: var(--color-bullet-background-color);
+  }
+  .color-bullet-wrapper {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+    clip-path: circle(50%);
+  }
+  .color-bullet-wrapper > * {
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-bullet-background-color);
+  }
+}
+
+.color-text {
+  @include twoLineTextEllipsis;
+  @include titleTipography;
+  width: $s-80;
+  text-align: center;
+  margin-top: $s-2;
+  max-height: $s-28;
+  color: var(--palette-text-color);
+  &.small-text {
+    @include textEllipsis;
+    max-height: $s-16;
+  }
+}
+
+.no-text {
+  display: none;
+}

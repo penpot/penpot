@@ -9,6 +9,7 @@
    [app.common.spec :as us]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -39,7 +40,8 @@
         initial (mf/with-memo [profile]
                   (update profile :lang #(or % "")))
         form    (fm/use-form :spec ::options-form
-                             :initial initial)]
+                             :initial initial)
+        new-css-system (features/use-feature :new-css-system)]
 
     [:& fm/form {:class "options-form"
                  :on-submit on-submit
@@ -55,14 +57,15 @@
                      :name :lang
                      :data-test "setting-lang"}]]
 
-     [:h2 (tr "dashboard.theme-change")]
-     [:div.fields-row
-      [:& fm/select {:label (tr "dashboard.select-ui-theme")
-                     :name :theme
-                     :default "default"
-                     :options [{:label "Penpot Dark (default)" :value "default"}
-                               {:label "Penpot Light" :value "light"}]
-                     :data-test "setting-theme"}]]
+     (when new-css-system
+       [:h2 (tr "dashboard.theme-change")]
+       [:div.fields-row
+        [:& fm/select {:label (tr "dashboard.select-ui-theme")
+                       :name :theme
+                       :default "default"
+                       :options [{:label "Penpot Dark (default)" :value "default"}
+                                 {:label "Penpot Light" :value "light"}]
+                       :data-test "setting-theme"}]])
      [:& fm/submit-button
       {:label (tr "dashboard.update-settings")
        :data-test "submit-lang-change"}]]))
@@ -72,7 +75,7 @@
 (mf/defc options-page
   []
   (mf/use-effect
-    #(dom/set-html-title (tr "title.settings.options")))
+   #(dom/set-html-title (tr "title.settings.options")))
 
   [:div.dashboard-settings
    [:div.form-container

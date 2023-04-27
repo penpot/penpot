@@ -1,0 +1,134 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.text-palette {
+  height: 100%;
+  display: flex;
+  .left-arrow,
+  .right-arrow {
+    @include buttonStyle;
+    @include flexCenter;
+    position: relative;
+    height: 100%;
+    width: $s-24;
+    padding: 0;
+    z-index: $z-index-4;
+    svg {
+      @extend .button-icon;
+    }
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: calc(-1 * $s-80);
+      height: 100%;
+      width: $s-80;
+      z-index: $z-index-1;
+      background-image: linear-gradient(
+        to left,
+        var(--palette-button-shadow-initial) 0%,
+        var(--palette-button-shadow-final) 100%
+      );
+      pointer-events: none;
+    }
+    &:hover {
+      svg {
+        stroke: var(--button-foreground-hover);
+      }
+    }
+    &:disabled {
+      svg {
+        stroke: var(--button-foreground-color-disabled);
+      }
+      &::after {
+        background-image: none;
+      }
+    }
+  }
+  .left-arrow {
+    &::after {
+      left: $s-24;
+      background-image: linear-gradient(
+        to right,
+        var(--palette-button-shadow-initial) 0%,
+        var(--palette-button-shadow-final) 100%
+      );
+    }
+    &.disabled ::after {
+      background-image: none;
+    }
+
+    svg {
+      transform: rotate(180deg);
+    }
+  }
+
+  .text-palette-content {
+    display: flex;
+    overflow: hidden;
+
+    .text-palette-inside {
+      display: flex;
+      gap: $s-8;
+    }
+    .typography-item {
+      @include titleTipography;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      height: 100%;
+      width: $s-136;
+      padding: $s-8;
+      border-radius: $br-8;
+      background-color: var(--palette-text-background-color);
+      &:first-child {
+        margin-left: $s-8;
+      }
+      .typography-name {
+        @include tabTitleTipography;
+        @include textEllipsis;
+        height: $s-16;
+        width: $s-120;
+        color: var(--palette-text-color-selected);
+      }
+      .typography-font {
+        @include textEllipsis;
+        height: $s-16;
+        width: $s-120;
+        color: var(--palette-text-color);
+      }
+      .typography-data {
+        @include textEllipsis;
+        height: $s-16;
+        width: $s-120;
+        color: var(--palette-text-color);
+      }
+      &.mid-item {
+        .typography-name {
+          height: $s-16;
+        }
+        .typography-data {
+          display: none;
+        }
+      }
+      &.small-item {
+        .typography-name {
+          height: $s-12;
+        }
+        .typography-data,
+        .typography-font {
+          display: none;
+        }
+      }
+      &:hover {
+        background-color: var(--palette-text-background-color-hover);
+      }
+    }
+  }
+}

@@ -69,7 +69,10 @@
         selected-drawtool    (mf/deref refs/selected-drawing-tool)
         select-drawtool      #(st/emit! :interrupt (dw/select-for-drawing %))
         edition              (mf/deref refs/selected-edition)
-        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)]
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+        new-css-system (mf/use-ctx ctx/new-css-system)
+        show-palette-btn? (and (not workspace-read-only?) (not new-css-system))
+        ]
     [:aside.left-toolbar
      [:ul.left-toolbar-options
       [:li
@@ -142,7 +145,7 @@
         i/chat]]]
 
      [:ul.left-toolbar-options.panels
-      (when-not workspace-read-only?
+      (when show-palette-btn?
         [:*
          [:li
           [:button

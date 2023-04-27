@@ -31,16 +31,19 @@
   line-height: 1.2;
 }
 
-@mixin buttonSmallTipography {
-  font-family: "worksans", sans-serif;
-  font-size: $fs-10;
-  font-weight: $fw400;
-  line-height: 1.2;
-}
-
 @mixin textEllipsis {
   max-width: 99%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: block;
+}
+
+@mixin twoLineTextEllipsis {
+  max-width: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }

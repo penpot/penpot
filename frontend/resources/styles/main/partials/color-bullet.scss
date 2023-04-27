@@ -4,6 +4,16 @@
 //
 // Copyright (c) KALEIDOS INC
 
+.color-bullet {
+  border: 2px solid $color-gray-30;
+  position: relative;
+  width: var(--bullet-size);
+  height: var(--bullet-size);
+
+  &:hover {
+    border-color: $color-primary;
+  }
+}
 .color-cell {
   display: grid;
   grid-template-columns: 100%;

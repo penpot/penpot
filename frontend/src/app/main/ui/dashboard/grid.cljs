@@ -25,6 +25,7 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.worker :as wrk]
+   [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
@@ -126,7 +127,7 @@
            [:div.asset-list
             (for [color (:sample colors)]
               (let [default-name (cond
-                                   (:gradient color) (bc/gradient-type->string (get-in color [:gradient :type]))
+                                   (:gradient color) (uc/gradient-type->string (get-in color [:gradient :type]))
                                    (:color color) (:color color)
                                    :else (:value color))]
                 [:div.asset-list-item {:key (str "assets-color-" (:id color))}

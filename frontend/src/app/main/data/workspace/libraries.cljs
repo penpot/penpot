@@ -35,6 +35,7 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
@@ -98,19 +99,14 @@
       item
       (assoc  item :path path :name name))))
 
-(defn default-color-name [color]
-  (or (:color color)
-      (case (get-in color [:gradient :type])
-        :linear (tr "workspace.gradients.linear")
-        :radial (tr "workspace.gradients.radial"))))
-
 (defn add-color
   [color]
   (let [id    (uuid/next)
         color (-> color
                   (assoc :id id)
-                  (assoc :name (default-color-name color)))]
-    (dm/assert! (ctc/color? color))
+                  (assoc :name (or (:color color)
+                                   (uc/gradient-type->string (get-in color [:gradient :type])))))]
+    (dm/assert! ::ctc/color color)
     (ptk/reify ::add-color
       IDeref
       (-deref [_] color)

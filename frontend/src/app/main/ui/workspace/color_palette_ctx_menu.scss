@@ -1,0 +1,65 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.palette-menu {
+  position: absolute;
+  left: auto;
+  bottom: $s-0;
+  padding: $s-4;
+  margin: 0 0 $s-4 0;
+  z-index: $z-index-10;
+  border-radius: $br-10;
+  background-color: var(--context-menu-background-color);
+
+  .palette-library,
+  .recent-colors,
+  .file-library {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    padding: $s-8;
+    border-radius: $br-8;
+    margin-bottom: $s-4;
+    &:last-child {
+      margin-bottom: 0;
+    }
+    .option-wrapper {
+      .library-name {
+        @include titleTipography;
+        color: var(--context-menu-foreground-color);
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .color-sample {
+        display: flex;
+        flex-direction: row;
+        gap: $s-8;
+        margin-top: $s-4;
+      }
+    }
+
+    &.selected,
+    &:hover {
+      .icon-wrapper {
+        @include flexCenter;
+        svg {
+          @include flexCenter;
+          @extend .button-icon-small;
+        }
+      }
+      .option-wrapper .library-name {
+        color: var(--context-menu-foreground-color-selected);
+      }
+    }
+
+    &:hover {
+      background-color: var(--context-menu-background-color-selected);
+    }
+  }
+}

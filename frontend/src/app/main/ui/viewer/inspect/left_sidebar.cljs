@@ -12,7 +12,7 @@
    [app.main.store :as st]
    [app.main.ui.components.shape-icon :as si]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.layers.layer-name.layer-name :refer [layer-name]]
+   [app.main.ui.workspace.sidebar.layer-name :refer [layer-name]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [okulary.core :as l]
