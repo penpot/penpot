@@ -1,0 +1,66 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.search-box {
+  display: flex;
+  gap: $s-2;
+  height: $s-32;
+  width: 100%;
+  border-radius: $br-8;
+  background-color: var(--search-bar-background-color);
+
+  .search-input-wrapper {
+    @include flexCenter;
+    height: $s-32;
+    width: 100%;
+    border: $s-1 solid var(--search-bar-input-border-color);
+    border-radius: $br-8;
+    background-color: var(--search-bar-input-background-color);
+    input {
+      width: 100%;
+      height: 100%;
+      margin: 0 $s-8 0 $s-4;
+      border: 0;
+      background-color: var(--input-background-color);
+      font-size: $fs-12;
+      color: var(--input-foreground-color);
+      &:focus {
+        outline: none;
+      }
+    }
+    &:hover {
+      border: $s-1 solid var(--input-background-color-hover);
+      background-color: var(--input-background-color-hover);
+      input {
+        background-color: var(--input-background-color-hover);
+      }
+    }
+    &:focus-within {
+      background-color: var(--input-background-color-active);
+      color: var(--input-foreground-color-active);
+      border: $s-1 solid var(--input-border-color-focus);
+      input {
+        background-color: var(--input-background-color-active);
+      }
+    }
+
+    .clear {
+      @extend .button-tag;
+      border-radius: $br-8;
+      height: 100%;
+      svg {
+        @extend .button-icon-small;
+        color: transparent;
+      }
+    }
+  }
+  &.has-children .search-input-wrapper {
+    border-radius: $br-2 $br-8 $br-8 $br-2;
+    margin-left: 0;
+  }
+}

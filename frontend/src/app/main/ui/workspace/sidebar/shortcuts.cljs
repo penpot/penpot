@@ -18,6 +18,7 @@
    [app.main.data.workspace.path.shortcuts]
    [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
+   [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -280,7 +281,7 @@
        (for [command-translate sorted-filtered]
          (let [sc-by-translate  (first (filter #(= (:translation (second %)) command-translate) elements))
                [command  comand-info] sc-by-translate
-               content                (or (:show-command comand-info)(:command comand-info))]
+               content                (or (:show-command comand-info) (:command comand-info))]
            [:li {:class (css :shortcuts-name)
                  :key command-translate}
             [:span {:class (css :command-name)}
@@ -326,7 +327,7 @@
                           :filter-term filter-term
                           :match-section? match-section?
                           :match-subsection? true}])
-      
+
       [:ul {:class (dom/classnames (css :subsection-menu) new-css-system
                                    :subsection-menu (not new-css-system))}
        (for [sub-translated sorted-translations]
@@ -365,7 +366,7 @@
         translations        (map #(translation-keyname :sc %) (keys subs-bodys))
         match-shortcut?     (some #(matches-search % @filter-term) translations)
         visible?            (some  #(= % section-id) @open-sections)]
-    
+
     (when (or match-section? match-subsection? match-shortcut?)
       [:div {:class (css :section)
              :on-click (manage-sections section-id)}
@@ -502,6 +503,11 @@
              (manage-sections-on-search value)
              (reset! filter-term value))))
 
+        on-search-term-change-2
+        (mf/use-callback
+         (fn [value]
+           (manage-sections-on-search value)
+           (reset! filter-term value)))
         on-search-clear-click
         (mf/use-callback
          (fn [_]
@@ -528,31 +534,17 @@
     (if new-css-system
       [:div {:class (css :shortcuts)}
        [:div {:class (css :shortcuts-header)}
-        [:div {:class (css :shortcuts-title)} "Keyboard Shortcuts"]
+        [:div {:class (css :shortcuts-title)} (tr "shortcuts.title")]
         [:div {:class (css :shortcuts-close-button)
                :on-click close-fn}
          i/close-refactor]]
-       ;; TODO Change this for search  bar component
        [:div {:class (css :search-field)}
-        [:div {:class (css :search-box)}
-         [:span {:class (css :icon-wrapper)}
-          i/search-refactor]
-         [:input {:class (dom/classnames (css :input-text) true)
-                  :id "shortcut-search"
-                  :placeholder (tr "shortcuts.title")
-                  :type "text"
-                  :value @filter-term
-                  :on-change on-search-term-change
-                  :auto-complete "off"
-                  :on-key-down manage-key-down}]
-         (when (not (str/empty? @filter-term))
 
-           [:button
-            {:class (css :clear-btn)
-             :on-click on-search-clear-click
-             :on-key-down on-key-down}
-            [:span {:class (css :clear-icon)}
-             i/delete-text-refactor]])]]
+        [:& search-bar {:on-change on-search-term-change-2
+                        :clear-action on-search-clear-click
+                        :value @filter-term
+                        :placeholder (tr "shortcuts.title")
+                        :icon (mf/html [:span {:class (css :search-icon)} i/search-refactor])}]]
 
        (if match-any?
          [:div {:class (dom/classnames (css :shortcuts-list) true)}

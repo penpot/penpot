@@ -1,0 +1,42 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.radio-btn-wrapper {
+  @include flexCenter;
+  border-radius: $br-8;
+  height: $s-32;
+  background-color: var(--radio-btns-background-color);
+}
+.radio-icon {
+  @extend .button-tertiary;
+  height: $s-28;
+  width: 100%;
+  border-radius: $s-6;
+  border: solid $s-2 transparent;
+  box-sizing: content-box;
+  input {
+    display: none;
+  }
+  svg {
+    @extend .button-icon;
+    stroke: var(--radio-btn-foreground-color);
+  }
+  &:hover {
+    border: solid $s-2 var(--radio-btns-background-color);
+  }
+  &.checked {
+    background-color: var(--radio-btn-background-color-selected);
+    border: $s-2 solid var(--radio-btn-border-color-selected);
+    svg {
+      stroke: var(--radio-btn-foreground-color-selected);
+    }
+    &:hover {
+      border: $s-2 solid var(--radio-btn-border-color-selected);
+    }
+  }
+}

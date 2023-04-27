@@ -13,6 +13,7 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
@@ -239,22 +240,20 @@
       [:div {:class (dom/classnames (css :sitemap) true)
              :ref parent-ref
              :style #js {"--height" (str size "px")}}
-       [:div {:class (dom/classnames (css :pages-tool-bar) true)}
 
-        [:button {:class (dom/classnames (css :page-tool-bar-title) true)
-                  :on-click toggle-pages}
-         [:span {:class (dom/classnames (css :collapsable-button) true)
-                 :style {:transform (when (not @show-pages?) "rotate(-90deg)")}}
-          i/arrow-refactor]
-         (tr "workspace.sidebar.sitemap")]
+       [:& title-bar {:collapsable? true
+                      :collapsed?   (not @show-pages?)
+                      :on-collapsed toggle-pages
+                      :title        (tr "workspace.sidebar.sitemap")
+                      :klass        :title-spacing-sitemap}
+
         (if workspace-read-only?
           [:div
            {:class  (dom/classnames (css :view-only-mode) true)}
            (tr "labels.view-only")]
-          [:*
-           [:button {:class (dom/classnames (css :add-page) true)
-                     :on-click create}
-            i/add-refactor]])]
+          [:button {:class (dom/classnames (css :add-page) true)
+                    :on-click create}
+           i/add-refactor])]
 
        [:div {:class (dom/classnames (css :tool-window-content) true)}
         [:& pages-list {:file file :key (:id file)}]]

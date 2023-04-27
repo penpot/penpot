@@ -35,6 +35,7 @@
         default-val      (obj/get props "default")
         nillable         (obj/get props "nillable")
         select-on-focus? (obj/get props "data-select-on-focus" true)
+        class            (obj/get props "klass")
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
@@ -218,7 +219,7 @@
 
         props (-> props
                   (obj/without ["value" "onChange" "nillable" "onFocus"])
-                  (obj/set! "className" "input-text")
+                  (obj/set! "className" (or class "input-text"))
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
                   (obj/set! "defaultValue" (fmt/format-number value))

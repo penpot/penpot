@@ -10,12 +10,15 @@
   position: relative;
   display: flex;
   flex-direction: row;
-  width: var(--bullet-size);
-  height: var(--bullet-size);
+  width: var(--bullet-size, $s-24);
+  height: var(--bullet-size, $s-24);
   margin-top: $s-4;
   border: $s-2 solid var(--color-bullet-border-color);
   border-radius: $br-circle;
   &.mini {
+    width: var(--bullet-size, $s-16);
+    height: var(--bullet-size, $s-16);
+    margin-top: 0;
     border: 1px solid var(--color-bullet-border-color);
   }
 

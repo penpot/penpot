@@ -66,10 +66,10 @@
   (let [selected-drawtool    (mf/deref refs/selected-drawing-tool)
         edition              (mf/deref refs/selected-edition)
 
-        new-css?             (mf/use-ctx ctx/new-css-system)
+        new-css-system       (mf/use-ctx ctx/new-css-system)
         read-only?           (mf/use-ctx ctx/workspace-read-only?)
 
-        show-palette-btn?    (and (not ^boolean read-only?) (not ^boolean new-css?))
+        show-palette-btn?    (and (not ^boolean read-only?) (not ^boolean new-css-system))
 
 
         interrupt

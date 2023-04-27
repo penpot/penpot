@@ -109,6 +109,21 @@
           }
         }
       }
+      &.selected {
+        .context-menu-action {
+          justify-content: space-between;
+          color: var(--menu-foreground-color-focus);
+        }
+        .selected-icon {
+          @extend .button-tag;
+          border-radius: $br-8;
+          height: 100%;
+          svg {
+            @extend .button-icon-small;
+            stroke: var(--menu-foreground-color-focus);
+          }
+        }
+      }
     }
     .is-selected .context-menu-action {
       padding-left: $s-28;

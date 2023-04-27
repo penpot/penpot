@@ -1,0 +1,304 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.typography-entry {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: $s-32;
+  width: 100%;
+  border-radius: $br-8;
+
+  .typography-selection-wrapper {
+    display: grid;
+    grid-template-columns: $s-24 auto 1fr;
+    flex: 1;
+    height: 100%;
+    width: 100%;
+    padding: 0 $s-12;
+
+    &.is-selectable {
+      cursor: pointer;
+    }
+
+    .typography-sample {
+      @include flexCenter;
+      min-width: $s-24;
+      color: var(--assets-item-name-foreground-color-hover);
+    }
+    .typography-name,
+    .typography-font {
+      @include titleTipography;
+      @include textEllipsis;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-left: $s-6;
+      color: var(--assets-item-name-foreground-color-hover);
+    }
+    .typography-font {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-width: 0;
+      color: var(--assets-item-name-foreground-color);
+    }
+  }
+
+  &.selected {
+    border: $s-1 solid var(--assets-item-border-color);
+  }
+
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
+  }
+}
+
+.font-name-wrapper {
+  @include titleTipography;
+  display: flex;
+  align-items: center;
+  height: $s-32;
+  width: 100%;
+  border-radius: $br-8;
+  border: $s-1 solid transparent;
+  box-sizing: border-box;
+  background-color: var(--assets-item-background-color);
+  margin-bottom: $s-4;
+  padding: $s-8 $s-0 $s-8 $s-12;
+
+  .typography-sample-input {
+    @include flexCenter;
+    width: $s-24;
+    height: 100%;
+    font-size: $fs-16;
+  }
+  .adv-typography-name {
+    @include removeInputStyle;
+    color: var(--input-foreground-color);
+    flex-grow: 1;
+    margin: 0;
+  }
+  .action-btn {
+    @extend .button-tertiary;
+    @include flexCenter;
+    width: $s-28;
+    height: $s-28;
+    svg {
+      @extend .button-icon-small;
+    }
+  }
+  &:focus-within {
+    border: $s-1 solid var(--input-border-color-active);
+    .adv-typography-name {
+      color: var(--input-foreground-color-active);
+    }
+  }
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
+  }
+}
+
+.advanced-options-wrapper {
+  height: 100%;
+  width: 100%;
+  background-color: var(--title-background-color);
+
+  .typography-options {
+    position: relative;
+    .font-option {
+      @include titleTipography;
+      @extend .asset-element;
+      padding-right: 0;
+      cursor: pointer;
+      .name {
+        flex-grow: 1;
+      }
+      .icon {
+        @include flexCenter;
+        height: $s-28;
+        width: $s-28;
+        svg {
+          @extend .button-icon;
+          transform: rotate(90deg);
+        }
+      }
+    }
+    .font-modifiers {
+      display: flex;
+      gap: $s-4;
+      .font-size-options {
+        @extend .asset-element;
+        @include titleTipography;
+        padding: 0;
+        flex-grow: 1;
+        .icon {
+          @include flexCenter;
+          height: $s-28;
+          min-width: $s-28;
+          svg {
+            @extend .button-icon;
+            transform: rotate(90deg);
+          }
+        }
+        .font-size-select {
+          @include removeInputStyle;
+          @include titleTipography;
+          height: 100%;
+          width: 100%;
+          margin: 0;
+          padding: 0;
+        }
+      }
+      .font-variant-options {
+        @extend .asset-element;
+        @include titleTipography;
+        padding: 0;
+        flex-grow: 2;
+        .icon {
+          @include flexCenter;
+          height: $s-28;
+          min-width: $s-28;
+          svg {
+            @extend .button-icon;
+            transform: rotate(90deg);
+          }
+        }
+        .font-variant-select {
+          @include removeInputStyle;
+          @include titleTipography;
+          height: 100%;
+          width: 100%;
+          margin: 0;
+          color: var(--assets-item-name-foreground-color);
+          option {
+            color: var(--assets-item-name-foreground-color);
+          }
+          &:hover {
+            color: var(--assets-item-name-foreground-color-hover);
+            option {
+              color: var(--assets-item-name-foreground-color-hover);
+            }
+          }
+        }
+      }
+    }
+    .typography-variations {
+      display: flex;
+      gap: $s-4;
+      align-items: center;
+      .spacing-options {
+        display: flex;
+        align-items: center;
+        gap: $s-4;
+        .line-height,
+        .letter-spacing {
+          @extend .asset-element;
+          .icon {
+            @include flexCenter;
+            width: $s-28;
+            svg {
+              @extend .button-icon-small;
+            }
+          }
+          .line-height-input,
+          .letter-spacing-input {
+            @include removeInputStyle;
+            @include titleTipography;
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            color: var(--assets-item-name-foreground-color);
+            &:hover,
+            &:active,
+            &:focus {
+              color: var(--assets-item-name-foreground-color-hover);
+            }
+          }
+        }
+      }
+      .text-transform {
+        @extend .asset-element;
+        width: fit-content;
+        padding: 0;
+      }
+    }
+  }
+}
+
+.font-selector {
+  @include flexCenter;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: $z-index-10;
+
+  .font-selector-dropdown {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    height: 100%;
+    .header {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      margin-bottom: $s-2;
+      .title {
+        @include tabTitleTipography;
+        margin: 9px 17px;
+      }
+    }
+    .fonts-list {
+      position: absolute;
+      top: $s-36;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 100%;
+      height: $s-216;
+      width: 100%;
+      padding: $s-2;
+      border-radius: $br-8;
+      background-color: var(--dropdown-background-color);
+      box-shadow: 0px 0px $s-12 0px var(--menu-shadow-color);
+    }
+    .font-wrapper {
+      padding-bottom: $s-4;
+      cursor: pointer;
+      .font-item {
+        @extend .asset-element;
+        border-radius: $br-8;
+        display: flex;
+        .icon {
+          @include flexCenter;
+          height: $s-28;
+          width: $s-28;
+          svg {
+            @extend .button-icon-small;
+          }
+        }
+        &.selected {
+          color: var(--assets-item-name-foreground-color-hover);
+          .icon {
+            svg {
+              stroke: var(--assets-item-name-foreground-color-hover);
+            }
+          }
+        }
+
+        .label {
+          @include titleTipography;
+          flex-grow: 1;
+        }
+      }
+    }
+  }
+}

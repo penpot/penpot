@@ -1,0 +1,84 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.custom-select {
+  position: relative;
+  display: flex;
+  width: 100%;
+  padding: $s-8;
+  border-radius: $br-8;
+  cursor: pointer;
+  .current-label {
+    width: 100%;
+    flex-grow: 1;
+  }
+  .dropdown-button {
+    @include flexCenter;
+    svg {
+      @extend .button-icon;
+      transform: rotate(90deg);
+    }
+  }
+  .custom-select-dropdown {
+    position: absolute;
+    top: $s-32;
+    left: 0;
+    width: 100%;
+    padding: $s-2;
+    margin: 0;
+    margin-top: $s-4;
+    border-radius: $br-8;
+    z-index: $z-index-10;
+    overflow-y: auto;
+    background-color: var(--menu-background-color);
+    box-shadow: 0px 0px $s-12 0px var(--menu-shadow-color);
+  }
+  .checked-element {
+    display: flex;
+    align-items: center;
+    height: $s-32;
+    padding: $s-8;
+    border-radius: $br-6;
+    color: var(--menu-foreground-color);
+    .label {
+      flex-grow: 1;
+      width: 100%;
+    }
+
+    .check-icon {
+      @include flexCenter;
+      svg {
+        @extend .button-icon-small;
+        visibility: hidden;
+      }
+    }
+
+    &.is-selected {
+      .check-icon svg {
+        stroke: var(--menu-foreground-color);
+        visibility: visible;
+      }
+    }
+    &:hover {
+      background-color: var(--menu-background-color-hover);
+      color: var(--menu-foreground-color-hover);
+      .check-icon svg {
+        stroke: var(--menu-foreground-color-hover);
+      }
+    }
+  }
+
+  &:hover {
+    .dropdown-button {
+      color: var(--menu-foreground-color-hover);
+      svg {
+        stroke: var(--menu-foreground-color-hover);
+      }
+    }
+  }
+}

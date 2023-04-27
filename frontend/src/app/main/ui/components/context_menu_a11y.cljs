@@ -258,6 +258,7 @@
                        :key id
                        :class (if (and new-css-system workspace?)
                                 (dom/classnames (css :is-selected) (and selected (= option-name selected))
+                                                (css :selected) (and selected (= data-test selected))
                                                 (css :context-menu-item) true)
                                 (dom/classnames :is-selected (and selected (= option-name selected))))
                        :key-index (dm/str "context-item-" index)
@@ -274,7 +275,11 @@
                              :data-test data-test}
                          (if (and in-dashboard? (= option-name "Default"))
                            (tr "dashboard.default-team-name")
-                           option-name)]
+                           option-name)
+
+                         (when (and new-css-system selected (= data-test selected))
+                           [:span {:class (dom/classnames (css :selected-icon) true)}
+                            i/tick-refactor])]
                         [:a {:class (if (and new-css-system workspace?)
                                       (dom/classnames (css :context-menu-action) true
                                                       (css :submenu) true)
@@ -288,7 +293,6 @@
                           (if (and new-css-system workspace?)
                             i/arrow-refactor
                             i/arrow-slide)]])]))))])])])))
-
 
 (mf/defc context-menu-a11y
   {::mf/wrap-props false}

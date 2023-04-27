@@ -79,7 +79,33 @@
   .title {
     padding: $s-20;
   }
-  .component-wrapper {
+  .components-wrapper {
     padding: $s-20;
+    display: flex;
+    flex-wrap: wrap;
+    .component-group {
+      @include flexCenter;
+      justify-content: flex-start;
+      flex-direction: column;
+      // width: $s-256;
+      border-radius: $s-8;
+      h3 {
+        @include titleTipography;
+        font-size: $fs-25;
+        width: 100%;
+      }
+      .component {
+        display: flex;
+        flex-direction: column;
+        gap: $s-8;
+        width: $s-240;
+        max-height: $s-80;
+        margin-bottom: $s-16;
+        .component-name {
+          @include tabTitleTipography;
+          font-weight: bold;
+        }
+      }
+    }
   }
 }

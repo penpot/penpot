@@ -33,12 +33,17 @@ $width-settings-bar-max: 500px;
     grid-template-columns: 100%;
     grid-template-rows: 100%;
     height: calc(100% - 2px);
-    .layers-tab {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      grid-template-columns: 100%;
-      height: 100%;
-      overflow: hidden;
+    .tabs-wrapper {
+      .layers-tab {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        grid-template-columns: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
     }
   }
+}
+:global(.tab-spacing) {
+  margin: $s-4 $s-4 0 $s-4;
 }

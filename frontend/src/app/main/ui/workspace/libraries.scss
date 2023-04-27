@@ -1,0 +1,139 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+.modal-overlay {
+  @include flexCenter;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  z-index: $z-index-modal;
+  background-color: var(--overlay-color);
+  pointer-events: none; // This is to allow outside click that closes modal.
+  .modal-dialog {
+    height: $s-400;
+    max-height: 100%;
+    width: $s-664;
+    border-radius: $br-8;
+    background-color: var(--modal-background-color);
+    pointer-events: all;
+    .close {
+      @extend .button-tertiary;
+      width: $s-32;
+      height: $s-32;
+      border-radius: $br-8;
+      svg {
+        @extend .button-icon;
+      }
+    }
+    .modal-content {
+      .libraries-header {
+        padding: $s-12;
+      }
+
+      .libraries-content,
+      .updates-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: $s-24;
+        padding-top: $s-16;
+        height: 100%;
+
+        .section {
+          height: 100%;
+          :global(.title-spacing-lib) {
+            margin: 0 0 $s-8 calc(-1 * $s-8);
+          }
+          .section-list {
+            height: 100%;
+            max-height: 250px;
+            overflow: auto;
+            .section-list-item {
+              display: grid;
+              grid-template-columns: 1fr auto;
+              margin-bottom: $s-12;
+
+              .item-name {
+                @include titleTipography;
+                color: var(--library-name-foreground-color);
+              }
+              .item-contents {
+                @include titleTipography;
+                color: var(--library-content-foreground-color);
+              }
+
+              .item-publish,
+              .item-unpublish,
+              .item-update {
+                @extend .button-primary;
+                @include tabTitleTipography;
+                height: $s-32;
+                min-width: $s-92;
+                padding: $s-8 $s-12;
+                border-radius: $br-8;
+              }
+              .item-unpublish {
+                @extend .button-secondary;
+              }
+              .item-button {
+                @extend .button-tertiary;
+                width: $s-32;
+                height: $s-32;
+                border-radius: $br-8;
+                svg {
+                  @extend .button-icon;
+                }
+              }
+              .item-button-icon {
+                width: $s-28;
+                height: $s-28;
+                svg {
+                  @extend .button-icon;
+                }
+              }
+            }
+          }
+
+          .section-title {
+            @include titleTipography;
+            margin-bottom: $s-12;
+          }
+          .libraries-search {
+            margin-bottom: $s-12;
+            .search-icon {
+              @include flexCenter;
+              padding: 0 0 0 $s-8;
+              width: $s-20;
+              svg {
+                @extend .button-icon-small;
+              }
+            }
+          }
+          .section-list-empty {
+            @include titleTipography;
+            display: flex;
+            align-items: center;
+
+            svg {
+              @extend .button-icon-small;
+              width: $s-16;
+              height: $s-16;
+            }
+          }
+        }
+      }
+      .updates-content {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+}
+
+.element-count {
+  white-space: nowrap;
+}
