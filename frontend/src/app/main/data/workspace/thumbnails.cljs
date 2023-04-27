@@ -14,8 +14,9 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.worker :as uw]
    [app.util.dom :as dom]
-   [app.util.timers :as ts]
+   [app.util.http :as http]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -37,14 +38,13 @@
                      (rx/filter (ptk/type? :app.main.data.workspace/finalize-page))
                      (rx/take 1))]
     (if (some? node)
-      ;; Success: we generate the blob (async call)
-      (rx/create
-       (fn [subs]
-         (ts/raf
-          #(.toBlob node (fn [blob]
-                           (rx/push! subs blob)
-                           (rx/end! subs))
-                    "image/png"))))
+      (->> (rx/from (js/createImageBitmap node))
+           (rx/switch-map
+            #(uw/ask! {:cmd :object-thumbnails/generate} %))
+           (rx/map :result)
+           (rx/flat-map
+            #(http/send! {:uri % :response-type :blob :method :get}))
+           (rx/map :body))
 
       ;; Not found, we retry after delay
       (->> (rx/timer 250)
