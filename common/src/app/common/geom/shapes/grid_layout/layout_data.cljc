@@ -49,8 +49,6 @@
 ;;
 ;; - Stretch auto tracks
 
-
-
 (ns app.common.geom.shapes.grid-layout.layout-data
   (:require
    [app.common.geom.point :as gpt]
@@ -61,47 +59,6 @@
   [parent shape-bounds]
   (let [[pad-top pad-right pad-bottom pad-left] (ctl/paddings parent)]
     (gpo/pad-points shape-bounds pad-top pad-right pad-bottom pad-left)))
-
-#_(defn set-sample-data
-  [parent children]
-
-  (let [parent (assoc parent
-                      :layout-grid-columns
-                      [{:type :percent :value 25}
-                       {:type :percent :value 25}
-                       {:type :fixed :value 100}
-                       ;;{:type :auto}
-                       ;;{:type :flex :value 1}
-                       ]
-
-                      :layout-grid-rows
-                      [{:type :percent :value 50}
-                       {:type :percent :value 50}
-                       ;;{:type :fixed :value 100}
-                       ;;{:type :auto}
-                       ;;{:type :flex :value 1}
-                       ])
-
-        num-rows (count (:layout-grid-rows parent))
-        num-columns (count (:layout-grid-columns parent))
-
-        layout-grid-cells
-        (into
-         {}
-         (for [[row-idx _row] (d/enumerate (:layout-grid-rows parent))
-               [col-idx _col] (d/enumerate (:layout-grid-columns parent))]
-           (let [[_bounds shape] (nth children (+ (* row-idx num-columns) col-idx) nil)
-                 cell-data {:id (uuid/next)
-                            :row (inc row-idx)
-                            :column (inc col-idx)
-                            :row-span 1
-                            :col-span 1
-                            :shapes (when shape [(:id shape)])}]
-             [(:id cell-data) cell-data])))
-
-        parent (assoc parent :layout-grid-cells layout-grid-cells)]
-
-    [parent children]))
 
 (defn calculate-initial-track-size
   [total-value {:keys [type value] :as track}]
@@ -118,7 +75,6 @@
           ;; flex, auto
           [0.01 ##Inf])]
     (assoc track :size size :max-size max-size)))
-
 
 (defn set-auto-base-size
   [track-list children shape-cells type]
@@ -280,7 +236,6 @@
                         (gpt/add start-p (vv (+ size row-gap)))])
                      [[] start-p])
              (first))
-
         ]
 
     {:origin start-p
@@ -288,6 +243,8 @@
      :row-tracks row-tracks
      :column-tracks column-tracks
      :shape-cells shape-cells
+     :column-gap column-gap
+     :row-gap row-gap
 
      ;; Convenient informaton for visualization
      :column-total-size column-total-size
@@ -300,7 +257,6 @@
   [{:keys [origin row-tracks column-tracks shape-cells]} _transformed-parent-bounds [_ child]]
 
   (let [grid-cell (get shape-cells (:id child))]
-
     (when (some? grid-cell)
       (let [column (nth column-tracks (dec (:column grid-cell)) nil)
             row (nth row-tracks (dec (:row grid-cell)) nil)
@@ -311,7 +267,7 @@
             start-p (gpt/add origin
                              (gpt/add
                               (gpt/to-vec origin column-start-p)
-                              (gpt/to-vec origin row-start-p)))
-            ]
+                              (gpt/to-vec origin row-start-p)))]
 
         (assoc grid-cell :start-p  start-p)))))
+

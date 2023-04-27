@@ -447,7 +447,7 @@
      (when expanded?
        [:div.columns-info-wrapper
         (for [[index column] (d/enumerate column-values)]
-          [:div.column-info
+          [:div.column-info {:key (dm/str index "-" (name type) "-" column)}
            [:div.direction-grid-icon
             (if is-col?
               i/layout-rows

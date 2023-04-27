@@ -11,9 +11,10 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.grid-layout :as gsg]
    [app.common.geom.shapes.points :as gpo]
-   [app.common.pages.helpers :as cph]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.grid-layout.editor :as dwge]
+   [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -145,8 +146,7 @@
 
 (defn use-drag
   [{:keys [on-drag-start on-drag-end on-drag-delta on-drag-position]}]
-  (let [
-        dragging-ref    (mf/use-ref false)
+  (let [dragging-ref    (mf/use-ref false)
         start-pos-ref   (mf/use-ref nil)
         current-pos-ref (mf/use-ref nil)
 
@@ -175,6 +175,7 @@
 
         handle-pointer-move
         (mf/use-callback
+         (mf/deps on-drag-delta on-drag-position)
          (fn [event]
            (when (mf/ref-val dragging-ref)
              (let [start (mf/ref-val start-pos-ref)
@@ -191,22 +192,67 @@
 (mf/defc resize-cell-handler
   {::mf/wrap-props false}
   [props]
-  (let [x (unchecked-get props "x")
+  (let [shape (unchecked-get props "shape")
+
+        x (unchecked-get props "x")
         y (unchecked-get props "y")
         width (unchecked-get props "width")
         height (unchecked-get props "height")
+        handler (unchecked-get props "handler")
+
+        {cell-id :id} (unchecked-get props "cell")
+        {:keys [row column row-span column-span]} (get-in shape [:layout-grid-cells cell-id])
+
         direction (unchecked-get props "direction")
         layout-data (unchecked-get props "layout-data")
         cursor (if (= direction :row) (cur/scale-ns 0) (cur/scale-ew 0))
 
         handle-drag-position
         (mf/use-callback
+         (mf/deps shape row column row-span column-span)
          (fn [position]
-           (prn ">>>" (gsg/get-position-grid-coord layout-data position))))
+           (let [[drag-row  drag-column] (gsg/get-position-grid-coord layout-data position)
+
+                 [new-row new-column new-row-span new-column-span]
+                 (case handler
+                   :top
+                   (let [new-row      (min (+ row (dec row-span)) drag-row)
+                         new-row-span (+ (- row new-row) row-span)]
+                     [new-row column new-row-span column-span])
+
+                   :left
+                   (let [new-column      (min (+ column (dec column-span)) drag-column)
+                         new-column-span (+ (- column new-column) column-span)]
+                     [row new-column row-span new-column-span])
+
+                   :bottom
+                   (let [new-row-span (max 1 (inc (- drag-row row)))]
+                     [row column new-row-span column-span])
+
+                   :right
+                   (let [new-column-span (max 1 (inc (- drag-column column)))]
+                     [row column row-span new-column-span]))
+
+                 shape
+                 (-> (ctl/resize-cell-area shape row column new-row new-column new-row-span new-column-span)
+                     (ctl/assign-cells))
+
+                 modifiers
+                 (-> (ctm/empty)
+                     (ctm/change-property :layout-grid-rows (:layout-grid-rows shape))
+                     (ctm/change-property :layout-grid-columns (:layout-grid-columns shape))
+                     (ctm/change-property :layout-grid-cells (:layout-grid-cells shape)))]
+             (st/emit! (dwm/set-modifiers (dwm/create-modif-tree [(:id shape)] modifiers))))))
+
+        handle-drag-end
+        (mf/use-callback
+         (fn []
+           (st/emit! (dwm/apply-modifiers))))
 
         {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
-        (use-drag {:on-drag-position handle-drag-position})]
-
+        (use-drag {:on-drag-position handle-drag-position
+                   ;;:on-drag-start handle-drag-start
+                   :on-drag-end handle-drag-end})]
     [:rect
      {:x x
       :y y
@@ -223,7 +269,8 @@
   [props]
   (let [shape (unchecked-get props "shape")
 
-        {:keys [origin row-tracks column-tracks layout-bounds] :as layout-data}
+        {:keys [row column row-span column-span] :as cell}  (unchecked-get props "cell")
+        {:keys [origin row-tracks column-tracks layout-bounds column-gap row-gap] :as layout-data}
         (unchecked-get props "layout-data")
 
         zoom    (unchecked-get props "zoom")
@@ -231,23 +278,23 @@
         hover?    (unchecked-get props "hover?")
         selected?    (unchecked-get props "selected?")
 
-        row (unchecked-get props "row")
-        column   (unchecked-get props "column")
-
-        column-track (nth column-tracks (dec column) nil)
-        row-track (nth row-tracks (dec row) nil)
+        span-column-tracks (subvec column-tracks (dec column) (+ (dec column) column-span))
+        span-row-tracks (subvec row-tracks (dec row) (+ (dec row) row-span))
 
         hv     #(gpo/start-hv layout-bounds %)
         vv     #(gpo/start-vv layout-bounds %)
 
         start-p (gpt/add origin
                          (gpt/add
-                          (gpt/to-vec origin (:start-p column-track))
-                          (gpt/to-vec origin (:start-p row-track))))
+                          (gpt/to-vec origin (dm/get-in span-column-tracks [0 :start-p]))
+                          (gpt/to-vec origin (dm/get-in span-row-tracks [0 :start-p]))))
 
-        end-p (-> start-p
-                  (gpt/add (hv (:size column-track)))
-                  (gpt/add (vv (:size row-track))))
+        end-p
+        (as-> start-p  $
+          (reduce (fn [p track] (gpt/add p (hv (:size track)))) $ span-column-tracks)
+          (reduce (fn [p track] (gpt/add p (vv (:size track)))) $ span-row-tracks)
+          (gpt/add $ (hv (* column-gap (dec (count span-column-tracks)))))
+          (gpt/add $ (vv (* row-gap (dec (count span-row-tracks))))))
 
         cell-width  (- (:x end-p) (:x start-p))
         cell-height (- (:y end-p) (:y start-p))]
@@ -259,10 +306,9 @@
        :width cell-width
        :height cell-height
 
-       :on-pointer-enter #(st/emit! (dwge/hover-grid-cell (:id shape) row column true))
-       :on-pointer-leave #(st/emit! (dwge/hover-grid-cell (:id shape) row column false))
-
-       :on-click #(st/emit! (dwge/select-grid-cell (:id shape) row column))
+       :on-pointer-enter #(st/emit! (dwge/hover-grid-cell (:id shape) (:id cell) true))
+       :on-pointer-leave #(st/emit! (dwge/hover-grid-cell (:id shape) (:id cell) false))
+       :on-click #(st/emit! (dwge/select-grid-cell (:id shape) (:id cell)))
 
        :style {:fill "transparent"
                :stroke "var(--color-distance)"
@@ -274,14 +320,18 @@
      (when selected?
        (let [handlers
              ;; Handlers positions, size and cursor
-             [[(:x start-p) (+ (:y start-p) (/ -10 zoom)) cell-width (/ 20 zoom) :row]
-              [(+ (:x start-p) cell-width (/ -10 zoom)) (:y start-p) (/ 20 zoom) cell-height :column]
-              [(:x start-p) (+ (:y start-p) cell-height (/ -10 zoom)) cell-width (/ 20 zoom) :row]
-              [(+ (:x start-p) (/ -10 zoom)) (:y start-p) (/ 20 zoom) cell-height :column]]]
+             [[:top (:x start-p) (+ (:y start-p) (/ -10 zoom)) cell-width (/ 20 zoom) :row]
+              [:right (+ (:x start-p) cell-width (/ -10 zoom)) (:y start-p) (/ 20 zoom) cell-height :column]
+              [:bottom (:x start-p) (+ (:y start-p) cell-height (/ -10 zoom)) cell-width (/ 20 zoom) :row]
+              [:left (+ (:x start-p) (/ -10 zoom)) (:y start-p) (/ 20 zoom) cell-height :column]]]
          [:*
-          (for [[x y width height dir] handlers]
-            [:& resize-cell-handler {:x x
+          (for [[handler x y width height dir] handlers]
+            [:& resize-cell-handler {:key (dm/str "resize-" (d/name handler) "-" (:id cell))
+                                     :shape shape
+                                     :handler handler
+                                     :x x
                                      :y y
+                                     :cell cell
                                      :width width
                                      :height height
                                      :direction dir
@@ -355,13 +405,19 @@
       :style {:fill "transparent"}}]))
 
 (mf/defc editor
-  {::mf/wrap-props false}
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
   [props]
 
-  (let [shape   (unchecked-get props "shape")
-        objects (unchecked-get props "objects")
-        zoom    (unchecked-get props "zoom")
+  (let [shape     (unchecked-get props "shape")
+        objects   (unchecked-get props "objects")
+        zoom      (unchecked-get props "zoom")
+        view-only (unchecked-get props "view-only")
         bounds  (:points shape)
+
+        ;; We need to know the state unmodified so we can create the modifiers
+        shape-ref (mf/use-memo (mf/deps (:id shape)) #(refs/object-by-id (:id shape)))
+        base-shape (mf/deref shape-ref)
 
         grid-edition-id-ref (mf/use-memo #(refs/workspace-grid-edition-id (:id shape)))
         grid-edition (mf/deref grid-edition-id-ref)
@@ -369,7 +425,8 @@
         hover-cells (:hover grid-edition)
         selected-cells (:selected grid-edition)
 
-        children (->> (cph/get-immediate-children objects (:id shape))
+        children (->> (:shapes shape)
+                      (map (d/getf objects))
                       (remove :hidden)
                       (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))
 
@@ -400,22 +457,22 @@
        (fn []
          #(st/emit! (dwge/stop-grid-layout-editing (:id shape)))))
 
-    [:g.grid-editor
-     [:& grid-editor-frame {:zoom zoom
-                            :bounds bounds}]
-     (let [start-p (-> origin (gpt/add (hv width)))]
-       [:& plus-btn {:start-p start-p
-                     :zoom zoom
-                     :type :column
-                     :on-click handle-add-column}])
+    [:g.grid-editor {:pointer-events (when view-only "none")}
+     (when-not view-only
+       [:*
+        [:& grid-editor-frame {:zoom zoom
+                               :bounds bounds}]
+        (let [start-p (-> origin (gpt/add (hv width)))]
+          [:& plus-btn {:start-p start-p
+                        :zoom zoom
+                        :type :column
+                        :on-click handle-add-column}])
 
-     (let [start-p (-> origin (gpt/add (vv height)))]
-       [:& plus-btn {:start-p start-p
-                     :zoom zoom
-                     :type :row
-                     :on-click handle-add-row}])
-
-
+        (let [start-p (-> origin (gpt/add (vv height)))]
+          [:& plus-btn {:start-p start-p
+                        :zoom zoom
+                        :type :row
+                        :on-click handle-add-row}])])
 
      (for [[idx column-data] (d/enumerate column-tracks)]
        (let [start-p (:start-p column-data)
@@ -427,7 +484,7 @@
              text-p (-> start-p
                         (gpt/subtract (vv (/ 20 zoom)))
                         (gpt/add (hv (/ (:size column-data) 2))))]
-         [:*
+         [:* {:key (dm/str "column-" idx)}
           [:& track-marker {:center marker-p
                             :value (dm/str (inc idx))
                             :zoom zoom}]
@@ -454,12 +511,12 @@
              marker-p (-> start-p
                           (gpt/subtract (hv (/ 20 zoom)))
                           (cond-> (not= idx 0)
-                           (gpt/subtract (vv (/ layout-gap-row 2)))))
+                            (gpt/subtract (vv (/ layout-gap-row 2)))))
 
              text-p (-> start-p
                         (gpt/subtract (hv (/ 20 zoom)))
                         (gpt/add (vv (/ (:size row-data) 2))))]
-         [:*
+         [:* {:key (dm/str "row-" idx)}
           [:g {:transform (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p))}
            [:& track-marker {:center marker-p
                              :value (dm/str (inc idx))
@@ -483,11 +540,11 @@
                                 :type :column
                                 :zoom zoom}])]))
 
-     (for [[_ {:keys [column row]}] (:layout-grid-cells shape)]
-       [:& grid-cell {:shape shape
+     (for [[_ cell] (:layout-grid-cells shape)]
+       [:& grid-cell {:key (dm/str "cell-" (:id cell))
+                      :shape base-shape
                       :layout-data layout-data
-                      :row row
-                      :column column
+                      :cell cell
                       :zoom zoom
-                      :hover? (contains? hover-cells [row column])
-                      :selected? (= selected-cells [row column])}])]))
+                      :hover? (contains? hover-cells (:id cell))
+                      :selected? (= selected-cells (:id cell))}])]))

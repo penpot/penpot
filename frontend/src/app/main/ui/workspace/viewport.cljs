@@ -203,6 +203,9 @@
         show-pixel-grid?         (and (contains? layout :show-pixel-grid)
                                       (>= zoom 8))
         show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
+
+        hover-grid?              (and (some? @hover-top-frame-id) (ctl/grid-layout? objects @hover-top-frame-id))
+
         show-grid-editor?        (and editing-shape (ctl/grid-layout? editing-shape))
         show-presence?           page-id
         show-prototypes?         (= options-mode :prototype)
@@ -586,8 +589,15 @@
           {:id (first selected)
            :zoom zoom}])
 
-       (when show-grid-editor?
+       ;; TODO: Temporary showing on hover. Remove eventualy
+       (when (or show-grid-editor? hover-grid?)
          [:& grid-layout/editor
           {:zoom zoom
-           :objects base-objects
-           :shape (get base-objects edition)}])]]]))
+           :objects objects-modified
+           :shape (or (get objects-modified edition)
+                      (gsh/transform-shape
+                       (get base-objects @hover-top-frame-id)
+                       (dm/get-in modifiers [@hover-top-frame-id :modifiers])))
+           :view-only (not show-grid-editor?)
+           }])
+       ]]]))

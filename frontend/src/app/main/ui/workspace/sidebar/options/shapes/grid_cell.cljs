@@ -31,7 +31,7 @@
 
 (mf/defc options
   {::mf/wrap [mf/memo]}
-  [{:keys [_shape row column] :as props}]
+  [{:keys [_shape cell] :as props}]
 
   (let [position-mode (mf/use-state :auto) ;; TODO this should come from shape
 
@@ -51,10 +51,10 @@
                                #_(if (= align-self value)
                                    (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self nil}))
                                    (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self value}))))
-        column-start column
-        column-end (inc column)
-        row-start row
-        row-end (inc row)
+        column-start (:column cell)
+        column-end (+ (:column cell) (:column-span cell))
+        row-start (:row cell)
+        row-end (+ (:row cell) (:row-span cell))
 
         on-change
         (fn [_side _orientation _value]

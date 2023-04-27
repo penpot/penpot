@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes.grid-layout.areas :as sga]
    [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]))
@@ -673,12 +674,6 @@
         (update :layout-grid-cells remove-cells)
         (assign-cells))))
 
-;; TODO: Mix the cells given as arguments leaving only one. It should move all the shapes in those cells in the direction for the grid
-;; and lastly use assign-cells to reassing the orphaned shapes
-(defn merge-cells
-  [parent _cells]
-  parent)
-
 (defn get-cells
   ([parent]
    (get-cells parent nil))
@@ -815,31 +810,128 @@
         [(assoc-in parent [:layout-grid-cells (get-in cells [index :id]) :shapes] [])
          (assoc-in result-cells [index :shapes] [])]))))
 
+
+(defn in-cell?
+  "Given a cell check if the row+column is inside this cell"
+  [{cell-row :row cell-column :column :keys [row-span column-span]} row column]
+  (and (>= row cell-row)
+       (>= column cell-column)
+       (<= row (+ cell-row row-span -1))
+       (<= column (+ cell-column column-span -1))))
+
+(defn cell-by-row-column
+  [parent row column]
+  (->> (:layout-grid-cells parent)
+       (vals)
+       (d/seek #(in-cell? % row column))))
+
 (defn seek-indexed-cell
   [cells row column]
   (let [cells+index (d/enumerate cells)]
-    (d/seek (fn [[_ {cell-row :row cell-column :column}]]
-              (and (= cell-row row)
-                   (= cell-column column))) cells+index)))
+    (d/seek #(in-cell? (second %) row column) cells+index)))
 
 (defn push-into-cell
   "Push the shapes into the row/column cell and moves the rest"
   [parent shape-ids row column]
 
   (let [cells (vec (get-cells parent {:sort? true}))
-        cells+index (d/enumerate cells)
+        [start-index start-cell] (seek-indexed-cell cells row column)]
 
-        [start-index _] (seek-indexed-cell cells row column)
+    (if (some? start-cell)
+      (let [ ;; start-index => to-index is the range where the shapes inserted will be added
+            to-index (min (+ start-index (count shape-ids)) (dec (count cells)))]
 
-        ;; start-index => to-index is the range where the shapes inserted will be added
-        to-index (min (+ start-index (count shape-ids)) (dec (count cells)))]
+        ;; Move shift the `shapes` attribute between cells
+        (->> (range start-index (inc to-index))
+             (map vector shape-ids)
+             (reduce (fn [[parent cells] [shape-id idx]]
+                       (let [[parent cells] (free-cell-push parent cells idx)]
+                         [(assoc-in parent [:layout-grid-cells (get-in cells [idx :id]) :shapes] [shape-id])
+                          cells]))
+                     [parent cells])
+             (first)))
+      parent)))
 
-    ;; Move shift the `shapes` attribute between cells
-    (->> (range start-index (inc to-index))
-         (map vector shape-ids)
-         (reduce (fn [[parent cells] [shape-id idx]]
-                   (let [[parent cells] (free-cell-push parent cells idx)]
-                     [(assoc-in parent [:layout-grid-cells (get-in cells [idx :id]) :shapes] [shape-id])
-                      cells]))
-                 [parent cells])
-         (first))))
+(defn resize-cell-area
+  "Increases/decreases the cell size"
+  [parent row column new-row new-column new-row-span new-column-span]
+
+  (let [cells (vec (get-cells parent {:sort? true}))
+
+        prev-cell (cell-by-row-column parent row column)
+        prev-area (sga/make-area prev-cell)
+
+        target-cell
+        (-> prev-cell
+            (assoc
+             :row new-row
+             :column new-column
+             :row-span new-row-span
+             :column-span new-column-span))
+
+        target-area (sga/make-area target-cell)]
+
+    (if (sga/contains? prev-area target-area)
+      ;; The new area is smaller than the previous. We need to create cells in the empty space
+      (let [parent
+            (-> parent
+                (assoc-in [:layout-grid-cells (:id target-cell)] target-cell))
+
+            new-cells
+            (->> (sga/difference prev-area target-area)
+                 (mapcat (fn [[column row column-span row-span]]
+                           (for [new-col (range column (+ column column-span))
+                                 new-row (range row (+ row row-span))]
+                             (merge grid-cell-defaults
+                                    {:id (uuid/next)
+                                     :row new-row
+                                     :column new-col
+                                     :row-span 1
+                                     :column-span 1})))))
+
+            parent
+            (->> new-cells
+                 (reduce #(assoc-in %1 [:layout-grid-cells (:id %2)] %2) parent))]
+
+        parent)
+
+      ;; The new area is bigger we need to remove the cells filled and split the intersections
+      (let [remove-cells (->> cells
+                              (filter #(and (not= (:id target-cell) (:id %))
+                                            (sga/contains? target-area (sga/make-area %))))
+                              (into #{}))
+
+            split-cells  (->> cells (filter #(and (not= (:id target-cell) (:id %))
+                                                  (not (contains? remove-cells %))
+                                                  (sga/intersects? target-area (sga/make-area %)))))
+
+            [parent _]
+            (->> (d/enumerate cells)
+                 (reduce (fn [[parent cells] [index cur-cell]]
+                           (if (contains? remove-cells cur-cell)
+                             (let [[parent cells] (free-cell-push parent cells index)]
+                               [parent (conj cells cur-cell)])
+                             [parent cells]))
+                         [parent cells]))
+
+            parent
+            (-> parent
+                (assoc-in [:layout-grid-cells (:id target-cell)] target-cell))
+
+            parent
+            (->> remove-cells
+                 (reduce (fn [parent cell]
+                           (update parent :layout-grid-cells dissoc (:id cell)))
+                         parent))
+
+            parent
+            (->> split-cells
+                 (reduce (fn [parent cell]
+                           (let [new-areas (sga/difference (sga/make-area cell) target-area)]
+                             (as-> parent $
+                               (update-in $ [:layout-grid-cells (:id cell)] merge (sga/area->cell-props (first new-areas)))
+                               (reduce (fn [parent area]
+                                         (let [cell (merge (assoc grid-cell-defaults :id (uuid/next)) (sga/area->cell-props area))]
+                                           (assoc-in parent [:layout-grid-cells (:id cell)] cell))) $ new-areas))))
+                         parent))]
+        parent))))

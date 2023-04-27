@@ -73,10 +73,10 @@
         first-selected-shape (first selected-shapes)
         shape-parent-frame   (cph/get-frame objects (:frame-id first-selected-shape))
 
-        [grid-id {[row-selected col-selected] :selected}]
+        [grid-id {cell-id :selected}]
         (d/seek (fn [[_ {:keys [selected]}]] (some? selected)) grid-edition)
 
-        grid-cell-selected? (and (some? grid-id) (some? row-selected) (some? col-selected))
+        grid-cell-selected? (and (some? grid-id) (some? cell-id))
 
         on-change-tab
         (fn [options-mode]
@@ -96,8 +96,7 @@
          [:& bool-options]
          (cond
            grid-cell-selected? [:& grid-cell/options {:shape (get objects grid-id)
-                                                      :row row-selected
-                                                      :column col-selected}]
+                                                      :cell (get-in objects [grid-id :layout-grid-cells cell-id])}]
 
            (d/not-empty? drawing) [:& shape-options {:shape (:object drawing)
                                                      :page-id page-id
