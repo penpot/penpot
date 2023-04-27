@@ -18,9 +18,9 @@
 (mf/defc collapsed-button
   {::mf/wrap-props false}
   []
-  (let [new-css? (mf/use-ctx ctx/new-css-system)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
         on-click (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))]
-    (if ^boolean new-css?
+    (if ^boolean new-css-system
       [:div {:class (dom/classnames (css :collapsed-sidebar) true)}
        [:div {:class (dom/classnames (css :collapsed-title) true)}
         [:button {:class (dom/classnames (css :collapsed-button) true)

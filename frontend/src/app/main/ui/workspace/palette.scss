@@ -57,7 +57,7 @@
       opacity: $op-10;
       transition: opacity 1s ease;
       .palette-btn {
-        @extend .button-primary;
+        @extend .button-tertiary;
         height: $s-32;
         width: $s-32;
         border-radius: $br-8;
@@ -82,7 +82,7 @@
     }
   }
   .palette-actions {
-    @extend .button-primary;
+    @extend .button-tertiary;
     grid-area: actions;
     height: calc(var(--height) - $s-16);
     width: $s-32;

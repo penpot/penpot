@@ -1,0 +1,249 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.component-group {
+  .drop-space {
+    height: $s-12;
+    border-radius: $br-8;
+    background-color: var(--assets-item-background-color);
+  }
+  .asset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: calc(10vh + $s-16);
+    gap: $s-4;
+    margin-left: $s-8;
+    margin-right: $s-12;
+    .grid-cell {
+      @include flexCenter;
+      position: relative;
+      padding: $s-8;
+      border: $s-2 solid transparent;
+      border-radius: $br-8;
+      background-color: var(--assets-item-background-color);
+      overflow: hidden;
+      cursor: pointer;
+      img {
+        height: auto;
+        width: auto;
+        max-height: 100%;
+        max-width: 100%;
+        pointer-events: none;
+      }
+      svg {
+        height: 10vh;
+      }
+      .cell-name {
+        @include titleTipography;
+        @include textEllipsis;
+        display: none;
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        padding: $s-2;
+
+        &.editing {
+          display: flex;
+          align-items: center;
+          height: $s-32;
+          border: $s-1 solid var(--input-border-color-focus);
+          border-radius: $br-8;
+          background-color: var(--input-background-color);
+          input {
+            @include textEllipsis;
+            @include titleTipography;
+            @include removeInputStyle;
+            flex-grow: 1;
+            height: $s-28;
+            max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
+            padding-left: $s-6;
+            margin: 0;
+            border-radius: $br-8;
+            color: var(--input-foreground-color);
+          }
+          span {
+            @include flexCenter;
+            height: $s-28;
+            background-color: transparent;
+            border-radius: $br-8;
+            svg {
+              @extend .button-icon-small;
+              stroke: var(--input-foreground-color);
+              transform: rotate(90deg);
+            }
+          }
+        }
+      }
+
+      &:hover {
+        background-color: var(--assets-item-background-color-hover);
+        .cell-name {
+          display: block;
+          color: var(--assets-item-name-foreground-color-hover);
+          background: linear-gradient(to top, rgba(52, 57, 59, 1) 0%, rgba(52, 57, 59, 0) 100%);
+          &.editing {
+            display: flex;
+            background: var(--input-background-color);
+            input {
+              color: var(--input-foreground-color-active);
+            }
+            span svg {
+              stroke: var(--input-foreground-color-active);
+            }
+          }
+        }
+      }
+
+      &.selected {
+        border: $s-1 solid var(--assets-item-border-color);
+      }
+    }
+    .grid-placeholder {
+      width: 100%;
+      border-radius: $br-8;
+      background-color: var(--assets-item-background-color);
+    }
+  }
+  .asset-enum {
+    margin: 0 $s-12;
+    .enum-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: $s-36;
+      margin-bottom: $s-4;
+      padding: $s-2;
+      border-radius: $br-8;
+      background-color: var(--assets-item-background-color);
+      cursor: pointer;
+
+      svg,
+      img {
+        @include flexCenter;
+        padding: $s-2;
+        height: $s-32;
+        width: $s-32;
+        border-radius: $br-6;
+        background-color: var(--assets-item-background-color);
+      }
+
+      .item-name {
+        @include titleTipography;
+        @include textEllipsis;
+        padding-left: $s-8;
+        color: var(--assets-item-name-foreground-color);
+        &.editing {
+          display: flex;
+          align-items: center;
+          height: $s-32;
+          border: $s-1 solid var(--input-border-color-focus);
+          border-radius: $br-8;
+          background-color: var(--input-background-color);
+          input {
+            @include textEllipsis;
+            @include titleTipography;
+            @include removeInputStyle;
+            flex-grow: 1;
+            height: $s-28;
+            max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
+            padding-left: $s-6;
+            margin: 0;
+            border-radius: $br-8;
+            color: var(--input-foreground-color);
+          }
+          span {
+            @include flexCenter;
+            height: $s-28;
+            background-color: transparent;
+            border-radius: $br-8;
+            svg {
+              @extend .button-icon-small;
+              stroke: var(--input-foreground-color);
+              transform: rotate(90deg);
+            }
+          }
+        }
+      }
+
+      &:hover {
+        background-color: var(--assets-item-background-color-hover);
+        .item-name {
+          color: var(--assets-item-name-foreground-color-hover);
+          &.editing {
+            background: var(--input-background-color);
+            input {
+              color: var(--input-foreground-color-active);
+            }
+            span svg {
+              stroke: var(--input-foreground-color-active);
+            }
+          }
+        }
+      }
+      &.selected {
+        border: $s-1 solid var(--assets-item-border-color);
+      }
+    }
+    .grid-placeholder {
+      height: $s-2;
+      width: 100%;
+      background-color: var(--color-accent-primary);
+    }
+  }
+}
+.listing-options {
+  display: flex;
+  align-items: center;
+
+  .listing-option-btn {
+    @include flexCenter;
+    cursor: pointer;
+
+    &.first {
+      margin-left: auto;
+    }
+
+    svg {
+      height: 16px;
+      width: 16px;
+    }
+  }
+}
+.add-component {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  margin-left: $s-2;
+  border-radius: $br-8;
+  svg {
+    @extend .button-icon;
+  }
+}
+:global(.three-row) {
+  .asset-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+:global(.four-row) {
+  .asset-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.dragging {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: $s-8;
+  background-color: var(--assets-item-background-color-drag);
+  border: $s-2 solid var(--assets-item-border-color-drag);
+}

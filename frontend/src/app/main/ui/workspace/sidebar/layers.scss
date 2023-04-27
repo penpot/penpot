@@ -20,13 +20,14 @@
     min-height: $s-32;
     margin-top: $s-2;
     margin-bottom: $s-4;
+    padding-right: $s-8;
     .page-name {
       @include tabTitleTipography;
       padding: 0 $s-12;
       color: var(--title-foreground-color);
     }
     .icon-search {
-      @extend .button-primary;
+      @extend .button-tertiary;
       height: $s-32;
       width: calc($s-24 + $s-4);
       border-radius: $br-8;
@@ -38,94 +39,41 @@
     }
     &.search {
       padding: 0 $s-8 0 $s-12;
-      .search-box {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: $s-2;
+      gap: $s-4;
+      .filter-button {
+        @include flexCenter;
+        @include buttonStyle;
         height: $s-32;
-        width: 100%;
-        margin-right: $s-4;
-        border-radius: $br-8;
-        background-color: var(--color-background-primary);
-        .filter-button {
-          @include flexCenter;
-          @include buttonStyle;
-          height: $s-32;
-          width: $s-32;
-          margin: 0;
-          border: 1px solid var(--color-background-tertiary);
-          border-radius: $br-8 $br-2 $br-2 $br-8;
-          background-color: var(--color-background-tertiary);
+        width: $s-32;
+        margin: 0;
+        border: 1px solid var(--color-background-tertiary);
+        border-radius: $br-8 $br-2 $br-2 $br-8;
+        background-color: var(--color-background-tertiary);
+        svg {
+          height: $s-16;
+          width: $s-16;
+          stroke: var(--icon-foreground);
+        }
+        &:focus {
+          border: 1px solid var(--input-border-color-focus);
+          outline: 0;
+          background-color: var(--input-background-color-active);
+          color: var(--input-foreground-color-active);
           svg {
-            height: $s-16;
-            width: $s-16;
-            stroke: var(--icon-foreground);
-          }
-          &:focus {
-            border: 1px solid var(--input-border-color-focus);
-            outline: 0;
             background-color: var(--input-background-color-active);
-            color: var(--input-foreground-color-active);
-            svg {
-              background-color: var(--input-background-color-active);
-            }
-          }
-          &:hover {
-            border: 1px solid var(--input-background-color-hover);
-            background-color: var(--input-background-color-hover);
-            svg {
-              background-color: var(--input-background-color-hover);
-              stroke: var(--button-foreground-hover);
-            }
           }
         }
-        .search-input-wrapper {
-          @include flexCenter;
-          height: $s-32;
-          width: 100%;
-          border: 1px solid var(--color-background-tertiary);
-          border-radius: $br-2 $br-8 $br-8 $br-2;
-          background-color: var(--color-background-tertiary);
-          input {
-            width: 100%;
-            margin: $s-8;
-            border: 0;
-            background-color: var(--input-background-color);
-            font-size: $fs-12;
-            color: var(--input-foreground-color);
-            &:focus {
-              outline: none;
-            }
-          }
-          &:hover {
-            border: 1px solid var(--input-background-color-hover);
+        &:hover {
+          border: 1px solid var(--input-background-color-hover);
+          background-color: var(--input-background-color-hover);
+          svg {
             background-color: var(--input-background-color-hover);
-            input {
-              background-color: var(--input-background-color-hover);
-            }
-          }
-          &:focus-within {
-            background-color: var(--input-background-color-active);
-            color: var(--input-foreground-color-active);
-            border: 1px solid var(--input-border-color-focus);
-            input {
-              background-color: var(--input-background-color-active);
-            }
-          }
-
-          .clear {
-            @extend .button-secondary;
-            border-radius: $br-8;
-            height: 100%;
-            svg {
-              @extend .button-icon-small;
-              color: transparent;
-            }
+            stroke: var(--button-foreground-hover);
           }
         }
       }
       .close-search {
-        @extend .button-primary;
+        @extend .button-tertiary;
         height: $s-32;
         width: $s-28;
         min-width: $s-28;
@@ -184,7 +132,7 @@
     gap: $s-4;
     margin: 0 $s-12;
     .layer-filter {
-      @extend .button-secondary;
+      @extend .button-tag;
       @include buttonStyle;
       gap: $s-6;
       height: $s-24;
@@ -296,7 +244,6 @@
     flex-direction: column;
     height: 100%;
     width: 100%;
-    border-radius: $br-8;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-gutter: stable;

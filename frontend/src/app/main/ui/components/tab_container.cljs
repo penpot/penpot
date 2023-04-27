@@ -35,10 +35,10 @@
         on-change       (unchecked-get props "on-change-tab")
         collapsable?    (unchecked-get props "collapsable?")
         handle-collapse (unchecked-get props "handle-collapse")
+        klass           (unchecked-get props "klass")
 
         state           (mf/use-state #(or selected (-> children first .-props .-id)))
         selected        (or selected @state)
-        new-css-system  (mf/use-ctx ctx/new-css-system)
 
         select-fn
         (mf/use-fn
@@ -48,42 +48,26 @@
              (reset! state id)
              (when (fn? on-change) (on-change id)))))]
 
-    [:div {:class (if new-css-system
-                    (dom/classnames (css :tab-container) true)
-                    (dom/classnames :tab-container true))}
-     [:div {:class (if new-css-system
-                     (dom/classnames (css :tab-container-tabs) true)
-                     (dom/classnames :tab-container-tabs true))}
-      (when (and new-css-system collapsable?)
+    [:div {:class (dom/classnames (css :tab-container) true)}
+     [:div {:class (dom/classnames (css :tab-container-tabs) true
+                                   klass true)}
+      (when collapsable?
         [:button
          {:on-click handle-collapse
           :class (dom/classnames (css :collapse-sidebar) true)
           :aria-label (tr "workspace.sidebar.collapse")}
          i/arrow-refactor])
-      (if new-css-system
-        [:div  {:class (dom/classnames (css :tab-container-tab-wrapper) new-css-system)}
-         (for [tab children]
-           (let [props (.-props tab)
-                 id    (.-id props)
-                 title (.-title props)]
-             [:div
-              {:key (str/concat "tab-" (d/name id))
-               :data-id (pr-str id)
-               :on-click select-fn
-               :class  (dom/classnames (css :tab-container-tab-title) true
-                                       (css :current) (= selected id))}
-              title]))]
-        (for [tab children]
-          (let [props (.-props tab)
-                id    (.-id props)
-                title (.-title props)]
-            [:div.tab-container-tab-title
-             {:key (str/concat "tab-" (d/name id))
-              :data-id (pr-str id)
-              :on-click select-fn
-              :class (when (= selected id) "current")}
-             title])))]
-     [:div {:class (if new-css-system
-                     (dom/classnames (css :tab-container-content) true)
-                     (dom/classnames :tab-container-content true))}
+      [:div  {:class (dom/classnames (css :tab-container-tab-wrapper) true)}
+       (for [tab children]
+         (let [props (.-props tab)
+               id    (.-id props)
+               title (.-title props)]
+           [:div
+            {:key (str/concat "tab-" (d/name id))
+             :data-id (pr-str id)
+             :on-click select-fn
+             :class  (dom/classnames (css :tab-container-tab-title) true
+                                     (css :current) (= selected id))}
+            title]))]]
+     [:div {:class (dom/classnames (css :tab-container-content) true)}
       (d/seek #(= selected (-> % .-props .-id)) children)]]))

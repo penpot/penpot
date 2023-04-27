@@ -15,6 +15,11 @@
   background: none;
   cursor: pointer;
 }
+@mixin removeInputStyle {
+  border: none;
+  background: none;
+  outline: none;
+}
 
 @mixin tabTitleTipography {
   font-family: "worksans", sans-serif;

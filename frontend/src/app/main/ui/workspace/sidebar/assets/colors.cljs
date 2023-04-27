@@ -1,0 +1,621 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
+(ns app.main.ui.workspace.sidebar.assets.colors
+  (:require-macros [app.main.style :refer [css]])
+  (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.pages.helpers :as cph]
+   [app.main.data.events :as ev]
+   [app.main.data.modal :as modal]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.undo :as dwu]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.ui.components.color-bullet :as bc]
+   [app.main.ui.components.color-bullet-new :as cb]
+   [app.main.ui.context :as ctx]
+   [app.main.ui.icons :as i]
+   [app.main.ui.workspace.sidebar.assets.common :as cmm]
+   [app.main.ui.workspace.sidebar.assets.groups :as grp]
+   [app.util.color :as uc]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
+   [cuerdas.core :as str]
+   [okulary.core :as l]
+   [potok.core :as ptk]
+   [rumext.v2 :as mf]))
+
+(mf/defc color-item
+  {::mf/wrap-props false}
+  [{:keys [color local? file-id selected multi-colors? multi-assets?
+           on-asset-click on-assets-delete on-clear-selection on-group
+           selected-full selected-paths move-color]}]
+
+  (let [color        (mf/with-memo [color file-id]
+                       (cond-> color
+                         (:value color) (assoc :color (:value color) :opacity 1)
+                         (:value color) (dissoc :value)
+                         true           (assoc :file-id file-id)))
+
+
+        color-id    (:id color)
+
+        item-ref    (mf/use-ref)
+        dragging*   (mf/use-state false)
+        dragging?   (deref dragging*)
+
+        rename?     (= (:color-for-rename @refs/workspace-local) color-id)
+        input-ref   (mf/use-ref)
+
+        editing*    (mf/use-state rename?)
+        editing?    (deref editing*)
+
+        menu-state  (mf/use-state cmm/initial-context-menu-state)
+        read-only?  (mf/use-ctx ctx/workspace-read-only?)
+        new-css-system (mf/use-ctx ctx/new-css-system)
+
+        default-name (cond
+                       (:gradient color) (uc/gradient-type->string (dm/get-in color [:gradient :type]))
+                       (:color color)    (:color color)
+                       :else             (:value color))
+
+        apply-color
+        (mf/use-fn
+         (mf/deps color)
+         (fn [event]
+           (st/emit! (dc/apply-color-from-palette (merge uc/empty-color color) (kbd/alt? event)))))
+
+        rename-color
+        (mf/use-fn
+         (mf/deps file-id color-id)
+         (fn [name]
+           (st/emit! (dwl/rename-color file-id color-id name))))
+
+        edit-color
+        (mf/use-fn
+         (mf/deps color file-id)
+         (fn [attrs]
+           (let [name  (cph/merge-path-item (:path color) (:name color))
+                 color (-> attrs
+                           (assoc :id (:id color))
+                           (assoc :file-id file-id)
+                           (assoc :name name))]
+             (st/emit! (dwl/update-color color file-id)))))
+
+        delete-color
+        (mf/use-fn
+         (mf/deps multi-colors? multi-assets? file-id color-id)
+         (fn []
+           (if (or multi-colors? multi-assets?)
+             (on-assets-delete)
+             (let [undo-id (js/Symbol)]
+               (st/emit! (dwu/start-undo-transaction undo-id)
+                         (dwl/delete-color color)
+                         (dwl/sync-file file-id file-id :colors color-id)
+                         (dwu/commit-undo-transaction undo-id))))))
+
+        rename-color-clicked
+        (mf/use-fn
+         (mf/deps read-only? local?)
+         (fn [event]
+           (when (and local? (not read-only?))
+             (dom/prevent-default event)
+             (reset! editing* true))))
+
+        input-blur
+        (mf/use-fn
+         (mf/deps rename-color)
+         (fn [event]
+           (let [target (dom/event->target event)
+                 name   (dom/get-value target)]
+             (rename-color name)
+             (st/emit! dwl/clear-color-for-rename)
+             (reset! editing* false))))
+
+        input-key-down
+        (mf/use-fn
+         (mf/deps input-blur)
+         (fn [event]
+           (when (kbd/esc? event)
+             (st/emit! dwl/clear-color-for-rename)
+             (reset! editing* false))
+           (when (kbd/enter? event)
+             (input-blur event))))
+
+        edit-color-clicked
+        (mf/use-fn
+         (mf/deps edit-color color)
+         (fn [event]
+           (modal/show! :colorpicker
+                        {:x (.-clientX ^js event)
+                         :y (.-clientY ^js event)
+                         :on-accept edit-color
+                         :data color
+                         :position :right})))
+
+        on-context-menu
+        (mf/use-fn
+         (mf/deps color-id selected on-clear-selection read-only?)
+         (fn [event]
+           (dom/prevent-default event)
+           (let [pos (dom/get-client-position event)]
+             (when (and local? (not read-only?))
+               (when-not (contains? selected color-id)
+                 (on-clear-selection))
+               (swap! menu-state cmm/open-context-menu pos)))))
+
+        on-close-menu
+        (mf/use-fn
+         (fn []
+           (swap! menu-state cmm/close-context-menu)))
+
+        on-drop
+        (mf/use-fn
+         (mf/deps color dragging* selected selected-full selected-paths move-color)
+         (fn [event]
+           (cmm/on-drop-asset event color dragging* selected selected-full
+                              selected-paths move-color)))
+
+        on-drag-enter
+        (mf/use-fn
+         (mf/deps color dragging* selected selected-paths)
+         (fn [event]
+           (cmm/on-drag-enter-asset event color dragging* selected selected-paths)))
+
+        on-drag-leave
+        (mf/use-fn
+         (mf/deps dragging*)
+         (fn [event]
+           (cmm/on-drag-leave-asset event dragging*)))
+
+        on-color-drag-start
+        (mf/use-fn
+         (mf/deps color file-id selected item-ref read-only?)
+         (fn [event]
+           (if read-only?
+             (dom/prevent-default event)
+             (cmm/on-asset-drag-start event file-id color selected item-ref :colors identity))))
+
+        on-click
+        (mf/use-fn
+         (mf/deps color-id apply-color on-asset-click)
+         (partial on-asset-click color-id apply-color))]
+
+    (mf/with-effect [editing?]
+      (when editing?
+        (let [input (mf/ref-val input-ref)]
+          (dom/select-text! input)
+          nil)))
+    
+    (if ^boolean new-css-system
+      [:div {:class (dom/classnames (css :asset-list-item) true
+                                    (css :selected) (contains? selected (:id color))
+                                    (css :editing) editing?)
+             :style #js {"--bullet-size" "16px"}
+             :on-context-menu on-context-menu
+             :on-click (when-not editing? on-click)
+             :ref item-ref
+             :draggable (and (not read-only?) (not editing?))
+             :on-drag-start on-color-drag-start
+             :on-drag-enter on-drag-enter
+             :on-drag-leave on-drag-leave
+             :on-drag-over dom/prevent-default
+             :on-drop on-drop}
+
+       [:div {:class (dom/classnames (css :bullet-block) true)}
+        [:& cb/color-bullet {:color color
+                             :mini? true}]]
+
+       (if ^boolean editing?
+         [:input
+          {:type "text"
+           :class (dom/classnames (css :element-name) true)
+           :ref input-ref
+           :on-blur input-blur
+           :on-key-down input-key-down
+           :auto-focus true
+           :default-value (cph/merge-path-item (:path color) (:name color))}]
+
+         [:div {:title (:name color)
+                :class (dom/classnames (css :name-block) true)
+                :on-double-click rename-color-clicked}
+
+          (if (= (:name color) default-name)
+            [:span  {:class (dom/classnames (css :default-name-only) true)} default-name]
+            [:*
+             [:span  {:class (dom/classnames (css :name) true)} (:name color)]
+             [:span  {:class (dom/classnames (css :default-name) true)} default-name]])])
+
+       (when local?
+         [:& cmm/assets-context-menu
+          {:on-close on-close-menu
+           :state @menu-state
+           :options [(when-not (or multi-colors? multi-assets?)
+                       {:option-name    (tr "workspace.assets.rename")
+                        :id             "assets-rename-color"
+                        :option-handler rename-color-clicked})
+                     (when-not (or multi-colors? multi-assets?)
+                       {:option-name    (tr "workspace.assets.edit")
+                        :id             "assets-edit-color"
+                        :option-handler edit-color-clicked})
+
+                     {:option-name    (tr "workspace.assets.delete")
+                      :id             "assets-delete-color"
+                      :option-handler delete-color}
+                     (when-not multi-assets?
+                       {:option-name   (tr "workspace.assets.group")
+                        :id             "assets-group-color"
+                        :option-handler (on-group (:id color))})]}])
+
+       (when ^boolean dragging?
+         [:div {:class (dom/classnames (css :dragging) true)}])]
+
+      [:div.asset-list-item
+       {:class-name (dom/classnames
+                     :selected (contains? selected (:id color)))
+        :on-context-menu on-context-menu
+        :on-click (when-not editing? on-click)
+        :ref item-ref
+        :draggable (and (not read-only?) (not editing?))
+        :on-drag-start on-color-drag-start
+        :on-drag-enter on-drag-enter
+        :on-drag-leave on-drag-leave
+        :on-drag-over dom/prevent-default
+        :on-drop on-drop}
+
+       [:& bc/color-bullet {:color color}]
+
+       (if ^boolean editing?
+         [:input.element-name
+          {:type "text"
+           :ref input-ref
+           :on-blur input-blur
+           :on-key-down input-key-down
+           :auto-focus true
+           :default-value (cph/merge-path-item (:path color) (:name color))}]
+
+         [:div.name-block {:title (:name color)
+                           :on-double-click rename-color-clicked}
+          (:name color)
+          (when-not (= (:name color) default-name)
+            [:span default-name])])
+
+       (when local?
+         [:& cmm/assets-context-menu
+          {:on-close on-close-menu
+           :state @menu-state
+           :options [(when-not (or multi-colors? multi-assets?)
+                       [(tr "workspace.assets.rename") rename-color-clicked])
+                     (when-not (or multi-colors? multi-assets?)
+                       [(tr "workspace.assets.edit") edit-color-clicked])
+                     [(tr "workspace.assets.delete") delete-color]
+                     (when-not multi-assets?
+                       [(tr "workspace.assets.group") (on-group (:id color))])]}])
+
+       (when ^boolean dragging?
+         [:div.dragging])])))
+
+(mf/defc colors-group
+  [{:keys [file-id prefix groups open-groups local? selected
+           multi-colors? multi-assets? on-asset-click on-assets-delete
+           on-clear-selection on-group on-rename-group on-ungroup colors
+           selected-full]}]
+  (let [group-open?    (get open-groups prefix true)
+        new-css-system (mf/use-ctx ctx/new-css-system)
+        dragging*      (mf/use-state false)
+        dragging?      (deref dragging*)
+
+        selected-paths (mf/with-memo [selected-full]
+                         (into #{}
+                               (comp (map :path) (d/nilv ""))
+                               selected-full))
+
+        move-color
+        (mf/use-fn (mf/deps file-id) (partial dwl/rename-color file-id))
+
+        on-drag-enter
+        (mf/use-fn
+         (mf/deps dragging* prefix selected-paths)
+         (fn [event]
+           (cmm/on-drag-enter-asset-group event dragging* prefix selected-paths)))
+
+        on-drag-leave
+        (mf/use-fn
+         (mf/deps dragging*)
+         (fn [event]
+           (cmm/on-drag-leave-asset event dragging*)))
+
+        on-drop
+        (mf/use-fn
+         (mf/deps dragging* prefix selected-paths selected-full move-color)
+         (fn [event]
+           (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full move-color)))]
+
+    (if ^boolean new-css-system
+      [:div {:class (dom/classnames (css :colors-group) true)
+             :on-drag-enter on-drag-enter
+             :on-drag-leave on-drag-leave
+             :on-drag-over dom/prevent-default
+             :on-drop on-drop}
+       [:& grp/asset-group-title {:file-id file-id
+                                  :section :colors
+                                  :path prefix
+                                  :group-open? group-open?
+                                  :on-rename on-rename-group
+                                  :on-ungroup on-ungroup}]
+       (when group-open?
+         [:*
+          (let [colors (get groups "" [])]
+            [:div {:class (dom/classnames (css :asset-list) true)
+                   :on-drag-enter on-drag-enter
+                   :on-drag-leave on-drag-leave
+                   :on-drag-over dom/prevent-default
+                   :on-drop on-drop}
+
+             (when ^boolean dragging?
+               [:div {:class (dom/classnames (css :grid-placeholder) true)}
+                "\u00A0"])
+
+             (when (and (empty? colors)
+                        (some? groups))
+               [:div {:class (dom/classnames (css :drop-space) true)}])
+
+             (for [color colors]
+               [:& color-item {:key (dm/str (:id color))
+                               :color color
+                               :file-id file-id
+                               :local? local?
+                               :selected selected
+                               :multi-colors? multi-colors?
+                               :multi-assets? multi-assets?
+                               :on-asset-click on-asset-click
+                               :on-assets-delete on-assets-delete
+                               :on-clear-selection on-clear-selection
+                               :on-group on-group
+                               :colors colors
+                               :selected-full selected-full
+                               :selected-paths selected-paths
+                               :move-color move-color}])])
+
+          (for [[path-item content] groups]
+            (when-not (empty? path-item)
+              [:& colors-group {:file-id file-id
+                                :prefix (cph/merge-path-item prefix path-item)
+                                :key (dm/str "group-" path-item)
+                                :groups content
+                                :open-groups open-groups
+                                :local? local?
+                                :selected selected
+                                :multi-colors? multi-colors?
+                                :multi-assets? multi-assets?
+                                :on-asset-click on-asset-click
+                                :on-assets-delete on-assets-delete
+                                :on-clear-selection on-clear-selection
+                                :on-group on-group
+                                :on-rename-group on-rename-group
+                                :on-ungroup on-ungroup
+                                :colors colors
+                                :selected-full selected-full}]))])]
+
+
+      [:div {:on-drag-enter on-drag-enter
+             :on-drag-leave on-drag-leave
+             :on-drag-over dom/prevent-default
+             :on-drop on-drop}
+       [:& grp/asset-group-title {:file-id file-id
+                                  :section :colors
+                                  :path prefix
+                                  :group-open? group-open?
+                                  :on-rename on-rename-group
+                                  :on-ungroup on-ungroup}]
+       (when group-open?
+         [:*
+          (let [colors (get groups "" [])]
+            [:div.asset-list {:on-drag-enter on-drag-enter
+                              :on-drag-leave on-drag-leave
+                              :on-drag-over dom/prevent-default
+                              :on-drop on-drop}
+
+             (when ^boolean dragging?
+               [:div.grid-placeholder "\u00A0"])
+
+             (when (and (empty? colors)
+                        (some? groups))
+               [:div.drop-space])
+
+             (for [color colors]
+               [:& color-item {:key (dm/str (:id color))
+                               :color color
+                               :file-id file-id
+                               :local? local?
+                               :selected selected
+                               :multi-colors? multi-colors?
+                               :multi-assets? multi-assets?
+                               :on-asset-click on-asset-click
+                               :on-assets-delete on-assets-delete
+                               :on-clear-selection on-clear-selection
+                               :on-group on-group
+                               :colors colors
+                               :selected-full selected-full
+                               :selected-paths selected-paths
+                               :move-color move-color}])])
+
+          (for [[path-item content] groups]
+            (when-not (empty? path-item)
+              [:& colors-group {:file-id file-id
+                                :prefix (cph/merge-path-item prefix path-item)
+                                :key (dm/str "group-" path-item)
+                                :groups content
+                                :open-groups open-groups
+                                :local? local?
+                                :selected selected
+                                :multi-colors? multi-colors?
+                                :multi-assets? multi-assets?
+                                :on-asset-click on-asset-click
+                                :on-assets-delete on-assets-delete
+                                :on-clear-selection on-clear-selection
+                                :on-group on-group
+                                :on-rename-group on-rename-group
+                                :on-ungroup on-ungroup
+                                :colors colors
+                                :selected-full selected-full}]))])])))
+
+(mf/defc colors-section
+  [{:keys [file-id local? colors open? open-status-ref selected reverse-sort?
+           on-asset-click on-assets-delete on-clear-selection] :as props}]
+
+  (let [selected        (:colors selected)
+        selected-full   (mf/with-memo [selected colors]
+                          (into #{} (filter #(contains? selected (:id %))) colors))
+
+        open-groups-ref (mf/with-memo [open-status-ref]
+                          (-> (l/in [:groups :colors])
+                              (l/derived open-status-ref)))
+        open-groups     (mf/deref open-groups-ref)
+
+        multi-colors?   (> (count selected) 1)
+        multi-assets?   (or (seq (:components selected))
+                            (seq (:graphics selected))
+                            (seq (:typographies selected)))
+
+        groups          (mf/with-memo [colors reverse-sort?]
+                          (grp/group-assets colors reverse-sort?))
+
+        read-only?      (mf/use-ctx ctx/workspace-read-only?)
+        new-css-system  (mf/use-ctx ctx/new-css-system)
+        add-color
+        (mf/use-fn
+         (fn [value _]
+           (st/emit! (dwl/add-color value))))
+
+        add-color-clicked
+        (mf/use-fn
+         (mf/deps file-id)
+         (fn [event]
+           (st/emit! (dw/set-assets-section-open file-id :colors true)
+                     (ptk/event ::ev/event {::ev/name "add-asset-to-library"
+                                            :asset-type "color"}))
+           (modal/show! :colorpicker
+                        {:x (.-clientX event)
+                         :y (.-clientY event)
+                         :on-accept add-color
+                         :data {:color "#406280"
+                                :opacity 1}
+                         :position :right})))
+
+        create-group
+        (mf/use-fn
+         (mf/deps colors selected on-clear-selection file-id)
+         (fn [color-id]
+           (fn [group-name]
+             (on-clear-selection)
+             (let [undo-id (js/Symbol)]
+               (st/emit! (dwu/start-undo-transaction undo-id))
+               (run! st/emit!
+                     (->> colors
+                          (filter #(if multi-colors?
+                                     (contains? selected (:id %))
+                                     (= color-id (:id %))))
+                          (map #(dwl/update-color
+                                 (assoc % :name
+                                        (cmm/add-group % group-name))
+                                 file-id))))
+               (st/emit! (dwu/commit-undo-transaction undo-id))))))
+
+        rename-group
+        (mf/use-fn
+         (mf/deps colors)
+         (fn [path last-path]
+           (on-clear-selection)
+           (let [undo-id (js/Symbol)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (run! st/emit!
+                   (->> colors
+                        (filter #(str/starts-with? (:path %) path))
+                        (map #(dwl/update-color
+                               (assoc % :name
+                                      (cmm/rename-group % path last-path))
+                               file-id))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
+
+        on-group
+        (mf/use-fn
+         (mf/deps colors selected)
+         (fn [color-id]
+           (fn [event]
+             (dom/stop-propagation event)
+             (modal/show! :name-group-dialog {:accept (create-group color-id)}))))
+
+        on-rename-group
+        (mf/use-fn
+         (mf/deps colors)
+         (fn [event path last-path]
+           (dom/stop-propagation event)
+           (modal/show! :name-group-dialog {:path path
+                                            :last-path last-path
+                                            :accept rename-group})))
+        on-ungroup
+        (mf/use-fn
+         (mf/deps colors)
+         (fn [path]
+           (on-clear-selection)
+           (let [undo-id (js/Symbol)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit!
+                    (->> colors
+                         (filter #(str/starts-with? (:path %) path))
+                         (map #(dwl/update-color
+                                (assoc % :name
+                                       (cmm/ungroup % path))
+                                file-id))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
+
+        on-asset-click
+        (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
+
+
+    [:& cmm/asset-section {:file-id file-id
+                           :title (tr "workspace.assets.colors")
+                           :section :colors
+                           :assets-count (count colors)
+                           :open? open?}
+     (if ^boolean new-css-system
+       (when local?
+         [:& cmm/asset-section-block {:role :title-button}
+          (when-not read-only?
+            [:button {:class (dom/classnames (css :assets-btn) true)
+                   :on-click add-color-clicked}
+             i/add-refactor])])
+
+       (when local?
+         [:& cmm/asset-section-block {:role :title-button}
+          (when-not read-only?
+            [:div.assets-button {:on-click add-color-clicked}
+             i/plus])]))
+
+
+     [:& cmm/asset-section-block {:role :content}
+      [:& colors-group {:file-id file-id
+                        :prefix ""
+                        :groups groups
+                        :open-groups open-groups
+                        :local? local?
+                        :selected selected
+                        :multi-colors? multi-colors?
+                        :multi-assets? multi-assets?
+                        :on-asset-click on-asset-click
+                        :on-assets-delete on-assets-delete
+                        :on-clear-selection on-clear-selection
+                        :on-group on-group
+                        :on-rename-group on-rename-group
+                        :on-ungroup on-ungroup
+                        :colors colors
+                        :selected-full selected-full}]]]))

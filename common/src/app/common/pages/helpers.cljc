@@ -448,25 +448,37 @@
       path)
     name))
 
+(defn merge-path-item-with-dot
+  "Put the item at the end of the path."
+  [path name]
+  (if-not (empty? path)
+    (if-not (empty? name)
+      (str path "\u00A0\u2022\u00A0" name)
+      path)
+    name))
+
 (defn compact-path
   "Separate last item of the path, and truncate the others if too long:
     'one'                          ->  ['' 'one' false]
     'one / two / three'            ->  ['one / two' 'three' false]
     'one / two / three / four'     ->  ['one / two / ...' 'four' true]
     'one-item-but-very-long / two' ->  ['...' 'two' true] "
-  [path max-length]
+  [path max-length dot?]
   (let [path-split (split-path path)
-        last-item  (last path-split)]
+        last-item  (last path-split)
+        merge-path (if dot?
+                     merge-path-item-with-dot
+                     merge-path-item)]
     (loop [other-items (seq (butlast path-split))
            other-path  ""]
       (if-let [item (first other-items)]
         (let [full-path (-> other-path
-                            (merge-path-item item)
-                            (merge-path-item last-item))]
+                            (merge-path item)
+                            (merge-path last-item))]
           (if (> (count full-path) max-length)
-            [(merge-path-item other-path "...") last-item true]
+            [(merge-path other-path "...") last-item true]
             (recur (next other-items)
-                   (merge-path-item other-path item))))
+                   (merge-path other-path item))))
         [other-path last-item false]))))
 
 (defn compact-name

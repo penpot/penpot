@@ -26,8 +26,7 @@
   flex-direction: row;
   gap: $s-2;
   height: $s-32;
-  margin: $s-4 $s-4 0 $s-4;
-  padding: $s-2 $s-2 $s-2 0;
+  padding: $s-2 $s-2 $s-2 $s-2;
   border-radius: $br-8;
   background: var(--color-background-secondary);
   cursor: pointer;
@@ -43,10 +42,12 @@
       @include tabTitleTipography;
       height: $s-28;
       width: 100%;
+      padding: 0 $s-8;
       margin: 0;
       border-radius: $br-5;
       background-color: transparent;
       color: var(--tab-foreground-color);
+      white-space: nowrap;
 
       &.current,
       &.current:hover {
@@ -63,12 +64,13 @@
     @include buttonStyle;
     height: 100%;
     width: $s-24;
-    padding: 0;
+    min-width: $s-24;
+    padding: 0 $s-6 0 0;
     border-radius: $br-5;
     svg {
       @include flexCenter;
-      height: 12px;
-      width: 16px;
+      height: $s-16;
+      width: $s-16;
       stroke: var(--icon-foreground);
       transform: rotate(180deg);
       fill: none;
@@ -83,6 +85,7 @@
     &.collapsed {
       svg {
         transform: rotate(0deg);
+        padding: 0 0 0 $s-6;
       }
     }
   }

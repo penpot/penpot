@@ -12,6 +12,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [app.main.ui.components.tabs-container :refer [tabs-container tabs-element]]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
@@ -40,7 +41,7 @@
                              (contains? layout :assets) :assets)
         shortcuts?     (contains? layout :shortcuts)
         show-debug?    (contains? layout :debug-panel)
-        new-css?       (mf/use-ctx ctx/new-css-system)
+        new-css-system (mf/use-ctx ctx/new-css-system)
 
         {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move parent-ref size]}
         (use-resize-hook :left-sidebar 255 255 500 :x false :left)
@@ -49,12 +50,14 @@
         (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
 
         on-tab-change
-        (mf/use-fn #(st/emit! (dw/go-to-layout %)))
-        ]
+        (mf/use-fn #(st/emit! (dw/go-to-layout %)))]
 
     [:aside {:ref parent-ref
-             :class (if ^boolean new-css?
-                      (dom/classnames (css :left-settings-bar) true)
+             :class (if ^boolean new-css-system
+                      (dom/classnames (css :left-settings-bar) true
+                                      :two-row   (<= size 300)
+                                      :three-row (and (> size 300) (<= size 400))
+                                      :four-row  (> size 400))
                       (dom/classnames :settings-bar true
                                       :settings-bar-left true
                                       :two-row   (<= size 300)
@@ -65,10 +68,10 @@
      [:div {:on-pointer-down on-pointer-down
             :on-lost-pointer-capture on-lost-pointer-capture
             :on-pointer-move on-pointer-move
-            :class (if ^boolean new-css?
+            :class (if ^boolean new-css-system
                      (dom/classnames (css :resize-area) true)
                      (dom/classnames :resize-area true))}]
-     [:div {:class (if ^boolean new-css?
+     [:div {:class (if ^boolean new-css-system
                      (dom/classnames (css :settings-bar-inside) true)
                      (dom/classnames :settings-bar-inside true))}
       (cond
@@ -79,22 +82,23 @@
         [:& debug-panel]
 
         :else
-        (if ^boolean new-css?
-          [:& tab-container
-           {:on-change-tab on-tab-change
-            :selected section
-            :shortcuts? shortcuts?
-            :collapsable? true
-            :handle-collapse handle-collapse}
+        (if ^boolean new-css-system
+          [:div  {:class (dom/classnames (css :tabs-wrapper) true)}
+           [:& tab-container
+            {:on-change-tab on-tab-change
+             :selected section
+             :shortcuts? shortcuts?
+             :collapsable? true
+             :handle-collapse handle-collapse
+             :klass :tab-spacing}
+            [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
+             [:div {:class (dom/classnames (css :layers-tab) true)}
+              [:& sitemap {:layout layout}]
+              [:& layers-toolbox {:size-parent size}]]]
 
-           [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
-            [:div {:class (dom/classnames (css :layers-tab) true)}
-             [:& sitemap {:layout layout}]
-             [:& layers-toolbox {:size-parent size}]]]
-
-           (when-not ^boolean mode-inspect?
-             [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
-              [:& assets-toolbox]])]
+            (when-not ^boolean mode-inspect?
+              [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
+               [:& assets-toolbox]])]]
 
           [:*
            [:button.collapse-sidebar
@@ -102,20 +106,20 @@
              :aria-label (tr "workspace.sidebar.collapse")}
             i/arrow-slide]
 
-           [:& tab-container
+           [:& tabs-container
             {:on-change-tab on-tab-change
              :selected section
              :shortcuts? shortcuts?
              :collapsable? true
              :handle-collapse handle-collapse}
 
-            [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
+            [:& tabs-element {:id :layers :title (tr "workspace.sidebar.layers")}
              [:div {:class (dom/classnames :layers-tab true)}
               [:& sitemap {:layout layout}]
               [:& layers-toolbox {:size-parent size}]]]
 
             (when-not ^boolean mode-inspect?
-              [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
+              [:& tabs-element {:id :assets :title (tr "workspace.toolbar.assets")}
                [:& assets-toolbox]])]]))]]))
 
 ;; --- Right Sidebar (Component)
@@ -150,4 +154,3 @@
 
         :else
         [:> options-toolbox props])]]))
-

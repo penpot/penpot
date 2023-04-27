@@ -24,7 +24,7 @@
     }
 
     .shortcuts-close-button {
-      @extend .button-primary;
+      @extend .button-tertiary;
       position: absolute;
       right: $s-2;
       top: $s-2;
@@ -45,7 +45,6 @@
     border-radius: $br-8;
     font-family: "worksans", sans-serif;
     background-color: var(--color-background-tertiary);
-
     .search-box {
       align-items: center;
       display: flex;
@@ -59,6 +58,7 @@
       }
 
       .input-text {
+        @include removeInputStyle;
         height: $s-32;
         width: 100%;
         margin: 0;
@@ -66,7 +66,6 @@
         border: 0;
         font-size: $fs-12;
         color: var(--color-foreground-primary);
-        background-color: transparent;
         &::placeholder {
           color: var(--color-foreground-secondary);
         }
@@ -85,6 +84,13 @@
             @extend .button-icon-small;
           }
         }
+      }
+    }
+    .search-icon {
+      @include flexCenter;
+      width: $s-28;
+      svg {
+        @extend .button-icon-small;
       }
     }
   }

@@ -6,6 +6,7 @@
 
 (ns app.main.ui.components.editable-label
   (:require
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -18,6 +19,7 @@
         tooltip (get props :tooltip)
         input (mf/use-ref nil)
         state (mf/use-state (:editing false))
+        new-css-system (mf/use-ctx ctx/new-css-system)
         is-editing (:editing @state)
         start-editing (fn []
                         (swap! state assoc :editing true)
@@ -52,7 +54,11 @@
                                      :default-value value
                                      :on-key-up on-key-up
                                      :on-blur cancel-editing}]
-       [:span.editable-label-close {:on-click cancel-editing} i/close]]
+       
+       [:span.editable-label-close {:on-click cancel-editing}
+        (if new-css-system
+          i/delete-text-refactor
+          i/close)]]
       [:span.editable-label {:class class-name
                              :title tooltip
                              :on-double-click on-dbl-click} display-value])))

@@ -13,7 +13,9 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.shape-icon-refactor :as sic]
+   [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
@@ -128,9 +130,14 @@
            (swap! filter-state assoc :search-text "" :num-items 100)))
 
         update-search-text
-        (mf/use-callback
+        (mf/use-fn
+         (mf/deps new-css-system)
          (fn [event]
-           (let [value (-> event dom/get-target dom/get-value)]
+          ;;  NOTE: When old-css-system is removed this function will recibe value and event 
+          ;;  Let won't be necessary any more
+           (let [value (if new-css-system
+                         event
+                         (dom/get-target-val event))]
              (swap! filter-state assoc :search-text value :num-items 100))))
 
         toggle-search
@@ -226,12 +233,9 @@
          (fn [event]
            (let [enter? (kbd/enter? event)
                  esc?   (kbd/esc? event)
-                 input-node (dom/event->target event)]
-
-             (when enter?
-               (dom/blur! input-node))
-             (when esc?
-               (dom/blur! input-node)))))]
+                 node (dom/event->target event)]
+             (when ^boolean enter? (dom/blur! node))
+             (when ^boolean esc? (dom/blur! node)))))]
 
     [filtered-objects
      handle-show-more
@@ -243,33 +247,33 @@
                                          (css :search) true)
                          (dom/classnames :tool-window-bar true
                                          :search true))}
-          [:span {:class (if new-css-system
-                           (dom/classnames (css :search-box) true)
-                           (dom/classnames :search-box true))}
-           [:button
-            {:on-click toggle-filters
-             :class (if new-css-system
-                      (dom/classnames :active active?
-                                      (css :filter-button) true)
-                      (dom/classnames :active active?
-                                      :filter true))}
-            (if new-css-system
-              i/filter-refactor
-              i/icon-filter)]
-           [:div {:class (dom/classnames (css :search-input-wrapper) new-css-system)}
-            [:input {:on-change update-search-text
-                     :value (:search-text @filter-state)
-                     :auto-focus (:show-search-box @filter-state)
-                     :placeholder (tr "workspace.sidebar.layers.search")
-                     :on-key-down handle-key-down}]
-            (when (not (= "" (:search-text @filter-state)))
-              [:button {:class (if new-css-system
-                                 (dom/classnames (css :clear) true)
-                                 (dom/classnames :clear true))
-                        :on-click clear-search-text}
-               (if new-css-system
-                 i/delete-text-refactor
-                 i/exclude)])]]
+          (if new-css-system
+            [:& search-bar
+             {:on-change update-search-text
+              :value (:search-text @filter-state)
+              :on-clear clear-search-text
+              :placeholder (tr "workspace.sidebar.layers.search")}
+             [:button
+              {:on-click toggle-filters
+               :class (dom/classnames :active active?
+                                      (css :filter-button) true)}
+              i/filter-refactor]]
+
+            [:span.search-box
+             [:button.filter
+              {:on-click toggle-filters
+               :class (dom/classnames :active active?)}
+              i/icon-filter]
+             [:div
+              [:input {:on-change update-search-text
+                       :value (:search-text @filter-state)
+                       :auto-focus (:show-search-box @filter-state)
+                       :placeholder (tr "workspace.sidebar.layers.search")
+                       :on-key-down handle-key-down}]
+              (when (not (= "" (:search-text @filter-state)))
+                [:button.clear {:on-click clear-search-text}
+                 i/exclude])]])
+
           [:button {:class (dom/classnames (css :close-search) new-css-system)
                     :on-click toggle-search}
            (if new-css-system
@@ -397,20 +401,18 @@
               [:span {:on-click (add-filter :text)} i/text (tr "workspace.sidebar.layers.texts")]
               [:span {:on-click (add-filter :image)} i/image (tr "workspace.sidebar.layers.images")]
               [:span {:on-click (add-filter :shape)} i/curve (tr "workspace.sidebar.layers.shapes")]]))]
-        [:div {:class (if new-css-system
-                        (dom/classnames (css :tool-window-bar) true)
-                        (dom/classnames :tool-window-bar true))}
-         [:span {:class (if new-css-system
-                          (dom/classnames (css :page-name) true)
-                          (dom/classnames :page-name true))}
-          (:name page)]
-         [:button {:class (if new-css-system
-                            (dom/classnames (css :icon-search) true)
-                            (dom/classnames :icon-search true))
-                   :on-click toggle-search}
-          (if new-css-system
-            i/search-refactor
-            i/search)]]))]))
+
+        (if new-css-system
+          [:div {:class (dom/classnames (css :tool-window-bar) true)}
+          [:& title-bar {:collapsable? false
+                         :title        (:name page)
+                         :on-btn-click toggle-search
+                         :btn-children i/search-refactor}]]
+          [:div.tool-window-bar
+           [:span.page-name
+            (:name page)]
+           [:button.icon-search {:on-click toggle-search}
+            i/search]])))]))
 
 (mf/defc layers-toolbox
   {:wrap [mf/memo]}

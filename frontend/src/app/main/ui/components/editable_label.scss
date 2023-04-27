@@ -1,0 +1,21 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.editable-label-input {
+  @include textEllipsis;
+  @include titleTipography;
+  @include removeInputStyle;
+  flex-grow: 1;
+  height: $s-28;
+  max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
+  margin: 0;
+  padding-left: $s-6;
+  border-radius: $br-8;
+  border: $s-1 solid var(--input-border-color-focus);
+  color: var(--layer-row-foreground-color);
+}

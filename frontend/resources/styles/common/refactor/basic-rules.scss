@@ -7,18 +7,24 @@
 .button-primary {
   @include buttonStyle;
   @include flexCenter;
+  background-color: var(--button-primary-background-color-rest);
+  border: $s-1 solid var(--button-primary-border-color-rest);
+  color: var(--button-primary-foreground-color-rest);
   &:hover {
-    background-color: var(--button-background-hover);
+    background-color: var(--button-primary-background-color-hover);
+    border: $s-1 solid var(--button-primary-border-color-hover);
+    color: var(--button-primary-foreground-color-hover);
     svg {
-      stroke: var(--button-foreground-hover);
+      stroke: var(--button-primary-foreground-color-hover);
     }
   }
   &:focus {
     outline: none;
-    border: 1px solid var(--button-border-focus);
-    background-color: var(--button-background-focus);
+    background-color: var(--button-primary-background-color-focus);
+    border: $s-1 solid var(--button-primary-boder-color-focus);
+    color: var(--button-primary-foreground-color-focus);
     svg {
-      stroke: var(--button-foreground-focus);
+      stroke: var(--button-primary-foreground-color-focus);
     }
   }
   &:active {
@@ -32,6 +38,73 @@
 }
 
 .button-secondary {
+  @include buttonStyle;
+  @include flexCenter;
+  background-color: var(--button-secondary-background-color-rest);
+  border: $s-1 solid var(--button-secondary-border-color-rest);
+  color: var(--button-secondary-foreground-color-rest);
+  &:hover {
+    background-color: var(--button-secondary-background-color-hover);
+    border: $s-1 solid var(--button-secondary-border-color-hover);
+    color: var(--button-secondary-foreground-color-hover);
+    svg,
+    span svg {
+      stroke: var(--button-secondary-foreground-color-hover);
+    }
+  }
+  &:focus {
+    outline: none;
+    background-color: var(--button-secondary-background-color-focus);
+    border: $s-1 solid var(--button-secondary-boder-color-focus);
+    color: var(--button-secondary-foreground-color-focus);
+    svg {
+      stroke: var(--button-secondary-foreground-color-focus);
+    }
+  }
+  &:active {
+    border: none;
+    background-color: transparent;
+  }
+  &:focus-visible {
+    border: none;
+    outline: none;
+  }
+}
+
+.button-tertiary {
+  @include buttonStyle;
+  @include flexCenter;
+  color: var(--button-tertiary-foreground-color-rest);
+  svg {
+    stroke: var(--button-tertiary-foreground-color-rest);
+  }
+  &:hover {
+    background-color: var(--button-tertiary-background-color-hover);
+    color: var(--button-tertiary-foreground-color-hover);
+    svg {
+      stroke: var(--button-tertiary-foreground-color-hover);
+    }
+  }
+  &:focus {
+    outline: none;
+    border: $s-1 solid var(--button-tertiary-border-color-focus);
+    background-color: var(--button-tertiary-background-color-focus);
+    color: var(--button-tertiary-foreground-color-focus);
+    svg {
+      stroke: var(--button-tertiary-foreground-color-focus);
+    }
+  }
+  &:active {
+    border: $s-1 solid var(--button-tertiary-border-color-focus);
+    outline: none;
+  }
+  &:focus-visible {
+    border: none;
+    outline: none;
+  }
+}
+
+.button-tag {
   @include buttonStyle;
   @include flexCenter;
   &:hover {
@@ -72,4 +145,21 @@
   height: $s-12;
   width: $s-12;
   stroke-width: 1.33px;
+}
+
+.asset-element {
+  @include titleTipography;
+  display: flex;
+  align-items: center;
+  height: $s-32;
+  border-radius: $br-8;
+  margin-bottom: $s-4;
+  padding: $s-8 $s-12;
+  background-color: var(--assets-item-background-color);
+  color: var(--assets-item-name-foreground-color);
+  &:hover,
+  &:focus-within {
+    background-color: var(--assets-item-background-color-hover);
+    color: var(--assets-item-name-foreground-color-hover);
+  }
 }

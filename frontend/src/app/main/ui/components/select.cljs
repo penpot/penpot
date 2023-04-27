@@ -5,11 +5,13 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.components.select
+  (:require-macros [app.main.style :refer [css]])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
@@ -22,7 +24,8 @@
 
 (mf/defc select
   [{:keys [default-value options class is-open? on-change on-pointer-enter-option on-pointer-leave-option]}]
-  (let [label-index    (mf/with-memo [options]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        label-index    (mf/with-memo [options]
                          (into {} (map as-key-value) options))
 
         state*         (mf/use-state
@@ -73,22 +76,46 @@
 
     (mf/with-effect [default-value]
       (swap! state* assoc :current-value default-value))
+    (if new-css-system
+      [:div {:on-click open-dropdown :class (dom/classnames (css class) true
+                                                            (css :custom-select) true)}
+       [:span {:class (css :current-label)} current-label]
+       [:span {:class (css :dropdown-button)} i/arrow-refactor]
+       [:& dropdown {:show is-open? :on-close close-dropdown}
+        [:ul {:class (css :custom-select-dropdown)}
+         (for [[index item] (d/enumerate options)]
+           (if (= :separator item)
+             [:hr {:key (dm/str current-id "-" index)}]
+             (let [[value label] (as-key-value item)]
+               [:li
+                {:key (dm/str current-id "-" index)
+                 :class (dom/classnames
+                         (css :checked-element) true
+                         (css :is-selected) (= value current-value))
+                 :data-value (pr-str value)
+                 :on-pointer-enter highlight-item
+                 :on-pointer-leave unhighlight-item
+                 :on-click select-item}
+                [:span {:class (css :label)} label]
+                [:span {:class (css :check-icon)} i/tick-refactor]])))]]]
+      
+      
 
-    [:div.custom-select {:on-click open-dropdown :class class}
-     [:span current-label]
-     [:span.dropdown-button i/arrow-down]
-     [:& dropdown {:show is-open? :on-close close-dropdown}
-      [:ul.custom-select-dropdown
-       (for [[index item] (d/enumerate options)]
-         (if (= :separator item)
-           [:hr {:key (dm/str current-id "-" index)}]
-           (let [[value label] (as-key-value item)]
-             [:li.checked-element
-              {:key (dm/str current-id "-" index)
-               :class (when (= value current-value) "is-selected")
-               :data-value (pr-str value)
-               :on-pointer-enter highlight-item
-               :on-pointer-leave unhighlight-item
-               :on-click select-item}
-              [:span.check-icon i/tick]
-              [:span label]])))]]]))
+      [:div.custom-select {:on-click open-dropdown :class class}
+       [:span current-label]
+       [:span.dropdown-button i/arrow-down]
+       [:& dropdown {:show is-open? :on-close close-dropdown}
+        [:ul.custom-select-dropdown
+         (for [[index item] (d/enumerate options)]
+           (if (= :separator item)
+             [:hr {:key (dm/str current-id "-" index)}]
+             (let [[value label] (as-key-value item)]
+               [:li.checked-element
+                {:key (dm/str current-id "-" index)
+                 :class (when (= value current-value) "is-selected")
+                 :data-value (pr-str value)
+                 :on-pointer-enter highlight-item
+                 :on-pointer-leave unhighlight-item
+                 :on-click select-item}
+                [:span.check-icon i/tick]
+                [:span label]])))]]])))
