@@ -70,7 +70,7 @@
             (update :x - delta-blur)
             (update :y - delta-blur)
             (update :x1 - delta-blur)
-            (update :x1 - delta-blur)
+            (update :y1 - delta-blur)
             (update :x2 + delta-blur)
             (update :y2 + delta-blur)
             (update :width + (* delta-blur 2))
