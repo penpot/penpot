@@ -156,3 +156,148 @@
     }
   }
 }
+
+.dashboard-access-tokens {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .access-tokens-hero-container {
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .access-tokens-hero {
+    font-size: $fs14;
+    padding: $size-6;
+    background-color: $color-white;
+    margin-top: $size-6;
+    display: flex;
+    justify-content: space-between;
+
+    .desc {
+      width: 80%;
+      color: $color-gray-40;
+      h2 {
+        margin-bottom: $size-4;
+        color: $color-black;
+      }
+      p {
+        font-size: $fs16;
+      }
+    }
+
+    .btn-primary {
+      flex-shrink: 0;
+    }
+  }
+
+  .access-tokens-empty {
+    text-align: center;
+    max-width: 1000px;
+    width: 100%;
+    padding: $size-6;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 1px dashed $color-gray-20;
+    color: $color-gray-40;
+    margin-top: 12px;
+    min-height: 136px;
+  }
+
+  .table-row {
+    background-color: $color-white;
+    display: grid;
+    grid-template-columns: 1fr 43% 12px;
+    height: 63px;
+    &:not(:first-child) {
+      margin-top: 8px;
+    }
+  }
+
+  .table-field {
+    &.name {
+      color: $color-gray-60;
+    }
+
+    &.expiration-date {
+      color: $color-gray-40;
+      font-size: $fs14;
+      .content {
+        padding: 2px 5px;
+        &.expired {
+          background-color: $color-warning-lighter;
+          border-radius: $br4;
+          color: $color-gray-40;
+        }
+      }
+    }
+
+    &.access-token-created {
+      word-break: break-all;
+    }
+
+    &.actions {
+      position: relative;
+    }
+  }
+}
+
+.access-tokens-modal {
+  .action-buttons {
+    gap: 10px;
+
+    .cancel-button {
+      border: 1px solid $color-gray-30;
+      background: $color-canvas;
+      border-radius: $br3;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      margin-right: 8px;
+
+      &:hover {
+        background: $color-gray-20;
+      }
+    }
+  }
+  .access-token-created {
+    position: relative;
+    word-break: break-all;
+
+    .custom-input input {
+      background-color: $color-success-lighter;
+      border: 0;
+      padding: 0 0 0 15px;
+    }
+  }
+
+  .help-icon {
+    border: none;
+    height: 40px;
+    width: 40px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    cursor: pointer;
+    background-color: $color-success-lighter;
+
+    svg {
+      fill: $color-gray-30;
+    }
+
+    &:hover {
+      svg {
+        fill: $color-gray-60;
+      }
+    }
+  }
+
+  .token-created-info {
+    font-size: $fs12;
+    color: $color-gray-40;
+  }
+}

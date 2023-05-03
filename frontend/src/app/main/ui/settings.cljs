@@ -8,6 +8,7 @@
   (:require
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.settings.access-tokens :refer [access-tokens-page]]
    [app.main.ui.settings.change-email]
    [app.main.ui.settings.delete-account]
    [app.main.ui.settings.feedback :refer [feedback-page]]
@@ -55,5 +56,8 @@
          [:& password-page {:locale locale}]
 
          :settings-options
-         [:& options-page {:locale locale}])]]]))
+         [:& options-page {:locale locale}]
+
+         :settings-access-tokens
+         [:& access-tokens-page])]]]))
 

@@ -19,18 +19,19 @@
    [clojure.spec.alpha :as s]))
 
 (defn- decode-row
-  [{:keys [perms] :as row}]
-  (cond-> row
-    (db/pgarray? perms "text")
-    (assoc :perms (db/decode-pgarray perms #{}))))
+  [row]
+  (dissoc row :perms))
 
-(defn- create-access-token
-  [{:keys [::conn ::main/props]} profile-id name perms]
+(defn create-access-token
+  [{:keys [::db/conn ::main/props]} profile-id name expiration]
   (let [created-at (dt/now)
         token-id   (uuid/next)
         token      (tokens/generate props {:iss "access-token"
                                            :tid token-id
-                                           :iat created-at})]
+                                           :iat created-at})
+
+        expires-at (some-> expiration dt/in-future)]
+
     (db/insert! conn :access-token
                 {:id token-id
                  :name name
@@ -38,33 +39,36 @@
                  :profile-id profile-id
                  :created-at created-at
                  :updated-at created-at
-                 :perms (db/create-array conn "text" perms)})))
+                 :expires-at expires-at
+                 :perms (db/create-array conn "text" [])})))
+
 
 (defn repl-create-access-token
-  [{:keys [::db/pool] :as system} profile-id name perms]
+  [{:keys [::db/pool] :as system} profile-id name expiration]
   (db/with-atomic [conn pool]
     (let [props (:app.setup/props system)]
-      (create-access-token {::conn conn ::main/props props}
+      (create-access-token {::db/conn conn ::main/props props}
                            profile-id
                            name
-                           perms))))
+                           expiration))))
 
 (s/def ::name ::us/not-empty-string)
-(s/def ::perms ::us/set-of-strings)
+(s/def ::expiration ::dt/duration)
 
 (s/def ::create-access-token
   (s/keys :req [::rpc/profile-id]
-          :req-un [::name ::perms]))
+          :req-un [::name]
+          :opt-un [::expiration]))
 
 (sv/defmethod ::create-access-token
   {::doc/added "1.18"}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id name perms]}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id name expiration]}]
   (db/with-atomic [conn pool]
-    (let [cfg (assoc cfg ::conn conn)]
+    (let [cfg (assoc cfg ::db/conn conn)]
       (quotes/check-quote! conn
                            {::quotes/id ::quotes/access-tokens-per-profile
                             ::quotes/profile-id profile-id})
-      (-> (create-access-token cfg profile-id name perms)
+      (-> (create-access-token cfg profile-id name expiration)
           (decode-row)))))
 
 (s/def ::delete-access-token
@@ -83,5 +87,8 @@
 (sv/defmethod ::get-access-tokens
   {::doc/added "1.18"}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id]}]
-  (->> (db/query pool :access-token {:profile-id profile-id})
+  (->> (db/query pool :access-token
+                 {:profile-id profile-id}
+                 {:order-by [[:expires-at :asc] [:created-at :asc]]
+                  :columns [:id :name :perms :created-at :updated-at :expires-at]})
        (mapv decode-row)))

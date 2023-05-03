@@ -55,7 +55,8 @@
        (:settings-profile
         :settings-password
         :settings-options
-        :settings-feedback)
+        :settings-feedback
+        :settings-access-tokens)
        [:& settings/settings {:route route}]
 
        :debug-icons-preview

@@ -21,44 +21,50 @@
 
 (mf/defc sidebar-content
   [{:keys [profile section] :as props}]
-  (let [profile?   (= section :settings-profile)
-        password?  (= section :settings-password)
-        options?   (= section :settings-options)
-        feedback?  (= section :settings-feedback)
+  (let [profile?       (= section :settings-profile)
+        password?      (= section :settings-password)
+        options?       (= section :settings-options)
+        feedback?      (= section :settings-feedback)
+        access-tokens? (= section :settings-access-tokens)
 
         go-dashboard
         (mf/use-callback
-         (mf/deps profile)
-         #(st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)})))
+          (mf/deps profile)
+          #(st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)})))
 
         go-settings-profile
         (mf/use-callback
-         (mf/deps profile)
-         #(st/emit! (rt/nav :settings-profile)))
+          (mf/deps profile)
+          #(st/emit! (rt/nav :settings-profile)))
 
         go-settings-feedback
         (mf/use-callback
-         (mf/deps profile)
-         #(st/emit! (rt/nav :settings-feedback)))
+          (mf/deps profile)
+          #(st/emit! (rt/nav :settings-feedback)))
 
         go-settings-password
         (mf/use-callback
-         (mf/deps profile)
-         #(st/emit! (rt/nav :settings-password)))
+          (mf/deps profile)
+          #(st/emit! (rt/nav :settings-password)))
 
         go-settings-options
         (mf/use-callback
-         (mf/deps profile)
-         #(st/emit! (rt/nav :settings-options)))
+          (mf/deps profile)
+          #(st/emit! (rt/nav :settings-options)))
 
+        go-settings-access-tokens
+        (mf/use-callback
+          (mf/deps profile)
+          #(st/emit! (rt/nav :settings-access-tokens)))
+        
         show-release-notes
         (mf/use-callback
-         (fn [event]
-           (let [version (:main @cf/version)]
-             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
-             (if (and (kbd/alt? event) (kbd/mod? event))
-               (st/emit! (modal/show {:type :onboarding}))
-               (st/emit! (modal/show {:type :release-notes :version version}))))))]
+          (fn [event]
+            (let [version (:main @cf/version)]
+              (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
+              (if (and (kbd/alt? event) (kbd/mod? event))
+                (st/emit! (modal/show {:type :onboarding}))
+                (st/emit! (modal/show {:type :release-notes :version version}))))))]
 
     [:div.sidebar-content
      [:div.sidebar-content-section
@@ -84,6 +90,13 @@
              :data-test "settings-profile"}
         i/tree
         [:span.element-title (tr "labels.settings")]]
+
+       (when (contains? @cf/flags :access-tokens)
+         [:li {:class (when access-tokens? "current")
+               :on-click go-settings-access-tokens
+               :data-test "settings-access-tokens"}
+          i/icon-key
+          [:span.element-title (tr "labels.access-tokens")]])
 
        [:hr]
 

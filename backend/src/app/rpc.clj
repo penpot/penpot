@@ -112,22 +112,6 @@
                   :hint "authentication required for this endpoint")
         (f cfg params)))))
 
-(defn- wrap-access-token
-  "Wraps service method with access token validation."
-  [_ f {:keys [::sv/name] :as mdata}]
-  (if (contains? cf/flags :access-tokens)
-    (fn [cfg params]
-      (let [request (::http/request params)]
-        (if (contains? request ::actoken/id)
-          (let [perms (::actoken/perms request #{})]
-            (if (contains? perms name)
-              (f cfg params)
-              (ex/raise :type :authorization
-                        :code :operation-not-allowed
-                        :allowed perms)))
-          (f cfg params))))
-    f))
-
 (defn- wrap-audit
   [_ f mdata]
   (if (or (contains? cf/flags :webhooks)
@@ -157,8 +141,7 @@
     (rlimit/wrap cfg $ mdata)
     (wrap-audit cfg $ mdata)
     (wrap-spec-conform cfg $ mdata)
-    (wrap-authentication cfg $ mdata)
-    (wrap-access-token cfg $ mdata)))
+    (wrap-authentication cfg $ mdata)))
 
 (defn- wrap
   [cfg f mdata]

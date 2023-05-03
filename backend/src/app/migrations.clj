@@ -315,7 +315,8 @@
    {:name "0101-mod-server-error-report-table"
     :fn (mg/resource "app/migrations/sql/0101-mod-server-error-report-table.sql")}
 
-  ])
+   {:name "0102-mod-access-token-table"
+    :fn (mg/resource "app/migrations/sql/0102-mod-access-token-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

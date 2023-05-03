@@ -191,25 +191,38 @@
         [:span.hint hint])]]))
 
 (mf/defc select
-  [{:keys [options label form default data-test] :as props
+  [{:keys [options disabled label form default data-test] :as props
     :or {default ""}}]
   (let [input-name (get props :name)
-        form      (or form (mf/use-ctx form-ctx))
-        value     (or (get-in @form [:data input-name]) default)
-        cvalue    (d/seek #(= value (:value %)) options)
-        on-change (fn [event]
-                    (let [target (dom/get-target event)
-                          value  (dom/get-value target)]
-                      (fm/on-input-change form input-name value)))]
+        form       (or form (mf/use-ctx form-ctx))
+        value      (or (get-in @form [:data input-name]) default)
+        cvalue     (d/seek #(= value (:value %)) options)
+        focus?     (mf/use-state false)
+        on-change
+        (fn [event]
+          (let [target (dom/get-target event)
+                value  (dom/get-value target)]
+            (fm/on-input-change form input-name value)))
+
+        on-focus
+        (fn [_]
+          (reset! focus? true))
+
+        on-blur
+        (fn [_]
+          (reset! focus? false))]
 
     [:div.custom-select
      [:select {:value value
                :on-change on-change
+               :on-focus on-focus
+               :on-blur on-blur
+               :disabled disabled
                :data-test data-test}
       (for [item options]
         [:option {:key (:value item) :value (:value item)} (:label item)])]
 
-     [:div.input-container
+     [:div.input-container {:class (dom/classnames :disabled disabled :focus @focus?)}
       [:div.main-content
        [:label label]
        [:span.value (:label cvalue "")]]

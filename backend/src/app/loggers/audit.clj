@@ -17,6 +17,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http :as-alias http]
+   [app.http.access-token :as-alias actoken]
    [app.http.client :as http.client]
    [app.loggers.audit.tasks :as-alias tasks]
    [app.loggers.webhooks :as-alias webhooks]
@@ -152,7 +153,11 @@
                                (dissoc :profile-id)
                                (dissoc :type)))
 
-                       (clean-props))]
+                       (clean-props))
+
+        token-id  (::actoken/id request)
+        context   (d/without-nils
+                   {:access-token-id (some-> token-id str)})]
 
     {::type (or (::type resultm)
                 (::rpc/type cfg))
@@ -161,6 +166,7 @@
      ::profile-id profile-id
      ::ip-addr (some-> request parse-client-ip)
      ::props props
+     ::context context
 
      ;; NOTE: for batch-key lookup we need the params as-is
      ;; because the rpc api does not need to know the
@@ -188,6 +194,7 @@
                 :type (::type event)
                 :profile-id (::profile-id event)
                 :ip-addr (::ip-addr event)
+                :context (::context event)
                 :props (::props event)}]
 
     (when (contains? cf/flags :audit-log)
@@ -201,6 +208,7 @@
           (db/insert! conn-or-pool :audit-log
                       (-> params
                           (update :props db/tjson)
+                          (update :context db/tjson)
                           (update :ip-addr db/inet)
                           (assoc :created-at now)
                           (assoc :tracked-at now)
