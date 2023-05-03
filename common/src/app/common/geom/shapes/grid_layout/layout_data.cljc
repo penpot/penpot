@@ -51,6 +51,7 @@
 
 (ns app.common.geom.shapes.grid-layout.layout-data
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.points :as gpo]
    [app.common.types.shape.layout :as ctl]))
@@ -134,6 +135,137 @@
                  (= :auto type)
                  (assoc :size (min (+ size add-size) max-size)))))))
 
+(defn size-to-allocate
+  [type parent [child-bounds _] cell]
+  (let [[row-gap column-gap] (ctl/gaps parent)
+        [sfn gap prop-span]
+        (if (= type :column)
+          [gpo/width-points column-gap :column-span ]
+          [gpo/height-points row-gap :row-span ])
+        span (get cell prop-span)]
+    (- (sfn child-bounds) (* gap (dec span)))))
+
+(defn allocate-size
+  [allocations indexed-tracks to-allocate]
+  (if (empty? indexed-tracks)
+    allocations
+    (let [[idx track] (first indexed-tracks)
+          old-allocated (get allocations idx 0.01)
+          auto-track? (= :auto (:type track))
+
+          allocated (if auto-track?
+                      (max old-allocated
+                           (/ to-allocate (count indexed-tracks))
+                           (:size track))
+                      (:size track))]
+      (recur (cond-> allocations auto-track?
+                     (assoc idx allocated))
+             (rest indexed-tracks) (- to-allocate allocated)))))
+
+(defn allocate-flex
+  [allocations indexed-tracks to-allocate fr-value]
+  (if (empty? indexed-tracks)
+    allocations
+    (let [[idx track] (first indexed-tracks)
+          old-allocated (get allocations idx 0.01)
+
+          auto-track? (= :auto (:type track))
+          flex-track? (= :flex (:type track))
+
+          fr (if flex-track? (:value track) 0)
+
+          target-allocation (* fr-value fr)
+
+          allocated (if (or auto-track? flex-track?)
+                      (max target-allocation
+                           old-allocated
+                           (:size track))
+                      (:size track))]
+      (recur (cond-> allocations (or flex-track? auto-track?)
+                     (assoc idx allocated))
+             (rest indexed-tracks)
+             (- to-allocate allocated)
+             fr-value))))
+
+(defn set-auto-multi-span
+  [parent track-list children-map shape-cells type]
+
+  (let [[prop prop-span]
+        (if (= type :column)
+          [:column :column-span]
+          [:row :row-span])
+
+        ;; First calculate allocation without applying so we can modify them on the following tracks
+        allocate-auto-tracks
+        (->> shape-cells
+             (vals)
+             (filter #(> (get % prop-span) 1))
+             (sort-by prop-span -)
+             (reduce
+              (fn [alloc cell]
+                (let [shape-id (first (:shapes cell))
+                      from-idx (dec (get cell prop))
+                      to-idx (+ (dec (get cell prop)) (get cell prop-span))
+                      indexed-tracks (subvec (d/enumerate track-list) from-idx to-idx)
+                      has-flex? (->> indexed-tracks (d/seek #(= :flex (:type (second %)))) some?)
+                      to-allocate (size-to-allocate type parent (get children-map shape-id) cell)]
+                  (cond-> alloc
+                    ;; skip cells with flex tracks
+                    (and (not has-flex?) (some? to-allocate))
+                    (allocate-size indexed-tracks to-allocate))))
+              {}))
+
+        ;; Apply the allocations to the tracks
+        track-list
+        (into []
+              (map-indexed #(update %2 :size max (get allocate-auto-tracks %1)))
+              track-list)]
+    track-list))
+
+(defn set-flex-multi-span
+  [parent track-list children-map shape-cells type]
+
+  (let [[prop prop-span]
+        (if (= type :column)
+          [:column :column-span]
+          [:row :row-span])
+
+        ;; First calculate allocation without applying so we can modify them on the following tracks
+        allocate-fr-tracks
+        (->> shape-cells
+             (vals)
+             (filter #(> (get % prop-span) 1))
+             (sort-by prop-span -)
+             (reduce
+              (fn [alloc cell]
+                (let [shape-id (first (:shapes cell))
+                      from-idx (dec (get cell prop))
+                      to-idx (+ (dec (get cell prop)) (get cell prop-span))
+                      indexed-tracks (subvec (d/enumerate track-list) from-idx to-idx)
+                      has-flex? (->> indexed-tracks (d/seek #(= :auto (:type (second %)))) some?)
+                      total-frs (->> indexed-tracks (reduce (fn [tot [_ {:keys [type value]}]]
+                                                              (cond-> tot
+                                                                (= type :flex)
+                                                                (+ value)))
+                                                            0))
+
+
+                      to-allocate (size-to-allocate type parent (get children-map shape-id) cell)
+                      fr-value (when (some? to-allocate) (/ to-allocate total-frs))]
+                  (cond-> alloc
+                    ;; skip cells with no flex tracks
+                    (and has-flex? (some? to-allocate))
+                    (allocate-flex indexed-tracks to-allocate fr-value))))
+              {}))
+
+        ;; Apply the allocations to the tracks
+        track-list
+        (into []
+              (map-indexed #(update %2 :size max (get allocate-fr-tracks %1)))
+              track-list)]
+    track-list))
+
+
 (defn calc-layout-data
   [parent children transformed-parent-bounds]
 
@@ -155,6 +287,10 @@
                         (->> (:shapes cell) (map #(vector % cell)))))
               (:layout-grid-cells parent))
 
+        children-map
+        (into {}
+              (map #(vector (:id (second %)) %))
+              children)
 
         ;; Initialize tracks
         column-tracks
@@ -171,8 +307,8 @@
 
 
         ;; Adjust multi-spaned cells with no flex columns
-        ;; TODO
-
+        column-tracks (set-auto-multi-span parent column-tracks children-map shape-cells :column)
+        row-tracks (set-auto-multi-span parent row-tracks children-map shape-cells :row)
 
         ;; Calculate the `fr` unit and adjust the size
         column-total-size (tracks-total-size column-tracks)
@@ -183,6 +319,12 @@
 
         column-frs        (tracks-total-frs column-tracks)
         row-frs           (tracks-total-frs row-tracks)
+
+        ;; Assign minimum size to the multi-span flex tracks. We do this after calculating
+        ;; the fr size because will affect only the minimum. The maximum will be set by the
+        ;; fracion
+        column-tracks (set-flex-multi-span parent column-tracks children-map shape-cells :column)
+        row-tracks (set-flex-multi-span parent row-tracks children-map shape-cells :row)
 
         ;; Once auto sizes have been calculated we get calculate the `fr` unit with the remainining size and adjust the size
         free-column-space (- bound-width (+ column-total-size column-total-gap))
@@ -235,8 +377,7 @@
                        [(conj tracks (assoc track :start-p start-p))
                         (gpt/add start-p (vv (+ size row-gap)))])
                      [[] start-p])
-             (first))
-        ]
+             (first))]
 
     {:origin start-p
      :layout-bounds layout-bounds
@@ -270,4 +411,3 @@
                               (gpt/to-vec origin row-start-p)))]
 
         (assoc grid-cell :start-p  start-p)))))
-

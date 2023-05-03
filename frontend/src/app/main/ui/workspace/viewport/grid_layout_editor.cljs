@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.viewport.grid-layout-editor
+  (:require-macros [app.main.style :refer [css]])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -20,6 +21,8 @@
    [app.main.store :as st]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -41,36 +44,38 @@
         value (unchecked-get props "value")
         zoom (unchecked-get props "zoom")
 
+        marker-width (/ 24 zoom)
+        marker-h1 (/ 22 zoom)
+        marker-h2 (/ 8 zoom)
+
+        marker-half-width (/ marker-width 2)
+        marker-half-height (/ (+ marker-h1 marker-h2) 2)
+
         marker-points
         (reduce
          apply-to-point
          [(gpt/subtract center
-                        (gpt/point (/ 13 zoom) (/ 16 zoom)))]
-         [#(gpt/add % (gpt/point (/ 26 zoom) 0))
-          #(gpt/add % (gpt/point 0 (/ 24 zoom)))
-          #(gpt/add % (gpt/point (- (/ 13 zoom)) (/ 8 zoom)))
-          #(gpt/subtract % (gpt/point (/ 13 zoom) (/ 8 zoom)))])
+                        (gpt/point marker-half-width marker-half-height))]
+         [#(gpt/add % (gpt/point marker-width 0))
+          #(gpt/add % (gpt/point 0 marker-h1))
+          #(gpt/add % (gpt/point (- marker-half-width) marker-h2))
+          #(gpt/subtract % (gpt/point marker-half-width marker-h2))])
 
         text-x (:x center)
         text-y (:y center)]
 
-    [:g.grid-track-marker
-     [:polygon {:points (->> marker-points
+    [:g {:class (css :grid-track-marker)}
+     [:polygon {:class (css :marker-shape)
+                :points (->> marker-points
                              (map #(dm/fmt "%,%" (:x %) (:y %)))
-                             (str/join " "))
-
-                :style {:fill "var(--color-distance)"
-                        :fill-opacity 0.3}}]
-     [:text {:x text-x
+                             (str/join " "))}]
+     [:text {:class (css :marker-text)
+             :x text-x
              :y text-y
              :width (/ 26.26 zoom)
              :height (/ 32 zoom)
-             :font-size (/ 16 zoom)
-             :font-family "worksans"
-             :font-weight 600
              :text-anchor "middle"
-             :dominant-baseline "middle"
-             :style {:fill "var(--color-distance)"}}
+             :dominant-baseline "middle"}
       (dm/str value)]]))
 
 (mf/defc grid-editor-frame
@@ -95,11 +100,11 @@
           #(gpt/add % (vv (+ height (/ 40 zoom))))
           #(gpt/add % (hv (/ 40 zoom)))])]
 
-    [:polygon {:points (->> frame-points
-                            (map #(dm/fmt "%,%" (:x %) (:y %)))
-                            (str/join " "))
-               :style {:stroke "var(--color-distance)"
-                       :stroke-width (/ 1 zoom)}}]))
+    [:polygon
+     {:class (css :grid-frame)
+      :points (->> frame-points
+                   (map #(dm/fmt "%,%" (:x %) (:y %)))
+                   (str/join " "))}]))
 
 (mf/defc plus-btn
   {::mf/wrap-props false}
@@ -127,22 +132,21 @@
          (mf/deps on-click)
          #(when on-click (on-click)))]
 
-    [:g.plus-button {:cursor "pointer"
-                     :on-click handle-click}
-     [:rect {:x rect-x
+    [:g {:class (css :grid-plus-button)
+         :on-click handle-click}
+
+     [:rect {:class (css :grid-plus-shape)
+             :x rect-x
              :y rect-y
              :width (/ 40 zoom)
-             :height (/ 40 zoom)
-             :style {:fill "var(--color-distance)"
-                     :stroke "var(--color-distance)"
-                     :stroke-width (/ 1 zoom)}}]
+             :height (/ 40 zoom)}]
 
-     [:use {:x icon-x
+     [:use {:class (css :grid-plus-icon)
+            :x icon-x
             :y icon-y
             :width (/ 16 zoom)
             :height (/ 16 zoom)
-            :href (dm/str "#icon-plus")
-            :fill "white"}]]))
+            :href (dm/str "#icon-plus")}]]))
 
 (defn use-drag
   [{:keys [on-drag-start on-drag-end on-drag-delta on-drag-position]}]
@@ -259,7 +263,6 @@
       :height height
       :width width
       :style {:fill "transparent" :stroke-width 0 :cursor cursor}
-
       :on-pointer-down handle-pointer-down
       :on-lost-pointer-capture handle-lost-pointer-capture
       :on-pointer-move handle-pointer-move}]))
@@ -301,21 +304,17 @@
 
     [:g.cell-editor
      [:rect
-      {:x (:x start-p)
+      {:class (dom/classnames (css :grid-cell-outline) true
+                              (css :hover) hover?
+                              (css :selected) selected?)
+       :x (:x start-p)
        :y (:y start-p)
        :width cell-width
        :height cell-height
 
        :on-pointer-enter #(st/emit! (dwge/hover-grid-cell (:id shape) (:id cell) true))
        :on-pointer-leave #(st/emit! (dwge/hover-grid-cell (:id shape) (:id cell) false))
-       :on-click #(st/emit! (dwge/select-grid-cell (:id shape) (:id cell)))
-
-       :style {:fill "transparent"
-               :stroke "var(--color-distance)"
-               :stroke-dasharray (when-not (or hover? selected?)
-                                   (str/join " " (map #(/ % zoom) [0 8]) ))
-               :stroke-linecap "round"
-               :stroke-width (/ 2 zoom)}}]
+       :on-click #(st/emit! (dwge/select-grid-cell (:id shape) (:id cell)))}]
 
      (when selected?
        (let [handlers
@@ -451,7 +450,44 @@
         (mf/use-callback
          (mf/deps (:id shape))
          (fn []
-           (st/emit! (st/emit! (dwsl/add-layout-track [(:id shape)] :row ctl/default-track-value)))))]
+           (st/emit! (st/emit! (dwsl/add-layout-track [(:id shape)] :row ctl/default-track-value)))))
+
+        handle-blur-track-input
+        (mf/use-callback
+         (mf/deps (:id shape))
+         (fn [track-type index event]
+           (let [target (-> event dom/get-target)
+                 value  (-> target dom/get-input-value str/upper)
+                 value-int (d/parse-integer value)
+
+                 [type value]
+                 (cond
+                   (str/ends-with? value "%")
+                   [:percent value-int]
+
+                   (str/ends-with? value "FR")
+                   [:flex value-int]
+
+                   (some? value-int)
+                   [:fixed value-int]
+
+                   (or (= value "AUTO") (= "" value))
+                   [:auto nil])]
+             (if (some? type)
+               (do (obj/set! target "value" (format-size {:type type :value value}))
+                   (dom/set-attribute! target "data-default-value" (format-size {:type type :value value}))
+                   (st/emit! (dwsl/change-layout-track [(:id shape)] track-type index {:type type :value value})))
+               (obj/set! target "value" (dom/get-attribute target "data-default-value"))))))
+
+        handle-keydown-track-input
+        (mf/use-callback
+         (fn [event]
+           (let [enter? (kbd/enter? event)
+                 esc?   (kbd/esc? event)]
+             (when enter?
+               (dom/blur! (dom/get-target event)))
+             (when esc?
+               (dom/blur! (dom/get-target event))))))]
 
     (mf/use-effect
        (fn []
@@ -482,23 +518,19 @@
                             (gpt/subtract (hv (/ layout-gap-col 2)))))
 
              text-p (-> start-p
-                        (gpt/subtract (vv (/ 20 zoom)))
-                        (gpt/add (hv (/ (:size column-data) 2))))]
+                        (gpt/subtract (vv (/ 36 zoom))))]
          [:* {:key (dm/str "column-" idx)}
           [:& track-marker {:center marker-p
                             :value (dm/str (inc idx))
                             :zoom zoom}]
-
-          [:text {:x (:x text-p)
-                  :y (:y text-p)
-                  :font-size (/ 14 zoom)
-                  :font-weight 600
-                  :font-family "worksans"
-                  :dominant-baseline "central"
-                  :text-anchor "middle"
-                  :style {:fill "var(--color-distance)"}}
-           (format-size column-data)]
-
+          [:foreignObject {:x (:x text-p) :y (:y text-p) :width (max 0 (- (:size column-data) 4)) :height (/ 32 zoom)}
+           [:input
+            {:class (css :grid-editor-label)
+             :type "text"
+             :default-value (format-size column-data)
+             :data-default-value (format-size column-data)
+             :on-key-down handle-keydown-track-input
+             :on-blur #(handle-blur-track-input :column idx %)}]]
           (when (not= idx 0)
             [:& resize-handler {:shape shape
                                 :layout-data layout-data
@@ -514,24 +546,25 @@
                             (gpt/subtract (vv (/ layout-gap-row 2)))))
 
              text-p (-> start-p
-                        (gpt/subtract (hv (/ 20 zoom)))
-                        (gpt/add (vv (/ (:size row-data) 2))))]
+                        (gpt/subtract (hv (/ (:size row-data) 2)))
+                        (gpt/subtract (hv (/ 16 zoom)))
+                        (gpt/add (vv (/ (:size row-data) 2)))
+                        (gpt/subtract (vv (/ 18 zoom))))]
          [:* {:key (dm/str "row-" idx)}
           [:g {:transform (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p))}
            [:& track-marker {:center marker-p
                              :value (dm/str (inc idx))
                              :zoom zoom}]]
 
-          [:g {:transform (dm/fmt "rotate(-90 % %)" (:x text-p) (:y text-p))}
-           [:text {:x (:x text-p)
-                   :y (:y text-p)
-                   :font-size (/ 14 zoom)
-                   :font-weight 600
-                   :font-family "worksans"
-                   :dominant-baseline "central"
-                   :text-anchor "middle"
-                   :style {:fill "var(--color-distance)"}}
-            (format-size row-data)]]
+          [:g {:transform (dm/fmt "rotate(-90 % %)" (+ (:x text-p) (/ (:size row-data) 2)) (+ (:y text-p) (/ 36 zoom 2)))}
+           [:foreignObject {:x (:x text-p) :y (:y text-p) :width (:size row-data) :height (/ 36 zoom)}
+            [:input
+             {:class (css :grid-editor-label)
+              :type "text"
+              :default-value (format-size row-data)
+              :data-default-value (format-size row-data)
+              :on-key-down handle-keydown-track-input
+              :on-blur #(handle-blur-track-input :row idx %)}]]]
 
           (when (not= idx 0)
             [:& resize-handler {:shape shape

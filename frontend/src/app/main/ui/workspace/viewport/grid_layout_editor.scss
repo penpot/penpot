@@ -1,0 +1,64 @@
+.grid-track-marker {
+  .marker-shape {
+    fill: var(--color-distance);
+    fill-opacity: 0.3;
+  }
+  .marker-text {
+    fill: var(--color-distance);
+    font-size: calc(12px / var(--zoom));
+    font-family: worksans;
+    font-weight: 600;
+  }
+}
+
+.grid-editor-label {
+  background: none;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  font-family: worksans;
+  color: var(--color-distance);
+  font-weight: 600;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: calc(12px / var(--zoom));
+
+  &:focus {
+    outline: none;
+    border-bottom: calc(1px / var(--zoom)) solid var(--color-distance);
+  }
+}
+
+.grid-frame {
+  fill: transparent;
+  stroke: var(--color-distance);
+  stroke-width: calc(1 / var(--zoom));
+}
+
+.grid-plus-button {
+  cursor: pointer;
+
+  .grid-plus-shape {
+    fill: var(--color-distance);
+    stroke: var(--color-distance);
+    stroke-width: calc(1 / var(--zoom));
+  }
+
+  .grid-plus-icon {
+    fill: white;
+  }
+}
+
+.grid-cell-outline {
+  fill: transparent;
+  stroke: var(--color-distance);
+  stroke-linecap: round;
+  stroke-width: calc(2 / var(--zoom));
+  stroke-dasharray: 0 calc(8 / var(--zoom));
+
+  &.hover,
+  &.selected {
+    stroke-dasharray: initial;
+  }
+}
