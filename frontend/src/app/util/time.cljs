@@ -6,6 +6,7 @@
 
 (ns app.util.time
   (:require
+   ["date-fns/format" :default dateFnsFormat]
    ["date-fns/formatDistanceToNowStrict" :default dateFnsFormatDistanceToNowStrict]
    ["date-fns/locale/ar-SA" :default dateFnsLocalesAr]
    ["date-fns/locale/ca" :default dateFnsLocalesCa]
@@ -232,3 +233,13 @@
                  :addSuffix true
                  :locale (obj/get locales locale)}
             (dateFnsFormatDistanceToNowStrict v))))))
+
+(defn format-date-locale
+  ([v] (format-date-locale v nil))
+  ([v {:keys [locale] :or {locale "en"}}]
+   (when v
+     (let [v (if (datetime? v) (format v :date) v)
+           locale (obj/get locales locale)
+           f (.date (.-formatLong locale) v)]
+       (->> #js {:locale locale}
+            (dateFnsFormat v f))))))

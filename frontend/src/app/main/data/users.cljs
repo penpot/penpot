@@ -525,4 +525,56 @@
       (->> (rp/cmd! :create-demo-profile {})
            (rx/map login)))))
 
+;; --- EVENT: fetch-team-webhooks
 
+(defn access-tokens-fetched
+  [access-tokens]
+  (ptk/reify ::access-tokens-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :access-tokens access-tokens))))
+
+(defn fetch-access-tokens
+  []
+  (ptk/reify ::fetch-access-tokens
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/command! :get-access-tokens)
+           (rx/map access-tokens-fetched)))))
+
+;; --- EVENT: create-access-token
+
+(defn access-token-created
+  [access-token]
+  (ptk/reify ::access-token-created
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :access-token-created access-token))))
+
+(defn create-access-token
+  [{:keys [] :as params}]
+  (ptk/reify ::create-access-token
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+        (->> (rp/command! :create-access-token params)
+             (rx/map access-token-created)
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
+;; --- EVENT: delete-access-token
+
+(defn delete-access-token
+  [{:keys [id] :as params}]
+  (us/assert! ::us/uuid id)
+  (ptk/reify ::delete-access-token
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+        (->> (rp/command! :delete-access-token params)
+             (rx/tap on-success)
+             (rx/catch on-error))))))

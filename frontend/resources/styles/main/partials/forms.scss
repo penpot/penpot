@@ -337,6 +337,10 @@ textarea {
     border: 1px solid $color-gray-20;
     height: 40px;
 
+    &.focus {
+      border-color: $color-gray-60;
+    }
+
     &.invalid {
       border-color: $color-danger;
       label {

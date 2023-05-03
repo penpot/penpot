@@ -26,12 +26,18 @@
   (when token
     (tokens/verify props {:token token :iss "access-token"})))
 
-(defn- get-token-perms
+(def sql:get-token-data
+  "SELECT perms, profile_id, expires_at
+     FROM access_token
+    WHERE id = ?
+      AND (expires_at IS NULL 
+           OR (expires_at > now()));")
+
+(defn- get-token-data
   [pool token-id]
   (when-not (db/read-only? pool)
-    (when-let [token (db/get* pool :access-token {:id token-id} {:columns [:perms]})]
-      (some-> (:perms token)
-              (db/decode-pgarray #{})))))
+    (some-> (db/exec-one! pool [sql:get-token-data token-id])
+            (update :perms db/decode-pgarray #{}))))
 
 (defn- wrap-soft-auth
   "Soft Authentication, will be executed synchronously on the undertow
@@ -56,10 +62,14 @@
   "Authorization middleware, will be executed synchronously on vthread."
   [handler {:keys [::db/pool]}]
   (fn [request]
-    (let [perms (some->> (::id request) (get-token-perms pool))]
+    (let [{:keys [perms profile-id expires-at]} (some->> (::id request) (get-token-data pool))]
       (handler (cond-> request
                  (some? perms)
-                 (assoc ::perms perms))))))
+                 (assoc ::perms perms)
+                 (some? profile-id)
+                 (assoc ::profile-id profile-id)
+                 (some? expires-at)
+                 (assoc ::expires-at expires-at))))))
 
 (def soft-auth
   {:name ::soft-auth

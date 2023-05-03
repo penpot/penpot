@@ -33,19 +33,20 @@
 
 (def routes
   [["/auth"
-    ["/login"            :auth-login]
-    ["/register"         :auth-register]
+    ["/login"             :auth-login]
+    ["/register"          :auth-register]
     ["/register/validate" :auth-register-validate]
-    ["/register/success" :auth-register-success]
-    ["/recovery/request" :auth-recovery-request]
-    ["/recovery"         :auth-recovery]
-    ["/verify-token"     :auth-verify-token]]
+    ["/register/success"  :auth-register-success]
+    ["/recovery/request"  :auth-recovery-request]
+    ["/recovery"          :auth-recovery]
+    ["/verify-token"      :auth-verify-token]]
 
    ["/settings"
-    ["/profile"  :settings-profile]
-    ["/password" :settings-password]
-    ["/feedback" :settings-feedback]
-    ["/options"  :settings-options]]
+    ["/profile"       :settings-profile]
+    ["/password"      :settings-password]
+    ["/feedback"      :settings-feedback]
+    ["/options"       :settings-options]
+    ["/access-tokens" :settings-access-tokens]]
 
    ["/view/:file-id"
     {:name :viewer

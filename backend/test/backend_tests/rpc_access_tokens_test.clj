@@ -19,12 +19,14 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest access-tokens-crud
-  (let [prof    (th/create-profile* 1 {:is-active true})
-        team-id (:default-team-id prof)
-        proj-id (:default-project-id prof)
-        atoken  (atom nil)]
+  (let [prof                     (th/create-profile* 1 {:is-active true})
+        team-id                  (:default-team-id prof)
+        proj-id                  (:default-project-id prof)
+        atoken-no-expiration     (atom nil)
+        atoken-future-expiration (atom nil)
+        atoken-past-expiration   (atom nil)]
 
-    (t/testing "create access token"
+    (t/testing "create access token without expiration date"
       (let [params {::th/type :create-access-token
                     ::rpc/profile-id (:id prof)
                     :name "token 1"
@@ -34,32 +36,65 @@
         (t/is (nil? (:error out)))
 
         (let [result (:result out)]
-          (reset! atoken result)
+          (reset! atoken-no-expiration result)
           (t/is (contains? result :id))
           (t/is (contains? result :created-at))
           (t/is (contains? result :updated-at))
-          (t/is (contains? result :token))
-          (t/is (contains? result :perms)))))
+          (t/is (contains? result :token)))))
 
-    (t/testing "get access token"
+    (t/testing "create access token with expiration date in the future"
+      (let [params {::th/type :create-access-token
+                    ::rpc/profile-id (:id prof)
+                    :name "token 1"
+                    :perms ["get-profile"]
+                    :expiration "130h"}
+            out    (th/command! params)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+
+        (let [result (:result out)]
+          (reset! atoken-past-expiration result)
+          (t/is (contains? result :id))
+          (t/is (contains? result :created-at))
+          (t/is (contains? result :updated-at))
+          (t/is (contains? result :expires-at))
+          (t/is (contains? result :token)))))
+
+    (t/testing "create access token with expiration date in the past"
+      (let [params {::th/type :create-access-token
+                    ::rpc/profile-id (:id prof)
+                    :name "token 1"
+                    :perms ["get-profile"]
+                    :expiration "-130h"}
+            out    (th/command! params)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+
+        (let [result (:result out)]
+          (reset! atoken-future-expiration result)
+          (t/is (contains? result :id))
+          (t/is (contains? result :created-at))
+          (t/is (contains? result :updated-at))
+          (t/is (contains? result :expires-at))
+          (t/is (contains? result :token)))))
+
+    (t/testing "get access tokens"
       (let [params {::th/type :get-access-tokens
                     ::rpc/profile-id (:id prof)}
             out    (th/command! params)]
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (let [[result :as results] (:result out)]
-          (t/is (= 1 (count results)))
+          (t/is (= 3 (count results)))
           (t/is (contains? result :id))
           (t/is (contains? result :created-at))
           (t/is (contains? result :updated-at))
-          (t/is (contains? result :token))
-          (t/is (contains? result :perms))
-          (t/is (= @atoken result)))))
+          (t/is (not (contains? result :token))))))
 
     (t/testing "delete access token"
       (let [params {::th/type :delete-access-token
                     ::rpc/profile-id (:id prof)
-                    :id (:id @atoken)}
+                    :id (:id @atoken-no-expiration)}
             out    (th/command! params)]
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -72,5 +107,4 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (let [results (:result out)]
-          (t/is (= 0 (count results))))))
-    ))
+          (t/is (= 2 (count results))))))))
