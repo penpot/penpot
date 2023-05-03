@@ -374,9 +374,14 @@
         line-height (or line-height "1.2")
         letter-spacing (or letter-spacing "0")
 
+        line-height-nillable (if (= (str line-height) "1.2") false true)
+
         handle-change
         (fn [value attr]
-          (on-change {attr (str value)}))]
+          (let [new-values (case attr
+                            :line-height (assoc values :line-height (if (or (str/empty? value) (nil? value)) 1.2 value))
+                            :spacing-options (assoc values :letter-spacing value))]
+            (on-change new-values)))]
 
     [:div.spacing-options
      [:div.input-icon
@@ -389,6 +394,7 @@
         :step 0.1
         :value (attr->string line-height)
         :placeholder (tr "settings.multiple")
+        :nillable line-height-nillable
         :on-change #(handle-change % :line-height)
         :on-blur on-blur}]]
 
