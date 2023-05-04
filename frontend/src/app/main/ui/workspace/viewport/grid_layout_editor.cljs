@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.grid-layout :as gsg]
    [app.common.geom.shapes.points :as gpo]
+   [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.grid-layout.editor :as dwge]
@@ -19,6 +20,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.formats :as fmt]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -31,9 +33,9 @@
 
 (defn format-size [{:keys [type value]}]
   (case type
-    :fixed (str value "PX")
-    :percent (str value "%")
-    :flex (str value "FR")
+    :fixed (dm/str (fmt/format-number value) "PX")
+    :percent (dm/str (fmt/format-number value) "%")
+    :flex (dm/str (fmt/format-number value) "FR")
     :auto "AUTO"))
 
 (mf/defc track-marker
@@ -255,7 +257,6 @@
 
         {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
         (use-drag {:on-drag-position handle-drag-position
-                   ;;:on-drag-start handle-drag-start
                    :on-drag-end handle-drag-end})]
     [:rect
      {:x x
@@ -336,47 +337,81 @@
                                      :direction dir
                                      :layout-data layout-data}])]))]))
 
-(mf/defc resize-handler
+(mf/defc resize-track-handler
   {::mf/wrap-props false}
   [props]
 
   (let [shape (unchecked-get props "shape")
+        index (unchecked-get props "index")
+        track-before (unchecked-get props "track-before")
+        track-after (unchecked-get props "track-after")
+
         {:keys [column-total-size column-total-gap row-total-size row-total-gap]} (unchecked-get props "layout-data")
         start-p (unchecked-get props "start-p")
         type (unchecked-get props "type")
         zoom (unchecked-get props "zoom")
 
-        dragging-ref (mf/use-ref false)
-        start-ref (mf/use-ref nil)
-
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
 
-        on-pointer-down
+        start-size-before (mf/use-var nil)
+        start-size-after (mf/use-var nil)
+
+        snap-pixel? (mf/deref refs/snap-pixel?)
+
+        handle-drag-start
         (mf/use-callback
-         (fn [event]
-           (dom/capture-pointer event)
-           (mf/set-ref-val! dragging-ref true)
-           (mf/set-ref-val! start-ref (dom/get-client-position event))))
+         (mf/deps shape track-before track-after)
+         (fn []
+           (reset! start-size-before (:size track-before))
+           (reset! start-size-after (:size track-after))
+           (let [tracks-prop
+                 (if (= :column type) :layout-grid-columns :layout-grid-rows)
 
-        on-lost-pointer-capture
+                 shape
+                 (-> shape
+                     (cond-> (some? track-before)
+                       (update-in [tracks-prop (dec index)] merge {:type :fixed :value (:size track-before)}))
+                     (cond-> (some? track-after)
+                       (update-in [tracks-prop index] merge {:type :fixed :value (:size track-after)})))
+
+                 modifiers
+                 (-> (ctm/empty)
+                     (ctm/change-property tracks-prop (get shape tracks-prop)))]
+             (st/emit! (dwm/set-modifiers (dwm/create-modif-tree [(:id shape)] modifiers))))))
+
+        handle-drag-position
         (mf/use-callback
-         (fn [event]
-           (dom/release-pointer event)
-           (mf/set-ref-val! dragging-ref false)
-           (mf/set-ref-val! start-ref nil)))
+         (mf/deps shape track-before track-after)
+         (fn [position]
+           (let [[tracks-prop axis]
+                 (if (= :column type) [:layout-grid-columns :x] [:layout-grid-rows :y])
 
-        on-pointer-move
+                 precision (if snap-pixel? mth/round identity)
+                 delta (get position axis)
+                 shape
+                 (-> shape
+                     (cond-> (some? track-before)
+                       (update-in [tracks-prop (dec index)] merge {:type :fixed :value (precision (+ @start-size-before delta))}))
+                     (cond-> (some? track-after)
+                       (update-in [tracks-prop index] merge {:type :fixed :value (precision (- @start-size-after delta))})))
+
+                 modifiers
+                 (-> (ctm/empty)
+                     (ctm/change-property tracks-prop (get shape tracks-prop)))]
+             (st/emit! (dwm/set-modifiers (dwm/create-modif-tree [(:id shape)] modifiers))))))
+
+        handle-drag-end
         (mf/use-callback
-         (fn [event]
-           (when (mf/ref-val dragging-ref)
-             (let [start (mf/ref-val start-ref)
-                   pos  (dom/get-client-position event)
-                   _delta (-> (gpt/to-vec start pos)
-                             (get (if (= type :column) :x :y)))]
+         (mf/deps track-before track-after)
+         (fn []
+           (reset! start-size-before nil)
+           (reset! start-size-after nil)
+           (st/emit! (dwm/apply-modifiers))))
 
-               ;; TODO Implement resize
-               #_(prn ">Delta" delta)))))
-
+        {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
+        (use-drag {:on-drag-start handle-drag-start
+                   :on-drag-delta handle-drag-position
+                   :on-drag-end handle-drag-end})
 
         [x y width height]
         (if (= type :column)
@@ -390,7 +425,7 @@
            (+ column-total-size column-total-gap (/ 40 zoom))
            (max layout-gap-row (/ 16 zoom))])]
 
-    [:rect.resize-handler
+    [:rect.resize-track-handler
      {:x x
       :y y
       :class (if (= type :column)
@@ -398,64 +433,54 @@
                "resize-ns-0")
       :height height
       :width width
-      :on-pointer-down on-pointer-down
-      :on-lost-pointer-capture on-lost-pointer-capture
-      :on-pointer-move on-pointer-move 
+      :on-pointer-down handle-pointer-down
+      :on-lost-pointer-capture handle-lost-pointer-capture
+      :on-pointer-move handle-pointer-move
       :style {:fill "transparent"}}]))
 
-(mf/defc editor
+(mf/defc track
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
+  (let [shape (unchecked-get props "shape")
+        zoom (unchecked-get props "zoom")
+        type (unchecked-get props "type")
+        index (unchecked-get props "index")
+        track-data (unchecked-get props "track-data")
+        layout-data (unchecked-get props "layout-data")
 
-  (let [shape     (unchecked-get props "shape")
-        objects   (unchecked-get props "objects")
-        zoom      (unchecked-get props "zoom")
-        view-only (unchecked-get props "view-only")
-        bounds  (:points shape)
-
-        ;; We need to know the state unmodified so we can create the modifiers
-        shape-ref (mf/use-memo (mf/deps (:id shape)) #(refs/object-by-id (:id shape)))
-        base-shape (mf/deref shape-ref)
-
-        grid-edition-id-ref (mf/use-memo #(refs/workspace-grid-edition-id (:id shape)))
-        grid-edition (mf/deref grid-edition-id-ref)
-
-        hover-cells (:hover grid-edition)
-        selected-cells (:selected grid-edition)
-
-        children (->> (:shapes shape)
-                      (map (d/getf objects))
-                      (remove :hidden)
-                      (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))
-
-        hv     #(gpo/start-hv bounds %)
-        vv     #(gpo/start-vv bounds %)
-        width  (gpo/width-points bounds)
-        height (gpo/height-points bounds)
-        origin (gpo/origin bounds)
-
+        track-input-ref (mf/use-ref)
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
+        bounds (:points shape)
+        vv     #(gpo/start-vv bounds %)
+        hv     #(gpo/start-hv bounds %)
 
-        {:keys [row-tracks column-tracks] :as layout-data}
-        (gsg/calc-layout-data shape children bounds)
+        start-p (:start-p track-data)
+        marker-p
+        (if (= type :column)
+          (-> start-p
+              (gpt/subtract (vv (/ 20 zoom)))
+              (cond-> (not= index 0)
+                (gpt/subtract (hv (/ layout-gap-col 2)))))
+          (-> start-p
+              (gpt/subtract (hv (/ 20 zoom)))
+              (cond-> (not= index 0)
+                (gpt/subtract (vv (/ layout-gap-row 2))))))
 
-        handle-add-column
-        (mf/use-callback
-         (mf/deps (:id shape))
-         (fn []
-           (st/emit! (st/emit! (dwsl/add-layout-track [(:id shape)] :column ctl/default-track-value)))))
-
-        handle-add-row
-        (mf/use-callback
-         (mf/deps (:id shape))
-         (fn []
-           (st/emit! (st/emit! (dwsl/add-layout-track [(:id shape)] :row ctl/default-track-value)))))
+        text-p
+        (if (= type :column)
+          (-> start-p
+              (gpt/subtract (vv (/ 36 zoom))))
+          (-> start-p
+              (gpt/subtract (hv (/ (:size track-data) 2)))
+              (gpt/subtract (hv (/ 16 zoom)))
+              (gpt/add (vv (/ (:size track-data) 2)))
+              (gpt/subtract (vv (/ 18 zoom)))))
 
         handle-blur-track-input
         (mf/use-callback
          (mf/deps (:id shape))
-         (fn [track-type index event]
+         (fn [event]
            (let [target (-> event dom/get-target)
                  value  (-> target dom/get-input-value str/upper)
                  value-int (d/parse-integer value)
@@ -474,9 +499,9 @@
                    (or (= value "AUTO") (= "" value))
                    [:auto nil])]
              (if (some? type)
-               (do (obj/set! target "value" (format-size {:type type :value value}))
-                   (dom/set-attribute! target "data-default-value" (format-size {:type type :value value}))
-                   (st/emit! (dwsl/change-layout-track [(:id shape)] track-type index {:type type :value value})))
+               (do (dom/set-value! target (format-size {:type type :value value}))
+                   (dom/set-data! target "default-value" (format-size {:type type :value value}))
+                   (st/emit! (dwsl/change-layout-track [(:id shape)] type index {:type type :value value})))
                (obj/set! target "value" (dom/get-attribute target "data-default-value"))))))
 
         handle-keydown-track-input
@@ -487,7 +512,92 @@
              (when enter?
                (dom/blur! (dom/get-target event)))
              (when esc?
-               (dom/blur! (dom/get-target event))))))]
+               (dom/blur! (dom/get-target event))))))
+
+        track-list-prop (if (= type :column) :column-tracks :row-tracks)
+        [text-x text-y text-width text-height]
+        (if (= type :column)
+          [(:x text-p) (:y text-p) (max 0 (- (:size track-data) 4)) (/ 32 zoom)]
+          [(:x text-p) (:y text-p) (:size track-data) (/ 36 zoom)])]
+
+    (mf/use-effect
+     (mf/deps track-data)
+     (fn []
+       (dom/set-value! (mf/ref-val track-input-ref) (format-size track-data))))
+
+    [:g.track
+     [:g {:transform (when (= type :row) (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p)))}
+      [:& track-marker {:center marker-p
+                        :value (dm/str (inc index))
+                        :zoom zoom}]]
+     [:g {:transform (when (= type :row) (dm/fmt "rotate(-90 % %)" (+ (:x text-p) (/ (:size track-data) 2)) (+ (:y text-p) (/ 36 zoom 2))))}
+      [:foreignObject {:x text-x :y text-y :width text-width :height text-height}
+       [:input
+        {:ref track-input-ref
+         :class (css :grid-editor-label)
+         :type "text"
+         :default-value (format-size track-data)
+         :data-default-value (format-size track-data)
+         :on-key-down handle-keydown-track-input
+         :on-blur handle-blur-track-input}]]]
+
+     (let [track-before (get-in layout-data [track-list-prop (dec index)])]
+       [:& resize-track-handler
+        {:index index
+         :shape shape
+         :layout-data layout-data
+         :start-p start-p
+         :type type
+         :track-before track-before
+         :track-after track-data
+         :zoom zoom}])]))
+
+(mf/defc editor
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
+  [props]
+
+  (let [shape     (unchecked-get props "shape")
+        objects   (unchecked-get props "objects")
+        zoom      (unchecked-get props "zoom")
+        view-only (unchecked-get props "view-only")
+
+        ;; We need to know the state unmodified so we can create the modifiers
+        shape-ref (mf/use-memo (mf/deps (:id shape)) #(refs/object-by-id (:id shape)))
+        base-shape (mf/deref shape-ref)
+
+        grid-edition-id-ref (mf/use-memo #(refs/workspace-grid-edition-id (:id shape)))
+        grid-edition (mf/deref grid-edition-id-ref)
+
+        hover-cells (:hover grid-edition)
+        selected-cells (:selected grid-edition)
+
+        children (->> (:shapes shape)
+                      (map (d/getf objects))
+                      (remove :hidden)
+                      (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))
+
+        bounds (:points shape)
+        hv     #(gpo/start-hv bounds %)
+        vv     #(gpo/start-vv bounds %)
+        width  (gpo/width-points bounds)
+        height (gpo/height-points bounds)
+        origin (gpo/origin bounds)
+
+        {:keys [row-tracks column-tracks] :as layout-data}
+        (gsg/calc-layout-data shape children bounds)
+
+        handle-add-column
+        (mf/use-callback
+         (mf/deps (:id shape))
+         (fn []
+           (st/emit! (st/emit! (dwsl/add-layout-track [(:id shape)] :column ctl/default-track-value)))))
+
+        handle-add-row
+        (mf/use-callback
+         (mf/deps (:id shape))
+         (fn []
+           (st/emit! (st/emit! (dwsl/add-layout-track [(:id shape)] :row ctl/default-track-value)))))]
 
     (mf/use-effect
        (fn []
@@ -511,67 +621,43 @@
                         :on-click handle-add-row}])])
 
      (for [[idx column-data] (d/enumerate column-tracks)]
-       (let [start-p (:start-p column-data)
-             marker-p (-> start-p
-                          (gpt/subtract (vv (/ 20 zoom)))
-                          (cond-> (not= idx 0)
-                            (gpt/subtract (hv (/ layout-gap-col 2)))))
+       [:& track {:key (dm/str "column-track-" idx)
+                  :shape shape
+                  :zoom zoom
+                  :type :column
+                  :index idx
+                  :layout-data layout-data
+                  :track-data column-data}])
 
-             text-p (-> start-p
-                        (gpt/subtract (vv (/ 36 zoom))))]
-         [:* {:key (dm/str "column-" idx)}
-          [:& track-marker {:center marker-p
-                            :value (dm/str (inc idx))
-                            :zoom zoom}]
-          [:foreignObject {:x (:x text-p) :y (:y text-p) :width (max 0 (- (:size column-data) 4)) :height (/ 32 zoom)}
-           [:input
-            {:class (css :grid-editor-label)
-             :type "text"
-             :default-value (format-size column-data)
-             :data-default-value (format-size column-data)
-             :on-key-down handle-keydown-track-input
-             :on-blur #(handle-blur-track-input :column idx %)}]]
-          (when (not= idx 0)
-            [:& resize-handler {:shape shape
-                                :layout-data layout-data
-                                :start-p start-p
-                                :type :column
-                                :zoom zoom}])]))
+     ;; Last track resize handler
+     (let [last-track (last column-tracks)
+           start-p (:start-p (last column-tracks))
+           marker-p (-> start-p
+                        (gpt/subtract (vv (/ 20 zoom)))
+                        (gpt/add (hv (:size last-track))))]
+       [:g.track
+        [:& track-marker {:center marker-p
+                          :value (dm/str (inc (count column-tracks)))
+                          :zoom zoom}]
+        [:& resize-track-handler
+         {:index (count column-tracks)
+          :shape shape
+          :layout-data layout-data
+          :start-p (-> start-p
+                       (gpt/add (hv (:size last-track)))
+                       (gpt/add (hv (/ 20 zoom))))
+          :type :column
+          :track-before (last column-tracks)
+          :zoom zoom}]])
 
      (for [[idx row-data] (d/enumerate row-tracks)]
-       (let [start-p (:start-p row-data)
-             marker-p (-> start-p
-                          (gpt/subtract (hv (/ 20 zoom)))
-                          (cond-> (not= idx 0)
-                            (gpt/subtract (vv (/ layout-gap-row 2)))))
-
-             text-p (-> start-p
-                        (gpt/subtract (hv (/ (:size row-data) 2)))
-                        (gpt/subtract (hv (/ 16 zoom)))
-                        (gpt/add (vv (/ (:size row-data) 2)))
-                        (gpt/subtract (vv (/ 18 zoom))))]
-         [:* {:key (dm/str "row-" idx)}
-          [:g {:transform (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p))}
-           [:& track-marker {:center marker-p
-                             :value (dm/str (inc idx))
-                             :zoom zoom}]]
-
-          [:g {:transform (dm/fmt "rotate(-90 % %)" (+ (:x text-p) (/ (:size row-data) 2)) (+ (:y text-p) (/ 36 zoom 2)))}
-           [:foreignObject {:x (:x text-p) :y (:y text-p) :width (:size row-data) :height (/ 36 zoom)}
-            [:input
-             {:class (css :grid-editor-label)
-              :type "text"
-              :default-value (format-size row-data)
-              :data-default-value (format-size row-data)
-              :on-key-down handle-keydown-track-input
-              :on-blur #(handle-blur-track-input :row idx %)}]]]
-
-          (when (not= idx 0)
-            [:& resize-handler {:shape shape
-                                :layout-data layout-data
-                                :start-p start-p
-                                :type :column
-                                :zoom zoom}])]))
+       [:& track {:key (dm/str "row-track-" idx)
+                  :shape shape
+                  :zoom zoom
+                  :type :row
+                  :index idx
+                  :layout-data layout-data
+                  :track-data row-data}])
 
      (for [[_ cell] (:layout-grid-cells shape)]
        [:& grid-cell {:key (dm/str "cell-" (:id cell))
