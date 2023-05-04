@@ -65,7 +65,7 @@
     (some? bcc) (assign-recipient :bcc bcc)))
 
 (defn- assign-from
-  [mmsg {:keys [default-from]} {:keys [from] :as props}]
+  [mmsg {:keys [::default-from] :as cfg} {:keys [from] :as params}]
   (let [from (or from default-from)]
     (when from
       (let [from (parse-address from)]
