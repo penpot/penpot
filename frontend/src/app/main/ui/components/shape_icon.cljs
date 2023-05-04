@@ -14,7 +14,7 @@
 
 (mf/defc element-icon
   [{:keys [shape main-instance?] :as props}]
-  (if (ctk/instance-root? shape)
+  (if (ctk/instance-head? shape)
     (if main-instance?
       i/component
       i/component-copy)

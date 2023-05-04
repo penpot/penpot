@@ -15,6 +15,7 @@
    [app.common.pages.common :as cpc]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.main.constants :refer [zoom-half-pixel-precision]]
@@ -54,7 +55,7 @@
           shape
 
           (nil? root)
-          (cph/get-root-shape objects shape)
+          (ctn/get-component-shape objects shape {:allow-main? true})
 
           :else root)
 
@@ -64,7 +65,7 @@
           transformed-shape
 
           (nil? transformed-root)
-          (as-> (cph/get-root-shape objects transformed-shape) $
+          (as-> (ctn/get-component-shape objects transformed-shape {:allow-main? true}) $
             (gsh/transform-shape (merge $ (get modif-tree (:id $)))))
 
           :else transformed-root)

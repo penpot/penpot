@@ -224,7 +224,7 @@
              #(as-> (get objects %) obj
                 (and (cph/root-frame? obj)
                      (d/not-empty? (:shapes obj))
-                     (not (ctk/instance-root? obj))
+                     (not (ctk/instance-head? obj))
                      (not (ctk/main-instance? obj))))
 
              ;; Set with the elements to remove from the hover list

@@ -260,12 +260,11 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [ignore-until  (-> state :workspace-file :ignore-sync-until)
-            file-id       (-> state :workspace-file :id)
-            needs-update? (some #(and (> (:modified-at %) (:synced-at %))
-                                      (or (not ignore-until)
-                                          (> (:modified-at %) ignore-until)))
-                                libraries)]
+      (let [file-data     (:workspace-data state)
+            ignore-until  (dm/get-in state [:workspace-file :ignore-sync-until])
+            file-id       (dm/get-in state [:workspace-file :id])
+            needs-update? (seq (filter #(dwl/assets-need-sync % file-data ignore-until)
+                                       libraries))]
         (when needs-update?
           (rx/of (dwl/notify-sync-file file-id)))))))
 
@@ -1633,7 +1632,7 @@
           ;; Check if the shape is an instance whose master is defined in a
           ;; library that is not linked to the current file
           (foreign-instance? [shape paste-objects state]
-            (let [root         (cph/get-root-shape paste-objects shape)
+            (let [root         (ctn/get-component-shape paste-objects shape)
                   root-file-id (:component-file root)]
               (and (some? root)
                    (not= root-file-id (:current-file-id state))

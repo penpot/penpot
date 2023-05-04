@@ -16,6 +16,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.pages.changes-spec :as pcs]
+   [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.colors-list :as ctcl]
@@ -53,7 +54,7 @@
            (run! validate-shape!)))))
 
 (defmulti process-change (fn [_ change] (:type change)))
-(defmulti process-operation (fn [_ op] (:type op)))
+(defmulti process-operation (fn [_ _ op] (:type op)))
 
 (defn process-changes
   ([data items]
@@ -91,14 +92,34 @@
 
 (defmethod process-change :mod-obj
   [data {:keys [id page-id component-id operations]}]
-  (let [update-fn (fn [objects]
+  (let [objects (if page-id
+                  (-> data :pages-index (get page-id) :objects)
+                  (-> data :components (get component-id) :objects))
+
+        modified-component-ids (atom #{})
+
+        on-touched (fn [shape]
+                     ;; When a shape is modified, if it belongs to a main component instance,
+                     ;; the component needs to be marked as modified.
+                     (let [component-root (ctn/get-component-shape objects shape {:allow-main? true})]
+                       (when (ctk/main-instance? component-root)
+                         (swap! modified-component-ids conj (:component-id component-root)))))
+
+        update-fn (fn [objects]
                     (if-let [obj (get objects id)]
-                      (let [result (reduce process-operation obj operations)]
+                      (let [result (reduce (partial process-operation on-touched) obj operations)]
                         (assoc objects id result))
-                      objects))]
-    (if page-id
-      (d/update-in-when data [:pages-index page-id :objects] update-fn)
-      (d/update-in-when data [:components component-id :objects] update-fn))))
+                      objects))
+        
+        modify-components (fn [data]
+                           (reduce ctkl/set-component-modified
+                                   data @modified-component-ids))]
+
+    (as-> data $
+      (if page-id
+        (d/update-in-when $ [:pages-index page-id :objects] update-fn)
+        (d/update-in-when $ [:components component-id :objects] update-fn))
+      (modify-components $))))
 
 (defmethod process-change :del-obj
   [data {:keys [page-id component-id id ignore-touched]}]
@@ -223,8 +244,6 @@
                 (not= :frame (:type obj))
                 (as-> $$ (reduce (partial assign-frame-id frame-id) $$ (:shapes obj))))))
 
-
-
           (move-objects [objects]
             (let [valid?   (every? (partial is-valid-move? objects) shapes)
                   parent   (get objects parent-id)
@@ -284,7 +303,7 @@
 
 (defmethod process-change :mod-color
   [data {:keys [color]}]
-  (d/assoc-in-when data [:colors (:id color)] color))
+  (ctcl/set-color data color))
 
 (defmethod process-change :del-color
   [data {:keys [id]}]
@@ -343,7 +362,7 @@
 
 (defmethod process-change :mod-typography
   [data {:keys [typography]}]
-  (d/update-in-when data [:typographies (:id typography)] merge typography))
+  (ctyl/update-typography data (:id typography) merge typography))
 
 (defmethod process-change :del-typography
   [data {:keys [id]}]
@@ -352,7 +371,7 @@
 ;; === Operations
 
 (defmethod process-operation :set
-  [shape op]
+  [on-touched shape op]
   (let [attr            (:attr op)
         group           (get component-sync-attrs attr)
         val             (:val op)
@@ -367,7 +386,7 @@
                         ;;       after the check added in data/workspace/modifiers/check-delta
                         ;;       function. Better check it and test toroughly when activating
                         ;;       components-v2 mode.
-        shape-ref       (:shape-ref shape)
+        in-copy?        (ctk/in-component-copy? shape)
         root-name?      (and (= group :name-group)
                              (:component-root? shape))
 
@@ -379,17 +398,23 @@
                  (gsh/close-attrs? attr val shape-val 1)
                  (gsh/close-attrs? attr val shape-val))]
 
+    (when (and group (not ignore) (not equal?)
+               (not root-name?)
+               (not (and ignore-geometry is-geometry?)))
+      ;; Notify touched even if it's not copy, because it may be a main instance
+      (on-touched shape))
+
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to
       ;; set the "touched" flag for the group the attribute belongs to.
       ;; In some cases we need to ignore touched only if the attribute is
       ;; geometric (position, width or transformation).
-      (and shape-ref group (not ignore) (not equal?)
+      (and in-copy? group (not ignore) (not equal?)
            (not root-name?)
            (not (and ignore-geometry is-geometry?)))
       (->
-        (update :touched cph/set-touched-group group)
-        (dissoc :remote-synced?))
+       (update :touched cph/set-touched-group group)
+       (dissoc :remote-synced?))
 
       (nil? val)
       (dissoc attr)
@@ -398,23 +423,23 @@
       (assoc attr val))))
 
 (defmethod process-operation :set-touched
-  [shape op]
+  [_ shape op]
   (let [touched (:touched op)
-        shape-ref (:shape-ref shape)]
-    (if (or (nil? shape-ref) (nil? touched) (empty? touched))
+        in-copy? (ctk/in-component-copy? shape)]
+    (if (or (not in-copy?) (nil? touched) (empty? touched))
       (dissoc shape :touched)
       (assoc shape :touched touched))))
 
 (defmethod process-operation :set-remote-synced
-  [shape op]
+  [_ shape op]
   (let [remote-synced? (:remote-synced? op)
-        shape-ref (:shape-ref shape)]
-    (if (or (nil? shape-ref) (not remote-synced?))
+        in-copy? (ctk/in-component-copy? shape)]
+    (if (or (not in-copy?) (not remote-synced?))
       (dissoc shape :remote-synced?)
       (assoc shape :remote-synced? true))))
 
 (defmethod process-operation :default
-  [_ op]
+  [_ _ op]
   (ex/raise :type :not-implemented
             :code :operation-not-implemented
             :context {:type (:type op)}))

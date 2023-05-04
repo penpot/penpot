@@ -235,7 +235,7 @@
 
 ;; --- SPECS WITHOUT CONFORMER
 
-(s/def ::inst inst?)
+(s/def ::inst inst?)  ;; A clojure instant (date and time)
 
 (s/def ::string
   (s/with-gen string?

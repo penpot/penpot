@@ -6,7 +6,9 @@
 
 (ns app.util.time
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.time :as common-time]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [fipp.ednize :as fez])
@@ -186,9 +188,7 @@
       :else
       (throw (UnsupportedOperationException. "unsupported type")))))
 
-(defn now
-  []
-  (Instant/now))
+(dm/export common-time/now)
 
 (defn in-future
   [v]

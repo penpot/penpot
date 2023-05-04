@@ -78,8 +78,7 @@
 (defn- library-change?
   [{:keys [type] :as change}]
   (or (contains? library-change-types type)
-      (and (contains? file-change-types type)
-           (some? (:component-id change)))))
+      (contains? file-change-types type)))
 
 (def ^:private sql:get-file
   "SELECT f.*, p.team_id
