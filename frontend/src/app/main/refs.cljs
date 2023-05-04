@@ -485,22 +485,22 @@
 (defn workspace-text-modifier-by-id [id]
   (l/derived #(get % id) workspace-text-modifier =))
 
-(defn is-flex-layout-child?
+(defn is-layout-child?
   [ids]
   (l/derived
    (fn [objects]
      (->> ids
           (map (d/getf objects))
-          (some (partial ctl/flex-layout-immediate-child? objects))))
+          (some (partial ctl/any-layout-immediate-child? objects))))
    workspace-page-objects))
 
-(defn all-flex-layout-child?
+(defn all-layout-child?
   [ids]
   (l/derived
    (fn [objects]
      (->> ids
           (map (d/getf objects))
-          (every? (partial ctl/flex-layout-immediate-child? objects))))
+          (every? (partial ctl/any-layout-immediate-child? objects))))
    workspace-page-objects))
 
 (defn get-flex-child-viewer

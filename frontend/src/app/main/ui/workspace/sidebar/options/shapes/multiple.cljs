@@ -294,15 +294,15 @@
         all-types (into #{} (map :type shapes))
 
         ids (->> shapes (map :id))
-        is-flex-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-flex-layout-child? ids))
-        is-flex-layout-child? (mf/deref is-flex-layout-child-ref)
+        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
+        is-layout-child? (mf/deref is-layout-child-ref)
 
         has-text? (contains? all-types :text)
 
         has-flex-layout-container? (->> shapes (some ctl/flex-layout?))
 
-        all-flex-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/all-flex-layout-child? ids))
-        all-flex-layout-child? (mf/deref all-flex-layout-child-ref)
+        all-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/all-layout-child? ids))
+        all-layout-child? (mf/deref all-layout-child-ref)
 
         all-flex-layout-container? (->> shapes (every? ctl/flex-layout?))
 
@@ -342,15 +342,15 @@
 
      [:& layout-container-menu {:type type :ids layout-container-ids :values layout-container-values :multiple true}]
 
-     (when (or is-flex-layout-child? has-flex-layout-container?)
+     (when (or is-layout-child? has-flex-layout-container?)
        [:& layout-item-menu
         {:type type
          :ids layout-item-ids
-         :is-layout-child? all-flex-layout-child?
+         :is-layout-child? all-layout-child?
          :is-layout-container? all-flex-layout-container?
          :values layout-item-values}])
 
-     (when-not (or (empty? constraint-ids) is-flex-layout-child?)
+     (when-not (or (empty? constraint-ids) is-layout-child?)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? layer-ids)
