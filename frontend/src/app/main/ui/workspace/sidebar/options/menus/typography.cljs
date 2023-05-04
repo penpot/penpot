@@ -378,10 +378,7 @@
 
         handle-change
         (fn [value attr]
-          (let [new-values (case attr
-                            :line-height (assoc values :line-height (if (or (str/empty? value) (nil? value)) 1.2 value))
-                            :spacing-options (assoc values :letter-spacing value))]
-            (on-change new-values)))]
+          (on-change {attr (str value)}))]
 
     [:div.spacing-options
      [:div.input-icon
@@ -392,6 +389,7 @@
        {:min -200
         :max 200
         :step 0.1
+        :default "1.2"
         :value (attr->string line-height)
         :placeholder (tr "settings.multiple")
         :nillable line-height-nillable
