@@ -148,13 +148,14 @@
   (let [file     (get-file conn id)
         features (->> (concat (:features file)
                               (:features params))
-                      (into files/default-features)
+                      (into (files/get-default-features))
                       (files/check-features-compatibility!))]
 
     (files/check-edition-permissions! conn profile-id (:id file))
 
     (binding [ffeat/*current*  features
               ffeat/*previous* (:features file)]
+
       (let [update-fn (cond-> update-file*
                         (contains? features "storage/pointer-map")
                         (wrap-with-pointer-map-context)

@@ -42,8 +42,9 @@
 
   (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED;"])
   (let [id       (or id (uuid/next))
-        features (-> (into files/default-features features)
-                     (files/check-features-compatibility!))
+        features (->> features
+                      (into (files/get-default-features))
+                      (files/check-features-compatibility!))
 
         data     (binding [pmap/*tracked* (atom {})
                            ffeat/*current* features

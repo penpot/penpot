@@ -26,7 +26,7 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
-(declare ^:private retrieve-candidates)
+(declare ^:private get-candidates)
 (declare ^:private process-file)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -43,31 +43,34 @@
 (defmethod ig/init-key ::handler
   [_ {:keys [::db/pool] :as cfg}]
   (fn [{:keys [file-id] :as params}]
+
     (db/with-atomic [conn pool]
-      (let [min-age (or (:min-age params) (::min-age cfg))
-            cfg     (assoc cfg ::min-age min-age ::conn conn ::file-id file-id)]
-        (loop [total 0
-               files (retrieve-candidates cfg)]
-          (if-let [file (first files)]
-            (do
-              (process-file conn file)
-              (recur (inc total)
-                     (rest files)))
-            (do
-              (l/info :hint "task finished" :min-age (dt/format-duration min-age) :processed total)
+      (let [min-age (dt/duration (or (:min-age params) (::min-age cfg)))
+            cfg     (-> cfg
+                        (assoc ::db/conn conn)
+                        (assoc ::file-id file-id)
+                        (assoc ::min-age min-age))
 
-              ;; Allow optional rollback passed by params
-              (when (:rollback? params)
-                (db/rollback! conn))
+            total   (reduce (fn [total file]
+                              (process-file cfg file)
+                              (inc total))
+                            0
+                            (get-candidates cfg))]
 
-              {:processed total})))))))
+        (l/info :hint "task finished" :min-age (dt/format-duration min-age) :processed total)
+
+        ;; Allow optional rollback passed by params
+        (when (:rollback? params)
+          (db/rollback! conn))
+
+        {:processed total}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private
-  sql:retrieve-candidates-chunk
+  sql:get-candidates-chunk
   "select f.id,
           f.data,
           f.revn,
@@ -81,8 +84,8 @@
     limit 1
     for update skip locked")
 
-(defn- retrieve-candidates
-  [{:keys [::conn ::min-age ::file-id]}]
+(defn- get-candidates
+  [{:keys [::db/conn ::min-age ::file-id]}]
   (if (uuid? file-id)
     (do
       (l/warn :hint "explicit file id passed on params" :file-id file-id)
@@ -90,7 +93,7 @@
            (map #(update % :features db/decode-pgarray #{}))))
     (let [interval  (db/interval min-age)
           get-chunk (fn [cursor]
-                      (let [rows (db/exec! conn [sql:retrieve-candidates-chunk interval cursor])]
+                      (let [rows (db/exec! conn [sql:get-candidates-chunk interval cursor])]
                         [(some->> rows peek :modified-at)
                          (map #(update % :features db/decode-pgarray #{}) rows)]))]
 
@@ -100,8 +103,7 @@
                    :initk (dt/now)))))
 
 (defn collect-used-media
-  "Analyzes the file data and collects all references to external
-  assets. Returns a set of ids."
+  "Given a fdata (file data), returns all media references."
   [data]
   (let [xform (comp
                (map :objects)
@@ -138,7 +140,7 @@
       ;; them.
       (db/delete! conn :file-media-object {:id (:id mobj)}))))
 
-(defn- clean-file-frame-thumbnails!
+(defn- clean-file-object-thumbnails!
   [conn file-id data]
   (let [stored (->> (db/query conn :file-object-thumbnail
                               {:file-id file-id}
@@ -171,7 +173,7 @@
       (l/debug :hint "delete file thumbnails" :file-id file-id :total (:next.jdbc/update-count res)))))
 
 (def ^:private
-  sql:retrieve-client-files
+  sql:get-files-for-library
   "select f.data, f.modified_at
      from file as f
      left join file_library_rel as fl on (fl.file_id = f.id)
@@ -181,75 +183,76 @@
     order by f.modified_at desc
     limit 1")
 
-(defn- retrieve-client-files
-  "search al files that use the given library.
-   Returns a sequence of file-data (only reads database rows one by one)."
-  [conn library-id]
-  (let [get-chunk (fn [cursor]
-                    (let [rows (db/exec! conn [sql:retrieve-client-files library-id cursor])]
-                      [(some-> rows peek :modified-at)
-                       (map (comp blob/decode :data) rows)]))]
-
-    (d/iteration get-chunk
-                 :vf second
-                 :kf first
-                 :initk (dt/now))))
-
 (defn- clean-deleted-components!
   "Performs the garbage collection of unreferenced deleted components."
-  [conn library-id library-data]
-  (let [find-used-components-file
-        (fn [components file-data]
-          ; Find which of the components are used in the file.
-          (into #{}
-                (filter #(ctf/used-in? file-data library-id % :component))
-                components))
+  [conn file-id data]
+  (letfn [(get-files-chunk [cursor]
+            (let [rows (db/exec! conn [sql:get-files-for-library file-id cursor])]
+              [(some-> rows peek :modified-at)
+               (map (comp blob/decode :data) rows)]))
 
-        find-unused-components
-        (fn [components files-data]
-          ; Find what components are NOT used in any of the files.
-          (loop [files-data      files-data
-                 components      components]
-            (let [file-data (first files-data)]
-              (if (or (nil? file-data) (empty? components))
-                components
-                (let [used-components-file (find-used-components-file components file-data)]
-                  (recur (rest files-data)
-                         (into #{} (remove used-components-file) components)))))))
+          (get-used-components [fdata components]
+            ;; Find which of the components are used in the file.
+            (into #{}
+                  (filter #(ctf/used-in? fdata file-id % :component))
+                  components))
 
-        deleted-components     (set (ctkl/deleted-components-seq library-data))
-        unused-components      (find-unused-components deleted-components
-                                                       (cons library-data
-                                                             (retrieve-client-files conn library-id)))
-        total                  (count unused-components)]
+          (get-unused-components [components files-data]
+            ;; Find and return a set of unused components (on all files).
+            (reduce (fn [components fdata]
+                      (if (seq components)
+                        (->> (get-used-components fdata components)
+                             (set/difference components))
+                        (reduced components)))
 
-    (when-not (zero? total)
-      (l/debug :hint "clean deleted components" :total total)
-      (let [new-data (reduce #(ctkl/delete-component %1 (:id %2))
-                             library-data
-                             unused-components)]
-        (db/update! conn :file
-                    {:data (blob/encode new-data)}
-                    {:id library-id})))))
+                    components
+                    files-data))]
 
-(def ^:private sql:get-unused-fragments
-  "SELECT id FROM file_data_fragment
-    WHERE file_id = ? AND id != ALL(?::uuid[])")
+    (let [deleted (into #{} (ctkl/deleted-components-seq data))
+          unused  (->> (d/iteration get-files-chunk :vf second :kf first :initk (dt/now))
+                       (cons data)
+                       (get-unused-components deleted)
+                       (mapv :id))]
+
+      (when (seq unused)
+        (l/debug :hint "clean deleted components" :total (count unused))
+
+        (let [data (reduce ctkl/delete-component data unused)]
+          (db/update! conn :file
+                      {:data (blob/encode data)}
+                      {:id file-id}))))))
 
 (defn- clean-data-fragments!
   [conn file-id data]
-  (let [used (->> (concat (vals data)
-                          (vals (:pages-index data)))
-                  (into #{} (comp (filter pmap/pointer-map?)
-                                  (map pmap/get-id)))
-                  (db/create-array conn "uuid"))
-        rows (db/exec! conn [sql:get-unused-fragments file-id used])]
-    (doseq [fragment-id (map :id rows)]
-      (l/trace :hint "remove unused file data fragment" :id (str fragment-id))
-      (db/delete! conn :file-data-fragment {:id fragment-id :file-id file-id}))))
+  (letfn [(get-pointers-chunk [cursor]
+            (let [sql  (str "select id, data, created_at "
+                            "  from file_change "
+                            " where file_id = ? "
+                            "   and data is not null "
+                            "   and created_at < ? "
+                            " order by created_at desc "
+                            " limit 1;")
+                  rows (db/exec! conn [sql file-id cursor])]
+              [(some-> rows peek :created-at)
+               (mapcat (comp files/get-all-pointer-ids blob/decode :data) rows)]))]
+
+    (let [used (into (files/get-all-pointer-ids data)
+                     (d/iteration get-pointers-chunk
+                                  :vf second
+                                  :kf first
+                                  :initk (dt/now)))
+
+          sql  (str "select id from file_data_fragment "
+                    " where file_id = ? AND id != ALL(?::uuid[])")
+          used (db/create-array conn "uuid" used)
+          rows (db/exec! conn [sql file-id used])]
+
+      (doseq [fragment-id (map :id rows)]
+        (l/trace :hint "remove unused file data fragment" :id (str fragment-id))
+        (db/delete! conn :file-data-fragment {:id fragment-id :file-id file-id})))))
 
 (defn- process-file
-  [conn {:keys [id data revn modified-at features] :as file}]
+  [{:keys [::db/conn]} {:keys [id data revn modified-at features] :as file}]
   (l/debug :hint "processing file" :id id :modified-at modified-at)
 
   (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
@@ -258,7 +261,7 @@
                    (pmg/migrate-data))]
 
       (clean-file-media! conn id data)
-      (clean-file-frame-thumbnails! conn id data)
+      (clean-file-object-thumbnails! conn id data)
       (clean-file-thumbnails! conn id revn)
       (clean-deleted-components! conn id data)
 
@@ -268,5 +271,4 @@
       ;; Mark file as trimmed
       (db/update! conn :file
                   {:has-media-trimmed true}
-                  {:id id})
-      nil)))
+                  {:id id}))))

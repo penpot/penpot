@@ -52,7 +52,8 @@
 
 (def defaults
   {:database-uri "postgresql://postgres/penpot_test"
-   :redis-uri "redis://redis/1"})
+   :redis-uri "redis://redis/1"
+   :file-change-snapshot-every 1})
 
 (def config
   (->> (cf/read-env "penpot-test")
@@ -63,7 +64,9 @@
   [:enable-secure-session-cookies
    :enable-email-verification
    :enable-smtp
-   :enable-quotes])
+   :enable-quotes
+   :enable-fdata-storage-pointer-map
+   :enable-fdata-storage-objets-map])
 
 (def test-init-sql
   ["alter table project_profile_rel set unlogged;\n"
@@ -134,7 +137,7 @@
                              :app.auth.oidc/generic-provider
                              :app.setup/builtin-templates
                              :app.auth.oidc/routes
-                             :app.worker/executors-monitor
+                             :app.worker/monitor
                              :app.http.oauth/handler
                              :app.notifications/handler
                              :app.loggers.mattermost/reporter
@@ -466,6 +469,14 @@
 (defn db-exec!
   [sql]
   (db/exec! *pool* sql))
+
+(defn db-delete!
+  [& params]
+  (apply db/delete! *pool* params))
+
+(defn db-update!
+  [& params]
+  (apply db/update! *pool* params))
 
 (defn db-insert!
   [& params]
