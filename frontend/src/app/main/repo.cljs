@@ -150,6 +150,10 @@
   [id params]
   (send-command! id params {:forward-query-params [:file-id :object-id]}))
 
+(defmethod command :get-file-object-thumbnails
+  [id params]
+  (send-command! id params {:forward-query-params [:file-id]}))
+
 (defmethod command :export-binfile
   [id params]
   (send-command! id params {:response-type :blob}))
