@@ -96,7 +96,7 @@
                       (pcb/change-parent (:parent-id attrs) [shape]))
                     (cond-> (ctl/grid-layout? objects (:parent-id shape))
                       (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells)))]
-    
+
     [shape changes]))
 
 (defn add-shape
@@ -400,7 +400,7 @@
 
             changes
             (prepare-move-shapes-into-frame changes (:id shape) selected objects)]
-        
+
         [shape changes]))))
 
 (defn create-artboard-from-selection
@@ -481,25 +481,33 @@
       (let [selected (wsh/lookup-selected state)]
         (rx/of (dch/update-shapes selected #(update % :blocked not)))))))
 
+
+;; FIXME: this need to be refactored
+
 (defn toggle-file-thumbnail-selected
   []
   (ptk/reify ::toggle-file-thumbnail-selected
     ptk/WatchEvent
     (watch [_ state _]
       (let [selected   (wsh/lookup-selected state)
-            pages      (-> state :workspace-data :pages-index vals)
-            get-frames (fn [{:keys [objects id] :as page}]
-                         (->> (ctst/get-frames objects)
-                              (sequence
-                               (comp (filter :use-for-thumbnail?)
-                                     (map :id)
-                                     (remove selected)
-                                     (map (partial vector id))))))]
+            pages      (-> state :workspace-data :pages-index vals)]
 
         (rx/concat
+         ;; First: clear the `:use-for-thumbnail?` flag from all not
+         ;; selected frames.
          (rx/from
-          (->> (mapcat get-frames pages)
+          (->> pages
+               (mapcat
+                (fn [{:keys [objects id] :as page}]
+                  (->> (ctst/get-frames objects)
+                       (sequence
+                        (comp (filter :use-for-thumbnail?)
+                              (map :id)
+                              (remove selected)
+                              (map (partial vector id)))))))
                (d/group-by first second)
                (map (fn [[page-id frame-ids]]
                       (dch/update-shapes frame-ids #(dissoc % :use-for-thumbnail?) {:page-id page-id})))))
+
+         ;; And finally: toggle the flag value on all the selected shapes
          (rx/of (dch/update-shapes selected #(update % :use-for-thumbnail? not))))))))
