@@ -25,6 +25,7 @@
         vbox' (gsh/transform-rect vbox mtx)]
     (-> local
         (assoc :zoom new-zoom)
+        (assoc :zoom-inverse (/ 1 new-zoom))
         (update :vbox merge (select-keys vbox' [:x :y :width :height])))))
 
 (defn increase-zoom

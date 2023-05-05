@@ -79,6 +79,7 @@
                 vbox
                 vport
                 zoom
+                zoom-inverse
                 edition]} wlocal
 
         {:keys [options-mode
@@ -509,6 +510,7 @@
        (when show-rules?
          [:& rules/rules
           {:zoom zoom
+           :zoom-inverse zoom-inverse
            :vbox vbox
            :selected-shapes selected-shapes
            :offset-x offset-x
