@@ -205,8 +205,10 @@
                  (gpo/parent-coords-bounds @transformed-parent-bounds))
              child])
 
-          (set-child-modifiers [modif-tree cell-data [child-bounds child]]
-            (let [modifiers (gcgl/child-modifiers parent transformed-parent-bounds child child-bounds cell-data)
+          (set-child-modifiers [modif-tree grid-data cell-data [child-bounds child]]
+            (let [modifiers
+                  (gcgl/child-modifiers parent transformed-parent-bounds child child-bounds grid-data cell-data)
+
                   modif-tree
                   (cond-> modif-tree
                     (d/not-empty? modifiers)
@@ -224,7 +226,7 @@
           (let [cell-data (gcgl/get-cell-data grid-data @transformed-parent-bounds bound+child)
                 modif-tree (cond-> modif-tree
                              (some? cell-data)
-                             (set-child-modifiers cell-data bound+child))]
+                             (set-child-modifiers grid-data cell-data bound+child))]
             (recur modif-tree (first pending) (rest pending)))
           modif-tree)))))
 

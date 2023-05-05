@@ -7,19 +7,108 @@
 (ns app.common.geom.shapes.grid-layout.positions
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.grid-layout.layout-data :as ld]
    [app.common.geom.shapes.points :as gpo]
+   [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
-   [app.common.types.modifiers :as ctm]))
+   [app.common.types.modifiers :as ctm]
+   [app.common.types.shape.layout :as ctl]))
+
+(defn cell-bounds
+  [{:keys [origin row-tracks column-tracks layout-bounds column-gap row-gap] :as layout-data} {:keys [row column row-span column-span] :as cell}]
+
+  (let [hv     #(gpo/start-hv layout-bounds %)
+        vv     #(gpo/start-vv layout-bounds %)
+
+        span-column-tracks (subvec column-tracks (dec column) (+ (dec column) column-span))
+        span-row-tracks (subvec row-tracks (dec row) (+ (dec row) row-span))
+
+        p1
+        (gpt/add
+         origin
+         (gpt/add
+          (gpt/to-vec origin (dm/get-in span-column-tracks [0 :start-p]))
+          (gpt/to-vec origin (dm/get-in span-row-tracks [0 :start-p]))))
+
+        p2
+        (as-> p1  $
+          (reduce (fn [p track] (gpt/add p (hv (:size track)))) $ span-column-tracks)
+          (gpt/add $ (hv (* column-gap (dec (count span-column-tracks))))))
+
+        p3
+        (as-> p2  $
+          (reduce (fn [p track] (gpt/add p (vv (:size track)))) $ span-row-tracks)
+          (gpt/add $ (vv (* row-gap (dec (count span-row-tracks))))))
+
+        p4
+        (as-> p1  $
+          (reduce (fn [p track] (gpt/add p (vv (:size track)))) $ span-row-tracks)
+          (gpt/add $ (vv (* row-gap (dec (count span-row-tracks))))))]
+    [p1 p2 p3 p4]))
+
+(defn calc-fill-width-data
+  "Calculates the size and modifiers for the width of an auto-fill child"
+  [_parent
+   transform
+   transform-inverse
+   _child
+   child-origin child-width
+   cell-bounds]
+
+  (let [target-width (max (gpo/width-points cell-bounds) 0.01)
+        fill-scale (/ target-width child-width)]
+    {:width target-width
+     :modifiers (ctm/resize-modifiers (gpt/point fill-scale 1) child-origin transform transform-inverse)}))
+
+(defn calc-fill-height-data
+  "Calculates the size and modifiers for the height of an auto-fill child"
+  [_parent
+   transform transform-inverse
+   _child
+   child-origin child-height
+   cell-bounds]
+  (let [target-height (max (gpo/height-points cell-bounds) 0.01)
+        fill-scale (/ target-height child-height)]
+    {:height target-height
+     :modifiers (ctm/resize-modifiers (gpt/point 1 fill-scale) child-origin transform transform-inverse)}))
+
+(defn fill-modifiers
+  [parent parent-bounds child child-bounds layout-data cell-data]
+  (let [child-origin (gpo/origin child-bounds)
+        child-width  (gpo/width-points child-bounds)
+        child-height (gpo/height-points child-bounds)
+
+        cell-bounds (cell-bounds layout-data cell-data)
+
+        [_ transform transform-inverse]
+        (when (or (ctl/fill-width? child) (ctl/fill-height? child))
+          (gtr/calculate-geometry @parent-bounds))
+
+        fill-width
+        (when (ctl/fill-width? child)
+          (calc-fill-width-data parent transform transform-inverse child child-origin child-width cell-bounds))
+
+        fill-height
+        (when (ctl/fill-height? child)
+          (calc-fill-height-data parent transform transform-inverse child child-origin child-height cell-bounds))]
+
+    (-> (ctm/empty)
+         (cond-> fill-width (ctm/add-modifiers (:modifiers fill-width)))
+         (cond-> fill-height (ctm/add-modifiers (:modifiers fill-height))))))
 
 (defn child-modifiers
-  [_parent _transformed-parent-bounds _child child-bounds cell-data]
-  (ctm/move-modifiers
-   (gpt/subtract (:start-p cell-data) (gpo/origin child-bounds))))
+  [parent parent-bounds child child-bounds layout-data cell-data]
+
+  (let [fill-modifiers (fill-modifiers parent parent-bounds child child-bounds layout-data cell-data)
+        position-delta (gpt/subtract (:start-p cell-data) (gpo/origin child-bounds))]
+    (-> (ctm/empty)
+        (ctm/add-modifiers fill-modifiers)
+        (ctm/move position-delta))))
 
 
 (defn line-value

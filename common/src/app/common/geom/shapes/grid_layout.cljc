@@ -15,3 +15,4 @@
 (dm/export glp/child-modifiers)
 (dm/export glp/get-position-grid-coord)
 (dm/export glp/get-drop-cell)
+(dm/export glp/cell-bounds)
