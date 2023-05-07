@@ -17,6 +17,7 @@
    [app.main.data.users :as du]
    [app.main.features :as features]
    [app.main.repo :as rp]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as tm]
@@ -1003,7 +1004,11 @@
                           {:team-id team-id}))
            (rx/of (rt/nav :dashboard-search
                           {:team-id team-id}
-                          {:search-term term}))))))))
+                          {:search-term term})))))
+
+     ptk/EffectEvent
+     (effect [_ _ _]
+       (dom/focus! (dom/get-element "search-input"))))))
 
 (defn go-to-projects
   ([]
