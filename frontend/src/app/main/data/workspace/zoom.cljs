@@ -83,6 +83,7 @@
                           zoom  (/ (:width vport) (:width srect))]
                       (-> local
                           (assoc :zoom zoom)
+                          (assoc :zoom-inverse (/ 1 zoom))
                           (update :vbox merge srect))))))))))
 
 (def zoom-to-selected-shape
@@ -103,6 +104,7 @@
                             zoom  (/ (:width vport) (:width srect))]
                         (-> local
                             (assoc :zoom zoom)
+                            (assoc :zoom-inverse (/ 1 zoom))
                             (update :vbox merge srect)))))))))))
 
 (defn start-zooming [pt]
