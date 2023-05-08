@@ -35,7 +35,7 @@
                   objects (wsh/lookup-page-objects state page-id)
                   shapes  (cph/get-immediate-children objects)
                   srect   (gsh/selection-rect shapes)
-                  local   (assoc local :vport size :zoom 1)]
+                  local   (assoc local :vport size :zoom 1 :zoom-inverse 1)]
               (cond
                 (or (not (d/num? (:width srect)))
                     (not (d/num? (:height srect))))
@@ -47,6 +47,7 @@
                       zoom  (/ (:width size) (:width srect))]
                   (-> local
                       (assoc :zoom zoom)
+                      (assoc :zoom-inverse (/ 1 zoom))
                       (update :vbox merge srect)))
 
                 :else
