@@ -22,6 +22,7 @@
 - Click to select full values at the design sidebar (by @akshay-gupta7) [Github #3179](https://github.com/penpot/penpot/pull/3179)
 - Fix rect filter bounds math (by @ryanbreen) [Github #3180](https://github.com/penpot/penpot/pull/3180)
 - Removed sizing variables from radius (by @ondrejkonec) [Github #3184](https://github.com/penpot/penpot/pull/3184)
+- Dashboard search, set focus after shortcut (by @akshay-gupta7) [Github #3196](https://github.com/penpot/penpot/pull/3196)
 
 ## 1.18.3 (Unreleased)
 
