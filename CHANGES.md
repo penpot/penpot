@@ -23,6 +23,7 @@
 - Fix rect filter bounds math (by @ryanbreen) [Github #3180](https://github.com/penpot/penpot/pull/3180)
 - Removed sizing variables from radius (by @ondrejkonec) [Github #3184](https://github.com/penpot/penpot/pull/3184)
 - Dashboard search, set focus after shortcut (by @akshay-gupta7) [Github #3196](https://github.com/penpot/penpot/pull/3196)
+- Library name dropdown arrow is overlapped by library name (by @ondrejkonec) [Taiga #5200](https://tree.taiga.io/project/penpot/issue/5200)
 
 ## 1.18.3 (Unreleased)
 
