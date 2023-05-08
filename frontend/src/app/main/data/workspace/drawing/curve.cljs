@@ -8,7 +8,8 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.flex-layout :as gsl]
+   [app.common.geom.shapes.flex-layout :as gslf]
+   [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.geom.shapes.path :as gsp]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -53,11 +54,15 @@
             position     (when start (gpt/point start))
             frame-id     (ctst/top-nested-frame objects position)
             flex-layout? (ctl/flex-layout? objects frame-id)
-            drop-index   (when flex-layout? (gsl/get-drop-index frame-id objects position))]
+            grid-layout? (ctl/grid-layout? objects frame-id)
+            drop-index   (when flex-layout? (gslf/get-drop-index frame-id objects position))
+            drop-cell    (when grid-layout? (gslg/get-drop-cell frame-id objects position))]
         (-> state
             (assoc-in [:workspace-drawing :object :frame-id] frame-id)
             (cond-> (some? drop-index)
-              (update-in [:workspace-drawing :object] with-meta {:index drop-index})))))))
+              (update-in [:workspace-drawing :object] with-meta {:index drop-index}))
+            (cond-> (some? drop-cell)
+              (update-in [:workspace-drawing :object] with-meta {:cell drop-cell})))))))
 
 (defn curve-to-path [{:keys [segments] :as shape}]
   (let [content (gsp/segments->content segments)

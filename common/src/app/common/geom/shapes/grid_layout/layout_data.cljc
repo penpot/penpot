@@ -349,6 +349,9 @@
         column-tracks (add-auto-size column-tracks column-add-auto)
         row-tracks (add-auto-size row-tracks row-add-auto)
 
+        column-total-size (tracks-total-size column-tracks)
+        row-total-size    (tracks-total-size row-tracks)
+
         start-p
         (cond-> bound-corner
           (= :end (:layout-align-content parent))

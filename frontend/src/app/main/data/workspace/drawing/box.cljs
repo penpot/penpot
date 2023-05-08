@@ -8,7 +8,8 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.flex-layout :as gsl]
+   [app.common.geom.shapes.flex-layout :as gslf]
+   [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
@@ -84,7 +85,10 @@
             fid        (ctst/top-nested-frame objects initial)
 
             flex-layout? (ctl/flex-layout? objects fid)
-            drop-index   (when flex-layout? (gsl/get-drop-index fid objects initial))
+            grid-layout? (ctl/grid-layout? objects fid)
+
+            drop-index   (when flex-layout? (gslf/get-drop-index fid objects initial))
+            drop-cell    (when grid-layout? (gslg/get-drop-cell fid objects initial))
 
             shape   (get-in state [:workspace-drawing :object])
             shape   (-> shape
@@ -100,6 +104,9 @@
 
                         (cond-> (some? drop-index)
                           (with-meta {:index drop-index}))
+
+                        (cond-> (some? drop-cell)
+                          (with-meta {:cell drop-cell}))
 
                         (assoc :initialized? true)
                         (assoc :click-draw? true))]

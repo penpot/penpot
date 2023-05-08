@@ -53,9 +53,9 @@
          (.setPointerCapture editor (.-pointerId bevent))
          (.setPointerCapture target (.-pointerId bevent))))
 
-
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
-               (dom/class? (dom/get-target bevent) "viewport-selrect"))
+               (dom/child? (dom/get-target bevent) (dom/query ".viewport-controls")))
+
        (dom/stop-propagation bevent)
 
        (when-not @z?
@@ -78,7 +78,6 @@
                        pt       (uwvv/point->viewport raw-pt)]
                    (st/emit! (dw/start-zooming pt)))
                  (st/emit! (dw/start-panning))))
-
 
              left-click?
              (do

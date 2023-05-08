@@ -5075,3 +5075,6 @@ msgstr "Marketing"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.student-teacher"
 msgstr "Estudiante o profesorado"
+
+msgid "workspace.layout_grid.editor.title"
+msgstr "Editando rejilla"
