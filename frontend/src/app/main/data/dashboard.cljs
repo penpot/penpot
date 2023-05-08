@@ -1000,8 +1000,10 @@
      (watch [_ state _]
        (let [team-id (:current-team-id state)]
          (if (empty? term)
-           (rx/of (rt/nav :dashboard-search
-                          {:team-id team-id}))
+           (do
+              (dom/focus! (dom/get-element "search-input"))
+              (rx/of (rt/nav :dashboard-search
+                              {:team-id team-id})))
            (rx/of (rt/nav :dashboard-search
                           {:team-id team-id}
                           {:search-term term})))))
