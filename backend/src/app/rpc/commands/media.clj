@@ -41,15 +41,6 @@
 (s/def ::file-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 
-(defn validate-content-size!
-  [content]
-  (when (> (:size content) (cf/get :media-max-file-size default-max-file-size))
-    (ex/raise :type :restriction
-              :code :media-max-file-size-reached
-              :hint (str/ffmt "the uploaded file size % is greater than the maximum %"
-                              (:size content)
-                              default-max-file-size))))
-
 ;; --- Create File Media object (upload)
 
 (declare create-file-media-object)
@@ -68,7 +59,7 @@
   (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (files/check-edition-permissions! pool profile-id file-id)
     (media/validate-media-type! content)
-    (validate-content-size! content)
+    (media/validate-media-size! content)
     (let [object (create-file-media-object cfg params)
           props  {:name (:name params)
                   :file-id file-id

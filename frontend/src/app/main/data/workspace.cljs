@@ -449,10 +449,12 @@
             page    (get-in state [:workspace-data :pages-index page-id])
             name    (cp/generate-unique-name unames (:name page))
 
-            no_thumbnails_objects (->> (:objects page)
-                                       (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))
-
-            page (-> page (assoc :name name :id id :objects no_thumbnails_objects))
+            page    (-> page
+                        (assoc :name name)
+                        (assoc :id id)
+                        (assoc :objects
+                               (->> (:objects page)
+                                    (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))))
 
             changes (-> (pcb/empty-changes it)
                         (pcb/add-page id page))]
@@ -1265,7 +1267,7 @@
 
             not-group-like? (and (= (count selected) 1)
                                  (not (contains? #{:group :bool} (:type head))))
-           
+
             no-bool-shapes? (->> all-selected (some (comp #{:frame :text} :type)))]
 
         (rx/concat

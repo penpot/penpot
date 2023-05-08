@@ -335,6 +335,20 @@
                                   :session-id session-id
                                   :profile-id profile-id})))))
 
+(declare command!)
+
+(defn update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
+  (let [params {::type :update-file
+                ::rpc/profile-id profile-id
+                :id file-id
+                :session-id (uuid/random)
+                :revn revn
+                :components-v2 true
+                :changes changes}
+        out    (command! params)]
+    (t/is (nil? (:error out)))
+    (:result out)))
+
 (defn create-webhook*
   ([params] (create-webhook* *pool* params))
   ([pool {:keys [team-id id uri mtype is-active]
