@@ -41,10 +41,12 @@
       (rx/create
        (fn [subs]
          (ts/raf
-          #(.toBlob node (fn [blob]
-                           (rx/push! subs blob)
-                           (rx/end! subs))
-                    "image/png"))))
+          (fn []
+            (.toBlob node (fn [blob]
+                            (rx/push! subs blob)
+                            #_(rx/end! subs))
+                     "image/png")))
+         (constantly nil)))
 
       ;; Not found, we retry after delay
       (->> (rx/timer 250)
