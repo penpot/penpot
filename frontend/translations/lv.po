@@ -1,65 +1,68 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-06 15:38+0000\n"
-"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
-"Language: he\n"
+"PO-Revision-Date: 2023-04-06 10:35+0000\n"
+"Last-Translator: \"Ņikita K.\" <nikita.kozlovs@gmail.com>\n"
+"Language-Team: Latvian "
+"<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
+"Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
-"n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 4.16-dev\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
+"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 4.17-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
-msgstr "כבר יש לך חשבון?"
+msgstr "Vai jums jau ir konts?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
-msgstr "נא לחפש בדוא״ל הנכנס שלך וללחוץ על הקישור כדי לאמת ולהתחיל להשתמש ב־Penpot."
+msgstr ""
+"Pārbaudiet savu e-pastu un noklikšķiniet uz saites, lai apstiprinātu un "
+"sāktu lietot Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
-msgstr "אישור הסיסמה"
+msgstr "Apstipriniet paroli"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-account"
-msgstr "יצירת חשבון הדגמה"
+msgstr "Izveidot demonstrācijas kontu"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-profile"
-msgstr "מעניין אותך רק להתנסות?"
+msgstr "Gribat tikai pamēģināt?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
-msgstr "זה שירות ניסיוני, לא להשתמש בו לעבודה אמתית, המיזמים יימחקו מדי פעם בפעם."
+msgstr ""
+"Šis ir DEMO pakalpojums, NEIZMANTOJIET reāliem darbiem, projektus tiks "
+"periodiski dzēsti."
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
-msgstr "דוא״ל"
+msgstr "E-pasts"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
-msgstr "שכחת סיסמה?"
+msgstr "Aizmirsāt paroli?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.fullname"
-msgstr "שם מלא"
+msgstr "Vārds un Uzvārds"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
-msgstr "כניסה מכאן"
+msgstr "Ienākt šeit"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
-msgstr "כניסה"
+msgstr "Ienākt"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
-msgstr "שמחים לראות אותך שוב!"
+msgstr "Prieks Jūs atkal redzēt!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -79,860 +82,876 @@ msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "‎OpenID Connect"
+msgstr "AtvērtoID (OpenID)"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
-msgstr "נא להקליד סיסמה חדשה"
+msgstr "Ierakstiet jaunu paroli"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
-msgstr "אסימון השחזור שגוי."
+msgstr "Atkopšanas marķieris nav derīgs."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.password-changed-successfully"
-msgstr "הסיסמה הוחלפה בהצלחה"
+msgstr "Parole ir veiksmīgi nomainīta"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
-msgstr "הפרופיל לא עבר אימות, נא לאמת את הפרופיל לפני המשך התהליך."
+msgstr ""
+"Profils nav pārbaudīts, lūdzu, pirms turpiniet, veiciet profila "
+"verificēšanu."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
-msgstr "קישור לשחזור סיסמה נשלח לתיבת הדוא״ל הנכנס שלך."
+msgstr "Uz Jūsu e-pastu nosūtīta paroles atkopšanas saite."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
-msgstr "הצטרפת לצוות בהצלחה"
+msgstr "Jūs esat veiksmīgi pievienojies komandai"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.password"
-msgstr "סיסמה"
+msgstr "Parole"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
-msgstr "8 תווים לפחות"
+msgstr "Vismaz 8 rakstzīmes"
 
 msgid "auth.privacy-policy"
-msgstr "מדיניות פרטיות"
+msgstr "Privātuma politika"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-submit"
-msgstr "שחזור סיסמה"
+msgstr "Atkopt paroli"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-subtitle"
-msgstr "נשלח לך הודעה בדוא״ל עם ההנחיות"
+msgstr "Mēs nosūtīsim jums e-pasta ziņojumu ar norādījumiem"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-title"
-msgstr "שכחת סיסמה?"
+msgstr "Aizmirsat paroli?"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.recovery-submit"
-msgstr "החלפת הסיסמה שלך"
+msgstr "Nomainīt paroli"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.register"
-msgstr "אין לך חשבון עדיין?"
+msgstr "Vēl nav konta?"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
-msgstr "יצירת חשבון"
+msgstr "Izveidot kontu"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-subtitle"
-msgstr "זה חינם, בקוד פתוח"
+msgstr "Tas ir bezmaksas, tā ir atvērtā pirmkoda programmatūra"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
-msgstr "יצירת חשבון"
+msgstr "Izveidot kontu"
 
 #: src/app/main/ui/auth.cljs
 msgid "auth.sidebar-tagline"
-msgstr "הפתרון בקוד פתוח לעיצוב ויצירת אבטיפוס."
+msgstr "Atvērtā pirmkoda risinājums projektēšanai un prototipizēšanai."
 
 msgid "auth.terms-of-service"
-msgstr "תנאי השירות"
+msgstr "Pakalpojumu sniegšanas noteikumi"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
-msgstr "יצירת חשבון חדש מהווה את הסכמתך לתנאי השירות ולמדיניות הפרטיות."
+msgstr ""
+"Veidojot jaunu kontu, jūs piekrītat mūsu pakalpojumu sniegšanas noteikumiem "
+"un konfidencialitātes politikai."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
-msgstr "שלחנו הודעת דוא״ל לאימות אל"
+msgstr "Mēs esam nosūtījuši apstiprinājuma e-pasta ziņojumu uz"
 
 msgid "common.publish"
-msgstr "פרסום"
+msgstr "Publicēt"
 
 msgid "common.share-link.all-users"
-msgstr "כל משתמשי Penpot"
+msgstr "Visi Penpot lietotāji"
 
 msgid "common.share-link.confirm-deletion-link-description"
-msgstr "להסיר את הקישור הזה? ביצוע פעולה זו תמנע מכולם לגשת אליו"
+msgstr ""
+"Vai tiešām vēlaties noņemt šo saiti? Noņemot saiti, tā vairs nebūs pieejama "
+"nevienam"
 
 msgid "common.share-link.current-tag"
-msgstr "(נוכחי)"
+msgstr "(pašreizējais)"
 
 msgid "common.share-link.destroy-link"
-msgstr "השמדת קישור"
+msgstr "Iznīcināt saiti"
 
 msgid "common.share-link.get-link"
-msgstr "קבלת קישור"
+msgstr "Iegūt saiti"
 
 msgid "common.share-link.link-copied-success"
-msgstr "הקישור הועתק בהצלחה"
+msgstr "Saite ir veiksmīgi nokopēta"
 
 msgid "common.share-link.manage-ops"
-msgstr "ניהול הרשאות"
+msgstr "Pārvaldīt atļaujas"
 
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
-msgstr[0] "עמוד שותף"
-msgstr[1] "%s עמודים שותפו"
-msgstr[2] "%s עמודים שותפו"
-msgstr[3] "%s עמודים שותפו"
+msgstr[0] "Nav koplietoto lapu"
+msgstr[1] "1 lapa koplietota"
+msgstr[2] "%s lapas koplietotas"
 
 msgid "common.share-link.permissions-can-comment"
-msgstr "הרשאות תגובה"
+msgstr "Var komentēt"
 
 msgid "common.share-link.permissions-can-inspect"
-msgstr "הרשאות לחקירת הקוד"
+msgstr "Var skatīties kodu"
 
 msgid "common.share-link.permissions-hint"
-msgstr "כל מי שיש לו את הקישור יכול לגשת"
+msgstr "Ikvienam, kam ir saite, būs piekļuve"
 
 msgid "common.share-link.permissions-pages"
-msgstr "עמודים ששותפו"
+msgstr "Koplietotas lapas"
 
 msgid "common.share-link.placeholder"
-msgstr "הקישור לשיתוף יופיע כאן"
+msgstr "Šeit tiks parādīta koplietojama saite"
 
 msgid "common.share-link.team-members"
-msgstr "רק חברי צוות"
+msgstr "Tikai komandas dalībnieki"
 
 msgid "common.share-link.title"
-msgstr "שיתוף אבות טיפוס"
+msgstr "Prototipu koplietošana"
 
 msgid "common.share-link.view-all"
-msgstr "בחירה בהכול"
+msgstr "Atlasīt visu"
 
 msgid "common.unpublish"
-msgstr "ביטול פרסום"
+msgstr "Atcelt publikāciju"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.management"
-msgstr "ניהול צוות"
+msgstr "Komandas vadība"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.text"
-msgstr "Penpot מיועד לצוותים. אפשר להזמין חברים כדי לעבוד ביחד על מיזמים וקבצים"
+msgstr ""
+"Penpot ir paredzēts komandām. Uzaiciniet dalībniekus strādāt kopā ar "
+"projektiem un failiem"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.title"
-msgstr "להתגבש כקבוצה!"
+msgstr "Apvienojaties!"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
-msgstr "כאן נלמד את היסודות של Penpot תוך השתעשעות עם המדריך המעשי הזה."
+msgstr "Apgūstiet Penpot pamatus, izmantojot šo apmācību un gūstiet prieku."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
-msgstr "התחלת המדריך"
+msgstr "Sākt apmācību"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.title"
-msgstr "מדריך מעשי"
+msgstr "Praktiskā apmācība"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.info"
-msgstr "סיור במרחבי Penpot ועריכת היכרות עם יכולות המפתח שלו."
+msgstr "Caurskatiet Penpot un iepazīstieties ar tā galvenajām funkcijām."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.start"
-msgstr "התחלת הסיור"
+msgstr "Sākt iepazīšanos"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.title"
-msgstr "סיור בנבכי מנשק המשתמש"
+msgstr "Saskarnes caurskate"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
-msgstr "הוספת ספריה משותפת"
+msgstr "Pievienot kā koplietojamu bibliotēku"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.change-email"
-msgstr "החלפת דוא״ל"
+msgstr "Mainīt e-pastu"
 
 #: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
 msgid "dashboard.copy-suffix"
-msgstr "(עותק)"
+msgstr "(kopija)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "יצירת צוות חדש"
+msgstr "Izveidot jaunu komandu"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
-msgstr "ה־Penpot שלך"
+msgstr "Jūsu Penpot"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.delete-team"
-msgstr "מחיקת צוות"
+msgstr "Dzēst komandu"
 
 msgid "dashboard.download-binary-file"
-msgstr "הורדת קובץ Penpot‏ (‎.penpot)"
+msgstr "Lejupielādēt Penpot failu (.penpot)"
 
 msgid "dashboard.download-standard-file"
-msgstr "הורדת קובץ תקני (‎.svg + .json)"
+msgstr "Lejupielādēt standarta failu (.svg + .json)"
 
-#: src/app/main/ui/dashboard/project_menu.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
-msgstr "שכפול"
+msgstr "Dublēt"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
-msgstr "שכפול %s קבצים"
+msgstr "Dublēt failus (%s)"
 
 #: src/app/main/ui/dashboard/grid.cljs
+#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"קבצים שנוספו לספריות יתווספו לכאן. כדאי לנסות לשתף את הקבצים שלך או להוסיף "
-"אותם מ[הספריות והתבניות](https://penpot.app/libraries-templates.html)."
+"Šeit tiks parādīti Bibliotēkām pievienotie faili. Mēģiniet koplietot failus "
+"vai pievienojiet tos no mūsu [Bibliotēkas un veidnes] "
+"(https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
-msgstr "הורדת %s קובצי Penpot‏ (‎.penpot)"
+msgstr "Lejupielādēt %s Penpot failus (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "ייצוא לוחות אומנות כ־PDF"
+msgstr "Eksportējiet dēļus PDF formātā"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
-msgstr "ייצוא כ־PDF"
+msgstr "Eksportēt kā PDF"
 
 msgid "dashboard.export-multi"
-msgstr "ייצוא קובצי %s של Penpot"
+msgstr "Penpot %s failu eksportēšana"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-multiple.selected"
-msgstr "נבחרו %s מתוך %s רכיבים"
+msgstr "Atlasīti elementi - %s no %s"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "dashboard.export-shapes"
-msgstr "ייצוא"
+msgstr "Eksportēt"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to"
-msgstr "אפשר להוסיף הגדרות ייצוא לרכיבים ממאפייני העיצוב (מתחתית הסרגל שמשמאל)."
+msgstr ""
+"Varat pievienot eksportēšanas iestatījumus elementiem no noformējuma "
+"rekvizītiem (labās sānjoslas apakšdaļā)."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to-link"
-msgstr "מידע על הגדרות ייצוא ב־Penpot."
+msgstr "Informācija par to, kā iestatīt eksportu Penpot."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.no-elements"
-msgstr "אין רכיבים עם הגדרות ייצוא."
+msgstr "Nav elementu ar eksportēšanas iestatījumiem."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
-msgstr "ייצוא הבחירה"
+msgstr "Atlases eksportēša"
 
 msgid "dashboard.export-standard-multi"
-msgstr "הורדת %s קבצים תקניים (‎.svg + .json)"
+msgstr "Lejupielādēt %s standarta failus (. svg +. json)"
 
 msgid "dashboard.export.detail"
-msgstr "* עשוי לכלול רכיבים, גרפיקה, צבעים ו/או טיפוגרפיות."
+msgstr "* var ietvert komponentus, grafikas, krāsas un/vai tipogrāfijas."
 
 msgid "dashboard.export.explain"
 msgstr ""
-"אחד או יותר מהקבצים שברצונך לייצא משתמשים בספריות משותפות. מה לעשות עם "
-"המשאבים שלהן*?"
+"Viens vai vairāki faili, kurus vēlaties eksportēt, izmanto koplietojamās "
+"bibliotēkas. Ko jūs gribat darīt ar viņu līdzekļiem *?"
 
 msgid "dashboard.export.options.all.message"
-msgstr "קבצים עם ספריות משותפות יצורפו לייצוא, תוך שימור הקישוריות שלהם."
+msgstr ""
+"eksportēšanā tiks iekļauti faili ar koplietojamām bibliotēkām, saglabājot "
+"to sasaisti."
 
 msgid "dashboard.export.options.all.title"
-msgstr "ייצוא ספריות משותפות"
+msgstr "Koplietojamo bibliotēku eksportēšana"
 
 msgid "dashboard.export.options.detach.message"
-msgstr "ספריות משותפות לא יצורפו לייצוא ואף משאב לא יתווסף לספריה. "
+msgstr ""
+"Koplietojamās bibliotēkas eksportēšanā netiks iekļautas, un bibliotēkai "
+"netiks pievienoti līdzekļi. "
 
 msgid "dashboard.export.options.detach.title"
-msgstr "להתייחס למשאבים בספריות משותפות כעצמים בסיסיים"
+msgstr "Attiekties pret koplietojamo bibliotēku līdzekļiem, kā pret pamatobjektiem"
 
 msgid "dashboard.export.options.merge.message"
-msgstr "הקובץ שלך ייוצא כשכל המשאבים החיצוניים ממוזגים לספריית הקבצים."
+msgstr ""
+"Fails tiks eksportēts ar visiem ārējiem līdzekļiem, kas tiks sapludināti "
+"faila bibliotēkā."
 
 msgid "dashboard.export.options.merge.title"
-msgstr "לכלול משאבי ספריה משותפת בספריות הקבצים"
+msgstr "Failu bibliotēkās iekļaut koplietojamos bibliotēkas līdzekļus"
 
 msgid "dashboard.export.title"
-msgstr "ייצוא קבצים"
+msgstr "Eksportēt failus"
 
 msgid "dashboard.fonts.deleted-placeholder"
-msgstr "הגופן נמחק"
+msgstr "Fonts izdzēsts"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.dismiss-all"
-msgstr "להתעלם מהכול"
+msgstr "Noraidīt visu"
 
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "גופנים שהעלית יופיעו כאן."
+msgstr "Šeit tiks parādīti jūsu augšupielādētie pielāgotie fonti."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
-msgstr[0] "נוסף גופן"
-msgstr[1] "נוספו 2 גופנים"
-msgstr[2] "נוספו %s גופנים"
-msgstr[3] "נוספו %s גופנים"
+msgstr[0] "Nav pievienoti fonti"
+msgstr[1] "Fonts pievienots"
+msgstr[2] "%s fonti pievienoti"
 
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"כל גופן דפדפן שיועלה כאן יתווסף לרשימת משפחת הגופנים שזמין במאפייני הטקסט "
-"של הקבצים של הצוות הזה. גופנים מאותו שם של משפחת גופנים יקובצו תחת **משפחת "
-"גופנים יחידה**. ניתן להעלות גופנים מהסוגים הבאים: **TTF,‏ OTF ו־WOFF** (אחד "
-"הסוגים יספיק)."
+"Visi šeit augšupielādētie tīmekļa fonti tiks pievienoti fontu saimes "
+"sarakstam, kas pieejams šīs grupas failu teksta rekvizītos. Fonti ar tādu "
+"pašu fontu saimes nosaukumu tiks grupēti kā **viena fonta saime**. Fontus "
+"var augšupielādēt šādos formātos: **TTF, OTF un WOFF** (būs nepieciešams "
+"tikai viens)."
 
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"עליך להעלות גופנים בבעלותך או שיש לך רישיון להשתמש בהם ב־Penpot. ניתן למצוא "
-"על כך מידע נוסף בסעיף זכויות התוכן של [תנאי השירות של "
-"Penpot](https://penpot.app/terms.html). אפשר גם לקרוא גם על [רישוי "
-"גופנים](https://www.typography.com/faq)."
+"Augšupielādējiet tikai tos fontus, kuri jums pieder vai kuriem ir licence "
+"lietošanai Penpot. Uzziniet vairāk [Penpot pakalpojumu sniegšanas "
+"noteikumi] (https://penpot.app/terms.html). Iespējams, vēlēsities izlasīt "
+"arī par [fontu licencēšanu] (https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
-msgstr "להעלות הכול"
+msgstr "Augšupielādēt visu"
 
 msgid "dashboard.import"
-msgstr "ייבוא קובצי Penpot"
+msgstr "Penpot failu importēšana"
 
 msgid "dashboard.import.analyze-error"
-msgstr "אופס! לא הצלחנו לייבא את הקובץ הזה"
+msgstr "Oopss! Šo failu nevarēja importēt"
 
 msgid "dashboard.import.import-error"
-msgstr "אירעה תקלה בייבוא הקובץ. הוא לא ייובא."
+msgstr "Importējot failu, radās problēma. Fails netika importēts."
 
 msgid "dashboard.import.import-message"
-msgstr "%s קבצים עברו ייבוא כרגיל."
+msgstr "%s faili tika veiksmīgi importēti."
 
 msgid "dashboard.import.import-warning"
-msgstr "חלק מהקבצים הכילו פריטים שגויים שהוסרו."
+msgstr "Dažos failos bija nederīgi objekti, kuri tika noņemti."
 
 msgid "dashboard.import.progress.process-colors"
-msgstr "עיבוד צבעים"
+msgstr "Krāsu apstrāde"
 
 msgid "dashboard.import.progress.process-components"
-msgstr "עיבוד רכיבים"
+msgstr "Komponenšu apstrāde"
 
 msgid "dashboard.import.progress.process-media"
-msgstr "עיבוד מדיה"
+msgstr "Multivides apstrāde"
 
 msgid "dashboard.import.progress.process-page"
-msgstr "עיבוד עמוד: %s"
+msgstr "%s lapas apstrāde"
 
 msgid "dashboard.import.progress.process-typographies"
-msgstr "עיבוד טיפוגרפיות"
+msgstr "Tipogrāfijas apstrāde"
 
 msgid "dashboard.import.progress.upload-data"
-msgstr "הנתונים נשלחים לשרת (%s/%s)"
+msgstr "Notiek datu augšupielāde serverī (%s/%s)"
 
 msgid "dashboard.import.progress.upload-media"
-msgstr "נשלח קובץ: %s"
+msgstr "Notiek faila augšupielāde: %s"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "הזמנת אנשים"
+msgstr "Uzaicināt personas"
 
-#: src/app/main/ui/dashboard/sidebar.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
-msgstr "עזיבת הצוות"
+msgstr "Atstāt komandu"
 
 msgid "dashboard.libraries-and-templates"
-msgstr "ספריות ותבניות"
+msgstr "Bibliotēkas un veidnes"
 
 msgid "dashboard.libraries-and-templates.explore"
-msgstr "עיון ביותר כאלה והסברים כיצד לתרום להן"
+msgstr "Izpētiet vairāk un uzziniet, kā dot ieguldījumu"
 
 msgid "dashboard.libraries-and-templates.import-error"
-msgstr "אירעה שגיאה בייבוא התבנית והיא לא ייובאה."
+msgstr "Importējot veidni, radās problēma. Veidne netika importēta."
 
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
-msgstr "ספריות משותפות"
+msgstr "Bibliotēkas"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.loading-files"
-msgstr "הקבצים שלך נטענים…"
+msgstr "notiek failu ielāde …"
 
 msgid "dashboard.loading-fonts"
-msgstr "הגופנים שלך נטענים…"
+msgstr "notiek fontu ielāde …"
 
-#: src/app/main/ui/dashboard/project_menu.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
-msgstr "העברה אל"
+msgstr "Pārvietot uz"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to-multi"
-msgstr "העברה של %s קבצים אל"
+msgstr "Pārvietot %s failus uz"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to-other-team"
-msgstr "העברה לצוות אחר"
+msgstr "Pārvietot uz citu komandu"
 
-#: src/app/main/ui/dashboard/projects.cljs,
-#: src/app/main/ui/dashboard/files.cljs
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
 msgid "dashboard.new-file"
-msgstr "+ קובץ חדש"
+msgstr "+ Jauns fails"
 
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-file-prefix"
-msgstr "קובץ חדש"
+msgstr "Jauns fails"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.new-project"
-msgstr "+ מיזם חדש"
+msgstr "+ Jauns projekts"
 
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
-msgstr "מיזם חדש"
+msgstr "Jauns projekts"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
-msgstr "לא נמצאו תוצאות לחיפוש אחר „%s”"
+msgstr "“%s” nav atrasta neviena atbilstība"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.no-projects-placeholder"
-msgstr "מיזמים נעוצים יופיעו כאן"
+msgstr "Šeit būs redzami piesprausti projekti"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "dashboard.notifications.email-changed-successfully"
-msgstr "כתובת הדוא״ל שלך עודכנה בהצלחה"
+msgstr "Jūsu e-pasta adrese ir veiksmīgi atjaunināta"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "dashboard.notifications.email-verified-successfully"
-msgstr "כתובת הדוא״ל שלך אומתה בהצלחה"
+msgstr "Jūsu e-pasta adrese ir veiksmīgi pārbaudīta"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "dashboard.notifications.password-saved"
-msgstr "הסיסמה נשמרה בהצלחה!"
+msgstr "Parole ir veiksmīgi saglabāta!"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.num-of-members"
-msgstr "%s חברים"
+msgstr "Dalībieki: %s"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.open-in-new-tab"
-msgstr "פתיחת קובץ בלשונית חדשה"
+msgstr "Atvērt failu jaunā cilnē"
 
 msgid "dashboard.options"
-msgstr "אפשרויות"
+msgstr "Opcijas"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "dashboard.password-change"
-msgstr "החלפת סיסמה"
+msgstr "Mainīt paroli"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.pin-unpin"
-msgstr "נעיצה/שחרור"
+msgstr "Piespraust/Atspraust"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.projects-title"
-msgstr "מיזמים"
+msgstr "Projekti"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
-msgstr "להסיר את החשבון שלך?"
+msgstr "Vai vēlaties noņemt savu kontu?"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
-msgstr "הסרה כספריה משותפת"
+msgstr "Noņemt kā koplietojamo bibliotēku"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.save-settings"
-msgstr "שמירת ההגדרות"
+msgstr "Saglabāt iestatījumus"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.search-placeholder"
-msgstr "חיפוש…"
+msgstr "Meklēt…"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.searching-for"
-msgstr "מתבצע חיפוש אחר „%s”…"
+msgstr "Meklē pēc “%s“…"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.select-ui-language"
-msgstr "בחירת שפת מנשק משתמש"
+msgstr "Atlasīt saskarnes valodu"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.select-ui-theme"
-msgstr "בחירת ערכת עיצוב"
+msgstr "Atlasīt dizainu"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.show-all-files"
-msgstr "הצגת כל הקבצים"
+msgstr "Rādīt visus failus"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Neviens fails nav izdzēsts"
+msgstr[1] "Jūsu fails ir sekmīgi izdzēsts"
+msgstr[2] "Jūsu faili ir sekmīgi izdzēsti"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
-msgstr "המיזם שלך נמחק בהצלחה"
+msgstr "Jūsu projekts ir veiksmīgi izdzēsts"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Neviens fails nav dublēts"
+msgstr[1] "Jūsu fails ir veiksmīgi dublēts"
+msgstr[2] "Jūsu faili ir veiksmīgi dublēti"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
-msgstr "המיזם שלך שוכפל בהצלחה"
+msgstr "Jūsu projekts ir veiksmīgi dublēts"
 
-#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-move-file"
-msgstr "הקובץ שלך הועבר בהצלחה"
+msgstr "Jūsu fails ir veiksmīgi pārvietots"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-move-files"
-msgstr "הקבצים שלך הועברו בהצלחה"
+msgstr "Jūsu faili ir veiksmīgi pārvietoti"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
-msgstr "המיזם שלך הועבר בהצלחה"
+msgstr "Jūsu projekts ir veiksmīgi pārvietots"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
-msgstr "פרטי הצוות"
+msgstr "Par komandu"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-members"
-msgstr "חברי הצוות"
+msgstr "Komandas dalībnieki"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-projects"
-msgstr "מיזמי הצוות"
+msgstr "Komandas projekti"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.theme-change"
-msgstr "ערכת עיצוב מנשק משתמש"
+msgstr "Saskarnes dizains"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.title-search"
-msgstr "תוצאות חיפוש"
+msgstr "Meklēšanas rezultāti"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.type-something"
-msgstr "נא להקליד כדי לחפש"
+msgstr "Ievadiet, lai meklētu"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
-msgstr "ביטול פרסום ספרייה"
+msgstr "Atcelt bibliotēkas publicēšanu"
 
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/settings/password.cljs,
-#: src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
-msgstr "עדכון הגדרות"
+msgstr "Atjaunināt iestatījumus"
 
 msgid "dashboard.webhooks.active"
-msgstr "פעילה"
+msgstr "Ir aktīvs"
 
 msgid "dashboard.webhooks.active.explain"
-msgstr "כאשר ההתליה הזאת מופעלת פרטי האירוע יישלחו"
+msgstr "Kad tiks aktivizēts āķis, notikuma detaļas tiks piegādātās"
 
 msgid "dashboard.webhooks.content-type"
-msgstr "סוג תוכן"
+msgstr "Satura tips"
 
 msgid "dashboard.webhooks.create"
-msgstr "יצירת התליית רשת"
+msgstr "Izveidot tīmekļa āķi"
 
 msgid "dashboard.webhooks.create.success"
-msgstr "התליית הרשת נוצרה בהצלחה."
+msgstr "Tīmekļa āķis ir veiksmīgi izveidots."
 
 msgid "dashboard.webhooks.description"
 msgstr ""
-"התליות רשת הן דרך פשוטה לאפשר לאתרים אחרים לקבל הודעות כשאירועים מסוימים "
-"מתרחשים ב־Penpot. אנו נשלח בקשת POST לכל אחת מהכתובות שתצויינה."
+"Tīmekļa āķi ir vienkāršs veids, kā ļaut citām tīmekļa vietnēm un lietotnēm "
+"saņemt paziņojumus, ja Penpot notiek noteikti notikumi. Mēs nosūtīsim POST "
+"pieprasījumu katram jūsu nodrošinātajam URL."
 
 msgid "dashboard.webhooks.empty.add-one"
-msgstr "לחיצה על הכפתור „הוספת התליית רשת” תוסיף אחת."
+msgstr "Nospiediet pogu \"Pievienot tīmekļa āķi\", lai to pievienotu."
 
 msgid "dashboard.webhooks.empty.no-webhooks"
-msgstr "לא נוצרו התליות רשת עדיין."
+msgstr "Līdz šim nav izveidoti tīmekļa āķi."
 
 msgid "dashboard.webhooks.update.success"
-msgstr "התליות הרשת עודכנו בהצלחה."
+msgstr "Tīmekļa āķis ir sekmīgi atjaunināts."
 
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
-msgstr "החשבון שלך"
+msgstr "Jūsu konts"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.your-email"
-msgstr "דוא״ל"
+msgstr "E-pasts"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.your-name"
-msgstr "שמך"
+msgstr "Jūsu vārds"
 
-#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs,
-#: src/app/main/ui/dashboard/libraries.cljs,
-#: src/app/main/ui/dashboard/projects.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
-msgstr "ה־Penpot שלך"
+msgstr "Jūsu Penpot"
 
 #: src/app/main/ui/alert.cljs
 msgid "ds.alert-ok"
-msgstr "אישור"
+msgstr "Labi"
 
 #: src/app/main/ui/alert.cljs
 msgid "ds.alert-title"
-msgstr "תשומת לב"
+msgstr "Uzmanību"
 
 #: src/app/main/ui/confirm.cljs
 msgid "ds.component-subtitle"
-msgstr "רכיבים לעדכון:"
+msgstr "Atjaunināmās komponentes:"
 
 #: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-cancel"
-msgstr "ביטול"
+msgstr "Atcelt"
 
 #: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-ok"
-msgstr "אישור"
+msgstr "Labi"
 
 #: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
 msgid "ds.confirm-title"
-msgstr "להמשיך?"
+msgstr "Vai esat pārliecināti?"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
-msgstr "לא מוגדר ספק אימות."
+msgstr "Autentifikācijas nodrošinātājs nav konfigurēts."
 
 msgid "errors.auth.unable-to-login"
-msgstr "נראה שלא עברת אימות או שתוקף ההפעלה פג."
+msgstr "Šķiet, ka neesat autentificēts vai jums ir beidzies sesijas derīgums."
 
 msgid "errors.bad-font"
-msgstr "לא ניתן לטעון את הגופן %s"
+msgstr "Fontu %s nevarēja ielādēt"
 
 msgid "errors.bad-font-plural"
-msgstr "לא ניתן לטעון את הגופנים %s"
+msgstr "Fontus %s nevarēja ielādēt"
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
-msgstr "הדפדפן שלך לא יכול לבצע את הפעולה הזאת"
+msgstr "Jūsu pārlūkprogramma nevar veikt šo darbību"
 
-#: src/app/main/ui/auth/verify_token.cljs,
-#: src/app/main/ui/settings/change_email.cljs
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-already-exists"
-msgstr "כתובת הדוא״ל כבר בשימוש"
+msgstr "E-pasts jau tiek lietots"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.email-already-validated"
-msgstr "כתובת הדוא״ל כבר אומתה."
+msgstr "E-pasts jau ir pārbaudīts."
 
 msgid "errors.email-as-password"
-msgstr "אין לך אפשרות להשתמש בכתובת הדוא״ל שלך כסיסמה"
+msgstr "E-pastu nevar izmantot kā paroli"
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs,
-#: src/app/main/ui/settings/change_email.cljs,
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
-msgstr "לכתובת הדוא״ל „%s” יש יותר מדי דוחות החזרה קבועים."
+msgstr "E-pastam “%s” ir daudz pastāvīgu atlēcienu atskaišu."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
 msgid "errors.email-invalid"
-msgstr "נא למלא כתובת דוא״ל תקפה בבקשה"
+msgstr "Ievadiet derīgu e-pasta adresi, lūdzu"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
-msgstr "כתובת הדוא״ל לאימות חייבת להיות תואמת"
+msgstr "Apstiprinājuma e-pastam jāatbilst"
 
 msgid "errors.email-spam-or-permanent-bounces"
-msgstr "כתובת הדוא״ל „%s” דווחה כספאם או שההודעות תוקפצנה לצמיתות."
+msgstr "E-pasta adrese “%s” ir atzīmēta surogātpasts vai pastāvīgi saņem atlēcienu."
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-mismatch"
 msgstr ""
-"נראה שניסית לפתוח קובץ בו פעילה היכולת ‚%s’ אבל מנשק ה־Penpot שלך לא תומך "
-"בה או שהיא מושבתת."
+"Šķiet, ka atverat failu, kurā ir iespējots līdzeklis '%s', bet jūsu Penpot "
+"priekšgalsistēma to neatbalsta vai ir atspējota."
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-not-supported"
-msgstr "אין תמיכה ביכולת ‚%s’."
+msgstr "Līdzeklis '%s' netiek atbalstīts."
 
-#: src/app/main/ui/auth/verify_token.cljs,
-#: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
-msgstr "קרה משהו לא טוב."
+msgstr "Noticis kaut kas nelāgs."
 
 #: src/app/main/ui/components/color_input.cljs
 msgid "errors.invalid-color"
-msgstr "צבע שגוי"
+msgstr "Nederīga krāsa"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.invite-invalid"
-msgstr "ההזמנה שגויה"
+msgstr "Nederīgs ielūgums"
 
 msgid "errors.invite-invalid.info"
-msgstr "ההזמנה כנראה בוטלה או שתוקפה פג."
+msgstr "Iespējams, šis uzaicinājums ir atcelts vai ir beidzies tā derīgums."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
-msgstr "אימות מול LDAP הושבת."
+msgstr "LDAP autentifikācija ir atspējota."
 
 #: src/app/main/errors.cljs
 msgid "errors.max-quote-reached"
-msgstr "הגעת למיכסת ה־‚%s’. נא ליצור קשר עם התמיכה."
+msgstr "Ir sasniegts '%s' limits. Sazinieties ar atbalsta dienestu."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "התמונה גדולה מכדי להוסיף אותה."
+msgstr "Attēls ir pārāk liels, lai to ievietotu."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
-msgstr "נראה כי תוכן התמונה לא תואם לסיומת הקובץ."
+msgstr "Šķiet, ka attēla saturs neatbilst faila paplašinājumam."
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
-msgstr "נראה כי זאת תמונה שגויה."
+msgstr "Šķiet, ka tas nav derīgs attēls."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.member-is-muted"
-msgstr "הודעות הדוא״ל לפרופיל שהזמנת מושתקות (דיווחים על דואר זבל או הרבה החזרות)."
+msgstr ""
+"Profilam, kuru uzaicināt, e-pasta ziņojumi ir izslēgti (surogātpasts vai "
+"daudz atlēcienu)."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-invalid-confirmation"
-msgstr "סיסמת האימות חייבת להיות תואמת"
+msgstr "Apstiprinājuma parolei ir jāsakrīt"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-too-short"
-msgstr "הסיסמה חייבת להיות באורך 8 תווים לפחות"
+msgstr "Parolei jābūt vismaz 8 rakstzīmēm"
 
 msgid "errors.profile-blocked"
-msgstr "הפרופיל חסום"
+msgstr "Profils ir bloķēts"
 
-#: src/app/main/ui/auth/recovery_request.cljs,
-#: src/app/main/ui/settings/change_email.cljs,
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
-msgstr "הודעות הדוא״ל לפרופיל שלך מושתקות (דיווחי דואר זבל או הרבה החזרות)."
+msgstr ""
+"Jūsu profila e-pasta ziņojumi ir izslēgti (surogātpasts vai daudz "
+"atlēcienu)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
-msgstr "ההרשמה מושבתת כרגע."
+msgstr "Reģistrācija pašlaik ir atspējota."
 
 msgid "errors.team-leave.insufficient-members"
-msgstr "אין מספיק חברים כדי לעזוב את הצוות, כנראה יהיה עליך למחוק אותו."
+msgstr "Nepietiek dalībnieku, lai pamestu komandu, iespējams, vēlaties to izdzēst."
 
 msgid "errors.team-leave.member-does-not-exists"
-msgstr "החבר שניסית להקצות לא קיים."
+msgstr "Dalībnieks, kuru mēģināt piešķirt, nepastāv."
 
 msgid "errors.team-leave.owner-cant-leave"
-msgstr "הבעלים לא יכולים לעזוב את הקבוצה, עליך להעביר את תפקיד הבעלות."
+msgstr "Īpašnieks nevar pamest komandu, ir jāpiešķir īpašnieka loma citam."
 
-#: src/app/main/data/media.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs
+#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "errors.unexpected-error"
-msgstr "אירעה שגיאה בלתי צפויה."
+msgstr "Radās neparedzēta kļūda."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
-msgstr "אסימון בלתי ידוע"
+msgstr "Nezināms marķieris"
 
 msgid "errors.webhooks.connection"
-msgstr "שגיאת תקשורת, הכתובת אינה נגישה"
+msgstr "Savienojuma kļūda, URL nav sasniedzams"
 
 msgid "errors.webhooks.invalid-uri"
-msgstr "הכתובת לא מעבירה תיקוף."
+msgstr "URL neiztur pārbaudi."
 
 msgid "errors.webhooks.last-delivery"
-msgstr "ההעברה האחרונה לא הצליחה."
+msgstr "Pēdējā piegāde nebija veiksmīga."
 
 msgid "errors.webhooks.ssl-validation"
-msgstr "שגיאה בתיקוף SSL."
+msgstr "Kļūda SSL pārbaudē."
 
 msgid "errors.webhooks.timeout"
-msgstr "תום זמן המתנה"
+msgstr "Noilgums"
 
 msgid "errors.webhooks.unexpected"
-msgstr "שגיאה לא צפויה בעת תיקוף"
+msgstr "Pārbaudes laikā radās neparedzēta kļūda"
 
 msgid "errors.webhooks.unexpected-status"
-msgstr "המצב %s לא צפוי"
+msgstr "Neparedzēts statuss %s"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
-msgstr "כתובת הדוא״ל או הסיסמה שגויים."
+msgstr "E-pasta adrese vai parole nav pareiza."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
-msgstr "הסיסמה הישנה שגויה"
+msgstr "Vecā parole nav pareiza"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
-msgstr "תיאור"
+msgstr "Apraksts"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-go-to"
-msgstr "מעבר לפורום של Penpot"
+msgstr "Doties uz Penpot forumu"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-subtitle1"
-msgstr "אנחנו שמחים שהצטרפת אלינו. לקבלת עזרה, נא לחפש בטרם פרסום הודעה."
+msgstr ""
+"Mēs esam priecīgi, ka jūs esat šeit. Ja nepieciešama palīdzība, pirms "
+"rakstiet, lūdzu, pameklējiet informāciju."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-title"
-msgstr "קהילת Penpot"
+msgstr "Penpot kopiena"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
-msgstr "נושא"
+msgstr "Temats"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"נא לתאר את הסיבה שלך לשליחת ההודעה תוך פירוט האם זאת תקלה, רעיון או בספק. "
-"אחד מחברי הצוות שלנו יגיב לך במהירות האפשרית."
+"Lūdzu, aprakstiet e-pasta ziņojuma iemeslu, norādot, vai tā ir problēma, "
+"ideja vai šaubas. Jums pēc iespējas ātrāk atbildēs kāds mūsu komandas "
+"dalībnieks."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
-msgstr "דוא״ל"
+msgstr "E-pasts"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "מעבר לטוויטר"
+msgstr "Atvērt Twitter"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
-msgstr "כאן כדי לסייע בסוגיות טכניות."
+msgstr "Šeit, lai palīdzētu ar tehniskajiem jautājumiem."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "חשבון תמיכה בטוויטר"
+msgstr "Twitter atbalsta konts"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
-msgstr "אירעה שגיאה"
+msgstr "Radās kļūda"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
-msgstr "טשטוש"
+msgstr "Aizmiglošana"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur.value"
-msgstr "ערך"
+msgstr "Vērtība"
 
 #: src/app/main/ui/inspect/attributes/common.cljs
 msgid "inspect.attributes.color.hex"
-msgstr "הקסדצימלי"
+msgstr "HEX"
 
 #: src/app/main/ui/inspect/attributes/common.cljs
 msgid "inspect.attributes.color.hsla"
@@ -944,2167 +963,2133 @@ msgstr "RGBA"
 
 #: src/app/main/ui/inspect/attributes/fill.cljs
 msgid "inspect.attributes.fill"
-msgstr "מילוי"
+msgstr "Aizpildījums"
 
 #: src/app/main/ui/inspect/attributes/image.cljs
 msgid "inspect.attributes.image.download"
-msgstr "הורדת תמונת מקור"
+msgstr "Lejupielādēt avota attēlu"
 
 #: src/app/main/ui/inspect/attributes/image.cljs
 msgid "inspect.attributes.image.height"
-msgstr "גובה"
+msgstr "Augstums"
 
 #: src/app/main/ui/inspect/attributes/image.cljs
 msgid "inspect.attributes.image.width"
-msgstr "רוחב"
+msgstr "Platums"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout"
-msgstr "פריסה"
+msgstr "Izkārtojums"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout.height"
-msgstr "גובה"
+msgstr "Augstums"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout.left"
-msgstr "שמאל"
+msgstr "Kreisi"
 
-#: src/app/main/ui/inspect/attributes/layout.cljs,
-#: src/app/main/ui/inspect/attributes/layout.cljs
+#: src/app/main/ui/inspect/attributes/layout.cljs, src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout.radius"
-msgstr "רדיוס"
+msgstr "Rādiuss"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout.rotation"
-msgstr "סיבוב"
+msgstr "Pagriešana"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout.top"
-msgstr "עליון"
+msgstr "Augša"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout.width"
-msgstr "רוחב"
+msgstr "Platums"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
-msgstr "צל"
+msgstr "Ēna"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.size"
-msgstr "גודל ומיקום"
+msgstr "Lielums un novietojums"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
-msgstr "מתאר"
+msgstr "Vilkums"
 
+#, permanent
 msgid "inspect.attributes.stroke.alignment.center"
-msgstr "מרכז"
+msgstr "Centrs"
 
+#, permanent
 msgid "inspect.attributes.stroke.alignment.inner"
-msgstr "בפנים"
+msgstr "Iekšpuse"
 
+#, permanent
 msgid "inspect.attributes.stroke.alignment.outer"
-msgstr "בחוץ"
+msgstr "Ārpuse"
 
 msgid "inspect.attributes.stroke.style.dotted"
-msgstr "מנוקד"
+msgstr "Punktots"
 
 msgid "inspect.attributes.stroke.style.mixed"
-msgstr "מעורב"
+msgstr "Sajaukts"
 
 msgid "inspect.attributes.stroke.style.none"
-msgstr "ללא"
+msgstr "Nav"
 
 msgid "inspect.attributes.stroke.style.solid"
-msgstr "אחיד"
+msgstr "Nepārtrauktā"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke.width"
-msgstr "רוחב"
+msgstr "Platums"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography"
-msgstr "טיפוגרפיה"
+msgstr "Tipogrāfija"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.font-family"
-msgstr "משפחת גופנים"
+msgstr "Fontu saime"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.font-size"
-msgstr "גודל גופן"
+msgstr "Fonta izmērs"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.font-style"
-msgstr "סגנון גופן"
+msgstr "Fonta stils"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.letter-spacing"
-msgstr "ריווח תווים"
+msgstr "Burtu atstarpes"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.line-height"
-msgstr "גובה שורה"
+msgstr "Līnijas augstums"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.text-decoration"
-msgstr "עיטור טקסט"
+msgstr "Teksta noformējums"
 
 msgid "inspect.attributes.typography.text-decoration.none"
-msgstr "ללא"
+msgstr "Nav"
 
 msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "קו חוצה"
+msgstr "Pārsvītrojums"
 
 msgid "inspect.attributes.typography.text-decoration.underline"
-msgstr "קו תחתי"
+msgstr "Pasvītrojums"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.text-transform"
-msgstr "התמרת טקסט"
+msgstr "Teksta transformācija"
 
 msgid "inspect.attributes.typography.text-transform.lowercase"
-msgstr "אותיות קטנות"
+msgstr "Mazie burti"
 
 msgid "inspect.attributes.typography.text-transform.none"
-msgstr "ללא"
+msgstr "Nav"
 
 msgid "inspect.attributes.typography.text-transform.titlecase"
-msgstr "ראשונות גדולות"
+msgstr "Virsraksta stils"
 
 msgid "inspect.attributes.typography.text-transform.uppercase"
-msgstr "אותיות גדולות"
+msgstr "Lielie burti"
 
 msgid "inspect.empty.help"
-msgstr "למידע נוסף על חקירת עיצוב אפשר לבקר במרכז העזרה של Penpot"
+msgstr "Ja vēlaties uzzināt vairāk par dizainu, skatiet Penpot palīdzības centru"
 
 msgid "inspect.empty.more-info"
-msgstr "מידע נוסף על חקירה"
+msgstr "Papildinformācija par pārbaudi"
 
 msgid "inspect.empty.select"
-msgstr "ניתן לבחור צורה, לוח או קבוצה ולראות את המאפיינים והקוד שלהם"
+msgstr "Atlasiet formu, dēli vai grupu, lai pārbaudītu to rekvizītus un kodu"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.code"
-msgstr "קוד"
+msgstr "Kods"
 
 msgid "inspect.tabs.code.selected.circle"
-msgstr "עיגול"
+msgstr "Aplis"
 
 msgid "inspect.tabs.code.selected.component"
-msgstr "רכיב"
+msgstr "Komponente"
 
 msgid "inspect.tabs.code.selected.curve"
-msgstr "עיקול"
+msgstr "Līkne"
 
 msgid "inspect.tabs.code.selected.frame"
-msgstr "לוח"
+msgstr "Tāfele"
 
 msgid "inspect.tabs.code.selected.group"
-msgstr "קבוצה"
+msgstr "Grupa"
 
 msgid "inspect.tabs.code.selected.image"
-msgstr "תמונה"
+msgstr "Attēls"
 
 msgid "inspect.tabs.code.selected.mask"
-msgstr "מסכה"
+msgstr "Maska"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.code.selected.multiple"
-msgstr "%s נבחרו"
+msgstr "Atlasīti: %s"
 
 msgid "inspect.tabs.code.selected.path"
-msgstr "נתיב"
+msgstr "Ceļš"
 
 msgid "inspect.tabs.code.selected.rect"
-msgstr "ריבוע"
+msgstr "Taisnstūris"
 
 msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
 msgid "inspect.tabs.code.selected.text"
-msgstr "טקסט"
+msgstr "Teksts"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
-msgstr "מידע"
+msgstr "Infomācija"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
-msgstr "קיצורי דרך"
+msgstr "Saīsnes"
 
 msgid "labels.accept"
-msgstr "מקובל"
+msgstr "Pieņemt"
 
 msgid "labels.active"
-msgstr "פעיל"
+msgstr "Aktīvs"
 
 msgid "labels.add-custom-font"
-msgstr "הוספת גופן משלך"
+msgstr "Pievienot pielāgotu fontu"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.admin"
-msgstr "ניהול"
+msgstr "Administrators"
 
 #: src/app/main/ui/workspace/comments.cljs
 msgid "labels.all"
-msgstr "הכול"
+msgstr "Visi"
 
 msgid "labels.and"
-msgstr "וגם"
+msgstr "un"
 
 msgid "labels.back"
-msgstr "חזרה"
+msgstr "Atpakaļ"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
 msgstr ""
-"נראה כאילו עליך להמתין מעט ולנסות שוב, אנו מבצעים עבודות תחזוקה פשוטות "
-"בשרתים שלנו."
+"Izskatās, ka jums mazliet jāpagaida un jāmēģina vēlreiz; mēs veicam nelielu "
+"mūsu serveru uzturēšanu."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.main-message"
-msgstr "שער גישה שגוי"
+msgstr "Nepareiza vārteja"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.cancel"
-msgstr "ביטול"
+msgstr "Atcelt"
 
 msgid "labels.close"
-msgstr "סגירה"
+msgstr "Aizvērt"
 
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.comments"
-msgstr "הערות"
+msgstr "Komentāri"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.community"
-msgstr "קהילה"
+msgstr "Kopiena"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
-msgstr "אישור סיסמה"
+msgstr "Apstiprināt paroli"
 
 msgid "labels.continue"
-msgstr "להמשיך"
+msgstr "Turpināt"
 
 msgid "labels.continue-with"
-msgstr "להמשיך עם"
+msgstr "Turpināt ar"
 
 msgid "labels.continue-with-penpot"
-msgstr "אפשר להמשיך עם חשבון Penpot"
+msgstr "Varat turpināt ar Penpot kontu"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.copy-invitation-link"
-msgstr "העתקת קישור"
+msgstr "Kopēt saiti"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
-msgstr "יצירה"
+msgstr "Izveidot"
 
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs
+#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
-msgstr "יצירת צוות חדש"
+msgstr "Izveidot jaunu komandu"
 
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team.placeholder"
-msgstr "נא למלא שם לצוות החדש"
+msgstr "Ievadiet jaunas komandas nosaukumu"
 
 msgid "labels.custom-fonts"
-msgstr "גופנים משלך"
+msgstr "Pielāgotie fonti"
 
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
-msgstr "לוח בקרה"
+msgstr "Infopanelis"
 
-#: src/app/main/ui/dashboard/project_menu.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
-msgstr "מחיקה"
+msgstr "Dzēst"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.delete-comment"
-msgstr "מחיקת הערה"
+msgstr "Dzēst komentāru"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.delete-comment-thread"
-msgstr "מחיקת שרשור"
+msgstr "Dzēst pavedienu"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.delete-invitation"
-msgstr "מחיקת הזמנה"
+msgstr "Dzēst uzaicinājumu"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete-multi-files"
-msgstr "מחיקת %s קבצים"
+msgstr "%s failu dzēšana"
 
-#: src/app/main/ui/dashboard/projects.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs,
-#: src/app/main/ui/dashboard/files.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.drafts"
-msgstr "טיוטות"
+msgstr "Melnraksti"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.edit"
-msgstr "עריכה"
+msgstr "Rediģēt"
 
 msgid "labels.edit-file"
-msgstr "עריכת קובץ"
+msgstr "Rediģēt failu"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
-msgstr "עורך"
+msgstr "Redaktors"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.expired-invitation"
-msgstr "התוקף פג"
+msgstr "Beidzies derīguma termiņš"
 
 msgid "labels.export"
-msgstr "ייצוא"
+msgstr "Eksportēt"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-disabled"
-msgstr "המשוב הושבת"
+msgstr "Atsauksme atspējota"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-sent"
-msgstr "המשוב נשלח"
+msgstr "Atsauksme nosūtīta"
 
 msgid "labels.font-family"
-msgstr "משפחת גופנים"
+msgstr "Fontu saime"
 
 msgid "labels.font-providers"
-msgstr "ספקי גופנים"
+msgstr "Fontu nodrošinātāji"
 
 msgid "labels.font-variants"
-msgstr "סגנונות"
+msgstr "Stili"
 
 msgid "labels.fonts"
-msgstr "גופנים"
+msgstr "Fonti"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.github-repo"
-msgstr "מאגר GitHub"
+msgstr "GitHub repozitorijs"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/settings/sidebar.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
-msgstr "הגשת משוב"
+msgstr "Sniegt atsauksmi"
 
 msgid "labels.go-back"
-msgstr "חזרה"
+msgstr "Atpakaļ"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.help-center"
-msgstr "מרכז העזרה"
+msgstr "Palīdzības centrs"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
-msgstr "הסתרת הערות שנפתרו"
+msgstr "Paslēpt atrisinātos komentārus"
 
 msgid "labels.inactive"
-msgstr "בלתי פעיל"
+msgstr "Neaktīvs"
 
 msgid "labels.installed-fonts"
-msgstr "גופנים מותקנים"
+msgstr "Instalētie fonti"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
 msgstr ""
-"משהו לא טוב קרה. נא לנסות לבצע את הפעולה שוב ואם הבעיה חוזרת, נא ליצור קשר "
-"עם התמיכה."
+"Notika kaut kas slikts. Lūdzu, mēģiniet vēlreiz un, ja problēma joprojām "
+"pastāv, sazinieties ar atbalsta dienestu."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"
-msgstr "שגיאה פנימית"
+msgstr "Iekšēja kļūda"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.invitations"
-msgstr "הזמנות"
+msgstr "Ielūgumi"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
-msgstr "שפה"
+msgstr "Valoda"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.libraries-and-templates"
-msgstr "ספריות ותבניות"
+msgstr "Bibliotēkas un veidnes"
 
 msgid "labels.log-or-sign"
-msgstr "כניסה או הרשמה"
+msgstr "Piesakieties vai reģistrējieties"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
-msgstr "יציאה"
+msgstr "Atteikties"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
-msgstr "חבר"
+msgstr "Dalībnieks"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
-msgstr "חברים"
+msgstr "Dalībnieki"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.new-password"
-msgstr "סיסמה חדשה"
+msgstr "Jauna parole"
 
-#: src/app/main/ui/workspace/comments.cljs,
-#: src/app/main/ui/dashboard/comments.cljs
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "עברת על הכול! התראות על הערות חדשות תופענה כאן."
+msgstr "Jūs esat pieķerti! Šeit tiks parādīti jaunu komentāru paziņojumi."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
-msgstr "אין הזמנות ממתינות."
+msgstr "Nav gaidošu uzaicinājumu."
 
 #: src/app/main/ui/dashboard/team.cljs
-#, markdown
 msgid "labels.no-invitations-hint"
-msgstr "לחיצה על הכפתור **הזמנת אנשים** תאפשר להזמין אנשים לצוות."
+msgstr ""
+"Noklikšķiniet uz pogas **Uzaicināt personas**, lai uzaicinātu personas uz "
+"šo komandu."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
-msgstr "יכול להיות שהעמוד לא קיים או שאין לך הרשאות לגשת אליו."
+msgstr "Iespējams, ka šī lapa nepastāv vai jums nav atļauju tai piekļūt."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
-msgstr "אופס!"
+msgstr "Ups!"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
-msgstr[0] "קובץ"
-msgstr[1] "%s קבצים"
-msgstr[2] "%s קבצים"
-msgstr[3] "%s קבצים"
+msgstr[0] "0 failu"
+msgstr[1] "Fails"
+msgstr[2] "%s faili"
 
 msgid "labels.num-of-frames"
 msgid_plural "labels.num-of-frames"
-msgstr[0] "לוח"
-msgstr[1] "%s לוחות"
-msgstr[2] "%s לוחות"
-msgstr[3] "%s לוחות"
+msgstr[0] "Nav dēļu"
+msgstr[1] "1 dēlis"
+msgstr[2] "%s dēļi"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-projects"
 msgid_plural "labels.num-of-projects"
-msgstr[0] "מיזם"
-msgstr[1] "%s מיזמים"
-msgstr[2] "%s מיזמים"
-msgstr[3] "%s מיזמים"
+msgstr[0] "0 projektu"
+msgstr[1] "Projekts"
+msgstr[2] "%s projekti"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.old-password"
-msgstr "סיסמה ישנה"
+msgstr "Vecā parole"
 
 #: src/app/main/ui/workspace/comments.cljs
 msgid "labels.only-yours"
-msgstr "שלך בלבד"
+msgstr "Tikai Jūsu"
 
 msgid "labels.or"
-msgstr "או"
+msgstr "vai"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.owner"
-msgstr "בעלים"
+msgstr "Īpašnieks"
 
-#: src/app/main/ui/settings/sidebar.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.password"
-msgstr "סיסמה"
+msgstr "Parole"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.pending-invitation"
-msgstr "בהמתנה"
+msgstr "Gaidīšana"
 
-#: src/app/main/ui/settings/sidebar.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.profile"
-msgstr "פרופיל"
+msgstr "Profils"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.projects"
-msgstr "מיזמים"
+msgstr "Projekti"
 
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.release-notes"
-msgstr "הודעות מהדורה"
+msgstr "Izlaides ziņas"
 
 #: src/app/main/ui/workspace.cljs
 msgid "labels.reload-file"
-msgstr "רענון קובץ"
+msgstr "Pārlādēt failu"
 
-#: src/app/main/ui/workspace/libraries.cljs,
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
-msgstr "הסרה"
+msgstr "Dzēst"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove-member"
-msgstr "הסרת חבר"
+msgstr "Dzēst dalībnieku"
 
-#: src/app/main/ui/dashboard/sidebar.cljs,
-#: src/app/main/ui/dashboard/project_menu.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.rename"
-msgstr "שינוי שם"
+msgstr "Pārdēvēt"
 
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.rename-team"
-msgstr "שינוי שם לצוות"
+msgstr "Pārdēvēt grupu"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.resend-invitation"
-msgstr "שליחת ההזמנה מחדש"
+msgstr "Nosūtīt uzaicinājumu vēlreiz"
 
-#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
-msgstr "ניסיון חוזר"
+msgstr "Pamēģināt vēlreiz"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.role"
-msgstr "תפקיד"
+msgstr "Loma"
 
 msgid "labels.save"
-msgstr "שמירה"
+msgstr "Saglabāt"
 
 msgid "labels.search-font"
-msgstr "חיפוש גופן"
+msgstr "Meklēt fontu"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.send"
-msgstr "שליחה"
+msgstr "Nosūtīt"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.sending"
-msgstr "מתבצעת שליחה…"
+msgstr "Nosūtīšana…"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.service-unavailable.desc-message"
-msgstr "אנחנו בהפוגת תחזוקה מתוכננת של המערכות שלנו."
+msgstr "Mēs esam ieplānotos sistēmu uzturēšanas darbos."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.service-unavailable.main-message"
-msgstr "השירות אינו זמין"
+msgstr "Pakalpojums nav pieejams"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
-msgstr "הגדרות"
+msgstr "Iestatījumi"
 
 msgid "labels.share-prototype"
-msgstr "שיתוף אבטיפוס"
+msgstr "Koplietot prototips"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
-msgstr "ספריות משותפות"
+msgstr "Bibliotēkas"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-all-comments"
-msgstr "הצגת כל ההערות"
+msgstr "Rādīt visus komentārus"
 
 msgid "labels.show-comments-list"
-msgstr "הצגת רשימת הערות"
+msgstr "Rādīt komentāru sarakstu"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
-msgstr "הצגת ההערות שלך בלבד"
+msgstr "Rādīt tikai jūsu komentārus"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
-msgstr "מצב"
+msgstr "Statuss"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.tutorials"
-msgstr "מדריכים"
+msgstr "Apmācības"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.unpublish-multi-files"
-msgstr "ביטול פרסום קובצי %s"
+msgstr "%s failu publicēšanas atcelšana"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
-msgstr "עדכון"
+msgstr "Atjaunināt"
 
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.update-team"
-msgstr "עדכון צוות"
+msgstr "Atjaunināt komandu"
 
 msgid "labels.upload"
-msgstr "העלאה"
+msgstr "Augšupielādēt"
 
 msgid "labels.upload-custom-fonts"
-msgstr "העלאת גופנים משלך"
+msgstr "Augšupielādēt pielāgotos fontus"
 
 msgid "labels.uploading"
-msgstr "מתבצעת העלאה…"
+msgstr "Notiek augšupielāde…"
 
 msgid "labels.view-only"
-msgstr "תצוגה בלבד"
+msgstr "TIKAI SKATĪT"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
-msgstr "מציג"
+msgstr "Pārlūks"
 
 msgid "labels.webhooks"
-msgstr "התליות"
+msgstr "Tīmekļa āķi"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
-msgstr "כתיבת הערה חדשה"
+msgstr "Rakstīt jaunu komentāru"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.you"
-msgstr "(אני)"
+msgstr "(Jūs)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.your-account"
-msgstr "החשבון שלך"
+msgstr "Jūsu konts"
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
-msgstr "התמונה נטענת…"
+msgstr "Ielādē attēlu…"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.accept"
-msgstr "הוספה כספריה משותפת"
+msgstr "Pievienot kā koplietojamu bibliotēku"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
-"לאחר שנוספה כספריה משותפת, המשאבים בספריית הקבצים הזאת יהיו זמינים בנוסף "
-"לשאר הקבצים שלך."
+"Kad šīs failu bibliotēkas līdzekļi būs pievienoti kā koplietojamā "
+"bibliotēka, tie būs pieejami izmantošanai starp pārējiem failiem."
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"
-msgstr "הוספת „%s” כספריה משותפת"
+msgstr "Pievienot “%s” kā koplietojamu bibliotēku"
 
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.big-nudge"
-msgstr "הינד גדול"
+msgstr "Liela nobīde"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.confirm-email"
-msgstr "אימות כתובת דוא״ל חדשה"
+msgstr "Pārbaudīt jauno e-pastu"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
-msgstr "נשלח הודעה לכתובת הדוא״ל הנוכחית שלך „%s” כדי לאמת את הזהות שלך."
+msgstr ""
+"Mēs nosūtīsim jums e-pasta ziņojumu uz jūsu pašreizējo e-pasta ziņojumu "
+"“%s”, lai pārbaudītu jūsu identitāti."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
-msgstr "כתובת דוא״ל חדשה"
+msgstr "Jauns e-pasts"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.submit"
-msgstr "החלפת כתובת דוא״ל"
+msgstr "Mainīt e-pastu"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.title"
-msgstr "החלפת כתובת הדוא״ל שלך"
+msgstr "E-pasta maiņa"
 
 msgid "modals.create-webhook.submit-label"
-msgstr "יצירת התליה"
+msgstr "Izveidot tīmekļa āķi"
 
 msgid "modals.create-webhook.title"
-msgstr "יצירת התליה"
+msgstr "Izveidot tīmekļa āķi"
 
 msgid "modals.create-webhook.url.label"
-msgstr "כתובת מטען"
+msgstr "Vērtuma URL"
 
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
-msgstr "ביטול ושמירה על החשבון שלי"
+msgstr "Atcelt un paturēt manu kontu"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.confirm"
-msgstr "כן, למחוק את החשבון שלי"
+msgstr "Jā, dzēst manu kontu"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.info"
-msgstr "הסרת החשבון שלך תוביל לאיבוד כל המיזמים והארכיונים הקיימים שלך."
+msgstr "Noņemot kontu, jūs zaudēsit visus pašreizējos projektus un arhīvus."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.title"
-msgstr "למחוק את החשבון שלך?"
+msgstr "Vai tiešām vēlaties dzēst savu kontu?"
 
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.accept"
-msgstr "מחיקת דיון"
+msgstr "Dzēst sarunu"
 
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.message"
-msgstr "למחוק את הדיון הזה? כל התגובות בשרשור תימחקנה."
+msgstr ""
+"Vai tiešām vēlaties izdzēst šo sarunu? Visi komentāri šajā pavedienā tiks "
+"dzēsti."
 
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.title"
-msgstr "מחיקת דיון"
+msgstr "Dzēst sarunu"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-confirm.accept"
-msgstr "מחיקת קובץ"
+msgstr "Dzēst failu"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-confirm.message"
-msgstr "למחוק את הקובץ?"
+msgstr "Vai tiešām vēlaties izdzēst šo failu?"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-confirm.title"
-msgstr "הקובץ נמחק"
+msgstr "Faila dzēšana"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.accept"
-msgstr "מחיקת קבצים"
+msgstr "Failu dzēšana"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.message"
-msgstr "למחוק %s קבצים?"
+msgstr "Vai tiešām vēlaties izdzēst %s failus?"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.title"
-msgstr "%s קבצים נמחקים"
+msgstr "Failu dzēšana (%s)"
 
 msgid "modals.delete-font-variant.message"
-msgstr "למחוק את סגנון הגופן הזה? הוא לא ייטען אם נעשה בו שימוש בקובץ."
+msgstr ""
+"Vai tiešām vēlaties izdzēst šo fonta stilu? Tas netiks ielādēts, ja tika "
+"izmantots failā."
 
 msgid "modals.delete-font-variant.title"
-msgstr "סגנון גופן נמחק"
+msgstr "Fonta stila dzēšana"
 
 msgid "modals.delete-font.message"
-msgstr "למחוק את הגופן הזה? הוא לא ייטען אם נעשה בו שימוש בקובץ."
+msgstr ""
+"Vai tiešām vēlaties izdzēst šo fontu? Tas netiks ielādēts, ja tika "
+"izmantots failā."
 
 msgid "modals.delete-font.title"
-msgstr "גופן נמחק"
+msgstr "Fonta dzēšana"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "modals.delete-page.body"
-msgstr "למחוק את העמוד הזה?"
+msgstr "Vai tiešām vēlaties izdzēst šo lapu?"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "modals.delete-page.title"
-msgstr "מחיקת עמוד"
+msgstr "Dzēst lapu"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "modals.delete-project-confirm.accept"
-msgstr "מחיקת מיזם"
+msgstr "Dzēst projektu"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "modals.delete-project-confirm.message"
-msgstr "למחוק את המיזם הזה?"
+msgstr "Vai tiešām vēlaties dzēst šo projektu?"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "modals.delete-project-confirm.title"
-msgstr "מחיקת מיזם"
+msgstr "Dzēst projektu"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
-msgstr[0] "מחיקת קובץ"
-msgstr[1] "מחיקת קבצים"
-msgstr[2] "מחיקת קבצים"
-msgstr[3] "מחיקת קבצים"
+msgstr[0] "Nav failu dzēšanai"
+msgstr[1] "Dzēst failu"
+msgstr[2] "Dzēst failus"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint"
 msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"מחיקה תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
-"בשימוש יאבדו."
+msgstr[0] "Nav līdzekļu dzēšanai."
 msgstr[1] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
-"בשימוש יאבדו."
+"Ja šo izdzēsīsiet, šie līdzekļi tiks pārvietoti uz šī faila lokālo "
+"bibliotēku. Tiks zaudēti visi neizmantotie līdzekļi."
 msgstr[2] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
-"בשימוש יאבדו."
-msgstr[3] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
-"בשימוש יאבדו."
+"Ja šo izdzēsīsiet, šie līdzekļi tiks pārvietoti uz šo failu lokālo "
+"bibliotēku. Tiks zaudēti visi neizmantotie līdzekļi."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint-many"
 msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"מחיקה תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים שאינם "
-"בשימוש יאבדו."
+msgstr[0] "Nav līdzekļu dzēšanai."
 msgstr[1] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים "
-"שאינם בשימוש יאבדו."
+"Ja šo izdzēsīsiet, šie līdzekļi tiks pārvietoti uz šī faila lokālo "
+"bibliotēku. Tiks zaudēti visi neizmantotie līdzekļi."
 msgstr[2] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים "
-"שאינם בשימוש יאבדו."
-msgstr[3] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים "
-"שאינם בשימוש יאבדו."
+"Ja šo izdzēsīsiet, šie līdzekļi tiks pārvietoti uz šo failu lokālo "
+"bibliotēku. Tiks zaudēti visi neizmantotie līdzekļi."
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
-msgstr[0] "למחוק את הקובץ?"
-msgstr[1] "למחוק את הקבצים?"
-msgstr[2] "למחוק את הקבצים?"
-msgstr[3] "למחוק את הקבצים?"
+msgstr[0] "Nav failu dzēšanai?"
+msgstr[1] "Vai tiešām vēlaties izdzēst šo failu?"
+msgstr[2] "Vai tiešām vēlaties izdzēst šos failus?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.no-files-message"
 msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] "אף אחד מהמשאבים שבספרייה של הקובץ הזה בשימוש. הם יימחקו יחד עם הקובץ."
-msgstr[1] "אף אחד מהמשאבים שבספרייה של הקבצים האלה בשימוש. הם יימחקו יחד עם הקבצים."
-msgstr[2] "אף אחד מהמשאבים שבספרייה של הקבצים האלה בשימוש. הם יימחקו יחד עם הקבצים."
-msgstr[3] "אף אחד מהמשאבים שבספרייה של הקבצים האלה בשימוש. הם יימחקו יחד עם הקבצים."
+msgstr[0] "Nav bibliotēku līdzekļu dzēšanai."
+msgstr[1] ""
+"Neviens no šī faila bibliotēku līdzekļiem netiek lietots. Tie tiks izdzēsti "
+"kopā ar failiem."
+msgstr[2] ""
+"Neviens no šo failu bibliotēku līdzekļiem netiek lietots. Tie tiks izdzēsti "
+"kopā ar failiem."
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "בחלק מהמשאבים בספרייה של הקובץ הזה נעשה שימוש כאן:"
-msgstr[1] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
-msgstr[2] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
-msgstr[3] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
+msgstr[0] "Nav bibliotēku līdzekļu dzēšanai:"
+msgstr[1] "Daži šī faila bibliotēku līdzekļi tiek izmantoti šeit:"
+msgstr[2] "Daži šo failu bibliotēku līdzekļi tiek izmantoti šeit:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message-many"
 msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "בחלק מהמשאבים בספרייה של הקובץ הזה נעשה שימוש כאן:"
-msgstr[1] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
-msgstr[2] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
-msgstr[3] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
+msgstr[0] "Nav bibliotēku līdzekļu dzēšanai:"
+msgstr[1] "Daži šī faila bibliotēku līdzekļi tiek izmantoti šeit:"
+msgstr[2] "Daži šo failu bibliotēku līdzekļi tiek izmantoti šeit:"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
-msgstr[0] "מחיקת קובץ"
-msgstr[1] "מחיקת קבצים"
-msgstr[2] "מחיקת קבצים"
-msgstr[3] "מחיקת קבצים"
+msgstr[0] "Nav failu dzēšanai"
+msgstr[1] "Faila dzēšana"
+msgstr[2] "Failu dzēšana"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.accept"
-msgstr "מחיקת צוות"
+msgstr "Dzēst komandu"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.message"
-msgstr "למחוק את הצוות הזה? כל המיזמים והקבצים שמשויכים לצוות יימחקו לצמיתות."
+msgstr ""
+"Vai tiešām vēlaties dzēst šo komandu? Visi ar komandu saistītie projekti un "
+"faili tiks neatgriezeniski dzēsti."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.title"
-msgstr "צוות נמחק"
+msgstr "Notiek komandas dzēšana"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.accept"
-msgstr "מחיקת חבר"
+msgstr "Dzēst dalībnieku"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.message"
-msgstr "למחוק את החבר הזה מהצוות?"
+msgstr "Vai tiešām vēlaties izdzēst šo dalībnieku no komandas?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
-msgstr "למחוק חבר בצוות"
+msgstr "Dzēst komandas dalībnieku"
 
 msgid "modals.delete-webhook.accept"
-msgstr "מחיקת התליה"
+msgstr "Dzēst tīmekļa āķi"
 
 msgid "modals.delete-webhook.message"
-msgstr "למחוק את ההתליה?"
+msgstr "Vai tiešām vēlaties izdzēst šo tīmekļa āķi?"
 
 msgid "modals.delete-webhook.title"
-msgstr "מחיקת התליה"
+msgstr "Notiek tīmekļa āķa dzēšana"
 
 msgid "modals.edit-webhook.submit-label"
-msgstr "עריכת התליה"
+msgstr "Rediģēt tīmekļa āķi"
 
 msgid "modals.edit-webhook.title"
-msgstr "עריכת התליה"
+msgstr "Rediģēt tīmekļa āķi"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member-confirm.accept"
-msgstr "שליחת הזמנה"
+msgstr "Nosūtīt uzaicinājumu"
 
 msgid "modals.invite-member.emails"
-msgstr "כתובות דוא״ל, מופרדות בפסיקים"
+msgstr "E-pasta ziņojumi, atdalīti ar komatiem"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
-msgstr "הזמנת חברים לצוות"
+msgstr "Uzaicināt dalībniekus uz komandu"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
-msgstr "כיוון שאין עוד חברים בצוות הזה מלבדך, הצוות יימחק על כל המיזמים והקבצים שלו."
+msgstr ""
+"Tā kā esat šīs komandas vienīgais dalībnieks, kopā ar tās projektiem un "
+"failiem komanda tiks izdzēsta."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.message"
-msgstr "ברצונך לעזוב את הצוות %s?"
+msgstr "Vai tiešām vēlaties pamest %s komandu?"
 
 msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
-"אי אפשר לעזוב צוות אם אין חברים שאפשר לקדם לבעלות עליה. אולי עדיף למחוק את "
-"הצוות."
+"Jūs nevarat pamest komandu, ja nav cita dalībnieka, ko nozīmēt par "
+"īpašnieku. Iespējams, ka vēlaties izdzēst grupu."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
-msgstr "הבעלות על הצוות הזה בידיך. נא לבחור מישהו כדי לקידום לבעלות בטרם עזיבתך."
+msgstr ""
+"Jūs esat šīs komandas īpašnieks. Pirms iziešanas nozīmējiet citu "
+"dalībnieku, ko noteikt kā īpašnieku."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
-msgstr "קידום ועזיבה"
+msgstr "Nozīmēt un pamest"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.select-member-to-promote"
-msgstr "נא לבחור חבר לקידום"
+msgstr "Atlasiet dalībnieku, ko nozīmēt"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.title"
-msgstr "בטרם עזיבתך"
+msgstr "Pirms pamešanas"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.accept"
-msgstr "עזיבת צוות"
+msgstr "Pamest komandu"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.message"
-msgstr "לעזוב את הצוות הזה?"
+msgstr "Vai tiešām vēlaties pamest šo komandu?"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.title"
-msgstr "עזיבת הצוות"
+msgstr "Komandas pamešana"
 
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.nudge-title"
-msgstr "כמות ההינד"
+msgstr "Nobīdes apjoms"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.accept"
-msgstr "העברת בעלות"
+msgstr "Īpašumtiesību nodošana"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
-"העברת בעלות תשנה את תפקידך לחלק מההנהלה תוך אובדן חלק מההרשאות שלך על הצוות "
-"הזה. "
+"Ja nodosit īpašumtiesības, jūs mainīsiet savu lomu uz Administrators, "
+"zaudējot dažas atļaujas šajā komandā. "
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
-msgstr "הצוות הזה הוא כרגע בבעלותך. להפוך את %s לבעלים החדשים של הצוות?"
+msgstr ""
+"Jūs esat šīs komandas pašreizējais īpašnieks. Vai tiešām vēlaties padarīt "
+"%s par jauno komandas īpašnieku?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.title"
-msgstr "בעלים חדשים לצוות"
+msgstr "Jauns komandas īpašnieks"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"
-msgstr "הסרה כספריה משותפת"
+msgstr "Noņemt kā koplietojamo bibliotēku"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
-"לאחר הסרה כספריה משותפת, ספריית הקבצים של הקובץ הזה לא תהיה זמינה עוד "
-"לשימוש בקרב שאר הקבצים שלך."
+"Kad fails būs noņemts kā koplietojamā bibliotēka, šī faila failu bibliotēka "
+"vairs nebūs pieejama izmantošanai starp pārējiem Jūsu failiem."
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
-msgstr "הסרת „%s” כספריה משותפת"
+msgstr "Noņemt “%s” kā koplietojamu bibliotēku"
 
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.small-nudge"
-msgstr "הינד קטן"
+msgstr "Maza nobīde"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Nav atlases"
+msgstr[1] "Atcelt publicēšanu"
+msgstr[2] "Atcelt publicēšanu"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] "ביטול הפרסום יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-msgstr[1] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-msgstr[2] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-msgstr[3] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
+msgstr[0] "Nav atlasīto publikāciju."
+msgstr[1] ""
+"Ja beigsiet publikāciju, šīs līdzeklis tiks pārvietots uz šī faila lokālo "
+"bibliotēku."
+msgstr[2] ""
+"Ja beigsiet publikāciju, šie līdzekļi tiks pārvietoti uz šī faila lokālo "
+"bibliotēku."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint-many"
 msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
-msgstr[1] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
-msgstr[2] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
-msgstr[3] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
+msgstr[0] "Nav atlasīto publikāciju."
+msgstr[1] ""
+"Ja beigsiet publikāciju, šīs līdzeklis tiks pārvietots uz šī faila lokālo "
+"bibliotēku."
+msgstr[2] ""
+"Ja beigsiet publikāciju, šie līdzekļi tiks pārvietoti uz šī faila lokālo "
+"bibliotēku."
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
-msgstr[0] "לבטל את פרסום הספרייה הזאת?"
-msgstr[1] "לבטל את פרסום הספריות האלו?"
-msgstr[2] "לבטל את פרסום הספריות האלו?"
-msgstr[3] "לבטל את פרסום הספריות האלו?"
+msgstr[0] "Nav izvēlēto bibliotēku?"
+msgstr[1] "Vai tiešām vēlaties atcelt šīs bibliotēkas publicēšanu?"
+msgstr[2] "Vai tiešām vēlaties atcelt šo bibliotēku publicēšanu?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.no-files-message"
 msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "אף אחד מהמשאבים שבספרייה הזאת נמצא בשימוש."
-msgstr[1] "אף אחד מהמשאבים שבספריות האלה נמצא בשימוש."
-msgstr[2] "אף אחד מהמשאבים שבספריות האלה נמצא בשימוש."
-msgstr[3] "אף אחד מהמשאבים שבספריות האלה נמצא בשימוש."
+msgstr[0] "Neviens līdzeklis no šīs bibliotēkas netiek izmantots."
+msgstr[1] "Neviens līdzeklis no šīs bibliotēkas netiek izmantots."
+msgstr[2] "Neviens līdzeklis no šīm bibliotēkām netiek izmantots."
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "בחלק מהמשאבים בספרייה הזאת נעשה שימוש כאן:"
-msgstr[1] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
-msgstr[2] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
-msgstr[3] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
+msgstr[0] "Daži līdzekļi no šīs bibliotēkās tiek izmantoti šeit:"
+msgstr[1] "Daži līdzekļi no šīs bibliotēkās tiek izmantoti šeit:"
+msgstr[2] "Daži līdzekļi no šīm bibliotēkām tiek izmantoti šeit:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message-many"
 msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "בחלק מהמשאבים בספרייה הזאת נעשה שימוש כאן:"
-msgstr[1] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
-msgstr[2] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
-msgstr[3] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
+msgstr[0] "Daži līdzekļi no šīs bibliotēkās tiek izmantoti šeit:"
+msgstr[1] "Daži līdzekļi no šīs bibliotēkās tiek izmantoti šeit:"
+msgstr[2] "Daži līdzekļi no šīm bibliotēkām tiek izmantoti šeit:"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
 msgid_plural "modals.unpublish-shared-confirm.title"
-msgstr[0] "ביטול פרסום ספרייה"
-msgstr[1] "ביטול פרסום ספריות"
-msgstr[2] "ביטול פרסום ספריות"
-msgstr[3] "ביטול פרסום ספריות"
+msgstr[0] "Bibliotēkas publicēšanas atcelšana"
+msgstr[1] "Bibliotēkas publicēšanas atcelšana"
+msgstr[2] "Bibliotēku publicēšanas atcelšana"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
 msgstr ""
-"פעולה זו תעדכן רכיבים בספרייה משותפת. עשוי להשפיע על קבצים אחרים שמשתמשים "
-"בה."
+"Jūs atjaunināt koplietotā bibliotēkā esošās komponentes. Tas var ietekmēt "
+"citus failus, kas to izmanto."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.message"
-msgstr "עדכון רכיבים בספרייה משותפת"
+msgstr "Komponenšu atjaunināšana koplietojamā bibliotēkā"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
-msgstr "עדכון"
+msgstr "Atjaunināt"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
-msgstr "ביטול"
+msgstr "Atcelt"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
 msgstr ""
-"פעולה זו תעדכן רכיב בספריה משותפת. זה עשוי להשפיע על הקבצים האחרים שמשתמשים "
-"בה."
+"Jūs atjaunināt koplietotā bibliotēkā esošās komponentes. Tas var ietekmēt "
+"citus failus, kas to izmanto."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
-msgstr "עדכון רכיב בספריה משותפת"
+msgstr "Komponentes atjaunināšana koplietojamā bibliotēkā"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
-msgstr "ההזמנה נשלחה בהצלחה"
+msgstr "Uzaicinājums veiksmīgi nosūtīts"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-link-copied"
-msgstr "קישור ההזמנה הועתק"
+msgstr "Uzaicinājuma saite nokopēta"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
-msgstr ""
-"אי אפשר למחוק את הפרופיל שלך. יש להקצות את הצוותים שלך מחדש בטרם המשך "
-"בתהליך."
+msgstr "Profilu nevar izdzēst. Pirms turpināt, veiciet tiesību piešķiršanu komandās."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
-msgstr "הפרופיל נשמר בהצלחה!"
+msgstr "Profils ir veiksmīgi saglabāts!"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "notifications.validation-email-sent"
-msgstr "הודעת האימות נשלחה בדוא״ל אל %s. נא לבדוק את הדוא״ל שלך!"
+msgstr "Uz %s nosūtīts pārbaudes e-pasta ziņojums. Pārbaudiet savu e-pastu!"
 
 msgid "onboarding-v2.before-start.desc1"
 msgstr ""
-"רצוי לדעת שיש מגוון משאבים זמינים לך כדי לסייע לך להתחיל להשתמש ב־Penpot "
-"כמו המדריך למשתמשים וערוץ ה־YouTube שלנו."
+"Jums jāzina, ka ir pieejami daudzi resursi, lai palīdzētu Jums sākt darbu "
+"ar Penpot, piemēram, Lietotāja rokasgrāmata un mūsu Youtube kanāls."
 
 msgid "onboarding-v2.before-start.desc2"
-msgstr "מידע מפורט על אופן השימוש ב־Penpot. החל מתכנון אבטיפוס ועד שיתוף עיצובים."
+msgstr ""
+"Detalizēta informācija par Penpot lietošanu. No prototipa izveides līdz "
+"dizaina organizēšanai vai koplietošanai."
 
 msgid "onboarding-v2.before-start.desc2.title"
-msgstr "מדריך למשתמשים"
+msgstr "Lietotāja rokasgrāmata"
 
 msgid "onboarding-v2.before-start.desc3"
-msgstr "אפשר לצפות במדריכים שלנו ובמדריכים שנוצרו על ידי חברי הקהילה שלנו."
+msgstr "Jūs varat apskatīties mūsu apmācības un mūsu kopienas māteriālus."
 
 msgid "onboarding-v2.before-start.desc3.title"
-msgstr "מדריכים מצולמים"
+msgstr "Video apmācības"
 
 msgid "onboarding-v2.before-start.title"
-msgstr "לפני שמתחילים"
+msgstr "Pirms sākat"
 
 msgid "onboarding-v2.newsletter.desc"
 msgstr ""
-"ניתן להירשם לרשימת הדיוור של Penpot כדי להתעדכן בתהליך פיתוח המוצר ובחדשות "
-"נוספות."
+"Abonējiet Penpot biļetenu, lai saņemtu jaunāko informāciju par produktu "
+"izstrādes gaitu un jaunumiem."
 
 msgid "onboarding-v2.newsletter.news"
-msgstr "נא לשלוח לי חדשות על Penpot (בלוגים, מדריכים מצולמים, שידורים…)."
+msgstr "Sūtiet man ziņas par Penpot (emuāra ziņas, video apmācības, straumēs...)."
 
 msgid "onboarding-v2.newsletter.privacy1"
-msgstr "אכפת לנו מפרטיות, כאן ניתן לקרוא את "
+msgstr "Mums rūp privātums, šeit var lasīt mūsu "
 
 msgid "onboarding-v2.newsletter.privacy2"
 msgstr ""
-"אנו נשלח לך בדוא״ל רק הודעות שרלוונטיות לך. אפשר לבטל את המינוי דרך כפתור "
-"ביטול המינוי בכל אחת מהודעות הדיוור שלנו."
+"Mēs jums nosūtīsim tikai attiecīgus e-pasta ziņojumus. Abonementu var "
+"anulēt jebkurā laikā, izmantojot abonēšanas atcelšanas saiti jebkurā mūsu "
+"biļetenī."
 
 msgid "onboarding-v2.newsletter.updates"
-msgstr "נא לשלוח לי עדכונים על המוצר (יכולות חדשות, מהדורות, תיקונים…)."
+msgstr ""
+"Nosūtīt man produkta atjauninājumus (jaunas funkcijas, izlaidumi, "
+"labojumi...)."
 
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
-"Penpot הוא בקוד פתוח והוא נוצר על ידי Kaleidos וגם על ידי הקהילה בה מגוון "
-"אנשים כבר מסייעים זה לזה. כל אחד יכול לתרום דרך:"
+"Penpot ir Atvērtā pirmkoda programmatūra, un to veido Kaleidos, kā arī "
+"kopiena, kur daudzi cilvēki jau palīdz viens otram. Visi var sadarboties:"
 
 msgid "onboarding-v2.welcome.desc2"
 msgstr ""
-"מקום ציבורי ללמידה, שיתוף ודיון על Penpot, ההווה והעתיד שלו עם כל הקהילה "
-"וצוות הליבה של Penpot."
+"Publiska telpa, lai mācītos, dalītos un apspriestu Penpot, tās tagadni un "
+"nākotni ar visu Kopienu un Penpot komandu."
 
 msgid "onboarding-v2.welcome.desc2.title"
-msgstr "השתתפות בפעילות הקהילתית"
+msgstr "Dalība Kopienā"
 
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
-"כאן אפשר למצוא מידע על כיצד לשתף פעולה בנושאי תרגום, בקשות יכולות, תרומות "
-"ליבה, מצוד אחר תקלות…"
+"Kur atradīsiet, kā piedalīties ar tulkojumiem, funkciju pieprasījumiem, "
+"kļūdām …"
 
 msgid "onboarding-v2.welcome.desc3.title"
-msgstr "מדריך למתנדבים"
+msgstr "Dalības rokasgrāmata"
 
 msgid "onboarding-v2.welcome.title"
-msgstr "ברוך בואך ל־Penpot!"
+msgstr "Laipni lūdzam Penpot!"
 
 msgid "onboarding.choice.team-up.create-later"
-msgstr "ליצירת צוות מאוחר יותר"
+msgstr "Izveidot komandu vēlāk"
 
 msgid "onboarding.choice.team-up.create-team"
-msgstr "שם הצוות שלך"
+msgstr "Jūsu komandas nosaukums"
 
 msgid "onboarding.choice.team-up.create-team-desc"
-msgstr "לאחר מתן שם לצוות שלך, יתאפשר לך להזמין אנשים להצטרף."
+msgstr ""
+"Pēc savas komandas nosaukšanas jūs varēsiet uzaicināt cilvēkus tai "
+"pievienoties."
 
 msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "נא למלא את שם הצוות"
+msgstr "Ievadiet komandas nosaukumu"
 
 msgid "onboarding.choice.team-up.invite-members"
-msgstr "הזמנת חברים"
+msgstr "Uzaicināt dalībniekus"
 
 msgid "onboarding.choice.team-up.invite-members-info"
-msgstr "רצוי לזכור לכלול את כולם. מפתחים, מעצבים, מנהלים… גיוון מעשיר :)"
+msgstr ""
+"Neaizmirstiet iekļaut visus. Izstrādātāji, dizaineri, menedžeri... viedokļu "
+"dažādībā ir spēks :)"
 
 msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "יצירת צוות והזמנה בהמשך"
+msgstr "Izveidot komandu un uzaicināt vēlāk"
 
 msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "יצירת צוות ושליחת הזמנות"
+msgstr "Izveidot komandu un sūtīt uzaicinājumus"
 
 msgid "onboarding.choice.team-up.roles"
-msgstr "הזמנה עם התפקיד:"
+msgstr "Uzaicināt ar lomu:"
 
 msgid "onboarding.newsletter.accept"
-msgstr "כן, להירשם"
+msgstr "Jā, abonēt"
 
 msgid "onboarding.newsletter.acceptance-message"
-msgstr "בקשת המינוי שלך נשלחה, נשלח לך הודעה בדוא״ל כדי לאשר אותה."
+msgstr ""
+"Jūsu abonementa pieprasījums ir nosūtīts, un mēs nosūtīsim jums e-pasta "
+"ziņojumu, lai to apstiprinātu."
 
 msgid "onboarding.newsletter.policy"
-msgstr "מדיניות פרטיות."
+msgstr "Konfidencialitātes politika."
 
 msgid "onboarding.newsletter.title"
-msgstr "מעניין אותך לקבל חדשות על Penpot?"
+msgstr "Vai vēlaties saņemt Penpot ziņas?"
 
 msgid "onboarding.team-modal.create-team"
-msgstr "יצירת צוות"
+msgstr "Izveidot komandu"
 
 msgid "onboarding.team-modal.create-team-desc"
 msgstr ""
-"צוות מאפשר לך לשתף פעולה עם משתמשים אחרים ב־Penpot שעובדים על אותם קבצים "
-"ומיזמים."
+"Komanda ļauj sadarboties ar citiem Penpot lietotājiem, kas strādā tajos "
+"pašos failos un projektos."
 
 msgid "onboarding.team-modal.create-team-feature-1"
-msgstr "אין הגבלה על קבצים או מיזמים"
+msgstr "Neierobežoti faili un projekti"
 
 msgid "onboarding.team-modal.create-team-feature-2"
-msgstr "מהדורת ריבוי משתתפים"
+msgstr "Vairāku lietotāju izdevums"
 
 msgid "onboarding.team-modal.create-team-feature-3"
-msgstr "ניהול תפקידים"
+msgstr "Lomu pārvaldība"
 
 msgid "onboarding.team-modal.create-team-feature-4"
-msgstr "ללא הגבלת משתמשים"
+msgstr "Neierobežoti dalībnieki"
 
 msgid "onboarding.team-modal.create-team-feature-5"
-msgstr "100% בחינם!"
+msgstr "100% bez maksas!"
 
 msgid "onboarding.templates.subtitle"
-msgstr "הנה כמה תבניות."
+msgstr "Lūk, dažas veidnes."
 
 msgid "onboarding.templates.title"
-msgstr "להתחיל לעצב"
+msgstr "Sākt projektēšanu"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
-msgstr "מעבר למסך הכניסה"
+msgstr "Pāriet uz pieteikšanos"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
-msgstr "מעורב"
+msgstr "Jaukts"
 
 # SECTIONS
 msgid "shortcut-section.basics"
-msgstr "יסודות"
+msgstr "Pamati"
 
 msgid "shortcut-section.dashboard"
-msgstr "לוח בקרה"
+msgstr "Panelis"
 
 msgid "shortcut-section.viewer"
-msgstr "מציג"
+msgstr "Pārlūks"
 
 msgid "shortcut-section.workspace"
-msgstr "סביבת עבודה"
+msgstr "Darbvieta"
 
 # SUBSECTIONS
 msgid "shortcut-subsection.alignment"
-msgstr "יישור"
+msgstr "Līdzinājums"
 
 msgid "shortcut-subsection.edit"
-msgstr "עריכה"
+msgstr "Rediģēt"
 
 msgid "shortcut-subsection.general-dashboard"
-msgstr "כללי"
+msgstr "Vispārējs"
 
 msgid "shortcut-subsection.general-viewer"
-msgstr "כללי"
+msgstr "Vispārējs"
 
 msgid "shortcut-subsection.main-menu"
-msgstr "תפריט ראשי"
+msgstr "Galvenā izvēlne"
 
 msgid "shortcut-subsection.modify-layers"
-msgstr "שינוי שכבות"
+msgstr "Mainīt slāņus"
 
 msgid "shortcut-subsection.navigation-dashboard"
-msgstr "ניווט"
+msgstr "Navigācija"
 
 msgid "shortcut-subsection.navigation-viewer"
-msgstr "ניווט"
+msgstr "Navigācija"
 
 msgid "shortcut-subsection.navigation-workspace"
-msgstr "ניווט"
+msgstr "Navigācija"
 
 msgid "shortcut-subsection.panels"
-msgstr "לוחות"
+msgstr "Paneļi"
 
 msgid "shortcut-subsection.path-editor"
-msgstr "נתיבים"
+msgstr "Ceļi"
 
 msgid "shortcut-subsection.shape"
-msgstr "צורות"
+msgstr "Formas"
 
 msgid "shortcut-subsection.tools"
-msgstr "כלים"
+msgstr "Rīki"
 
 msgid "shortcut-subsection.zoom-viewer"
-msgstr "תקריב"
+msgstr "Tālummaiņa"
 
 msgid "shortcut-subsection.zoom-workspace"
-msgstr "תקריב"
+msgstr "Tālummaiņa"
 
 msgid "shortcuts.add-comment"
-msgstr "הערות"
+msgstr "Komentāri"
 
 msgid "shortcuts.add-node"
-msgstr "הוספת מפרק"
+msgstr "Pievienot mezglu"
 
 msgid "shortcuts.align-bottom"
-msgstr "יישור לתחתית"
+msgstr "Līdzināt uz leju"
 
 msgid "shortcuts.align-hcenter"
-msgstr "יישור למרכז אופקית"
+msgstr "Centrēt horizontāli"
 
 msgid "shortcuts.align-left"
-msgstr "יישור שמאלה"
+msgstr "Līdzināt pa kreisi"
 
 msgid "shortcuts.align-right"
-msgstr "יישור ימינה"
+msgstr "Līdzināt pa labi"
 
 msgid "shortcuts.align-top"
-msgstr "יישור לראש"
+msgstr "Līdzināt uz augšu"
 
 msgid "shortcuts.align-vcenter"
-msgstr "יישור למרכז אנכית"
+msgstr "Centrēt vertikāli"
 
 msgid "shortcuts.artboard-selection"
-msgstr "יצירת לוח מהבחירה"
+msgstr "Izveidot dēli no atlases"
 
 msgid "shortcuts.bool-difference"
-msgstr "הבדל בוליאני"
+msgstr "Būla starpība"
 
 msgid "shortcuts.bool-exclude"
-msgstr "החרגה בוליאנית"
+msgstr "Būla izslēgšana"
 
 msgid "shortcuts.bool-intersection"
-msgstr "הצלבה בוליאנית"
+msgstr "Būla krustošanās"
 
 msgid "shortcuts.bool-union"
-msgstr "איחוד בוליאני"
+msgstr "Būla apvienošana"
 
 msgid "shortcuts.bring-back"
-msgstr "שליחה אחורה"
+msgstr "Sūtīt uz aizmuguri"
 
 msgid "shortcuts.bring-backward"
-msgstr "הרחקה לאחור"
+msgstr "Sūtīt atpakaļ"
 
 msgid "shortcuts.bring-forward"
-msgstr "קידום"
+msgstr "Virzīt uz priekšu"
 
 msgid "shortcuts.bring-front"
-msgstr "הבאה לחזית"
+msgstr "Izvirzīt priekšā"
 
 msgid "shortcuts.clear-undo"
-msgstr "פינוי ביטול"
+msgstr "Iztīrīt atsaukšanu"
 
 msgid "shortcuts.copy"
-msgstr "העתקה"
+msgstr "Kopēt"
 
 msgid "shortcuts.create-component"
-msgstr "יצירת רכיב"
+msgstr "Izveidot komponenti"
 
 msgid "shortcuts.create-new-project"
-msgstr "יצירת חדש"
+msgstr "Izveidot jaunu"
 
 msgid "shortcuts.cut"
-msgstr "גזירה"
+msgstr "Izgriezt"
 
 msgid "shortcuts.decrease-zoom"
-msgstr "התרחקות"
+msgstr "Tālināt"
 
 msgid "shortcuts.delete"
-msgstr "מחיקה"
+msgstr "Dzēst"
 
 msgid "shortcuts.delete-node"
-msgstr "מחיקת מפרק"
+msgstr "Dzēst mezglu"
 
 msgid "shortcuts.detach-component"
-msgstr "ניתוק רכיב"
+msgstr "Atdalīt komponenti"
 
 msgid "shortcuts.draw-curve"
-msgstr "עיקול"
+msgstr "Līkne"
 
 msgid "shortcuts.draw-ellipse"
-msgstr "אליפסה"
+msgstr "Elipse"
 
 msgid "shortcuts.draw-frame"
-msgstr "לוח"
+msgstr "Dēlis"
 
 msgid "shortcuts.draw-nodes"
-msgstr "ציור נתיב"
+msgstr "Zīmēt ceļu"
 
 msgid "shortcuts.draw-path"
-msgstr "נתיב"
+msgstr "Ceļš"
 
 msgid "shortcuts.draw-rect"
-msgstr "ריבוע"
+msgstr "Taisnstūris"
 
 msgid "shortcuts.draw-text"
-msgstr "טקסט"
+msgstr "Teksts"
 
 msgid "shortcuts.duplicate"
-msgstr "שכפול"
+msgstr "Dublikāts"
 
 msgid "shortcuts.escape"
-msgstr "ביטול"
+msgstr "Atcelt"
 
 msgid "shortcuts.export-shapes"
-msgstr "ייצוא צורות"
+msgstr "Eksportēt formas"
 
 msgid "shortcuts.fit-all"
-msgstr "כיוון תקריב כדי להציג הכול"
+msgstr "Tālummaiņa, lai ietilpinātu visu"
 
 msgid "shortcuts.flip-horizontal"
-msgstr "היפוך אופקי"
+msgstr "Apvērst horizontāli"
 
 msgid "shortcuts.flip-vertical"
-msgstr "היפוך אנכי"
+msgstr "Apvērst vertikāli"
 
 msgid "shortcuts.go-to-drafts"
-msgstr "מעבר לטיוטות"
+msgstr "Doties uz melnrakstiem"
 
 msgid "shortcuts.go-to-libs"
-msgstr "מעבר לספריות המשותפות"
+msgstr "Doties uz koplietojamām bibliotēkām"
 
 msgid "shortcuts.go-to-search"
-msgstr "חיפוש"
+msgstr "Meklēt"
 
 msgid "shortcuts.group"
-msgstr "קבוצה"
+msgstr "Grupa"
 
 msgid "shortcuts.h-distribute"
-msgstr "פיזור אופקית"
+msgstr "Izkliedēt horizontāli"
 
 msgid "shortcuts.hide-ui"
-msgstr "הצגת/הסתרת מנשק משתמש"
+msgstr "Rādīt/paslēpt lietotāja interfeisu"
 
 msgid "shortcuts.increase-zoom"
-msgstr "התקרבות"
+msgstr "Tuvināt"
 
 msgid "shortcuts.insert-image"
-msgstr "הוספת תמונה"
+msgstr "Ievietot attēlu"
 
 msgid "shortcuts.join-nodes"
-msgstr "צירוף מפרקים"
+msgstr "Savienot mezglus"
 
 msgid "shortcuts.make-corner"
-msgstr "הפיכה לפינה"
+msgstr "Izveidot stūri"
 
 msgid "shortcuts.make-curve"
-msgstr "הפיכה לעיקול"
+msgstr "Izveidot līkni"
 
 msgid "shortcuts.mask"
-msgstr "מסכה"
+msgstr "Maska"
 
 msgid "shortcuts.merge-nodes"
-msgstr "מיזוג מפרקים"
+msgstr "Sapludināt mezglus"
 
 msgid "shortcuts.move"
-msgstr "העברה"
+msgstr "Pārvietot"
 
 msgid "shortcuts.move-fast-down"
-msgstr "העברה למטה מהר"
+msgstr "Ātri pārvietoties uz leju"
 
 msgid "shortcuts.move-fast-left"
-msgstr "העברה שמאלה מהר"
+msgstr "Ātri pārvietoties uz kreisi"
 
 msgid "shortcuts.move-fast-right"
-msgstr "העברה ימינה מהר"
+msgstr "Ātri pārvietoties pa labi"
 
 msgid "shortcuts.move-fast-up"
-msgstr "העברה למעלה מהר"
+msgstr "Ātri pārvietoties uz augšu"
 
 msgid "shortcuts.move-nodes"
-msgstr "העברת מפרק"
+msgstr "Pārvietot mezglu"
 
 msgid "shortcuts.move-unit-down"
-msgstr "העברה למטה"
+msgstr "Pārvietoties lejup"
 
 msgid "shortcuts.move-unit-left"
-msgstr "העברה שמאלה"
+msgstr "Pārvietot pa kreisi"
 
 msgid "shortcuts.move-unit-right"
-msgstr "העברה ימינה"
+msgstr "Pārvietot pa labi"
 
 msgid "shortcuts.move-unit-up"
-msgstr "העברה למעלה"
+msgstr "Pārvietoties augšup"
 
 msgid "shortcuts.next-frame"
-msgstr "הלוח הבא"
+msgstr "Nākamais dēlis"
 
 msgid "shortcuts.not-found"
-msgstr "לא נמצאו קיצורי דרך"
+msgstr "Saīsnes nav atrastas"
 
 msgid "shortcuts.opacity-0"
-msgstr "הגדרת אטימות ל־100%"
+msgstr "Iestatīt necaurspīdīgumu uz 100%"
 
 msgid "shortcuts.opacity-1"
-msgstr "הגדרת אטימות ל־10%"
+msgstr "Iestatīt necaurspīdīgumu uz 10%"
 
 msgid "shortcuts.opacity-2"
-msgstr "הגדרת אטימות ל־20%"
+msgstr "Iestatīt necaurspīdīgumu uz 20%"
 
 msgid "shortcuts.opacity-3"
-msgstr "הגדרת אטימות ל־30%"
+msgstr "Iestatīt necaurspīdīgumu uz 30%"
 
 msgid "shortcuts.opacity-4"
-msgstr "הגדרת אטימות ל־40%"
+msgstr "Iestatīt necaurspīdīgumu uz 40%"
 
 msgid "shortcuts.opacity-5"
-msgstr "הגדרת אטימות ל־50%"
+msgstr "Iestatīt necaurspīdīgumu uz 50%"
 
 msgid "shortcuts.opacity-6"
-msgstr "הגדרת אטימות ל־60%"
+msgstr "Iestatīt necaurspīdīgumu uz 60%"
 
 msgid "shortcuts.opacity-7"
-msgstr "הגדרת אטימות ל־70%"
+msgstr "Iestatīt necaurspīdīgumu uz 70%"
 
 msgid "shortcuts.opacity-8"
-msgstr "הגדרת אטימות ל־80%"
+msgstr "Iestatīt necaurspīdīgumu uz 80%"
 
 msgid "shortcuts.opacity-9"
-msgstr "הגדרת אטימות ל־90%"
+msgstr "Iestatīt necaurspīdīgumu uz 90%"
 
 msgid "shortcuts.open-color-picker"
-msgstr "בוחר צבעים"
+msgstr "Krāsu atlasītājs"
 
 msgid "shortcuts.open-comments"
-msgstr "מעבר לסעיף הערות צופים"
+msgstr "Atvērt pārlūka komentāru sadaļu"
 
 msgid "shortcuts.open-dashboard"
-msgstr "מעבר ללוח בקרה"
+msgstr "Doties uz Infopaneli"
 
 msgid "shortcuts.open-inspect"
-msgstr "מעבר לסעיף חקירת צופה"
+msgstr "Doties uz pārlūka izpētes sekciju"
 
 msgid "shortcuts.open-interactions"
-msgstr "מעבר לסעיף תפעול משתמש"
+msgstr "Doties uz pārlūka mijiedarbības sadaļu"
 
 msgid "shortcuts.open-viewer"
-msgstr "מעבר לסעיף תפעול צופה"
+msgstr "Doties uz pārlūka mijiedarbības sadaļu"
 
 msgid "shortcuts.open-workspace"
-msgstr "מעבר לסביבת עבודה"
+msgstr "Doties uz darbvietu"
 
 msgid "shortcuts.or"
-msgstr " או "
+msgstr " vai "
 
 msgid "shortcuts.paste"
-msgstr "הדבקה"
+msgstr "Ielīmēt"
 
 msgid "shortcuts.prev-frame"
-msgstr "לוח קודם"
+msgstr "Iepriekšējais dēlis"
 
 msgid "shortcuts.redo"
-msgstr "ביצוע חוזר"
+msgstr "Atatsaukt"
 
 msgid "shortcuts.reset-zoom"
-msgstr "איפוס תקריב"
+msgstr "Atiestatīt tālummaiņu"
 
 msgid "shortcuts.search-placeholder"
-msgstr "חיפוש בקיצורי הדרך"
+msgstr "Meklēt saīsnes"
 
 msgid "shortcuts.select-all"
-msgstr "בחירה בהכול"
+msgstr "Atlasīt visu"
 
 msgid "shortcuts.separate-nodes"
-msgstr "הפרדת מפרקים"
+msgstr "Atdalīt mezglus"
 
 msgid "shortcuts.show-pixel-grid"
-msgstr "הצגת/הסתרת רשת פיקסלים"
+msgstr "Rādīt/paslēpt pikseļu režģi"
 
 msgid "shortcuts.show-shortcuts"
-msgstr "הצגת/הסתרת קיצורי דרך"
+msgstr "Rādīt/paslēpt saīsnes"
 
 msgid "shortcuts.snap-nodes"
-msgstr "הצמדה למפרקים"
+msgstr "Pieķerties mezgliem"
 
 msgid "shortcuts.snap-pixel-grid"
-msgstr "הצמדה לרשת פיקסלים"
+msgstr "Pieķerties pikseļu režģim"
 
 msgid "shortcuts.start-editing"
-msgstr "התחלת עריכה"
+msgstr "Sākt rediģēšanu"
 
 msgid "shortcuts.start-measure"
-msgstr "התחלת מדידה"
+msgstr "Sākt mērīšanu"
 
 msgid "shortcuts.stop-measure"
-msgstr "עצירת מדידה"
+msgstr "Beigt mērīšanu"
 
 msgid "shortcuts.thumbnail-set"
-msgstr "הגדרת תמונות ממוזערות"
+msgstr "Iestatīt sīktēlus"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs
 msgid "shortcuts.title"
-msgstr "קיצורי מקלדת"
+msgstr "Īsinājumtaustiņi"
 
 msgid "shortcuts.toggle-alignment"
-msgstr "החלפת מצב יישור דינמי"
+msgstr "Pārslēgt dinamisko līdzinājumu"
 
 msgid "shortcuts.toggle-assets"
-msgstr "החלפת מצב נכסים"
+msgstr "Pārslēgt līdzekļus"
 
 msgid "shortcuts.toggle-colorpalette"
-msgstr "החלפת מצב לוח צבעים"
+msgstr "Pārslēgt krāsu paleti"
 
 msgid "shortcuts.toggle-focus-mode"
-msgstr "החלפת מצב מיקוד"
+msgstr "Pārslēgt fokusa režīmu"
 
 msgid "shortcuts.toggle-fullscreen"
-msgstr "החלפת מילוי מסך"
+msgstr "Pārslēgt pilnekrāna režīmu"
 
 msgid "shortcuts.toggle-grid"
-msgstr "הצגת/הסתרת רשת"
+msgstr "Rādīt/paslēpt režģi"
 
 msgid "shortcuts.toggle-history"
-msgstr "החלפת הצגת היסטוריה"
+msgstr "Pārslēgt vēsturi"
 
 msgid "shortcuts.toggle-layers"
-msgstr "החלפת הצגת שכבות"
+msgstr "Pārslēgt slāņus"
 
 msgid "shortcuts.toggle-layout-flex"
-msgstr "הוספת/הסרת flex פריסה"
+msgstr "Pievienot/noņemt izkārtojuma elastīgumu"
 
 msgid "shortcuts.toggle-lock"
-msgstr "נעילת הנבחרים"
+msgstr "Bloķēt atlasi"
 
 msgid "shortcuts.toggle-lock-size"
-msgstr "נעילת יחס"
+msgstr "Bloķēt proporcijas"
 
 msgid "shortcuts.toggle-rules"
-msgstr "הצגת/הסתרת סרגלים"
+msgstr "Rādīt/paslēpt mērjoslas"
 
 msgid "shortcuts.toggle-scale-text"
-msgstr "החלפת מצב שינוי קנה מידה של כתב"
+msgstr "Pārslēgt teksta mērogošanu"
 
 msgid "shortcuts.toggle-snap-grid"
-msgstr "הצמדה לרשת"
+msgstr "Pieķerties režģim"
 
 msgid "shortcuts.toggle-snap-guide"
-msgstr "הצמדה לקווים מנחים"
+msgstr "Pieķerties vadotnēm"
 
 msgid "shortcuts.toggle-textpalette"
-msgstr "החלפת לוח טקסט"
+msgstr "Pārslēgt teksta paleti"
 
 msgid "shortcuts.toggle-visibility"
-msgstr "החלפת מצב הצגה"
+msgstr "Pārslēgt redzamību"
 
 msgid "shortcuts.toggle-zoom-style"
-msgstr "החלפת סגנון תקריב"
+msgstr "Pārslēgt tālummaiņas stilu"
 
 msgid "shortcuts.undo"
-msgstr "ביטול"
+msgstr "Atsaukt"
 
 msgid "shortcuts.ungroup"
-msgstr "פירוק קבוצה"
+msgstr "Atgrupēt"
 
 msgid "shortcuts.unmask"
-msgstr "ביטול מסכה"
+msgstr "Noņemt masku"
 
 msgid "shortcuts.v-distribute"
-msgstr "פיזור אנכי"
+msgstr "Izkliedēt vertikāli"
 
 msgid "shortcuts.zoom-selected"
-msgstr "התמקדות על הנבחר"
+msgstr "Tālummainīt uz atlasi"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
-msgstr "%s‏ - Penpot"
+msgstr "%s - Penpot"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "title.dashboard.font-providers"
-msgstr "ספקי גופנים - %s‏ - Penpot"
+msgstr "Fontu nodrošinātāji - %s - Penpot"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "title.dashboard.fonts"
-msgstr "גופנים - %s‏ - Penpot"
+msgstr "Fonti - %s - Penpot"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "title.dashboard.projects"
-msgstr "מיזמים - %s‏ - Penpot"
+msgstr "Projekti - %s - Penpot"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "title.dashboard.search"
-msgstr "חיפוש - %s‏ - Penpot"
+msgstr "Meklēšana - %s - Penpot"
 
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "title.dashboard.shared-libraries"
-msgstr "ספריות משותפות - %s‏ - Penpot"
+msgstr "Koplietojamās bibliotēkas - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
 msgid "title.default"
-msgstr "Penpot - חופש עיצובי לצוותים"
+msgstr "Penpot - Dizaina brīvība komandām"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "title.settings.feedback"
-msgstr "הגשת משוב - Penpot"
+msgstr "Sniegt atsauksmes - Penpot"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "title.settings.options"
-msgstr "הגדרות - Penpot"
+msgstr "Iestātijumi - Penpot"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "title.settings.password"
-msgstr "סיסמה - Penpot"
+msgstr "Parole - Penpot"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "title.settings.profile"
-msgstr "פרופיל - Penpot"
+msgstr "Profils - Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-invitations"
-msgstr "הזמנות - %s -‏ Penpot"
+msgstr "Ielūgumi - %s - Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-members"
-msgstr "חברים - %s‏ - Penpot"
+msgstr "Dalībnieki - %s - Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-settings"
-msgstr "הגדרות - %s‏ - Penpot"
+msgstr "Iestatījumi - %s - Penpot"
 
 msgid "title.team-webhooks"
-msgstr "התליות - %s‏ - Penpot"
+msgstr "Tīkla āķi - %s - Penpot"
 
 #: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "title.viewer"
-msgstr "%s - מצב תצוגה - Penpot"
+msgstr "%s - skata režīms - Penpot"
 
 #: src/app/main/ui/workspace.cljs
 msgid "title.workspace"
-msgstr "%s‏ - Penpot"
+msgstr "%s - Penpot"
 
 msgid "viewer.breaking-change.description"
 msgstr ""
-"קישור זה לשיתוף אינו תקף עוד. נא ליצור אחד חדש או לבקש מהבעלים ליצור אחד "
-"חדש."
+"Šī kopīgojamā saite vairs nav derīga. Izveidojiet jaunu vai lūdziet "
+"īpašniekam jaunu."
 
 msgid "viewer.breaking-change.message"
-msgstr "מתנצלים!"
+msgstr "Piedošanu!"
 
 #: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.empty-state"
-msgstr "לא נמצאו לוחות בעמוד."
+msgstr "Lapā nav atrasts neviens dēlis."
 
 #: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.frame-not-found"
-msgstr "הלוח לא נמצא."
+msgstr "Dēlis nav atrasts."
 
 msgid "viewer.header.comments-section"
-msgstr "הערות (%s)"
+msgstr "Komentāri (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
-msgstr "לא להציג אינטראקציות"
+msgstr "Nerādīt mijiedarbības"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
-msgstr "מסך מלא"
+msgstr "Pilnekrāns"
 
 msgid "viewer.header.inspect-section"
-msgstr "חקירה (%s)"
+msgstr "Pārbaudīt (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
-msgstr "אינטראקציות"
+msgstr "Mijiedarbības"
 
 msgid "viewer.header.interactions-section"
-msgstr "אינטראקציות (%s)"
+msgstr "Mijiedarbības (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
-msgstr "העתקת קישור"
+msgstr "Kopēt saiti"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
-msgstr "הצגת פעילויות"
+msgstr "Rādīt mijiedarbības"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions-on-click"
-msgstr "הצגת פעילויות בקליק"
+msgstr "Rādīt mijiedarbības pēc klikšķa"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.sitemap"
-msgstr "מפת אתר"
+msgstr "Tīmekļa vietnes karte"
 
 msgid "webhooks.last-delivery.success"
-msgstr "ההעברה האחרונה הצליחה."
+msgstr "Pēdējā piegāde bija veiksmīga."
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "(%s) יישור למרכז האופקי"
+msgstr "Horizontālā centra līdzināšana (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "(%s) פיזור ריווח אופקי"
+msgstr "Sadalīt horizontālo atstarpi (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "(%s) יישור שמאלה"
+msgstr "Līdzināt pa kreisi (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "(%s) יישור ימינה"
+msgstr "Līdzināt pa labi (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "(%s) יישור למטה"
+msgstr "Līdzināt uz leju (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "(%s) יישור למרכז אנכית"
+msgstr "Līdzināt uz vertikālo centru (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "(%s) פיזור בריווח אנכי"
+msgstr "Izkliedēt vertikālo atstarpi (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "(%s) יישור למעלה"
+msgstr "Līdzināt uz augšu (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"
-msgstr "משאבים"
+msgstr "Līdzekļi"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.box-filter-all"
-msgstr "כל המשאבים"
+msgstr "Visi līdzekļi"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.colors"
-msgstr "צבעים"
+msgstr "Krāsas"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.components"
-msgstr "רכיבים"
+msgstr "Componentes"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.create-group"
-msgstr "יצירת קבוצה"
+msgstr "Izveidot grupu"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.create-group-hint"
-msgstr "הפריטים שלך יקבלו אוטומטית שם בסגנון „שם קבוצה / שם פריט”"
+msgstr ""
+"Jūsu vienumi tiks automātiski nosaukti kā “grupas nosaukums/vienuma "
+"nosaukums”"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.delete"
-msgstr "מחיקה"
+msgstr "Dzēst"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.duplicate"
-msgstr "שכפול"
+msgstr "Dublikāts"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
-msgstr "עריכה"
+msgstr "Rediģēt"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
-msgstr "גרפיקה"
+msgstr "Grafika"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.group"
-msgstr "קבוצה"
+msgstr "Grupa"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.group-name"
-msgstr "שם קבוצה"
+msgstr "Grupas nosaukums"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.libraries"
-msgstr "ספריות"
+msgstr "Bibliotēkas"
 
 msgid "workspace.assets.local-library"
-msgstr "ספרייה מקומית"
+msgstr "lokālā bibliotēka"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.not-found"
-msgstr "לא נמצאו משאבים"
+msgstr "Līdzekļi nav atrasti"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.rename"
-msgstr "שינוי שם"
+msgstr "Pārdēvēt"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.rename-group"
-msgstr "שינוי שם קבוצה"
+msgstr "Pārdēvēt grupu"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.search"
-msgstr "חיפוש במשאבים"
+msgstr "Meklēt līdzekļus"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.selected-count"
 msgid_plural "workspace.assets.selected-count"
-msgstr[0] "פריט נבחר"
-msgstr[1] "%s פריטים נבחרו"
-msgstr[2] "%s פריטים נבחרו"
-msgstr[3] "%s פריטים נבחרו"
+msgstr[0] "atlasīts %s vienums"
+msgstr[1] "atlasīts %s vienums"
+msgstr[2] "atlasīti %s vienumi"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.shared"
-msgstr "משותף"
+msgstr "KOPĪGIE"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
-msgstr "טיפוגרפיות"
+msgstr "Tipogrāfijas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.font-id"
-msgstr "גופן"
+msgstr "Fonti"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.font-size"
-msgstr "גודל"
+msgstr "Izmērs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.font-variant-id"
-msgstr "הגוון"
+msgstr "Fonta variants"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.go-to-edit"
-msgstr "מעבר לקובץ ספריית סגנון כדי לערוך"
+msgstr "Doties uz stilu bibliotēkas failu, lai rediģētu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.letter-spacing"
-msgstr "ריווח תווים"
+msgstr "Burtstarpa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.line-height"
-msgstr "גובה שורה"
+msgstr "Rindas augstums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs,
-#: src/app/main/ui/inspect/attributes/text.cljs,
-#: src/app/main/ui/inspect/attributes/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/inspect/attributes/text.cljs, src/app/main/ui/inspect/attributes/text.cljs
 msgid "workspace.assets.typography.sample"
-msgstr "שצ"
+msgstr "Ag"
 
 msgid "workspace.assets.typography.text-styles"
-msgstr "סגנונות טקסט"
+msgstr "Teksta stili"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.text-transform"
-msgstr "התמרת טקסט"
+msgstr "Teksta pārveide"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.ungroup"
-msgstr "פירוק קבוצה"
+msgstr "Atgrupēt"
 
 msgid "workspace.focus.focus-mode"
-msgstr "מצב מיקוד"
+msgstr "Fokusa režīms"
 
 msgid "workspace.focus.focus-off"
-msgstr "מיקוד כבוי"
+msgstr "Beigt fokusēties"
 
 msgid "workspace.focus.focus-on"
-msgstr "מיקוד פעיל"
+msgstr "Fokusēties"
 
 msgid "workspace.focus.selection"
-msgstr "בחירה"
+msgstr "Atlase"
 
-#: src/app/main/data/workspace/libraries.cljs,
-#: src/app/main/ui/components/color_bullet.cljs
+#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
 msgid "workspace.gradients.linear"
-msgstr "מדרג קווי"
+msgstr "Lineārais gradients"
 
-#: src/app/main/data/workspace/libraries.cljs,
-#: src/app/main/ui/components/color_bullet.cljs
+#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
 msgid "workspace.gradients.radial"
-msgstr "מדרג מעגלי"
+msgstr "Radiālais gradients"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-dynamic-alignment"
-msgstr "השבתת יישור דינמי"
+msgstr "Atspējot dinamisko līdzinājumu"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-scale-text"
-msgstr "השבתת שינוי גודל טקסט"
+msgstr "Deaktivizēt teksta mērogošanu"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-grid"
-msgstr "השבתת הצמדה לרשת"
+msgstr "Atspējot pieķeršanos režģim"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
-msgstr "השבתת הצמדה לקווים המנחים"
+msgstr "Atspējot piesaisti vadotnēm"
 
 msgid "workspace.header.menu.disable-snap-pixel-grid"
-msgstr "השבתת הצמדה לפיקסל"
+msgstr "Atspējot pieķeršanos pikselim"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
-msgstr "הפעלת יישור דינמי"
+msgstr "Iespējot dinamisko līdzinājumu"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-scale-text"
-msgstr "הפעלת שינוי גודל טקסט"
+msgstr "Aktivizēt teksta mērogošanu"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-grid"
-msgstr "הצמדה לרשת"
+msgstr "Pieķerties režģim"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
-msgstr "הצמדה לקווים מנחים"
+msgstr "Pieķerties vadotnēm"
 
 msgid "workspace.header.menu.enable-snap-pixel-grid"
-msgstr "הפעלת הצמדה לפיקסל"
+msgstr "Iespējot pieķeršanos pikselim"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
-msgstr "הסתרת שמות לוחות"
+msgstr "Paslēpt dēļu nosaukumus"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
-msgstr "הסתרת רשתות"
+msgstr "Paslēpt režģus"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
-msgstr "הסתרת ערכת צבעים"
+msgstr "Paslēpt krāsu paleti"
 
 msgid "workspace.header.menu.hide-pixel-grid"
-msgstr "הסתרת רשת פיקסלים"
+msgstr "Paslēpt pikseļu režģi"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-rules"
-msgstr "הסתרת סרגלים"
+msgstr "Paslēpt mērjoslas"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-textpalette"
-msgstr "הסתרת לוח גופנים"
+msgstr "Paslēpt fontu paleti"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.edit"
-msgstr "עריכה"
+msgstr "Rediģēt"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.file"
-msgstr "קובץ"
+msgstr "Fails"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.help-info"
-msgstr "עזרה ומידע"
+msgstr "Palīdzība un informācija"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.preferences"
-msgstr "העדפות"
+msgstr "Izvēles"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.view"
-msgstr "תצוגה"
+msgstr "Skatīt"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
-msgstr "לבחור הכול"
+msgstr "Izvēlēties visu"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
-msgstr "הצגת שמות לוחות"
+msgstr "Rādīt dēļu nosaukumus"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
-msgstr "הצגת רשת"
+msgstr "Rādīt režģi"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
-msgstr "הצגת ערכת צבעים"
+msgstr "Rādīt krāsu paleti"
 
 msgid "workspace.header.menu.show-pixel-grid"
-msgstr "הצגת רשת פיקסלים"
+msgstr "Rādīt pikseļu režģi"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-rules"
-msgstr "הצגת סרגלים"
+msgstr "Rādīt mērjoslas"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
-msgstr "הצגת לוח גופנים"
+msgstr "Rādīt fontu paleti"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
-msgstr "איפוס"
+msgstr "Atiestatīšana"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.save-error"
-msgstr "שגיאה בשמירה"
+msgstr "Saglabāšanas kļūda"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.saved"
-msgstr "נשמר"
+msgstr "Saglabāts"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.saving"
-msgstr "בשמירה"
+msgstr "Saglabāšana"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.unsaved"
-msgstr "שינויים שלא נשמרו"
+msgstr "Nesaglabātās izmaiņas"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.viewer"
-msgstr "מצב תצוגה (%s)"
+msgstr "Skata režīms (%s)"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-fill"
-msgstr "מילוי - שינוי גודל כדי למלא"
+msgstr "Aizpildījums — aizpildāmais mērogs"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-fit"
-msgstr "התאמה - שינוי גודל כדי להתאים"
+msgstr "Ietilpināt — samazināt, lai ietilpinātu"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-fit-all"
-msgstr "כיוון תקריב כדי להציג הכול"
+msgstr "Tālummaiņa, lai ietilpinātu visu"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-full-screen"
-msgstr "מסך מלא"
+msgstr "Pilnekrāns"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-selected"
-msgstr "התמקדות על הנבחר"
+msgstr "Tālummainīt uz atlasi"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
-msgstr "הוספה"
+msgstr "Pievienot"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.colors"
-msgstr "%s צבעים"
+msgstr "%s krāsas"
 
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs,
-#: src/app/main/ui/workspace/colorpalette.cljs
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.file-library"
-msgstr "ספריית קבצים"
+msgstr "Failu bibliotēka"
 
 #: src/app/main/ui/workspace/colorpicker.cljs
 msgid "workspace.libraries.colors.hsv"
 msgstr "HSV"
 
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs,
-#: src/app/main/ui/workspace/colorpalette.cljs
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.recent-colors"
-msgstr "צבעים אחרונים"
+msgstr "Nesen lietotās krāsas"
 
 #: src/app/main/ui/workspace/colorpicker.cljs
 msgid "workspace.libraries.colors.rgb-complementary"
-msgstr "RGB משלים"
+msgstr "Papildu RGB"
 
 #: src/app/main/ui/workspace/colorpicker.cljs
 msgid "workspace.libraries.colors.rgba"
@@ -3112,769 +3097,768 @@ msgstr "RGBA"
 
 #: src/app/main/ui/workspace/colorpicker.cljs
 msgid "workspace.libraries.colors.save-color"
-msgstr "שמירת סגנון צבע"
+msgstr "Saglabāt krāsu stilu"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.components"
-msgstr "%s רכיבים"
+msgstr "%s komponentes"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.file-library"
-msgstr "ספריית קבצים"
+msgstr "Failu bibliotēka"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.graphics"
-msgstr "%s גרפיקה"
+msgstr "%s grafikas"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.in-this-file"
-msgstr "ספריות בקובץ הזה"
+msgstr "BIBLIOTĒKAS ŠAJĀ FAILĀ"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.libraries"
-msgstr "ספריות"
+msgstr "BIBLIOTĒKAS"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.library"
-msgstr "ספרייה"
+msgstr "BIBLIOTĒKAS"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
-msgstr "אין ספריות משותפות שדורשות עדכון"
+msgstr "Nav nevienas koplietojamās bibliotēkas, kas būtu jāatjaunina"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-matches-for"
-msgstr "לא נמצאו תוצאות לחיפוש אחר „%s”"
+msgstr "“%s” nav atrasta neviena atbilstība"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "אין ספריות משותפות זמינות"
+msgstr "Nav pieejamu koplietojamu bibliotēku"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.search-shared-libraries"
-msgstr "חיפוש בספריות המשותפות"
+msgstr "Meklēt koplietojamās bibliotēkas"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.shared-libraries"
-msgstr "ספריות משותפות"
+msgstr "KOPLIETOJAMĀS BIBLIOTĒKAS"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography"
-msgstr "מגוון טיפוגרפיות"
+msgstr "Vairākas tipogrāfijas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography-tooltip"
-msgstr "ניתוק כל הטיפוגרפיות"
+msgstr "Atsaistīt visas tipogrāfijas"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.typography"
-msgstr "%s טיפוגרפיות"
+msgstr "%s tipogrāfijas"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.update"
-msgstr "עדכון"
+msgstr "Atjaunināt"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
-msgstr "עדכונים"
+msgstr "ATJAUNINĀJUMI"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
-msgstr "יש ללחוץ על הכפתור + כדי להוסיף אינטראקציות."
+msgstr "Noklikšķiniet uz + pogas, lai pievienotu mijiedarbību."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
-msgstr "טשטוש"
+msgstr "Aizmiglojums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title.group"
-msgstr "טשטוש קבוצה"
+msgstr "Grupas aizmiglojums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title.multiple"
-msgstr "טשטוש בחירה"
+msgstr "Atlases aizmiglojums"
 
 #: src/app/main/ui/workspace/sidebar/options/page.cljs
 msgid "workspace.options.canvas-background"
-msgstr "רקע משטח ציור"
+msgstr "Kanvas fons"
 
 msgid "workspace.options.clip-content"
-msgstr "חיתוך התוכן"
+msgstr "Izgriešanas saturs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"
-msgstr "רכיב"
+msgstr "Komponente"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
-msgstr "הגבלות"
+msgstr "Ierobežojumi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.bottom"
-msgstr "תחתית"
+msgstr "Apakša"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.center"
-msgstr "מרכז"
+msgstr "Centrs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.fix-when-scrolling"
-msgstr "תיקון בעת גלילה"
+msgstr "Nofiksēt ritināšanas laikā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.left"
-msgstr "שמאל"
+msgstr "Pa kreisi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.leftright"
-msgstr "שמאל וימין"
+msgstr "Pa kreisi un labi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.right"
-msgstr "ימין"
+msgstr "Pa labi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.scale"
-msgstr "שינוי גודל"
+msgstr "Mērogs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.top"
-msgstr "עליון"
+msgstr "Augša"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.topbottom"
-msgstr "עליון ותחתון"
+msgstr "Augša un apakša"
 
 #: src/app/main/ui/workspace/sidebar/options.cljs
 msgid "workspace.options.design"
-msgstr "עיצוב"
+msgstr "Dizains"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export"
-msgstr "ייצוא"
+msgstr "Eksports"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export-multiple"
-msgstr "ייצוא הבחירה"
+msgstr "Eksportēt atlasi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "%s elementa eksportēšana"
+msgstr[1] "%s elementa eksportēšana"
+msgstr[2] "%s elementu eksportēšana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
-msgstr "סיומת"
+msgstr "Sufiks"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-complete"
-msgstr "הייצוא הושלם"
+msgstr "Eksportēšana pabeigta"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object"
-msgstr "מתבצע ייצוא…"
+msgstr "Notiek eksportēšana…"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-error"
-msgstr "הייצוא נכשל"
+msgstr "Eksportēšana neizdevās"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-slow"
-msgstr "הייצוא אטי בהגזמה"
+msgstr "Eksportēšana ir negaidīti lēna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.fill"
-msgstr "מילוי"
+msgstr "Aizpildīšana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.add-flow-start"
-msgstr "הוספת תחילת זרימה"
+msgstr "Pievienot plūsmas sākumu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow-start"
-msgstr "התחלת זרימה"
+msgstr "Plūsmas sākums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow-starts"
-msgstr "הזרימה מתחילה"
+msgstr "Plūsma sākās"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.auto"
-msgstr "אוטומטי"
+msgstr "Auto"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.column"
-msgstr "עמודות"
+msgstr "Kolonnas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.grid-title"
-msgstr "טבלה"
+msgstr "Režģis"
 
 msgid "workspace.options.grid.params.color"
-msgstr "צבע"
+msgstr "Krāsa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.columns"
-msgstr "עמודות"
+msgstr "Kolonnas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.gutter"
-msgstr "מרזב"
+msgstr "Rene"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.height"
-msgstr "גובה"
+msgstr "Augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.margin"
-msgstr "שול"
+msgstr "Mala"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.rows"
-msgstr "שורות"
+msgstr "Rindas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.set-default"
-msgstr "הגדרה כבררת מחדל"
+msgstr "Iestatīt kā noklusējumu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.size"
-msgstr "גודל"
+msgstr "Izmērs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.type"
-msgstr "סוג"
+msgstr "Tips"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.type.bottom"
-msgstr "תחתון"
+msgstr "Apakša"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.type.center"
-msgstr "מרכז"
+msgstr "Centrs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.type.left"
-msgstr "שמאל"
+msgstr "Pa kreiss"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.type.right"
-msgstr "ימין"
+msgstr "Pa labi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.type.stretch"
-msgstr "מתיחה"
+msgstr "Izstiept"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.type.top"
-msgstr "עליון"
+msgstr "Augša"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.use-default"
-msgstr "להשתמש בבררת המחדל"
+msgstr "Lietot noklusējumu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.width"
-msgstr "רוחב"
+msgstr "Platums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.row"
-msgstr "שורות"
+msgstr "Rindas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.square"
-msgstr "ריבוע"
+msgstr "Kvadrāts"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.group-fill"
-msgstr "מילוי קבוצה"
+msgstr "Grupas aizpildījums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.group-stroke"
-msgstr "מתאר קבוצה"
+msgstr "Grupas kontūra"
 
 msgid "workspace.options.height"
-msgstr "גובה"
+msgstr "Augstums"
 
 msgid "workspace.options.inspect"
-msgstr "חקירה"
+msgstr "Apskatīt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-action"
-msgstr "פעולה"
+msgstr "Darbība"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-after-delay"
-msgstr "לאחר השהיה"
+msgstr "Pēc kavēšanās"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation"
-msgstr "הנפשה"
+msgstr "Animācija"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-dissolve"
-msgstr "התמוססות"
+msgstr "Izšķīst"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-none"
-msgstr "ללא"
+msgstr "Nav"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-push"
-msgstr "דחיפה"
+msgstr "Grūdiens"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-slide"
-msgstr "גלישה"
+msgstr "Bīdīšana"
 
 msgid "workspace.options.interaction-auto"
-msgstr "אוטו"
+msgstr "auto"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
-msgstr "הוספת שכבת רקע"
+msgstr "Pievienot fona pārklājumu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-close-outside"
-msgstr "תיסגר בלחיצה מחוצה לה"
+msgstr "Aizvērt, noklikšķinot ārpus"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-close-overlay"
-msgstr "סגירת שכבת על"
+msgstr "Aizvērt pārklājumu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-close-overlay-dest"
-msgstr "סגירת שכבת על: %s"
+msgstr "Aizvērt pārklājumu: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-delay"
-msgstr "השהיה"
+msgstr "Nobīde"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-destination"
-msgstr "יעד"
+msgstr "Galamērķis"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-duration"
-msgstr "משך"
+msgstr "Ilgums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing"
-msgstr "החלקה"
+msgstr "Mīkstināšana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease"
-msgstr "קלה"
+msgstr "Mīkstināt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease-in"
-msgstr "החלקה פנימה"
+msgstr "Viegli iekšā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease-in-out"
-msgstr "החלקה פנימה החוצה"
+msgstr "Viegli iekšā ārā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease-out"
-msgstr "החלקה החוצה"
+msgstr "Viegli ārā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-linear"
-msgstr "קווי"
+msgstr "Lineāri"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-in"
-msgstr "פנימה"
+msgstr "Iekšā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-mouse-enter"
-msgstr "כניסת עכבר"
+msgstr "Peles ievade"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-mouse-leave"
-msgstr "יציאת עכבר"
+msgstr "Peles pamešana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-ms"
-msgstr "מילישניות"
+msgstr "ms"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-navigate-to"
-msgstr "ניווט אל"
+msgstr "Doties uz"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-navigate-to-dest"
-msgstr "ניווט אל: %s"
+msgstr "Doties uz: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-none"
-msgstr "(לא הוגדר)"
+msgstr "(nav noteikts)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-offset-effect"
-msgstr "אפקט הזחה"
+msgstr "Nobīdes efekts"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-on-click"
-msgstr "בלחיצה"
+msgstr "Uz klikšķa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-overlay"
-msgstr "פתיחת שכבת על"
+msgstr "Atvērt pārklājumu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-overlay-dest"
-msgstr "פתיחת שכבת על: %s"
+msgstr "Atvērt pārklājumu: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-url"
-msgstr "פתיחת כתובת"
+msgstr "Atvērt URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-out"
-msgstr "החוצה"
+msgstr "Ārā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-bottom-center"
-msgstr "בתחתית במרכז"
+msgstr "Apakšējais centrs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-bottom-left"
-msgstr "בתחתית משמאל"
+msgstr "Apakšā pa kreisi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-bottom-right"
-msgstr "בתחתית מימין"
+msgstr "Apakšā pa labi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-center"
-msgstr "מרכז"
+msgstr "Centrs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-manual"
-msgstr "ידני"
+msgstr "Manuāli"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-top-center"
-msgstr "בראש באמצע"
+msgstr "Augšējais centrs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-top-left"
-msgstr "בראש משמאל"
+msgstr "Augšā pa kreisi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-top-right"
-msgstr "בראש מימין"
+msgstr "Augšā pa labi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-position"
-msgstr "מיקום"
+msgstr "Novietojums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-preserve-scroll"
-msgstr "שימור מיקום גלילה"
+msgstr "Paturēt ritināšanas pozīciju"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-prev-screen"
-msgstr "המסך הקודם"
+msgstr "Iepriekšējais ekrāns"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-relative-to"
-msgstr "יחסי אל"
+msgstr "Attiecībā pret"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-self"
-msgstr "עצמי"
+msgstr "sevi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-toggle-overlay"
-msgstr "החלפת מצב שכבת על"
+msgstr "Pārslēgt pārklājumu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-toggle-overlay-dest"
-msgstr "החלפת מצב שכבת על: %s"
+msgstr "Pārslēgt pārklājumu: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-trigger"
-msgstr "הקפצה"
+msgstr "Izraisītājs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-url"
-msgstr "כתובת"
+msgstr "URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-while-hovering"
-msgstr "בזמן ריחוף"
+msgstr "Karāšanās laikā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-while-pressing"
-msgstr "בזמן לחיצה"
+msgstr "Nospiešanas laikā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interactions"
-msgstr "אינטראקציות"
+msgstr "Mijiedarbības"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.color"
-msgstr "צבע"
+msgstr "Krāsa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.color-burn"
-msgstr "צריבת צבע"
+msgstr "Krāsas izbalēšana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.color-dodge"
-msgstr "בריחת צבע"
+msgstr "Krāsas izcēlums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.darken"
-msgstr "החשכה"
+msgstr "Aptumšot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.difference"
-msgstr "הבדל"
+msgstr "Starpība"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.exclusion"
-msgstr "הדרה"
+msgstr "Izslēgšana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.hard-light"
-msgstr "אור קשיח"
+msgstr "Konturgaisma"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.hue"
-msgstr "גוון"
+msgstr "Nokrāsa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.lighten"
-msgstr "הבהרה"
+msgstr "Izgaismot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.luminosity"
-msgstr "תאורה"
+msgstr "Spožums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.multiply"
-msgstr "הכפלה"
+msgstr "Vairot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.normal"
-msgstr "רגיל"
+msgstr "Normāls"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.overlay"
-msgstr "שכבת על"
+msgstr "Pārklājums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.saturation"
-msgstr "רוויה"
+msgstr "Piesātinājums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.screen"
-msgstr "מסך"
+msgstr "Ekrāns"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.soft-light"
-msgstr "אור רך"
+msgstr "Izkliedgaisma"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.title"
-msgstr "שכבה"
+msgstr "Slānis"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.title.group"
-msgstr "קיבוץ שכבות"
+msgstr "Grupēt slāņus"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.title.multiple"
-msgstr "שכבות נבחרות"
+msgstr "Atlasītie slāņi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.advanced-ops"
-msgstr "אפשרויות מתקדמות"
+msgstr "Papildu opcijas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.layout-item-max-h"
-msgstr "גובה מר.‏"
+msgstr "Maks.augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.layout-item-max-w"
-msgstr "רוחב מר.‏"
+msgstr "Maks.platums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.layout-item-min-h"
-msgstr "גובה מז.‏"
+msgstr "Min.augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.layout-item-min-w"
-msgstr "רוחב מז.‏"
+msgstr "Min.platums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-item-max-h"
-msgstr "גובה מרבי"
+msgstr "Maksimālais augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-item-max-w"
-msgstr "רוחב מרבי"
+msgstr "Maksimālais platums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-item-min-h"
-msgstr "גובה מזערי"
+msgstr "Minimālais augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-item-min-w"
-msgstr "רוחב מזערי"
+msgstr "Minimālais platums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
-msgstr "תחתית"
+msgstr "Apakša"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.column"
-msgstr "עמודה"
+msgstr "Kolona"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.column-reverse"
-msgstr "היפוך עמודה"
+msgid "workspace.options.layout.direction.reverse-column"
+msgstr "Apvērst kolonu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.reverse-row"
+msgstr "Apvērst rindu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
-msgstr "שורה"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row-reverse"
-msgstr "היפוך שורה"
+msgstr "Rinda"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
-msgstr "מרווח"
+msgstr "Atstarpe"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.left"
-msgstr "שמאל"
+msgstr "Pa kreisi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout.margin"
-msgstr "שול"
+msgstr "Mala"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout.margin-all"
-msgstr "כל הצדדים"
+msgstr "Visas malas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout.margin-simple"
-msgstr "שול פשוט"
+msgstr "Vienkāršā mala"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.packed"
-msgstr "אסוף"
+msgstr "kompakts"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.padding"
-msgstr "ריפוד"
+msgstr "Papildināšana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.padding-all"
-msgstr "כל הצדדים"
+msgstr "Visas malas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.padding-simple"
-msgstr "ריפוד פשוט"
+msgstr "Vienkāršā papildināšana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.right"
-msgstr "ימין"
+msgstr "Pa labi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.space-around"
-msgstr "רווח מסביב"
+msgstr "telpa apkārt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.space-between"
-msgstr "רווח בין לבין"
+msgstr "telpa starp"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.top"
-msgstr "עליון"
+msgstr "Augša"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
-msgstr "צבעים נוספים"
+msgstr "Vairāk krāsu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-lib-colors"
-msgstr "צבעי ספרייה נוספים"
+msgstr "Vairāk bibliotēkas krāsu"
 
 msgid "workspace.options.opacity"
-msgstr "אטימות"
+msgstr "Caurspīdīgums"
 
-#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.position"
-msgstr "מיקום"
+msgstr "Novietojums"
 
 #: src/app/main/ui/workspace/sidebar/options.cljs
 msgid "workspace.options.prototype"
-msgstr "אבטיפוס"
+msgstr "Prototips"
 
 msgid "workspace.options.radius"
-msgstr "רדיוס"
+msgstr "Rādiuss"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.all-corners"
-msgstr "כל הפינות"
+msgstr "Visi stūri"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.single-corners"
-msgstr "פינות עצמאיות"
+msgstr "Atsevišķie stūri"
 
 msgid "workspace.options.recent-fonts"
-msgstr "אחרונים"
+msgstr "Pēdējie"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.retry"
-msgstr "לנסות שוב"
+msgstr "Atkārtot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.rotation"
-msgstr "סיבוב"
+msgstr "Pagriešana"
 
 msgid "workspace.options.search-font"
-msgstr "חיפוש גופן"
+msgstr "Meklēt fontu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-a-shape"
-msgstr "נא לבחור צורה, לוח או קבוצה כדי לגרור חיבור ללוח אחר."
+msgstr "Atlasiet formu, dēli vai grupu, lai vilktu savienojumu uz citu dēli."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.selection-color"
-msgstr "צבעים נבחרים"
+msgstr "Atlasītās krāsas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.selection-fill"
-msgstr "מילוי בחירה"
+msgstr "Atlases aizpildījums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.selection-stroke"
-msgstr "מתאר בחירה"
+msgstr "Atlases vilkums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.blur"
-msgstr "טשטוש"
+msgstr "Aizmiglojums"
 
 msgid "workspace.options.shadow-options.color"
-msgstr "צבע הצללה"
+msgstr "Ēnas krāsa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.drop-shadow"
-msgstr "הטלת צל"
+msgstr "Ēnot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.inner-shadow"
-msgstr "צל פנימי"
+msgstr "Iekšējā ēna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.offsetx"
@@ -3886,685 +3870,669 @@ msgstr "Y"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.spread"
-msgstr "פיזור"
+msgstr "Izkliede"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.title"
-msgstr "צל"
+msgstr "Ēna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.title.group"
-msgstr "צל של קבוצה"
+msgstr "Grupas ēna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.title.multiple"
-msgstr "צללים של בחירה"
+msgstr "Atlases ēnas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.show-fill-on-export"
-msgstr "הצגה בייצואים"
+msgstr "Rādīt eksportā"
 
 msgid "workspace.options.show-in-viewer"
-msgstr "להציג במצב הצגה"
+msgstr "Rādīt skata režīmā"
 
-#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.size"
-msgstr "גודל"
+msgstr "Izmērs"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs
 msgid "workspace.options.size-presets"
-msgstr "תבניות גודל"
+msgstr "Izmēra standarti"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke"
-msgstr "מתאר"
+msgstr "Vilkums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.circle-marker"
-msgstr "סמן עגול"
+msgstr "Apļa marķieris"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.diamond-marker"
-msgstr "סמן יהלום"
+msgstr "Rombveida marķieris"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.line-arrow"
-msgstr "חץ קו"
+msgstr "Līnijas bulta"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.none"
-msgstr "ללא"
+msgstr "Nav"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.round"
-msgstr "עגול"
+msgstr "Apaļš"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.square"
-msgstr "ריבוע"
+msgstr "Kvadrāts"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.square-marker"
-msgstr "סמן ריבוע"
+msgstr "Kvadrāta marķieris"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow"
-msgstr "חץ משולש"
+msgstr "Trīsstūra bulta"
 
 msgid "workspace.options.stroke-color"
-msgstr "צבע מתאר"
+msgstr "Vilkuma krāsa"
 
 msgid "workspace.options.stroke-width"
-msgstr "עובי מתאר"
+msgstr "Vilkuma biezums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.center"
-msgstr "מרכז"
+msgstr "CEntrs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.dashed"
-msgstr "מקווקוו"
+msgstr "Pārtraukts"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.dotted"
-msgstr "מנוקד"
+msgstr "Punktots"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.inner"
-msgstr "בפנים"
+msgstr "Iekšā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.mixed"
-msgstr "מעורב"
+msgstr "Jaukts"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.outer"
-msgstr "בחוץ"
+msgstr "Ārā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.solid"
-msgstr "אחיד"
+msgstr "Blīvs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-bottom"
-msgstr "יישור לתחתית"
+msgstr "Līdzināt lejā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-center"
-msgstr "יישור למרכז"
+msgstr "Līdzināt uz centru"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "יישור לשני הצדדים (%s)"
+msgstr "Izlīdzināt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "יישור שמאלה (%s)"
+msgstr "Līdzināt pa kreisi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "יישור לאמצע (%s)"
+msgstr "Līdzināt pa vidu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "יישור ימינה (%s)"
+msgstr "Līdzināt pa labi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
-msgstr "יישור לראש"
+msgstr "Līdzināt augšā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.direction-ltr"
-msgstr "משמאל לימין"
+msgstr "No kreisās uz labo pusi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.direction-rtl"
-msgstr "מימין לשמאל"
+msgstr "No labās uz kreiso pusi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.grow-auto-height"
-msgstr "גובה אוטומטי"
+msgstr "Automātiskais augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.grow-auto-width"
-msgstr "רוחב אוטומטי"
+msgstr "Automātiskais platums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.grow-fixed"
-msgstr "קבוע"
+msgstr "Fiksēts"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.letter-spacing"
-msgstr "ריווח תווים"
+msgstr "Burtu atstarpes"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.line-height"
-msgstr "גובה שורה"
+msgstr "Rindas augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.lowercase"
-msgstr "אותיות קטנות"
+msgstr "Mazie burti"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.none"
-msgstr "ללא"
+msgstr "Nav"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "קו חוצה (%s)"
+msgstr "Pārsvītrots"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
-msgstr "טקסט"
+msgstr "Teksts"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title-group"
-msgstr "קיבוץ טקסט"
+msgstr "Grupas teksts"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title-selection"
-msgstr "טקסט בחירה"
+msgstr "Atlases teksts"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.titlecase"
-msgstr "רישיות כותרת"
+msgstr "Virsraksta stils"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "קו תחתי (%s)"
+msgstr "Pasvītrojums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"
-msgstr "אותיות גדולות"
+msgstr "Lielie burti"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
-msgstr "ניתן להשתמש בכפתור הנגינה שבכותרת כדי להריץ את תצוגת האבטיפוס."
+msgstr "Lai palaistu prototipa skatu, izmantojiet atskaņošanas pogu pie galvenes."
 
 msgid "workspace.options.width"
-msgstr "עובי"
+msgstr "Platums"
 
 msgid "workspace.options.x"
-msgstr "ציר X"
+msgstr "X ass"
 
 msgid "workspace.options.y"
-msgstr "ציר Y"
+msgstr "Y ass"
 
 msgid "workspace.path.actions.add-node"
-msgstr "הוספת מפרק (%s)"
+msgstr "Pievienot mezglu (%s)"
 
 msgid "workspace.path.actions.delete-node"
-msgstr "מחיקת מפרק (%s)"
+msgstr "Dzēst mezglu (%s)"
 
 msgid "workspace.path.actions.draw-nodes"
-msgstr "ציור מפרקים (%s)"
+msgstr "Zīmēt mezglus (%s)"
 
 msgid "workspace.path.actions.join-nodes"
-msgstr "צירוף מפרקים (%s)"
+msgstr "Savienot mezglus (%s)"
 
 msgid "workspace.path.actions.make-corner"
-msgstr "לפינה (%s)"
+msgstr "Uz stūri (%s)"
 
 msgid "workspace.path.actions.make-curve"
-msgstr "לעיקול (%s)"
+msgstr "Uz līkni (%s)"
 
 msgid "workspace.path.actions.merge-nodes"
-msgstr "מיזוג מפרקים (%s)"
+msgstr "Mezglu sapludināšana (%s)"
 
 msgid "workspace.path.actions.move-nodes"
-msgstr "העברת מפרקים (%s)"
+msgstr "Pārvietot mezglus (%s)"
 
 msgid "workspace.path.actions.separate-nodes"
-msgstr "הפרדת מפרקים (%s)"
+msgstr "Atdalīt mezglus (%s)"
 
 msgid "workspace.path.actions.snap-nodes"
-msgstr "הצמדת מפרקים (%s)"
+msgstr "Pieķert mezglus (%s)"
 
 #: src/app/main/ui/workspace.cljs
 msgid "workspace.remove-graphics.error-hint"
 msgstr ""
-"כדי לנסות שוב, אפשר לרענן את הקובץ הזה. אם הבעיה נמשכת, אנו ממליצים לך "
-"להביט ברשימה ולשקול למחוק גרפיקה פגומה."
+"Lai to mēģinātu vēlreiz, varat atkārtoti ielādēt šo failu. Ja problēma "
+"joprojām pastāv, ieteicams apskatīt sarakstu un dzēst bojātās grafikas."
 
 #: src/app/main/ui/workspace.cljs
 msgid "workspace.remove-graphics.error-msg"
-msgstr "לא ניתן לעדכן חלק מהגרפיקה."
+msgstr "Dažas grafikas nevar atjaunināt."
 
 #: src/app/main/ui/workspace.cljs
 msgid "workspace.remove-graphics.progress"
-msgstr "מתבצעת המרה %s/%s"
+msgstr "%s/%s pārvēršana"
 
 #: src/app/main/ui/workspace.cljs
 msgid "workspace.remove-graphics.text1"
-msgstr "גרפיקות ספרייה הן רכיבים מעתה ואילך, מה שהופך אותן להרבה יותר עוצמתיות."
+msgstr ""
+"Bibliotēkas grafikas turpmāk sauksies Komponentes, kas padarīs tās daudz "
+"jaudīgākas."
 
 #: src/app/main/ui/workspace.cljs
 msgid "workspace.remove-graphics.text2"
-msgstr "העדכון הזה הוא חד־פעמי."
+msgstr "Šis atjauninājums ir vienreizēja darbība."
 
 #: src/app/main/ui/workspace.cljs
 msgid "workspace.remove-graphics.title"
-msgstr "%s מתעדכן…"
+msgstr "Notiek %s atjaunināšana..."
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
-msgstr "הוספת flex פריסה"
+msgstr "Pievienot izkārtojuma saliekšanu"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
-msgstr "הרחקה"
+msgstr "Sūtīt atpakaļ"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.backward"
-msgstr "הרחקה לאחור"
+msgstr "Sūtīt uz aizmuguri"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.copy"
-msgstr "העתקה"
+msgstr "Kopēt"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-artboard-from-selection"
-msgstr "בחירה ללוח"
+msgstr "Atlase uz dēli"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-component"
-msgstr "יצירת רכיב"
+msgstr "Izveidot komponenti"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.cut"
-msgstr "גזירה"
+msgstr "Izgriezt"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.delete"
-msgstr "מחיקה"
+msgstr "Dzēst"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.delete-flow-start"
-msgstr "מחיקת התחלת זרימה"
+msgstr "Dzēst plūsmas sākumu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.detach-instance"
-msgstr "ניתוק מופע"
+msgstr "Atvienot instanci"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.detach-instances-in-bulk"
-msgstr "הפרדת מופעים"
+msgstr "Atvienot instances"
 
 msgid "workspace.shape.menu.difference"
-msgstr "הבדל"
+msgstr "Starpība"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.duplicate"
-msgstr "שכפול"
+msgstr "Dublēšana"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.edit"
-msgstr "עריכה"
+msgstr "Rediģēt"
 
 msgid "workspace.shape.menu.exclude"
-msgstr "החרגה"
+msgstr "Izslēgt"
 
 msgid "workspace.shape.menu.flatten"
-msgstr "שיטוח"
+msgstr "Izklāt"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flip-horizontal"
-msgstr "היפוך אופקי"
+msgstr "Apvērst horizontāli"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flip-vertical"
-msgstr "היפוך אנכי"
+msgstr "Apvērst vertikāli"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flow-start"
-msgstr "התחלת זרימה"
+msgstr "Plūsmas sākums"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.forward"
-msgstr "קידום"
+msgstr "Virzīt uz priekšu"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.front"
-msgstr "קידום לחזית"
+msgstr "Virzīt priekšā"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.go-main"
-msgstr "מעבר לקובץ הרכיב הראשי"
+msgstr "Doties uz galveno komponentu failu"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.group"
-msgstr "קבוצה"
+msgstr "Grupa"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.hide"
-msgstr "הסתרה"
+msgstr "Slēpt"
 
 msgid "workspace.shape.menu.hide-ui"
-msgstr "הצגת/הסתרת מנשק משתמש"
+msgstr "Rādīt/paslēpt UI"
 
 msgid "workspace.shape.menu.intersection"
-msgstr "הצלבה"
+msgstr "Šķēlums"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.lock"
-msgstr "נעילה"
+msgstr "Bloķēt"
 
-#: src/app/main/ui/workspace/context_menu.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.mask"
-msgstr "מסכה"
+msgstr "Maska"
 
-#: src/app/main/ui/workspace/context_menu.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.paste"
-msgstr "הדבקה"
+msgstr "Ievietot"
 
 msgid "workspace.shape.menu.path"
-msgstr "נתיב"
+msgstr "Ceļš"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-flex"
-msgstr "הסרת flex פריסה"
+msgstr "Noņemt izkārtojuma saliekšanu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
-msgstr "איפוס מעקפים"
+msgstr "Atiestatīt aizvietojumus"
 
 msgid "workspace.shape.menu.restore-main"
-msgstr "שחזור הרכיב הראשי"
+msgstr "Atjaunot galveno komponenti"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.select-layer"
-msgstr "בחירת שכבה"
+msgstr "Izvēlēties slāni"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show"
-msgstr "הצגה"
+msgstr "Pāradīt"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-in-assets"
-msgstr "הצגה בלוח משאבים"
+msgstr "Rādīt līdzekļu panelī"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
-msgstr "הצגת הרכיב הראשי"
+msgstr "Rādīt galveno komponenti"
 
 msgid "workspace.shape.menu.thumbnail-remove"
-msgstr "הסרת התמונה הממוזערת"
+msgstr "Noņemt sīktēlu"
 
 msgid "workspace.shape.menu.thumbnail-set"
-msgstr "הגדרה כתמונה ממוזערת"
+msgstr "Iestatīt kā sīktēlu"
 
 msgid "workspace.shape.menu.transform-to-path"
-msgstr "המרה לנתיב"
+msgstr "Transformēt par ceļu"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.ungroup"
-msgstr "פירוק קבוצה"
+msgstr "Atgrupēt"
 
 msgid "workspace.shape.menu.union"
-msgstr "איחוד"
+msgstr "Apvienot"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.unlock"
-msgstr "שחרור נעילה"
+msgstr "Atbloķēt"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.unmask"
-msgstr "ביטול מסכה"
+msgstr "Noņemt masku"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-components-in-bulk"
-msgstr "עדכון הרכיבים הראשיים"
+msgstr "Galveno komponenšu atjaunināšana"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
-msgstr "עדכון הרכיב הראשי"
+msgstr "Galvenas komponentes atjaunināšana"
 
 msgid "workspace.sidebar.collapse"
-msgstr "צמצום סרגל צד"
+msgstr "Sakļaut sānjoslu"
 
 msgid "workspace.sidebar.expand"
-msgstr "הרחבת סרגל צד"
+msgstr "Izvērst sānjoslu"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
-msgstr "היסטוריה (%s)"
+msgstr "Vēsture (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.layers"
-msgstr "שכבות"
+msgstr "Slāņi"
 
 msgid "workspace.sidebar.layers.components"
-msgstr "רכיבים"
+msgstr "Komponentes"
 
 msgid "workspace.sidebar.layers.frames"
-msgstr "לוחות"
+msgstr "Dēļi"
 
 msgid "workspace.sidebar.layers.groups"
-msgstr "קבוצות"
+msgstr "Grupas"
 
 msgid "workspace.sidebar.layers.images"
-msgstr "תמונות"
+msgstr "Attēli"
 
 msgid "workspace.sidebar.layers.masks"
-msgstr "מסכות"
+msgstr "Maskas"
 
 msgid "workspace.sidebar.layers.search"
-msgstr "חיפוש בשכבות"
+msgstr "Meklēt slāņus"
 
 msgid "workspace.sidebar.layers.shapes"
-msgstr "צורות"
+msgstr "Formas"
 
 msgid "workspace.sidebar.layers.texts"
-msgstr "טקסטים"
+msgstr "Teksti"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs,
-#: src/app/main/ui/inspect/attributes/svg.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/inspect/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
-msgstr "מאפייני SVG יובאו"
+msgstr "Importētie SVG atribūti"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "workspace.sidebar.sitemap"
-msgstr "עמודים"
+msgstr "Lapas"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.sitemap"
-msgstr "מפת אתר"
+msgstr "Tīmekļa vietnes karte"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.assets"
-msgstr "משאבים"
+msgstr "Līdzekļi"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.color-palette"
-msgstr "ערכת צבעים (%s)"
+msgstr "Krāsu palete (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.comments"
-msgstr "הערות (%s)"
+msgstr "Komentāri (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.curve"
-msgstr "עיקול (%s)"
+msgstr "Līkne (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.ellipse"
-msgstr "אליפסה (%s)"
+msgstr "Elipse (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.frame"
-msgstr "לוח (%s)"
+msgstr "Dēlis (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.image"
-msgstr "תמונה (%s)"
+msgstr "Attēls (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.move"
-msgstr "העברה (%s)"
+msgstr "Pārvietot (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.path"
-msgstr "נתיב (%s)"
+msgstr "Ceļš (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.rect"
-msgstr "ריבוע (%s)"
+msgstr "Taisnstūris (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.shortcuts"
-msgstr "קיצורי דרך (%s)"
+msgstr "Saīsnes (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
-msgstr "טקסט (%s)"
+msgstr "Teksts (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text-palette"
-msgstr "טיפוגרפיות (%s)"
+msgstr "Tipogrāfijas (%s)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"
-msgstr "אין שינויים היסטוריים עד כה"
+msgstr "Līdz šim nav notikušas nekādas vēsturiskās izmaiņas"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.delete"
-msgstr "%s נמחק"
+msgstr "Dzēsts %s"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.modify"
-msgstr "%s נערך"
+msgstr "Modificēts %s"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.move"
-msgstr "פריטים שהועברו"
+msgstr "Pārvietoti objekti"
 
 msgid "workspace.undo.entry.multiple.circle"
-msgstr "עיגולים"
+msgstr "apļi"
 
 msgid "workspace.undo.entry.multiple.color"
-msgstr "משאבי צבע"
+msgstr "krāsu līdzekļi"
 
 msgid "workspace.undo.entry.multiple.component"
-msgstr "רכיבים"
+msgstr "komponentes"
 
 msgid "workspace.undo.entry.multiple.curve"
-msgstr "עיקולים"
+msgstr "līknes"
 
 msgid "workspace.undo.entry.multiple.frame"
-msgstr "לוח"
+msgstr "dēļi"
 
 msgid "workspace.undo.entry.multiple.group"
-msgstr "קבוצות"
+msgstr "grupas"
 
 msgid "workspace.undo.entry.multiple.media"
-msgstr "משאבים גרפיים"
+msgstr "grafiskie līdzekļi"
 
 msgid "workspace.undo.entry.multiple.multiple"
-msgstr "פריטים"
+msgstr "objekti"
 
 msgid "workspace.undo.entry.multiple.page"
-msgstr "עמודים"
+msgstr "lapas"
 
 msgid "workspace.undo.entry.multiple.path"
-msgstr "נתיבים"
+msgstr "ceļi"
 
 msgid "workspace.undo.entry.multiple.rect"
-msgstr "ריבועים"
+msgstr "taisnstūri"
 
 msgid "workspace.undo.entry.multiple.shape"
-msgstr "צורות"
+msgstr "formas"
 
 msgid "workspace.undo.entry.multiple.text"
-msgstr "טקסטים"
+msgstr "teksti"
 
 msgid "workspace.undo.entry.multiple.typography"
-msgstr "משאבים טיפוגרפיים"
+msgstr "tipogrāfijas līdzekļi"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.new"
-msgstr "%s חדש"
+msgstr "Jauns %s"
 
 msgid "workspace.undo.entry.single.circle"
-msgstr "עיגול"
+msgstr "aplis"
 
 msgid "workspace.undo.entry.single.color"
-msgstr "משאב צבע"
+msgstr "krāsas līdzeklis"
 
 msgid "workspace.undo.entry.single.component"
-msgstr "רכיב"
+msgstr "komponente"
 
 msgid "workspace.undo.entry.single.curve"
-msgstr "עיקול"
+msgstr "līkne"
 
 msgid "workspace.undo.entry.single.frame"
-msgstr "לוח"
+msgstr "dēlis"
 
 msgid "workspace.undo.entry.single.group"
-msgstr "קבוצה"
+msgstr "grupa"
 
 msgid "workspace.undo.entry.single.image"
-msgstr "תמונה"
+msgstr "attēls"
 
 msgid "workspace.undo.entry.single.media"
-msgstr "משאב גרפי"
+msgstr "grafiskais līdzeklis"
 
 msgid "workspace.undo.entry.single.multiple"
-msgstr "פריט"
+msgstr "objekts"
 
 msgid "workspace.undo.entry.single.page"
-msgstr "עמוד"
+msgstr "lapa"
 
 msgid "workspace.undo.entry.single.path"
-msgstr "נתיב"
+msgstr "ceļš"
 
 msgid "workspace.undo.entry.single.rect"
-msgstr "ריבוע"
+msgstr "taisnstūris"
 
 msgid "workspace.undo.entry.single.shape"
-msgstr "צורה"
+msgstr "forma"
 
 msgid "workspace.undo.entry.single.text"
-msgstr "טקסט"
+msgstr "teksts"
 
 msgid "workspace.undo.entry.single.typography"
-msgstr "משאב טיפוגרפי"
+msgstr "tipogrāfijas līdzeklis"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.unknown"
-msgstr "פעולה על %s"
+msgstr "Darbība ar %s"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.title"
-msgstr "היסטוריה"
+msgstr "Vēsture"
 
 #: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.dismiss"
-msgstr "התעלמות"
+msgstr "Izlaist"
 
 #: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.there-are-updates"
-msgstr "יש עדכונים בספריות המשותפות"
+msgstr "Koplietojamās bibliotēkās ir atjauninājumi"
 
 #: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.update"
-msgstr "עדכון"
+msgstr "Atjaunināt"
 
 msgid "workspace.viewport.click-to-close-path"
-msgstr "לחיצה תסגור את הנתיב"
+msgstr "Noklikšķiniet, lai aizvērtu ceļu"

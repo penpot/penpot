@@ -1,4 +1,8 @@
-[{:id "tutorial-for-beginners"
+[{:id "material-design-3"
+  :name "Material Design 3"
+  :thumbnail-uri "https://penpot.app/images/libraries/cover-md3.jpg"
+  :file-uri "https://github.com/penpot/penpot-files/raw/main/Material%20Design%203.penpot"}
+ {:id "tutorial-for-beginners"
   :name "Tutorial for beginners"
   :thumbnail-uri "https://penpot.app/images/libraries/tutorial-for-beginners.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/tutorial-for-beginners.penpot"}
@@ -29,8 +33,4 @@
  {:id "whiteboarding-kit"
   :name "Whiteboarding Kit"
   :thumbnail-uri "https://penpot.app/images/libraries/cover-whiteboards.jpg"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Whiteboarding-mapping-kit.penpot"}
- {:id "material-design-3"
-  :name "Material Design 3"
-  :thumbnail-uri "https://penpot.app/images/libraries/cover-md3.jpg"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Material%20Design%203.penpot"}]
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Whiteboarding-mapping-kit.penpot"}]

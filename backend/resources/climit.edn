@@ -1,4 +1,3 @@
-;; Example climit.edn file
 ;; Required: concurrency
 ;; Optional: queue-size, ommited means Integer/MAX_VALUE
 {:update-file   {:concurrency 1 :queue-size 3}
