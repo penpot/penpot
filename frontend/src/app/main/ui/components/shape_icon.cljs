@@ -26,7 +26,8 @@
                (and (ctl/flex-layout? shape) (ctl/row? shape))
                i/layout-rows
 
-               ;; TODO: GRID ICON
+               (ctl/grid-layout? shape)
+               i/grid-layout-mode
 
                :else
                i/artboard)

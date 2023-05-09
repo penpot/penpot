@@ -301,7 +301,6 @@
         (mf/use-callback
          (mf/deps shape track-before track-after)
          (fn []
-           (prn "???" type (:name shape) index track-before track-after zoom snap-pixel?)
            (reset! start-size-before (:size track-before))
            (reset! start-size-after (:size track-after))
            (let [tracks-prop

@@ -52,7 +52,6 @@
     (update [_ state]
       (let [objects (wsh/lookup-page-objects state)
             srect (get-in objects [grid-id :selrect])]
-        (prn srect)
         (-> state
             (update :workspace-local
                     (fn [{:keys [zoom vport] :as local}]
