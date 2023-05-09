@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.18.3 (Unreleased)
+## 1.18.3
 
 ### :bug: Bugs fixed
 
