@@ -255,6 +255,7 @@
                                     (dom/classnames :separator true))}]
                      [:& context-menu-a11y-item
                       {:id id
+                       :key id
                        :class (if (and new-css-system workspace?)
                                 (dom/classnames (css :is-selected) (and selected (= option-name selected))
                                                 (css :context-menu-item) true)
