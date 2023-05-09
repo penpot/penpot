@@ -881,7 +881,7 @@
 
 (defn move-files
   [{:keys [ids project-id] :as params}]
-  (dm/assert! ::sm/set-of-uuid ids)
+  (dm/assert! (sm/set-of-uuid? ids))
   (dm/assert! (uuid? project-id))
   (ptk/reify ::move-files
     IDeref
