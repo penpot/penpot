@@ -2156,7 +2156,7 @@ msgstr ""
 "futuro con toda la Comunidad y el equipo de Penpot."
 
 msgid "onboarding-v2.welcome.desc2.title"
-msgstr "Participantdo en la Comunidad"
+msgstr "Participando en la Comunidad"
 
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
