@@ -300,7 +300,7 @@
     (binding [pmap/*load-fn* (partial files/load-pointer conn file-id)]
       (some-> (db/get* conn :file {:id file-id})
               (files/decode-row)
-              (update :data files/process-pointers deref)))))
+              (files/process-pointers deref)))))
 
 (def ^:private sql:file-media-objects
   "SELECT * FROM file_media_object WHERE id = ANY(?)")
