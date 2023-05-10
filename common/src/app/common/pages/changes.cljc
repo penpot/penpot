@@ -360,7 +360,8 @@
         ignore          (:ignore-touched op)
         ignore-geometry (:ignore-geometry op)
         is-geometry?    (and (or (= group :geometry-group)
-                                 (and (= group :content-group) (= (:type shape) :path)))
+                                 (and (= group :content-group) (= (:type shape) :path))
+                                 (= attr :position-data))
                              (not (#{:width :height} attr))) ;; :content in paths are also considered geometric
                         ;; TODO: the check of :width and :height probably may be removed
                         ;;       after the check added in data/workspace/modifiers/check-delta
