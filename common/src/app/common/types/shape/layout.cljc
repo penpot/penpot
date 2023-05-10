@@ -593,8 +593,7 @@
                          (assoc result id
                                 (merge {:id id
                                         :row (inc row-idx)
-                                        :column new-col-num
-                                        :track? true}
+                                        :column new-col-num}
                                        grid-cell-defaults))))
                      (:layout-grid-cells parent)))]
     (-> parent
@@ -617,8 +616,7 @@
                          (assoc result id
                                 (merge {:id id
                                         :column (inc col-idx)
-                                        :row new-row-num
-                                        :track? true}
+                                        :row new-row-num}
                                        grid-cell-defaults))))
                      (:layout-grid-cells parent)))]
     (-> parent
@@ -852,86 +850,98 @@
              (first)))
       parent)))
 
+
+(defn create-cells
+  "Create cells in an area. One cell per row/column "
+  [parent [column row column-span row-span]]
+
+  (->> (for [row (range row (+ row row-span))
+             column (range column (+ column column-span))]
+         (merge grid-cell-defaults
+                {:id (uuid/next)
+                 :row row
+                 :column column
+                 :row-span 1
+                 :column-span 1}))
+       (reduce #(assoc-in %1 [:layout-grid-cells (:id %2)] %2) parent)))
+
 (defn resize-cell-area
   "Increases/decreases the cell size"
   [parent row column new-row new-column new-row-span new-column-span]
 
-  (let [cells (vec (get-cells parent {:sort? true}))
+  (if (and (>= new-row 0)
+           (>= new-column 0)
+           (>= new-row-span 1)
+           (>= new-column-span 1))
+    (let [prev-cell (cell-by-row-column parent row column)
+          prev-area (sga/make-area prev-cell)
 
-        prev-cell (cell-by-row-column parent row column)
-        prev-area (sga/make-area prev-cell)
+          target-cell
+          (-> prev-cell
+              (assoc
+               :row new-row
+               :column new-column
+               :row-span new-row-span
+               :column-span new-column-span))
 
-        target-cell
-        (-> prev-cell
-            (assoc
-             :row new-row
-             :column new-column
-             :row-span new-row-span
-             :column-span new-column-span))
+          target-area (sga/make-area target-cell)
 
-        target-area (sga/make-area target-cell)]
+          ;; Create columns/rows if necessary
+          parent
+          (->> (range (count (:layout-grid-columns parent))
+                      (+ new-column new-column-span -1))
+               (reduce (fn [parent _] (add-grid-column parent default-track-value)) parent))
 
-    (if (sga/contains? prev-area target-area)
-      ;; The new area is smaller than the previous. We need to create cells in the empty space
-      (let [parent
-            (-> parent
-                (assoc-in [:layout-grid-cells (:id target-cell)] target-cell))
+          parent
+          (->> (range (count (:layout-grid-rows parent))
+                      (+ new-row new-row-span -1))
+               (reduce (fn [parent _] (add-grid-row parent default-track-value)) parent))
 
-            new-cells
-            (->> (sga/difference prev-area target-area)
-                 (mapcat (fn [[column row column-span row-span]]
-                           (for [new-col (range column (+ column column-span))
-                                 new-row (range row (+ row row-span))]
-                             (merge grid-cell-defaults
-                                    {:id (uuid/next)
-                                     :row new-row
-                                     :column new-col
-                                     :row-span 1
-                                     :column-span 1})))))
+          parent (create-cells parent prev-area)
 
-            parent
-            (->> new-cells
-                 (reduce #(assoc-in %1 [:layout-grid-cells (:id %2)] %2) parent))]
+          cells (vec (get-cells parent {:sort? true}))
+          remove-cells
+          (->> cells
+               (filter #(and (not= (:id target-cell) (:id %))
+                             (sga/contains? target-area (sga/make-area %))))
+               (into #{}))
 
-        parent)
+          split-cells
+          (->> cells
+               (filter #(and (not= (:id target-cell) (:id %))
+                             (not (contains? remove-cells %))
+                             (sga/intersects? target-area (sga/make-area %)))))
 
-      ;; The new area is bigger we need to remove the cells filled and split the intersections
-      (let [remove-cells (->> cells
-                              (filter #(and (not= (:id target-cell) (:id %))
-                                            (sga/contains? target-area (sga/make-area %))))
-                              (into #{}))
+          [parent _]
+          (->> (d/enumerate cells)
+               (reduce (fn [[parent cells] [index cur-cell]]
+                         (if (contains? remove-cells cur-cell)
+                           (let [[parent cells] (free-cell-push parent cells index)]
+                             [parent (conj cells cur-cell)])
+                           [parent cells]))
+                       [parent cells]))
 
-            split-cells  (->> cells (filter #(and (not= (:id target-cell) (:id %))
-                                                  (not (contains? remove-cells %))
-                                                  (sga/intersects? target-area (sga/make-area %)))))
+          parent
+          (-> parent
+              (assoc-in [:layout-grid-cells (:id target-cell)] target-cell))
 
-            [parent _]
-            (->> (d/enumerate cells)
-                 (reduce (fn [[parent cells] [index cur-cell]]
-                           (if (contains? remove-cells cur-cell)
-                             (let [[parent cells] (free-cell-push parent cells index)]
-                               [parent (conj cells cur-cell)])
-                             [parent cells]))
-                         [parent cells]))
+          parent
+          (->> remove-cells
+               (reduce (fn [parent cell]
+                         (update parent :layout-grid-cells dissoc (:id cell)))
+                       parent))
 
-            parent
-            (-> parent
-                (assoc-in [:layout-grid-cells (:id target-cell)] target-cell))
+          parent
+          (->> split-cells
+               (reduce (fn [parent cell]
+                         (let [new-areas (sga/difference (sga/make-area cell) target-area)]
+                           (as-> parent $
+                             (update-in $ [:layout-grid-cells (:id cell)] merge (sga/area->cell-props (first new-areas)))
+                             (reduce (fn [parent area]
+                                       (let [cell (merge (assoc grid-cell-defaults :id (uuid/next)) (sga/area->cell-props area))]
+                                         (assoc-in parent [:layout-grid-cells (:id cell)] cell))) $ new-areas))))
+                       parent))]
+      parent)
 
-            parent
-            (->> remove-cells
-                 (reduce (fn [parent cell]
-                           (update parent :layout-grid-cells dissoc (:id cell)))
-                         parent))
-
-            parent
-            (->> split-cells
-                 (reduce (fn [parent cell]
-                           (let [new-areas (sga/difference (sga/make-area cell) target-area)]
-                             (as-> parent $
-                               (update-in $ [:layout-grid-cells (:id cell)] merge (sga/area->cell-props (first new-areas)))
-                               (reduce (fn [parent area]
-                                         (let [cell (merge (assoc grid-cell-defaults :id (uuid/next)) (sga/area->cell-props area))]
-                                           (assoc-in parent [:layout-grid-cells (:id cell)] cell))) $ new-areas))))
-                         parent))]
-        parent))))
+    ;; Not valid resize: we don't alter the layout
+    parent))

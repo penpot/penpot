@@ -171,6 +171,7 @@
 
     (when (not (:hidden frame))
       [:g.frame-title {:id (dm/str "frame-title-" (:id frame))
+                       :data-edit-grid grid-edition?
                        :transform (vwu/title-transform frame zoom grid-edition?)
                        :pointer-events (when (:blocked frame) "none")}
        (cond

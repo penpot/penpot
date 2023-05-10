@@ -61,3 +61,4 @@
                             srect (gsh/make-selrect x y width height)]
                         (-> local
                             (update :vbox merge (select-keys srect [:x :y :x1 :x2 :y1 :y2])))))))))))
+

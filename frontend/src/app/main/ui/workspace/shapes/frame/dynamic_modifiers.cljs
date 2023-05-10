@@ -151,7 +151,8 @@
             (dom/class? node "frame-title")
             (let [shape (gsh/transform-shape shape modifiers)
                   zoom  (get-in @st/state [:workspace-local :zoom] 1)
-                  mtx   (vwu/title-transform shape zoom false)]
+                  edit-grid? (= (dom/get-data node "edit-grid") "true")
+                  mtx   (vwu/title-transform shape zoom edit-grid?)]
               (override-transform-att! node "transform" mtx))
 
             (or (= (dom/get-tag-name node) "mask")

@@ -8,6 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
@@ -52,13 +53,13 @@
    :layout-padding-type    :simple
    :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})
 
-(def initial-grid-layout ;; TODO
+(def initial-grid-layout
   {:layout :grid
    :layout-grid-dir        :row
    :layout-gap-type        :multiple
    :layout-gap             {:row-gap 0 :column-gap 0}
    :layout-align-items     :start
-   :layout-align-content   :stretch
+   :layout-align-content   :start
    :layout-justify-items   :start
    :layout-justify-content :start
    :layout-padding-type    :simple
@@ -549,3 +550,44 @@
                (dwc/update-shapes parent-ids (partial fix-parent-sizing objects (set ids) changes))
                (ptk/data-event :layout/update ids)
                (dwu/commit-undo-transaction undo-id))))))
+
+(defn update-grid-cell
+  [layout-id cell-id props]
+  (ptk/reify ::update-grid-cell
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dwc/update-shapes
+          [layout-id]
+          (fn [shape]
+            (-> shape
+                (d/update-in-when [:layout-grid-cells cell-id]
+                                  #(d/without-nils (merge % props))))))
+         (ptk/data-event :layout/update [layout-id])
+         (dwu/commit-undo-transaction undo-id))))))
+
+(defn update-grid-cell-position
+  [layout-id cell-id props]
+
+  (ptk/reify ::update-grid-cell-position
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dwc/update-shapes
+          [layout-id]
+          (fn [shape]
+            (let [prev-data (-> (dm/get-in shape [:layout-grid-cells cell-id])
+                                (select-keys [:row :column :row-span :column-span]))
+
+                  new-data (merge prev-data props)]
+              (-> shape
+                  (ctl/resize-cell-area (:row prev-data) (:column prev-data)
+                                        (:row new-data) (:column new-data)
+                                        (:row-span new-data) (:column-span new-data))
+                  (ctl/assign-cells)))))
+         (ptk/data-event :layout/update [layout-id])
+         (dwu/commit-undo-transaction undo-id))))))

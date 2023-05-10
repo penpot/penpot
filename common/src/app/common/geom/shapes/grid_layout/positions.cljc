@@ -128,13 +128,13 @@
   (let [hv #(gpo/start-hv layout-bounds %)
         vv #(gpo/start-vv layout-bounds %)
 
-        ;;make-is-inside-track
-        ;;(fn [type]
-        ;;  (let [[vfn ofn] (if (= type :column) [vv hv] [hv vv])]
-        ;;    (fn is-inside-track? [{:keys [start-p size] :as track}]
-        ;;      (let [unit-v    (vfn 1)
-        ;;            end-p     (gpt/add start-p (ofn size))]
-        ;;        (is-inside-lines? [start-p unit-v] [end-p unit-v]  position)))))
+        make-is-inside-track
+        (fn [type]
+          (let [[vfn ofn] (if (= type :column) [vv hv] [hv vv])]
+            (fn is-inside-track? [{:keys [start-p size] :as track}]
+              (let [unit-v    (vfn 1)
+                    end-p     (gpt/add start-p (ofn size))]
+                (is-inside-lines? [start-p unit-v] [end-p unit-v]  position)))))
 
         make-min-distance-track
         (fn [type]
@@ -149,25 +149,29 @@
                   [[cur-idx track] (min dist-1 dist-2)]
                   [selected selected-dist])))))
 
-        ;;[col-idx column]
-        ;;(->> (d/enumerate column-tracks)
-        ;;     (d/seek (comp (make-is-inside-track :column) second)))
-        ;;
-        ;;[row-idx row]
-        ;;(->> (d/enumerate row-tracks)
-        ;;     (d/seek (comp (make-is-inside-track :row) second)))
-
-
+        ;; Check if it's inside a track
         [col-idx column]
         (->> (d/enumerate column-tracks)
-             (reduce (make-min-distance-track :column) [[nil nil] ##Inf])
-             (first))
+             (d/seek (comp (make-is-inside-track :column) second)))
 
         [row-idx row]
         (->> (d/enumerate row-tracks)
-             (reduce (make-min-distance-track :row) [[nil nil] ##Inf])
-             (first))
-        ]
+             (d/seek (comp (make-is-inside-track :row) second)))
+
+        ;; If not inside we find the closest start/end line
+        [col-idx column]
+        (if (some? column)
+          [col-idx column]
+          (->> (d/enumerate column-tracks)
+               (reduce (make-min-distance-track :column) [[nil nil] ##Inf])
+               (first)))
+
+        [row-idx row]
+        (if (some? row)
+          [row-idx row]
+          (->> (d/enumerate row-tracks)
+               (reduce (make-min-distance-track :row) [[nil nil] ##Inf])
+               (first)))]
 
     (when (and (some? column) (some? row))
       [(inc row-idx) (inc col-idx)])))

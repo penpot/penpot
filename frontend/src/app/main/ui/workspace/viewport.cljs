@@ -204,8 +204,7 @@
                                       (>= zoom 8))
         show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
 
-        ;; Debug utility
-        ;; hover-grid?              (and (some? @hover-top-frame-id) (ctl/grid-layout? objects @hover-top-frame-id))
+        hover-grid?              (and (some? @hover-top-frame-id) (ctl/grid-layout? objects @hover-top-frame-id))
 
         show-grid-editor?        (and editing-shape (ctl/grid-layout? editing-shape))
         show-presence?           page-id
@@ -591,8 +590,7 @@
            :zoom zoom}])
 
 
-       (when show-grid-editor?
-         #_(or show-grid-editor? hover-grid?) ;; Debug utility
+       (when  (or show-grid-editor? hover-grid?)
          [:& grid-layout/editor
           {:zoom zoom
            :objects objects-modified

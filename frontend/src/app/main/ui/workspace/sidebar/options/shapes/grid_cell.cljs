@@ -8,6 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :as lyc]
@@ -16,7 +18,8 @@
 
 (mf/defc set-self-alignment
   [{:keys [is-col? alignment set-alignment] :as props}]
-  (let [dir-v [:auto :start :center :end :stretch #_:baseline]]
+  (let [dir-v [:auto :start :center :end :stretch #_:baseline]
+        alignment (or alignment :auto)]
     [:div.align-self-style
      (for [align dir-v]
        [:button.align-self.tooltip.tooltip-bottom
@@ -31,51 +34,69 @@
 
 (mf/defc options
   {::mf/wrap [mf/memo]}
-  [{:keys [_shape cell] :as props}]
+  [{:keys [shape cell] :as props}]
 
-  (let [position-mode (mf/use-state :auto) ;; TODO this should come from shape
+  (let [{:keys [mode area-name align-self justify-self column column-span row row-span]} cell
+        column-end (+ column column-span)
+        row-end (+ row row-span)
 
-        set-position-mode (fn [mode]
-                            (reset! position-mode mode))
+        cell-mode (or mode :auto)
+        cell-mode (if (and (= :auto cell-mode)
+                           (or (> (:column-span cell) 1)
+                               (> (:row-span cell) 1)))
+                    :manual
+                    cell-mode)
 
+        set-alignment
+        (mf/use-callback
+         (mf/deps align-self (:id shape) (:id cell))
+         (fn [value]
+           (if (= align-self value)
+             (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:align-self nil}))
+             (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:align-self value})))))
 
-        align-self          (mf/use-state :auto) ;; TODO this should come from shape
-        justify-alignment   (mf/use-state :auto) ;; TODO this should come from shape
-        set-alignment     (fn [value]
-                            (reset! align-self value)
-                            #_(if (= align-self value)
-                                (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self nil}))
-                                (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self value}))))
-        set-justify-self     (fn [value]
-                               (reset! justify-alignment value)
-                               #_(if (= align-self value)
-                                   (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self nil}))
-                                   (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self value}))))
-        column-start (:column cell)
-        column-end (+ (:column cell) (:column-span cell))
-        row-start (:row cell)
-        row-end (+ (:row cell) (:row-span cell))
+        set-justify-self
+        (mf/use-callback
+         (mf/deps justify-self (:id shape) (:id cell))
+         (fn [value]
+           (if (= justify-self value)
+             (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:justify-self nil}))
+             (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:justify-self value})))))
 
         on-change
-        (fn [_side _orientation _value]
-          ;; TODO
-          #_(if (= orientation :column)
-            (case side
-              :all ((reset! column-start value)
-                    (reset! column-end value))
-              :start (reset! column-start value)
-              :end (reset! column-end value))
-            (case side
-              :all ((reset! row-start value)
-                    (reset! row-end value))
-              :start (reset! row-start value)
-              :end (reset! row-end value))))
+        (mf/use-callback
+         (mf/deps column row (:id shape) (:id cell))
+         (fn [field type value]
+           (let [[property value]
+                 (cond
+                   (and (= type :column) (or (= field :all) (= field :start)))
+                   [:column value]
 
-        area-name (mf/use-state "header") ;; TODO this should come from shape
+                   (and (= type :column) (= field :end))
+                   [:column-span (max 1 (- value column))]
 
-        on-area-name-change (fn [value]
-                              (reset! area-name value))
-        on-key-press (fn [_event])]
+                   (and (= type :row) (or (= field :all) (= field :start)))
+                   [:row value]
+
+                   (and (= type :row) (= field :end))
+                   [:row-span (max 1 (- value row))])]
+
+             (st/emit! (dwsl/update-grid-cell-position (:id shape) (:id cell) {property value})))))
+
+        on-area-name-change
+        (mf/use-callback
+         (mf/deps (:id shape) (:id cell))
+         (fn [event]
+           (let [value (dom/get-value (dom/get-target event))]
+             (if (= value "")
+               (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:area-name nil}))
+               (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:area-name value}))))))
+
+        set-cell-mode
+        (mf/use-callback
+         (mf/deps (:id shape) (:id cell))
+         (fn [mode]
+           (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:mode mode}))))]
 
     [:div.element-set
      [:div.element-set-title
@@ -86,16 +107,17 @@
        [:div.row-title.sizing "Position"]
        [:div.position-wrapper
         [:button.position-btn
-         {:on-click #(set-position-mode :auto)
-          :class (dom/classnames :active (= :auto @position-mode))} "Auto"]
+         {:on-click #(set-cell-mode :auto)
+          :class (dom/classnames :active (= :auto cell-mode))} "Auto"]
         [:button.position-btn
-         {:on-click #(set-position-mode :manual)
-          :class (dom/classnames :active (= :manual @position-mode))} "Manual"]
+         {:on-click #(set-cell-mode :manual)
+          :class (dom/classnames :active (= :manual cell-mode))} "Manual"]
         [:button.position-btn
-         {:on-click #(set-position-mode :area)
-          :class (dom/classnames :active (= :area @position-mode))} "Area"]]]
+         {:on-click #(set-cell-mode :area)
+          :class (dom/classnames :active (= :area cell-mode))} "Area"]]]
+
       [:div.manage-grid-columns
-       (when (= :auto @position-mode)
+       (when (= :auto cell-mode)
          [:div.grid-auto
           [:div.grid-columns-auto
            [:span.icon i/layout-rows]
@@ -103,42 +125,42 @@
             [:> numeric-input
              {:placeholder "--"
               :on-click #(dom/select-target %)
-              :on-change (partial on-change :all :column) ;; TODO cambiar este on-change y el value
-              :value column-start}]]]
+              :on-change (partial on-change :all :column)
+              :value column}]]]
           [:div.grid-rows-auto
            [:span.icon i/layout-columns]
            [:div.input-wrapper
             [:> numeric-input
              {:placeholder "--"
               :on-click #(dom/select-target %)
-              :on-change (partial on-change :all :row) ;; TODO cambiar este on-change y el value
-              :value row-start}]]]])
-       (when (= :area @position-mode)
+              :on-change (partial on-change :all :row)
+              :value row}]]]])
+
+       (when (= :area cell-mode)
          [:div.input-wrapper
           [:input.input-text
-           {:key "grid-area-name"
+           {:key (dm/str "name-" (:id cell))
             :id "grid-area-name"
             :type "text"
             :aria-label "grid-area-name"
             :placeholder "--"
-            :default-value @area-name
+            :default-value area-name
             :auto-complete "off"
-            :on-change on-area-name-change
-            :on-key-press on-key-press}]])
+            :on-change on-area-name-change}]])
 
-       (when (or (= :manual @position-mode) (= :area @position-mode))
+       (when (or (= :manual cell-mode) (= :area cell-mode))
          [:div.grid-manual
           [:div.grid-columns-auto
            [:span.icon i/layout-rows]
            [:div.input-wrapper
             [:> numeric-input
              {:placeholder "--"
-              :on-click #(dom/select-target %)
+              :on-pointer-down #(dom/select-target %)
               :on-change (partial on-change :start :column)
-              :value column-start}]
+              :value column}]
             [:> numeric-input
              {:placeholder "--"
-              :on-click #(dom/select-target %)
+              :on-pointer-down #(dom/select-target %)
               :on-change (partial on-change :end :column)
               :value column-end}]]]
           [:div.grid-rows-auto
@@ -146,12 +168,12 @@
            [:div.input-wrapper
             [:> numeric-input
              {:placeholder "--"
-              :on-click #(dom/select-target %)
+              :on-pointer-down #(dom/select-target %)
               :on-change (partial on-change :start :row)
-              :value row-start}]
+              :value row}]
             [:> numeric-input
              {:placeholder "--"
-              :on-click #(dom/select-target %)
+              :on-pointer-down #(dom/select-target %)
               :on-change (partial on-change :end :row)
               :value row-end}]]]])]
 
@@ -159,13 +181,11 @@
        [:div.row-title "Align"]
        [:div.btn-wrapper
         [:& set-self-alignment {:is-col? false
-                                :alignment @align-self
+                                :alignment align-self
                                 :set-alignment set-alignment}]]]
-
-
       [:div.layout-row
        [:div.row-title "Justify"]
        [:div.btn-wrapper
         [:& set-self-alignment {:is-col? true
-                                :alignment @justify-alignment
+                                :alignment justify-self
                                 :set-alignment set-justify-self}]]]]]))

@@ -572,7 +572,6 @@
          :on-key-down handle-keydown-track-input
          :on-blur handle-blur-track-input}]]]
 
-
      [:& resize-track-handler
       {:index index
        :layout-data layout-data
@@ -662,85 +661,85 @@
           [:& plus-btn {:start-p start-p
                         :zoom zoom
                         :type :row
-                        :on-click handle-add-row}])])
+                        :on-click handle-add-row}])
 
-     (for [[idx column-data] (d/enumerate column-tracks)]
-       [:& track {:key (dm/str "column-track-" idx)
-                  :shape shape
-                  :zoom zoom
-                  :type :column
-                  :index idx
-                  :layout-data layout-data
-                  :snap-pixel? snap-pixel?
-                  :track-data column-data}])
+        (for [[idx column-data] (d/enumerate column-tracks)]
+          [:& track {:key (dm/str "column-track-" idx)
+                     :shape shape
+                     :zoom zoom
+                     :type :column
+                     :index idx
+                     :layout-data layout-data
+                     :snap-pixel? snap-pixel?
+                     :track-data column-data}])
 
-     ;; Last track resize handler
-     (when-not (empty? column-tracks)
-       (let [last-track (last column-tracks)
-             start-p (:start-p (last column-tracks))
-             relative (gpt/to-vec origin start-p)
-             marker-p (-> origin
-                          (gpt/add (hv (:x relative)))
-                          (gpt/subtract (vv (/ 20 zoom)))
-                          (gpt/add (hv (:size last-track))))]
-         [:g.track
-          [:& track-marker {:center marker-p
-                            :index (count column-tracks)
-                            :shape shape
-                            :snap-pixel? snap-pixel?
-                            :track-before (last column-tracks)
-                            :type :column
-                            :value (dm/str (inc (count column-tracks)))
-                            :zoom zoom}]
-          [:& resize-track-handler
-           {:index (count column-tracks)
-            :shape shape
-            :layout-data layout-data
-            :snap-pixel? snap-pixel?
-            :start-p (-> start-p (gpt/add (hv (+ layout-gap-col (:size last-track)))))
-            :type :column
-            :track-before (last column-tracks)
-            :zoom zoom}]]))
+        ;; Last track resize handler
+        (when-not (empty? column-tracks)
+          (let [last-track (last column-tracks)
+                start-p (:start-p (last column-tracks))
+                relative (gpt/to-vec origin start-p)
+                marker-p (-> origin
+                             (gpt/add (hv (:x relative)))
+                             (gpt/subtract (vv (/ 20 zoom)))
+                             (gpt/add (hv (:size last-track))))]
+            [:g.track
+             [:& track-marker {:center marker-p
+                               :index (count column-tracks)
+                               :shape shape
+                               :snap-pixel? snap-pixel?
+                               :track-before (last column-tracks)
+                               :type :column
+                               :value (dm/str (inc (count column-tracks)))
+                               :zoom zoom}]
+             [:& resize-track-handler
+              {:index (count column-tracks)
+               :shape shape
+               :layout-data layout-data
+               :snap-pixel? snap-pixel?
+               :start-p (-> start-p (gpt/add (hv (+ layout-gap-col (:size last-track)))))
+               :type :column
+               :track-before (last column-tracks)
+               :zoom zoom}]]))
 
-     (for [[idx row-data] (d/enumerate row-tracks)]
-       [:& track {:index idx
-                  :key (dm/str "row-track-" idx)
-                  :layout-data layout-data
-                  :shape shape
-                  :snap-pixel? snap-pixel?
-                  :track-data row-data
-                  :type :row
-                  :zoom zoom}])
+        (for [[idx row-data] (d/enumerate row-tracks)]
+          [:& track {:index idx
+                     :key (dm/str "row-track-" idx)
+                     :layout-data layout-data
+                     :shape shape
+                     :snap-pixel? snap-pixel?
+                     :track-data row-data
+                     :type :row
+                     :zoom zoom}])
 
-     (when-not (empty? row-tracks)
-       (let [last-track (last row-tracks)
-             start-p (:start-p (last row-tracks))
-             relative (gpt/to-vec origin start-p)
-             marker-p
-             (-> origin
-                 (gpt/add (vv (:y relative)))
-                 (gpt/subtract (hv (/ 20 zoom)))
-                 (gpt/add (vv (:size last-track))))]
-         [:g.track
-          [:g {:transform (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p))}
-           [:& track-marker {:center marker-p
-                             :index (count row-tracks)
-                             :shape shape
-                             :snap-pixel? snap-pixel?
-                             :track-before (last row-tracks)
-                             :type :row
-                             :value (dm/str (inc (count row-tracks)))
-                             :zoom zoom}]]
-          [:& resize-track-handler
-           {:index (count row-tracks)
-            :shape shape
-            :layout-data layout-data
-            :start-p (-> start-p
-                         (gpt/add (vv (+ layout-gap-row (:size last-track)))))
-            :type :row
-            :track-before (last row-tracks)
-            :snap-pixel? snap-pixel?
-            :zoom zoom}]]))
+        (when-not (empty? row-tracks)
+          (let [last-track (last row-tracks)
+                start-p (:start-p (last row-tracks))
+                relative (gpt/to-vec origin start-p)
+                marker-p
+                (-> origin
+                    (gpt/add (vv (:y relative)))
+                    (gpt/subtract (hv (/ 20 zoom)))
+                    (gpt/add (vv (:size last-track))))]
+            [:g.track
+             [:g {:transform (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p))}
+              [:& track-marker {:center marker-p
+                                :index (count row-tracks)
+                                :shape shape
+                                :snap-pixel? snap-pixel?
+                                :track-before (last row-tracks)
+                                :type :row
+                                :value (dm/str (inc (count row-tracks)))
+                                :zoom zoom}]]
+             [:& resize-track-handler
+              {:index (count row-tracks)
+               :shape shape
+               :layout-data layout-data
+               :start-p (-> start-p
+                            (gpt/add (vv (+ layout-gap-row (:size last-track)))))
+               :type :row
+               :track-before (last row-tracks)
+               :snap-pixel? snap-pixel?
+               :zoom zoom}]]))])
 
      (for [[_ cell] (:layout-grid-cells shape)]
        [:& grid-cell {:key (dm/str "cell-" (:id cell))
