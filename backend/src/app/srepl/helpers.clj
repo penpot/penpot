@@ -58,10 +58,12 @@
 (defn get-file
   "Get the migrated data of one file."
   [system id]
-  (-> (:app.db/pool system)
-      (db/get-by-id :file id)
-      (update :data blob/decode)
-      (update :data pmg/migrate-data)))
+  (db/with-atomic [conn (:app.db/pool system)]
+    (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
+      (-> (db/get-by-id conn :file id)
+          (update :data blob/decode)
+          (update :data pmg/migrate-data)
+          (files/process-pointers deref)))))
 
 (defn update-file!
   "Apply a function to the data of one file. Optionally save the changes or not.
