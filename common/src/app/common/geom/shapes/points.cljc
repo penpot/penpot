@@ -80,7 +80,7 @@
   "Given a point and a line returns the parametric t the cross point with the line going through the other axis projected"
   [point [start end] other-axis-vec]
 
-  (let [line-vec    (gpt/to-vec start end)
+  (let [line-vec (gpt/to-vec start end)
         pr-point (gsi/line-line-intersect point (gpt/add point other-axis-vec) start end)]
     (cond
       (not (mth/almost-zero? (:x line-vec)))
@@ -92,6 +92,15 @@
       ;; Vector is almost zero
       :else
       0)))
+
+(defn project-point
+  "Project the point into the given axis: `:h` or `:v` means horizontal or vertical axis"
+  [[p0 p1 _ p3 :as bounds] axis point]
+  (let [[other-vec start end]
+        (if (= axis :h)
+          [(gpt/to-vec p0 p3) p0 p1]
+          [(gpt/to-vec p0 p1) p0 p3])]
+    (gsi/line-line-intersect point (gpt/add point other-vec) start end)))
 
 (defn parent-coords-bounds
   [child-bounds [p1 p2 _ p4 :as parent-bounds]]
@@ -154,3 +163,13 @@
   [bounds vector]
   (->> bounds
        (map #(gpt/add % vector))))
+
+(defn center
+  [bounds]
+  (let [width (width-points bounds)
+        height (height-points bounds)
+        half-h (start-hv bounds (/ width 2))
+        half-v (start-vv bounds (/ height 2))]
+    (-> (origin bounds)
+        (gpt/add half-h)
+        (gpt/add half-v))))

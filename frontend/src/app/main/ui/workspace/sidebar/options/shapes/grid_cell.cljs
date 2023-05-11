@@ -96,7 +96,10 @@
         (mf/use-callback
          (mf/deps (:id shape) (:id cell))
          (fn [mode]
-           (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:mode mode}))))]
+           (let [props (cond-> {:mode mode}
+                         (not= mode :area)
+                         (assoc :area-name nil))]
+             (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) props)))))]
 
     [:div.element-set
      [:div.element-set-title

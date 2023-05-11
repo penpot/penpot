@@ -226,6 +226,40 @@
       :on-lost-pointer-capture handle-lost-pointer-capture
       :on-pointer-move handle-pointer-move}]))
 
+(mf/defc grid-cell-area-label
+  {::mf/wrap-props false}
+  [props]
+
+  (let [cell-origin (unchecked-get props "origin")
+        cell-width  (unchecked-get props "width")
+        zoom  (unchecked-get props "zoom")
+        text  (unchecked-get props "text")
+
+        area-width (/ (* 10 (count text)) zoom)
+        area-height (/ 25 zoom)
+        area-x (- (+ (:x cell-origin) cell-width) area-width)
+        area-y (:y cell-origin)
+
+        area-text-x (+ area-x (/ area-width 2))
+        area-text-y (+ area-y (/ area-height 2))]
+
+    [:g {:pointer-events "none"}
+     [:rect {:x area-x
+             :y area-y
+             :width area-width
+             :height area-height
+             :style {:fill "var(--color-distance)"
+                     :fill-opacity 0.3}}]
+     [:text {:x area-text-x
+             :y area-text-y
+             :style {:fill "var(--color-distance)"
+                     :font-family "worksans"
+                     :font-weight 600
+                     :font-size (/ 14 zoom)
+                     :alignment-baseline "central"
+                     :text-anchor "middle"}}
+      text]]))
+
 (mf/defc grid-cell
   {::mf/wrap-props false}
   [props]
@@ -270,6 +304,12 @@
        :on-pointer-enter handle-pointer-enter
        :on-pointer-leave handle-pointer-leave
        :on-pointer-down handle-pointer-down}]
+
+     (when (:area-name cell)
+       [:& grid-cell-area-label {:origin cell-origin
+                                 :width cell-width
+                                 :zoom zoom
+                                 :text (:area-name cell)}])
 
      (when selected?
        (let [handlers

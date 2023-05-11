@@ -390,7 +390,7 @@
   [{:keys [is-col? align-items set-align] :as props}]
   (let [type (if is-col? :column :row)]
     [:div.align-items-style
-     (for [align [:start :center :end :stretch :baseline]]
+     (for [align [:start :center :end]]
        [:button.align-start.tooltip
         {:class    (dom/classnames :active  (= align-items align)
                                    :tooltip-bottom-left (not= align :start)

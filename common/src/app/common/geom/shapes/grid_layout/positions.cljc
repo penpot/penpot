@@ -104,8 +104,54 @@
 (defn child-modifiers
   [parent parent-bounds child child-bounds layout-data cell-data]
 
-  (let [fill-modifiers (fill-modifiers parent parent-bounds child child-bounds layout-data cell-data)
-        position-delta (gpt/subtract (:start-p cell-data) (gpo/origin child-bounds))]
+  (let [cell-bounds (cell-bounds layout-data cell-data)
+
+        fill-modifiers (fill-modifiers parent parent-bounds child child-bounds layout-data cell-data)
+
+        align (:layout-align-items parent)
+        justify (:layout-justify-items parent)
+        align-self (:align-self cell-data)
+        justify-self (:justify-self cell-data)
+
+        align-self (when (and align-self (not= align-self :auto)) align-self)
+        justify-self (when (and justify-self (not= justify-self :auto)) justify-self)
+
+        align (or align-self align)
+        justify (or justify-self justify)
+
+        position-delta (gpt/point)
+
+        ;; Adjust alignment/justify
+        [from-h to-h]
+        (case justify
+          :end
+          [(gpo/project-point cell-bounds :h (nth child-bounds 1))
+           (nth cell-bounds 1)]
+
+          :center
+          [(gpo/project-point cell-bounds :h (gpo/center child-bounds))
+           (gpo/project-point cell-bounds :h (gpo/center cell-bounds))]
+
+          [(gpo/project-point cell-bounds :h (first child-bounds))
+           (first cell-bounds)])
+
+        [from-v to-v]
+        (case align
+          :end
+          [(gpo/project-point cell-bounds :v (nth child-bounds 3))
+           (nth cell-bounds 3)]
+
+          :center
+          [(gpo/project-point cell-bounds :v (gpo/center child-bounds))
+           (gpo/project-point cell-bounds :v (gpo/center cell-bounds))]
+
+          [(gpo/project-point cell-bounds :v (first child-bounds))
+           (first cell-bounds)])
+
+        position-delta
+        (-> position-delta
+            (gpt/add (gpt/to-vec from-h to-h))
+            (gpt/add (gpt/to-vec from-v to-v)))]
     (-> (ctm/empty)
         (ctm/add-modifiers fill-modifiers)
         (ctm/move position-delta))))
