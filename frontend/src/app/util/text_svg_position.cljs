@@ -90,27 +90,26 @@
   [shape-id]
   (when (some? shape-id)
     (p/let [text-data (calc-text-node-positions shape-id)]
-      (when (d/not-empty? text-data)
-        (->> text-data
-             (mapv (fn [{:keys [node position text direction]}]
-                     (let [{:keys [x y width height]} position
-                           styles (js/getComputedStyle ^js node)
-                           get    (fn [prop]
-                                    (let [value (.getPropertyValue styles prop)]
-                                      (when (and value (not= value ""))
-                                        value)))]
-                       (d/without-nils
-                        {:x                   x
-                         :y                   (+ y height)
-                         :width               width
-                         :height              height
-                         :direction           direction
-                         :font-family         (str (get "font-family"))
-                         :font-size           (str (get "font-size"))
-                         :font-weight         (str (get "font-weight"))
-                         :text-transform      (str (get "text-transform"))
-                         :text-decoration     (str (get "text-decoration"))
-                         :letter-spacing      (str (get "letter-spacing"))
-                         :font-style          (str (get "font-style"))
-                         :fills               (transit/decode-str (get "--fills"))
-                         :text                text})))))))))
+      (->> text-data
+           (mapv (fn [{:keys [node position text direction]}]
+                   (let [{:keys [x y width height]} position
+                         styles (js/getComputedStyle ^js node)
+                         get    (fn [prop]
+                                  (let [value (.getPropertyValue styles prop)]
+                                    (when (and value (not= value ""))
+                                      value)))]
+                     (d/without-nils
+                       {:x                   x
+                        :y                   (+ y height)
+                        :width               width
+                        :height              height
+                        :direction           direction
+                        :font-family         (str (get "font-family"))
+                        :font-size           (str (get "font-size"))
+                        :font-weight         (str (get "font-weight"))
+                        :text-transform      (str (get "text-transform"))
+                        :text-decoration     (str (get "text-decoration"))
+                        :letter-spacing      (str (get "letter-spacing"))
+                        :font-style          (str (get "font-style"))
+                        :fills               (transit/decode-str (get "--fills"))
+                        :text                text}))))))))
