@@ -100,13 +100,13 @@
       (-> (update :svg-attrs dissoc :fill-opacity)
           (update-in [:svg-attrs :style] dissoc :fill-opacity)
           (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :fill-opacity])
-                                                 (d/parse-double))))
+                                                 (d/parse-double 1))))
 
       (get-in shape [:svg-attrs :style :fill-opacity])
       (-> (update-in [:svg-attrs :style] dissoc :fill-opacity)
           (update :svg-attrs dissoc :fill-opacity)
           (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :style :fill-opacity])
-                                                 (d/parse-double)))))))
+                                                 (d/parse-double 1)))))))
 
 (defn setup-stroke [shape]
   (let [stroke-linecap (-> (or (get-in shape [:svg-attrs :stroke-linecap])
