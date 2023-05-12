@@ -292,6 +292,7 @@
 (mf/defc component-svg
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
   [{:keys [objects root-shape zoom] :or {zoom 1} :as props}]
+  (when root-shape
   (let [root-shape-id (:id root-shape)
         include-metadata? (mf/use-ctx export/include-metadata-ctx)
 
@@ -334,7 +335,7 @@
 
      [:> shape-container {:shape root-shape'}
       [:& (mf/provider muc/is-component?) {:value true}
-       [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]]))
+       [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]])))
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
