@@ -208,14 +208,10 @@
                        (recur (rest ids-seq)
                               (conj ids-to-delete id)
                               ids-to-hide)))))
-               [ids []])
-             
-             undo-id (js/Symbol)]
+               [ids []])]
 
-         (rx/of (dwu/start-undo-transaction undo-id)
-                (update-shape-flags ids-to-hide {:hidden true})
-                (real-delete-shapes file page objects ids-to-delete it components-v2)
-                (dwu/commit-undo-transaction undo-id)))))))
+         (rx/concat (rx/of (update-shape-flags ids-to-hide {:hidden true}))
+                    (real-delete-shapes file page objects ids-to-delete it components-v2)))))))
 
 (defn- real-delete-shapes
   [file page objects ids it components-v2]
@@ -335,11 +331,14 @@
                     (cond-> (seq starting-flows)
                       (pcb/update-page-option :flows (fn [flows]
                                                        (->> (map :id starting-flows)
-                                                            (reduce ctp/remove-flow flows))))))]
+                                                            (reduce ctp/remove-flow flows))))))
+        undo-id (js/Symbol)]
 
-    (rx/of (dc/detach-comment-thread ids)
+    (rx/of (dwu/start-undo-transaction undo-id)
+           (dc/detach-comment-thread ids)
            (ptk/data-event :layout/update all-parents)
-           (dch/commit-changes changes))))
+           (dch/commit-changes changes)
+           (dwu/commit-undo-transaction undo-id))))
 
 (defn create-and-add-shape
   [type frame-x frame-y data]
