@@ -287,7 +287,7 @@
       (when (and (not selected?) (:menu-open @local))
         (swap! local assoc :menu-open false)))
 
-    [:li.grid-item.project-th
+    [:li.grid-item.project-th {:class (dom/classnames :library library-view?)}
      [:button
       {:tab-index "0"
        :class (dom/classnames :selected selected?
