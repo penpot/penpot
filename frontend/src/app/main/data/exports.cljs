@@ -101,7 +101,7 @@
                        {:enabled true
                         :page-id page-id
                         :file-id file-id
-                         :object-id (:id frame)
+                        :object-id (:id frame)
                         :shape frame
                         :name (:name frame)})]
 
@@ -145,7 +145,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (when (= status "ended")
-        (->> (rp/command! :export {:cmd :get-resource :blob? true :id resource-id})
+        (->> (rp/cmd! :export {:cmd :get-resource :blob? true :id resource-id})
              (rx/delay 500)
              (rx/map #(dom/trigger-download filename %)))))))
 
@@ -165,9 +165,9 @@
                         :wait true}]
         (rx/concat
          (rx/of ::dwp/force-persist)
-         (->> (rp/command! :export params)
+         (->> (rp/cmd! :export params)
               (rx/mapcat (fn [{:keys [id filename]}]
-                           (->> (rp/command! :export {:cmd :get-resource :blob? true :id id})
+                           (->> (rp/cmd! :export {:cmd :get-resource :blob? true :id id})
                                 (rx/map (fn [data]
                                           (dom/trigger-download filename data)
                                           (clear-export-state uuid/zero))))))
@@ -213,7 +213,7 @@
 
          ;; Launch the exportation process and stores the resource id
          ;; locally.
-         (->> (rp/command! :export params)
+         (->> (rp/cmd! :export params)
               (rx/map (fn [{:keys [id] :as resource}]
                         (vreset! resource-id id)
                         (initialize-export-status exports cmd resource))))

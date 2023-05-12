@@ -179,7 +179,7 @@
           (->> (rx/of file)
                (rx/flat-map
                 (fn [file]
-                  (->> (rp/command :has-file-libraries {:file-id (:id file)})
+                  (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
                        (rx/map #(assoc file :has-libraries? %)))))
                (rx/reduce conj [])
                (rx/subs

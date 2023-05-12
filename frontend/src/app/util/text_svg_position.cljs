@@ -57,7 +57,7 @@
     (-> (fonts/ensure-loaded! font-id)
         (p/then #(when (not (dom/check-font? font))
                    (load-font font)))
-        (p/catch #(.error js/console (dm/str "Cannot load font" font-id) %)))))
+        (p/catch #(.error js/console (dm/str "Cannot load font " font-id) %)))))
 
 (defn- calc-text-node-positions
   [shape-id]

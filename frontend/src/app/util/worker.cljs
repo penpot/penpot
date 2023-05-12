@@ -8,6 +8,7 @@
   "A lightweight layer on top of webworkers api."
   (:require
    [app.common.uuid :as uuid]
+   [app.util.object :as obj]
    [app.worker.messages :as wm]
    [beicon.core :as rx]))
 
@@ -25,11 +26,14 @@
              (rx/take-while #(not (:completed %)) ob)
              (rx/take 1 ob)))
 
-         data (wm/encode message)
+         transfer (:transfer message)
+         data (cond-> (wm/encode (dissoc message :transfer))
+                (some? transfer)
+                (obj/set! "transfer" transfer))
          instance (:instance worker)]
 
      (if (some? instance)
-       (do (.postMessage instance data)
+       (do (.postMessage instance data transfer)
            (->> (:stream worker)
                 (rx/filter #(= (:reply-to %) sender-id))
                 (take-messages)
@@ -38,27 +42,36 @@
        (rx/empty)))))
 
 (defn ask!
-  [worker message]
-  (send-message!
-   worker
-   {:sender-id (uuid/next)
-    :payload message}))
+  ([worker message]
+   (ask! worker message nil))
+  ([worker message transfer]
+   (send-message!
+    worker
+    {:sender-id (uuid/next)
+     :payload message
+     :transfer transfer})))
 
 (defn ask-many!
-  [worker message]
-  (send-message!
-   worker
-   {:sender-id (uuid/next)
-    :payload message}
-   {:many? true}))
+  ([worker message]
+   (ask-many! worker message nil))
+  ([worker message transfer]
+   (send-message!
+    worker
+    {:sender-id (uuid/next)
+     :payload message
+     :transfer transfer}
+    {:many? true})))
 
 (defn ask-buffered!
-  [worker message]
-  (send-message!
-   worker
-   {:sender-id (uuid/next)
-    :payload message
-    :buffer? true}))
+  ([worker message]
+   (ask-buffered! worker message nil))
+  ([worker message transfer]
+   (send-message!
+    worker
+    {:sender-id (uuid/next)
+     :payload message
+     :buffer? true
+     :transfer transfer})))
 
 (defn init
   "Return a initialized webworker instance."

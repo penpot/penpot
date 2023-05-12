@@ -474,9 +474,9 @@
   (->> (rx/from files)
        (rx/mapcat
         (fn [file]
-          (->> (rp/command! :export-binfile {:file-id (:id file)
-                                             :include-libraries? (= export-type :all)
-                                             :embed-assets? (= export-type :merge)})
+          (->> (rp/cmd! :export-binfile {:file-id (:id file)
+                                         :include-libraries? (= export-type :all)
+                                         :embed-assets? (= export-type :merge)})
                (rx/map #(hash-map :type :finish
                                   :file-id (:id file)
                                   :filename (:name file)

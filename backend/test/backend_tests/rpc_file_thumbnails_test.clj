@@ -52,7 +52,7 @@
                          :parent-id uuid/zero
                          :type :frame}}])
 
-        data1   {::th/type :upsert-file-object-thumbnail
+        data1   {::th/type :create-file-object-thumbnail
                  ::rpc/profile-id (:id profile)
                  :file-id (:id file)
                  :object-id "test-key-1"
@@ -61,7 +61,7 @@
                          :path (th/tempfile "backend_tests/test_files/sample.jpg")
                          :mtype "image/jpeg"}}
 
-        data2   {::th/type :upsert-file-object-thumbnail
+        data2   {::th/type :create-file-object-thumbnail
                  ::rpc/profile-id (:id profile)
                  :file-id (:id file)
                  :object-id (str page-id shid)
@@ -156,7 +156,7 @@
                  :revn 1
                  :data "data:base64,1234123124"}
 
-        data2   {::th/type :upsert-file-thumbnail
+        data2   {::th/type :create-file-thumbnail
                  ::rpc/profile-id (:id profile)
                  :file-id (:id file)
                  :props {}
@@ -166,7 +166,7 @@
                          :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                          :mtype "image/jpeg"}}
 
-        data3   {::th/type :upsert-file-thumbnail
+        data3   {::th/type :create-file-thumbnail
                  ::rpc/profile-id (:id profile)
                  :file-id (:id file)
                  :props {}
@@ -177,11 +177,11 @@
                          :mtype "image/jpeg"}}]
 
     (let [out (th/command! data1)]
-      ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
     (let [out (th/command! data2)]
+      ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
@@ -251,10 +251,10 @@
       (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted? false})]
         (t/is (nil? row)))
 
-      (t/is (some? (sto/get-object storage (:media-id row3))))
+      (t/is (some? (sto/get-object storage (:media-id row3)))))
 
 
-      )))
+    ))
 
 (t/deftest get-file-object-thumbnail
   (let [storage (::sto/storage th/*system*)
@@ -269,7 +269,7 @@
                  :object-id "test-key-1"
                  :data "data:base64,1234123124"}
 
-        data2   {::th/type :upsert-file-object-thumbnail
+        data2   {::th/type :create-file-object-thumbnail
                  ::rpc/profile-id (:id profile)
                  :file-id (:id file)
                  :object-id "test-key-2"
