@@ -37,7 +37,7 @@
 (defn- login-with-oidc
   [event provider params]
   (dom/prevent-default event)
-  (->> (rp/command! :login-with-oidc (assoc params :provider provider))
+  (->> (rp/cmd! :login-with-oidc (assoc params :provider provider))
        (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
                   (if redirect-uri
                     (.replace js/location redirect-uri)
@@ -57,7 +57,7 @@
   (dom/prevent-default event)
   (dom/stop-propagation event)
   (let [{:keys [on-error]} (meta params)]
-    (->> (rp/command! :login-with-ldap params)
+    (->> (rp/cmd! :login-with-ldap params)
          (rx/subs (fn [profile]
                     (if-let [token (:invitation-token profile)]
                       (st/emit! (rt/nav :auth-verify-token {} {:token token}))

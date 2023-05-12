@@ -46,7 +46,8 @@
   (let [features (cond-> ffeat/enabled
                    (features/active-feature? :components-v2)
                    (conj "components/v2"))]
-    (wrk/ask! {:cmd :thumbnails/generate
+
+    (wrk/ask! {:cmd :thumbnails/generate-for-file
                :revn (:revn file)
                :file-id (:id file)
                :file-name (:name file)

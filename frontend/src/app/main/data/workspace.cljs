@@ -267,6 +267,29 @@
         (when needs-update?
           (rx/of (dwl/notify-sync-file file-id)))))))
 
+(defn- fetch-thumbnail-blob-uri
+  [uri]
+  (->> (http/send! {:uri uri
+                    :response-type :blob
+                    :method :get})
+       (rx/map :body)
+       (rx/map (fn [blob] (.createObjectURL js/URL blob)))))
+
+(defn- fetch-thumbnail-blobs
+  [file-id]
+  (->> (rp/cmd! :get-file-object-thumbnails {:file-id file-id})
+       (rx/mapcat (fn [thumbnails]
+          (->> (rx/from thumbnails)
+               (rx/mapcat (fn [[k v]]
+                  ;; we only need to fetch the thumbnail if
+                  ;; it is a data:uri, otherwise we can just
+                  ;; use the value as is.
+                  (if (.startsWith v "data:")
+                    (->> (fetch-thumbnail-blob-uri v)
+                         (rx/map (fn [uri] [k uri])))
+                    (rx/of [k v])))))))
+       (rx/reduce conj {})))
+
 (defn- fetch-bundle
   [project-id file-id]
   (ptk/reify ::fetch-bundle
@@ -285,9 +308,8 @@
             ;; WTF is this?
             share-id (-> state :viewer-local :share-id)
             stoper   (rx/filter (ptk/type? ::fetch-bundle) stream)]
-
         (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
-                     (rp/cmd! :get-file-object-thumbnails {:file-id file-id})
+                     (fetch-thumbnail-blobs file-id)
                      (rp/cmd! :get-project {:id project-id})
                      (rp/cmd! :get-team-users {:file-id file-id})
                      (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id}))

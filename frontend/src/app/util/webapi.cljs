@@ -51,8 +51,8 @@
 
 (defn revoke-uri
   [url]
-  (assert (string? url) "invalid arguments")
-  (js/URL.revokeObjectURL url))
+  (when ^boolean (str/starts-with? url "blob:")
+    (js/URL.revokeObjectURL url)))
 
 (defn create-uri
   "Create a url from blob."

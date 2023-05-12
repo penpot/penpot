@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.schema :as sm]
+   [app.util.object :as obj]
    [app.worker.export]
    [app.worker.impl :as impl]
    [app.worker.import]
@@ -38,7 +39,7 @@
 
 (defn- handle-message
   "Process the message and returns to the client"
-  [{:keys [sender-id payload] :as message}]
+  [{:keys [sender-id payload transfer] :as message}]
   (dm/assert! (message? message))
   (letfn [(post [msg]
             (let [msg (-> msg (assoc :reply-to sender-id) (wm/encode))]
@@ -63,7 +64,7 @@
                           :completed true})))]
 
     (try
-      (let [result (impl/handler payload)
+      (let [result (impl/handler payload transfer)
             promise? (p/promise? result)
             stream? (or (rx/observable? result) (rx/subject? result))]
 
@@ -145,7 +146,10 @@
   [event]
   (when (nil? (.-source event))
     (let [message (.-data event)
-          message (wm/decode message)]
+          transfer (obj/get message "transfer")
+          message (cond-> (wm/decode message)
+                    (some? transfer)
+                    (assoc :transfer transfer))]
       (if (:buffer? message)
         (rx/push! buffer message)
         (handle-message message)))))

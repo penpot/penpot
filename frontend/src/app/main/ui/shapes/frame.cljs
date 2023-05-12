@@ -88,36 +88,41 @@
 (mf/defc frame-thumbnail-image
   {::mf/wrap-props false}
   [props]
+  (let [shape    (unchecked-get props "shape")
+        bounds   (or (unchecked-get props "bounds")
+                     (gsh/points->selrect (:points shape)))
 
-  (let [shape (obj/get props "shape")
-        bounds (or (obj/get props "bounds") (gsh/points->selrect (:points shape)))]
+        shape-id (:id shape)
+        thumb    (:thumbnail shape)
 
-    (when (:thumbnail shape)
-      [:*
-       [:image.frame-thumbnail
-        {:id (dm/str "thumbnail-" (:id shape))
-         :href (:thumbnail shape)
-         :x (:x bounds)
-         :y (:y bounds)
-         :width (:width bounds)
-         :height (:height bounds)
-         ;; DEBUG
-         :style {:filter (when (and (not (cf/check-browser? :safari))(debug? :thumbnails)) "sepia(1)")}}]
+        debug?   (debug? :thumbnails)
+        safari?  (cf/check-browser? :safari)]
 
-       ;; Safari don't support filters so instead we add a rectangle around the thumbnail
-       (when (and (cf/check-browser? :safari) (debug? :thumbnails))
-         [:rect {:x (+ (:x bounds) 4)
-                 :y (+ (:y bounds) 4)
-                 :width (- (:width bounds) 8)
-                 :height (- (:height bounds) 8)
-                 :stroke "red"
-                 :stroke-width 2}])])))
+    [:*
+     [:image.frame-thumbnail
+      {:id (dm/str "thumbnail-" shape-id)
+       :href thumb
+       :decoding "async"
+       :x (:x bounds)
+       :y (:y bounds)
+       :width (:width bounds)
+       :height (:height bounds)
+       :style {:filter (when (and (not ^boolean safari?) ^boolean debug?) "sepia(1)")}}]
+
+     ;; Safari don't support filters so instead we add a rectangle around the thumbnail
+     (when (and ^boolean safari? ^boolean debug?)
+       [:rect {:x (+ (:x bounds) 4)
+               :y (+ (:y bounds) 4)
+               :width (- (:width bounds) 8)
+               :height (- (:height bounds) 8)
+               :stroke "red"
+               :stroke-width 2}])]))
 
 (mf/defc frame-thumbnail
   {::mf/wrap-props false}
   [props]
-  (let [shape (obj/get props "shape")]
-    (when (:thumbnail shape)
+  (let [shape (unchecked-get props "shape")]
+    (when ^boolean (:thumbnail shape)
       [:> frame-container props
        [:> frame-thumbnail-image props]])))
 

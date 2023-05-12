@@ -672,7 +672,7 @@
                          :response-type :blob
                          :method :get})
                        (rx/map :body)
-                       (rx/mapcat #(rp/command! :import-binfile {:file %
+                       (rx/mapcat #(rp/cmd! :import-binfile {:file %
                                                                  :project-id project-id}))
                        (rx/map
                         (fn [_]

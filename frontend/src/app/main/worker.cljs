@@ -26,13 +26,19 @@
     (reset! instance worker)))
 
 (defn ask!
-  [message]
-  (when @instance (uw/ask! @instance message)))
+  ([message]
+   (when @instance (uw/ask! @instance message)))
+  ([message transfer]
+   (when @instance (uw/ask! @instance message transfer))))
 
 (defn ask-buffered!
-  [message]
-  (when @instance (uw/ask-buffered! @instance message)))
+  ([message]
+   (when @instance (uw/ask-buffered! @instance message)))
+  ([message transfer]
+   (when @instance (uw/ask-buffered! @instance message transfer))))
 
 (defn ask-many!
-  [message]
-  (when @instance (uw/ask-many! @instance message)))
+  ([message]
+   (when @instance (uw/ask-many! @instance message)))
+  ([message transfer]
+   (when @instance (uw/ask-many! @instance message transfer))))

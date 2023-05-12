@@ -48,8 +48,9 @@
    (let [sql (str/concat
               "select object_id, data, media_id "
               "  from file_object_thumbnail"
-              " where file_id=?")]
-     (->> (db/exec! conn [sql file-id])
+              " where file_id=?")
+         res (db/exec! conn [sql file-id])]
+     (->> res
           (d/index-by :object-id (fn [row]
                                    (or (some-> row :media-id get-public-uri)
                                        (:data row))))
@@ -57,14 +58,16 @@
 
   ([conn file-id object-ids]
    (let [sql (str/concat
-              "select object_id, data "
+              "select object_id, data, media_id "
               "  from file_object_thumbnail"
               " where file_id=? and object_id = ANY(?)")
-         ids (db/create-array conn "text" (seq object-ids))]
-     (->> (db/exec! conn [sql file-id ids])
-          (d/index-by :object-id (fn [row]
-                                   (or (some-> row :media-id get-public-uri)
-                                       (:data row))))))))
+         ids (db/create-array conn "text" (seq object-ids))
+         res (db/exec! conn [sql file-id ids])]
+     (d/index-by :object-id
+                 (fn [row]
+                   (or (some-> row :media-id get-public-uri)
+                       (:data row)))
+                 res))))
 
 (sv/defmethod ::get-file-object-thumbnails
   "Retrieve a file object thumbnails."
@@ -248,125 +251,200 @@
 
 ;; --- MUTATION COMMAND: upsert-file-object-thumbnail
 
-(def sql:upsert-object-thumbnail-1
+(def sql:upsert-object-thumbnail
   "insert into file_object_thumbnail(file_id, object_id, data)
    values (?, ?, ?)
        on conflict(file_id, object_id) do
           update set data = ?;")
 
-(def sql:upsert-object-thumbnail-2
-  "insert into file_object_thumbnail(file_id, object_id, media_id)
-   values (?, ?, ?)
-       on conflict(file_id, object_id) do
-          update set media_id = ?;")
-
 (defn upsert-file-object-thumbnail!
-  [{:keys [::db/conn ::sto/storage]} {:keys [file-id object-id] :as params}]
+  [conn {:keys [file-id object-id data]}]
+  (if data
+    (db/exec-one! conn [sql:upsert-object-thumbnail file-id object-id data data])
+    (db/delete! conn :file-object-thumbnail {:file-id file-id :object-id object-id})))
 
-  ;; NOTE: params can come with data set but with `nil` value, so we
-  ;; need first check the existence of the key and then the value.
-  (cond
-    (contains? params :data)
-    (if-let [data (:data params)]
-      (db/exec-one! conn [sql:upsert-object-thumbnail-1 file-id object-id data data])
-      (db/delete! conn :file-object-thumbnail {:file-id file-id :object-id object-id}))
-
-    (contains? params :media)
-    (if-let [{:keys [path mtype] :as media} (:media params)]
-      (let [_     (media/validate-media-type! media)
-            _     (media/validate-media-size! media)
-            hash  (sto/calculate-hash path)
-            data  (-> (sto/content path)
-                      (sto/wrap-with-hash hash))
-            media (sto/put-object! storage
-                                   {::sto/content data
-                                    ::sto/deduplicate? false
-                                    :content-type mtype
-                                    :bucket "file-object-thumbnail"})]
-
-        (db/exec-one! conn [sql:upsert-object-thumbnail-2 file-id object-id (:id media) (:id media)]))
-      (db/delete! conn :file-object-thumbnail {:file-id file-id :object-id object-id}))))
-
-;; FIXME: change it on validation refactor
 (s/def ::data (s/nilable ::us/string))
-(s/def ::media (s/nilable ::media/upload))
 (s/def ::object-id ::us/string)
 
 (s/def ::upsert-file-object-thumbnail
   (s/keys :req [::rpc/profile-id]
           :req-un [::file-id ::object-id]
-          :opt-un [::data ::media]))
+          :opt-un [::data]))
 
 (sv/defmethod ::upsert-file-object-thumbnail
   {::doc/added "1.17"
+   ::doc/deprecated "1.19"
    ::audit/skip true}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  (db/with-atomic [conn pool]
+    (files/check-edition-permissions! conn profile-id file-id)
 
-  (assert (or (contains? params :data)
-              (contains? params :media)))
+    (when-not (db/read-only? conn)
+      (upsert-file-object-thumbnail! conn params)
+      nil)))
+
+
+;; --- MUTATION COMMAND: create-file-object-thumbnail
+
+(def ^:private sql:create-object-thumbnail
+  "insert into file_object_thumbnail(file_id, object_id, media_id)
+   values (?, ?, ?)
+       on conflict(file_id, object_id) do
+          update set media_id = ?;")
+
+(defn- create-file-object-thumbnail!
+  [{:keys [::db/conn ::sto/storage]} file-id object-id media]
+
+  (let [path  (:path media)
+        mtype (:mtype media)
+        hash  (sto/calculate-hash path)
+        data  (-> (sto/content path)
+                  (sto/wrap-with-hash hash))
+        media (sto/put-object! storage
+                               {::sto/content data
+                                ::sto/deduplicate? false
+                                :content-type mtype
+                                :bucket "file-object-thumbnail"})]
+
+    (db/exec-one! conn [sql:create-object-thumbnail file-id object-id
+                        (:id media) (:id media)])))
+
+
+(s/def ::media (s/nilable ::media/upload))
+(s/def ::create-file-object-thumbnail
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::object-id ::media]))
+
+(sv/defmethod ::create-file-object-thumbnail
+  {:doc/added "1.19"
+   ::audit/skip true}
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id object-id media]}]
+  (db/with-atomic [conn pool]
+    (files/check-edition-permissions! conn profile-id file-id)
+    (media/validate-media-type! media)
+    (media/validate-media-size! media)
+
+    (when-not (db/read-only? conn)
+      (-> cfg
+          (update ::sto/storage media/configure-assets-storage)
+          (assoc ::db/conn conn)
+          (create-file-object-thumbnail! file-id object-id media))
+      nil)))
+
+;; --- MUTATION COMMAND: delete-file-object-thumbnail
+
+(defn- delete-file-object-thumbnail!
+  [{:keys [::db/conn ::sto/storage]} file-id object-id]
+  (when-let [{:keys [media-id]} (db/get* conn :file-object-thumbnail
+                                         {:file-id file-id
+                                          :object-id object-id}
+                                         {::db/for-update? true})]
+    (when media-id
+      (sto/del-object! storage media-id))
+
+    (db/delete! conn :file-object-thumbnail
+                {:file-id file-id
+                 :object-id object-id})
+    nil))
+
+(s/def ::delete-file-object-thumbnail
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::object-id]))
+
+(sv/defmethod ::delete-file-object-thumbnail
+  {:doc/added "1.19"
+   ::audit/skip true}
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id object-id]}]
 
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
 
     (when-not (db/read-only? conn)
-      (let [cfg (-> cfg
-                    (update ::sto/storage media/configure-assets-storage)
-                    (assoc ::db/conn conn))]
-        (upsert-file-object-thumbnail! cfg params)
-        nil))))
+      (-> cfg
+          (update ::sto/storage media/configure-assets-storage)
+          (assoc ::db/conn conn)
+          (delete-file-object-thumbnail! file-id object-id))
+      nil)))
 
 ;; --- MUTATION COMMAND: upsert-file-thumbnail
 
 (def ^:private sql:upsert-file-thumbnail
-  "insert into file_thumbnail (file_id, revn, data, media_id, props)
-   values (?, ?, ?, ?, ?::jsonb)
+  "insert into file_thumbnail (file_id, revn, data, props)
+   values (?, ?, ?, ?::jsonb)
        on conflict(file_id, revn) do
-          update set data=?, media_id=?, props=?, updated_at=now();")
+          update set data = ?, props=?, updated_at=now();")
 
 (defn- upsert-file-thumbnail!
-  [{:keys [::db/conn ::sto/storage]} {:keys [file-id revn props] :as params}]
+  [conn {:keys [file-id revn data props]}]
   (let [props (db/tjson (or props {}))]
-    (cond
-      (contains? params :data)
-      (when-let [data (:data params)]
-        (db/exec-one! conn [sql:upsert-file-thumbnail
-                            file-id revn data nil props data nil props]))
+    (db/exec-one! conn [sql:upsert-file-thumbnail
+                        file-id revn data props data props])))
 
-      (contains? params :media)
-      (when-let [{:keys [path mtype] :as media} (:media params)]
-        (let [_     (media/validate-media-type! media)
-              _     (media/validate-media-size! media)
-              hash  (sto/calculate-hash path)
-              data  (-> (sto/content path)
-                        (sto/wrap-with-hash hash))
-              media (sto/put-object! storage
-                                     {::sto/content data
-                                      ::sto/deduplicate? false
-                                      :content-type mtype
-                                      :bucket "file-thumbnail"})]
-          (db/exec-one! conn [sql:upsert-file-thumbnail
-                              file-id revn nil (:id media) props nil (:id media) props]))))))
 
 (s/def ::revn ::us/integer)
 (s/def ::props map?)
-(s/def ::media ::media/upload)
 
 (s/def ::upsert-file-thumbnail
   (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::revn ::props]
-          :opt-un [::data ::media]))
+          :req-un [::file-id ::revn ::props ::data]))
 
 (sv/defmethod ::upsert-file-thumbnail
   "Creates or updates the file thumbnail. Mainly used for paint the
   grid thumbnails."
   {::doc/added "1.17"
+   ::doc/deprecated "1.19"
    ::audit/skip true}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (when-not (db/read-only? conn)
-      (let [cfg (-> cfg
-                    (update ::sto/storage media/configure-assets-storage)
-                    (assoc ::db/conn conn))]
-        (upsert-file-thumbnail! cfg params))
+      (upsert-file-thumbnail! conn params)
+      nil)))
+
+;; --- MUTATION COMMAND: create-file-thumbnail
+
+(def ^:private sql:create-file-thumbnail
+  "insert into file_thumbnail (file_id, revn, media_id, props)
+   values (?, ?, ?, ?::jsonb)
+       on conflict(file_id, revn) do
+          update set media_id=?, props=?, updated_at=now();")
+
+(defn- create-file-thumbnail!
+  [{:keys [::db/conn ::sto/storage]} {:keys [file-id revn props media] :as params}]
+  (media/validate-media-type! media)
+  (media/validate-media-size! media)
+
+  (let [props (db/tjson (or props {}))
+        path  (:path media)
+        mtype (:mtype media)
+        hash  (sto/calculate-hash path)
+        data  (-> (sto/content path)
+                  (sto/wrap-with-hash hash))
+        media (sto/put-object! storage
+                               {::sto/content data
+                                ::sto/deduplicate? false
+                                :content-type mtype
+                                :bucket "file-thumbnail"})]
+    (db/exec-one! conn [sql:create-file-thumbnail file-id revn
+                        (:id media) props
+                        (:id media) props])))
+
+(s/def ::media ::media/upload)
+(s/def ::create-file-thumbnail
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::revn ::props ::media]))
+
+(sv/defmethod ::create-file-thumbnail
+  "Creates or updates the file thumbnail. Mainly used for paint the
+  grid thumbnails."
+  {::doc/added "1.19"
+   ::audit/skip true}
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  (db/with-atomic [conn pool]
+    (files/check-edition-permissions! conn profile-id file-id)
+    (when-not (db/read-only? conn)
+      (-> cfg
+          (update ::sto/storage media/configure-assets-storage)
+          (assoc ::db/conn conn)
+          (create-file-thumbnail! params))
       nil)))

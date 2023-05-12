@@ -16,6 +16,7 @@
    [app.worker.impl :as impl]
    [beicon.core :as rx]
    [debug :refer [debug?]]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (log/set-level! :trace)
@@ -110,8 +111,8 @@
          (rx/catch body-too-large? (constantly (rx/of nil)))
          (rx/map (constantly params)))))
 
-(defmethod impl/handler :thumbnails/generate
-  [{:keys [file-id revn features] :as message}]
+(defmethod impl/handler :thumbnails/generate-for-file
+  [{:keys [file-id revn features] :as message} _]
   (letfn [(on-result [{:keys [data props]}]
             {:data data
              :fonts (:fonts props)})
@@ -130,3 +131,18 @@
                      (log/debug :hint "request-thumbnail" :file-id file-id :revn revn :cache "hit")))
            (rx/catch not-found? on-cache-miss)
            (rx/map on-result)))))
+
+(defmethod impl/handler :thumbnails/render-offscreen-canvas
+  [_ ibpm]
+  (let [canvas (js/OffscreenCanvas. (.-width ^js ibpm) (.-height ^js ibpm))
+        ctx    (.getContext ^js canvas "bitmaprenderer")]
+
+    (.transferFromImageBitmap ^js ctx ibpm)
+
+    (->> (.convertToBlob ^js canvas #js {:type "image/png"})
+         (p/fmap (fn [blob]
+                   (js/console.log "[worker]: generated thumbnail")
+                   {:result (.createObjectURL js/URL blob)}))
+         (p/fnly (fn [_]
+                   (.close ^js ibpm))))))
+

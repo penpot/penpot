@@ -94,7 +94,7 @@
      (->> (rx/from uris)
           (rx/filter (comp not svg-url?))
           (rx/map prepare)
-          (rx/mapcat #(rp/command! :create-file-media-object-from-url %))
+          (rx/mapcat #(rp/cmd! :create-file-media-object-from-url %))
           (rx/do on-image))
 
      (->> (rx/from uris)

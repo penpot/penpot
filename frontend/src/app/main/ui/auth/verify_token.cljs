@@ -65,7 +65,7 @@
 
     (mf/with-effect []
       (dom/set-html-title (tr "title.default"))
-      (->> (rp/command! :verify-token {:token token})
+      (->> (rp/cmd! :verify-token {:token token})
            (rx/subs
             (fn [tdata]
               (handle-token tdata))
