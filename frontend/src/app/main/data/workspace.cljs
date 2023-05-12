@@ -783,6 +783,12 @@
                                  (assoc :layout-item-v-sizing :fix))
                                parent)))
 
+        ;; Update grid layout
+        (pcb/update-shapes parents
+                           (fn [parent]
+                             (cond-> parent
+                               (ctl/grid-layout? parent)
+                               (ctl/assign-cells))))
         ;; Resize parent containers that need to
         (pcb/resize-parents parents))))
 
@@ -1800,7 +1806,9 @@
 
                   changes  (-> (dws/prepare-duplicate-changes all-objects page selected delta it libraries library-data file-id)
                                (pcb/amend-changes (partial process-rchange media-idx))
-                               (pcb/amend-changes (partial change-add-obj-index paste-objects selected index)))
+                               (pcb/amend-changes (partial change-add-obj-index paste-objects selected index))
+                               (cond-> (ctl/grid-layout? all-objects parent-id)
+                                 (pcb/update-shapes [parent-id] ctl/assign-cells)))
 
                   ;; Adds a resize-parents operation so the groups are updated. We add all the new objects
                   new-objects-ids (->> changes :redo-changes (filter #(= (:type %) :add-obj)) (mapv :id))

@@ -178,7 +178,7 @@
 
 (mf/defc layout-item-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "is-layout-child?"]))]}
-  [{:keys [ids values is-layout-child? is-layout-container?] :as props}]
+  [{:keys [ids values is-layout-child? is-layout-container? is-grid-parent? is-flex-parent?] :as props}]
 
   (let [selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)
@@ -188,11 +188,15 @@
           (st/emit! (dwsl/update-layout-child ids {:layout-item-margin-type type})))
 
         align-self         (:layout-item-align-self values)
-        set-align-self     (fn [value]
-                             (if (= align-self value)
-                               (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self nil}))
-                               (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self value}))))
-        
+
+        set-align-self
+        (mf/use-callback
+         (mf/deps ids align-self)
+         (fn [value]
+           (if (= align-self value)
+             (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self nil}))
+             (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self value})))))
+
         is-absolute? (:layout-item-absolute values)
 
         is-col? (every? ctl/col? selection-parents)
@@ -231,9 +235,18 @@
 
     [:div.element-set
      [:div.element-set-title
-      [:span (if (and is-layout-container? (not is-layout-child?))
+      [:span (cond
+               (and is-layout-container? (not is-layout-child?))
                "Flex board"
-               "Flex element")]]
+
+               is-flex-parent?
+               "Flex element"
+
+               is-grid-parent?
+               "Grid element"
+
+               :else
+               "Layout element")]]
 
      [:div.element-set-content.layout-item-menu
       (when is-layout-child?

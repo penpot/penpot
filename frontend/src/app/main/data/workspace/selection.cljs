@@ -18,6 +18,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.shape.interactions :as ctsi]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
@@ -324,6 +325,16 @@
         (when selected
           (rx/of (select-shape (:id selected))))))))
 
+(defn remap-grid-cells
+  "Remaps the shapes inside the cells"
+  [shape ids-map]
+
+  (let [do-remap-cells
+        (fn [cell]
+          (-> cell
+              (update :shapes #(mapv ids-map %))))]
+
+    (update shape :layout-grid-cells update-vals do-remap-cells)))
 
 ;; --- Duplicate Shapes
 (declare prepare-duplicate-shape-change)
@@ -431,10 +442,15 @@
                                    :shape-ref
                                    :use-for-thumbnail?)
                            (gsh/move delta)
-                           (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
+                           (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))
+
+                           (cond-> (ctl/grid-layout? obj)
+                             (remap-grid-cells ids-map)))
 
            changes (-> (pcb/add-object changes new-obj)
-                       (pcb/amend-last-change #(assoc % :old-id (:id obj))))
+                       (pcb/amend-last-change #(assoc % :old-id (:id obj)))
+                       (cond-> (ctl/grid-layout? objects (:parent-id obj))
+                         (pcb/update-shapes [(:parent-id obj)] ctl/assign-cells)))
 
            changes (cond-> changes
                      (and is-component-root? is-component-main?)
