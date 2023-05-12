@@ -38,6 +38,13 @@
 
         is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
         is-layout-child? (mf/deref is-layout-child-ref)
+
+        is-flex-parent-ref (mf/use-memo (mf/deps ids) #(refs/flex-layout-child? ids))
+        is-flex-parent? (mf/deref is-flex-parent-ref)
+
+        is-grid-parent-ref (mf/use-memo (mf/deps ids) #(refs/grid-layout-child? ids))
+        is-grid-parent? (mf/deref is-grid-parent-ref)
+
         is-flex-layout-container? (ctl/flex-layout? shape)
         is-layout-child-absolute? (ctl/layout-absolute? shape)]
     [:*
@@ -58,6 +65,8 @@
         {:ids ids
          :type type
          :values layout-item-values
+         :is-flex-parent? is-flex-parent?
+         :is-grid-parent? is-grid-parent?
          :is-layout-child? is-layout-child?
          :is-layout-container? is-flex-layout-container?
          :shape shape}])

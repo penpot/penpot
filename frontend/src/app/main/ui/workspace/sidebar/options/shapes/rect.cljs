@@ -32,8 +32,15 @@
         stroke-values (select-keys shape stroke-attrs)
         layout-item-values (select-keys shape layout-item-attrs)
         layout-container-values (select-keys shape layout-container-flex-attrs)
+
         is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
         is-layout-child? (mf/deref is-layout-child-ref)
+
+        is-flex-parent-ref (mf/use-memo (mf/deps ids) #(refs/flex-layout-child? ids))
+        is-flex-parent? (mf/deref is-flex-parent-ref)
+
+        is-grid-parent-ref (mf/use-memo (mf/deps ids) #(refs/grid-layout-child? ids))
+        is-grid-parent? (mf/deref is-grid-parent-ref)
         is-layout-child-absolute? (ctl/layout-absolute? shape)]
     [:*
      [:& measures-menu {:ids ids
@@ -47,6 +54,8 @@
          :type type
          :values layout-item-values
          :is-layout-child? true
+         :is-flex-parent? is-flex-parent?
+         :is-grid-parent? is-grid-parent?
          :shape shape}])
 
      (when (or (not is-layout-child?) is-layout-child-absolute?)

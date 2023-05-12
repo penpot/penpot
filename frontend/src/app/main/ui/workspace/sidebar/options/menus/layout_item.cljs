@@ -177,7 +177,7 @@
         (get-layout-flex-icon :align-self align is-col?)])]))
 
 (mf/defc layout-item-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "is-layout-child?"]))]}
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "is-layout-child?" "is-grid-parent?" "is-flex-parent?"]))]}
   [{:keys [ids values is-layout-child? is-layout-container? is-grid-parent? is-flex-parent?] :as props}]
 
   (let [selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
@@ -285,7 +285,7 @@
                                 :layout-item-h-sizing (or (:layout-item-h-sizing values) :fix)
                                 :on-change-behavior on-change-behavior}]]
 
-         (when is-layout-child?
+         (when (and is-layout-child? is-flex-parent?)
            [:div.layout-row
             [:div.row-title "Align"]
             [:div.btn-wrapper

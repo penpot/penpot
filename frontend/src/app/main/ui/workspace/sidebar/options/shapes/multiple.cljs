@@ -297,6 +297,12 @@
         is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
         is-layout-child? (mf/deref is-layout-child-ref)
 
+        is-flex-parent-ref (mf/use-memo (mf/deps ids) #(refs/flex-layout-child? ids))
+        is-flex-parent? (mf/deref is-flex-parent-ref)
+
+        is-grid-parent-ref (mf/use-memo (mf/deps ids) #(refs/grid-layout-child? ids))
+        is-grid-parent? (mf/deref is-grid-parent-ref)
+
         has-text? (contains? all-types :text)
 
         has-flex-layout-container? (->> shapes (some ctl/flex-layout?))
@@ -348,6 +354,8 @@
          :ids layout-item-ids
          :is-layout-child? all-layout-child?
          :is-layout-container? all-flex-layout-container?
+         :is-flex-parent? is-flex-parent?
+         :is-grid-parent? is-grid-parent?
          :values layout-item-values}])
 
      (when-not (or (empty? constraint-ids) is-layout-child?)

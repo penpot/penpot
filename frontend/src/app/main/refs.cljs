@@ -501,7 +501,25 @@
      (->> ids
           (map (d/getf objects))
           (every? (partial ctl/any-layout-immediate-child? objects))))
-   workspace-page-objects))
+   workspace-page-objects =))
+
+(defn flex-layout-child?
+  [ids]
+  (l/derived
+   (fn [objects]
+     (->> ids
+          (map (d/getf objects))
+          (every? (partial ctl/flex-layout-immediate-child? objects))))
+   workspace-page-objects =))
+
+(defn grid-layout-child?
+  [ids]
+  (l/derived
+   (fn [objects]
+     (->> ids
+          (map (d/getf objects))
+          (every? (partial ctl/grid-layout-immediate-child? objects))))
+   workspace-page-objects =))
 
 (defn get-flex-child-viewer
   [ids page-id]
