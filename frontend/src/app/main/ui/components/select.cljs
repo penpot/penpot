@@ -12,9 +12,9 @@
    [app.main.ui.icons :as i]
    [rumext.v2 :as mf]))
 
-(mf/defc select [{:keys [default-value options class on-change]}]
+(mf/defc select [{:keys [default-value options class is-open? on-change on-pointer-enter-option on-pointer-leave-option]}]
   (let [state (mf/use-state {:id (uuid/next)
-                             :is-open? false
+                             :is-open? (or is-open? false)
                              :current-value default-value})
         open-dropdown #(swap! state assoc :is-open? true)
         close-dropdown #(swap! state assoc :is-open? false)
@@ -22,14 +22,20 @@
                       (fn [_]
                         (swap! state assoc :current-value value)
                         (when on-change (on-change value))))
+        highlight-item (fn [value]
+                          (when on-pointer-enter-option (on-pointer-enter-option value)))
+        unhighlight-item (fn [value]
+                          (when on-pointer-leave-option (on-pointer-leave-option value)))
         as-key-value (fn [item] (if (map? item) [(:value item) (:label item)] [item item]))
         value->label (into {} (->> options
                                    (map as-key-value))) ]
 
     (mf/use-effect
      (mf/deps options)
-     #(reset! state {:is-open? false
-                     :current-value default-value}))
+     #(if is-open?
+          (reset! state (assoc @state :current-value default-value)) 
+          (reset! state {:is-open? false
+                        :current-value default-value})))
 
     [:div.custom-select {:on-click open-dropdown
                          :class class}
@@ -45,6 +51,8 @@
                    [:li.checked-element
                     {:key (dm/str (:id @state) "-" index)
                      :class (when (= value (-> @state :current-value)) "is-selected")
+                     :on-pointer-enter #(highlight-item value)
+                     :on-pointer-leave #(unhighlight-item value)
                      :on-click (select-item value)}
                     [:span.check-icon i/tick]
                     [:span label]])))]]]))
