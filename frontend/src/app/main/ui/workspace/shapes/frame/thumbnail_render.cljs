@@ -31,11 +31,10 @@
   (if (.isArray js/Array value)
     (->> value
          (remove (fn [change]
-                   (or
-                    (= "data-loading" (.-attributeName change))
-                    (and (= "attributes" (.-type change))
-                         (= "href" (.-attributeName change))
-                         (str/starts-with? (.-oldValue change) "http"))))))
+                   (or (= "data-loading" (.-attributeName change))
+                       (and (= "attributes" (.-type change))
+                            (= "href" (.-attributeName change))
+                            (str/starts-with? (.-oldValue change) "http"))))))
     [value]))
 
 (defn- create-svg-blob-uri-from

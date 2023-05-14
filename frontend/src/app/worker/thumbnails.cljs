@@ -7,12 +7,14 @@
 (ns app.worker.thumbnails
   (:require
    ["react-dom/server" :as rds]
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.fonts :as fonts]
    [app.main.render :as render]
    [app.util.http :as http]
+   [app.util.time :as ts]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
    [debug :refer [debug?]]
@@ -20,7 +22,6 @@
    [rumext.v2 :as mf]))
 
 (log/set-level! :trace)
-
 
 (defn- handle-response
   [{:keys [body status] :as response}]
@@ -135,14 +136,15 @@
 (defmethod impl/handler :thumbnails/render-offscreen-canvas
   [_ ibpm]
   (let [canvas (js/OffscreenCanvas. (.-width ^js ibpm) (.-height ^js ibpm))
-        ctx    (.getContext ^js canvas "bitmaprenderer")]
+        ctx    (.getContext ^js canvas "bitmaprenderer")
+        tp     (ts/tpoint-ms)]
 
     (.transferFromImageBitmap ^js ctx ibpm)
 
     (->> (.convertToBlob ^js canvas #js {:type "image/png"})
          (p/fmap (fn [blob]
-                   (js/console.log "[worker]: generated thumbnail")
                    {:result (.createObjectURL js/URL blob)}))
          (p/fnly (fn [_]
+                   (log/debug :hint "generated thumbnail" :elapsed (dm/str (tp) "ms"))
                    (.close ^js ibpm))))))
 
