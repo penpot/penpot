@@ -48,7 +48,7 @@
 (defn duration
   [o]
   (cond
-    (integer? o)  (.fromMillis Duration o)
+    (number? o)   (.fromMillis Duration o)
     (duration? o) o
     (string? o)   (.fromISO Duration o)
     (map? o)      (.fromObject Duration (clj->js o))
@@ -239,6 +239,25 @@
    (when v
      (let [v (if (datetime? v) (format v :date) v)
            locale (obj/get locales locale)
-           f (-> (.-formatLong ^js locale)
-                 (.date v))]
-       (dateFnsFormat v f #js {:locale locale})))))
+           f (.date (.-formatLong locale) v)]
+       (->> #js {:locale locale}
+            (dateFnsFormat v f))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Measurement Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn tpoint
+  "Create a measurement checkpoint for time measurement of potentially
+  asynchronous flow."
+  []
+  (let [p1 (.now js/performance)]
+    #(duration (- (.now js/performance) p1))))
+
+(defn tpoint-ms
+  "Create a measurement checkpoint for time measurement of potentially
+  asynchronous flow."
+  []
+  (let [p1 (.now js/performance)]
+    #(- (.now js/performance) p1)))

@@ -41,7 +41,7 @@
                           :transform transform}))
           path? (some? (.-d props))]
       [:clipPath.frame-clip-def {:id (frame-clip-id shape render-id) :class "frame-clip"}
-       (if path?
+       (if ^boolean path?
          [:> :path props]
          [:> :rect props])])))
 
@@ -51,36 +51,36 @@
   {::mf/wrap-props false}
   [props]
 
-  (let [shape (obj/get props "shape")
-        children (obj/get props "children")
+  (let [shape     (unchecked-get props "shape")
+        children  (unchecked-get props "children")
 
         {:keys [x y width height show-content]} shape
         transform (gsh/transform-str shape)
 
         render-id (mf/use-ctx muc/render-id)
 
-        props (-> (attrs/extract-style-attrs shape render-id)
-                  (obj/merge!
-                   #js {:x x
-                        :y y
-                        :transform transform
-                        :width width
-                        :height height
-                        :className "frame-background"}))
+        props     (-> (attrs/extract-style-attrs shape render-id)
+                      (obj/merge!
+                       #js {:x x
+                            :y y
+                            :transform transform
+                            :width width
+                            :height height
+                            :className "frame-background"}))
         path? (some? (.-d props))]
     [:*
      [:g {:clip-path (when (not show-content) (frame-clip-url shape render-id))}
       [:& frame-clip-def {:shape shape :render-id render-id}]
 
       [:& shape-fills {:shape shape}
-       (if path?
+       (if ^boolean path?
          [:> :path props]
          [:> :rect props])]
 
       children]
 
      [:& shape-strokes {:shape shape}
-      (if path?
+      (if ^boolean path?
         [:> :path props]
         [:> :rect props])]]))
 
