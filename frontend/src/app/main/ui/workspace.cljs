@@ -5,7 +5,6 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace
-  (:import goog.events.EventType)
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.messages :as msg]
@@ -101,22 +100,26 @@
                            :selected selected
                            :layout layout}]])]))
 
-(def trimmed-page-ref (l/derived :workspace-trimmed-page st/state =))
+(def ^:private ref:page-loaded
+  (l/derived
+   (fn [state]
+     (some? (:workspace-trimmed-page state)))
+   st/state))
 
 (mf/defc workspace-page
-  [{:keys [file layout page-id wglobal] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [file layout page-id wglobal]}]
+  (let [prev-page-id (hooks/use-previous page-id)
+        page-loaded? (mf/deref ref:page-loaded)]
 
-  (let [prev-page-id (hooks/use-previous page-id)]
-    (mf/with-effect
-      [page-id]
+    (mf/with-effect [page-id prev-page-id]
       (when (and prev-page-id (not= prev-page-id page-id))
         (st/emit! (dw/finalize-page prev-page-id)))
-
       (if (nil? page-id)
         (st/emit! (dw/go-to-page))
         (st/emit! (dw/initialize-page page-id))))
 
-    (when (mf/deref trimmed-page-ref)
+    (when ^boolean page-loaded?
       [:& workspace-content {:page-id page-id
                              :file file
                              :wglobal wglobal
@@ -128,31 +131,28 @@
    i/loader-pencil])
 
 (mf/defc workspace
-  {::mf/wrap [mf/memo]}
-  [{:keys [project-id file-id page-id layout-name] :as props}]
-  (let [file                 (mf/deref refs/workspace-file)
-        project              (mf/deref refs/workspace-project)
-        layout               (mf/deref refs/workspace-layout)
-        wglobal              (mf/deref refs/workspace-global)
-        ready?               (mf/deref refs/workspace-ready?)
-        workspace-read-only? (mf/deref refs/workspace-read-only?)
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
+  [{:keys [project-id file-id page-id layout-name]}]
+  (let [file             (mf/deref refs/workspace-file)
+        project          (mf/deref refs/workspace-project)
+        layout           (mf/deref refs/workspace-layout)
+        wglobal          (mf/deref refs/workspace-global)
+        ready?           (mf/deref refs/workspace-ready?)
+        read-only?       (mf/deref refs/workspace-read-only?)
 
-        components-v2        (features/use-feature :components-v2)
-        new-css-system       (features/use-feature :new-css-system)
+        team-id          (:team-id project)
+        file-name        (:name file)
 
-        background-color     (:background-color wglobal)
+        components-v2    (features/use-feature :components-v2)
+        new-css-system   (features/use-feature :new-css-system)
 
-        focus-out
-        (mf/use-callback
-         (fn []
-           (st/emit! (dw/workspace-focus-lost))))]
+        background-color (:background-color wglobal)]
 
-    (mf/use-effect
-     (mf/deps focus-out)
-     (fn []
-       (let [keys [(events/listen globals/window EventType.BLUR focus-out)]]
-         #(doseq [key keys]
-            (events/unlistenByKey key)))))
+    (mf/with-effect []
+      (let [focus-out #(st/emit! (dw/workspace-focus-lost))
+            key       (events/listen globals/document "blur" focus-out)]
+        (partial events/unlistenByKey key)))
 
     ;; Setting the layout preset by its name
     (mf/with-effect [layout-name]
@@ -164,22 +164,21 @@
         (st/emit! ::dwp/force-persist
                   (dw/finalize-file project-id file-id))))
 
-    ;; Set html theme color and close any non-modal dialog that may be still open
-    (mf/with-effect
+    (mf/with-effect []
       (st/emit! msg/hide))
 
     ;; Set properly the page title
-    (mf/with-effect [(:name file)]
-      (when (:name file)
-        (dom/set-html-title (tr "title.workspace" (:name file)))))
+    (mf/with-effect [file-name]
+      (when file-name
+        (dom/set-html-title (tr "title.workspace" file-name))))
 
-    [:& (mf/provider ctx/current-file-id) {:value (:id file)}
-     [:& (mf/provider ctx/current-team-id) {:value (:team-id project)}
-      [:& (mf/provider ctx/current-project-id) {:value (:id project)}
+    [:& (mf/provider ctx/current-file-id) {:value file-id}
+     [:& (mf/provider ctx/current-team-id) {:value team-id}
+      [:& (mf/provider ctx/current-project-id) {:value project-id}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
         [:& (mf/provider ctx/components-v2) {:value components-v2}
          [:& (mf/provider ctx/new-css-system) {:value new-css-system}
-          [:& (mf/provider ctx/workspace-read-only?) {:value workspace-read-only?}
+          [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
            [:section#workspace {:style {:background-color background-color
                                         :touch-action "none"}}
             (when (not (:hide-ui layout))
@@ -190,7 +189,7 @@
 
             [:& context-menu]
 
-            (if ready?
+            (if ^boolean ready?
               [:& workspace-page {:page-id page-id
                                   :file file
                                   :wglobal wglobal
