@@ -13,6 +13,7 @@
    [app.common.text :as txt]
    [app.main.data.fonts :as fts]
    [app.main.data.shortcuts :as dsc]
+   [app.main.data.workspace :as dw]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -24,8 +25,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
-   [app.util.router :as rt]
    [app.util.strings :as ust]
    [app.util.timers :as tm]
    [cuerdas.core :as str]
@@ -38,7 +37,7 @@
     (ust/format-precision value 2)))
 
 (defn select-all [event]
-  (dom/select-text! (dom/get-target event)))
+  (some-> event dom/get-target dom/select-text!))
 
 (defn- get-next-font
   [{:keys [id] :as current} fonts]
@@ -229,8 +228,8 @@
       [:div.fonts-list
        [:> rvt/AutoSizer {}
         (fn [props]
-          (let [width  (obj/get props "width")
-                height (obj/get props "height")
+          (let [width  (unchecked-get props "width")
+                height (unchecked-get props "height")
                 render #(row-renderer fonts @selected on-select-and-close %)]
             (mf/html
              [:> rvt/List #js {:height height
@@ -241,9 +240,9 @@
                                :rowRenderer render}])))]]]]))
 (defn row-renderer
   [fonts selected on-select props]
-  (let [index (obj/get props "index")
-        key   (obj/get props "key")
-        style (obj/get props "style")
+  (let [index (unchecked-get props "index")
+        key   (unchecked-get props "key")
+        style (unchecked-get props "style")
         font  (nth fonts index)]
     (mf/html
      [:& font-item {:key key
@@ -253,7 +252,8 @@
                     :current? (= (:id font) (:id selected))}])))
 
 (mf/defc font-options
-  [{:keys [values on-change on-blur show-recent] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [values on-change on-blur show-recent]}]
   (let [{:keys [font-id font-size font-variant-id]} values
 
         font-id         (or font-id (:font-id txt/default-text-attrs))
@@ -371,7 +371,8 @@
 
 
 (mf/defc spacing-options
-  [{:keys [values on-change on-blur] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [values on-change on-blur]}]
   (let [{:keys [line-height
                 letter-spacing]} values
 
@@ -416,7 +417,8 @@
         :on-blur on-blur}]]]))
 
 (mf/defc text-transform-options
-  [{:keys [values on-change on-blur] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [values on-change on-blur]}]
   (let [text-transform (or (:text-transform values) "none")
         handle-change
         (fn [_ type]
@@ -446,6 +448,7 @@
       i/titlecase]]))
 
 (mf/defc typography-options
+  {::mf/wrap-props false}
   [{:keys [ids editor values on-change on-blur show-recent]}]
   (let [opts #js {:editor editor
                   :ids ids
@@ -460,19 +463,18 @@
      [:div.row-flex
       [:> text-transform-options opts]]]))
 
-
-;; TODO: this need to be refactored, right now combines too much logic
-;; and has a dropdown that behaves like a modal but is not a modal.
-;; In summary, this need to a good UX/UI/IMPL rework.
-
 (mf/defc typography-entry
-  [{:keys [typography local? selected? on-click on-change on-detach on-context-menu editing? focus-name? file open?]}]
-  (let [hover-detach         (mf/use-state false)
+  {::mf/wrap-props false}
+  [{:keys [file-id typography local? selected? on-click on-change on-detach on-context-menu editing? focus-name? external-open*]}]
+  (let [hover-detach*        (mf/use-state false)
+        hover-detach?        (deref hover-detach*)
+
         name-input-ref       (mf/use-ref)
-        on-change-ref        (mf/use-ref nil)
-        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
-        editable?            (and local? (not workspace-read-only?))
-        open?                (if (nil? open?) (mf/use-state editing?) open?)
+        read-only?           (mf/use-ctx ctx/workspace-read-only?)
+        editable?            (and local? (not read-only?))
+
+        open*                (mf/use-state editing?)
+        open?                (deref open*)
 
         on-name-blur
         (mf/use-callback
@@ -480,11 +482,36 @@
          (fn [event]
            (let [name (dom/get-target-val event)]
              (when-not (str/blank? name)
-               (on-change {:name name})))))]
+               (on-change {:name name})))))
+
+        on-pointer-enter
+        (mf/use-fn #(reset! hover-detach* true))
+
+        on-pointer-leave
+        (mf/use-fn #(reset! hover-detach* false))
+
+        on-open
+        (mf/use-fn #(reset! open* true))
+
+        on-close
+        (mf/use-fn #(reset! open* false))
+
+        navigate-to-library
+        (mf/use-fn
+         (mf/deps file-id)
+         (fn []
+           (when file-id
+             (st/emit! (dw/navigate-to-library file-id)))))
+
+        ]
 
     (mf/with-effect [editing?]
       (when editing?
-        (reset! open? editing?)))
+        (reset! open* editing?)))
+
+    (mf/with-effect [open?]
+      (when (some? external-open*)
+        (reset! external-open* open?)))
 
     (mf/with-effect [focus-name?]
       (when focus-name?
@@ -493,15 +520,12 @@
             (dom/focus! node)
             (dom/select-text! node)))))
 
-    (mf/with-effect [on-change]
-      (mf/set-ref-val! on-change-ref {:on-change on-change}))
-
     [:*
      [:div.element-set-options-group.typography-entry
-      {:class (when selected? "selected")
-       :style {:display (when @open? "none")}}
+      {:class (when ^boolean selected? "selected")
+       :style {:display (when ^boolean open? "none")}}
       [:div.typography-selection-wrapper
-       {:class (when on-click "is-selectable")
+       {:class (when ^boolean on-click "is-selectable")
         :on-click on-click
         :on-context-menu on-context-menu}
        [:div.typography-sample
@@ -511,20 +535,36 @@
         (tr "workspace.assets.typography.sample")]
        [:div.typography-name {:title (:name typography)}(:name typography)]]
       [:div.element-set-actions
-       (when on-detach
+       (when ^boolean on-detach
          [:div.element-set-actions-button
-          {:on-pointer-enter #(reset! hover-detach true)
-           :on-pointer-leave #(reset! hover-detach false)
+          {:on-pointer-enter on-pointer-enter
+           :on-pointer-leave on-pointer-leave
            :on-click on-detach}
-          (if @hover-detach i/unchain i/chain)])
+          (if ^boolean hover-detach? i/unchain i/chain)])
 
        [:div.element-set-actions-button
-        {:on-click #(reset! open? true)}
+        {:on-click on-open}
         i/actions]]]
 
-     [:& advanced-options {:visible? @open?
-                           :on-close #(reset! open? false)}
-      (if (not editable?)
+     [:& advanced-options {:visible? open? :on-close on-close}
+      (if ^boolean editable?
+        [:*
+         [:div.element-set-content
+          [:div.row-flex
+           [:input.element-name.adv-typography-name
+            {:type "text"
+             :ref name-input-ref
+             :default-value (:name typography)
+             :on-blur on-name-blur}]
+
+           [:div.element-set-actions-button
+            {:on-click on-close}
+            i/actions]]]
+
+         [:& typography-options {:values typography
+                                 :on-change on-change
+                                 :show-recent false}]]
+
         [:div.element-set-content.typography-read-only-data
          [:div.row-flex.typography-name
           [:span {:title (:name typography)} (:name typography)]]
@@ -534,7 +574,7 @@
           [:span (:font-id typography)]]
 
          [:div.element-set-actions-button.actions-inside
-          {:on-click #(reset! open? false)}
+          {:on-click on-close}
           i/actions]
 
          [:div.row-flex
@@ -560,25 +600,7 @@
          (when-not local?
            [:div.row-flex
             [:a.go-to-lib-button
-             {:on-click #(st/emit! (rt/nav-new-window* {:rname :workspace
-                                                        :path-params {:project-id (:project-id file)
-                                                                      :file-id (:id file)}
-                                                        :query-params {:page-id (get-in file [:data :pages 0])}}))}
+             {:on-click navigate-to-library}
              (tr "workspace.assets.typography.go-to-edit")]])]
 
-        [:*
-         [:div.element-set-content
-          [:div.row-flex
-           [:input.element-name.adv-typography-name
-            {:type "text"
-             :ref name-input-ref
-             :default-value (:name typography)
-             :on-blur on-name-blur}]
-
-             [:div.element-set-actions-button
-              {:on-click #(reset! open? false)}
-             i/actions]]]
-
-         [:& typography-options {:values typography
-                                 :on-change on-change
-                                 :show-recent false}]])]]))
+        )]]))

@@ -43,4 +43,3 @@
     (watch [_ _ _]
       (->> (rp/cmd! :delete-share-link {:id id})
            (rx/ignore)))))
-

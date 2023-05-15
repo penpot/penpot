@@ -14,7 +14,6 @@
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -23,7 +22,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (mf/defc text-align-options
@@ -159,11 +157,6 @@
        :on-click #(handle-change % "line-through")}
       i/strikethrough]]))
 
-(defn generate-typography-name
-  [{:keys [font-id font-variant-id] :as typography}]
-  (let [{:keys [name]} (fonts/get-font-data font-id)]
-    (assoc typography :name (str name " " (str/title font-variant-id)))))
-
 (mf/defc text-menu
   {::mf/wrap [mf/memo]}
   [{:keys [ids type values] :as props}]
@@ -215,7 +208,7 @@
                                               dwt/text-spacing-attrs
                                               dwt/text-transform-attrs)))
                 typography (merge txt/default-typography set-values)
-                typography (generate-typography-name typography)
+                typography (dwt/generate-typography-name typography)
                 id         (uuid/next)]
             (st/emit! (dwl/add-typography (assoc typography :id id) false))
             (run! #(emit-update! % {:typography-ref-id id

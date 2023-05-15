@@ -181,13 +181,14 @@
                 (rx/of (dwn/initialize team-id id)
                        (dwsl/initialize))
 
-                ;; Load team fonts. We must ensure custom fonts are fully loadad before starting the workspace load
+                ;; Load team fonts. We must ensure custom fonts are fully loadad
+                ;; before starting the workspace load.
                 (rx/merge
+                 (rx/of (df/load-team-fonts team-id))
                  (->> stream
                       (rx/filter (ptk/type? :app.main.data.fonts/team-fonts-loaded))
                       (rx/take 1)
-                      (rx/ignore))
-                 (rx/of (df/load-team-fonts team-id)))
+                      (rx/ignore)))
 
                 (rx/merge
                  ;; Load all pages, independently if they are pointers or already
@@ -218,8 +219,6 @@
                       (rx/merge-map
                        (fn [_]
                          (rx/merge
-                          (rx/of (workspace-initialized))
-
                           (->> data
                                (filter (comp t/pointer? val))
                                (resolve-pointers id)
@@ -249,8 +248,9 @@
                                         (fn [pages-index]
                                           (assoc-in file [:data :pages-index] pages-index))))))
                                (rx/reduce conj [])
-                               (rx/map libraries-fetched))))))))
+                               (rx/map libraries-fetched)))))))
 
+                (rx/of (workspace-initialized)))
                (rx/take-until stoper)))))))
 
 (defn- libraries-fetched
@@ -1135,6 +1135,19 @@
             qparams    {:page-id page-id :layout (name layout)}]
         (rx/of (rt/nav :workspace pparams qparams))))))
 
+(defn navigate-to-library
+  "Open a new tab, and navigate to the workspace with the provided file"
+  [library-id]
+  (ptk/reify ::navigate-to-file
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when-let [file (dm/get-in state [:workspace-libraries library-id])]
+        (let [params {:rname :workspace
+                      :path-params {:project-id (:project-id file)
+                                    :file-id (:id file)}
+                      :query-params {:page-id (dm/get-in file [:data :pages 0])}}]
+          (rx/of (rt/nav-new-window* params)))))))
+
 (defn check-in-asset
   [items element]
   (let [items (or items #{})]
@@ -1147,31 +1160,31 @@
   (ptk/reify ::toggle-selected-assets
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-global :selected-assets type] #(check-in-asset % asset)))))
+      (update-in state [:workspace-assets-selected type] #(check-in-asset % asset)))))
 
 (defn select-single-asset
   [asset type]
   (ptk/reify ::select-single-asset
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-global :selected-assets type] #{asset}))))
+      (assoc-in state [:workspace-assets-selected type] #{asset}))))
 
 (defn select-assets
   [assets type]
   (ptk/reify ::select-assets
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-global :selected-assets type] (into #{} assets)))))
+      (assoc-in state [:workspace-assets-selected type] (into #{} assets)))))
 
 (defn unselect-all-assets
   []
   (ptk/reify ::unselect-all-assets
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-global :selected-assets] {:components #{}
-                                                            :graphics #{}
-                                                            :colors #{}
-                                                            :typographies #{}}))))
+      (assoc state :workspace-assets-selected {:components #{}
+                                               :graphics #{}
+                                               :colors #{}
+                                               :typographies #{}}))))
 (defn go-to-main-instance
   [page-id shape-id]
   (dm/assert! (uuid? page-id))
@@ -1216,8 +1229,8 @@
                 pparams       {:file-id file-id :project-id project-id}
                 qparams       {:page-id page-id :layout :assets}]
             (rx/of (rt/nav :workspace pparams qparams)
-                   (dwl/set-assets-box-open file-id :library true)
-                   (dwl/set-assets-box-open file-id :components true)
+                   (dwl/set-assets-section-open file-id :library true)
+                   (dwl/set-assets-section-open file-id :components true)
                    (select-single-asset component-id :components))))))
 
     ptk/EffectEvent
@@ -1238,8 +1251,8 @@
             pparams       {:file-id file-id :project-id project-id}
             qparams       {:page-id page-id :layout :assets}]
         (rx/of (rt/nav :workspace pparams qparams)
-               (dwl/set-assets-box-open file-id :library true)
-               (dwl/set-assets-box-open file-id :components true)
+               (dwl/set-assets-section-open file-id :library true)
+               (dwl/set-assets-section-open file-id :components true)
                (select-single-asset component-id :components))))
 
     ptk/EffectEvent
@@ -2090,26 +2103,6 @@
       (let [local (-> (:workspace-local state)
                       (dissoc :page-item))]
         (assoc state :workspace-local local)))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; File Library persistent settings
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-(defn set-file-library-listing-thumbs
-  [listing-thumbs?]
-  (ptk/reify ::set-file-library-listing-thumbs
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-global :file-library-listing-thumbs] listing-thumbs?))))
-
-(defn set-file-library-reverse-sort
-  [reverse-sort?]
-  (ptk/reify ::set-file-library-reverse-sort
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-global :file-library-reverse-sort] reverse-sort?))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components annotations

@@ -76,19 +76,19 @@
 
 (declare sync-file)
 
-(defn set-assets-box-open
-  [file-id box open?]
-  (ptk/reify ::set-assets-box-open
+(defn set-assets-section-open
+  [file-id section open?]
+  (ptk/reify ::set-assets-section-open
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-global :assets-files-open file-id box] open?))))
+      (assoc-in state [:workspace-assets-open-status file-id section] open?))))
 
 (defn set-assets-group-open
-  [file-id box path open?]
+  [file-id section path open?]
   (ptk/reify ::set-assets-group-open
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-global :assets-files-open file-id :groups box path] open?))))
+      (assoc-in state [:workspace-assets-open-status file-id :groups section path] open?))))
 
 (defn extract-path-if-missing
   [item]
@@ -951,12 +951,22 @@
 (defn link-file-to-library
   [file-id library-id]
   (ptk/reify ::attach-library
+    ;; NOTE: this event implements UpdateEvent protocol for perform an
+    ;; optimistic update state for make the UI feel more responsive.
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [libraries (:workspace-shared-files state)
+            library   (d/seek #(= (:id %) library-id) libraries)]
+        (if library
+          (update state :workspace-libraries assoc library-id (dissoc library :library-summary))
+          state)))
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [features (cond-> ffeat/enabled
                        (features/active-feature? state :components-v2)
                        (conj "components/v2"))]
-        (rx/concat
+        (rx/merge
          (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
               (rx/ignore))
          (->> (rp/cmd! :get-file {:id library-id :features features})

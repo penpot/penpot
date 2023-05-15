@@ -36,7 +36,6 @@
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.object :as obj]
    [app.util.router :as rt]
    [debug :refer [debug?]]
    [goog.events :as events]
@@ -47,14 +46,11 @@
 
 (mf/defc workspace-content
   {::mf/wrap-props false}
-  [props]
+  [{:keys [file layout page-id wglobal]}]
   (let [selected (mf/deref refs/selected-shapes)
-        file     (obj/get props "file")
-        layout   (obj/get props "layout")
-        page-id  (obj/get props "page-id")
 
         {:keys [vport] :as wlocal} (mf/deref refs/workspace-local)
-        {:keys [options-mode] :as wglobal} (obj/get props "wglobal")
+        {:keys [options-mode]} wglobal
 
         colorpalette? (:colorpalette layout)
         textpalette?  (:textpalette layout)

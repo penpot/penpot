@@ -6,88 +6,101 @@
 
 (ns app.main.ui.delete-shared
   (:require
-   [app.main.data.dashboard :as dd]
+   [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
-   [app.main.refs :as refs]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as k]
+   [beicon.core :as rx]
    [goog.events :as events]
-   [rumext.v2 :as mf])
-  (:import goog.events.EventType))
+   [rumext.v2 :as mf]))
+
+(def ^:private noop (constantly nil))
 
 (mf/defc delete-shared-dialog
   {::mf/register modal/components
-   ::mf/register-as :delete-shared}
-  [{:keys [on-accept
-           on-cancel
-           accept-style
-           origin
-           count-libraries] :as props}]
-  (let [on-accept       (or on-accept identity)
-        on-cancel       (or on-cancel identity)
-        cancel-label    (tr "labels.cancel")
-        accept-style    (or accept-style :danger)
-        dashboard-local (mf/deref refs/dashboard-local)
-        files->shared   (:files-with-shared dashboard-local)
+   ::mf/register-as :delete-shared-libraries
+   ::mf/wrap-props false}
+  [{:keys [ids on-accept on-cancel accept-style origin count-libraries]}]
+  (let [references*  (mf/use-state {})
+        references   (deref references*)
 
-        is-delete?      (= origin :delete)
-        count-files     (count (keys files->shared))
+        on-accept    (or on-accept noop)
+        on-cancel    (or on-cancel noop)
 
-        title            (if is-delete?
-                           (tr "modals.delete-shared-confirm.title" (i18n/c count-libraries))
-                           (tr "modals.unpublish-shared-confirm.title" (i18n/c count-libraries)))
-        message          (if is-delete?
-                           (tr "modals.delete-shared-confirm.message" (i18n/c count-libraries))
-                           (tr "modals.unpublish-shared-confirm.message" (i18n/c count-libraries)))
-        accept-label     (if is-delete?
-                           (tr "modals.delete-shared-confirm.accept" (i18n/c count-libraries))
-                           (tr "modals.unpublish-shared-confirm.accept" (i18n/c count-libraries)))
-        no-files-message (if is-delete?
-                           (tr "modals.delete-shared-confirm.no-files-message" (i18n/c count-libraries))
-                           (tr "modals.unpublish-shared-confirm.no-files-message" (i18n/c count-libraries)))
-        scd-message      (if is-delete?
-                           (if (= count-files 1)
-                             (tr "modals.delete-shared-confirm.scd-message" (i18n/c count-libraries))
-                             (tr "modals.delete-shared-confirm.scd-message-many" (i18n/c count-libraries)))
-                           (if (= count-files 1)
-                              (tr "modals.unpublish-shared-confirm.scd-message" (i18n/c count-libraries))
-                              (tr "modals.unpublish-shared-confirm.scd-message-many" (i18n/c count-libraries))))
-        hint             (if is-delete?
-                           (if (= count-files 1)
-                             (tr "modals.delete-shared-confirm.hint" (i18n/c count-libraries))
+        cancel-label (tr "labels.cancel")
+        accept-style (or accept-style :danger)
+
+        is-delete?   (= origin :delete)
+        count-files  (count (keys references))
+
+        title        (if ^boolean is-delete?
+                       (tr "modals.delete-shared-confirm.title" (i18n/c count-libraries))
+                       (tr "modals.unpublish-shared-confirm.title" (i18n/c count-libraries)))
+
+        subtitle     (if ^boolean is-delete?
+                       (tr "modals.delete-shared-confirm.message" (i18n/c count-libraries))
+                       (tr "modals.unpublish-shared-confirm.message" (i18n/c count-libraries)))
+
+        accept-label (if ^boolean is-delete?
+                       (tr "modals.delete-shared-confirm.accept" (i18n/c count-libraries))
+                       (tr "modals.unpublish-shared-confirm.accept" (i18n/c count-libraries)))
+
+        no-files-msg (if ^boolean is-delete?
+                       (tr "modals.delete-shared-confirm.no-files-message" (i18n/c count-libraries))
+                       (tr "modals.unpublish-shared-confirm.no-files-message" (i18n/c count-libraries)))
+
+        scd-msg      (if ^boolean is-delete?
+                       (if (= count-files 1)
+                         (tr "modals.delete-shared-confirm.scd-message" (i18n/c count-libraries))
+                         (tr "modals.delete-shared-confirm.scd-message-many" (i18n/c count-libraries)))
+                       (if (= count-files 1)
+                         (tr "modals.unpublish-shared-confirm.scd-message" (i18n/c count-libraries))
+                         (tr "modals.unpublish-shared-confirm.scd-message-many" (i18n/c count-libraries))))
+        hint         (if ^boolean is-delete?
+                       (if (= count-files 1)
+                         (tr "modals.delete-shared-confirm.hint" (i18n/c count-libraries))
                              (tr "modals.delete-shared-confirm.hint-many" (i18n/c count-libraries)))
-                           (if (= count-files 1)
-                             (tr "modals.unpublish-shared-confirm.hint" (i18n/c count-libraries))
-                             (tr "modals.unpublish-shared-confirm.hint-many" (i18n/c count-libraries))))
+                       (if (= count-files 1)
+                         (tr "modals.unpublish-shared-confirm.hint" (i18n/c count-libraries))
+                         (tr "modals.unpublish-shared-confirm.hint-many" (i18n/c count-libraries))))
 
         accept-fn
-        (mf/use-callback
+        (mf/use-fn
+         (mf/deps on-accept)
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (modal/hide))
-           (on-accept props)))
+           (on-accept)))
 
         cancel-fn
-        (mf/use-callback
+        (mf/use-fn
+         (mf/deps on-cancel)
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (modal/hide))
-           (on-cancel props)))]
+           (on-cancel)))]
 
-    (mf/with-effect
+    (mf/with-effect [ids]
+      (->> (rx/from ids)
+           (rx/map #(array-map :file-id %))
+           (rx/mapcat #(rp/cmd! :get-library-file-references %))
+           (rx/mapcat identity)
+           (rx/map (juxt :id :name))
+           (rx/reduce conj [])
+           (rx/subs #(reset! references* %))))
+
+    (mf/with-effect [accept-fn]
       (letfn [(on-keydown [event]
                 (when (k/enter? event)
                   (dom/prevent-default event)
                   (dom/stop-propagation event)
-                  (st/emit! (modal/hide))
-                  (on-accept props)))]
-        (let [key (events/listen js/document EventType.KEYDOWN on-keydown)]
-          (fn []
-            (events/unlistenByKey key)
-            (st/emit! (dd/clean-temp-shared))))))
+                  (accept-fn)))]
+        (let [key (events/listen js/document "keydown" on-keydown)]
+          (partial events/unlistenByKey key))))
 
     [:div.modal-overlay
      [:div.modal-container.confirm-dialog
@@ -98,23 +111,23 @@
         {:on-click cancel-fn} i/close]]
 
       [:div.modal-content.delete-shared
-       (when (and (string? message) (not= message ""))
-         [:h3 message])
+       (when (and (string? subtitle) (not= subtitle ""))
+         [:h3 subtitle])
        (when (not= 0 count-libraries)
-         (if (> (count files->shared) 0)
+         (if (pos? (count references))
            [:*
             [:div
-             (when (and (string? scd-message) (not= scd-message ""))
-               [:h3 scd-message])
+             (when (and (string? scd-msg) (not= scd-msg ""))
+               [:h3 scd-msg])
              [:ul.file-list
-              (for [[id file] files->shared]
+              (for [[file-id file-name] references]
                 [:li.modal-item-element
-                 {:key id}
-                 [:span "- " (:name file)]])]]
+                 {:key (dm/str file-id)}
+                 [:span "- " file-name]])]]
             (when (and (string? hint) (not= hint ""))
               [:h3 hint])]
            [:*
-            [:h3 no-files-message]]))]
+            [:h3 no-files-msg]]))]
 
       [:div.modal-footer
        [:div.action-buttons

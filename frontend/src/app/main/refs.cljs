@@ -187,17 +187,8 @@
 (def editing-page-item
   (l/derived :page-item workspace-local))
 
-(def file-library-listing-thumbs?
-  (l/derived :file-library-listing-thumbs workspace-global))
-
-(def file-library-reverse-sort?
-  (l/derived :file-library-reverse-sort workspace-global))
-
 (def current-hover-ids
   (l/derived :hover-ids context-menu))
-
-(def selected-assets
-  (l/derived :selected-assets workspace-global))
 
 (def workspace-layout
   (l/derived :workspace-layout st/state))
@@ -212,10 +203,9 @@
                      data (:workspace-data state)]
                  (-> file
                      (dissoc :data)
-                     (assoc :options (:options data)
-                            :components (:components data)
-                            :pages (:pages data)
-                            :pages-index (:pages-index data)))))
+                     ;; FIXME: still used in sitemaps but sitemaps
+                     ;; should declare its own lense for it
+                     (assoc :pages (:pages data)))))
              st/state =))
 
 (def workspace-data
@@ -395,9 +385,7 @@
 
 (def selected-objects
   (letfn [(selector [{:keys [selected objects]}]
-            (->> selected
-                 (map #(get objects %))
-                 (filterv (comp not nil?))))]
+            (into [] (keep (d/getf objects)) selected))]
     (l/derived selector selected-data =)))
 
 (def selected-shapes-with-children

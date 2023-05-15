@@ -224,7 +224,7 @@
 
 (defn on-context-menu
   [hover hover-ids workspace-read-only?]
-  (mf/use-callback
+  (mf/use-fn
    (mf/deps @hover @hover-ids workspace-read-only?)
    (fn [event]
      (if workspace-read-only?
