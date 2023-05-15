@@ -345,7 +345,8 @@
                                                  file-data
                                                  position
                                                  false
-                                                 {:main-instance? true})
+                                                 {:main-instance? true
+                                                  :force-frame-id uuid/zero})
 
                     add-shapes
                     (fn [page]

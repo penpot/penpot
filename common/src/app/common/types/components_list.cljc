@@ -30,25 +30,19 @@
   (assoc component :modified-at (dt/now)))
 
 (defn add-component
-  [file-data {:keys [id name path main-instance-id main-instance-page shapes]}]
-  (let [components-v2  (dm/get-in file-data [:options :components-v2])
-        wrap-object-fn feat/*wrap-with-objects-map-fn*]
-    (cond-> file-data
-      :always
-      (assoc-in [:components id]
-                (touch {:id id
-                        :name name
-                        :path path}))
-
-      (not components-v2)
-      (assoc-in [:components id :objects]
-                (->> shapes
-                     (d/index-by :id)
-                     (wrap-object-fn)))
-      components-v2
-      (update-in [:components id] assoc
+  [fdata {:keys [id name path main-instance-id main-instance-page shapes]}]
+  (let [components-v2  (dm/get-in fdata [:options :components-v2])
+        fdata          (update fdata :components assoc id (touch {:id id :name name :path path}))]
+    (if components-v2
+      (update-in fdata [:components id] assoc
                  :main-instance-id main-instance-id
-                 :main-instance-page main-instance-page))))
+                 :main-instance-page main-instance-page)
+
+      (let [wrap-object-fn feat/*wrap-with-objects-map-fn*]
+        (assoc-in fdata [:components id :objects]
+                  (->> shapes
+                       (d/index-by :id)
+                       (wrap-object-fn)))))))
 
 (defn mod-component
   [file-data {:keys [id name path objects annotation]}]

@@ -225,14 +225,17 @@
                                (resolve-pointers id)
                                (rx/map workspace-data-pointers-loaded))
 
-                          (->> (rp/cmd! :get-file-libraries {:file-id id :features features})
+                          (->> (rp/cmd! :get-file-libraries {:file-id id})
                                (rx/mapcat identity)
-                               (rx/mapcat
+                               (rx/merge-map
+                                (fn [{:keys [id]}]
+                                  (rp/cmd! :get-file {:id id :features features})))
+                               (rx/merge-map
                                 (fn [{:keys [id data] :as file}]
                                   (->> (filter (comp t/pointer? val) data)
                                        (resolve-pointers id)
                                        (rx/map #(update file :data merge %)))))
-                               (rx/mapcat
+                               (rx/merge-map
                                 (fn [{:keys [id data] :as file}]
                                   ;; Resolve all pages of each library, if needed
                                   (->> (rx/from (seq (:pages-index data)))
