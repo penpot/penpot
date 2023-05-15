@@ -13,8 +13,8 @@
   funcool/tubax {:mvn/version "2021.05.20-0"}
 
   funcool/rumext
-  {:git/tag "v2.1"
-   :git/sha "6343102"
+  {:git/tag "v2.3"
+   :git/sha "09942e7"
    :git/url "https://github.com/funcool/rumext.git"
   }
 
