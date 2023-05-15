@@ -580,8 +580,10 @@
 
 (defn nilv
   "Returns a default value if the given value is nil"
-  [v default]
-  (if (some? v) v default))
+  ([default]
+   (map #(nilv % default)))
+  ([v default]
+   (if (some? v) v default)))
 
 (defn num?
   "Checks if a value `val` is a number but not an Infinite or NaN"
