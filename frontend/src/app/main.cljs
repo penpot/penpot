@@ -98,3 +98,6 @@
  (fn [_ _ old-value current-value]
    (when (not= old-value current-value)
      (reinit))))
+
+(set! (.-stackTraceLimit js/Error) 50)
+
