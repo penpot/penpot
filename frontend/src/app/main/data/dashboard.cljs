@@ -237,34 +237,6 @@
         (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
              (rx/map shared-files-fetched))))))
 
-;; --- EVENT: Get files that use this shared-file
-
-(defn clean-temp-shared
-  []
-  (ptk/reify ::clean-temp-shared
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:dashboard-local :files-with-shared] nil))))
-
-(defn library-using-files-fetched
-  [files]
-  (ptk/reify ::library-using-files-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [files (d/index-by :id files)]
-        (assoc-in state [:dashboard-local :files-with-shared] files)))))
-
-(defn fetch-libraries-using-files
-  [files]
-  (ptk/reify ::fetch-library-using-files
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rx/from files)
-           (rx/map :id)
-           (rx/mapcat #(rp/cmd! :get-library-file-references {:file-id %}))
-           (rx/reduce into [])
-           (rx/map library-using-files-fetched)))))
-
 ;; --- EVENT: recent-files
 
 (defn recent-files-fetched

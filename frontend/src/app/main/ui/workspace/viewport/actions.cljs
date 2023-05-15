@@ -224,14 +224,14 @@
 
 (defn on-context-menu
   [hover hover-ids workspace-read-only?]
-  (mf/use-callback
+  (mf/use-fn
    (mf/deps @hover @hover-ids workspace-read-only?)
    (fn [event]
      (if workspace-read-only?
        (dom/prevent-default event)
        (when (or (dom/class? (dom/get-target event) "viewport-controls")
                  (dom/class? (dom/get-target event) "viewport-selrect")
-                 (workspace-read-only?))
+                 workspace-read-only?)
          (dom/prevent-default event)
 
          (let [position (dom/get-client-position event)]

@@ -9,7 +9,6 @@
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
    [app.main.data.modal :as modal]
@@ -108,6 +107,7 @@
 
 ;; --- Header Users
 
+;; FIXME: refactor & optimizations
 (mf/defc menu
   [{:keys [layout project file team-id] :as props}]
   (let [show-menu?           (mf/use-state false)
@@ -121,9 +121,6 @@
 
         add-shared-fn
         #(st/emit! (dwl/set-file-shared (:id file) true))
-
-
-
 
         on-add-shared
         (mf/use-fn
@@ -144,10 +141,10 @@
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (st/emit! (dd/fetch-libraries-using-files [file]))
            (st/emit! (modal/show
-                      {:type :delete-shared
+                      {:type :delete-shared-libraries
                        :origin :unpublish
+                       :ids #{(:id file)}
                        :on-accept #(st/emit! (dwl/set-file-shared (:id file) false))
                        :count-libraries 1}))))
 

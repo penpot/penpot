@@ -98,12 +98,12 @@
           (let [num-shared (filter #(:is-shared %) files)]
 
             (if (< 0 (count num-shared))
-              (do (st/emit! (dd/fetch-libraries-using-files files))
-                  (st/emit! (modal/show
-                             {:type :delete-shared
-                              :origin :delete
-                              :on-accept delete-fn
-                              :count-libraries (count num-shared)})))
+              (st/emit! (modal/show
+                         {:type :delete-shared-libraries
+                          :origin :delete
+                          :ids (into #{} (map :id) files)
+                          :on-accept delete-fn
+                          :count-libraries (count num-shared)}))
 
               (if multi?
                 (st/emit! (modal/show
@@ -161,10 +161,10 @@
         (fn [event]
           (dom/prevent-default event)
           (dom/stop-propagation event)
-          (st/emit! (dd/fetch-libraries-using-files files))
           (st/emit! (modal/show
-                     {:type :delete-shared
+                     {:type :delete-shared-libraries
                       :origin :unpublish
+                      :ids (into #{} (map :id) files)
                       :on-accept del-shared
                       :count-libraries file-count})))
 
