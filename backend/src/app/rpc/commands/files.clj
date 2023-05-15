@@ -201,15 +201,15 @@
                      ::db/check-deleted? false})]
     (blob/decode (:content row))))
 
-(defn load-all-pointers!
-  [data]
+(defn- load-all-pointers!
+  [{:keys [data] :as file}]
   (doseq [[_id page] (:pages-index data)]
     (when (pmap/pointer-map? page)
       (pmap/load! page)))
   (doseq [[_id component] (:components data)]
     (when (pmap/pointer-map? component)
       (pmap/load! component)))
-  data)
+  file)
 
 (defn persist-pointers!
   [conn file-id]
@@ -247,22 +247,44 @@
 ;; QUERY COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn handle-file-features
-  [{:keys [features] :as file} client-features]
+(defn handle-file-features!
+  [conn {:keys [id features data] :as file} client-features]
+
   (when (and (contains? features "components/v2")
              (not (contains? client-features "components/v2")))
     (ex/raise :type :restriction
               :code :feature-mismatch
               :feature "components/v2"
               :hint "file has 'components/v2' feature enabled but frontend didn't specifies it"))
-  (cond-> file
-    (and (contains? client-features "components/v2")
-         (not (contains? features "components/v2")))
-    (update :data ctf/migrate-to-components-v2)
 
-    (and (contains? features "storage/pointer-map")
-         (not (contains? client-features "storage/pointer-map")))
-    (process-pointers deref)))
+  ;; NOTE: this operation is needed because the components migration
+  ;; generates a new page with random id which is returned to the
+  ;; client; without persisting the migration this can cause that two
+  ;; simultaneous clients can have a different view of the file data
+  ;; and end persisting two pages with main components and breaking
+  ;; the whole file
+  (let [file (if (and (contains? client-features "components/v2")
+                      (not (contains? features "components/v2")))
+               (binding [pmap/*tracked* (atom {})]
+                 (let [data        (ctf/migrate-to-components-v2 data)
+                       features    (conj features "components/v2")
+                       modified-at (dt/now)]
+                   (db/update! conn :file
+                               {:data (blob/encode data)
+                                :modified-at modified-at
+                                :features features}
+                               {:id id})
+                   (persist-pointers! conn id)
+                   (-> file
+                       (assoc :modified-at modified-at)
+                       (assoc :features features)
+                       (assoc :data data))))
+               file)]
+
+    (cond-> file
+      (and (contains? features "storage/pointer-map")
+           (not (contains? client-features "storage/pointer-map")))
+      (process-pointers deref))))
 
 ;; --- COMMAND QUERY: get-file (by id)
 
@@ -306,10 +328,18 @@
   ;; here we check if client requested features are supported
   (check-features-compatibility! client-features)
   (binding [pmap/*load-fn* (partial load-pointer conn id)]
-    (-> (db/get-by-id conn :file id)
-        (decode-row)
-        (pmg/migrate-file)
-        (handle-file-features client-features))))
+    (let [file  (-> (db/get-by-id conn :file id)
+                    (decode-row)
+                    (pmg/migrate-file))
+
+          file  (handle-file-features! conn file client-features)]
+
+      ;; NOTE: if migrations are applied, probably new pointers generated so
+      ;; instead of persiting them on each get-file, we just resolve them until
+      ;; user updates the file and permanently persists the new pointers
+      (cond-> file
+        (pmg/migrated? file)
+        (process-pointers deref)))))
 
 (defn get-minimal-file
   [{:keys [::db/pool] :as cfg} id]
@@ -543,7 +573,7 @@
 
 ;; --- COMMAND QUERY: get-file-libraries
 
-(def ^:private sql:file-libraries
+(def ^:private sql:get-file-libraries
   "WITH RECURSIVE libs AS (
      SELECT fl.*, flr.synced_at
        FROM file AS fl
@@ -556,7 +586,6 @@
        JOIN libs AS l ON (flr.file_id = l.id)
    )
    SELECT l.id,
-          l.data,
           l.features,
           l.project_id,
           l.created_at,
@@ -569,33 +598,24 @@
     WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
 
 (defn get-file-libraries
-  [conn file-id client-features]
-  (check-features-compatibility! client-features)
-  (->> (db/exec! conn [sql:file-libraries file-id])
-       (map decode-row)
-       (map #(assoc % :is-indirect false))
-       (map (fn [{:keys [id] :as row}]
-              (binding [pmap/*load-fn* (partial load-pointer conn id)]
-                (-> row
-                    ;; TODO: re-enable this dissoc and replace call
-                    ;;       with other that gets files individually
-                    ;;       See task https://tree.taiga.io/project/penpot/task/4904
-                    ;; (update :data dissoc :pages-index)
-                    (handle-file-features client-features)))))
-       (vec)))
+  [conn file-id]
+  (into []
+        (comp
+         (map #(assoc % :is-indirect false))
+         (map decode-row))
+        (db/exec! conn [sql:get-file-libraries file-id])))
 
 (s/def ::get-file-libraries
   (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id]
-          :opt-un [::features]))
+          :req-un [::file-id]))
 
 (sv/defmethod ::get-file-libraries
   "Get libraries used by the specified file."
   {::doc/added "1.17"}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id features]}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
-    (get-file-libraries conn file-id features)))
+    (get-file-libraries conn file-id)))
 
 
 ;; --- COMMAND QUERY: Files that use this File library
@@ -719,31 +739,38 @@
               {:is-shared is-shared}
               {:id id}))
 
+(def sql:get-referenced-files
+  "SELECT f.id
+     FROM file_library_rel AS flr
+    INNER JOIN file AS f ON (f.id = flr.file_id)
+    WHERE flr.library_file_id = ?
+    ORDER BY f.created_at ASC;")
+
 (defn absorb-library
   "Find all files using a shared library, and absorb all library assets
   into the file local libraries"
   [conn {:keys [id] :as params}]
   (let [library (db/get-by-id conn :file id)]
     (when (:is-shared library)
-      (let [ldata (-> library decode-row pmg/migrate-file :data)]
-        (binding [pmap/*load-fn* (partial load-pointer conn id)]
-          (load-all-pointers! ldata))
-
-        (->> (db/query conn :file-library-rel {:library-file-id id})
-             (map :file-id)
-             (keep #(db/get-by-id conn :file % ::db/check-deleted? false))
-             (map decode-row)
-             (map pmg/migrate-file)
-             (run! (fn [{:keys [id data revn] :as file}]
-                     (binding [pmap/*tracked* (atom {})
-                               pmap/*load-fn* (partial load-pointer conn id)]
-                       (let [data (ctf/absorb-assets data ldata)]
-                         (db/update! conn :file
-                                     {:revn (inc revn)
-                                      :data (blob/encode data)
-                                      :modified-at (dt/now)}
-                                     {:id id}))
-                       (persist-pointers! conn id)))))))))
+      (let [ldata (binding [pmap/*load-fn* (partial load-pointer conn id)]
+                    (-> library decode-row load-all-pointers! pmg/migrate-file :data))
+            rows  (db/exec! conn [sql:get-referenced-files id])]
+        (doseq [file-id (map :id rows)]
+          (binding [pmap/*load-fn* (partial load-pointer conn file-id)
+                    pmap/*tracked* (atom {})]
+            (let [file (-> (db/get-by-id conn :file file-id
+                                         ::db/check-deleted? false
+                                         ::db/remove-deleted? false)
+                           (decode-row)
+                           (load-all-pointers!)
+                           (pmg/migrate-file))
+                  data (ctf/absorb-assets (:data file) ldata)]
+              (db/update! conn :file
+                          {:revn (inc (:revn file))
+                           :data (blob/encode data)
+                           :modified-at (dt/now)}
+                          {:id file-id})
+              (persist-pointers! conn file-id))))))))
 
 (s/def ::set-file-shared
   (s/keys :req [::rpc/profile-id]

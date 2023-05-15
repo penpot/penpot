@@ -173,7 +173,8 @@
    (make-component-instance container component library-data position components-v2 {}))
 
   ([container component library-data position components-v2
-    {:keys [main-instance? force-id] :or {main-instance? false force-id nil}}]
+    {:keys [main-instance? force-id force-frame-id]
+     :or {main-instance? false force-id nil force-frame-id nil}}]
    (let [component-page  (when components-v2
                            (ctpl/get-page library-data (:main-instance-page component)))
          component-shape (if components-v2
@@ -188,10 +189,11 @@
          objects         (:objects container)
          unames          (volatile! (common/retrieve-used-names objects))
 
-         frame-id        (ctst/frame-id-by-position objects
-                                                    (gpt/add orig-pos delta)
-                                                    {:skip-components? true}) ; It'd be weird to make an instance
-         frame-ids-map   (volatile! {})                                       ; inside other component
+         frame-id        (or force-frame-id
+                             (ctst/frame-id-by-position objects
+                                                        (gpt/add orig-pos delta)
+                                                        {:skip-components? true}))
+         frame-ids-map   (volatile! {})
 
          update-new-shape
          (fn [new-shape original-shape]
