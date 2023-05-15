@@ -60,8 +60,8 @@
         (c/update ::modal merge options)))))
 
 (defn show!
-  [type props]
-  (st/emit! (show type props)))
+  ([props] (st/emit! (show props)))
+  ([type props] (st/emit! (show type props))))
 
 (defn update-props!
   [type props]

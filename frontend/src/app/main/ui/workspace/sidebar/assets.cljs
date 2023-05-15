@@ -303,6 +303,7 @@
     :options options}])
 
 (mf/defc asset-section
+  {::mf/wrap-props false}
   [{:keys [children file-id title section assets-count open?]}]
   (let [children (->> (if (array? children) children [children])
                       (filter some?))
@@ -310,12 +311,12 @@
         title-buttons (filter #(= (get-role %) :title-button) children)
         content       (filter #(= (get-role %) :content) children)]
     [:div.asset-section
-     [:div.asset-title {:class (when (not open?) "closed")}
+     [:div.asset-title {:class (when (not ^boolean open?) "closed")}
       [:span {:on-click #(st/emit! (dwl/set-assets-section-open file-id section (not open?)))}
        i/arrow-slide title]
       [:span.num-assets (str "\u00A0(") assets-count ")"] ;; Unicode 00A0 is non-breaking space
       title-buttons]
-     (when open?
+     (when ^boolean open?
        content)]))
 
 (mf/defc asset-section-block
