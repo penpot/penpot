@@ -358,7 +358,7 @@
                                           file          (wsh/get-local-file new-state)
                                           component2    (ctkl/get-component file (thp/id :component1))
                                           component3    (ctkl/get-deleted-component file (thp/id :component1))
-                                          
+
                                           saved-objects (:objects component3)
                                           saved-main1   (get saved-objects (:shape-ref instance1))
                                           saved-shape2  (get saved-objects (:shape-ref shape2))]
@@ -381,7 +381,7 @@
                                       (t/is (= (:name component3) "Rect 1"))
                                       (t/is (= (:deleted component3) true))
                                       (t/is (some? (:objects component3)))
-                                      
+
                                       (t/is (= (:name saved-main1) "Rect 1"))
                                       (t/is (= (:name saved-shape2) "Rect 1")))))]
 
