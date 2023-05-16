@@ -22,8 +22,8 @@
 (s/def ::page-id uuid?)
 (s/def ::component-id uuid?)
 (s/def ::name string?)
-(s/def ::path string?)
-(s/def ::annotation string?)
+(s/def ::path (s/nilable string?))
+(s/def ::annotation (s/nilable string?))
 
 (defmulti operation-spec :type)
 
