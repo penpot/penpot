@@ -1,0 +1,175 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+.signup-questions {
+  background-color: $color-white;
+  color: $color-gray-60;
+  height: 710px;
+  max-width: 646px;
+  overflow-y: auto;
+  padding: 1.5rem 1rem;
+  position: relative;
+  width: 100%;
+
+  h1,
+  h3 {
+    font-family: "worksans", sans-serif;
+    font-weight: $fw500;
+  }
+
+  h1 {
+    font-size: $fs36;
+    padding-top: 2.5rem;
+  }
+
+  h3 {
+    font-size: $fs23;
+  }
+
+  .step-header {
+    height: 2.5rem;
+    width: 100%;
+  }
+
+  .step-number {
+    background-color: $color-gray-10;
+    border: none;
+    border-radius: 1rem; // Need to be investigated, before we can use variable
+    color: $color-gray-40;
+    float: right;
+    font-family: "worksans", sans-serif;
+    font-size: $fs12;
+    height: 1.5rem;
+    line-height: $lh-200; // Original value was 1.5rem = 24px; 24px/12px = 200% => lh-200
+    text-align: center;
+    width: 2.5rem;
+  }
+
+  .header-image {
+    width: 240px;
+  }
+
+  .intro {
+    font-size: $fs16;
+    padding: 0.5rem 0 1rem 0;
+    color: $color-gray-40;
+  }
+  .section {
+    display: block;
+    font-weight: $fw500;
+    font-size: $fs18;
+    margin: 0 0 0.3em 0;
+    padding: 0.8rem 0 0 0;
+    font-family: "worksans", sans-serif !important;
+  }
+
+  .other {
+    .custom-input {
+      margin: 0.75rem 0 2rem 0;
+    }
+  }
+
+  .step-prev {
+    position: absolute;
+    left: 1rem;
+    bottom: 1.25rem;
+    button {
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: $fs15;
+    }
+  }
+
+  .step-next {
+    display: flex;
+    position: absolute;
+    right: 1rem;
+    bottom: 0rem;
+    input {
+      font-size: $fs15;
+      color: $color-black;
+      background-color: $color-primary;
+      width: 11rem;
+      margin-left: auto;
+    }
+  }
+
+  .custom-radio {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    .input-radio {
+      margin: 0;
+      max-width: 12rem;
+      width: 100%;
+
+      &.with-image {
+        display: block;
+        padding: 0;
+      }
+
+      label {
+        font-family: "worksans", sans-serif !important;
+        color: $color-gray-60;
+        font-size: $fs15;
+        padding-left: 0;
+        position: relative;
+        text-align: center;
+        height: 4rem;
+        margin: 0;
+
+        &.with-image {
+          min-height: 120px;
+          display: flex;
+          padding-top: 4rem;
+          justify-content: center;
+          background-size: 50px;
+          background-repeat: no-repeat;
+          background-position: center 0.75rem;
+        }
+      }
+
+      input[type="radio"] {
+        /*We need it to be accesible so we can't use display none*/
+        display: inline;
+        opacity: 0;
+      }
+
+      input[type="radio"] + label:before {
+        background-color: $color-white;
+        border: 1px solid $color-gray-10;
+      }
+
+      input[type="radio"] + label.with-image:before {
+        background-color: transparent;
+        border-radius: 4px;
+        min-width: 100%;
+        min-height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        margin: 0;
+      }
+
+      input[type="radio"]:focus + label:before {
+        border: 1px solid $color-gray-60;
+      }
+
+      input[type="radio"]:checked + label:before {
+        box-shadow: inset 0 0 0 4px $color-white;
+        background-color: $color-primary;
+        border: 1px solid $color-gray-30;
+      }
+
+      input[type="radio"]:checked + label.with-image:before {
+        border: 1px solid $color-primary;
+        background-color: transparent;
+      }
+    }
+  }
+}

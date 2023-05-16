@@ -384,7 +384,7 @@
               (rx/map (constantly (fetch-profile)))))))))
 
 (defn mark-questions-as-answered
-  []
+  [onboarding-questions]
   (ptk/reify ::mark-questions-as-answered
     ptk/UpdateEvent
     (update [_ state]
@@ -392,7 +392,8 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [props {:onboarding-questions-answered true}]
+      (let [props {:onboarding-questions-answered true
+                   :onboarding-questions onboarding-questions}]
         (->> (rp/cmd! :update-profile-props {:props props})
              (rx/map (constantly (fetch-profile))))))))
 
