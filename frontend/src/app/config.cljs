@@ -87,7 +87,6 @@
 (def worker-uri           (obj/get global "penpotWorkerURI" "/js/worker.js"))
 (def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
-(def onboarding-form-id   (obj/get global "penpotOnboardingQuestionsFormId"))
 
 (def build-date           (parse-build-date global))
 (def flags                (atom (parse-flags global)))
