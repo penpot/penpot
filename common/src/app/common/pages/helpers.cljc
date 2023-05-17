@@ -87,6 +87,8 @@
   ([shape]
    (d/not-empty? (:shapes shape))))
 
+;; ---- ACCESSORS
+
 (defn get-children-ids
   [objects id]
   (letfn [(get-children-ids-rec

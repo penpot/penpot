@@ -8,27 +8,28 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.defaults :refer [version]]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as log]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.changes :as cpc]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
-;; TODO: revisit this and rename to file-migrations
+#?(:cljs (log/set-level! :info))
 
 (defmulti migrate :version)
 
-(log/set-level! :info)
-
 (defn migrate-data
-  ([data] (migrate-data data cp/file-version))
+  ([data] (migrate-data data version))
   ([data to-version]
+   (prn "migrate-data" (:version data) to-version)
+
    (if (= (:version data) to-version)
      data
      (let [migrate-fn #(do
@@ -242,7 +243,7 @@
     (loop [data data]
       (let [changes (mapcat calculate-changes (:pages-index data))]
         (if (seq changes)
-          (recur (cp/process-changes data changes))
+          (recur (cpc/process-changes data changes))
           data)))))
 
 (defmethod migrate 10
@@ -462,12 +463,14 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defmethod migrate 21
+(defmethod migrate 22
   [data]
   (letfn [(update-object [object]
+            (prn "KKKK" object)
             (-> object
-                (update :selrect cts/map->Rect)
-                (map->Shape)))
+                (d/update-when :selrect cts/map->Rect)
+                (cts/map->Shape)))
+
           (update-container [container]
             (d/update-when container :objects update-vals update-object))]
     (-> data
