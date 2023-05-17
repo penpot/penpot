@@ -357,8 +357,9 @@
     (rx/of (dwu/start-undo-transaction undo-id)
            (dc/detach-comment-thread ids)
            (dch/commit-changes changes)
-           (ptk/data-event :layout/update all-parents)
-           (dwu/commit-undo-transaction undo-id))))
+           (dwu/commit-undo-transaction undo-id)
+           (ptk/data-event :layout/update all-parents))))
+
 
 (defn create-and-add-shape
   [type frame-x frame-y data]

@@ -320,28 +320,28 @@
   [child]
   (if (and (fill-width? child)
            (some? (:layout-item-min-w child)))
-    (max 0 (:layout-item-min-w child))
-    0))
+    (max 0.01 (:layout-item-min-w child))
+    0.01))
 
 (defn child-max-width
   [child]
   (if (and (fill-width? child)
            (some? (:layout-item-max-w child)))
-    (max 0 (:layout-item-max-w child))
+    (max 0.01 (:layout-item-max-w child))
     ##Inf))
 
 (defn child-min-height
   [child]
   (if (and (fill-height? child)
            (some? (:layout-item-min-h child)))
-    (max 0 (:layout-item-min-h child))
-    0))
+    (max 0.01 (:layout-item-min-h child))
+    0.01))
 
 (defn child-max-height
   [child]
   (if (and (fill-height? child)
            (some? (:layout-item-max-h child)))
-    (max 0 (:layout-item-max-h child))
+    (max 0.01 (:layout-item-max-h child))
     ##Inf))
 
 (defn child-margins

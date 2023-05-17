@@ -49,6 +49,7 @@
         (as-> p1  $
           (reduce (fn [p track] (gpt/add p (vv (:size track)))) $ span-row-tracks)
           (gpt/add $ (vv (* row-gap (dec (count span-row-tracks))))))]
+
     [p1 p2 p3 p4]))
 
 (defn calc-fill-width-data
@@ -152,6 +153,7 @@
         (-> position-delta
             (gpt/add (gpt/to-vec from-h to-h))
             (gpt/add (gpt/to-vec from-v to-v)))]
+
     (-> (ctm/empty)
         (ctm/add-modifiers fill-modifiers)
         (ctm/move position-delta))))
