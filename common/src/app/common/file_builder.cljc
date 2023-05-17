@@ -91,49 +91,49 @@
 
     (commit-change file change {:add-container? true :fail-on-spec? fail-on-spec?})))
 
-(defn setup-rect-selrect [{:keys [x y width height transform] :as obj}]
-  (when-not (d/num? x y width height)
-    (ex/raise :type :assertion
-              :code :invalid-condition
-              :hint "Coords not valid for object"))
+;; (defn setup-rect-selrect [{:keys [x y width height transform] :as obj}]
+;;   (when-not (d/num? x y width height)
+;;     (ex/raise :type :assertion
+;;               :code :invalid-condition
+;;               :hint "Coords not valid for object"))
 
-  (let [rect      (gsh/make-rect x y width height)
-        center    (gsh/center-rect rect)
-        selrect   (gsh/rect->selrect rect)
+;;   (let [rect      (gsh/make-rect x y width height)
+;;         center    (gsh/center-rect rect)
+;;         selrect   (gsh/rect->selrect rect)
 
-        points (-> (gsh/rect->points rect)
-                   (gsh/transform-points center transform))]
+;;         points (-> (gsh/rect->points rect)
+;;                    (gsh/transform-points center transform))]
 
-    (-> obj
-        (assoc :selrect selrect)
-        (assoc :points points))))
+;;     (-> obj
+;;         (assoc :selrect selrect)
+;;         (assoc :points points))))
 
-(defn- setup-path-selrect
-  [{:keys [content center transform transform-inverse] :as obj}]
+;; (defn- setup-path-selrect
+;;   [{:keys [content center transform transform-inverse] :as obj}]
 
-  (when (or (empty? content) (nil? center))
-    (ex/raise :type :assertion
-              :code :invalid-condition
-              :hint "Path not valid"))
+;;   (when (or (empty? content) (nil? center))
+;;     (ex/raise :type :assertion
+;;               :code :invalid-condition
+;;               :hint "Path not valid"))
 
-  (let [transform (gmt/transform-in center transform)
-        transform-inverse (gmt/transform-in center transform-inverse)
+;;   (let [transform (gmt/transform-in center transform)
+;;         transform-inverse (gmt/transform-in center transform-inverse)
 
-        content' (gsh/transform-content content transform-inverse)
-        selrect  (gsh/content->selrect content')
-        points   (-> (gsh/rect->points selrect)
-                     (gsh/transform-points transform))]
+;;         content' (gsh/transform-content content transform-inverse)
+;;         selrect  (gsh/content->selrect content')
+;;         points   (-> (gsh/rect->points selrect)
+;;                      (gsh/transform-points transform))]
 
-    (-> obj
-        (dissoc :center)
-        (assoc :selrect selrect)
-        (assoc :points points))))
+;;     (-> obj
+;;         (dissoc :center)
+;;         (assoc :selrect selrect)
+;;         (assoc :points points))))
 
-(defn- setup-selrect
-  [obj]
-  (if (= (:type obj) :path)
-    (setup-path-selrect obj)
-    (setup-rect-selrect obj)))
+;; (defn- setup-selrect
+;;   [obj]
+;;   (if (= (:type obj) :path)
+;;     (setup-path-selrect obj)
+;;     (setup-rect-selrect obj)))
 
 (defn- generate-name
   [type data]
@@ -221,10 +221,8 @@
 
 (defn add-artboard [file data]
   (let [obj (-> (cts/make-minimal-shape :frame)
-                (merge data)
-                (check-name file :frame)
-                (setup-selrect)
-                (d/without-nils))]
+                (cts/setup-shape data)
+                (check-name file :frame))]
     (-> file
         (commit-shape obj)
         (assoc :current-frame-id (:id obj))
@@ -244,12 +242,9 @@
 
 (defn add-group [file data]
   (let [frame-id (:current-frame-id file)
-        selrect cts/empty-selrect
-        name (:name data)
-        obj (-> (cts/make-minimal-group frame-id selrect name)
-                (merge data)
-                (check-name file :group)
-                (d/without-nils))]
+        obj      (-> (cts/make-minimal-shape :group)
+                     (cts/setup-shape (assoc data :frame-id frame-id))
+                     (check-name file :group))]
     (-> file
         (commit-shape obj)
         (assoc :last-id (:id obj))
@@ -309,15 +304,9 @@
 
 (defn add-bool [file data]
   (let [frame-id (:current-frame-id file)
-        name (:name data)
-        obj (-> {:id (uuid/next)
-                 :type :bool
-                 :name name
-                 :shapes []
-                 :frame-id frame-id}
-                (merge data)
-                (check-name file :bool)
-                (d/without-nils))]
+        obj      (-> (cts/make-minimal-shape :bool)
+                     (cts/setup-shape (assoc data :frame-id frame-id))
+                     (check-name file :bool))]
     (-> file
         (commit-shape obj)
         (assoc :last-id (:id obj))
@@ -361,10 +350,8 @@
 
 (defn create-shape [file type data]
   (let [obj (-> (cts/make-minimal-shape type)
-                (merge data)
-                (check-name file :type)
-                (setup-selrect)
-                (d/without-nils))]
+                (cts/setup-shape data)
+                (check-name file :type))]
     (-> file
         (commit-shape obj)
         (assoc :last-id (:id obj))
@@ -556,6 +543,8 @@
          {:type :del-media
           :id id}))))
 
+
+;; FIXME: i'm not sure about this fn
 (defn start-component
   ([file data] (start-component file data :group))
   ([file data root-type]
@@ -565,14 +554,22 @@
          path               (:path data)
          main-instance-id   (:main-instance-id data)
          main-instance-page (:main-instance-page data)
-         obj (-> (cts/make-shape root-type selrect data)
-                 (dissoc :path
-                         :main-instance-id
-                         :main-instance-page
-                         :main-instance-x
-                         :main-instance-y)
-                 (check-name file root-type)
-                 (d/without-nils))]
+         attrs (-> data
+                   (assoc :x (:x selrect))
+                   (assoc :y (:y selrect))
+                   (assoc :width (:width selrect))
+                   (assoc :height (:height selrect))
+                   (assoc :selrect selrect)
+                   (dissoc :path)
+                   (dissoc :main-instance-id)
+                   (dissoc :main-instance-page)
+                   (dissoc :main-instance-x)
+                   (dissoc :main-instance-y))
+
+         obj   (-> (cts/make-minimal-shape root-type)
+                   (cts/setup-shape attrs)
+                   (check-name file root-type))]
+
      (-> file
          (commit-change
           {:type :add-component
@@ -734,8 +731,8 @@
 (defn update-object
   [file old-obj new-obj]
   (let [page-id (:current-page-id file)
-        new-obj (setup-selrect new-obj)
-        attrs (d/concat-set (keys old-obj) (keys new-obj))
+        new-obj (cts/setup-shape new-obj)
+        attrs   (d/concat-set (keys old-obj) (keys new-obj))
         generate-operation
         (fn [changes attr]
           (let [old-val (get old-obj attr)

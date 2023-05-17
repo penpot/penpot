@@ -9,7 +9,18 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.transit :as t]
    [app.common.math :as mth]))
+
+(defrecord Rect [x y width height])
+
+(t/add-handlers!
+ {:id "rect"
+  :class Rect
+  :wfn #(into {} %)
+  :rfn map->Rect})
+
+;; FIXME: optimize access using static props
 
 (defn make-rect
   ([p1 p2]
@@ -17,34 +28,35 @@
          yp1 (:y p1)
          xp2 (:x p2)
          yp2 (:y p2)
-         x1 (min xp1 xp2)
-         y1 (min yp1 yp2)
-         x2 (max xp1 xp2)
-         y2 (max yp1 yp2)]
+         x1  (min xp1 xp2)
+         y1  (min yp1 yp2)
+         x2  (max xp1 xp2)
+         y2  (max yp1 yp2)]
      (make-rect x1 y1 (- x2 x1) (- y2 y1))))
 
   ([x y width height]
    (when (d/num? x y width height)
      (let [width (max width 0.01)
            height (max height 0.01)]
-       {:x x
-        :y y
-        :width width
-        :height height}))))
+       (map->Rect
+        {:x x
+         :y y
+         :width width
+         :height height})))))
 
 (defn make-selrect
   [x y width height]
   (when (d/num? x y width height)
     (let [width (max width 0.01)
           height (max height 0.01)]
-      {:x x
-       :y y
-       :x1 x
-       :y1 y
-       :x2 (+ x width)
-       :y2 (+ y height)
-       :width width
-       :height height})))
+      (map->Rect {:x x
+                  :y y
+                  :x1 x
+                  :y1 y
+                  :x2 (+ x width)
+                  :y2 (+ y height)
+                  :width width
+                  :height height}))))
 
 (defn close-rect?
   [rect1 rect2]

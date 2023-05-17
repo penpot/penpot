@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.drawing
   "Drawing interactions."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
@@ -61,14 +62,13 @@
                  (rx/map common/clear-drawing)
                  (rx/take-until stopper)))))))))
 
-
 ;; NOTE/TODO: when an exception is raised in some point of drawing the
 ;; draw lock is not released so the user need to refresh in order to
 ;; be able draw again. THIS NEED TO BE REVISITED
 
 (defn start-drawing
   [type]
-  {:pre [(keyword? type)]}
+  (dm/assert! (keyword? type))
   (let [lock-id (uuid/next)]
     (ptk/reify ::start-drawing
       ptk/UpdateEvent

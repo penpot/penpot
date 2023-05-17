@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.drawing.common
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
@@ -30,33 +31,34 @@
   (ptk/reify ::handle-finish-drawing
     ptk/WatchEvent
     (watch [_ state _]
-      (let [tool (get-in state [:workspace-drawing :tool])
-            shape (get-in state [:workspace-drawing :object])
-            objects (wsh/lookup-page-objects state)]
+      (let [tool    (dm/get-in state [:workspace-drawing :tool])
+            shape   (dm/get-in state [:workspace-drawing :object])
+            objects (wsh/lookup-page-objects state)
+            page-id (:current-page-id state)]
+
+        (prn "handle-finish-drawing" shape)
+
         (rx/concat
          (when (:initialized? shape)
-           (let [page-id (:current-page-id state)
+           (let [click-draw? (:click-draw? shape)
+                 text?       (cph/text-shape? shape)
+                 vbox        (dm/get-in state [:workspace-local :vbox])
 
-                 click-draw? (:click-draw? shape)
-                 text? (= :text (:type shape))
-
-                 min-side (min 100
-                               (mth/floor (get-in state [:workspace-local :vbox :width]))
-                               (mth/floor (get-in state [:workspace-local :vbox :height])))
+                 min-side    (min 100 mth/floor (:width vbox) (:height vbox))
 
                  shape
                  (cond-> shape
                    (not click-draw?)
-                   (-> (assoc :grow-type :fixed))
+                   (assoc :grow-type :fixed)
 
                    (and click-draw? (not text?))
                    (-> (assoc :width min-side :height min-side)
-                       (cts/setup-rect-selrect)
+                       (cts/setup-rect)
                        (gsh/transform-shape (ctm/move-modifiers (- (/ min-side 2)) (- (/ min-side 2)))))
 
                    (and click-draw? text?)
                    (-> (assoc :height 17 :width 4 :grow-type :auto-width)
-                       (cts/setup-rect-selrect))
+                       (cts/setup-rect))
 
                    :always
                    (dissoc :initialized? :click-draw?))]

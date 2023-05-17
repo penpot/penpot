@@ -137,6 +137,7 @@
 (dm/export gco/center-points)
 (dm/export gco/transform-points)
 
+(dm/export gpr/map->Rect)
 (dm/export gpr/make-rect)
 (dm/export gpr/make-selrect)
 (dm/export gpr/rect->selrect)

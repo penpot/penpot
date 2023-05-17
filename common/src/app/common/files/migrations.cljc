@@ -95,7 +95,7 @@
 
           (fix-empty-points [shape]
             (let [shape (cond-> shape
-                          (empty? (:selrect shape)) (cts/setup-rect-selrect))]
+                          (empty? (:selrect shape)) (cts/setup-rect))]
               (cond-> shape
                 (empty? (:points shape))
                 (assoc :points (gsh/rect->points (:selrect shape))))))
@@ -463,16 +463,16 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defmethod migrate 22
-  [data]
-  (letfn [(update-object [object]
-            (prn "KKKK" object)
-            (-> object
-                (d/update-when :selrect cts/map->Rect)
-                (cts/map->Shape)))
+;; (defmethod migrate 22
+;;   [data]
+;;   (letfn [(update-object [object]
+;;             (prn "KKKK" object)
+;;             (-> object
+;;                 (d/update-when :selrect cts/map->Rect)
+;;                 (cts/map->Shape)))
 
-          (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
-    (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
+;;           (update-container [container]
+;;             (d/update-when container :objects update-vals update-object))]
+;;     (-> data
+;;         (update :pages-index update-vals update-container)
+;;         (update :components update-vals update-container))))

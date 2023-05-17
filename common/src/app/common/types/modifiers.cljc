@@ -661,9 +661,8 @@
   (let [modifiers (->> (into (dm/get-prop modifiers :geometry-parent)
                              (dm/get-prop modifiers :geometry-child))
                        (sort-by #(dm/get-prop % :order)))]
-
-    (app.common.pprint/pprint modifiers)
-    #?(:cljs (wasm.transform/modifiers->transform modifiers)
+    ;; (app.common.pprint/pprint modifiers)
+    #?(:cljs (modifiers->transform' modifiers #_(wasm.transform/modifiers->transform modifiers))
        :clj  (modifiers->transform' modifiers))))
 
 (defn transform-text-node [value attrs]

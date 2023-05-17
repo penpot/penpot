@@ -6,6 +6,8 @@
 
 (ns app.common.geom.proportions)
 
+;; FIXME: move to types.shape
+
 ;; --- Proportions
 
 (defn assign-proportions

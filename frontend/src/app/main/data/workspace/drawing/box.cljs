@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.drawing.box
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.flex-layout :as gsl]
@@ -68,41 +69,39 @@
   (ptk/reify ::handle-drawing-box
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper? #(or (ms/mouse-up? %) (= % :interrupt))
-            stoper  (rx/filter stoper? stream)
-            layout  (get state :workspace-layout)
-            zoom       (get-in state [:workspace-local :zoom] 1)
-            snap-pixel? (contains? layout :snap-pixel-grid)
+      (let [stoper       (rx/filter #(or (ms/mouse-up? %) (= % :interrupt))  stream)
+            layout       (get state :workspace-layout)
+            zoom         (dm/get-in state [:workspace-local :zoom] 1)
 
-            snap-precision (if (>= zoom zoom-half-pixel-precision) 0.5 1)
-            initial (cond-> @ms/mouse-position snap-pixel? (gpt/round-step snap-precision))
+            snap-pixel?  (contains? layout :snap-pixel-grid)
+            snap-prec    (if (>= zoom zoom-half-pixel-precision) 0.5 1)
+            initial      (cond-> @ms/mouse-position snap-pixel? (gpt/round-step snap-prec))
 
-            page-id    (:current-page-id state)
-            objects    (wsh/lookup-page-objects state page-id)
-            focus      (:workspace-focus-selected state)
+            page-id      (:current-page-id state)
+            objects      (wsh/lookup-page-objects state page-id)
+            focus        (:workspace-focus-selected state)
 
-            fid        (ctst/top-nested-frame objects initial)
+            fid          (ctst/top-nested-frame objects initial)
 
             flex-layout? (ctl/flex-layout? objects fid)
             drop-index   (when flex-layout? (gsl/get-drop-index fid objects initial))
 
-            shape   (get-in state [:workspace-drawing :object])
-            shape   (-> shape
-                        (cts/setup-shape {:x (:x initial)
-                                          :y (:y initial)
-                                          :width 0.01
-                                          :height 0.01})
-                        (cond-> (and (cph/frame-shape? shape)
-                                     (not= fid uuid/zero))
-                          (assoc :fills [] :hide-in-viewer true))
+            shape        (dm/get-in state [:workspace-drawing :object])
+            attrs        {:x (:x initial)
+                          :y (:y initial)
+                          :frame-id fid
+                          ;; FIXME: they are not need because they are set as initial values
+                          ;; :width 0.01
+                          ;; :height 0.01
+                          :initialized? true
+                          :click-draw? true
+                          :hide-in-viewer (and (cph/frame-shape? shape)
+                                               (not= fid uuid/zero))}
 
-                        (assoc :frame-id fid)
+            shape        (cond-> (cts/setup-shape shape attrs)
+                           (some? drop-index)
+                           (with-meta {:index drop-index}))]
 
-                        (cond-> (some? drop-index)
-                          (with-meta {:index drop-index}))
-
-                        (assoc :initialized? true)
-                        (assoc :click-draw? true))]
         (rx/concat
          ;; Add shape to drawing state
          (rx/of #(assoc-in state [:workspace-drawing :object] shape))
@@ -122,7 +121,8 @@
                         (rx/map #(conj current %)))))
                 (rx/map
                  (fn [[_ shift? point]]
-                   #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step snap-precision)) shift?)))))
+                   #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step snap-prec)) shift?)))))
+
           (rx/take-until stoper))
 
          (->> (rx/of (common/handle-finish-drawing))
