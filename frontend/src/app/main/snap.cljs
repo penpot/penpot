@@ -11,6 +11,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages :as cp]
+   [app.common.pages.focus :as cpf]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :refer [zero]]
    [app.main.refs :as refs]
@@ -53,7 +54,7 @@
       (or (contains? filter-shapes id)
           (not (contains? layout :dynamic-alignment))
           (and (d/not-empty? focus)
-               (not (cp/is-in-focus? objects focus id)))))))
+               (not (cpf/is-in-focus? objects focus id)))))))
 
 (defn- calculate-distance [query-result point coord]
   (->> query-result

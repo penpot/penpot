@@ -11,8 +11,8 @@
   inactivity (the default threshold is 72h)."
   (:require
    [app.common.data :as d]
+   [app.common.files.migrations :as pmg]
    [app.common.logging :as l]
-   [app.common.pages.migrations :as pmg]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
@@ -275,7 +275,8 @@
   [{:keys [::db/conn] :as cfg} {:keys [id data revn modified-at features] :as file}]
   (l/debug :hint "processing file" :id id :modified-at modified-at)
 
-  (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
+  (binding [pmap/*load-fn* (partial files/load-pointer conn id)
+            pmap/*tracked* (atom {})]
     (let [data (-> (blob/decode data)
                    (assoc :id id)
                    (pmg/migrate-data))]
@@ -291,4 +292,6 @@
       ;; Mark file as trimmed
       (db/update! conn :file
                   {:has-media-trimmed true}
-                  {:id id}))))
+                  {:id id})
+
+      (files/persist-pointers! conn id))))

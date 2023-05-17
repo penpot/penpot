@@ -9,7 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.common :as common]
+   [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -187,7 +187,7 @@
          delta           (gpt/subtract position orig-pos)
 
          objects         (:objects container)
-         unames          (volatile! (common/retrieve-used-names objects))
+         unames          (volatile! (cfh/get-used-names objects))
 
          frame-id        (or force-frame-id
                              (ctst/frame-id-by-position objects

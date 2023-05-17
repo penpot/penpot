@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.pages.migrations
+(ns app.common.files.migrations
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -462,5 +462,14 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-;; TODO: pending to do a migration for delete already not used fill
-;; and stroke props. This should be done for >1.14.x version.
+(defmethod migrate 21
+  [data]
+  (letfn [(update-object [object]
+            (-> object
+                (update :selrect cts/map->Rect)
+                (map->Shape)))
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))

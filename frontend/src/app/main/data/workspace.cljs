@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.features :as ffeat]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpp]
@@ -402,8 +403,8 @@
       ptk/WatchEvent
       (watch [it state _]
         (let [pages   (get-in state [:workspace-data :pages-index])
-              unames  (cp/retrieve-used-names pages)
-              name    (cp/generate-unique-name unames "Page 1")
+              unames  (cfh/get-used-names pages)
+              name    (cfh/generate-unique-name unames "Page 1")
 
               changes (-> (pcb/empty-changes it)
                           (pcb/add-empty-page id name))]
@@ -417,9 +418,9 @@
     (watch [it state _]
       (let [id      (uuid/next)
             pages   (get-in state [:workspace-data :pages-index])
-            unames  (cp/retrieve-used-names pages)
+            unames  (cfh/get-used-names pages)
             page    (get-in state [:workspace-data :pages-index page-id])
-            name    (cp/generate-unique-name unames (:name page))
+            name    (cfh/generate-unique-name unames (:name page))
 
             page    (-> page
                         (assoc :name name)

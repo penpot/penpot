@@ -9,6 +9,7 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -500,8 +501,7 @@
              (- y vb-y (/ vb-height 2))
              y))
 
-        unames (cp/retrieve-used-names objects)
-
+        unames   (cfh/get-used-names objects)
         svg-name (str/replace (:name svg-data) ".svg" "")
 
         svg-data (-> svg-data

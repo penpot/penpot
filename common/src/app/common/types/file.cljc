@@ -8,10 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.defaults :refer [version]]
    [app.common.files.features :as ffeat]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.common :refer [file-version]]
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.types.color :as ctc]
@@ -68,7 +68,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def empty-file-data
-  {:version file-version
+  {:version version
    :pages []
    :pages-index {}})
 

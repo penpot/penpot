@@ -10,8 +10,8 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.files.features :as ffeat]
+   [app.common.files.migrations :as pmg]
    [app.common.logging :as l]
-   [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -616,7 +616,7 @@
     (-> data
         (update :pages-index update-vals #(update % :objects omap-wrap))
         (update :pages-index update-vals pmap-wrap)
-        (update :components update-vals #(update % :objects omap-wrap))
+        (update :components update-vals #(d/update-when % :objects omap-wrap))
         (update :components pmap-wrap))))
 
 (defmethod read-section :v1/files

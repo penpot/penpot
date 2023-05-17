@@ -6,7 +6,7 @@
 
 (ns app.common.types.shape.radius
   (:require
-    [app.common.pages.common :refer [editable-attrs]]))
+   [app.common.types.shape.attrs :refer [editable-attrs]]))
 
 ;; There are some shapes that admit border radius, as rectangles
 ;; frames and images. Those shapes may define the radius of the corners in two modes:

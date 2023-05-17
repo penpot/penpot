@@ -12,10 +12,10 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages.common :as cpc]
    [app.common.pages.helpers :as cph]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.main.constants :refer [zoom-half-pixel-precision]]
    [app.main.data.workspace.changes :as dch]
@@ -354,11 +354,11 @@
    (ptk/reify ::set-rotation-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (let [objects     (wsh/lookup-page-objects state)
+       (let [objects (wsh/lookup-page-objects state)
              ids
              (->> shapes
                   (remove #(get % :blocked false))
-                  (filter #((cpc/editable-attrs (:type %)) :rotation))
+                  (filter #(:rotation (get editable-attrs (:type %))))
                   (map :id))
 
              get-modifier

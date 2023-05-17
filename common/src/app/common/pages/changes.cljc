@@ -12,7 +12,6 @@
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages.common :refer [component-sync-attrs]]
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.schema.desc-native :as smd]
@@ -20,6 +19,7 @@
    [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
@@ -583,7 +583,7 @@
 (defmethod process-operation :set
   [on-touched shape op]
   (let [attr            (:attr op)
-        group           (get component-sync-attrs attr)
+        group           (get ctk/sync-attrs attr)
         val             (:val op)
         shape-val       (get shape attr)
         ignore          (:ignore-touched op)
@@ -673,7 +673,7 @@
                        ; We need to trigger a sync if the shape has changed any
                        ; attribute that participates in components synchronization.
                        (and (= (:type operation) :set)
-                            (component-sync-attrs (:attr operation))))
+                            (get ctk/sync-attrs (:attr operation))))
           any-sync? (some need-sync? operations)]
       (when any-sync?
         (let [xform (comp (filter :main-instance?) ; Select shapes that are main component instances

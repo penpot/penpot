@@ -1158,7 +1158,7 @@
         origin-shape (reposition-shape origin-shape origin-root dest-root)
         touched      (get dest-shape :touched #{})]
 
-    (loop [attrs (seq (keys cp/component-sync-attrs))
+    (loop [attrs (seq (keys ctk/sync-attrs))
            roperations []
            uoperations []]
 
@@ -1196,7 +1196,7 @@
                             :val (get dest-shape attr)
                             :ignore-touched true}
 
-                attr-group (get cp/component-sync-attrs attr)
+                attr-group (get ctk/sync-attrs attr)
 
                 root-name? (and (= attr-group :name-group)
                                 (:component-root? dest-shape))]

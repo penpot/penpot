@@ -12,10 +12,10 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.common :refer [default-color]]
    [app.common.schema :as sm]
    [app.common.types.color :as ctc]
    [app.common.types.grid :as ctg]
+   [app.common.types.shape.attrs :refer [default-color]]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
    [app.common.types.shape.interactions :as ctsi]
@@ -24,7 +24,21 @@
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
+   [app.common.transit :as t]
    [clojure.set :as set]))
+
+(defrecord Shape [id name selrect points transform transform-inverse parent-id frame-id])
+(defrecord Rect [x y width height])
+
+(t/add-handlers!
+ {:id "shape"
+  :class Shape
+  :wfn #(into {} %)
+  :rfn map->Shape}
+ {:id "rect"
+  :class Rect
+  :wfn #(into {} %)
+  :rfn map->Rect})
 
 (def stroke-caps-line #{:round :square})
 (def stroke-caps-marker #{:line-arrow :triangle-arrow :square-marker :circle-marker :diamond-marker})

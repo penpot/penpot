@@ -12,8 +12,10 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages :as cp]
+   [app.common.pages.focus :as cpf]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.shape.interactions :as ctsi]
@@ -215,7 +217,7 @@
       (let [objects (wsh/lookup-page-objects state)
             focus (:workspace-focus-selected state)
             ids (if (d/not-empty? focus)
-                  (cp/filter-not-focus objects focus ids)
+                  (cpf/filter-not-focus objects focus ids)
                   ids)]
         (assoc-in state [:workspace-local :selected] ids)))
 
@@ -234,7 +236,7 @@
             ;; mode is active
             focus    (:workspace-focus-selected state)
             objects  (-> (wsh/lookup-page-objects state)
-                         (cp/focus-objects focus))
+                         (cpf/focus-objects focus))
 
             lookup   (d/getf objects)
             parents  (->> (wsh/lookup-selected state)
@@ -341,7 +343,7 @@
 
   ([all-objects page ids delta it libraries library-data file-id init-changes]
    (let [shapes         (map (d/getf all-objects) ids)
-         unames         (volatile! (cp/retrieve-used-names (:objects page)))
+         unames         (volatile! (cfh/get-used-names (:objects page)))
          update-unames! (fn [new-name] (vswap! unames conj new-name))
          all-ids        (reduce #(into %1 (cons %2 (cph/get-children-ids all-objects %2))) (d/ordered-set) ids)
          ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
@@ -467,7 +469,7 @@
       (let [update-flows (fn [flows]
                            (reduce
                              (fn [flows frame]
-                               (let [name     (cp/generate-unique-name @unames "Flow 1")
+                               (let [name     (cfh/generate-unique-name @unames "Flow 1")
                                      _        (vswap! unames conj name)
                                      new-flow {:id (uuid/next)
                                                :name name
