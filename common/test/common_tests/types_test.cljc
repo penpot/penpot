@@ -6,54 +6,27 @@
 
 (ns common-tests.types-test
   (:require
-   [clojure.spec.alpha :as s]
    [clojure.test :as t]
-   [clojure.test.check.clojure-test :refer [defspec]]
-   [clojure.test.check.generators :as gen]
-   [clojure.test.check.properties :as props]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
    [app.common.transit :as transit]
    [app.common.types.shape :as cts]
    [app.common.types.page :as ctp]
    [app.common.types.file :as ctf]))
 
-(defspec transit-encode-decode-with-shape 10
-  (props/for-all
-   [fdata (s/gen ::cts/shape)]
-   (let [res (-> fdata transit/encode-str transit/decode-str)]
-     (t/is (= res fdata)))))
+(t/deftest transit-encode-decode-with-shape
+  (sg/check!
+   (sg/for [fdata (sg/generator ::cts/shape)]
+     (let [res (-> fdata transit/encode-str transit/decode-str)]
+       (t/is (= res fdata))))
+   {:num 18 :seed 1683548002439}))
 
-(defspec types-shape-spec 5
-  (props/for-all
-   [fdata (s/gen ::cts/shape)]
-   (t/is (us/valid? ::cts/shape fdata))))
+(t/deftest types-shape-spec
+  (sg/check!
+   (sg/for [fdata (sg/generator ::cts/shape)]
+     (t/is (sm/validate ::cts/shape fdata)))))
 
-(defspec types-page-spec 5
-  (props/for-all
-   [fdata (s/gen ::ctp/page)]
-   (t/is (us/valid? ::ctp/page fdata))))
-
-(defspec types-file-colors-spec 10
-  (props/for-all
-   [fdata (s/gen ::ctf/colors)]
-   (t/is (us/valid? ::ctf/colors fdata))))
-
-(defspec types-file-recent-colors-spec 10
-  (props/for-all
-   [fdata (s/gen ::ctf/recent-colors)]
-   (t/is (us/valid? ::ctf/recent-colors fdata))))
-
-(defspec types-file-typographies-spec 10
-  (props/for-all
-   [fdata (s/gen ::ctf/typographies)]
-   (t/is (us/valid? ::ctf/typographies fdata))))
-
-(defspec types-file-media-spec 10
-  (props/for-all
-   [fdata (s/gen ::ctf/media)]
-   (t/is (us/valid? ::ctf/media fdata))))
-
-(defspec types-file-components-spec 1
-  (props/for-all
-   [fdata (s/gen ::ctf/components)]
-   (t/is (us/valid? ::ctf/components fdata))))
+(t/deftest types-page-spec
+  (-> (sg/for [fdata (sg/generator ::ctp/page)]
+        (t/is (sm/validate ::ctp/page fdata)))
+      (sg/check! {:num 30})))

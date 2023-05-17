@@ -15,8 +15,19 @@
    [app.common.spec :as us]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
+   [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
+   [app.common.schema.desc-native :as smdn]
+   [app.common.schema.desc-js-like :as smdj]
    [app.config :as cfg]
    [app.main :as main]
+   [malli.core :as m]
+   [malli.error :as me]
+   [malli.dev.pretty :as mdp]
+   [malli.transform :as mt]
+   [malli.util :as mu]
+   [malli.registry :as mr]
+   [malli.generator :as mg]
    [app.srepl.helpers]
    [app.srepl.main :as srepl]
    [app.util.blob :as blob]
@@ -31,7 +42,7 @@
    [clojure.spec.alpha :as s]
    [clojure.stacktrace :as trace]
    [clojure.test :as test]
-   [clojure.test.check.generators :as gen]
+   [clojure.test.check.generators :as tgen]
    [clojure.tools.namespace.repl :as repl]
    [clojure.walk :refer [macroexpand-all]]
    [criterium.core  :as crit]
@@ -130,3 +141,39 @@
     (add-tap #(locking debug-tap
                 (prn "tap debug:" %)))
     1))
+
+
+(sm/def! ::test
+  [:map {:title "Foo"}
+   [:x :int]
+   [:y {:min 0} :double]
+   [:bar
+    [:map {:title "Bar"}
+     [:z :string]
+     [:v ::sm/uuid]]]
+   [:items
+    [:vector ::dt/instant]]])
+
+(sm/def! ::test2
+  [:multi {:title "Foo" :dispatch :type}
+   [:x
+    [:map {:title "FooX"}
+     [:type [:= :x]]
+     [:x :int]]]
+   [:y
+    [:map
+     [:type [:= :x]]
+     [:y [::sm/one-of #{:a :b :c}]]]]
+   [:z
+    [:map {:title "FooZ"}
+     [:z
+      [:multi {:title "Bar" :dispatch :type}
+       [:a
+        [:map
+         [:type [:= :a]]
+         [:a :int]]]
+       [:b
+        [:map
+         [:type [:= :b]]
+         [:b :int]]]]]]]])
+

@@ -36,7 +36,8 @@
 
   Share links are resources that allows external users access to specific
   pages of a file with specific permissions (who-comment and who-inspect)."
-  {::doc/added "1.18"}
+  {::doc/added "1.18"
+   ::doc/module :files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
@@ -62,7 +63,8 @@
           :req-un [::us/id]))
 
 (sv/defmethod ::delete-share-link
-  {::doc/added "1.18"}
+  {::doc/added "1.18"
+   ::doc/module ::files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [slink (db/get-by-id conn :share-link id)]

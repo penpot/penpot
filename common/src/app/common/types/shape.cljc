@@ -13,142 +13,24 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.common :refer [default-color]]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.types.color :as ctc]
+   [app.common.types.grid :as ctg]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
    [app.common.types.shape.interactions :as ctsi]
-   [app.common.types.shape.layout :as ctsl]
-   [app.common.types.shape.path :as ctsp]
-   [app.common.types.shape.radius :as ctsr]
+   ;; FIXME: missing spec -> schema
+   #_[app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
-   [clojure.set :as set]
-   [clojure.spec.alpha :as s]
-   [clojure.test.check.generators :as tgen]))
-
-;; --- Specs
-
-(s/def ::frame-id uuid?)
-(s/def ::id uuid?)
-(s/def ::name ::us/string)
-(s/def ::path (s/nilable ::us/string))
-(s/def ::page-id uuid?)
-(s/def ::parent-id uuid?)
-(s/def ::string ::us/string)
-(s/def ::type #{:frame :text :rect :path :image :circle :group :bool :svg-raw})
-(s/def ::uuid uuid?)
-
-(s/def ::component-id uuid?)
-(s/def ::component-file uuid?)
-(s/def ::component-root? boolean?)
-(s/def ::shape-ref uuid?)
-
-;; Size constraints
-
-(s/def ::constraints-h #{:left :right :leftright :center :scale})
-(s/def ::constraints-v #{:top :bottom :topbottom :center :scale})
-(s/def ::fixed-scroll boolean?)
-
-;; Page Data related
-(s/def ::blocked boolean?)
-(s/def ::collapsed boolean?)
-
-(s/def ::fill-color ::us/rgb-color-str)
-(s/def ::fill-opacity ::us/safe-number)
-(s/def ::fill-color-gradient (s/nilable ::ctc/gradient))
-(s/def ::fill-color-ref-file (s/nilable uuid?))
-(s/def ::fill-color-ref-id (s/nilable uuid?))
-
-(s/def ::hide-fill-on-export boolean?)
-(s/def ::show-content boolean?)
-(s/def ::hide-in-viewer boolean?)
-
-(s/def ::file-thumbnail boolean?)
-(s/def ::masked-group? boolean?)
-(s/def ::font-family ::us/string)
-(s/def ::font-size ::us/safe-integer)
-(s/def ::font-style ::us/string)
-(s/def ::font-weight ::us/string)
-(s/def ::hidden boolean?)
-(s/def ::letter-spacing ::us/safe-number)
-(s/def ::line-height ::us/safe-number)
-(s/def ::locked boolean?)
-(s/def ::page-id uuid?)
-(s/def ::proportion ::us/safe-number)
-(s/def ::proportion-lock boolean?)
-(s/def ::stroke-color ::us/string)
-(s/def ::stroke-color-gradient (s/nilable ::ctc/gradient))
-(s/def ::stroke-color-ref-file (s/nilable uuid?))
-(s/def ::stroke-color-ref-id (s/nilable uuid?))
-(s/def ::stroke-opacity ::us/safe-number)
-(s/def ::stroke-style #{:solid :dotted :dashed :mixed :none :svg})
+   [clojure.set :as set]))
 
 (def stroke-caps-line #{:round :square})
 (def stroke-caps-marker #{:line-arrow :triangle-arrow :square-marker :circle-marker :diamond-marker})
 (def stroke-caps (set/union stroke-caps-line stroke-caps-marker))
 
-(s/def ::stroke-cap-start stroke-caps)
-(s/def ::stroke-cap-end stroke-caps)
-
-(s/def ::stroke-width ::us/safe-number)
-(s/def ::stroke-alignment #{:center :inner :outer})
-(s/def ::text-align #{"left" "right" "center" "justify"})
-(s/def ::x ::us/safe-number)
-(s/def ::y ::us/safe-number)
-(s/def ::cx ::us/safe-number)
-(s/def ::cy ::us/safe-number)
-(s/def ::width ::us/safe-number)
-(s/def ::height ::us/safe-number)
-(s/def ::index integer?)
-
-(s/def ::x1 ::us/safe-number)
-(s/def ::y1 ::us/safe-number)
-(s/def ::x2 ::us/safe-number)
-(s/def ::y2 ::us/safe-number)
-
-(s/def ::selrect
-  (s/keys :req-un [::x ::y ::x1 ::y1 ::x2 ::y2 ::width ::height]))
-
-(s/def ::exports
-  (s/coll-of ::ctse/export :kind vector?))
-
-(s/def ::points
-  (s/every ::gpt/point :kind vector?))
-
-(s/def ::shapes
-  (s/every uuid? :kind vector?))
-
-(s/def ::fill
-  (s/and (s/keys :opt-un [::fill-color
-                          ::fill-opacity
-                          ::fill-color-gradient
-                          ::fill-color-ref-file
-                          ::fill-color-ref-id])
-         (comp boolean seq)))
-
-(s/def ::fills
-  (s/coll-of ::fill :kind vector?))
-
-(s/def ::stroke
-  (s/keys :opt-un [::stroke-color
-                   ::stroke-color-ref-file
-                   ::stroke-color-ref-id
-                   ::stroke-opacity
-                   ::stroke-style
-                   ::stroke-width
-                   ::stroke-alignment
-                   ::stroke-cap-start
-                   ::stroke-cap-end]))
-
-(s/def ::strokes
-  (s/coll-of ::stroke :kind vector?))
-
-(s/def ::transform ::gmt/matrix)
-(s/def ::transform-inverse ::gmt/matrix)
-(s/def ::opacity ::us/safe-number)
-(s/def ::blend-mode
+(def blend-mode
   #{:normal
     :darken
     :multiply
@@ -166,102 +48,235 @@
     :color
     :luminosity})
 
-(s/def ::shape-base-attrs
-  (s/keys :opt-un [::id
-                   ::name
-                   ::component-id
-                   ::component-file
-                   ::component-root?
-                   ::shape-ref
-                   ::selrect
-                   ::points
-                   ::blocked
-                   ::collapsed
-                   ::fills
-                   ::hide-fill-on-export
-                   ::font-family
-                   ::font-size
-                   ::font-style
-                   ::font-weight
-                   ::hidden
-                   ::letter-spacing
-                   ::line-height
-                   ::locked
-                   ::proportion
-                   ::proportion-lock
-                   ::constraints-h
-                   ::constraints-v
-                   ::fixed-scroll
-                   ::ctsr/rx
-                   ::ctsr/ry
-                   ::ctsr/r1
-                   ::ctsr/r2
-                   ::ctsr/r3
-                   ::ctsr/r4
-                   ::x
-                   ::y
-                   ::exports
-                   ::shapes
-                   ::strokes
-                   ::text-align
-                   ::transform
-                   ::transform-inverse
-                   ::width
-                   ::height
-                   ::masked-group?
-                   ::ctsi/interactions
-                   ::ctss/shadow
-                   ::ctsb/blur
-                   ::opacity
-                   ::blend-mode]))
+(def horizontal-constraint-types
+  #{:left :right :leftright :center :scale})
 
-(s/def ::shape-attrs
-  (s/with-gen
-    (s/merge
-     ::shape-base-attrs
-     ::ctsl/layout-container-props
-     ::ctsl/layout-child-props
+(def vertical-constraint-types
+  #{:top :bottom :topbottom :center :scale})
 
-     ;; For BACKWARD COMPATIBILITY we need to spec fill and stroke
-     ;; attrs as shape toplevel attrs
-     ::fill
-     ::stroke)
-    #(tgen/let [attrs1 (s/gen ::shape-base-attrs)
-                attrs2 (s/gen ::ctsl/layout-container-props)
-                attrs3 (s/gen ::ctsl/layout-child-props)]
-       (merge attrs1 attrs2 attrs3))))
+(def text-align-types
+  #{"left" "right" "center" "justify"})
 
-(defmulti shape-spec :type)
+(sm/def! ::selrect
+  [:map {:title "Selrect"}
+   [:x ::sm/safe-number]
+   [:y ::sm/safe-number]
+   [:x1 ::sm/safe-number]
+   [:x2 ::sm/safe-number]
+   [:y1 ::sm/safe-number]
+   [:y2 ::sm/safe-number]
+   [:width ::sm/safe-number]
+   [:height ::sm/safe-number]])
 
-(defmethod shape-spec :default [_]
-  (s/spec ::shape-attrs))
+(sm/def! ::points
+  [:vector {:gen/max 5} ::gpt/point])
 
-(defmethod shape-spec :text [_]
-  (s/merge ::shape-attrs
-           (s/keys :opt-un [::ctsx/content
-                            ::ctsx/position-data])))
+(sm/def! ::fill
+  [:map {:title "Fill" :min 1}
+   [:fill-color {:optional true} ::ctc/rgb-color]
+   [:fill-opacity {:optional true} ::sm/safe-number]
+   [:fill-color-gradient {:optional true} ::ctc/gradient]
+   [:fill-color-ref-file {:optional true} [:maybe ::sm/uuid]]
+   [:fill-color-ref-id {:optional true} [:maybe ::sm/uuid]]])
 
-(defmethod shape-spec :path [_]
-  (s/merge ::shape-attrs
-           (s/keys :opt-un [::ctsp/content])))
+(sm/def! ::stroke
+  [:map {:title "Stroke"}
+   [:stroke-color {:optional true} :string]
+   [:stroke-color-ref-file {:optional true} ::sm/uuid]
+   [:stroke-color-ref-id {:optional true} ::sm/uuid]
+   [:stroke-opacity {:optional true} ::sm/safe-number]
+   [:stroke-style {:optional true}
+    [::sm/one-of #{:solid :dotted :dashed :mixed :none :svg}]]
+   [:stroke-width {:optional true} ::sm/safe-number]
+   [:stroke-alignment {:optional true}
+    [::sm/one-of #{:center :inner :outer}]]
+   [:stroke-cap-start {:optional true}
+    [::sm/one-of stroke-caps]]
+   [:stroke-cap-end {:optional true}
+    [::sm/one-of stroke-caps]]
+   [:stroke-color-gradient {:optional true} ::ctc/gradient]])
 
-(defmethod shape-spec :frame [_]
-  (s/merge ::shape-attrs
-           (s/keys :opt-un [::file-thumbnail
-                            ::hide-fill-on-export
-                            ::show-content
-                            ::hide-in-viewer])))
+(sm/def! ::shape-attrs
+  [:map {:title "ShapeAttrs"}
+   [:name {:optional true} :string]
+   [:component-id {:optional true}  ::sm/uuid]
+   [:component-file {:optional true} ::sm/uuid]
+   [:component-root {:optional true} :boolean]
+   [:shape-ref {:optional true} ::sm/uuid]
+   [:selrect {:optional true} ::selrect]
+   [:points {:optional true} ::points]
+   [:blocked {:optional true} :boolean]
+   [:collapsed {:optional true} :boolean]
+   [:locked {:optional true} :boolean]
+   [:hidden {:optional true} :boolean]
+   [:masked-group? {:optional true} :boolean]
+   [:fills {:optional true}
+    [:vector {:gen/max 2} ::fill]]
+   [:hide-fill-on-export {:optional true} :boolean]
+   [:proportion {:optional true} ::sm/safe-number]
+   [:proportion-lock {:optional true} :boolean]
+   [:constraints-h {:optional true}
+    [::sm/one-of horizontal-constraint-types]]
+   [:constraints-v {:optional true}
+    [::sm/one-of vertical-constraint-types]]
+   [:fixed-scroll {:optional true} :boolean]
+   [:rx {:optional true} ::sm/safe-number]
+   [:ry {:optional true} ::sm/safe-number]
+   [:r1 {:optional true} ::sm/safe-number]
+   [:r2 {:optional true} ::sm/safe-number]
+   [:r3 {:optional true} ::sm/safe-number]
+   [:r4 {:optional true} ::sm/safe-number]
+   [:x {:optional true} ::sm/safe-number]
+   [:y {:optional true} ::sm/safe-number]
+   [:width {:optional true} ::sm/safe-number]
+   [:height {:optional true} ::sm/safe-number]
+   [:opacity {:optional true} ::sm/safe-number]
+   [:grids {:optional true}
+    [:vector {:gen/max 2} ::ctg/grid]]
+   [:exports {:optional true}
+    [:vector {:gen/max 2} ::ctse/export]]
+   [:strokes {:optional true}
+    [:vector {:gen/max 2} ::stroke]]
+   [:transform {:optional true} ::gmt/matrix]
+   [:transform-inverse {:optional true} ::gmt/matrix]
+   [:blend-mode {:optional true} [::sm/one-of blend-mode]]
+   [:interactions {:optional true}
+    [:vector {:gen/max 2} ::ctsi/interaction]]
+   [:shadow {:optional true}
+    [:vector {:gen/max 1} ::ctss/shadow]]
+   [:blur {:optional true} ::ctsb/blur]
+   [:grow-type {:optional true}
+    [::sm/one-of #{:auto-width :auto-height :fixed}]]
+   ])
 
-(s/def ::shape
-  (s/with-gen
-    (s/merge
-     (s/keys :req-un [::type ::name])
-     (s/multi-spec shape-spec :type))
-    (fn []
-      (tgen/let [type  (s/gen ::type)
-                 name  (s/gen ::name)
-                 attrs (s/gen ::shape-attrs)]
-        (assoc attrs :type type :name name)))))
+(def shape-attrs?
+  (sm/pred-fn ::shape-attrs))
+
+(sm/def! ::group-attrs
+  [:map {:title "GroupAttrs"}
+   [:type [:= :group]]
+   [:id ::sm/uuid]
+   [:shapes [:vector {:min 1 :gen/max 10 :gen/min 1} ::sm/uuid]]])
+
+(sm/def! ::frame-attrs
+  [:map {:title "FrameAttrs"}
+   [:type [:= :frame]]
+   [:id ::sm/uuid]
+   [:shapes {:optional true} [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
+   [:file-thumbnail {:optional true} :boolean]
+   [:hide-fill-on-export {:optional true} :boolean]
+   [:show-content {:optional true} :boolean]
+   [:hide-in-viewer {:optional true} :boolean]])
+
+(sm/def! ::bool-attrs
+  [:map {:title "BoolAttrs"}
+   [:type [:= :bool]]
+   [:id ::sm/uuid]
+   [:shapes [:vector {:min 1 :gen/max 10 :gen/min 1} ::sm/uuid]]
+
+   ;; FIXME: improve this schema
+   [:bool-type :keyword]
+
+   ;; FIXME: improve this schema
+   [:bool-content
+    [:vector {:gen/max 2}
+     [:map
+      [:command :keyword]
+      [:relative :boolean]
+      [:params [:map-of {:gen/max 5} :keyword ::sm/safe-number]]]]]])
+
+(sm/def! ::rect-attrs
+  [:map {:title "RectAttrs"}
+   [:type [:= :rect]]
+   [:id ::sm/uuid]])
+
+(sm/def! ::circle-attrs
+  [:map {:title "CircleAttrs"}
+   [:type [:= :circle]]
+   [:id ::sm/uuid]])
+
+(sm/def! ::svg-raw-attrs
+  [:map {:title "SvgRawAttrs"}
+   [:type [:= :svg-raw]]
+   [:id ::sm/uuid]])
+
+(sm/def! ::image-attrs
+  [:map {:title "ImageAttrs"}
+   [:type [:= :image]]
+   [:id ::sm/uuid]
+   [:metadata
+    [:map
+     [:width :int]
+     [:height :int]
+     [:mtype :string]
+     [:id ::sm/uuid]]]])
+
+(sm/def! ::path-attrs
+  [:map {:title "PathAttrs"}
+   [:type [:= :path]]
+   [:id ::sm/uuid]
+   [:content
+    [:vector
+     [:map
+      [:command :keyword]
+      [:params {:optional true} [:maybe :map]]]]]])
+
+(sm/def! ::text-attrs
+  [:map {:title "TextAttrs"}
+   [:id ::sm/uuid]
+   [:type [:= :text]]
+   [:content ::ctsx/content]])
+
+(sm/def! ::shape
+  [:multi {:dispatch :type :title "Shape"}
+   [:group
+    [:merge {:title "GroupShape"}
+     ::shape-attrs
+     ::group-attrs]]
+
+   [:frame
+    [:merge {:title "FrameShape"}
+     ::shape-attrs
+     ::frame-attrs]]
+
+   [:bool
+    [:merge {:title "BoolShape"}
+     ::shape-attrs
+     ::bool-attrs]]
+
+   [:rect
+    [:merge {:title "RectShape"}
+     ::shape-attrs
+     ::rect-attrs]]
+
+   [:circle
+    [:merge {:title "CircleShape"}
+     ::shape-attrs
+     ::circle-attrs]]
+
+   [:image
+    [:merge {:title "ImageShape"}
+     ::shape-attrs
+     ::image-attrs]]
+
+   [:svg-raw
+    [:merge {:title "SvgRawShape"}
+     ::shape-attrs
+     ::svg-raw-attrs]]
+
+   [:path
+    [:merge {:title "PathShape"}
+     ::shape-attrs
+     ::path-attrs]]
+
+   [:text
+    [:merge {:title "TextShape"}
+     ::shape-attrs
+     ::text-attrs]]
+   ])
+
+(def shape?
+  (sm/pred-fn ::shape))
 
 ;; --- Initialization
 
@@ -311,11 +326,6 @@
     :fills [{:fill-color clr/white
              :fill-opacity 1}]
     :strokes []
-    :stroke-style :none
-    :stroke-alignment :center
-    :stroke-width 0
-    :stroke-color clr/black
-    :stroke-opacity 0
     :rx 0
     :ry 0}
 

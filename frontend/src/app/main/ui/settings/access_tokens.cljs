@@ -94,12 +94,14 @@
                           (with-meta params mdata))))))
 
         copy-token
-        (fn [event]
-          (dom/prevent-default event)
-          (wapi/write-to-clipboard (:token created))
-          (st/emit! (dm/show {:type :info
-                              :content (tr "dashboard.access-tokens.copied-success")
-                              :timeout 1000})))]
+        (mf/use-fn
+         (mf/deps created)
+         (fn [event]
+           (dom/prevent-default event)
+           (wapi/write-to-clipboard (:token created))
+           (st/emit! (dm/show {:type :info
+                               :content (tr "dashboard.access-tokens.copied-success")
+                               :timeout 1000}))))]
 
     [:div.modal-overlay
      [:div.modal-container.access-tokens-modal
@@ -180,17 +182,18 @@
        [:span (tr "dashboard.access-tokens.create")]]]]))
 
 (mf/defc access-token-actions
-  [{:keys [on-delete] :as props}]
+  [{:keys [on-delete]}]
   (let [local    (mf/use-state {:menu-open false})
         show?    (:menu-open @local)
+        options  (mf/with-memo [on-delete]
+                   [{:option-name    (tr "labels.delete")
+                     :id             "access-token-delete"
+                     :option-handler on-delete}])
+
         menu-ref (mf/use-ref)
-        options  [{:option-name    (tr "labels.delete")
-                   :id             "access-token-delete"
-                   :option-handler on-delete}]
 
         on-menu-close
-        (mf/use-fn
-         #(swap! local assoc :menu-open false))
+        (mf/use-fn #(swap! local assoc :menu-open false))
 
         on-menu-click
         (mf/use-fn
@@ -254,7 +257,7 @@
          :else (tr "dashboard.access-tokens.expires-on" expires-txt))]]
      [:div.table-field.actions
       [:& access-token-actions
-       {:on-delete on-delete :key (:id token)}]]]))
+       {:on-delete on-delete}]]]))
 
 (mf/defc access-tokens-page
   []

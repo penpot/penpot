@@ -6,20 +6,19 @@
 
 (ns app.main.data.workspace.path.drawing
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.path.commands :as upc]
    [app.common.path.shapes-to-path :as upsp]
-   [app.common.spec :as us]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
-   [app.main.data.workspace.path.common :as common]
+   [app.main.data.workspace.path.common :as common :refer [content?]]
    [app.main.data.workspace.path.helpers :as helpers]
-   [app.main.data.workspace.path.spec :as spec]
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.streams :as streams]
    [app.main.data.workspace.path.undo :as undo]
@@ -256,7 +255,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [content (get-in state [:workspace-drawing :object :content] [])]
-        (us/verify ::spec/content content)
+        (dm/assert! (content? content))
         (if (> (count content) 1)
           (assoc-in state [:workspace-drawing :object :initialized?] true)
           state)))

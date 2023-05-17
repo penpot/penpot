@@ -8,6 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -38,11 +39,11 @@
 (defonce default-image {:x 0 :y 0 :width 1 :height 1 :rx 0 :ry 0})
 
 (defn- assert-valid-num [attr num]
-  (us/verify!
-   :expr (and (d/num? num)
-              (<= num max-safe-int)
-              (>= num min-safe-int))
-   :hint (str/ffmt "%1 attribute has invalid value: %2" (d/name attr) num))
+  (dm/assert!
+   ["%1 attribute has invalid value: %2" (d/name attr) num]
+   (and (d/num? num)
+        (<= num max-safe-int)
+        (>= num min-safe-int)))
 
   ;; If the number is between 0-1 we round to 1 (same in negative form
   (cond
@@ -52,9 +53,9 @@
 
 (defn- assert-valid-pos-num
   [attr num]
-  (us/verify!
-   :expr (pos? num)
-   :hint (str/ffmt "%1 attribute should be positive" (d/name attr)))
+  (dm/assert!
+   ["%1 attribute should be positive" (d/name attr)]
+   (pos? num))
   num)
 
 (defn- svg-dimensions [data]

@@ -143,7 +143,9 @@
                              :app.loggers.mattermost/reporter
                              :app.loggers.database/reporter
                              :app.worker/cron
-                             :app.worker/worker))
+                             :app.worker/dispatcher
+                             [:app.main/default :app.worker/worker]
+                             [:app.main/webhook :app.worker/worker]))
           _      (ig/load-namespaces system)
           system (-> (ig/prep system)
                      (ig/init))]
@@ -495,6 +497,10 @@
 (defn db-insert!
   [& params]
   (apply db/insert! *pool* params))
+
+(defn db-delete!
+  [& params]
+  (apply db/delete! *pool* params))
 
 (defn db-query
   [& params]

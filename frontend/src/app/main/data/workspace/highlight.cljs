@@ -6,7 +6,7 @@
 
 (ns app.main.data.workspace.highlight
   (:require
-   [app.common.spec :as us]
+   [app.common.data.macros :as dm]
    [clojure.set :as set]
    [potok.core :as ptk]))
 
@@ -14,7 +14,7 @@
 
 (defn highlight-shape
   [id]
-  (us/verify ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::highlight-shape
     ptk/UpdateEvent
     (update [_ state]
@@ -22,7 +22,7 @@
 
 (defn dehighlight-shape
   [id]
-  (us/verify ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::dehighlight-shape
     ptk/UpdateEvent
     (update [_ state]

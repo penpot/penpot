@@ -18,7 +18,6 @@
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.components-list :as ctkl]
@@ -84,10 +83,6 @@
 
 (def default-workspace-local {:zoom 1})
 
-(s/def ::layout-name (s/nilable ::us/keyword))
-(s/def ::coll-of-uuids (s/coll-of ::us/uuid))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -101,7 +96,11 @@
 
 (defn initialize-layout
   [lname]
-  (us/assert! ::layout-name lname)
+  ;; (dm/assert!
+  ;;  "expected valid layout"
+  ;;  (and (keyword? lname)
+  ;;       (contains? layout/presets lname)))
+
   (ptk/reify ::initialize-layout
     ptk/UpdateEvent
     (update [_ state]
@@ -298,8 +297,8 @@
 
 (defn initialize-file
   [project-id file-id]
-  (us/assert! ::us/uuid project-id)
-  (us/assert! ::us/uuid file-id)
+  (dm/assert! (uuid? project-id))
+  (dm/assert! (uuid? file-id))
 
   (ptk/reify ::initialize-file
     ptk/UpdateEvent
@@ -350,7 +349,7 @@
 
 (defn initialize-page
   [page-id]
-  (us/assert! ::us/uuid page-id)
+  (dm/assert! (uuid? page-id))
   (ptk/reify ::initialize-page
     ptk/UpdateEvent
     (update [_ state]
@@ -384,7 +383,7 @@
 
 (defn finalize-page
   [page-id]
-  (us/assert! ::us/uuid page-id)
+  (dm/assert! (uuid? page-id))
   (ptk/reify ::finalize-page
     ptk/UpdateEvent
     (update [_ state]
@@ -465,8 +464,8 @@
 
 (defn rename-page
   [id name]
-  (us/verify ::us/uuid id)
-  (us/verify string? name)
+  (dm/assert! (uuid? id))
+  (dm/assert! (string? name))
   (ptk/reify ::rename-page
     ptk/WatchEvent
     (watch [it state _]
@@ -567,8 +566,8 @@
 
 (defn update-shape
   [id attrs]
-  (us/verify ::us/uuid id)
-  (us/verify ::cts/shape-attrs attrs)
+  (dm/assert! (uuid? id))
+  (dm/assert! (cts/shape-attrs? attrs))
   (ptk/reify ::update-shape
     ptk/WatchEvent
     (watch [_ _ _]
@@ -577,7 +576,7 @@
 
 (defn start-rename-shape
   [id]
-  (us/verify ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::start-rename-shape
     ptk/UpdateEvent
     (update [_ state]
@@ -594,7 +593,7 @@
 
 (defn update-selected-shapes
   [attrs]
-  (us/verify ::cts/shape-attrs attrs)
+  (dm/assert! (cts/shape-attrs? attrs))
   (ptk/reify ::update-selected-shapes
     ptk/WatchEvent
     (watch [_ state _]
@@ -621,11 +620,14 @@
 
 ;; --- Shape Vertical Ordering
 
-(s/def ::loc  #{:up :down :bottom :top})
+(def valid-vertical-locations
+  #{:up :down :bottom :top})
 
 (defn vertical-order-selected
   [loc]
-  (us/verify ::loc loc)
+  (dm/assert!
+   "expected valid location"
+   (contains? valid-vertical-locations loc))
   (ptk/reify ::vertical-order-selected
     ptk/WatchEvent
     (watch [it state _]
@@ -746,9 +748,9 @@
 
 (defn relocate-shapes
   [ids parent-id to-index & [ignore-parents?]]
-  (us/verify (s/coll-of ::us/uuid) ids)
-  (us/verify ::us/uuid parent-id)
-  (us/verify number? to-index)
+  (dm/assert! (every? uuid? ids))
+  (dm/assert! (uuid? parent-id))
+  (dm/assert! (number? to-index))
 
   (ptk/reify ::relocate-shapes
     ptk/WatchEvent
@@ -935,7 +937,10 @@
 
 (defn align-objects
   [axis]
-  (us/verify ::gal/align-axis axis)
+  (dm/assert!
+   "expected valid align axis value"
+   (contains? gal/valid-align-axis axis))
+
   (ptk/reify ::align-objects
     ptk/WatchEvent
     (watch [_ state _]
@@ -976,7 +981,10 @@
 
 (defn distribute-objects
   [axis]
-  (us/verify ::gal/dist-axis axis)
+  (dm/assert!
+   "expected valid distribute axis value"
+   (contains? gal/valid-dist-axis axis))
+
   (ptk/reify ::distribute-objects
     ptk/WatchEvent
     (watch [_ state _]
@@ -1055,7 +1063,7 @@
              qparams    {:page-id page-id}]
          (rx/of (rt/nav' :workspace pparams qparams))))))
   ([page-id]
-   (us/assert! ::us/uuid page-id)
+   (dm/assert! (uuid? page-id))
    (ptk/reify ::go-to-page-2
      ptk/WatchEvent
      (watch [_ state _]
@@ -1067,7 +1075,6 @@
 
 (defn go-to-layout
   [layout]
-  (us/verify ::layout/flag layout)
   (ptk/reify ::go-to-layout
     IDeref
     (-deref [_] {:layout layout})
@@ -1120,8 +1127,8 @@
                                                             :typographies #{}}))))
 (defn go-to-main-instance
   [page-id shape-id]
-  (us/verify ::us/uuid page-id)
-  (us/verify ::us/uuid shape-id)
+  (dm/assert! (uuid? page-id))
+  (dm/assert! (uuid? shape-id))
   (ptk/reify ::go-to-main-instance
     ptk/WatchEvent
     (watch [_ state stream]
@@ -1243,12 +1250,9 @@
 ;; Context Menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::point gpt/point?)
-
-
 (defn show-context-menu
   [{:keys [position] :as params}]
-  (us/verify ::point position)
+  (dm/assert! (gpt/point? position))
   (ptk/reify ::show-context-menu
     ptk/UpdateEvent
     (update [_ state]
@@ -1282,7 +1286,7 @@
 
 (defn show-page-item-context-menu
   [{:keys [position page] :as params}]
-  (us/verify ::point position)
+  (dm/assert! (gpt/point? position))
   (ptk/reify ::show-page-item-context-menu
     ptk/WatchEvent
     (watch [_ _ _]
@@ -1729,7 +1733,7 @@
 
 (defn paste-text
   [text]
-  (us/assert! (string? text) "expected string as first argument")
+  (dm/assert! (string? text))
   (ptk/reify ::paste-text
     ptk/WatchEvent
     (watch [_ state _]
@@ -1756,7 +1760,7 @@
 ;; TODO: why not implement it in terms of upload-media-workspace?
 (defn- paste-svg
   [text]
-  (us/assert! (string? text) "expected string as first argument")
+  (dm/assert! (string? text))
   (ptk/reify ::paste-svg
     ptk/WatchEvent
     (watch [_ state _]
@@ -2067,8 +2071,8 @@
 (defn update-component-annotation
   "Update the component with the given annotation"
   [id annotation]
-  (us/assert ::us/uuid id)
-  (us/assert ::us/string annotation)
+  (dm/assert! (uuid? id))
+  (dm/assert! (string? annotation))
   (ptk/reify ::update-component-annotation
     ptk/WatchEvent
     (watch [it state _]

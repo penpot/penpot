@@ -155,7 +155,7 @@
 (defn write-char
   [n w o]
   (write-tag! w n 1)
-  (write-int! w o))
+  (write-int! w (int o)))
 
 (defn read-char
   [rdr]
@@ -259,8 +259,8 @@
   :rfn (comp vec read-object!)}
 
  {:name "clj/list"
-  :class clojure.lang.IPersistentList
-  :wfn write-list-like
+  ;; :class clojure.lang.IPersistentList
+  ;; :wfn write-list-like
   :rfn #(apply list (read-object! %))}
 
  {:name "clj/seq"

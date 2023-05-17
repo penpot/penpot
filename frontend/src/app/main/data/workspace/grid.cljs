@@ -8,8 +8,8 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.changes-builder :as pcb]
-   [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
@@ -40,7 +40,7 @@
 
 (defn add-frame-grid
   [frame-id]
-  (us/assert ::us/uuid frame-id)
+  (dm/assert! (uuid? frame-id))
   (ptk/reify ::add-frame-grid
     ptk/WatchEvent
     (watch [_ state _]

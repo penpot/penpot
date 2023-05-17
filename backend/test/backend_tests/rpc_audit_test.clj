@@ -37,7 +37,6 @@
           proj-id (:default-project-id prof)
 
           params  {::th/type :push-audit-events
-                   :app.http/request http-request
                    ::rpc/profile-id (:id prof)
                    :events [{:name "navigate"
                              :props {:project-id proj-id
@@ -47,6 +46,9 @@
                              :profile-id (:id prof)
                              :timestamp (dt/now)
                              :type "action"}]}
+          params  (with-meta params
+                    {:app.http/request http-request})
+
           out     (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
@@ -67,7 +69,6 @@
           proj-id (:default-project-id prof)
 
           params  {::th/type :push-audit-events
-                   :app.http/request http-request
                    ::rpc/profile-id (:id prof)
                    :events [{:name "navigate"
                              :props {:project-id proj-id
@@ -77,6 +78,8 @@
                              :profile-id uuid/zero
                              :timestamp (dt/now)
                              :type "action"}]}
+          params  (with-meta params
+                    {:app.http/request http-request})
           out     (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))

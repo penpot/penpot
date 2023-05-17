@@ -14,7 +14,6 @@
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.shape.interactions :as ctsi]
@@ -30,13 +29,9 @@
    [app.main.streams :as ms]
    [app.main.worker :as uw]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [clojure.set :as set]
    [linked.set :as lks]
    [potok.core :as ptk]))
-
-(s/def ::ordered-set-of-uuid
-  (s/every uuid? :kind d/ordered-set?))
 
 (defn interrupt? [e] (= e :interrupt))
 
@@ -122,7 +117,7 @@
    (select-shape id false))
 
   ([id toggle?]
-   (us/verify ::us/uuid id)
+   (dm/assert! (uuid? id))
    (ptk/reify ::select-shape
      ptk/UpdateEvent
      (update [_ state]
@@ -185,7 +180,7 @@
 
 (defn deselect-shape
   [id]
-  (us/verify ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::deselect-shape
     ptk/UpdateEvent
     (update [_ state]
@@ -196,7 +191,7 @@
    (shift-select-shapes id nil))
 
   ([id objects]
-   (ptk/reify ::shift-select-shapes
+   (ptk/reify ::shift-select-shapes-2
      ptk/UpdateEvent
      (update [_ state]
        (let [objects (or objects (wsh/lookup-page-objects state))
@@ -209,7 +204,11 @@
 
 (defn select-shapes
   [ids]
-  (us/verify ::ordered-set-of-uuid ids)
+  (dm/assert!
+   "expected valid coll of uuids"
+   (and (every? uuid? ids)
+        (d/ordered-set? ids)))
+
   (ptk/reify ::select-shapes
     ptk/UpdateEvent
     (update [_ state]

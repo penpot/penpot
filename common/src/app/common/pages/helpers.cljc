@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.spec :as us]
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape.layout :as ctl]
@@ -286,9 +285,9 @@
 
 (defn get-container
   [file type id]
-  (us/assert map? file)
-  (us/assert keyword? type)
-  (us/assert uuid? id)
+  (dm/assert! (map? file))
+  (dm/assert! (keyword? type))
+  (dm/assert! (uuid? id))
 
   (-> (if (= type :page)
         (ctpl/get-page file id)
@@ -375,7 +374,7 @@
        (map second)))
 
 (defn get-index-replacement
-  "Given a collection of shapes, calculate their positions 
+  "Given a collection of shapes, calculate their positions
    in the parent, find first index and return next one"
   [shapes objects]
   (->> shapes

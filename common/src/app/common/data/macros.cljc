@@ -108,6 +108,14 @@
           `(do ~@body)
           (reverse (partition 2 bindings))))
 
+(defmacro check
+  "Applies a predicate to the value, if result is true, return the
+  value if not, returns nil."
+  [pred-fn value]
+  `(if (~pred-fn ~value)
+     ~value
+     nil))
+
 (defmacro get-prop
   "A macro based, optimized variant of `get` that access the property
   directly on CLJS, on CLJ works as get."
@@ -119,3 +127,32 @@
   (if (:ns &env)
     (list (symbol ".") (with-meta obj {:tag 'js}) (symbol (str "-" (c/name prop))))
     `(c/get ~obj ~prop)))
+
+(def ^:dynamic *assert-context* nil)
+
+(defmacro assert!
+  ([expr]
+   `(assert! nil ~expr))
+  ([hint expr]
+   (let [hint (cond
+                (vector? hint)
+                `(str/ffmt ~@hint)
+
+                (some? hint)
+                hint
+
+                :else
+                (str "expr assert: " (pr-str expr)))]
+     (when *assert*
+       `(binding [*assert-context* true]
+          (when-not ~expr
+            (let [hint#   ~hint
+                  params# {:type :assertion
+                           :code :expr-validation
+                           :hint hint#}]
+              (throw (ex-info hint# params#)))))))))
+
+(defmacro verify!
+  [& params]
+  (binding [*assert* true]
+    `(assert! ~@params)))

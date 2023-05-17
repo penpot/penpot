@@ -12,7 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
@@ -30,10 +30,7 @@
    [app.main.features :as features]
    [app.main.streams :as ms]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
-
-(s/def ::shape-attrs ::cts/shape-attrs)
 
 (defn get-shape-layer-position
   [objects selected attrs]
@@ -102,9 +99,8 @@
 (defn add-shape
   ([attrs]
    (add-shape attrs {}))
-
   ([attrs {:keys [no-select? no-update-layout?]}]
-   (us/verify ::shape-attrs attrs)
+   (dm/assert! (cts/shape-attrs? attrs))
    (ptk/reify ::add-shape
      ptk/WatchEvent
      (watch [it state _]
@@ -168,7 +164,7 @@
 (defn delete-shapes
   ([ids] (delete-shapes nil ids))
   ([page-id ids]
-   (us/assert ::us/set-of-uuid ids)
+   (dm/assert! (sm/set-of-uuid? ids))
    (ptk/reify ::delete-shapes
      ptk/WatchEvent
      (watch [it state _]
@@ -449,8 +445,14 @@
 
 (defn update-shape-flags
   [ids {:keys [blocked hidden] :as flags}]
-  (us/verify (s/coll-of ::us/uuid) ids)
-  (us/assert ::shape-attrs flags)
+  (dm/assert!
+   "expected valid coll of uuids"
+   (every? uuid? ids))
+
+  (dm/assert!
+   "expected valid shape-attrs value for `flags`"
+   (cts/shape-attrs? flags))
+
   (ptk/reify ::update-shape-flags
     ptk/WatchEvent
     (watch [_ state _]

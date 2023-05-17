@@ -6,23 +6,25 @@
 
 (ns app.config
   (:require
+   [app.common.data.macros :as dm]
    [app.common.flags :as flags]
-   [app.common.spec :as us]
    [app.common.uri :as u]
    [app.common.version :as v]
    [app.util.avatars :as avatars]
    [app.util.dom :as dom]
    [app.util.globals :refer [global location]]
    [app.util.object :as obj]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
 (set! *assert* js/goog.DEBUG)
 
 ;; --- Auxiliar Functions
 
-(s/def ::platform #{:windows :linux :macos :other})
-(s/def ::browser #{:chrome :firefox :safari :edge :other})
+(def valid-browsers
+  #{:chrome :firefox :safari :edge :other})
+
+(def valid-platforms
+  #{:windows :linux :macos :other})
 
 (defn- parse-browser
   []
@@ -114,11 +116,11 @@
 ;; --- Helper Functions
 
 (defn ^boolean check-browser? [candidate]
-  (us/verify! ::browser candidate)
+  (dm/assert! (contains? valid-browsers candidate))
   (= candidate @browser))
 
 (defn ^boolean check-platform? [candidate]
-  (us/verify! ::platform candidate)
+  (dm/assert! (contains? valid-platforms candidate))
   (= candidate @platform))
 
 (defn resolve-profile-photo-url

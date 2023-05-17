@@ -6,26 +6,42 @@
 
 (ns app.common.types.container
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.common :as common]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
-   [app.common.uuid :as uuid]
-   [clojure.spec.alpha :as s]))
+   [app.common.uuid :as uuid]))
 
-(s/def ::type #{:page :component})
-(s/def ::id uuid?)
-(s/def ::name ::us/string)
-(s/def ::path (s/nilable ::us/string))
-(s/def ::modified-at ::us/inst)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SCHEMA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::container
-  (s/keys :req-un [::id ::name]
-          :opt-un [::type ::path ::modified-at ::ctst/objects]))
+(def valid-container-types
+  #{:page :component})
+
+(sm/def! ::container
+  [:map
+   [:id ::sm/uuid]
+   [:type {:optional true}
+    [::sm/one-of valid-container-types]]
+   [:name :string]
+   [:path {:optional true} [:maybe :string]]
+   [:modified-at {:optional true} ::sm/inst]
+   [:objects {:optional true}
+    [:map-of {:gen/max 10} ::sm/uuid ::cts/shape]]])
+
+(def container?
+  (sm/pred-fn ::container))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn make-container
   [page-or-component type]
@@ -41,9 +57,9 @@
 
 (defn get-container
   [file type id]
-  (us/assert map? file)
-  (us/assert ::type type)
-  (us/assert uuid? id)
+  (dm/assert! (map? file))
+  (dm/assert! (contains? valid-container-types type))
+  (dm/assert! (uuid? id))
 
   (-> (if (= type :page)
         (ctpl/get-page file id)
@@ -52,8 +68,14 @@
 
 (defn get-shape
   [container shape-id]
-  (us/assert ::container container)
-  (us/assert ::us/uuid shape-id)
+  (dm/assert!
+   "expected valid container"
+   (container? container))
+
+  (dm/assert!
+   "expected valid uuid for `shape-id`"
+   (uuid? shape-id))
+
   (-> container
       (get :objects)
       (get shape-id)))

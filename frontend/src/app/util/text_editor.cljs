@@ -155,13 +155,13 @@
     (impl/insertText state text (clj->js attrs) (clj->js style))))
 
 (defn get-style-override [state]
-  (.getInlineStyleOverride state))
+  (.getInlineStyleOverride ^js state))
 
 (defn set-style-override [state inline-style]
   (impl/setInlineStyleOverride state inline-style))
 
 (defn content-equals [state other]
-  (.equals (.getCurrentContent state) (.getCurrentContent other)))
+  (.equals (.getCurrentContent ^js state) (.getCurrentContent ^js other)))
 
 (defn selection-equals [state other]
   (impl/selectionEquals (.getSelection state) (.getSelection other)))

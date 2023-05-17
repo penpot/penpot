@@ -3,10 +3,10 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v18.12.0 \
-    CLOJURE_VERSION=1.11.1.1189 \
-    CLJKONDO_VERSION=2022.10.14 \
-    BABASHKA_VERSION=0.9.162 \
+ENV NODE_VERSION=v18.15.0 \
+    CLOJURE_VERSION=1.11.1.1257 \
+    CLJKONDO_VERSION=2023.03.17 \
+    BABASHKA_VERSION=1.3.176 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -15,6 +15,9 @@ RUN set -ex; \
     echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail; \
     apt-get -qq update; \
     apt-get -qqy install --no-install-recommends \
+        build-essential \
+        openssh-client \
+        redis-tools \
         locales \
         gnupg2 \
         ca-certificates \
@@ -32,6 +35,8 @@ RUN set -ex; \
         netcat \
         file \
         less \
+        jq \
+        nginx \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
@@ -45,26 +50,17 @@ RUN set -ex; \
 RUN set -ex; \
     apt-get -qq update; \
     apt-get -qqy install --no-install-recommends \
-        build-essential \
+        python3 \
+        python3-tabulate \
         imagemagick \
         ghostscript \
         netpbm \
         poppler-utils \
         potrace \
         webp \
-        nginx \
-        jq \
-        redis-tools \
         woff-tools \
         woff2 \
         fontforge \
-        openssh-client \
-    ; \
-    rm -rf /var/lib/apt/lists/*;
-
-RUN set -ex; \
-    apt-get -qq update; \
-    apt-get -qqy install \
         gconf-service \
         libasound2 \
         libatk1.0-0 \
@@ -168,13 +164,25 @@ RUN set -eux; \
     /usr/local/nodejs/bin/npm install -g yarn; \
     rm -rf /tmp/nodejs.tar.xz;
 
-# TODO: waiting for aarch64 build
-# Install clj-kondo
 RUN set -ex; \
-    curl -LfsSo /tmp/clj-kondo.zip https://github.com/borkdude/clj-kondo/releases/download/v$CLJKONDO_VERSION/clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/clj-kondo/clj-kondo/releases/download/v$CLJKONDO_VERSION/clj-kondo-$CLJKONDO_VERSION-linux-aarch64.zip"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/clj-kondo/clj-kondo/releases/download/v$CLJKONDO_VERSION/clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    cd /tmp; \
+    curl -LfsSo /tmp/clj-kondo.zip ${BINARY_URL}; \
     cd /usr/local/bin; \
     unzip /tmp/clj-kondo.zip; \
-    rm /tmp/clj-kondo.zip;
+    rm -rf /tmp/clj-kondo.zip;
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \

@@ -163,11 +163,11 @@
 (extend-protocol IPrintWithWriter
   DateTime
   (-pr-writer [p writer _]
-    (-write writer (str/fmt "#stks/datetime \"%s\"" (format p :iso))))
+    (-write writer (str/fmt "#app/instant \"%s\"" (format p :iso))))
 
   Duration
   (-pr-writer [p writer _]
-    (-write writer (str/fmt "#stks/duration \"%s\"" (format p :iso)))))
+    (-write writer (str/fmt "#app/duration \"%s\"" (format p :iso)))))
 
 (defn- resolve-format
   [v]
@@ -239,6 +239,6 @@
    (when v
      (let [v (if (datetime? v) (format v :date) v)
            locale (obj/get locales locale)
-           f (.date (.-formatLong locale) v)]
-       (->> #js {:locale locale}
-            (dateFnsFormat v f))))))
+           f (-> (.-formatLong ^js locale)
+                 (.date v))]
+       (dateFnsFormat v f #js {:locale locale})))))

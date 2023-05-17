@@ -7,8 +7,9 @@
 (ns app.main.data.workspace.notifications
   (:require
    [app.common.data :as d]
-   [app.common.pages.changes-spec :as pcs]
-   [app.common.spec :as us]
+   [app.common.data.macros :as dm]
+   [app.common.pages.changes :as cpc]
+   [app.common.schema :as sm]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
@@ -18,7 +19,6 @@
    [app.util.object :as obj]
    [app.util.time :as dt]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [clojure.set :as set]
    [potok.core :as ptk]))
 
@@ -183,19 +183,18 @@
                           :updated-at (dt/now)
                           :page-id page-id))))))
 
-(s/def ::type keyword?)
-(s/def ::profile-id uuid?)
-(s/def ::file-id uuid?)
-(s/def ::session-id uuid?)
-(s/def ::revn integer?)
-(s/def ::changes ::pcs/changes)
-
-(s/def ::file-change-event
-  (s/keys :req-un [::type ::profile-id ::file-id ::session-id ::revn ::changes]))
+(def schema:handle-file-change
+  [:map
+   [:type :keyword]
+   [:profile-id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:session-id ::sm/uuid]
+   [:revn :int]
+   [:changes ::cpc/changes]])
 
 (defn handle-file-change
   [{:keys [file-id changes] :as msg}]
-  (us/assert ::file-change-event msg)
+  (dm/assert! (sm/valid? schema:handle-file-change msg))
   (ptk/reify ::handle-file-change
     IDeref
     (-deref [_] {:changes changes})
@@ -241,18 +240,19 @@
          (when-not (empty? changes-by-pages)
            (rx/from (map process-page-changes changes-by-pages))))))))
 
-(s/def ::library-change-event
-  (s/keys :req-un [::type
-                   ::profile-id
-                   ::file-id
-                   ::session-id
-                   ::revn
-                   ::modified-at
-                   ::changes]))
+(def schema:handle-library-change
+  [:map
+   [:type :keyword]
+   [:profile-id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:session-id ::sm/uuid]
+   [:revn :int]
+   [:modified-at ::sm/inst]
+   [:changes ::cpc/changes]])
 
 (defn handle-library-change
   [{:keys [file-id modified-at changes revn] :as msg}]
-  (us/assert ::library-change-event msg)
+  (dm/assert! (sm/valid? schema:handle-library-change msg))
   (ptk/reify ::handle-library-change
     ptk/WatchEvent
     (watch [_ state _]

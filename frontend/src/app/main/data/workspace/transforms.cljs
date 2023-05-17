@@ -17,7 +17,6 @@
    [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -31,7 +30,6 @@
    [app.main.streams :as ms]
    [app.util.dom :as dom]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
 ;; -- Helpers --------------------------------------------------------
@@ -237,9 +235,13 @@
   "Change size of shapes, from the sideber options form.
   Will ignore pixel snap used in the options side panel"
   [ids attr value]
-  (us/verify (s/coll-of ::us/uuid) ids)
-  (us/verify #{:width :height} attr)
-  (us/verify ::us/number value)
+  (dm/assert! (number? value))
+  (dm/assert!
+   "expected valid coll of uuids"
+   (every? uuid? ids))
+  (dm/assert!
+   "expected valid attr"
+   (contains? #{:width :height} attr))
   (ptk/reify ::update-dimensions
     ptk/UpdateEvent
     (update [_ state]
@@ -261,8 +263,13 @@
   "Change orientation of shapes, from the sidebar options form.
   Will ignore pixel snap used in the options side panel"
   [ids orientation]
-  (us/verify (s/coll-of ::us/uuid) ids)
-  (us/verify #{:horiz :vert} orientation)
+  (dm/assert!
+   "expected valid coll of uuids"
+   (every? uuid? ids))
+  (dm/assert!
+   "expected valid orientation"
+   (contains? #{:horiz :vert} orientation))
+
   (ptk/reify ::change-orientation
     ptk/UpdateEvent
     (update [_ state]
@@ -535,7 +542,8 @@
                                (finish-transform)
                                (dwu/commit-undo-transaction undo-id))))))))))))))
 
-(s/def ::direction #{:up :down :right :left})
+(def valid-directions
+  #{:up :down :right :left})
 
 (defn reorder-selected-layout-child
   [direction]
@@ -660,8 +668,8 @@
 (defn move-selected
   "Move shapes a fixed increment in one direction, from a keyboard action."
   [direction shift?]
-  (us/verify ::direction direction)
-  (us/verify boolean? shift?)
+  (dm/assert! (contains? valid-directions direction))
+  (dm/assert! (boolean? shift?))
 
   (ptk/reify ::move-selected
     ptk/WatchEvent
@@ -675,16 +683,12 @@
           (rx/of (reorder-selected-layout-child direction))
           (rx/of (nudge-selected-shapes direction shift?)))))))
 
-(s/def ::x number?)
-(s/def ::y number?)
-(s/def ::position
-  (s/keys :opt-un [::x ::y]))
-
 (defn update-position
   "Move shapes to a new position, from the sidebar options form."
   [id position]
-  (us/verify ::us/uuid id)
-  (us/verify ::position position)
+  (js/console.log "DEBUG" (pr-str position))
+  (dm/assert! (uuid? id))
+
   (ptk/reify ::update-position
     ptk/WatchEvent
     (watch [_ state _]

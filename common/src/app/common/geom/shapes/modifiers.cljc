@@ -17,7 +17,6 @@
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
@@ -43,10 +42,7 @@
 (defn resolve-tree-sequence
   "Given the ids that have changed search for layout roots to recalculate"
   [ids objects]
-
-  (us/assert!
-   :expr (or (nil? ids) (set? ids))
-   :hint (dm/str "tree sequence from not set: " ids))
+  (dm/assert! (or (nil? ids) (set? ids)))
 
   (let [get-tree-root
         (fn ;; Finds the tree root for the current id

@@ -132,6 +132,7 @@
                           :components-v2 true
                           :changes changes}
                   out    (th/command! params)]
+              ;; (th/print-result! out)
               (t/is (nil? (:error out)))
               (:result out)))]
 
@@ -164,7 +165,6 @@
       ;; Check the number of fragments
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
         (t/is (= 2 (count rows))))
-
 
       ;; Check the number of fragments
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
@@ -646,10 +646,11 @@
                   :components-v2 true}
             out  (th/command! data)]
 
+        ;; (th/print-result! out)
         (t/is (not (th/success? out)))
         (let [{:keys [type code]} (-> out :error ex-data)]
           (t/is (= :validation type))
-          (t/is (= :spec-validation code))))
+          (t/is (= :params-validation code))))
 
       )
 

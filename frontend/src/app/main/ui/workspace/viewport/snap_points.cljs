@@ -7,9 +7,9 @@
 (ns app.main.ui.workspace.viewport.snap-points
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
    [app.common.types.shape.layout :as ctl]
    [app.main.snap :as snap]
    [app.util.geom.snap-points :as sp]
@@ -155,7 +155,7 @@
 (mf/defc snap-points
   {::mf/wrap [mf/memo]}
   [{:keys [layout zoom objects selected page-id drawing focus] :as props}]
-  (us/assert set? selected)
+  (dm/assert! (set? selected))
   (let [shapes  (into [] (keep (d/getf objects)) selected)
 
         filter-shapes

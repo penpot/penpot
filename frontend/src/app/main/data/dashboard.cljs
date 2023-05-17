@@ -7,8 +7,10 @@
 (ns app.main.data.dashboard
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages :as cp]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.events :as ev]
@@ -23,40 +25,7 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
-
-;; --- Specs
-
-(s/def ::id ::us/uuid)
-(s/def ::name string?)
-(s/def ::team-id ::us/uuid)
-(s/def ::profile-id ::us/uuid)
-(s/def ::project-id ::us/uuid)
-(s/def ::created-at ::us/inst)
-(s/def ::modified-at ::us/inst)
-(s/def ::is-pinned ::us/boolean)
-
-(s/def ::team
-  (s/keys :req-un [::id
-                   ::name
-                   ::created-at
-                   ::modified-at]))
-
-(s/def ::project
-  (s/keys :req-un [::id
-                   ::name
-                   ::team-id
-                   ::created-at
-                   ::modified-at
-                   ::is-pinned]))
-
-(s/def ::file
-  (s/keys :req-un [::id
-                   ::name
-                   ::project-id]
-          :opt-un [::created-at
-                   ::modified-at]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialization
@@ -68,7 +37,7 @@
 
 (defn initialize
   [{:keys [id] :as params}]
-  (us/assert! ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
@@ -199,13 +168,13 @@
     (update [_ state]
       (assoc state :dashboard-search-result result))))
 
-(s/def ::search-term (s/nilable ::us/string))
-(s/def ::search
-  (s/keys :req-un [::search-term ]))
+(def schema:search-params
+  [:map {:closed true}
+   [:search-term [:maybe :string]]])
 
 (defn search
   [params]
-  (us/assert! ::search params)
+  (dm/assert! schema:search-params params)
   (ptk/reify ::search
     ptk/UpdateEvent
     (update [_ state]
@@ -240,7 +209,7 @@
 
 (defn fetch-files
   [{:keys [project-id] :as params}]
-  (us/assert! ::us/uuid project-id)
+  (dm/assert! (uuid? project-id))
   (ptk/reify ::fetch-files
     ptk/WatchEvent
     (watch [_ _ _]
@@ -351,7 +320,6 @@
 
 (defn toggle-file-select
   [{:keys [id project-id] :as file}]
-  (us/assert! ::file file)
   (ptk/reify ::toggle-file-select
     ptk/UpdateEvent
     (update [_ state]
@@ -381,7 +349,7 @@
 
 (defn create-team
   [{:keys [name] :as params}]
-  (us/assert! ::us/string name)
+  (dm/assert! (string? name))
   (ptk/reify ::create-team
     ptk/WatchEvent
     (watch [_ _ _]
@@ -397,7 +365,6 @@
 
 (defn create-team-with-invitations
   [{:keys [name emails role] :as params}]
-  (us/assert! ::us/string name)
   (ptk/reify ::create-team-with-invitations
     ptk/WatchEvent
     (watch [_ _ _]
@@ -416,7 +383,6 @@
 
 (defn update-team
   [{:keys [id name] :as params}]
-  (us/assert! ::team params)
   (ptk/reify ::update-team
     ptk/UpdateEvent
     (update [_ state]
@@ -429,7 +395,9 @@
 
 (defn update-team-photo
   [file]
-  (us/assert! ::di/blob file)
+  (dm/assert!
+   "expected a valid blob for `file` param"
+   (di/blob? file))
   (ptk/reify ::update-team-photo
     ptk/WatchEvent
     (watch [_ state _]
@@ -450,8 +418,8 @@
 
 (defn update-team-member-role
   [{:keys [role member-id] :as params}]
-  (us/assert! ::us/uuid member-id)
-  (us/assert! ::us/keyword role)
+  (dm/assert! (uuid? member-id))
+  (dm/assert! (keyword? role)) ;  FIXME: validate proper role?
   (ptk/reify ::update-team-member-role
     ptk/WatchEvent
     (watch [_ state _]
@@ -464,7 +432,7 @@
 
 (defn delete-team-member
   [{:keys [member-id] :as params}]
-  (us/assert! ::us/uuid member-id)
+  (dm/assert! (uuid? member-id))
   (ptk/reify ::delete-team-member
     ptk/WatchEvent
     (watch [_ state _]
@@ -477,9 +445,9 @@
 
 (defn leave-team
   [{:keys [reassign-to] :as params}]
-  (us/assert!
-   :spec (s/nilable ::us/uuid)
-   :val  reassign-to)
+  (dm/assert! (or (nil? reassign-to)
+                  (uuid? reassign-to)))
+
   (ptk/reify ::leave-team
     ptk/WatchEvent
     (watch [_ state _]
@@ -496,9 +464,10 @@
 
 (defn invite-team-members
   [{:keys [emails role team-id resend?] :as params}]
-  (us/assert! ::us/set-of-valid-emails emails)
-  (us/assert! ::us/keyword role)
-  (us/assert! ::us/uuid team-id)
+  (dm/assert! (keyword? role))
+  (dm/assert! (uuid? team-id))
+  (dm/assert! (sm/set-of-emails? emails))
+
   (ptk/reify ::invite-team-members
     IDeref
     (-deref [_] {:role role :team-id team-id :resend? resend?})
@@ -516,13 +485,12 @@
 
 (defn copy-invitation-link
   [{:keys [email team-id] :as params}]
-  (us/assert! ::us/email email)
-  (us/assert! ::us/uuid team-id)
+  (dm/assert! (sm/email? email))
+  (dm/assert! (uuid? team-id))
 
   (ptk/reify ::copy-invitation-link
     IDeref
     (-deref [_] {:email email :team-id team-id})
-
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -545,9 +513,10 @@
 
 (defn update-team-invitation-role
   [{:keys [email team-id role] :as params}]
-  (us/assert! ::us/email email)
-  (us/assert! ::us/uuid team-id)
-  (us/assert! ::us/keyword role)
+  (dm/assert! (sm/email? email))
+  (dm/assert! (uuid? team-id))
+  (dm/assert! (keyword? role)) ;; FIXME validate role
+
   (ptk/reify ::update-team-invitation-role
     IDeref
     (-deref [_] {:role role})
@@ -563,8 +532,8 @@
 
 (defn delete-team-invitation
   [{:keys [email team-id] :as params}]
-  (us/assert! ::us/email email)
-  (us/assert! ::us/uuid team-id)
+  (dm/assert! (sm/email? email))
+  (dm/assert! (uuid? team-id))
   (ptk/reify ::delete-team-invitation
     ptk/WatchEvent
     (watch [_ _ _]
@@ -577,7 +546,7 @@
 
 (defn delete-team-webhook
   [{:keys [id] :as params}]
-  (us/assert! ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::delete-team-webhook
     ptk/WatchEvent
     (watch [_ state _]
@@ -590,17 +559,17 @@
              (rx/tap on-success)
              (rx/catch on-error))))))
 
-(s/def ::mtype
+(def valid-mtypes
   #{"application/json"
     "application/x-www-form-urlencoded"
     "application/transit+json"})
 
 (defn update-team-webhook
   [{:keys [id uri mtype is-active] :as params}]
-  (us/assert! ::us/uuid id)
-  (us/assert! ::us/uri uri)
-  (us/assert! ::mtype mtype)
-  (us/assert! ::us/boolean is-active)
+  (dm/assert! (uuid? id))
+  (dm/assert! (contains? valid-mtypes mtype))
+  (dm/assert! (boolean? is-active))
+  (dm/assert! (u/uri? uri))
   (ptk/reify ::update-team-webhook
     ptk/WatchEvent
     (watch [_ state _]
@@ -615,9 +584,10 @@
 
 (defn create-team-webhook
   [{:keys [uri mtype is-active] :as params}]
-  (us/assert! ::us/uri uri)
-  (us/assert! ::mtype mtype)
-  (us/assert! ::us/boolean is-active)
+  (dm/assert! (contains? valid-mtypes mtype))
+  (dm/assert! (boolean? is-active))
+  (dm/assert! (u/uri? uri))
+
   (ptk/reify ::create-team-webhook
     ptk/WatchEvent
     (watch [_ state _]
@@ -636,7 +606,6 @@
 
 (defn delete-team
   [{:keys [id] :as params}]
-  (us/assert! ::team params)
   (ptk/reify ::delete-team
     ptk/WatchEvent
     (watch [_ _ _]
@@ -691,7 +660,7 @@
 
 (defn duplicate-project
   [{:keys [id name] :as params}]
-  (us/assert! ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::duplicate-project
     ptk/WatchEvent
     (watch [_ _ _]
@@ -708,8 +677,8 @@
 
 (defn move-project
   [{:keys [id team-id] :as params}]
-  (us/assert! ::us/uuid id)
-  (us/assert! ::us/uuid team-id)
+  (dm/assert! (uuid? id))
+  (dm/assert! (uuid? team-id))
   (ptk/reify ::move-project
     IDeref
     (-deref [_]
@@ -727,7 +696,6 @@
 
 (defn toggle-project-pin
   [{:keys [id is-pinned] :as project}]
-  (us/assert! ::project project)
   (ptk/reify ::toggle-project-pin
     ptk/UpdateEvent
     (update [_ state]
@@ -744,7 +712,6 @@
 
 (defn rename-project
   [{:keys [id name] :as params}]
-  (us/assert! ::project params)
   (ptk/reify ::rename-project
     ptk/UpdateEvent
     (update [_ state]
@@ -762,7 +729,6 @@
 
 (defn delete-project
   [{:keys [id] :as params}]
-  (us/assert! ::project params)
   (ptk/reify ::delete-project
     ptk/UpdateEvent
     (update [_ state]
@@ -784,7 +750,6 @@
 
 (defn delete-file
   [{:keys [id project-id] :as params}]
-  (us/assert! ::file params)
   (ptk/reify ::delete-file
     ptk/UpdateEvent
     (update [_ state]
@@ -803,7 +768,6 @@
 
 (defn rename-file
   [{:keys [id name] :as params}]
-  (us/assert! ::file params)
   (ptk/reify ::rename-file
     IDeref
     (-deref [_]
@@ -826,7 +790,6 @@
 
 (defn set-file-shared
   [{:keys [id is-shared] :as params}]
-  (us/assert! ::file params)
   (ptk/reify ::set-file-shared
     IDeref
     (-deref [_]
@@ -853,7 +816,6 @@
 
 (defn file-created
   [{:keys [id project-id] :as file}]
-  (us/verify ::file file)
   (ptk/reify ::file-created
     IDeref
     (-deref [_] {:file-id id
@@ -868,7 +830,7 @@
 
 (defn create-file
   [{:keys [project-id] :as params}]
-  (us/assert! ::us/uuid project-id)
+  (dm/assert! (uuid? project-id))
   (ptk/reify ::create-file
 
     IDeref
@@ -899,8 +861,8 @@
 
 (defn duplicate-file
   [{:keys [id name] :as params}]
-  (us/assert! ::us/uuid id)
-  (us/assert! ::name name)
+  (dm/assert! (uuid? id))
+  (dm/assert! (string? name))
   (ptk/reify ::duplicate-file
     ptk/WatchEvent
     (watch [_ _ _]
@@ -919,8 +881,8 @@
 
 (defn move-files
   [{:keys [ids project-id] :as params}]
-  (us/assert! ::us/set-of-uuid ids)
-  (us/assert! ::us/uuid project-id)
+  (dm/assert! (sm/set-of-uuid? ids))
+  (dm/assert! (uuid? project-id))
   (ptk/reify ::move-files
     IDeref
     (-deref [_]
@@ -931,8 +893,8 @@
     (update [_ state]
       (let [origin-project (get-in state [:dashboard-files (first ids) :project-id])]
         (-> state
-            (d/update-in-when [:dashboard-projects origin-project :count] #(- % (count ids)))
-            (d/update-in-when [:dashboard-projects project-id :count] #(+ % (count ids))))))
+            (d/update-in-when [:dashboard-projects origin-project] update :count #(- % (count ids)))
+            (d/update-in-when [:dashboard-projects project-id] update :count #(+ % (count ids))))))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -947,7 +909,7 @@
 ;; --- EVENT: clone-template
 (defn clone-template
   [{:keys [template-id project-id] :as params}]
-  (us/assert! ::us/uuid project-id)
+  (dm/assert! (uuid? project-id))
   (ptk/reify ::clone-template
     IDeref
     (-deref [_]
@@ -969,7 +931,6 @@
 
 (defn go-to-workspace
   [{:keys [id project-id] :as file}]
-  (us/assert! ::file file)
   (ptk/reify ::go-to-workspace
     ptk/WatchEvent
     (watch [_ _ _]

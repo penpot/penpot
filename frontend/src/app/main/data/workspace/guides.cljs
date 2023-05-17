@@ -6,11 +6,11 @@
 
 (ns app.main.data.workspace.guides
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
-   [app.common.spec :as us]
-   [app.common.types.page.guide :as ctpg]
+   [app.common.types.page :as ctp]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
@@ -23,7 +23,10 @@
       (merge guide))))
 
 (defn update-guides [guide]
-  (us/verify ::ctpg/guide guide)
+  (dm/assert!
+   "expected valid guide"
+   (ctp/guide? guide))
+
   (ptk/reify ::update-guides
     ptk/WatchEvent
     (watch [it state _]
@@ -35,7 +38,10 @@
         (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guide [guide]
-  (us/verify ::ctpg/guide guide)
+  (dm/assert!
+   "expected valid guide"
+   (ctp/guide? guide))
+
   (ptk/reify ::remove-guide
     ptk/UpdateEvent
     (update [_ state]
@@ -62,10 +68,11 @@
             guides (-> (select-keys guides ids) (vals))]
         (rx/from (->> guides (mapv #(remove-guide %))))))))
 
-
 (defmethod ptk/resolve ::move-frame-guides
   [_ ids]
-  (us/assert! ::us/coll-of-uuid ids)
+  (dm/assert!
+   "expected a coll of uuids"
+   (every? uuid? ids))
   (ptk/reify ::move-frame-guides
     ptk/WatchEvent
     (watch [_ state _]

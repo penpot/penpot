@@ -9,8 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.pages :as cp]
-   [app.common.pages.changes-spec :as pcs]
-   [app.common.spec :as us]
+   [app.common.pages.changes :as cpc]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -21,7 +20,6 @@
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [okulary.core :as l]
    [potok.core :as ptk]))
 
@@ -137,7 +135,7 @@
 (defn persist-changes
   [file-id file-revn changes pending-commits]
   (log/debug :hint "persist changes" :changes (count changes))
-  (us/verify ::us/uuid file-id)
+  (dm/assert! (uuid? file-id))
   (ptk/reify ::persist-changes
     ptk/WatchEvent
     (watch [_ state _]
@@ -197,7 +195,7 @@
 
 (defn persist-synchronous-changes
   [{:keys [file-id changes]}]
-  (us/verify ::us/uuid file-id)
+  (dm/assert! (uuid? file-id))
   (ptk/reify ::persist-synchronous-changes
     ptk/WatchEvent
     (watch [_ state _]
@@ -229,17 +227,16 @@
                        :status status
                        :updated-at (dt/now)))))))
 
-(s/def ::revn ::us/integer)
-(s/def ::shapes-changes-persisted
-  (s/keys :req-un [::revn ::pcs/changes]))
 
 (defn shapes-persisted-event? [event]
   (= (ptk/type event) ::changes-persisted))
 
 (defn shapes-changes-persisted
-  [file-id {:keys [revn changes] :as params}]
-  (us/verify! ::us/uuid file-id)
-  (us/verify! ::shapes-changes-persisted params)
+  [file-id {:keys [revn changes]}]
+  (dm/assert! (uuid? file-id))
+  (dm/assert! (int? revn))
+  (dm/assert! (cpc/changes? changes))
+
   (ptk/reify ::shapes-changes-persisted
     ptk/UpdateEvent
     (update [_ state]

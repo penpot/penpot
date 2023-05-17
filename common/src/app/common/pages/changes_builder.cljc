@@ -613,7 +613,7 @@
                                      :main-instance-id main-instance-id
                                      :main-instance-page main-instance-page}
                                     (some? new-shapes)  ;; this will be null in components-v2
-                                    (assoc :shapes new-shapes)))
+                                    (assoc :shapes (vec new-shapes))))
                       (into (map mk-change) updated-shapes))))
         (update :undo-changes
                 (fn [undo-changes]

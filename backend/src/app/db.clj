@@ -361,11 +361,19 @@
   [data]
   (org.postgresql.util.PGInterval. ^String data))
 
+(defn connection?
+  [conn]
+  (instance? Connection conn))
+
 (defn savepoint
   ([^Connection conn]
    (.setSavepoint conn))
   ([^Connection conn label]
    (.setSavepoint conn (name label))))
+
+(defn release!
+  [^Connection conn ^Savepoint sp ]
+  (.releaseSavepoint conn sp))
 
 (defn rollback!
   ([^Connection conn]

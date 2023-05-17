@@ -6,11 +6,11 @@
 
 (ns app.main.data.workspace.path.changes
   (:require
+   [app.common.data.macros :as dm]
    [app.common.pages.changes-builder :as pcb]
-   [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.path.common :refer [content?]]
    [app.main.data.workspace.path.helpers :as helpers]
-   [app.main.data.workspace.path.spec :as spec]
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
@@ -19,8 +19,8 @@
 (defn generate-path-changes
   "Generates changes to update the new content of the shape"
   [it objects page-id shape old-content new-content]
-  (us/verify ::spec/content old-content)
-  (us/verify ::spec/content new-content)
+  (dm/assert! (content? old-content))
+  (dm/assert! (content? new-content))
   (let [shape-id (:id shape)
 
         [old-points old-selrect]

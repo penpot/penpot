@@ -7,11 +7,11 @@
 (ns app.common.types.shape.interactions
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
-   [clojure.spec.alpha :as s]))
+   [app.common.schema :as sm]))
 
 ;; WARNING: options are not deleted when changing event or action type, so it can be
 ;;          restored if the user changes it back later.
@@ -22,9 +22,11 @@
 ;;          So make sure to use has-delay/has-destination... functions, or similar,
 ;;          before reading them.
 
-;; -- Options depending on event type
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SCHEMA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::event-type
+(def event-types
   #{:click
     :mouse-press
     :mouse-over
@@ -32,65 +34,15 @@
     :mouse-leave
     :after-delay})
 
-(s/def ::delay ::us/safe-integer)
-
-(defmulti event-opts-spec :event-type)
-
-(defmethod event-opts-spec :after-delay [_]
-  (s/keys :req-un [::delay]))
-
-(defmethod event-opts-spec :default [_]
-  (s/keys :req-un []))
-
-(s/def ::event-opts
-  (s/multi-spec event-opts-spec :event-type))
-
-;; -- Animation options
-
-(s/def ::animation-type #{:dissolve :slide :push})
-(s/def ::duration ::us/safe-integer)
-(s/def ::way #{:in :out})
-(s/def ::direction #{:right :left :up :down})
-(s/def ::offset-effect ::us/boolean)
-(s/def ::easing
-  #{:linear
-    :ease
-    :ease-in
-    :ease-out
-    :ease-in-out})
-
-(defmulti animation-spec :animation-type)
-
-(defmethod animation-spec :dissolve [_]
-  (s/keys :req-un [::duration
-                   ::easing]))
-
-(defmethod animation-spec :slide [_]
-  (s/keys :req-un [::duration
-                   ::easing
-                   ::way
-                   ::direction
-                   ::offset-effect]))
-
-(defmethod animation-spec :push [_]
-  (s/keys :req-un [::duration
-                   ::easing
-                   ::direction]))
-
-(s/def ::animation
-  (s/multi-spec animation-spec :animation-type))
-
-;; -- Options depending on action type
-
-(s/def ::action-type
+(def action-types
   #{:navigate
     :open-overlay
     :toggle-overlay
     :close-overlay
     :prev-screen
     :open-url})
-(s/def ::position-relative-to (s/nilable ::us/uuid))
-(s/def ::overlay-pos-type
+
+(def overlay-positioning-types
   #{:manual
     :center
     :top-left
@@ -100,65 +52,101 @@
     :bottom-right
     :bottom-center})
 
-(s/def ::destination (s/nilable ::us/uuid))
-(s/def ::overlay-position ::gpt/point)
-(s/def ::url ::us/string)
-(s/def ::close-click-outside ::us/boolean)
-(s/def ::background-overlay ::us/boolean)
-(s/def ::preserve-scroll ::us/boolean)
+(def easing-types
+  #{:linear
+    :ease
+    :ease-in
+    :ease-out
+    :ease-in-out})
 
-(defmulti action-opts-spec :action-type)
+(def direction-types
+  #{:right
+    :left
+    :up
+    :down})
 
-(defmethod action-opts-spec :navigate [_]
-  (s/keys :opt-un [::destination
-                   ::preserve-scroll
-                   ::animation]))
+(def way-types
+  #{:in :out})
 
-(defmethod action-opts-spec :open-overlay [_]
-  (s/keys :req-un [::overlay-position
-                   ::overlay-pos-type]
-          :opt-un [::destination
-                   ::close-click-outside
-                   ::background-overlay
-                   ::animation
-                   ::position-relative-to]))
+(def animation-types
+  #{:dissolve :slide :push})
 
-(defmethod action-opts-spec :toggle-overlay [_]
-  (s/keys :req-un [::overlay-position
-                   ::overlay-pos-type]
-          :opt-un [::destination
-                   ::close-click-outside
-                   ::background-overlay
-                   ::animation
-                   ::position-relative-to]))
+(sm/def! ::animation
+  [:multi {:dispatch :animation-type :title "Animation"}
+   [:dissolve
+    [:map {:title "AnimationDisolve"}
+     [:animation-type [:= :dissolve]]
+     [:duration ::sm/safe-int]
+     [:easing [::sm/one-of easing-types]]]]
+   [:slide
+    [:map {:title "AnimationSlide"}
+     [:animation-type [:= :slide]]
+     [:duration ::sm/safe-int]
+     [:easing [::sm/one-of easing-types]]
+     [:way [::sm/one-of way-types]]
+     [:direction [::sm/one-of direction-types]]
+     [:offset-effect :boolean]]]
+   [:push
+    [:map {:title "AnimationPush"}
+     [:animation-type [:= :push]]
+     [:duration ::sm/safe-int]
+     [:easing [::sm/one-of easing-types]]
+     [:direction [::sm/one-of direction-types]]]]])
 
-(defmethod action-opts-spec :close-overlay [_]
-  (s/keys :opt-un [::destination
-                   ::animation
-                   ::position-relative-to]))
+(def animation?
+  (sm/pred-fn ::animation))
 
-(defmethod action-opts-spec :prev-screen [_]
-  (s/keys :req-un []))
+(sm/def! ::interaction
+  [:multi {:dispatch :action-type}
+   [:navigate
+    [:map
+     [:action-type [:= :navigate]]
+     [:event-type [::sm/one-of event-types]]
+     [:destination {:optional true} [:maybe ::sm/uuid]]
+     [:preserve-scroll {:optional true} :boolean]
+     [:animation {:optional true} ::animation]]]
+   [:open-overlay
+    [:map
+     [:action-type [:= :open-overlay]]
+     [:event-type [::sm/one-of event-types]]
+     [:overlay-position ::gpt/point]
+     [:overlay-pos-type [::sm/one-of overlay-positioning-types]]
+     [:destination {:optional true} [:maybe ::sm/uuid]]
+     [:close-click-outside {:optional true} :boolean]
+     [:background-overlay {:optional true} :boolean]
+     [:animation {:optional true} ::animation]
+     [:position-relative-to {:optional true} [:maybe ::sm/uuid]]]]
+   [:toggle-overlay
+    [:map
+     [:action-type [:= :toggle-overlay]]
+     [:event-type [::sm/one-of event-types]]
+     [:overlay-position ::gpt/point]
+     [:overlay-pos-type [::sm/one-of overlay-positioning-types]]
+     [:destination {:optional true} [:maybe ::sm/uuid]]
+     [:close-click-outside {:optional true} :boolean]
+     [:background-overlay {:optional true} :boolean]
+     [:animation {:optional true} ::animation]
+     [:position-relative-to {:optional true} [:maybe ::sm/uuid]]]]
+   [:close-overlay
+    [:map
+     [:action-type [:= :close-overlay]]
+     [:event-type [::sm/one-of event-types]]
+     [:destination {:optional true} [:maybe ::sm/uuid]]
+     [:animation {:optional true} ::animation]
+     [:position-relative-to {:optional true} [:maybe ::sm/uuid]]]]
+   [:prev-screen
+    [:map
+     [:action-type [:= :prev-screen]]
+     [:event-type [::sm/one-of event-types]]]]
+   [:open-url
+    [:map
+     [:action-type [:= :open-url]]
+     [:event-type [::sm/one-of event-types]]
+     [:url :string]]]])
 
-(defmethod action-opts-spec :open-url [_]
-  (s/keys :req-un [::url]))
-
-(s/def ::action-opts
-  (s/multi-spec action-opts-spec :action-type))
-
-;; -- Interaction
-
-(s/def ::classifier
-  (s/keys :req-un [::event-type
-                   ::action-type]))
-
-(s/def ::interaction
-  (s/merge ::classifier
-           ::event-opts
-           ::action-opts))
-
-(s/def ::interactions
-  (s/coll-of ::interaction :kind vector?))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def default-interaction
   {:event-type :click
@@ -169,17 +157,33 @@
 
 (def default-delay 600)
 
+
 ;; -- Helpers for interaction
+
+(def interaction?
+  (sm/pred-fn ::interaction))
+
+;; (def destination?
+;;   (sm/pred-fn [:maybe ::sm/uuid]))
 
 (declare calc-overlay-pos-initial)
 (declare allowed-animation?)
 
 (defn set-event-type
   [interaction event-type shape]
-  (us/verify ::interaction interaction)
-  (us/verify ::event-type event-type)
-  (assert (or (not= event-type :after-delay)
-              (= (:type shape) :frame)))
+  (dm/assert!
+   "Should be an interraction map"
+   ^boolean (interaction? interaction))
+
+  (dm/assert!
+   "Should be a valid event type"
+   (contains? event-types event-type))
+
+  (dm/assert!
+   "The `:after-delay` event type incompatible with frame shapes"
+   (or (not= event-type :after-delay)
+       (= (:type shape) :frame)))
+
   (if (= (:event-type interaction) event-type)
     interaction
     (case event-type
@@ -194,8 +198,15 @@
 
 (defn set-action-type
   [interaction action-type]
-  (us/verify ::interaction interaction)
-  (us/verify ::action-type action-type)
+
+  (dm/assert!
+   "Should be an interraction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "Should be a valid event type"
+   (contains? action-types action-type))
+
   (let [new-interaction
         (if (= (:action-type interaction) action-type)
           interaction
@@ -233,16 +244,32 @@
                                (-> new-interaction :animation :animation-type)))
       (dissoc :animation-type :animation))))
 
+;; FIXME: should be renamed to has-delay?
+
 (defn has-delay
   [interaction]
   (= (:event-type interaction) :after-delay))
 
 (defn set-delay
   [interaction delay]
-  (us/verify ::interaction interaction)
-  (us/verify ::delay delay)
-  (assert (has-delay interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected valid delay"
+   (sm/safe-int? delay))
+
+  (dm/assert!
+   "expected compatible interaction event type"
+   (has-delay interaction))
+
   (assoc interaction :delay delay))
+
+;; FIXME: rename to proper name, very confusing one because it does
+;; not checks if interaction has distination, it checks if it can have
+;; one.
 
 (defn has-destination
   [interaction]
@@ -256,9 +283,15 @@
 
 (defn set-destination
   [interaction destination]
-  (us/verify ::interaction interaction)
-  (us/verify ::destination destination)
-  (assert (has-destination interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected compatible interaction event type"
+   (has-destination interaction))
+
   (cond-> interaction
     :always
     (assoc :destination destination)
@@ -274,9 +307,19 @@
 
 (defn set-preserve-scroll
   [interaction preserve-scroll]
-  (us/verify ::interaction interaction)
-  (us/verify ::us/boolean preserve-scroll)
-  (assert (has-preserve-scroll interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected boolean for `preserve-scroll`"
+   (boolean? preserve-scroll))
+
+  (dm/assert!
+   "expected compatible interaction map with preserve-scroll"
+   (has-preserve-scroll interaction))
+
   (assoc interaction :preserve-scroll preserve-scroll))
 
 (defn has-url
@@ -285,9 +328,19 @@
 
 (defn set-url
   [interaction url]
-  (us/verify ::interaction interaction)
-  (us/verify ::url url)
-  (assert (has-url interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected a string for `url`"
+   (string? url))
+
+  (dm/assert!
+   "expected compatible interaction map with url param"
+   (has-url interaction))
+
   (assoc interaction :url url))
 
 (defn has-overlay-opts
@@ -296,9 +349,19 @@
 
 (defn set-overlay-pos-type
   [interaction overlay-pos-type shape objects]
-  (us/verify ::interaction interaction)
-  (us/verify ::overlay-pos-type overlay-pos-type)
-  (assert (has-overlay-opts interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected valid overlay positioning type"
+   (contains? overlay-positioning-types overlay-pos-type))
+
+  (dm/assert!
+   "expected compatible interaction map"
+   (has-overlay-opts interaction))
+
   (assoc interaction
          :overlay-pos-type overlay-pos-type
          :overlay-position (calc-overlay-pos-initial (:destination interaction)
@@ -307,9 +370,19 @@
                                                      overlay-pos-type)))
 (defn toggle-overlay-pos-type
   [interaction overlay-pos-type shape objects]
-  (us/verify ::interaction interaction)
-  (us/verify ::overlay-pos-type overlay-pos-type)
-  (assert (has-overlay-opts interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected valid overlay positioning type"
+   (contains? overlay-positioning-types overlay-pos-type))
+
+  (dm/assert!
+   "expected compatible interaction map"
+   (has-overlay-opts interaction))
+
   (let [new-pos-type (if (= (:overlay-pos-type interaction) overlay-pos-type)
                        :manual
                        overlay-pos-type)]
@@ -321,32 +394,73 @@
                                                        new-pos-type))))
 (defn set-overlay-position
   [interaction overlay-position]
-  (us/verify ::interaction interaction)
-  (us/verify ::overlay-position overlay-position)
-  (assert (has-overlay-opts interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected valid overlay position"
+   (gpt/point? overlay-position))
+
+  (dm/assert!
+   "expected compatible interaction map"
+   (has-overlay-opts interaction))
+
   (assoc interaction
          :overlay-pos-type :manual
          :overlay-position overlay-position))
 
 (defn set-close-click-outside
   [interaction close-click-outside]
-  (us/verify ::interaction interaction)
-  (us/verify ::us/boolean close-click-outside)
-  (assert (has-overlay-opts interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected boolean value for `close-click-outside`"
+   (boolean? close-click-outside))
+
+  (dm/assert!
+   "expected compatible interaction map"
+   (has-overlay-opts interaction))
+
   (assoc interaction :close-click-outside close-click-outside))
 
 (defn set-background-overlay
   [interaction background-overlay]
-  (us/verify ::interaction interaction)
-  (us/verify ::us/boolean background-overlay)
-  (assert (has-overlay-opts interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected boolean value for `background-overlay`"
+   (boolean? background-overlay))
+
+  (dm/assert!
+   "expected compatible interaction map"
+   (has-overlay-opts interaction))
+
   (assoc interaction :background-overlay background-overlay))
 
 (defn set-position-relative-to
   [interaction position-relative-to]
-  (us/verify ::interaction interaction)
-  (us/verify ::position-relative-to position-relative-to)
-  (assert (has-overlay-opts interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected valid uuid for `position-relative-to`"
+   (or (nil? position-relative-to)
+       (uuid? position-relative-to)))
+
+  (dm/assert!
+   "expected compatible interaction map"
+   (has-overlay-opts interaction))
+
   (assoc interaction :position-relative-to position-relative-to))
 
 (defn- calc-overlay-pos-initial
@@ -363,16 +477,24 @@
     (gpt/point 0 0)))
 
 (defn calc-overlay-position
-  [interaction                        ;; interaction data
-   shape                              ;; Shape with the interaction
-   objects                            ;; the objects tree
-   relative-to-shape                  ;; the interaction position is realtive to this sape
-   base-frame                         ;; the base frame of the current interaction
-   dest-frame                         ;; the frame to display with this interaction
-   frame-offset]                      ;; if this interaction starts in a frame opened on another interaction, this is the position of that frame
+  [interaction         ;; interaction data
+   shape               ;; Shape with the interaction
+   objects             ;; the objects tree
+   relative-to-shape   ;; the interaction position is realtive to this
+                       ;; sape
+   base-frame          ;; the base frame of the current interaction
+   dest-frame          ;; the frame to display with this interaction
+   frame-offset]       ;; if this interaction starts in a frame opened
+                       ;; on another interaction, this is the position
+                       ;; of that frame
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
 
-  (us/verify ::interaction interaction)
-  (assert (has-overlay-opts interaction))
+  (dm/assert!
+   "expected compatible interaction map"
+   (has-overlay-opts interaction))
+
   (let [
         ;; When the interactive item is inside a nested frame we need to add to the offset the position
         ;; of the parent-frame otherwise the position won't match
@@ -455,10 +577,22 @@
 
 (defn set-animation-type
   [interaction animation-type]
-  (us/verify ::interaction interaction)
-  (us/verify (s/nilable ::animation-type) animation-type)
-  (assert (has-animation? interaction))
-  (assert (allowed-animation? (:action-type interaction) animation-type))
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected valid value for `animation-type`"
+   (or (nil? animation-type)
+       (contains? animation-types animation-type)))
+
+  (dm/assert!
+   "expected interaction map compatible with animation"
+   (has-animation? interaction))
+
+  (dm/assert!
+   "expected allowed animation type"
+   (allowed-animation? (:action-type interaction) animation-type))
 
   (if (= (-> interaction :animation :animation-type) animation-type)
     interaction
@@ -493,9 +627,19 @@
 
 (defn set-duration
   [interaction duration]
-  (us/verify ::interaction interaction)
-  (us/verify ::duration duration)
-  (assert (has-duration? interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected valid duration"
+   (sm/safe-int? duration))
+
+  (dm/assert!
+   "expected compatible interaction map"
+   (has-duration? interaction))
+
   (update interaction :animation assoc :duration duration))
 
 (defn has-easing?
@@ -504,9 +648,19 @@
 
 (defn set-easing
   [interaction easing]
-  (us/verify ::interaction interaction)
-  (us/verify ::easing easing)
-  (assert (has-easing? interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected valid easing"
+   (contains? easing-types easing))
+
+  (dm/assert!
+   "expected compatible interaction map"
+   (has-easing? interaction))
+
   (update interaction :animation assoc :easing easing))
 
 (defn has-way?
@@ -517,9 +671,19 @@
 
 (defn set-way
   [interaction way]
-  (us/verify ::interaction interaction)
-  (us/verify ::way way)
-  (assert (has-way? interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected valid way"
+   (contains? way-types way))
+
+  (dm/assert!
+   "expected compatible interaction map"
+   (has-way? interaction))
+
   (update interaction :animation assoc :way way))
 
 (defn has-direction?
@@ -528,14 +692,28 @@
 
 (defn set-direction
   [interaction direction]
-  (us/verify ::interaction interaction)
-  (us/verify ::direction direction)
-  (assert (has-direction? interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected valid direction"
+   (contains? direction-types direction))
+
+  (dm/assert!
+   "expected compatible interaction map"
+   (has-direction? interaction))
+
   (update interaction :animation assoc :direction direction))
 
 (defn invert-direction
   [animation]
-  (us/verify (s/nilable ::animation) animation)
+  (dm/assert!
+   "expected valid animation map"
+   (or (nil? animation)
+       (animation? animation)))
+
   (case (:direction animation)
     :right
     (assoc animation :direction :left)
@@ -545,6 +723,7 @@
     (assoc animation :direction :down)
     :down
     (assoc animation :direction :up)
+
     animation))
 
 (defn has-offset-effect?
@@ -555,9 +734,19 @@
 
 (defn set-offset-effect
   [interaction offset-effect]
-  (us/verify ::interaction interaction)
-  (us/verify ::offset-effect offset-effect)
-  (assert (has-offset-effect? interaction))
+
+  (dm/assert!
+   "expected valid interaction map"
+   (interaction? interaction))
+
+  (dm/assert!
+   "expected valid boolean for `offset-effect`"
+   (boolean? offset-effect))
+
+  (dm/assert!
+   "expected compatible interaction map"
+   (has-offset-effect? interaction))
+
   (update interaction :animation assoc :offset-effect offset-effect))
 
 (defn dest-to?

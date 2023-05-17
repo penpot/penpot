@@ -27,12 +27,78 @@ main {
 header {
   border-bottom: 1px solid #c0c0c0;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   width: 100%;
 }
 
-.rpc-doc-content {
+header .menu {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+header .menu nav {
+  list-style: none;
+  padding: 0px;
+  margin: 0px;
+  display: flex;
+  width: 45px;
+  justify-content: space-between;
+}
+
+header .menu nav > a {
+  list-style: none;
+  padding: 0px;
+  margin: 0px;
+  cursor: pointer;
+}
+
+header .menu nav > a.selected {
+  font-weight: 600;
+}
+
+b {
+  font-weight: 500;
+}
+
+h2 {
+  margin-top: 30px;
+}
+
+h3 {
+  font-weight: 400;
+  font-size: 11px;
   margin-top: 20px;
+  text-decoration: underline;
+}
+
+h4 {
+  font-weight: 300;
+  font-size: 11px;
+}
+
+.doc-content {
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  /* border: 1px solid red; */
+  padding: 5px;
+}
+
+.doc-content p {
+  line-height: 22px;
+  margin-bottom: 0px;
+}
+
+.doc-content h3 {
+  margin-bottom: 0px;
+}
+
+.rpc-doc-content {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -65,7 +131,7 @@ header {
 .rpc-row-info {
   cursor: pointer;
   display: flex;
-  background-color: #eeeeee;
+  background-color: #e5e5e5;
   padding: 5px 10px;
 }
 
@@ -108,6 +174,8 @@ header {
 .rpc-row-detail {
   padding: 5px 10px;
   padding-bottom: 20px;
+  border-left: 2px solid #e5e5e5;
+  border-right: 2px solid #e5e5e5;
 }
 
 .rpc-row-detail p {
@@ -141,5 +209,9 @@ header {
 }
 
 p.small strong {
+  font-size: 10px;
+}
+
+p.small a {
   font-size: 10px;
 }

@@ -8,8 +8,9 @@
   (:require
    [app.auth :as auth]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -37,19 +38,35 @@
 (declare strip-private-attrs)
 (declare verify-password)
 
-;; --- QUERY: Get profile (own)
+(def schema:profile
+  [:map {:title "Profile"}
+   [:id ::sm/uuid]
+   [:fullname :string]
+   [:email ::sm/email]
+   [:is-active {:optional true} :boolean]
+   [:is-blocked {:optional true} :boolean]
+   [:is-demo {:optional true} :boolean]
+   [:is-muted {:optional true} :boolean]
+   [:created-at {:optional true} ::sm/inst]
+   [:modified-at {:optional true} ::sm/inst]
+   [:default-project-id {:optional true} ::sm/uuid]
+   [:default-team-id {:optional true} ::sm/uuid]
+   [:props {:optional true}
+    [:map-of {:title "ProfileProps"} :keyword :any]]])
 
-(s/def ::get-profile
-  (s/keys :opt [::rpc/profile-id]))
+(def profile?
+  (sm/pred-fn schema:profile))
+
+;; --- QUERY: Get profile (own)
 
 (sv/defmethod ::get-profile
   {::rpc/auth false
-   ::doc/added "1.18"}
+   ::doc/added "1.18"
+   ::sm/result schema:profile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id]}]
   ;; We need to return the anonymous profile object in two cases, when
   ;; no profile-id is in session, and when db call raises not found. In all other
   ;; cases we need to reraise the exception.
-
   (try
     (-> (get-profile pool profile-id)
         (strip-private-attrs)
@@ -63,22 +80,21 @@
   (-> (db/get-by-id conn :profile id attrs)
       (decode-row)))
 
-
 ;; --- MUTATION: Update Profile (own)
 
-(s/def ::email ::us/email)
-(s/def ::fullname ::us/not-empty-string)
-(s/def ::lang ::us/string)
-(s/def ::theme ::us/string)
-
-(s/def ::update-profile
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::fullname]
-          :opt-un [::lang ::theme]))
-
 (sv/defmethod ::update-profile
-  {::doc/added "1.0"}
+  {::doc/added "1.0"
+   ::sm/params [:map {:title "UpdateProfileParams"}
+                [:fullname {:min 1} :string]
+                [:lang {:optional true} :string]
+                [:theme {:optional true} :string]]
+   ::sm/result schema:profile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id fullname lang theme] :as params}]
+
+  (dm/assert!
+   "expected valid profile data"
+   (profile? params))
+
   (db/with-atomic [conn pool]
     ;; NOTE: we need to retrieve the profile independently if we use
     ;; it or not for explicit locking and avoid concurrent updates of
@@ -112,14 +128,13 @@
 (declare update-profile-password!)
 (declare invalidate-profile-session!)
 
-(s/def ::password ::us/not-empty-string)
-(s/def ::old-password (s/nilable ::us/string))
-
-(s/def ::update-profile-password
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::password ::old-password]))
-
 (sv/defmethod ::update-profile-password
+  {:doc/added "1.0"
+   ::sm/params [:map {:title "UpdateProfilePasswordParams"}
+                [:password :string]
+                [:old-password :string]]
+   ::sm/result :nil}
+
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id password] :as params}]
   (db/with-atomic [conn pool]
     (let [cfg        (assoc cfg ::db/conn conn)
@@ -163,12 +178,11 @@
 (declare upload-photo)
 (declare update-profile-photo)
 
-(s/def ::file ::media/upload)
-(s/def ::update-profile-photo
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file]))
-
 (sv/defmethod ::update-profile-photo
+  {:doc/added "1.1"
+   ::sm/params [:map {:title "UpdateProfilePhotoParams"}
+                [:file ::media/upload]]
+   ::sm/result :nil}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})

@@ -7,26 +7,23 @@
 (ns app.main.data.workspace.libraries
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.features :as ffeat]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes :as ch]
    [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.changes-spec :as pcs]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
-   [app.common.types.file.media-object :as ctfm]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
-   [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries-helpers :as dwlh]
@@ -42,13 +39,10 @@
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
-
-(s/def ::file ::dd/file)
 
 (defn- log-changes
   [changes file]
@@ -116,7 +110,7 @@
         color (-> color
                   (assoc :id id)
                   (assoc :name (default-color-name color)))]
-    (us/assert ::ctc/color color)
+    (dm/assert! (ctc/color? color))
     (ptk/reify ::add-color
       IDeref
       (-deref [_] color)
@@ -130,7 +124,7 @@
 
 (defn add-recent-color
   [color]
-  (us/assert! ::ctc/recent-color color)
+  (dm/assert! (ctc/recent-color? color))
   (ptk/reify ::add-recent-color
     ptk/WatchEvent
     (watch [it _ _]
@@ -160,8 +154,9 @@
 
 (defn update-color
   [color file-id]
-  (us/assert ::ctc/color color)
-  (us/assert ::us/uuid file-id)
+  (dm/assert! (ctc/color? color))
+  (dm/assert! (uuid? file-id))
+
   (ptk/reify ::update-color
     ptk/WatchEvent
     (watch [it state _]
@@ -169,9 +164,10 @@
 
 (defn rename-color
   [file-id id new-name]
-  (us/assert ::us/uuid file-id)
-  (us/assert ::us/uuid id)
-  (us/assert ::us/string new-name)
+  (dm/assert! (uuid? file-id))
+  (dm/assert! (uuid? id))
+  (dm/assert! (string? new-name))
+
   (ptk/reify ::rename-color
     ptk/WatchEvent
     (watch [it state _]
@@ -183,7 +179,7 @@
 
 (defn delete-color
   [{:keys [id] :as params}]
-  (us/assert ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::delete-color
     ptk/WatchEvent
     (watch [it state _]
@@ -195,7 +191,7 @@
 
 (defn add-media
   [media]
-  (us/assert ::ctfm/media-object media)
+  (dm/assert! (ctf/media-object? media))
   (ptk/reify ::add-media
     ptk/WatchEvent
     (watch [it _ _]
@@ -206,8 +202,8 @@
 
 (defn rename-media
   [id new-name]
-  (us/assert ::us/uuid id)
-  (us/assert ::us/string new-name)
+  (dm/assert! (uuid? id))
+  (dm/assert! (string? new-name))
   (ptk/reify ::rename-media
     ptk/WatchEvent
     (watch [it state _]
@@ -224,7 +220,7 @@
 
 (defn delete-media
   [{:keys [id] :as params}]
-  (us/assert ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::delete-media
     ptk/WatchEvent
     (watch [it state _]
@@ -238,7 +234,7 @@
   ([typography] (add-typography typography true))
   ([typography edit?]
    (let [typography (update typography :id #(or % (uuid/next)))]
-     (us/assert ::ctt/typography typography)
+     (dm/assert! (ctt/typography? typography))
      (ptk/reify ::add-typography
        IDeref
        (-deref [_] typography)
@@ -267,8 +263,9 @@
 
 (defn update-typography
   [typography file-id]
-  (us/assert ::ctt/typography typography)
-  (us/assert ::us/uuid file-id)
+  (dm/assert! (ctt/typography? typography))
+  (dm/assert! (uuid? file-id))
+
   (ptk/reify ::update-typography
     ptk/WatchEvent
     (watch [it state _]
@@ -276,9 +273,9 @@
 
 (defn rename-typography
   [file-id id new-name]
-  (us/assert ::us/uuid file-id)
-  (us/assert ::us/uuid id)
-  (us/assert ::us/string new-name)
+  (dm/assert! (uuid? file-id))
+  (dm/assert! (uuid? id))
+  (dm/assert! (string? new-name))
   (ptk/reify ::rename-typography
     ptk/WatchEvent
     (watch [it state _]
@@ -291,7 +288,7 @@
 
 (defn delete-typography
   [id]
-  (us/assert ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::delete-typography
     ptk/WatchEvent
     (watch [it state _]
@@ -341,8 +338,8 @@
 (defn rename-component
   "Rename the component with the given id, in the current file library."
   [id new-name]
-  (us/assert ::us/uuid id)
-  (us/assert ::us/string new-name)
+  (dm/assert! (uuid? id))
+  (dm/assert! (string? new-name))
   (ptk/reify ::rename-component
     ptk/WatchEvent
     (watch [it state _]
@@ -414,7 +411,7 @@
 (defn delete-component
   "Delete the component with the given id, from the current file library."
   [{:keys [id] :as params}]
-  (us/assert ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::delete-component
     ptk/WatchEvent
     (watch [it state _]
@@ -432,8 +429,8 @@
 (defn restore-component
   "Restore a deleted component, with the given id, in the given file library."
   [library-id component-id]
-  (us/assert ::us/uuid library-id)
-  (us/assert ::us/uuid component-id)
+  (dm/assert! (uuid? library-id))
+  (dm/assert! (uuid? component-id))
   (ptk/reify ::restore-component
     ptk/WatchEvent
     (watch [it state _]
@@ -460,9 +457,10 @@
   "Create a new shape in the current page, from the component with the given id
   in the given file library. Then selects the newly created instance."
   [file-id component-id position]
-  (us/assert ::us/uuid file-id)
-  (us/assert ::us/uuid component-id)
-  (us/assert ::gpt/point position)
+  (dm/assert! (uuid? file-id))
+  (dm/assert! (uuid? component-id))
+  (dm/assert! (gpt/point? position))
+
   (ptk/reify ::instantiate-component
     ptk/WatchEvent
     (watch [it state _]
@@ -489,7 +487,7 @@
   "Remove all references to components in the shape with the given id,
   and all its children, at the current page."
   [id]
-  (us/assert ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::detach-component
     ptk/WatchEvent
     (watch [it state _]
@@ -528,7 +526,7 @@
 
 (defn nav-to-component-file
   [file-id]
-  (us/assert ::us/uuid file-id)
+  (dm/assert! (uuid? file-id))
   (ptk/reify ::nav-to-component-file
     ptk/WatchEvent
     (watch [_ state _]
@@ -543,8 +541,8 @@
 
 (defn ext-library-changed
   [file-id modified-at revn changes]
-  (us/assert ::us/uuid file-id)
-  (us/assert ::pcs/changes changes)
+  (dm/assert! (uuid? file-id))
+  (dm/assert! (ch/changes? changes))
   (ptk/reify ::ext-library-changed
     ptk/UpdateEvent
     (update [_ state]
@@ -559,7 +557,7 @@
   the current page. Set all attributes equal to the ones in the linked component,
   and untouched."
   [id]
-  (us/assert ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::reset-component
     ptk/WatchEvent
     (watch [it state _]
@@ -595,7 +593,7 @@
   different of that the one we are currently editing."
   ([id] (update-component id nil))
   ([id undo-group]
-   (us/assert ::us/uuid id)
+   (dm/assert! (uuid? id))
    (ptk/reify ::update-component
      ptk/WatchEvent
      (watch [it state _]
@@ -680,6 +678,9 @@
 
 (declare sync-file-2nd-stage)
 
+(def valid-asset-types
+  #{:colors :components :typographies})
+
 (defn sync-file
   "Synchronize the given file from the given library. Walk through all
   shapes in all pages in the file that use some color, typography or
@@ -694,10 +695,12 @@
   ([file-id library-id asset-type asset-id]
    (sync-file file-id library-id asset-type asset-id nil))
   ([file-id library-id asset-type asset-id undo-group]
-   (us/assert ::us/uuid file-id)
-   (us/assert ::us/uuid library-id)
-   (us/assert (s/nilable #{:colors :components :typographies}) asset-type)
-   (us/assert (s/nilable ::us/uuid) asset-id)
+   (dm/assert! (uuid? file-id))
+   (dm/assert! (uuid? library-id))
+   (dm/assert! (or (nil? asset-type)
+                   (contains? valid-asset-types asset-type)))
+   (dm/assert! (or (nil? asset-id)
+                   (uuid? asset-id)))
    (ptk/reify ::sync-file
      ptk/UpdateEvent
      (update [_ state]
@@ -748,7 +751,7 @@
                                                               (:redo-changes changes)
                                                               file))
            (rx/concat
-            (rx/of (dm/hide-tag :sync-dialog))
+            (rx/of (msg/hide-tag :sync-dialog))
             (when (seq (:redo-changes changes))
               (rx/of (dch/commit-changes (assoc changes ;; TODO a ver qué pasa con esto
                                                 :file-id file-id))))
@@ -777,9 +780,10 @@
   ;;       implement updated-at at component level, to detect what components have
   ;;       not changed, and then not to apply sync and terminate the loop.
   [file-id library-id asset-id undo-group]
-  (us/assert ::us/uuid file-id)
-  (us/assert ::us/uuid library-id)
-  (us/assert (s/nilable ::us/uuid) asset-id)
+  (dm/assert! (uuid? file-id))
+  (dm/assert! (uuid? library-id))
+  (dm/assert! (or (nil? asset-id)
+                  (uuid? asset-id)))
   (ptk/reify ::sync-file-2nd-stage
     ptk/WatchEvent
     (watch [it state _]
@@ -818,7 +822,7 @@
   "Get a lazy sequence of all the assets of each type in the library that have
   been modified after the last sync of the library. The sync date may be
   overriden by providing a ignore-until parameter.
-   
+
   The sequence items are tuples of (page-id shape-id asset-id asset-type)."
   ([library file-data] (assets-need-sync library file-data nil))
   ([library file-data ignore-until]
@@ -828,7 +832,7 @@
 
 (defn notify-sync-file
   [file-id]
-  (us/assert ::us/uuid file-id)
+  (dm/assert! (uuid? file-id))
   (ptk/reify ::notify-sync-file
     ptk/WatchEvent
     (watch [_ state _]
@@ -839,12 +843,12 @@
                                                   (sync-file (:current-file-id state)
                                                              (:id library)))
                                                 libraries-need-sync))
-                           (st/emit! dm/hide))
+                           (st/emit! msg/hide))
             do-dismiss #(do (st/emit! ignore-sync)
-                            (st/emit! dm/hide))]
+                            (st/emit! msg/hide))]
 
         (when (seq libraries-need-sync)
-          (rx/of (dm/info-dialog
+          (rx/of (msg/info-dialog
                   (tr "workspace.updates.there-are-updates")
                   :inline-actions
                   [{:label (tr "workspace.updates.update")
@@ -921,7 +925,6 @@
 
 (defn- shared-files-fetched
   [files]
-  (us/verify (s/every ::file) files)
   (ptk/reify ::shared-files-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -930,7 +933,7 @@
 
 (defn fetch-shared-files
   [{:keys [team-id] :as params}]
-  (us/assert ::us/uuid team-id)
+  (dm/assert! (uuid? team-id))
   (ptk/reify ::fetch-shared-files
     ptk/WatchEvent
     (watch [_ _ _]

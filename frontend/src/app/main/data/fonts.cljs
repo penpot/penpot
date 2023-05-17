@@ -8,11 +8,11 @@
   (:require
    ["opentype.js" :as ot]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.media :as cm]
-   [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -96,18 +96,17 @@
                  ;; If the useTypoMetrics is not set, Firefox will also use metrics from the hhea table.
                  ;; On Windows, all browsers use the usWin metrics, but respect the useTypoMetrics setting and if set will use the OS/2 values.
 
-                  hhea-ascender   (abs (-> font .-tables .-hhea .-ascender))
-                  hhea-descender  (abs (-> font .-tables .-hhea .-descender))
+                  hhea-ascender   (abs (-> ^js font .-tables .-hhea .-ascender))
+                  hhea-descender  (abs (-> ^js font .-tables .-hhea .-descender))
 
-                  win-ascent      (abs (-> font .-tables .-os2 .-usWinAscent))
-                  win-descent     (abs (-> font .-tables .-os2 .-usWinDescent))
+                  win-ascent      (abs (-> ^js font .-tables .-os2 .-usWinAscent))
+                  win-descent     (abs (-> ^js font .-tables .-os2 .-usWinDescent))
 
-                  os2-ascent      (abs (-> font .-tables .-os2 .-sTypoAscender))
-                  os2-descent     (abs (-> font .-tables .-os2 .-sTypoDescender))
+                  os2-ascent      (abs (-> ^js font .-tables .-os2 .-sTypoAscender))
+                  os2-descent     (abs (-> ^js font .-tables .-os2 .-sTypoDescender))
 
                   ;; useTypoMetrics can be read from the 7th bit
-                  f-selection     (-> (-> font .-tables .-os2 .-fsSelection)
-                                      (bit-test 7))
+                  f-selection     (-> ^js font .-tables .-os2 .-fsSelection (bit-test 7))
 
                   height-warning? (or (not= hhea-ascender win-ascent)
                                       (not= hhea-descender win-descent)
@@ -183,7 +182,7 @@
                     #(when
                       (not-empty %)
                        (st/emit!
-                        (dm/error
+                        (msg/error
                          (if (> (count %) 1)
                            (tr "errors.bad-font-plural" (str/join ", " %))
                            (tr "errors.bad-font" (first %)))))))
@@ -246,8 +245,8 @@
 
 (defn update-font
   [{:keys [id name] :as params}]
-  (us/assert ::us/uuid id)
-  (us/assert ::us/not-empty-string name)
+  (dm/assert! (uuid? id))
+  (dm/assert! (string? name))
   (ptk/reify ::update-font
     ptk/UpdateEvent
     (update [_ state]
@@ -270,7 +269,7 @@
 (defn delete-font
   "Delete all variants related to the provided `font-id`."
   [font-id]
-  (us/assert ::us/uuid font-id)
+  (dm/assert! (uuid? font-id))
   (ptk/reify ::delete-font
     ptk/UpdateEvent
     (update [_ state]
@@ -286,7 +285,7 @@
 
 (defn delete-font-variant
   [id]
-  (us/assert ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::delete-font-variants
     ptk/UpdateEvent
     (update [_ state]
