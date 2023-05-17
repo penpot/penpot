@@ -393,6 +393,32 @@
         column-total-size (tracks-total-size column-tracks)
         row-total-size    (tracks-total-size row-tracks)
 
+        column-gap
+        (case (:layout-align-content parent)
+          :space-evenly
+          (max column-gap (/ (- bound-width column-total-size) (inc (count column-tracks))))
+
+          :space-around
+          (max column-gap (/ (- bound-width column-total-size) (count column-tracks)))
+
+          :space-between
+          (max column-gap (/ (- bound-width column-total-size) (dec (count column-tracks))))
+
+          column-gap)
+
+        row-gap
+        (case (:layout-justify-content parent)
+          :space-evenly
+          (max row-gap (/ (- bound-height row-total-size) (inc (count row-tracks))))
+
+          :space-around
+          (max row-gap (/ (- bound-height row-total-size) (count row-tracks)))
+
+          :space-between
+          (max row-gap (/ (- bound-height row-total-size) (dec (count row-tracks))))
+
+          row-gap)
+
         start-p
         (cond-> bound-corner
           (= :end (:layout-align-content parent))
@@ -405,7 +431,20 @@
           (gpt/add (vv (- bound-height (+ row-total-size row-total-gap))))
 
           (= :center (:layout-justify-content parent))
-          (gpt/add (vv (/ (- bound-height (+ row-total-size row-total-gap)) 2))))
+          (gpt/add (vv (/ (- bound-height (+ row-total-size row-total-gap)) 2)))
+
+
+          (= :space-around (:layout-align-content parent))
+          (gpt/add (hv (/ column-gap 2)))
+
+          (= :space-evenly (:layout-align-content parent))
+          (gpt/add (hv column-gap))
+
+          (= :space-around (:layout-justify-content parent))
+          (gpt/add (vv (/ row-gap 2)))
+
+          (= :space-evenly (:layout-justify-content parent))
+          (gpt/add (vv row-gap)))
 
         column-tracks
         (->> column-tracks

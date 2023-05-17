@@ -129,13 +129,16 @@
         :end           i/grid-justify-content-column-end
         :center        i/grid-justify-content-column-center
         :space-around  i/grid-justify-content-column-around
-        :space-between i/grid-justify-content-column-between)
+        :space-between i/grid-justify-content-column-between
+        :space-evenly  i/grid-justify-content-column-between)
+
       (case val
         :start         i/grid-justify-content-row-start
         :end           i/grid-justify-content-row-end
         :center        i/grid-justify-content-row-center
         :space-around  i/grid-justify-content-row-around
-        :space-between i/grid-justify-content-row-between))))
+        :space-between i/grid-justify-content-row-between
+        :space-evenly  i/grid-justify-content-row-between))))
 
 (mf/defc direction-btn
   [{:keys [dir saved-dir set-direction icon?] :as props}]
@@ -404,7 +407,7 @@
   [{:keys [is-col? justify-items set-justify] :as props}]
   (let [type (if is-col? :column :row)]
     [:div.justify-content-style
-     (for [align [:start :center :end :space-around :space-between]]
+     (for [align [:start :center :end :space-around :space-between :space-evenly]]
        [:button.align-start.tooltip
         {:class    (dom/classnames :active  (= justify-items align)
                                    :tooltip-bottom-left (not= align :start)
@@ -457,14 +460,15 @@
             [:> numeric-input {:no-validate true
                                :value (:value column)
                                :on-change #(set-column-value type index %)
-                               :placeholder "--"}]]
+                               :placeholder "--"
+                               :disabled (= :auto (:type column))}]]
            [:div.grid-column-unit
             [:& select
              {:class "grid-column-unit-selector"
               :default-value (:type column)
-              :options [{:value :flex :label "fr"}
-                        {:value :auto :label "auto"}
-                        {:value :fixed :label "px"}
+              :options [{:value :flex :label "FR"}
+                        {:value :auto :label "AUTO"}
+                        {:value :fixed :label "PX"}
                         {:value :percent :label "%"}]
               :on-change #(set-column-type type index %)}]]
            [:button.remove-grid-column
@@ -472,8 +476,8 @@
             i/minus]])])]))
 
 (mf/defc layout-container-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "multiple"]))]}
-  [{:keys [ids _type values  multiple] :as props}]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "multiple"]))]}
+  [{:keys [ids values  multiple] :as props}]
   (let [open?               (mf/use-state false)
 
         ;; Display
@@ -630,7 +634,13 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [type index track-type]
-           (st/emit! (dwsl/change-layout-track ids type index {:type track-type}))))]
+           (let [value (case track-type
+                         :auto nil
+                         :flex 1
+                         :percent 20
+                         :fixed 100)]
+             (st/emit! (dwsl/change-layout-track ids type index {:value value
+                                                                 :type track-type})))))]
 
     [:div.element-set
      [:div.element-set-title
