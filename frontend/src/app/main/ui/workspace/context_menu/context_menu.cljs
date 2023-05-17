@@ -441,7 +441,7 @@
         is-non-root?        (and single? (ctk/in-component-copy-not-root? (first shapes)))
 
         first-shape         (first shapes)
-        {:keys [shape-id component-id component-file main-instance?]} first-shape
+        {:keys [id component-id component-file main-instance?]} first-shape
         lacks-annotation?   (nil? (:annotation first-shape))
         component-shapes    (filter #(contains? % :component-id) shapes)
 
@@ -459,9 +459,9 @@
                                     (ctf/get-component workspace-libraries component-file component-id)))
 
         do-add-component #(st/emit! (dwl/add-component))
-        do-detach-component #(st/emit! (dwl/detach-component shape-id))
+        do-detach-component #(st/emit! (dwl/detach-component id))
         do-detach-component-in-bulk #(st/emit! dwl/detach-selected-components)
-        do-reset-component #(st/emit! (dwl/reset-component shape-id))
+        do-reset-component #(st/emit! (dwl/reset-component id))
         do-show-component #(st/emit! (dw/go-to-component component-id))
         do-show-in-assets #(st/emit! (if components-v2
                                        (dw/show-component-in-assets component-id)
@@ -470,7 +470,7 @@
                              (st/emit! (dw/set-annotations-id-for-create (:id first-shape))))
 
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file component-file))
-        do-update-component #(st/emit! (dwl/update-component-sync shape-id component-file))
+        do-update-component #(st/emit! (dwl/update-component-sync id component-file))
         do-update-component-in-bulk #(st/emit! (dwl/update-component-in-bulk component-shapes component-file))
         do-restore-component #(st/emit! (dwl/restore-component component-file component-id))
 
