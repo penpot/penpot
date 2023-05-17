@@ -7,6 +7,8 @@
 (ns app.main.streams
   "User interaction events and streams."
   (:require
+   ["rxjs-spy" :as spy]
+   ["rxjs-spy/operators/tag" :refer [tag]]
    [app.config :as cfg]
    [app.main.store :as st]
    [app.util.globals :as globals]
@@ -14,6 +16,8 @@
    [beicon.core :as rx]))
 
 ;; --- User Events
+
+(def spyx (spy/create))
 
 (defrecord KeyboardEvent [type key shift ctrl alt meta editing])
 
@@ -133,17 +137,18 @@
 
 (defonce keyboard-alt
   (let [sub (rx/behavior-subject nil)
-        ob  (->> (rx/merge
-                  (->> st/stream
-                       (rx/filter keyboard-event?)
-                       (rx/filter kbd/alt-key?)
-                       (rx/map #(= :down (:type %))))
-                  ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
-                  ;; that makes keyboard-alt stream registering the key pressed but
-                  ;; on blurring the window (unfocus) the key down is never arrived.
-                  (->> window-blur
-                       (rx/map (constantly false))))
-                 (rx/dedupe))]
+        ob  (rx/pipe (->> (rx/merge
+                           (->> st/stream
+                                (rx/filter keyboard-event?)
+                                (rx/filter kbd/alt-key?)
+                                (rx/map #(= :down (:type %))))
+                           ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
+                           ;; that makes keyboard-alt stream registering the key pressed but
+                           ;; on blurring the window (unfocus) the key down is never arrived.
+                           (->> window-blur
+                                (rx/map (constantly false))))
+                          (rx/dedupe))
+                     (tag "s-keyboard-alt"))]
     (rx/subscribe-with ob sub)
     sub))
 
