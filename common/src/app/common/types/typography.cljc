@@ -6,6 +6,7 @@
 
 (ns app.common.types.typography
   (:require
+    [app.common.spec :as us]
     [app.common.text :as txt]
     [clojure.spec.alpha :as s]))
 
@@ -21,6 +22,7 @@
 (s/def ::line-height string?)
 (s/def ::letter-spacing string?)
 (s/def ::text-transform string?)
+(s/def ::modified-at ::us/inst)
 
 (s/def ::typography
   (s/keys :req-un [::id
@@ -34,7 +36,8 @@
                    ::line-height
                    ::letter-spacing
                    ::text-transform]
-          :opt-un [::path]))
+          :opt-un [::path
+                   ::modified-at]))
 
 (defn uses-library-typographies?
   "Check if the shape uses any typography in the given library."

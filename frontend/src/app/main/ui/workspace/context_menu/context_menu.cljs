@@ -438,7 +438,7 @@
 
         has-component?      (some true? (map #(contains? % :component-id) shapes))
         is-component?       (and single? (-> shapes first :component-id some?))
-        is-non-root?        (and single? (ctk/in-component-instance-not-root? (first shapes)))
+        is-non-root?        (and single? (ctk/in-component-copy-not-root? (first shapes)))
 
         first-shape         (first shapes)
         {:keys [shape-id component-id component-file main-instance?]} first-shape

@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MPL-2.0",
   "dependencies": {
-    "luxon": "^3.1.1"
+    "luxon": "^3.3.0"
   },
   "scripts": {
     "compile-and-watch-test": "clojure -M:dev:shadow-cljs watch test",

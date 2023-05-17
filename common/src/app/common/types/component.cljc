@@ -7,6 +7,12 @@
 (ns app.common.types.component)
 
 (defn instance-root?
+  "Check if this shape is the head of a top instance."
+  [shape]
+  (some? (:component-root? shape)))
+
+(defn instance-head?
+  "Check if this shape is the head of a top instance or a subinstance."
   [shape]
   (some? (:component-id shape)))
 
@@ -46,12 +52,12 @@
   (and (some? (:component-id shape))
        (= (:component-file shape) library-id)))
 
-(defn in-component-instance?
+(defn in-component-copy?
   "Check if the shape is inside a component non-main instance."
   [shape]
   (some? (:shape-ref shape)))
 
-(defn in-component-instance-not-root?
+(defn in-component-copy-not-root?
   "Check if the shape is inside a component non-main instance and
   is not the root shape."
   [shape]

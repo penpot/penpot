@@ -10,6 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.common :as common]
    [app.common.spec :as us]
+   [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
@@ -20,10 +21,11 @@
 (s/def ::id uuid?)
 (s/def ::name ::us/string)
 (s/def ::path (s/nilable ::us/string))
+(s/def ::modified-at ::us/inst)
 
 (s/def ::container
   (s/keys :req-un [::id ::name]
-          :opt-un [::type ::path ::ctst/objects]))
+          :opt-un [::type ::path ::modified-at ::ctst/objects]))
 
 (defn make-container
   [page-or-component type]
@@ -70,14 +72,20 @@
 
 (defn get-component-shape
   "Get the parent shape linked to a component for this shape, if any"
-  [objects shape]
-  (if-not (:shape-ref shape)
+  ([objects shape] (get-component-shape objects shape nil))
+  ([objects shape {:keys [allow-main?] :or {allow-main? false} :as options}]
+  (cond
+    (nil? shape)
     nil
-    (if (:component-id shape)
-      shape
-      (if-let [parent-id (:parent-id shape)]
-        (get-component-shape objects (get objects parent-id))
-        nil))))
+
+    (and (not (ctk/in-component-copy? shape)) (not allow-main?))
+    nil
+
+    (ctk/instance-root? shape)
+    shape
+
+    :else
+    (get-component-shape objects (get objects (:parent-id shape)) options))))
 
 (defn make-component-shape
   "Clone the shape and all children. Generate new ids and detach

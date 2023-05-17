@@ -118,8 +118,8 @@
                                (filter cph/frame-shape?))]
               (->> (keys objects)
                    (into [] xform))))
-        (remove #(or (and skip-components? (ctk/instance-root? %))
-                     (and skip-copies? (and (ctk/instance-root? %) (not (ctk/main-instance? %)))))))))
+        (remove #(or (and skip-components? (ctk/instance-head? %))
+                     (and skip-copies? (and (ctk/instance-head? %) (not (ctk/main-instance? %)))))))))
 
 (defn get-frames-ids
   "Retrieves all frame ids as vector"

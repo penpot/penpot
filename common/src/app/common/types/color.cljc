@@ -58,6 +58,7 @@
 (s/def ::color-generic/gradient (s/nilable ::gradient))
 (s/def ::color-generic/ref-id uuid?)
 (s/def ::color-generic/ref-file uuid?)
+(s/def ::color-generic/modified-at ::us/inst)
 
 (s/def ::shape-color
   (s/keys :req-un [:us/color
@@ -73,7 +74,8 @@
                    ::color-generic/value
                    ::color-generic/color
                    ::color-generic/opacity
-                   ::color-generic/gradient]))
+                   ::color-generic/gradient
+                   ::color-generic/modified-at]))
 
 (s/def ::recent-color
   (s/and

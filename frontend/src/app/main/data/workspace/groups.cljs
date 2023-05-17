@@ -91,7 +91,7 @@
 
         ;; Shapes that are in a component, but are not root, must be detached,
         ;; because they will be now children of a non instance group.
-        shapes-to-detach (filter ctk/in-component-instance-not-root? shapes)
+        shapes-to-detach (filter ctk/in-component-copy-not-root? shapes)
 
         ;; Look at the `get-empty-groups-after-group-creation`
         ;; docstring to understand the real purpose of this code
@@ -124,7 +124,7 @@
 
         ;; Shapes that are in a component (including root) must be detached,
         ;; because cannot be easyly synchronized back to the main component.
-        shapes-to-detach (filter ctk/in-component-instance?
+        shapes-to-detach (filter ctk/in-component-copy?
                                  (cph/get-children-with-self objects (:id group)))]
 
     (-> (pcb/empty-changes it page-id)

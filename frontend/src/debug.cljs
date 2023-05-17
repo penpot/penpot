@@ -295,18 +295,20 @@
     nil))
 
 (defn dump-tree'
-  ([state] (dump-tree' state false false))
-  ([state show-ids] (dump-tree' state show-ids false))
-  ([state show-ids show-touched]
+  ([state] (dump-tree' state false false false))
+  ([state show-ids] (dump-tree' state show-ids false false))
+  ([state show-ids show-touched] (dump-tree' state show-ids show-touched false))
+  ([state show-ids show-touched show-modified]
    (let [page-id    (get state :current-page-id)
          file-data  (get state :workspace-data)
          libraries  (get state :workspace-libraries)]
-     (ctf/dump-tree file-data page-id libraries show-ids show-touched))))
+     (ctf/dump-tree file-data page-id libraries show-ids show-touched show-modified))))
 
 (defn ^:export dump-tree
   ([] (dump-tree' @st/state))
-  ([show-ids] (dump-tree' @st/state show-ids))
-  ([show-ids show-touched] (dump-tree' @st/state show-ids show-touched)))
+  ([show-ids] (dump-tree' @st/state show-ids false false))
+  ([show-ids show-touched] (dump-tree' @st/state show-ids show-touched false))
+  ([show-ids show-touched show-modified] (dump-tree' @st/state show-ids show-touched show-modified)))
 
 (when *assert*
   (defonce debug-subscription

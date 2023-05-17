@@ -189,7 +189,7 @@
                ;; but hidden (to be able to recover them more easily).
                (let [shape           (get objects shape-id)
                      component-shape (ctn/get-component-shape objects shape)]
-                 (and (ctk/in-component-instance? shape)
+                 (and (ctk/in-component-copy? shape)
                       (not= shape component-shape)
                       (not (ctk/main-instance? component-shape)))))
 

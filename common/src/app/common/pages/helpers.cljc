@@ -272,17 +272,6 @@
   [shape group]
   ((or (:touched shape) #{}) group))
 
-(defn get-root-shape
-  "Get the root shape linked to a component for this shape, if any."
-  [objects shape]
-
-  (cond
-    (some? (:component-root? shape))
-    shape
-
-    (some? (:shape-ref shape))
-    (recur objects (get objects (:parent-id shape)))))
-
 (defn make-container
   [page-or-component type]
   (assoc page-or-component :type type))

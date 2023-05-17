@@ -14,7 +14,7 @@
 
 (mf/defc element-icon-refactor
   [{:keys [shape main-instance?] :as props}]
-  (if (ctk/instance-root? shape)
+  (if (ctk/instance-head? shape)
     (if main-instance?
       i/component-refactor
       i/copy-refactor)
