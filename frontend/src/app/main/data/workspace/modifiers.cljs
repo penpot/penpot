@@ -184,6 +184,7 @@
                   (update :shapes #(d/removev selected %))
                   (ctl/assign-cells))
 
+        selected (->> selected (remove #(ctl/layout-absolute? objects %)))
         frame (-> frame
                   (update :shapes d/concat-vec selected)
                   (cond-> (some? cell)

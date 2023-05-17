@@ -329,6 +329,7 @@
                         (->> (:shapes cell) (map #(vector % cell)))))
               (:layout-grid-cells parent))
 
+        children (->> children (remove #(ctl/layout-absolute? (second %))))
         children-map
         (into {}
               (map #(vector (:id (second %)) %))

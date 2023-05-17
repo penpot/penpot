@@ -300,13 +300,13 @@
         transformed-parent-bounds (delay (gtr/transform-bounds @(get bounds parent-id) modifiers))
 
         children-modifiers
-        (if flex-layout?
+        (if (or flex-layout? grid-layout?)
           (->> (:shapes parent)
                (filter #(ctl/layout-absolute? objects %)))
           (:shapes parent))
 
         children-layout
-        (when flex-layout?
+        (when (or flex-layout? grid-layout?)
           (->> (:shapes parent)
                (remove #(ctl/layout-absolute? objects %))))]
 

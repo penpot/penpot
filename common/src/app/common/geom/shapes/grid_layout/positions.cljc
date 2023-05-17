@@ -154,9 +154,10 @@
             (gpt/add (gpt/to-vec from-h to-h))
             (gpt/add (gpt/to-vec from-v to-v)))]
 
-    (-> (ctm/empty)
-        (ctm/add-modifiers fill-modifiers)
-        (ctm/move position-delta))))
+    (cond-> (ctm/empty)
+      (not (ctl/layout-absolute? child))
+      (-> (ctm/add-modifiers fill-modifiers)
+          (ctm/move position-delta)))))
 
 
 (defn line-value
