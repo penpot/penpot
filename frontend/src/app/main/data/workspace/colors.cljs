@@ -255,6 +255,16 @@
                                             new-attrs (merge (get-in shape [:shadow index :color]) attrs)]
                                         (assoc-in shape [:shadow index :color] new-attrs))))))))
 
+(defn add-shadow
+  [ids shadow]
+  (ptk/reify ::add-shadow
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [add (fn [shape attrs] (assoc shape :shadow (into [attrs] (:shadow shape))))]
+        (rx/of (dch/update-shapes
+                ids
+                #(add % shadow)))))))
+
 (defn add-stroke
   [ids stroke]
   (ptk/reify ::add-stroke
@@ -288,6 +298,15 @@
         (rx/of (dch/update-shapes
                 ids
                 #(remove-all %)))))))
+
+(defn reorder-shadows
+  [ids index new-index]
+  (ptk/reify ::reorder-shadow
+    ptk/WatchEvent
+    (watch [_ _ _]
+           (rx/of (dch/update-shapes
+                   ids
+                   #(swap-attrs % :shadow index new-index))))))
 
 (defn reorder-strokes
   [ids index new-index]
