@@ -173,8 +173,7 @@
              (->> move-stream
                   (rx/tap #(reset! last-point-ref %))
                   ;; When transforming shapes we stop querying the worker
-                  (rx/merge-map query-point)
-                  ))))]
+                  (rx/merge-map query-point)))))]
 
     ;; Refresh the refs on a value change
     (mf/use-effect
