@@ -361,9 +361,10 @@
    (fn [event]
      (let [event  (.getBrowserEvent ^js event)
            target (dom/get-target event)
-           mod? (kbd/mod? event)]
+           mod? (kbd/mod? event)
+           picking-color? (= "pixel-overlay" (.-id target))]
 
-       (when (uwvv/inside-viewport? target)
+       (when (or (uwvv/inside-viewport? target) picking-color?)
          (dom/prevent-default event)
          (dom/stop-propagation event)
          (let [raw-pt (dom/get-client-position event)
