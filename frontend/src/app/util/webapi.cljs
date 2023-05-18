@@ -8,6 +8,7 @@
   "HTML5 web api helpers."
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.util.object :as obj]
    [beicon.core :as rx]
@@ -21,10 +22,15 @@
   (rx/create
    (fn [subs]
      (let [reader (js/FileReader.)]
-       (obj/set! reader "onload" #(do (rx/push! subs (.-result reader))
+       (obj/set! reader "onload" #(do (rx/push! subs (.-result ^js reader))
                                       (rx/end! subs)))
+       (obj/set! reader "onerror" #(rx/error! subs %))
+       (obj/set! reader "onabort" #(rx/error! subs (ex/error :type :internal
+                                                             :code :abort
+                                                             :hint "operation aborted")))
        (f reader)
-       (constantly nil)))))
+       (fn []
+         (.abort ^js reader))))))
 
 (defn read-file-as-text
   [file]
