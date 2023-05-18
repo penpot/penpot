@@ -584,8 +584,6 @@
    :justify-self :auto
    :shapes []})
 
-;; TODO: GRID ASSIGNMENTS
-
 ;; Adding a track creates the cells. We should check the shapes that are not tracked (with default values) and assign to the correct tracked values
 (defn add-grid-column
   [parent value]
@@ -634,7 +632,6 @@
         (assoc :layout-grid-cells layout-grid-cells))))
 
 
-;; TODO: SPAN NOT CHECK!!
 (defn make-remove-track
   [attr track-num]
   (comp #(= % track-num) attr second))
@@ -648,6 +645,7 @@
             (update attr dec))]
       [key new-val])))
 
+;; TODO: CHECK CELLS MULTI SPAN
 (defn remove-grid-column
   [parent index]
   (let [track-num (inc index)
@@ -860,7 +858,6 @@
              (first)))
       parent)))
 
-
 (defn create-cells
   "Create cells in an area. One cell per row/column "
   [parent [column row column-span row-span]]
@@ -955,3 +952,30 @@
 
     ;; Not valid resize: we don't alter the layout
     parent))
+
+
+(defn get-cell-by-position
+  [parent target-row target-column]
+  (->> (:layout-grid-cells parent)
+       (d/seek
+        (fn [[_ {:keys [column row column-span row-span]}]]
+          (and (>= target-row row)
+               (>= target-column column)
+               (< target-column (+ column column-span))
+               (< target-row (+ row row-span)))))
+       (second)))
+
+(defn get-cell-by-shape-id
+  [parent shape-id]
+  (->> (:layout-grid-cells parent)
+       (d/seek
+        (fn [[_ {:keys [shapes]}]]
+          (contains? (set shapes) shape-id)))
+       (second)))
+
+(defn swap-shapes
+  [parent id-from id-to]
+
+  (-> parent
+      (assoc-in [:layout-grid-cells id-from :shapes] (dm/get-in parent [:layout-grid-cells id-to :shapes]))
+      (assoc-in [:layout-grid-cells id-to :shapes] (dm/get-in parent [:layout-grid-cells id-from :shapes]))))

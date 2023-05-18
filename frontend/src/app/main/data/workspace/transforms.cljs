@@ -556,57 +556,75 @@
             objects (wsh/lookup-page-objects state)
             page-id (:current-page-id state)
 
-            get-new-position
+            get-move-to-index
             (fn [parent-id position]
               (let [parent (get objects parent-id)]
-                (cond
-                  (ctl/flex-layout? parent)
-                  (if (or
-                       (and (ctl/reverse? parent)
-                            (or (= direction :left)
-                                (= direction :up)))
-                       (and (not (ctl/reverse? parent))
-                            (or (= direction :right)
-                                (= direction :down))))
-                    (dec position)
-                    (+ position 2))
+                (if (or (and (ctl/reverse? parent)
+                             (or (= direction :left)
+                                 (= direction :up)))
+                        (and (not (ctl/reverse? parent))
+                             (or (= direction :right)
+                                 (= direction :down))))
+                  (dec position)
+                  (+ position 2))))
 
-                  ;; TODO: GRID
-                  (ctl/grid-layout? parent)
-                  nil
-                  )))
+            move-flex-children
+            (fn [changes parent-id children]
+              (->> children
+                   ;; Add the position to move the children
+                   (map (fn [id]
+                          (let [position (cph/get-position-on-parent objects id)]
+                            [id (get-move-to-index parent-id position)])))
+                   (sort-by second >)
+                   (reduce (fn [changes [child-id index]]
+                             (pcb/change-parent changes parent-id [(get objects child-id)] index))
+                           changes)))
 
-            add-children-position
-            (fn [[parent-id children]]
-              (let [children+position
+            move-grid-children
+            (fn [changes parent-id children]
+              (let [parent (get objects parent-id)
+
+                    key-prop (case direction
+                               (:up :down) :row
+                               (:right :left) :column)
+                    key-comp (case direction
+                               (:up :left) <
+                               (:down :right) >)
+
+                    {:keys [layout-grid-cells]}
                     (->> children
-                         (keep #(let [new-position (get-new-position
-                                                    parent-id
-                                                    (cph/get-position-on-parent objects %))]
-                                  (when new-position
-                                    (vector % new-position))))
-                         (sort-by second >))]
-                [parent-id children+position]))
-
-            change-parents-and-position
-            (->> selected
-                 (group-by #(dm/get-in objects [% :parent-id]))
-                 (map add-children-position)
-                 (into {}))
+                         (keep #(ctl/get-cell-by-shape-id parent %))
+                         (sort-by key-prop key-comp)
+                         (reduce (fn [parent {:keys [id row column row-span column-span]}]
+                                   (let [[next-row next-column]
+                                         (case direction
+                                           :up    [(dec row) column]
+                                           :right [row (+ column column-span)]
+                                           :down  [(+ row row-span) column]
+                                           :left  [row (dec column)])
+                                         next-cell (ctl/get-cell-by-position parent next-row next-column)]
+                                     (cond-> parent
+                                       (some? next-cell)
+                                       (ctl/swap-shapes id (:id next-cell)))))
+                                 parent))]
+                (-> changes
+                    (pcb/update-shapes [(:id parent)] (fn [shape] (assoc shape :layout-grid-cells layout-grid-cells))))))
 
             changes
-            (->> change-parents-and-position
+            (->> selected
+                 (group-by #(dm/get-in objects [% :parent-id]))
                  (reduce
                   (fn [changes [parent-id children]]
-                    (->> children
-                         (reduce
-                          (fn [changes [child-id index]]
-                            (pcb/change-parent changes parent-id
-                                               [(get objects child-id)]
-                                               index))
-                          changes)))
+                    (cond-> changes
+                      (ctl/flex-layout? objects parent-id)
+                      (move-flex-children parent-id children)
+
+                      (ctl/grid-layout? objects parent-id)
+                      (move-grid-children parent-id children)))
+
                   (-> (pcb/empty-changes it page-id)
                       (pcb/with-objects objects))))
+
             undo-id (js/Symbol)]
 
         (rx/of
