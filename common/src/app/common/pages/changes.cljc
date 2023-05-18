@@ -27,7 +27,8 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.typographies-list :as ctyl]
-   [app.common.types.typography :as ctt]))
+   [app.common.types.typography :as ctt]
+   [clojure.set :as set]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS
@@ -665,7 +666,7 @@
   (when page-id
     (let [page (ctpl/get-page file-data page-id)
           shape-and-parents (map #(ctn/get-shape page %)
-                                 (into [id] (cph/get-parent-ids (:objects page) id)))
+                                 (cons id (cph/get-parent-ids (:objects page) id)))
           need-sync? (fn [operation]
                        ; We need to trigger a sync if the shape has changed any
                        ; attribute that participates in components synchronization.
@@ -676,6 +677,34 @@
         (let [xform (comp (filter :main-instance?) ; Select shapes that are main component instances
                           (map :id))]
           (into #{} xform shape-and-parents))))))
+
+(defmethod components-changed :mov-objects
+  [file-data {:keys [page-id _component-id parent-id shapes] :as change}]
+  (when page-id
+    (let [page (ctpl/get-page file-data page-id)
+
+          xform (comp (filter :main-instance?)
+                      (map :id))
+
+          check-shape
+          (fn [shape-id others]
+            (let [all-parents (map (partial ctn/get-shape page)
+                                   (concat others (cph/get-parent-ids (:objects page) shape-id)))]
+              (into #{} xform all-parents)))]
+
+      (reduce #(set/union %1 (check-shape %2 []))
+              (check-shape parent-id [parent-id])
+              shapes))))
+
+(defmethod components-changed :del-obj
+  [file-data {:keys [id page-id _component-id] :as change}]
+  (when page-id
+    (let [page (ctpl/get-page file-data page-id)
+          shape-and-parents (map (partial ctn/get-shape page)
+                                 (cons id (cph/get-parent-ids (:objects page) id)))
+          xform (comp (filter :main-instance?)
+                      (map :id))]
+      (into #{} xform shape-and-parents))))
 
 (defmethod components-changed :default
   [_ _]
