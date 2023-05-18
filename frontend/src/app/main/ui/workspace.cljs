@@ -149,7 +149,7 @@
     (mf/use-effect
      (mf/deps focus-out)
      (fn []
-       (let [keys [(events/listen globals/document EventType.FOCUSOUT focus-out)]]
+       (let [keys [(events/listen globals/window EventType.BLUR focus-out)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 
