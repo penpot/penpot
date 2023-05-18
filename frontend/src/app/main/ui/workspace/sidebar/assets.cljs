@@ -39,7 +39,6 @@
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.perf :as perf]
    [app.util.router :as rt]
    [app.util.strings :refer [matches-search]]
    [app.util.timers :as ts]
@@ -2490,44 +2489,43 @@
         show-libraries-dialog
         (mf/use-fn #(modal/show! :libraries-dialog {}))]
 
-    [:& perf/profiler {:enabled true :label "sidebar/assets"}
-     [:div.assets-bar
-      [:div.tool-window
-       [:div.tool-window-content
-        [:div.assets-bar-title
-         (tr "workspace.assets.assets")
+    [:div.assets-bar
+     [:div.tool-window
+      [:div.tool-window-content
+       [:div.assets-bar-title
+        (tr "workspace.assets.assets")
 
-         (when-not ^boolean read-only?
-           [:div.libraries-button {:on-click show-libraries-dialog}
-            i/text-align-justify
-            (tr "workspace.assets.libraries")])]
+        (when-not ^boolean read-only?
+          [:div.libraries-button {:on-click show-libraries-dialog}
+           i/text-align-justify
+           (tr "workspace.assets.libraries")])]
 
-        [:div.search-block
-         [:input.search-input
-          {:placeholder (tr "workspace.assets.search")
-           :type "text"
-           :value (:term filters)
-           :on-change on-search-term-change
-           :on-key-down handle-key-down}]
+       [:div.search-block
+        [:input.search-input
+         {:placeholder (tr "workspace.assets.search")
+          :type "text"
+          :value (:term filters)
+          :on-change on-search-term-change
+          :on-key-down handle-key-down}]
 
-         (if ^boolean (str/empty? (:term filters))
-           [:div.search-icon
-            i/search]
-           [:div.search-icon.close
-            {:on-click on-search-clear-click}
-            i/close])]
+        (if ^boolean (str/empty? (:term filters))
+          [:div.search-icon
+           i/search]
+          [:div.search-icon.close
+           {:on-click on-search-clear-click}
+           i/close])]
 
-        [:select.input-select {:value (:section filters)
-                               :on-change on-section-filter-change}
-         [:option {:value ":all"} (tr "workspace.assets.box-filter-all")]
-         [:option {:value ":components"} (tr "workspace.assets.components")]
-         [:option {:value ":graphics"} (tr "workspace.assets.graphics")]
-         [:option {:value ":colors"} (tr "workspace.assets.colors")]
-         [:option {:value ":typographies"} (tr "workspace.assets.typography")]]]]
+       [:select.input-select {:value (:section filters)
+                              :on-change on-section-filter-change}
+        [:option {:value ":all"} (tr "workspace.assets.box-filter-all")]
+        [:option {:value ":components"} (tr "workspace.assets.components")]
+        [:option {:value ":graphics"} (tr "workspace.assets.graphics")]
+        [:option {:value ":colors"} (tr "workspace.assets.colors")]
+        [:option {:value ":typographies"} (tr "workspace.assets.typography")]]]]
 
-      [:& (mf/provider ctx:filters) {:value filters}
-       [:& (mf/provider ctx:toggle-ordering) {:value toggle-ordering}
-        [:& (mf/provider ctx:toggle-list-style) {:value toggle-list-style}
-         [:div.libraries-wrapper
-          [:& assets-local-library {:filters filters}]
-          [:& assets-libraries {:filters filters}]]]]]]]))
+     [:& (mf/provider ctx:filters) {:value filters}
+      [:& (mf/provider ctx:toggle-ordering) {:value toggle-ordering}
+       [:& (mf/provider ctx:toggle-list-style) {:value toggle-list-style}
+        [:div.libraries-wrapper
+         [:& assets-local-library {:filters filters}]
+         [:& assets-libraries {:filters filters}]]]]]]))

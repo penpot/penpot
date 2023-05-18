@@ -131,8 +131,7 @@
    i/loader-pencil])
 
 (mf/defc workspace
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+  {::mf/wrap-props false}
   [{:keys [project-id file-id page-id layout-name]}]
   (let [file             (mf/deref refs/workspace-file)
         project          (mf/deref refs/workspace-project)
