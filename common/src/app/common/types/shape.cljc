@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.geom.proportions :as gpr]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -350,7 +351,9 @@
     :name "Text"
     :content nil}
 
-   {:type :svg-raw}])
+   {:type :svg-raw
+    :fills []
+    :strokes []}])
 
 (def empty-selrect
   (gsh/map->Rect
@@ -440,4 +443,5 @@
      (-> (case (:type shape)
            :path  (setup-path shape)
            :image (-> shape setup-rect setup-image)
-           (setup-rect shape))))))
+           (setup-rect shape))
+         (gpr/setup-proportions)))))

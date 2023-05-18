@@ -32,46 +32,63 @@
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-(defn get-shape-layer-position
-  [objects selected shape]
+;; (defn- get-shape-layer-position
+;;   [objects selected shape]
 
-  ;; Calculate the frame over which we're drawing
+;;   ;; Calculate the frame over which we're drawing
+;;   (let [position @ms/mouse-position
+;;         frame-id (:frame-id shape (ctst/top-nested-frame objects position))
+;;         shape    (when-not (empty? selected)
+;;                    (cph/get-base-shape objects selected))]
+
+;;     (if (or (not shape) (not= (:frame-id shape) frame-id))
+;;       [frame-id frame-id nil]
+
+;;       ;; Otherwise, we add it to next to the selected shape
+;;       (let [index (cph/get-position-on-parent objects (:id shape))
+;;             {:keys [frame-id parent-id]} shape]
+;;         [frame-id parent-id (inc index)]))))
+
+(defn setup-shape-parents
+  "Uses the current mouse position and currently selected shapes for
+  identify the final destination (frame & parent) of the shape."
+  [shape objects selected]
   (let [position @ms/mouse-position
-        frame-id (:frame-id shape (ctst/top-nested-frame objects position))
-        shape    (when-not (empty? selected)
+        selected (into #{}
+                       (comp (map (d/getf objects))
+                             (remove cph/frame-shape?))
+                       selected)
+
+        frame-id (or (:frame-id shape)
+                     (ctst/top-nested-frame objects position))
+
+        base     (when (seq selected)
                    (cph/get-base-shape objects selected))]
 
     ;; When no shapes has been selected or we're over a different frame
     ;; we add it as the latest shape of that frame
-    (if (or (not shape) (not= (:frame-id shape) frame-id))
-      [frame-id frame-id nil]
+    (if (or (not base) (not=  (:frame-id base) frame-id))
+      (-> shape
+          (assoc :frame-id frame-id)
+          (assoc :parent-id frame-id))
 
-      ;; Otherwise, we add it to next to the selected shape
-      (let [index (cph/get-position-on-parent objects (:id shape))
-            {:keys [frame-id parent-id]} shape]
-        [frame-id parent-id (inc index)]))))
+      (let [index (cph/get-position-on-parent objects (:id base))]
+        (-> shape
+            (assoc :frame-id (:frame-id base))
+            (assoc :parent-id (:parent-id base))
+            (assoc :index (inc index)))))))
 
 (defn prepare-add-shape
   [changes shape objects selected]
-  (let [id       (or (:id attrs) (uuid/next))
-        name     (:name attrs)
+  (let [id       (:id shape)
+        name     (:name shape)
 
-        selected-non-frames
-        (into #{} (comp (map (d/getf objects))
-                        (remove cph/frame-shape?))
-              selected)
+        shape    (setup-shape-parents shape objects selected)
 
-        [frame-id parent-id index]
-        (get-shape-layer-position objects selected-non-frames shape)
+        ;; WTF: index again? revisit please
+        index   (:index (meta shape))
 
-        shape (-> shape
-                  (gpp/setup-proportions)
-                  (assoc :frame-id frame-id)
-                  (assoc :parent-id frame-id)
-                  (assoc :index index))
-
-        ;; WTF: index again?
-        index   (:index (meta attrs))
+        _ (prn "KKKKK" index (:index shape))
 
         changes (-> changes
                     (pcb/with-objects objects)
@@ -79,8 +96,8 @@
                       (pcb/add-object shape {:index index}))
                     (cond-> (nil? index)
                       (pcb/add-object shape))
-                    (cond-> (some? (:parent-id attrs))
-                      (pcb/change-parent (:parent-id attrs) [shape]))
+                    (cond-> (some? (:parent-id shape))
+                      (pcb/change-parent (:parent-id shape) [shape]))
                     (cond-> (ctl/grid-layout? objects (:parent-id shape))
                       (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells)))]
 
@@ -328,14 +345,16 @@
            (ptk/data-event :layout/update all-parents)
            (dch/commit-changes changes))))
 
+
+;; FIXME: add schema to this
 (defn create-and-add-shape
-  [type frame-x frame-y {:keys [width height] :as data}]
+  [type frame-x frame-y {:keys [width height] :as attrs}]
   (ptk/reify ::create-and-add-shape
     ptk/WatchEvent
     (watch [_ state _]
       (let [vbc       (wsh/viewport-center state)
-            x         (:x data (- (:x vbc) (/ width 2)))
-            y         (:y data (- (:y vbc) (/ height 2)))
+            x         (:x attrs (- (:x vbc) (/ width 2)))
+            y         (:y attrs (- (:y vbc) (/ height 2)))
             page-id   (:current-page-id state)
             objects   (wsh/lookup-page-objects state page-id)
             frame-id  (-> (wsh/lookup-page-objects state page-id)
@@ -352,7 +371,7 @@
 
             shape     (-> (cts/make-minimal-shape type)
                           (cts/setup-shape
-                           (-> data
+                           (-> attrs
                                (assoc :x x)
                                (assoc :y y)
                                (assoc :frame-id frame-id)
