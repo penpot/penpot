@@ -21,15 +21,16 @@
 ;; :layout-gap             ;; {:row-gap number , :column-gap number}
 
 ;; :layout-align-items     ;; :start :end :center :stretch
-;; :layout-justify-content ;; :start :center :end :space-between :space-around :space-evenly
 ;; :layout-align-content   ;; :start :center :end :space-between :space-around :space-evenly :stretch (by default)
+;; :layout-justify-items    ;; :start :center :end :space-between :space-around :space-evenly
+;; :layout-justify-content ;; :start :center :end :space-between :space-around :space-evenly
 ;; :layout-wrap-type       ;; :wrap, :nowrap
 ;; :layout-padding-type    ;; :simple, :multiple
 ;; :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
 
-;; layout-grid-rows
-;; layout-grid-columns
-;; layout-justify-items
+;; layout-grid-rows        ;; vector of grid-track
+;; layout-grid-columns     ;; vector of grid-track
+;; layout-grid-cells       ;; map of id->grid-cell
 
 ;; ITEMS
 ;; :layout-item-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}
@@ -40,14 +41,18 @@
 ;; :layout-item-min-h       ;; num
 ;; :layout-item-max-w       ;; num
 ;; :layout-item-min-w       ;; num
-;; :layout-item-absolute
-;; :layout-item-z-index
+;; :layout-item-absolute    ;; boolean
+;; :layout-item-z-index     ;; int
+
 
 (def layout-types
   #{:flex :grid})
 
 (def flex-direction-types
   #{:row :reverse-row :row-reverse :column :reverse-column :column-reverse}) ;;TODO remove reverse-column and reverse-row after script
+
+(def grid-direction-types
+  #{:row :column})
 
 (def gap-types
   #{:simple :multiple})
@@ -59,7 +64,7 @@
   #{:simple :multiple})
 
 (def justify-content-types
-  #{:start :center :end :space-between :space-around :space-evenly})
+  #{:start :center :end :space-between :space-around :space-evenly :stretch})
 
 (def align-content-types
   #{:start :end :center :space-between :space-around :space-evenly :stretch})
@@ -90,48 +95,49 @@
    [:layout-justify-content {:optional true} [::sm/one-of justify-content-types]]
    [:layout-justify-items {:optional true} [::sm/one-of justify-items-types]]
    [:layout-align-content {:optional true} [::sm/one-of align-content-types]]
-   [:layout-align-items {:optional true} [::sm/one-of align-items-types]]])
+   [:layout-align-items {:optional true} [::sm/one-of align-items-types]]
 
-;; (s/def :grid/type #{:percent :flex :auto :fixed})
-;; (s/def :grid/value (s/nilable ::us/safe-number))
-;; (s/def ::grid-definition (s/keys :req-un [:grid/type]
-;;                                  :opt-un [:grid/value]))
-;; (s/def ::layout-grid-rows (s/coll-of ::grid-definition :kind vector?))
-;; (s/def ::layout-grid-columns (s/coll-of ::grid-definition :kind vector?))
+   [:layout-grid-dir {:optional true} [::sm/one-of grid-direction-types]]
+   [:layout-grid-rows {:optional true}
+    [:vector {:gen/max 2} ::grid-track]]
+   [:layout-grid-columns {:optional true}
+    [:vector {:gen/max 2} ::grid-track]]
+   [:layout-grid-cells {:optional true}
+    [:map-of {:gen/max 5} ::sm/uuid ::grid-cell]]])
 
-;; (s/def :grid-cell/id uuid?)
-;; (s/def :grid-cell/area-name ::us/string)
-;; (s/def :grid-cell/row-start ::us/safe-integer)
-;; (s/def :grid-cell/row-span ::us/safe-integer)
-;; (s/def :grid-cell/column-start ::us/safe-integer)
-;; (s/def :grid-cell/column-span ::us/safe-integer)
-;; (s/def :grid-cell/position #{:auto :manual :area})
-;; (s/def :grid-cell/align-self #{:auto :start :end :center :stretch})
-;; (s/def :grid-cell/justify-self #{:auto :start :end :center :stretch})
-;; (s/def :grid-cell/shapes (s/coll-of uuid?))
+;; Grid types
+(def grid-track-types
+  #{:percent :flex :auto :fixed})
 
-;; (s/def ::grid-cell (s/keys :opt-un [:grid-cell/id
-;;                                     :grid-cell/area-name
-;;                                     :grid-cell/row-start
-;;                                     :grid-cell/row-span
-;;                                     :grid-cell/column-start
-;;                                     :grid-cell/column-span
-;;                                     :grid-cell/position ;; auto, manual, area
-;;                                     :grid-cell/align-self
-;;                                     :grid-cell/justify-self
-;;                                     :grid-cell/shapes]))
-;; (s/def ::layout-grid-cells (s/map-of uuid? ::grid-cell))
+(def grid-position-types
+  #{:auto :manual :area})
 
-;; (s/def ::layout-container-props
-;;   (s/keys :opt-un [
-;;                    ;; grid
-;;                    ::layout-grid-dir
-;;                    ::layout-justify-items
-;;                    ::layout-grid-rows
-;;                    ::layout-grid-columns
-;;                    ::layout-grid-cells
-;;                    ]))
+(def grid-cell-align-self-types
+  #{:auto :start :center :end :stretch})
 
+(def grid-cell-justify-self-types
+  #{:auto :start :center :end :stretch})
+
+(sm/def! ::grid-cell
+  [:map {:title "GridCell"}
+   [:id ::sm/uuid]
+   [:area-name {:optional true} :string]
+   [:row ::sm/safe-int]
+   [:row-span ::sm/safe-int]
+   [:column ::sm/safe-int]
+   [:column-span ::sm/safe-int]
+   [:position {:optional true} [::sm/one-of grid-position-types]]
+   [:align-self {:optional true} [::sm/one-of grid-cell-align-self-types]]
+   [:justify-self {:optional true} [::sm/one-of grid-cell-justify-self-types]]
+   [:shapes
+    [:vector {:gen/max 1} ::sm/uuid]]])
+
+(sm/def! ::grid-track
+  [:map {:title "GridTrack"}
+   [:type [::sm/one-of grid-track-types]]
+   [:value {:optional true} [:maybe ::sm/safe-number]]])
+
+;; LAYOUT CHILDREN
 
 (def item-margin-types
   #{:simple :multiple})
@@ -164,13 +170,7 @@
    [:layout-item-absolute {:optional true} :boolean]
    [:layout-item-z-index {:optional true} ::sm/safe-number]])
 
-(def schema:grid-definition
-  [:map {:title "LayoutGridDefinition"}
-   [:type [::sm/one-of #{:percent :flex :auto :fixed}]]
-   [:value {:optional true} [:maybe ::sm/safe-int]]])
-
-(def grid-definition?
-  (sm/pred-fn schema:grid-definition))
+(def grid-track? (sm/pred-fn ::grid-track))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS
@@ -524,11 +524,11 @@
           :layout-wrap-type
           :layout-padding-type
           :layout-padding
+          :layout-align-content
           :layout-justify-content
           :layout-align-items
-          :layout-align-content
-          :layout-grid-dir
           :layout-justify-items
+          :layout-grid-dir
           :layout-grid-columns
           :layout-grid-rows
           ))
@@ -570,7 +570,6 @@
       (d/update-in-when [:layout-item-margin :m3] * scale)
       (d/update-in-when [:layout-item-margin :m4] * scale)))
 
-
 (declare assign-cells)
 
 (def default-track-value
@@ -589,7 +588,7 @@
   [parent value]
   (dm/assert!
    "expected a valid grid definition for `value`"
-   (grid-definition? value))
+   (grid-track? value))
 
   (let [rows (:layout-grid-rows parent)
         new-col-num (inc (count (:layout-grid-columns parent)))
@@ -612,7 +611,7 @@
   [parent value]
   (dm/assert!
    "expected a valid grid definition for `value`"
-   (grid-definition? value))
+   (grid-track? value))
 
   (let [cols (:layout-grid-columns parent)
         new-row-num (inc (count (:layout-grid-rows parent)))

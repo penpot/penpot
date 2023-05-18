@@ -19,8 +19,7 @@
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
    [app.common.types.shape.interactions :as ctsi]
-   ;; FIXME: missing spec -> schema
-   #_[app.common.types.shape.layout :as ctsl]
+   [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
@@ -232,48 +231,57 @@
    [:group
     [:merge {:title "GroupShape"}
      ::shape-attrs
-     ::group-attrs]]
+     ::group-attrs
+     ::ctsl/layout-child-attrs]]
 
    [:frame
     [:merge {:title "FrameShape"}
      ::shape-attrs
-     ::frame-attrs]]
+     ::frame-attrs
+     ::ctsl/layout-attrs
+     ::ctsl/layout-child-attrs]]
 
    [:bool
     [:merge {:title "BoolShape"}
      ::shape-attrs
-     ::bool-attrs]]
+     ::bool-attrs
+     ::ctsl/layout-child-attrs]]
 
    [:rect
     [:merge {:title "RectShape"}
      ::shape-attrs
-     ::rect-attrs]]
+     ::rect-attrs
+     ::ctsl/layout-child-attrs]]
 
    [:circle
     [:merge {:title "CircleShape"}
      ::shape-attrs
-     ::circle-attrs]]
+     ::circle-attrs
+     ::ctsl/layout-child-attrs]]
 
    [:image
     [:merge {:title "ImageShape"}
      ::shape-attrs
-     ::image-attrs]]
+     ::image-attrs
+     ::ctsl/layout-child-attrs]]
 
    [:svg-raw
     [:merge {:title "SvgRawShape"}
      ::shape-attrs
-     ::svg-raw-attrs]]
+     ::svg-raw-attrs
+     ::ctsl/layout-child-attrs]]
 
    [:path
     [:merge {:title "PathShape"}
      ::shape-attrs
-     ::path-attrs]]
+     ::path-attrs
+     ::ctsl/layout-child-attrs]]
 
    [:text
     [:merge {:title "TextShape"}
      ::shape-attrs
-     ::text-attrs]]
-   ])
+     ::text-attrs
+     ::ctsl/layout-child-attrs]]])
 
 (def shape?
   (sm/pred-fn ::shape))
