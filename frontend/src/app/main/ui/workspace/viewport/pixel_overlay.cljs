@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
@@ -17,14 +18,45 @@
    [app.main.ui.cursors :as cur]
    [app.main.ui.workspace.shapes :as shapes]
    [app.util.dom :as dom]
+   [app.util.http :as http]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
    [promesa.core :as p]
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
+
+(defn- resolve-svg-images!
+  [svg-node]
+  (let [image-nodes (dom/query-all svg-node "image:not([href^=data])")
+        noop-fn     (constantly nil)]
+    (->> (rx/from image-nodes)
+         (rx/mapcat
+          (fn [image]
+            (let [href (dom/get-attribute image "href")]
+              (->> (http/fetch {:method :get :uri href})
+                   (rx/mapcat (fn [response] (.blob ^js response)))
+                   (rx/mapcat wapi/read-file-as-data-url)
+                   (rx/tap (fn [data]
+                             (dom/set-attribute! image "href" data)))
+                   (rx/reduce noop-fn))))))))
+
+(defn- svg-as-data-url
+  "Transforms SVG as data-url resolving any blob, http or https url to
+  its data equivalent."
+  [svg]
+  (let [svg-clone (.cloneNode svg true)]
+    (->> (resolve-svg-images! svg-clone)
+         (rx/map (fn [_]
+                   (let [xml (-> (js/XMLSerializer.)
+                                 (.serializeToString ^js svg-clone)
+                                 (js/encodeURIComponent)
+                                 (js/unescape)
+                                 (js/btoa))]
+                     (dm/str "data:image/svg+xml;base64," xml)))))))
 
 (defn format-viewbox [vbox]
   (str/join " " [(:x vbox 0)
@@ -92,8 +124,8 @@
                    x (- (.-clientX event) brx)
                    y (- (.-clientY event) bry)
 
-                   zoom-context (.getContext zoom-view-node "2d")
-                   canvas-context (.getContext canvas-node "2d")
+                   zoom-context (.getContext zoom-view-node "2d" #js {:willReadFrequently true})
+                   canvas-context (.getContext canvas-node "2d" #js {:willReadFrequently true})
                    pixel-data (.getImageData canvas-context x y 1 1)
                    rgba (.-data pixel-data)
                    r (obj/get rgba 0)
@@ -140,14 +172,10 @@
          (mf/deps img-ref)
          (fn []
            (let [img-node (mf/ref-val img-ref)
-                 svg-node (dom/get-element "render")
-                 xml  (-> (js/XMLSerializer.)
-                          (.serializeToString svg-node)
-                          js/encodeURIComponent
-                          js/unescape
-                          js/btoa)
-                 img-src (str "data:image/svg+xml;base64," xml)]
-             (obj/set! img-node "src" img-src))))
+                 svg-node (dom/get-element "render")]
+             (->> (svg-as-data-url svg-node)
+                  (rx/subs (fn [uri]
+                             (obj/set! img-node "src" uri)))))))
 
         handle-svg-change
         (mf/use-callback
