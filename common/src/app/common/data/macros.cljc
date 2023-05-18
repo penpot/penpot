@@ -153,6 +153,22 @@
               (throw (ex-info hint# params#)))))))))
 
 (defmacro verify!
-  [& params]
-  (binding [*assert* true]
-    `(assert! ~@params)))
+  ([expr]
+   `(assert! nil ~expr))
+  ([hint expr]
+   (let [hint (cond
+                (vector? hint)
+                `(str/ffmt ~@hint)
+
+                (some? hint)
+                hint
+
+                :else
+                (str "expr assert: " (pr-str expr)))]
+     `(binding [*assert-context* true]
+        (when-not ~expr
+          (let [hint#   ~hint
+                params# {:type :assertion
+                         :code :expr-validation
+                         :hint hint#}]
+            (throw (ex-info hint# params#))))))))
