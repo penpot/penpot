@@ -869,12 +869,64 @@
           :style
           parse-style))))
 
+(defn parse-grid-tracks
+  [node label]
+  (let [node (-> (get-data node :penpot:layout)
+                 (find-node label))]
+    (->> node
+         :content
+         (mapv
+          (fn [track-node]
+            (let [{:keys [type value]} (-> track-node :attrs remove-penpot-prefix)]
+              {:type (keyword type)
+               :value (d/parse-double value)}))))))
+
+(defn parse-grid-cells
+  [node]
+  (let [node (-> (get-data node :penpot:layout)
+                 (find-node :penpot:grid-cells))]
+    (->> node
+         :content
+         (mapv
+          (fn [cell-node]
+            (let [{:keys [id
+                          area-name
+                          row
+                          row-span
+                          column
+                          column-span
+                          position
+                          align-self
+                          justify-self
+                          shapes]} (-> cell-node :attrs remove-penpot-prefix)
+                  id (uuid/uuid id)]
+              [id (d/without-nils
+                   {:id id
+                    :area-name area-name
+                    :row (d/parse-integer  row)
+                    :row-span (d/parse-integer row-span)
+                    :column (d/parse-integer column)
+                    :column-span (d/parse-integer column-span)
+                    :position (keyword position)
+                    :align-self (keyword align-self)
+                    :justify-self (keyword justify-self)
+                    :shapes (if (and (some? shapes) (d/not-empty? shapes))
+                              (->> (str/split shapes " ")
+                                   (mapv uuid/uuid))
+                              [])})])))
+         (into {}))))
+
 (defn add-layout-container-data [props node]
   (if-let [data (get-data node :penpot:layout)]
-    (merge props
+    (let [layout-grid-rows (parse-grid-tracks node :penpot:grid-rows)
+          layout-grid-columns (parse-grid-tracks node :penpot:grid-columns)
+          layout-grid-cells (parse-grid-cells node)]
+      (-> props
+          (merge
            (d/without-nils
             {:layout (get-meta data :layout keyword)
              :layout-flex-dir (get-meta data :layout-flex-dir keyword)
+             :layout-grid-dir (get-meta data :layout-grid-dir keyword)
              :layout-wrap-type (get-meta data :layout-wrap-type keyword)
 
              :layout-gap-type (get-meta data :layout-gap-type keyword)
@@ -891,9 +943,17 @@
                :p3 (get-meta data :layout-padding-p3 d/parse-double)
                :p4 (get-meta data :layout-padding-p4 d/parse-double)})
 
+             :layout-justify-items (get-meta data :layout-justify-items keyword)
              :layout-justify-content (get-meta data :layout-justify-content keyword)
              :layout-align-items (get-meta data :layout-align-items keyword)
              :layout-align-content (get-meta data :layout-align-content keyword)}))
+
+          (cond-> (d/not-empty? layout-grid-rows)
+            (assoc :layout-grid-rows layout-grid-rows))
+          (cond-> (d/not-empty? layout-grid-columns)
+            (assoc :layout-grid-columns layout-grid-columns))
+          (cond-> (d/not-empty? layout-grid-cells)
+            (assoc :layout-grid-cells layout-grid-cells))))
     props))
 
 (defn add-layout-item-data [props node]
@@ -914,7 +974,10 @@
              :layout-item-min-h (get-meta data :layout-item-min-h d/parse-double)
              :layout-item-max-w (get-meta data :layout-item-max-w d/parse-double)
              :layout-item-min-w (get-meta data :layout-item-min-w d/parse-double)
-             :layout-item-align-self (get-meta data :layout-item-align-self keyword)}))
+             :layout-item-align-self (get-meta data :layout-item-align-self keyword)
+             :layout-item-align-absolute (get-meta data :layout-item-align-absolute str->bool)
+             :layout-item-align-index (get-meta data :layout-item-align-index d/parse-double)
+             }))
     props))
 
 (defn parse-data

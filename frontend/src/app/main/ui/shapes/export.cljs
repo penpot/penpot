@@ -340,9 +340,14 @@
            layout-wrap-type
            layout-padding-type
            layout-padding
+           layout-justify-items
            layout-justify-content
            layout-align-items
-           layout-align-content]}]
+           layout-align-content
+           layout-grid-dir
+           layout-grid-rows
+           layout-grid-columns
+           layout-grid-cells]}]
 
   (when layout
     (mf/html
@@ -358,9 +363,48 @@
            :penpot:layout-padding-p2 (:p2 layout-padding)
            :penpot:layout-padding-p3 (:p3 layout-padding)
            :penpot:layout-padding-p4 (:p4 layout-padding)
+           :penpot:layout-justify-items (d/name layout-justify-items)
            :penpot:layout-justify-content (d/name layout-justify-content)
            :penpot:layout-align-items (d/name layout-align-items)
-           :penpot:layout-align-content (d/name layout-align-content)}])))
+           :penpot:layout-align-content (d/name layout-align-content)
+           :penpot:layout-grid-dir (d/name layout-grid-dir)}
+
+      [:> "penpot:grid-rows" #js {}
+       (for [[idx {:keys [type value]}] (d/enumerate layout-grid-rows)]
+         [:> "penpot:grid-track"
+          #js {:penpot:index idx
+               :penpot:type (d/name type)
+               :penpot:value value}])]
+
+      [:> "penpot:grid-columns" #js {}
+       (for [[idx {:keys [type value]}] (d/enumerate layout-grid-columns)]
+         [:> "penpot:grid-track"
+          #js {:penpot:index idx
+               :penpot:type (d/name type)
+               :penpot:value value}])]
+
+      [:> "penpot:grid-cells" #js {}
+       (for [[_ {:keys [id
+                        area-name
+                        row
+                        row-span
+                        column
+                        column-span
+                        position
+                        align-self
+                        justify-self
+                        shapes]}] layout-grid-cells]
+         [:> "penpot:grid-cell"
+          #js {:penpot:id id
+               :penpot:area-name area-name
+               :penpot:row row
+               :penpot:row-span row-span
+               :penpot:column column
+               :penpot:column-span column-span
+               :penpot:position (d/name position)
+               :penpot:align-self (d/name align-self)
+               :penpot:justify-self (d/name justify-self)
+               :penpot:shapes (str/join " " shapes)}])]])))
 
 (defn- export-layout-item-data
   [{:keys [layout-item-margin
@@ -371,7 +415,9 @@
            layout-item-min-h
            layout-item-max-w
            layout-item-min-w
-           layout-item-align-self]}]
+           layout-item-align-self
+           layout-item-absolute
+           layout-item-z-index]}]
 
   (when (or layout-item-margin
             layout-item-margin-type
@@ -381,7 +427,9 @@
             layout-item-min-h
             layout-item-max-w
             layout-item-min-w
-            layout-item-align-self)
+            layout-item-align-self
+            layout-item-absolute
+            layout-item-z-index)
     (mf/html
      [:> "penpot:layout-item"
       #js {:penpot:layout-item-margin-m1 (:m1 layout-item-margin)
@@ -395,7 +443,9 @@
            :penpot:layout-item-min-h layout-item-min-h
            :penpot:layout-item-max-w layout-item-max-w
            :penpot:layout-item-min-w layout-item-min-w
-           :penpot:layout-item-align-self (d/name layout-item-align-self)}])))
+           :penpot:layout-item-align-self (d/name layout-item-align-self)
+           :penpot:layout-item-absolute layout-item-absolute
+           :penpot:layout-item-z-index layout-item-z-index}])))
 
 
 (mf/defc export-data

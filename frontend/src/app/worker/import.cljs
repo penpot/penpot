@@ -229,7 +229,16 @@
         (d/update-when :shape-ref resolve)
 
         (cond-> (= type :text)
-          (d/update-when :content resolve-text-content context)))))
+          (d/update-when :content resolve-text-content context))
+
+        (cond-> (and (= type :frame) (= :grid (:layout data)))
+          (update
+           :layout-grid-cells
+           (fn [cells]
+             (->> (vals cells)
+                  (reduce (fn [cells {:keys [id shapes]}]
+                            (assoc-in cells [id :shapes] (mapv resolve shapes)))
+                          cells))))))))
 
 (defn- translate-frame
   [data type file]

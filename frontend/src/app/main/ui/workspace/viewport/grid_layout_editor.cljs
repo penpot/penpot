@@ -564,7 +564,7 @@
 
              (if (some? track-type)
                (do (st/emit! (dwsl/change-layout-track [(:id shape)] type index {:type track-type :value value}))
-                   (dom/set-data! target "default-value" (format-size {:type type :value value})))
+                   (dom/set-data! target "default-value" (format-size {:type track-type :value value})))
                (obj/set! target "value" (dom/get-attribute target "data-default-value"))))))
 
         handle-keydown-track-input
