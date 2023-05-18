@@ -36,7 +36,8 @@
             objects (wsh/lookup-page-objects state)
             page-id (:current-page-id state)]
 
-        (prn "handle-finish-drawing" shape)
+        (prn "handle-finish-drawing")
+        (app.common.pprint/pprint shape)
 
         (rx/concat
          (when (:initialized? shape)
@@ -65,13 +66,13 @@
 
              ;; Add & select the created shape to the workspace
              (rx/concat
-              (if (= :text (:type shape))
+              (if (cph/text-shape? shape)
                 (rx/of (dwu/start-undo-transaction (:id shape)))
                 (rx/empty))
 
               (rx/of (dwsh/add-shape shape {:no-select? (= tool :curve)}))
 
-              (if (= :frame (:type shape))
+              (if (cph/frame-shape? shape)
                 (->> (uw/ask! {:cmd :selection/query
                                :page-id page-id
                                :rect (:selrect shape)

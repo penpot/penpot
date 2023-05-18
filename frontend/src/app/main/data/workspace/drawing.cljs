@@ -26,11 +26,12 @@
 (defn select-for-drawing
   ([tool] (select-for-drawing tool nil))
   ([tool data]
+   (prn "select-for-drawing" tool data)
    (ptk/reify ::select-for-drawing
      ptk/UpdateEvent
      (update [_ state]
        (-> state
-           (update :workspace-drawing assoc :tool tool :object data)
+           (update :workspace-drawing assoc :tool tool) ;; :object data)
            ;; When changing drawing tool disable "scale text" mode
            ;; automatically, to help users that ignore how this
            ;; mode works.
@@ -52,7 +53,7 @@
                  (rx/take-until stopper))))
 
         ;; NOTE: comments are a special case and they manage they
-        ;; own interrupt cycle.q
+        ;; own interrupt cycle.
         (when (and (not= tool :comments)
                    (not= tool :path))
           (let [stopper (rx/filter (ptk/type? ::clear-drawing) stream)]
@@ -89,10 +90,16 @@
 (defn handle-drawing
   [type]
   (ptk/reify ::handle-drawing
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [data (cts/make-minimal-shape type)]
-        (update-in state [:workspace-drawing :object] merge data)))
+    ;; ptk/UpdateEvent
+    ;; (update [_ state]
+    ;;   (update-in state [:workspace-drawing :object]
+    ;;              (fn [object]
+    ;;                (let [res (-> (cts/make-minimal-shape type)
+    ;;                              (cts/setup-shape object))]
+    ;;                  ;; (prn "handle-drawing" "update" type)
+    ;;                  ;; (app.common.pprint/pprint res)
+    ;;                  res))))
+
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -102,10 +109,10 @@
          (path/handle-new-shape)
 
          :curve
-         (curve/handle-drawing-curve)
+         (curve/handle-drawing)
 
          ;; default
-         (box/handle-drawing-box))))))
+         (box/handle-drawing type))))))
 
 
 

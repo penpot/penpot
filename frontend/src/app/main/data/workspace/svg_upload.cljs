@@ -462,9 +462,14 @@
   (let [[shape new-children] (parse-svg-element frame-id svg-data svg-element unames)]
     (if (some? shape)
       (let [shape-id (:id shape)
-            shape    (dwsh/setup-shape-parents shape objects selected)
+            shape (-> shape
+                      (assoc :frame-id frame-id)
+                      (assoc :parent-id parent-id))
+
+
             children (conj children shape)
             unames   (conj unames (:name shape))]
+
         (reduce (partial create-svg-children objects selected frame-id shape-id svg-data)
                 [unames children]
                 (d/enumerate new-children)))
@@ -547,10 +552,11 @@
             (usvg/extract-defs))
 
         svg-data   (assoc svg-data :defs def-nodes)
-
-        root-shape (-> (create-svg-root frame-id parent-id svg-data)
-                       (dwsh/setup-shape-parents  objects selected))
+        root-shape (create-svg-root frame-id parent-id svg-data)
         root-id    (:id root-shape)
+
+        ;; _ (prn "prev" frame-id parent-id)
+        ;; _ (prn "post" (:frame-id root-shape) (:parent-id root-shape))
 
         ;; In penpot groups have the size of their children. To
         ;; respect the imported svg size and empty space let's create

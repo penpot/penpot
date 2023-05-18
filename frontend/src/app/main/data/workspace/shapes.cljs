@@ -85,10 +85,11 @@
 
         shape    (setup-shape-parents shape objects selected)
 
+        ;; _        (prn "add-shape")
+        ;; _        (app.common.pprint/pprint shape)
+
         ;; WTF: index again? revisit please
         index   (:index (meta shape))
-
-        _ (prn "KKKKK" index (:index shape))
 
         changes (-> changes
                     (pcb/with-objects objects)

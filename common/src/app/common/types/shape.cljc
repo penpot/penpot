@@ -137,10 +137,10 @@
    [:r2 {:optional true} ::sm/safe-number]
    [:r3 {:optional true} ::sm/safe-number]
    [:r4 {:optional true} ::sm/safe-number]
-   [:x {:optional true} ::sm/safe-number]
-   [:y {:optional true} ::sm/safe-number]
-   [:width {:optional true} ::sm/safe-number]
-   [:height {:optional true} ::sm/safe-number]
+   [:x {:optional true} [:maybe ::sm/safe-number]]
+   [:y {:optional true} [:maybe ::sm/safe-number]]
+   [:width {:optional true} [:maybe ::sm/safe-number]]
+   [:height {:optional true} [:maybe ::sm/safe-number]]
    [:opacity {:optional true} ::sm/safe-number]
    [:grids {:optional true}
     [:vector {:gen/max 2} ::ctg/grid]]
@@ -389,7 +389,7 @@
   "Initializes the selrect and points for a shape."
   [{:keys [transform selrect points] :as shape}]
   (let [selrect (or selrect (gsh/rect->selrect shape))
-        points  (or points (gsh/rect->points selrect))
+        points  (or points  (gsh/rect->points selrect))
         center  (gsh/center-points points)
 
         points  (cond-> points
@@ -399,24 +399,6 @@
         (assoc :selrect selrect)
         (assoc :points points))))
 
-;; (defn setup-path
-;;   [{:keys [content center transform transform-inverse] :as shape}]
-;;   (let [transform     (some-> center (gmt/transform-in transform))
-;;         transform-inv (some-> center (gmt/transform-in transform-inverse))
-
-;;         selrect       (gsh/content->selrect
-;;                        (cond-> content
-;;                          (some? transform-inv)
-;;                          (gsh/transform-content transform-inv)))
-
-;;         points        (cond-> (gsh/rect->points selrect)
-;;                         (some? transform)
-;;                         (gsh/transform-points transform))]
-
-;;     (-> shape
-;;         (dissoc :center)
-;;         (assoc :selrect selrect)
-;;         (assoc :points points))))
 
 (defn setup-path
   [{:keys [content selrect points] :as shape}]
@@ -444,4 +426,6 @@
            :path  (setup-path shape)
            :image (-> shape setup-rect setup-image)
            (setup-rect shape))
-         (gpr/setup-proportions)))))
+         (gpr/setup-proportions)
+         (assoc :transform (gmt/matrix))
+         (assoc :transform-inverse (gmt/matrix))))))
