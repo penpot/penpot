@@ -160,8 +160,8 @@
     [:vector {:gen/max 2} ::ctse/export]]
    [:strokes {:optional true}
     [:vector {:gen/max 2} ::stroke]]
-   [:transform {:optional true} ::gmt/matrix]
-   [:transform-inverse {:optional true} ::gmt/matrix]
+   [:transform {:optional true} [:maybe ::gmt/matrix]]
+   [:transform-inverse {:optional true} [:maybe ::gmt/matrix]]
    [:blend-mode {:optional true} [::sm/one-of blend-mode]]
    [:interactions {:optional true}
     [:vector {:gen/max 2} ::ctsi/interaction]]
