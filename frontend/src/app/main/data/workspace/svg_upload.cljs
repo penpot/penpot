@@ -186,57 +186,57 @@
 
 (defn create-raw-svg
   [name frame-id {:keys [x y width height offset-x offset-y]} {:keys [tag attrs] :as data}]
-  (-> (cts/make-minimal-shape :svg-raw)
-      (cts/setup-shape
-       {:name name
-        :frame-id frame-id
-        :width width
-        :height height
-        :x x
-        :y y
-        :hidden (= tag :defs)
-        :content (cond-> data
-                   (map? data) (update :attrs usvg/clean-attrs))
-        :svg-attrs attrs
-        :svg-viewbox {:width width
-                      :height height
-                      :x offset-x
-                      :y offset-y}})))
+  (cts/setup-shape
+   {:type :svg-raw
+    :name name
+    :frame-id frame-id
+    :width width
+    :height height
+    :x x
+    :y y
+    :hidden (= tag :defs)
+    :content (cond-> data
+               (map? data) (update :attrs usvg/clean-attrs))
+    :svg-attrs attrs
+    :svg-viewbox {:width width
+                  :height height
+                  :x offset-x
+                  :y offset-y}}))
 
 (defn create-svg-root
   [frame-id parent-id {:keys [name x y width height offset-x offset-y attrs]}]
-  (-> (cts/make-minimal-shape :group)
-      (cts/setup-shape
-       {:name name
-        :frame-id frame-id
-        :parent-id parent-id
-        :width width
-        :height height
-        :x (+ x offset-x)
-        :y (+ y offset-y)
-        :svg-attrs (-> attrs
-                       (dissoc :viewBox)
-                       (dissoc :xmlns)
-                       (d/without-keys usvg/inheritable-props))})))
+  (cts/setup-shape
+   {:type :group
+    :name name
+    :frame-id frame-id
+    :parent-id parent-id
+    :width width
+    :height height
+    :x (+ x offset-x)
+    :y (+ y offset-y)
+    :svg-attrs (-> attrs
+                   (dissoc :viewBox)
+                   (dissoc :xmlns)
+                   (d/without-keys usvg/inheritable-props))}))
 
 (defn create-group
   [name frame-id {:keys [x y width height offset-x offset-y] :as svg-data} {:keys [attrs]}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))]
-    (-> (cts/make-minimal-shape :group)
-        (cts/setup-shape
-         {:name name
-          :frame-id frame-id
-          :x (+ x offset-x)
-          :y (+ y offset-y)
-          :width width
-          :height height
-          :svg-transform svg-transform
-          :svg-attrs (d/without-keys attrs usvg/inheritable-props)
+    (cts/setup-shape
+     {:type :group
+      :name name
+      :frame-id frame-id
+      :x (+ x offset-x)
+      :y (+ y offset-y)
+      :width width
+      :height height
+      :svg-transform svg-transform
+      :svg-attrs (d/without-keys attrs usvg/inheritable-props)
 
-          :svg-viewbox {:width width
-                        :height height
-                        :x offset-x
-                        :y offset-y}}))))
+      :svg-viewbox {:width width
+                    :height height
+                    :x offset-x
+                    :y offset-y}})))
 
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (when (and (contains? attrs :d) (seq (:d attrs)))
@@ -252,9 +252,9 @@
 
           origin        (gpt/negate (gpt/point svg-data))]
 
-      (-> (cts/make-minimal-shape :path)
-          (cts/setup-shape
-           {:name name
+      (-> (cts/setup-shape
+           {:type :path
+            :name name
             :frame-id frame-id
             :content content
             :selrect selrect
@@ -336,13 +336,13 @@
 
         metadata (calculate-rect-metadata rect-data transform)]
 
-    (-> (cts/make-minimal-shape :circle)
-        (cts/setup-shape
-         (-> metadata
-             (assoc :name name)
-             (assoc :frame-id frame-id)
-             (assoc :svg-viewbox (select-keys rect [:x :y :width :height]))
-             (assoc :svg-attrs (dissoc attrs :cx :cy :r :rx :ry :transform)))))))
+    (cts/setup-shape
+     (-> metadata
+         (assoc :type :circle)
+         (assoc :name name)
+         (assoc :frame-id frame-id)
+         (assoc :svg-viewbox (select-keys rect [:x :y :width :height]))
+         (assoc :svg-attrs (dissoc attrs :cx :cy :r :rx :ry :transform))))))
 
 (defn create-image-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))

@@ -90,15 +90,14 @@
             flex-layout? (ctl/flex-layout? objects fid)
             drop-index   (when flex-layout? (gsl/get-drop-index fid objects initial))
 
-            shape        (-> (cts/make-minimal-shape type)
-                             (cts/setup-shape
-                              {:x (:x initial)
-                               :y (:y initial)
-                               :frame-id fid
-                               :parent-id fid
-                               :initialized? true
-                               :click-draw? true
-                               :hide-in-viewer (and (= type :frame) (not= fid uuid/zero))})
+            shape        (-> (cts/setup-shape {:type type
+                                               :x (:x initial)
+                                               :y (:y initial)
+                                               :frame-id fid
+                                               :parent-id fid
+                                               :initialized? true
+                                               :click-draw? true
+                                               :hide-in-viewer (and (= type :frame) (not= fid uuid/zero))})
                              (cond-> (some? drop-index)
                                (with-meta {:index drop-index})))
             ]

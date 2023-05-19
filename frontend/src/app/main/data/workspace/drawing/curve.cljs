@@ -93,9 +93,9 @@
     (watch [_ _ stream]
       (let [stoper (rx/filter stoper-event? stream)
             mouse  (rx/sample 10 ms/mouse-position)
-            shape  (-> (cts/make-minimal-shape :path)
-                       (cts/setup-shape {:initialized? true
-                                         :segments []}))]
+            shape  (cts/setup-shape {:type :path
+                                     :initialized? true
+                                     :segments []})]
         (rx/concat
          (rx/of #(update % :workspace-drawing assoc :object shape))
          (->> mouse

@@ -372,7 +372,7 @@
     :width 0.01
     :height 0.01}))
 
-(defn make-minimal-shape
+(defn- make-minimal-shape
   [type]
   (let [type  (if (= type :curve) :path type)
         attrs (d/seek #(= type (:type %)) minimal-shapes)]
@@ -396,23 +396,17 @@
 
 (defn setup-rect
   "Initializes the selrect and points for a shape."
-  [{:keys [transform selrect points] :as shape}]
+  [{:keys [selrect points] :as shape}]
   (let [selrect (or selrect (gsh/rect->selrect shape))
-        points  (or points  (gsh/rect->points selrect))
-        center  (gsh/center-points points)
-
-        points  (cond-> points
-                  (some? transform)
-                  (gsh/transform-points center transform))]
+        points  (or points  (gsh/rect->points selrect))]
     (-> shape
         (assoc :selrect selrect)
         (assoc :points points))))
 
-
 (defn setup-path
   [{:keys [content selrect points] :as shape}]
   (let [selrect (or selrect (gsh/content->selrect content))
-        points  (or points (gsh/rect->points selrect))]
+        points  (or points  (gsh/rect->points selrect))]
     (-> shape
         (assoc :selrect selrect)
         (assoc :points points))))
@@ -428,13 +422,17 @@
 (defn setup-shape
   "A function that initializes the geometric data of
   the shape. The props must have :x :y :width :height."
-  ([shape] (setup-shape shape {}))
-  ([shape props]
-   (let [shape (merge shape (d/without-nils props))]
-     (-> (case (:type shape)
-           :path  (setup-path shape)
-           :image (-> shape setup-rect setup-image)
-           (setup-rect shape))
-         (gpr/setup-proportions)
-         (assoc :transform (gmt/matrix))
-         (assoc :transform-inverse (gmt/matrix))))))
+  [{:keys [type] :as props}]
+  (let [shape (make-minimal-shape type)
+        shape (merge shape (d/without-nils props))
+        shape (map->Shape shape)
+        shape (case (:type shape)
+                :path  (setup-path shape)
+                :image (-> shape setup-rect setup-image)
+                (setup-rect shape))]
+    (-> shape
+        (cond-> (nil? (:transform shape))
+          (assoc :transform (gmt/matrix)))
+        (cond-> (nil? (:transform-inverse shape))
+          (assoc :transform-inverse (gmt/matrix)))
+        (gpr/setup-proportions))))

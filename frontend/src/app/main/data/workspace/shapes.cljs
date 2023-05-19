@@ -369,13 +369,13 @@
                         frame-id
                         (:parent-id base))
 
-            shape     (-> (cts/make-minimal-shape type)
-                          (cts/setup-shape
-                           (-> attrs
-                               (assoc :x x)
-                               (assoc :y y)
-                               (assoc :frame-id frame-id)
-                               (assoc :parent-id parent-id))))]
+            shape     (cts/setup-shape
+                       (-> attrs
+                           (assoc :type type)
+                           (assoc :x x)
+                           (assoc :y y)
+                           (assoc :frame-id frame-id)
+                           (assoc :parent-id parent-id)))]
 
         (rx/of (add-shape shape))))))
 
@@ -395,29 +395,29 @@
             frame-id    (dm/get-in objects [selected-id :frame-id])
             parent-id   (or parent-id (dm/get-in objects [selected-id :parent-id]))
 
-            attrs       {:x (:x srect)
+            attrs       {:type :frame
+                         :x (:x srect)
                          :y (:y srect)
                          :width (:width srect)
                          :height (:height srect)}
 
-            shape     (-> (cts/make-minimal-shape :frame)
-                          (cts/setup-shape
-                           (cond-> attrs
-                             (some? id)
-                             (assoc :id id)
+            shape     (cts/setup-shape
+                       (cond-> attrs
+                         (some? id)
+                         (assoc :id id)
 
-                             (some? frame-name)
-                             (assoc :name frame-name)
+                         (some? frame-name)
+                         (assoc :name frame-name)
 
-                             :always
-                             (assoc :frame-id frame-id
-                                    :parent-id parent-id)
+                         :always
+                         (assoc :frame-id frame-id
+                                :parent-id parent-id)
 
-                             :always
-                             (with-meta {:index new-index})
+                         :always
+                         (with-meta {:index new-index})
 
-                             (or (not= frame-id uuid/zero) without-fill?)
-                             (assoc :fills [] :hide-in-viewer true))))
+                         (or (not= frame-id uuid/zero) without-fill?)
+                         (assoc :fills [] :hide-in-viewer true)))
 
             [shape changes]
             (prepare-add-shape changes shape objects selected)

@@ -219,8 +219,7 @@
       (clear-names)))
 
 (defn add-artboard [file data]
-  (let [obj (-> (cts/make-minimal-shape :frame)
-                (cts/setup-shape data)
+  (let [obj (-> (cts/setup-shape (assoc data :type :frame))
                 (check-name file :frame))]
     (-> file
         (commit-shape obj)
@@ -241,8 +240,7 @@
 
 (defn add-group [file data]
   (let [frame-id (:current-frame-id file)
-        obj      (-> (cts/make-minimal-shape :group)
-                     (cts/setup-shape (assoc data :frame-id frame-id))
+        obj      (-> (cts/setup-shape (assoc data :type :group :frame-id frame-id))
                      (check-name file :group))]
     (-> file
         (commit-shape obj)
@@ -303,8 +301,8 @@
 
 (defn add-bool [file data]
   (let [frame-id (:current-frame-id file)
-        obj      (-> (cts/make-minimal-shape :bool)
-                     (cts/setup-shape (assoc data :frame-id frame-id))
+        ;; FIXME: missing? parent-id?
+        obj      (-> (cts/setup-shape (assoc data :type :bool :frame-id frame-id))
                      (check-name file :bool))]
     (-> file
         (commit-shape obj)
@@ -348,8 +346,7 @@
         (update :parent-stack pop))))
 
 (defn create-shape [file type data]
-  (let [obj (-> (cts/make-minimal-shape type)
-                (cts/setup-shape data)
+  (let [obj (-> (cts/setup-shape (assoc data :type type))
                 (check-name file :type))]
     (-> file
         (commit-shape obj)
@@ -554,6 +551,7 @@
          main-instance-id   (:main-instance-id data)
          main-instance-page (:main-instance-page data)
          attrs (-> data
+                   (assoc :type root-type)
                    (assoc :x (:x selrect))
                    (assoc :y (:y selrect))
                    (assoc :width (:width selrect))
@@ -565,8 +563,7 @@
                    (dissoc :main-instance-x)
                    (dissoc :main-instance-y))
 
-         obj   (-> (cts/make-minimal-shape root-type)
-                   (cts/setup-shape attrs)
+         obj   (-> (cts/setup-shape attrs)
                    (check-name file root-type))]
 
      (-> file
