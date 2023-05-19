@@ -435,9 +435,10 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [page-id         (:current-page-id state)
+            current-page    (dm/get-in state [:workspace-data :pages-index page-id])
             objects         (wsh/lookup-page-objects state page-id)
             library-data (wsh/get-file state library-id)
-            {:keys [changes shape]} (dwlh/prepare-restore-component library-data component-id it)
+            {:keys [changes shape]} (dwlh/prepare-restore-component library-data component-id current-page it)
             parent-id (:parent-id shape)
             objects (cond-> (assoc objects (:id shape) shape)
                       (not (nil? parent-id))

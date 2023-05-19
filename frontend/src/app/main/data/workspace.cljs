@@ -478,18 +478,40 @@
 (declare purge-page)
 (declare go-to-file)
 
+(defn- delete-page-components
+  [changes page]
+  (let [components-to-delete (->> page
+                                  :objects
+                                  vals
+                                  (filter #(true? (:main-instance? %)))
+                                  (map :component-id))
+
+        changes (reduce (fn [changes component-id]
+                          (pcb/delete-component changes component-id))
+                        changes
+                        components-to-delete)]
+    changes))
+
 (defn delete-page
   [id]
   (ptk/reify ::delete-page
     ptk/WatchEvent
     (watch [it state _]
-      (let [pages (get-in state [:workspace-data :pages])
+      (let [components-v2 (features/active-feature? state :components-v2)
+            file-id       (:current-file-id state)
+            file          (wsh/get-file state file-id)
+            pages (get-in state [:workspace-data :pages])
             index (d/index-of pages id)
             page (get-in state [:workspace-data :pages-index id])
             page (assoc page :index index)
 
-            changes (-> (pcb/empty-changes it)
-                        (pcb/del-page page))]
+            changes (cond-> (pcb/empty-changes it)
+                      components-v2
+                      (pcb/with-library-data file)
+                      components-v2
+                      (delete-page-components page)
+                      :always
+                      (pcb/del-page page))]
 
         (rx/of (dch/commit-changes changes)
                (when (= id (:current-page-id state))
