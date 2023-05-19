@@ -12,6 +12,7 @@
    [app.common.path.commands :as upc]
    [app.common.path.shapes-to-path :as upsp]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.drawing.common :as dwdc]
@@ -250,6 +251,7 @@
                    (fn [object]
                      (-> object
                          (assoc :frame-id frame-id)
+                         (assoc :parent-id frame-id)
                          (cond-> (some? drop-index)
                            (with-meta {:index drop-index})))))))))
 
@@ -279,8 +281,11 @@
   (ptk/reify ::handle-new-shape
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (st/get-path-id state)]
-        (assoc-in state [:workspace-local :edit-path id :snap-toggled] false)))
+      (let [id    (st/get-path-id state)
+            shape (cts/setup-shape {:type :path})]
+        (-> state
+            (assoc-in [:workspace-local :edit-path id :snap-toggled] false)
+            (update :workspace-drawing assoc :object shape))))
 
     ptk/WatchEvent
     (watch [_ state stream]
