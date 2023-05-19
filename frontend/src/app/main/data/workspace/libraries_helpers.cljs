@@ -213,9 +213,10 @@
                 children-ids)))))
 
 (defn prepare-restore-component
-  ([library-data component-id it]
+  ([library-data component-id current-page it]
    (let [component    (ctkl/get-deleted-component library-data component-id)
-         page         (ctf/get-component-page library-data component)]
+         page         (or (ctf/get-component-page library-data component)
+                          current-page)]
      (prepare-restore-component nil library-data component-id it page (gpt/point 0 0) nil nil)))
 
   ([changes library-data component-id it page delta old-id parent-id]
