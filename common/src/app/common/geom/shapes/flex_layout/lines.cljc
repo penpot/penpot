@@ -162,7 +162,6 @@
 
 (defn add-lines-positions
   [parent layout-bounds layout-lines]
-
   (let [row?          (ctl/row? parent)
         col?          (ctl/col? parent)
         auto-width?   (ctl/auto-width? parent)
@@ -409,6 +408,9 @@
   (let [layout-bounds (layout-bounds shape shape-bounds)
         reverse?      (ctl/reverse? shape)
         children      (cond->> children (not reverse?) reverse)
+
+        ;; Don't take into account absolute children
+        children      (->> children (remove (comp ctl/layout-absolute? second)))
 
         ;; Creates the layout lines information
         layout-lines

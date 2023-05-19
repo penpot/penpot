@@ -46,12 +46,16 @@
 (defn format-padding-margin-shorthand
   [values]
   ;; Values come in [p1 p2 p3 p4]
-  (let [[p1 p2 p3 p4] values]
+  (let [[p1 p2 p3 p4] values
+        p1 (format-number p1)
+        p2 (format-number p2)
+        p3 (format-number p3)
+        p4 (format-number p4)]
     (cond
-      (apply = values)
+      (= p1 p2 p3 p4)
       {:p1 p1}
 
-      (= 4 (count (set values)))
+      (= 4 (count (set [p1 p2 p3 p4])))
       {:p1 p1 :p2 p2 :p3 p3 :p4 p4}
 
       (and (= p1 p3) (= p2 p4))
@@ -59,7 +63,6 @@
 
       (and (not= p1 p3) (= p2 p4))
       {:p1 p1 :p2 p2 :p3 p3}
-      
       :else
       {:p1 p1 :p2 p2 :p3 p3 :p4 p4})))
 
@@ -71,7 +74,7 @@
       (= sizing :fill) "100%"
       (= sizing :auto) "auto"
       (number? value)  (format-pixels value)
-      :else value)))
+      :else            value)))
 
 (defn format-padding
   [padding-values type]
@@ -92,5 +95,5 @@
   (let [row-gap (:row-gap gap-values)
         column-gap (:column-gap gap-values)]
     (if (= row-gap column-gap)
-      (str/fmt "%spx" row-gap)
-      (str/fmt "%spx %spx" row-gap column-gap))))
+      (str/fmt "%spx" (format-number row-gap))
+      (str/fmt "%spx %spx" (format-number row-gap) (format-number column-gap)))))
