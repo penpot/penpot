@@ -67,7 +67,7 @@
      [:map {:title "AddObjChange"}
       [:type [:= :add-obj]]
       [:id ::sm/uuid]
-      [:obj [:map-of {:gen/max 10} :keyword :any]]
+      [:obj :map]
       [:page-id {:optional true} ::sm/uuid]
       [:component-id {:optional true} ::sm/uuid]
       [:frame-id {:optional true} ::sm/uuid]

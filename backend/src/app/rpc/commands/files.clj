@@ -274,7 +274,6 @@
                                 :modified-at modified-at
                                 :features features}
                                {:id id})
-                   (persist-pointers! conn id)
                    (-> file
                        (assoc :modified-at modified-at)
                        (assoc :features features)
@@ -394,8 +393,8 @@
   (dm/with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id file-id share-id)]
       (check-read-permissions! perms)
-      (-> (get-file-fragment conn file-id fragment-id)
-          (rph/with-http-cache long-cache-duration)))))
+      (let [fragment (get-file-fragment conn file-id fragment-id)]
+        (rph/with-http-cache fragment long-cache-duration)))))
 
 ;; --- COMMAND QUERY: get-project-files
 

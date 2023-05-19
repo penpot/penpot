@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.util.fressian
+(ns app.common.fressian
   (:require
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]

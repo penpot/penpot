@@ -36,10 +36,10 @@
   "
 
   (:require
+   [app.common.fressian :as fres]
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
-   [app.util.fressian :as fres]
    [app.util.time :as dt]
    [clojure.core :as c])
   (:import

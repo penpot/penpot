@@ -418,7 +418,7 @@
            asset-type   (dnd/get-data event "text/asset-type")]
        (cond
          (dnd/has-type? event "penpot/shape")
-         (let [shape (dnd/get-data event "penpot/shape")
+         (let [shape   (dnd/get-data event "penpot/shape")
                final-x (- (:x viewport-coord) (/ (:width shape) 2))
                final-y (- (:y viewport-coord) (/ (:height shape) 2))]
            (st/emit! (dw/add-shape (-> shape

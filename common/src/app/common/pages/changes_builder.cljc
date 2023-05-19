@@ -227,7 +227,7 @@
           :frame-id       (:frame-id obj)
           :index          (::index obj)
           :ignore-touched ignore-touched
-          :obj            (dissoc obj ::index :parent-id)}
+          :obj            (dissoc obj ::index)}
 
          del-change
          {:type :del-obj

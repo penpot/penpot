@@ -23,6 +23,8 @@
 
 ;; --- Select for Drawing
 
+
+;; FIXME: remove arity-2
 (defn select-for-drawing
   ([tool] (select-for-drawing tool nil))
   ([tool data]

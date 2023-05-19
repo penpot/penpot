@@ -83,6 +83,7 @@
   (let [id       (:id shape)
         name     (:name shape)
 
+        ;; FIXME: Don't understand the utility of this function
         shape    (setup-shape-parents shape objects selected)
 
         ;; _        (prn "add-shape")
@@ -116,10 +117,9 @@
              objects  (wsh/lookup-page-objects state page-id)
              selected (wsh/lookup-selected state)
 
-             changes  (pcb/empty-changes it page-id)
-
              [shape changes]
-             (prepare-add-shape changes shape objects selected)
+             (-> (pcb/empty-changes it page-id)
+                 (prepare-add-shape shape objects selected))
 
              undo-id (js/Symbol)]
 

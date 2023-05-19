@@ -166,9 +166,10 @@
 (defn make-component-instance
   "Generate a new instance of the component inside the given container.
 
-  Clone the shapes of the component, generating new names and ids, and linking
-  each new shape to the corresponding one of the component. Place the new instance
-  coordinates in the given position."
+  Clone the shapes of the component, generating new names and ids, and
+  linking each new shape to the corresponding one of the
+  component. Place the new instance coordinates in the given
+  position."
   ([container component library-data position components-v2]
    (make-component-instance container component library-data position components-v2 {}))
 
@@ -177,6 +178,7 @@
      :or {main-instance? false force-id nil force-frame-id nil}}]
    (let [component-page  (when components-v2
                            (ctpl/get-page library-data (:main-instance-page component)))
+
          component-shape (if components-v2
                            (-> (get-shape component-page (:main-instance-id component))
                                (assoc :parent-id nil)

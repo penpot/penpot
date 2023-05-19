@@ -177,6 +177,7 @@
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
     (db/xact-lock! conn id)
+
     (let [cfg    (assoc cfg ::db/conn conn)
           params (assoc params :profile-id profile-id)
           tpoint (dt/tpoint)]

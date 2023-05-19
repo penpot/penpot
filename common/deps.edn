@@ -2,9 +2,9 @@
  {org.clojure/clojure {:mvn/version "1.11.1"}
   org.clojure/data.json {:mvn/version "2.4.0"}
   org.clojure/tools.cli {:mvn/version "1.0.214"}
-  metosin/jsonista {:mvn/version "0.3.7"}
   org.clojure/clojurescript {:mvn/version "1.11.60"}
   org.clojure/test.check {:mvn/version "1.1.1"}
+  org.clojure/data.fressian {:mvn/version "1.0.0"}
 
   ;; Logging
   org.apache.logging.log4j/log4j-api {:mvn/version "2.19.0"}
@@ -18,6 +18,7 @@
   selmer/selmer {:mvn/version "1.12.55"}
   criterium/criterium {:mvn/version "0.4.6"}
 
+  metosin/jsonista {:mvn/version "0.3.7"}
   metosin/malli {:mvn/version "0.11.0"}
 
   expound/expound {:mvn/version "0.9.0"}
@@ -30,14 +31,14 @@
   {:git/tag "11.0-alpha13"
    :git/sha "f6cab38"
    :git/url "https://github.com/funcool/promesa.git"}
+  funcool/datoteka {:mvn/version "3.0.66"
+                    :exclusions [funcool/promesa]}
 
   lambdaisland/uri {:mvn/version "1.13.95"
                     :exclusions [org.clojure/data.json]}
 
   frankiesardo/linked {:mvn/version "1.3.0"}
 
-  funcool/datoteka {:mvn/version "3.0.66"
-                    :exclusions [funcool/promesa]}
   com.sun.mail/jakarta.mail {:mvn/version "2.0.1"}
   org.la4j/la4j {:mvn/version "0.6.0"}
 

@@ -317,10 +317,9 @@
   (not (mth/almost-zero? (:rotation frame 0))))
 
 (defn clone-object
-  "Gets a copy of the object and all its children, with new ids
-  and with the parent-children links correctly set. Admits functions
-  to make more transformations to the cloned objects and the
-  original ones.
+  "Gets a copy of the object and all its children, with new ids and with
+  the parent-children links correctly set. Admits functions to make
+  more transformations to the cloned objects and the original ones.
 
   Returns the cloned object, the list of all new objects (including
   the cloned one), and possibly a list of original objects modified.
@@ -343,7 +342,7 @@
 
        (if (empty? child-ids)
          (let [new-object (cond-> object
-                            true
+                            :always
                             (assoc :id new-id
                                    :parent-id parent-id)
 

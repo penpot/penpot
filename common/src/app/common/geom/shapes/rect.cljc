@@ -6,6 +6,7 @@
 
 (ns app.common.geom.shapes.rect
   (:require
+   #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
@@ -13,6 +14,13 @@
    [app.common.math :as mth]))
 
 (defrecord Rect [x y width height])
+
+#?(:clj
+   (fres/add-handlers!
+    {:name "penpot/geom/rect"
+     :class Rect
+     :wfn fres/write-map-like
+     :rfn (comp map->Rect fres/read-map-like)}))
 
 (t/add-handlers!
  {:id "rect"

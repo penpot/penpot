@@ -95,6 +95,7 @@
                               {:x (:x initial)
                                :y (:y initial)
                                :frame-id fid
+                               :parent-id fid
                                :initialized? true
                                :click-draw? true
                                :hide-in-viewer (and (= type :frame) (not= fid uuid/zero))})

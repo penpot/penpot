@@ -6,6 +6,7 @@
 
 (ns app.common.types.shape
   (:require
+   #?(:clj [app.common.fressian :as fres])
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -31,11 +32,22 @@
 
 (defrecord Shape [id name x y width height selrect points transform transform-inverse parent-id frame-id])
 
+(defn shape-instance?
+  [o]
+  (instance? Shape o))
+
 (t/add-handlers!
  {:id "shape"
   :class Shape
   :wfn #(into {} %)
   :rfn map->Shape})
+
+#?(:clj
+   (fres/add-handlers!
+    {:name "penpot/shape"
+     :class Shape
+     :wfn fres/write-map-like
+     :rfn (comp map->Shape fres/read-map-like)}))
 
 (def stroke-caps-line #{:round :square})
 (def stroke-caps-marker #{:line-arrow :triangle-arrow :square-marker :circle-marker :diamond-marker})

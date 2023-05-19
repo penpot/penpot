@@ -72,6 +72,7 @@
    :pages []
    :pages-index {}})
 
+;; FIXME: strange impl
 (defn make-file-data
   ([file-id]
    (make-file-data file-id (uuid/next)))
@@ -79,9 +80,8 @@
   ([file-id page-id]
    (let [page (when (some? page-id)
                 (ctp/make-empty-page page-id "Page 1"))]
-     (cond-> (-> empty-file-data
-                 (assoc :id file-id))
 
+     (cond-> (assoc empty-file-data :id file-id)
        (some? page-id)
        (ctpl/add-page page)
 

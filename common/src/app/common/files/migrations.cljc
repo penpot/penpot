@@ -463,16 +463,14 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-;; (defmethod migrate 22
-;;   [data]
-;;   (letfn [(update-object [object]
-;;             (prn "KKKK" object)
-;;             (-> object
-;;                 (d/update-when :selrect cts/map->Rect)
-;;                 (cts/map->Shape)))
-
-;;           (update-container [container]
-;;             (d/update-when container :objects update-vals update-object))]
-;;     (-> data
-;;         (update :pages-index update-vals update-container)
-;;         (update :components update-vals update-container))))
+(defmethod migrate 21
+  [data]
+  (letfn [(update-object [object]
+            (-> object
+                (d/update-when :selrect gsh/map->Rect)
+                (cts/map->Shape)))
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
