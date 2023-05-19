@@ -185,6 +185,7 @@
                                (assoc :frame-id uuid/zero))
                            (get-shape component (:id component)))
 
+
          orig-pos        (gpt/point (:x component-shape) (:y component-shape))
          delta           (gpt/subtract position orig-pos)
 

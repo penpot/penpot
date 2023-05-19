@@ -217,10 +217,10 @@
 
     ]])
 
-(def change?
+(def valid-change?
   (sm/pred-fn ::change))
 
-(def changes?
+(def valid-changes?
   (sm/pred-fn [:sequential ::change]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -238,6 +238,9 @@
 
 ;; Changes Processing Impl
 
+(def valid-shape?
+  (sm/pred-fn ::cts/shape))
+
 (defn validate-shapes!
   [data-old data-new items]
   (letfn [(validate-shape! [[page-id id]]
@@ -248,7 +251,8 @@
               (when (and (some? shape-old)
                          (some? shape-new)
                          (not= shape-old shape-new))
-                (dm/verify! (cts/shape? shape-new)))))]
+                (dm/verify! (and (cts/shape? shape-new)
+                                 (valid-shape? shape-new))))))]
 
     (->> (into #{} (map :page-id) items)
          (mapcat (fn [page-id]
@@ -273,7 +277,7 @@
    ;; When verify? false we spec the schema validation. Currently used to make just
    ;; 1 validation even if the changes are applied twice
    (when verify?
-     (dm/verify! (changes? items)))
+     (dm/verify! (valid-changes? items)))
 
    (let [result (reduce #(or (process-change %1 %2) %1) data items)]
      ;; Validate result shapes (only on the backend)

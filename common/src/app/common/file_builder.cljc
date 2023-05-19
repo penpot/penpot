@@ -52,13 +52,12 @@
                          :frame-id (:current-frame-id file)))]
 
      (when fail-on-spec?
-       (dm/verify! (ch/change? change)))
+       (dm/verify! (ch/valid-change? change)))
 
-     (let [valid? (ch/change? change)]
+     (let [valid? (ch/valid-change? change)]
        (when-not valid?
          (pp/pprint change {:level 100})
          (sm/pretty-explain ::ch/change change))
-
 
        (cond-> file
          valid?

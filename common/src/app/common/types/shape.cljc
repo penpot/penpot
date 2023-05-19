@@ -32,7 +32,7 @@
 
 (defrecord Shape [id name x y width height selrect points transform transform-inverse parent-id frame-id])
 
-(defn shape-instance?
+(defn shape?
   [o]
   (instance? Shape o))
 
@@ -172,7 +172,7 @@
     [::sm/one-of #{:auto-width :auto-height :fixed}]]
    ])
 
-(def shape-attrs?
+(def valid-shape-attrs?
   (sm/pred-fn ::shape-attrs))
 
 (sm/def! ::group-attrs
@@ -297,9 +297,6 @@
      ::shape-attrs
      ::text-attrs]]
    ])
-
-(def shape?
-  (sm/pred-fn ::shape))
 
 ;; --- Initialization
 

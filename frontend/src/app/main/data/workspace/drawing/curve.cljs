@@ -61,6 +61,7 @@
                    (fn [object]
                      (-> object
                          (assoc :frame-id frame-id)
+                         (assoc :parent-id frame-id)
                          (cond-> (some? drop-index)
                            (with-meta {:index drop-index})))))))))
 

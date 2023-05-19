@@ -474,3 +474,20 @@
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
+
+(defmethod migrate 22
+  [data]
+  (letfn [(update-object [object]
+            (cond-> object
+              (nil? (:transform object))
+              (assoc :transform (gmt/matrix))
+
+              (nil? (:transform-inverse object))
+              (assoc :transform-inverse (gmt/matrix))))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))

@@ -543,7 +543,7 @@
 (defn ext-library-changed
   [file-id modified-at revn changes]
   (dm/assert! (uuid? file-id))
-  (dm/assert! (ch/changes? changes))
+  (dm/assert! (ch/valid-changes? changes))
   (ptk/reify ::ext-library-changed
     ptk/UpdateEvent
     (update [_ state]

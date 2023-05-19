@@ -49,45 +49,44 @@
 ;;             {:keys [frame-id parent-id]} shape]
 ;;         [frame-id parent-id (inc index)]))))
 
-(defn setup-shape-parents
-  "Uses the current mouse position and currently selected shapes for
-  identify the final destination (frame & parent) of the shape."
-  [shape objects selected]
-  (let [position @ms/mouse-position
-        selected (into #{}
-                       (comp (map (d/getf objects))
-                             (remove cph/frame-shape?))
-                       selected)
+;; (defn setup-shape-parents
+;;   "Uses the current mouse position and currently selected shapes for
+;;   identify the final destination (frame & parent) of the shape."
+;;   [shape objects selected]
+;;   (let [position @ms/mouse-position
+;;         selected (into #{}
+;;                        (comp (map (d/getf objects))
+;;                              (remove cph/frame-shape?))
+;;                        selected)
 
-        frame-id (or (:frame-id shape)
-                     (ctst/top-nested-frame objects position))
+;;         frame-id (or (:frame-id shape)
+;;                      (ctst/top-nested-frame objects position))
 
-        base     (when (seq selected)
-                   (cph/get-base-shape objects selected))]
+;;         base     (when (seq selected)
+;;                    (cph/get-base-shape objects selected))]
 
-    ;; When no shapes has been selected or we're over a different frame
-    ;; we add it as the latest shape of that frame
-    (if (or (not base) (not=  (:frame-id base) frame-id))
-      (-> shape
-          (assoc :frame-id frame-id)
-          (assoc :parent-id frame-id))
+;;     ;; When no shapes has been selected or we're over a different frame
+;;     ;; we add it as the latest shape of that frame
+;;     (if (or (not base) (not=  (:frame-id base) frame-id))
+;;       (-> shape
+;;           (assoc :frame-id frame-id)
+;;           (assoc :parent-id frame-id))
 
-      (let [index (cph/get-position-on-parent objects (:id base))]
-        (-> shape
-            (assoc :frame-id (:frame-id base))
-            (assoc :parent-id (:parent-id base))
-            (assoc :index (inc index)))))))
+;;       (let [index (cph/get-position-on-parent objects (:id base))]
+;;         (-> shape
+;;             (assoc :frame-id (:frame-id base))
+;;             (assoc :parent-id (:parent-id base))
+;;             (assoc :index (inc index)))))))
 
 (defn prepare-add-shape
   [changes shape objects selected]
   (let [id       (:id shape)
         name     (:name shape)
 
-        ;; FIXME: Don't understand the utility of this function
-        shape    (setup-shape-parents shape objects selected)
+        ;; FIXME: validate
 
-        ;; _        (prn "add-shape")
-        ;; _        (app.common.pprint/pprint shape)
+        _        (prn "add-shape")
+        _        (app.common.pprint/pprint shape)
 
         ;; WTF: index again? revisit please
         index   (:index (meta shape))
@@ -109,7 +108,7 @@
   ([shape]
    (add-shape shape {}))
   ([shape {:keys [no-select? no-update-layout?]}]
-   (dm/assert! (cts/shape-attrs? shape))
+   (dm/assert! (cts/valid-shape-attrs? shape))
    (ptk/reify ::add-shape
      ptk/WatchEvent
      (watch [it state _]
@@ -478,7 +477,7 @@
 
   (dm/assert!
    "expected valid shape-attrs value for `flags`"
-   (cts/shape-attrs? flags))
+   (cts/valid-shape-attrs? flags))
 
   (ptk/reify ::update-shape-flags
     ptk/WatchEvent
