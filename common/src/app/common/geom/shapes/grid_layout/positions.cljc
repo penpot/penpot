@@ -96,18 +96,21 @@
 
         fill-height
         (when (ctl/fill-height? child)
-          (calc-fill-height-data parent transform transform-inverse child child-origin child-height cell-bounds))]
+          (calc-fill-height-data parent transform transform-inverse child child-origin child-height cell-bounds))
 
-    (-> (ctm/empty)
+        child-width (or (:width fill-width) child-width)
+        child-height (or (:height fill-height) child-height)]
+
+    [child-width
+     child-height
+     (-> (ctm/empty)
          (cond-> fill-width (ctm/add-modifiers (:modifiers fill-width)))
-         (cond-> fill-height (ctm/add-modifiers (:modifiers fill-height))))))
+         (cond-> fill-height (ctm/add-modifiers (:modifiers fill-height))))]))
 
-(defn child-modifiers
-  [parent parent-bounds child child-bounds layout-data cell-data]
-
+(defn child-position-delta
+  [parent child-bounds child-width child-height layout-data cell-data]
   (let [cell-bounds (cell-bounds layout-data cell-data)
-
-        fill-modifiers (fill-modifiers parent parent-bounds child child-bounds layout-data cell-data)
+        child-origin (gpo/origin child-bounds)
 
         align (:layout-align-items parent)
         justify (:layout-justify-items parent)
@@ -120,39 +123,46 @@
         align (or align-self align)
         justify (or justify-self justify)
 
-        position-delta (gpt/point)
+        origin-h (gpo/project-point cell-bounds :h child-origin)
+        origin-v (gpo/project-point cell-bounds :v child-origin)
+        hv     (partial gpo/start-hv cell-bounds)
+        vv     (partial gpo/start-vv cell-bounds)
 
         ;; Adjust alignment/justify
         [from-h to-h]
         (case justify
           :end
-          [(gpo/project-point cell-bounds :h (nth child-bounds 1))
+          [(gpt/add origin-h (hv child-width))
            (nth cell-bounds 1)]
 
           :center
-          [(gpo/project-point cell-bounds :h (gpo/center child-bounds))
+          [(gpt/add origin-h (hv (/ child-width 2)))
            (gpo/project-point cell-bounds :h (gpo/center cell-bounds))]
 
-          [(gpo/project-point cell-bounds :h (first child-bounds))
-           (first cell-bounds)])
+          [origin-h (first cell-bounds)])
 
         [from-v to-v]
         (case align
           :end
-          [(gpo/project-point cell-bounds :v (nth child-bounds 3))
+          [(gpt/add origin-v (vv child-height))
            (nth cell-bounds 3)]
 
           :center
-          [(gpo/project-point cell-bounds :v (gpo/center child-bounds))
+          [(gpt/add origin-v (vv (/ child-height 2)))
            (gpo/project-point cell-bounds :v (gpo/center cell-bounds))]
 
-          [(gpo/project-point cell-bounds :v (first child-bounds))
-           (first cell-bounds)])
+          [origin-v (first cell-bounds)])]
+    (-> (gpt/point)
+        (gpt/add (gpt/to-vec from-h to-h))
+        (gpt/add (gpt/to-vec from-v to-v)))))
 
-        position-delta
-        (-> position-delta
-            (gpt/add (gpt/to-vec from-h to-h))
-            (gpt/add (gpt/to-vec from-v to-v)))]
+(defn child-modifiers
+  [parent parent-bounds child child-bounds layout-data cell-data]
+
+  (let [[child-width child-height fill-modifiers]
+        (fill-modifiers parent parent-bounds child child-bounds layout-data cell-data)
+
+        position-delta (child-position-delta parent child-bounds child-width child-height layout-data cell-data)]
 
     (cond-> (ctm/empty)
       (not (ctl/layout-absolute? child))
