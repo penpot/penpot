@@ -326,88 +326,88 @@
   main instances for all components there and remove shapes from library components.
   Mark the file with the :components-v2 option."
   [file-data]
-  (let [components (ctkl/components-seq file-data)]
-    (if (or (empty? components)
-            (dm/get-in file-data [:options :components-v2]))
-      (assoc-in file-data [:options :components-v2] true)
-      (let [grid-gap 50
+  (let [migrated? (dm/get-in file-data [:options :components-v2])]
+    (if migrated?
+      file-data
+      (let [components (ctkl/components-seq file-data)]
+        (if (empty? components)
+          (assoc-in file-data [:options :components-v2] true)
+          (let [grid-gap 50
+                [file-data page-id start-pos]
+                (get-or-add-library-page file-data grid-gap)
 
-            [file-data page-id start-pos]
-            (get-or-add-library-page file-data grid-gap)
+                add-main-instance
+                (fn [file-data component position]
+                  (let [page (ctpl/get-page file-data page-id)
 
-            add-main-instance
-            (fn [file-data component position]
-              (let [page (ctpl/get-page file-data page-id)
+                        [new-shape new-shapes]
+                        (ctn/make-component-instance page
+                                                     component
+                                                     file-data
+                                                     position
+                                                     false
+                                                     {:main-instance? true
+                                                      :force-frame-id uuid/zero})
 
-                    [new-shape new-shapes]
-                    (ctn/make-component-instance page
-                                                 component
-                                                 file-data
-                                                 position
-                                                 false
-                                                 {:main-instance? true
-                                                  :force-frame-id uuid/zero})
+                        add-shapes
+                        (fn [page]
+                          (reduce (fn [page shape]
+                                    (ctst/add-shape (:id shape)
+                                                    shape
+                                                    page
+                                                    (:frame-id shape)
+                                                    (:parent-id shape)
+                                                    nil     ; <- As shapes are ordered, we can safely add each
+                                                    true))  ;    one at the end of the parent's children list.
+                                  page
+                                  new-shapes))
 
-                    add-shapes
-                    (fn [page]
-                      (reduce (fn [page shape]
-                                (ctst/add-shape (:id shape)
-                                                shape
-                                                page
-                                                (:frame-id shape)
-                                                (:parent-id shape)
-                                                nil     ; <- As shapes are ordered, we can safely add each
-                                                true))  ;    one at the end of the parent's children list.
-                              page
-                              new-shapes))
+                        update-component
+                        (fn [component]
+                          (-> component
+                              (assoc :main-instance-id (:id new-shape)
+                                     :main-instance-page page-id)
+                              (dissoc :objects)))]
 
-                    update-component
-                    (fn [component]
-                      (-> component
-                          (assoc :main-instance-id (:id new-shape)
-                                 :main-instance-page page-id)
-                          (dissoc :objects)))]
+                    (-> file-data
+                        (ctpl/update-page page-id add-shapes)
+                        (ctkl/update-component (:id component) update-component))))
 
-                (-> file-data
-                    (ctpl/update-page page-id add-shapes)
-                    (ctkl/update-component (:id component) update-component))))
+                add-instance-grid
+                (fn [file-data components]
+                  (let [position-seq (ctst/generate-shape-grid
+                                      (map (partial get-component-root file-data) components)
+                                      start-pos
+                                      grid-gap)]
+                    (loop [file-data      file-data
+                           components-seq (seq components)
+                           position-seq   position-seq]
+                      (let [component (first components-seq)
+                            position  (first position-seq)]
+                        (if (nil? component)
+                          file-data
+                          (recur (add-main-instance file-data component position)
+                                 (rest components-seq)
+                                 (rest position-seq)))))))
 
-            add-instance-grid
-            (fn [file-data components]
-              (let [position-seq (ctst/generate-shape-grid
-                                  (map (partial get-component-root file-data) components)
-                                  start-pos
-                                  grid-gap)]
-                (loop [file-data      file-data
-                       components-seq (seq components)
-                       position-seq   position-seq]
-                  (let [component (first components-seq)
-                        position  (first position-seq)]
-                    (if (nil? component)
-                      file-data
-                      (recur (add-main-instance file-data component position)
-                             (rest components-seq)
-                             (rest position-seq)))))))
+                root-to-board
+                (fn [shape]
+                  (cond-> shape
+                    (and (ctk/instance-root? shape)
+                         (cph/frame-shape? shape))
+                    (assoc :fills []
+                           :hide-in-viewer true
+                           :rx 0
+                           :ry 0)))
 
-            root-to-board
-            (fn [shape]
-              (cond-> shape
-                (and (ctk/instance-head? shape)
-                     (not= (:type shape) :frame))
-                (assoc :type :frame
-                       :fills []
-                       :hide-in-viewer true
-                       :rx 0
-                       :ry 0)))
+                roots-to-board
+                (fn [page]
+                  (update page :objects update-vals root-to-board))]
 
-            roots-to-board
-            (fn [page]
-              (update page :objects update-vals root-to-board))]
-
-        (-> file-data
-            (add-instance-grid (sort-by :name components))
-            (update :pages-index update-vals roots-to-board)
-            (assoc-in [:options :components-v2] true))))))
+            (-> file-data
+                (add-instance-grid (sort-by :name components))
+                (update :pages-index update-vals roots-to-board)
+                (assoc-in [:options :components-v2] true))))))))
 
 (defn- absorb-components
   [file-data used-components library-data]
