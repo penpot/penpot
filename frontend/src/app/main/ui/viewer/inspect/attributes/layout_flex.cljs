@@ -107,13 +107,13 @@
       [:& copy-button {:data (copy-data shape :layout-align-content)}]])
    
    [:div.attributes-unit-row
-    [:div.attributes-label "Gap"]
-    (if (=  (:row-gap (:layout-gap shape))  (:column-gap (:layout-gap shape)))
+    [:div.attributes-label "Gaps"]
+    (if (= (:row-gap (:layout-gap shape)) (:column-gap (:layout-gap shape)))
       [:div.attributes-value
-       [:span (str/capital (d/name (:row-gap (:layout-gap shape)))) "px"]]
+       [:span (-> shape :layout-gap :row-gap fm/format-pixels)]]
       [:div.attributes-value
-       [:span.items (:row-gap (:layout-gap shape)) "px"]
-       [:span (:column-gap (:layout-gap shape)) "px"]])
+       [:span.items (-> shape :layout-gap :row-gap fm/format-pixels)]
+       [:span (-> shape :layout-gap :column-gap fm/format-pixels)]])
     [:& copy-button {:data (copy-data shape :layout-gap)}]]
 
    [:div.attributes-unit-row
