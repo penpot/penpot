@@ -8,8 +8,10 @@
   (:refer-clojure :exclude [assert])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.files.features :as ffeat]
+   [app.common.fressian :as fres]
    [app.common.logging :as l]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
@@ -28,7 +30,6 @@
    [app.storage.tmp :as tmp]
    [app.tasks.file-gc]
    [app.util.blob :as blob]
-   [app.util.fressian :as fres]
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -45,8 +46,7 @@
    java.io.DataInputStream
    java.io.DataOutputStream
    java.io.InputStream
-   java.io.OutputStream
-   java.lang.AutoCloseable))
+   java.io.OutputStream))
 
 (set! *warn-on-reflection* true)
 
@@ -296,7 +296,7 @@
 
 (defn- retrieve-file
   [pool file-id]
-  (with-open [^AutoCloseable conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (binding [pmap/*load-fn* (partial files/load-pointer conn file-id)]
       (some-> (db/get* conn :file {:id file-id})
               (files/decode-row)
@@ -307,7 +307,7 @@
 
 (defn- retrieve-file-media
   [pool {:keys [data id] :as file}]
-  (with-open [^AutoCloseable conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (let [ids (app.tasks.file-gc/collect-used-media data)
           ids (db/create-array conn "uuid" ids)]
 
@@ -341,7 +341,7 @@
 
 (defn- retrieve-libraries
   [pool ids]
-  (with-open [^AutoCloseable conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (let [ids (db/create-array conn "uuid" ids)]
       (map :id (db/exec! pool [sql:file-libraries ids])))))
 
@@ -351,7 +351,7 @@
 
 (defn- retrieve-library-relations
   [pool ids]
-  (with-open [^AutoCloseable conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (db/exec! conn [sql:file-library-rels (db/create-array conn "uuid" ids)])))
 
 (defn- create-or-update-file
@@ -616,7 +616,7 @@
     (-> data
         (update :pages-index update-vals #(update % :objects omap-wrap))
         (update :pages-index update-vals pmap-wrap)
-        (update :components update-vals #(update % :objects omap-wrap))
+        (update :components update-vals #(d/update-when % :objects omap-wrap))
         (update :components pmap-wrap))))
 
 (defmethod read-section :v1/files
@@ -834,7 +834,7 @@
         cs (volatile! nil)]
     (try
       (l/info :hint "start exportation" :export-id id)
-      (with-open [^AutoCloseable output (io/output-stream output)]
+      (dm/with-open [output (io/output-stream output)]
         (binding [*position* (atom 0)]
           (write-export! (assoc cfg ::output output))))
 
@@ -857,7 +857,7 @@
 (defn export-to-tmpfile!
   [cfg]
   (let [path (tmp/tempfile :prefix "penpot.export.")]
-    (with-open [^AutoCloseable output (io/output-stream path)]
+    (dm/with-open [output (io/output-stream path)]
       (export! cfg output)
       path)))
 
@@ -869,7 +869,7 @@
     (l/info :hint "import: started" :import-id id)
     (try
       (binding [*position* (atom 0)]
-        (with-open [^AutoCloseable input (io/input-stream input)]
+        (dm/with-open [input (io/input-stream input)]
           (read-import! (assoc cfg ::input input))))
 
       (catch Throwable cause
