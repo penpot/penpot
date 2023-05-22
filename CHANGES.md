@@ -5,6 +5,7 @@
 ### :bug: Bugs fixed
 
 - Fix zooming while color picker breaks UI [GH #3214](https://github.com/penpot/penpot/issues/3214)
+- Fix problem with layout not reflowing on shape deletion [Taiga #5289](https://tree.taiga.io/project/penpot/issue/5289)
 
 ## 1.18.3
 
