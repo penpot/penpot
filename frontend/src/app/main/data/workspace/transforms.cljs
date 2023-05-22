@@ -376,6 +376,7 @@
                (some? id)
                (d/toggle-selection id shift?))]
 
+         ;; Take the first mouse position and start a move or a duplicate
          (when (or (d/not-empty? selected) (some? id))
            (->> ms/mouse-position
                 (rx/map #(gpt/to-vec initial %))

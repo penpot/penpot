@@ -172,10 +172,6 @@
   [{:keys [redo-changes undo-changes
            origin save-undo? file-id undo-group tags stack-undo?]
     :or {save-undo? true stack-undo? false tags #{} undo-group (uuid/next)}}]
-  (log/debug :msg "commit-changes"
-             :js/undo-group (str undo-group)
-             :js/redo-changes redo-changes
-             :js/undo-changes undo-changes)
   (let [error   (volatile! nil)
         page-id (:current-page-id @st/state)
         frames  (changed-frames redo-changes (wsh/lookup-page-objects @st/state))]
@@ -195,6 +191,10 @@
 
       ptk/UpdateEvent
       (update [_ state]
+        (log/info :msg "commit-changes"
+                  :js/undo-group (str undo-group)
+                  :js/redo-changes redo-changes
+                  :js/undo-changes undo-changes)
         (let [current-file-id (get state :current-file-id)
               file-id         (or file-id current-file-id)
               path            (if (= file-id current-file-id)

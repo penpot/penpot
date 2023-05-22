@@ -890,7 +890,8 @@
                                                changes)]
                 (when (and (d/not-empty? components-changed) save-undo?)
                   (log/info :msg "DETECTED COMPONENTS CHANGED"
-                            :ids (map str components-changed))
+                            :ids (map str components-changed)
+                            :undo-group undo-group)
                   (run! st/emit!
                         (map #(update-component-sync % (:id old-data) undo-group)
                              components-changed)))))]
