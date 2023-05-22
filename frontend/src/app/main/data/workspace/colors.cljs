@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.common.schema :as sm]
    [app.main.broadcast :as mbc]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
@@ -248,22 +249,27 @@
   (ptk/reify ::change-shadow
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes ids (fn [shape]
-                                      (let [;; If we try to set a gradient to a shadow (for example using the color selection from multiple shapes) let's use the first stop color
-                                            attrs (cond-> attrs
-                                                    (:gradient attrs) (get-in [:gradient :stops 0]))
-                                            new-attrs (merge (get-in shape [:shadow index :color]) attrs)]
-                                        (assoc-in shape [:shadow index :color] new-attrs))))))))
+      (rx/of (dch/update-shapes
+              ids
+              (fn [shape]
+                (let [;; If we try to set a gradient to a shadow (for
+                      ;; example using the color selection from
+                      ;; multiple shapes) let's use the first stop
+                      ;; color
+                      attrs     (cond-> attrs
+                                  (:gradient attrs) (get-in [:gradient :stops 0]))
+                      new-attrs (merge (get-in shape [:shadow index :color]) attrs)]
+                  (assoc-in shape [:shadow index :color] new-attrs))))))))
 
 (defn add-shadow
   [ids shadow]
+  (dm/assert! (sm/coll-of-uuid? ids))
   (ptk/reify ::add-shadow
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [add (fn [shape attrs] (assoc shape :shadow (into [attrs] (:shadow shape))))]
-        (rx/of (dch/update-shapes
-                ids
-                #(add % shadow)))))))
+      (let [add-shadow (fn [shape]
+                         (update shape :shadow #(into [shadow] %)))]
+        (rx/of (dch/update-shapes ids add-shadow))))))
 
 (defn add-stroke
   [ids stroke]
@@ -304,9 +310,9 @@
   (ptk/reify ::reorder-shadow
     ptk/WatchEvent
     (watch [_ _ _]
-           (rx/of (dch/update-shapes
-                   ids
-                   #(swap-attrs % :shadow index new-index))))))
+      (rx/of (dch/update-shapes
+              ids
+              #(swap-attrs % :shadow index new-index))))))
 
 (defn reorder-strokes
   [ids index new-index]
