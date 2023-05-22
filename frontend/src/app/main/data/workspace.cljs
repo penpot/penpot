@@ -14,6 +14,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpp]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
@@ -1806,13 +1807,19 @@
 
                   changes  (-> (dws/prepare-duplicate-changes all-objects page selected delta it libraries library-data file-id)
                                (pcb/amend-changes (partial process-rchange media-idx))
-                               (pcb/amend-changes (partial change-add-obj-index paste-objects selected index))
-                               (cond-> (ctl/grid-layout? all-objects parent-id)
-                                 (pcb/update-shapes [parent-id] ctl/assign-cells)))
+                               (pcb/amend-changes (partial change-add-obj-index paste-objects selected index)))
 
                   ;; Adds a resize-parents operation so the groups are updated. We add all the new objects
                   new-objects-ids (->> changes :redo-changes (filter #(= (:type %) :add-obj)) (mapv :id))
-                  changes (pcb/resize-parents changes new-objects-ids)
+
+                  drop-cell
+                  (when (ctl/grid-layout? all-objects parent-id)
+                    (gslg/get-drop-cell frame-id all-objects mouse-pos))
+
+                  changes
+                  (-> (pcb/resize-parents changes new-objects-ids)
+                      (cond-> (some? drop-cell)
+                        (pcb/update-shapes [parent-id] #(ctl/add-children-to-cell % (into (d/ordered-set) new-objects-ids) all-objects drop-cell))))
 
                   selected  (->> changes
                                  :redo-changes

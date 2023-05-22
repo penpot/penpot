@@ -994,3 +994,18 @@
   (-> parent
       (assoc-in [:layout-grid-cells id-from :shapes] (dm/get-in parent [:layout-grid-cells id-to :shapes]))
       (assoc-in [:layout-grid-cells id-to :shapes] (dm/get-in parent [:layout-grid-cells id-from :shapes]))))
+
+(defn add-children-to-cell
+  [frame children objects [row column :as cell]]
+  (let [;; Temporary remove the children when moving them
+        frame (-> frame
+                  (update :shapes #(d/removev children %))
+                  (assign-cells))
+
+        children (->> children (remove #(layout-absolute? objects %)))]
+
+    (-> frame
+        (update :shapes d/concat-vec children)
+        (cond-> (some? cell)
+          (push-into-cell children row column))
+        (assign-cells))))
