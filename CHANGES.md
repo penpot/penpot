@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.18.4
+
+### :bug: Bugs fixed
+
+- Fix zooming while color picker breaks UI [GH #3214](https://github.com/penpot/penpot/issues/3214)
+
 ## 1.18.3
 
 ### :bug: Bugs fixed
