@@ -1680,7 +1680,7 @@
           ;; Check if the shape is an instance whose master is defined in a
           ;; library that is not linked to the current file
           (foreign-instance? [shape paste-objects state]
-            (let [root         (ctn/get-component-shape paste-objects shape)
+            (let [root         (ctn/get-component-shape paste-objects shape {:allow-main? true})
                   root-file-id (:component-file root)]
               (and (some? root)
                    (not= root-file-id (:current-file-id state))
