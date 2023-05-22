@@ -11,6 +11,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix background-color property on inspect code [Taiga #5300](https://tree.taiga.io/project/penpot/issue/5300)
 - Fix problem with rulers not placing correctly [Taiga #5093](https://tree.taiga.io/project/penpot/issue/5093)
 - Fix page context menu [Taiga #5145](https://tree.taiga.io/project/penpot/issue/5145)
 - Fix project file count [Taiga #5148](https://tree.taiga.io/project/penpot/issue/5148)
