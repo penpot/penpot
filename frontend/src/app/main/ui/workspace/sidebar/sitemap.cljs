@@ -49,8 +49,7 @@
            (dom/prevent-default event)
            (dom/stop-propagation event)
            (when-not workspace-read-only?
-             (st/emit! (dw/start-rename-page-item id))
-             (st/emit! (dw/hide-context-menu)))))
+             (st/emit! (dw/start-rename-page-item id)))))
 
         on-blur
         (mf/use-callback

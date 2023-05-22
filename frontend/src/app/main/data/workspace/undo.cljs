@@ -8,9 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.logging :as log]
    [app.common.pages.changes :as cpc]
    [app.common.schema :as sm]
    [potok.core :as ptk]))
+
+;; Change this to :info :debug or :trace to debug this module
+(log/set-level! :warn)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Undo / Redo
@@ -74,7 +78,9 @@
   (-> state
       (update-in [:workspace-undo :transaction :undo-changes] #(into undo-changes %))
       (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))
-      (assoc-in [:workspace-undo :transaction :undo-group] undo-group)
+      (cond->
+       (nil? (get-in state [:workspace-undo :transaction :undo-group]))
+       (assoc-in [:workspace-undo :transaction :undo-group] undo-group))
       (assoc-in [:workspace-undo :transaction :tags] tags)))
 
 (defn append-undo
@@ -107,6 +113,7 @@
   (ptk/reify ::start-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
+      (log/info :msg "start-undo-transaction")
       ;; We commit the old transaction before starting the new one
       (let [current-tx    (get-in state [:workspace-undo :transaction])
             pending-tx    (get-in state [:workspace-undo :transactions-pending])]
@@ -119,12 +126,14 @@
   (ptk/reify ::discard-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
+      (log/info :msg "discard-undo-transaction")
       (update state :workspace-undo dissoc :transaction :transactions-pending))))
 
 (defn commit-undo-transaction [id]
   (ptk/reify ::commit-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
+      (log/info :msg "commit-undo-transaction")
       (let [state (update-in state [:workspace-undo :transactions-pending] disj id)]
         (if (empty? (get-in state [:workspace-undo :transactions-pending]))
           (-> state
