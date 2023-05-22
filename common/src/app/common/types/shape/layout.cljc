@@ -631,52 +631,68 @@
         (assoc :layout-grid-cells layout-grid-cells))))
 
 
-(defn make-remove-track
-  [attr track-num]
-  (comp #(= % track-num) attr second))
+(defn make-remove-cell
+  [attr span-attr track-num]
+  (fn [[_ cell]]
+    ;; Only remove cells with span=1 otherwise the cell will be fixed
+    (and (= track-num (get cell attr))
+         (= (get cell span-attr) 1))))
 
 (defn make-decrease-track-num
-  [attr track-num]
-  (fn [[key value]]
-    (let [new-val
-          (cond-> value
-            (> (get value attr) track-num)
-            (update attr dec))]
-      [key new-val])))
+  [attr span-attr track-num]
+  (fn [[id cell]]
+    (let [inner-track?
+          (or (= track-num (get cell attr))
+              (and (< (get cell attr) track-num (+ (get cell attr) (get cell span-attr)))))
 
-;; TODO: CHECK CELLS MULTI SPAN
+          displace-cell?
+          (and (not inner-track?) (< track-num (get cell attr)))
+
+          cell
+          (cond-> cell
+            inner-track?
+            (update span-attr dec)
+
+            displace-cell?
+            (update attr dec))]
+
+      [id cell])))
+
 (defn remove-grid-column
   [parent index]
+
   (let [track-num (inc index)
 
-        decrease-track-num (make-decrease-track-num :column track-num)
-        remove-track? (make-remove-track :column track-num)
+        decrease-track-num (make-decrease-track-num :column :column-span track-num)
+        remove-track? (make-remove-cell :column :column-span track-num)
 
-        remove-cells
+        update-cells
         (fn [cells]
-          (into {} (comp
-                    (remove remove-track?)
-                    (map decrease-track-num)) cells))]
+          (into {}
+                (comp (remove remove-track?)
+                      (map decrease-track-num))
+                cells))]
     (-> parent
         (update :layout-grid-columns d/remove-at-index index)
-        (update :layout-grid-cells remove-cells)
+        (update :layout-grid-cells update-cells)
         (assign-cells))))
 
 (defn remove-grid-row
   [parent index]
   (let [track-num (inc index)
 
-        decrease-track-num (make-decrease-track-num :row track-num)
-        remove-track? (make-remove-track :row track-num)
+        decrease-track-num (make-decrease-track-num :row :row-span track-num)
+        remove-track? (make-remove-cell :row :row-span track-num)
 
-        remove-cells
+        update-cells
         (fn [cells]
-          (into {} (comp
-                    (remove remove-track?)
-                    (map decrease-track-num)) cells))]
+          (into {}
+                (comp (remove remove-track?)
+                      (map decrease-track-num))
+                cells))]
     (-> parent
         (update :layout-grid-rows d/remove-at-index index)
-        (update :layout-grid-cells remove-cells)
+        (update :layout-grid-cells update-cells)
         (assign-cells))))
 
 (defn get-cells
