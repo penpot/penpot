@@ -10,6 +10,7 @@
   (:require
    #?(:clj [clojure.stacktrace :as strace])
    [app.common.pprint :as pp]
+   [app.common.schema :as sm]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [expound.alpha :as expound])
@@ -31,6 +32,7 @@
   [& params]
   `(throw (error ~@params)))
 
+;; FIXME deprecate
 (defn try*
   [f on-error]
   (try (f) (catch #?(:clj Throwable :cljs :default) e (on-error e))))
@@ -40,11 +42,15 @@
 
 (defmacro ignoring
   [& exprs]
-  `(try* (^:once fn* [] ~@exprs) (constantly nil)))
+  (if (:ns &env)
+    `(try ~@exprs (catch :default e# nil))
+    `(try ~@exprs (catch Throwable e# nil))))
 
 (defmacro try!
   [& exprs]
-  `(try* (^:once fn* [] ~@exprs) identity))
+  (if (:ns &env)
+    `(try ~@exprs (catch :default e# e#))
+    `(try ~@exprs (catch Throwable e# e#))))
 
 (defn ex-info?
   [v]
@@ -65,7 +71,7 @@
 
 (defn explain
   ([data] (explain data nil))
-  ([data {:keys [max-problems] :or {max-problems 10} :as opts}]
+  ([data {:keys [level length] :or {level 8 length 10} :as opts}]
    (cond
      ;; ;; NOTE: a special case for spec validation errors on integrant
      (and (= (:reason data) :integrant.core/build-failed-spec)
@@ -77,7 +83,11 @@
           (contains? data ::s/spec))
      (binding [s/*explain-out* expound/printer]
        (with-out-str
-         (s/explain-out (update data ::s/problems #(take max-problems %))))))))
+         (s/explain-out (update data ::s/problems #(take length %)))))
+
+     (contains? data ::sm/explain)
+     (-> (sm/humanize-data (::sm/explain data))
+         (pp/pprint-str {:level level :length length})))))
 
 #?(:clj
 (defn format-throwable
@@ -89,7 +99,7 @@
                             explain? true
                             chain? true
                             data-length 10
-                            data-level 3}}]
+                            data-level 8}}]
 
   (letfn [(print-trace-element [^StackTraceElement e]
             (let [class (.getClassName e)
@@ -157,9 +167,9 @@
             (print-trace cause)
             (when-let [data (ex-data cause)]
               (when data?
-                (print-data (dissoc data ::s/problems ::s/spec ::s/value)))
+                (print-data (dissoc data ::s/problems ::s/spec ::s/value ::sm/explain)))
               (when explain?
-                (if-let [explain (explain data)]
+                (if-let [explain (explain data {:length data-length :level data-level})]
                   (print-explain explain)))))
 
           (print-all [^Throwable cause]

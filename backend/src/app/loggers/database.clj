@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
@@ -32,35 +33,41 @@
   (when-not (db/read-only? pool)
     (db/insert! pool :server-error-report
                 {:id id
-                 :version 2
+                 :version 3
                  :content (db/tjson report)})))
 
 (defn record->report
   [{:keys [::l/context ::l/message ::l/props ::l/logger ::l/level ::l/cause] :as record}]
   (us/assert! ::l/record record)
 
-  (merge
-   {:context (-> context
-                 (assoc :tenant (cf/get :tenant))
-                 (assoc :host (cf/get :host))
-                 (assoc :public-uri (cf/get :public-uri))
-                 (assoc :version (:full cf/version))
-                 (assoc :logger-name logger)
-                 (assoc :logger-level level)
-                 (dissoc :params)
-                 (pp/pprint-str :width 200))
-    :params  (some-> (:params context)
-                     (pp/pprint-str :width 200))
-    :props   (pp/pprint-str props :width 200)
-    :hint    (or (ex-message cause) @message)
-    :trace   (ex/format-throwable cause :data? false :explain? false :header? false :summary? false)}
+  (let [data (ex-data cause)]
+    (merge
+     {:context (-> context
+                   (assoc :tenant (cf/get :tenant))
+                   (assoc :host (cf/get :host))
+                   (assoc :public-uri (cf/get :public-uri))
+                   (assoc :version (:full cf/version))
+                   (assoc :logger-name logger)
+                   (assoc :logger-level level)
+                   (dissoc :params)
+                   (pp/pprint-str :width 200))
 
-   (when-let [data (ex-data cause)]
-     {:spec-value    (some-> (::s/value data) (pp/pprint-str :width 200))
-      :spec-explain  (ex/explain data)
-      :data          (-> data
-                         (dissoc ::s/problems ::s/value ::s/spec :hint)
-                         (pp/pprint-str :width 200))})))
+      :props   (pp/pprint-str props :width 200)
+      :hint    (or (ex-message cause) @message)
+      :trace   (ex/format-throwable cause :data? false :explain? false :header? false :summary? false)}
+
+     (when-let [params (:params context)]
+       {:params (pp/pprint-str params :width 200)})
+
+     (when-let [data (some-> data (dissoc ::s/problems ::s/value ::s/spec ::sm/explain :hint))]
+       {:data (pp/pprint-str data :width 200)})
+
+     (when-let [value (-> data ::sm/explain :value)]
+       {:value (pp/pprint-str value :width 200)})
+
+     (when-let [explain (ex/explain data)]
+       {:explain explain}))))
+
 
 (defn error-record?
   [{:keys [::l/level ::l/cause]}]

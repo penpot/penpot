@@ -55,7 +55,7 @@
 
     [:div.options
      [:& measures-menu {:type type :ids measure-ids :values measure-values :shape shape}]
-     [:& component-menu {:ids comp-ids :values comp-values :shape-name (:name shape)}]
+     [:& component-menu {:ids comp-ids :values comp-values :shape shape}] ;;remove this in components-v2
      [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
 
      (when is-flex-layout-child?

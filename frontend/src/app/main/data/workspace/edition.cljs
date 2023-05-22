@@ -6,7 +6,7 @@
 
 (ns app.main.data.workspace.edition
   (:require
-   [app.common.spec :as us]
+   [app.common.data.macros :as dm]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -17,7 +17,7 @@
 
 (defn start-edition-mode
   [id]
-  (us/assert ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::start-edition-mode
     ptk/UpdateEvent
     (update [_ state]

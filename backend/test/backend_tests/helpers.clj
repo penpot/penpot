@@ -143,7 +143,9 @@
                              :app.loggers.mattermost/reporter
                              :app.loggers.database/reporter
                              :app.worker/cron
-                             :app.worker/worker))
+                             :app.worker/dispatcher
+                             [:app.main/default :app.worker/worker]
+                             [:app.main/webhook :app.worker/worker]))
           _      (ig/load-namespaces system)
           system (-> (ig/prep system)
                      (ig/init))]
@@ -335,6 +337,20 @@
                                   :session-id session-id
                                   :profile-id profile-id})))))
 
+(declare command!)
+
+(defn update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
+  (let [params {::type :update-file
+                ::rpc/profile-id profile-id
+                :id file-id
+                :session-id (uuid/random)
+                :revn revn
+                :components-v2 true
+                :changes changes}
+        out    (command! params)]
+    (t/is (nil? (:error out)))
+    (:result out)))
+
 (defn create-webhook*
   ([params] (create-webhook* *pool* params))
   ([pool {:keys [team-id id uri mtype is-active]
@@ -481,6 +497,10 @@
 (defn db-insert!
   [& params]
   (apply db/insert! *pool* params))
+
+(defn db-delete!
+  [& params]
+  (apply db/delete! *pool* params))
 
 (defn db-query
   [& params]

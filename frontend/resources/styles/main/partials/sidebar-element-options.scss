@@ -2327,3 +2327,130 @@
     }
   }
 }
+
+.component-annotation {
+  background-color: $color-gray-60;
+  border: 1px solid $color-gray-60;
+  border-radius: 2px;
+
+  .title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid $color-gray-50;
+    font-size: $fs12;
+    color: $color-gray-20;
+    padding: 0 10px;
+
+    &.expandeable {
+      cursor: pointer;
+    }
+
+    div {
+      display: flex;
+      align-items: center;
+      line-height: 2.5;
+    }
+
+    .expand {
+      svg {
+        fill: $color-gray-20;
+        width: $size-2;
+        height: $size-2;
+        margin-right: 10px;
+      }
+    }
+
+    .icon {
+      display: none;
+      cursor: pointer;
+      svg {
+        fill: $color-gray-20;
+        width: $size-4;
+        height: $size-4;
+        margin-left: 15px;
+        &.icon-cross {
+          width: $size-3;
+          height: $size-3;
+        }
+      }
+
+      .icon-tick:hover,
+      .icon-pencil:hover {
+        fill: $color-primary;
+      }
+
+      .icon-cross:hover,
+      .icon-trash:hover {
+        fill: $color-danger;
+      }
+    }
+
+    &:hover {
+      .icon {
+        display: flex;
+      }
+    }
+  }
+
+  &.editing {
+    border: 1px solid $color-primary;
+    .title .icon {
+      display: flex;
+    }
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  .counter {
+    text-align: right;
+    font-size: $fs11;
+    color: $color-gray-30;
+    margin: 0 10px 10px 0;
+  }
+
+  // Auto growing text
+  .grow-wrap {
+    // easy way to plop the elements on top of each other and have them both sized based on the tallest one's height
+    display: grid;
+
+    &:after {
+      // The space is needed to preventy jumpy behavior
+      content: attr(data-replicated-value) " ";
+      white-space: pre-wrap;
+      visibility: hidden;
+    }
+
+    textarea {
+      background-color: $color-gray-60;
+      color: $color-white;
+      min-height: 250px;
+      padding: 10px;
+
+      border: none;
+      overflow: hidden;
+      outline: none;
+
+      -webkit-box-shadow: none;
+      -moz-box-shadow: none;
+      box-shadow: none;
+
+      resize: none; /*remove the resize handle on the bottom right*/
+    }
+
+    textarea,
+    &:after {
+      /* Identical styling required!! */
+      font: inherit;
+      font-size: $fs14;
+      overflow-wrap: anywhere;
+
+      padding: 10px;
+
+      /* Place on top of each other */
+      grid-area: 1 / 1 / 2 / 2;
+    }
+  }
+}

@@ -144,8 +144,8 @@
 (defn level->int
   [level]
   (case level
-    :debug 10
-    :trace 20
+    :trace 10
+    :debug 20
     :info 30
     :warn 40
     :error 50))

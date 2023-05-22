@@ -14,8 +14,8 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes :as ch]
-   [app.common.pages.changes-spec :as pcs]
-   [app.common.spec :as us]
+   [app.common.pprint :as pp]
+   [app.common.schema :as sm]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
@@ -23,7 +23,6 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [clojure.spec.alpha :as spec]
    [cuerdas.core :as str]))
 
 (def root-frame uuid/zero)
@@ -53,20 +52,13 @@
                          :frame-id (:current-frame-id file)))]
 
      (when fail-on-spec?
-       (us/verify ::pcs/change change))
+       (dm/verify! (ch/change? change)))
 
-     (let [valid? (us/valid? ::pcs/change change)
-           explain (spec/explain-str ::pcs/change change)]
-       #?(:cljs
-          (when-not valid?
-            (do
-              (.warn js/console "Invalid shape" (clj->js change))
-              (.warn js/console explain)))
-          :clj
-          (when-not valid?
-            (do
-              (prn "Invalid shape" change)
-              (prn explain))))
+     (let [valid? (ch/change? change)]
+       (when-not valid?
+         (pp/pprint change {:level 100})
+         (sm/pretty-explain ::ch/change change))
+
 
        (cond-> file
          valid?
@@ -79,8 +71,8 @@
 (defn- lookup-objects
   ([file]
    (if (some? (:current-component-id file))
-     (get-in file [:data :components  (:current-component-id file) :objects])
-     (get-in file [:data :pages-index (:current-page-id file) :objects]))))
+     (dm/get-in file [:data :components  (:current-component-id file) :objects])
+     (dm/get-in file [:data :pages-index (:current-page-id file) :objects]))))
 
 (defn lookup-shape [file shape-id]
   (-> (lookup-objects file)
@@ -146,7 +138,7 @@
 (defn- generate-name
   [type data]
   (if (= type :svg-raw)
-    (let [tag (get-in data [:content :tag])]
+    (let [tag (dm/get-in data [:content :tag])]
       (str "svg-" (cond (string? tag) tag
                         (keyword? tag) (d/name tag)
                         (nil? tag) "node"
@@ -164,7 +156,7 @@
   [name file]
   (let [container-id (or (:current-component-id file)
                          (:current-page-id file))
-        unames (get-in file [:unames container-id])]
+        unames (dm/get-in file [:unames container-id])]
     (d/unique-name name (or unames #{}))))
 
 (defn clear-names [file]
@@ -198,8 +190,7 @@
 
 (defn add-page
   [file data]
-
-  (assert (nil? (:current-component-id file)))
+  (dm/assert! (nil? (:current-component-id file)))
   (let [page-id (or (:id data) (uuid/next))
         page (-> (ctp/make-empty-page page-id "Page 1")
                  (d/deep-merge data))]
@@ -221,7 +212,7 @@
         (assoc :last-id nil))))
 
 (defn close-page [file]
-  (assert (nil? (:current-component-id file)))
+  (dm/assert! (nil? (:current-component-id file)))
   (-> file
       (dissoc :current-page-id)
       (dissoc :parent-stack)
@@ -242,7 +233,7 @@
         (update :parent-stack conjv (:id obj)))))
 
 (defn close-artboard [file]
-  (let [parent-id (-> file :parent-id peek)
+  (let [parent-id (-> file :parent-stack peek)
         parent (lookup-shape file parent-id)
         current-frame-id (or (:frame-id parent)
                              (when (nil? (:current-component-id file))
@@ -411,7 +402,7 @@
 
     ;; First :content is the the shape attribute, the other content is the
     ;; XML children
-    (reduce create-child file (get-in data [:content :content]))))
+    (reduce create-child file (dm/get-in data [:content :content]))))
 
 (defn close-svg-raw [file]
   (-> file
@@ -763,7 +754,7 @@
 (defn get-current-page
   [file]
   (let [page-id (:current-page-id file)]
-    (-> file (get-in [:data :pages-index page-id]))))
+    (dm/get-in file [:data :pages-index page-id])))
 
 (defn add-guide
   [file guide]
@@ -772,7 +763,7 @@
                 (nil? (:id guide))
                 (assoc :id (uuid/next)))
         page-id (:current-page-id file)
-        old-guides (or (get-in file [:data :pages-index page-id :options :guides]) {})
+        old-guides (or (dm/get-in file [:data :pages-index page-id :options :guides]) {})
         new-guides (assoc old-guides (:id guide) guide)]
     (-> file
         (commit-change
@@ -786,7 +777,7 @@
   [file id]
 
   (let [page-id (:current-page-id file)
-        old-guides (or (get-in file [:data :pages-index page-id :options :guides]) {})
+        old-guides (or (dm/get-in file [:data :pages-index page-id :options :guides]) {})
         new-guides (dissoc old-guides id)]
     (-> file
         (commit-change
@@ -799,7 +790,7 @@
   [file guide]
 
   (let [page-id (:current-page-id file)
-        old-guides (or (get-in file [:data :pages-index page-id :options :guides]) {})
+        old-guides (or (dm/get-in file [:data :pages-index page-id :options :guides]) {})
         new-guides (assoc old-guides (:id guide) guide)]
     (-> file
         (commit-change

@@ -14,19 +14,27 @@
           <span>AUTH</span>
         </span>
       {% endif %}
-      
+
       {% if item.webhook %}
         <span class="tag">
           <span>WEBHOOK</span>
         </span>
       {% endif %}
+      {% if item.params-schema-js %}
+        <span class="tag">
+          <span>SC</span>
+        </span>
+      {% else %}
+        <span class="tag">
+          <span>SP</span>
+        </span>
+      {% endif %}
     </div>
   </div>
   <div class="rpc-row-detail hidden">
-    <h3>DOCSTRING:</h3>
+    <h4>DOCSTRING:</h4>
 
     <section class="padded-section">
-
       {% if item.added %}
         <p class="small"><strong>Added:</strong> on v{{item.added}}</p>
       {% endif %}
@@ -35,13 +43,18 @@
         <p class="small"><strong>Deprecated:</strong> since v{{item.deprecated}}</p>
       {% endif %}
 
+      {% if item.entrypoint %}
+        <p class="small"><strong>URI:</strong> <a href="{{item.entrypoint}}">{{item.entrypoint}}</a></p>
+      {% endif %}
+
       {% if item.docs %}
         <p class="docstring"> {{item.docs}}</p>
       {% endif %}
+
     </section>
 
     {% if item.changes %}
-      <h3>CHANGES:</h3>
+      <h4>CHANGES:</h4>
       <section class="padded-section">
 
         <ul class="changes">
@@ -52,9 +65,55 @@
       </section>
     {% endif %}
 
-    <h3>SPEC EXPLAIN:</h3>
-    <section class="padded-section">
-      <pre class="spec-explain">{{item.spec}}</pre>
-    </section>
+    {% if item.spec %}
+      <h4>PARAMS (SPEC):</h4>
+      <section class="padded-section">
+        <pre class="spec-explain">{{item.spec}}</pre>
+      </section>
+    {% endif %}
+
+    {% if param-style = "js" %}
+      {% if item.params-schema-js %}
+        <h4>PARAMS:</h4>
+        <section class="padded-section">
+          <pre class="params-schema">{{item.params-schema-js}}</pre>
+        </section>
+      {% endif %}
+
+      {% if item.result-schema-js %}
+        <h4>RESPONSE:</h4>
+        <section class="padded-section">
+          <pre class="result">{{item.result-schema-js}}</pre>
+        </section>
+      {% endif %}
+
+      {% if item.webhook-schema-js %}
+        <h4>WEBHOOK PAYLOAD:</h4>
+        <section class="padded-section">
+          <pre class="webhook">{{item.webhook-schema-js}}</pre>
+        </section>
+      {% endif %}
+    {% else %}
+      {% if item.params-schema-clj %}
+        <h4>PARAMS:</h4>
+        <section class="padded-section">
+          <pre class="params-schema">{{item.params-schema-clj}}</pre>
+        </section>
+      {% endif %}
+
+      {% if item.result-schema-clj %}
+        <h4>RESPONSE:</h4>
+        <section class="padded-section">
+          <pre class="result">{{item.result-schema-clj}}</pre>
+        </section>
+      {% endif %}
+
+      {% if item.webhook-schema-clj %}
+        <h4>WEBHOOK PAYLOAD:</h4>
+        <section class="padded-section">
+          <pre class="webhook">{{item.webhook-schema-clj}}</pre>
+        </section>
+      {% endif %}
+    {% endif %}
   </div>
 </li>

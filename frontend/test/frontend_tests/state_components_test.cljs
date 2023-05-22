@@ -82,14 +82,14 @@
          store (the/prepare-store state done
                  (fn [new-state]
                    ; Expected shape tree:
-                   ; [Page]                                                                                                                                                                    
-                   ; Root Frame                                                                                                                                                                
-                   ;   Component 1                                                                        
-                   ;     Rect 1           
-                   ;     Rect-2                                                                           
-                   ;                                                                                      
-                   ; [Component 1]                                                                        
-                   ;   page1 / Component 1                                                                                                                                                     
+                   ; [Page]
+                   ; Root Frame
+                   ;   Component 1
+                   ;     Rect 1
+                   ;     Rect-2
+                   ;
+                   ; [Component 1]
+                   ;   page1 / Component 1
                    ;
                    (let [shape1 (thp/get-shape new-state :shape1)
 
@@ -136,14 +136,14 @@
                 (fn [new-state]
                    ; Expected shape tree:
                    ;
-                   ; [Page]                                                                                                                                                                    
-                   ; Root Frame                                                                                                                                                                
-                   ;   Group                                                                              
-                   ;     Rect 1           
-                   ;     Rect-2                                                                           
-                   ;                                                                                      
-                   ; [Group]                                                                              
-                   ;   page1 / Group                                                                                                                                                           
+                   ; [Page]
+                   ; Root Frame
+                   ;   Group
+                   ;     Rect 1
+                   ;     Rect-2
+                   ;
+                   ; [Group]
+                   ;   page1 / Group
                    ;
                   (let [[[group shape1 shape2]
                          [c-group c-shape1 c-shape2]
@@ -184,17 +184,17 @@
                  (fn [new-state]
                    ; Expected shape tree:
                    ;
-                   ; [Page]                                                                               
-                   ; Root Frame                                                                           
-                   ;   Rect 1                                                                                                                                                                  
-                   ;     Rect 1                                                                                                                                                                
-                   ;       Rect 1                                                                                                                                                              
-                   ;                                                                                                                                                                           
-                   ; [Rect 1]                                                                             
-                   ;   page1 / Rect 1                                                                     
-                   ;                                                                                      
-                   ; [Rect 1]                                                                                                                                                                  
-                   ;   page1 / Rect 1                                                                                                                                                          
+                   ; [Page]
+                   ; Root Frame
+                   ;   Rect 1
+                   ;     Rect 1
+                   ;       Rect 1
+                   ;
+                   ; [Rect 1]
+                   ;   page1 / Rect 1
+                   ;
+                   ; [Rect 1]
+                   ;   page1 / Rect 1
                    ;
                    (let [[[instance1 shape1]
                           [c-instance1 c-shape1]
@@ -247,13 +247,13 @@
                 (fn [new-state]
                   ; Expected shape tree:
                   ;
-                  ; [Page]                                                                                                                                                                    
-                  ; Root Frame                                                                           
-                  ;   Rect 1             
-                  ;     Rect 1                                                                           
-                  ;                                                                                      
-                  ; [Renamed component]                                                                  
-                  ;   page1 / Rect 1                                                                                                                                                          
+                  ; [Page]
+                  ; Root Frame
+                  ;   Rect 1
+                  ;     Rect 1
+                  ;
+                  ; [Renamed component]
+                  ;   page1 / Rect 1
                   ;
                   (let [libs      (wsh/get-libraries new-state)
                         component (ctf/get-component libs
@@ -284,18 +284,18 @@
                  (fn [new-state]
                    ; Expected shape tree:
                    ;
-                   ; [Page]                                                                               
-                   ; Root Frame                                                                           
-                   ;   Rect 1                                                                                                                                                                  
-                   ;     Rect 1                                                                                                                                                                
-                   ;   Rect 1              #--> Rect 1                                                                                                                                         
-                   ;     Rect 1            ---> Rect 1                                                                                                                                         
-                   ;                                                                                      
+                   ; [Page]
+                   ; Root Frame
+                   ;   Rect 1
+                   ;     Rect 1
+                   ;   Rect 1              #--> Rect 1
+                   ;     Rect 1            ---> Rect 1
+                   ;
                    ; [Rect 1]
-                   ;   page1 / Rect 1                                                                     
-                   ;                                                                                      
-                   ; [Rect 1]                                                                             
-                   ;   page1 / Rect 1                                                                                                                                                          
+                   ;   page1 / Rect 1
+                   ;
+                   ; [Rect 1]
+                   ;   page1 / Rect 1
                    ;
                    (let [new-component-id (->> (get-in new-state
                                                        [:workspace-data
@@ -340,10 +340,10 @@
                                   (fn [new-state]
                                     ; Expected shape tree:
                                     ;
-                                    ; [Page]                                                                                                                                                                                        
-                                    ; Root Frame                                                                                     
-                                    ;   Rect 1              #--> ?                                                                   
-                                    ;     Rect 1            ---> ?                                                                   
+                                    ; [Page]
+                                    ; Root Frame
+                                    ;   Rect 1              #--> ?
+                                    ;     Rect 1            ---> ?
                                     ;
                                     (let [[main1 shape1]
                                           (thl/resolve-noninstance
@@ -358,7 +358,7 @@
                                           file          (wsh/get-local-file new-state)
                                           component2    (ctkl/get-component file (thp/id :component1))
                                           component3    (ctkl/get-deleted-component file (thp/id :component1))
-                                          
+
                                           saved-objects (:objects component3)
                                           saved-main1   (get saved-objects (:shape-ref instance1))
                                           saved-shape2  (get saved-objects (:shape-ref shape2))]
@@ -381,7 +381,7 @@
                                       (t/is (= (:name component3) "Rect 1"))
                                       (t/is (= (:deleted component3) true))
                                       (t/is (some? (:objects component3)))
-                                      
+
                                       (t/is (= (:name saved-main1) "Rect 1"))
                                       (t/is (= (:name saved-shape2) "Rect 1")))))]
 
@@ -406,15 +406,15 @@
                                   (fn [new-state]
                                     ; Expected shape tree:
                                     ;
-                                    ; [Page]                                                                                         
-                                    ; Root Frame                                                                                     
-                                    ;   Rect 1              #--> Rect 1                                                              
-                                    ;     Rect 1            ---> Rect 1                                                              
-                                    ;   Rect 1             
-                                    ;     Rect 1                                                                                     
-                                    ;                                                                                                
-                                    ; [Rect 1]                                                                                       
-                                    ;   page1 / Rect 1                                                                                                                                                                              
+                                    ; [Page]
+                                    ; Root Frame
+                                    ;   Rect 1              #--> Rect 1
+                                    ;     Rect 1            ---> Rect 1
+                                    ;   Rect 1
+                                    ;     Rect 1
+                                    ;
+                                    ; [Rect 1]
+                                    ;   page1 / Rect 1
                                     ;
                                     (let [[[instance1 shape2] [c-instance1 c-shape2] component1]
                                           (thl/resolve-instance-and-main
@@ -459,15 +459,15 @@
                  (fn [new-state]
                    ; Expected shape tree:
                    ;
-                   ; [Page]                                                                                                                                                                    
-                   ; Root Frame                                                                                                                                                                
-                   ;   Rect 1                                                                                                                                                                  
-                   ;     Rect 1                                                                           
+                   ; [Page]
+                   ; Root Frame
+                   ;   Rect 1
+                   ;     Rect 1
                    ;   Rect 1              #--> Rect 1
-                   ;     Rect 1            ---> Rect 1                                                    
-                   ;                                                                                      
-                   ; [Rect 1]                                                                             
-                   ;   page1 / Rect 1                                                                                                                                                          
+                   ;     Rect 1            ---> Rect 1
+                   ;
+                   ; [Rect 1]
+                   ;   page1 / Rect 1
                    ;
                    (let [new-instance-id (-> new-state
                                              wsh/lookup-selected
@@ -563,15 +563,15 @@
                 (fn [new-state]
                   ; Expected shape tree:
                   ;
-                  ; [Page]                                                                                                                                                                    
-                  ; Root Frame                                                                                                                                                                
-                  ;   Rect 1                                                                                                                                                                  
-                  ;     Rect 1                                                                           
-                  ;   Rect 1             
-                  ;     Rect 1                                                                           
-                  ;                                                                                      
-                  ; [Rect 1]                                                                             
-                  ;   page1 / Rect 1                                                                                                                                                          
+                  ; [Page]
+                  ; Root Frame
+                  ;   Rect 1
+                  ;     Rect 1
+                  ;   Rect 1
+                  ;     Rect 1
+                  ;
+                  ; [Rect 1]
+                  ;   page1 / Rect 1
                   ;
                   (let [[instance2 shape1]
                         (thl/resolve-noninstance
@@ -598,17 +598,17 @@
                   (fn [new-state]
                     ; Expected shape tree:
                     ;
-                    ; [Page]                                                                               
-                    ; Root Frame                                                                                                                                                                
-                    ;   Group                                                                                                                                                                   
-                    ;     Rect 1                                                                                                                                                                
-                    ;       Rect 1                                                                                                                                                              
-                    ;                                                                                      
+                    ; [Page]
+                    ; Root Frame
+                    ;   Group
+                    ;     Rect 1
+                    ;       Rect 1
+                    ;
                     ; [Rect 1]
-                    ;   page1 / Rect 1                                                                     
-                    ;                                                                                      
-                    ; [Group]                                                                              
-                    ;   page1 / Group                                                                                                                                                           
+                    ;   page1 / Rect 1
+                    ;
+                    ; [Group]
+                    ;   page1 / Group
                     ;
                     (let [page    (thp/current-page new-state)
                           shape1  (thp/get-shape new-state :shape1)
@@ -658,20 +658,20 @@
                  (fn [new-state]
                    ; Expected shape tree:
                    ;
-                   ; [Page]                                                                                                                                                                    
-                   ; Root Frame                                                                           
-                   ;   Rect 1                                                                             
-                   ;     Rect 1                                                                           
-                   ;       Rect 1                                                                                                                                                              
-                   ;   Rect 1              #--> Rect 1                                                                                                                                         
-                   ;     Rect 1            @--> Rect 1                                                                                                                                         
-                   ;       Rect 1          ---> Rect 1                                                                                                                                         
-                   ;                                                                                      
+                   ; [Page]
+                   ; Root Frame
+                   ;   Rect 1
+                   ;     Rect 1
+                   ;       Rect 1
+                   ;   Rect 1              #--> Rect 1
+                   ;     Rect 1            @--> Rect 1
+                   ;       Rect 1          ---> Rect 1
+                   ;
                    ; [Rect 1]
-                   ;   page1 / Rect 1                                                                     
-                   ;                                                                                      
-                   ; [Rect 1]                                                                             
-                   ;   page1 / Rect 1                                                                                                                                                          
+                   ;   page1 / Rect 1
+                   ;
+                   ; [Rect 1]
+                   ;   page1 / Rect 1
                    ;
                    (let [new-instance-id (-> new-state
                                              wsh/lookup-selected
@@ -724,14 +724,14 @@
                  (fn [new-state]
                    ; Expected shape tree:
                    ;
-                   ; [Page]                                                                               
-                   ; Root Frame                                                                           
-                   ;   Group                                                                              
-                   ;     Rect 1            #--> <Library 1> Rect 1                                                                                                                             
-                   ;       Rect 1          ---> <Library 1> Rect 1                                                                                                                             
-                   ;                                                                                                                                                                           
-                   ; [Group]                                                                                                                                                                   
-                   ;   page1 / Group                                                                      
+                   ; [Page]
+                   ; Root Frame
+                   ;   Group
+                   ;     Rect 1            #--> <Library 1> Rect 1
+                   ;       Rect 1          ---> <Library 1> Rect 1
+                   ;
+                   ; [Group]
+                   ;   page1 / Group
                    ;
                    (let [instance1 (thp/get-shape new-state :instance1)
 

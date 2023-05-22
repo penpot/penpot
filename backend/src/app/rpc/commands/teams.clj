@@ -764,15 +764,17 @@
                   :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
 
       (let [cfg         (assoc cfg ::db/conn conn)
-            invitations (->> emails
-                             (remove member?)
-                             (map (fn [email]
-                                    {:email (str/lower email)
-                                     :team team
-                                     :profile profile
-                                     :role role}))
-                             (keep (partial create-invitation cfg)))]
-        (with-meta (vec invitations)
+            invitations (into []
+                              (comp
+                               (remove member?)
+                               (map (fn [email]
+                                      {:email (str/lower email)
+                                       :team team
+                                       :profile profile
+                                       :role role}))
+                               (keep (partial create-invitation cfg)))
+                              emails)]
+        (with-meta invitations
           {::audit/props {:invitations (count invitations)}})))))
 
 

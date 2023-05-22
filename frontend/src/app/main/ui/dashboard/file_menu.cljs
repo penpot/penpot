@@ -131,7 +131,7 @@
 
         on-move
         (fn [team-id project-id]
-          (let [params  {:ids (set (map :id files))
+          (let [params  {:ids (into #{} (map :id) files)
                          :project-id project-id}]
             (fn []
               (st/emit! (dd/move-files
@@ -177,7 +177,7 @@
           (->> (rx/from files)
                (rx/flat-map
                 (fn [file]
-                  (->> (rp/command :has-file-libraries {:file-id (:id file)})
+                  (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
                        (rx/map #(assoc file :has-libraries? %)))))
                (rx/reduce conj [])
                (rx/subs
@@ -213,7 +213,7 @@
               (rx/map group-by-team)
               (rx/subs #(when (mf/ref-val mounted-ref)
                           (reset! teams %)))))))
-    
+
     (when current-team
       (let [sub-options (concat (vec (for [project current-projects]
                                         {:option-name (get-project-name project)

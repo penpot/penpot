@@ -6,8 +6,13 @@
 
 (ns app.util.time
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.schema :as sm]
+   [app.common.schema.openapi :as-alias oapi]
+   [app.common.time :as common-time]
    [clojure.spec.alpha :as s]
+   [clojure.test.check.generators :as tgen]
    [cuerdas.core :as str]
    [fipp.ednize :as fez])
   (:import
@@ -186,9 +191,7 @@
       :else
       (throw (UnsupportedOperationException. "unsupported type")))))
 
-(defn now
-  []
-  (Instant/now))
+(dm/export common-time/now)
 
 (defn in-future
   [v]
@@ -358,3 +361,27 @@
   []
   (let [p1 (System/nanoTime)]
     #(duration {:nanos (- (System/nanoTime) p1)})))
+
+(sm/def! ::instant
+  {:type ::instant
+   :pred instant?
+   :type-properties
+   {:error/message "should be an instant"
+    :title "instant"
+    ::sm/decode instant
+    :gen/gen (tgen/fmap (fn [i] (in-past i))  tgen/pos-int)
+    ::oapi/type "string"
+    ::oapi/format "iso"
+    }})
+
+(sm/def! ::duration
+  {:type :durations
+   :pred duration?
+   :type-properties
+   {:error/message "should be a duration"
+    :gen/gen (tgen/fmap duration tgen/pos-int)
+    :title "duration"
+    ::sm/decode duration
+    ::oapi/type "string"
+    ::oapi/format "duration"
+    }})

@@ -67,7 +67,7 @@
    :cut                  {:tooltip (ds/meta "X")
                           :command (ds/c-mod "x")
                           :subsections [:edit]
-                          :fn #(emit-when-no-readonly (dw/copy-selected) 
+                          :fn #(emit-when-no-readonly (dw/copy-selected)
                                  (dw/delete-selected))}
 
    :paste                {:tooltip (ds/meta "V")
@@ -110,7 +110,7 @@
 
 
    ;; MODIFY LAYERS
-   
+
 
    :group                {:tooltip (ds/meta "G")
                           :command (ds/c-mod "g")
@@ -222,7 +222,7 @@
                           :fn #(emit-when-no-readonly (dwsl/toggle-layout-flex))}
 
    ;; TOOLS
-   
+
    :draw-frame           {:tooltip "B"
                           :command ["b" "a"]
                           :subsections [:tools :basics]
@@ -300,7 +300,7 @@
                           :fn #(emit-when-no-readonly (dw/toggle-focus-mode))}
 
    ;; ITEM ALIGNMENT
-   
+
    :align-left           {:tooltip (ds/alt "A")
                           :command "alt+a"
                           :subsections [:alignment]
@@ -342,7 +342,7 @@
                           :fn #(emit-when-no-readonly (dw/distribute-objects :vertical))}
 
    ;; MAIN MENU
-   
+
    :toggle-rules         {:tooltip (ds/meta-shift "R")
                           :command (ds/c-mod "shift+r")
                           :subsections [:main-menu]
@@ -354,7 +354,7 @@
                           :fn #(st/emit! (dw/select-all))}
 
    :toggle-grid          {:tooltip (ds/meta "'")
-                          ;;https://github.com/ccampbell/mousetrap/issues/85                          
+                          ;;https://github.com/ccampbell/mousetrap/issues/85
                           :command [(ds/c-mod "'") (ds/c-mod "219")]
                           :subsections [:main-menu]
                           :fn #(st/emit! (toggle-layout-flag :display-grid))}
@@ -402,7 +402,7 @@
                           :fn #(st/emit! (toggle-layout-flag :shortcuts))}
 
    ;; PANELS
-   
+
    :toggle-layers       {:tooltip (ds/alt "L")
                          :command (ds/a-mod "l")
                          :subsections [:panels]
@@ -438,7 +438,7 @@
                           :fn #(st/emit! (toggle-layout-flag :hide-ui))}
 
    ;; ZOOM-WORKSPACE
-   
+
    :increase-zoom        {:tooltip "+"
                           :command ["+" "="]
                           :subsections [:zoom-workspace]
@@ -475,7 +475,7 @@
                          :fn identity}
 
    ;; NAVIGATION
-   
+
 
    :open-viewer          {:tooltip "G V"
                           :command "g v"
@@ -501,14 +501,14 @@
                           :command "shift+tab"
                           :subsections [:navigation-workspace]
                           :fn #(st/emit! (dw/select-prev-shape))}
-   
+
    :select-next          {:tooltip ds/tab
                           :command "tab"
                           :subsections [:navigation-workspace]
                           :fn #(st/emit! (dw/select-next-shape))}
 
    ;; SHAPE
-   
+
 
    :bool-union           {:tooltip (ds/meta (ds/alt "U"))
                           :command (ds/c-mod "alt+u")

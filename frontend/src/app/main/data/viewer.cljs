@@ -11,7 +11,7 @@
    [app.common.files.features :as ffeat]
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.interactions :as ctsi]
@@ -22,11 +22,7 @@
    [app.util.globals :as ug]
    [app.util.router :as rt]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
-
-(s/def ::nilable-boolean (s/nilable ::us/boolean))
-(s/def ::nilable-animation (s/nilable ::ctsi/animation))
 
 ;; --- Local State Initialization
 
@@ -50,19 +46,15 @@
 (declare zoom-to-fill)
 (declare zoom-to-fit)
 
-(s/def ::file-id ::us/uuid)
-(s/def ::index ::us/integer)
-(s/def ::page-id (s/nilable ::us/uuid))
-(s/def ::share-id (s/nilable ::us/uuid))
-(s/def ::section ::us/string)
-
-(s/def ::initialize-params
-  (s/keys :req-un [::file-id]
-          :opt-un [::share-id ::page-id]))
+(def schema:initialize
+  [:map
+   [:file-id ::sm/uuid]
+   [:share-id {:optional true} [:maybe ::sm/uuid]]
+   [:page-id {:optional true} ::sm/uuid]])
 
 (defn initialize
   [{:keys [file-id share-id] :as params}]
-  (us/assert ::initialize-params params)
+  (dm/assert! (sm/valid? schema:initialize params))
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
@@ -77,7 +69,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (fetch-bundle params)
+      (rx/of (fetch-bundle (d/without-nils params))
              (fetch-comment-threads params)))
 
     ptk/EffectEvent
@@ -99,14 +91,15 @@
 
 ;; --- Data Fetching
 
-(s/def ::fetch-bundle
-  (s/keys :req-un [::page-id ::file-id]
-          :opt-un [::share-id]))
+(def schema:fetch-bundle
+  [:map
+   [:page-id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:share-id {:optional true} ::sm/uuid]])
 
 (defn- fetch-bundle
   [{:keys [file-id share-id] :as params}]
-  (us/assert! ::fetch-bundle params)
-
+  (dm/assert! (sm/valid? schema:fetch-bundle params))
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
     (watch [_ state _]
@@ -141,6 +134,17 @@
                      (rx/reduce conj {})
                      (rx/map (fn [pages-index]
                                (update-in bundle [:file :data] assoc :pages-index pages-index))))))
+             (rx/mapcat
+              (fn [bundle]
+                (->> (rx/from (-> bundle :file :data seq))
+                     (rx/merge-map
+                      (fn [[_ object :as kp]]
+                        (if (t/pointer? object)
+                          (resolve kp)
+                          (rx/of kp))))
+                     (rx/reduce conj {})
+                     (rx/map (fn [data]
+                               (update bundle :file assoc :data data))))))
              (rx/mapcat
               (fn [{:keys [fonts] :as bundle}]
                 (rx/of (df/fonts-fetched fonts)
@@ -216,7 +220,7 @@
 
 (defn fetch-comments
   [{:keys [thread-id]}]
-  (us/assert ::us/uuid thread-id)
+  (dm/assert! (uuid thread-id))
   (letfn [(fetched [comments state]
             (update state :comments assoc thread-id (d/index-by :id comments)))]
     (ptk/reify ::retrieve-comments
@@ -380,11 +384,14 @@
          (dcm/close-thread)
          (rt/nav :viewer pparams (assoc qparams :index 0)))))))
 
-(s/def ::interactions-mode #{:hide :show :show-on-click})
+(def valid-interaction-modes
+  #{:hide :show :show-on-click})
 
 (defn set-interactions-mode
   [mode]
-  (us/verify ::interactions-mode mode)
+  (dm/assert!
+   "expected valid interaction mode"
+   (contains? valid-interaction-modes mode))
   (ptk/reify ::set-interactions-mode
     ptk/UpdateEvent
     (update [_ state]
@@ -460,8 +467,9 @@
    (go-to-frame frame-id nil))
 
   ([frame-id animation]
-   (us/assert! ::us/uuid frame-id)
-   (us/assert! ::nilable-animation animation)
+   (dm/assert! (uuid? frame-id))
+   (dm/assert! (or (nil? animation)
+                   (ctsi/animation? animation)))
 
    (ptk/reify ::go-to-frame
      ptk/UpdateEvent
@@ -552,12 +560,14 @@
 
 (defn open-overlay
   [frame-id position close-click-outside background-overlay animation]
-  (us/assert! ::us/uuid frame-id)
-  (us/assert! ::gpt/point position)
-  (us/assert! ::nilable-boolean close-click-outside)
-  (us/assert! ::nilable-boolean background-overlay)
-  (us/assert! ::nilable-animation animation)
-
+  (dm/assert! (uuid? frame-id))
+  (dm/assert! (gpt/point? position))
+  (dm/assert! (or (nil? close-click-outside)
+                  (boolean? close-click-outside)))
+  (dm/assert! (or (nil? background-overlay)
+                  (boolean? background-overlay)))
+  (dm/assert! (or (nil? animation)
+                  (ctsi/animation? animation)))
   (ptk/reify ::open-overlay
     ptk/UpdateEvent
     (update [_ state]
@@ -579,11 +589,14 @@
 
 (defn toggle-overlay
   [frame-id position close-click-outside background-overlay animation]
-  (us/assert! ::us/uuid frame-id)
-  (us/assert! ::gpt/point position)
-  (us/assert! ::nilable-boolean close-click-outside)
-  (us/assert! ::nilable-boolean background-overlay)
-  (us/assert! ::nilable-animation animation)
+  (dm/assert! (uuid? frame-id))
+  (dm/assert! (gpt/point? position))
+  (dm/assert! (or (nil? close-click-outside)
+                  (boolean? close-click-outside)))
+  (dm/assert! (or (nil? background-overlay)
+                  (boolean? background-overlay)))
+  (dm/assert! (or (nil? animation)
+                  (ctsi/animation? animation)))
 
   (ptk/reify ::toggle-overlay
     ptk/UpdateEvent
@@ -608,8 +621,9 @@
 (defn close-overlay
   ([frame-id] (close-overlay frame-id nil))
   ([frame-id animation]
-   (us/assert! ::us/uuid frame-id)
-   (us/assert! ::nilable-animation animation)
+   (dm/assert! (uuid? frame-id))
+   (dm/assert! (or (nil? animation)
+                   (ctsi/animation? animation)))
 
    (ptk/reify ::close-overlay
      ptk/UpdateEvent

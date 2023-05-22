@@ -161,6 +161,68 @@
       (let [result (:result out)]
         (t/is (= uuid/zero (:id result)))))))
 
+(t/deftest profile-immediate-deletion
+  (let [prof1 (th/create-profile* 1)
+        prof2 (th/create-profile* 2)
+        file  (th/create-file* 1 {:profile-id (:id prof1)
+                                  :project-id (:default-project-id prof1)
+                                  :is-shared false})
+
+        team  (th/create-team* 1 {:profile-id (:id prof1)})
+        _     (th/create-team-role* {:team-id (:id team)
+                                     :profile-id (:id prof2)
+                                     :role :admin})]
+
+    ;; profile is not deleted because it does not meet all
+    ;; conditions to be deleted.
+    (let [result (th/run-task! :objects-gc {:min-age (dt/duration 0)})]
+      (t/is (= 0 (:orphans result)))
+      (t/is (= 0 (:processed result))))
+
+    ;; just delete the profile
+    (th/db-delete! :profile {:id (:id prof1)})
+
+    ;; query files after profile deletion, expecting not found
+    (let [params {::th/type :get-project-files
+                  ::rpc/profile-id (:id prof1)
+                  :project-id (:default-project-id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :not-found (:type edata)))))
+
+    ;; the files and projects still exists on the database
+    (let [files    (th/db-query :file {:project-id (:default-project-id prof1)})
+          projects (th/db-query :project {:team-id (:default-team-id prof1)})]
+      (t/is (= 1 (count files)))
+      (t/is (= 1 (count projects))))
+
+    ;; execute the gc task
+    (let [result (th/run-task! :objects-gc {:min-age (dt/duration "-1m")})]
+      (t/is (= 1 (:processed result)))
+      (t/is (= 1 (:orphans result))))
+
+    ;; Check the deletion flag on the default profile team
+    (let [row (th/db-get :team
+                         {:id (:default-team-id prof1)}
+                         {::db/remove-deleted? false})]
+      (t/is (dt/instant? (:deleted-at row))))
+
+    ;; Check the deletion flag on the shared team
+    (let [row (th/db-get :team
+                         {:id (:id team)}
+                         {::db/remove-deleted? false})]
+      (t/is (nil? (:deleted-at row))))
+
+    ;; Check the roles on the shared team
+    (let [rows (th/db-query :team-profile-rel {:team-id (:id team)})]
+      (t/is (= 1 (count rows)))
+      (t/is (= (:id prof2) (get-in rows [0 :profile-id])))
+      (t/is (= false (get-in rows [0 :is-owner]))))
+
+    ))
+
 (t/deftest registration-domain-whitelist
   (let [whitelist #{"gmail.com" "hey.com" "ya.ru"}]
     (t/testing "allowed email domain"

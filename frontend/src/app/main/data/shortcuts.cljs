@@ -8,10 +8,10 @@
   (:refer-clojure :exclude [meta reset!])
   (:require
    ["./shortcuts_impl.js$default" :as mousetrap]
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.config :as cf]
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
@@ -127,21 +127,16 @@
 
 ;; --- EVENT: push
 
-(s/def ::tooltip ::us/string)
-(s/def ::fn fn?)
+(def schema:shortcuts
+  [:map-of
+   :keyword
+   [:map
+    [:command [:or :string [:vector :any]]]
+    [:fn {:optional true} fn?]
+    [:tooltip {:optional true} :string]]])
 
-(s/def ::command
-  (s/or :str ::us/string
-        :vec vector?))
-
-(s/def ::shortcut
-  (s/keys :req-un [::command]
-          :opt-un [::fn
-                   ::tooltip]))
-
-(s/def ::shortcuts
-  (s/map-of ::us/keyword
-            ::shortcut))
+(def shortcuts?
+  (sm/pred-fn schema:shortcuts))
 
 (defn- wrap-cb
   [key cb]
@@ -174,8 +169,9 @@
 
 (defn push-shortcuts
   [key shortcuts]
-  (us/assert ::us/keyword key)
-  (us/assert ::shortcuts shortcuts)
+  (dm/assert! (keyword? key))
+  (dm/assert! (shortcuts? shortcuts))
+
   (ptk/reify ::push-shortcuts
     ptk/UpdateEvent
     (update [_ state]

@@ -7,19 +7,21 @@
 (ns app.worker.thumbnails
   (:require
    ["react-dom/server" :as rds]
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.fonts :as fonts]
    [app.main.render :as render]
    [app.util.http :as http]
+   [app.util.time :as ts]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
    [debug :refer [debug?]]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (log/set-level! :trace)
-
 
 (defn- handle-response
   [{:keys [body status] :as response}]
@@ -110,8 +112,8 @@
          (rx/catch body-too-large? (constantly (rx/of nil)))
          (rx/map (constantly params)))))
 
-(defmethod impl/handler :thumbnails/generate
-  [{:keys [file-id revn features] :as message}]
+(defmethod impl/handler :thumbnails/generate-for-file
+  [{:keys [file-id revn features] :as message} _]
   (letfn [(on-result [{:keys [data props]}]
             {:data data
              :fonts (:fonts props)})
@@ -130,3 +132,19 @@
                      (log/debug :hint "request-thumbnail" :file-id file-id :revn revn :cache "hit")))
            (rx/catch not-found? on-cache-miss)
            (rx/map on-result)))))
+
+(defmethod impl/handler :thumbnails/render-offscreen-canvas
+  [_ ibpm]
+  (let [canvas (js/OffscreenCanvas. (.-width ^js ibpm) (.-height ^js ibpm))
+        ctx    (.getContext ^js canvas "bitmaprenderer")
+        tp     (ts/tpoint-ms)]
+
+    (.transferFromImageBitmap ^js ctx ibpm)
+
+    (->> (.convertToBlob ^js canvas #js {:type "image/png"})
+         (p/fmap (fn [blob]
+                   {:result (.createObjectURL js/URL blob)}))
+         (p/fnly (fn [_]
+                   (log/debug :hint "generated thumbnail" :elapsed (dm/str (tp) "ms"))
+                   (.close ^js ibpm))))))
+

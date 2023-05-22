@@ -613,7 +613,7 @@
                                      :main-instance-id main-instance-id
                                      :main-instance-page main-instance-page}
                                     (some? new-shapes)  ;; this will be null in components-v2
-                                    (assoc :shapes new-shapes)))
+                                    (assoc :shapes (vec new-shapes))))
                       (into (map mk-change) updated-shapes))))
         (update :undo-changes
                 (fn [undo-changes]
@@ -639,11 +639,13 @@
                                       :id id
                                       :name (:name new-component)
                                       :path (:path new-component)
+                                      :annotation (:annotation new-component)
                                       :objects (:objects new-component)}) ;; this won't exist in components-v2
           (update :undo-changes d/preconj {:type :mod-component
                                            :id id
                                            :name (:name prev-component)
                                            :path (:path prev-component)
+                                           :annotation (:annotation prev-component)
                                            :objects (:objects prev-component)}))
       changes)))
 

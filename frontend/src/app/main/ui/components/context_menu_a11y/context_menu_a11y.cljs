@@ -190,7 +190,7 @@
 
     (mf/with-effect [ids]
       (tm/schedule-on-idle
-       (dom/focus! (dom/get-element (first ids)))))
+       #(dom/focus! (dom/get-element (first ids)))))
 
     (when (and open? (some? (:levels @local)))
       [:> dropdown' props
@@ -255,6 +255,7 @@
                                     (dom/classnames :separator true))}]
                      [:& context-menu-a11y-item
                       {:id id
+                       :key id
                        :class (if (and new-css-system workspace?)
                                 (dom/classnames (css :is-selected) (and selected (= option-name selected))
                                                 (css :context-menu-item) true)

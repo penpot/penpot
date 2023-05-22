@@ -212,10 +212,11 @@
     (into [] (map #(assoc % ::service sname)) limits)))
 
 (defn- get-uid
-  [{:keys [::http/request] :as params}]
-  (or (::rpc/profile-id params)
-      (some-> request parse-client-ip)
-      uuid/zero))
+  [{:keys [::rpc/profile-id] :as params}]
+  (let [request (-> params meta ::http/request)]
+    (or profile-id
+        (some-> request parse-client-ip)
+        uuid/zero)))
 
 (defn process-request!
   [{:keys [::rpc/rlimit ::rds/redis ::skey ::sname] :as cfg} params]

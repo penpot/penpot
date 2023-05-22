@@ -6,9 +6,9 @@
 
 (ns app.main.ui.hooks.resize
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
-   [app.common.spec :as us]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
@@ -74,7 +74,10 @@
 
 (defn use-resize-observer
   [callback]
-  (us/assert! (some? callback) "the `callback` is mandatory")
+
+  (dm/assert!
+   "expected a valid callback"
+   (fn? callback))
 
   (let [prev-val-ref (mf/use-ref nil)
         observer-ref (mf/use-ref nil)

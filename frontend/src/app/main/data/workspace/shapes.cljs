@@ -12,7 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
@@ -30,10 +30,7 @@
    [app.main.features :as features]
    [app.main.streams :as ms]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
-
-(s/def ::shape-attrs ::cts/shape-attrs)
 
 (defn get-shape-layer-position
   [objects selected attrs]
@@ -96,15 +93,14 @@
                       (pcb/change-parent (:parent-id attrs) [shape]))
                     (cond-> (ctl/grid-layout? objects (:parent-id shape))
                       (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells)))]
-    
+
     [shape changes]))
 
 (defn add-shape
   ([attrs]
    (add-shape attrs {}))
-
   ([attrs {:keys [no-select? no-update-layout?]}]
-   (us/verify ::shape-attrs attrs)
+   (dm/assert! (cts/shape-attrs? attrs))
    (ptk/reify ::add-shape
      ptk/WatchEvent
      (watch [it state _]
@@ -168,7 +164,7 @@
 (defn delete-shapes
   ([ids] (delete-shapes nil ids))
   ([page-id ids]
-   (us/assert ::us/set-of-uuid ids)
+   (dm/assert! (sm/set-of-uuid? ids))
    (ptk/reify ::delete-shapes
      ptk/WatchEvent
      (watch [it state _]
@@ -189,7 +185,7 @@
                ;; but hidden (to be able to recover them more easily).
                (let [shape           (get objects shape-id)
                      component-shape (ctn/get-component-shape objects shape)]
-                 (and (ctk/in-component-instance? shape)
+                 (and (ctk/in-component-copy? shape)
                       (not= shape component-shape)
                       (not (ctk/main-instance? component-shape)))))
 
@@ -208,10 +204,15 @@
                        (recur (rest ids-seq)
                               (conj ids-to-delete id)
                               ids-to-hide)))))
-               [ids []])]
+               [ids []])
 
-         (rx/concat (rx/of (update-shape-flags ids-to-hide {:hidden true}))
-                    (real-delete-shapes file page objects ids-to-delete it components-v2)))))))
+             undo-id (js/Symbol)]
+
+         (rx/concat
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 (update-shape-flags ids-to-hide {:hidden true}))
+          (real-delete-shapes file page objects ids-to-delete it components-v2)
+          (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn- real-delete-shapes
   [file page objects ids it components-v2]
@@ -331,14 +332,11 @@
                     (cond-> (seq starting-flows)
                       (pcb/update-page-option :flows (fn [flows]
                                                        (->> (map :id starting-flows)
-                                                            (reduce ctp/remove-flow flows))))))
-        undo-id (js/Symbol)]
+                                                            (reduce ctp/remove-flow flows))))))]
 
-    (rx/of (dwu/start-undo-transaction undo-id)
-           (dc/detach-comment-thread ids)
+    (rx/of (dc/detach-comment-thread ids)
            (ptk/data-event :layout/update all-parents)
-           (dch/commit-changes changes)
-           (dwu/commit-undo-transaction undo-id))))
+           (dch/commit-changes changes))))
 
 (defn create-and-add-shape
   [type frame-x frame-y data]
@@ -400,7 +398,7 @@
 
             changes
             (prepare-move-shapes-into-frame changes (:id shape) selected objects)]
-        
+
         [shape changes]))))
 
 (defn create-artboard-from-selection
@@ -447,8 +445,14 @@
 
 (defn update-shape-flags
   [ids {:keys [blocked hidden] :as flags}]
-  (us/verify (s/coll-of ::us/uuid) ids)
-  (us/assert ::shape-attrs flags)
+  (dm/assert!
+   "expected valid coll of uuids"
+   (every? uuid? ids))
+
+  (dm/assert!
+   "expected valid shape-attrs value for `flags`"
+   (cts/shape-attrs? flags))
+
   (ptk/reify ::update-shape-flags
     ptk/WatchEvent
     (watch [_ state _]
@@ -481,25 +485,33 @@
       (let [selected (wsh/lookup-selected state)]
         (rx/of (dch/update-shapes selected #(update % :blocked not)))))))
 
+
+;; FIXME: this need to be refactored
+
 (defn toggle-file-thumbnail-selected
   []
   (ptk/reify ::toggle-file-thumbnail-selected
     ptk/WatchEvent
     (watch [_ state _]
       (let [selected   (wsh/lookup-selected state)
-            pages      (-> state :workspace-data :pages-index vals)
-            get-frames (fn [{:keys [objects id] :as page}]
-                         (->> (ctst/get-frames objects)
-                              (sequence
-                               (comp (filter :use-for-thumbnail?)
-                                     (map :id)
-                                     (remove selected)
-                                     (map (partial vector id))))))]
+            pages      (-> state :workspace-data :pages-index vals)]
 
         (rx/concat
+         ;; First: clear the `:use-for-thumbnail?` flag from all not
+         ;; selected frames.
          (rx/from
-          (->> (mapcat get-frames pages)
+          (->> pages
+               (mapcat
+                (fn [{:keys [objects id] :as page}]
+                  (->> (ctst/get-frames objects)
+                       (sequence
+                        (comp (filter :use-for-thumbnail?)
+                              (map :id)
+                              (remove selected)
+                              (map (partial vector id)))))))
                (d/group-by first second)
                (map (fn [[page-id frame-ids]]
                       (dch/update-shapes frame-ids #(dissoc % :use-for-thumbnail?) {:page-id page-id})))))
+
+         ;; And finally: toggle the flag value on all the selected shapes
          (rx/of (dch/update-shapes selected #(update % :use-for-thumbnail? not))))))))

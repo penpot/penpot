@@ -7,95 +7,103 @@
 (ns app.common.types.color
   (:require
     [app.common.data :as d]
-    [app.common.spec :as us]
+    [app.common.schema :as sm]
+    [app.common.schema.openapi :as-alias oapi]
     [app.common.text :as txt]
     [app.common.types.color.generic :as-alias color-generic]
     [app.common.types.color.gradient :as-alias color-gradient]
     [app.common.types.color.gradient.stop :as-alias color-gradient-stop]
-    [clojure.spec.alpha :as s]))
+    [clojure.test.check.generators :as tgen]))
 
-;; TODO: maybe define ::color-hex-string with proper hex color spec?
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SCHEMAS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; --- GRADIENTS
+(def rgb-color-re
+  #"^#(?:[0-9a-fA-F]{3}){1,2}$")
 
-(s/def ::id uuid?)
+(defn- random-rgb-color
+  []
+  #?(:clj (format "#%06x" (rand-int 16rFFFFFF))
+     :cljs
+     (let [r (rand-int 255)
+           g (rand-int 255)
+           b (rand-int 255)]
+       (str "#"
+            (.. r (toString 16) (padStart 2 "0"))
+            (.. g (toString 16) (padStart 2 "0"))
+            (.. b (toString 16) (padStart 2 "0"))))))
 
-(s/def ::color-gradient/type #{:linear :radial})
-(s/def ::color-gradient/start-x ::us/safe-number)
-(s/def ::color-gradient/start-y ::us/safe-number)
-(s/def ::color-gradient/end-x ::us/safe-number)
-(s/def ::color-gradient/end-y ::us/safe-number)
-(s/def ::color-gradient/width ::us/safe-number)
+(sm/def! ::rgb-color
+  {:type ::rgb-color
+   :pred #(and (string? %) (some? (re-matches rgb-color-re %)))
+   :type-properties
+   {:title "rgb-color"
+    :description "RGB Color String"
+    :error/message "expected a valid RGB color"
+    :gen/gen (->> tgen/any (tgen/fmap (fn [_] (random-rgb-color))))
 
-(s/def ::color-gradient-stop/color ::us/rgb-color-str)
-(s/def ::color-gradient-stop/opacity ::us/safe-number)
-(s/def ::color-gradient-stop/offset ::us/safe-number)
+    ::oapi/type "integer"
+    ::oapi/format "int64"}})
 
-(s/def ::color-gradient/stop
-  (s/keys :req-un [::color-gradient-stop/color
-                   ::color-gradient-stop/opacity
-                   ::color-gradient-stop/offset]))
+(sm/def! ::gradient
+  [:map {:title "Gradient"}
+   [:type [::sm/one-of #{:linear :radial}]]
+   [:start-x ::sm/safe-number]
+   [:start-y ::sm/safe-number]
+   [:end-x ::sm/safe-number]
+   [:end-y ::sm/safe-number]
+   [:width ::sm/safe-number]
+   [:stops
+    [:vector {:min 1 :gen/max 2}
+     [:map {:title "GradientStop"}
+      [:color ::rgb-color]
+      [:opacity ::sm/safe-number]
+      [:offset ::sm/safe-number]]]]])
 
-(s/def ::color-gradient/stops
-  (s/coll-of ::color-gradient/stop :kind vector?))
+(sm/def! ::color
+  [:map
+   [:id {:optional true} ::sm/uuid]
+   [:name {:optional true} :string]
+   [:path {:optional true} [:maybe :string]]
+   [:value {:optional true} [:maybe :string]]
+   [:color {:optional true} [:maybe ::rgb-color]]
+   [:opacity {:optional true} [:maybe ::sm/safe-number]]
+   [:modified-at {:optional true} ::sm/inst]
+   [:ref-id {:optional true} ::sm/uuid]
+   [:ref-file {:optional true} ::sm/uuid]
+   [:gradient {:optional true} [:maybe ::gradient]]])
 
-(s/def ::gradient
-  (s/keys :req-un [::color-gradient/type
-                   ::color-gradient/start-x
-                   ::color-gradient/start-y
-                   ::color-gradient/end-x
-                   ::color-gradient/end-y
-                   ::color-gradient/width
-                   ::color-gradient/stops]))
 
-;; --- COLORS
+;; FIXME: incomplete schema
+(sm/def! ::recent-color
+  [:and
+   [:map {:title "RecentColot"}
+    [:opacity {:optional true} [:maybe ::sm/safe-number]]
+    [:color {:optional true} [:maybe ::rgb-color]]
+    [:gradient {:optional true} [:maybe ::gradient]]]
+   [::sm/contains-any {:strict true} [:color :gradient]]])
 
-(s/def ::color-generic/name string?)
-(s/def ::color-generic/path (s/nilable string?))
-(s/def ::color-generic/value (s/nilable string?))
-(s/def ::color-generic/color (s/nilable ::us/rgb-color-str))
-(s/def ::color-generic/opacity (s/nilable ::us/safe-number))
-(s/def ::color-generic/gradient (s/nilable ::gradient))
-(s/def ::color-generic/ref-id uuid?)
-(s/def ::color-generic/ref-file uuid?)
+(def color?
+  (sm/pred-fn ::color))
 
-(s/def ::shape-color
-  (s/keys :req-un [:us/color
-                   ::color-generic/opacity]
-          :opt-un [::color-generic/gradient
-                   ::color-generic/ref-id
-                   ::color-generic/ref-file]))
+(def recent-color?
+  (sm/pred-fn ::recent-color))
 
-(s/def ::color
-  (s/keys :opt-un [::id
-                   ::color-generic/name
-                   ::color-generic/path
-                   ::color-generic/value
-                   ::color-generic/color
-                   ::color-generic/opacity
-                   ::color-generic/gradient]))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::recent-color
-  (s/and
-   (s/keys :opt-un [::color-generic/value
-                    ::color-generic/color
-                    ::color-generic/opacity
-                    ::color-generic/gradient])
-   (fn [o]
-     (or (contains? o :gradient)
-         (contains? o :color)))))
-
-;; --- Helpers for color in different parts of a shape
-
-;; fill
+;; --- fill
 
 (defn fill->shape-color
   [fill]
-  (d/without-nils {:color (:fill-color fill)
-                   :opacity (:fill-opacity fill)
-                   :gradient (:fill-color-gradient fill)
-                   :ref-id (:fill-color-ref-id fill)
-                   :ref-file (:fill-color-ref-file fill)}))
+  (d/without-nils
+   {:color (:fill-color fill)
+    :opacity (:fill-opacity fill)
+    :gradient (:fill-color-gradient fill)
+    :ref-id (:fill-color-ref-id fill)
+    :ref-file (:fill-color-ref-file fill)}))
 
 (defn set-fill-color
   [shape position color opacity gradient]

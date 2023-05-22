@@ -36,7 +36,8 @@
                    ::create-page]))
 
 (sv/defmethod ::create-temp-file
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::doc/module :files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
     (projects/check-edition-permissions! conn profile-id project-id)
@@ -64,7 +65,8 @@
                    ::files/id]))
 
 (sv/defmethod ::update-temp-file
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::doc/module :files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (update-temp-file conn (assoc params :profile-id profile-id))
@@ -101,7 +103,8 @@
           :req-un [::files/id]))
 
 (sv/defmethod ::persist-temp-file
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::doc/module :files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)

@@ -18,7 +18,6 @@
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.components-list :as ctkl]
@@ -84,10 +83,6 @@
 
 (def default-workspace-local {:zoom 1})
 
-(s/def ::layout-name (s/nilable ::us/keyword))
-(s/def ::coll-of-uuids (s/coll-of ::us/uuid))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -101,7 +96,11 @@
 
 (defn initialize-layout
   [lname]
-  (us/assert! ::layout-name lname)
+  ;; (dm/assert!
+  ;;  "expected valid layout"
+  ;;  (and (keyword? lname)
+  ;;       (contains? layout/presets lname)))
+
   (ptk/reify ::initialize-layout
     ptk/UpdateEvent
     (update [_ state]
@@ -260,14 +259,36 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [ignore-until  (-> state :workspace-file :ignore-sync-until)
-            file-id       (-> state :workspace-file :id)
-            needs-update? (some #(and (> (:modified-at %) (:synced-at %))
-                                      (or (not ignore-until)
-                                          (> (:modified-at %) ignore-until)))
-                                libraries)]
+      (let [file-data     (:workspace-data state)
+            ignore-until  (dm/get-in state [:workspace-file :ignore-sync-until])
+            file-id       (dm/get-in state [:workspace-file :id])
+            needs-update? (seq (filter #(dwl/assets-need-sync % file-data ignore-until)
+                                       libraries))]
         (when needs-update?
           (rx/of (dwl/notify-sync-file file-id)))))))
+
+(defn- fetch-thumbnail-blob-uri
+  [uri]
+  (->> (http/send! {:uri uri
+                    :response-type :blob
+                    :method :get})
+       (rx/map :body)
+       (rx/map (fn [blob] (.createObjectURL js/URL blob)))))
+
+(defn- fetch-thumbnail-blobs
+  [file-id]
+  (->> (rp/cmd! :get-file-object-thumbnails {:file-id file-id})
+       (rx/mapcat (fn [thumbnails]
+          (->> (rx/from thumbnails)
+               (rx/mapcat (fn [[k v]]
+                  ;; we only need to fetch the thumbnail if
+                  ;; it is a data:uri, otherwise we can just
+                  ;; use the value as is.
+                  (if (.startsWith v "data:")
+                    (->> (fetch-thumbnail-blob-uri v)
+                         (rx/map (fn [uri] [k uri])))
+                    (rx/of [k v])))))))
+       (rx/reduce conj {})))
 
 (defn- fetch-bundle
   [project-id file-id]
@@ -287,9 +308,8 @@
             ;; WTF is this?
             share-id (-> state :viewer-local :share-id)
             stoper   (rx/filter (ptk/type? ::fetch-bundle) stream)]
-
         (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
-                     (rp/cmd! :get-file-object-thumbnails {:file-id file-id})
+                     (fetch-thumbnail-blobs file-id)
                      (rp/cmd! :get-project {:id project-id})
                      (rp/cmd! :get-team-users {:file-id file-id})
                      (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id}))
@@ -299,8 +319,8 @@
 
 (defn initialize-file
   [project-id file-id]
-  (us/assert! ::us/uuid project-id)
-  (us/assert! ::us/uuid file-id)
+  (dm/assert! (uuid? project-id))
+  (dm/assert! (uuid? file-id))
 
   (ptk/reify ::initialize-file
     ptk/UpdateEvent
@@ -351,7 +371,7 @@
 
 (defn initialize-page
   [page-id]
-  (us/assert! ::us/uuid page-id)
+  (dm/assert! (uuid? page-id))
   (ptk/reify ::initialize-page
     ptk/UpdateEvent
     (update [_ state]
@@ -385,7 +405,7 @@
 
 (defn finalize-page
   [page-id]
-  (us/assert! ::us/uuid page-id)
+  (dm/assert! (uuid? page-id))
   (ptk/reify ::finalize-page
     ptk/UpdateEvent
     (update [_ state]
@@ -449,10 +469,12 @@
             page    (get-in state [:workspace-data :pages-index page-id])
             name    (cp/generate-unique-name unames (:name page))
 
-            no_thumbnails_objects (->> (:objects page)
-                                       (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))
-
-            page (-> page (assoc :name name :id id :objects no_thumbnails_objects))
+            page    (-> page
+                        (assoc :name name)
+                        (assoc :id id)
+                        (assoc :objects
+                               (->> (:objects page)
+                                    (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))))
 
             changes (-> (pcb/empty-changes it)
                         (pcb/add-page id page))]
@@ -464,8 +486,8 @@
 
 (defn rename-page
   [id name]
-  (us/verify ::us/uuid id)
-  (us/verify string? name)
+  (dm/assert! (uuid? id))
+  (dm/assert! (string? name))
   (ptk/reify ::rename-page
     ptk/WatchEvent
     (watch [it state _]
@@ -478,18 +500,40 @@
 (declare purge-page)
 (declare go-to-file)
 
+(defn- delete-page-components
+  [changes page]
+  (let [components-to-delete (->> page
+                                  :objects
+                                  vals
+                                  (filter #(true? (:main-instance? %)))
+                                  (map :component-id))
+
+        changes (reduce (fn [changes component-id]
+                          (pcb/delete-component changes component-id))
+                        changes
+                        components-to-delete)]
+    changes))
+
 (defn delete-page
   [id]
   (ptk/reify ::delete-page
     ptk/WatchEvent
     (watch [it state _]
-      (let [pages (get-in state [:workspace-data :pages])
+      (let [components-v2 (features/active-feature? state :components-v2)
+            file-id       (:current-file-id state)
+            file          (wsh/get-file state file-id)
+            pages (get-in state [:workspace-data :pages])
             index (d/index-of pages id)
             page (get-in state [:workspace-data :pages-index id])
             page (assoc page :index index)
 
-            changes (-> (pcb/empty-changes it)
-                        (pcb/del-page page))]
+            changes (cond-> (pcb/empty-changes it)
+                      components-v2
+                      (pcb/with-library-data file)
+                      components-v2
+                      (delete-page-components page)
+                      :always
+                      (pcb/del-page page))]
 
         (rx/of (dch/commit-changes changes)
                (when (= id (:current-page-id state))
@@ -566,8 +610,8 @@
 
 (defn update-shape
   [id attrs]
-  (us/verify ::us/uuid id)
-  (us/verify ::cts/shape-attrs attrs)
+  (dm/assert! (uuid? id))
+  (dm/assert! (cts/shape-attrs? attrs))
   (ptk/reify ::update-shape
     ptk/WatchEvent
     (watch [_ _ _]
@@ -576,7 +620,7 @@
 
 (defn start-rename-shape
   [id]
-  (us/verify ::us/uuid id)
+  (dm/assert! (uuid? id))
   (ptk/reify ::start-rename-shape
     ptk/UpdateEvent
     (update [_ state]
@@ -593,7 +637,7 @@
 
 (defn update-selected-shapes
   [attrs]
-  (us/verify ::cts/shape-attrs attrs)
+  (dm/assert! (cts/shape-attrs? attrs))
   (ptk/reify ::update-selected-shapes
     ptk/WatchEvent
     (watch [_ state _]
@@ -620,11 +664,14 @@
 
 ;; --- Shape Vertical Ordering
 
-(s/def ::loc  #{:up :down :bottom :top})
+(def valid-vertical-locations
+  #{:up :down :bottom :top})
 
 (defn vertical-order-selected
   [loc]
-  (us/verify ::loc loc)
+  (dm/assert!
+   "expected valid location"
+   (contains? valid-vertical-locations loc))
   (ptk/reify ::vertical-order-selected
     ptk/WatchEvent
     (watch [it state _]
@@ -745,9 +792,9 @@
 
 (defn relocate-shapes
   [ids parent-id to-index & [ignore-parents?]]
-  (us/verify (s/coll-of ::us/uuid) ids)
-  (us/verify ::us/uuid parent-id)
-  (us/verify number? to-index)
+  (dm/assert! (every? uuid? ids))
+  (dm/assert! (uuid? parent-id))
+  (dm/assert! (number? to-index))
 
   (ptk/reify ::relocate-shapes
     ptk/WatchEvent
@@ -934,7 +981,10 @@
 
 (defn align-objects
   [axis]
-  (us/verify ::gal/align-axis axis)
+  (dm/assert!
+   "expected valid align axis value"
+   (contains? gal/valid-align-axis axis))
+
   (ptk/reify ::align-objects
     ptk/WatchEvent
     (watch [_ state _]
@@ -975,7 +1025,10 @@
 
 (defn distribute-objects
   [axis]
-  (us/verify ::gal/dist-axis axis)
+  (dm/assert!
+   "expected valid distribute axis value"
+   (contains? gal/valid-dist-axis axis))
+
   (ptk/reify ::distribute-objects
     ptk/WatchEvent
     (watch [_ state _]
@@ -1054,7 +1107,7 @@
              qparams    {:page-id page-id}]
          (rx/of (rt/nav' :workspace pparams qparams))))))
   ([page-id]
-   (us/assert! ::us/uuid page-id)
+   (dm/assert! (uuid? page-id))
    (ptk/reify ::go-to-page-2
      ptk/WatchEvent
      (watch [_ state _]
@@ -1066,7 +1119,6 @@
 
 (defn go-to-layout
   [layout]
-  (us/verify ::layout/flag layout)
   (ptk/reify ::go-to-layout
     IDeref
     (-deref [_] {:layout layout})
@@ -1119,8 +1171,8 @@
                                                             :typographies #{}}))))
 (defn go-to-main-instance
   [page-id shape-id]
-  (us/verify ::us/uuid page-id)
-  (us/verify ::us/uuid shape-id)
+  (dm/assert! (uuid? page-id))
+  (dm/assert! (uuid? shape-id))
   (ptk/reify ::go-to-main-instance
     ptk/WatchEvent
     (watch [_ state stream]
@@ -1242,12 +1294,9 @@
 ;; Context Menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::point gpt/point?)
-
-
 (defn show-context-menu
   [{:keys [position] :as params}]
-  (us/verify ::point position)
+  (dm/assert! (gpt/point? position))
   (ptk/reify ::show-context-menu
     ptk/UpdateEvent
     (update [_ state]
@@ -1265,7 +1314,7 @@
 
             not-group-like? (and (= (count selected) 1)
                                  (not (contains? #{:group :bool} (:type head))))
-           
+
             no-bool-shapes? (->> all-selected (some (comp #{:frame :text} :type)))]
 
         (rx/concat
@@ -1281,7 +1330,7 @@
 
 (defn show-page-item-context-menu
   [{:keys [position page] :as params}]
-  (us/verify ::point position)
+  (dm/assert! (gpt/point? position))
   (ptk/reify ::show-page-item-context-menu
     ptk/WatchEvent
     (watch [_ _ _]
@@ -1631,7 +1680,7 @@
           ;; Check if the shape is an instance whose master is defined in a
           ;; library that is not linked to the current file
           (foreign-instance? [shape paste-objects state]
-            (let [root         (cph/get-root-shape paste-objects shape)
+            (let [root         (ctn/get-component-shape paste-objects shape)
                   root-file-id (:component-file root)]
               (and (some? root)
                    (not= root-file-id (:current-file-id state))
@@ -1728,7 +1777,7 @@
 
 (defn paste-text
   [text]
-  (us/assert! (string? text) "expected string as first argument")
+  (dm/assert! (string? text))
   (ptk/reify ::paste-text
     ptk/WatchEvent
     (watch [_ state _]
@@ -1755,7 +1804,7 @@
 ;; TODO: why not implement it in terms of upload-media-workspace?
 (defn- paste-svg
   [text]
-  (us/assert! (string? text) "expected string as first argument")
+  (dm/assert! (string? text))
   (ptk/reify ::paste-svg
     ptk/WatchEvent
     (watch [_ state _]
@@ -2057,6 +2106,58 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-global :file-library-reverse-sort] reverse-sort?))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Components annotations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn update-component-annotation
+  "Update the component with the given annotation"
+  [id annotation]
+  (dm/assert! (uuid? id))
+  (dm/assert! (string? annotation))
+  (ptk/reify ::update-component-annotation
+    ptk/WatchEvent
+    (watch [it state _]
+
+        (let [data (get state :workspace-data)
+
+              update-fn
+              (fn [component]
+                ;; NOTE: we need to ensure the component exists,
+                ;; because there are small possibilities of race
+                ;; conditions with component deletion.
+                (when component
+                  (if (nil? annotation)
+                    (dissoc component :annotation)
+                    (assoc component :annotation annotation))))
+
+              changes (-> (pcb/empty-changes it)
+                          (pcb/with-library-data data)
+                          (pcb/update-component id update-fn))]
+
+          (rx/of (dch/commit-changes changes))))))
+
+
+
+(defn set-annotations-expanded
+  [expanded?]
+  (ptk/reify ::set-annotations-expanded
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-annotations :expanded?] expanded?))))
+
+(defn set-annotations-id-for-create
+  [id]
+  (ptk/reify ::set-annotations-id-for-create
+    ptk/UpdateEvent
+    (update [_ state]
+      (if id
+        (-> (assoc-in state [:workspace-annotations :id-for-create] id)
+            (assoc-in [:workspace-annotations :expanded?] true))
+        (d/dissoc-in state [:workspace-annotations :id-for-create])))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports

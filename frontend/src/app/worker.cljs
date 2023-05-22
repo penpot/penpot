@@ -6,8 +6,10 @@
 
 (ns app.worker
   (:require
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
+   [app.util.object :as obj]
    [app.worker.export]
    [app.worker.impl :as impl]
    [app.worker.import]
@@ -16,33 +18,29 @@
    [app.worker.snaps]
    [app.worker.thumbnails]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [promesa.core :as p]))
 
 (log/setup! {:app :info})
 
 ;; --- Messages Handling
 
-(s/def ::cmd keyword?)
+(def schema:message
+  [:map {:title "WorkerMessage"}
+   [:sender-id ::sm/uuid]
+   [:payload
+    [:map
+     [:cmd :keyword]]]
+   [:buffer? {:optional true} :boolean]])
 
-(s/def ::payload
-  (s/keys :req-un [::cmd]))
-
-(s/def ::sender-id uuid?)
-
-(s/def ::buffer? boolean?)
-
-(s/def ::message
-  (s/keys
-   :opt-un [::buffer?]
-   :req-un [::payload ::sender-id]))
+(def message?
+  (sm/pred-fn schema:message))
 
 (def buffer (rx/subject))
 
 (defn- handle-message
   "Process the message and returns to the client"
-  [{:keys [sender-id payload] :as message}]
-  (us/assert ::message message)
+  [{:keys [sender-id payload transfer] :as message}]
+  (dm/assert! (message? message))
   (letfn [(post [msg]
             (let [msg (-> msg (assoc :reply-to sender-id) (wm/encode))]
               (.postMessage js/self msg)))
@@ -66,7 +64,7 @@
                           :completed true})))]
 
     (try
-      (let [result (impl/handler payload)
+      (let [result (impl/handler payload transfer)
             promise? (p/promise? result)
             stream? (or (rx/observable? result) (rx/subject? result))]
 
@@ -88,7 +86,7 @@
 (defn- drop-message
   "Sends to the client a notification that its messages have been dropped"
   [{:keys [sender-id] :as message}]
-  (us/assert ::message message)
+  (dm/assert! (message? message))
   (.postMessage js/self (wm/encode {:reply-to sender-id
                                     :dropped true})))
 
@@ -148,7 +146,10 @@
   [event]
   (when (nil? (.-source event))
     (let [message (.-data event)
-          message (wm/decode message)]
+          transfer (obj/get message "transfer")
+          message (cond-> (wm/decode message)
+                    (some? transfer)
+                    (assoc :transfer transfer))]
       (if (:buffer? message)
         (rx/push! buffer message)
         (handle-message message)))))

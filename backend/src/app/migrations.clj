@@ -316,7 +316,15 @@
     :fn (mg/resource "app/migrations/sql/0101-mod-server-error-report-table.sql")}
 
    {:name "0102-mod-access-token-table"
-    :fn (mg/resource "app/migrations/sql/0102-mod-access-token-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0102-mod-access-token-table.sql")}
+
+   {:name "0103-mod-file-object-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0103-mod-file-object-thumbnail-table.sql")}
+
+   {:name "0104-mod-file-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0104-mod-file-thumbnail-table.sql")}
+
+   ])
 
 (defn apply-migrations!
   [pool name migrations]

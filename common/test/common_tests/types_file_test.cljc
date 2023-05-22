@@ -195,6 +195,7 @@
 
         typographies (ctyl/typographies-seq (ctf/file-data absorbed-file))
         page         (ctpl/get-page (ctf/file-data absorbed-file) file-page-id)
+
         shape1       (ctn/get-shape page (thf/id :shape1))
         text-node    (d/seek #(some? (:text %)) (txt/node-seq (:content shape1)))]
 

@@ -230,6 +230,30 @@
       [:div.icon
        i/arrow-slide]]]))
 
+(mf/defc radio-buttons
+  [{:keys [name options form trim] :as props}]
+  (let [form      (or form (mf/use-ctx form-ctx))
+        value     (get-in @form [:data name] "")
+        on-change (fn [event]
+                    (let [value (-> event dom/get-target dom/get-value)]
+                      (swap! form assoc-in [:touched name] true)
+                      (fm/on-input-change form name value trim)))]
+    [:div.custom-radio
+     (for [item options]
+       (let [id (str/ffmt "%-%" name (:value item))
+             image (:image item)]
+         [:div.input-radio {:key id :class (when image "with-image")}
+          [:input {:on-change on-change
+                   :type "radio"
+                   :id id
+                   :name name
+                   :value (:value item)
+                   :checked (= value (:value item))}]
+          [:label {:for id
+                   :style {:background-image (when image (str/ffmt "url(%)" image))}
+                   :class (when image "with-image")}
+           (:label item)]]))]))
+
 (mf/defc submit-button
   [{:keys [label form on-click disabled data-test] :as props}]
   (let [form (or form (mf/use-ctx form-ctx))]

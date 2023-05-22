@@ -18,7 +18,9 @@
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
    [app.db :as db]
+   [app.media :as media]
    [app.rpc.commands.files :as files]
+   [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
@@ -34,7 +36,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool]))
+  (s/keys :req [::db/pool ::sto/storage]))
 
 (defmethod ig/prep-key ::handler
   [_ cfg]
@@ -47,6 +49,7 @@
     (db/with-atomic [conn pool]
       (let [min-age (dt/duration (or (:min-age params) (::min-age cfg)))
             cfg     (-> cfg
+                        (update ::sto/storage media/configure-assets-storage conn)
                         (assoc ::db/conn conn)
                         (assoc ::file-id file-id)
                         (assoc ::min-age min-age))
@@ -141,36 +144,53 @@
       (db/delete! conn :file-media-object {:id (:id mobj)}))))
 
 (defn- clean-file-object-thumbnails!
-  [conn file-id data]
+  [{:keys [::db/conn ::sto/storage]} file-id data]
   (let [stored (->> (db/query conn :file-object-thumbnail
                               {:file-id file-id}
                               {:columns [:object-id]})
                     (into #{} (map :object-id)))
 
-        get-objects-ids
-        (fn [{:keys [id objects]}]
-          (->> (ctt/get-frames objects)
-               (map #(str id (:id %)))))
-
-        using (into #{}
-                    (mapcat get-objects-ids)
-                    (vals (:pages-index data)))
+        using  (into #{}
+                     (mapcat (fn [{:keys [id objects]}]
+                               (->> (ctt/get-frames objects)
+                                    (map #(str id (:id %))))))
+                     (vals (:pages-index data)))
 
         unused (set/difference stored using)]
 
     (when (seq unused)
       (let [sql (str "delete from file_object_thumbnail "
-                     " where file_id=? and object_id=ANY(?)")
-            res (db/exec-one! conn [sql file-id (db/create-array conn "text" unused)])]
-        (l/debug :hint "delete file object thumbnails" :file-id file-id :total (:next.jdbc/update-count res))))))
+                     " where file_id=? and object_id=ANY(?)"
+                     " returning media_id")
+            res (db/exec! conn [sql file-id (db/create-array conn "text" unused)])]
+
+        (doseq [media-id (into #{} (keep :media-id) res)]
+          ;; Mark as deleted the storage object related with the
+          ;; photo-id field.
+          (l/trace :hint "mark storage object as deleted" :id media-id)
+          (sto/del-object! storage media-id))
+
+        (l/debug :hint "delete file object thumbnails"
+                 :file-id file-id
+                 :total (count res))))))
 
 (defn- clean-file-thumbnails!
-  [conn file-id revn]
+  [{:keys [::db/conn ::sto/storage]} file-id revn]
   (let [sql (str "delete from file_thumbnail "
-                 " where file_id=? and revn < ?")
-        res (db/exec-one! conn [sql file-id revn])]
-    (when-not (zero? (:next.jdbc/update-count res))
-      (l/debug :hint "delete file thumbnails" :file-id file-id :total (:next.jdbc/update-count res)))))
+                 " where file_id=? and revn < ? "
+                 " returning media_id")
+        res (db/exec! conn [sql file-id revn])]
+
+    (when (seq res)
+      (doseq [media-id (into #{} (keep :media-id) res)]
+        ;; Mark as deleted the storage object related with the
+        ;; photo-id field.
+        (l/trace :hint "mark storage object as deleted" :id media-id)
+        (sto/del-object! storage media-id))
+
+      (l/debug :hint "delete file thumbnails"
+               :file-id file-id
+               :total (count res)))))
 
 (def ^:private
   sql:get-files-for-library
@@ -252,7 +272,7 @@
         (db/delete! conn :file-data-fragment {:id fragment-id :file-id file-id})))))
 
 (defn- process-file
-  [{:keys [::db/conn]} {:keys [id data revn modified-at features] :as file}]
+  [{:keys [::db/conn] :as cfg} {:keys [id data revn modified-at features] :as file}]
   (l/debug :hint "processing file" :id id :modified-at modified-at)
 
   (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
@@ -261,8 +281,8 @@
                    (pmg/migrate-data))]
 
       (clean-file-media! conn id data)
-      (clean-file-object-thumbnails! conn id data)
-      (clean-file-thumbnails! conn id revn)
+      (clean-file-object-thumbnails! cfg id data)
+      (clean-file-thumbnails! cfg id revn)
       (clean-deleted-components! conn id data)
 
       (when (contains? features "storage/pointer-map")

@@ -10,6 +10,9 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.media :as cm]
+   [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
+   [app.common.schema.openapi :as-alias oapi]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as-alias db]
@@ -29,6 +32,9 @@
    org.im4java.core.IMOperation
    org.im4java.core.Info))
 
+(def default-max-file-size
+  (* 1024 1024 30)) ; 30 MiB
+
 (s/def ::path fs/path?)
 (s/def ::filename string?)
 (s/def ::size integer?)
@@ -44,6 +50,27 @@
   (s/keys :req-un [::path]
           :opt-un [::mtype]))
 
+(sm/def! ::fs/path
+  {:type ::fs/path
+   :pred fs/path?
+   :type-properties
+   {:title "path"
+    :description "filesystem path"
+    :error/message "expected a valid fs path instance"
+    :gen/gen (sg/generator :string)
+    ::oapi/type "string"
+    ::oapi/format "unix-path"
+    ::oapi/decode fs/path}})
+
+(sm/def! ::upload
+  [:map {:title "Upload"}
+   [:filename :string]
+   [:size :int]
+   [:path ::fs/path]
+   [:mtype {:optional true} :string]
+   [:headers {:optional true}
+    [:map-of :string :string]]])
+
 (defn validate-media-type!
   ([upload] (validate-media-type! upload cm/valid-image-types))
   ([upload allowed]
@@ -53,6 +80,16 @@
                :hint "Seems like you are uploading an invalid media object"))
 
    upload))
+
+(defn validate-media-size!
+  [upload]
+  (when (> (:size upload) (cf/get :media-max-file-size default-max-file-size))
+    (ex/raise :type :restriction
+              :code :media-max-file-size-reached
+              :hint (str/ffmt "the uploaded file size % is greater than the maximum %"
+                              (:size upload)
+                              default-max-file-size)))
+  upload)
 
 (defmulti process :cmd)
 (defmulti process-error class)

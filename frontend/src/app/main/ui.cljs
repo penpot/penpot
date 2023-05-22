@@ -31,7 +31,6 @@
 (mf/defc on-main-error
   [{:keys [error] :as props}]
   (mf/with-effect
-    (js/console.log error)
     (st/emit! (rt/assign-exception error)))
   [:span "Internal application error"])
 
@@ -91,12 +90,9 @@
            #_[:& app.main.ui.onboarding/onboarding-team-modal]]
         (when-let [props (some-> profile (get :props {}))]
           (cond
-            (and cf/onboarding-form-id
-                 (not (:onboarding-questions-answered props false))
+            (and (not (:onboarding-questions-answered props false))
                  (not (:onboarding-viewed props false)))
-            [:& app.main.ui.onboarding.questions/questions
-             {:profile profile
-              :form-id cf/onboarding-form-id}]
+            [:& app.main.ui.onboarding.questions/questions]
 
             (not (:onboarding-viewed props))
             [:& app.main.ui.onboarding/onboarding-modal {}]

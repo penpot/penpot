@@ -7,9 +7,9 @@
 (ns app.main.data.messages
   (:require
    [app.common.data :as d]
-   [app.common.spec :as us]
+   [app.common.data.macros :as dm]
+   [app.common.schema :as sm]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
 (declare hide)
@@ -18,32 +18,34 @@
 (def default-animation-timeout 600)
 (def default-timeout 5000)
 
-(s/def ::type #{:success :error :info :warning})
-(s/def ::position #{:fixed :floating :inline})
-(s/def ::status #{:visible :hide})
-(s/def ::controls #{:none :close :inline-actions :bottom-actions})
+(def schema:message
+  [:map {:title "Message"}
+   [:type [::sm/one-of #{:success :error :info :warning}]]
+   [:status {:optional true}
+    [::sm/one-of #{:visible :hide}]]
+   [:position {:optional true}
+    [::sm/one-of #{:fixed :floating :inline}]]
+   [:controls {:optional true}
+    [::sm/one-of #{:none :close :inline-actions :bottom-actions}]]
+   [:tag {:optional true}
+    [:or :string :keyword]]
+   [:timeout {:optional true}
+    [:maybe :int]]
+   [:actions {:optional true}
+    [:vector
+     [:map
+      [:label :string]
+      [:callback ::sm/fn]]]]])
 
-(s/def ::tag (s/or :str ::us/string :kw ::us/keyword))
-(s/def ::label ::us/string)
-(s/def ::callback fn?)
-(s/def ::action (s/keys :req-un [::label ::callback]))
-(s/def ::actions (s/every ::action :kind vector?))
-(s/def ::timeout (s/nilable ::us/integer))
-(s/def ::content ::us/string)
-
-(s/def ::message
-  (s/keys :req-un [::type]
-          :opt-un [::status
-                   ::position
-                   ::controls
-                   ::tag
-                   ::timeout
-                   ::actions
-                   ::status]))
+(def message?
+  (sm/pred-fn schema:message))
 
 (defn show
   [data]
-  (us/verify ::message data)
+  (dm/assert!
+   "expected valid message map"
+   (message? data))
+
   (ptk/reify ::show
     ptk/UpdateEvent
     (update [_ state]

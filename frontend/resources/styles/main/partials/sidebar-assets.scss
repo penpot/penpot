@@ -112,6 +112,7 @@
 
   .collapse-library {
     margin-right: $size-2;
+    flex-shrink: inherit; // Inheriting shrink behaviour
 
     &.open svg {
       transform: rotate(90deg);

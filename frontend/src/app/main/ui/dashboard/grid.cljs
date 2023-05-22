@@ -46,7 +46,8 @@
   (let [features (cond-> ffeat/enabled
                    (features/active-feature? :components-v2)
                    (conj "components/v2"))]
-    (wrk/ask! {:cmd :thumbnails/generate
+
+    (wrk/ask! {:cmd :thumbnails/generate-for-file
                :revn (:revn file)
                :file-id (:id file)
                :file-name (:name file)
@@ -287,7 +288,7 @@
       (when (and (not selected?) (:menu-open @local))
         (swap! local assoc :menu-open false)))
 
-    [:li.grid-item.project-th
+    [:li.grid-item.project-th {:class (dom/classnames :library library-view?)}
      [:button
       {:tab-index "0"
        :class (dom/classnames :selected selected?

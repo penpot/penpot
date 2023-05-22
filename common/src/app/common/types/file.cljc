@@ -13,54 +13,59 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.common :refer [file-version]]
    [app.common.pages.helpers :as cph]
+   [app.common.schema :as sm]
    [app.common.types.color :as ctc]
    [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
-   [app.common.types.file.media-object :as ctfm]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
-;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SCHEMA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::colors
-  (s/map-of uuid? ::ctc/color))
+(sm/def! ::media-object
+  [:map {:title "FileMediaObject"}
+   [:id ::sm/uuid]
+   [:name :string]
+   [:width ::sm/safe-int]
+   [:height ::sm/safe-int]
+   [:mtype :string]
+   [:path {:optional true} [:maybe :string]]])
 
-(s/def ::recent-colors
-  (s/coll-of ::ctc/recent-color :kind vector?))
+(sm/def! ::data
+  [:map {:title "FileData"}
+   [:pages [:vector ::sm/uuid]]
+   [:pages-index
+    [:map-of {:gen/max 5} ::sm/uuid ::ctp/page]]
+   [:colors {:optional true}
+    [:map-of {:gen/max 5} ::sm/uuid ::ctc/color]]
+   [:components {:optional true}
+    [:map-of {:gen/max 5} ::sm/uuid ::ctn/container]]
+   [:recent-colors {:optional true}
+    [:vector {:gen/max 3} ::ctc/recent-color]]
+   [:typographies {:optional true}
+    [:map-of {:gen/max 2} ::sm/uuid ::cty/typography]]
+   [:media {:optional true}
+    [:map-of {:gen/max 5} ::sm/uuid ::media-object]]
+   ])
 
-(s/def ::typographies
-  (s/map-of uuid? ::cty/typography))
+(def file-data?
+  (sm/pred-fn ::data))
 
-(s/def ::pages
-  (s/coll-of uuid? :kind vector?))
+(def media-object?
+  (sm/pred-fn ::media-object))
 
-(s/def ::media
-  (s/map-of uuid? ::ctfm/media-object))
-
-(s/def ::pages-index
-  (s/map-of uuid? ::ctp/page))
-
-(s/def ::components
-  (s/map-of uuid? ::ctn/container))
-
-(s/def ::data
-  (s/keys :req-un [::pages-index
-                   ::pages]
-          :opt-un [::colors
-                   ::components
-                   ::recent-colors
-                   ::typographies
-                   ::media]))
-
-;; Initialization
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INITIALIZATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def empty-file-data
   {:version file-version
@@ -281,6 +286,22 @@
 
     (some used-in-container? (containers-seq file-data))))
 
+(defn used-assets-changed-since
+  "Get a lazy sequence of all assets in the library that are in use by the file and have
+   been modified after the given date."
+  [file-data library since-date]
+  (letfn [(used-assets-shape [shape]
+             (concat 
+              (ctkl/used-components-changed-since shape library since-date)
+              (ctcl/used-colors-changed-since shape library since-date)
+              (ctyl/used-typographies-changed-since shape library since-date)))
+
+          (used-assets-container [container]
+           (->> (mapcat used-assets-shape (ctn/shapes-seq container))
+                (map #(cons (:id container) %))))]
+    
+    (mapcat used-assets-container (containers-seq file-data))))
+
 (defn get-or-add-library-page
   "If exists a page named 'Library backup', get the id and calculate the position to start
   adding new components. If not, create it and start at (0, 0)."
@@ -370,7 +391,7 @@
             root-to-board
             (fn [shape]
               (cond-> shape
-                (and (ctk/instance-root? shape)
+                (and (ctk/instance-head? shape)
                      (not= (:type shape) :frame))
                 (assoc :type :frame
                        :fills []
@@ -413,6 +434,7 @@
                         (some? (:component-file %))
                         (assoc :component-file (:id file-data)))
                      main-instance-shapes)
+
                 ; Add all shapes of the main instance to the library page
                 add-main-instance-shapes
                 (fn [page]
@@ -548,75 +570,81 @@
 
 (defn dump-tree
   ([file-data page-id libraries]
-   (dump-tree file-data page-id libraries false false))
+   (dump-tree file-data page-id libraries false false false))
 
   ([file-data page-id libraries show-ids]
-   (dump-tree file-data page-id libraries show-ids false))
+   (dump-tree file-data page-id libraries show-ids false false))
 
   ([file-data page-id libraries show-ids show-touched]
+   (dump-tree file-data page-id libraries show-ids show-touched false))
+
+  ([file-data page-id libraries show-ids show-touched show-modified]
    (let [page       (ctpl/get-page file-data page-id)
          objects    (:objects page)
          components (ctkl/components file-data)
          root       (d/seek #(nil? (:parent-id %)) (vals objects))]
 
      (letfn [(show-shape [shape-id level objects]
-                         (let [shape (get objects shape-id)]
-                           (println (str/pad (str (str/repeat "  " level)
-                                                  (when (:main-instance? shape) "{")
-                                                  (:name shape)
-                                                  (when (:main-instance? shape) "}")
-                                                  (when (seq (:touched shape)) "*")
-                                                  (when show-ids (str/format " <%s>" (:id shape))))
-                                             {:length 20
-                                              :type :right})
-                                    (show-component-info shape objects))
-                           (when show-touched
-                             (when (seq (:touched shape))
-                               (println (str (str/repeat "  " level)
-                                             "    "
-                                             (str (:touched shape)))))
-                             (when (:remote-synced? shape)
-                               (println (str (str/repeat "  " level)
-                                             "    (remote-synced)"))))
-                           (when (:shapes shape)
-                             (dorun (for [shape-id (:shapes shape)]
-                                      (show-shape shape-id (inc level) objects))))))
+               (let [shape (get objects shape-id)]
+                 (println (str/pad (str (str/repeat "  " level)
+                                        (when (:main-instance? shape) "{")
+                                        (:name shape)
+                                        (when (:main-instance? shape) "}")
+                                        (when (seq (:touched shape)) "*")
+                                        (when show-ids (str/format " <%s>" (:id shape))))
+                                   {:length 20
+                                    :type :right})
+                          (show-component-info shape objects))
+                 (when show-touched
+                   (when (seq (:touched shape))
+                     (println (str (str/repeat "  " level)
+                                   "    "
+                                   (str (:touched shape)))))
+                   (when (:remote-synced? shape)
+                     (println (str (str/repeat "  " level)
+                                   "    (remote-synced)"))))
+                 (when (:shapes shape)
+                   (dorun (for [shape-id (:shapes shape)]
+                            (show-shape shape-id (inc level) objects))))))
 
              (show-component-info [shape objects]
-                                  (if (nil? (:shape-ref shape))
-                                    (if (:component-root? shape) " #" "")
-                                    (let [root-shape        (ctn/get-component-shape objects shape)
-                                          component-id      (when root-shape (:component-id root-shape))
-                                          component-file-id (when root-shape (:component-file root-shape))
-                                          component-file    (when component-file-id (get libraries component-file-id nil))
-                                          component         (when component-id
-                                                              (if component-file
-                                                                (ctkl/get-component (:data component-file) component-id)
-                                                                (get components component-id)))
-                                          component-shape   (when component
-                                                              (if component-file
-                                                                (get-ref-shape (:data component-file) component shape)
-                                                                (get-ref-shape file-data component shape)))]
+               (if (nil? (:shape-ref shape))
+                 (if (:component-root? shape) " #" "")
+                 (let [root-shape        (ctn/get-component-shape objects shape)
+                       component-id      (when root-shape (:component-id root-shape))
+                       component-file-id (when root-shape (:component-file root-shape))
+                       component-file    (when component-file-id (get libraries component-file-id nil))
+                       component         (when component-id
+                                           (if component-file
+                                             (ctkl/get-component (:data component-file) component-id)
+                                             (get components component-id)))
+                       component-shape   (when component
+                                           (if component-file
+                                             (get-ref-shape (:data component-file) component shape)
+                                             (get-ref-shape file-data component shape)))]
 
-                                      (str/format " %s--> %s%s%s"
-                                                  (cond (:component-root? shape) "#"
-                                                        (:component-id shape) "@"
-                                                        :else "-")
-                                                  (when component-file (str/format "<%s> " (:name component-file)))
-                                                  (or (:name component-shape) "?")
-                                                  (if (or (:component-root? shape)
-                                                          (nil? (:component-id shape))
-                                                          true)
-                                                    ""
-                                                    (let [component-id      (:component-id shape)
-                                                          component-file-id (:component-file shape)
-                                                          component-file    (when component-file-id (get libraries component-file-id nil))
-                                                          component         (if component-file
-                                                                              (ctkl/get-component (:data component-file) component-id)
-                                                                              (get components component-id))]
-                                                      (str/format " (%s%s)"
-                                                                  (when component-file (str/format "<%s> " (:name component-file)))
-                                                                  (:name component))))))))
+                   (str/format " %s--> %s%s%s"
+                               (cond (:component-root? shape) "#"
+                                     (:component-id shape) "@"
+                                     :else "-")
+
+                               (when component-file (str/format "<%s> " (:name component-file)))
+
+                               (or (:name component-shape) "?")
+
+                               (if (or (:component-root? shape)
+                                       (nil? (:component-id shape))
+                                       true)
+                                 ""
+                                 (let [component-id      (:component-id shape)
+                                       component-file-id (:component-file shape)
+                                       component-file    (when component-file-id (get libraries component-file-id nil))
+                                       component         (if component-file
+                                                           (ctkl/get-component (:data component-file) component-id)
+                                                           (get components component-id))]
+                                   (str/format " (%s%s)"
+                                               (when component-file (str/format "<%s> " (:name component-file)))
+                                               (:name component))))))))
 
              (show-component-instance [component]
                (let [page (get-component-page file-data component)
@@ -633,7 +661,10 @@
        (dorun (for [component (vals components)]
                 (do
                   (println)
-                  (println (str/format "[%s]" (:name component)))
+                  (println (str/format "[%s]%s%s"
+                                       (:name component)
+                                       (when show-ids (str " " (:id component)))
+                                       (when show-modified (str " " (:modified-at component)))))
                   (when (:objects component)
                     (show-shape (:id component) 0 (:objects component)))
                   (when (:main-instance-page component)

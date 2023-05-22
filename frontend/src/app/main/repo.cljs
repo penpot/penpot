@@ -10,29 +10,8 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.util.http :as http]
-   [beicon.core :as rx]))
-
-(derive :get-all-projects ::query)
-(derive :get-comment-threads ::query)
-(derive :get-file ::query)
-(derive :get-file-fragment ::query)
-(derive :get-file-libraries ::query)
-(derive :get-file-object-thumbnails ::query)
-(derive :get-font-variants ::query)
-(derive :get-profile ::query)
-(derive :get-project ::query)
-(derive :get-projects ::query)
-(derive :get-team-invitations ::query)
-(derive :get-team-members ::query)
-(derive :get-team-shared-files ::query)
-(derive :get-team-stats ::query)
-(derive :get-team-users ::query)
-(derive :get-teams ::query)
-(derive :get-view-only-bundle ::query)
-(derive :search-files ::query)
-(derive :retrieve-list-of-builtin-templates ::query)
-(derive :get-unread-comment-threads ::query)
-(derive :get-team-recent-files ::query)
+   [beicon.core :as rx]
+   [cuerdas.core :as str]))
 
 (defn handle-response
   [{:keys [status body] :as response}]
@@ -65,116 +44,66 @@
                :status status
                :data body})))
 
-(defn- send-query!
-  "A simple helper for send and receive transit data on the penpot
-  query api."
-  ([id params]
-   (send-query! id params nil))
-  ([id params {:keys [raw-transit?]}]
-   (let [decode-transit (if raw-transit?
-                          http/conditional-error-decode-transit
-                          http/conditional-decode-transit)]
-     (->> (http/send! {:method :get
-                       :uri (u/join @cf/public-uri "api/rpc/query/" (name id))
-                       :headers {"accept" "application/transit+json"}
-                       :credentials "include"
-                       :query params})
-          (rx/map decode-transit)
-          (rx/mapcat handle-response)))))
+(def default-options
+  {:update-file {:query-params [:id]}
+   :get-raw-file {:rename-to :get-file :raw-transit? true}
+   :upsert-file-object-thumbnail {:query-params [:file-id :object-id]}
+   :create-file-object-thumbnail {:query-params [:file-id :object-id]
+                                  :form-data? true}
+   :export-binfile {:response-type :blob}
+   :import-binfile {:form-data? true}
+   :retrieve-list-of-builtin-templates {:query-params :all}
+   })
 
-(defn- send-mutation!
+(defn- send!
   "A simple helper for a common case of sending and receiving transit
   data to the penpot mutation api."
-  [id params]
-  (->> (http/send! {:method :post
-                    :uri (u/join @cf/public-uri "api/rpc/mutation/" (name id))
-                    :headers {"accept" "application/transit+json"}
-                    :credentials "include"
-                    :body (http/transit-data params)})
-       (rx/map http/conditional-decode-transit)
-       (rx/mapcat handle-response)))
+  [id params options]
+  (let [{:keys [response-type
+                form-data?
+                raw-transit?
+                query-params
+                rename-to]}
+        (-> (get default-options id)
+            (merge options))
 
-(defn- send-command!
-  "A simple helper for a common case of sending and receiving transit
-  data to the penpot mutation api."
-  [id params {:keys [response-type form-data? raw-transit? forward-query-params]}]
-  (let [decode-fn (if raw-transit?
+        decode-fn (if raw-transit?
                     http/conditional-error-decode-transit
                     http/conditional-decode-transit)
-        method    (if (isa? id ::query) :get :post)]
 
-    (->> (http/send! {:method method
-                      :uri (u/join @cf/public-uri "api/rpc/command/" (name id))
-                      :credentials "include"
-                      :headers {"accept" "application/transit+json"}
-                      :body (when (= method :post)
-                              (if form-data?
-                                (http/form-data params)
-                                (http/transit-data params)))
-                      :query (if (= method :get)
-                               params
-                               (if forward-query-params
-                                 (select-keys params forward-query-params)
-                                 nil))
-                      :response-type (or response-type :text)})
+        id        (or rename-to id)
+        nid       (name id)
+        method    (cond
+                    (= query-params :all)  :get
+                    (str/starts-with? nid "get-") :get
+                    :else :post)
+
+        request   {:method method
+                   :uri (u/join @cf/public-uri "api/rpc/command/" (name id))
+                   :credentials "include"
+                   :headers {"accept" "application/transit+json"}
+                   :body (when (= method :post)
+                           (if form-data?
+                             (http/form-data params)
+                             (http/transit-data params)))
+                   :query (if (= method :get)
+                            params
+                            (if query-params
+                              (select-keys params query-params)
+                              nil))
+                   :response-type (or response-type :text)}]
+
+    (->> (http/send! request)
          (rx/map decode-fn)
          (rx/mapcat handle-response))))
 
-(defn- dispatch [& args] (first args))
+(defmulti cmd! (fn [id _] id))
 
-(defmulti query dispatch)
-(defmulti mutation dispatch)
-(defmulti command dispatch)
-
-(defmethod query :default
+(defmethod cmd! :default
   [id params]
-  (send-query! id params))
+  (send! id params nil))
 
-(defmethod command :get-raw-file
-  [_id params]
-  (send-command! :get-file params {:raw-transit? true}))
-
-(defmethod mutation :default
-  [id params]
-  (send-mutation! id params))
-
-(defmethod command :default
-  [id params]
-  (send-command! id params nil))
-
-(defmethod command :update-file
-  [id params]
-  (send-command! id params {:forward-query-params [:id]}))
-
-(defmethod command :upsert-file-object-thumbnail
-  [id params]
-  (send-command! id params {:forward-query-params [:file-id :object-id]}))
-
-(defmethod command :export-binfile
-  [id params]
-  (send-command! id params {:response-type :blob}))
-
-(defmethod command :import-binfile
-  [id params]
-  (send-command! id params {:form-data? true}))
-
-(defn query!
-  ([id] (query id {}))
-  ([id params] (query id params)))
-
-(defn mutation!
-  ([id] (mutation id {}))
-  ([id params] (mutation id params)))
-
-(defn command!
-  ([id] (command id {}))
-  ([id params] (command id params)))
-
-(defn cmd!
-  ([id] (command id {}))
-  ([id params] (command id params)))
-
-(defmethod command :login-with-oidc
+(defmethod cmd! :login-with-oidc
   [_ {:keys [provider] :as params}]
   (let [uri    (u/join @cf/public-uri "api/auth/oauth/" (d/name provider))
         params (dissoc params :provider)]
@@ -195,7 +124,7 @@
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
 
-(defmethod command :export
+(defmethod cmd! :export
   [_ params]
   (let [default {:wait false :blob? false}]
     (send-export (merge default params))))
@@ -204,16 +133,7 @@
 (derive :update-profile-photo ::multipart-upload)
 (derive :update-team-photo ::multipart-upload)
 
-(defmethod mutation ::multipart-upload
-  [id params]
-  (->> (http/send! {:method :post
-                    :uri  (u/join @cf/public-uri "api/rpc/mutation/" (name id))
-                    :credentials "include"
-                    :body (http/form-data params)})
-       (rx/map http/conditional-decode-transit)
-       (rx/mapcat handle-response)))
-
-(defmethod command ::multipart-upload
+(defmethod cmd! ::multipart-upload
   [id params]
   (->> (http/send! {:method :post
                     :uri  (u/join @cf/public-uri "api/rpc/command/" (name id))

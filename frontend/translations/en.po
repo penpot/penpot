@@ -314,7 +314,7 @@ msgstr "Create token"
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.delete-acces-token.title"
 msgstr "Delete token"
-                       
+
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.delete-acces-token.message"
 msgstr "Are you sure you want to delete this token?"
@@ -1337,6 +1337,9 @@ msgstr "Copy link"
 msgid "labels.create"
 msgstr "Create"
 
+msgid "labels.discard"
+msgstr "Discard"
+
 #: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
 msgstr "Create new team"
@@ -2123,6 +2126,12 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
 msgstr "Update a component in a shared library"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "Are you sure you want to delete this annotation?"
+
+msgid "modals.delete-component-annotation.title"
+msgstr "Delete annotation"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
@@ -3368,6 +3377,15 @@ msgstr "Clip content"
 msgid "workspace.options.component"
 msgstr "Component"
 
+msgid "workspace.options.component.annotation"
+msgstr "Annotation"
+
+msgid "workspace.options.component.create-annotation"
+msgstr "Create an annotation"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "Edit an annotation"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
 msgstr "Constraints"
@@ -4451,6 +4469,9 @@ msgstr "Show in assets panel"
 msgid "workspace.shape.menu.show-main"
 msgstr "Show main component"
 
+msgid "workspace.shape.menu.create-annotation"
+msgstr "Create annotation"
+
 msgid "workspace.shape.menu.thumbnail-remove"
 msgstr "Remove thumbnail"
 
@@ -4714,3 +4735,175 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.lets-get-started"
+msgstr "Let's get started!"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.your-feedback-will-help-us"
+msgstr "Your feedback will help us understand what your habits and preferences are so that we can keep making Penpot such a useful and enjoyable tool."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions-how-are-you-planning-to-use-penpot"
+msgstr "How are you planning to use Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.discover-more-about-penpot"
+msgstr "Discover more about Penpot"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
+msgstr "Test Penpot to see if it's a fit for team "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start-to-work-on-my-project"
+msgstr "Start to work on my project"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "Get the code from my team project "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.leave-feedback-for-my-team-project"
+msgstr "Leave feedback for my team project"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-in-concept-ideas"
+msgstr "Work in concept ideas"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.try-out-before-using-penpot-on-premise"
+msgstr "Try out before using Penpot on-premise"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.select-option"
+msgstr "Select option"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.previous"
+msgstr "Previous"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.next"
+msgstr "Next"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start"
+msgstr "Start"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.describe-your-experience-working-on"
+msgstr "How would you best describe your experience working on..."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...branding, illustrations, marketing pieces, etc."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.none"
+msgstr "None"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.some"
+msgstr "Some"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.a-lot"
+msgstr "A lot"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.interface-design-visual-assets-design-systems"
+msgstr "... interface design, visual assets, design systems, etc."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.wireframes-user-journeys-flows-navigation-trees"
+msgstr "... wireframes, user journeys & flows, navigation trees, etc."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "question.design-tool-more-experienced-with"
+msgstr "Which is the design tool you have more experience with?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.figma"
+msgstr "Figma"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.sketch"
+msgstr "Sketch"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.adobe-xd"
+msgstr "Adobe XD"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.canva"
+msgstr "Canva"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.invision"
+msgstr "InVision"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-a-tool"
+msgstr "I've never used a design tool before"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other"
+msgstr "Other (specify)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.team-size"
+msgstr "What's the size of your team?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.more-than-50"
+msgstr "More than 50"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.31-50"
+msgstr "31-50"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.11-30"
+msgstr "11-30"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.2-10"
+msgstr "2-10"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.freelancer"
+msgstr "I'm a freelancer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.personal-project"
+msgstr "I’m working in a personal project"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role"
+msgstr "What's your role?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.designer"
+msgstr "Designer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.developer"
+msgstr "Developer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.manager"
+msgstr "Product or Project manager"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.founder"
+msgstr "Founder/VP"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.marketing"
+msgstr "Marketing"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.student-teacher"
+msgstr "Student or teacher"

@@ -9,20 +9,19 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
+   [app.common.schema :as sm]
+   [app.common.schema.desc-js-like :as-alias smdj]
+   [app.common.schema.generators :as sg]
    [app.common.spec :as us]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
-   [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
    [app.db :as db]
-   [app.db.sql :as sql]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.files.thumbnails :as-alias thumbs]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
@@ -191,7 +190,7 @@
       (ex/raise :type :restriction
                 :code :features-not-supported
                 :feature (first not-supported)
-                :hint (format "features %s not supported" (str/join "," not-supported))))
+                :hint (format "features %s not supported" (str/join "," (map name not-supported)))))
     features))
 
 (defn load-pointer
@@ -256,7 +255,6 @@
               :code :feature-mismatch
               :feature "components/v2"
               :hint "file has 'components/v2' feature enabled but frontend didn't specifies it"))
-
   (cond-> file
     (and (contains? client-features "components/v2")
          (not (contains? features "components/v2")))
@@ -266,8 +264,42 @@
          (not (contains? client-features "storage/pointer-map")))
     (process-pointers deref)))
 
-
 ;; --- COMMAND QUERY: get-file (by id)
+
+(sm/def! ::features
+  [:schema
+   {:title "FileFeatures"
+    ::smdj/inline true
+    :gen/gen (sg/subseq supported-features)}
+   ::sm/set-of-strings])
+
+(sm/def! ::file
+  [:map {:title "File"}
+   [:id ::sm/uuid]
+   [:features ::features]
+   [:has-media-trimmed :boolean]
+   [:comment-thread-seqn {:min 0} :int]
+   [:name :string]
+   [:revn {:min 0} :int]
+   [:modified-at ::dt/instant]
+   [:is-shared :boolean]
+   [:project-id ::sm/uuid]
+   [:created-at ::dt/instant]
+   [:data {:optional true} :any]])
+
+(sm/def! ::permissions-mixin
+  [:map {:title "PermissionsMixin"}
+   [:permissions ::perms/permissions]])
+
+(sm/def! ::file-with-permissions
+  [:merge {:title "FileWithPermissions"}
+   ::file
+   ::permissions-mixin])
+
+(sm/def! ::get-file
+  [:map {:title "get-file"}
+   [:features {:optional true} ::features]
+   [:id ::sm/uuid]])
 
 (defn get-file
   [conn id client-features]
@@ -287,17 +319,14 @@
   [{:keys [modified-at revn]}]
   (str (dt/format-instant modified-at :iso) "-" revn))
 
-(s/def ::get-file
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::id]
-          :opt-un [::features]))
-
 (sv/defmethod ::get-file
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.17"
    ::cond/get-object #(get-minimal-file %1 (:id %2))
-   ::cond/key-fn get-file-etag}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id features]}]
+   ::cond/key-fn get-file-etag
+   ::sm/params ::get-file
+   ::sm/result ::file-with-permissions}
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id features] :as params}]
   (dm/with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id id)]
       (check-read-permissions! perms)
@@ -308,64 +337,35 @@
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
+(sm/def! ::file-fragment
+  [:map {:title "FileFragment"}
+   [:id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:created-at ::dt/instant]
+   [:content any?]])
+
+(sm/def! ::get-file-fragment
+  [:map {:title "get-file-fragment"}
+   [:file-id ::sm/uuid]
+   [:fragment-id ::sm/uuid]
+   [:share-id {:optional true} ::sm/uuid]])
+
 (defn- get-file-fragment
   [conn file-id fragment-id]
   (some-> (db/get conn :file-data-fragment {:file-id file-id :id fragment-id})
           (update :content blob/decode)))
 
-(s/def ::share-id ::us/uuid)
-(s/def ::fragment-id ::us/uuid)
-
-(s/def ::get-file-fragment
-  (s/keys :req-un [::file-id ::fragment-id]
-          :opt [::rpc/profile-id]
-          :opt-un [::share-id]))
-
 (sv/defmethod ::get-file-fragment
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.17"
-   ::rpc/:auth false}
+   ::sm/params ::get-file-fragment
+   ::sm/result ::file-fragment}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id fragment-id share-id] }]
   (dm/with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id file-id share-id)]
       (check-read-permissions! perms)
       (-> (get-file-fragment conn file-id fragment-id)
           (rph/with-http-cache long-cache-duration)))))
-
-;; --- COMMAND QUERY: get-file-object-thumbnails
-
-(defn get-object-thumbnails
-  ([conn file-id]
-   (let [sql (str/concat
-              "select object_id, data "
-              "  from file_object_thumbnail"
-              " where file_id=?")]
-     (->> (db/exec! conn [sql file-id])
-          (d/index-by :object-id :data))))
-
-  ([conn file-id object-ids]
-   (let [sql (str/concat
-              "select object_id, data "
-              "  from file_object_thumbnail"
-              " where file_id=? and object_id = ANY(?)")
-         ids (db/create-array conn "text" (seq object-ids))]
-     (->> (db/exec! conn [sql file-id ids])
-          (d/index-by :object-id :data)))))
-
-(s/def ::get-file-object-thumbnails
-  (s/keys :req [::rpc/profile-id] :req-un [::file-id]))
-
-(sv/defmethod ::get-file-object-thumbnails
-  "Retrieve a file object thumbnails."
-  {::doc/added "1.17"
-   ::cond/get-object #(get-minimal-file %1 (:file-id %2))
-   ::cond/reuse-key? true
-   ::cond/key-fn get-file-etag}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
-  (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id file-id)
-    (get-object-thumbnails conn file-id)))
-
 
 ;; --- COMMAND QUERY: get-project-files
 
@@ -382,16 +382,16 @@
       and f.deleted_at is null
     order by f.modified_at desc")
 
-(s/def ::get-project-files
-  (s/keys :req [::rpc/profile-id] :req-un [::project-id]))
-
 (defn get-project-files
   [conn project-id]
   (db/exec! conn [sql:project-files project-id]))
 
 (sv/defmethod ::get-project-files
   "Get all files for the specified project."
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params [:map {:title "get-project-files"}
+                [:project-id ::sm/uuid]]
+   ::sm/result [:vector ::file]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id]}]
   (dm/with-open [conn (db/open pool)]
     (projects/check-read-permissions! conn profile-id project-id)
@@ -402,15 +402,12 @@
 
 (declare get-has-file-libraries)
 
-(s/def ::file-id ::us/uuid)
-
-(s/def ::has-file-libraries
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id]))
-
 (sv/defmethod ::has-file-libraries
   "Checks if the file has libraries. Returns a boolean"
-  {::doc/added "1.15.1"}
+  {::doc/added "1.15.1"
+   ::sm/params [:map {:title "has-file-libraries"}
+                [:file-id ::sm/uuid]]
+   ::sm/result :boolean}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! pool profile-id file-id)
@@ -438,7 +435,7 @@
   structure."
   [{:keys [objects] :as page} object-id]
   (let [objects (cph/get-children-with-self objects object-id)]
-     (assoc page :objects (d/index-by :id objects))))
+    (assoc page :objects (d/index-by :id objects))))
 
 (defn- prune-thumbnails
   "Given the page data, removes the `:thumbnail` prop from all
@@ -448,6 +445,12 @@
 
 (defn get-page
   [conn {:keys [file-id page-id object-id features]}]
+  (when (and (uuid? object-id)
+             (not (uuid? page-id)))
+    (ex/raise :type :validation
+              :code :params-validation
+              :hint "page-id is required when object-id is provided"))
+
   (let [file     (get-file conn file-id features)
         page-id  (or page-id (-> file :data :pages first))
         page     (dm/get-in file [:data :pages-index page-id])]
@@ -455,17 +458,11 @@
       (uuid? object-id)
       (prune-objects object-id))))
 
-(s/def ::page-id ::us/uuid)
-(s/def ::object-id ::us/uuid)
-(s/def ::get-page
-  (s/and
-   (s/keys :req [::rpc/profile-id]
-           :req-un [::file-id]
-           :opt-un [::page-id ::object-id ::features])
-   (fn [obj]
-     (if (contains? obj :object-id)
-       (contains? obj :page-id)
-       true))))
+(sm/def! ::get-page
+  [:map {:title "GetPage"}
+   [:page-id {:optional true} ::sm/uuid]
+   [:object-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::features]])
 
 (sv/defmethod ::get-page
   "Retrieves the page data from file and returns it. If no page-id is
@@ -477,7 +474,8 @@
   mandatory.
 
   Mainly used for rendering purposes."
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params ::get-page}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
@@ -662,161 +660,6 @@
     (teams/check-read-permissions! conn profile-id team-id)
     (get-team-recent-files conn team-id)))
 
-
-;; --- COMMAND QUERY: get-file-thumbnail
-
-(defn get-file-thumbnail
-  [conn file-id revn]
-  (let [sql (sql/select :file-thumbnail
-                        (cond-> {:file-id file-id}
-                          revn (assoc :revn revn))
-                        {:limit 1
-                         :order-by [[:revn :desc]]})
-        row (db/exec-one! conn sql)]
-    (when-not row
-      (ex/raise :type :not-found
-                :code :file-thumbnail-not-found))
-
-    {:data (:data row)
-     :props (some-> (:props row) db/decode-transit-pgobject)
-     :revn (:revn row)
-     :file-id (:file-id row)}))
-
-(s/def ::revn ::us/integer)
-
-(s/def ::get-file-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id]
-          :opt-un [::revn]))
-
-(sv/defmethod ::get-file-thumbnail
-  {::doc/added "1.17"}
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id file-id revn]}]
-  (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id file-id)
-    (-> (get-file-thumbnail conn file-id revn)
-        (rph/with-http-cache long-cache-duration))))
-
-
-;; --- COMMAND QUERY: get-file-data-for-thumbnail
-
-;; FIXME: performance issue
-;;
-;; We need to improve how we set frame for thumbnail in order to avoid
-;; loading all pages into memory for find the frame set for thumbnail.
-
-(defn get-file-data-for-thumbnail
-  [conn {:keys [data id] :as file}]
-  (letfn [;; function responsible on finding the frame marked to be
-          ;; used as thumbnail; the returned frame always have
-          ;; the :page-id set to the page that it belongs.
-
-          (get-thumbnail-frame [data]
-            ;; NOTE: this is a hack for avoid perform blocking
-            ;; operation inside the for loop, clojure lazy-seq uses
-            ;; synchronized blocks that does not plays well with
-            ;; virtual threads, so we need to perform the load
-            ;; operation first. This operation forces all pointer maps
-            ;; load into the memory.
-            (->> (-> data :pages-index vals)
-                 (filter pmap/pointer-map?)
-                 (run! pmap/load!))
-
-            ;; Then proceed to find the frame set for thumbnail
-
-            (d/seek :use-for-thumbnail?
-                    (for [page  (-> data :pages-index vals)
-                          frame (-> page :objects ctt/get-frames)]
-                      (assoc frame :page-id (:id page)))))
-
-          ;; function responsible to filter objects data structure of
-          ;; all unneeded shapes if a concrete frame is provided. If no
-          ;; frame, the objects is returned untouched.
-          (filter-objects [objects frame-id]
-            (d/index-by :id (cph/get-children-with-self objects frame-id)))
-
-          ;; function responsible of assoc available thumbnails
-          ;; to frames and remove all children shapes from objects if
-          ;; thumbnails is available
-          (assoc-thumbnails [objects page-id thumbnails]
-            (loop [objects objects
-                   frames  (filter cph/frame-shape? (vals objects))]
-
-              (if-let [frame  (-> frames first)]
-                (let [frame-id (:id frame)
-                      object-id (str page-id frame-id)
-                      frame (if-let [thumb (get thumbnails object-id)]
-                              (assoc frame :thumbnail thumb :shapes [])
-                              (dissoc frame :thumbnail))
-
-                      children-ids
-                      (cph/get-children-ids objects frame-id)
-
-                      bounds
-                      (when (:show-content frame)
-                        (gsh/selection-rect (concat [frame] (->> children-ids (map (d/getf objects))))))
-
-                      frame
-                      (cond-> frame
-                        (some? bounds)
-                        (assoc :children-bounds bounds))]
-
-                  (if (:thumbnail frame)
-                    (recur (-> objects
-                               (assoc frame-id frame)
-                               (d/without-keys children-ids))
-                           (rest frames))
-                    (recur (assoc objects frame-id frame)
-                           (rest frames))))
-
-                objects)))]
-
-    (binding [pmap/*load-fn* (partial load-pointer conn id)]
-      (let [frame     (get-thumbnail-frame data)
-            frame-id  (:id frame)
-            page-id   (or (:page-id frame)
-                          (-> data :pages first))
-
-            page      (dm/get-in data [:pages-index page-id])
-            page      (cond-> page (pmap/pointer-map? page) deref)
-            frame-ids (if (some? frame) (list frame-id) (map :id (ctt/get-frames (:objects page))))
-
-            obj-ids   (map #(str page-id %) frame-ids)
-            thumbs    (get-object-thumbnails conn id obj-ids)]
-
-        (cond-> page
-          ;; If we have frame, we need to specify it on the page level
-          ;; and remove the all other unrelated objects.
-          (some? frame-id)
-          (-> (assoc :thumbnail-frame-id frame-id)
-              (update :objects filter-objects frame-id))
-
-          ;; Assoc the available thumbnails and prune not visible shapes
-          ;; for avoid transfer unnecessary data.
-          :always
-          (update :objects assoc-thumbnails page-id thumbs))))))
-
-(s/def ::get-file-data-for-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id]
-          :opt-un [::features]))
-
-(sv/defmethod ::get-file-data-for-thumbnail
-  "Retrieves the data for generate the thumbnail of the file. Used
-  mainly for render thumbnails on dashboard."
-  {::doc/added "1.17"}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id features] :as props}]
-  (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id file-id)
-    ;; NOTE: we force here the "storage/pointer-map" feature, because
-    ;; it used internally only and is independent if user supports it
-    ;; or not.
-    (let [feat (into #{"storage/pointer-map"} features)
-          file (get-file conn file-id feat)]
-      {:file-id file-id
-       :revn (:revn file)
-       :page (get-file-data-for-thumbnail conn file)})))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -830,13 +673,30 @@
                :modified-at (dt/now)}
               {:id id}))
 
-(s/def ::rename-file
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::name ::id]))
-
 (sv/defmethod ::rename-file
   {::doc/added "1.17"
-   ::webhooks/event? true}
+   ::webhooks/event? true
+
+   ::sm/webhook
+   [:map {:title "RenameFileEvent"}
+    [:id ::sm/uuid]
+    [:project-id ::sm/uuid]
+    [:name :string]
+    [:created-at ::dt/instant]
+    [:modified-at ::dt/instant]]
+
+   ::sm/params
+   [:map {:title "RenameFileParams"}
+    [:name {:min 1} :string]
+    [:id ::sm/uuid]]
+
+   ::sm/result
+   [:map {:title "SimplifiedFile"}
+    [:id ::sm/uuid]
+    [:name :string]
+    [:created-at ::dt/instant]
+    [:modified-at ::dt/instant]]}
+
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
@@ -868,6 +728,7 @@
       (let [ldata (-> library decode-row pmg/migrate-file :data)]
         (binding [pmap/*load-fn* (partial load-pointer conn id)]
           (load-all-pointers! ldata))
+
         (->> (db/query conn :file-library-rel {:library-file-id id})
              (map :file-id)
              (keep #(db/get-by-id conn :file % ::db/check-deleted? false))
@@ -1026,66 +887,3 @@
     (check-edition-permissions! conn profile-id file-id)
     (->  (ignore-sync conn params)
          (update :features db/decode-pgarray #{}))))
-
-
-;; --- MUTATION COMMAND: upsert-file-object-thumbnail
-
-(def sql:upsert-object-thumbnail
-  "insert into file_object_thumbnail(file_id, object_id, data)
-   values (?, ?, ?)
-       on conflict(file_id, object_id) do
-          update set data = ?;")
-
-(defn upsert-file-object-thumbnail!
-  [conn {:keys [file-id object-id data]}]
-  (if data
-    (db/exec-one! conn [sql:upsert-object-thumbnail file-id object-id data data])
-    (db/delete! conn :file-object-thumbnail {:file-id file-id :object-id object-id})))
-
-(s/def ::data (s/nilable ::us/string))
-(s/def ::thumbs/object-id ::us/string)
-(s/def ::upsert-file-object-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::thumbs/object-id]
-          :opt-un [::data]))
-
-(sv/defmethod ::upsert-file-object-thumbnail
-  {::doc/added "1.17"
-   ::audit/skip true}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
-  (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id file-id)
-    (upsert-file-object-thumbnail! conn params)
-    nil))
-
-;; --- MUTATION COMMAND: upsert-file-thumbnail
-
-(def ^:private sql:upsert-file-thumbnail
-  "insert into file_thumbnail (file_id, revn, data, props)
-   values (?, ?, ?, ?::jsonb)
-       on conflict(file_id, revn) do
-          update set data = ?, props=?, updated_at=now();")
-
-(defn- upsert-file-thumbnail!
-  [conn {:keys [file-id revn data props]}]
-  (let [props (db/tjson (or props {}))]
-    (db/exec-one! conn [sql:upsert-file-thumbnail
-                        file-id revn data props data props])))
-
-(s/def ::revn ::us/integer)
-(s/def ::props map?)
-(s/def ::upsert-file-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::revn ::data ::props]))
-
-(sv/defmethod ::upsert-file-thumbnail
-  "Creates or updates the file thumbnail. Mainly used for paint the
-  grid thumbnails."
-  {::doc/added "1.17"
-   ::audit/skip true}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
-  (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id file-id)
-    (when-not (db/read-only? conn)
-      (upsert-file-thumbnail! conn params))
-    nil))

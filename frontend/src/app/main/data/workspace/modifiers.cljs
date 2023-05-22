@@ -14,7 +14,7 @@
    [app.common.math :as mth]
    [app.common.pages.common :as cpc]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
+   [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.main.constants :refer [zoom-half-pixel-precision]]
@@ -24,7 +24,6 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
 ;; -- temporary modifiers -------------------------------------------
@@ -54,7 +53,7 @@
           shape
 
           (nil? root)
-          (cph/get-root-shape objects shape)
+          (ctn/get-component-shape objects shape {:allow-main? true})
 
           :else root)
 
@@ -64,7 +63,7 @@
           transformed-shape
 
           (nil? transformed-root)
-          (as-> (cph/get-root-shape objects transformed-shape) $
+          (as-> (ctn/get-component-shape objects transformed-shape {:allow-main? true}) $
             (gsh/transform-shape (merge $ (get modif-tree (:id $)))))
 
           :else transformed-root)
@@ -95,7 +94,6 @@
         ignore-geometry? (and (and (< (:x distance) 1) (< (:y distance) 1))
                               (mth/close? (:width selrect) (:width transformed-selrect))
                               (mth/close? (:height selrect) (:height transformed-selrect)))]
-
     [root transformed-root ignore-geometry?]))
 
 (defn- get-ignore-tree
@@ -156,12 +154,16 @@
 
 (defn create-modif-tree
   [ids modifiers]
-  (us/verify (s/coll-of uuid?) ids)
+  (dm/assert!
+   "expected valid coll of uuids"
+   (every? uuid? ids))
   (into {} (map #(vector % {:modifiers modifiers})) ids))
 
 (defn build-modif-tree
   [ids objects get-modifier]
-  (us/verify (s/coll-of uuid?) ids)
+  (dm/assert!
+   "expected valid coll of uuids"
+   (every? uuid? ids))
   (into {} (map #(vector % {:modifiers (get-modifier (get objects %))})) ids))
 
 (defn modifier-remove-from-parent

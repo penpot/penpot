@@ -6,8 +6,13 @@
 
 (ns app.common.types.shape.blur
   (:require
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SPEC
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::id uuid?)
 (s/def ::type #{:layer-blur})
@@ -17,3 +22,13 @@
 (s/def ::blur
   (s/keys :req-un [::id ::type ::value ::hidden]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SCHEMA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(sm/def! ::blur
+  [:map {:title "Blur"}
+   [:id ::sm/uuid]
+   [:type [:= :layer-blur]]
+   [:value ::sm/safe-number]
+   [:hidden :boolean]])

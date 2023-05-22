@@ -7,7 +7,9 @@
 (ns app.main.data.users
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -19,35 +21,27 @@
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
-;; --- COMMON SPECS
+;; --- SCHEMAS
+
+(def schema:profile
+  [:map {:title "Profile"}
+   [:id ::sm/uuid]
+   [:created-at {:optional true} :any]
+   [:fullname {:optional true} :string]
+   [:email {:optional true} :string]
+   [:lang {:optional true} :string]
+   [:theme {:optional true} :string]])
+
+(def profile?
+  (sm/pred-fn schema:profile))
+
+;; --- HELPERS
 
 (defn is-authenticated?
   [{:keys [id]}]
   (and (uuid? id) (not= id uuid/zero)))
-
-(s/def ::id ::us/uuid)
-(s/def ::fullname ::us/string)
-(s/def ::email ::us/email)
-(s/def ::password ::us/string)
-(s/def ::lang (s/nilable ::us/string))
-(s/def ::theme (s/nilable ::us/string))
-(s/def ::created-at ::us/inst)
-(s/def ::password-1 ::us/string)
-(s/def ::password-2 ::us/string)
-(s/def ::password-old (s/nilable ::us/string))
-
-(s/def ::profile
-  (s/keys :req-un [::id]
-          :opt-un [::created-at
-                   ::fullname
-                   ::email
-                   ::lang
-                   ::theme]))
-
-;; --- HELPERS
 
 (defn get-current-team-id
   [profile]
@@ -98,7 +92,6 @@
 
 (defn profile-fetched
   [{:keys [id] :as profile}]
-  (us/verify ::profile profile)
   (ptk/reify ::profile-fetched
     IDeref
     (-deref [_] profile)
@@ -174,16 +167,10 @@
                       (get-redirect-event))
                (rx/observe-on :async)))))))
 
-(s/def ::invitation-token ::us/not-empty-string)
-(s/def ::login-params
-  (s/keys :req-un [::email ::password]
-          :opt-un [::invitation-token]))
-
 (declare login-from-register)
 
 (defn login
   [{:keys [email password invitation-token] :as data}]
-  (us/verify ::login-params data)
   (ptk/reify ::login
     ptk/WatchEvent
     (watch [_ _ stream]
@@ -299,7 +286,7 @@
 
 (defn update-profile
   [data]
-  (us/assert ::profile data)
+  (dm/assert! (profile? data))
   (ptk/reify ::update-profile
     ptk/WatchEvent
     (watch [_ _ stream]
@@ -307,7 +294,6 @@
             on-success (:on-success mdata identity)
             on-error   (:on-error mdata rx/throw)]
         (->> (rp/cmd! :update-profile (dissoc data :props))
-             (rx/catch on-error)
              (rx/mapcat
               (fn [_]
                 (rx/merge
@@ -316,14 +302,16 @@
                       (rx/take 1)
                       (rx/tap on-success)
                       (rx/ignore))
-                 (rx/of (profile-fetched data))))))))))
+                 (rx/of (profile-fetched data)))))
+             (rx/catch on-error))))))
+
 
 
 ;; --- Request Email Change
 
 (defn request-email-change
   [{:keys [email] :as data}]
-  (us/assert ::us/email email)
+  (dm/assert! ::us/email email)
   (ptk/reify ::request-email-change
     ptk/WatchEvent
     (watch [_ _ _]
@@ -345,14 +333,15 @@
 
 ;; --- Update Password (Form)
 
-(s/def ::update-password
-  (s/keys :req-un [::password-1
-                   ::password-2
-                   ::password-old]))
+(def schema:update-password
+  [:map {:closed true}
+   [:password-1 :string]
+   [:password-2 :string]
+   [:password-old :string]])
 
 (defn update-password
   [data]
-  (us/verify ::update-password data)
+  (dm/assert! (sm/valid? schema:update-password data))
   (ptk/reify ::update-password
     ptk/WatchEvent
     (watch [_ _ _]
@@ -395,7 +384,7 @@
               (rx/map (constantly (fetch-profile)))))))))
 
 (defn mark-questions-as-answered
-  []
+  [onboarding-questions]
   (ptk/reify ::mark-questions-as-answered
     ptk/UpdateEvent
     (update [_ state]
@@ -403,7 +392,8 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [props {:onboarding-questions-answered true}]
+      (let [props {:onboarding-questions-answered true
+                   :onboarding-questions onboarding-questions}]
         (->> (rp/cmd! :update-profile-props {:props props})
              (rx/map (constantly (fetch-profile))))))))
 
@@ -412,7 +402,10 @@
 
 (defn update-photo
   [file]
-  (us/verify ::di/blob file)
+  (dm/assert!
+   "expected a valid blob for `file` param"
+   (di/blob? file))
+
   (ptk/reify ::update-photo
     ptk/WatchEvent
     (watch [_ _ _]
@@ -434,8 +427,8 @@
              (rx/catch on-error))))))
 
 (defn fetch-users
-  [{:keys [team-id] :as params}]
-  (us/assert ::us/uuid team-id)
+  [{:keys [team-id]}]
+  (dm/assert! (uuid? team-id))
   (letfn [(fetched [users state]
             (->> users
                  (d/index-by :id)
@@ -447,8 +440,8 @@
              (rx/map #(partial fetched %)))))))
 
 (defn fetch-file-comments-users
-  [{:keys [team-id] :as params}]
-  (us/assert ::us/uuid team-id)
+  [{:keys [team-id]}]
+  (dm/assert! (uuid? team-id))
   (letfn [(fetched [users state]
             (->> users
                  (d/index-by :id)
@@ -479,12 +472,14 @@
 
 ;; --- EVENT: request-profile-recovery
 
-(s/def ::request-profile-recovery
-  (s/keys :req-un [::email]))
+(def schema:request-profile-recovery
+  [:map {:closed true}
+   [:email ::sm/email]])
 
+;; FIXME: check if we can use schema for proper filter
 (defn request-profile-recovery
   [data]
-  (us/verify ::request-profile-recovery data)
+  (dm/assert! (sm/valid? schema:request-profile-recovery data))
   (ptk/reify ::request-profile-recovery
     ptk/WatchEvent
     (watch [_ _ _]
@@ -498,13 +493,14 @@
 
 ;; --- EVENT: recover-profile (Password)
 
-(s/def ::token string?)
-(s/def ::recover-profile
-  (s/keys :req-un [::password ::token]))
+(def schema:recover-profile
+  [:map {:closed true}
+   [:password :string]
+   [:token :string]])
 
 (defn recover-profile
   [data]
-  (us/verify ::recover-profile data)
+  (dm/assert! (sm/valid? ::recover-profile data))
   (ptk/reify ::recover-profile
     ptk/WatchEvent
     (watch [_ _ _]
@@ -539,7 +535,7 @@
   (ptk/reify ::fetch-access-tokens
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/command! :get-access-tokens)
+      (->> (rp/cmd! :get-access-tokens)
            (rx/map access-tokens-fetched)))))
 
 ;; --- EVENT: create-access-token
@@ -559,7 +555,7 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
-        (->> (rp/command! :create-access-token params)
+        (->> (rp/cmd! :create-access-token params)
              (rx/map access-token-created)
              (rx/tap on-success)
              (rx/catch on-error))))))
@@ -575,6 +571,6 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
-        (->> (rp/command! :delete-access-token params)
+        (->> (rp/cmd! :delete-access-token params)
              (rx/tap on-success)
              (rx/catch on-error))))))

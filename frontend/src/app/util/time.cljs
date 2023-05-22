@@ -22,12 +22,13 @@
    ["date-fns/locale/ru" :default dateFnsLocalesRu]
    ["date-fns/locale/tr" :default dateFnsLocalesTr]
    ["date-fns/locale/zh-CN" :default dateFnsLocalesZhCn]
-   ["luxon" :as lxn]
+   [app.common.data.macros :as dm]
+   [app.common.time :as common-time]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
 
-(def DateTime lxn/DateTime)
-(def Duration lxn/Duration)
+(dm/export common-time/DateTime)
+(dm/export common-time/Duration)
 
 (defprotocol ITimeMath
   (plus [_ o])
@@ -47,7 +48,7 @@
 (defn duration
   [o]
   (cond
-    (integer? o)  (.fromMillis Duration o)
+    (number? o)   (.fromMillis Duration o)
     (duration? o) o
     (string? o)   (.fromISO Duration o)
     (map? o)      (.fromObject Duration (clj->js o))
@@ -89,9 +90,7 @@
        :rfc2822 (.fromRFC2822 ^js DateTime s #js {:zone zone :setZone force-zone})
        :http    (.fromHTTP ^js DateTime s #js {:zone zone :setZone force-zone})))))
 
-(defn now
-  []
-  (.local ^js DateTime))
+(dm/export common-time/now)
 
 (defn utc-now
   []
@@ -164,11 +163,11 @@
 (extend-protocol IPrintWithWriter
   DateTime
   (-pr-writer [p writer _]
-    (-write writer (str/fmt "#stks/datetime \"%s\"" (format p :iso))))
+    (-write writer (str/fmt "#app/instant \"%s\"" (format p :iso))))
 
   Duration
   (-pr-writer [p writer _]
-    (-write writer (str/fmt "#stks/duration \"%s\"" (format p :iso)))))
+    (-write writer (str/fmt "#app/duration \"%s\"" (format p :iso)))))
 
 (defn- resolve-format
   [v]
@@ -243,3 +242,22 @@
            f (.date (.-formatLong locale) v)]
        (->> #js {:locale locale}
             (dateFnsFormat v f))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Measurement Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn tpoint
+  "Create a measurement checkpoint for time measurement of potentially
+  asynchronous flow."
+  []
+  (let [p1 (.now js/performance)]
+    #(duration (- (.now js/performance) p1))))
+
+(defn tpoint-ms
+  "Create a measurement checkpoint for time measurement of potentially
+  asynchronous flow."
+  []
+  (let [p1 (.now js/performance)]
+    #(- (.now js/performance) p1)))

@@ -6,35 +6,35 @@
 
 (ns app.common.types.typography
   (:require
-    [app.common.text :as txt]
-    [clojure.spec.alpha :as s]))
+    [app.common.schema :as sm]
+    [app.common.text :as txt]))
 
-(s/def ::id uuid?)
-(s/def ::name string?)
-(s/def ::path (s/nilable string?))
-(s/def ::font-id string?)
-(s/def ::font-family string?)
-(s/def ::font-variant-id string?)
-(s/def ::font-size string?)
-(s/def ::font-weight string?)
-(s/def ::font-style string?)
-(s/def ::line-height string?)
-(s/def ::letter-spacing string?)
-(s/def ::text-transform string?)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SCHEMA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::typography
-  (s/keys :req-un [::id
-                   ::name
-                   ::font-id
-                   ::font-family
-                   ::font-variant-id
-                   ::font-size
-                   ::font-weight
-                   ::font-style
-                   ::line-height
-                   ::letter-spacing
-                   ::text-transform]
-          :opt-un [::path]))
+(sm/def! ::typography
+  [:map {:title "Typography"}
+   [:id ::sm/uuid]
+   [:name :string]
+   [:font-id :string]
+   [:font-family :string]
+   [:font-variant-id :string]
+   [:font-size :string]
+   [:font-weight :string]
+   [:font-style :string]
+   [:line-height :string]
+   [:letter-spacing :string]
+   [:text-transform :string]
+   [:modified-at {:optional true} ::sm/inst]
+   [:path {:optional true} [:maybe :string]]])
+
+(def typography?
+  (sm/pred-fn ::typography))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn uses-library-typographies?
   "Check if the shape uses any typography in the given library."

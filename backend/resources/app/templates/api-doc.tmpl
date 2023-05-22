@@ -20,10 +20,68 @@
     <main>
       <header>
         <h1>Penpot API Documentation (v{{version}})</h1>
+        <small class="menu">
+          [
+          <nav>
+            <a href="?type=js" {% if param-style = "js" %}class="selected"{% endif %}>JS</a>
+            <a href="?type=clj" {% if param-style = "cljs" %}class="selected"{% endif %}>CLJ</a>
+          </nav>
+          ]
+        </small>
       </header>
-      <section class="rpc-doc-content">
+      <section class="doc-content">
+        <h2>INTRODUCTION</h2>
+        <p>This documentation is intended to be a general overview of the penpot RPC API.
+          If you prefer, you can use <a href="/api/openapi.json">OpenAPI</a>
+          and/or <a href="/api/openapi">SwaggerUI</a> as alternative.</p>
 
-        <h2>RPC METHODS:</h2>
+        <h2>GENERAL NOTES</h2>
+
+        <h3>Authentication</h3>
+        <p>The penpot backend right now offerts two way for authenticate the request:
+        <b>cookies</b> (the same mechanism that we use ourselves on accessing the API from the
+        web application) and <b>access tokens</b>.</p>
+
+        <p>The cookie can be obtained using the <b>`login-with-password`</b> rpc method,
+        on successful login it sets the <b>`auth-token`</b> cookie with the session
+        token.</p>
+
+        <p>The access token can be obtained on the appropriate section on profile settings
+        and it should be provided using <b>`Authorization`</b> header with <b>`Token
+        &lt;token-string&gt;`</b> value.</p>
+
+        <h3>Content Negotiation</h3>
+        <p>The penpot API by default operates indistinctly with: <b>`application/json`</b>
+        and <b>`application/transit+json`</b> content types. You should specify the
+        desired content-type on the <b>`Accept`</b> header, the transit encoding is used
+        by default.</p>
+
+
+        <h3>Limits</h3>
+        <p>The rate limit work per user basis (this means that different api keys share
+        the same rate limit). For now the limits are not documented because we are
+        studying and analyzing the data. As a general rule, it should not be abused, if an
+        abusive use is detected, we will proceed to block the user's access to the
+        API.</p>
+
+        <h3>Webhooks</h3>
+        <p>All methods that emit webhook events are marked with flag <b>WEBHOOK</b>, the
+        data structure defined on each method represents the <i>payload</i> of the
+        event.</p>
+        <p>The webhook event structure has this aspect:</p>
+        <br/>
+
+        <pre>
+{
+  "id": "db601c95-045f-808b-8002-362f08fcb621",
+  "name": "rename-file",
+  "props": &lt;payload&gt;,
+  "profileId": "db601c95-045f-808b-8002-361312e63531"
+}
+        </pre>
+      </section>
+      <section class="rpc-doc-content">
+        <h2>RPC METHODS REFERENCE:</h2>
         <ul class="rpc-items">
           {% for item in methods %}
             {% include "app/templates/api-doc-entry.tmpl" with item=item %}

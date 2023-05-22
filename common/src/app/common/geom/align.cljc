@@ -7,12 +7,12 @@
 (ns app.common.geom.align
   (:require
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :refer [get-children]]
-   [clojure.spec.alpha :as s]))
+   [app.common.pages.helpers :refer [get-children]]))
 
 ;; --- Alignment
 
-(s/def ::align-axis #{:hleft :hcenter :hright :vtop :vcenter :vbottom})
+(def valid-align-axis
+  #{:hleft :hcenter :hright :vtop :vcenter :vbottom})
 
 (declare calc-align-pos)
 
@@ -65,7 +65,8 @@
 
 ;; --- Distribute
 
-(s/def ::dist-axis #{:horizontal :vertical})
+(def valid-dist-axis
+  #{:horizontal :vertical})
 
 (defn distribute-space
   "Distribute equally the space between shapes in the given axis. If

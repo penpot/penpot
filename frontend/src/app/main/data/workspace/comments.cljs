@@ -6,10 +6,11 @@
 
 (ns app.main.data.workspace.comments
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
    [app.main.data.comments :as dcm]
    [app.main.data.workspace.changes :as dwc]
@@ -28,7 +29,7 @@
 
 (defn initialize-comments
   [file-id]
-  (us/assert ::us/uuid file-id)
+  (dm/assert! (uuid? file-id))
   (ptk/reify ::initialize-comments
     ptk/WatchEvent
     (watch [_ _ stream]
@@ -80,7 +81,7 @@
 
 (defn center-to-comment-thread
   [{:keys [position] :as thread}]
-  (us/assert ::dcm/comment-thread thread)
+  (dm/assert! (dcm/comment-thread? thread))
   (ptk/reify ::center-to-comment-thread
     ptk/UpdateEvent
     (update [_ state]
@@ -96,7 +97,7 @@
 
 (defn navigate
   [thread]
-  (us/assert ::dcm/comment-thread thread)
+  (dm/assert! (dcm/comment-thread? thread))
   (ptk/reify ::open-comment-thread
     ptk/WatchEvent
     (watch [_ _ stream]
@@ -117,7 +118,7 @@
    (update-comment-thread-position thread  [new-x new-y] nil))
 
   ([thread  [new-x new-y] frame-id]
-  (us/assert ::dcm/comment-thread thread)
+  (dm/assert! (dcm/comment-thread? thread))
   (ptk/reify ::update-comment-thread-position
     ptk/WatchEvent
     (watch [it state _]
@@ -146,7 +147,7 @@
 ;; Move comment threads that are inside a frame when that frame is moved"
 (defmethod ptk/resolve ::move-frame-comment-threads
   [_ ids]
-  (us/assert! ::us/coll-of-uuid ids)
+  (dm/assert! (sm/coll-of-uuid? ids))
   (ptk/reify ::move-frame-comment-threads
     ptk/WatchEvent
     (watch [_ state _]

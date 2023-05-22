@@ -7,12 +7,12 @@
 (ns app.main.data.workspace.viewport
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [beicon.core :as rx]
@@ -35,7 +35,7 @@
                   objects (wsh/lookup-page-objects state page-id)
                   shapes  (cph/get-immediate-children objects)
                   srect   (gsh/selection-rect shapes)
-                  local   (assoc local :vport size :zoom 1)]
+                  local   (assoc local :vport size :zoom 1 :zoom-inverse 1)]
               (cond
                 (or (not (d/num? (:width srect)))
                     (not (d/num? (:height srect))))
@@ -47,6 +47,7 @@
                       zoom  (/ (:width size) (:width srect))]
                   (-> local
                       (assoc :zoom zoom)
+                      (assoc :zoom-inverse (/ 1 zoom))
                       (update :vbox merge srect)))
 
                 :else
@@ -68,8 +69,14 @@
 
 (defn update-viewport-position
   [{:keys [x y] :or {x identity y identity}}]
-  (us/assert fn? x)
-  (us/assert fn? y)
+
+  (dm/assert!
+   "expected function for `x`"
+   (fn? x))
+  (dm/assert!
+   "expected function for `y`"
+   (fn? y))
+
   (ptk/reify ::update-viewport-position
     ptk/UpdateEvent
     (update [_ state]

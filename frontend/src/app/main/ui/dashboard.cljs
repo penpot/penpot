@@ -159,8 +159,8 @@
        [:span (tr "dashboard.libraries-and-templates")]
        [:span.icon (if collapsed i/arrow-up i/arrow-down)]]]
      [:div.content {:ref content-ref
-                    :style {:left @card-offset :width (str container-size "px")}} 
-      
+                    :style {:left @card-offset :width (str container-size "px")}}
+
       (for [num-item (range (count templates)) :let [item (nth templates num-item)]]
         (let [is-visible? (and (>= num-item first-visible-card) (<= num-item last-visible-card))]
           [:a.card-container {:tab-index (if (or (not is-visible?) collapsed)
@@ -227,25 +227,31 @@
   [{:keys [team projects project section search-term profile] :as props}]
   (let [container          (mf/use-ref)
         content-width      (mf/use-state 0)
-        default-project-id
-        (->> (vals projects)
-             (d/seek :is-default)
-             (:id))
-        on-resize
-        (fn [_]
-          (let [dom   (mf/ref-val container)
-                width (obj/get dom "clientWidth")]
-            (reset! content-width width)))]
 
-    (mf/use-effect
-     #(let [key1 (events/listen js/window "resize" on-resize)]
-        (fn []
-          (events/unlistenByKey key1))))
+        default-project-id
+        (mf/with-memo [projects]
+          (->> (vals projects)
+               (d/seek :is-default)
+               (:id)))
+
+        on-resize
+        (mf/use-fn
+         (fn [_]
+           (let [dom   (mf/ref-val container)
+                 width (obj/get dom "clientWidth")]
+             (reset! content-width width))))
+
+        clear-selected-fn
+        (mf/use-fn
+         #(st/emit! (dd/clear-selected-files)))]
+
+    (mf/with-effect []
+      (let [key1 (events/listen js/window "resize" on-resize)]
+        #(events/unlistenByKey key1)))
 
     (mf/use-effect on-resize)
 
-    [:div.dashboard-content {:on-click #(st/emit! (dd/clear-selected-files))
-                             :ref container}
+    [:div.dashboard-content {:on-click clear-selected-fn :ref container}
      (case section
        :dashboard-projects
        [:*
@@ -280,8 +286,7 @@
                         :search-term search-term}]
 
        :dashboard-libraries
-       [*
-        [:& libraries-page {:team team}]]
+       [:& libraries-page {:team team}]
 
        :dashboard-team-members
        [:& team-members-page {:team team :profile profile}]

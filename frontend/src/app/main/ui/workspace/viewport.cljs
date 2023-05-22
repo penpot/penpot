@@ -239,7 +239,7 @@
 
         first-selected-shape (first selected-shapes)
         selecting-first-level-frame? (and one-selected-shape?
-                                       (cph/root-frame? first-selected-shape))
+                                          (cph/root-frame? first-selected-shape))
 
         offset-x (if selecting-first-level-frame?
                    (:x first-selected-shape)
@@ -591,5 +591,4 @@
          [:& grid-layout/editor
           {:zoom zoom
            :objects base-objects
-           :shape (get base-objects edition)}])
-       ]]]))
+           :shape (get base-objects edition)}])]]]))

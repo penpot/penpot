@@ -47,7 +47,7 @@
                         :shape shape}]
      [:& component-menu {:ids comp-ids
                          :values comp-values
-                         :shape-name (:name shape)}]
+                         :shape shape}]
      (when (or (not is-flex-layout-child?) is-layout-child-absolute?)
        [:& constraints-menu {:ids ids
                              :values constraint-values}])

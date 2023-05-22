@@ -12,14 +12,9 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
    [app.common.types.component :as ctk]
-   [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]
-   [clojure.spec.alpha :as s]))
-
-(s/def ::objects (s/map-of uuid? ::cts/shape))
+   [app.common.uuid :as uuid]))
 
 (defn add-shape
   "Insert a shape in the tree, at the given index below the given parent or frame.
@@ -118,8 +113,8 @@
                                (filter cph/frame-shape?))]
               (->> (keys objects)
                    (into [] xform))))
-        (remove #(or (and skip-components? (ctk/instance-root? %))
-                     (and skip-copies? (and (ctk/instance-root? %) (not (ctk/main-instance? %)))))))))
+        (remove #(or (and skip-components? (ctk/instance-head? %))
+                     (and skip-copies? (and (ctk/instance-head? %) (not (ctk/main-instance? %)))))))))
 
 (defn get-frames-ids
   "Retrieves all frame ids as vector"
@@ -367,7 +362,7 @@
 
          (let [child-id (first child-ids)
                child    (get objects child-id)
-               _        (us/assert! ::us/some child)
+               _        (dm/assert! (some? child))
 
                [new-child new-child-objects updated-child-objects]
                (clone-object child new-id objects update-new-object update-original-object)]
