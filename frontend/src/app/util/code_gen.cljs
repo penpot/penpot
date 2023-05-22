@@ -95,7 +95,7 @@
                            :height   #(get-size :height %)}
                  :multi   {:r1 [:r1 :r2 :r3 :r4]}}
    :fill        {:props [:fills]
-                 :to-prop {:fills (if (> (count (:fills shape)) 1) "background-image" "background")}
+                 :to-prop {:fills (if (> (count (:fills shape)) 1) "background-image" "background-color")}
                  :format {:fills format-fill-color}}
    :stroke      {:props [:strokes]
                  :to-prop {:strokes "border"}
