@@ -42,7 +42,8 @@
                        :attrs attrs}))
                    selected-ids))))]
 
-    [:div.typography-item {:on-click handle-click}
+    [:div.typography-item {:title (:name typography)
+                           :on-click handle-click}
      [:div.typography-name
       {:style {:font-family (:font-family typography)
                :font-weight (:font-weight typography)
