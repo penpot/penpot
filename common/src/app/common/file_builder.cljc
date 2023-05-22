@@ -233,7 +233,7 @@
         (update :parent-stack conjv (:id obj)))))
 
 (defn close-artboard [file]
-  (let [parent-id (-> file :parent-id peek)
+  (let [parent-id (-> file :parent-stack peek)
         parent (lookup-shape file parent-id)
         current-frame-id (or (:frame-id parent)
                              (when (nil? (:current-component-id file))
