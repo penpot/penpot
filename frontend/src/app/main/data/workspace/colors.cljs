@@ -201,7 +201,6 @@
                                               (if (= (:type shape) :frame)
                                                 (d/merge shape attrs)
                                                 shape))))))))
-
 (defn change-stroke
   [ids attrs index]
   (ptk/reify ::change-stroke
@@ -225,24 +224,28 @@
 
             attrs (merge attrs color-attrs)]
 
-        (rx/of (dch/update-shapes ids (fn [shape]
-                                        (let [new-attrs (merge (get-in shape [:strokes index]) attrs)
-                                              new-attrs (cond-> new-attrs
-                                                          (not (contains? new-attrs :stroke-width))
-                                                          (assoc :stroke-width 1)
+        (rx/of (dch/update-shapes
+                ids
+                (fn [shape]
+                  (let [new-attrs (merge (get-in shape [:strokes index]) attrs)
+                        new-attrs (cond-> new-attrs
+                                    (not (contains? new-attrs :stroke-width))
+                                    (assoc :stroke-width 1)
 
-                                                          (not (contains? new-attrs :stroke-style))
-                                                          (assoc :stroke-style :solid)
+                                    (not (contains? new-attrs :stroke-style))
+                                    (assoc :stroke-style :solid)
 
-                                                          (not (contains? new-attrs :stroke-alignment))
-                                                          (assoc :stroke-alignment :center)
+                                    (not (contains? new-attrs :stroke-alignment))
+                                    (assoc :stroke-alignment :center)
 
-                                                          :always
-                                                          (d/without-nils))]
-                                          (-> shape
-                                              (cond-> (not (contains? shape :strokes))
-                                                (assoc :strokes []))
-                                              (assoc-in [:strokes index] new-attrs))))))))))
+                                    :always
+                                    (d/without-nils))]
+                    (cond-> shape
+                      (not (contains? shape :strokes))
+                      (assoc :strokes [])
+
+                      :always
+                      (assoc-in [:strokes index] new-attrs))))))))))
 
 (defn change-shadow
   [ids attrs index]
@@ -276,34 +279,29 @@
   (ptk/reify ::add-stroke
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [add (fn [shape attrs] (assoc shape :strokes (into [attrs] (:strokes shape))))]
-        (rx/of (dch/update-shapes
-                ids
-                #(add % stroke)))))))
+      (let [add-stroke (fn [shape] (update shape :strokes #(into [stroke] %)))]
+        (rx/of (dch/update-shapes ids add-stroke))))))
 
 (defn remove-stroke
   [ids position]
   (ptk/reify ::remove-stroke
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [remove-fill-by-index (fn [values index] (->> (d/enumerate values)
-                                                         (filterv (fn [[idx _]] (not= idx index)))
-                                                         (mapv second)))
-
-            remove (fn [shape] (update shape :strokes remove-fill-by-index position))]
-        (rx/of (dch/update-shapes
-                ids
-                #(remove %)))))))
+      (letfn [(remove-fill-by-index [values index]
+                (->> (d/enumerate values)
+                     (filterv (fn [[idx _]] (not= idx index)))
+                     (mapv second)))
+              (remove-stroke [shape]
+                (update shape :strokes remove-fill-by-index position))]
+        (rx/of (dch/update-shapes ids remove-stroke))))))
 
 (defn remove-all-strokes
   [ids]
   (ptk/reify ::remove-all-strokes
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [remove-all (fn [shape] (assoc shape :strokes []))]
-        (rx/of (dch/update-shapes
-                ids
-                #(remove-all %)))))))
+      (let [remove-all #(assoc % :strokes [])]
+        (rx/of (dch/update-shapes ids remove-all))))))
 
 (defn reorder-shadows
   [ids index new-index]
