@@ -639,8 +639,13 @@
         (mf/use-fn
          (mf/deps @state)
          (fn [new-name]
-           (st/emit! (dwl/rename-component (:renaming @state) new-name))
-           (swap! state assoc :renaming nil)))
+           (let [component-id (:renaming @state)
+                 component    (dm/get-in file [:components component-id])
+                 main-instance-id   (:main-instance-id component)
+                 main-instance-page (:main-instance-page component)]
+
+             (dwl/rename-component-and-main-instance component-id main-instance-id new-name main-instance-page)
+             (swap! state assoc :renaming nil))))
 
         cancel-rename
         (mf/use-fn
@@ -1778,7 +1783,7 @@
            (st/emit! (dwl/add-typography typography)
              (ptk/event ::ev/event {::ev/name "add-asset-to-library"
                                     :asset-type "typography"}))))
-        
+
         handle-change
         (mf/use-fn
          (mf/deps file-id)
