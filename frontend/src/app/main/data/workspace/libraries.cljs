@@ -366,6 +366,11 @@
 
           (rx/of (dch/commit-changes changes)))))))
 
+(defn rename-component-and-main-instance
+  [component-id shape-id name page-id]
+  (st/emit!  (rename-component component-id name)
+             (dch/update-shapes [shape-id] #(merge % {:name name}) {:page-id page-id :stack-undo? true})))
+
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
   [library-id component-id]

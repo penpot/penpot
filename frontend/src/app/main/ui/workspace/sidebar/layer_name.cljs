@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :refer [css]])
   (:require
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
@@ -30,13 +31,16 @@
                        (swap! local assoc :edition true)))
 
         accept-edit (fn []
-                      (let [name-input (mf/ref-val name-ref)
-                            name       (dom/get-value name-input)]
+                      (let [name-input     (mf/ref-val name-ref)
+                            name           (str/trim (dom/get-value name-input))
+                            main-instance? (:main-instance? shape)]
                         (on-stop-edit)
                         (swap! local assoc :edition false)
-                        (st/emit! (dw/end-rename-shape)
-                                  (when-not (str/empty? (str/trim name))
-                                    (dw/update-shape (:id shape) {:name (str/trim name)})))))
+                        (st/emit! (dw/end-rename-shape))
+                        (when-not (str/empty? name)
+                          (if main-instance?
+                            (dwl/rename-component-and-main-instance (:component-id shape) (:id shape) name nil)
+                            (st/emit! (dw/update-shape (:id shape) {:name name}))))))
         cancel-edit (fn []
                       (on-stop-edit)
                       (swap! local assoc :edition false)

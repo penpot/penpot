@@ -595,8 +595,6 @@
                         ;;       function. Better check it and test toroughly when activating
                         ;;       components-v2 mode.
         in-copy?        (ctk/in-component-copy? shape)
-        root-name?      (and (= group :name-group)
-                             (:component-root? shape))
 
         ;; For geometric attributes, there are cases in that the value changes
         ;; slightly (e.g. when rounding to pixel, or when recalculating text
@@ -607,7 +605,6 @@
                  (gsh/close-attrs? attr val shape-val))]
 
     (when (and group (not ignore) (not equal?)
-               (not root-name?)
                (not (and ignore-geometry is-geometry?)))
       ;; Notify touched even if it's not copy, because it may be a main instance
       (on-touched shape))
@@ -618,7 +615,6 @@
       ;; In some cases we need to ignore touched only if the attribute is
       ;; geometric (position, width or transformation).
       (and in-copy? group (not ignore) (not equal?)
-           (not root-name?)
            (not (and ignore-geometry is-geometry?)))
       (-> (update :touched cph/set-touched-group group)
           (dissoc :remote-synced?))
