@@ -347,7 +347,8 @@
                                                      position
                                                      false
                                                      {:main-instance? true
-                                                      :force-frame-id uuid/zero})
+                                                      :force-frame-id uuid/zero
+                                                      :keep-ids? true})
 
                         add-shapes
                         (fn [page]
