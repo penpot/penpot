@@ -14,7 +14,6 @@
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]))
 
@@ -34,7 +33,7 @@
    [:path {:optional true} [:maybe :string]]
    [:modified-at {:optional true} ::sm/inst]
    [:objects {:optional true}
-    [:map-of {:gen/max 10} ::sm/uuid ::cts/shape]]])
+    [:map-of {:gen/max 10} ::sm/uuid :map]]])
 
 (def container?
   (sm/pred-fn ::container))
@@ -68,6 +67,7 @@
 
 (defn get-shape
   [container shape-id]
+
   (dm/assert!
    "expected valid container"
    (container? container))
