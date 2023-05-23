@@ -329,13 +329,19 @@
   the order of the children of each parent."
 
   ([object parent-id objects update-new-object]
-   (clone-object object parent-id objects update-new-object (fn [object _] object) nil))
+   (clone-object object parent-id objects update-new-object (fn [object _] object) nil false))
 
   ([object parent-id objects update-new-object update-original-object]
-   (clone-object object parent-id objects update-new-object update-original-object nil))
+   (clone-object object parent-id objects update-new-object update-original-object nil false))
 
   ([object parent-id objects update-new-object update-original-object force-id]
-   (let [new-id (or force-id (uuid/next))]
+   (clone-object object parent-id objects update-new-object update-original-object force-id false))
+
+  ([object parent-id objects update-new-object update-original-object force-id keep-ids?]
+   (let [new-id (cond
+                  (some? force-id) force-id
+                  keep-ids? (:id object)
+                  :else (uuid/next))]
      (loop [child-ids (seq (:shapes object))
             new-direct-children []
             new-children []
@@ -365,7 +371,7 @@
                _        (dm/assert! (some? child))
 
                [new-child new-child-objects updated-child-objects]
-               (clone-object child new-id objects update-new-object update-original-object)]
+               (clone-object child new-id objects update-new-object update-original-object nil keep-ids?)]
 
            (recur
             (next child-ids)

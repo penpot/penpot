@@ -173,8 +173,8 @@
    (make-component-instance container component library-data position components-v2 {}))
 
   ([container component library-data position components-v2
-    {:keys [main-instance? force-id force-frame-id]
-     :or {main-instance? false force-id nil force-frame-id nil}}]
+    {:keys [main-instance? force-id force-frame-id keep-ids?]
+     :or {main-instance? false force-id nil force-frame-id nil keep-ids? false}}]
    (let [component-page  (when components-v2
                            (ctpl/get-page library-data (:main-instance-page component)))
          component-shape (if components-v2
@@ -237,7 +237,8 @@
                             (if components-v2 (:objects component-page) (:objects component))
                             update-new-shape
                             (fn [object _] object)
-                            force-id)
+                            force-id
+                            keep-ids?)
 
         ;; If frame-id points to a shape inside the component, remap it to the
         ;; corresponding new frame shape. If not, set it to the destination frame.
