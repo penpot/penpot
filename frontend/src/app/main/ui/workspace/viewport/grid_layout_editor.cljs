@@ -261,7 +261,8 @@
       text]]))
 
 (mf/defc grid-cell
-  {::mf/wrap-props false}
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "cell" "layout-data" "zoom" "hover?" "selected?"]))]
+   ::mf/wrap-props false}
   [props]
   (let [shape       (unchecked-get props "shape")
         cell        (unchecked-get props "cell")
@@ -278,16 +279,19 @@
 
         handle-pointer-enter
         (mf/use-callback
+         (mf/deps (:id shape) (:id cell))
          (fn []
            (st/emit! (dwge/hover-grid-cell (:id shape) (:id cell) true))))
 
         handle-pointer-leave
         (mf/use-callback
+         (mf/deps (:id shape) (:id cell))
          (fn []
            (st/emit! (dwge/hover-grid-cell (:id shape) (:id cell) false))))
 
         handle-pointer-down
         (mf/use-callback
+         (mf/deps (:id shape) (:id cell))
          (fn []
            (st/emit! (dwge/select-grid-cell (:id shape) (:id cell)))))]
 
@@ -639,7 +643,11 @@
 
         snap-pixel? (mf/deref refs/snap-pixel?)
 
-        grid-edition-id-ref (mf/use-memo #(refs/workspace-grid-edition-id (:id shape)))
+        grid-edition-id-ref
+        (mf/use-memo
+         (mf/deps (:id shape))
+         #(refs/workspace-grid-edition-id (:id shape)))
+
         grid-edition (mf/deref grid-edition-id-ref)
 
         hover-cells (:hover grid-edition)
@@ -781,11 +789,12 @@
                :snap-pixel? snap-pixel?
                :zoom zoom}]]))])
 
-     (for [[_ cell] (:layout-grid-cells shape)]
-       [:& grid-cell {:key (dm/str "cell-" (:id cell))
-                      :shape base-shape
-                      :layout-data layout-data
-                      :cell cell
-                      :zoom zoom
-                      :hover? (contains? hover-cells (:id cell))
-                      :selected? (= selected-cells (:id cell))}])]))
+     [:g.cells
+      (for [cell (ctl/get-cells shape {:sort? true})]
+        [:& grid-cell {:key (dm/str "cell-" (:id cell))
+                       :shape base-shape
+                       :layout-data layout-data
+                       :cell cell
+                       :zoom zoom
+                       :hover? (contains? hover-cells (:id cell))
+                       :selected? (= selected-cells (:id cell))}])]]))

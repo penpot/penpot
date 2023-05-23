@@ -643,7 +643,7 @@
   (fn [[id cell]]
     (let [inner-track?
           (or (= track-num (get cell attr))
-              (and (< (get cell attr) track-num (+ (get cell attr) (get cell span-attr)))))
+              (< (get cell attr) track-num (+ (get cell attr) (get cell span-attr))))
 
           displace-cell?
           (and (not inner-track?) (< track-num (get cell attr)))

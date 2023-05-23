@@ -1,4 +1,4 @@
-; This Source Code Form is subject to the terms of the Mozilla Public
+;; This Source Code Form is subject to the terms of the Mozilla Public
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
@@ -9,6 +9,7 @@
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.workspace :as dw]
@@ -204,7 +205,7 @@
 
          (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt? meta?))
 
-       ;; Emit asynchronously so the double click to exit shapes won't break
+         ;; Emit asynchronously so the double click to exit shapes won't break
          (timers/schedule
           (fn []
             (when (and (not drawing-path?) shape)
@@ -212,6 +213,9 @@
                 (and editable? (not= id edition) (not workspace-read-only?))
                 (st/emit! (dw/select-shape id)
                           (dw/start-editing-selected))
+
+                (ctl/grid-layout? shape)
+                (st/emit! (dw/start-edition-mode id))
 
                 :else
                 (let [;; We only get inside childrens of the hovering shape

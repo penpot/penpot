@@ -26,7 +26,8 @@
         (if (contains? objects id)
           (-> state
               (assoc-in [:workspace-local :selected] #{id})
-              (assoc-in [:workspace-local :edition] id))
+              (assoc-in [:workspace-local :edition] id)
+              (dissoc :workspace-grid-edition))
           state)))
 
     ptk/WatchEvent

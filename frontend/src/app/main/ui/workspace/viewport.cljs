@@ -251,7 +251,9 @@
 
         offset-y (if selecting-first-level-frame?
                    (:y (first selected-shapes))
-                   (:y selected-frame))]
+                   (:y selected-frame))
+
+        rule-area-size (/ rules/rule-area-size zoom)]
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -348,6 +350,14 @@
        :on-pointer-leave on-pointer-leave
        :on-pointer-move  on-pointer-move
        :on-pointer-up    on-pointer-up}
+
+      [:defs
+       ;; This clip is so the handlers are not over the rules
+       [:clipPath {:id "clip-handlers"}
+        [:rect {:x (+ (:x vbox) rule-area-size)
+                :y (+ (:y vbox) rule-area-size)
+                :width (- (:width vbox) (* rule-area-size 2))
+                :height (- (:height vbox) (* rule-area-size 2))}]]]
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
        (when show-text-editor?
@@ -559,15 +569,6 @@
 
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
-          [:defs
-           (let [rule-area-size (/ rules/rule-area-size zoom)]
-             ;; This clip is so the handlers are not over the rules
-             [:clipPath {:id "clip-handlers"}
-              [:rect {:x (+ (:x vbox) rule-area-size)
-                      :y (+ (:y vbox) rule-area-size)
-                      :width (max 0 (- (:width vbox) (* rule-area-size 2)))
-                      :height (max 0 (- (:height vbox) (* rule-area-size 2)))}]])]
-
           [:& selection/selection-handlers
            {:selected selected
             :shapes selected-shapes
@@ -589,14 +590,13 @@
           {:id (first selected)
            :zoom zoom}])
 
-
        (when  (or show-grid-editor? hover-grid?)
-         [:& grid-layout/editor
-          {:zoom zoom
-           :objects objects-modified
-           :shape (or (get objects-modified edition)
-                      (gsh/transform-shape
-                       (get base-objects @hover-top-frame-id)
-                       (dm/get-in modifiers [@hover-top-frame-id :modifiers])))
-           :view-only (not show-grid-editor?)}])
-       ]]]))
+         [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
+          [:& grid-layout/editor
+           {:zoom zoom
+            :objects objects-modified
+            :shape (or (get objects-modified edition)
+                       (gsh/transform-shape
+                        (get base-objects @hover-top-frame-id)
+                        (dm/get-in modifiers [@hover-top-frame-id :modifiers])))
+            :view-only (not show-grid-editor?)}]])]]]))

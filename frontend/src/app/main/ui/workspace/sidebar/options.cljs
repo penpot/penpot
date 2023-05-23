@@ -85,6 +85,7 @@
           (if (= options-mode :inspect) ;;TODO maybe move this logic to set-options-mode
             (st/emit! :interrupt (udw/set-workspace-read-only true))
             (st/emit! :interrupt (udw/set-workspace-read-only false))))]
+
     [:div.tool-window
      [:div.tool-window-content
       [:& tabs-container {:on-change-tab on-change-tab
@@ -95,27 +96,41 @@
          [:& align-options]
          [:& bool-options]
          (cond
-           grid-cell-selected? [:& grid-cell/options {:shape (get objects grid-id)
-                                                      :cell (get-in objects [grid-id :layout-grid-cells cell-id])}]
+           grid-cell-selected?
+           [:& grid-cell/options
+            {:shape (get objects grid-id)
+             :cell (get-in objects [grid-id :layout-grid-cells cell-id])}]
 
-           (d/not-empty? drawing) [:& shape-options {:shape (:object drawing)
-                                                     :page-id page-id
-                                                     :file-id file-id
-                                                     :shared-libs shared-libs}]
-           (= 0 (count selected)) [:& page/options]
-           (= 1 (count selected)) [:& shape-options {:shape (first selected-shapes)
-                                                     :page-id page-id
-                                                     :file-id file-id
-                                                     :shared-libs shared-libs
-                                                     :shapes-with-children shapes-with-children}]
-           :else [:& multiple/options {:shapes-with-children shapes-with-children
-                                       :shapes selected-shapes
-                                       :page-id page-id
-                                       :file-id file-id
-                                       :shared-libs shared-libs}])]]
+           (d/not-empty? drawing)
+           [:& shape-options
+            {:shape (:object drawing)
+             :page-id page-id
+             :file-id file-id
+             :shared-libs shared-libs}]
 
-       [:& tabs-element {:id :prototype
-                        :title (tr "workspace.options.prototype")}
+           (= 0 (count selected))
+           [:& page/options]
+
+           (= 1 (count selected))
+           [:& shape-options
+            {:shape (first selected-shapes)
+             :page-id page-id
+             :file-id file-id
+             :shared-libs shared-libs
+             :shapes-with-children shapes-with-children}]
+
+           :else
+           [:& multiple/options
+            {:shapes-with-children shapes-with-children
+             :shapes selected-shapes
+             :page-id page-id
+             :file-id file-id
+             :shared-libs shared-libs}])]]
+
+       [:& tabs-element
+        {:id :prototype
+         :title (tr "workspace.options.prototype")}
+
         [:div.element-options
          [:& interactions-menu {:shape (first shapes)}]]]
 
