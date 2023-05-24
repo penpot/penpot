@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.sidebar.options.shapes.grid-cell
+(ns app.main.ui.workspace.sidebar.options.menus.grid-cell
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]

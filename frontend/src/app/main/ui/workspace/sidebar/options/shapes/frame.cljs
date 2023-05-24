@@ -16,6 +16,7 @@
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
+   [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
@@ -49,7 +50,11 @@
         is-grid-parent? (mf/deref is-grid-parent-ref)
 
         is-flex-layout-container? (ctl/flex-layout? shape)
-        is-layout-child-absolute? (ctl/layout-absolute? shape)]
+        is-layout-child-absolute? (ctl/layout-absolute? shape)
+
+        ids (hooks/use-equal-memo ids)
+        parents-by-ids-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
+        parents (mf/deref parents-by-ids-ref)]
     [:*
      [:& measures-menu {:ids [(:id shape)]
                         :values measure-values
@@ -62,6 +67,11 @@
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
      [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
+
+     (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
+       [:& grid-cell/options
+        {:shape (first parents)
+         :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
 
      (when (or is-layout-child? is-flex-layout-container?)
        [:& layout-item-menu
