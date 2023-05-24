@@ -74,8 +74,8 @@
       [:frame-id {:optional true} ::sm/uuid]
       [:parent-id {:optional true} ::sm/uuid]
       [:index {:optional true} [:maybe :int]]
-      [:ignore-touched {:optional true} :boolean]
-      ]]
+      [:ignore-touched {:optional true} :boolean]]]
+      
 
     [:mod-obj
      [:map {:title "ModObjChange"}
@@ -214,9 +214,9 @@
     [:del-typography
      [:map {:title "DelTypogrphyChange"}
       [:type [:= :del-typography]]
-      [:id ::sm/uuid]]]
+      [:id ::sm/uuid]]]]])
 
-    ]])
+    
 
 (def change?
   (sm/pred-fn ::change))
@@ -385,15 +385,29 @@
 
 (defmethod process-change :mov-objects
   [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape]}]
-  (letfn [(calculate-invalid-targets [objects shape-id]
+  (letfn [(nested-components? [objects shape-id]
+             (let [children            (cph/get-children-with-self objects shape-id)
+                   xf-get-component-id (keep :component-id)
+                   child-components    (into #{} xf-get-component-id children)
+
+                   parents             (cph/get-parents-with-self objects parent-id)
+                   xf-get-main-id      (comp (filter :main-instance?)
+                                             xf-get-component-id)
+                   parent-components   (into #{} xf-get-main-id parents)]
+               (seq (set/intersection child-components parent-components))))
+
+          (calculate-invalid-targets [objects shape-id]
             (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
               (->> (get-in objects [shape-id :shapes])
                    (reduce reduce-fn #{shape-id}))))
 
+          ;; Avoid placing a shape as a direct or indirect child of itself,
+          ;; or inside its main component if it's in a copy.
           (is-valid-move? [objects shape-id]
             (let [invalid-targets (calculate-invalid-targets objects shape-id)]
               (and (contains? objects shape-id)
                    (not (invalid-targets parent-id))
+                   (not (nested-components? objects shape-id))
                    #_(cph/valid-frame-target? objects parent-id shape-id))))
 
           (insert-items [prev-shapes index shapes]
@@ -428,14 +442,12 @@
                       component? (and (:shape-ref obj)
                                       (= (:type obj) :group)
                                       (not ignore-touched))]
-
                   (-> objects
                       (d/update-in-when [pid :shapes] d/without-obj sid)
                       (d/update-in-when [pid :shapes] d/vec-without-nils)
                       (cond-> component? (d/update-when pid #(-> %
                                                                  (update :touched cph/set-touched-group :shapes-group)
                                                                  (dissoc :remote-synced?)))))))))
-
           (update-parent-id [objects id]
             (-> objects
                 (d/update-when id assoc :parent-id parent-id)))
