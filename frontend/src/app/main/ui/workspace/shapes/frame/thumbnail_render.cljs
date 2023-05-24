@@ -38,9 +38,19 @@
     [value]))
 
 (defn- create-svg-blob-uri-from
-  [fixed-width fixed-height rect node style-node]
+  [rect node style-node]
   (let [{:keys [x y width height]} rect
         viewbox (dm/str x " " y " " width " " height)
+        
+        ;; Calculate the fixed width and height
+        ;; We don't want to generate thumbnails 
+        ;; bigger than 2000px
+        [fixed-width fixed-height]
+        (if (> width height)
+          [(mth/clamp width 250 2000)
+           (/ (* height (mth/clamp width 250 2000)) width)]
+          [(/ (* width (mth/clamp height 250 2000)) height)
+           (mth/clamp height 250 2000)])
 
         ;; This is way faster than creating a node
         ;; through the DOM API
@@ -53,8 +63,8 @@
                 (dom/node->xml node))
 
         ;; create SVG blob
-        blob (js/Blob. #js [svg-data] #js {:type "image/svg+xml;charset=utf-8"})
-        url  (dm/str (.createObjectURL js/URL blob) "#svg")]
+        blob (wapi/create-blob svg-data "image/svg+xml;charset=utf-8")
+        url  (dm/str (wapi/create-uri blob) "#svg")]
     ;; returns the url and the node
     url))
 
@@ -75,13 +85,6 @@
         (if (:show-content shape)
           (gsh/selection-rect (concat [shape] all-children))
           (-> shape :points gsh/points->selrect))
-
-        [fixed-width fixed-height]
-        (if (> width height)
-          [(mth/clamp width 250 2000)
-           (/ (* height (mth/clamp width 250 2000)) width)]
-          [(/ (* width (mth/clamp height 250 2000)) height)
-           (mth/clamp height 250 2000)])
 
         svg-uri*          (mf/use-state nil)
         bitmap-uri*       (mf/use-state nil)
@@ -131,7 +134,7 @@
                (if (dom/has-children? node)
                  ;; The frame-content need to have children in order to generate the thumbnail
                  (let [style-node (dom/query (dm/str "#frame-container-" id " style"))
-                       url        (create-svg-blob-uri-from fixed-width fixed-height @shape-bb* node style-node)]
+                       url        (create-svg-blob-uri-from @shape-bb* node style-node)]
                    (reset! svg-uri* url))
 
                  ;; Node not yet ready, we schedule a new generation

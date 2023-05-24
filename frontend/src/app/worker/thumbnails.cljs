@@ -15,6 +15,7 @@
    [app.main.render :as render]
    [app.util.http :as http]
    [app.util.time :as ts]
+   [app.util.webapi :as wapi]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
    [debug :refer [debug?]]
@@ -143,7 +144,7 @@
 
     (->> (.convertToBlob ^js canvas #js {:type "image/png"})
          (p/fmap (fn [blob]
-                   {:result (.createObjectURL js/URL blob)}))
+                   {:result (wapi/create-uri blob)}))
          (p/fnly (fn [_]
                    (log/debug :hint "generated thumbnail" :elapsed (dm/str (tp) "ms"))
                    (.close ^js ibpm))))))
