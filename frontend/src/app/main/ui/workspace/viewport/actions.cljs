@@ -187,10 +187,10 @@
              (st/emit! (dw/increase-zoom pt)))))))))
 
 (defn on-double-click
-  [hover hover-ids drawing-path? objects edition drawing-tool z? workspace-read-only?]
+  [hover hover-ids hover-top-frame-id drawing-path? objects edition drawing-tool z? workspace-read-only?]
 
   (mf/use-callback
-   (mf/deps @hover @hover-ids drawing-path? edition drawing-tool @z? workspace-read-only?)
+   (mf/deps @hover @hover-ids @hover-top-frame-id drawing-path? edition drawing-tool @z? workspace-read-only?)
    (fn [event]
      (dom/stop-propagation event)
      (when-not @z?
@@ -214,8 +214,8 @@
                 (st/emit! (dw/select-shape id)
                           (dw/start-editing-selected))
 
-                (ctl/grid-layout? shape)
-                (st/emit! (dw/start-edition-mode id))
+                (ctl/grid-layout? objects @hover-top-frame-id)
+                (st/emit! (dw/start-edition-mode @hover-top-frame-id))
 
                 :else
                 (let [;; We only get inside childrens of the hovering shape
