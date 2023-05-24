@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
@@ -62,30 +63,27 @@
         (mf/use-fn
          (mf/deps on-change)
          (fn [value]
-          (when (not= "multiple" value)
-            (swap! state* assoc
-                   :selected-blend-mode value
-                   :option-highlighted? false
-                   :preview-complete? true)
-            (on-change :blend-mode value))))
+           (swap! state* assoc
+             :selected-blend-mode value
+             :option-highlighted? false
+             :preview-complete? true)
+           (on-change :blend-mode value)))
 
-        handle-option-enter
+        handle-blend-mode-enter
         (mf/use-fn
          (mf/deps on-change current-blend-mode)
          (fn [value]
-           (when (not= :multiple current-blend-mode)
-             (swap! state* assoc
-                    :preview-complete? false
-                    :option-highlighted? true)
-             (on-change :blend-mode value))))
+           (swap! state* assoc
+             :preview-complete? false
+             :option-highlighted? true)
+           (st/emit! (dw/set-preview-blend-mode ids value))))
 
-        handle-option-leave
+        handle-blend-mode-leave
         (mf/use-fn
          (mf/deps on-change selected-blend-mode)
          (fn [_value]
-           (when (not= :multiple current-blend-mode)
-             (swap! state* assoc :preview-complete? true)
-             (on-change :blend-mode selected-blend-mode))))
+           (swap! state* assoc :preview-complete? true)
+           (st/emit! (dw/unset-preview-blend-mode ids))))
 
         handle-opacity-change
         (mf/use-fn
@@ -121,7 +119,7 @@
         options
         (mf/with-memo [current-blend-mode]
           (d/concat-vec
-           (when (= :multiple current-blend-mode)
+           (when (= "multiple" current-blend-mode)
              [{:value "multiple" :label "--"}])
            [{:value "normal" :label (tr "workspace.options.layer-options.blend-mode.normal")}
             {:value "darken" :label (tr "workspace.options.layer-options.blend-mode.darken")}
@@ -164,8 +162,8 @@
          :options options
          :on-change handle-change-blend-mode
          :is-open? option-highlighted?
-         :on-pointer-enter-option handle-option-enter
-         :on-pointer-leave-option handle-option-leave}]
+         :on-pointer-enter-option handle-blend-mode-enter
+         :on-pointer-leave-option handle-blend-mode-leave}]
 
        [:div.input-element {:title (tr "workspace.options.opacity")
                             :class "percentail"}

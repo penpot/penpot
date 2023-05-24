@@ -72,6 +72,9 @@
                              (d/read-string))]
                (on-pointer-leave-option value)))))]
 
+    (mf/with-effect [default-value]
+      (swap! state* assoc :current-value default-value))
+
     [:div.custom-select {:on-click open-dropdown :class class}
      [:span current-label]
      [:span.dropdown-button i/arrow-down]

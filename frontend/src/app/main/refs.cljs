@@ -550,3 +550,8 @@
 (def current-file-id
   (l/derived :current-file-id st/state))
 
+(def workspace-preview-blend
+  (l/derived :workspace-preview-blend st/state))
+
+(defn workspace-preview-blend-by-id [id]
+  (l/derived (l/key id) workspace-preview-blend =))

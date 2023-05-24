@@ -2160,6 +2160,25 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Preview blend modes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn set-preview-blend-mode
+  [ids blend-mode]
+  (ptk/reify ::set-preview-blend-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce #(assoc-in %1 [:workspace-preview-blend %2] blend-mode) state ids))))
+
+(defn unset-preview-blend-mode
+  [ids]
+  (ptk/reify ::unset-preview-blend-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce #(update %1 :workspace-preview-blend dissoc %2) state ids))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
