@@ -786,7 +786,8 @@
   }
 }
 
-.grid-option {
+.grid-option,
+.shadow-option {
   margin-bottom: 0.5rem;
   .advanced-options {
     .row-flex {
@@ -796,6 +797,15 @@
       left: 0;
       position: absolute;
       top: 12px;
+    }
+    .element-set-actions-button {
+      min-width: auto;
+      min-height: auto;
+      padding-right: 10px;
+      svg {
+        width: 12px;
+        height: 12px;
+      }
     }
   }
 }
@@ -807,7 +817,8 @@
   margin-left: 0.25rem;
 }
 
-.element-set-content .grid-option-main {
+.element-set-content .grid-option-main,
+.element-set-content .shadow-option-main {
   align-items: center;
   display: flex;
   padding: 0.3rem 0;
@@ -857,11 +868,13 @@
   }
 }
 
-.grid-option-main-actions {
+.grid-option-main-actions,
+.shadow-option-main-actions {
   display: flex;
   visibility: hidden;
 
-  .grid-option:hover & {
+  .grid-option:hover &,
+  .shadow-option:hover & {
     visibility: visible;
   }
 }

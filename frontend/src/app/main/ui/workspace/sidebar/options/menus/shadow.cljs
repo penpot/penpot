@@ -22,6 +22,7 @@
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (def shadow-attrs [:shadow])
@@ -45,10 +46,8 @@
        (mapv second)))
 
 (mf/defc shadow-entry
-  [{:keys [ids index value on-reorder disable-drag? on-blur]}]
-  (let [open-shadow        (mf/use-state false)
-
-        basic-offset-x-ref (mf/use-ref nil)
+  [{:keys [ids index value on-reorder disable-drag? on-blur open-state-ref]}]
+  (let [basic-offset-x-ref (mf/use-ref nil)
         basic-offset-y-ref (mf/use-ref nil)
         basic-blur-ref     (mf/use-ref nil)
 
@@ -58,6 +57,12 @@
         adv-spread-ref     (mf/use-ref nil)
 
         shadow-style       (dm/str (:style value))
+        shadow-id          (:id value)
+
+        open-status-ref    (mf/with-memo [open-state-ref shadow-id]
+                             (-> (l/key shadow-id)
+                                 (l/derived open-state-ref)))
+        open-shadow        (mf/deref open-status-ref)
 
         on-remove-shadow
         (mf/use-fn
@@ -125,15 +130,19 @@
         toggle-visibility
         (fn [index]
           (fn []
-            (st/emit! (dch/update-shapes ids #(update-in % [:shadow index :hidden] not)))))]
+            (st/emit! (dch/update-shapes ids #(update-in % [:shadow index :hidden] not)))))
+
+        on-toggle-open-shadow
+        (fn []
+            (swap! open-state-ref update shadow-id not))]
     [:*
-     [:div.border-data {:class (dom/classnames
-                                :dnd-over-top (= (:over dprops) :top)
-                                :dnd-over-bot (= (:over dprops) :bot))
-                        :ref dref}
-      [:div.element-set-options-group {:style {:display (when @open-shadow "none")}}
+     [:div.shadow-option {:class (dom/classnames
+                                   :dnd-over-top (= (:over dprops) :top)
+                                   :dnd-over-bot (= (:over dprops) :bot))
+                          :ref dref}
+      [:div.shadow-option-main {:style {:display (when open-shadow "none")}}
        [:div.element-set-actions-button
-        {:on-click #(reset! open-shadow true)}
+        {:on-click on-toggle-open-shadow}
         i/actions]
 
        [:select.input-select
@@ -148,7 +157,7 @@
                   :selected (when (= shadow-style ":inner-shadow") "selected")}
          (tr "workspace.options.shadow-options.inner-shadow")]]
 
-       [:div.element-set-actions
+       [:div.shadow-option-main-actions
         [:div.element-set-actions-button {:on-click (toggle-visibility index)}
          (if (:hidden value) i/eye-closed i/eye)]
         [:div.element-set-actions-button
@@ -156,19 +165,23 @@
           :on-click on-remove-shadow}
          i/minus]]]
 
-      [:& advanced-options {:visible? @open-shadow
-                            :on-close #(reset! open-shadow false)}
+      [:& advanced-options {:visible? open-shadow
+                            :on-close on-toggle-open-shadow}
        [:div.color-data
         [:div.element-set-actions-button
-         {:on-click #(reset! open-shadow false)}
+         {:on-click on-toggle-open-shadow}
          i/actions]
         [:select.input-select
-         {:default-value (str (:style value))
+         {:default-value shadow-style
           :on-change (fn [event]
                        (let [value (-> event dom/get-target dom/get-value d/read-string)]
                          (st/emit! (dch/update-shapes ids #(assoc-in % [:shadow index :style] value)))))}
-         [:option {:value ":drop-shadow"} (tr "workspace.options.shadow-options.drop-shadow")]
-         [:option {:value ":inner-shadow"} (tr "workspace.options.shadow-options.inner-shadow")]]]
+         [:option {:value ":drop-shadow"
+                   :selected (when (= shadow-style ":drop-shadow") "selected")}
+          (tr "workspace.options.shadow-options.drop-shadow")]
+         [:option {:value ":inner-shadow"
+                   :selected (when (= shadow-style ":inner-shadow") "selected")}
+          (tr "workspace.options.shadow-options.inner-shadow")]]]
 
        [:div.row-grid-2
         [:div.input-element {:title (tr "workspace.options.shadow-options.offsetx")}
@@ -227,14 +240,15 @@
 (mf/defc shadow-menu
   {::mf/wrap-props false}
   [props]
-  (let [ids           (unchecked-get props "ids")
-        type          (unchecked-get props "type")
-        values        (unchecked-get props "values")
+  (let [ids            (unchecked-get props "ids")
+        type           (unchecked-get props "type")
+        values         (unchecked-get props "values")
 
-        shadows       (:shadow values [])
+        shadows        (:shadow values [])
+        open-state-ref (mf/with-memo [] (l/atom {}))
 
-        disable-drag* (mf/use-state false)
-        disable-drag? (deref disable-drag*)
+        disable-drag*  (mf/use-state false)
+        disable-drag?  (deref disable-drag*)
 
         on-remove-all
         (mf/use-fn
@@ -288,4 +302,5 @@
              :on-reorder handle-reorder
              :disable-drag? disable-drag?
              :on-blur on-blur
-             :index index}])]])]))
+             :index index
+             :open-state-ref open-state-ref}])]])]))
