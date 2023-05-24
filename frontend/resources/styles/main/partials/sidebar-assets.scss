@@ -434,6 +434,14 @@
       cursor: pointer;
       position: relative;
 
+      .name-block {
+        color: $color-gray-20;
+        width: calc(100% - 24px - #{$size-2});
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
       & span {
         margin-left: $size-1;
         color: $color-gray-30;

@@ -211,7 +211,8 @@
 
     [:*
      [:div.pixel-overlay
-      {:tab-index 0
+      {:id "pixel-overlay"
+       :tab-index 0
        :style {:cursor cur/picker}
        :on-pointer-down handle-pointer-down-picker
        :on-pointer-up handle-pointer-up-picker
