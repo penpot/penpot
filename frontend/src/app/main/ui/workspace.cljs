@@ -137,8 +137,11 @@
         project          (mf/deref refs/workspace-project)
         layout           (mf/deref refs/workspace-layout)
         wglobal          (mf/deref refs/workspace-global)
-        ready?           (mf/deref refs/workspace-ready?)
         read-only?       (mf/deref refs/workspace-read-only?)
+
+        ready-lens       (mf/with-memo [file-id]
+                           (refs/make-workspace-ready-ref file-id))
+        ready?           (mf/deref ready-lens)
 
         team-id          (:team-id project)
         file-name        (:name file)

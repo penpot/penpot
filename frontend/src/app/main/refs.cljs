@@ -104,14 +104,13 @@
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))
 
-;; FIXME: define it as function, because in some situations this
-;; current check is not enought for true readiness
-(def workspace-ready?
+(defn make-workspace-ready-ref
+  [file-id]
   (l/derived (fn [state]
-               (and (:workspace-ready? state)
-                    (:workspace-data state)
-                    (:current-file-id state)
-                    (:current-project-id state)))
+               (let [data (:workspace-data state)]
+                 (and (:workspace-ready? state)
+                      (= file-id (:current-file-id state))
+                      (= file-id (:id data)))))
              st/state))
 
 ;; TODO: rename to workspace-selected (?)
