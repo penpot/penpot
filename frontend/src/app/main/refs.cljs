@@ -104,9 +104,12 @@
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))
 
+;; FIXME: define it as function, because in some situations this
+;; current check is not enought for true readiness
 (def workspace-ready?
   (l/derived (fn [state]
                (and (:workspace-ready? state)
+                    (:workspace-data state)
                     (:current-file-id state)
                     (:current-project-id state)))
              st/state))

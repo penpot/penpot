@@ -78,7 +78,6 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [linked.core :as lks]
    [potok.core :as ptk]))
 
 (def default-workspace-local {:zoom 1})
@@ -220,7 +219,7 @@
                             (rx/map (fn [data] (assoc file :data data))))))
                     (rx/reduce conj [])
                     (rx/map libraries-fetched)))
-              (rx/of (workspace-initialized)))
+              (rx/of (with-meta (workspace-initialized) {:file-id id})))
              (rx/take-until stoper))))))
 
 (defn- libraries-fetched
@@ -369,7 +368,10 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [pindex (-> state :workspace-data :pages-index)]
+      ;; NOTE: there are cases between files navigation when this
+      ;; event is emmited but the page-index is still not loaded, so
+      ;; we only need to proceed when page-index is properly loaded
+      (when-let [pindex (-> state :workspace-data :pages-index)]
         (if (contains? pindex page-id)
           (rx/of (preload-data-uris page-id)
                  (dwth/watch-state-changes)
@@ -593,6 +595,7 @@
 
 
 (defn start-rename-shape
+  "Start shape renaming process"
   [id]
   (dm/assert! (uuid? id))
   (ptk/reify ::start-rename-shape
@@ -601,13 +604,32 @@
       (assoc-in state [:workspace-local :shape-for-rename] id))))
 
 (defn end-rename-shape
-  []
-  (ptk/reify ::end-rename-shape
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-local dissoc :shape-for-rename))))
+  "End the ongoing shape rename process"
+  ([] (end-rename-shape nil))
+  ([name]
+   (ptk/reify ::end-rename-shape
+     ptk/WatchEvent
+     (watch [_ state _]
+       (prn "end-rename-shape" name (string? name)  (not (str/blank? name)))
+       (when-let [shape-id (dm/get-in state [:workspace-local :shape-for-rename])]
+         (prn "end-rename-shape" shape-id)
+         (let [shape (wsh/lookup-shape state shape-id)]
+           (rx/concat
+            ;; Remove rename state from workspace local state
+            (rx/of #(update % :workspace-local dissoc :shape-for-rename))
+
+            ;; Rename the shape if string is not empty/blank
+            (when (and (string? name) (not (str/blank? name)))
+              (rx/of (update-shape shape-id {:name name})))
+
+            ;; Update the component in case if shape is a main instance
+            (when (:main-instance? shape)
+              (when-let [component-id (:component-id shape)]
+                (rx/of (dwl/rename-component component-id name)))))))))))
+
 
 ;; --- Update Selected Shapes attrs
+
 
 (defn update-selected-shapes
   [attrs]
@@ -1173,27 +1195,53 @@
          (update state :workspace-assets dissoc :selected))))))
 
 (defn go-to-main-instance
-  [page-id shape-id]
-  (dm/assert! (uuid? page-id))
-  (dm/assert! (uuid? shape-id))
+  [file-id component-id]
+  (dm/assert!
+   "expected uuid type for `file-id` parameter (nilable)"
+   (or (nil? file-id)
+       (uuid? file-id)))
+
+  (dm/assert!
+   "expected uuid type for `component-id` parameter"
+   (uuid? component-id))
+
   (ptk/reify ::go-to-main-instance
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [current-page-id (:current-page-id state)]
-        (if (= page-id current-page-id)
-          (rx/of (dws/select-shapes (lks/set shape-id))
-                 dwz/zoom-to-selected-shape)
-          (let [project-id      (:current-project-id state)
-                file-id         (:current-file-id state)
-                pparams         {:file-id file-id :project-id project-id}
-                qparams         {:page-id page-id}]
-            (rx/merge
-             (rx/of (rt/nav :workspace pparams qparams))
-             (->> stream
-                  (rx/filter (ptk/type? ::dwv/page-loaded))
-                  (rx/take 1)
-                  (rx/mapcat #(rx/of (dws/select-shapes (lks/set shape-id))
-                                     dwz/zoom-to-selected-shape))))))))))
+      (let [current-file-id    (:current-file-id state)
+            current-page-id    (:current-page-id state)
+            current-project-id (:current-project-id state)
+            file-id            (or file-id current-file-id)
+
+            redirect-to
+            (fn [file-id page-id]
+              (let [pparams {:file-id file-id :project-id current-project-id}
+                    qparams {:page-id page-id}]
+                (rx/merge
+                 (rx/of (rt/nav :workspace pparams qparams))
+                 (->> stream
+                      (rx/filter (ptk/type? ::workspace-initialized))
+                      (rx/map meta)
+                      (rx/filter #(= file-id (:file-id %)))
+                      (rx/take 1)
+                      (rx/observe-on :async)
+                      (rx/map #(go-to-main-instance file-id component-id))))))]
+
+        (if (= file-id current-file-id)
+          (let [component (dm/get-in state [:workspace-data :components component-id])
+                page-id   (:main-instance-page component)]
+
+            (when (some? page-id)
+              (if (= page-id current-page-id)
+                (let [shape-id (:main-instance-id component)]
+                  (rx/of (dws/select-shapes (d/ordered-set shape-id))
+                         dwz/zoom-to-selected-shape))
+                (redirect-to current-page-id page-id))))
+
+          (let [component (dm/get-in state [:workspace-libraries file-id :data :components component-id])]
+            (some->> (:main-instance-page component)
+                     (redirect-to file-id))))))))
+
 
 (defn go-to-component
   [component-id]

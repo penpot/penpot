@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :refer [css]])
   (:require
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.libraries :as dwl]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
@@ -19,6 +18,7 @@
 
 (def shape-for-rename-ref
   (l/derived (l/in [:workspace-local :shape-for-rename]) st/state))
+
 (mf/defc layer-name
   [{:keys [shape on-start-edit  disabled-double-click on-stop-edit name-ref depth parent-size selected? type-comp type-frame hidden] :as props}]
   (let [local            (mf/use-state {})
@@ -28,27 +28,25 @@
         start-edit (fn []
                      (when (not disabled-double-click)
                        (on-start-edit)
-                       (swap! local assoc :edition true)))
+                       (swap! local assoc :edition true)
+                       (st/emit! (dw/start-rename-shape (:id shape)))))
 
         accept-edit (fn []
                       (let [name-input     (mf/ref-val name-ref)
-                            name           (str/trim (dom/get-value name-input))
-                            main-instance? (:main-instance? shape)]
+                            name           (str/trim (dom/get-value name-input))]
                         (on-stop-edit)
                         (swap! local assoc :edition false)
-                        (st/emit! (dw/end-rename-shape))
-                        (when-not (str/empty? name)
-                          (if main-instance?
-                            (dwl/rename-component-and-main-instance (:component-id shape) (:id shape) name nil)
-                            (st/emit! (dw/update-shape (:id shape) {:name name}))))))
+                        (st/emit! (dw/end-rename-shape name))))
+
         cancel-edit (fn []
                       (on-stop-edit)
                       (swap! local assoc :edition false)
-                      (st/emit! (dw/end-rename-shape)))
+                      (st/emit! (dw/end-rename-shape nil)))
 
         on-key-down (fn [event]
                       (when (kbd/enter? event) (accept-edit))
                       (when (kbd/esc? event) (cancel-edit)))
+
         space-for-icons 110
         parent-size (str (- parent-size space-for-icons) "px")]
 

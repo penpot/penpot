@@ -335,6 +335,8 @@
                 ;; NOTE: we need to ensure the component exists,
                 ;; because there are small possibilities of race
                 ;; conditions with component deletion.
+                ;;
+                ;; FIXME: this race conditon should be handled in pcb/update-component
                 (when component
                   (cond-> component
                     :always
@@ -343,7 +345,7 @@
 
                     (not components-v2)
                     (update :objects
-                              ;; Give the same name to the root shape
+                            ;; Give the same name to the root shape
                             #(assoc-in % [id :name] name)))))
 
               changes (-> (pcb/empty-changes it)
@@ -353,9 +355,19 @@
           (rx/of (dch/commit-changes changes)))))))
 
 (defn rename-component-and-main-instance
-  [component-id shape-id name page-id]
-  (st/emit!  (rename-component component-id name)
-             (dch/update-shapes [shape-id] #(merge % {:name name}) {:page-id page-id :stack-undo? true})))
+  [component-id name]
+  (ptk/reify ::rename-component-and-main-instance
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when-let [component (dm/get-in state [:workspace-data :components component-id])]
+        (let [shape-id (:main-instance-id component)
+              page-id  (:main-instance-page component)]
+          (rx/concat
+           (rx/of (rename-component component-id name))
+
+           ;; NOTE: only when components-v2 is enabled
+           (when (and shape-id page-id)
+             (rx/of (dch/update-shapes [shape-id] #(assoc % :name name) {:page-id page-id :stack-undo? true})))))))))
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."

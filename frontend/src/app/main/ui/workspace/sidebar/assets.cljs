@@ -415,13 +415,10 @@
 
         on-component-double-click
         (mf/use-fn
-         (mf/deps component selected)
+         (mf/deps file-id component-id)
          (fn [event]
            (dom/stop-propagation event)
-           (let [main-instance-id (:main-instance-id component)
-                 main-instance-page (:main-instance-page component)]
-             (when (and main-instance-id main-instance-page) ;; Only when :components-v2 is enabled
-               (st/emit! (dw/go-to-main-instance main-instance-page main-instance-id))))))
+           (st/emit! (dw/go-to-main-instance file-id component-id))))
 
         on-drop
         (mf/use-fn
@@ -605,8 +602,12 @@
            on-asset-click on-assets-delete on-clear-selection open-status-ref]}]
 
   (let [input-ref                (mf/use-ref nil)
-        state                    (mf/use-state {:renaming nil
-                                                :component-id nil})
+
+        state*                   (mf/use-state {})
+        state                    (deref state*)
+
+        current-component-id     (:component-id state)
+        renaming?                (:renaming state)
 
         open-groups-ref          (mf/with-memo [open-status-ref]
                                    (-> (l/in [:groups :components])
@@ -647,50 +648,43 @@
 
         on-duplicate
         (mf/use-fn
-         (mf/deps @state)
+         (mf/deps current-component-id selected)
          (fn []
-           (let [undo-id (js/Symbol)]
-             (if (empty? selected)
-               (st/emit! (dwl/duplicate-component file-id (:component-id @state)))
-               (do
-                 (st/emit! (dwu/start-undo-transaction undo-id))
-                 (apply st/emit! (map (partial dwl/duplicate-component file-id) selected))
-                 (st/emit! (dwu/commit-undo-transaction undo-id)))))))
+           (if (empty? selected)
+             (st/emit! (dwl/duplicate-component file-id current-component-id))
+             (let [undo-id (js/Symbol)]
+               (st/emit! (dwu/start-undo-transaction undo-id))
+               (run! st/emit! (map (partial dwl/duplicate-component file-id) selected))
+               (st/emit! (dwu/commit-undo-transaction undo-id))))))
 
         on-delete
         (mf/use-fn
-         (mf/deps @state file-id multi-components? multi-assets?)
+         (mf/deps current-component-id file-id multi-components? multi-assets? on-assets-delete)
          (fn []
            (let [undo-id (js/Symbol)]
              (if (or multi-components? multi-assets?)
                (on-assets-delete)
                (st/emit! (dwu/start-undo-transaction undo-id)
-                         (dwl/delete-component {:id (:component-id @state)})
-                         (dwl/sync-file file-id file-id :components (:component-id @state))
+                         (dwl/delete-component {:id current-component-id})
+                         (dwl/sync-file file-id file-id :components current-component-id)
                          (dwu/commit-undo-transaction undo-id))))))
 
+        on-close-menu
+        (mf/use-fn #(swap! menu-state close-context-menu))
+
         on-rename
-        (mf/use-fn
-         (fn []
-           (swap! state (fn [state]
-                          (assoc state :renaming (:component-id state))))))
+        (mf/use-fn #(swap! state* assoc :renaming true))
+
+        cancel-rename
+        (mf/use-fn #(swap! state* dissoc :renaming))
 
         do-rename
         (mf/use-fn
-         (mf/deps @state)
+         (mf/deps current-component-id)
          (fn [new-name]
-           (let [component-id (:renaming @state)
-                 component    (dm/get-in file [:components component-id])
-                 main-instance-id   (:main-instance-id component)
-                 main-instance-page (:main-instance-page component)]
-
-             (dwl/rename-component-and-main-instance component-id main-instance-id new-name main-instance-page)
-             (swap! state assoc :renaming nil))))
-
-        cancel-rename
-        (mf/use-fn
-         (fn []
-           (swap! state assoc :renaming nil)))
+           (swap! state* dissoc :renaming)
+           (st/emit!
+            (dwl/rename-component-and-main-instance current-component-id new-name))))
 
         on-context-menu
         (mf/use-fn
@@ -701,17 +695,13 @@
              (when (and local? (not read-only?))
                (when-not (contains? selected component-id)
                  (on-clear-selection))
-               (swap! state assoc :component-id component-id)
-               (swap! menu-state open-context-menu pos)))))
 
-        on-close-menu
-        (mf/use-fn
-         (fn []
-           (swap! menu-state close-context-menu)))
+               (swap! state* assoc :component-id component-id)
+               (swap! menu-state open-context-menu pos)))))
 
         create-group
         (mf/use-fn
-         (mf/deps components selected on-clear-selection)
+         (mf/deps current-component-id components selected on-clear-selection)
          (fn [group-name]
            (on-clear-selection)
            (let [undo-id (js/Symbol)]
@@ -720,7 +710,7 @@
                    (->> components
                         (filter #(if multi-components?
                                    (contains? selected (:id %))
-                                    (= (:component-id @state) (:id %))))
+                                   (= current-component-id (:id %))))
                         (map #(dwl/rename-component
                                (:id %)
                                (add-group % group-name)))))
@@ -780,17 +770,10 @@
 
         on-show-main
         (mf/use-fn
-         (mf/deps @state components)
+         (mf/deps current-component-id file-id)
          (fn [event]
            (dom/stop-propagation event)
-           (let [component-id (:component-id @state)
-                 component (->> components
-                                (filter #(= (:id %) component-id))
-                                first)
-                 main-instance-id (:main-instance-id component)
-                 main-instance-page (:main-instance-page component)]
-             (when (and main-instance-id main-instance-page) ;; Only when :components-v2 is enabled
-               (st/emit! (dw/go-to-main-instance main-instance-page main-instance-id))))))
+           (st/emit! (dw/go-to-main-instance file-id current-component-id))))
 
         on-asset-click
         (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
@@ -815,7 +798,7 @@
                             :prefix ""
                             :groups groups
                             :open-groups open-groups
-                            :renaming (:renaming @state)
+                            :renaming (when ^boolean renaming? current-component-id)
                             :listing-thumbs? listing-thumbs?
                             :selected selected
                             :on-asset-click on-asset-click
