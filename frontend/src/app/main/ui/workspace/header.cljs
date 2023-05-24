@@ -248,8 +248,9 @@
      [:div.btn-icon-dark.btn-small {:on-click #(reset! show-menu? true)} i/actions]
      [:div.project-tree {:alt (tr "workspace.sitemap")}
       [:span.project-name
-       {:on-click #(st/emit! (rt/navigate :dashboard-files {:team-id team-id
-                                                            :project-id (:project-id file)}))}
+       {:on-click #(st/emit! (rt/nav-new-window* {:rname :dashboard-files
+                                                  :path-params {:team-id team-id
+                                                                :project-id (:project-id file)}}))}
        (:name project) " /"]
       (if @editing?
         [:input.file-name
