@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace
   (:require
    [app.common.data.macros :as dm]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.persistence :as dwp]
@@ -165,9 +164,6 @@
       (fn []
         (st/emit! ::dwp/force-persist
                   (dw/finalize-file project-id file-id))))
-
-    (mf/with-effect []
-      (st/emit! msg/hide))
 
     ;; Set properly the page title
     (mf/with-effect [file-name]
