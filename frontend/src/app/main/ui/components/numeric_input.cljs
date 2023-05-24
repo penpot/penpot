@@ -42,7 +42,7 @@
 
         ;; We need to store the handle-blur ref so we can call it on unmount
         handle-blur-ref (mf/use-ref nil)
-        dirty-ref (mf/use-ref false)
+        dirty-ref       (mf/use-ref false)
 
         ;; This `value` represents the previous value and is used as
         ;; initil value for the simple math expression evaluation.
@@ -106,10 +106,11 @@
         apply-value
         (mf/use-callback
          (mf/deps on-change update-input value)
-         (fn [new-value]
+         (fn [new-value event]
            (mf/set-ref-val! dirty-ref false)
-           (when (and (not= new-value value) (some? on-change))
-             (on-change new-value))
+           (when (and (not= new-value value)
+                      (fn? on-change))
+             (on-change new-value event))
            (update-input new-value)))
 
         set-delta
@@ -146,7 +147,7 @@
 
                                  :else new-value)]
 
-                 (apply-value new-value))))))
+                 (apply-value new-value event))))))
 
         handle-key-down
         (mf/use-callback
@@ -180,12 +181,12 @@
         handle-blur
         (mf/use-callback
          (mf/deps parse-value apply-value update-input on-blur)
-         (fn [_]
+         (fn [event]
            (let [new-value (or (parse-value) default-val)]
              (if (or nillable new-value)
-               (apply-value new-value)
+               (apply-value new-value event)
                (update-input new-value)))
-           (when on-blur (on-blur))))
+           (when on-blur (on-blur event))))
 
         on-click
         (mf/use-callback
@@ -236,7 +237,7 @@
                    (events/listen globals/window EventType.CLICK on-click)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
-    
+
     (mf/use-layout-effect
      (mf/deps handle-mouse-wheel)
      (fn []
