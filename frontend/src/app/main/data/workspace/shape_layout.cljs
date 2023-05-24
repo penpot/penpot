@@ -88,84 +88,90 @@
   ([objects shapes]
    (shapes->flex-params objects shapes nil))
   ([objects shapes parent]
-   (let [points
-         (->> shapes
-              (map :id)
-              (ctt/sort-z-index objects)
-              (map (comp gsh/center-shape (d/getf objects))))
+   (when (d/not-empty? shapes)
+     (let [points
+           (->> shapes
+                (map :id)
+                (ctt/sort-z-index objects)
+                (map (comp gsh/center-shape (d/getf objects))))
 
-         start (first points)
-         end (reduce (fn [acc p] (gpt/add acc (gpt/to-vec start p))) points)
+           start (first points)
+           end (reduce (fn [acc p] (gpt/add acc (gpt/to-vec start p))) points)
 
-         angle (gpt/signed-angle-with-other
-                (gpt/to-vec start end)
-                (gpt/point 1 0))
+           angle (gpt/signed-angle-with-other
+                  (gpt/to-vec start end)
+                  (gpt/point 1 0))
 
-         angle (mod angle 360)
+           angle (mod angle 360)
 
-         t1 (min (abs (-  angle 0)) (abs (-  angle 360)))
-         t2 (abs (- angle 90))
-         t3 (abs (- angle 180))
-         t4 (abs (- angle 270))
+           t1 (min (abs (-  angle 0)) (abs (-  angle 360)))
+           t2 (abs (- angle 90))
+           t3 (abs (- angle 180))
+           t4 (abs (- angle 270))
 
-         tmin (min t1 t2 t3 t4)
+           tmin (min t1 t2 t3 t4)
 
-         direction
-         (cond
-           (mth/close? tmin t1) :row
-           (mth/close? tmin t2) :column-reverse
-           (mth/close? tmin t3) :row-reverse
-           (mth/close? tmin t4) :column)
+           direction
+           (cond
+             (mth/close? tmin t1) :row
+             (mth/close? tmin t2) :column-reverse
+             (mth/close? tmin t3) :row-reverse
+             (mth/close? tmin t4) :column)
 
-         selrects (->> shapes
-                       (mapv :selrect))
-         min-x (->> selrects
-                    (mapv #(min (:x1 %) (:x2 %)))
-                    (apply min))
-         max-x (->> selrects
-                    (mapv #(max (:x1 %) (:x2 %)))
-                    (apply max))
-         all-width (->> selrects
-                        (map :width)
-                        (reduce +))
-         column-gap (if (and (> (count shapes) 1)
-                             (or (= direction :row) (= direction :row-reverse)))
-                      (/ (- (- max-x min-x) all-width)
-                         (dec (count shapes)))
-                      0)
+           selrects (->> shapes
+                         (mapv :selrect))
+           min-x (->> selrects
+                      (mapv #(min (:x1 %) (:x2 %)))
+                      (apply min))
+           max-x (->> selrects
+                      (mapv #(max (:x1 %) (:x2 %)))
+                      (apply max))
+           all-width (->> selrects
+                          (map :width)
+                          (reduce +))
+           column-gap (if (and (> (count shapes) 1)
+                               (or (= direction :row) (= direction :row-reverse)))
+                        (/ (- (- max-x min-x) all-width)
+                           (dec (count shapes)))
+                        0)
 
-         min-y (->> selrects
-                    (mapv #(min (:y1 %) (:y2 %)))
-                    (apply min))
-         max-y (->> selrects
-                    (mapv #(max (:y1 %) (:y2 %)))
-                    (apply max))
-         all-height (->> selrects
-                         (map :height)
-                         (reduce +))
-         row-gap (if (and (> (count shapes) 1)
-                          (or (= direction :column) (= direction :column-reverse)))
-                   (/ (- (- max-y min-y) all-height)
-                      (dec (count shapes)))
-                   0)
+           min-y (->> selrects
+                      (mapv #(min (:y1 %) (:y2 %)))
+                      (apply min))
+           max-y (->> selrects
+                      (mapv #(max (:y1 %) (:y2 %)))
+                      (apply max))
+           all-height (->> selrects
+                           (map :height)
+                           (reduce +))
+           row-gap (if (and (> (count shapes) 1)
+                            (or (= direction :column) (= direction :column-reverse)))
+                     (/ (- (- max-y min-y) all-height)
+                        (dec (count shapes)))
+                     0)
 
-         layout-gap {:row-gap (max row-gap 0) :column-gap (max column-gap 0)}
+           layout-gap {:row-gap (max row-gap 0) :column-gap (max column-gap 0)}
 
-         parent-selrect (:selrect parent)
-         padding (when (and (not (nil? parent)) (> (count shapes) 0))
-                   {:p1 (min (- min-y (:y1 parent-selrect)) (- (:y2 parent-selrect) max-y))
-                    :p2 (min (- min-x (:x1 parent-selrect)) (- (:x2 parent-selrect) max-x))})]
+           parent-selrect (:selrect parent)
+           padding (when (and (not (nil? parent)) (> (count shapes) 0))
+                     {:p1 (min (- min-y (:y1 parent-selrect)) (- (:y2 parent-selrect) max-y))
+                      :p2 (min (- min-x (:x1 parent-selrect)) (- (:x2 parent-selrect) max-x))})]
 
-     (cond-> {:layout-flex-dir direction :layout-gap layout-gap}
-       (not (nil? padding))
-       (assoc :layout-padding {:p1 (:p1 padding) :p2 (:p2 padding) :p3 (:p1 padding) :p4 (:p2 padding)})))))
+       (cond-> {:layout-flex-dir direction :layout-gap layout-gap}
+         (not (nil? padding))
+         (assoc :layout-padding {:p1 (:p1 padding) :p2 (:p2 padding) :p3 (:p1 padding) :p4 (:p2 padding)}))))))
 
 (defn shapes->grid-params
   "Given the shapes calculate its flex parameters (horizontal vs vertical, gaps, etc)"
   ([objects shapes]
    (shapes->flex-params objects shapes nil))
-  ([_objects _shapes _parent]
-   {}))
+  ([_objects shapes _parent]
+   (if (empty? shapes)
+     (ctl/create-cells
+      {:layout-grid-columns [{:type :auto} {:type :auto}]
+       :layout-grid-rows [{:type :auto} {:type :auto}]}
+      [1 1 2 2])
+     {})))
 
 (defn create-layout-from-id
   [ids type from-frame?]
@@ -176,10 +182,9 @@
             children-ids    (into [] (mapcat #(get-in objects [% :shapes])) ids)
             children-shapes (map (d/getf objects) children-ids)
             parent          (get objects (first ids))
-            layout-params   (when (d/not-empty? children-shapes)
-                              (case type
-                                :flex (shapes->flex-params objects children-shapes parent)
-                                :grid (shapes->grid-params objects children-shapes parent)))
+            layout-params   (case type
+                              :flex (shapes->flex-params objects children-shapes parent)
+                              :grid (shapes->grid-params objects children-shapes parent))
             undo-id         (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
                (dwc/update-shapes ids (get-layout-initializer type from-frame?))
@@ -190,7 +195,8 @@
                       (cond-> (not from-frame?)
                         (assoc :layout-item-h-sizing :auto
                                :layout-item-v-sizing :auto))
-                      (merge layout-params))))
+                      (merge layout-params)
+                      (cond-> (= type :grid) (ctl/assign-cells)))))
                (ptk/data-event :layout/update ids)
                (dwc/update-shapes children-ids #(dissoc % :constraints-h :constraints-v))
                (dwu/commit-undo-transaction undo-id))))))
@@ -280,7 +286,7 @@
 
           (let [new-shape-id (uuid/next)
                 undo-id      (js/Symbol)
-                flex-params     (shapes->flex-params objects selected-shapes)]
+                flex-params  (shapes->flex-params objects selected-shapes)]
             (rx/of
              (dwu/start-undo-transaction undo-id)
              (dws/create-artboard-from-selection new-shape-id)

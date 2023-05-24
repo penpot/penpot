@@ -356,8 +356,8 @@
        [:clipPath {:id "clip-handlers"}
         [:rect {:x (+ (:x vbox) rule-area-size)
                 :y (+ (:y vbox) rule-area-size)
-                :width (- (:width vbox) (* rule-area-size 2))
-                :height (- (:height vbox) (* rule-area-size 2))}]]]
+                :width (max 0 (- (:width vbox) (* rule-area-size 2)))
+                :height (max 0 (- (:height vbox) (* rule-area-size 2)))}]]]
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
        (when show-text-editor?

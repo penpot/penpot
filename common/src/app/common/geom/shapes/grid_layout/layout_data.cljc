@@ -10,8 +10,6 @@
 ;;   - Auto
 ;;   - Flex
 ;;
-;;
-;;
 ;;   Min functions:
 ;;   - Fixed: value
 ;;   - Percent: value to pixels

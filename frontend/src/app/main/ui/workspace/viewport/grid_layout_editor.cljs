@@ -21,6 +21,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.formats :as fmt]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -658,6 +659,8 @@
                       (remove :hidden)
                       (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))
 
+        children (hooks/use-equal-memo children)
+
         bounds (:points shape)
         hv     #(gpo/start-hv bounds %)
         vv     #(gpo/start-vv bounds %)
@@ -668,7 +671,9 @@
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
 
         {:keys [row-tracks column-tracks] :as layout-data}
-        (gsg/calc-layout-data shape children bounds)
+        (mf/use-memo
+         (mf/deps shape children)
+         #(gsg/calc-layout-data shape children bounds))
 
         handle-pointer-down
         (mf/use-callback
