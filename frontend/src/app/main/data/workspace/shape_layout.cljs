@@ -505,7 +505,7 @@
       (assoc :layout-item-v-sizing :fix))))
 
 (defn fix-parent-sizing
-  [objects ids-set changes parent]
+  [parent objects ids-set changes]
 
   (let [auto-width? (ctl/auto-width? parent)
         auto-height? (ctl/auto-height? parent)
@@ -553,7 +553,12 @@
         (rx/of (dwu/start-undo-transaction undo-id)
                (dwc/update-shapes ids #(d/deep-merge (or % {}) changes))
                (dwc/update-shapes children-ids (partial fix-child-sizing objects changes))
-               (dwc/update-shapes parent-ids (partial fix-parent-sizing objects (set ids) changes))
+               (dwc/update-shapes parent-ids
+                                  (fn [parent]
+                                    (-> parent
+                                        (fix-parent-sizing objects (set ids) changes)
+                                        (cond-> (ctl/grid-layout? parent)
+                                          (ctl/assign-cells)))))
                (ptk/data-event :layout/update ids)
                (dwu/commit-undo-transaction undo-id))))))
 
