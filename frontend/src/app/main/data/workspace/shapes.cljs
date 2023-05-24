@@ -332,8 +332,8 @@
                     (cond-> (seq starting-flows)
                       (pcb/update-page-option :flows (fn [flows]
                                                        (->> (map :id starting-flows)
-                                                            (reduce ctp/remove-flow flows))))))]
-
+                                                            (reduce ctp/remove-flow flows))))))
+                    undo-id (js/Symbol)]
     (rx/of (dwu/start-undo-transaction undo-id)
            (dc/detach-comment-thread ids)
            (dch/commit-changes changes)
