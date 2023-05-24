@@ -230,8 +230,7 @@
      (if workspace-read-only?
        (dom/prevent-default event)
        (when (or (dom/class? (dom/get-target event) "viewport-controls")
-                 (dom/class? (dom/get-target event) "viewport-selrect")
-                 (workspace-read-only?))
+                 (dom/class? (dom/get-target event) "viewport-selrect"))
          (dom/prevent-default event)
 
          (let [position (dom/get-client-position event)]
