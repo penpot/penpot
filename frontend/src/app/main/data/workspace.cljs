@@ -273,7 +273,7 @@
                     :response-type :blob
                     :method :get})
        (rx/map :body)
-       (rx/map (fn [blob] (.createObjectURL js/URL blob)))))
+       (rx/map (fn [blob] (wapi/create-uri blob)))))
 
 (defn- fetch-thumbnail-blobs
   [file-id]
