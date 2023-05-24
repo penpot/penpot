@@ -1119,7 +1119,21 @@
                       :query-params {:page-id (dm/get-in file [:data :pages 0])}}]
           (rx/of (rt/nav-new-window* params)))))))
 
-(defn check-in-asset
+(defn set-assets-section-open
+  [file-id section open?]
+  (ptk/reify ::set-assets-section-open
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-assets :open-status file-id section] open?))))
+
+(defn set-assets-group-open
+  [file-id section path open?]
+  (ptk/reify ::set-assets-group-open
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-assets :open-status file-id :groups section path] open?))))
+
+(defn- check-in-asset
   [items element]
   (let [items (or items #{})]
     (if (contains? items element)
@@ -1127,35 +1141,37 @@
       (conj items element))))
 
 (defn toggle-selected-assets
-  [asset type]
+  [file-id asset-id type]
   (ptk/reify ::toggle-selected-assets
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-assets-selected type] #(check-in-asset % asset)))))
+      (update-in state [:workspace-assets :selected file-id type] check-in-asset asset-id))))
 
 (defn select-single-asset
-  [asset type]
+  [file-id asset-id type]
   (ptk/reify ::select-single-asset
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-assets-selected type] #{asset}))))
+      (prn "select-single-asset" file-id asset-id type)
+      (assoc-in state [:workspace-assets :selected file-id type] #{asset-id}))))
 
 (defn select-assets
-  [assets type]
+  [file-id assets-ids type]
   (ptk/reify ::select-assets
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-assets-selected type] (into #{} assets)))))
+      (assoc-in state [:workspace-assets :selected file-id type] (into #{} assets-ids)))))
 
 (defn unselect-all-assets
-  []
-  (ptk/reify ::unselect-all-assets
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :workspace-assets-selected {:components #{}
-                                               :graphics #{}
-                                               :colors #{}
-                                               :typographies #{}}))))
+  ([] (unselect-all-assets nil))
+  ([file-id]
+   (ptk/reify ::unselect-all-assets
+     ptk/UpdateEvent
+     (update [_ state]
+       (if file-id
+         (update-in state [:workspace-assets :selected] dissoc file-id)
+         (update state :workspace-assets dissoc :selected))))))
+
 (defn go-to-main-instance
   [page-id shape-id]
   (dm/assert! (uuid? page-id))
@@ -1200,9 +1216,9 @@
                 pparams       {:file-id file-id :project-id project-id}
                 qparams       {:page-id page-id :layout :assets}]
             (rx/of (rt/nav :workspace pparams qparams)
-                   (dwl/set-assets-section-open file-id :library true)
-                   (dwl/set-assets-section-open file-id :components true)
-                   (select-single-asset component-id :components))))))
+                   (set-assets-section-open file-id :library true)
+                   (set-assets-section-open file-id :components true)
+                   (select-single-asset file-id component-id :components))))))
 
     ptk/EffectEvent
     (effect [_ state _]
@@ -1222,9 +1238,9 @@
             pparams       {:file-id file-id :project-id project-id}
             qparams       {:page-id page-id :layout :assets}]
         (rx/of (rt/nav :workspace pparams qparams)
-               (dwl/set-assets-section-open file-id :library true)
-               (dwl/set-assets-section-open file-id :components true)
-               (select-single-asset component-id :components))))
+               (set-assets-section-open file-id :library true)
+               (set-assets-section-open file-id :components true)
+               (select-single-asset file-id component-id :components))))
 
     ptk/EffectEvent
     (effect [_ _ _]

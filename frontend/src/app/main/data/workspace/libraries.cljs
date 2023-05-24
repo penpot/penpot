@@ -76,20 +76,6 @@
 
 (declare sync-file)
 
-(defn set-assets-section-open
-  [file-id section open?]
-  (ptk/reify ::set-assets-section-open
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-assets-open-status file-id section] open?))))
-
-(defn set-assets-group-open
-  [file-id section path open?]
-  (ptk/reify ::set-assets-group-open
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-assets-open-status file-id :groups section path] open?))))
-
 (defn extract-path-if-missing
   [item]
   (let [[path name] (cph/parse-path-name (:name item))]

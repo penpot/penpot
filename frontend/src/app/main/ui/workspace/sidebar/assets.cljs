@@ -52,13 +52,14 @@
 (def ctx:toggle-ordering   (mf/create-context nil))
 (def ctx:toggle-list-style (mf/create-context nil))
 
-(def ref:selected-assets
-  (l/derived :workspace-assets-selected st/state =))
+(def lens:selected
+  (-> (l/in [:workspace-assets :selected])
+      (l/derived st/state)))
 
-(def ref:open-status
-  (l/derived :workspace-assets-open-status st/state))
+(def lens:open-status
+  (l/derived (l/in [:workspace-assets :open-status]) st/state))
 
-(def ref:typography-section-state
+(def lens:typography-section-state
   (l/derived (fn [gstate]
                {:rename-typography (:rename-typography gstate)
                 :edit-typography (:edit-typography gstate)})
@@ -195,23 +196,23 @@
     (st/emit! (dwu/commit-undo-transaction undo-id))))
 
 (defn- on-drop-asset
-  [event asset dragging* selected-assets selected-assets-full selected-assets-paths rename]
+  [event asset dragging* selected selected-full selected-paths rename]
   (let [create-typed-assets-group (partial create-assets-group rename)]
     (when (not (dnd/from-child? event))
       (reset! dragging* false)
       (when
-          (and (not (contains? selected-assets (:id asset)))
-               (every? #(= % (:path asset)) selected-assets-paths))
-        (let [components-to-group (conj selected-assets-full asset)
+          (and (not (contains? selected (:id asset)))
+               (every? #(= % (:path asset)) selected-paths))
+        (let [components-to-group (conj selected-full asset)
               create-typed-assets-group (partial create-typed-assets-group components-to-group)]
           (modal/show! :name-group-dialog {:accept create-typed-assets-group}))))))
 
 (defn- on-drag-enter-asset
-  [event asset dragging* selected-assets selected-assets-paths]
+  [event asset dragging* selected selected-paths]
   (when (and
          (not (dnd/from-child? event))
-         (every? #(= % (:path asset)) selected-assets-paths)
-         (not (contains? selected-assets (:id asset))))
+         (every? #(= % (:path asset)) selected-paths)
+         (not (contains? selected (:id asset))))
     (reset! dragging* true)))
 
 (defn- on-drag-leave-asset
@@ -241,32 +242,32 @@
     (ts/raf #(.removeChild ^js item-el counter-el))))
 
 (defn- on-asset-drag-start
-  [event asset selected-assets item-ref asset-type on-drag-start]
-  (let [id-asset (:id asset)
-        num-selected (if (contains? selected-assets id-asset)
-                       (count selected-assets)
+  [event file-id asset selected item-ref asset-type on-drag-start]
+  (let [id-asset     (:id asset)
+        num-selected (if (contains? selected id-asset)
+                       (count selected)
                        1)]
-    (when (not (contains? selected-assets id-asset))
-      (st/emit! (dw/unselect-all-assets)
-                (dw/toggle-selected-assets id-asset asset-type)))
+    (when (not (contains? selected id-asset))
+      (st/emit! (dw/unselect-all-assets file-id)
+                (dw/toggle-selected-assets file-id id-asset asset-type)))
     (on-drag-start asset event)
     (when (> num-selected 1)
       (set-drag-image event item-ref num-selected))))
 
 (defn- on-drag-enter-asset-group
-  [event dragging* prefix selected-assets-paths]
+  [event dragging* prefix selected-paths]
   (dom/stop-propagation event)
   (when (and (not (dnd/from-child? event))
-             (not (every? #(= % prefix) selected-assets-paths)))
+             (not (every? #(= % prefix) selected-paths)))
     (reset! dragging* true)))
 
 (defn- on-drop-asset-group
-  [event dragging* prefix selected-assets-paths selected-assets-full rename]
+  [event dragging* prefix selected-paths selected-full rename]
   (dom/stop-propagation event)
   (when (not (dnd/from-child? event))
     (reset! dragging* false)
-    (when (not (every? #(= % prefix) selected-assets-paths))
-      (doseq [target-asset selected-assets-full]
+    (when (not (every? #(= % prefix) selected-paths))
+      (doseq [target-asset selected-full]
         (st/emit!
          (rename
           (:id target-asset)
@@ -311,7 +312,7 @@
         content       (filter #(= (get-role %) :content) children)]
     [:div.asset-section
      [:div.asset-title {:class (when (not ^boolean open?) "closed")}
-      [:span {:on-click #(st/emit! (dwl/set-assets-section-open file-id section (not open?)))}
+      [:span {:on-click #(st/emit! (dw/set-assets-section-open file-id section (not open?)))}
        i/arrow-slide title]
       [:span.num-assets (str "\u00A0(") assets-count ")"] ;; Unicode 00A0 is non-breaking space
       title-buttons]
@@ -333,10 +334,10 @@
            (mf/deps file-id section path group-open?)
            (fn [event]
              (dom/stop-propagation event)
-             (st/emit! (dwl/set-assets-group-open file-id
-                                                  section
-                                                  path
-                                                  (not group-open?)))))
+             (st/emit! (dw/set-assets-group-open file-id
+                                                 section
+                                                 path
+                                                 (not group-open?)))))
           on-context-menu
           (mf/use-fn
            (fn [event]
@@ -385,8 +386,6 @@
   [{:keys [component renaming listing-thumbs? selected
            file-id on-asset-click on-context-menu on-drag-start do-rename
            cancel-rename selected-full selected-paths]}]
-
-  ;; (prn "components-item" (:name component))
   (let [item-ref       (mf/use-ref)
 
         dragging*      (mf/use-state false)
@@ -395,8 +394,6 @@
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
         components-v2  (mf/use-ctx ctx/components-v2)
         component-id   (:id component)
-
-        ;; _  (app.common.pprint/pprint component)
 
         ;; NOTE: we don't use reactive deref for it because we don't
         ;; really need rerender on any change on the file change. If
@@ -447,11 +444,11 @@
 
         on-component-drag-start
         (mf/use-fn
-         (mf/deps component selected item-ref on-drag-start read-only?)
+         (mf/deps file-id component selected item-ref on-drag-start read-only?)
          (fn [event]
            (if read-only?
              (dom/prevent-default event)
-             (on-asset-drag-start event component selected item-ref :components on-drag-start))))
+             (on-asset-drag-start event file-id component selected item-ref :components on-drag-start))))
 
         on-context-menu
         (mf/use-fn
@@ -604,7 +601,7 @@
 
 (mf/defc components-section
   {::mf/wrap-props false}
-  [{:keys [file-id local? components listing-thumbs? open? reverse-sort? selected-assets
+  [{:keys [file-id local? components listing-thumbs? open? reverse-sort? selected
            on-asset-click on-assets-delete on-clear-selection open-status-ref]}]
 
   (let [input-ref                (mf/use-ref nil)
@@ -620,12 +617,12 @@
         menu-state               (mf/use-state initial-context-menu-state)
         read-only?               (mf/use-ctx ctx/workspace-read-only?)
 
-        selected                 (:components selected-assets)
+        selected                 (:components selected)
         selected-full            (into #{} (filter #(contains? selected (:id %))) components)
         multi-components?        (> (count selected) 1)
-        multi-assets?            (or (seq (:graphics selected-assets))
-                                     (seq (:colors selected-assets))
-                                     (seq (:typographies selected-assets)))
+        multi-assets?            (or (seq (:graphics selected))
+                                     (seq (:colors selected))
+                                     (seq (:typographies selected)))
 
         groups                   (mf/with-memo [components reverse-sort?]
                                    (group-assets components reverse-sort?))
@@ -635,7 +632,7 @@
         add-component
         (mf/use-fn
          (fn []
-           (st/emit! (dwl/set-assets-section-open file-id :components true))
+           (st/emit! (dw/set-assets-section-open file-id :components true))
            (dom/click (mf/ref-val input-ref))))
 
         on-file-selected
@@ -796,7 +793,7 @@
                (st/emit! (dw/go-to-main-instance main-instance-page main-instance-id))))))
 
         on-asset-click
-        (mf/use-fn (mf/deps groups) (partial on-asset-click groups))]
+        (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
 
     [:& asset-section {:file-id file-id
                        :title (tr "workspace.assets.components")
@@ -850,7 +847,7 @@
 ;; ---- Graphics section ----
 
 (mf/defc graphics-item
-  [{:keys [object renaming listing-thumbs? selected-objects
+  [{:keys [object renaming listing-thumbs? selected-objects file-id
            on-asset-click on-context-menu on-drag-start do-rename cancel-rename
            selected-full selected-graphics-paths]}]
   (let [item-ref   (mf/use-ref)
@@ -883,11 +880,11 @@
 
         on-grahic-drag-start
         (mf/use-fn
-         (mf/deps object selected-objects item-ref on-drag-start read-only?)
+         (mf/deps object file-id selected-objects item-ref on-drag-start read-only?)
          (fn [event]
            (if read-only?
              (dom/prevent-default event)
-             (on-asset-drag-start event object selected-objects item-ref :graphics on-drag-start))))
+             (on-asset-drag-start event file-id object selected-objects item-ref :graphics on-drag-start))))
 
         on-context-menu
         (mf/use-fn
@@ -896,7 +893,7 @@
 
         on-asset-click
         (mf/use-fn
-         (mf/deps object-id)
+         (mf/deps object-id on-asset-click)
          (partial on-asset-click object-id nil))
 
         ]
@@ -1005,6 +1002,7 @@
 
            (for [object objects]
              [:& graphics-item {:key (dm/str "object-" (:id object))
+                                :file-id file-id
                                 :object object
                                 :renaming renaming
                                 :listing-thumbs? listing-thumbs?
@@ -1038,7 +1036,7 @@
 
 (mf/defc graphics-section
   {::mf/wrap-props false}
-  [{:keys [file-id project-id local? objects listing-thumbs? open? open-status-ref selected-assets reverse-sort?
+  [{:keys [file-id project-id local? objects listing-thumbs? open? open-status-ref selected reverse-sort?
            on-asset-click on-assets-delete on-clear-selection]}]
   (let [input-ref         (mf/use-ref nil)
         state             (mf/use-state {:renaming nil :object-id nil})
@@ -1051,12 +1049,12 @@
                                 (l/derived open-status-ref)))
         open-groups       (mf/deref open-groups-ref)
 
-        selected          (:graphics selected-assets)
+        selected          (:graphics selected)
         selected-full     (into #{} (filter #(contains? selected (:id %))) objects)
         multi-objects?    (> (count selected) 1)
-        multi-assets?     (or (seq (:components selected-assets))
-                              (seq (:colors selected-assets))
-                              (seq (:typographies selected-assets)))
+        multi-assets?     (or (seq (:components selected))
+                              (seq (:colors selected))
+                              (seq (:typographies selected)))
 
         objects           (mf/with-memo [objects]
                             (mapv dwl/extract-path-if-missing objects))
@@ -1070,7 +1068,7 @@
         add-graphic
         (mf/use-fn
          (fn []
-           (st/emit! (dwl/set-assets-section-open file-id :graphics true))
+           (st/emit! (dw/set-assets-section-open file-id :graphics true))
            (dom/click (mf/ref-val input-ref))))
 
         on-file-selected
@@ -1192,7 +1190,7 @@
            (dnd/set-allowed-effect! event "move")))
 
         on-asset-click
-        (mf/use-fn (mf/deps groups) (partial on-asset-click groups))]
+        (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
 
     [:& asset-section {:file-id file-id
                        :title (tr "workspace.assets.graphics")
@@ -1382,15 +1380,15 @@
 
         on-color-drag-start
         (mf/use-fn
-         (mf/deps color selected item-ref read-only?)
+         (mf/deps color file-id selected item-ref read-only?)
          (fn [event]
            (if read-only?
              (dom/prevent-default event)
-             (on-asset-drag-start event color selected item-ref :colors identity))))
+             (on-asset-drag-start event file-id color selected item-ref :colors identity))))
 
         on-click
         (mf/use-fn
-         (mf/deps color-id apply-color)
+         (mf/deps color-id apply-color on-asset-click)
          (partial on-asset-click color-id apply-color))]
 
     (mf/with-effect [editing?]
@@ -1543,10 +1541,10 @@
                               :selected-full selected-full}]))])]))
 
 (mf/defc colors-section
-  [{:keys [file-id local? colors open? open-status-ref selected-assets reverse-sort?
+  [{:keys [file-id local? colors open? open-status-ref selected reverse-sort?
            on-asset-click on-assets-delete on-clear-selection] :as props}]
 
-  (let [selected        (:colors selected-assets)
+  (let [selected        (:colors selected)
         selected-full   (mf/with-memo [selected colors]
                           (into #{} (filter #(contains? selected (:id %))) colors))
 
@@ -1556,9 +1554,9 @@
         open-groups     (mf/deref open-groups-ref)
 
         multi-colors?   (> (count selected) 1)
-        multi-assets?   (or (seq (:components selected-assets))
-                            (seq (:graphics selected-assets))
-                            (seq (:typographies selected-assets)))
+        multi-assets?   (or (seq (:components selected))
+                            (seq (:graphics selected))
+                            (seq (:typographies selected)))
 
         groups          (mf/with-memo [colors reverse-sort?]
                           (group-assets colors reverse-sort?))
@@ -1574,7 +1572,7 @@
         (mf/use-fn
          (mf/deps file-id)
          (fn [event]
-           (st/emit! (dwl/set-assets-section-open file-id :colors true)
+           (st/emit! (dw/set-assets-section-open file-id :colors true)
                      (ptk/event ::ev/event {::ev/name "add-asset-to-library"
                                             :asset-type "color"}))
            (modal/show! :colorpicker
@@ -1653,7 +1651,7 @@
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         on-asset-click
-        (mf/use-fn (mf/deps groups) (partial on-asset-click groups))]
+        (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
 
     [:& asset-section {:file-id file-id
                        :title (tr "workspace.assets.colors")
@@ -1723,11 +1721,11 @@
 
         on-typography-drag-start
         (mf/use-fn
-         (mf/deps typography selected item-ref read-only?)
+         (mf/deps typography file-id selected item-ref read-only?)
          (fn [event]
            (if read-only?
              (dom/prevent-default event)
-             (on-asset-drag-start event typography selected item-ref :typographies identity))))
+             (on-asset-drag-start event file-id typography selected item-ref :typographies identity))))
 
         on-context-menu
         (mf/use-fn
@@ -1746,7 +1744,7 @@
 
         on-asset-click
         (mf/use-fn
-         (mf/deps typography apply-typography)
+         (mf/deps typography apply-typography on-asset-click)
          (partial on-asset-click typography-id apply-typography))
 
         ]
@@ -1873,10 +1871,10 @@
 
 (mf/defc typographies-section
   {::mf/wrap-props false}
-  [{:keys [file file-id local? typographies open? open-status-ref selected-assets reverse-sort?
+  [{:keys [file file-id local? typographies open? open-status-ref selected reverse-sort?
            on-asset-click on-assets-delete on-clear-selection]}]
   (let [state         (mf/use-state {:detail-open? false :id nil})
-        local-data    (mf/deref ref:typography-section-state)
+        local-data    (mf/deref lens:typography-section-state)
 
         read-only?    (mf/use-ctx ctx/workspace-read-only?)
         menu-state    (mf/use-state initial-context-menu-state)
@@ -1886,14 +1884,14 @@
         groups        (mf/with-memo [typographies reverse-sort?]
                         (group-assets typographies reverse-sort?))
 
-        selected      (:typographies selected-assets)
+        selected      (:typographies selected)
         selected-full (mf/with-memo [selected typographies]
                         (into #{} (filter #(contains? selected (:id %))) typographies))
 
         multi-typographies?  (> (count selected) 1)
-        multi-assets?        (or (seq (:components selected-assets))
-                                 (seq (:graphics selected-assets))
-                                 (seq (:colors selected-assets)))
+        multi-assets?        (or (seq (:components selected))
+                                 (seq (:graphics selected))
+                                 (seq (:colors selected)))
 
         open-groups-ref      (mf/with-memo [open-status-ref]
                                (-> (l/in [:groups :components])
@@ -2026,7 +2024,7 @@
 
         on-asset-click
         (mf/use-fn
-         (mf/deps groups)
+         (mf/deps groups on-asset-click)
          (partial on-asset-click groups))]
 
     (mf/use-effect
@@ -2114,7 +2112,7 @@
         (mf/use-fn
          (mf/deps file-id open?)
          (fn []
-           (st/emit! (dwl/set-assets-section-open file-id :library (not open?)))))
+           (st/emit! (dw/set-assets-section-open file-id :library (not open?)))))
         ]
 
     [:div.tool-window-bar.library-bar
@@ -2193,92 +2191,94 @@
                                 (or (pos? (count typographies))
                                     (str/empty? filters-term)))
 
-        selected-assets    (mf/deref ref:selected-assets)
-        selected-count     (+ (count (:components selected-assets))
-                              (count (:graphics selected-assets))
-                              (count (:colors selected-assets))
-                              (count (:typographies selected-assets)))
 
-        extend-selected-assets
-        (mf/use-fn
-         (mf/deps selected-assets)
-         (fn [asset-type asset-groups asset-id]
+        selected-lens      (mf/with-memo [file-id]
+                             (-> (l/key file-id)
+                                 (l/derived lens:selected)))
+        selected           (mf/deref selected-lens)
+        selected-count     (+ (count (get selected :components))
+                              (count (get selected :graphics))
+                              (count (get selected :colors))
+                              (count (get selected :typographies)))
 
-           ;; FIXME: revisit performance of this function
-           (letfn [(flatten-groups [groups]
-                     (reduce concat [(get groups "" [])
-                                     (into []
-                                           (->> (filter #(seq (first %)) groups)
-                                                (map second)
-                                                (mapcat flatten-groups)))]))]
-             (let [selected-assets-type (get selected-assets asset-type)
-                   count-assets (count selected-assets-type)]
-               (if (<= count-assets 0)
-                 (st/emit! (dw/select-single-asset asset-id asset-type))
-                 (let [all-assets   (flatten-groups asset-groups)
-                       clicked-idx  (d/index-of-pred all-assets #(= (:id %) asset-id))
-                       components (get selected-assets asset-type)
+        extend-selected
+        (fn [type asset-groups asset-id]
+          (letfn [(flatten-groups [groups]
+                    (reduce concat [(get groups "" [])
+                                    (into []
+                                          (->> (filter #(seq (first %)) groups)
+                                               (map second)
+                                               (mapcat flatten-groups)))]))]
 
-                       first-idx    (first (sort (map (fn [asset] (d/index-of-pred all-assets #(= (:id %) asset))) components)))
-                       selected-idx (vector  first-idx clicked-idx)
-                       min-idx      (apply min (conj selected-idx clicked-idx))
-                       max-idx      (apply max (conj selected-idx clicked-idx))
-                       values       (->> all-assets
-                                         (d/enumerate)
-                                         (filter #(<= min-idx (first %) max-idx))
-                                         (map #(-> % second :id))
-                                         (set))]
+            (let [selected' (get selected type)]
+              (if (zero? (count selected'))
+                (st/emit! (dw/select-single-asset file-id asset-id type))
+                (let [all-assets  (flatten-groups asset-groups)
+                      click-index (d/index-of-pred all-assets #(= (:id %) asset-id))
+                      first-index (->> (get selected type)
+                                       (map (fn [asset] (d/index-of-pred all-assets #(= (:id %) asset))))
+                                       (sort)
+                                       (first))
 
-                   (st/emit! (dw/select-assets values asset-type))))))))
+                      min-index   (min first-index click-index)
+                      max-index   (max first-index click-index)
+                      ids         (->> (d/enumerate all-assets)
+                                       (into #{} (comp (filter #(<= min-index (first %) max-index))
+                                                       (map (comp :id second)))))]
+
+                  (st/emit! (dw/select-assets file-id ids type)))))))
 
         on-asset-click
         (mf/use-fn
+         (mf/deps file-id extend-selected)
          (fn [asset-type asset-groups asset-id default-click event]
            (cond
              (kbd/mod? event)
              (do
                (dom/stop-propagation event)
-               (st/emit! (dw/toggle-selected-assets asset-id asset-type)))
+               (st/emit! (dw/toggle-selected-assets file-id asset-id asset-type)))
 
              (kbd/shift? event)
              (do
                (dom/stop-propagation event)
-               (extend-selected-assets asset-type asset-groups asset-id))
+               (extend-selected asset-type asset-groups asset-id))
 
              :else
              (when default-click
                (default-click event)))))
 
         on-component-click
-        (mf/use-fn (partial on-asset-click :components))
+        (mf/use-fn (mf/deps on-asset-click) (partial on-asset-click :components))
 
         on-graphics-click
-        (mf/use-fn (partial on-asset-click :graphics))
+        (mf/use-fn (mf/deps on-asset-click) (partial on-asset-click :graphics))
 
         on-colors-click
-        (mf/use-fn (partial on-asset-click :colors))
+        (mf/use-fn (mf/deps on-asset-click) (partial on-asset-click :colors))
 
         on-typography-click
-        (mf/use-fn (partial on-asset-click :typographies))
+        (mf/use-fn (mf/deps on-asset-click) (partial on-asset-click :typographies))
 
         on-assets-delete
         (mf/use-fn
-         (mf/deps selected-assets)
+         (mf/deps selected file-id)
          (fn []
            (let [undo-id (js/Symbol)]
              (st/emit! (dwu/start-undo-transaction undo-id))
              (run! st/emit! (map #(dwl/delete-component {:id %})
-                                 (:components selected-assets)))
+                                 (:components selected)))
              (run! st/emit! (map #(dwl/delete-media {:id %})
-                                 (:graphics selected-assets)))
+                                 (:graphics selected)))
              (run! st/emit! (map #(dwl/delete-color {:id %})
-                                 (:colors selected-assets)))
+                                 (:colors selected)))
              (run! st/emit! (map #(dwl/delete-typography %)
-                                 (:typographies selected-assets)))
-             (when (or (d/not-empty? (:components selected-assets))
-                       (d/not-empty? (:colors selected-assets))
-                       (d/not-empty? (:typographies selected-assets)))
-               (st/emit! (dwl/sync-file (:id file) (:id file))))
+                                 (:typographies selected)))
+
+             (when (or (seq (:components selected))
+                       (seq (:colors selected))
+                       (seq (:typographies selected)))
+               (st/emit! (dwl/sync-file file-id file-id)))
+
              (st/emit! (dwu/commit-undo-transaction undo-id)))))]
 
     [:div.tool-window-content
@@ -2304,7 +2304,7 @@
          :open? (get open-status :components true)
          :open-status-ref open-status-ref
          :reverse-sort? reverse-sort?
-         :selected-assets selected-assets
+         :selected selected
          :on-asset-click on-component-click
          :on-assets-delete on-assets-delete
          :on-clear-selection on-clear-selection}])
@@ -2319,7 +2319,7 @@
          :open? (get open-status :graphics true)
          :open-status-ref open-status-ref
          :reverse-sort? reverse-sort?
-         :selected-assets selected-assets
+         :selected selected
          :on-asset-click on-graphics-click
          :on-assets-delete on-assets-delete
          :on-clear-selection on-clear-selection}])
@@ -2332,7 +2332,7 @@
          :open? (get open-status :colors true)
          :open-status-ref open-status-ref
          :reverse-sort? reverse-sort?
-         :selected-assets selected-assets
+         :selected selected
          :on-asset-click on-colors-click
          :on-assets-delete on-assets-delete
          :on-clear-selection on-clear-selection}])
@@ -2346,7 +2346,7 @@
          :open? (get open-status :typographies true)
          :open-status-ref open-status-ref
          :reverse-sort? reverse-sort?
-         :selected-assets selected-assets
+         :selected selected
          :on-asset-click on-typography-click
          :on-assets-delete on-assets-delete
          :on-clear-selection on-clear-selection}])
@@ -2369,14 +2369,15 @@
 
         open-status-ref (mf/with-memo [file-id]
                           (-> (l/key file-id)
-                              (l/derived ref:open-status)))
+                              (l/derived lens:open-status)))
         open-status      (mf/deref open-status-ref)
         open?            (d/nilv (:library open-status) default-open?)
 
         unselect-all
         (mf/use-fn
+         (mf/deps file-id)
          (fn []
-           (st/emit! (dw/unselect-all-assets))))
+           (st/emit! (dw/unselect-all-assets file-id))))
 
         ]
 
