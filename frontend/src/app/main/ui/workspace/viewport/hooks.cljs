@@ -28,7 +28,6 @@
    [app.main.worker :as uw]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
-   [app.util.timers :as timers]
    [beicon.core :as rx]
    [debug :refer [debug?]]
    [goog.events :as events]
@@ -55,22 +54,13 @@
              (events/unlistenByKey key))))))))
 
 (defn setup-viewport-size [vport viewport-ref]
-  (mf/use-layout-effect
-   (mf/deps vport)
-   (fn []
-     (when-not vport
-       (let [node (mf/ref-val viewport-ref)
-             prnt (dom/get-parent node)]
-         ;; We schedule the event so it fires after `initialize-page` event
-         (timers/schedule #(st/emit! (dw/initialize-viewport (dom/get-client-size prnt)))))))))
+  (mf/with-effect [vport]
+    (let [node (mf/ref-val viewport-ref)
+          prnt (dom/get-parent node)
+          size (dom/get-client-size prnt)]
 
-
-(defn setup-page-loaded [page-id]
-  (mf/use-effect
-   (mf/deps page-id)
-   (fn []
-     ;; We schedule the event so it fires after `initialize-page` event
-     (timers/schedule #(st/emit! (dw/page-loaded page-id))))))
+      (when (not= size vport)
+        (st/emit! (dw/initialize-viewport (dom/get-client-size prnt)))))))
 
 (defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only?]
   (mf/use-effect

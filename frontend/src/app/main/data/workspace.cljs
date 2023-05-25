@@ -391,7 +391,10 @@
             exit? (not= :workspace (dm/get-in state [:route :data :name]))
             state (-> state
                       (update :workspace-cache assoc page-id local)
-                      (dissoc :current-page-id :workspace-local :workspace-trimmed-page :workspace-focus-selected))]
+                      (dissoc :current-page-id
+                              :workspace-local
+                              :workspace-trimmed-page
+                              :workspace-focus-selected))]
 
         (cond-> state
           exit? (dissoc :workspace-drawing))))))
@@ -611,9 +614,7 @@
    (ptk/reify ::end-rename-shape
      ptk/WatchEvent
      (watch [_ state _]
-       (prn "end-rename-shape" name (string? name)  (not (str/blank? name)))
        (when-let [shape-id (dm/get-in state [:workspace-local :shape-for-rename])]
-         (prn "end-rename-shape" shape-id)
          (let [shape (wsh/lookup-shape state shape-id)]
            (rx/concat
             ;; Remove rename state from workspace local state
@@ -2299,7 +2300,6 @@
 (dm/export dwv/update-viewport-size)
 (dm/export dwv/start-panning)
 (dm/export dwv/finish-panning)
-(dm/export dwv/page-loaded)
 
 ;; Undo
 (dm/export dwu/reinitialize-undo)

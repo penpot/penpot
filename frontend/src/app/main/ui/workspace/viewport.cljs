@@ -258,7 +258,6 @@
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path? text-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
-    (hooks/setup-page-loaded page-id)
 
     [:div.viewport
      [:div.viewport-overlays

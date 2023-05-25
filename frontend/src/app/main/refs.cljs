@@ -104,15 +104,6 @@
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))
 
-(defn make-workspace-ready-ref
-  [file-id]
-  (l/derived (fn [state]
-               (let [data (:workspace-data state)]
-                 (and (:workspace-ready? state)
-                      (= file-id (:current-file-id state))
-                      (= file-id (:id data)))))
-             st/state))
-
 ;; TODO: rename to workspace-selected (?)
 ;; Don't use directly from components, this is a proxy to improve performance of selected-shapes
 (def ^:private selected-shapes-data

@@ -26,9 +26,9 @@
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.nudge]
    [app.main.ui.workspace.palette :refer [palette]]
+   [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
-   [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.textpalette :refer [textpalette]]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.dom :as dom]
@@ -40,7 +40,21 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-;; --- Workspace
+(defn- make-file-ready-ref
+  [file-id]
+  (l/derived (fn [state]
+               (let [data (:workspace-data state)]
+                 (and (:workspace-ready? state)
+                      (= file-id (:current-file-id state))
+                      (= file-id (:id data)))))
+             st/state))
+
+(defn- make-page-ready-ref
+  [page-id]
+  (l/derived (fn [state]
+               (and (some? page-id)
+                    (= page-id (:current-page-id state))))
+             st/state))
 
 (mf/defc workspace-content
   {::mf/wrap-props false}
@@ -50,13 +64,13 @@
         {:keys [vport] :as wlocal} (mf/deref refs/workspace-local)
         {:keys [options-mode]} wglobal
 
-        colorpalette? (:colorpalette layout)
-        textpalette?  (:textpalette layout)
-        hide-ui?      (:hide-ui layout)
+        colorpalette?  (:colorpalette layout)
+        textpalette?   (:textpalette layout)
+        hide-ui?       (:hide-ui layout)
         new-css-system (mf/use-ctx ctx/new-css-system)
 
         on-resize
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps vport)
          (fn [resize-type size]
            (when (and vport (not= size vport))
@@ -73,8 +87,9 @@
      (when (and textpalette? (not hide-ui?))
        [:& textpalette])])
 
-     [:section.workspace-content {:key (dm/str "workspace-" page-id)
-                                  :ref node-ref}
+     [:section.workspace-content
+      {:key (dm/str "workspace-" page-id)
+       :ref node-ref}
       [:section.workspace-viewport
        (when (debug? :coordinates)
          [:& coordinates/coordinates {:colorpalette? colorpalette?}])
@@ -83,6 +98,7 @@
          [:div.history-debug-overlay
           [:button {:on-click #(st/emit! dw/reinitialize-undo)} "CLEAR"]
           [:& history-toolbox]])
+
        [:& viewport {:file file
                      :wlocal wlocal
                      :wglobal wglobal
@@ -99,65 +115,70 @@
                            :selected selected
                            :layout layout}]])]))
 
-(def ^:private ref:page-loaded
-  (l/derived
-   (fn [state]
-     (some? (:workspace-trimmed-page state)))
-   st/state))
-
-(mf/defc workspace-page
-  {::mf/wrap-props false}
-  [{:keys [file layout page-id wglobal]}]
-  (let [prev-page-id (hooks/use-previous page-id)
-        page-loaded? (mf/deref ref:page-loaded)]
-
-    (mf/with-effect [page-id prev-page-id]
-      (when (and prev-page-id (not= prev-page-id page-id))
-        (st/emit! (dw/finalize-page prev-page-id)))
-      (if (nil? page-id)
-        (st/emit! (dw/go-to-page))
-        (st/emit! (dw/initialize-page page-id))))
-
-    (when ^boolean page-loaded?
-      [:& workspace-content {:page-id page-id
-                             :file file
-                             :wglobal wglobal
-                             :layout layout}])))
-
 (mf/defc workspace-loader
   []
   [:div.workspace-loader
    i/loader-pencil])
 
-(mf/defc workspace
+(mf/defc workspace-page
   {::mf/wrap-props false}
-  [{:keys [project-id file-id page-id layout-name]}]
-  (let [file             (mf/deref refs/workspace-file)
-        project          (mf/deref refs/workspace-project)
-        layout           (mf/deref refs/workspace-layout)
-        wglobal          (mf/deref refs/workspace-global)
-        read-only?       (mf/deref refs/workspace-read-only?)
-
-        ready-lens       (mf/with-memo [file-id]
-                           (refs/make-workspace-ready-ref file-id))
-        ready?           (mf/deref ready-lens)
-
-        team-id          (:team-id project)
-        file-name        (:name file)
-
-        components-v2    (features/use-feature :components-v2)
-        new-css-system   (features/use-feature :new-css-system)
-
-        background-color (:background-color wglobal)]
+  [{:keys [page-id file layout wglobal]}]
+  (let [page-id     (hooks/use-equal-memo page-id)
+        page-ready* (mf/with-memo [page-id]
+                      (make-page-ready-ref page-id))
+        page-ready? (mf/deref page-ready*)]
 
     (mf/with-effect []
       (let [focus-out #(st/emit! (dw/workspace-focus-lost))
             key       (events/listen globals/document "blur" focus-out)]
         (partial events/unlistenByKey key)))
 
+    (mf/with-effect [page-id]
+      (if (some? page-id)
+        (st/emit! (dw/initialize-page page-id))
+        (st/emit! (dw/go-to-page)))
+      (fn []
+        (when (some? page-id)
+          (st/emit! (dw/finalize-page page-id)))))
+
+    (if ^boolean page-ready?
+      [:& workspace-content {:page-id page-id
+                             :file file
+                             :wglobal wglobal
+                             :layout layout}]
+      [:& workspace-loader])))
+
+(mf/defc workspace
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
+  [{:keys [project-id file-id page-id layout-name]}]
+
+  (let [layout           (mf/deref refs/workspace-layout)
+        wglobal          (mf/deref refs/workspace-global)
+        read-only?       (mf/deref refs/workspace-read-only?)
+
+        file             (mf/deref refs/workspace-file)
+        project          (mf/deref refs/workspace-project)
+
+        team-id          (:team-id project)
+        file-name        (:name file)
+
+        file-ready*      (mf/with-memo [file-id]
+                           (make-file-ready-ref file-id))
+        file-ready?      (mf/deref file-ready*)
+
+        components-v2?   (features/use-feature :components-v2)
+        new-css?         (features/use-feature :new-css-system)
+
+        background-color (:background-color wglobal)]
+
     ;; Setting the layout preset by its name
     (mf/with-effect [layout-name]
       (st/emit! (dw/initialize-layout layout-name)))
+
+    (mf/with-effect [file-name]
+      (when file-name
+        (dom/set-html-title (tr "title.workspace" file-name))))
 
     (mf/with-effect [project-id file-id]
       (st/emit! (dw/initialize-file project-id file-id))
@@ -165,17 +186,12 @@
         (st/emit! ::dwp/force-persist
                   (dw/finalize-file project-id file-id))))
 
-    ;; Set properly the page title
-    (mf/with-effect [file-name]
-      (when file-name
-        (dom/set-html-title (tr "title.workspace" file-name))))
-
     [:& (mf/provider ctx/current-file-id) {:value file-id}
-     [:& (mf/provider ctx/current-team-id) {:value team-id}
-      [:& (mf/provider ctx/current-project-id) {:value project-id}
+     [:& (mf/provider ctx/current-project-id) {:value project-id}
+      [:& (mf/provider ctx/current-team-id) {:value team-id}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
-        [:& (mf/provider ctx/components-v2) {:value components-v2}
-         [:& (mf/provider ctx/new-css-system) {:value new-css-system}
+        [:& (mf/provider ctx/components-v2) {:value components-v2?}
+         [:& (mf/provider ctx/new-css-system) {:value new-css?}
           [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
            [:section#workspace {:style {:background-color background-color
                                         :touch-action "none"}}
@@ -187,7 +203,7 @@
 
             [:& context-menu]
 
-            (if ^boolean ready?
+            (if ^boolean file-ready?
               [:& workspace-page {:page-id page-id
                                   :file file
                                   :wglobal wglobal
@@ -208,6 +224,7 @@
     (mf/use-effect
      (fn []
        #(st/emit! (dw/clear-remove-graphics))))
+
     [:div.modal-overlay
      [:div.modal-container.remove-graphics-dialog
       [:div.modal-header

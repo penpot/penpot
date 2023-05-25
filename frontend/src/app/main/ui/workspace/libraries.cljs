@@ -171,7 +171,7 @@
       [:div.section-list
 
        [:div.section-list-item
-        [:div {:data-kaka "1"}
+        [:div
          [:div.item-name (tr "workspace.libraries.file-library")]
          [:div.item-contents (describe-library
                               (count components)

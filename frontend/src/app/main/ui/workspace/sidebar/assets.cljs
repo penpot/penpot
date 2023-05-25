@@ -2435,7 +2435,7 @@
                      :ordering :asc
                      :list-style :thumbs})
         filters    (deref filters*)
-
+        term       (:term filters)
 
         toggle-ordering
         (mf/use-fn #(swap! filters* update :ordering toggle-values [:asc :desc]))
@@ -2488,11 +2488,11 @@
         [:input.search-input
          {:placeholder (tr "workspace.assets.search")
           :type "text"
-          :value (:term filters)
+          :value term
           :on-change on-search-term-change
           :on-key-down handle-key-down}]
 
-        (if ^boolean (str/empty? (:term filters))
+        (if ^boolean (str/empty? term)
           [:div.search-icon
            i/search]
           [:div.search-icon.close
