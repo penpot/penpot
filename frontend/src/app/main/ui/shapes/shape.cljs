@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.main.refs :as refs]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.export :as ed]
@@ -53,33 +54,39 @@
         children         (unchecked-get props "children")
         pointer-events   (unchecked-get props "pointer-events")
         disable-shadows? (unchecked-get props "disable-shadows?")
+        shape-id         (:id shape)
+
+        preview-blend-mode-ref
+        (mf/with-memo [shape-id] (refs/workspace-preview-blend-by-id shape-id))
+
+        blend-mode       (-> (mf/deref preview-blend-mode-ref)
+                             (or (:blend-mode shape)))
 
         type             (:type shape)
         render-id        (mf/use-id)
         filter-id        (dm/str "filter_" render-id)
         styles           (-> (obj/create)
                              (obj/set! "pointerEvents" pointer-events)
-                             (cond-> (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
-                               (obj/set! "mixBlendMode" (d/name (:blend-mode shape)))))
+                             (cond-> (and blend-mode (not= blend-mode :normal))
+                               (obj/set! "mixBlendMode" (d/name blend-mode))))
 
         include-metadata? (mf/use-ctx ed/include-metadata-ctx)
 
         shape-without-blur (dissoc shape :blur)
         shape-without-shadows (assoc shape :shadow [])
 
-
         filter-str
         (when (and (or (cph/group-shape? shape)
-                       (cph/frame-shape? shape)
-                       (cph/svg-raw-shape? shape))
-                   (not disable-shadows?))
+                     (cph/frame-shape? shape)
+                     (cph/svg-raw-shape? shape))
+                (not disable-shadows?))
           (filters/filter-str filter-id shape))
 
         wrapper-props
         (-> (obj/clone props)
             (obj/without ["shape" "children" "disable-shadows?"])
             (obj/set! "ref" ref)
-            (obj/set! "id" (dm/fmt "shape-%" (:id shape)))
+            (obj/set! "id" (dm/fmt "shape-%" shape-id))
             (obj/set! "style" styles))
 
         wrapper-props

@@ -35,6 +35,7 @@
 - Fix problem with layout not reflowing on shape deletion [Taiga #5289](https://tree.taiga.io/project/penpot/issue/5289)
 - Fix extra long typography names on assets and palette [Taiga #5199](https://tree.taiga.io/project/penpot/issue/5199)
 - Fix background-color property on inspect code [Taiga #5300](https://tree.taiga.io/project/penpot/issue/5300)
+- Preview layer blend modes (by @akshay-gupta7) [Github #3235](https://github.com/penpot/penpot/pull/3235)
 
 ## 1.18.3
 

@@ -7,70 +7,144 @@
 (ns app.main.ui.workspace.sidebar.options.menus.layer
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.select :refer [select]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(def layer-attrs [:opacity :blend-mode :blocked :hidden])
+(def layer-attrs
+  [:opacity :blend-mode :blocked :hidden])
 
-(defn opacity->string [opacity]
+(defn opacity->string
+  [opacity]
   (if (= opacity :multiple)
     ""
-    (str (-> opacity
-             (d/coalesce 1)
-             (* 100)))))
+    (dm/str (-> opacity
+                (d/coalesce 1)
+                (* 100)))))
 
-(defn select-all [event]
-  (dom/select-text! (dom/get-target event)))
+(defn select-all!
+  [event]
+  (some-> event dom/get-target dom/select-text!))
 
-(mf/defc layer-menu [{:keys [ids type values]}]
-  (let [change!
-        (mf/use-callback
+(mf/defc layer-menu
+  {::mf/wrap-props false}
+  [props]
+  (let [ids                (unchecked-get props "ids")
+        type               (unchecked-get props "type")
+        values             (unchecked-get props "values")
+
+        current-blend-mode (d/name (or (:blend-mode values) :normal))
+        current-opacity    (:opacity values)
+
+        state*             (mf/use-state
+                            {:selected-blend-mode current-blend-mode
+                             :option-highlighted? false
+                             :preview-complete? true})
+
+        state               (deref state*)
+        selected-blend-mode (get state :selected-blend-mode)
+        option-highlighted? (get state :option-highlighted?)
+        preview-complete?   (get state :preview-complete?)
+
+        on-change
+        (mf/use-fn
          (mf/deps ids)
          (fn [prop value]
            (st/emit! (dch/update-shapes ids #(assoc % prop value)))))
 
         handle-change-blend-mode
-        (mf/use-callback
-         (mf/deps change!)
-         (fn [event]
-           (let [value (-> (dom/get-target-val event) (keyword))]
-             (change! :blend-mode value))))
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [value]
+           (swap! state* assoc
+             :selected-blend-mode value
+             :option-highlighted? false
+             :preview-complete? true)
+           (on-change :blend-mode value)))
+
+        handle-blend-mode-enter
+        (mf/use-fn
+         (mf/deps on-change current-blend-mode)
+         (fn [value]
+           (swap! state* assoc
+             :preview-complete? false
+             :option-highlighted? true)
+           (st/emit! (dw/set-preview-blend-mode ids value))))
+
+        handle-blend-mode-leave
+        (mf/use-fn
+         (mf/deps on-change selected-blend-mode)
+         (fn [_value]
+           (swap! state* assoc :preview-complete? true)
+           (st/emit! (dw/unset-preview-blend-mode ids))))
 
         handle-opacity-change
-        (mf/use-callback
-         (mf/deps change!)
+        (mf/use-fn
+         (mf/deps on-change)
          (fn [value]
-           (let [value (-> value (/ 100))]
-             (change! :opacity value))))
+           (let [value (/ value 100)]
+             (on-change :opacity value))))
 
         handle-set-hidden
-        (mf/use-callback
-         (mf/deps change!)
+        (mf/use-fn
+         (mf/deps on-change)
          (fn [_]
-           (change! :hidden true)))
+           (on-change :hidden true)))
 
         handle-set-visible
-        (mf/use-callback
-         (mf/deps change!)
+        (mf/use-fn
+         (mf/deps on-change)
          (fn [_]
-           (change! :hidden false)))
+           (on-change :hidden false)))
 
         handle-set-blocked
-        (mf/use-callback
-         (mf/deps change!)
+        (mf/use-fn
+         (mf/deps on-change)
          (fn [_]
-           (change! :blocked true)))
+           (on-change :blocked true)))
 
         handle-set-unblocked
-        (mf/use-callback
-         (mf/deps change!)
+        (mf/use-fn
+         (mf/deps on-change)
          (fn [_]
-           (change! :blocked false)))]
+           (on-change :blocked false)))
+
+        options
+        (mf/with-memo [current-blend-mode]
+          (d/concat-vec
+           (when (= "multiple" current-blend-mode)
+             [{:value "multiple" :label "--"}])
+           [{:value "normal" :label (tr "workspace.options.layer-options.blend-mode.normal")}
+            {:value "darken" :label (tr "workspace.options.layer-options.blend-mode.darken")}
+            {:value "multiply" :label (tr "workspace.options.layer-options.blend-mode.multiply")}
+            {:value "color-burn" :label (tr "workspace.options.layer-options.blend-mode.color-burn")}
+            {:value "lighten" :label (tr "workspace.options.layer-options.blend-mode.lighten")}
+            {:value "screen" :label (tr "workspace.options.layer-options.blend-mode.screen")}
+            {:value "color-dodge" :label (tr "workspace.options.layer-options.blend-mode.color-dodge")}
+            {:value "overlay" :label (tr "workspace.options.layer-options.blend-mode.overlay")}
+            {:value "soft-light" :label (tr "workspace.options.layer-options.blend-mode.soft-light")}
+            {:value "hard-light" :label (tr "workspace.options.layer-options.blend-mode.hard-light")}
+            {:value "difference" :label (tr "workspace.options.layer-options.blend-mode.difference")}
+            {:value "exclusion" :label (tr "workspace.options.layer-options.blend-mode.exclusion")}
+            {:value "hue" :label (tr "workspace.options.layer-options.blend-mode.hue")}
+            {:value "saturation" :label (tr "workspace.options.layer-options.blend-mode.saturation")}
+            {:value "color" :label (tr "workspace.options.layer-options.blend-mode.color")}
+            {:value "luminosity" :label (tr "workspace.options.layer-options.blend-mode.luminosity")}]))]
+
+    (mf/with-effect [current-blend-mode
+                     option-highlighted?
+                     preview-complete?]
+      (when (or (not option-highlighted?)
+                (and option-highlighted?
+                     preview-complete?))
+        (swap! state* assoc :selected-blend-mode current-blend-mode)))
 
     [:div.element-set
      [:div.element-set-title
@@ -82,42 +156,24 @@
 
      [:div.element-set-content
       [:div.row-flex
-       [:select.input-select {:on-change handle-change-blend-mode
-                              :value (d/name (:blend-mode values) "normal")}
+       [:& select
+        {:class "flex-grow"
+         :default-value selected-blend-mode
+         :options options
+         :on-change handle-change-blend-mode
+         :is-open? option-highlighted?
+         :on-pointer-enter-option handle-blend-mode-enter
+         :on-pointer-leave-option handle-blend-mode-leave}]
 
-        (when (= :multiple (:blend-mode values))
-            [:option {:value "multiple"} "--"])
-
-        [:option {:value "normal"} (tr "workspace.options.layer-options.blend-mode.normal")]
-
-        [:option {:value "darken"} (tr "workspace.options.layer-options.blend-mode.darken")]
-        [:option {:value "multiply"} (tr "workspace.options.layer-options.blend-mode.multiply")]
-        [:option {:value "color-burn"} (tr "workspace.options.layer-options.blend-mode.color-burn")]
-
-        [:option {:value "lighten"} (tr "workspace.options.layer-options.blend-mode.lighten")]
-        [:option {:value "screen"} (tr "workspace.options.layer-options.blend-mode.screen")]
-        [:option {:value "color-dodge"} (tr "workspace.options.layer-options.blend-mode.color-dodge")]
-
-        [:option {:value "overlay"} (tr "workspace.options.layer-options.blend-mode.overlay")]
-        [:option {:value "soft-light"} (tr "workspace.options.layer-options.blend-mode.soft-light")]
-        [:option {:value "hard-light"} (tr "workspace.options.layer-options.blend-mode.hard-light")]
-
-        [:option {:value "difference"} (tr "workspace.options.layer-options.blend-mode.difference")]
-        [:option {:value "exclusion"} (tr "workspace.options.layer-options.blend-mode.exclusion")]
-
-        [:option {:value "hue"} (tr "workspace.options.layer-options.blend-mode.hue")]
-        [:option {:value "saturation"} (tr "workspace.options.layer-options.blend-mode.saturation")]
-        [:option {:value "color"} (tr "workspace.options.layer-options.blend-mode.color")]
-        [:option {:value "luminosity"} (tr "workspace.options.layer-options.blend-mode.luminosity")]]
-
-       [:div.input-element {:title (tr "workspace.options.opacity") :class "percentail"}
-        [:> numeric-input {:value (-> values :opacity opacity->string)
-                           :placeholder (tr "settings.multiple")
-                           :on-focus select-all
-                           :on-change handle-opacity-change
-                           :min 0
-                           :max 100}]]
-
+       [:div.input-element {:title (tr "workspace.options.opacity")
+                            :class "percentail"}
+        [:> numeric-input
+         {:value (opacity->string current-opacity)
+          :placeholder (tr "settings.multiple")
+          :on-focus select-all!
+          :on-change handle-opacity-change
+          :min 0
+          :max 100}]]
 
        [:div.element-set-actions.layer-actions
         (cond
