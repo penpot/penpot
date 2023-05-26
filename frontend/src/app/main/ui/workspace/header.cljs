@@ -608,7 +608,7 @@
          (mf/deps team-id project-id)
          #(st/emit! (rt/nav-new-window* {:rname :dashboard-files
                                          :path-params {:team-id team-id
-                                                       :project-id (:project-id project-id)}})))
+                                                       :project-id project-id}})))
 
         toggle-history
         (mf/use-fn
