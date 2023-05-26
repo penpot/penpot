@@ -96,14 +96,17 @@
                 (into shapes (mapcat #(get-children-ids-rec % (conj processed id))) shapes))))]
     (get-children-ids-rec id #{})))
 
+(defn get-children-ids-with-self
+  [objects id]
+  (into [id] (get-children-ids objects id)))
+
 (defn get-children
   [objects id]
   (mapv (d/getf objects) (get-children-ids objects id)))
 
 (defn get-children-with-self
   [objects id]
-  (let [lookup (d/getf objects)]
-    (into [(lookup id)] (map lookup) (get-children-ids objects id))))
+  (mapv (d/getf objects) (get-children-ids-with-self objects id)))
 
 (defn get-parent
   "Retrieve the id of the parent for the shape-id (if exists)"

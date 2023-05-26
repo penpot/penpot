@@ -16,6 +16,12 @@
   [shape]
   (some? (:component-id shape)))
 
+(defn subinstance-head?
+  "Check if this shape is the head of a subinstance."
+  [shape]
+  (and (some? (:component-id shape))
+       (nil? (:component-root shape))))
+
 (defn instance-of?
   [shape file-id component-id]
   (and (some? (:component-id shape))
