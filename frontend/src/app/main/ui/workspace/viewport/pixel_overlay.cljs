@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
@@ -50,13 +49,7 @@
   [svg]
   (let [svg-clone (.cloneNode svg true)]
     (->> (resolve-svg-images! svg-clone)
-         (rx/map (fn [_]
-                   (let [xml (-> (js/XMLSerializer.)
-                                 (.serializeToString ^js svg-clone)
-                                 (js/encodeURIComponent)
-                                 (js/unescape)
-                                 (js/btoa))]
-                     (dm/str "data:image/svg+xml;base64," xml)))))))
+         (rx/map (fn [_] (dom/svg-node->data-uri svg-clone))))))
 
 (defn format-viewbox [vbox]
   (str/join " " [(:x vbox 0)

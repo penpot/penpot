@@ -410,14 +410,19 @@
     (->  (js/XMLSerializer.)
          (.serializeToString node))))
 
-(defn svg->data-uri
-  [svg]
-  (assert (string? svg))
-  (let [b64 (-> svg
-                js/encodeURIComponent
-                js/unescape
+(defn str->data-uri
+  [str type]
+  (assert (string? str))
+  (let [b64 (-> str
                 js/btoa)]
-    (dm/str "data:image/svg+xml;base64," b64)))
+    (dm/str "data:" type ";base64," b64)))
+
+(defn svg-node->data-uri
+  [svg-node]
+  (let [xml  (-> (js/XMLSerializer.)
+                 (.serializeToString svg-node))
+        data-uri (str->data-uri xml "image/svg+xml")]
+    data-uri))
 
 (defn set-property! [^js node property value]
   (when (some? node)
