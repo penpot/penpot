@@ -412,7 +412,7 @@
 
 (defn rotation-modifiers
   [shape center angle]
-  (let [shape-center (gco/center-shape shape)
+  (let [shape-center (gco/shape->center shape)
         ;; Translation caused by the rotation
         move-vec
         (gpt/transform
@@ -502,7 +502,7 @@
 
         shape-transform (:transform shape)
         shape-transform-inv (:transform-inverse shape)
-        shape-center (gco/center-shape shape)
+        shape-center (gco/shape->center shape)
         {sr-width :width sr-height :height} (:selrect shape)
 
         origin (cond-> (gpt/point (:selrect shape))

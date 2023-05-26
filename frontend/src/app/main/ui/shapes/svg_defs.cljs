@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bounds :as gsb]
    [app.util.svg :as usvg]
@@ -92,7 +93,7 @@
 (defn svg-def-bounds [svg-def shape transform]
   (let [{:keys [tag]} svg-def]
     (if (or (= tag :mask) (contains? usvg/filter-tags tag))
-      (-> (gsh/make-rect (d/parse-double (get-in svg-def [:attrs :x]))
+      (-> (grc/make-rect (d/parse-double (get-in svg-def [:attrs :x]))
                          (d/parse-double (get-in svg-def [:attrs :y]))
                          (d/parse-double (get-in svg-def [:attrs :width]))
                          (d/parse-double (get-in svg-def [:attrs :height])))

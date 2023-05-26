@@ -9,13 +9,6 @@
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]))
 
-(defn generate-child-parent-index
-  [objects]
-  (reduce-kv
-   (fn [index id obj]
-     (assoc index id (:parent-id obj)))
-   {} objects))
-
 (defn generate-child-all-parents-index
   "Creates an index where the key is the shape id and the value is a set
   with all the parents"

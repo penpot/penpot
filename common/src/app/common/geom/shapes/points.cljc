@@ -8,9 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.intersect :as gsi]
-   [app.common.geom.shapes.rect :as gre]
    [app.common.math :as mth]))
 
 (defn origin
@@ -93,7 +91,6 @@
 
 (defn parent-coords-bounds
   [child-bounds [p1 p2 _ p4 :as parent-bounds]]
-
   (if (empty? child-bounds)
     parent-bounds
 
@@ -110,10 +107,10 @@
           (fn [[th-min th-max tv-min tv-max] current-point]
             (let [cth (project-t current-point rh vv)
                   ctv (project-t current-point rv hv)]
-              [(min th-min cth)
-               (max th-max cth)
-               (min tv-min ctv)
-               (max tv-max ctv)]))
+              [(mth/min th-min cth)
+               (mth/max th-max cth)
+               (mth/min tv-min ctv)
+               (mth/max tv-max ctv)]))
 
           [th-min th-max tv-min tv-max]
           (->> child-bounds
@@ -140,13 +137,6 @@
 (defn merge-parent-coords-bounds
   [bounds parent-bounds]
   (parent-coords-bounds (flatten bounds) parent-bounds))
-
-(defn points->selrect
-  [points]
-  (let [width (width-points points)
-        height (height-points points)
-        center (gco/center-points points)]
-    (gre/center->selrect center width height)))
 
 (defn move
   [bounds vector]

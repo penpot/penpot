@@ -203,8 +203,8 @@
           (try
             (dm/assert!
              "expect valid vector of changes"
-             (and (cpc/changes? redo-changes)
-                  (cpc/changes? undo-changes)))
+             (and (cpc/valid-changes? redo-changes)
+                  (cpc/valid-changes? undo-changes)))
 
             (update-in state path (fn [file]
                                     (-> file

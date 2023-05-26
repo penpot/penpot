@@ -109,7 +109,7 @@
         ;; For rotated or stretched shapes, the origin point we show in the menu
         ;; is not the (:x :y) shape attribute, but the top left coordinate of the
         ;; wrapping rectangle.
-        values (let [{:keys [x y]} (gsh/selection-rect [(first shapes)])]
+        values (let [{:keys [x y]} (gsh/shapes->rect [(first shapes)])]
                  (cond-> values
                    (not= (:x values) :multiple) (assoc :x x)
                    (not= (:y values) :multiple) (assoc :y y)

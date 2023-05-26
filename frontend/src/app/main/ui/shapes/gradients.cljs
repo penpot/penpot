@@ -62,7 +62,7 @@
 
         angle (+ (gpt/angle gradient-vec) 90)
 
-        bb-shape (gsh/selection-rect [shape])
+        bb-shape (gsh/shapes->rect [shape])
 
         ;; Paths don't have a transform in SVG because we transform the points
         ;; we need to compensate the difference between the original rectangle

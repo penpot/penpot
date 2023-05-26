@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.logging :as log]
    [app.common.media :as cm]
    [app.util.globals :as globals]
@@ -332,8 +333,7 @@
 (defn get-client-size
   [^js node]
   (when (some? node)
-    {:width (.-clientWidth ^js node)
-     :height (.-clientHeight ^js node)}))
+    (grc/make-rect 0 0 (.-clientWidth ^js node) (.-clientHeight ^js node))))
 
 (defn get-bounding-rect
   [node]

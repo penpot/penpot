@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.bool :as gsb]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
@@ -16,20 +17,11 @@
    [app.common.geom.shapes.intersect :as gsi]
    [app.common.geom.shapes.modifiers :as gsm]
    [app.common.geom.shapes.path :as gsp]
-   [app.common.geom.shapes.rect :as gpr]
-   [app.common.geom.shapes.text :as gst]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]))
 
 ;; --- Outer Rect
 
-(defn selection-rect
-  "Returns a rect that contains all the shapes and is aware of the
-  rotation of each shape. Mainly used for multiple selection."
-  [shapes]
-  (->> shapes
-       (map (comp gpr/points->selrect :points))
-       (gpr/join-selrects)))
 
 (defn translate-to-frame
   [shape {:keys [x y]}]
@@ -39,13 +31,22 @@
   [shape {:keys [x y]}]
   (gtr/move shape (gpt/point x y))  )
 
+(defn shape->rect
+  [shape]
+  (let [x (dm/get-prop shape :x)
+        y (dm/get-prop shape :y)
+        w (dm/get-prop shape :width)
+        h (dm/get-prop shape :height)]
+    (when (d/num? x y w h)
+      (grc/make-rect x y w h))))
+
 ;; --- Helpers
 
 (defn bounding-box
   "Returns a rect that wraps the shape after all transformations applied."
   [shape]
   ;; TODO: perhaps we need to store this calculation in a shape attribute
-  (gpr/points->rect (:points shape)))
+  (grc/points->rect (:points shape)))
 
 (defn left-bound
   "Returns the lowest x coord of the shape BEFORE applying transformations."
@@ -82,21 +83,38 @@
          (update :width (comp inc inc))
          (update :height (comp inc inc))))))
 
-(defn selrect->areas [bounds selrect]
-  (let [{bound-x1 :x1 bound-x2 :x2 bound-y1 :y1 bound-y2 :y2} bounds
-        {sr-x1 :x1 sr-x2 :x2 sr-y1 :y1 sr-y2 :y2} selrect]
-    {:left (gpr/corners->selrect bound-x1 sr-y1 sr-x1 sr-y2)
-     :top    (gpr/corners->selrect sr-x1 bound-y1 sr-x2 sr-y1)
-     :right  (gpr/corners->selrect sr-x2 sr-y1 bound-x2 sr-y2)
-     :bottom (gpr/corners->selrect sr-x1 sr-y2 sr-x2 bound-y2)}))
+(defn get-areas
+  [bounds selrect]
+  (let [bound-x1 (dm/get-prop bounds :x1)
+        bound-x2 (dm/get-prop bounds :x2)
+        bound-y1 (dm/get-prop bounds :y1)
+        bound-y2 (dm/get-prop bounds :y2)
+        sr-x1    (dm/get-prop selrect :x1)
+        sr-x2    (dm/get-prop selrect :x2)
+        sr-y1    (dm/get-prop selrect :y1)
+        sr-y2    (dm/get-prop selrect :y2)]
+    {:left   (grc/corners->rect bound-x1 sr-y1 sr-x1 sr-y2)
+     :top    (grc/corners->rect sr-x1 bound-y1 sr-x2 sr-y1)
+     :right  (grc/corners->rect sr-x2 sr-y1 bound-x2 sr-y2)
+     :bottom (grc/corners->rect sr-x1 sr-y2 sr-x2 bound-y2)}))
 
-(defn distance-selrect [selrect other]
-  (let [{:keys [x1 y1]} other
-        {:keys [x2 y2]} selrect]
+(defn distance-selrect
+  [selrect other]
+
+  (dm/assert!
+   (and (grc/rect? selrect)
+        (grc/rect? other)))
+
+  (let [x1 (dm/get-prop other :x1)
+        y1 (dm/get-prop other :y1)
+        x2 (dm/get-prop selrect :x2)
+        y2 (dm/get-prop selrect :y2)]
     (gpt/point (- x1 x2) (- y1 y2))))
 
 (defn distance-shapes [shape other]
-  (distance-selrect (:selrect shape) (:selrect other)))
+  (distance-selrect
+   (dm/get-prop shape :selrect)
+   (dm/get-prop other :selrect)))
 
 (defn close-attrs?
   "Compares two shapes attributes to see if they are equal or almost
@@ -131,26 +149,10 @@
        (= val1 val2)))))
 
 ;; EXPORTS
-(dm/export gco/center-shape)
-(dm/export gco/center-selrect)
-(dm/export gco/center-rect)
-(dm/export gco/center-points)
+(dm/export gco/shape->center)
+(dm/export gco/shapes->rect)
+(dm/export gco/points->center)
 (dm/export gco/transform-points)
-
-(dm/export gpr/make-rect)
-(dm/export gpr/make-selrect)
-(dm/export gpr/rect->selrect)
-(dm/export gpr/rect->points)
-(dm/export gpr/points->selrect)
-(dm/export gpr/points->rect)
-(dm/export gpr/center->rect)
-(dm/export gpr/center->selrect)
-(dm/export gpr/join-rects)
-(dm/export gpr/join-selrects)
-(dm/export gpr/contains-selrect?)
-(dm/export gpr/contains-point?)
-(dm/export gpr/close-selrect?)
-(dm/export gpr/clip-selrect)
 
 (dm/export gtr/move)
 (dm/export gtr/absolute-move)
@@ -173,6 +175,7 @@
 (dm/export gct/calc-child-modifiers)
 
 ;; PATHS
+;; FIXME: rename
 (dm/export gsp/content->selrect)
 (dm/export gsp/transform-content)
 (dm/export gsp/open-path?)
@@ -196,6 +199,3 @@
 
 ;; Modifiers
 (dm/export gsm/set-objects-modifiers)
-
-;; Text
-(dm/export gst/position-data-selrect)

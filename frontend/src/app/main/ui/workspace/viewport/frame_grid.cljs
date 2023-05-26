@@ -7,11 +7,11 @@
 (ns app.main.ui.workspace.viewport.frame-grid
   (:require
    [app.common.data :as d]
+   [app.common.geom.grid :as gg]
    [app.common.math :as mth]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
-   [app.util.geom.grid :as gg]
    [rumext.v2 :as mf]))
 
 (mf/defc square-grid [{:keys [frame zoom grid] :as props}]

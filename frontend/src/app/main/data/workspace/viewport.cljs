@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
@@ -21,6 +22,10 @@
 (defn initialize-viewport
   [{:keys [width height] :as size}]
 
+  (dm/assert!
+   "expected `size` to be a rect instance"
+   (gpr/rect? size))
+
   (letfn [(update* [{:keys [vport] :as local}]
             (let [wprop (/ (:width vport) width)
                   hprop (/ (:height vport) height)]
@@ -29,13 +34,14 @@
                   (update :vbox (fn [vbox]
                                   (-> vbox
                                       (update :width #(/ % wprop))
-                                      (update :height #(/ % hprop))))))))
+                                      (update :height #(/ % hprop))
+                                      (gpr/update-rect :size)))))))
 
           (initialize [state local]
             (let [page-id (:current-page-id state)
                   objects (wsh/lookup-page-objects state page-id)
                   shapes  (cph/get-immediate-children objects)
-                  srect   (gsh/selection-rect shapes)
+                  srect   (gsh/shapes->rect shapes)
                   local   (assoc local :vport size :zoom 1 :zoom-inverse 1)]
               (cond
                 (or (not (d/num? (:width srect)))
@@ -49,12 +55,20 @@
                   (-> local
                       (assoc :zoom zoom)
                       (assoc :zoom-inverse (/ 1 zoom))
-                      (update :vbox merge srect)))
+                      (update :vbox (fn [vbox]
+                                      (-> (merge vbox srect)
+                                          (gpr/make-rect))))))
 
                 :else
-                (assoc local :vbox (assoc size
-                                          :x (+ (:x srect) (/ (- (:width srect) width) 2))
-                                          :y (+ (:y srect) (/ (- (:height srect) height) 2)))))))
+                (let [vx   (+ (:x srect)
+                              (/ (- (:width srect) width) 2))
+                      vy   (+ (:y srect)
+                              (/ (- (:height srect) height) 2))
+                      vbox (-> size
+                               (assoc :x vx)
+                               (assoc :y vy)
+                               (gpr/update-rect :position))]
+                  (assoc local :vbox vbox)))))
 
           (setup [state local]
             (if (and (:vbox local) (:vport local))

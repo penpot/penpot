@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.main.data.comments :as dcm]
    [app.main.data.events :as ev]
@@ -103,7 +104,7 @@
         threads-map  (mf/deref refs/comment-threads)
 
         frame-corner (mf/with-memo [frame]
-                       (-> frame :points gsh/points->selrect gpt/point))
+                       (-> frame :points grc/points->rect gpt/point))
 
         modifier1    (mf/with-memo [frame-corner]
                        (-> (gmt/matrix)

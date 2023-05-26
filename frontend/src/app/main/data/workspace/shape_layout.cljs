@@ -90,7 +90,7 @@
          (->> shapes
               (map :id)
               (ctt/sort-z-index objects)
-              (map (comp gsh/center-shape (d/getf objects))))
+              (map (comp gsh/shape->center (d/getf objects))))
 
          start (first points)
          end (reduce (fn [acc p] (gpt/add acc (gpt/to-vec start p))) points)

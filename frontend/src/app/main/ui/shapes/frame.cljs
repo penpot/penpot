@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.frame
   (:require
    [app.common.data.macros :as dm]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
@@ -90,7 +91,7 @@
   [props]
   (let [shape    (unchecked-get props "shape")
         bounds   (or (unchecked-get props "bounds")
-                     (gsh/points->selrect (:points shape)))
+                     (grc/points->rect (:points shape)))
 
         shape-id (:id shape)
         thumb    (:thumbnail shape)
@@ -103,6 +104,8 @@
       {:id (dm/str "thumbnail-" shape-id)
        :href thumb
        :decoding "async"
+       ;; FIXME: ensure bounds is always a rect instance and
+       ;; dm/get-prop for static attr access
        :x (:x bounds)
        :y (:y bounds)
        :width (:width bounds)

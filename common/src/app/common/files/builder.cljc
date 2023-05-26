@@ -4,14 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.file-builder
-  "A version parsing helper."
+(ns app.common.files.builder
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes :as ch]
    [app.common.pprint :as pp]
@@ -25,9 +24,9 @@
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
-(def root-frame uuid/zero)
-(def conjv (fnil conj []))
-(def conjs (fnil conj #{}))
+(def ^:private root-id uuid/zero)
+(def ^:private conjv (fnil conj []))
+(def ^:private conjs (fnil conj #{}))
 
 (defn- commit-change
   ([file change]
@@ -38,35 +37,33 @@
                  :or   {add-container? false
                         fail-on-spec? false}}]
    (let [component-id (:current-component-id file)
-         change (cond-> change
-                  (and add-container? (some? component-id))
-                  (cond->
-                   :always
-                    (assoc :component-id component-id)
+         change       (cond-> change
+                        (and add-container? (some? component-id))
+                        (-> (assoc :component-id component-id)
+                            (cond-> (some? (:current-frame-id file))
+                              (assoc :frame-id (:current-frame-id file))))
 
-                    (some? (:current-frame-id file))
-                    (assoc :frame-id (:current-frame-id file)))
+                        (and add-container? (nil? component-id))
+                        (assoc :page-id  (:current-page-id file)
+                               :frame-id (:current-frame-id file)))
+         valid? (ch/valid-change? change)]
 
-                  (and add-container? (nil? component-id))
-                  (assoc :page-id  (:current-page-id file)
-                         :frame-id (:current-frame-id file)))]
+     (when-not valid?
+       (let [explain (sm/explain ::ch/change change)]
+         (pp/pprint (sm/humanize-data explain))
+         (when fail-on-spec?
+           (ex/raise :type :assertion
+                     :code :data-validation
+                     :hint "invalid change"
+                     ::sm/explain explain))))
 
-     (when fail-on-spec?
-       (dm/verify! (ch/change? change)))
+     (cond-> file
+       valid?
+       (-> (update :changes conjv change)
+           (update :data ch/process-changes [change] false))
 
-     (let [valid? (ch/change? change)]
-       (when-not valid?
-         (pp/pprint change {:level 100})
-         (sm/pretty-explain ::ch/change change))
-
-
-       (cond-> file
-         valid?
-         (-> (update :changes conjv change)
-             (update :data ch/process-changes [change] false))
-
-         (not valid?)
-         (update :errors conjv change))))))
+       (not valid?)
+       (update :errors conjv change)))))
 
 (defn- lookup-objects
   ([file]
@@ -90,50 +87,6 @@
                           (= :frame (:type obj)))]
 
     (commit-change file change {:add-container? true :fail-on-spec? fail-on-spec?})))
-
-(defn setup-rect-selrect [{:keys [x y width height transform] :as obj}]
-  (when-not (d/num? x y width height)
-    (ex/raise :type :assertion
-              :code :invalid-condition
-              :hint "Coords not valid for object"))
-
-  (let [rect      (gsh/make-rect x y width height)
-        center    (gsh/center-rect rect)
-        selrect   (gsh/rect->selrect rect)
-
-        points (-> (gsh/rect->points rect)
-                   (gsh/transform-points center transform))]
-
-    (-> obj
-        (assoc :selrect selrect)
-        (assoc :points points))))
-
-(defn- setup-path-selrect
-  [{:keys [content center transform transform-inverse] :as obj}]
-
-  (when (or (empty? content) (nil? center))
-    (ex/raise :type :assertion
-              :code :invalid-condition
-              :hint "Path not valid"))
-
-  (let [transform (gmt/transform-in center transform)
-        transform-inverse (gmt/transform-in center transform-inverse)
-
-        content' (gsh/transform-content content transform-inverse)
-        selrect  (gsh/content->selrect content')
-        points   (-> (gsh/rect->points selrect)
-                     (gsh/transform-points transform))]
-
-    (-> obj
-        (dissoc :center)
-        (assoc :selrect selrect)
-        (assoc :points points))))
-
-(defn- setup-selrect
-  [obj]
-  (if (= (:type obj) :path)
-    (setup-path-selrect obj)
-    (setup-rect-selrect obj)))
 
 (defn- generate-name
   [type data]
@@ -203,10 +156,10 @@
         (assoc :current-page-id page-id)
 
         ;; Current frame-id
-        (assoc :current-frame-id root-frame)
+        (assoc :current-frame-id root-id)
 
         ;; Current parent stack we'll be nesting
-        (assoc :parent-stack [root-frame])
+        (assoc :parent-stack [root-id])
 
         ;; Last object id added
         (assoc :last-id nil))))
@@ -220,11 +173,8 @@
       (clear-names)))
 
 (defn add-artboard [file data]
-  (let [obj (-> (cts/make-minimal-shape :frame)
-                (merge data)
-                (check-name file :frame)
-                (setup-selrect)
-                (d/without-nils))]
+  (let [obj (-> (cts/setup-shape (assoc data :type :frame))
+                (check-name file :frame))]
     (-> file
         (commit-shape obj)
         (assoc :current-frame-id (:id obj))
@@ -237,19 +187,15 @@
         parent (lookup-shape file parent-id)
         current-frame-id (or (:frame-id parent)
                              (when (nil? (:current-component-id file))
-                               root-frame))]
+                               root-id))]
     (-> file
         (assoc :current-frame-id current-frame-id)
         (update :parent-stack pop))))
 
 (defn add-group [file data]
   (let [frame-id (:current-frame-id file)
-        selrect cts/empty-selrect
-        name (:name data)
-        obj (-> (cts/make-minimal-group frame-id selrect name)
-                (merge data)
-                (check-name file :group)
-                (d/without-nils))]
+        obj      (-> (cts/setup-shape (assoc data :type :group :frame-id frame-id))
+                     (check-name file :group))]
     (-> file
         (commit-shape obj)
         (assoc :last-id (:id obj))
@@ -309,15 +255,8 @@
 
 (defn add-bool [file data]
   (let [frame-id (:current-frame-id file)
-        name (:name data)
-        obj (-> {:id (uuid/next)
-                 :type :bool
-                 :name name
-                 :shapes []
-                 :frame-id frame-id}
-                (merge data)
-                (check-name file :bool)
-                (d/without-nils))]
+        obj      (-> (cts/setup-shape (assoc data :type :bool :frame-id frame-id))
+                     (check-name file :bool))]
     (-> file
         (commit-shape obj)
         (assoc :last-id (:id obj))
@@ -360,11 +299,8 @@
         (update :parent-stack pop))))
 
 (defn create-shape [file type data]
-  (let [obj (-> (cts/make-minimal-shape type)
-                (merge data)
-                (check-name file :type)
-                (setup-selrect)
-                (d/without-nils))]
+  (let [obj (-> (cts/setup-shape (assoc data :type type))
+                (check-name file :type))]
     (-> file
         (commit-shape obj)
         (assoc :last-id (:id obj))
@@ -556,23 +492,33 @@
          {:type :del-media
           :id id}))))
 
+
 (defn start-component
   ([file data] (start-component file data :group))
   ([file data root-type]
-   (let [selrect (or (gsh/make-selrect (:x data) (:y data) (:width data) (:height data))
-                     cts/empty-selrect)
+   ;; FIXME: data probably can be a shape instance, then we can use gsh/shape->rect
+   (let [selrect (or (grc/make-rect (:x data) (:y data) (:width data) (:height data))
+                     grc/empty-rect)
          name               (:name data)
          path               (:path data)
          main-instance-id   (:main-instance-id data)
          main-instance-page (:main-instance-page data)
-         obj (-> (cts/make-shape root-type selrect data)
-                 (dissoc :path
-                         :main-instance-id
-                         :main-instance-page
-                         :main-instance-x
-                         :main-instance-y)
-                 (check-name file root-type)
-                 (d/without-nils))]
+         attrs (-> data
+                   (assoc :type root-type)
+                   (assoc :x (:x selrect))
+                   (assoc :y (:y selrect))
+                   (assoc :width (:width selrect))
+                   (assoc :height (:height selrect))
+                   (assoc :selrect selrect)
+                   (dissoc :path)
+                   (dissoc :main-instance-id)
+                   (dissoc :main-instance-page)
+                   (dissoc :main-instance-x)
+                   (dissoc :main-instance-y))
+
+         obj   (-> (cts/setup-shape attrs)
+                   (check-name file root-type))]
+
      (-> file
          (commit-change
           {:type :add-component
@@ -734,8 +680,8 @@
 (defn update-object
   [file old-obj new-obj]
   (let [page-id (:current-page-id file)
-        new-obj (setup-selrect new-obj)
-        attrs (d/concat-set (keys old-obj) (keys new-obj))
+        new-obj (cts/setup-shape new-obj)
+        attrs   (d/concat-set (keys old-obj) (keys new-obj))
         generate-operation
         (fn [changes attr]
           (let [old-val (get old-obj attr)

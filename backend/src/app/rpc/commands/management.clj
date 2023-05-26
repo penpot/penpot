@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.pages.migrations :as pmg]
+   [app.common.files.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -233,7 +233,7 @@
 
   (let [project (-> (db/get-by-id conn :project project-id)
                     (assoc :is-pinned false))
-        
+
         files   (db/query conn :file
                   {:project-id (:id project)
                    :deleted-at nil}

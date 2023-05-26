@@ -8,8 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.types.page :as ctp]
@@ -33,8 +33,8 @@
       (let [page    (wsh/lookup-page state)
 
             flows   (get-in page [:options :flows] [])
-            unames  (into #{} (map :name flows))
-            name    (cp/generate-unique-name unames "Flow 1")
+            unames  (cfh/get-used-names flows)
+            name    (cfh/generate-unique-name unames "Flow 1")
 
             new-flow {:id (uuid/next)
                       :name name

@@ -7,7 +7,7 @@
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
-   [app.common.pages :as cp]
+   [app.common.pages.focus :as cpf]
    [app.main.broadcast :as mbc]
    [app.main.data.shortcuts :as dsc]
    [app.main.refs :as refs]
@@ -256,7 +256,7 @@
   ([objects focus]
    (let [objects (mf/use-memo
                   (mf/deps focus objects)
-                  #(cp/focus-objects objects focus))]
+                  #(cpf/focus-objects objects focus))]
      objects)))
 
 (defn use-debounce

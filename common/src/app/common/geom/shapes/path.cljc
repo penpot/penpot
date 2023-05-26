@@ -9,8 +9,8 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.common :as gsc]
-   [app.common.geom.shapes.rect :as gpr]
+   [app.common.geom.rect :as grc]
+   [app.common.geom.shapes.common :as gco]
    [app.common.math :as mth]
    [app.common.path.commands :as upc]
    [app.common.path.subpaths :as sp]))
@@ -334,7 +334,7 @@
                                     (->> (curve-extremities curve)
                                          (mapv #(curve-values curve %)))))
                   [])]
-     (gpr/points->selrect points))))
+     (grc/points->rect points))))
 
 (defn content->selrect [content]
   (let [calc-extremities
@@ -360,7 +360,7 @@
         extremities (mapcat calc-extremities
                             content
                             (concat [nil] content))]
-    (gpr/points->selrect extremities)))
+    (grc/points->rect extremities)))
 
 (defn move-content [content move-vec]
   (let [dx (:x move-vec)
@@ -591,7 +591,7 @@
   (let [[from-p to-p :as curve] (subcurve-range curve from-t to-t)
         extremes (->> (curve-extremities curve)
                       (mapv #(curve-values curve %)))]
-    (gpr/points->rect (into [from-p to-p] extremes))))
+    (grc/points->rect (into [from-p to-p] extremes))))
 
 (defn line-has-point?
   "Using the line equation we put the x value and check if matches with
@@ -623,7 +623,7 @@
   [point curve]
   (letfn [(check-range [from-t to-t]
             (let [r (curve-range->rect curve from-t to-t)]
-              (when (gpr/contains-point? r point)
+              (when (grc/contains-point? r point)
                 (if (s= from-t to-t)
                   (< (gpt/distance (curve-values curve from-t) point) 0.1)
 
@@ -760,7 +760,7 @@
             (let [r1 (curve-range->rect c1 c1-from c1-to)
                   r2 (curve-range->rect c2 c2-from c2-to)]
 
-              (when (gpr/overlaps-rects? r1 r2)
+              (when (grc/overlaps-rects? r1 r2)
                 (let [p1 (curve-values c1 c1-from)
                       p2 (curve-values c2 c2-from)]
 
@@ -811,7 +811,7 @@
   [[from-p to-p :as curve]]
   (let [extremes (->> (curve-extremities curve)
                       (mapv #(curve-values curve %)))]
-    (gpr/points->rect (into [from-p to-p] extremes))))
+    (grc/points->rect (into [from-p to-p] extremes))))
 
 
 (defn is-point-in-border?
@@ -943,7 +943,7 @@
   [content]
   (-> content
       content->selrect
-      gsc/center-selrect))
+      grc/rect->center))
 
 (defn content->points+selrect
   "Given the content of a shape, calculate its points and selrect"
@@ -960,7 +960,7 @@
           flip-y (gmt/scale (gpt/point 1 -1))
           :always (gmt/multiply (:transform-inverse shape (gmt/matrix))))
 
-        center (or (gsc/center-shape shape)
+        center (or (gco/shape->center shape)
                    (content-center content))
 
         base-content (transform-content
@@ -969,16 +969,16 @@
 
         ;; Calculates the new selrect with points given the old center
         points (-> (content->selrect base-content)
-                   (gpr/rect->points)
-                   (gsc/transform-points center transform))
+                   (grc/rect->points)
+                   (gco/transform-points center transform))
 
-        points-center (gsc/center-points points)
+        points-center (gco/points->center points)
 
         ;; Points is now the selrect but the center is different so we can create the selrect
         ;; through points
         selrect (-> points
-                    (gsc/transform-points points-center transform-inverse)
-                    (gpr/points->selrect))]
+                    (gco/transform-points points-center transform-inverse)
+                    (grc/points->rect))]
     [points selrect]))
 
 (defn open-path?

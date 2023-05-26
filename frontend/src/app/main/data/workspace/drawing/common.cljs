@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.drawing.common
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
@@ -30,46 +31,47 @@
   (ptk/reify ::handle-finish-drawing
     ptk/WatchEvent
     (watch [_ state _]
-      (let [tool (get-in state [:workspace-drawing :tool])
-            shape (get-in state [:workspace-drawing :object])
-            objects (wsh/lookup-page-objects state)]
+      (let [tool    (dm/get-in state [:workspace-drawing :tool])
+            shape   (dm/get-in state [:workspace-drawing :object])
+            objects (wsh/lookup-page-objects state)
+            page-id (:current-page-id state)]
+
         (rx/concat
          (when (:initialized? shape)
-           (let [page-id (:current-page-id state)
+           (let [click-draw? (:click-draw? shape)
+                 text?       (cph/text-shape? shape)
+                 vbox        (dm/get-in state [:workspace-local :vbox])
 
-                 click-draw? (:click-draw? shape)
-                 text? (= :text (:type shape))
-
-                 min-side (min 100
-                               (mth/floor (get-in state [:workspace-local :vbox :width]))
-                               (mth/floor (get-in state [:workspace-local :vbox :height])))
+                 min-side    (mth/min 100
+                                      (mth/floor (dm/get-prop vbox :width))
+                                      (mth/floor (dm/get-prop vbox :height)))
 
                  shape
                  (cond-> shape
                    (not click-draw?)
-                   (-> (assoc :grow-type :fixed))
+                   (assoc :grow-type :fixed)
 
-                   (and click-draw? (not text?))
+                   (and ^boolean click-draw? (not ^boolean text?))
                    (-> (assoc :width min-side :height min-side)
-                       (cts/setup-rect-selrect)
+                       (cts/setup-shape)
                        (gsh/transform-shape (ctm/move-modifiers (- (/ min-side 2)) (- (/ min-side 2)))))
 
                    (and click-draw? text?)
                    (-> (assoc :height 17 :width 4 :grow-type :auto-width)
-                       (cts/setup-rect-selrect))
+                       (cts/setup-shape))
 
                    :always
                    (dissoc :initialized? :click-draw?))]
 
              ;; Add & select the created shape to the workspace
              (rx/concat
-              (if (= :text (:type shape))
+              (if (cph/text-shape? shape)
                 (rx/of (dwu/start-undo-transaction (:id shape)))
                 (rx/empty))
 
               (rx/of (dwsh/add-shape shape {:no-select? (= tool :curve)}))
 
-              (if (= :frame (:type shape))
+              (if (cph/frame-shape? shape)
                 (->> (uw/ask! {:cmd :selection/query
                                :page-id page-id
                                :rect (:selrect shape)

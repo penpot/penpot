@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.geom.shapes.points :as gpo]
@@ -248,8 +249,8 @@
 (mf/defc measurement
   [{:keys [bounds frame selected-shapes hover-shape zoom]}]
   (let [selected-ids          (into #{} (map :id) selected-shapes)
-        selected-selrect      (gsh/selection-rect selected-shapes)
-        hover-selrect         (-> hover-shape :points gsh/points->selrect)
+        selected-selrect      (gsh/shapes->rect selected-shapes)
+        hover-selrect         (-> hover-shape :points grc/points->rect)
         bounds-selrect        (bound->selrect bounds)
         hover-selected-shape? (not (contains? selected-ids (:id hover-shape)))]
 
@@ -262,7 +263,7 @@
 
        (if (or (not hover-shape) (not hover-selected-shape?))
          (when (and frame (not= uuid/zero (:id frame)))
-           (let [frame-bb (-> (:points frame) (gsh/points->selrect))]
+           (let [frame-bb (-> (:points frame) (grc/points->rect))]
              [:g.hover-shapes
               [:& selection-rect {:type :hover :selrect frame-bb :zoom zoom}]
               [:& distance-display {:from frame-bb

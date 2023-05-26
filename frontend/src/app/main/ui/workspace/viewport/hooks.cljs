@@ -8,8 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages :as cp]
+   [app.common.pages.focus :as cpf]
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.shape-tree :as ctt]
@@ -137,7 +138,7 @@
          (mf/deps page-id)
          (fn [point]
            (let [zoom (mf/ref-val zoom-ref)
-                 rect (gsh/center->rect point (/ 5 zoom) (/ 5 zoom))]
+                 rect (grc/center->rect point (/ 5 zoom) (/ 5 zoom))]
              (if (mf/ref-val hover-disabled-ref)
                (rx/of nil)
                (->> (uw/ask-buffered!
@@ -244,7 +245,7 @@
                   (remove remove-id?)
                   (remove (partial cph/hidden-parent? objects))
                   (remove #(and mod? (no-fill-nested-frames? %)))
-                  (filter #(or (empty? focus) (cp/is-in-focus? objects focus %)))
+                  (filter #(or (empty? focus) (cpf/is-in-focus? objects focus %)))
                   (first)
                   (get objects))]
 

@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.shapes :as gsh]
+   [app.common.geom.rect :as grc]
    [app.main.ui.context :as muc]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -52,7 +52,7 @@
           svg-text?   (and (= :text (:type mask)) (some? (:position-data mask)))
 
           mask-bb      (:points mask)
-          mask-bb-rect (gsh/points->rect mask-bb)]
+          mask-bb-rect (grc/points->rect mask-bb)]
       [:defs
        [:filter {:id (filter-id render-id mask)}
         [:feFlood {:flood-color "white"

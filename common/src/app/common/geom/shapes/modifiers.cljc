@@ -29,7 +29,7 @@
 ;;                           [(get-in objects [k :name]) v]))
 ;;                    modif-tree))))
 
-(defn children-sequence
+(defn- get-children-seq
   "Given an id returns a sequence of its children"
   [id objects]
 
@@ -39,61 +39,63 @@
         id)
        (map #(get objects %))))
 
-(defn resolve-tree-sequence
+(defn- resolve-tree
   "Given the ids that have changed search for layout roots to recalculate"
   [ids objects]
   (dm/assert! (or (nil? ids) (set? ids)))
 
-  (let [get-tree-root
-        (fn ;; Finds the tree root for the current id
-          [id]
-
+  (let [;; Finds the tree root for the current id
+        get-tree-root
+        (fn [id]
           (loop [current id
                  result  id]
-            (let [shape (get objects current)
-                  parent (get objects (:parent-id shape))]
-              (cond
-                (or (not shape) (= uuid/zero current))
+            (let [shape (get objects current)]
+              (if (or (not ^boolean shape) (= uuid/zero current))
                 result
+                (let [parent-id (dm/get-prop shape :parent-id)
+                      parent    (get objects parent-id)]
+                  (cond
+                    ;; Frame found, but not layout we return the last layout found (or the id)
+                    (and ^boolean (cph/frame-shape? parent)
+                         (not ^boolean (ctl/any-layout? parent)))
+                    result
 
-                ;; Frame found, but not layout we return the last layout found (or the id)
-                (and (= :frame (:type parent))
-                     (not (ctl/any-layout? parent)))
-                result
+                    ;; Layout found. We continue upward but we mark this layout
+                    (ctl/any-layout? parent)
+                    (recur parent-id parent-id)
 
-                ;; Layout found. We continue upward but we mark this layout
-                (ctl/any-layout? parent)
-                (recur (:id parent) (:id parent))
+                    ;; If group or boolean or other type of group we continue with the last result
+                    :else
+                    (recur parent-id result)))))))
 
-                ;; If group or boolean or other type of group we continue with the last result
-                :else
-                (recur (:id parent) result)))))
-
-        is-child? #(cph/is-child? objects %1 %2)
-
-        calculate-common-roots
-        (fn ;; Given some roots retrieves the minimum number of tree roots
-          [result id]
+        ;; Given some roots retrieves the minimum number of tree roots
+        search-common-roots
+        (fn [result id]
           (if (= id uuid/zero)
             result
             (let [root (get-tree-root id)
 
                   ;; Remove the children from the current root
                   result
-                  (if (cph/has-children? objects root)
-                    (into #{} (remove #(is-child? root %)) result)
+                  (if ^boolean (cph/has-children? objects root)
+                    (into #{} (remove (partial cph/is-child? objects root)) result)
                     result)
 
-                  root-parents (cph/get-parent-ids objects root)
-                  contains-parent? (some #(contains? result %) root-parents)]
-              (cond-> result
-                (not contains-parent?)
-                (conj root)))))
+                  contains-parent?
+                  (->> (cph/get-parent-ids objects root)
+                       (some (partial contains? result)))]
 
-        roots (->> ids (reduce calculate-common-roots #{}))]
-    (concat
-     (when (contains? ids uuid/zero) [(get objects uuid/zero)])
-     (mapcat #(children-sequence % objects) roots))))
+              (if (not contains-parent?)
+                (conj result root)
+                result))))
+
+        result
+        (->> (reduce search-common-roots #{} ids)
+             (mapcat #(get-children-seq % objects)))]
+
+    (if (contains? ids uuid/zero)
+      (cons (get objects uuid/zero) result)
+      result)))
 
 (defn- set-children-modifiers
   "Propagates the modifiers from a parent too its children applying constraints if necesary"
@@ -363,7 +365,7 @@
 (defn reflow-layout
   [objects old-modif-tree bounds ignore-constraints id]
 
-  (let [tree-seq (children-sequence id objects)
+  (let [tree-seq (get-children-seq id objects)
 
         [modif-tree _]
         (reduce
@@ -408,7 +410,7 @@
 
                 (let [resize-modif-tree {current {:modifiers auto-resize-modifiers}}
 
-                      tree-seq (children-sequence current objects)
+                      tree-seq (get-children-seq current objects)
 
                       [resize-modif-tree _]
                       (reduce
@@ -432,7 +434,7 @@
 
         ;; Step-2: After resizing we still need to reflow the layout parents that are not auto-width/height
 
-        tree-seq (resolve-tree-sequence to-reflow objects)
+        tree-seq (resolve-tree to-reflow objects)
 
         [reflow-modif-tree _]
         (reduce
@@ -468,7 +470,7 @@
                   (some? old-modif-tree)
                   (transform-bounds objects old-modif-tree))
 
-         shapes-tree (resolve-tree-sequence (-> modif-tree keys set) objects)
+         shapes-tree (resolve-tree (-> modif-tree keys set) objects)
 
          ;; Calculate the input transformation and constraints
          modif-tree (reduce #(propagate-modifiers-constraints objects bounds ignore-constraints %1 %2) modif-tree shapes-tree)

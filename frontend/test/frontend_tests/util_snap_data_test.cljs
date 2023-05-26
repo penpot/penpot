@@ -6,7 +6,7 @@
 
 (ns frontend-tests.util-snap-data-test
   (:require
-   [app.common.file-builder :as fb]
+   [app.common.files.builder :as fb]
    [app.common.uuid :as uuid]
    [app.util.snap-data :as sd]
    [cljs.pprint :refer [pprint]]

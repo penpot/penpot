@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.text :as gsht]
+   [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
@@ -24,7 +24,7 @@
   [props]
   (let [shape (unchecked-get props "shape")
         zoom (mf/deref refs/selected-zoom)
-        bounding-box (gsht/position-data-selrect shape)
+        bounding-box (gst/shape->rect shape)
         ctx (js* "document.createElement(\"canvas\").getContext(\"2d\")")]
     [:g {:transform (gsh/transform-str shape)}
      [:rect {:x (:x bounding-box)
@@ -66,22 +66,24 @@
 ;; --- Text Wrapper for workspace
 (mf/defc text-wrapper
   {::mf/wrap-props false}
-  [props]
-  (let [shape (unchecked-get props "shape")
+  [{:keys [shape]}]
+  (let [shape-id (dm/get-prop shape :id)
 
         text-modifier-ref
-        (mf/use-memo (mf/deps (:id shape)) #(refs/workspace-text-modifier-by-id (:id shape)))
+        (mf/with-memo [shape-id]
+          (refs/workspace-text-modifier-by-id shape-id))
 
         text-modifier
         (mf/deref text-modifier-ref)
 
-        shape (cond-> shape
-                (some? text-modifier)
-                (dwt/apply-text-modifier text-modifier))]
+        shape (if (some? shape)
+                (dwt/apply-text-modifier shape text-modifier)
+                shape)]
 
     [:> shape-container {:shape shape}
-     [:g.text-shape {:key (dm/str "text-" (:id shape))}
+     [:g.text-shape {:key (dm/str shape-id)}
       [:& text/text-shape {:shape shape}]]
 
-     (when (and (debug? :text-outline) (d/not-empty? (:position-data shape)))
+     (when (and ^boolean (debug? :text-outline)
+                ^boolean (seq (:position-data shape)))
        [:& debug-text-bounds {:shape shape}])]))

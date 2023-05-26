@@ -7,7 +7,7 @@
 #_:clj-kondo/ignore
 (ns app.common.data.macros
   "Data retrieval & manipulation specific macros."
-  (:refer-clojure :exclude [get-in select-keys str with-open])
+  (:refer-clojure :exclude [get-in select-keys str with-open min max])
   #?(:cljs (:require-macros [app.common.data.macros]))
   (:require
    #?(:clj [clojure.core :as c]
@@ -154,7 +154,7 @@
 
 (defmacro verify!
   ([expr]
-   `(assert! nil ~expr))
+   `(verify! nil ~expr))
   ([hint expr]
    (let [hint (cond
                 (vector? hint)

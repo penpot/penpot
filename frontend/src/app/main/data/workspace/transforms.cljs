@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.flex-layout :as gslf]
    [app.common.geom.shapes.grid-layout :as gslg]
@@ -109,7 +110,7 @@
             (let [{:keys [width height]} (:selrect shape)
                   {:keys [rotation]} shape
 
-                  shape-center (gsh/center-shape shape)
+                  shape-center (gsh/shape->center shape)
                   shape-transform (:transform shape)
                   shape-transform-inverse (:transform-inverse shape)
 
@@ -304,8 +305,8 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (let [stoper          (rx/filter ms/mouse-up? stream)
-            group           (gsh/selection-rect shapes)
-            group-center    (gsh/center-selrect group)
+            group           (gsh/shapes->rect shapes)
+            group-center    (grc/rect->center group)
             initial-angle   (gpt/angle @ms/mouse-position group-center)
 
             calculate-angle
@@ -699,7 +700,8 @@
             objects (wsh/lookup-page-objects state page-id)
             shape   (get objects id)
 
-            bbox (-> shape :points gsh/points->selrect)
+            ;; FIXME: performance rect
+            bbox (-> shape :points grc/points->rect)
 
             cpos (gpt/point (:x bbox) (:y bbox))
             pos  (gpt/point (or (:x position) (:x bbox))
@@ -821,8 +823,8 @@
       (let [objects   (wsh/lookup-page-objects state)
             selected  (wsh/lookup-selected state {:omit-blocked? true})
             shapes    (map #(get objects %) selected)
-            selrect   (gsh/selection-rect shapes)
-            center    (gsh/center-selrect selrect)
+            selrect   (gsh/shapes->rect shapes)
+            center    (grc/rect->center selrect)
             modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point -1.0 1.0) center))]
         (rx/of (dwm/apply-modifiers {:modifiers modifiers}))))))
 
@@ -833,7 +835,7 @@
       (let [objects   (wsh/lookup-page-objects state)
             selected  (wsh/lookup-selected state {:omit-blocked? true})
             shapes    (map #(get objects %) selected)
-            selrect   (gsh/selection-rect shapes)
-            center    (gsh/center-selrect selrect)
+            selrect   (gsh/shapes->rect shapes)
+            center    (grc/rect->center selrect)
             modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point 1.0 -1.0) center))]
         (rx/of (dwm/apply-modifiers {:modifiers modifiers}))))))

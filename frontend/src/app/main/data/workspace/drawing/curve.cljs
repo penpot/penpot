@@ -6,10 +6,13 @@
 
 (ns app.main.data.workspace.drawing.curve
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.geom.shapes.path :as gsp]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.drawing.common :as common]
@@ -21,81 +24,86 @@
 
 (def simplify-tolerance 0.3)
 
-(defn stoper-event? [{:keys [type] :as event}]
+(defn stoper-event?
+  [{:keys [type] :as event}]
   (ms/mouse-event? event) (= type :up))
 
-(defn initialize-drawing [state]
-  (assoc-in state [:workspace-drawing :object :initialized?] true))
-
-(defn insert-point-segment [state point]
-  (let [segments (-> state
-                     (get-in [:workspace-drawing :object :segments])
-                     (or [])
-                     (conj point))
-        content (gsp/segments->content segments)
-        selrect (gsh/content->selrect content)
-        points (gsh/rect->points selrect)]
-    (-> state
-        (update-in [:workspace-drawing :object] assoc
-                   :segments segments
-                   :content content
-                   :selrect selrect
-                   :points points))))
-
-(defn setup-frame-curve []
-  (ptk/reify ::setup-frame-path
+(defn- insert-point
+  [point]
+  (ptk/reify ::insert-point
     ptk/UpdateEvent
     (update [_ state]
+      (update-in state [:workspace-drawing :object]
+                 (fn [object]
+                   (let [segments (-> (:segments object)
+                                      (conj point))
+                         content  (gsp/segments->content segments)
+                         selrect  (gsh/content->selrect content)
+                         points   (grc/rect->points selrect)]
+                     (-> object
+                         (assoc :segments segments)
+                         (assoc :content content)
+                         (assoc :selrect selrect)
+                         (assoc :points points))))))))
 
+(defn- setup-frame
+  []
+  (ptk/reify ::setup-frame
+    ptk/UpdateEvent
+    (update [_ state]
       (let [objects      (wsh/lookup-page-objects state)
-            content      (get-in state [:workspace-drawing :object :content] [])
-            start        (get-in content [0 :params] nil)
+            content      (dm/get-in state [:workspace-drawing :object :content] [])
+            start        (dm/get-in content [0 :params] nil)
             position     (when start (gpt/point start))
             frame-id     (ctst/top-nested-frame objects position)
             flex-layout? (ctl/flex-layout? objects frame-id)
             drop-index   (when flex-layout? (gsl/get-drop-index frame-id objects position))]
-        (-> state
-            (assoc-in [:workspace-drawing :object :frame-id] frame-id)
-            (cond-> (some? drop-index)
-              (update-in [:workspace-drawing :object] with-meta {:index drop-index})))))))
+        (update-in state [:workspace-drawing :object]
+                   (fn [object]
+                     (-> object
+                         (assoc :frame-id frame-id)
+                         (assoc :parent-id frame-id)
+                         (cond-> (some? drop-index)
+                           (with-meta {:index drop-index})))))))))
 
-(defn curve-to-path [{:keys [segments] :as shape}]
-  (let [content (gsp/segments->content segments)
-        selrect (gsh/content->selrect content)
-        points (gsh/rect->points selrect)]
-    (-> shape
-        (dissoc :segments)
-        (assoc :content content)
-        (assoc :selrect selrect)
-        (assoc :points points)
-
-        (cond-> (or (empty? points) (nil? selrect) (<= (count content) 1))
-          (assoc :initialized? false)))))
-
-(defn finish-drawing-curve
+(defn finish-drawing
   []
-  (ptk/reify ::finish-drawing-curve
+  (ptk/reify ::finish-drawing
     ptk/UpdateEvent
     (update [_ state]
-      (letfn [(update-curve [shape]
-                (-> shape
-                    (update :segments #(ups/simplify % simplify-tolerance))
-                    (curve-to-path)))]
-        (-> state
-            (update-in [:workspace-drawing :object] update-curve))))))
+      (update-in state [:workspace-drawing :object]
+                 (fn [{:keys [segments] :as shape}]
+                   (let [segments (ups/simplify segments simplify-tolerance)
+                         content  (gsp/segments->content segments)
+                         selrect  (gsh/content->selrect content)
+                         points   (grc/rect->points selrect)]
 
-(defn handle-drawing-curve []
-  (ptk/reify ::handle-drawing-curve
+                     (-> shape
+                         (dissoc :segments)
+                         (assoc :content content)
+                         (assoc :selrect selrect)
+                         (assoc :points points)
+                         (cond-> (or (empty? points)
+                                     (nil? selrect)
+                                     (<= (count content) 1))
+                           (assoc :initialized? false)))))))))
+
+(defn handle-drawing []
+  (ptk/reify ::handle-drawing
     ptk/WatchEvent
     (watch [_ _ stream]
       (let [stoper (rx/filter stoper-event? stream)
-            mouse  (rx/sample 10 ms/mouse-position)]
+            mouse  (rx/sample 10 ms/mouse-position)
+            shape  (cts/setup-shape {:type :path
+                                     :initialized? true
+                                     :segments []})]
         (rx/concat
-         (rx/of initialize-drawing)
+         (rx/of #(update % :workspace-drawing assoc :object shape))
          (->> mouse
-              (rx/map (fn [pt] #(insert-point-segment % pt)))
+              (rx/map insert-point)
               (rx/take-until stoper))
-         (rx/of (setup-frame-curve)
-                (finish-drawing-curve)
-                (common/handle-finish-drawing)))))))
+         (rx/of
+          (setup-frame)
+          (finish-drawing)
+          (common/handle-finish-drawing)))))))
 

@@ -4,30 +4,30 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.pages.migrations
+(ns app.common.files.migrations
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.defaults :refer [version]]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as log]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.changes :as cpc]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
-;; TODO: revisit this and rename to file-migrations
+#?(:cljs (log/set-level! :info))
 
 (defmulti migrate :version)
 
-(log/set-level! :info)
-
 (defn migrate-data
-  ([data] (migrate-data data cp/file-version))
+  ([data] (migrate-data data version))
   ([data to-version]
    (if (= (:version data) to-version)
      data
@@ -74,7 +74,7 @@
             (if-not (contains? shape :content)
               (let [content (gsp/segments->content (:segments shape) (:close? shape))
                     selrect (gsh/content->selrect content)
-                    points  (gsh/rect->points selrect)]
+                    points  (grc/rect->points selrect)]
                 (-> shape
                     (dissoc :segments)
                     (dissoc :close?)
@@ -87,17 +87,17 @@
           (fix-frames-selrects [frame]
             (if (= (:id frame) uuid/zero)
               frame
-              (let [frame-rect (select-keys frame [:x :y :width :height])]
+              (let [selrect (gsh/shape->rect frame)]
                 (-> frame
-                    (assoc :selrect (gsh/rect->selrect frame-rect))
-                    (assoc :points (gsh/rect->points frame-rect))))))
+                    (assoc :selrect selrect)
+                    (assoc :points (grc/rect->points selrect))))))
 
           (fix-empty-points [shape]
             (let [shape (cond-> shape
-                          (empty? (:selrect shape)) (cts/setup-rect-selrect))]
+                          (empty? (:selrect shape)) (cts/setup-rect))]
               (cond-> shape
                 (empty? (:points shape))
-                (assoc :points (gsh/rect->points (:selrect shape))))))
+                (assoc :points (grc/rect->points (:selrect shape))))))
 
           (update-object [object]
             (cond-> object
@@ -141,10 +141,10 @@
   ;; Fixes issues with selrect/points for shapes with width/height = 0 (line-like paths)"
   (letfn [(fix-line-paths [shape]
             (if (= (:type shape) :path)
-              (let [{:keys [width height]} (gsh/points->rect (:points shape))]
+              (let [{:keys [width height]} (grc/points->rect (:points shape))]
                 (if (or (mth/almost-zero? width) (mth/almost-zero? height))
                   (let [selrect (gsh/content->selrect (:content shape))
-                        points (gsh/rect->points selrect)
+                        points (grc/rect->points selrect)
                         transform (gmt/matrix)
                         transform-inv (gmt/matrix)]
                     (assoc shape
@@ -242,7 +242,7 @@
     (loop [data data]
       (let [changes (mapcat calculate-changes (:pages-index data))]
         (if (seq changes)
-          (recur (cp/process-changes data changes))
+          (recur (cpc/process-changes data changes))
           data)))))
 
 (defmethod migrate 10
@@ -462,5 +462,31 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-;; TODO: pending to do a migration for delete already not used fill
-;; and stroke props. This should be done for >1.14.x version.
+(defmethod migrate 21
+  [data]
+  (letfn [(update-object [object]
+            (-> object
+                (d/update-when :selrect grc/make-rect)
+                (cts/map->Shape)))
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(defmethod migrate 22
+  [data]
+  (letfn [(update-object [object]
+            (cond-> object
+              (nil? (:transform object))
+              (assoc :transform (gmt/matrix))
+
+              (nil? (:transform-inverse object))
+              (assoc :transform-inverse (gmt/matrix))))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))

@@ -9,7 +9,7 @@
   data resources."
   (:refer-clojure :exclude [read-string hash-map merge name update-vals
                             parse-double group-by iteration concat mapcat
-                            parse-uuid])
+                            parse-uuid max min])
   #?(:cljs
      (:require-macros [app.common.data]))
 
@@ -590,23 +590,43 @@
   ([a]
    (mth/finite? a))
   ([a b]
-   (and (mth/finite? a)
-        (mth/finite? b)))
+   (and ^boolean (mth/finite? a)
+        ^boolean (mth/finite? b)))
   ([a b c]
-   (and (mth/finite? a)
-        (mth/finite? b)
-        (mth/finite? c)))
+   (and ^boolean (mth/finite? a)
+        ^boolean (mth/finite? b)
+        ^boolean (mth/finite? c)))
   ([a b c d]
-   (and (mth/finite? a)
-        (mth/finite? b)
-        (mth/finite? c)
-        (mth/finite? d)))
+   (and ^boolean (mth/finite? a)
+        ^boolean (mth/finite? b)
+        ^boolean (mth/finite? c)
+        ^boolean (mth/finite? d)))
   ([a b c d & others]
-   (and (mth/finite? a)
-        (mth/finite? b)
-        (mth/finite? c)
-        (mth/finite? d)
-        (every? mth/finite? others))))
+   (and ^boolean (mth/finite? a)
+        ^boolean (mth/finite? b)
+        ^boolean (mth/finite? c)
+        ^boolean (mth/finite? d)
+        ^boolean (every? mth/finite? others))))
+
+(defn max
+  ([a] a)
+  ([a b] (mth/max a b))
+  ([a b c] (mth/max a b c))
+  ([a b c d] (mth/max a b c d))
+  ([a b c d e] (mth/max a b c d e))
+  ([a b c d e f] (mth/max a b c d e f))
+  ([a b c d e f & other]
+   (reduce max (mth/max a b c d e f) other)))
+
+(defn min
+  ([a] a)
+  ([a b] (mth/min a b))
+  ([a b c] (mth/min a b c))
+  ([a b c d] (mth/min a b c d))
+  ([a b c d e] (mth/min a b c d e))
+  ([a b c d e f] (mth/min a b c d e f))
+  ([a b c d e f & other]
+   (reduce min (mth/min a b c d e f) other)))
 
 (defn check-num
   "Function that checks if a number is nil or nan. Will return 0 when not

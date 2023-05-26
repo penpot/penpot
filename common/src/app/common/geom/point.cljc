@@ -119,9 +119,11 @@
   "Returns the addition of the supplied value to both
   coordinates of the point as a new point."
   [p1 p2]
-  (assert (and (point? p1)
-               (point? p2))
-          "arguments should be pointer instance")
+  (dm/assert!
+   "arguments should be point instance"
+   (and (point? p1)
+        (point? p2)))
+
   (Point. (+ (dm/get-prop p1 :x)
              (dm/get-prop p2 :x))
           (+ (dm/get-prop p1 :y)

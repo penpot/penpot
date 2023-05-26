@@ -6,6 +6,81 @@
 
 (ns app.common.types.component)
 
+;; Attributes that may be synced in components, and the group they belong to.
+;; When one attribute is modified in a shape inside a component, the corresponding
+;; group is marked as :touched. Then, if the shape is synced with the remote shape
+;; in the main component, none of the attributes of the same group is changed.
+
+(def sync-attrs
+  {:name                    :name-group
+   :fills                   :fill-group
+   :hide-fill-on-export     :fill-group
+   :content                 :content-group
+   :position-data           :content-group
+   :hidden                  :visibility-group
+   :blocked                 :modifiable-group
+   :grow-type               :text-font-group
+   :font-family             :text-font-group
+   :font-size               :text-font-group
+   :font-style              :text-font-group
+   :font-weight             :text-font-group
+   :letter-spacing          :text-display-group
+   :line-height             :text-display-group
+   :text-align              :text-display-group
+   :strokes                 :stroke-group
+   :rx                      :radius-group
+   :ry                      :radius-group
+   :r1                      :radius-group
+   :r2                      :radius-group
+   :r3                      :radius-group
+   :r4                      :radius-group
+   :type                    :geometry-group
+   :selrect                 :geometry-group
+   :points                  :geometry-group
+   :locked                  :geometry-group
+   :proportion              :geometry-group
+   :proportion-lock         :geometry-group
+   :x                       :geometry-group
+   :y                       :geometry-group
+   :width                   :geometry-group
+   :height                  :geometry-group
+   :rotation                :geometry-group
+   :transform               :geometry-group
+   :transform-inverse       :geometry-group
+   :opacity                 :layer-effects-group
+   :blend-mode              :layer-effects-group
+   :shadow                  :shadow-group
+   :blur                    :blur-group
+   :masked-group?           :mask-group
+   :constraints-h           :constraints-group
+   :constraints-v           :constraints-group
+   :fixed-scroll            :constraints-group
+   :exports                 :exports-group
+
+   :layout                  :layout-container
+   :layout-align-content    :layout-container
+   :layout-align-items      :layout-container
+   :layout-flex-dir         :layout-container
+   :layout-gap              :layout-container
+   :layout-gap-type         :layout-container
+   :layout-justify-content  :layout-container
+   :layout-wrap-type        :layout-container
+   :layout-padding-type     :layout-container
+   :layout-padding          :layout-container
+   :layout-h-orientation    :layout-container
+   :layout-v-orientation    :layout-container
+
+   :layout-item-margin      :layout-item
+   :layout-item-margin-type :layout-item
+   :layout-item-h-sizing    :layout-item
+   :layout-item-v-sizing    :layout-item
+   :layout-item-max-h       :layout-item
+   :layout-item-min-h       :layout-item
+   :layout-item-max-w       :layout-item
+   :layout-item-min-w       :layout-item
+   :layout-item-align-self  :layout-item})
+
+
 (defn instance-root?
   "Check if this shape is the head of a top instance."
   [shape]

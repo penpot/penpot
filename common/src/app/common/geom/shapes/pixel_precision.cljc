@@ -9,9 +9,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.points :as gpo]
-   [app.common.geom.shapes.rect :as gpr]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
@@ -40,7 +40,7 @@
 
 (defn position-pixel-precision
   [modifiers _ points precision ignore-axis]
-  (let [bounds        (gpr/bounds->rect points)
+  (let [bounds        (grc/bounds->rect points)
         corner        (gpt/point bounds)
         target-corner
         (cond-> corner

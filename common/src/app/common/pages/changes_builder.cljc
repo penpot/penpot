@@ -11,6 +11,7 @@
    [app.common.files.features :as ffeat]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages :as cp]
@@ -215,6 +216,9 @@
    (add-object changes obj nil))
 
   ([changes obj {:keys [index ignore-touched] :or {index ::undefined ignore-touched false}}]
+
+   ;; FIXME: add shape validation
+
    (assert-page-id changes)
    (let [obj (cond-> obj
                (not= index ::undefined)
@@ -227,7 +231,7 @@
           :frame-id       (:frame-id obj)
           :index          (::index obj)
           :ignore-touched ignore-touched
-          :obj            (dissoc obj ::index :parent-id)}
+          :obj            (dissoc obj ::index)}
 
          del-change
          {:type :del-obj
@@ -438,7 +442,7 @@
                           (every? #(apply gpt/close? %) (d/zip old-val new-val))
 
                           (= attr :selrect)
-                          (gsh/close-selrect? old-val new-val)
+                          (grc/close-rect? old-val new-val)
 
                           :else
                           (= old-val new-val))]

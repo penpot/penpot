@@ -11,7 +11,6 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
-   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -181,8 +180,9 @@
                        (not (nil? parent-id))
                        (assoc :parent-id parent-id))
 
+         ;; on copy/paste old id is used later to reorder the paster layers
          changes (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
-                   (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers
+                   (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id)))
 
          changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                          changes
@@ -1157,7 +1157,7 @@
         origin-shape (reposition-shape origin-shape origin-root dest-root)
         touched      (get dest-shape :touched #{})]
 
-    (loop [attrs (seq (keys cp/component-sync-attrs))
+    (loop [attrs (seq (keys ctk/sync-attrs))
            roperations []
            uoperations []]
 
@@ -1195,7 +1195,7 @@
                             :val (get dest-shape attr)
                             :ignore-touched true}
 
-                attr-group (get cp/component-sync-attrs attr)]
+                attr-group (get ctk/sync-attrs attr)]
 
             (if (or (= (get origin-shape attr) (get dest-shape attr))
                     (and (touched attr-group) omit-touched?))

@@ -12,7 +12,6 @@
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages.common :refer [component-sync-attrs]]
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.schema.desc-native :as smd]
@@ -20,6 +19,7 @@
    [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
@@ -68,7 +68,7 @@
      [:map {:title "AddObjChange"}
       [:type [:= :add-obj]]
       [:id ::sm/uuid]
-      [:obj [:map-of {:gen/max 10} :keyword :any]]
+      [:obj :map]
       [:page-id {:optional true} ::sm/uuid]
       [:component-id {:optional true} ::sm/uuid]
       [:frame-id {:optional true} ::sm/uuid]
@@ -218,10 +218,10 @@
 
     
 
-(def change?
+(def valid-change?
   (sm/pred-fn ::change))
 
-(def changes?
+(def valid-changes?
   (sm/pred-fn [:sequential ::change]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -239,6 +239,9 @@
 
 ;; Changes Processing Impl
 
+(def valid-shape?
+  (sm/pred-fn ::cts/shape))
+
 (defn validate-shapes!
   [data-old data-new items]
   (letfn [(validate-shape! [[page-id id]]
@@ -249,7 +252,8 @@
               (when (and (some? shape-old)
                          (some? shape-new)
                          (not= shape-old shape-new))
-                (dm/verify! (cts/shape? shape-new)))))]
+                (dm/verify! (and (cts/shape? shape-new)
+                                 (valid-shape? shape-new))))))]
 
     (->> (into #{} (map :page-id) items)
          (mapcat (fn [page-id]
@@ -274,7 +278,7 @@
    ;; When verify? false we spec the schema validation. Currently used to make just
    ;; 1 validation even if the changes are applied twice
    (when verify?
-     (dm/verify! (changes? items)))
+     (dm/verify! (valid-changes? items)))
 
    (let [result (reduce #(or (process-change %1 %2) %1) data items)]
      ;; Validate result shapes (only on the backend)
@@ -596,7 +600,7 @@
 (defmethod process-operation :set
   [on-touched shape op]
   (let [attr            (:attr op)
-        group           (get component-sync-attrs attr)
+        group           (get ctk/sync-attrs attr)
         val             (:val op)
         shape-val       (get shape attr)
         ignore          (:ignore-touched op)
@@ -682,7 +686,7 @@
                        ; We need to trigger a sync if the shape has changed any
                        ; attribute that participates in components synchronization.
                        (and (= (:type operation) :set)
-                            (component-sync-attrs (:attr operation))))
+                            (get ctk/sync-attrs (:attr operation))))
           any-sync? (some need-sync? operations)]
       (when any-sync?
         (let [xform (comp (filter :main-instance?) ; Select shapes that are main component instances

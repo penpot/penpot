@@ -24,7 +24,8 @@
 (t/deftest types-shape-spec
   (sg/check!
    (sg/for [fdata (sg/generator ::cts/shape)]
-     (t/is (sm/validate ::cts/shape fdata)))))
+     (binding [app.common.data.macros/*assert-context* true]
+       (t/is (sm/valid? ::cts/shape fdata))))))
 
 (t/deftest types-page-spec
   (-> (sg/for [fdata (sg/generator ::ctp/page)]

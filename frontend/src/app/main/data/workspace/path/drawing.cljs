@@ -11,6 +11,7 @@
    [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.path.commands :as upc]
    [app.common.path.shapes-to-path :as upsp]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
@@ -196,14 +197,13 @@
        drag-events
        (rx/of (finish-drag)))))))
 
-(defn handle-drawing-path
+(defn handle-drawing
   [_id]
-  (ptk/reify ::handle-drawing-path
+  (ptk/reify ::handle-drawing
     ptk/UpdateEvent
     (update [_ state]
       (let [id (st/get-path-id state)]
-        (-> state
-            (assoc-in [:workspace-local :edit-path id :edit-mode] :draw))))
+        (assoc-in state [:workspace-local :edit-path id :edit-mode] :draw)))
 
     ptk/WatchEvent
     (watch [_ _ stream]
@@ -234,9 +234,8 @@
                    mousedown-events)
          (rx/of (common/finish-path "after-events")))))))
 
-
-(defn setup-frame-path []
-  (ptk/reify ::setup-frame-path
+(defn setup-frame []
+  (ptk/reify ::setup-frame
     ptk/UpdateEvent
     (update [_ state]
       (let [objects      (wsh/lookup-page-objects state)
@@ -245,10 +244,14 @@
             frame-id     (ctst/top-nested-frame objects position)
             flex-layout? (ctl/flex-layout? objects frame-id)
             drop-index   (when flex-layout? (gsl/get-drop-index frame-id objects position))]
-        (-> state
-            (assoc-in [:workspace-drawing :object :frame-id] frame-id)
-            (cond-> (some? drop-index)
-              (update-in [:workspace-drawing :object] with-meta {:index drop-index})))))))
+
+        (update-in state [:workspace-drawing :object]
+                   (fn [object]
+                     (-> object
+                         (assoc :frame-id frame-id)
+                         (assoc :parent-id frame-id)
+                         (cond-> (some? drop-index)
+                           (with-meta {:index drop-index})))))))))
 
 (defn handle-new-shape-result [shape-id]
   (ptk/reify ::handle-new-shape-result
@@ -264,7 +267,7 @@
     (watch [_ state _]
       (let [content (get-in state [:workspace-drawing :object :content] [])]
         (if (seq content)
-          (rx/of (setup-frame-path)
+          (rx/of (setup-frame)
                  (dwdc/handle-finish-drawing)
                  (dwe/start-edition-mode shape-id)
                  (change-edit-mode :draw))
@@ -276,15 +279,17 @@
   (ptk/reify ::handle-new-shape
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (st/get-path-id state)]
+      (let [id    (st/get-path-id state)
+            shape (cts/setup-shape {:type :path})]
         (-> state
-            (assoc-in [:workspace-local :edit-path id :snap-toggled] false))))
+            (assoc-in [:workspace-local :edit-path id :snap-toggled] false)
+            (update :workspace-drawing assoc :object shape))))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [shape-id (get-in state [:workspace-drawing :object :id])]
+      (let [shape-id (dm/get-in state [:workspace-drawing :object :id])]
         (rx/concat
-         (rx/of (handle-drawing-path shape-id))
+         (rx/of (handle-drawing shape-id))
          (->> stream
               (rx/filter (ptk/type? ::common/finish-path))
               (rx/take 1)
@@ -310,7 +315,7 @@
         (if (= :draw edit-mode)
           (rx/concat
            (rx/of (dch/update-shapes [id] upsp/convert-to-path))
-           (rx/of (handle-drawing-path id))
+           (rx/of (handle-drawing id))
            (->> stream
                 (rx/filter (ptk/type? ::common/finish-path))
                 (rx/take 1)

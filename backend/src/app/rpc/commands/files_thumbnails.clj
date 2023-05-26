@@ -122,7 +122,6 @@
     (-> (get-file-thumbnail conn file-id revn)
         (rph/with-http-cache long-cache-duration))))
 
-
 ;; --- COMMAND QUERY: get-file-data-for-thumbnail
 
 ;; FIXME: performance issue, handle new media_id
@@ -168,18 +167,18 @@
                    frames  (filter cph/frame-shape? (vals objects))]
 
               (if-let [frame  (-> frames first)]
-                (let [frame-id (:id frame)
+                (let [frame-id  (:id frame)
                       object-id (str page-id frame-id)
-                      frame (if-let [thumb (get thumbnails object-id)]
-                              (assoc frame :thumbnail thumb :shapes [])
-                              (dissoc frame :thumbnail))
+                      frame     (if-let [thumb (get thumbnails object-id)]
+                                  (assoc frame :thumbnail thumb :shapes [])
+                                  (dissoc frame :thumbnail))
 
                       children-ids
                       (cph/get-children-ids objects frame-id)
 
                       bounds
                       (when (:show-content frame)
-                        (gsh/selection-rect (concat [frame] (->> children-ids (map (d/getf objects))))))
+                        (gsh/shapes->rect (cons frame (map (d/getf objects) children-ids))))
 
                       frame
                       (cond-> frame
