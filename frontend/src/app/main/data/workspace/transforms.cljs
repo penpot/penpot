@@ -17,6 +17,8 @@
    [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -717,8 +719,9 @@
     (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            layout?  (get-in objects [frame-id :layout])
             lookup   (d/getf objects)
+            frame    (get objects frame-id)
+            layout?  (:layout frame)
 
             shapes (->> ids (cph/clean-loops objects) (keep lookup))
 
@@ -765,6 +768,21 @@
                  (remove (fn [shape]
                            (and (ctl/layout-absolute? shape)
                                 (= frame-id (:parent-id shape))))))
+
+            frame-component
+            (ctn/get-component-shape objects frame)
+
+            shape-ids-to-detach
+            (reduce (fn [result shape]
+                      (if (and (some? shape) (ctk/in-component-copy-not-root? shape))
+                        (let [shape-component (ctn/get-component-shape objects shape)]
+                          (if (= (:id frame-component) (:id shape-component))
+                            result
+                            (into result (cph/get-children-ids-with-self objects (:id shape)))))
+                        result))
+                    #{}
+                    moving-shapes)
+
             moving-shapes-ids
             (map :id moving-shapes)
 
@@ -775,12 +793,14 @@
                 (cond-> (not (ctl/any-layout? objects frame-id))
                   (pcb/update-shapes moving-shapes-ids ctl/remove-layout-item-data))
                 (pcb/update-shapes moving-shapes-ids #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true)))
+                (pcb/update-shapes shape-ids-to-detach ctk/detach-shape)
                 (pcb/change-parent frame-id moving-shapes drop-index)
                 (pcb/remove-objects empty-parents))]
 
         (when (and (some? frame-id) (d/not-empty? changes))
           (rx/of (dch/commit-changes changes)
                  (dwc/expand-collapse frame-id)))))))
+
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the
   provided direction speed and distances thresholds."
