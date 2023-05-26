@@ -1232,13 +1232,12 @@
         (if (= file-id current-file-id)
           (let [component (dm/get-in state [:workspace-data :components component-id])
                 page-id   (:main-instance-page component)]
-
             (when (some? page-id)
               (if (= page-id current-page-id)
                 (let [shape-id (:main-instance-id component)]
                   (rx/of (dws/select-shapes (d/ordered-set shape-id))
                          dwz/zoom-to-selected-shape))
-                (redirect-to current-page-id page-id))))
+                (redirect-to current-file-id page-id))))
 
           (let [component (dm/get-in state [:workspace-libraries file-id :data :components component-id])]
             (some->> (:main-instance-page component)
