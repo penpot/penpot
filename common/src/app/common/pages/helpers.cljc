@@ -125,6 +125,11 @@
         (recur (conj result parent-id) parent-id)
         result))))
 
+(defn get-parents-with-self
+  [objects id]
+  (let [lookup (d/getf objects)]
+    (into [(lookup id)] (map lookup) (get-parent-ids objects id))))
+
 (defn hidden-parent?
   "Checks the parent for the hidden property"
   [objects shape-id]
