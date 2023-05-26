@@ -14,6 +14,7 @@
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.shape.interactions :as ctsi]
@@ -565,7 +566,9 @@
 (defn calc-duplicate-delta
   [obj state objects]
   (let [{:keys [id-original id-duplicated]}
-        (get-in state [:workspace-local :duplicated])]
+        (get-in state [:workspace-local :duplicated])
+        move? (and (cph/frame-shape? obj)
+                   (not (ctk/instance-head? obj)))]
     (if (or (and (not= id-original (:id obj))
                  (not= id-duplicated (:id obj)))
             ;; As we can remove duplicated elements may be we can still caching a deleted id
@@ -574,7 +577,7 @@
 
       ;; The default is leave normal shapes in place, but put
       ;; new frames to the right of the original.
-      (if (cph/frame-shape? obj)
+      (if move?
         (gpt/point (+ (:width obj) 50) 0)
         (gpt/point 0 0))
 

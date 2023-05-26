@@ -149,23 +149,12 @@
                  (dom/classnames :separator true))}]))
 
 (mf/defc context-menu-edit
-  [props]
-  (let [shapes            (:shapes props)
-        main-component-id (when (and (= 1 (count shapes))
-                                     (:main-instance? (first shapes)))
-                            (:component-id (first shapes)))
-        do-copy           #(st/emit! (dw/copy-selected))
+  [_]
+  (let [do-copy           #(st/emit! (dw/copy-selected))
         do-cut            #(st/emit! (dw/copy-selected)
                                      (dw/delete-selected))
         do-paste          #(st/emit! dw/paste)
-        do-duplicate      #(if main-component-id
-                             (st/emit! (dwl/duplicate-component (:component-file (first shapes)) main-component-id))
-                             (st/emit! (dw/duplicate-selected false)))
-
-
-        duplicate-title (if main-component-id
-                          (tr "workspace.assets.duplicate-main")
-                          (tr "workspace.shape.menu.duplicate"))]
+        do-duplicate      #(st/emit! (dw/duplicate-selected true))]
     [:*
      [:& menu-entry {:title (tr "workspace.shape.menu.copy")
                      :shortcut (sc/get-tooltip :copy)
@@ -176,7 +165,7 @@
      [:& menu-entry {:title (tr "workspace.shape.menu.paste")
                      :shortcut (sc/get-tooltip :paste)
                      :on-click do-paste}]
-     [:& menu-entry {:title duplicate-title
+     [:& menu-entry {:title (tr "workspace.shape.menu.duplicate")
                      :shortcut (sc/get-tooltip :duplicate)
                      :on-click do-duplicate}]
 
