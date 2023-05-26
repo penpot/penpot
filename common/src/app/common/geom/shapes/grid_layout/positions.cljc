@@ -242,7 +242,6 @@
         children    (->> (cph/get-immediate-children objects (:id frame))
                          (remove :hidden)
                          (map #(vector (gpo/parent-coords-bounds (:points %) (:points frame)) %)))
-        layout-data (ld/calc-layout-data frame children (:points frame))
-        position    (gmt/transform-point-center position (gco/center-shape frame) (:transform-inverse frame))]
+        layout-data (ld/calc-layout-data frame children (:points frame))]
 
     (get-position-grid-coord layout-data position)))

@@ -160,6 +160,7 @@
    (fn [event]
      (when (and (nil? selrect)
                 (or (dom/class? (dom/get-target event) "viewport-controls")
+                    (dom/child? (dom/get-target event) (dom/query ".viewport-controls"))
                     (dom/class? (dom/get-target event) "viewport-selrect")))
        (let [ctrl? (kbd/ctrl? event)
              shift? (kbd/shift? event)
@@ -233,11 +234,11 @@
      (if workspace-read-only?
        (dom/prevent-default event)
        (when (or (dom/class? (dom/get-target event) "viewport-controls")
-                 (dom/class? (dom/get-target event) "viewport-selrect"))
-         (dom/prevent-default event)
-
+                 (dom/child? (dom/get-target event) (dom/query ".viewport-controls"))
+                 (dom/class? (dom/get-target event) "viewport-selrect")
+                 workspace-read-only?)
          (let [position (dom/get-client-position event)]
-         ;; Delayed callback because we need to wait to the previous context menu to be closed
+           ;; Delayed callback because we need to wait to the previous context menu to be closed
            (timers/schedule
             #(st/emit!
               (if (some? @hover)
