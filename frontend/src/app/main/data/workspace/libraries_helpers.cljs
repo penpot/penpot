@@ -134,8 +134,7 @@
       (let [main-instance-page  (ctf/get-component-page library-data component)
             main-instance-shape (ctf/get-component-root library-data component)
 
-            position (gpt/add (gpt/point (:x main-instance-shape) (:y main-instance-shape))
-                              (gpt/point (+ (:width main-instance-shape) 50) 0))
+            position (gpt/point (:x main-instance-shape) (:y main-instance-shape))
 
             component-instance-extra-data (if components-v2 {:main-instance? true} {})
 
