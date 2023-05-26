@@ -8,11 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
-   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
+   [app.common.pages.focus :as cpf]
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
@@ -54,33 +55,28 @@
   (ptk/reify ::handle-area-selection
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [zoom (get-in state [:workspace-local :zoom] 1)
-            stop? (fn [event] (or (interrupt? event) (ms/mouse-up? event)))
-            stoper (->> stream (rx/filter stop?))
+      (let [zoom   (dm/get-in state [:workspace-local :zoom] 1)
+            stop?  (fn [event] (or (interrupt? event) (ms/mouse-up? event)))
+            stoper (rx/filter stop? stream)
 
-            init-selrect
-            {:type :rect
-             :x1 (:x @ms/mouse-position)
-             :y1 (:y @ms/mouse-position)
-             :x2 (:x @ms/mouse-position)
-             :y2 (:y @ms/mouse-position)}
+            init-position @ms/mouse-position
+
+            init-selrect  (grc/make-rect
+                           (dm/get-prop init-position :x)
+                           (dm/get-prop init-position :y)
+                           0 0)
 
             calculate-selrect
             (fn [selrect [delta space?]]
-              (let [result
-                    (cond-> selrect
-                      :always
-                      (-> (update :x2 + (:x delta))
-                          (update :y2 + (:y delta)))
-
-                      space?
-                      (-> (update :x1 + (:x delta))
-                          (update :y1 + (:y delta))))]
-                (assoc result
-                       :x (min (:x1 result) (:x2 result))
-                       :y (min (:y1 result) (:y2 result))
-                       :width (mth/abs (- (:x2 result) (:x1 result)))
-                       :height (mth/abs (- (:y2 result) (:y1 result))))))
+              (let [selrect (-> selrect
+                                (update :x2 + (:x delta))
+                                (update :y2 + (:y delta)))
+                    selrect (if ^boolean space?
+                              (-> selrect
+                                  (update :x1 + (:x delta))
+                                  (update :y1 + (:y delta)))
+                              selrect)]
+                (grc/update-rect selrect :corners)))
 
             selrect-stream
             (->> ms/mouse-position
@@ -89,9 +85,10 @@
                  (rx/filter some?)
                  (rx/with-latest-from ms/keyboard-space)
                  (rx/scan calculate-selrect init-selrect)
-                 (rx/filter #(or (> (:width %) (/ 10 zoom))
-                                 (> (:height %) (/ 10 zoom))))
+                 (rx/filter #(or (> (dm/get-prop % :width) (/ 10 zoom))
+                                 (> (dm/get-prop % :height) (/ 10 zoom))))
                  (rx/take-until stoper))]
+
         (rx/concat
          (if preserve?
            (rx/empty)
@@ -217,7 +214,7 @@
       (let [objects (wsh/lookup-page-objects state)
             focus (:workspace-focus-selected state)
             ids (if (d/not-empty? focus)
-                  (cp/filter-not-focus objects focus ids)
+                  (cpf/filter-not-focus objects focus ids)
                   ids)]
         (assoc-in state [:workspace-local :selected] ids)))
 
@@ -236,7 +233,7 @@
             ;; mode is active
             focus    (:workspace-focus-selected state)
             objects  (-> (wsh/lookup-page-objects state)
-                         (cp/focus-objects focus))
+                         (cpf/focus-objects focus))
 
             lookup   (d/getf objects)
             parents  (->> (wsh/lookup-selected state)
@@ -282,14 +279,15 @@
   (ptk/reify ::select-shapes-by-current-selrect
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state)
-            selected (wsh/lookup-selected state)
+      (let [page-id     (:current-page-id state)
+            objects     (wsh/lookup-page-objects state)
+            selected    (wsh/lookup-selected state)
             initial-set (if preserve?
                           selected
                           lks/empty-linked-set)
-            selrect (get-in state [:workspace-local :selrect])
-            blocked? (fn [id] (get-in objects [id :blocked] false))]
+            selrect     (dm/get-in state [:workspace-local :selrect])
+            blocked?    (fn [id] (dm/get-in objects [id :blocked] false))]
+
         (when selrect
           (rx/empty)
           (->> (uw/ask-buffered!
@@ -353,7 +351,7 @@
 
   ([all-objects page ids delta it libraries library-data file-id init-changes]
    (let [shapes         (map (d/getf all-objects) ids)
-         unames         (volatile! (cp/retrieve-used-names (:objects page)))
+         unames         (volatile! (cfh/get-used-names (:objects page)))
          update-unames! (fn [new-name] (vswap! unames conj new-name))
          all-ids        (reduce #(into %1 (cons %2 (cph/get-children-ids all-objects %2))) (d/ordered-set) ids)
          ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
@@ -486,7 +484,7 @@
       (let [update-flows (fn [flows]
                            (reduce
                              (fn [flows frame]
-                               (let [name     (cp/generate-unique-name @unames "Flow 1")
+                               (let [name     (cfh/generate-unique-name @unames "Flow 1")
                                      _        (vswap! unames conj name)
                                      new-flow {:id (uuid/next)
                                                :name name

@@ -3,11 +3,13 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) KALEIDOS INC
+
 (ns app.main.data.workspace.zoom
   (:require
    [app.common.geom.align :as gal]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -19,10 +21,10 @@
   [{:keys [vbox] :as local} center zoom]
   (let [new-zoom (if (fn? zoom) (zoom (:zoom local)) zoom)
         old-zoom (:zoom local)
-        center (if center center (gsh/center-rect vbox))
-        scale (/ old-zoom new-zoom)
-        mtx  (gmt/scale-matrix (gpt/point scale) center)
-        vbox' (gsh/transform-rect vbox mtx)]
+        center   (if center center (grc/rect->center vbox))
+        scale    (/ old-zoom new-zoom)
+        mtx      (gmt/scale-matrix (gpt/point scale) center)
+        vbox'    (gsh/transform-rect vbox mtx)]
     (-> local
         (assoc :zoom new-zoom)
         (assoc :zoom-inverse (/ 1 new-zoom))
@@ -74,7 +76,7 @@
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
             shapes  (cph/get-immediate-children objects)
-            srect   (gsh/selection-rect shapes)]
+            srect   (gsh/shapes->rect shapes)]
         (if (empty? shapes)
           state
           (update state :workspace-local
@@ -97,7 +99,7 @@
                 objects (wsh/lookup-page-objects state page-id)
                 srect   (->> selected
                              (map #(get objects %))
-                             (gsh/selection-rect))]
+                             (gsh/shapes->rect))]
             (update state :workspace-local
                     (fn [{:keys [vport] :as local}]
                       (let [srect (gal/adjust-to-viewport vport srect {:padding 40})

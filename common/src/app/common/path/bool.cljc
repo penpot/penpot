@@ -8,8 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.path :as gsp]
-   [app.common.geom.shapes.rect :as gpr]
    [app.common.path.commands :as upc]
    [app.common.path.subpaths :as ups]))
 
@@ -101,7 +101,7 @@
               (if (= :move-to (:command segment))
                 false
                 (let [r1 (command->selrect segment)]
-                  (gpr/overlaps-rects? r1 selrect))))
+                  (grc/overlaps-rects? r1 selrect))))
 
             (overlap-segments?
               [seg-1 seg-2]
@@ -110,7 +110,7 @@
                 false
                 (let [r1 (command->selrect seg-1)
                       r2 (command->selrect seg-2)]
-                  (gpr/overlaps-rects? r1 r2))))
+                  (grc/overlaps-rects? r1 r2))))
 
             (split
               [seg-1 seg-2]
@@ -156,7 +156,7 @@
                 :curve-to (-> (gsp/command->bezier segment)
                               (gsp/curve-values 0.5)))]
 
-    (and (gpr/contains-point? content-sr point)
+    (and (grc/contains-point? content-sr point)
          (or
           (gsp/is-point-in-geom-data? point content-geom)
           (gsp/is-point-in-border? point content)))))
@@ -170,7 +170,7 @@
                 :curve-to (-> (gsp/command->bezier segment)
                               (gsp/curve-values 0.5)))]
 
-    (and (gpr/contains-point? content-sr point)
+    (and (grc/contains-point? content-sr point)
          (gsp/is-point-in-geom-data? point content-geom))))
 
 (defn overlap-segment?

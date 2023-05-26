@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.constraints
   (:require
    [app.common.data :as d]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -32,7 +33,8 @@
         shapes (as-> old-shapes $
                  (map gsh/translate-to-frame $ frames))
 
-        values (let [{:keys [x y]} (-> shapes first :points gsh/points->selrect)]
+        ;; FIXME: performance rect
+        values (let [{:keys [x y]} (-> shapes first :points grc/points->rect)]
                  (cond-> values
                    (not= (:x values) :multiple) (assoc :x x)
                    (not= (:y values) :multiple) (assoc :y y)))

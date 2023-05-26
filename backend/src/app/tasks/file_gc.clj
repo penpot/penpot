@@ -11,8 +11,8 @@
   inactivity (the default threshold is 72h)."
   (:require
    [app.common.data :as d]
+   [app.common.files.migrations :as pmg]
    [app.common.logging :as l]
-   [app.common.pages.migrations :as pmg]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]

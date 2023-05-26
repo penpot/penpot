@@ -8,10 +8,10 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.files.features :as ffeat]
+   [app.common.files.migrations :as pmg]
    [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.pages.changes :as cpc]
-   [app.common.pages.migrations :as pmg]
    [app.common.schema :as sm]
    [app.common.schema.generators :as smg]
    [app.common.spec :as us]
@@ -177,6 +177,7 @@
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
     (db/xact-lock! conn id)
+
     (let [cfg    (assoc cfg ::db/conn conn)
           params (assoc params :profile-id profile-id)
           tpoint (dt/tpoint)]

@@ -66,9 +66,11 @@
 (def empty-page-data
   {:options {}
    :objects {root
-             {:id root
-              :type :frame
-              :name "Root Frame"}}})
+             (cts/setup-shape {:id root
+                               :type :frame
+                               :parent-id root
+                               :frame-id root
+                               :name "Root Frame"})}})
 
 (defn make-empty-page
   [id name]

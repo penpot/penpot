@@ -6,7 +6,7 @@
 
 (ns app.common.attrs
   (:require
-    [app.common.geom.shapes.transforms :as gtr]
+    [app.common.geom.shapes :as gsh]
     [app.common.math :as mth]))
 
 (defn- get-attr
@@ -24,7 +24,8 @@
         value
         (if-let [points (:points obj)]
           (if (not= points :multiple)
-            (let [rect (gtr/selection-rect [obj])]
+            ;; FIXME: consider using gsh/shape->rect ??
+            (let [rect (gsh/shapes->rect [obj])]
               (if (= attr :ox) (:x rect) (:y rect)))
             :multiple)
           (get obj attr ::unset)))

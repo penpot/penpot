@@ -14,7 +14,7 @@
    [app.common.files.features :as ffeat]
    [app.common.logging :as l]
    [app.common.pages :as cp]
-   [app.common.pages.migrations :as pmg]
+   [app.common.files.migrations :as pmg]
    [app.common.pprint :refer [pprint]]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]

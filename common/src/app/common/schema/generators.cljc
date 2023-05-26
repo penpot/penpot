@@ -82,7 +82,6 @@
              ext    (tg/elements ["net" "com" "org" "app" "io"])]
     (u/uri (str scheme "://" domain "." ext))))
 
-;; FIXME: revisit
 (defn uuid
   []
   (->> tg/small-integer

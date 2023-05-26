@@ -8,10 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.defaults :refer [version]]
    [app.common.files.features :as ffeat]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.common :refer [file-version]]
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.types.color :as ctc]
@@ -68,7 +68,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def empty-file-data
-  {:version file-version
+  {:version version
    :pages []
    :pages-index {}})
 
@@ -79,9 +79,8 @@
   ([file-id page-id]
    (let [page (when (some? page-id)
                 (ctp/make-empty-page page-id "Page 1"))]
-     (cond-> (-> empty-file-data
-                 (assoc :id file-id))
 
+     (cond-> (assoc empty-file-data :id file-id)
        (some? page-id)
        (ctpl/add-page page)
 
@@ -291,7 +290,7 @@
    been modified after the given date."
   [file-data library since-date]
   (letfn [(used-assets-shape [shape]
-             (concat 
+             (concat
               (ctkl/used-components-changed-since shape library since-date)
               (ctcl/used-colors-changed-since shape library since-date)
               (ctyl/used-typographies-changed-since shape library since-date)))
@@ -299,7 +298,7 @@
           (used-assets-container [container]
            (->> (mapcat used-assets-shape (ctn/shapes-seq container))
                 (map #(cons (:id container) %))))]
-    
+
     (mapcat used-assets-container (containers-seq file-data))))
 
 (defn get-or-add-library-page
@@ -672,4 +671,3 @@
                     (show-shape (:id component) 0 (:objects component)))
                   (when (:main-instance-page component)
                     (show-component-instance component)))))))))
-

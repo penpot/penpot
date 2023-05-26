@@ -21,7 +21,7 @@
 
   (let [cell-origin (unchecked-get props "origin")
         cell-width  (unchecked-get props "width")
-        text  (unchecked-get props "text")
+        text        (unchecked-get props "text")
 
         area-width (* 10 (count text))
         area-height 25
@@ -54,12 +54,12 @@
   (let [shape       (unchecked-get props "shape")
         cell        (unchecked-get props "cell")
         layout-data (unchecked-get props "layout-data")
-        
+
         cell-bounds (gsg/cell-bounds layout-data cell)
         cell-origin (gpo/origin cell-bounds)
         cell-width  (gpo/width-points cell-bounds)
         cell-height (gpo/height-points cell-bounds)
-        cell-center (gsh/center-points cell-bounds)
+        cell-center (gsh/points->center cell-bounds)
         cell-origin (gpt/transform cell-origin (gmt/transform-in cell-center (:transform-inverse shape)))]
 
     [:g.cell
@@ -91,7 +91,7 @@
 
         layout-data (gsg/calc-layout-data shape children (:points shape))]
 
-    [:g.cells 
+    [:g.cells
      (for [cell (ctl/get-cells shape {:sort? true})]
        [:& grid-cell {:key (dm/str "cell-" (:id cell))
                       :shape shape

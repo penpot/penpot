@@ -9,10 +9,10 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.flex-layout.lines :as fli]
    [app.common.geom.shapes.points :as gpo]
-   [app.common.geom.shapes.rect :as gsr]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
@@ -59,16 +59,16 @@
 
     (if row?
       (let [half-point-width (+ (- box-x x) (/ box-width 2))]
-        [(gsr/make-rect x y width height)
-         (-> (gsr/make-rect x y half-point-width height)
+        [(grc/make-rect x y width height)
+         (-> (grc/make-rect x y half-point-width height)
              (assoc :index (if reverse? (inc index) index)))
-         (-> (gsr/make-rect (+ x half-point-width) y (- width half-point-width) height)
+         (-> (grc/make-rect (+ x half-point-width) y (- width half-point-width) height)
              (assoc :index (if reverse? index (inc index))))])
       (let [half-point-height (+ (- box-y y) (/ box-height 2))]
-        [(gsr/make-rect x y width height)
-         (-> (gsr/make-rect x y width half-point-height)
+        [(grc/make-rect x y width height)
+         (-> (grc/make-rect x y width half-point-height)
              (assoc :index (if reverse? (inc index) index)))
-         (-> (gsr/make-rect x (+ y half-point-height) width (- height half-point-height))
+         (-> (grc/make-rect x (+ y half-point-height) width (- height half-point-height))
              (assoc :index (if reverse? index (inc index))))]))))
 
 (defn drop-line-area
@@ -83,7 +83,7 @@
         v-center? (and col? (ctl/v-center? frame))
         v-end?    (and row? (ctl/v-end? frame))
 
-        center (gco/center-shape frame)
+        center (gco/shape->center frame)
         start-p (gmt/transform-point-center start-p center transform-inverse)
 
         line-width
@@ -136,7 +136,7 @@
 
                  :else
                  (+ line-height (- box-y prev-y) (/ layout-gap-row 2)))]
-    (gsr/make-rect x y width height)))
+    (grc/make-rect x y width height)))
 
 (defn layout-drop-areas
   "Retrieve the layout drop areas to move shapes inside layouts"
@@ -190,7 +190,7 @@
           (-> (ctm/empty)
               (ctm/resize (gpt/point (if flip-x -1.0 1.0)
                                      (if flip-y -1.0 1.0))
-                          (gco/center-shape shape)
+                          (gco/shape->center shape)
                           transform
                           transform-inverse))]
       [(gtr/transform-shape shape modifiers) modifiers])
@@ -212,6 +212,6 @@
   [frame-id objects position]
   (let [frame       (get objects frame-id)
         drop-areas  (get-drop-areas frame objects)
-        position    (gmt/transform-point-center position (gco/center-shape frame) (:transform-inverse frame))
-        area        (d/seek #(gsr/contains-point? % position) drop-areas)]
+        position    (gmt/transform-point-center position (gco/shape->center frame) (:transform-inverse frame))
+        area        (d/seek #(grc/contains-point? % position) drop-areas)]
     (:index area)))

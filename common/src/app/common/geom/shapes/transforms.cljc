@@ -13,10 +13,10 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.bool :as gshb]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpa]
-   [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
@@ -24,25 +24,47 @@
 
 #?(:clj (set! *warn-on-reflection* true))
 
+(defn- valid-point?
+  [o]
+  (and ^boolean (gpt/point? o)
+       ^boolean (d/num? (dm/get-prop o :x)
+                        (dm/get-prop o :y))))
+
 ;; --- Relative Movement
 
-(defn- move-selrect [{:keys [x y x1 y1 x2 y2 width height] :as selrect} {dx :x dy :y :as pt}]
-  (if (and (some? selrect) (some? pt) (d/num? dx dy))
-    {:x      (if (d/num? x)  (+ dx x)  x)
-     :y      (if (d/num? y)  (+ dy y)  y)
-     :x1     (if (d/num? x1) (+ dx x1) x1)
-     :y1     (if (d/num? y1) (+ dy y1) y1)
-     :x2     (if (d/num? x2) (+ dx x2) x2)
-     :y2     (if (d/num? y2) (+ dy y2) y2)
-     :width  width
-     :height height}
+(defn- move-selrect
+  [selrect pt]
+  (if (and ^boolean (some? selrect)
+           ^boolean (valid-point? pt))
+    (let [x  (dm/get-prop selrect :x)
+          y  (dm/get-prop selrect :y)
+          w  (dm/get-prop selrect :width)
+          h  (dm/get-prop selrect :height)
+          x1 (dm/get-prop selrect :x1)
+          y1 (dm/get-prop selrect :y1)
+          x2 (dm/get-prop selrect :x2)
+          y2 (dm/get-prop selrect :y2)
+          dx (dm/get-prop pt :x)
+          dy (dm/get-prop pt :y)]
+
+      (grc/make-rect
+       (if ^boolean (d/num? x) (+ dx x)  x)
+       (if ^boolean (d/num? y)  (+ dy y)  y)
+       w
+       h
+       (if ^boolean (d/num? x1) (+ dx x1) x1)
+       (if ^boolean (d/num? y1) (+ dy y1) y1)
+       (if ^boolean (d/num? x2) (+ dx x2) x2)
+       (if ^boolean (d/num? y2) (+ dy y2) y2)))
     selrect))
 
-(defn- move-points [points move-vec]
-  (cond->> points
-    (d/num? (:x move-vec) (:y move-vec))
-    (mapv #(gpt/add % move-vec))))
+(defn- move-points
+  [points move-vec]
+  (if (valid-point? move-vec)
+    (mapv #(gpt/add % move-vec) points)
+    points))
 
+;; FIXME: revisit performance
 (defn move-position-data
   ([position-data {:keys [x y]}]
    (move-position-data position-data x y))
@@ -105,7 +127,7 @@
    (transform-matrix shape nil))
 
   ([shape params]
-   (transform-matrix shape params (or (gco/center-shape shape) (gpt/point 0 0))))
+   (transform-matrix shape params (or (gco/shape->center shape) (gpt/point 0 0))))
 
   ([{:keys [flip-x flip-y transform] :as shape} {:keys [no-flip]} shape-center]
    (-> (gmt/matrix)
@@ -136,7 +158,7 @@
 
 (defn inverse-transform-matrix
   ([shape]
-   (let [shape-center (or (gco/center-shape shape)
+   (let [shape-center (or (gco/shape->center shape)
                           (gpt/point 0 0))]
      (inverse-transform-matrix shape shape-center)))
   ([{:keys [flip-x flip-y] :as shape} center]
@@ -152,9 +174,9 @@
   "Transform a rectangles and changes its attributes"
   [rect matrix]
 
-  (let [points (-> (gpr/rect->points rect)
+  (let [points (-> (grc/rect->points rect)
                    (gco/transform-points matrix))]
-    (gpr/points->rect points)))
+    (grc/points->rect points)))
 
 (defn transform-points-matrix
   "Calculate the transform matrix to convert from the selrect to the points bounds
@@ -238,8 +260,10 @@
   [points]
   (let [width  (calculate-width points)
         height (calculate-height points)
-        center (gco/center-points points)
-        sr     (gpr/center->selrect center width height)
+
+        ;; FIXME: looks redundant, we can convert points to rect directly
+        center (gco/points->center points)
+        sr     (grc/center->rect center width height)
 
         points-transform-mtx (transform-points-matrix sr points)
 
@@ -385,7 +409,7 @@
   (let [;; Points for every shape inside the group
         points (->> children (mapcat :points))
 
-        shape-center (gco/center-points points)
+        shape-center (gco/points->center points)
 
         ;; Fixed problem with empty groups. Should not happen (but it does)
         points (if (empty? points) (:points group) points)
@@ -393,13 +417,14 @@
         ;; Invert to get the points minus the transforms applied to the group
         base-points (gco/transform-points points shape-center (:transform-inverse group (gmt/matrix)))
 
+        ;; FIXME: looks redundant operation points -> rect -> points
         ;; Defines the new selection rect with its transformations
-        new-points (-> (gpr/points->selrect base-points)
-                       (gpr/rect->points)
+        new-points (-> (grc/points->rect base-points)
+                       (grc/rect->points)
                        (gco/transform-points shape-center (:transform group (gmt/matrix))))
 
         ;; Calculate the new selrect
-        new-selrect (gpr/points->selrect base-points)]
+        new-selrect (grc/points->rect base-points)]
 
     ;; Updates the shape and the applytransform-rect will update the other properties
     (-> group
@@ -492,24 +517,17 @@
 (defn transform-selrect
   [selrect modifiers]
   (-> selrect
-      (gpr/rect->points)
+      (grc/rect->points)
       (transform-bounds modifiers)
-      (gpr/points->selrect)))
+      (grc/points->rect)))
 
 (defn transform-selrect-matrix
   [selrect mtx]
   (-> selrect
-      (gpr/rect->points)
+      (grc/rect->points)
       (gco/transform-points mtx)
-      (gpr/points->selrect)))
+      (grc/points->rect)))
 
-(defn selection-rect
-  "Returns a rect that contains all the shapes and is aware of the
-  rotation of each shape. Mainly used for multiple selection."
-  [shapes]
-  (->> shapes
-       (map (comp gpr/points->selrect :points transform-shape))
-       (gpr/join-selrects)))
 
 (declare apply-group-modifiers)
 

@@ -9,9 +9,9 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpp]
-   [app.common.geom.shapes.rect :as gpr]
    [app.common.geom.shapes.text :as gte]
    [app.common.math :as mth]))
 
@@ -163,7 +163,7 @@
   "Checks if the given rect intersects with the selrect"
   [rect points]
 
-  (let [rect-points  (gpr/rect->points rect)
+  (let [rect-points  (grc/rect->points rect)
         rect-lines   (points->lines rect-points)
         points-lines (points->lines points)]
 
@@ -182,7 +182,7 @@
           ;; TODO: Look for ways to optimize this operation
           simple? (> (count (:content shape)) 100)
 
-          rect-points  (gpr/rect->points rect)
+          rect-points  (grc/rect->points rect)
           rect-lines   (points->lines rect-points)
           path-lines   (if simple?
                          (points->lines (:points shape))
@@ -268,7 +268,7 @@
   "Checks if the given rect overlaps with an ellipse"
   [shape rect]
 
-  (let [rect-points  (gpr/rect->points rect)
+  (let [rect-points  (grc/rect->points rect)
         rect-lines   (points->lines rect-points)
         {:keys [x y width height]} shape
 
@@ -289,7 +289,7 @@
   [{:keys [position-data] :as shape} rect]
 
   (if (and (some? position-data) (d/not-empty? position-data))
-    (let [center    (gco/center-shape shape)
+    (let [center (gco/shape->center shape)
 
           transform-rect
           (fn [rect-points]
@@ -297,7 +297,7 @@
 
       (->> position-data
            (map (comp transform-rect
-                      gpr/rect->points
+                      grc/rect->points
                       gte/position-data->rect))
            (some #(overlaps-rect-points? rect %))))
     (overlaps-rect-points? rect (:points shape))))
@@ -332,7 +332,7 @@
 
 (defn has-point-rect?
   [rect point]
-  (let [lines (gpr/rect->lines rect)]
+  (let [lines (grc/rect->lines rect)]
     (is-point-inside-evenodd? point lines)))
 
 (defn has-point?

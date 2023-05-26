@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.common :as gsc]
+   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.corners :as gso]
    [app.common.geom.shapes.path :as gsp]
    [app.common.path.bool :as pb]
@@ -231,7 +231,7 @@
 
            new-content (cond-> new-content
                          (some? transform)
-                         (gsp/transform-content (gmt/transform-in (gsc/center-shape shape) transform)))]
+                         (gsp/transform-content (gmt/transform-in (gco/shape->center shape) transform)))]
 
        (-> shape
            (assoc :type :path)

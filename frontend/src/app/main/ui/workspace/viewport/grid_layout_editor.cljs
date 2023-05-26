@@ -283,7 +283,7 @@
         cell-origin (gpo/origin cell-bounds)
         cell-width  (gpo/width-points cell-bounds)
         cell-height (gpo/height-points cell-bounds)
-        cell-center (gsh/center-points cell-bounds)
+        cell-center (gsh/points->center cell-bounds)
         cell-origin (gpt/transform cell-origin (gmt/transform-in cell-center (:transform-inverse shape)))
 
         handle-pointer-enter

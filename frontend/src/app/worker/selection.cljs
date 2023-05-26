@@ -7,8 +7,9 @@
 (ns app.worker.selection
   (:require
    [app.common.data :as d]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.text :as gte]
+   [app.common.geom.shapes.text :as gst]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
@@ -16,6 +17,8 @@
    [app.worker.impl :as impl]
    [clojure.set :as set]
    [okulary.core :as l]))
+
+;; FIXME: performance shape & rect static props
 
 (def ^:const padding-percent 0.10)
 
@@ -26,13 +29,14 @@
   (fn [index shape]
     (let [{:keys [x y width height]}
           (cond
-            (and (= :text (:type shape))
-                 (some? (:position-data shape))
-                 (d/not-empty? (:position-data shape)))
-            (gte/position-data-bounding-box shape)
+            (and ^boolean (cph/text-shape? shape)
+                 ^boolean (some? (:position-data shape))
+                 ^boolean (d/not-empty? (:position-data shape)))
+            (gst/shape->bounds shape)
 
             :else
-            (gsh/points->selrect (:points shape)))
+            (grc/points->rect (:points shape)))
+
           shape-bound #js {:x x :y y :width width :height height}
 
           parents      (get parents-index (:id shape))
@@ -55,7 +59,7 @@
   (-> objects
       (dissoc uuid/zero)
       vals
-      gsh/selection-rect))
+      gsh/shapes->rect))
 
 (defn add-padding-bounds
   "Adds a padding to the bounds defined as a percent in the constant `padding-percent`.
@@ -79,7 +83,7 @@
         clip-parents-index (cp/create-clip-index objects parents-index)
 
         root-shapes        (cph/get-immediate-children objects uuid/zero)
-        bounds             (-> root-shapes gsh/selection-rect add-padding-bounds)
+        bounds             (-> root-shapes gsh/shapes->rect add-padding-bounds)
 
         index-shape        (make-index-shape objects parents-index clip-parents-index)
         initial-quadtree   (qdt/create (clj->js bounds))
@@ -176,7 +180,7 @@
              ;; we can update the index. Otherwise we need to
              ;; re-create it.
              (if (and (some? index)
-                      (gsh/contains-selrect? old-bounds new-bounds))
+                      (grc/contains-rect? old-bounds new-bounds))
                (update-index index old-objects new-objects)
                (create-index new-objects)))))
   nil)

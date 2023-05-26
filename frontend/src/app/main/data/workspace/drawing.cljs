@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.drawing
   "Drawing interactions."
   (:require
-   [app.common.types.shape :as cts]
+   [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing.box :as box]
@@ -23,44 +23,43 @@
 ;; --- Select for Drawing
 
 (defn select-for-drawing
-  ([tool] (select-for-drawing tool nil))
-  ([tool data]
-   (ptk/reify ::select-for-drawing
-     ptk/UpdateEvent
-     (update [_ state]
-       (-> state
-           (update :workspace-drawing assoc :tool tool :object data)
-           ;; When changing drawing tool disable "scale text" mode
-           ;; automatically, to help users that ignore how this
-           ;; mode works.
-           (update :workspace-layout disj :scale-text)))
+  [tool]
+  (ptk/reify ::select-for-drawing
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-drawing assoc :tool tool)
+          ;; When changing drawing tool disable "scale text" mode
+          ;; automatically, to help users that ignore how this
+          ;; mode works.
+          (update :workspace-layout disj :scale-text)))
 
-     ptk/WatchEvent
-     (watch [_ _ stream]
-       (rx/merge
-        (when (= tool :path)
-          (rx/of (start-drawing :path)))
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (rx/merge
+       (when (= tool :path)
+         (rx/of (start-drawing :path)))
 
-        (when (= tool :curve)
-          (let [stopper (->> stream (rx/filter dwc/interrupt?))]
-            (->> stream
-                 (rx/filter (ptk/type? ::common/handle-finish-drawing))
-                 (rx/take 1)
-                 (rx/observe-on :async)
-                 (rx/map #(select-for-drawing tool data))
-                 (rx/take-until stopper))))
+       (when (= tool :curve)
+         (let [stopper (->> stream (rx/filter dwc/interrupt?))]
+           (->> stream
+                (rx/filter (ptk/type? ::common/handle-finish-drawing))
+                (rx/map (constantly tool))
+                (rx/take 1)
+                (rx/observe-on :async)
+                (rx/map select-for-drawing)
+                (rx/take-until stopper))))
 
-        ;; NOTE: comments are a special case and they manage they
-        ;; own interrupt cycle.q
-        (when (and (not= tool :comments)
-                   (not= tool :path))
-          (let [stopper (rx/filter (ptk/type? ::clear-drawing) stream)]
-            (->> stream
-                 (rx/filter dwc/interrupt?)
-                 (rx/take 1)
-                 (rx/map common/clear-drawing)
-                 (rx/take-until stopper)))))))))
-
+       ;; NOTE: comments are a special case and they manage they
+       ;; own interrupt cycle.
+       (when (and (not= tool :comments)
+                  (not= tool :path))
+         (let [stopper (rx/filter (ptk/type? ::clear-drawing) stream)]
+           (->> stream
+                (rx/filter dwc/interrupt?)
+                (rx/take 1)
+                (rx/map common/clear-drawing)
+                (rx/take-until stopper))))))))
 
 ;; NOTE/TODO: when an exception is raised in some point of drawing the
 ;; draw lock is not released so the user need to refresh in order to
@@ -68,7 +67,7 @@
 
 (defn start-drawing
   [type]
-  {:pre [(keyword? type)]}
+  (dm/assert! (keyword? type))
   (let [lock-id (uuid/next)]
     (ptk/reify ::start-drawing
       ptk/UpdateEvent
@@ -77,7 +76,7 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [lock (get-in state [:workspace-drawing :lock])]
+        (let [lock (dm/get-in state [:workspace-drawing :lock])]
           (when (= lock lock-id)
             (rx/merge
              (rx/of (handle-drawing type))
@@ -89,23 +88,13 @@
 (defn handle-drawing
   [type]
   (ptk/reify ::handle-drawing
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [data (cts/make-minimal-shape type)]
-        (update-in state [:workspace-drawing :object] merge data)))
-
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
        (case type
-         :path
-         (path/handle-new-shape)
-
-         :curve
-         (curve/handle-drawing-curve)
-
-         ;; default
-         (box/handle-drawing-box))))))
+         :path (path/handle-new-shape)
+         :curve (curve/handle-drawing)
+         (box/handle-drawing type))))))
 
 
 

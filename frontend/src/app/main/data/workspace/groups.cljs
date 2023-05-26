@@ -80,18 +80,20 @@
                     (:name (first shapes))
                     base-name)
 
-        selrect   (gsh/selection-rect shapes)
+        selrect   (gsh/shapes->rect shapes)
         group-idx (->> shapes
                        last
                        :id
                        (cph/get-position-on-parent objects)
                        inc)
-        group     (-> (cts/make-minimal-group frame-id selrect gname)
-                      (cts/setup-shape selrect)
-                      (assoc :shapes (mapv :id shapes)
-                             :parent-id parent-id
-                             :frame-id frame-id
-                             :index group-idx))
+
+        group     (cts/setup-shape {:type :group
+                                    :name gname
+                                    :shapes (mapv :id shapes)
+                                    :selrect selrect
+                                    :parent-id parent-id
+                                    :frame-id frame-id
+                                    :index group-idx})
 
         ;; Shapes that are in a component, but are not root, must be detached,
         ;; because they will be now children of a non instance group.

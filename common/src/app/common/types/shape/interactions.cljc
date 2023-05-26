@@ -182,7 +182,7 @@
   (dm/assert!
    "The `:after-delay` event type incompatible with frame shapes"
    (or (not= event-type :after-delay)
-       (= (:type shape) :frame)))
+       (cph/frame-shape? shape)))
 
   (if (= (:event-type interaction) event-type)
     interaction

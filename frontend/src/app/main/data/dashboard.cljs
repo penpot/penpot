@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages :as cp]
+   [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
    [app.common.time :as dt]
    [app.common.uri :as u]
@@ -607,8 +607,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [projects (get state :dashboard-projects)
-            unames   (cp/retrieve-used-names projects)
-            name     (cp/generate-unique-name unames (str (tr "dashboard.new-project-prefix") " 1"))
+            unames   (cfh/get-used-names projects)
+            name     (cfh/generate-unique-name unames (str (tr "dashboard.new-project-prefix") " 1"))
             team-id  (:current-team-id state)
             params   {:name name
                       :team-id team-id}
@@ -823,8 +823,8 @@
                   on-error rx/throw}} (meta params)
 
             files    (get state :dashboard-files)
-            unames   (cp/retrieve-used-names files)
-            name     (cp/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1"))
+            unames   (cfh/get-used-names files)
+            name     (cfh/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1"))
             features (cond-> #{}
                        (features/active-feature? state :components-v2)
                        (conj "components/v2"))
@@ -1033,11 +1033,11 @@
             in-project?   (contains? pparams :project-id)
             name          (if in-project?
                             (let [files  (get state :dashboard-files)
-                                  unames (cp/retrieve-used-names files)]
-                              (cp/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1")))
+                                  unames (cfh/get-used-names files)]
+                              (cfh/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1")))
                             (let [projects (get state :dashboard-projects)
-                                  unames   (cp/retrieve-used-names projects)]
-                              (cp/generate-unique-name unames (str (tr "dashboard.new-project-prefix") " 1"))))
+                                  unames   (cfh/get-used-names projects)]
+                              (cfh/generate-unique-name unames (str (tr "dashboard.new-project-prefix") " 1"))))
             params        (if in-project?
                             {:project-id (:project-id pparams)
                              :name name}

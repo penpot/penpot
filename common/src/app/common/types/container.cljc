@@ -7,9 +7,10 @@
 (ns app.common.types.container
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.common :as common]
+   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -100,7 +101,7 @@
      (nil? shape)
      nil
 
-     (= uuid/zero (:id shape))
+     (cph/root-frame? shape)
      nil
 
      (and (not (ctk/in-component-copy? shape)) (not allow-main?))
@@ -186,9 +187,10 @@
 (defn make-component-instance
   "Generate a new instance of the component inside the given container.
 
-  Clone the shapes of the component, generating new names and ids, and linking
-  each new shape to the corresponding one of the component. Place the new instance
-  coordinates in the given position."
+  Clone the shapes of the component, generating new names and ids, and
+  linking each new shape to the corresponding one of the
+  component. Place the new instance coordinates in the given
+  position."
   ([container component library-data position components-v2]
    (make-component-instance container component library-data position components-v2 {}))
 
@@ -197,17 +199,19 @@
      :or {main-instance? false force-id nil force-frame-id nil keep-ids? false}}]
    (let [component-page  (when components-v2
                            (ctpl/get-page library-data (:main-instance-page component)))
+
          component-shape (if components-v2
                            (-> (get-shape component-page (:main-instance-id component))
                                (assoc :parent-id nil)
                                (assoc :frame-id uuid/zero))
                            (get-shape component (:id component)))
 
+
          orig-pos        (gpt/point (:x component-shape) (:y component-shape))
          delta           (gpt/subtract position orig-pos)
 
          objects         (:objects container)
-         unames          (volatile! (common/retrieve-used-names objects))
+         unames          (volatile! (cfh/get-used-names objects))
 
          frame-id        (or force-frame-id
                              (ctst/frame-id-by-position objects

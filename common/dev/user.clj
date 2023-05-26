@@ -6,13 +6,18 @@
 
 (ns user
   (:require
+   [app.common.schema :as sm]
+   [app.common.schema.desc-js-like :as smdj]
+   [app.common.schema.desc-native :as smdn]
+   [app.common.schema.generators :as sg]
+   [app.common.pprint :as pp]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint print-table]]
    [clojure.repl :refer :all]
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as sgen]
    [clojure.test :as test]
-   [clojure.test.check.generators :as gen]
+   [clojure.test.check.generators :as tgen]
    [clojure.tools.namespace.repl :as repl]
    [clojure.walk :refer [macroexpand-all]]
    [criterium.core  :as crit]))

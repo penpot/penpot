@@ -10,13 +10,14 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.features :as ffeat]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpp]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logging :as log]
-   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
@@ -436,8 +437,8 @@
       ptk/WatchEvent
       (watch [it state _]
         (let [pages   (get-in state [:workspace-data :pages-index])
-              unames  (cp/retrieve-used-names pages)
-              name    (cp/generate-unique-name unames "Page 1")
+              unames  (cfh/get-used-names pages)
+              name    (cfh/generate-unique-name unames "Page 1")
 
               changes (-> (pcb/empty-changes it)
                           (pcb/add-empty-page id name))]
@@ -451,9 +452,9 @@
     (watch [it state _]
       (let [id      (uuid/next)
             pages   (get-in state [:workspace-data :pages-index])
-            unames  (cp/retrieve-used-names pages)
+            unames  (cfh/get-used-names pages)
             page    (get-in state [:workspace-data :pages-index page-id])
-            name    (cp/generate-unique-name unames (:name page))
+            name    (cfh/generate-unique-name unames (:name page))
 
             page    (-> page
                         (assoc :name name)
@@ -597,7 +598,7 @@
 (defn update-shape
   [id attrs]
   (dm/assert! (uuid? id))
-  (dm/assert! (cts/shape-attrs? attrs))
+  (dm/assert! (cts/valid-shape-attrs? attrs))
   (ptk/reify ::update-shape
     ptk/WatchEvent
     (watch [_ _ _]
@@ -641,7 +642,7 @@
 
 (defn update-selected-shapes
   [attrs]
-  (dm/assert! (cts/shape-attrs? attrs))
+  (dm/assert! (cts/valid-shape-attrs? attrs))
   (ptk/reify ::update-selected-shapes
     ptk/WatchEvent
     (watch [_ state _]
@@ -990,8 +991,8 @@
 
 (defn- move-shape
   [shape]
-  (let [bbox (-> shape :points gsh/points->selrect)
-        pos (gpt/point (:x bbox) (:y bbox))]
+  (let [bbox  (-> shape :points grc/points->rect)
+        pos   (gpt/point (:x bbox) (:y bbox))]
     (dwt/update-position (:id shape) pos)))
 
 (defn align-objects
@@ -1009,8 +1010,8 @@
             moved    (if (= 1 (count selected))
                        (align-object-to-parent objects (first selected) axis)
                        (align-objects-list objects selected axis))
-            ids (map :id moved)
-            undo-id (js/Symbol)]
+            ids      (map :id moved)
+            undo-id  (js/Symbol)]
         (when (can-align? selected objects)
           (rx/concat
            (rx/of (dwu/start-undo-transaction undo-id))
@@ -1029,7 +1030,7 @@
 (defn align-objects-list
   [objects selected axis]
   (let [selected-objs (map #(get objects %) selected)
-        rect (gsh/selection-rect selected-objs)]
+        rect (gsh/shapes->rect selected-objs)]
     (mapcat #(gal/align-to-rect % rect axis objects) selected-objs)))
 
 (defn can-distribute? [selected]
@@ -1671,7 +1672,7 @@
                   selected-objs        (map #(get paste-objects %) selected)
                   first-selected-obj   (first selected-objs)
                   page-selected        (wsh/lookup-selected state)
-                  wrapper              (gsh/selection-rect selected-objs)
+                  wrapper              (gsh/shapes->rect selected-objs)
                   orig-pos             (gpt/point (:x1 wrapper) (:y1 wrapper))
                   frame-id             (first page-selected)
                   frame-object         (get page-objects frame-id)
@@ -1716,22 +1717,25 @@
                         margin-y  (-> (- (:height origin-frame-object) (+ (:y wrapper) (:height wrapper)))
                                       (min (- (:height frame-object) (:height wrapper))))
 
-                      ;; Pasted objects mustn't exceed the selected frame x limit
+                        ;; Pasted objects mustn't exceed the selected frame x limit
                         paste-x (if (> (+ (:width wrapper) (:x1 wrapper)) (:width frame-object))
                                   (+ (- (:x frame-object) (:x orig-pos)) (- (:width frame-object) (:width wrapper) margin-x))
                                   (:x frame-object))
 
-                      ;; Pasted objects mustn't exceed the selected frame y limit
+                        ;; Pasted objects mustn't exceed the selected frame y limit
                         paste-y (if (> (+ (:height wrapper) (:y1 wrapper)) (:height frame-object))
                                   (+ (- (:y frame-object) (:y orig-pos)) (- (:height frame-object) (:height wrapper) margin-y))
                                   (:y frame-object))
 
                         delta (if (= origin-frame-id uuid/zero)
-                              ;; When the origin isn't in a frame the result is pasted in the center.
-                                (gpt/subtract (gsh/center-shape frame-object) (gsh/center-selrect wrapper))
-                              ;; When pasting from one frame to another frame the object position must be limited to container boundaries. If the pasted object doesn't fit we try to:
-                              ;;    - Align it to the limits on the x and y axis
-                              ;;    - Respect the distance of the object to the right and bottom in the original frame
+                                ;; When the origin isn't in a frame the result is pasted in the center.
+                                (gpt/subtract (gsh/shape->center frame-object) (grc/rect->center wrapper))
+                                ;; When pasting from one frame to another frame the object
+                                ;; position must be limited to container boundaries. If
+                                ;; the pasted object doesn't fit we try to:
+                                ;;
+                                ;; - Align it to the limits on the x and y axis
+                                ;; - Respect the distance of the object to the right and bottom in the original frame
                                 (gpt/point paste-x paste-y))]
                     [frame-id frame-id delta]))
 
@@ -1876,7 +1880,7 @@
           page-objects  (wsh/lookup-page-objects state)
           frame-id (first page-selected)
           frame-object (get page-objects frame-id)]
-      (gsh/center-shape frame-object))
+      (gsh/shape->center frame-object))
 
     :else
     (deref ms/mouse-position)))
@@ -2057,6 +2061,7 @@
                       (log/error :msg (str "Error removing " (:name media-obj))
                                  :hint (ex-message %)
                                  :error %)
+                      (js/console.log (.-stack %))
                       (rx/of (error-in-remove-graphics)))))))
 
 (defn- remove-graphics
@@ -2076,10 +2081,8 @@
             media     (vals (:media file-data'))
 
             media-points
-            (map #(assoc % :points (gsh/rect->points {:x 0
-                                                      :y 0
-                                                      :width (:width %)
-                                                      :height (:height %)}))
+            (map #(assoc % :points (-> (grc/make-rect 0 0 (:width %) (:height %))
+                                       (grc/rect->points)))
                  media)
 
             shape-grid

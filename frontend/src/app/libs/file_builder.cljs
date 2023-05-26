@@ -7,7 +7,7 @@
 (ns app.libs.file-builder
   (:require
    [app.common.data :as d]
-   [app.common.file-builder :as fb]
+   [app.common.files.builder :as fb]
    [app.common.media :as cm]
    [app.common.types.components-list :as ctkl]
    [app.common.uuid :as uuid]

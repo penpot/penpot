@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-file-test
   (:require
    [app.common.uuid :as uuid]
+   [app.common.types.shape :as cts]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http :as http]
@@ -187,11 +188,12 @@
          :parent-id uuid/zero
          :frame-id uuid/zero
          :components-v2 true
-         :obj {:id shape-id
-               :name "image"
-               :frame-id uuid/zero
-               :parent-id uuid/zero
-               :type :rect}}])
+         :obj (cts/setup-shape
+               {:id shape-id
+                :name "image"
+                :frame-id uuid/zero
+                :parent-id uuid/zero
+                :type :rect})}])
 
       ;; Check the number of fragments
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
@@ -282,12 +284,13 @@
          :parent-id uuid/zero
          :frame-id uuid/zero
          :components-v2 true
-         :obj {:id shid
-               :name "image"
-               :frame-id uuid/zero
-               :parent-id uuid/zero
-               :type :image
-               :metadata {:id (:id fmo1) :width 200 :height 200 :mtype "image/jpeg"}}}])
+         :obj (cts/setup-shape
+               {:id shid
+                :name "image"
+                :frame-id uuid/zero
+                :parent-id uuid/zero
+                :type :image
+                :metadata {:id (:id fmo1) :width 100 :height 100 :mtype "image/jpeg"}})}])
 
       ;; Check that reference storage objects on filemediaobjects
       ;; are the same because of deduplication feature.
@@ -547,38 +550,42 @@
         shape2-id (uuid/next)
 
         changes   [{:type :add-obj
-                   :page-id page-id
-                   :id frame1-id
-                   :parent-id uuid/zero
-                   :frame-id uuid/zero
-                   :obj {:id frame1-id
-                         :use-for-thumbnail? true
-                         :name "test-frame1"
-                         :type :frame}}
-                  {:type :add-obj
-                   :page-id page-id
-                   :id shape1-id
-                   :parent-id frame1-id
-                   :frame-id frame1-id
-                   :obj {:id shape1-id
-                         :name "test-shape1"
-                         :type :rect}}
-                  {:type :add-obj
-                   :page-id page-id
-                   :id frame2-id
-                   :parent-id uuid/zero
-                   :frame-id uuid/zero
-                   :obj {:id frame2-id
-                         :name "test-frame2"
-                         :type :frame}}
-                  {:type :add-obj
-                   :page-id page-id
-                   :id shape2-id
-                   :parent-id frame2-id
-                   :frame-id frame2-id
-                   :obj {:id shape2-id
-                         :name "test-shape2"
-                         :type :rect}}]]
+                    :page-id page-id
+                    :id frame1-id
+                    :parent-id uuid/zero
+                    :frame-id uuid/zero
+                    :obj (cts/setup-shape
+                          {:id frame1-id
+                           :use-for-thumbnail? true
+                           :name "test-frame1"
+                           :type :frame})}
+                    {:type :add-obj
+                     :page-id page-id
+                     :id shape1-id
+                     :parent-id frame1-id
+                     :frame-id frame1-id
+                     :obj (cts/setup-shape
+                           {:id shape1-id
+                          :name "test-shape1"
+                            :type :rect})}
+                   {:type :add-obj
+                    :page-id page-id
+                    :id frame2-id
+                    :parent-id uuid/zero
+                    :frame-id uuid/zero
+                    :obj (cts/setup-shape
+                          {:id frame2-id
+                           :name "test-frame2"
+                           :type :frame})}
+                   {:type :add-obj
+                    :page-id page-id
+                    :id shape2-id
+                    :parent-id frame2-id
+                    :frame-id frame2-id
+                    :obj (cts/setup-shape
+                          {:id shape2-id
+                           :name "test-shape2"
+                           :type :rect})}]]
     ;; Update the file
     (th/update-file* {:file-id (:id file)
                       :profile-id (:id prof)

@@ -259,27 +259,29 @@
   "Convert a media object that contains a bitmap image into shapes,
   one shape of type :image and one group that contains it."
   [pos {:keys [name width height id mtype] :as media-obj}]
-  (let [group-shape (cts/make-shape :group
-                                    {:x (:x pos)
-                                     :y (:y pos)
-                                     :width width
-                                     :height height}
-                                    {:name name
-                                     :frame-id uuid/zero
-                                     :parent-id uuid/zero})
+  (let [group-shape (cts/setup-shape
+                     {:type :group
+                      :x (:x pos)
+                      :y (:y pos)
+                      :width width
+                      :height height
+                      :name name
+                      :frame-id uuid/zero
+                      :parent-id uuid/zero})
 
-        img-shape (cts/make-shape :image
-                                  {:x (:x pos)
-                                   :y (:y pos)
-                                   :width width
-                                   :height height
-                                   :metadata {:id id
-                                              :width width
-                                              :height height
-                                              :mtype mtype}}
-                                  {:name name
-                                   :frame-id uuid/zero
-                                   :parent-id (:id group-shape)})]
+        img-shape   (cts/setup-shape
+                     {:type :image
+                      :x (:x pos)
+                      :y (:y pos)
+                      :width width
+                      :height height
+                      :metadata {:id id
+                                 :width width
+                                 :height height
+                                 :mtype mtype}
+                      :name name
+                      :frame-id uuid/zero
+                      :parent-id (:id group-shape)})]
     (rx/of [group-shape [img-shape]])))
 
 (defn- add-shapes-and-component

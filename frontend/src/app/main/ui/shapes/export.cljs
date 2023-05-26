@@ -72,7 +72,7 @@
         path?  (= :path (:type shape))
         mask?  (and group? (:masked-group? shape))
         bool?  (= :bool (:type shape))
-        center (gsh/center-shape shape)]
+        center (gsh/shape->center shape)]
     (-> props
         (add! :name)
         (add! :blocked)
