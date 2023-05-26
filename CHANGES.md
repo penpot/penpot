@@ -11,6 +11,7 @@
 - Access tokens support [Taiga #4460](https://tree.taiga.io/project/penpot/us/4460)
 
 ### :bug: Bugs fixed
+- Fix files can be opened from multiple urls [Taiga #5310](https://tree.taiga.io/project/penpot/issue/5310)
 
 ### :arrow_up: Deps updates
 
