@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.shortcuts
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.dashboard.shortcuts]
    [app.main.data.events :as ev]
@@ -213,7 +214,7 @@
   [{:keys [content command] :as props}]
   (let [managed-list    (if (coll? content)
                           content
-                          (conj () content)) 
+                          (conj () content))
         chars-list      (map ds/split-sc managed-list)
         last-element    (last chars-list)
         short-char-list (if (= 1 (count chars-list))
@@ -224,13 +225,16 @@
      (for [chars short-char-list]
        [:*
         (for [char chars]
-          [:& converted-chars {:char char :command command}])
+          [:& converted-chars {:key (dm/str char "-" (name command))
+                               :char char
+                               :command command}])
         (when (not= chars penultimate) [:span.space ","])])
      (when (not= last-element penultimate)
        [:*
         [:span.space (tr "shortcuts.or")]
         (for [char last-element]
-          [:& converted-chars {:char char
+          [:& converted-chars {:key (dm/str char "-" (name command))
+                               :char char
                                :command command}])])]))
 
 (mf/defc shortcut-row
@@ -463,7 +467,7 @@
            (when (kbd/enter? event)
              (on-search-clear-click)
              (dom/focus! (dom/get-element "shortcut-search")))))]
-    
+
       (mf/with-effect []
         (dom/focus! (dom/get-element "shortcut-search")))
 

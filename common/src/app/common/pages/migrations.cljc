@@ -37,10 +37,16 @@
        (reduce migrate-fn data (range (:version data 0) to-version))))))
 
 (defn migrate-file
-  [file]
-  (-> file
-      (update :data assoc :id (:id file))
-      (update :data migrate-data)))
+  [{:keys [id data] :as file}]
+  (let [data (assoc data :id id)]
+    (-> file
+        (assoc ::orig-version (:version data))
+        (assoc :data (migrate-data data)))))
+
+(defn migrated?
+  [{:keys [data] :as file}]
+  (> (:version data)
+     (::orig-version file)))
 
 ;; Default handler, noop
 (defmethod migrate :default [data] data)

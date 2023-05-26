@@ -27,9 +27,8 @@
   [conn file-id profile-id features]
   (let [file    (files/get-file conn file-id features)
         project (get-project conn (:project-id file))
-        libs    (files/get-file-libraries conn file-id features)
+        libs    (files/get-file-libraries conn file-id)
         users   (comments/get-file-comments-users conn file-id profile-id)
-
         links   (->> (db/query conn :share-link {:file-id file-id})
                      (mapv (fn [row]
                              (-> row

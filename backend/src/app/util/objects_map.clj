@@ -16,10 +16,9 @@
   properly from each value."
 
   (:require
-   ;; [app.common.logging :as l]
+   [app.common.fressian :as fres]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
-   [app.util.fressian :as fres]
    [clojure.core :as c])
   (:import
    clojure.lang.Counted

@@ -20,6 +20,7 @@
 
 (defn initialize-viewport
   [{:keys [width height] :as size}]
+
   (letfn [(update* [{:keys [vport] :as local}]
             (let [wprop (/ (:width vport) width)
                   hprop (/ (:height vport) height)]
@@ -153,11 +154,3 @@
     (update [_ state]
       (-> state
           (update :workspace-local dissoc :panning)))))
-
-
-;; This event does nothing. Is only for subscibe and know when the page has been loaded
-(defn page-loaded [_page-id]
-  (ptk/reify ::page-loaded
-    ptk/UpdateEvent
-    (update [_ state]
-      state)))

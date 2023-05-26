@@ -49,7 +49,7 @@
 
 (defn point->viewport
   [pt]
-  (let [zoom (dm/get-in @st/state [:workspace-local :zoom])]
+  (let [zoom (dm/get-in @st/state [:workspace-local :zoom] 1)]
     (when (and (some? @viewport-ref)
                (some? @viewport-brect))
       (let [vbox     (.. ^js @viewport-ref -viewBox -baseVal)

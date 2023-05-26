@@ -31,7 +31,8 @@
          [:type [:= "paragraph"]]
          [:key {:optional true} :string]
          [:fills {:optional true}
-          [:vector {:gen/max 2} ::shape/fill]]
+          [:maybe
+           [:vector {:gen/max 2} ::shape/fill]]]
          [:font-family {:optional true} :string]
          [:font-size {:optional true} :string]
          [:font-style {:optional true} :string]

@@ -8,9 +8,9 @@
   "A generic blob storage encoding. Mainly used for page data, page
   options and txlog payload storage."
   (:require
+   [app.common.fressian :as fres]
    [app.common.transit :as t]
-   [app.config :as cf]
-   [app.util.fressian :as fres])
+   [app.config :as cf])
   (:import
    com.github.luben.zstd.Zstd
    java.io.ByteArrayInputStream
