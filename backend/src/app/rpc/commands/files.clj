@@ -322,25 +322,31 @@
 (sm/def! ::get-file
   [:map {:title "get-file"}
    [:features {:optional true} ::features]
-   [:id ::sm/uuid]])
+   [:id ::sm/uuid]
+   [:project-id {:optional true} ::sm/uuid]])
 
 (defn get-file
-  [conn id client-features]
+  ([conn id client-features]
+   (get-file conn id client-features nil))
+  ([conn id client-features project-id]
   ;; here we check if client requested features are supported
-  (check-features-compatibility! client-features)
-  (binding [pmap/*load-fn* (partial load-pointer conn id)]
-    (let [file  (-> (db/get-by-id conn :file id)
-                    (decode-row)
-                    (pmg/migrate-file))
+   (check-features-compatibility! client-features)
+   (binding [pmap/*load-fn* (partial load-pointer conn id)]
+     (let [params (merge {:id id}
+                    (when (some? project-id)
+                      {:project-id project-id}))
+           file   (-> (db/get conn :file params)
+                      (decode-row)
+                      (pmg/migrate-file))
 
-          file  (handle-file-features! conn file client-features)]
+           file   (handle-file-features! conn file client-features)]
 
       ;; NOTE: if migrations are applied, probably new pointers generated so
       ;; instead of persiting them on each get-file, we just resolve them until
       ;; user updates the file and permanently persists the new pointers
-      (cond-> file
-        (pmg/migrated? file)
-        (process-pointers deref)))))
+       (cond-> file
+         (pmg/migrated? file)
+         (process-pointers deref))))))
 
 (defn get-minimal-file
   [{:keys [::db/pool] :as cfg} id]
@@ -357,11 +363,11 @@
    ::cond/key-fn get-file-etag
    ::sm/params ::get-file
    ::sm/result ::file-with-permissions}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id features] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id features project-id] :as params}]
   (dm/with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id id)]
       (check-read-permissions! perms)
-      (let [file (-> (get-file conn id features)
+      (let [file (-> (get-file conn id features project-id)
                      (assoc :permissions perms))]
         (vary-meta file assoc ::cond/key (get-file-etag file))))))
 

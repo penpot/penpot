@@ -280,7 +280,7 @@
             ;; WTF is this?
             share-id (-> state :viewer-local :share-id)
             stoper   (rx/filter (ptk/type? ::fetch-bundle) stream)]
-        (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
+        (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features :project-id project-id})
                      (fetch-thumbnail-blobs file-id)
                      (rp/cmd! :get-project {:id project-id})
                      (rp/cmd! :get-team-users {:file-id file-id})
