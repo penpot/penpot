@@ -422,8 +422,8 @@
            parent-id   (or parent-id frame-id)
            name        (:name obj)
 
-           is-component-root? (:saved-component-root? obj)
-           is-component-main? (:main-instance? obj)
+           is-component-root? (:saved-component-root obj)
+           is-component-main? (:main-instance obj)
            regenerate-component
            (fn [changes shape]
              (let [components-v2 (dm/get-in library-data [:options :components-v2])
@@ -436,9 +436,9 @@
                                   :parent-id parent-id
                                   :frame-id frame-id)
                            (dissoc :shapes
-                                   :main-instance?
+                                   :main-instance
                                    :shape-ref
-                                   :use-for-thumbnail?)
+                                   :use-for-thumbnail)
                            (gsh/move delta)
                            (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))
 

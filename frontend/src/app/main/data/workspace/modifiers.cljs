@@ -50,7 +50,7 @@
   [shape root transformed-shape transformed-root objects modif-tree]
   (let [root
         (cond
-          (:component-root? shape)
+          (:component-root shape)
           shape
 
           (nil? root)
@@ -60,7 +60,7 @@
 
         transformed-root
         (cond
-          (:component-root? transformed-shape)
+          (:component-root transformed-shape)
           transformed-shape
 
           (nil? transformed-root)

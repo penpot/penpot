@@ -22,12 +22,12 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(def component-attrs [:component-id :component-file :shape-ref :main-instance? :annotation])
+(def component-attrs [:component-id :component-file :shape-ref :main-instance :annotation])
 
 
 (mf/defc component-annotation
   [{:keys [id values shape component] :as props}]
-  (let [main-instance?        (:main-instance? values)
+  (let [main-instance?        (:main-instance values)
         component-id          (:component-id values)
         annotation            (:annotation component)
         editing?              (mf/use-state false)
@@ -140,8 +140,6 @@
         (when (or @editing? creating?)
           [:div.counter (str @size "/300")])]])))
 
-
-
 (mf/defc component-menu
   [{:keys [ids values shape] :as props}]
   (let [current-file-id     (mf/use-ctx ctx/current-file-id)
@@ -160,9 +158,11 @@
         library-id          (:component-file values)
         show?               (some? component-id)
         main-instance?      (if components-v2
-                              (:main-instance? values)
+                              (:main-instance values)
                               true)
-        main-component?     (:main-instance? values)
+        main-component?     (:main-instance values)
+        lacks-annotation?   (nil? (:annotation values))
+
         local-component?    (= library-id current-file-id)
         workspace-data      (deref refs/workspace-data)
         workspace-libraries (deref refs/workspace-libraries)
@@ -170,7 +170,6 @@
                               (ctkl/get-component workspace-data component-id)
                               (ctf/get-component workspace-libraries library-id component-id))
         is-dangling?        (nil? component)
-        lacks-annotation?   (nil? (:annotation component))
         lib-exists?         (and (not local-component?)
                                  (some? (get workspace-libraries library-id)))
 

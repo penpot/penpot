@@ -49,7 +49,7 @@
 (defn mask-shape?
   ([shape]
    (and ^boolean (group-shape? shape)
-        ^boolean (:masked-group? shape)))
+        ^boolean (:masked-group shape)))
   ([objects id]
    (mask-shape? (get objects id))))
 

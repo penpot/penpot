@@ -50,7 +50,7 @@
    [:set-remote-synced
     [:map {:title "SetRemoteSyncedOperation"}
      [:type [:= :set-remote-synced]]
-     [:remote-synced? [:maybe :boolean]]]]])
+     [:remote-synced {:optional true} [:maybe :boolean]]]]])
 
 (sm/def! ::change
   [:schema
@@ -434,7 +434,7 @@
                 (= :bool (:type group))
                 (gsh/update-bool-selrect group children objects)
 
-                (:masked-group? group)
+                (:masked-group group)
                 (set-mask-selrect group children)
 
                 :else
@@ -478,7 +478,7 @@
                      (#{:group :frame} (:type parent))
                      (not ignore-touched))
                 (-> (update :touched cph/set-touched-group :shapes-group)
-                    (dissoc :remote-synced?)))))
+                    (dissoc :remote-synced)))))
 
           (remove-from-old-parent [old-objects objects shape-id]
             (let [prev-parent-id (dm/get-in old-objects [shape-id :parent-id])]
@@ -497,7 +497,7 @@
                       (d/update-in-when [pid :shapes] d/vec-without-nils)
                       (cond-> component? (d/update-when pid #(-> %
                                                                  (update :touched cph/set-touched-group :shapes-group)
-                                                                 (dissoc :remote-synced?)))))))))
+                                                                 (dissoc :remote-synced)))))))))
           (update-parent-id [objects id]
             (-> objects
                 (d/update-when id assoc :parent-id parent-id)))
@@ -679,7 +679,7 @@
       (and in-copy? group (not ignore) (not equal?)
            (not (and ignore-geometry is-geometry?)))
       (-> (update :touched cph/set-touched-group group)
-          (dissoc :remote-synced?))
+          (dissoc :remote-synced))
 
       (nil? val)
       (dissoc attr)
@@ -697,11 +697,11 @@
 
 (defmethod process-operation :set-remote-synced
   [_ shape op]
-  (let [remote-synced? (:remote-synced? op)
+  (let [remote-synced (:remote-synced op)
         in-copy? (ctk/in-component-copy? shape)]
-    (if (or (not in-copy?) (not remote-synced?))
-      (dissoc shape :remote-synced?)
-      (assoc shape :remote-synced? true))))
+    (if (or (not in-copy?) (not remote-synced))
+      (dissoc shape :remote-synced)
+      (assoc shape :remote-synced true))))
 
 (defmethod process-operation :default
   [_ _ op]
@@ -732,16 +732,15 @@
                             (get ctk/sync-attrs (:attr operation))))
           any-sync? (some need-sync? operations)]
       (when any-sync?
-        (let [xform (comp (filter :main-instance?) ; Select shapes that are main component instances
+        (let [xform (comp (filter :main-instance) ; Select shapes that are main component instances
                           (map :component-id))]
           (into #{} xform shape-and-parents))))))
 
 (defmethod components-changed :mov-objects
   [file-data {:keys [page-id _component-id parent-id shapes] :as change}]
   (when page-id
-    (let [page (ctpl/get-page file-data page-id)
-
-          xform (comp (filter :main-instance?)
+    (let [page  (ctpl/get-page file-data page-id)
+          xform (comp (filter :main-instance)
                       (map :component-id))
 
           check-shape
@@ -760,7 +759,7 @@
     (let [page (ctpl/get-page file-data page-id)
           shape-and-parents (map (partial ctn/get-shape page)
                                  (cons id (cph/get-parent-ids (:objects page) id)))
-          xform (comp (filter :main-instance?)
+          xform (comp (filter :main-instance)
                       (map :component-id))]
       (into #{} xform shape-and-parents))))
 

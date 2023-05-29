@@ -346,7 +346,7 @@
                                                      file-data
                                                      position
                                                      false
-                                                     {:main-instance? true
+                                                     {:main-instance true
                                                       :force-frame-id uuid/zero
                                                       :keep-ids? true})
                         add-shapes
@@ -429,7 +429,7 @@
                                              library-data
                                              position
                                              (dm/get-in file-data [:options :components-v2])
-                                             {:main-instance? true})
+                                             {:main-instance true})
 
                 main-instance-shapes
                 (map #(cond-> %
@@ -589,9 +589,9 @@
      (letfn [(show-shape [shape-id level objects]
                (let [shape (get objects shape-id)]
                  (println (str/pad (str (str/repeat "  " level)
-                                        (when (:main-instance? shape) "{")
+                                        (when (:main-instance shape) "{")
                                         (:name shape)
-                                        (when (:main-instance? shape) "}")
+                                        (when (:main-instance shape) "}")
                                         (when (seq (:touched shape)) "*")
                                         (when show-ids (str/format " <%s>" (:id shape))))
                                    {:length 20
@@ -602,7 +602,7 @@
                      (println (str (str/repeat "  " level)
                                    "    "
                                    (str (:touched shape)))))
-                   (when (:remote-synced? shape)
+                   (when (:remote-synced shape)
                      (println (str (str/repeat "  " level)
                                    "    (remote-synced)"))))
                  (when (:shapes shape)
@@ -611,7 +611,7 @@
 
              (show-component-info [shape objects]
                (if (nil? (:shape-ref shape))
-                 (if (:component-root? shape) " #" "")
+                 (if (:component-root shape) " #" "")
                  (let [root-shape        (ctn/get-component-shape objects shape)
                        component-id      (when root-shape (:component-id root-shape))
                        component-file-id (when root-shape (:component-file root-shape))
@@ -626,7 +626,7 @@
                                              (get-ref-shape file-data component shape)))]
 
                    (str/format " %s--> %s%s%s"
-                               (cond (:component-root? shape) "#"
+                               (cond (:component-root shape) "#"
                                      (:component-id shape) "@"
                                      :else "-")
 
@@ -634,7 +634,7 @@
 
                                (or (:name component-shape) "?")
 
-                               (if (or (:component-root? shape)
+                               (if (or (:component-root shape)
                                        (nil? (:component-id shape))
                                        true)
                                  ""

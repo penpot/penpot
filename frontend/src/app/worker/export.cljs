@@ -206,7 +206,7 @@
             (dissoc :stroke-color-ref-id :stroke-color-ref-file)
 
             (not= file-id (get-component-ref-file objects shape))
-            (dissoc :component-id :component-file :shape-ref :component-root?)
+            (dissoc :component-id :component-file :shape-ref :component-root)
 
             (= :text (:type shape))
             (update :content detach-text)))

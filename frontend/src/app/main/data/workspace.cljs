@@ -492,7 +492,7 @@
   (let [components-to-delete (->> page
                                   :objects
                                   vals
-                                  (filter #(true? (:main-instance? %)))
+                                  (filter #(true? (:main-instance %)))
                                   (map :component-id))
 
         changes (reduce (fn [changes component-id]
@@ -632,7 +632,7 @@
               (rx/of (update-shape shape-id {:name name})))
 
             ;; Update the component in case if shape is a main instance
-            (when (:main-instance? shape)
+            (when (:main-instance shape)
               (when-let [component-id (:component-id shape)]
                 (rx/of (dwl/rename-component component-id name)))))))))))
 
@@ -743,7 +743,7 @@
         ;; Unmask groups whose mask have moved outside
         (pcb/update-shapes groups-to-unmask
                            (fn [shape]
-                             (assoc shape :masked-group? false)))
+                             (assoc shape :masked-group false)))
 
         ;; Detach shapes moved out of their component
         (pcb/update-shapes shapes-to-detach ctk/detach-shape)
@@ -751,12 +751,12 @@
         ;; Make non root a component moved inside another one
         (pcb/update-shapes shapes-to-deroot
                            (fn [shape]
-                             (assoc shape :component-root? nil)))
+                             (assoc shape :component-root nil)))
 
         ;; Make root a subcomponent moved outside its parent component
         (pcb/update-shapes shapes-to-reroot
                            (fn [shape]
-                             (assoc shape :component-root? true)))
+                             (assoc shape :component-root true)))
 
         ;; Reset constraints depending on the new parent
         (pcb/update-shapes shapes-to-unconstraint
@@ -856,7 +856,7 @@
                       ;; removed, and it must be converted to a normal group.
                       (let [obj (get objects id)
                             parent (get objects (:parent-id obj))]
-                        (if (and (:masked-group? parent)
+                        (if (and (:masked-group parent)
                                  (= id (first (:shapes parent)))
                                  (not= (:id parent) parent-id))
                           (conj group-ids (:id parent))
@@ -1801,10 +1801,9 @@
                       (-> shape
                           (assoc :frame-id frame-id :parent-id parent-id)
                           (cond-> detach?
-                            (->
-                             ;; this is used later, if the paste needs to create a new component from the detached shape
-                             (assoc :saved-component-root? (:component-root? shape))
-                             ctk/detach-shape))
+                            ;; this is used later, if the paste needs to create a new component from the detached shape
+                            (-> (assoc :saved-component-root (:component-root shape))
+                                (ctk/detach-shape)))
                           ;; if is a text, remove references to external typographies
                           (cond-> (= (:type shape) :text)
                             (ctt/remove-external-typographies file-id)))))

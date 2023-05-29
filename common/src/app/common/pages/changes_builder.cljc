@@ -495,7 +495,7 @@
                                  (gsh/update-bool-selrect parent children objects)
 
                                  (= (:type parent) :group)
-                                 (if (:masked-group? parent)
+                                 (if (:masked-group parent)
                                    (gsh/update-mask-selrect parent children)
                                    (gsh/update-group-selrect parent children)))]
             (if resized-parent
@@ -628,11 +628,11 @@
                                    :attr :component-file
                                    :val (:component-file shape)}
                                   {:type :set
-                                   :attr :component-root?
-                                   :val (:component-root? shape)}
+                                   :attr :component-root
+                                   :val (:component-root shape)}
                                   {:type :set
-                                   :attr :main-instance?
-                                   :val (:main-instance? shape)}
+                                   :attr :main-instance
+                                   :val (:main-instance shape)}
                                   {:type :set
                                    :attr :shape-ref
                                    :val (:shape-ref shape)}

@@ -51,7 +51,7 @@
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
         new-css-system       (mf/use-ctx ctx/new-css-system)
         main-instance?       (if components-v2
-                               (:main-instance? item)
+                               (:main-instance item)
                                true)
         parent-board? (and (= :frame (:type item))
                            (= uuid/zero (:parent-id item)))
@@ -165,7 +165,7 @@
 
         ref         (mf/use-ref)
         depth (+ recieved-depth 1)
-        component-tree? (or component-child? (:component-root? item))]
+        component-tree? (or component-child? (:component-root item))]
 
     (mf/with-effect [selected? selected]
       (let [single? (= (count selected) 1)
@@ -185,7 +185,7 @@
 
         #(when (some? subid)
            (rx/dispose! subid))))
-    
+
     (if new-css-system
       [:*
        [:div {:on-context-menu on-context-menu
@@ -195,7 +195,7 @@
               :class (dom/classnames
                       (css :layer-row) true
                       (css :component) (not (nil? (:component-id item)))
-                      (css :masked) (:masked-group? item)
+                      (css :masked) (:masked-group item)
                       (css :selected) selected?
                       (css :type-frame) (= :frame (:type item))
                       (css :type-bool) (= :bool (:type item))
@@ -289,7 +289,7 @@
             :ref dref
             :class (dom/classnames
                     :component (not (nil? (:component-id item)))
-                    :masked (:masked-group? item)
+                    :masked (:masked-group item)
                     :dnd-over (= (:over dprops) :center)
                     :dnd-over-top (= (:over dprops) :top)
                     :dnd-over-bot (= (:over dprops) :bot)

@@ -22,7 +22,7 @@
             childs         (unchecked-get props "childs")
             objects        (unchecked-get props "objects")
             render-id      (mf/use-ctx muc/render-id)
-            masked-group?  (:masked-group? shape)
+            masked-group?  (:masked-group shape)
 
             [mask childs]  (if masked-group?
                              [(first childs) (rest childs)]

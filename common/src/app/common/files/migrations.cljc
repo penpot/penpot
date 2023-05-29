@@ -490,3 +490,30 @@
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
+
+(defmethod migrate 23
+  [data]
+  (letfn [(update-object [object]
+            (cond-> object
+              (contains? object :main-instance?)
+              (-> (assoc :main-instance (:main-instance? object))
+                  (dissoc :main-instance?))
+
+              (contains? object :component-root?)
+              (-> (assoc :component-root (:component-root? object))
+                  (dissoc :component-root?))
+
+              (contains? object :remote-synced?)
+              (-> (assoc :remote-synced (:remote-synced? object))
+                  (dissoc :remote-synced?))
+
+              (contains? object :masked-group?)
+              (-> (assoc :masked-group (:masked-group? object))
+                  (dissoc :masked-group?))))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))

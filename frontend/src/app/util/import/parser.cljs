@@ -413,10 +413,10 @@
              :component-file component-file)
 
       component-root?
-      (assoc :component-root? component-root?)
+      (assoc :component-root component-root?)
 
       main-instance?
-      (assoc :main-instance? main-instance?)
+      (assoc :main-instance main-instance?)
 
       (some? shape-ref)
       (assoc :shape-ref shape-ref))))
@@ -538,7 +538,7 @@
   (let [mask? (get-meta node :masked-group str->bool)]
     (cond-> props
       mask?
-      (assoc :masked-group? true))))
+      (assoc :masked-group true))))
 
 (defn add-bool-data
   [props node]
