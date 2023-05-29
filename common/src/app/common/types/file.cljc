@@ -333,6 +333,7 @@
         (if (empty? components)
           (assoc-in file-data [:options :components-v2] true)
           (let [grid-gap 50
+
                 [file-data page-id start-pos]
                 (get-or-add-library-page file-data grid-gap)
 
@@ -349,7 +350,6 @@
                                                      {:main-instance? true
                                                       :force-frame-id uuid/zero
                                                       :keep-ids? true})
-
                         add-shapes
                         (fn [page]
                           (reduce (fn [page shape]
@@ -394,9 +394,10 @@
                 root-to-board
                 (fn [shape]
                   (cond-> shape
-                    (and (ctk/instance-root? shape)
-                         (cph/frame-shape? shape))
-                    (assoc :fills []
+                    (and (ctk/instance-head? shape)
+                         (not (cph/frame-shape? shape)))
+                    (assoc :type :frame
+                           :fills []
                            :hide-in-viewer true
                            :rx 0
                            :ry 0)))
