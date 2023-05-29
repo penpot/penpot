@@ -183,7 +183,7 @@
                   ;; converted to a normal group.
                   (let [obj    (lookup id)
                         parent (lookup (:parent-id obj))]
-                    (if (and (:masked-group? parent)
+                    (if (and (:masked-group parent)
                              (= id (first (:shapes parent))))
                       (conj group-ids (:id parent))
                       group-ids)))
@@ -251,7 +251,7 @@
           (reduce (fn [components id]
                     (let [shape (get objects id)]
                       (if (and (= (:component-file shape) (:id file)) ;; Main instances should exist only in local file
-                               (:main-instance? shape))               ;; but check anyway
+                               (:main-instance shape))               ;; but check anyway
                         (conj components (:component-id shape))
                         components)))
                   []
@@ -278,7 +278,7 @@
                     (pcb/resize-parents all-parents)
                     (pcb/update-shapes groups-to-unmask
                                        (fn [shape]
-                                         (assoc shape :masked-group? false)))
+                                         (assoc shape :masked-group false)))
                     (pcb/update-shapes (map :id interacting-shapes)
                                        (fn [shape]
                                          (d/update-when shape :interactions

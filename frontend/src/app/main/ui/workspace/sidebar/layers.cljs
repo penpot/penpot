@@ -195,10 +195,10 @@
                 (some #{:group} filters)
                 (and (= :group (:type shape))
                      (not (contains? shape :component-id))
-                     (or (not (contains? shape :masked-group?)) (false? (:masked-group? shape)))))
+                     (or (not (contains? shape :masked-group)) (false? (:masked-group shape)))))
                (and
                 (some #{:mask} filters)
-                (true? (:masked-group? shape))))))))
+                (true? (:masked-group shape))))))))
 
         filtered-objects-total
         (mf/use-memo

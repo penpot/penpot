@@ -36,7 +36,7 @@
       :path i/curve
       :rect i/box
       :text i/text
-      :group (if (:masked-group? shape)
+      :group (if (:masked-group shape)
                i/mask
                i/folder)
       :bool (case (:bool-type shape)

@@ -217,7 +217,7 @@
             :id group-id}
            {:add-container? true})
 
-          (:masked-group? group)
+          (:masked-group group)
           (let [mask (first children)]
             (commit-change
              file
@@ -550,7 +550,7 @@
             :id component-id
             :skip-undelete? true})
 
-          (:masked-group? component)
+          (:masked-group component)
           (let [mask (first children)]
             (commit-change
              file
@@ -606,7 +606,7 @@
                                      (gpt/point main-instance-x
                                                 main-instance-y)
                                      true
-                                     {:main-instance? true
+                                     {:main-instance true
                                       :force-id main-instance-id})]
     (as-> file $
       (reduce #(commit-change %1
@@ -649,7 +649,7 @@
                                      (gpt/point x
                                                 y)
                                      components-v2
-                                     #_{:main-instance? true
+                                     #_{:main-instance true
                                         :force-id main-instance-id})]
 
     (as-> file $

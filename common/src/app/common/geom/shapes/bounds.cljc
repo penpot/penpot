@@ -154,7 +154,7 @@
           (empty? (:shapes shape))
           [(calculate-base-bounds shape)]
 
-          (:masked-group? shape)
+          (:masked-group shape)
           [(calculate-base-bounds shape)]
 
           (and (cph/frame-shape? shape) (not (:show-content shape)))
@@ -169,7 +169,7 @@
                       (:show-content shape))
 
                   (or (not (cph/group-shape? shape))
-                      (not (:masked-group? shape)))))
+                      (not (:masked-group shape)))))
            (:id shape)
            (fn [result child]
              (conj result (calculate-base-bounds child)))

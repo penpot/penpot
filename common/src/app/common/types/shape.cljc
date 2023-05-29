@@ -146,6 +146,8 @@
    [:component-id {:optional true}  ::sm/uuid]
    [:component-file {:optional true} ::sm/uuid]
    [:component-root {:optional true} :boolean]
+   [:main-instance {:optional true} :boolean]
+   [:remote-synced {:optional true} :boolean]
    [:shape-ref {:optional true} ::sm/uuid]
    [:selrect {:optional true} ::selrect]
    [:points {:optional true} ::points]
@@ -153,7 +155,7 @@
    [:collapsed {:optional true} :boolean]
    [:locked {:optional true} :boolean]
    [:hidden {:optional true} :boolean]
-   [:masked-group? {:optional true} :boolean]
+   [:masked-group {:optional true} :boolean]
    [:fills {:optional true}
     [:vector {:gen/max 2} ::fill]]
    [:hide-fill-on-export {:optional true} :boolean]
@@ -448,7 +450,6 @@
 (defn- setup-image
   [{:keys [metadata] :as shape}]
   (-> shape
-      (assoc :metadata metadata)
       (assoc :proportion (/ (:width metadata)
                             (:height metadata)))
       (assoc :proportion-lock true)))

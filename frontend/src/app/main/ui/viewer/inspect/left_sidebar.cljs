@@ -64,7 +64,7 @@
     [:li {:ref item-ref
           :class (dom/classnames
                   :component (not (nil? (:component-id item)))
-                  :masked (:masked-group? item)
+                  :masked (:masked-group item)
                   :selected selected?)}
 
      [:div.element-list-body {:class (dom/classnames :selected selected?

@@ -51,7 +51,7 @@
    :blend-mode              :layer-effects-group
    :shadow                  :shadow-group
    :blur                    :blur-group
-   :masked-group?           :mask-group
+   :masked-group            :mask-group
    :constraints-h           :constraints-group
    :constraints-v           :constraints-group
    :fixed-scroll            :constraints-group
@@ -84,7 +84,7 @@
 (defn instance-root?
   "Check if this shape is the head of a top instance."
   [shape]
-  (some? (:component-root? shape)))
+  (some? (:component-root shape)))
 
 (defn instance-head?
   "Check if this shape is the head of a top instance or a subinstance."
@@ -111,9 +111,10 @@
            (= (:shape-ref shape-inst) (:shape-ref shape-main)))))
 
 (defn main-instance?
-  "Check if this shape is the root of the main instance of some component."
+  "Check if this shape is the root of the main instance of some
+  component."
   [shape]
-  (some? (:main-instance? shape)))
+  (some? (:main-instance shape)))
 
 (defn in-component-copy?
   "Check if the shape is inside a component non-main instance."
@@ -151,7 +152,7 @@
   (dissoc shape
           :component-id
           :component-file
-          :component-root?
-          :remote-synced?
+          :component-root
+          :remote-synced
           :shape-ref
           :touched))

@@ -20,12 +20,12 @@
     [app.util.i18n :as i18n :refer [tr]]
     [rumext.v2 :as mf]))
 
-(def component-attrs [:component-id :component-file :shape-ref :main-instance? :annotation])
+(def component-attrs [:component-id :component-file :shape-ref :main-instance :annotation])
 
 
 (mf/defc component-annotation
   [{:keys [id values shape component] :as props}]
-  (let [main-instance?        (:main-instance? values)
+  (let [main-instance?        (:main-instance values)
         component-id          (:component-id values)
         annotation            (:annotation component)
         editing?              (mf/use-state false)
@@ -151,9 +151,9 @@
         library-id          (:component-file values)
         show?               (some? component-id)
         main-instance?      (if components-v2
-                              (:main-instance? values)
+                              (:main-instance values)
                               true)
-        main-component?     (:main-instance? values)
+        main-component?     (:main-instance values)
         lacks-annotation?   (nil? (:annotation values))
         local-component?    (= library-id current-file-id)
         workspace-data      (deref refs/workspace-data)

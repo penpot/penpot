@@ -115,12 +115,12 @@
 
 (defn in-component-main?
   "Check if the shape is inside a component non-main instance.
-   
+
    Note that we must iterate on the parents because non-root shapes in
    a main component have not any discriminating attribute."
   [objects shape]
   (let [component-shape (get-component-shape objects shape {:allow-main? true})]
-    (:main-instance? component-shape)))
+    (:main-instance component-shape)))
 
 (defn in-any-component?
   "Check if the shape is part of any component (main or copy), wether it's
@@ -147,7 +147,7 @@
 
                            (cond-> new-shape
                              true
-                             (dissoc :component-root?)
+                             (dissoc :component-root)
 
                              (nil? (:parent-id new-shape))
                              (dissoc :component-id
@@ -166,13 +166,13 @@
                                   (nil? (:parent-id new-shape))
                                   (assoc :component-id (:id new-shape)
                                          :component-file file-id
-                                         :component-root? true)
+                                         :component-root true)
 
                                   (and (nil? (:parent-id new-shape)) components-v2)
-                                  (assoc :main-instance? true)
+                                  (assoc :main-instance true)
 
                                   (some? (:parent-id new-shape))
-                                  (dissoc :component-root?)))
+                                  (dissoc :component-root)))
 
         [new-root-shape new-shapes updated-shapes]
         (ctst/clone-object shape nil objects update-new-shape update-original-shape)
@@ -235,10 +235,10 @@
                    (dissoc :touched))
 
                main-instance?
-               (assoc :main-instance? true)
+               (assoc :main-instance true)
 
                (not main-instance?)
-               (dissoc :main-instance?)
+               (dissoc :main-instance)
 
                (and (not main-instance?) (nil? (:shape-ref original-shape)))
                (assoc :shape-ref (:id original-shape))
@@ -246,14 +246,14 @@
                (nil? (:parent-id original-shape))
                (assoc :component-id (:id component)
                       :component-file (:id library-data)
-                      :component-root? true
+                      :component-root true
                       :name new-name)
 
                (and (nil? (:parent-id original-shape)) main-instance? components-v2)
-               (assoc :main-instance? true)
+               (assoc :main-instance true)
 
                (some? (:parent-id original-shape))
-               (dissoc :component-root?))))
+               (dissoc :component-root))))
 
          [new-shape new-shapes _]
          (ctst/clone-object component-shape

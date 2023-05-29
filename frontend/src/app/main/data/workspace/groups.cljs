@@ -243,7 +243,7 @@
                              (pcb/update-shapes [(:id group)]
                                                 (fn [group]
                                                   (assoc group
-                                                         :masked-group? true
+                                                         :masked-group true
                                                          :selrect (:selrect first-shape)
                                                          :points (:points first-shape)
                                                          :transform (:transform first-shape)
@@ -272,7 +272,7 @@
                               (-> changes
                                   (pcb/update-shapes [(:id mask)]
                                                      (fn [shape]
-                                                       (dissoc shape :masked-group?)))
+                                                       (dissoc shape :masked-group)))
                                   (pcb/resize-parents [(:id mask)])))
                             (-> (pcb/empty-changes it page-id)
                                 (pcb/with-objects objects))

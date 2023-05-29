@@ -35,7 +35,7 @@
                          (not= uuid/zero (:id shape)))
                     (conj shape)
 
-                    (:masked-group? shape)
+                    (:masked-group shape)
                     (conj (get objects (->> shape :shapes first)))
 
                     (= :bool (:type shape))
