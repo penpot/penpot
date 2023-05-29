@@ -685,7 +685,7 @@
           (rx/of (nudge-selected-shapes direction shift?)))))))
 
 (defn update-position
-  "Move shapes to a new position, from the sidebar options form."
+  "Move shapes to a new position"
   [id position]
   (js/console.log "DEBUG" (pr-str position))
   (dm/assert! (uuid? id))

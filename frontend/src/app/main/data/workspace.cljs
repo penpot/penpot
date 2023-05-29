@@ -977,6 +977,12 @@
     :else
     (not= uuid/zero (:parent-id (get objects (first selected))))))
 
+(defn- move-shape
+  [shape]
+  (let [bbox (-> shape :points gsh/points->selrect)
+        pos (gpt/point (:x bbox) (:y bbox))]
+    (dwt/update-position (:id shape) pos)))
+
 (defn align-objects
   [axis]
   (dm/assert!
@@ -992,15 +998,15 @@
             moved    (if (= 1 (count selected))
                        (align-object-to-parent objects (first selected) axis)
                        (align-objects-list objects selected axis))
-            moved-objects (->> moved (group-by :id))
-            ids (keys moved-objects)
-            update-fn (fn [shape] (first (get moved-objects (:id shape))))
+            ids (map :id moved)
             undo-id (js/Symbol)]
         (when (can-align? selected objects)
-          (rx/of (dwu/start-undo-transaction undo-id)
-                 (dch/update-shapes ids update-fn {:reg-objects? true})
-                 (ptk/data-event :layout/update ids)
-                 (dwu/commit-undo-transaction undo-id)))))))
+          (rx/concat
+           (rx/of (dwu/start-undo-transaction undo-id))
+           (->> (rx/from moved)
+                (rx/map move-shape))
+           (rx/of (ptk/data-event :layout/update ids)
+                  (dwu/commit-undo-transaction undo-id))))))))
 
 (defn align-object-to-parent
   [objects object-id axis]
