@@ -34,7 +34,7 @@ jobs:
           working_directory: "./frontend"
           command: |
             yarn install
-            yarn run lint-scss
+            yarn run lint:scss
 
       - run:
           name: common lint

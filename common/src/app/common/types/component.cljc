@@ -28,6 +28,13 @@
    :line-height             :text-display-group
    :text-align              :text-display-group
    :strokes                 :stroke-group
+
+   ;; DEPRECATED: FIXME: this attrs are deprecated for a long time but
+   ;; we still have tests that uses this attribute for synchronization
+   :stroke-width            :stroke-group
+   :fill-color              :fill-group
+   :fill-opacity            :fill-group
+
    :rx                      :radius-group
    :ry                      :radius-group
    :r1                      :radius-group

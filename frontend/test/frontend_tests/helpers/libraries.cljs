@@ -19,18 +19,18 @@
   [shape]
   (t/is (nil? (:shape-ref shape)))
   (t/is (some? (:component-id shape)))
-  (t/is (= (:component-root? shape) true)))
+  (t/is (= (:component-root shape) true)))
 
 (defn is-main-instance-subroot
   [shape]
   (t/is (some? (:component-id shape)))       ; shape-ref may or may be not nil
-  (t/is (= (:component-root? shape) true)))
+  (t/is (= (:component-root shape) true)))
 
 (defn is-main-instance-child
   [shape]
   (t/is (nil? (:component-id shape)))        ; shape-ref may or may be not nil
   (t/is (nil? (:component-file shape)))
-  (t/is (nil? (:component-root? shape))))
+  (t/is (nil? (:component-root shape))))
 
 (defn is-main-instance-inner
   [shape]
@@ -42,20 +42,20 @@
   [shape]
   (t/is (some? (:shape-ref shape)))
   (t/is (some? (:component-id shape)))
-  (t/is (= (:component-root? shape) true)))
+  (t/is (= (:component-root shape) true)))
 
 (defn is-instance-subroot
   [shape]
   (t/is (some? (:shape-ref shape)))
   (t/is (some? (:component-id shape)))
-  (t/is (nil? (:component-root? shape))))
+  (t/is (nil? (:component-root shape))))
 
 (defn is-instance-child
   [shape]
   (t/is (some? (:shape-ref shape)))
   (t/is (nil? (:component-id shape)))
   (t/is (nil? (:component-file shape)))
-  (t/is (nil? (:component-root? shape))))
+  (t/is (nil? (:component-root shape))))
 
 (defn is-instance-inner
   [shape]
@@ -68,8 +68,8 @@
   (t/is (nil? (:shape-ref shape)))
   (t/is (nil? (:component-id shape)))
   (t/is (nil? (:component-file shape)))
-  (t/is (nil? (:component-root? shape)))
-  (t/is (nil? (:remote-synced? shape)))
+  (t/is (nil? (:component-root shape)))
+  (t/is (nil? (:remote-synced shape)))
   (t/is (nil? (:touched shape))))
 
 (defn is-from-file
@@ -109,7 +109,7 @@
   ([state root-inst-id subinstance?]
    (let [page           (thp/current-page state)
          root-inst      (ctn/get-shape page root-inst-id)
-         main-instance? (:main-instance? root-inst)
+         main-instance? (:main-instance root-inst)
 
          libs           (wsh/get-libraries state)
          component      (ctf/get-component libs (:component-id root-inst))
