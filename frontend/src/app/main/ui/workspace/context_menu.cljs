@@ -472,7 +472,8 @@
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file component-file))
         do-update-component #(st/emit! (dwl/update-component-sync id component-file))
         do-update-component-in-bulk #(st/emit! (dwl/update-component-in-bulk component-shapes component-file))
-        do-restore-component #(st/emit! (dwl/restore-component component-file component-id))
+        do-restore-component #(st/emit! (dwl/restore-component component-file component-id)
+                                        (dw/go-to-main-instance nil component-id))
 
         do-update-remote-component
         #(st/emit! (modal/show
