@@ -245,8 +245,10 @@
              [:& sic/element-icon-refactor {:shape item
                                             :main-instance? main-instance?}]]])
 
-         [:& layer-name {:shape item
-                         :name-ref ref
+         [:& layer-name {:ref ref
+                         :shape-id (:id item)
+                         :shape-name (:name item)
+                         :shape-touched? (boolean (seq (:touched item)))
                          :disabled-double-click workspace-read-only?
                          :on-start-edit #(reset! disable-drag true)
                          :on-stop-edit #(reset! disable-drag false)
@@ -255,7 +257,7 @@
                          :selected? selected?
                          :type-comp component-tree?
                          :type-frame (= :frame (:type item))
-                         :hidden (:hidden item)}]
+                         :hidden? (:hidden item)}]
          [:div {:class (dom/classnames (css :element-actions) true
                                        (css :is-parent) (:shapes item)
                                        (css :selected) (:hidden item)
@@ -310,15 +312,17 @@
            [:div.absolute i/position-absolute])
          [:& si/element-icon {:shape item
                               :main-instance? main-instance?}]]
-        [:& layer-name {:shape item
-                        :name-ref ref
-                        :disabled-double-click workspace-read-only?
+        [:& layer-name {:ref ref
+                        :shape-id (:id item)
+                        :shape-name (:name item)
+                        :shape-touched? (boolean (seq (:touched item)))
                         :on-start-edit #(reset! disable-drag true)
                         :on-stop-edit #(reset! disable-drag false)
+                        :disabled-double-click workspace-read-only?
                         :selected? selected?
                         :type-comp component-tree?
                         :type-frame (= :frame (:type item))
-                        :hidden (:hidden item)}]
+                        :hidden? (:hidden item)}]
 
         [:div.element-actions {:class (when (:shapes item) "is-parent")}
          [:div.toggle-element {:class (when (:hidden item) "selected")
