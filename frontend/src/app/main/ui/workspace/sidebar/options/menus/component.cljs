@@ -184,7 +184,8 @@
         #(st/emit! (dwl/update-component-sync id library-id))
 
         do-restore-component
-        #(st/emit! (dwl/restore-component library-id component-id))
+        #(st/emit! (dwl/restore-component library-id component-id)
+                   (dw/go-to-main-instance nil component-id))
 
         do-update-remote-component
         #(st/emit! (modal/show
