@@ -11,6 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
@@ -441,9 +442,13 @@
   (let [num (count shapes)
         {:keys [type] :as shape} (first shapes)
 
-        color (if (or (> num 1) (nil? (:shape-ref shape)))
-                selection-rect-color-normal
-                selection-rect-color-component)]
+        ;; Note that we don't use mf/deref to avoid a repaint dependency here
+        objects (deref refs/workspace-page-objects)
+
+        color (if (and (= num 1)
+                       (ctn/in-any-component? objects shape))
+                selection-rect-color-component
+                selection-rect-color-normal)]
     (cond
       (zero? num)
       nil
@@ -481,9 +486,13 @@
   (let [num (count shapes)
         {:keys [type] :as shape} (first shapes)
 
-        color (if (or (> num 1) (nil? (:shape-ref shape)))
-                selection-rect-color-normal
-                selection-rect-color-component)]
+        ;; Note that we don't use mf/deref to avoid a repaint dependency here
+        objects (deref refs/workspace-page-objects)
+
+        color (if (and (= num 1)
+                       (ctn/in-any-component? objects shape))
+                selection-rect-color-component
+                selection-rect-color-normal)]
     (cond
       (zero? num)
       nil
