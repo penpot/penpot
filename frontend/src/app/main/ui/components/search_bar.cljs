@@ -15,13 +15,13 @@
 (mf/defc search-bar
   {::mf/wrap-props false}
   [props]
-  (let [children (unchecked-get props "children")
-        on-change (unchecked-get props "on-change")
-        value (unchecked-get props "value")
-        on-clear (unchecked-get props "clear-action")
+  (let [children    (unchecked-get props "children")
+        on-change   (unchecked-get props "on-change")
+        value       (unchecked-get props "value")
+        on-clear    (unchecked-get props "clear-action")
         placeholder (unchecked-get props "placeholder")
-        icon (unchecked-get props "icon")
-        
+        icon        (unchecked-get props "icon")
+
         handle-change
         (mf/use-fn
          (mf/deps on-change)
