@@ -8,9 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.grid-layout.layout-data :as ld]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]

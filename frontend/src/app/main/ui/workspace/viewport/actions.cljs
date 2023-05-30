@@ -231,8 +231,8 @@
   (mf/use-fn
    (mf/deps @hover @hover-ids workspace-read-only?)
    (fn [event]
-     (if workspace-read-only?
-       (dom/prevent-default event)
+     (dom/prevent-default event)
+     (when-not workspace-read-only?
        (when (or (dom/class? (dom/get-target event) "viewport-controls")
                  (dom/child? (dom/get-target event) (dom/query ".viewport-controls"))
                  (dom/class? (dom/get-target event) "viewport-selrect")

@@ -6,8 +6,11 @@
 
 (ns app.main.data.workspace.common
   (:require
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.util.router :as rt]
    [beicon.core :as rx]
@@ -53,10 +56,13 @@
   (ptk/reify ::undo
     ptk/WatchEvent
     (watch [it state _]
-      (let [edition (get-in state [:workspace-local :edition])
+      (let [objects (wsh/lookup-page-objects state)
+            edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
+
         ;; Editors handle their own undo's
-        (when (and (nil? edition) (nil? (:object drawing)))
+        (when (or (and (nil? edition) (nil? (:object drawing)))
+                  (ctl/grid-layout? objects edition))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
@@ -64,14 +70,17 @@
               (let [item (get items index)
                     changes (:undo-changes item)
                     undo-group (:undo-group item)
-                    find-first-group-idx (fn ffgidx[index]
-                                           (let [item (get items index)]
-                                             (if (= (:undo-group item) undo-group)
-                                               (ffgidx (dec index))
-                                               (inc index))))
 
-                    undo-group-index (when undo-group
-                                       (find-first-group-idx index))]
+                    find-first-group-idx
+                    (fn [index]
+                      (if (= (dm/get-in items [index :undo-group]) undo-group)
+                        (recur (dec index))
+                        (inc index)))
+
+                    undo-group-index
+                    (when undo-group
+                      (find-first-group-idx index))]
+
                 (if undo-group
                   (rx/of (undo-to-index (dec undo-group-index)))
                   (rx/of (dwu/materialize-undo changes (dec index))
@@ -117,9 +126,11 @@
   (ptk/reify ::undo-to-index
     ptk/WatchEvent
     (watch [it state _]
-      (let [edition (get-in state [:workspace-local :edition])
+      (let [objects (wsh/lookup-page-objects state)
+            edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
-        (when-not (or (some? edition) (not-empty drawing))
+        (when-not (and (or (some? edition) (not-empty drawing))
+                       (not (ctl/grid-layout? objects edition)))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]

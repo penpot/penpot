@@ -238,7 +238,8 @@
        [:button.btn-options {:disabled is-default
                              :on-click handle-set-as-default} (tr "workspace.options.grid.params.set-default")]]]]))
 
-(mf/defc frame-grid [{:keys [shape]}]
+(mf/defc frame-grid
+  [{:keys [shape]}]
   (let [id (:id shape)
         saved-grids         (mf/deref workspace-saved-grids)
         default-grid-params (mf/use-memo (mf/deps saved-grids) #(merge dw/default-grid-params saved-grids))

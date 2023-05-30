@@ -4481,6 +4481,9 @@ msgstr "Actualizando %s..."
 msgid "workspace.shape.menu.add-flex"
 msgstr "Añadir flex layout"
 
+msgid "workspace.shape.menu.add-grid"
+msgstr "Añadir grid layout"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
 msgstr "Enviar al fondo"

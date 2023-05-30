@@ -354,5 +354,5 @@
        (do (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
            #(st/emit! (dsc/pop-shortcuts ::path)))
        text-editing?
-        (do (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
-            #(st/emit! (dsc/pop-shortcuts ::text)))))))
+       (do (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
+           #(st/emit! (dsc/pop-shortcuts ::text)))))))

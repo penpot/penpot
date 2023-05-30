@@ -477,7 +477,7 @@
 
 (mf/defc layout-container-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "multiple"]))]}
-  [{:keys [ids values  multiple] :as props}]
+  [{:keys [ids values multiple] :as props}]
   (let [open?               (mf/use-state false)
 
         ;; Display
@@ -594,53 +594,7 @@
          (fn [value type]
            (if (= type :row)
              (st/emit! (dwsl/update-layout ids {:layout-align-content value}))
-             (st/emit! (dwsl/update-layout ids {:layout-justify-content value})))))
-
-
-        ;;Grid columns
-        column-grid-values  (:layout-grid-columns values)
-        grid-columns-open?  (mf/use-state false)
-        toggle-columns-info (mf/use-callback
-                             (fn [_]
-                               (swap! grid-columns-open? not)))
-
-        ; Grid rows / columns
-        rows-grid-values  (:layout-grid-rows values)
-        grid-rows-open?  (mf/use-state false)
-        toggle-rows-info
-        (mf/use-callback
-         (fn [_]
-           (swap! grid-rows-open? not)))
-
-        add-new-element
-        (mf/use-callback
-         (mf/deps ids)
-         (fn [type value]
-           (st/emit! (dwsl/add-layout-track ids type value))))
-
-        remove-element
-        (mf/use-callback
-         (mf/deps ids)
-         (fn [type index]
-           (st/emit! (dwsl/remove-layout-track ids type index))))
-
-        set-column-value
-        (mf/use-callback
-         (mf/deps ids)
-         (fn [type index value]
-           (st/emit! (dwsl/change-layout-track ids type index {:value value}))))
-
-        set-column-type
-        (mf/use-callback
-         (mf/deps ids)
-         (fn [type index track-type]
-           (let [value (case track-type
-                         :auto nil
-                         :flex 1
-                         :percent 20
-                         :fixed 100)]
-             (st/emit! (dwsl/change-layout-track ids type index {:value value
-                                                                 :type track-type})))))]
+             (st/emit! (dwsl/update-layout ids {:layout-justify-content value})))))]
 
     [:div.element-set
      [:div.element-set-title
@@ -751,36 +705,112 @@
                                     :set-justify set-justify-grid}]
               [:& justify-grid-row {:is-col? false
                                     :justify-items grid-justify-content-row
-                                    :set-justify set-justify-grid}]]]
-
-            [:& grid-columns-row {:is-col? true
-                                  :expanded? @grid-columns-open?
-                                  :toggle toggle-columns-info
-                                  :column-values column-grid-values
-                                  :add-new-element add-new-element
-                                  :set-column-value set-column-value
-                                  :set-column-type set-column-type
-                                  :remove-element remove-element}]
-
-            [:& grid-columns-row {:is-col? false
-                                  :expanded? @grid-rows-open?
-                                  :toggle toggle-rows-info
-                                  :column-values rows-grid-values
-                                  :add-new-element add-new-element
-                                  :set-column-value set-column-value
-                                  :set-column-type set-column-type
-                                  :remove-element remove-element}]
-
-            [:& gap-section {:is-col? is-col?
-                             :wrap-type wrap-type
-                             :gap-selected? gap-selected?
-                             :set-gap set-gap
-                             :gap-value (:layout-gap values)}]
-
-            [:& padding-section {:values values
-                                 :on-change-style change-padding-type
-                                 :on-change on-padding-change}]]
-
+                                    :set-justify set-justify-grid}]]]]
 
            ;; Default if not grid or flex
            nil)))]))
+
+(mf/defc grid-layout-edition
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values"]))]}
+  [{:keys [ids values] :as props}]
+  (let [;; Gap
+        gap-selected?       (mf/use-state :none)
+
+        set-gap
+        (fn [gap-multiple? type val]
+          (if gap-multiple?
+            (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
+            (st/emit! (dwsl/update-layout ids {:layout-gap {type val}}))))
+
+        ;; Padding
+        change-padding-type
+        (fn [type]
+          (st/emit! (dwsl/update-layout ids {:layout-padding-type type})))
+
+        on-padding-change
+        (fn [type prop val]
+          (cond
+            (and (= type :simple) (= prop :p1))
+            (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
+
+            (and (= type :simple) (= prop :p2))
+            (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
+
+            :else
+            (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))
+
+        ;;Grid columns
+        column-grid-values  (:layout-grid-columns values)
+        grid-columns-open?  (mf/use-state false)
+        toggle-columns-info (mf/use-callback
+                             (fn [_]
+                               (swap! grid-columns-open? not)))
+
+                                        ; Grid rows / columns
+        rows-grid-values  (:layout-grid-rows values)
+        grid-rows-open?  (mf/use-state false)
+        toggle-rows-info
+        (mf/use-callback
+         (fn [_]
+           (swap! grid-rows-open? not)))
+
+        add-new-element
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [type value]
+           (st/emit! (dwsl/add-layout-track ids type value))))
+
+        remove-element
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [type index]
+           (st/emit! (dwsl/remove-layout-track ids type index))))
+
+        set-column-value
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [type index value]
+           (st/emit! (dwsl/change-layout-track ids type index {:value value}))))
+
+        set-column-type
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [type index track-type]
+           (let [value (case track-type
+                         :auto nil
+                         :flex 1
+                         :percent 20
+                         :fixed 100)]
+             (st/emit! (dwsl/change-layout-track ids type index {:value value
+                                                                 :type track-type})))))]
+
+    [:div.element-set
+     [:div.element-set-title
+      [:span "Grid Layout"]]
+
+     [:div.element-set-content.layout-menu
+      [:& grid-columns-row {:is-col? true
+                            :expanded? @grid-columns-open?
+                            :toggle toggle-columns-info
+                            :column-values column-grid-values
+                            :add-new-element add-new-element
+                            :set-column-value set-column-value
+                            :set-column-type set-column-type
+                            :remove-element remove-element}]
+
+      [:& grid-columns-row {:is-col? false
+                            :expanded? @grid-rows-open?
+                            :toggle toggle-rows-info
+                            :column-values rows-grid-values
+                            :add-new-element add-new-element
+                            :set-column-value set-column-value
+                            :set-column-type set-column-type
+                            :remove-element remove-element}]
+
+      [:& gap-section {:gap-selected? gap-selected?
+                       :set-gap set-gap
+                       :gap-value (:layout-gap values)}]
+
+      [:& padding-section {:values values
+                           :on-change-style change-padding-type
+                           :on-change on-padding-change}]]]))

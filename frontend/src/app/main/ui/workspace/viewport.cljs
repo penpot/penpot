@@ -159,7 +159,7 @@
         create-comment?   (= :comments drawing-tool)
         drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
-        node-editing?     (and edition (not= :text (get-in base-objects [edition :type])))
+        node-editing?     (and edition (= :path (get-in base-objects [edition :type])))
         text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
         grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 

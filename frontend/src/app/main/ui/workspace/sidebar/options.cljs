@@ -7,8 +7,10 @@
 (ns app.main.ui.workspace.sidebar.options
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -20,6 +22,7 @@
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.interactions :refer [interactions-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :as layout-container]
    [app.main.ui.workspace.sidebar.options.page :as page]
    [app.main.ui.workspace.sidebar.options.shapes.bool :as bool]
    [app.main.ui.workspace.sidebar.options.shapes.circle :as circle]
@@ -68,15 +71,15 @@
   (let [drawing              (mf/deref refs/workspace-drawing)
         objects              (mf/deref refs/workspace-page-objects)
         shared-libs          (mf/deref refs/workspace-libraries)
+        edition              (mf/deref refs/selected-edition)
         grid-edition         (mf/deref refs/workspace-grid-edition)
+
         selected-shapes      (into [] (keep (d/getf objects)) selected)
         first-selected-shape (first selected-shapes)
         shape-parent-frame   (cph/get-frame objects (:frame-id first-selected-shape))
 
-        [grid-id {cell-id :selected}]
-        (d/seek (fn [[_ {:keys [selected]}]] (some? selected)) grid-edition)
-
-        grid-cell-selected? (and (some? grid-id) (some? cell-id))
+        edit-grid?           (ctl/grid-layout? objects edition)
+        selected-cell        (dm/get-in grid-edition [edition :selected])
 
         on-change-tab
         (fn [options-mode]
@@ -96,10 +99,15 @@
          [:& align-options]
          [:& bool-options]
          (cond
-           grid-cell-selected?
+           (some? selected-cell)
            [:& grid-cell/options
-            {:shape (get objects grid-id)
-             :cell (get-in objects [grid-id :layout-grid-cells cell-id])}]
+            {:shape (get objects edition)
+             :cell (dm/get-in objects [edition :layout-grid-cells selected-cell])}]
+
+           edit-grid?
+           [:& layout-container/grid-layout-edition
+            {:ids [edition]
+             :values (get objects edition)}]
 
            (d/not-empty? drawing)
            [:& shape-options
