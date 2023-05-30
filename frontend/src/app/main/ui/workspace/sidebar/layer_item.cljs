@@ -30,7 +30,8 @@
 
 
 (mf/defc layer-item
-  [{:keys [index item selected objects sortable? filtered? recieved-depth parent-size component-child?] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [index item selected objects sortable? filtered? recieved-depth parent-size component-child?]}]
   (let [id                   (:id item)
         blocked?             (:blocked item)
         hidden?              (:hidden item)

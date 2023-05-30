@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
@@ -99,7 +100,6 @@
 
 (defn calc-reparented-objects
   [objects]
-
   (let [reparented-objects
         (d/mapm (fn [_ val]
                   (assoc val :parent-id uuid/zero :shapes nil))
@@ -114,314 +114,349 @@
 
 ;; --- Layers Toolbox
 
+;; FIXME: optimize
+(defn- match-filters?
+  [state [id shape]]
+  (let [search  (:search-text state)
+        filters (:filters state)
+        filters (cond-> filters
+                  (contains? filters :shape)
+                  (conj :rect :circle :path :bool))]
+    (or (= uuid/zero id)
+        (and (or (str/includes? (str/lower (:name shape)) (str/lower search))
+                 (str/includes? (dm/str (:id shape)) (str/lower search)))
+             (or (empty? filters)
+                 (and (contains? filters :component)
+                      (contains? shape :component-id))
+                 (let [direct-filters (filter #{:frame :rect :circle :path :bool :image :text} filters)]
+                   (some #{(:type shape)} direct-filters))
+                 (and (contains? filters :group)
+                      (and (cph/group-shape? shape)
+                           (not (contains? shape :component-id))
+                           (or (not (contains? shape :masked-group))
+                               (false? (:masked-group shape)))))
+                 (and (contains? filters :mask)
+                      (true? (:masked-group shape))))))))
+
 (defn use-search
   [page objects]
-  (let [filter-state (mf/use-state {:show-search-box false
-                                    :show-filters-menu false
-                                    :search-text ""
-                                    :active-filters #{}
-                                    :num-items 100})
-        new-css-system (mf/use-ctx ctx/new-css-system)
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        state*          (mf/use-state
+                         {:show-search false
+                          :show-menu false
+                          :search-text ""
+                          :filters #{}
+                          :num-items 100})
+        state           (deref state*)
+
+        current-filters (:filters state)
+        current-items   (:num-items state)
+        current-search  (:search-text state)
+        show-menu?      (:show-menu state)
+        show-search?    (:show-search state)
+
         clear-search-text
-        (mf/use-callback
-         (fn []
-           (swap! filter-state assoc :search-text "" :num-items 100)))
-
-        update-search-text
-        (mf/use-callback
-         (fn [event]
-           (let [value (-> event dom/get-target dom/get-value)]
-             (swap! filter-state assoc :search-text value :num-items 100))))
-
-        toggle-search
-        (mf/use-callback
-         (fn [event]
-           (let [node (dom/get-current-target event)]
-             (swap! filter-state assoc :search-text "")
-             (swap! filter-state assoc :active-filters #{})
-             (swap! filter-state assoc :show-filters-menu false)
-             (swap! filter-state assoc :num-items 100)
-             (swap! filter-state update :show-search-box not)
-             (dom/blur! node))))
+        (mf/use-fn
+         #(swap! state* assoc :search-text "" :num-items 100))
 
         toggle-filters
-        (mf/use-callback
-         (fn []
-           (swap! filter-state update :show-filters-menu not)))
+        (mf/use-fn
+         #(swap! state* update :show-menu not))
+
+        update-search-text
+        (mf/use-fn
+         (fn [event]
+           (let [value (-> event dom/get-target dom/get-value)]
+             (swap! state* assoc :search-text value :num-items 100))))
+
+        toggle-search
+        (mf/use-fn
+         (fn [event]
+           (let [node (dom/get-current-target event)]
+             (dom/blur! node)
+             (swap! state* (fn [state]
+                             (-> state
+                                 (assoc :search-text "")
+                                 (assoc :filters #{})
+                                 (assoc :show-menu false)
+                                 (assoc :num-items 100)
+                                 (update :show-search not)))))))
 
         remove-filter
-        (mf/use-callback
-         (mf/deps @filter-state)
-         (fn [key]
-           (fn [_]
-             (swap! filter-state update :active-filters disj key)
-             (swap! filter-state assoc :num-items 100))))
+        (mf/use-fn
+         (fn [event]
+           (let [fkey (-> (dom/get-current-target event)
+                          (dom/get-data "filter")
+                          (keyword))]
+             (swap! state* (fn [state]
+                             (-> state
+                                 (update :filters disj fkey)
+                                 (assoc :num-items 100)))))))
 
         add-filter
-        (mf/use-callback
-         (mf/deps @filter-state (:show-filters-menu @filter-state))
-         (fn [key]
-           (fn [_]
-             (swap! filter-state update :active-filters conj key)
-             (swap! filter-state assoc :num-items 100)
-             (toggle-filters))))
+        (mf/use-fn
+         (fn [event]
+           (let [key (-> (dom/get-current-target event)
+                         (dom/get-data "filter")
+                         (keyword))]
+             (swap! state* (fn [state]
+                             (-> state
+                                 (update :filters conj key)
+                                 (update :show-menu not)
+                                 (assoc :num-items 100)))))))
 
         active?
-        (and
-         (:show-search-box @filter-state)
-         (or (d/not-empty? (:search-text @filter-state))
-             (d/not-empty? (:active-filters @filter-state))))
+        (and ^boolean show-search?
+             (or ^boolean (d/not-empty? current-search)
+                 ^boolean (d/not-empty? current-filters)))
 
-        search-and-filters
-        (fn [[id shape]]
-          (let [search (:search-text @filter-state)
-                filters (:active-filters @filter-state)
-                filters (cond-> filters
-                          (some #{:shape} filters)
-                          (conj :rect :circle :path :bool))]
-            (or
-             (= uuid/zero id)
-             (and
-              (or (str/includes? (str/lower (:name shape)) (str/lower search))
-                  (str/includes? (dm/str (:id shape)) (str/lower search)))
-              (or
-               (empty? filters)
-               (and
-                (some #{:component} filters)
-                (contains? shape :component-id))
-               (let [direct_filters (filter #{:frame :rect :circle :path :bool :image :text} filters)]
-                 (some #{(:type shape)} direct_filters))
-               (and
-                (some #{:group} filters)
-                (and (= :group (:type shape))
-                     (not (contains? shape :component-id))
-                     (or (not (contains? shape :masked-group)) (false? (:masked-group shape)))))
-               (and
-                (some #{:mask} filters)
-                (true? (:masked-group shape))))))))
+        filtered-objects-all
+        (mf/with-memo [active? objects state]
+          (when active?
+            (into [] (filter (partial match-filters? state)) objects)))
 
         filtered-objects-total
-        (mf/use-memo
-         (mf/deps objects active? @filter-state)
-         #(when active?
-            ;; filterv so count is constant time
-            (filterv search-and-filters objects)))
+        (count filtered-objects-all)
 
         filtered-objects
-        (mf/use-memo
-         (mf/deps filtered-objects-total)
-         #(when active?
-            (calc-reparented-objects
-             (into {}
-                   (take (:num-items @filter-state))
-                   filtered-objects-total))))
+        (mf/with-memo [active? filtered-objects-all current-items]
+          (when active?
+            (->> filtered-objects-all
+                 (into {} (take current-items))
+                 (calc-reparented-objects))))
 
         handle-show-more
-        (fn []
-          (when (<= (:num-items @filter-state) (count filtered-objects-total))
-            (swap! filter-state update :num-items + 100)))
+        (mf/use-fn
+         (mf/deps filtered-objects-total current-items)
+         (fn [_]
+           (when (<= current-items filtered-objects-total)
+             (swap! state* update :num-items + 100))))
 
         handle-key-down
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (let [enter? (kbd/enter? event)
-                 esc?   (kbd/esc? event)
-                 input-node (dom/event->target event)]
-
-             (when enter?
-               (dom/blur! input-node))
-             (when esc?
-               (dom/blur! input-node)))))]
+                 esc?   (kbd/esc? event)]
+             (when-let [input-node (dom/event->target event)]
+               (when enter?
+                 (dom/blur! input-node))
+               (when esc?
+                 (dom/blur! input-node))))))]
 
     [filtered-objects
      handle-show-more
-     (mf/html
-      (if (:show-search-box @filter-state)
-        [:*
-         [:div {:class (if new-css-system
-                         (dom/classnames (css :tool-window-bar) true
-                                         (css :search) true)
-                         (dom/classnames :tool-window-bar true
-                                         :search true))}
-          [:span {:class (if new-css-system
-                           (dom/classnames (css :search-box) true)
-                           (dom/classnames :search-box true))}
-           [:button
-            {:on-click toggle-filters
-             :class (if new-css-system
-                      (dom/classnames :active active?
-                                      (css :filter-button) true)
-                      (dom/classnames :active active?
-                                      :filter true))}
-            (if new-css-system
-              i/filter-refactor
-              i/icon-filter)]
-           [:div {:class (dom/classnames (css :search-input-wrapper) new-css-system)}
-            [:input {:on-change update-search-text
-                     :value (:search-text @filter-state)
-                     :auto-focus (:show-search-box @filter-state)
-                     :placeholder (tr "workspace.sidebar.layers.search")
-                     :on-key-down handle-key-down}]
-            (when (not (= "" (:search-text @filter-state)))
-              [:button {:class (if new-css-system
-                                 (dom/classnames (css :clear) true)
-                                 (dom/classnames :clear true))
-                        :on-click clear-search-text}
-               (if new-css-system
-                 i/delete-text-refactor
-                 i/exclude)])]]
-          [:button {:class (dom/classnames (css :close-search) new-css-system)
+     #(mf/html
+       (if show-search?
+         [:*
+          [:div {:class (if ^boolean new-css-system
+                          (dom/classnames (css :tool-window-bar) true
+                                          (css :search) true)
+                          (dom/classnames :tool-window-bar true
+                                          :search true))}
+           [:span {:class (if ^boolean new-css-system
+                            (dom/classnames (css :search-box) true)
+                            (dom/classnames :search-box true))}
+            [:button
+             {:on-click toggle-filters
+              :class (if ^boolean new-css-system
+                       (dom/classnames :active active?
+                                       (css :filter-button) true)
+                       (dom/classnames :active active?
+                                       :filter true))}
+             (if new-css-system
+               i/filter-refactor
+               i/icon-filter)]
+            [:div {:class (dom/classnames (css :search-input-wrapper) new-css-system)}
+             [:input {:on-change update-search-text
+                      :value current-search
+                      :auto-focus show-search?
+                      :placeholder (tr "workspace.sidebar.layers.search")
+                      :on-key-down handle-key-down}]
+             (when (not (= "" current-search))
+               [:button {:class (if ^boolean new-css-system
+                                  (dom/classnames (css :clear) true)
+                                  (dom/classnames :clear true))
+                         :on-click clear-search-text}
+                (if ^boolean new-css-system
+                  i/delete-text-refactor
+                  i/exclude)])]]
+           [:button {:class (dom/classnames (css :close-search) new-css-system)
+                     :on-click toggle-search}
+            (if ^boolean new-css-system
+              i/close-refactor
+              i/cross)]]
+
+          [:div {:class (if ^boolean new-css-system
+                          (dom/classnames (css :active-filters) true)
+                          (dom/classnames :active-filters true))}
+           (for [fkey current-filters]
+             (let [fname (d/name fkey)
+                   name  (case fkey
+                           :frame     (tr "workspace.sidebar.layers.frames")
+                           :group     (tr "workspace.sidebar.layers.groups")
+                           :mask      (tr "workspace.sidebar.layers.masks")
+                           :component (tr "workspace.sidebar.layers.components")
+                           :text      (tr "workspace.sidebar.layers.texts")
+                           :image     (tr "workspace.sidebar.layers.images")
+                           :shape     (tr "workspace.sidebar.layers.shapes")
+                           (tr fkey))]
+               (if ^boolean new-css-system
+                 [:button {:class (dom/classnames (css :layer-filter) true)
+                           :key fname
+                           :data-filter fname
+                           :on-click remove-filter}
+                  [:span {:class (dom/classnames (css :layer-filter-icon) true)}
+                   [:& sic/element-icon-refactor-by-type
+                    {:type fkey
+                     :main-instance? (= fkey :component)}]]
+                  [:span {:class (dom/classnames (css :layer-filter-name) true)}
+                   name]
+                  [:span {:class (dom/classnames (css :layer-filter-close) true)}
+                   i/close-small-refactor]]
+
+                 [:span {:on-click remove-filter
+                         :data-filter fname
+                         :key fname}
+                  name i/cross])))]
+
+          (when ^boolean show-menu?
+            (if ^boolean new-css-system
+              [:ul {:class (css :filters-container)}
+               [:li {:class (dom/classnames
+                             (css :filter-menu-item) true
+                             (css :selected) (contains? current-filters :frame))
+                     :data-filter "frame"
+                     :on-click add-filter}
+                [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
+                 [:span {:class (dom/classnames (css :filter-menu-item-icon) true)} i/board-refactor]
+                 [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
+                  (tr "workspace.sidebar.layers.frames")]]
+                (when (contains? current-filters :frame)
+                  [:span {:class (dom/classnames (css :filter-menu-item-tick) true)} i/tick-refactor])]
+
+               [:li {:class (dom/classnames
+                             (css :filter-menu-item) true
+                             (css :selected) (contains? current-filters :group))
+                     :data-filter "group"
+                     :on-click add-filter}
+                [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
+                 [:span {:class (dom/classnames (css :filter-menu-item-icon) true)} i/group-refactor]
+                 [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
+                  (tr "workspace.sidebar.layers.groups")]]
+
+                (when (contains? current-filters :group)
+                  [:span {:class (dom/classnames (css :filter-menu-item-tick) true)} i/tick-refactor])]
+
+               [:li {:class (dom/classnames
+                             (css :filter-menu-item) true
+                             (css :selected) (contains? current-filters :mask))
+                     :data-filter "mask"
+                     :on-click add-filter}
+                [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
+                 [:span {:class (dom/classnames (css :filter-menu-item-icon) true)} i/mask-refactor]
+                 [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
+                  (tr "workspace.sidebar.layers.masks")]]
+                (when (contains? current-filters :mask)
+                  [:span {:class (dom/classnames (css :filter-menu-item-tick) true)} i/tick-refactor])]
+
+               [:li {:class (dom/classnames
+                             (css :filter-menu-item) true
+                             (css :selected) (contains? current-filters :component))
+                     :data-filter "component"
+                     :on-click add-filter}
+                [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
+                 [:span {:class (dom/classnames (css :filter-menu-item-icon) true)} i/component-refactor]
+                 [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
+                  (tr "workspace.sidebar.layers.components")]]
+                (when (contains? current-filters :component)
+                  [:span {:class (dom/classnames (css :filter-menu-item-tick) true)} i/tick-refactor])]
+               [:li {:class (dom/classnames
+                             (css :filter-menu-item) true
+                             (css :selected) (contains? current-filters :text))
+                     :data-filter "text"
+                     :on-click add-filter}
+                [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
+                 [:span {:class (dom/classnames (css :filter-menu-item-icon) true)} i/text-refactor]
+                 [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
+                  (tr "workspace.sidebar.layers.texts")]]
+                (when (contains? current-filters :text)
+                  [:span {:class (dom/classnames (css :filter-menu-item-tick) true)} i/tick-refactor])]
+
+               [:li {:class (dom/classnames
+                             (css :filter-menu-item) true
+                             (css :selected) (contains? current-filters :image))
+                     :data-filter "image"
+                     :on-click add-filter}
+                [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
+                 [:span {:class (dom/classnames (css :filter-menu-item-icon) true)} i/img-refactor]
+                 [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
+                  (tr "workspace.sidebar.layers.images")]]
+                (when (contains? current-filters :image)
+                  [:span {:class (dom/classnames (css :filter-menu-item-tick) true)} i/tick-refactor])]
+               [:li {:class (dom/classnames
+                             (css :filter-menu-item) true
+                             (css :selected) (contains? current-filters :shape))
+                     :data-filter "shape"
+                     :on-click add-filter}
+                [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
+                 [:span {:class (dom/classnames (css :filter-menu-item-icon) true)} i/path-refactor]
+                 [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
+                  (tr "workspace.sidebar.layers.shapes")]]
+                (when (contains? current-filters :shape)
+                  [:span {:class (dom/classnames (css :filter-menu-item-tick) true)} i/tick-refactor])]]
+
+              [:div.filters-container
+               [:span {:data-filter "frame"
+                       :on-click add-filter}
+                i/artboard (tr "workspace.sidebar.layers.frames")]
+               [:span {:data-filter "group"
+                       :on-click add-filter}
+                i/folder (tr "workspace.sidebar.layers.groups")]
+               [:span {:data-filter "mask"
+                       :on-click add-filter}
+                i/mask (tr "workspace.sidebar.layers.masks")]
+               [:span {:data-filter "component"
+                       :on-click add-filter}
+                i/component (tr "workspace.sidebar.layers.components")]
+               [:span {:data-filter "text"
+                       :on-click add-filter}
+                i/text (tr "workspace.sidebar.layers.texts")]
+               [:span {:data-filter "image"
+                       :on-click add-filter}
+                i/image (tr "workspace.sidebar.layers.images")]
+               [:span {:data-filter "shape"
+                       :on-click add-filter}
+                i/curve (tr "workspace.sidebar.layers.shapes")]]))]
+
+         [:div {:class (if ^boolean new-css-system
+                         (dom/classnames (css :tool-window-bar) true)
+                         (dom/classnames :tool-window-bar true))}
+          [:span {:class (if ^boolean new-css-system
+                           (dom/classnames (css :page-name) true)
+                           (dom/classnames :page-name true))}
+           (:name page)]
+          [:button {:class (if new-css-system
+                             (dom/classnames (css :icon-search) true)
+                             (dom/classnames :icon-search true))
                     :on-click toggle-search}
-           (if new-css-system
-             i/close-refactor
-             i/cross)]]
-         [:div {:class (if new-css-system
-                         (dom/classnames (css :active-filters) true)
-                         (dom/classnames :active-filters true))}
-          (for [f (:active-filters @filter-state)]
-            (let [name (case f
-                         :frame (tr "workspace.sidebar.layers.frames")
-                         :group (tr "workspace.sidebar.layers.groups")
-                         :mask (tr "workspace.sidebar.layers.masks")
-                         :component (tr "workspace.sidebar.layers.components")
-                         :text (tr "workspace.sidebar.layers.texts")
-                         :image (tr "workspace.sidebar.layers.images")
-                         :shape (tr "workspace.sidebar.layers.shapes")
-                         (tr f))]
-              (if new-css-system
-                [:button {:class (dom/classnames (css :layer-filter) true)
-                          :on-click (remove-filter f)}
-                 [:span {:class (dom/classnames (css :layer-filter-icon) true)}
-                  [:& sic/element-icon-refactor-by-type {:type f
-                                                         :main-instance? (= f :component)}]]
-                 [:span {:class (dom/classnames (css :layer-filter-name) true)}
-                  name]
-                 [:span {:class (dom/classnames (css :layer-filter-close) true)}
-                  i/close-small-refactor]]
-                [:span {:on-click (remove-filter f)}
-                 name i/cross])))]
-
-         (when (:show-filters-menu @filter-state)
-           (if new-css-system
-             [:ul {:class (dom/classnames (css :filters-container) true)}
-              [:li {:key "frames-filter-item"
-                    :class (dom/classnames (css :filter-menu-item) true
-                                           (css :selected) (contains? (:active-filters @filter-state) :frame))
-                    :on-click (add-filter :frame)}
-               [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
-                [:span {:class (dom/classnames (css :filter-menu-item-icon) true)}
-                 i/board-refactor]
-                [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
-                 (tr "workspace.sidebar.layers.frames")]]
-               (when (contains? (:active-filters @filter-state) :frame)
-                 [:span {:class (dom/classnames (css :filter-menu-item-tick) true)}
-                  i/tick-refactor])]
-              [:li {:key "groups-filter-item"
-                    :class (dom/classnames (css :filter-menu-item) true
-                                           (css :selected) (contains? (:active-filters @filter-state) :group))
-                    :on-click (add-filter :group)}
-               [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
-                [:span {:class (dom/classnames (css :filter-menu-item-icon) true)}
-                 i/group-refactor]
-                [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
-                 (tr "workspace.sidebar.layers.groups")]]
-               (when (contains? (:active-filters @filter-state) :group)
-                 [:span {:class (dom/classnames (css :filter-menu-item-tick) true)}
-                  i/tick-refactor])]
-              [:li {:key "masks-filter-item"
-                    :class (dom/classnames (css :filter-menu-item) true
-                                           (css :selected) (contains? (:active-filters @filter-state) :mask))
-                    :on-click (add-filter :mask)}
-               [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
-                [:span {:class (dom/classnames (css :filter-menu-item-icon) true)}
-                 i/mask-refactor]
-                [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
-                 (tr "workspace.sidebar.layers.masks")]]
-               (when (contains? (:active-filters @filter-state) :mask)
-                 [:span {:class (dom/classnames (css :filter-menu-item-tick) true)}
-                  i/tick-refactor])]
-              [:li {:key "components-filter-item"
-                    :class (dom/classnames (css :filter-menu-item) true
-                                           (css :selected) (contains? (:active-filters @filter-state) :component))
-                    :on-click (add-filter :component)}
-               [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
-                [:span {:class (dom/classnames (css :filter-menu-item-icon) true)}
-                 i/component-refactor]
-                [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
-                 (tr "workspace.sidebar.layers.components")]]
-               (when (contains? (:active-filters @filter-state) :component)
-                 [:span {:class (dom/classnames (css :filter-menu-item-tick) true)}
-                  i/tick-refactor])]
-              [:li {:key "texts-filter-item"
-                    :class (dom/classnames (css :filter-menu-item) true
-                                           (css :selected) (contains? (:active-filters @filter-state) :text))
-                    :on-click (add-filter :text)}
-               [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
-                [:span {:class (dom/classnames (css :filter-menu-item-icon) true)}
-                 i/text-refactor]
-                [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
-                 (tr "workspace.sidebar.layers.texts")]]
-               (when (contains? (:active-filters @filter-state) :text)
-                 [:span {:class (dom/classnames (css :filter-menu-item-tick) true)}
-                  i/tick-refactor])]
-              [:li {:key "images-filter-item"
-                    :class (dom/classnames (css :filter-menu-item) true
-                                           (css :selected) (contains? (:active-filters @filter-state) :image))
-                    :on-click (add-filter :image)}
-               [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
-                [:span {:class (dom/classnames (css :filter-menu-item-icon) true)}
-                 i/img-refactor]
-                [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
-                 (tr "workspace.sidebar.layers.images")]]
-               (when (contains? (:active-filters @filter-state) :image)
-                 [:span {:class (dom/classnames (css :filter-menu-item-tick) true)}
-                  i/tick-refactor])]
-              [:li {:key "shapes-filter-item"
-                    :class (dom/classnames (css :filter-menu-item) true
-                                           (css :selected) (contains? (:active-filters @filter-state) :shape))
-                    :on-click (add-filter :shape)}
-               [:div {:class (dom/classnames (css :filter-menu-item-name-wrapper) true)}
-                [:span {:class (dom/classnames (css :filter-menu-item-icon) true)}
-                 i/path-refactor]
-                [:span {:class (dom/classnames (css :filter-menu-item-name) true)}
-                 (tr "workspace.sidebar.layers.shapes")]]
-               (when (contains? (:active-filters @filter-state) :shape)
-                 [:span {:class (dom/classnames (css :filter-menu-item-tick) true)}
-                  i/tick-refactor])]]
-
-             [:div.filters-container
-              [:span {:on-click (add-filter :frame)} i/artboard (tr "workspace.sidebar.layers.frames")]
-              [:span {:on-click (add-filter :group)} i/folder (tr "workspace.sidebar.layers.groups")]
-              [:span {:on-click (add-filter :mask)} i/mask (tr "workspace.sidebar.layers.masks")]
-              [:span {:on-click (add-filter :component)} i/component (tr "workspace.sidebar.layers.components")]
-              [:span {:on-click (add-filter :text)} i/text (tr "workspace.sidebar.layers.texts")]
-              [:span {:on-click (add-filter :image)} i/image (tr "workspace.sidebar.layers.images")]
-              [:span {:on-click (add-filter :shape)} i/curve (tr "workspace.sidebar.layers.shapes")]]))]
-        [:div {:class (if new-css-system
-                        (dom/classnames (css :tool-window-bar) true)
-                        (dom/classnames :tool-window-bar true))}
-         [:span {:class (if new-css-system
-                          (dom/classnames (css :page-name) true)
-                          (dom/classnames :page-name true))}
-          (:name page)]
-         [:button {:class (if new-css-system
-                            (dom/classnames (css :icon-search) true)
-                            (dom/classnames :icon-search true))
-                   :on-click toggle-search}
-          (if new-css-system
-            i/search-refactor
-            i/search)]]))]))
+           (if ^boolean new-css-system
+             i/search-refactor
+             i/search)]]))]))
 
 (mf/defc layers-toolbox
-  {:wrap [mf/memo]}
-  [{:keys [size-parent] :as props}]
-  (let [page  (mf/deref refs/workspace-page)
-        focus (mf/deref refs/workspace-focus-selected)
-        objects (hooks/with-focus-objects (:objects page) focus)
-        title (when (= 1 (count focus)) (get-in objects [(first focus) :name]))
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
+  [{:keys [size-parent]}]
+  (let [page           (mf/deref refs/workspace-page)
+        focus          (mf/deref refs/workspace-focus-selected)
+
+        objects        (hooks/with-focus-objects (:objects page) focus)
+        title          (when (= 1 (count focus))
+                         (dm/get-in objects [(first focus) :name]))
+
         new-css-system (mf/use-ctx ctx/new-css-system)
-        observer-var (mf/use-var nil)
-        lazy-load-ref (mf/use-ref nil)
+        observer-var   (mf/use-var nil)
+        lazy-load-ref  (mf/use-ref nil)
 
         [filtered-objects show-more filter-component] (use-search page objects)
 
@@ -432,16 +467,16 @@
 
         on-render-container
         (fn [element]
-          (let [options #js {:root element}
-                lazy-el (mf/ref-val lazy-load-ref)]
+          (when-let [lazy-node (mf/ref-val lazy-load-ref)]
             (cond
               (and (some? element) (not (some? @observer-var)))
-              (let [observer (js/IntersectionObserver. intersection-callback options)]
-                (.observe observer lazy-el)
+              (let [observer (js/IntersectionObserver. intersection-callback
+                                                       #js {:root element})]
+                (.observe observer lazy-node)
                 (reset! observer-var observer))
 
               (and (nil? element) (some? @observer-var))
-              (do (.disconnect @observer-var)
+              (do (.disconnect ^js @observer-var)
                   (reset! observer-var nil)))))
 
         on-scroll
@@ -503,18 +538,17 @@
            [:div {:class (dom/classnames (css :focus-mode-tag-wrapper) true)}
             [:div {:class (dom/classnames (css :focus-mode-tag) true)} (tr "workspace.focus.focus-mode")]]
            [:div.focus-mode (tr "workspace.focus.focus-mode")])]]
-       filter-component)
+       (filter-component))
      (if (some? filtered-objects)
        [:*
         [:div {:class (if new-css-system
                         (dom/classnames (css :tool-window-content) true)
                         (dom/classnames :tool-window-content true))
-               :ref on-render-container  :key "filters"}
+               :ref on-render-container}
          [:& filters-tree {:objects filtered-objects
                            :key (dm/str (:id page))
                            :parent-size size-parent}]
          [:div.lazy {:ref lazy-load-ref
-                     :key "lazy-load"
                      :style {:min-height 16}}]]
         [:div {:on-scroll on-scroll
                :class (if new-css-system
