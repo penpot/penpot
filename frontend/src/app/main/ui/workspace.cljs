@@ -130,7 +130,7 @@
 
     (mf/with-effect []
       (let [focus-out #(st/emit! (dw/workspace-focus-lost))
-            key       (events/listen globals/document "blur" focus-out)]
+            key       (events/listen globals/window "blur" focus-out)]
         (partial events/unlistenByKey key)))
 
     (mf/with-effect [page-id]
