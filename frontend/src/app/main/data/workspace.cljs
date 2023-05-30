@@ -21,7 +21,6 @@
    [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.component :as ctk]
-   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
@@ -1251,11 +1250,7 @@
     (watch [_ state _]
       (let [components-v2 (features/active-feature? state :components-v2)]
         (if components-v2
-          (let [file-data          (wsh/get-local-file state)
-                component          (ctkl/get-component file-data component-id)
-                main-instance-id   (:main-instance-id component)
-                main-instance-page (:main-instance-page component)]
-            (rx/of (go-to-main-instance main-instance-page main-instance-id)))
+          (rx/of (go-to-main-instance nil component-id))
           (let [project-id    (get-in state [:workspace-project :id])
                 file-id       (get-in state [:workspace-file :id])
                 page-id       (get state :current-page-id)
