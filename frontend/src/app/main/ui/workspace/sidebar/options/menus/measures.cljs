@@ -68,7 +68,9 @@
 
 ;; -- User/drawing coords
 (mf/defc measures-menu
-  [{:keys [ids ids-with-children values type all-types shape] :as props}]
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
+  [{:keys [ids ids-with-children values type all-types shape]}]
   (let [options (if (= type :multiple)
                   (reduce #(union %1 %2) (map #(get type->options %) all-types))
                   (get type->options type))
