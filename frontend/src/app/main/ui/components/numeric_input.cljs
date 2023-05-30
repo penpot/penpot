@@ -7,150 +7,130 @@
 (ns app.main.ui.components.numeric-input
   (:require
    [app.common.data :as d]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.ui.formats :as fmt]
+   [app.main.ui.hooks :as h]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [app.util.simple-math :as sm]
+   [app.util.simple-math :as smt]
+   [cljs.core :as c]
    [cuerdas.core :as str]
    [goog.events :as events]
-   [rumext.v2 :as mf])
-  (:import goog.events.EventType))
+   [rumext.v2 :as mf]))
 
 (mf/defc numeric-input
   {::mf/wrap-props false
    ::mf/forward-ref true}
   [props external-ref]
-  (let [value-str    (obj/get props "value")
-        min-val-str  (obj/get props "min")
-        max-val-str  (obj/get props "max")
-        step-val-str (obj/get props "step")
-        wrap-value?  (obj/get props "data-wrap")
-        on-change    (obj/get props "onChange")
-        on-blur      (obj/get props "onBlur")
-        title        (obj/get props "title")
-        default-val  (obj/get props "default")
-        nillable     (obj/get props "nillable")
+  (let [value-str   (unchecked-get props "value")
+        min-value   (unchecked-get props "min")
+        max-value   (unchecked-get props "max")
+        step-value  (unchecked-get props "step")
+        wrap-value? (unchecked-get props "data-wrap")
+        on-change   (unchecked-get props "onChange")
+        on-blur     (unchecked-get props "onBlur")
+        title       (unchecked-get props "title")
+        default     (unchecked-get props "default")
+        nillable?   (unchecked-get props "nillable")
+
+        min-value   (d/parse-double min-value)
+        max-value   (d/parse-double max-value)
+        step-value  (d/parse-double step-value 1)
+        default     (d/parse-double default 0)
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
         ;; So we use the external ref if provided, and the local one if not.
-        local-ref  (mf/use-ref)
-        ref        (or external-ref local-ref)
-
-        ;; We need to store the handle-blur ref so we can call it on unmount
-        handle-blur-ref (mf/use-ref nil)
-        dirty-ref       (mf/use-ref false)
+        local-ref   (mf/use-ref)
+        ref         (or external-ref local-ref)
 
         ;; This `value` represents the previous value and is used as
         ;; initil value for the simple math expression evaluation.
-        value      (d/parse-double value-str default-val)
+        value       (d/parse-double value-str default)
 
-        min-val    (cond
-                     (number? min-val-str)
-                     min-val-str
-
-                     (string? min-val-str)
-                     (d/parse-double min-val-str))
-
-        max-val    (cond
-                     (number? max-val-str)
-                     max-val-str
-
-                     (string? max-val-str)
-                     (d/parse-double max-val-str))
-
-        step-val   (cond
-                     (number? step-val-str)
-                     step-val-str
-
-                     (string? step-val-str)
-                     (d/parse-double step-val-str)
-
-                     :else 1)
+        ;; We need to store the handle-blur ref so we can call it on unmount
+        dirty-ref   (mf/use-ref false)
 
         parse-value
-        (mf/use-callback
-         (mf/deps ref min-val max-val value nillable default-val)
+        (mf/use-fn
+         (mf/deps min-value max-value value nillable? default)
          (fn []
-           (let [input-node (mf/ref-val ref)
-                 new-value (-> (dom/get-value input-node)
-                               (str/strip-suffix ".")
-                               (sm/expr-eval value))]
-             (cond
-               (d/num? new-value)
-               (-> new-value
-                   (cljs.core/max (/ us/min-safe-int 2))
-                   (cljs.core/min (/ us/max-safe-int 2))
-                   (cond->
-                    (d/num? min-val)
-                     (cljs.core/max min-val)
+           (when-let [node (mf/ref-val ref)]
+             (let [new-value (-> (dom/get-value node)
+                                 (str/strip-suffix ".")
+                                 (smt/expr-eval value))]
+               (cond
+                 (d/num? new-value)
+                 (-> new-value
+                     (d/max (/ sm/min-safe-int 2))
+                     (d/min (/ sm/max-safe-int 2))
+                     (cond-> (d/num? min-value)
+                       (d/max min-value))
+                     (cond-> (d/num? max-value)
+                       (d/min max-value)))
 
-                     (d/num? max-val)
-                     (cljs.core/min max-val)))
+                 nillable?
+                 default
 
-               nillable
-               default-val
-
-               :else value))))
+                 :else value)))))
 
         update-input
-        (mf/use-callback
-         (mf/deps ref)
+        (mf/use-fn
          (fn [new-value]
-           (let [input-node (mf/ref-val ref)]
-             (dom/set-value! input-node (fmt/format-number new-value)))))
+           (when-let [node (mf/ref-val ref)]
+             (dom/set-value! node (fmt/format-number new-value)))))
 
         apply-value
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-change update-input value)
-         (fn [new-value event]
+         (fn [event new-value]
            (mf/set-ref-val! dirty-ref false)
            (when (and (not= new-value value)
                       (fn? on-change))
+             ;; FIXME: on-change very slow, makes the handler laggy
              (on-change new-value event))
            (update-input new-value)))
 
         set-delta
-        (mf/use-callback
-         (mf/deps wrap-value? min-val max-val parse-value apply-value)
+        (mf/use-fn
+         (mf/deps wrap-value? min-value max-value parse-value apply-value)
          (fn [event up? down?]
            (let [current-value (parse-value)]
              (when current-value
                (let [increment (cond
                                  (kbd/shift? event)
-                                 (if up? (* step-val 10) (* step-val -10))
+                                 (if up? (* step-value 10) (* step-value -10))
 
                                  (kbd/alt? event)
-                                 (if up? (* step-val 0.1) (* step-val -0.1))
+                                 (if up? (* step-value 0.1) (* step-value -0.1))
 
                                  :else
-                                 (if up? step-val (- step-val)))
+                                 (if up? step-value (- step-value)))
 
                      new-value (+ current-value increment)
                      new-value (cond
-                                 (and wrap-value? (d/num? max-val min-val)
-                                      (> new-value max-val) up?)
-                                 (-> new-value (- max-val) (+ min-val) (- step-val))
+                                 (and wrap-value? (d/num? max-value min-value)
+                                      (> new-value max-value) up?)
+                                 (-> new-value (- max-value) (+ min-value) (- step-value))
 
-                                 (and wrap-value? (d/num? max-val min-val)
-                                      (< new-value min-val) down?)
-                                 (-> new-value (- min-val) (+ max-val) (+ step-val))
+                                 (and wrap-value? (d/num? max-value min-value)
+                                      (< new-value min-value) down?)
+                                 (-> new-value (- min-value) (+ max-value) (+ step-value))
 
-                                 (and (d/num? min-val) (< new-value min-val))
-                                 min-val
+                                 (and (d/num? min-value) (< new-value min-value))
+                                 min-value
 
-                                 (and (d/num? max-val) (> new-value max-val))
-                                 max-val
+                                 (and (d/num? max-value) (> new-value max-value))
+                                 max-value
 
                                  :else new-value)]
 
-                 (apply-value new-value event))))))
+                 (apply-value event new-value))))))
 
         handle-key-down
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps set-delta apply-value update-input)
          (fn [event]
            (mf/set-ref-val! dirty-ref true)
@@ -158,47 +138,55 @@
                  down?  (kbd/down-arrow? event)
                  enter? (kbd/enter? event)
                  esc?   (kbd/esc? event)
-                 input-node (mf/ref-val ref)]
+                 node   (mf/ref-val ref)]
              (when (or up? down?)
                (set-delta event up? down?))
              (when enter?
-               (dom/blur! input-node))
+               (dom/blur! node))
              (when esc?
                (update-input value-str)
-               (dom/blur! input-node)))))
+               (dom/blur! node)))))
 
+        ;; FIXME: test it
         handle-mouse-wheel
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps set-delta)
          (fn [event]
-           (let [input-node (mf/ref-val ref)]
-             (when (dom/active? input-node)
-               (let [event (.getBrowserEvent ^js event)]
-                 (dom/prevent-default event)
-                 (dom/stop-propagation event)
-                 (set-delta event (< (.-deltaY event) 0) (> (.-deltaY event) 0)))))))
+           (when-let [node (mf/ref-val ref)]
+             (when (dom/active? node)
+               (dom/prevent-default event)
+               (dom/stop-propagation event)
+               (let [{:keys [y]} (dom/get-delta-position event)]
+                 (set-delta event (< y 0) (> y 0)))))))
 
         handle-blur
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps parse-value apply-value update-input on-blur)
          (fn [event]
-           (let [new-value (or (parse-value) default-val)]
-             (if (or nillable new-value)
-               (apply-value new-value event)
+           (let [new-value (or (parse-value) default)]
+             (if (or nillable? new-value)
+               (apply-value event new-value)
                (update-input new-value)))
-           (when on-blur (on-blur event))))
+           (when (fn? on-blur)
+             (on-blur event))))
+
+        handle-unmount
+        (h/use-ref-callback handle-blur)
 
         on-click
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
-           (let [target (dom/get-target event)]
-             (when (some? ref)
-               (let [current (mf/ref-val ref)]
-                 (when (and (some? current) (not (.contains current target)))
-                   (dom/blur! current)))))))
+           (let [target (dom/get-target event)
+                 node   (mf/ref-val ref)]
+             (when (and (some? node) (not (dom/child? node target)))
+               (dom/blur! node)))))
 
-        props (-> props
-                  (obj/without ["value" "onChange" "nillable"])
+        props (-> (obj/clone props)
+                  ;; NOTE: the fastest way to remove props is just
+                  ;; assigning `nil` value
+                  (obj/set! "value" mf/undefined)
+                  (obj/set! "onChange" mf/undefined)
+                  (obj/set! "nillable" mf/undefined)
                   (obj/set! "className" "input-text")
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
@@ -207,50 +195,23 @@
                   (obj/set! "onKeyDown" handle-key-down)
                   (obj/set! "onBlur" handle-blur))]
 
-    (mf/use-effect
-     (mf/deps value)
-     (fn []
-       (when-let [input-node (mf/ref-val ref)]
-         (dom/set-value! input-node (fmt/format-number value)))))
+    (mf/with-effect [value]
+      (when-let [input-node (mf/ref-val ref)]
+        (dom/set-value! input-node (fmt/format-number value))))
 
-    (mf/use-effect
-     (mf/deps handle-blur)
-     (fn []
-       (mf/set-ref-val! handle-blur-ref {:fn handle-blur})))
+    (mf/with-effect []
+      (fn []
+        (when (mf/ref-val dirty-ref)
+          (handle-unmount))))
 
-    (mf/use-layout-effect
-     (fn []
-       #(when (mf/ref-val dirty-ref)
-          (let [handle-blur (:fn (mf/ref-val handle-blur-ref))]
-            (handle-blur)))))
+    (mf/with-layout-effect []
+      (let [keys [(events/listen globals/window "pointerdown" on-click)
+                  (events/listen globals/window "click" on-click)]]
+        #(run! events/unlistenByKey keys)))
 
-    (mf/use-layout-effect
-     (mf/deps handle-mouse-wheel)
-     (fn []
-       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:passive false})]]
-         #(doseq [key keys]
-            (events/unlistenByKey key)))))
-
-    (mf/use-layout-effect
-     (fn []
-       (let [keys [(events/listen globals/window EventType.POINTERDOWN on-click)
-                   (events/listen globals/window EventType.CLICK on-click)]]
-         #(doseq [key keys]
-            (events/unlistenByKey key)))))
-
-    (mf/use-layout-effect
-     (mf/deps handle-mouse-wheel)
-     (fn []
-       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:passive false})]]
-         #(doseq [key keys]
-            (events/unlistenByKey key)))))
-
-
-    (mf/use-layout-effect
-     (mf/deps handle-mouse-wheel)
-     (fn []
-       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:passive false})]]
-         #(doseq [key keys]
-            (events/unlistenByKey key)))))
+    (mf/with-layout-effect [handle-mouse-wheel]
+      (when-let [node (mf/ref-val ref)]
+        (let [key (events/listen node "wheel" handle-mouse-wheel #js {:passive false})]
+          #(events/unlistenByKey key))))
 
     [:> :input props]))
