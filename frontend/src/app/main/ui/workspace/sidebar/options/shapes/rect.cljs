@@ -21,27 +21,38 @@
    [rumext.v2 :as mf]))
 
 (mf/defc options
-  {::mf/wrap [mf/memo]}
-  [{:keys [shape] :as props}]
-  (let [ids [(:id shape)]
-        type (:type shape)
-        measure-values (select-measure-keys shape)
-        layer-values (select-keys shape layer-attrs)
-        constraint-values (select-keys shape constraint-attrs)
-        fill-values (select-keys shape fill-attrs)
-        stroke-values (select-keys shape stroke-attrs)
-        layout-item-values (select-keys shape layout-item-attrs)
-        layout-container-values (select-keys shape layout-container-flex-attrs)
-        is-flex-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-flex-layout-child? ids))
-        is-flex-layout-child? (mf/deref is-flex-layout-child-ref)
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
+  [{:keys [shape]}]
+  (let [shape-id                  (:id shape)
+        ids                       [shape-id]
+        type                      (:type shape)
+
+        measure-values            (select-measure-keys shape)
+        layer-values              (select-keys shape layer-attrs)
+        constraint-values         (select-keys shape constraint-attrs)
+        fill-values               (select-keys shape fill-attrs)
+        stroke-values             (select-keys shape stroke-attrs)
+        layout-item-values        (select-keys shape layout-item-attrs)
+        layout-container-values   (select-keys shape layout-container-flex-attrs)
+
+        is-flex-layout-child*     (mf/with-memo [shape-id]
+                                    (refs/is-flex-layout-child? ids))
+        is-flex-layout-child?     (mf/deref is-flex-layout-child*)
         is-layout-child-absolute? (ctl/layout-absolute? shape)]
+
     [:*
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values
                         :shape shape}]
-     [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
-     (when is-flex-layout-child?
+     [:& layout-container-menu
+      {:type type
+       :ids ids
+       :values layout-container-values
+       :multiple false}]
+
+     (when ^boolean is-flex-layout-child?
        [:& layout-item-menu
         {:ids ids
          :type type
@@ -49,9 +60,11 @@
          :is-layout-child? true
          :shape shape}])
 
-     (when (or (not is-flex-layout-child?) is-layout-child-absolute?)
-       [:& constraints-menu {:ids ids
-                             :values constraint-values}])
+     (when (or (not ^boolean is-flex-layout-child?)
+               ^boolean is-layout-child-absolute?)
+       [:& constraints-menu
+        {:ids ids
+         :values constraint-values}])
 
      [:& layer-menu {:ids ids
                      :type type
