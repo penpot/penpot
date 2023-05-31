@@ -26,7 +26,6 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-
 ;; This components is a piece for sharding equality check between top
 ;; level frames and try to avoid rerender frames that are does not
 ;; affected by the selected set.
@@ -37,10 +36,10 @@
   [:> layer-item props])
 
 (mf/defc layers-tree
-  {::mf/wrap [#(mf/memo % =)
-              #(mf/throttle % 200)]}
+  {::mf/wrap [mf/memo #(mf/throttle % 200)]
+   ::mf/wrap-props false}
   [{:keys [objects filtered? parent-size] :as props}]
-  (let [selected           (mf/deref refs/selected-shapes)
+  (let [selected       (mf/deref refs/selected-shapes)
         selected       (hooks/use-equal-memo selected)
         root           (get objects uuid/zero)
         new-css-system (mf/use-ctx ctx/new-css-system)]
@@ -72,8 +71,8 @@
               :parent-size parent-size}])))]]))
 
 (mf/defc filters-tree
-  {::mf/wrap [#(mf/memo % =)
-              #(mf/throttle % 200)]}
+  {::mf/wrap [mf/memo #(mf/throttle % 200)]
+   ::mf/wrap-props false}
   [{:keys [objects parent-size]}]
   (let [selected       (mf/deref refs/selected-shapes)
         selected       (hooks/use-equal-memo selected)
@@ -422,6 +421,46 @@
              i/search-refactor
              i/search)]]))]))
 
+
+(defn- on-scroll
+  [event]
+  (let [children (dom/get-elements-by-class "sticky-children")
+        length   (alength children)]
+    (when (pos? length)
+      (let [target     (dom/get-target event)
+            target-top (:top (dom/get-bounding-rect target))
+            frames     (dom/get-elements-by-class "root-board")
+
+            last-hidden-frame
+            (->> frames
+                 (filter #(<= (- (:top (dom/get-bounding-rect %)) target-top) 0))
+                 last)
+
+            frame-id (dom/get-attribute last-hidden-frame "id")
+
+            last-hidden-children
+            (->> children
+                 (filter #(< (- (:top (dom/get-bounding-rect %)) target-top) 0))
+                 last)
+
+            is-children-shown?
+            (and last-hidden-children
+                 (> (- (:bottom (dom/get-bounding-rect last-hidden-children)) target-top) 0))
+
+            children-frame-id (dom/get-attribute last-hidden-children "data-id")
+
+            ;; We want to check that root-board is out of view but its children are not.
+            ;; only in that case we make root board sticky.
+            sticky? (and last-hidden-frame
+                         is-children-shown?
+                         (= frame-id children-frame-id))]
+
+        (run! #(dom/remove-class! % "sticky") frames)
+
+        (when sticky?
+          (dom/add-class! last-hidden-frame "sticky"))))))
+
+
 (mf/defc layers-toolbox
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
@@ -456,40 +495,8 @@
 
               (and (nil? element) (some? @observer-var))
               (do (.disconnect ^js @observer-var)
-                  (reset! observer-var nil)))))
+                  (reset! observer-var nil)))))]
 
-        on-scroll
-        (fn [event]
-          (let [children (dom/get-elements-by-class "sticky-children")
-                length (.-length children)]
-            (when (< 0 length)
-              (let [target (dom/get-target event)
-                    target-top (:top (dom/get-bounding-rect target))
-                    frames (dom/get-elements-by-class "root-board")
-
-                    last-hidden-frame (->> frames
-                                           (filter #(<= (- (:top (dom/get-bounding-rect %)) target-top) 0))
-                                           last)
-                    frame-id (dom/get-attribute last-hidden-frame "id")
-
-                    last-hidden-children (->> children
-                                              (filter #(< (- (:top (dom/get-bounding-rect %)) target-top) 0))
-                                              last)
-
-                    is-children-shown? (and last-hidden-children
-                                            (> (- (:bottom (dom/get-bounding-rect last-hidden-children)) target-top) 0))
-
-                    children-frame-id (dom/get-attribute last-hidden-children "data-id")
-                ;; We want to check that root-board is out of view but its children are not.
-                ;; only in that case we make root board sticky.
-                    sticky? (and last-hidden-frame
-                                 is-children-shown?
-                                 (= frame-id children-frame-id))]
-                (doseq [frame frames]
-                  (dom/remove-class! frame  "sticky"))
-
-                (when sticky?
-                  (dom/add-class! last-hidden-frame "sticky"))))))]
     [:div#layers
      {:class (if ^boolean new-css-system
                (stl/css :layers)
@@ -500,16 +507,19 @@
         [:button {:class (stl/css new-css-system :focus-title)
                   :on-click #(st/emit! (dw/toggle-focus-mode))}
          [:span {:class (stl/css new-css-system :back-button)}
-          (if new-css-system
+          (if ^boolean new-css-system
             i/arrow-refactor
             i/arrow-slide)]
+
          [:div {:class (stl/css new-css-system :focus-name)}
           (or title (tr "workspace.sidebar.layers"))]
+
          (if ^boolean new-css-system
            [:div {:class (stl/css :focus-mode-tag-wrapper)}
             [:div {:class (stl/css :focus-mode-tag)} (tr "workspace.focus.focus-mode")]]
            [:div.focus-mode (tr "workspace.focus.focus-mode")])]]
        (filter-component))
+
      (if (some? filtered-objects)
        [:*
         [:div {:class (stl/css new-css-system :tool-window-content)
@@ -526,6 +536,7 @@
                           :key (dm/str (:id page))
                           :filtered? true
                           :parent-size size-parent}]]]
+
        [:div {:on-scroll on-scroll
               :class (stl/css new-css-system :tool-window-content)
               :style {:display (when (some? filtered-objects) "none")}}
