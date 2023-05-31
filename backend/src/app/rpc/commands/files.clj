@@ -269,11 +269,11 @@
                  (let [data        (ctf/migrate-to-components-v2 data)
                        features    (conj features "components/v2")
                        modified-at (dt/now)
-                       features    (db/create-array conn "text" features)]
+                       features'   (db/create-array conn "text" features)]
                    (db/update! conn :file
                                {:data (blob/encode data)
                                 :modified-at modified-at
-                                :features features}
+                                :features features'}
                                {:id id})
                    (persist-pointers! conn id)
                    (-> file
