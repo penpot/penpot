@@ -7,7 +7,6 @@
 (ns app.main.style
   "A fonts loading macros."
   (:require
-   [app.common.data :as d]
    [clojure.core :as c]
    [clojure.data.json :as json]
    [clojure.java.io :as io]

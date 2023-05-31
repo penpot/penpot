@@ -13,7 +13,8 @@
 
 
 (mf/defc element-icon-refactor
-  [{:keys [shape main-instance?] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [shape main-instance?]}]
   (if (ctk/instance-head? shape)
     (if main-instance?
       i/component-refactor

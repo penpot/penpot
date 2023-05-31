@@ -5,9 +5,10 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.layer-item
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -28,34 +29,38 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-
 (mf/defc layer-item
   {::mf/wrap-props false}
-  [{:keys [index item selected objects sortable? filtered? recieved-depth parent-size component-child?]}]
-  (let [id                   (:id item)
-        blocked?             (:blocked item)
-        hidden?              (:hidden item)
+  [{:keys [index item selected objects sortable? filtered? depth parent-size component-child?]}]
+  (let [id                (:id item)
+        name              (:name item)
+        blocked?          (:blocked item)
+        hidden?           (:hidden item)
+        touched?          (-> item :touched seq boolean)
+        has-shapes?       (-> item :shapes seq boolean)
 
-        disable-drag         (mf/use-state false)
-        scroll-to-middle?    (mf/use-var true)
-        expanded-iref        (mf/with-memo [id]
-                               (-> (l/in [:expanded id])
-                                   (l/derived refs/workspace-local)))
+        drag-disabled*    (mf/use-state false)
+        drag-disabled?    (deref drag-disabled*)
 
-        expanded?            (mf/deref expanded-iref)
-        selected?            (contains? selected id)
-        container?           (or (cph/frame-shape? item)
-                                 (cph/group-shape? item))
-        absolute?            (ctl/layout-absolute? item)
+        scroll-to-middle? (mf/use-var true)
+        expanded-iref     (mf/with-memo [id]
+                            (-> (l/in [:expanded id])
+                                (l/derived refs/workspace-local)))
+        expanded?         (mf/deref expanded-iref)
 
-        components-v2        (mf/use-ctx ctx/components-v2)
-        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
-        new-css-system       (mf/use-ctx ctx/new-css-system)
-        main-instance?       (if components-v2
-                               (:main-instance item)
-                               true)
-        parent-board? (and (= :frame (:type item))
-                           (= uuid/zero (:parent-id item)))
+        selected?         (contains? selected id)
+        container?        (or (cph/frame-shape? item)
+                              (cph/group-shape? item))
+        absolute?         (ctl/layout-absolute? item)
+
+        components-v2     (mf/use-ctx ctx/components-v2)
+        read-only?        (mf/use-ctx ctx/workspace-read-only?)
+        new-css-system    (mf/use-ctx ctx/new-css-system)
+        main-instance?    (if components-v2
+                            (:main-instance item)
+                            true)
+        parent-board?     (and (cph/frame-shape? item)
+                               (= uuid/zero (:parent-id item)))
         toggle-collapse
         (mf/use-fn
          (mf/deps expanded?)
@@ -108,22 +113,22 @@
         on-pointer-enter
         (mf/use-fn
          (mf/deps id)
-         (fn [_event]
+         (fn [_]
            (st/emit! (dw/highlight-shape id))))
 
         on-pointer-leave
         (mf/use-fn
          (mf/deps id)
-         (fn [_event]
+         (fn [_]
            (st/emit! (dw/dehighlight-shape id))))
 
         on-context-menu
         (mf/use-fn
-         (mf/deps item workspace-read-only?)
+         (mf/deps item read-only?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (when-not workspace-read-only?
+           (when-not read-only?
              (let [pos (dom/get-client-position event)]
                (st/emit! (dw/show-shape-context-menu {:position pos :shape item}))))))
 
@@ -151,27 +156,37 @@
            (when-not expanded?
              (st/emit! (dwc/toggle-collapse id)))))
 
+        zoom-to-selected
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (dom/prevent-default event)
+           (st/emit! dw/zoom-to-selected-shape)))
+
         [dprops dref]
         (hooks/use-sortable
          :data-type "penpot/layer"
          :on-drop on-drop
          :on-drag on-drag
          :on-hold on-hold
-         :disabled @disable-drag
+         :disabled drag-disabled?
          :detect-center? container?
          :data {:id (:id item)
                 :index index
                 :name (:name item)}
-         :draggable? (and sortable? (not workspace-read-only?)))
+         :draggable? (and sortable? (not read-only?)))
 
-        ref         (mf/use-ref)
-        depth (+ recieved-depth 1)
-        component-tree? (or component-child? (:component-root item))]
+        ref             (mf/use-ref)
+        depth           (+ depth 1)
+        component-tree? (or component-child? (:component-root item))
+
+        enable-drag      (mf/use-fn #(reset! drag-disabled* true))
+        disable-drag     (mf/use-fn #(reset! drag-disabled* false))]
 
     (mf/with-effect [selected? selected]
       (let [single? (= (count selected) 1)
-            node (mf/ref-val ref)
-            parent-node (dom/get-parent (dom/get-parent node))
+            node    (mf/ref-val ref)
+            parent  (dom/get-parent (dom/get-parent node))
 
             subid
             (when (and single? selected?)
@@ -179,9 +194,9 @@
                 (ts/schedule
                  100
                  #(if scroll-to
-                    (dom/scroll-into-view! parent-node #js {:block "center" :behavior "smooth"  :inline "start"})
+                    (dom/scroll-into-view! parent {:block "center" :behavior "smooth"  :inline "start"})
                     (do
-                      (dom/scroll-into-view-if-needed! parent-node #js {:block "center" :behavior "smooth" :inline "start"})
+                      (dom/scroll-into-view-if-needed! parent {:block "center" :behavior "smooth" :inline "start"})
                       (reset! scroll-to-middle? true))))))]
 
         #(when (some? subid)
@@ -193,89 +208,98 @@
               :ref dref
               :on-click select-shape
               :id id
-              :class (dom/classnames
-                      (css :layer-row) true
-                      (css :component) (not (nil? (:component-id item)))
-                      (css :masked) (:masked-group item)
-                      (css :selected) selected?
-                      (css :type-frame) (= :frame (:type item))
-                      (css :type-bool) (= :bool (:type item))
-                      (css :type-comp) component-tree?
-                      (css :hidden) (:hidden item)
+              :class (stl/css-case
+                      :layer-row true
+                      :component (some? (:component-id item))
+                      :masked (:masked-group item)
+                      :selected selected?
+                      :type-frame (cph/frame-shape? item)
+                      :type-bool (cph/bool-shape? item)
+                      :type-comp component-tree?
+                      :hidden hidden?
                       :dnd-over (= (:over dprops) :center)
                       :dnd-over-top (= (:over dprops) :top)
                       :dnd-over-bot (= (:over dprops) :bot)
                       :root-board parent-board?)}
-        [:span {:class (dom/classnames (css :tab-indentation) true
-                                       (css :filtered) filtered?)
-                :style #js {"--depth" depth}}]
-        [:div {:class (dom/classnames (css :element-list-body) true
-                                      (css :filtered) filtered?
-                                      (css :selected) selected?
-                                      (css :icon-layer) (= (:type item) :icon))
-               :style #js {"--depth" depth}
+        [:span {:class (stl/css-case
+                        :tab-indentation true
+                        :filtered filtered?)
+                :style {"--depth" depth}}]
+        [:div {:class (stl/css-case
+                       :element-list-body true
+                       :filtered filtered?
+                       :selected selected?
+                       :icon-layer (= (:type item) :icon))
+               :style {"--depth" depth}
                :on-pointer-enter on-pointer-enter
                :on-pointer-leave on-pointer-leave
-               :on-double-click #(dom/stop-propagation %)}
+               :on-double-click dom/stop-propagation}
 
          (if (< 0 (count (:shapes item)))
-           [:div {:class (dom/classnames (css :button-content) true)}
+           [:div {:class (stl/css :button-content)}
             (when (not filtered?)
-              [:button {:class (dom/classnames (css :toggle-content) true
-                                               (css :inverse) expanded?)
+              [:button {:class (stl/css-case
+                                :toggle-content true
+                                :inverse expanded?)
                         :on-click toggle-collapse}
                i/arrow-refactor])
 
-            [:div {:class (dom/classnames (css :icon-shape) true)
-                   :on-double-click #(do (dom/stop-propagation %)
-                                         (dom/prevent-default %)
-                                         (st/emit! dw/zoom-to-selected-shape))}
+            [:div {:class (stl/css :icon-shape)
+                   :on-double-click zoom-to-selected}
              (when absolute?
-               [:div {:class (dom/classnames (css :absolute) true)} ])
-             [:& sic/element-icon-refactor {:shape item
-                                            :main-instance? main-instance?}]]]
-           [:div {:class (dom/classnames (css :button-content) true)}
-            (when (not filtered?)
-              [:span {:class (dom/classnames (css :toggle-content) true)}])
-            [:div {:class (dom/classnames (css :icon-shape) true)
-                   :on-double-click #(do (dom/stop-propagation %)
-                                         (dom/prevent-default %)
-                                         (st/emit! dw/zoom-to-selected-shape))}
-             (when absolute?
-               [:div {:class (dom/classnames (css :absolute) true)} ])
-             [:& sic/element-icon-refactor {:shape item
-                                            :main-instance? main-instance?}]]])
+               [:div {:class (stl/css :absolute)}])
+
+             [:& sic/element-icon-refactor
+              {:shape item
+               :main-instance? main-instance?}]]]
+
+           [:div {:class (stl/css :button-content)}
+            (when (not ^boolean filtered?)
+              [:span {:class (stl/css :toggle-content)}])
+            [:div {:class (stl/css :icon-shape)
+                   :on-double-click zoom-to-selected}
+             (when ^boolean absolute?
+               [:div {:class (stl/css :absolute)}])
+             [:& sic/element-icon-refactor
+              {:shape item
+               :main-instance? main-instance?}]]])
 
          [:& layer-name {:ref ref
-                         :shape-id (:id item)
-                         :shape-name (:name item)
-                         :shape-touched? (boolean (seq (:touched item)))
-                         :disabled-double-click workspace-read-only?
-                         :on-start-edit #(reset! disable-drag true)
-                         :on-stop-edit #(reset! disable-drag false)
+                         :shape-id id
+                         :shape-name name
+                         :shape-touched? touched?
+                         :disabled-double-click read-only?
+                         :on-start-edit disable-drag
+                         :on-stop-edit enable-drag
                          :depth depth
                          :parent-size parent-size
                          :selected? selected?
                          :type-comp component-tree?
-                         :type-frame (= :frame (:type item))
-                         :hidden? (:hidden item)}]
-         [:div {:class (dom/classnames (css :element-actions) true
-                                       (css :is-parent) (:shapes item)
-                                       (css :selected) (:hidden item)
-                                       (css :selected) (:blocked item))}
-          [:button {:class (dom/classnames (css :toggle-element) true
-                                           (css :selected) (:hidden item))
+                         :type-frame (cph/frame-shape? item)
+                         :hidden? hidden?}]
+         [:div {:class (stl/css-case
+                        :element-actions true
+                        :is-parent has-shapes?
+                        :selected hidden?
+                        :selected blocked?)}
+          [:button {:class (stl/css-case
+                            :toggle-element true
+                            :selected hidden?)
                     :on-click toggle-visibility}
-           (if (:hidden item) i/hide-refactor i/shown-refactor)]
-          [:button {:class (dom/classnames (css :block-element) true
-                                           (css :selected) (:blocked item))
+           (if ^boolean hidden? i/hide-refactor i/shown-refactor)]
+          [:button {:class (stl/css-case
+                            :block-element true
+                            :selected blocked?)
                     :on-click toggle-blocking}
-           (if (:blocked item) i/lock-refactor i/unlock-refactor)]]]]
+           (if ^boolean blocked? i/lock-refactor i/unlock-refactor)]]]]
+
        (when (and (:shapes item) expanded?)
-         [:div {:class (dom/classnames (css :element-children) true
-                                       (css :parent-selected) selected?
-                                       :sticky-children parent-board?)
-                :data-id (when parent-board? (:id item))}
+         [:div {:class (stl/css-case
+                        :element-children true
+                        :parent-selected selected?
+                        :sticky-children parent-board?)
+                :data-id (when ^boolean parent-board? id)}
+
           (for [[index id] (reverse (d/enumerate (:shapes item)))]
             (when-let [item (get objects id)]
               [:& layer-item
@@ -283,63 +307,68 @@
                 :selected selected
                 :index index
                 :objects objects
-                :key (:id item)
+                :key (dm/str id)
                 :sortable? sortable?
-                :recieved-depth depth
+                :depth depth
                 :parent-size parent-size
                 :component-child? component-tree?}]))])]
+
+      ;; ---- OLD CSS
       [:li {:on-context-menu on-context-menu
             :ref dref
-            :class (dom/classnames
-                    :component (not (nil? (:component-id item)))
-                    :masked (:masked-group item)
-                    :dnd-over (= (:over dprops) :center)
+            :class (stl/css-case*
+                    :component    (some? (:component-id item))
+                    :masked       (:masked-group item)
+                    :dnd-over     (= (:over dprops) :center)
                     :dnd-over-top (= (:over dprops) :top)
                     :dnd-over-bot (= (:over dprops) :bot)
-                    :selected selected?
-                    :type-frame (= :frame (:type item)))}
+                    :selected     selected?
+                    :type-frame   (cph/frame-shape? item))}
 
-       [:div.element-list-body {:class (dom/classnames :selected selected?
-                                                       :icon-layer (= (:type item) :icon))
+       [:div.element-list-body {:class (stl/css-case*
+                                        :selected selected?
+                                        :icon-layer (= (:type item) :icon))
                                 :on-click select-shape
                                 :on-pointer-enter on-pointer-enter
                                 :on-pointer-leave on-pointer-leave
-                                :on-double-click #(dom/stop-propagation %)}
+                                :on-double-click dom/stop-propagation}
 
-        [:div.icon {:on-double-click #(do (dom/stop-propagation %)
-                                          (dom/prevent-default %)
-                                          (st/emit! dw/zoom-to-selected-shape))}
-         (when absolute?
+        [:div.icon {:on-double-click zoom-to-selected}
+         (when ^boolean absolute?
            [:div.absolute i/position-absolute])
-         [:& si/element-icon {:shape item
-                              :main-instance? main-instance?}]]
+         [:& si/element-icon
+          {:shape item
+           :main-instance? main-instance?}]]
         [:& layer-name {:ref ref
                         :parent-size parent-size
-                        :shape-id (:id item)
-                        :shape-name (:name item)
-                        :shape-touched? (boolean (seq (:touched item)))
-                        :on-start-edit #(reset! disable-drag true)
-                        :on-stop-edit #(reset! disable-drag false)
-                        :disabled-double-click workspace-read-only?
+                        :shape-id id
+                        :shape-name name
+                        :shape-touched? touched?
+                        :on-start-edit disable-drag
+                        :on-stop-edit enable-drag
+                        :disabled-double-click read-only?
                         :selected? selected?
                         :type-comp component-tree?
-                        :type-frame (= :frame (:type item))
-                        :hidden? (:hidden item)}]
+                        :type-frame (cph/frame-shape? item)
+                        :hidden? hidden?}]
 
-        [:div.element-actions {:class (when (:shapes item) "is-parent")}
-         [:div.toggle-element {:class (when (:hidden item) "selected")
+        [:div.element-actions {:class (when ^boolean has-shapes? "is-parent")}
+         [:div.toggle-element {:class (when ^boolean hidden? "selected")
                                :on-click toggle-visibility}
-          (if (:hidden item) i/eye-closed i/eye)]
-         [:div.block-element {:class (when (:blocked item) "selected")
+          (if ^boolean hidden? i/eye-closed i/eye)]
+         [:div.block-element {:class (when ^boolean blocked? "selected")
                               :on-click toggle-blocking}
-          (if (:blocked item) i/lock i/unlock)]]
+          (if ^boolean blocked? i/lock i/unlock)]]
 
-        (when (:shapes item)
-          (when (not filtered?) [:span.toggle-content
-                                 {:on-click toggle-collapse
-                                  :class (when expanded? "inverse")}
-                                 i/arrow-slide]))]
-       (when (and (:shapes item) expanded?)
+        (when ^boolean has-shapes?
+          (when (not ^boolean filtered?)
+            [:span.toggle-content
+             {:on-click toggle-collapse
+              :class (when ^boolean expanded? "inverse")}
+             i/arrow-slide]))]
+
+       (when (and ^boolean has-shapes?
+                  ^boolean expanded?)
          [:ul.element-children
           (for [[index id] (reverse (d/enumerate (:shapes item)))]
             (when-let [item (get objects id)]
@@ -348,5 +377,5 @@
                 :selected selected
                 :index index
                 :objects objects
-                :key (:id item)
+                :key (dm/str id)
                 :sortable? sortable?}]))])])))
