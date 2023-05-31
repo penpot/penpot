@@ -9,6 +9,8 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.container :as ctn]
+   [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.attrs :as attrs]
    [app.util.object :as obj]
@@ -22,7 +24,6 @@
   [props]
   (let [shape    (obj/get props "shape")
         zoom     (obj/get props "zoom" 1)
-        color    (obj/get props "color")
         modifier (obj/get props "modifier")
 
         shape (gsh/transform-shape shape (:modifiers modifier))
@@ -34,6 +35,13 @@
          #(when path?
             (or (ex/ignoring (upf/format-path (:content shape)))
                 "")))
+
+        ;; Note that we don't use mf/deref to avoid a repaint dependency here
+        objects (deref refs/workspace-page-objects)
+
+        color     (if (ctn/in-any-component? objects shape)
+                    "var(--color-component-highlight)"
+                    "var(--color-primary)")
 
         {:keys [x y width height selrect]} shape
 
@@ -78,19 +86,16 @@
    ::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "zoom" "modifiers"]))]}
   [props]
 
-  (let [shapes (obj/get props "shapes")
-        zoom   (obj/get props "zoom")
-        modifiers   (obj/get props "modifiers")
-        color  (if (or (> (count shapes) 1) (nil? (:shape-ref (first shapes))))
-                 "var(--color-primary)" "var(--color-component-highlight)")]
+  (let [shapes    (obj/get props "shapes")
+        zoom      (obj/get props "zoom")
+        modifiers (obj/get props "modifiers")]
 
     (for [shape shapes]
       (let [modifier (get modifiers (:id shape))]
         [:& outline {:key (str "outline-" (:id shape))
                      :shape shape
                      :modifier modifier
-                     :zoom zoom
-                     :color color}]))))
+                     :zoom zoom}]))))
 
 (defn- show-outline?
   [shape]

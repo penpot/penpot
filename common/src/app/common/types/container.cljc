@@ -109,6 +109,23 @@
     :else
     (get-component-shape objects (get objects (:parent-id shape)) options))))
 
+(defn in-component-main?
+  "Check if the shape is inside a component non-main instance.
+   
+   Note that we must iterate on the parents because non-root shapes in
+   a main component have not any discriminating attribute."
+  [objects shape]
+  (let [component-shape (get-component-shape objects shape {:allow-main? true})]
+    (:main-instance? component-shape)))
+
+(defn in-any-component?
+  "Check if the shape is part of any component (main or copy), wether it's
+   head or not."
+  [objects shape]
+  (or (ctk/in-component-copy? shape)
+      (ctk/main-instance? shape)
+      (in-component-main? objects shape)))
+
 (defn make-component-shape
   "Clone the shape and all children. Generate new ids and detach
   from parent and frame. Update the original shapes to have links

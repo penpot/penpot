@@ -40,7 +40,19 @@
   [shape]
   (some? (:main-instance? shape)))
 
-(defn is-main-instance?
+(defn in-component-copy?
+  "Check if the shape is inside a component non-main instance."
+  [shape]
+  (some? (:shape-ref shape)))
+
+(defn in-component-copy-not-root?
+  "Check if the shape is inside a component non-main instance and
+  is not the root shape."
+  [shape]
+  (and (some? (:shape-ref shape))
+       (nil? (:component-id shape))))
+
+(defn main-instance-of?
   "Check if this shape is the root of the main instance of the given component."
   [shape-id page-id component]
   (and (= shape-id (:main-instance-id component))
@@ -57,18 +69,6 @@
   [shape library-id]
   (and (some? (:component-id shape))
        (= (:component-file shape) library-id)))
-
-(defn in-component-copy?
-  "Check if the shape is inside a component non-main instance."
-  [shape]
-  (some? (:shape-ref shape)))
-
-(defn in-component-copy-not-root?
-  "Check if the shape is inside a component non-main instance and
-  is not the root shape."
-  [shape]
-  (and (some? (:shape-ref shape))
-       (nil? (:component-id shape))))
 
 (defn detach-shape
   "Remove the links and leave it as a plain shape, detached from any component."
