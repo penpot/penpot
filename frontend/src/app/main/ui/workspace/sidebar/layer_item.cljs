@@ -314,6 +314,7 @@
          [:& si/element-icon {:shape item
                               :main-instance? main-instance?}]]
         [:& layer-name {:ref ref
+                        :parent-size parent-size
                         :shape-id (:id item)
                         :shape-name (:name item)
                         :shape-touched? (boolean (seq (:touched item)))
