@@ -248,16 +248,15 @@
       (mf/set-ref-val! ref val))
     (mf/ref-val ref)))
 
+;; FIXME: rename to use-focus-objects
 (defn with-focus-objects
   ([objects]
    (let [focus (mf/deref refs/workspace-focus-selected)]
      (with-focus-objects objects focus)))
 
   ([objects focus]
-   (let [objects (mf/use-memo
-                  (mf/deps focus objects)
-                  #(cpf/focus-objects objects focus))]
-     objects)))
+   (mf/with-memo [focus objects]
+     (cpf/focus-objects objects focus))))
 
 (defn use-debounce
   [ms value]

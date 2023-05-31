@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.layers
-  (:require-macros [app.main.style :as stl :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -34,8 +34,7 @@
 ;; affected by the selected set.
 (mf/defc frame-wrapper
   {::mf/wrap-props false
-   ::mf/wrap [mf/memo
-              #(mf/deferred % ts/idle-then-raf)]}
+   ::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
   [props]
   [:> layer-item props])
 
@@ -43,16 +42,16 @@
   {::mf/wrap [#(mf/memo % =)
               #(mf/throttle % 200)]}
   [{:keys [objects filtered? parent-size] :as props}]
-  (let [selected (mf/deref refs/selected-shapes)
-        selected (hooks/use-equal-memo selected)
-        root (get objects uuid/zero)
+  (let [selected           (mf/deref refs/selected-shapes)
+        selected       (hooks/use-equal-memo selected)
+        root           (get objects uuid/zero)
         new-css-system (mf/use-ctx ctx/new-css-system)]
     [:ul
      {:class (stl/css new-css-system ::stl/element-list)}
      [:& hooks/sortable-container {}
       (for [[index id] (reverse (d/enumerate (:shapes root)))]
         (when-let [obj (get objects id)]
-          (if (= (:type obj) :frame)
+          (if (cph/frame-shape? obj)
             [:& frame-wrapper
              {:item obj
               :selected selected
@@ -62,7 +61,7 @@
               :sortable? true
               :filtered? filtered?
               :parent-size parent-size
-              :recieved-depth -1}]
+              :depth -1}]
             [:& layer-item
              {:item obj
               :selected selected
@@ -71,16 +70,16 @@
               :key id
               :sortable? true
               :filtered? filtered?
-              :recieved-depth -1
+              :depth -1
               :parent-size parent-size}])))]]))
 
 (mf/defc filters-tree
   {::mf/wrap [#(mf/memo % =)
               #(mf/throttle % 200)]}
-  [{:keys [objects parent-size] :as props}]
-  (let [selected (mf/deref refs/selected-shapes)
-        selected (hooks/use-equal-memo selected)
-        root (get objects uuid/zero)
+  [{:keys [objects parent-size]}]
+  (let [selected       (mf/deref refs/selected-shapes)
+        selected       (hooks/use-equal-memo selected)
+        root           (get objects uuid/zero)
         new-css-system (mf/use-ctx ctx/new-css-system)]
     [:ul {:class (stl/css new-css-system ::stl/element-list)}
      (for [[index id] (d/enumerate (:shapes root))]
@@ -93,7 +92,7 @@
            :key id
            :sortable? false
            :filtered? true
-           :recieved-depth -1
+           :depth -1
            :parent-size parent-size}]))]))
 
 (defn calc-reparented-objects
