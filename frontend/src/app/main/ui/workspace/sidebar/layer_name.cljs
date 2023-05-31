@@ -5,8 +5,9 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.layer-name
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
@@ -33,7 +34,7 @@
         edition?         (deref edition*)
 
         local-ref        (mf/use-ref)
-        ref              (or external-ref local-ref)
+        ref              (d/nilv external-ref local-ref)
 
         shape-for-rename (mf/deref lens:shape-for-rename)
         new-css-system   (mf/use-ctx ctx/new-css-system)
@@ -86,26 +87,25 @@
 
     (if ^boolean edition?
       [:input
-       {:class (if new-css-system
-                 (dom/classnames (css :element-name-input) true)
-                 (dom/classnames :element-name true))
-        :style #js {"--depth" depth "--parent-size" parent-size}
+       {:class (stl/css new-css-system :element-name :element-name-input)
+        :style {"--depth" depth "--parent-size" parent-size}
         :type "text"
         :ref ref
         :on-blur accept-edit
         :on-key-down on-key-down
         :auto-focus true
-        :default-value (or shape-name "")}]
+        :default-value (d/nilv shape-name "")}]
       [:span
-       {:class (if new-css-system
-                 (dom/classnames (css :element-name) true
-                                 (css :selected) selected?
-                                 (css :hidden) hidden?
-                                 (css :type-comp) type-comp
-                                 (css :type-frame) type-frame)
-                 (dom/classnames :element-name true))
-        :style #js {"--depth" depth "--parent-size" parent-size}
+       {:class (if ^boolean new-css-system
+                 (stl/css-case
+                  :element-name true
+                  :selected selected?
+                  :hidden hidden?
+                  :type-comp type-comp
+                  :type-frame type-frame)
+                 (stl/css* :element-name))
+        :style {"--depth" depth "--parent-size" parent-size}
         :ref ref
         :on-double-click start-edit}
-       (or shape-name "")
+       (d/nilv shape-name "")
        (when ^boolean shape-touched? " *")])))
