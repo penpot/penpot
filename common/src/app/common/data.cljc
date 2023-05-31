@@ -608,6 +608,10 @@
         ^boolean (mth/finite? d)
         ^boolean (every? mth/finite? others))))
 
+(defn safe+
+  [a b]
+  (if (mth/finite? a) (+ a b) a))
+
 (defn max
   ([a] a)
   ([a b] (mth/max a b))
