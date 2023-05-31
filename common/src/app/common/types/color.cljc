@@ -58,7 +58,7 @@
     [:vector {:min 1 :gen/max 2}
      [:map {:title "GradientStop"}
       [:color ::rgb-color]
-      [:opacity ::sm/safe-number]
+      [:opacity {:optional true} [:maybe ::sm/safe-number]]
       [:offset ::sm/safe-number]]]]])
 
 (sm/def! ::color
