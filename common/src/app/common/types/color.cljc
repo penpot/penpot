@@ -28,7 +28,7 @@
 (s/def ::color-gradient/width ::us/safe-number)
 
 (s/def ::color-gradient-stop/color ::us/rgb-color-str)
-(s/def ::color-gradient-stop/opacity ::us/safe-number)
+(s/def ::color-gradient-stop/opacity (s/nilable ::us/safe-number))
 (s/def ::color-gradient-stop/offset ::us/safe-number)
 
 (s/def ::color-gradient/stop
