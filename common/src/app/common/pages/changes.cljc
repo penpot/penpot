@@ -75,7 +75,7 @@
       [:parent-id {:optional true} ::sm/uuid]
       [:index {:optional true} [:maybe :int]]
       [:ignore-touched {:optional true} :boolean]]]
-      
+
 
     [:mod-obj
      [:map {:title "ModObjChange"}
@@ -216,7 +216,7 @@
       [:type [:= :del-typography]]
       [:id ::sm/uuid]]]]])
 
-    
+
 
 (def change?
   (sm/pred-fn ::change))
@@ -388,18 +388,7 @@
 
 (defmethod process-change :mov-objects
   [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape]}]
-  (letfn [(nested-components? [objects shape-id]
-             (let [children            (cph/get-children-with-self objects shape-id)
-                   xf-get-component-id (keep :component-id)
-                   child-components    (into #{} xf-get-component-id children)
-
-                   parents             (cph/get-parents-with-self objects parent-id)
-                   xf-get-main-id      (comp (filter :main-instance?)
-                                             xf-get-component-id)
-                   parent-components   (into #{} xf-get-main-id parents)]
-               (seq (set/intersection child-components parent-components))))
-
-          (calculate-invalid-targets [objects shape-id]
+  (letfn [(calculate-invalid-targets [objects shape-id]
             (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
               (->> (get-in objects [shape-id :shapes])
                    (reduce reduce-fn #{shape-id}))))
@@ -410,7 +399,7 @@
             (let [invalid-targets (calculate-invalid-targets objects shape-id)]
               (and (contains? objects shape-id)
                    (not (invalid-targets parent-id))
-                   (not (nested-components? objects shape-id))
+                   (not (cph/components-nesting-loop? objects shape-id parent-id))
                    #_(cph/valid-frame-target? objects parent-id shape-id))))
 
           (insert-items [prev-shapes index shapes]
