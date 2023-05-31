@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require
+    [app.common.pages.helpers :as cph]
     [app.common.types.components-list :as ctkl]
     [app.common.types.file :as ctf]
     [app.main.data.modal :as modal]
@@ -142,6 +143,10 @@
   (let [current-file-id     (mf/use-ctx ctx/current-file-id)
         components-v2       (mf/use-ctx ctx/components-v2)
 
+        objects             (deref refs/workspace-page-objects)
+        touched?            (cph/component-touched? objects (:id shape))
+        can-update-main?    (or (not components-v2) touched?)
+
         id                  (first ids)
         local               (mf/use-state {:menu-open false})
 
@@ -230,23 +235,29 @@
                               (if local-component?
                                 (if is-dangling?
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
+                                   (when can-update-main?
+                                     [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
                                    (when components-v2
                                      [(tr "workspace.shape.menu.restore-main") do-restore-component])]
 
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
-                                   [(tr "workspace.shape.menu.update-main") do-update-component]
+                                   (when can-update-main?
+                                     [:*
+                                      [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
+                                      [(tr "workspace.shape.menu.update-main") do-update-component]])
                                    [(tr "workspace.shape.menu.show-main") do-show-component]])
 
                                 (if is-dangling?
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
+                                   (when can-update-main?
+                                     [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
                                    (when components-v2
                                      [(tr "workspace.shape.menu.restore-main") do-restore-component])]
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
-                                   [(tr "workspace.shape.menu.update-main") do-update-remote-component]
+                                   (when can-update-main?
+                                     [:*
+                                      [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
+                                      [(tr "workspace.shape.menu.update-main") do-update-remote-component]])
                                    [(tr "workspace.shape.menu.go-main") do-navigate-component-file]])))}]]]
 
         (when components-v2
