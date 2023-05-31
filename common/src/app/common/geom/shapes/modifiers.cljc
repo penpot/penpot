@@ -175,7 +175,7 @@
               [layout-line modif-tree]))]
 
     (let [children     (->> children
-                            (map (d/getf objects))
+                            (keep (d/getf objects))
                             (remove :hidden)
                             (remove gco/invalid-geometry?)
                             (map apply-modifiers))
