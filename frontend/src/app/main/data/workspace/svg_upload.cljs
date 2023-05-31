@@ -8,7 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -31,6 +31,7 @@
    [app.util.svg :as usvg]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
+   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
@@ -39,11 +40,12 @@
 (defonce default-image {:x 0 :y 0 :width 1 :height 1 :rx 0 :ry 0})
 
 (defn- assert-valid-num [attr num]
-  (dm/assert!
-   ["%1 attribute has invalid value: %2" (d/name attr) num]
-   (and (d/num? num)
-        (<= num max-safe-int)
-        (>= num min-safe-int)))
+  (when-not (and (d/num? num)
+              (<= num max-safe-int)
+              (>= num min-safe-int))
+    (ex/raise :type :assertion
+      :code :expr-validation
+      :hint (str/ffmt "%1 attribute has invalid value: %2" (d/name attr) num)))
 
   ;; If the number is between 0-1 we round to 1 (same in negative form
   (cond
@@ -53,10 +55,23 @@
 
 (defn- assert-valid-pos-num
   [attr num]
-  (dm/assert!
-   ["%1 attribute should be positive" (d/name attr)]
-   (pos? num))
+  (when-not (pos? num)
+    (ex/raise :type :assertion
+      :code :expr-validation
+      :hint (str/ffmt "%1 attribute should be positive" (d/name attr))))
   num)
+
+(defn- assert-valid-blend-mode
+  [mode]
+  (let [clean-value (-> mode
+                        str/trim
+                        str/lower
+                        keyword)]
+    (when-not (s/valid? ::cts/blend-mode clean-value)
+      (ex/raise :type :assertion
+        :code :expr-validation
+        :hint (str/ffmt "%1 is not a valid blend mode" clean-value)))
+    clean-value))
 
 (defn- svg-dimensions [data]
   (let [width (get-in data [:attrs :width] 100)
@@ -101,13 +116,13 @@
       (-> (update :svg-attrs dissoc :fill-opacity)
           (update-in [:svg-attrs :style] dissoc :fill-opacity)
           (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :fill-opacity])
-                                                 (d/parse-double))))
+                                                 (d/parse-double 1))))
 
       (get-in shape [:svg-attrs :style :fill-opacity])
       (-> (update-in [:svg-attrs :style] dissoc :fill-opacity)
           (update :svg-attrs dissoc :fill-opacity)
           (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :style :fill-opacity])
-                                                 (d/parse-double)))))))
+                                                 (d/parse-double 1)))))))
 
 (defn setup-stroke [shape]
   (let [stroke-linecap (-> (or (get-in shape [:svg-attrs :stroke-linecap])
@@ -134,12 +149,12 @@
           (get-in shape [:svg-attrs :stroke-opacity])
           (-> (update :svg-attrs dissoc :stroke-opacity)
               (assoc-in [:strokes 0 :stroke-opacity] (-> (get-in shape [:svg-attrs :stroke-opacity])
-                                                         (d/parse-double))))
+                                                         (d/parse-double 1))))
 
           (get-in shape [:svg-attrs :style :stroke-opacity])
           (-> (update-in [:svg-attrs :style] dissoc :stroke-opacity)
               (assoc-in [:strokes 0 :stroke-opacity] (-> (get-in shape [:svg-attrs :style :stroke-opacity])
-                                                         (d/parse-double))))
+                                                         (d/parse-double 1))))
 
           (get-in shape [:svg-attrs :stroke-width])
           (-> (update :svg-attrs dissoc :stroke-width)
@@ -166,21 +181,21 @@
     (get-in shape [:svg-attrs :opacity])
     (-> (update :svg-attrs dissoc :opacity)
         (assoc :opacity (-> (get-in shape [:svg-attrs :opacity])
-                            (d/parse-double))))
+                            (d/parse-double 1))))
 
     (get-in shape [:svg-attrs :style :opacity])
     (-> (update-in [:svg-attrs :style] dissoc :opacity)
         (assoc :opacity (-> (get-in shape [:svg-attrs :style :opacity])
-                            (d/parse-double))))
+                            (d/parse-double 1))))
 
 
     (get-in shape [:svg-attrs :mix-blend-mode])
     (-> (update :svg-attrs dissoc :mix-blend-mode)
-        (assoc :blend-mode (-> (get-in shape [:svg-attrs :mix-blend-mode]) keyword)))
+        (assoc :blend-mode (-> (get-in shape [:svg-attrs :mix-blend-mode]) assert-valid-blend-mode)))
 
     (get-in shape [:svg-attrs :style :mix-blend-mode])
     (-> (update-in [:svg-attrs :style] dissoc :mix-blend-mode)
-        (assoc :blend-mode (-> (get-in shape [:svg-attrs :style :mix-blend-mode]) keyword)))))
+        (assoc :blend-mode (-> (get-in shape [:svg-attrs :style :mix-blend-mode]) assert-valid-blend-mode)))))
 
 (defn create-raw-svg [name frame-id svg-data {:keys [tag attrs] :as data}]
   (let [{:keys [x y width height offset-x offset-y]} svg-data]
