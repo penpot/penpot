@@ -224,7 +224,6 @@
         pos (d/index-of shapes id)]
     (if (= 0 pos) nil (nth shapes (dec pos)))))
 
-
 (defn get-immediate-children
   "Retrieve resolved shape objects that are immediate children
    of the specified shape-id"
@@ -302,6 +301,13 @@
         (ctpl/get-page file id)
         (ctkl/get-component file id))
       (assoc :type type)))
+
+(defn component-touched?
+  "Check if any shape in the component is touched"
+  [objects root-id]
+  (->> (get-children-with-self objects root-id)
+       (filter (comp seq :touched))
+       seq))
 
 (defn components-nesting-loop?
   "Check if a nesting loop would be created if the given shape is moved below the given parent"

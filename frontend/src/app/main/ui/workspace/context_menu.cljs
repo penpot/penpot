@@ -435,17 +435,20 @@
 (mf/defc context-menu-component
   [{:keys [shapes]}]
   (let [single?             (= (count shapes) 1)
+        components-v2       (features/use-feature :components-v2)
 
         has-component?      (some true? (map #(contains? % :component-id) shapes))
         is-component?       (and single? (-> shapes first :component-id some?))
         is-non-root?        (and single? (ctk/in-component-copy-not-root? (first shapes)))
+        objects             (deref refs/workspace-page-objects)
+        touched?            (and single? (cph/component-touched? objects (:id (first shapes))))
+        can-update-main?    (or (not components-v2) touched?)
 
         first-shape         (first shapes)
         {:keys [id component-id component-file main-instance?]} first-shape
         lacks-annotation?   (nil? (:annotation first-shape))
         component-shapes    (filter #(contains? % :component-id) shapes)
 
-        components-v2       (features/use-feature :components-v2)
 
         current-file-id     (mf/use-ctx ctx/current-file-id)
         local-component?    (= component-file current-file-id)
@@ -534,8 +537,9 @@
                [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
                                :shortcut (sc/get-tooltip :detach-component)
                                :on-click do-detach-component}]
-               [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
-                               :on-click do-reset-component}]
+               (when can-update-main?
+                 [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
+                                 :on-click do-reset-component}])
                (when components-v2
                  [:& menu-entry {:title (tr "workspace.shape.menu.restore-main")
                                  :on-click do-restore-component}])]
@@ -543,10 +547,12 @@
                [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
                                :shortcut (sc/get-tooltip :detach-component)
                                :on-click do-detach-component}]
-               [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
-                               :on-click do-reset-component}]
-               [:& menu-entry {:title (tr "workspace.shape.menu.update-main")
-                               :on-click do-update-component}]
+               (when can-update-main?
+                 [:*
+                  [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
+                                  :on-click do-reset-component}]
+                  [:& menu-entry {:title (tr "workspace.shape.menu.update-main")
+                                  :on-click do-update-component}]])
                [:& menu-entry {:title (tr "workspace.shape.menu.show-main")
                                :on-click do-show-component}]])
             (if is-dangling?
@@ -554,8 +560,9 @@
                [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
                                :shortcut (sc/get-tooltip :detach-component)
                                :on-click do-detach-component}]
-               [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
-                               :on-click do-reset-component}]
+               (when can-update-main?
+                 [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
+                               :on-click do-reset-component}])
                (when components-v2
                  [:& menu-entry {:title (tr "workspace.shape.menu.restore-main")
                                  :on-click do-restore-component}])]
@@ -563,10 +570,12 @@
                [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
                                :shortcut (sc/get-tooltip :detach-component)
                                :on-click do-detach-component}]
-               [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
-                               :on-click do-reset-component}]
-               [:& menu-entry {:title (tr "workspace.shape.menu.update-main")
-                               :on-click do-update-remote-component}]
+               (when can-update-main?
+                 [:*
+                  [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
+                                  :on-click do-reset-component}]
+                  [:& menu-entry {:title (tr "workspace.shape.menu.update-main")
+                                  :on-click do-update-remote-component}]])
                [:& menu-entry {:title (tr "workspace.shape.menu.go-main")
                                :on-click do-navigate-component-file}]])))])
      [:& menu-separator]]))
