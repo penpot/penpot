@@ -1646,9 +1646,18 @@
                   tree-root            (get-tree-root-shapes paste-objects)
                   only-one-root-shape? (and
                                         (< 1 (count paste-objects))
-                                        (= 1 (count tree-root)))]
+                                        (= 1 (count tree-root)))
+                  all-objects           (merge page-objects paste-objects)
+                  comps-nesting-loop?   (not (->> (keys paste-objects)
+                                                  (map #(cph/components-nesting-loop? all-objects % (:id base)))
+                                                  (every? nil?)))]
 
               (cond
+                comps-nesting-loop?
+                ;; Avoid placing a shape as a direct or indirect child of itself,
+                ;; or inside its main component if it's in a copy.
+                [uuid/zero uuid/zero (gpt/subtract mouse-pos orig-pos)]
+
                 (selected-frame? state)
 
                 (if (or (any-same-frame-from-selected? state (keys paste-objects))

@@ -12,6 +12,7 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [clojure.set :as set]
    [cuerdas.core :as str]))
 
 (declare reduce-objects)
@@ -301,6 +302,19 @@
         (ctpl/get-page file id)
         (ctkl/get-component file id))
       (assoc :type type)))
+
+(defn components-nesting-loop?
+  "Check if a nesting loop would be created if the given shape is moved below the given parent"
+  [objects shape-id parent-id]
+  (let [children            (get-children-with-self objects shape-id)
+        xf-get-component-id (keep :component-id)
+        child-components    (into #{} xf-get-component-id children)
+
+        parents             (get-parents-with-self objects parent-id)
+        xf-get-main-id      (comp (filter :main-instance?)
+                                  xf-get-component-id)
+        parent-components   (into #{} xf-get-main-id parents)]
+    (seq (set/intersection child-components parent-components))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ALGORITHMS & TRANSFORMATIONS FOR SHAPES
