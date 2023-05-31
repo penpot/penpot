@@ -424,7 +424,7 @@
 
                       to-reflow
                       (cond-> to-reflow
-                        (and (ctl/flex-layout-descent? objects parent-base)
+                        (and (ctl/any-layout-descent? objects parent-base)
                              (not= uuid/zero (:frame-id parent-base)))
                         (conj (:frame-id parent-base)))]
                   (recur modif-tree

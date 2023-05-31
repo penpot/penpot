@@ -715,6 +715,11 @@
   [{:keys [ids values] :as props}]
   (let [;; Gap
         gap-selected?       (mf/use-state :none)
+        saved-grid-dir (:layout-grid-dir values)
+
+        set-direction
+        (fn [dir]
+          (st/emit! (dwsl/update-layout ids {:layout-grid-dir dir})))
 
         set-gap
         (fn [gap-multiple? type val]
@@ -739,6 +744,28 @@
             :else
             (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))
 
+        ;; Align grid
+        align-items-row    (:layout-align-items values)
+        align-items-column (:layout-justify-items values)
+
+        set-align-grid
+        (fn [value type]
+          (if (= type :row)
+            (st/emit! (dwsl/update-layout ids {:layout-align-items value}))
+            (st/emit! (dwsl/update-layout ids {:layout-justify-items value}))))
+
+        ;; Justify grid
+        grid-justify-content-row    (:layout-align-content values)
+        grid-justify-content-column (:layout-justify-content values)
+
+        set-justify-grid
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [value type]
+           (if (= type :row)
+             (st/emit! (dwsl/update-layout ids {:layout-align-content value}))
+             (st/emit! (dwsl/update-layout ids {:layout-justify-content value})))))
+
         ;;Grid columns
         column-grid-values  (:layout-grid-columns values)
         grid-columns-open?  (mf/use-state false)
@@ -746,7 +773,7 @@
                              (fn [_]
                                (swap! grid-columns-open? not)))
 
-                                        ; Grid rows / columns
+        ;; Grid rows / columns
         rows-grid-values  (:layout-grid-rows values)
         grid-rows-open?  (mf/use-state false)
         toggle-rows-info
@@ -789,6 +816,42 @@
       [:span "Grid Layout"]]
 
      [:div.element-set-content.layout-menu
+      [:div.layout-row
+       [:div.direction-wrap.row-title "Direction"]
+       [:div.btn-wrapper
+        [:div.direction
+         [:*
+          (for [dir [:row :column]]
+            [:& direction-btn {:key (d/name dir)
+                               :dir dir
+                               :saved-dir saved-grid-dir
+                               :set-direction #(set-direction dir)
+                               :icon? false}])]]
+
+        (when (= 1 (count ids))
+          [:div.edit-mode
+           [:& grid-edit-mode {:id (first ids)}]])]]
+
+      [:div.layout-row
+       [:div.align-items-grid.row-title "Align"]
+       [:div.btn-wrapper.align-grid
+        [:& align-grid-row {:is-col? false
+                            :align-items align-items-row
+                            :set-align set-align-grid}]
+
+        [:& align-grid-row {:is-col? true
+                            :align-items align-items-column
+                            :set-align set-align-grid}]]]
+
+      [:div.layout-row
+       [:div.jusfiy-content-grid.row-title "Justify"]
+       [:div.btn-wrapper.align-grid
+        [:& justify-grid-row {:is-col? true
+                              :justify-items grid-justify-content-column
+                              :set-justify set-justify-grid}]
+        [:& justify-grid-row {:is-col? false
+                              :justify-items grid-justify-content-row
+                              :set-justify set-justify-grid}]]]
       [:& grid-columns-row {:is-col? true
                             :expanded? @grid-columns-open?
                             :toggle toggle-columns-info

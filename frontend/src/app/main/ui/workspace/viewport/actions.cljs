@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.actions
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
@@ -202,7 +203,12 @@
 
              {:keys [id type] :as shape} (or @hover (get objects (first @hover-ids)))
 
-             editable? (contains? #{:text :rect :path :image :circle} type)]
+             editable? (contains? #{:text :rect :path :image :circle} type)
+
+             hover-shape (->> @hover-ids (filter (partial cph/is-child? objects id)) first)
+             selected-shape (get objects hover-shape)
+
+             grid-layout-id (->> @hover-ids reverse (d/seek (partial ctl/grid-layout? objects)))]
 
          (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt? meta?))
 
@@ -215,16 +221,12 @@
                 (st/emit! (dw/select-shape id)
                           (dw/start-editing-selected))
 
-                (ctl/grid-layout? objects @hover-top-frame-id)
-                (st/emit! (dw/start-edition-mode @hover-top-frame-id))
+                (some? selected-shape)
+                (do (reset! hover selected-shape)
+                    (st/emit! (dw/select-shape (:id selected-shape))))
 
-                :else
-                (let [;; We only get inside childrens of the hovering shape
-                      hover-ids (->> @hover-ids (filter (partial cph/is-child? objects id)))
-                      selected (get objects (first hover-ids))]
-                  (when (some? selected)
-                    (reset! hover selected)
-                    (st/emit! (dw/select-shape (:id selected))))))))))))))
+                (and (not selected-shape) (some? grid-layout-id))
+                (st/emit! (dw/start-edition-mode grid-layout-id)))))))))))
 
 (defn on-context-menu
   [hover hover-ids workspace-read-only?]

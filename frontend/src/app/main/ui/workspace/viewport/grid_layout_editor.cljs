@@ -299,9 +299,11 @@
 
         handle-pointer-down
         (mf/use-callback
-         (mf/deps (:id shape) (:id cell))
+         (mf/deps (:id shape) (:id cell) selected?)
          (fn []
-           (st/emit! (dwge/select-grid-cell (:id shape) (:id cell)))))]
+           (if selected?
+             (st/emit! (dwge/remove-selection (:id shape)))
+             (st/emit! (dwge/select-grid-cell (:id shape) (:id cell))))))]
 
     [:g.cell-editor
      [:rect
@@ -657,14 +659,17 @@
    ::mf/wrap-props false}
   [props]
 
-  (let [shape     (unchecked-get props "shape")
-        objects   (unchecked-get props "objects")
-        zoom      (unchecked-get props "zoom")
-        view-only (unchecked-get props "view-only")
+  (let [base-shape (unchecked-get props "shape")
+        objects    (unchecked-get props "objects")
+        modifiers  (unchecked-get props "modifiers")
+        zoom       (unchecked-get props "zoom")
+        view-only  (unchecked-get props "view-only")
 
-        ;; We need to know the state unmodified so we can create the modifiers
-        shape-ref (mf/use-memo (mf/deps (:id shape)) #(refs/object-by-id (:id shape)))
-        base-shape (mf/deref shape-ref)
+        shape (mf/use-memo
+               (mf/deps modifiers base-shape)
+               #(gsh/transform-shape
+                 base-shape
+                 (dm/get-in modifiers [(:id base-shape) :modifiers])))
 
         snap-pixel? (mf/deref refs/snap-pixel?)
 
@@ -680,6 +685,7 @@
 
         children (->> (:shapes shape)
                       (map (d/getf objects))
+                      (map #(gsh/transform-shape % (dm/get-in modifiers [(:id %) :modifiers])))
                       (remove :hidden)
                       (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))
 

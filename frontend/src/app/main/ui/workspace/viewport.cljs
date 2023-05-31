@@ -595,9 +595,8 @@
          [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
           [:& grid-layout/editor
            {:zoom zoom
-            :objects objects-modified
+            :objects base-objects
+            :modifiers modifiers
             :shape (or (get objects-modified edition)
-                       (gsh/transform-shape
-                        (get base-objects @hover-top-frame-id)
-                        (dm/get-in modifiers [@hover-top-frame-id :modifiers])))
+                       (get base-objects @hover-top-frame-id))
             :view-only (not show-grid-editor?)}]])]]]))

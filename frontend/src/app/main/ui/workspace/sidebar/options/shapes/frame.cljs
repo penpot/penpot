@@ -49,7 +49,7 @@
         is-grid-parent-ref (mf/use-memo (mf/deps ids) #(refs/grid-layout-child? ids))
         is-grid-parent? (mf/deref is-grid-parent-ref)
 
-        is-flex-layout-container? (ctl/flex-layout? shape)
+        is-layout-container? (ctl/any-layout? shape)
         is-layout-child-absolute? (ctl/layout-absolute? shape)
 
         ids (hooks/use-equal-memo ids)
@@ -73,7 +73,7 @@
         {:shape (first parents)
          :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
 
-     (when (or is-layout-child? is-flex-layout-container?)
+     (when (or is-layout-child? is-layout-container?)
        [:& layout-item-menu
         {:ids ids
          :type type
@@ -81,7 +81,7 @@
          :is-flex-parent? is-flex-parent?
          :is-grid-parent? is-grid-parent?
          :is-layout-child? is-layout-child?
-         :is-layout-container? is-flex-layout-container?
+         :is-layout-container? is-layout-container?
          :shape shape}])
 
      [:& layer-menu {:ids ids
