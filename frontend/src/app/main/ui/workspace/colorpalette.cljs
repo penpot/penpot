@@ -118,7 +118,7 @@
                    :on-close #(swap! state assoc :show-menu false)}
       [:ul.workspace-context-menu.palette-menu
        (for [{:keys [data id] :as library} (vals shared-libs)]
-         (let [colors (-> data :colors vals)]
+         (let [colors (->> data :colors vals (sort-by :name))]
            [:li.palette-library
             {:key (dm/str "library-" id)
              :on-click on-select-palette
@@ -126,7 +126,7 @@
             (when (= selected id) i/tick)
             [:div.library-name (str (:name library) " " (str/ffmt "(%)" (count colors)))]
             [:div.color-sample
-             (for [[i {:keys [color]}] (map-indexed vector (take 7 colors))]
+             (for [[i {:keys [color]}] (map-indexed vector colors)]
                [:& cb/color-bullet {:key (dm/str "color-" i)
                                     :color color}])]]))
 
@@ -139,7 +139,7 @@
                             (tr "workspace.libraries.colors.file-library")
                             (str/ffmt " (%)" (count file-colors)))]
         [:div.color-sample
-         (for [[i color] (map-indexed vector (take 7 (vals file-colors)))]
+         (for [[i color] (map-indexed vector (take 7 (->> (vals file-colors) (sort-by :name))))]
            [:& cb/color-bullet {:key (dm/str "color-" i)
                                 :color color}])]]
 

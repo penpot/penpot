@@ -54,12 +54,13 @@
                      (map #(if (map? %) % {:color %}) (reverse (or recent-colors [])))
 
                      (= @selected :file)
-                     (vals file-colors)
+                     (->> (vals file-colors) (sort-by :name))
 
                      :else ;; Library UUID
                      (as-> @selected file-id
                        (->> (get-in shared-libs [file-id :data :colors])
                             (vals)
+                            (sort-by :name)
                             (map #(assoc % :file-id file-id)))))]
 
         (reset! current-colors (into [] (filter check-valid-color?) colors))))
