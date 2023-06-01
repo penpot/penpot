@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-04-15 13:47+0000\n"
+"PO-Revision-Date: 2023-06-03 00:50+0000\n"
 "Last-Translator: 王世阳 <wangshiyangchina@gmail.com>\n"
-"Language-Team: Chinese (Simplified) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
+"penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 4.17-dev\n"
+"X-Generator: Weblate 4.18-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -406,9 +406,6 @@ msgstr "文件无法导入"
 msgid "dashboard.import.import-error"
 msgstr "文件导入过程中出现未知问题，导入失败。"
 
-msgid "dashboard.import.import-message"
-msgstr "%s 个文件导入成功。"
-
 msgid "dashboard.import.import-warning"
 msgstr "一些包含无效对象的文档已被移除。"
 
@@ -728,7 +725,7 @@ msgstr "此邮箱[%s]已被标记为垃圾邮件或已被永久拉黑。"
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-mismatch"
-msgstr "看起来您正在打开一个启用了“%s”功能的文件，您的 penpot 前端不支持它或已禁用它。"
+msgstr "看起来你正在打开一个启用了'%s'功能的文件，但你的penpot前台不支持它或禁用它。"
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-not-supported"
@@ -1650,14 +1647,18 @@ msgstr[1] "批量删除文件"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint"
 msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] "如果将其删除，这些资源将移动到此文件的本地库中。任何未使用的资产都将丢失。"
-msgstr[1] "如果删除它们，这些资源将移动到此文件的本地库中。任何未使用的资产都将丢失。"
+msgstr[0] "如果你删除它，这些资产将不再能从其他文件中获得。已经使用过的资产将保留在这个"
+"文件中（没有设计会被破坏！）。"
+msgstr[1] "如果你删除它们，这些资产将不再能从其他文件中获得。已经使用过的资产将保留在这"
+"个文件中（没有设计会被破坏！）。"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint-many"
 msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] "如果将其删除，这些资源将移动到这些文件的本地库中。任何未使用的资产都将丢失。"
-msgstr[1] "如果删除它们，这些资源将移动到这些文件的本地库中。任何未使用的资产都将丢失。"
+msgstr[0] "如果你删除它，这些资产将不再能从其他文件中获得。已经使用过的资产将保留在这些"
+"文件中（没有设计会被破坏！）。"
+msgstr[1] "如果你删除它们，这些资产将不再能从其他文件中获得。已经使用过的资产将保留在这"
+"些文件中（没有设计会被破坏！）。"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
@@ -1817,14 +1818,18 @@ msgstr "小幅微调"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] "如果取消发布它，这些资产将移动到此文件的本地库。"
-msgstr[1] "如果取消发布它们，这些资源将移动到此文件的本地库中。"
+msgstr[0] "如果你取消发布，这些资产将不再能从其他文件中获得。已经使用过的资产将保留在这"
+"个文件中（没有设计会被破坏！）。"
+msgstr[1] "如果你取消发布它们，这些资产将不再能从其他文件中获得。已经使用过的资产将保留"
+"在这个文件中（没有设计会被破坏！）。"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint-many"
 msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] "如果取消发布，这些资源将移动到这些文件的本地库中。"
-msgstr[1] "如果取消发布它们，这些资源将移动到这些文件的本地库中。"
+msgstr[0] "如果你取消发布，这些资产将不再能从其他文件中获得。已经使用过的资产将保留在这"
+"些文件中（没有设计会被破坏！）。"
+msgstr[1] "如果你取消发布它们，这些资产将不再能从其他文件中获得。已经使用过的资产将保留"
+"在这些文件中（没有设计会被破坏！）。"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -1989,9 +1994,6 @@ msgstr "隐私策略。"
 
 msgid "onboarding.newsletter.title"
 msgstr "想要接收 Penpot 新闻？"
-
-msgid "onboarding.slide.1.title"
-msgstr "通过交互使您的设计栩栩如生"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "创建一个团队"
@@ -2410,7 +2412,7 @@ msgid "shortcuts.toggle-layers"
 msgstr "切换层"
 
 msgid "shortcuts.toggle-layout-flex"
-msgstr "添加/删除布局弹性"
+msgstr "添加/删除弹性布局"
 
 msgid "shortcuts.toggle-lock"
 msgstr "锁定所选"
@@ -3551,10 +3553,6 @@ msgid "workspace.options.layout.direction.column"
 msgstr "列"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-row"
-msgstr "反转行"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
 msgstr "行"
 
@@ -3638,7 +3636,7 @@ msgstr "所有角"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.single-corners"
-msgstr "单个角"
+msgstr "独立的角"
 
 msgid "workspace.options.recent-fonts"
 msgstr "最近的"
@@ -3955,7 +3953,7 @@ msgstr "正在更新 %s..."
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
-msgstr "添加布局弹性"
+msgstr "添加弹性布局"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
@@ -4069,7 +4067,7 @@ msgstr "路径"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-flex"
-msgstr "删除布局弹性"
+msgstr "删除弹性布局"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
@@ -4357,3 +4355,110 @@ msgstr "更新"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "您的文件已被成功删除"
+msgstr[1] "您的文件已被成功删除"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "字体重量"
+
+msgid "shortcuts.bold"
+msgstr "切换粗体"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "减少字母间距"
+
+msgid "shortcuts.font-size-inc"
+msgstr "增加字体大小"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "减少字母间距"
+
+msgid "shortcuts.underline"
+msgstr "切换下划线"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "反向列"
+
+msgid "workspace.header.menu.redo"
+msgstr "重做"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "您的文件已被成功复制"
+msgstr[1] "您的文件已被成功复制"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "输出1个元素"
+msgstr[1] "输出%s元素"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "取消发布"
+msgstr[1] "取消发布"
+
+msgid "shortcuts.line-height-inc"
+msgstr "增加行高"
+
+msgid "shortcuts.line-through"
+msgstr "切换删除线"
+
+msgid "shortcuts.align-justify"
+msgstr "两端对齐"
+
+msgid "workspace.assets.duplicate-main"
+msgstr "重复主体"
+
+msgid "workspace.header.menu.undo"
+msgstr "撤销"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "反向行"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"我们在你的字体中检测到一个可能的问题，与不同操作系统的垂直度量有关。为了检查"
+"它，你可以使用字体垂直度量服务，如[这个](https://vertical-metrics.netlify."
+"app/)。此外，我们建议使用[Transfonter](https://transfonter.org/"
+")来生成网络字体并修复错误。 "
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr "有些电子邮件是来自当前的团队成员。他们的邀请将不会被发送。"
+
+msgid "shortcuts.font-size-dec"
+msgstr "缩小字体大小"
+
+msgid "shortcuts.italic"
+msgstr "切换斜体"
+
+msgid "shortcuts.select-prev"
+msgstr "选择上一个图层"
+
+msgid "shortcut-subsection.text-editor"
+msgstr "文本"
+
+msgid "shortcuts.align-center"
+msgstr "居中对齐"
+
+msgid "shortcuts.line-height-dec"
+msgstr "减少行高"
+
+msgid "shortcuts.select-next"
+msgstr "选择下一个图层"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "禁用比例尺"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "启用比例尺"
