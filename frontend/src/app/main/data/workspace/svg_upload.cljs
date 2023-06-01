@@ -9,7 +9,6 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -38,14 +37,12 @@
   {:x 0 :y 0 :width 1 :height 1})
 
 (defn- assert-valid-num [attr num]
-  (when-not (and (d/num? num)
-              (<= num max-safe-int)
-              (>= num min-safe-int))
-    (ex/raise :type :assertion
-      :code :expr-validation
-      :hint (str/ffmt "%1 attribute has invalid value: %2" (d/name attr) num)))
+  (dm/verify!
+   ["%1 attribute has invalid value: %2" (d/name attr) num]
+   (and (d/num? num)
+        (<= num max-safe-int)
+        (>= num min-safe-int)))
 
-  ;; If the number is between 0-1 we round to 1 (same in negative form
   (cond
     (and (> num 0) (< num 1))    1
     (and (< num 0) (> num -1))  -1
@@ -53,22 +50,19 @@
 
 (defn- assert-valid-pos-num
   [attr num]
-  (when-not (pos? num)
-    (ex/raise :type :assertion
-      :code :expr-validation
-      :hint (str/ffmt "%1 attribute should be positive" (d/name attr))))
+
+  (dm/verify!
+   ["%1 attribute should be positive" (d/name attr)]
+   (pos? num))
+
   num)
 
 (defn- assert-valid-blend-mode
   [mode]
-  (let [clean-value (-> mode
-                        str/trim
-                        str/lower
-                        keyword)]
-    (when-not (contains? cts/blend-modes clean-value)
-      (ex/raise :type :assertion
-                :code :expr-validation
-                :hint (str/ffmt "%1 is not a valid blend mode" clean-value)))
+  (let [clean-value (-> mode str/trim str/lower keyword)]
+    (dm/verify!
+     ["%1 is not a valid blend mode" clean-value]
+     (contains? cts/blend-modes clean-value))
     clean-value))
 
 (defn- svg-dimensions [data]

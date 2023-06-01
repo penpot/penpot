@@ -71,8 +71,8 @@
       [:obj :map]
       [:page-id {:optional true} ::sm/uuid]
       [:component-id {:optional true} ::sm/uuid]
-      [:frame-id {:optional true} ::sm/uuid]
-      [:parent-id {:optional true} ::sm/uuid]
+      [:frame-id ::sm/uuid]
+      [:parent-id {:optional true} [:maybe ::sm/uuid]]
       [:index {:optional true} [:maybe :int]]
       [:ignore-touched {:optional true} :boolean]]]
 
