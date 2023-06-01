@@ -983,20 +983,18 @@
   (ptk/reify ::align-objects
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
+      (let [objects  (wsh/lookup-page-objects state)
             selected (wsh/lookup-selected state)
             moved    (if (= 1 (count selected))
                        (align-object-to-parent objects (first selected) axis)
                        (align-objects-list objects selected axis))
-            ids      (map :id moved)
             undo-id  (js/Symbol)]
         (when (can-align? selected objects)
           (rx/concat
            (rx/of (dwu/start-undo-transaction undo-id))
            (->> (rx/from moved)
                 (rx/map move-shape))
-           (rx/of (ptk/data-event :layout/update ids)
+           (rx/of (ptk/data-event :layout/update (mapv :id moved))
                   (dwu/commit-undo-transaction undo-id))))))))
 
 (defn align-object-to-parent
