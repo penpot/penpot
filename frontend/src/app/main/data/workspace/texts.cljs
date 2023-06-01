@@ -426,7 +426,10 @@
 
           (let [ids (->> (keys props) (filter changed-text?))]
             (rx/of (dwu/start-undo-transaction undo-id)
-                   (dch/update-shapes ids update-fn {:reg-objects? true :stack-undo? true :ignore-remote? true})
+                   (dch/update-shapes ids update-fn {:reg-objects? true
+                                                     :stack-undo? true
+                                                     :ignore-remote? true
+                                                     :ignore-touched true})
                    (ptk/data-event :layout/update ids)
                    (dwu/commit-undo-transaction undo-id))))))))
 
