@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
+   [app.common.types.component :as ctk]
    [app.main.broadcast :as mbc]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
@@ -408,10 +409,11 @@
               (if (empty? pending)
                 result
                 (let [cur (first pending)
-                      ;; We treat frames with no fill the same as groups
+                      ;; We treat frames that aren't components and with no fill the same as groups
                       group? (or (cph/group-shape? objects cur)
                                  (and (cph/frame-shape? objects cur)
-                                      (empty? (dm/get-in objects [cur :fills]))))
+                                      (empty? (dm/get-in objects [cur :fills]))
+                                      (not (ctk/instance-head? (get objects cur)))))
 
                       pending
                       (if group?
