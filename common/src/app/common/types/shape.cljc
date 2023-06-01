@@ -50,7 +50,7 @@
     :svg-raw
     :image})
 
-(def blend-mode
+(def blend-modes
   #{:normal
     :darken
     :multiply
@@ -185,7 +185,7 @@
     [:vector {:gen/max 2} ::stroke]]
    [:transform {:optional true} [:maybe ::gmt/matrix]]
    [:transform-inverse {:optional true} [:maybe ::gmt/matrix]]
-   [:blend-mode {:optional true} [::sm/one-of blend-mode]]
+   [:blend-mode {:optional true} [::sm/one-of blend-modes]]
    [:interactions {:optional true}
     [:vector {:gen/max 2} ::ctsi/interaction]]
    [:shadow {:optional true}
