@@ -314,7 +314,7 @@
                         components-to-delete)
 
         changes (-> changes
-                    (pcb/remove-objects all-children)
+                    (pcb/remove-objects all-children {:ignore-touched true})
                     (pcb/remove-objects ids)
                     (pcb/remove-objects empty-parents)
                     (pcb/resize-parents all-parents)
