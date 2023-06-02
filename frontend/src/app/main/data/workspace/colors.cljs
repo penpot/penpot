@@ -13,6 +13,7 @@
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.main.broadcast :as mbc]
+   [app.main.data.events :as ev]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.layout :as layout]
@@ -20,6 +21,7 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.store :as st]
    [app.util.color :as uc]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -606,3 +608,35 @@
                                               (assoc :alpha 0)
                                               (assoc :offset 1)
                                               (materialize-color-components))]))))))))))
+
+(defn select-color
+  [position]
+  (ptk/reify ::select-color
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected   (wsh/lookup-selected state)
+            shapes     (wsh/lookup-shapes state selected)
+            shape      (first shapes)
+            fills      (if (cph/text-shape? shape)
+                         (:fills (dwt/current-text-values
+                                   {:editor-state (dm/get-in state [:workspace-editor-state (:id shape)])
+                                    :shape shape
+                                    :attrs (conj dwt/text-fill-attrs :fills)}))
+                         (:fills shape))
+            fill       (first fills)
+            single?    (and (= 1 (count selected))
+                         (= 1 (count fills)))
+            data       (if single?
+                         (d/without-nils {:color (:fill-color fill)
+                                          :opacity (:fill-opacity fill)
+                                          :gradient (:fill-color-gradient fill)})
+                         {:color "#406280"
+                          :opacity 1})]
+        (rx/of (md/show :colorpicker
+                 {:x (:x position)
+                  :y (:y position)
+                  :on-accept #(st/emit! (dwl/add-color data))
+                  :data data
+                  :position :right})
+          (ptk/event ::ev/event {::ev/name "add-asset-to-library"
+                                 :asset-type "color"}))))))
