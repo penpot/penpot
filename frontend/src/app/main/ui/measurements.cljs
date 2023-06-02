@@ -290,7 +290,6 @@
    [:text {:x (+ x (/ width 2))
            :y (+ y (/ height 2))
            :text-anchor "middle"
-           :text-align "center"
            :dominant-baseline "central"
            :style {:fill distance-text-color
                    :font-size font-size}}
@@ -352,8 +351,8 @@
 
     [:rect.padding-rect {:x (:x rect-data)
                          :y (:y rect-data)
-                         :width (:width rect-data)
-                         :height (:height rect-data)
+                         :width (max 0 (:width rect-data))
+                         :height (max 0 (:height rect-data))
                          :on-pointer-enter on-pointer-enter
                          :on-pointer-leave on-pointer-leave
                          :on-pointer-down on-pointer-down
