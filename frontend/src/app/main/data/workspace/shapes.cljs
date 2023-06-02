@@ -90,7 +90,7 @@
                     (cond-> (nil? index)
                       (pcb/add-object shape))
                     (cond-> (some? (:parent-id attrs))
-                      (pcb/change-parent (:parent-id attrs) [shape]))
+                      (pcb/change-parent (:parent-id attrs) [shape] index))
                     (cond-> (ctl/grid-layout? objects (:parent-id shape))
                       (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells)))]
 
