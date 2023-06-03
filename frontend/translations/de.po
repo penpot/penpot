@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-08 14:36+0000\n"
+"PO-Revision-Date: 2023-06-04 12:49+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.16-dev\n"
+"X-Generator: Weblate 4.18-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -4638,3 +4638,37 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Ihre Datei wurde erfolgreich dupliziert"
+msgstr[1] "Ihre Dateien wurden erfolgreich dupliziert"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Strichstärke"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Veröffentlichung aufheben"
+msgstr[1] "Veröffentlichung aufheben"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Schriftgröße erhöhen"
+
+msgid "shortcut-subsection.text-editor"
+msgstr "Texte"
+
+msgid "shortcuts.align-center"
+msgstr "Zentrieren"
+
+msgid "shortcuts.font-size-dec"
+msgstr "Schriftgröße verkleinern"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Ihre Datei wurde erfolgreich gelöscht"
+msgstr[1] "Ihre Dateien wurden erfolgreich gelöscht"
