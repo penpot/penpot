@@ -785,11 +785,17 @@
                                parent)))
 
         ;; Update grid layout
+        (cond-> (ctl/grid-layout? objects parent-id)
+          (pcb/update-shapes [parent-id] #(ctl/add-children-to-index % ids objects to-index)))
+
         (pcb/update-shapes parents
                            (fn [parent]
                              (cond-> parent
                                (ctl/grid-layout? parent)
                                (ctl/assign-cells))))
+
+        (pcb/reorder-grid-children parents)
+
         ;; Resize parent containers that need to
         (pcb/resize-parents parents))))
 

@@ -595,7 +595,7 @@
 
         layout-grid-cells
         (->> (d/enumerate rows)
-             (reduce (fn [result [row-idx _row]]
+             (reduce (fn [result [row-idx _]]
                        (let [id (uuid/next)]
                          (assoc result id
                                 (merge {:id id
@@ -618,7 +618,7 @@
 
         layout-grid-cells
         (->> (d/enumerate cols)
-             (reduce (fn [result [col-idx _col]]
+             (reduce (fn [result [col-idx _]]
                        (let [id (uuid/next)]
                          (assoc result id
                                 (merge {:id id
@@ -699,16 +699,20 @@
   ([parent]
    (get-cells parent nil))
 
-  ([{:keys [layout-grid-cells layout-grid-dir]} {:keys [sort?] :or {sort? false}}]
+  ([{:keys [layout-grid-cells layout-grid-dir]} {:keys [sort? remove-empty?] :or {sort? false remove-empty? false}}]
    (let [comp-fn (if (= layout-grid-dir :row)
                    (juxt :row :column)
                    (juxt :column :row))
 
          maybe-sort?
-         (if sort? (partial sort-by (comp comp-fn second)) identity)]
+         (if sort? (partial sort-by (comp comp-fn second)) identity)
+
+         maybe-remove?
+         (if remove-empty? (partial remove #(empty? (:shapes (second %)))) identity)]
 
      (->> layout-grid-cells
           (maybe-sort?)
+          (maybe-remove?)
           (map (fn [[id cell]] (assoc cell :id id)))))))
 
 (defn get-free-cells
@@ -739,7 +743,35 @@
 
     (assoc parent :layout-grid-cells cells)))
 
-;; TODO
+(defn overlapping-cells
+  "Find overlapping cells"
+  [parent]
+  (let [cells (->> parent
+                   :layout-grid-cells
+                   (map (fn [[id cell]]
+                          [id (sga/make-area cell)])))
+        find-overlaps
+        (fn [result [id area]]
+          (let [[fid _]
+                (d/seek #(and (not= (first %) id)
+                              (sga/intersects? (second %) area))
+                        cells)]
+            (cond-> result
+              (some? fid)
+              (conj #{id fid}))))]
+    (reduce find-overlaps #{} cells)))
+
+;; FIXME: This is only for development
+#_(defn fix-overlaps
+  [parent overlaps]
+  (reduce (fn [parent ids]
+            (let [id (if (empty? (get-in parent [:layout-grid-cells (first ids)]))
+                       (first ids)
+                       (second ids))]
+              (update parent :layout-grid-cells dissoc id)))
+          parent
+          overlaps))
+
 ;; Assign cells takes the children and move them into the allotted cells. If there are not enough cells it creates
 ;; not-tracked rows/columns and put the shapes there
 ;;   Non-tracked tracks need to be deleted when they are empty and there are no more shapes unallocated
@@ -798,6 +830,8 @@
                       cells (update-in cells [next-free :shapes] conj current)]
                   (recur cells (rest free-cells) (rest pending)))))]
 
+        ;; TODO: Remove after testing
+        (assert (empty? (overlapping-cells parent)) (dm/str (overlapping-cells parent)))
         (assoc parent :layout-grid-cells cells)))))
 
 (defn free-cell-push
@@ -1009,3 +1043,29 @@
         (cond-> (some? cell)
           (push-into-cell children row column))
         (assign-cells))))
+
+(defn add-children-to-index
+  [parent ids objects to-index]
+  (let [ids (into (d/ordered-set) ids)
+        cells (get-cells parent {:sort? true :remove-empty? true})
+        to-index (- (count cells) to-index)
+        target-cell (nth cells to-index nil)]
+
+    (cond-> parent
+      (some? target-cell)
+      (add-children-to-cell ids objects [(:row target-cell) (:column target-cell)]))))
+
+(defn reorder-grid-children
+  [parent]
+  (let [cells (get-cells parent {:sort? true})
+        child? (set (:shapes parent))
+        new-shapes
+        (into (d/ordered-set)
+              (comp (keep (comp first :shapes))
+                    (filter child?))
+              cells)
+
+        ;; Add the children that are not in cells (absolute positioned for example)
+        new-shapes (into new-shapes (:shapes parent))]
+
+    (assoc parent :shapes (into [] (reverse new-shapes)))))

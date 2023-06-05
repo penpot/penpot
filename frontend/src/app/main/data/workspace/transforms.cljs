@@ -539,8 +539,8 @@
                     (fn [[_ target-frame drop-index]]
                       (let [undo-id (js/Symbol)]
                         (rx/of (dwu/start-undo-transaction undo-id)
-                               (move-shapes-to-frame ids target-frame drop-index)
                                (dwm/apply-modifiers {:undo-transation? false})
+                               (move-shapes-to-frame ids target-frame drop-index)
                                (finish-transform)
                                (dwu/commit-undo-transaction undo-id))))))))))))))
 
@@ -608,7 +608,8 @@
                                        (ctl/swap-shapes id (:id next-cell)))))
                                  parent))]
                 (-> changes
-                    (pcb/update-shapes [(:id parent)] (fn [shape] (assoc shape :layout-grid-cells layout-grid-cells))))))
+                    (pcb/update-shapes [(:id parent)] (fn [shape] (assoc shape :layout-grid-cells layout-grid-cells)))
+                    (pcb/reorder-grid-children [(:id parent)]))))
 
             changes
             (->> selected
@@ -812,6 +813,7 @@
                 (pcb/update-shapes moving-shapes-ids #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true)))
                 (pcb/update-shapes shape-ids-to-detach ctk/detach-shape)
                 (pcb/change-parent frame-id moving-shapes drop-index)
+                (pcb/reorder-grid-children [frame-id])
                 (pcb/remove-objects empty-parents))]
 
         (when (and (some? frame-id) (d/not-empty? changes))
