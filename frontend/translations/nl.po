@@ -1,2 +1,576 @@
 msgid ""
-msgstr "X-Generator: Weblate\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit"
+msgstr ""
+"PO-Revision-Date: 2023-06-06 08:49+0000\n"
+"Last-Translator: Sebastiaan Pasma <sebastiaan@enkodo.nl>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
+">\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.18-dev\n"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Wachtwoordherstel-link verzonden naar je inbox."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Heb je al een account?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Bevestig wachtwoord"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Inloggen"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "De open-source oplossing voor ontwerp en prototyping."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Dit is een DEMO-service, GEBRUIK DIT NIET voor echt werk, de projecten "
+"zullen regelmatig worden gewist."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Maak een demo-account aan"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Wil je het gewoon proberen?"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "We sturen je een e-mail met instructies"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Wachtwoord herstellen"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Wachtwoord vergeten?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Wijzig je wachtwoord"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Nog geen account?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Het is gratis, het is open source"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Account aanmaken"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "We hebben een verificatie-e-mail verzonden naar"
+
+msgid "common.share-link.view-all"
+msgstr "Alles selecteren"
+
+msgid "common.publish"
+msgstr "Publiceren"
+
+msgid "common.share-link.all-users"
+msgstr "Alle Penpot-gebruikers"
+
+msgid "common.share-link.team-members"
+msgstr "Alleen teamleden"
+
+msgid "common.share-link.placeholder"
+msgstr "De deelbare link zal hier verschijnen"
+
+msgid "common.unpublish"
+msgstr "Publicatie ongedaan maken"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Werk samen!"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "E-mailadres wijzigen"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(kopie)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "Nieuw team maken"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Jouw Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "Verwijder team"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Dupliceer %s bestanden"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Dupliceer"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Download %s Penpot-bestanden (.penpot)"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Je kunt exportinstellingen toevoegen aan elementen vanuit de "
+"ontwerpeigenschappen (onderaan de rechter zijbalk)."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Info over het instellen van exports in Penpot."
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Aangepaste lettertypen die je uploadt, worden hier weergegeven."
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Gedeelde bibliotheken worden niet opgenomen in de export en er worden geen "
+"assets aan de bibliotheek toegevoegd. "
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"Bestanden met gedeelde bibliotheken worden opgenomen in de export en hun "
+"koppelingen worden behouden."
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Lettertype verwijderd"
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"U mag alleen lettertypen uploaden waarvan u de eigenaar bent of waarvoor u "
+"een licentie hebt om te gebruiken in Penpot. Lees meer in het gedeelte "
+"Inhoudsrechten van [Penpot's Servicevoorwaarden](https://penpot.app/terms."
+"html). Misschien wilt u ook meer lezen over [lettertypelicenties](https://www"
+".typography.com/faq)."
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"We hebben een mogelijk probleem gevonden in uw lettertypen met betrekking "
+"tot verticale metriek voor verschillende besturingssystemen. Om het te "
+"controleren, kunt u verticale metrische lettertype-services zoals [deze] "
+"gebruiken (https://vertical-metrics.netlify.app/). Daarnaast raden we aan "
+"[Transfonter](https://transfonter.org/) te gebruiken om webfonts te "
+"genereren en soortgelijke fouten op te lossen. "
+
+#, fuzzy
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "1 bestand is geïmporteerd."
+msgstr[1] "%s bestanden zijn geïmporteerd."
+
+msgid "dashboard.import.import-warning"
+msgstr "Sommige bestanden bevatten ongeldige objecten die verwijderd zijn."
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Media aan het verwerken"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Componenten aan het verwerken"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Gegevens uploaden naar server (%s/%s)"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Bibliotheken & sjablonen"
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "Bibliotheken"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Ontdek er meer van en weet hoe je kunt bijdragen"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr ""
+"Er is een probleem opgetreden bij het importeren van het sjabloon. Het "
+"sjabloon is niet geïmporteerd."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "Wachtwoord succesvol opgeslagen!"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Nieuw bestand"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ Nieuw project"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.no-matches-for"
+msgstr "Geen overeenkomsten gevonden voor \"%s\""
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "Je e-mailadres is geverifieerd"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Nieuw project"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "%s leden"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Bestand openen in een nieuw tabblad"
+
+msgid "dashboard.options"
+msgstr "Opties"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "Vastgemaakte projecten worden hier weergegeven"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "Verander wachtwoord"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Vastzetten/losmaken"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "Projecten"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "Wil je je account verwijderen?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Controleer je e-mail en klik op de link om te verifiëren en Penpot te gaan "
+"gebruiken."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "E-mail"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Wachtwoord vergeten?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Volledige naam"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Hier inloggen"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Goed om je weer te zien!"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Typ een nieuw wachtwoord"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "De hersteltoken is ongeldig."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Wachtwoord succesvol gewijzigd"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr ""
+"Profiel is niet geverifieerd, verifieer het profiel voordat je verder gaat."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Succesvol toegetreden tot het team"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Wachtwoord"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Minimaal 8 tekens"
+
+msgid "auth.privacy-policy"
+msgstr "Privacybeleid"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Account aanmaken"
+
+msgid "auth.terms-of-service"
+msgstr "Gebruiksvoorwaarden"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Bij het aanmaken van een nieuw account ga je akkoord met onze "
+"gebruiksvoorwaarden en ons privacybeleid."
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Weet je zeker dat je deze link wilt verwijderen? Als je dit doet, is het "
+"voor niemand meer beschikbaar"
+
+msgid "common.share-link.current-tag"
+msgstr "(huidig)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Vernietig link"
+
+msgid "common.share-link.get-link"
+msgstr "Link ophalen"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Link gekopieerd"
+
+msgid "common.share-link.manage-ops"
+msgstr "Rechten beheren"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 pagina gedeeld"
+msgstr[1] "%s pagina's gedeeld"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Kan commentaar geven"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Kan code inspecteren"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Iedereen met de link heeft toegang"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Gedeelde pagina's"
+
+msgid "common.share-link.title"
+msgstr "Prototypes delen"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Teambeheer"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot is bedoeld voor teams. Nodig leden uit om samen te werken aan "
+"projecten en bestanden"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Leer de basisprincipes van Penpot terwijl je plezier hebt met deze "
+"interactieve tutorial."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Start de tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Praktische tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr ""
+"Maak een rondleiding door Penpot en leer de belangrijkste functies kennen."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Start de rondleiding"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Rondleiding door de interface"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Toevoegen als gedeelde bibliotheek"
+
+msgid "dashboard.download-binary-file"
+msgstr "Download Penpot-bestand (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Download standaardbestand (.svg + .json)"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Bestanden die aan bibliotheken zijn toegevoegd, worden hier weergegeven. "
+"Probeer uw bestanden te delen of toe te voegen vanuit onze [Bibliotheken & "
+"sjablonen] (https://penpot.app/libraries-templates.html)."
+
+msgid "dashboard.export-frames"
+msgstr "Borden exporteren als PDF"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Exporteren als PDF"
+
+msgid "dashboard.export-multi"
+msgstr "Exporteer %s Penpot-bestanden"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s van %s elementen geselecteerd"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Exporteren"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Er zijn geen elementen met exportinstellingen."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Selectie exporteren"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Download %s standaardbestanden (.svg + .json)"
+
+msgid "dashboard.export.detail"
+msgstr "* Kan componenten, afbeeldingen, kleuren en/of typografieën bevatten."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"Een of meer bestanden die je wilt exporteren maken gebruik van gedeelde "
+"bibliotheken. Wat wil je doen met hun assets*?"
+
+msgid "dashboard.export.options.all.title"
+msgstr "Gedeelde bibliotheken exporteren"
+
+msgid "dashboard.export.options.detach.title"
+msgstr "Behandel gedeelde bibliotheek-assets als basisobjecten"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Je bestand wordt geëxporteerd met alle externe assets samengevoegd in de "
+"bestandsbibliotheek."
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Inclusief gedeelde bibliotheek-assets in bestandsbibliotheken"
+
+msgid "dashboard.export.title"
+msgstr "Bestanden exporteren"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Alles negeren"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "1 lettertype toegevoegd"
+msgstr[1] "%s lettertypes toegevoegd"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Alles uploaden"
+
+msgid "dashboard.import"
+msgstr "Importeer Penpot-bestanden"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Oeps! We konden dit bestand niet importeren"
+
+msgid "dashboard.import.import-error"
+msgstr ""
+"Er is een probleem opgetreden bij het importeren van het bestand. Het "
+"bestand is niet geïmporteerd."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Kleuren aan het verwerken"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Pagina aan het verwerkten: %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Typografieën aan het verwerken"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Bestand aan het uploaden: %s"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Nodig mensen uit"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "Team verlaten"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "Je bestanden aan het laden …"
+
+msgid "dashboard.loading-fonts"
+msgstr "Je lettertypes worden geladen …"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Verplaats naar"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Verplaats %s bestanden naar"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Verplaats naar ander team"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.new-file"
+msgstr "+ Nieuw bestand"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "Je e-mailadres is succesvol bijgewerkt"
