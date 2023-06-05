@@ -665,6 +665,22 @@
             (sync-file file-id file-id :components (:component-id shape) undo-group))
           (dwu/commit-undo-transaction undo-id)))))))
 
+(defn launch-component-sync
+  "Launch a sync of the current file and of the library file of the given component."
+  ([component-id file-id] (launch-component-sync component-id file-id nil))
+  ([component-id file-id undo-group]
+   (ptk/reify ::launch-component-sync
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [current-file-id (:current-file-id state)
+             undo-id         (js/Symbol)]
+         (rx/of
+          (dwu/start-undo-transaction undo-id)
+          (sync-file current-file-id file-id :components component-id undo-group)
+          (when (not= current-file-id file-id)
+            (sync-file file-id file-id :components component-id undo-group))
+          (dwu/commit-undo-transaction undo-id)))))))
+
 (defn update-component-in-bulk
   [shapes file-id]
   (ptk/reify ::update-component-in-bulk
@@ -897,7 +913,7 @@
                               :ids (map str components-changed)
                               :undo-group undo-group)
                     (run! st/emit!
-                          (map #(update-component-sync % (:id old-data) undo-group)
+                          (map #(launch-component-sync % (:id old-data) undo-group)
                                components-changed))))))]
 
         (when components-v2
