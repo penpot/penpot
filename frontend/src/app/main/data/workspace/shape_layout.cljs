@@ -126,8 +126,10 @@
          all-width (->> selrects
                         (map :width)
                         (reduce +))
-         column-gap (if (or (= direction :row) (= direction :row-reverse))
-                      (/ (- (- max-x min-x) all-width) (dec (count shapes)))
+         column-gap (if (and (> (count shapes) 1)
+                             (or (= direction :row) (= direction :row-reverse)))
+                      (/ (- (- max-x min-x) all-width)
+                         (dec (count shapes)))
                       0)
 
          min-y (->> selrects
@@ -139,8 +141,10 @@
          all-height (->> selrects
                          (map :height)
                          (reduce +))
-         row-gap (if (or (= direction :column) (= direction :column-reverse))
-                   (/ (- (- max-y min-y) all-height) (dec (count shapes)))
+         row-gap (if (and (> (count shapes) 1)
+                          (or (= direction :column) (= direction :column-reverse)))
+                   (/ (- (- max-y min-y) all-height)
+                      (dec (count shapes)))
                    0)
 
          layout-gap {:row-gap (max row-gap 0) :column-gap (max column-gap 0)}

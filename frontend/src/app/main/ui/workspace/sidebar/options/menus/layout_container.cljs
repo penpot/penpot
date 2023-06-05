@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
@@ -337,7 +338,7 @@
         i/auto-gap]
        [:> numeric-input {:no-validate true
                           :placeholder "--"
-                        :on-focus (fn [event]
+                          :on-focus (fn [event]
                                       (select-gap :column-gap)
                                       (reset! gap-selected? :column-gap)
                                       (dom/select-target event))
@@ -535,9 +536,10 @@
 
         set-gap
         (fn [gap-multiple? type val]
-          (if gap-multiple?
-            (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
-            (st/emit! (dwsl/update-layout ids {:layout-gap {type val}}))))
+          (let [val (mth/finite val 0)]
+            (if gap-multiple?
+              (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
+              (st/emit! (dwsl/update-layout ids {:layout-gap {type val}})))))
 
         ;; Padding
 
@@ -547,15 +549,16 @@
 
         on-padding-change
         (fn [type prop val]
-          (cond
-            (and (= type :simple) (= prop :p1))
-            (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
+          (let [val (mth/finite val 0)]
+            (cond
+              (and (= type :simple) (= prop :p1))
+              (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
 
-            (and (= type :simple) (= prop :p2))
-            (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
+              (and (= type :simple) (= prop :p2))
+              (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
 
-            :else
-            (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))
+              :else
+              (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}})))))
 
         ;; Grid-direction
 

@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]))
 
@@ -293,8 +294,8 @@
 
 (defn gaps
   [{:keys [layout-gap]}]
-  (let [layout-gap-row (or (-> layout-gap :row-gap) 0)
-        layout-gap-col (or (-> layout-gap :column-gap) 0)]
+  (let [layout-gap-row (or (-> layout-gap :row-gap (mth/finite 0)) 0)
+        layout-gap-col (or (-> layout-gap :column-gap (mth/finite 0)) 0)]
     [layout-gap-row layout-gap-col]))
 
 (defn child-min-width
