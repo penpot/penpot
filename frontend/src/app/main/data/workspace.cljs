@@ -1172,7 +1172,6 @@
   (ptk/reify ::select-single-asset
     ptk/UpdateEvent
     (update [_ state]
-      (prn "select-single-asset" file-id asset-id type)
       (assoc-in state [:workspace-assets :selected file-id type] #{asset-id}))))
 
 (defn select-assets
@@ -1211,7 +1210,21 @@
             current-project-id (:current-project-id state)
             file-id            (or file-id current-file-id)
 
-            redirect-to
+            select-and-zoom
+            (fn [shape-id]
+              (rx/of (dws/select-shapes (d/ordered-set shape-id))
+                     dwz/zoom-to-selected-shape))
+
+            redirect-to-page
+            (fn [page-id shape-id]
+              (rx/concat
+               (rx/of (go-to-page page-id))
+               (->> stream
+                    (rx/filter (ptk/type? ::initialize-page))
+                    (rx/take 1))
+               (select-and-zoom shape-id)))
+
+            redirect-to-file
             (fn [file-id page-id]
               (let [pparams {:file-id file-id :project-id current-project-id}
                     qparams {:page-id page-id}]
@@ -1227,17 +1240,16 @@
 
         (if (= file-id current-file-id)
           (let [component (dm/get-in state [:workspace-data :components component-id])
-                page-id   (:main-instance-page component)]
+                page-id   (:main-instance-page component)
+                shape-id (:main-instance-id component)]
             (when (some? page-id)
               (if (= page-id current-page-id)
-                (let [shape-id (:main-instance-id component)]
-                  (rx/of (dws/select-shapes (d/ordered-set shape-id))
-                         dwz/zoom-to-selected-shape))
-                (redirect-to current-file-id page-id))))
+                (select-and-zoom shape-id)
+                (redirect-to-page page-id shape-id))))
 
           (let [component (dm/get-in state [:workspace-libraries file-id :data :components component-id])]
             (some->> (:main-instance-page component)
-                     (redirect-to file-id))))))))
+                     (redirect-to-file file-id))))))))
 
 
 (defn go-to-component
