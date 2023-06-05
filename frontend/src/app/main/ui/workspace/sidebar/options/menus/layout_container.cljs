@@ -274,10 +274,9 @@
          [:> numeric-input
           {:placeholder "--"
            :on-change (partial on-change :simple :p1)
-           :on-focus #(select-paddings true false true false)
-           :on-blur #(do
+           :on-focus #(do
                        (dom/select-target %)
-                       (select-paddings false false false false))
+                       (select-paddings true false true false))
            :value p1}]]
 
         [:div.padding-item.tooltip.tooltip-bottom-left
