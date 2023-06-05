@@ -40,8 +40,19 @@
       (let [children (->> (cph/get-immediate-children objects (:id shape))
                           (remove :hidden))
             bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points]))
-            layout-bounds (gsl/layout-content-bounds bounds shape children)
-            layout-points (flatten (gsl/layout-content-points bounds shape children))]
+            layout-bounds
+            (cond (ctl/flex-layout? shape)
+                  (gsl/layout-content-bounds bounds shape children)
+
+                  (ctl/grid-layout? shape)
+                  (gsg/layout-content-bounds bounds shape children))
+            layout-points
+            (cond (ctl/flex-layout? shape)
+                  (flatten (gsl/layout-content-points bounds shape children))
+
+                  (ctl/grid-layout? shape)
+                  (flatten (gsg/layout-content-points bounds shape children)))]
+
         [:g.debug-layout {:pointer-events "none"}
          [:polygon {:points (->> layout-bounds (map #(dm/fmt "%, %" (:x %) (:y %))) (str/join " "))
                     :style  {:stroke "red" :fill "none"}}]

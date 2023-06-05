@@ -256,7 +256,12 @@
 
         content-bounds
         (when (and (d/not-empty? children) (or (ctl/auto-height? parent) (ctl/auto-width? parent)))
-          (gcfl/layout-content-bounds bounds parent children))
+          (cond
+            (ctl/flex-layout? parent)
+            (gcfl/layout-content-bounds bounds parent children)
+
+            (ctl/grid-layout? parent)
+            (gcgl/layout-content-bounds bounds parent children)))
 
         auto-width (when content-bounds (gpo/width-points content-bounds))
         auto-height (when content-bounds (gpo/height-points content-bounds))]

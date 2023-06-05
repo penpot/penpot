@@ -665,11 +665,12 @@
         zoom       (unchecked-get props "zoom")
         view-only  (unchecked-get props "view-only")
 
-        shape (mf/use-memo
-               (mf/deps modifiers base-shape)
-               #(gsh/transform-shape
-                 base-shape
-                 (dm/get-in modifiers [(:id base-shape) :modifiers])))
+        shape
+        (mf/use-memo
+         (mf/deps modifiers base-shape)
+         #(gsh/transform-shape
+           base-shape
+           (dm/get-in modifiers [(:id base-shape) :modifiers])))
 
         snap-pixel? (mf/deref refs/snap-pixel?)
 

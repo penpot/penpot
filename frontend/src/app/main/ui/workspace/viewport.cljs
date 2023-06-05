@@ -597,6 +597,6 @@
            {:zoom zoom
             :objects base-objects
             :modifiers modifiers
-            :shape (or (get objects-modified edition)
+            :shape (or (get base-objects edition)
                        (get base-objects @hover-top-frame-id))
             :view-only (not show-grid-editor?)}]])]]]))
