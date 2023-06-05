@@ -1014,7 +1014,7 @@
 (defn can-distribute? [selected]
   (cond
     (empty? selected) false
-    (< (count selected) 2) false
+    (< (count selected) 3) false
     :else true))
 
 (defn distribute-objects
