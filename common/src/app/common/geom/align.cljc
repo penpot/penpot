@@ -84,28 +84,27 @@
         ; Each shape wrapped in its own rectangle
         wrapped-shapes (map #(gsh/selection-rect [%]) sorted-shapes)
         ; The total space between shapes
-        space (reduce - (size wrapper-rect) (map size wrapped-shapes))]
+        space (reduce - (size wrapper-rect) (map size wrapped-shapes))
+        unit-space (/ space (- (count wrapped-shapes) 1))
+        ; Calculate the distance we need to move each shape.
+        ; The new position of each one is the position of the
+        ; previous one plus its size plus the unit space.
+        deltas (loop [shapes' wrapped-shapes
+                      start-pos (coord wrapper-rect)
+                      deltas []]
 
-    (let [unit-space (/ space (- (count wrapped-shapes) 1))
-          ; Calculate the distance we need to move each shape.
-          ; The new position of each one is the position of the
-          ; previous one plus its size plus the unit space.
-          deltas (loop [shapes' wrapped-shapes
-                        start-pos (coord wrapper-rect)
-                        deltas []]
+                 (let [first-shape (first shapes')
+                       delta (- start-pos (coord first-shape))
+                       new-pos (+ start-pos (size first-shape) unit-space)]
 
-                    (let [first-shape (first shapes')
-                          delta (- start-pos (coord first-shape))
-                          new-pos (+ start-pos (size first-shape) unit-space)]
-
-                      (if (= (count shapes') 1)
-                        (conj deltas delta)
-                        (recur (rest shapes')
-                              new-pos
-                              (conj deltas delta)))))]
+                   (if (= (count shapes') 1)
+                     (conj deltas delta)
+                     (recur (rest shapes')
+                       new-pos
+                       (conj deltas delta)))))]
 
         (mapcat #(recursive-move %1 {coord %2 other-coord 0} objects)
-                sorted-shapes deltas))))
+                sorted-shapes deltas)))
 
 ;; Adjust to viewport
 
