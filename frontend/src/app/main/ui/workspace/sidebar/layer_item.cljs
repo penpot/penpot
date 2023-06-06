@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -30,7 +31,7 @@
 
 
 (mf/defc layer-item
-  [{:keys [index item selected objects sortable? filtered? recieved-depth parent-size component-child?] :as props}]
+  [{:keys [index item selected objects sortable? filtered? recieved-depth parent-size component-child? parent-component] :as props}]
   (let [id                   (:id item)
         blocked?             (:blocked item)
         hidden?              (:hidden item)
@@ -185,7 +186,7 @@
 
         #(when (some? subid)
            (rx/dispose! subid))))
-    
+
     (if new-css-system
       [:*
        [:div {:on-context-menu on-context-menu
@@ -255,7 +256,8 @@
                          :selected? selected?
                          :type-comp component-tree?
                          :type-frame (= :frame (:type item))
-                         :hidden (:hidden item)}]
+                         :hidden (:hidden item)
+                         :parent-component parent-component}]
          [:div {:class (dom/classnames (css :element-actions) true
                                        (css :is-parent) (:shapes item)
                                        (css :selected) (:hidden item)
@@ -318,7 +320,8 @@
                         :selected? selected?
                         :type-comp component-tree?
                         :type-frame (= :frame (:type item))
-                        :hidden (:hidden item)}]
+                        :hidden (:hidden item)
+                        :belongs-component-main? (ctk/main-instance? parent-component)}]
 
         [:div.element-actions {:class (when (:shapes item) "is-parent")}
          [:div.toggle-element {:class (when (:hidden item) "selected")
@@ -343,4 +346,5 @@
                 :index index
                 :objects objects
                 :key (:id item)
-                :sortable? sortable?}]))])])))
+                :sortable? sortable?
+                :parent-component (if (ctk/instance-head? item) item parent-component)}]))])])))

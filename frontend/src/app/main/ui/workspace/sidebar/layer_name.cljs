@@ -20,7 +20,7 @@
   (l/derived (l/in [:workspace-local :shape-for-rename]) st/state))
 
 (mf/defc layer-name
-  [{:keys [shape on-start-edit  disabled-double-click on-stop-edit name-ref depth parent-size selected? type-comp type-frame hidden] :as props}]
+  [{:keys [shape on-start-edit disabled-double-click on-stop-edit name-ref depth parent-size selected? type-comp type-frame hidden belongs-component-main?] :as props}]
   (let [local            (mf/use-state {})
         shape-for-rename (mf/deref shape-for-rename-ref)
         new-css-system   (mf/use-ctx ctx/new-css-system)
@@ -85,4 +85,6 @@
         :ref name-ref
         :on-double-click start-edit}
        (:name shape "")
-       (when (seq (:touched shape)) " *")])))
+       (when (and (not belongs-component-main?)
+                  (seq (:touched shape)))
+         " *")])))
