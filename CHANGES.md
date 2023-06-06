@@ -29,6 +29,7 @@
 - Reorder shadows (by @akshay-gupta7) [Github #3236](https://github.com/penpot/penpot/pull/3236)
 - Open project in new tab from workspace (by @akshay-gupta7) [Github #3246](https://github.com/penpot/penpot/pull/3246)
 - Distribute fix enabled when two elements were selected (by @dfelinto) [Github #3266](https://github.com/penpot/penpot/pull/3266)
+- Distribute vertical spacing failing for overlapped text (by @dfelinto) [Github #3267](https://github.com/penpot/penpot/pull/3267)
 
 ## 1.18.4
 
