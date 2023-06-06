@@ -47,7 +47,9 @@
            [:map
             [:text :string]
             [:key {:optional true} :string]
-            [:fills [:vector {:gen/max 2} ::shape/fill]]
+            [:fills {:optional true}
+             [:maybe
+              [:vector {:gen/max 2} ::shape/fill]]]
             [:font-family {:optional true} :string]
             [:font-size {:optional true} :string]
             [:font-style {:optional true} :string]

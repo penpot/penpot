@@ -359,54 +359,56 @@
                  (apply-changes-local)))))
 
 (defn remove-objects
-  [changes ids]
-  (assert-page-id changes)
-  (assert-objects changes)
-  (let [page-id (::page-id (meta changes))
-        objects (lookup-objects changes)
+  ([changes ids] (remove-objects changes ids nil))
+  ([changes ids {:keys [ignore-touched] :or {ignore-touched false}}]
+   (assert-page-id changes)
+   (assert-objects changes)
+   (let [page-id (::page-id (meta changes))
+         objects (lookup-objects changes)
 
-        add-redo-change
-        (fn [change-set id]
-          (conj change-set
-                {:type :del-obj
-                 :page-id page-id
-                 :id id}))
+         add-redo-change
+         (fn [change-set id]
+           (conj change-set
+                 {:type :del-obj
+                  :page-id page-id
+                  :ignore-touched ignore-touched
+                  :id id}))
 
-        add-undo-change-shape
-        (fn [change-set id]
-          (let [shape (get objects id)]
-            (d/preconj
-             change-set
-             {:type :add-obj
-              :id id
-              :page-id page-id
-              :parent-id (:frame-id shape)
-              :frame-id (:frame-id shape)
-              :index (cph/get-position-on-parent objects id)
-              :obj (cond-> shape
-                     (contains? shape :shapes)
-                     (assoc :shapes []))})))
+         add-undo-change-shape
+         (fn [change-set id]
+           (let [shape (get objects id)]
+             (d/preconj
+              change-set
+              {:type :add-obj
+               :id id
+               :page-id page-id
+               :parent-id (:frame-id shape)
+               :frame-id (:frame-id shape)
+               :index (cph/get-position-on-parent objects id)
+               :obj (cond-> shape
+                      (contains? shape :shapes)
+                      (assoc :shapes []))})))
 
-        add-undo-change-parent
-        (fn [change-set id]
-          (let [shape (get objects id)
-                prev-sibling (cph/get-prev-sibling objects (:id shape))]
-            (d/preconj
-             change-set
-             {:type :mov-objects
-              :page-id page-id
-              :parent-id (:parent-id shape)
-              :shapes [id]
-              :after-shape prev-sibling
-              :index 0
-              :ignore-touched true})))]
+         add-undo-change-parent
+         (fn [change-set id]
+           (let [shape (get objects id)
+                 prev-sibling (cph/get-prev-sibling objects (:id shape))]
+             (d/preconj
+              change-set
+              {:type :mov-objects
+               :page-id page-id
+               :parent-id (:parent-id shape)
+               :shapes [id]
+               :after-shape prev-sibling
+               :index 0
+               :ignore-touched true})))]
 
-    (-> changes
-        (update :redo-changes #(reduce add-redo-change % ids))
-        (update :undo-changes #(as-> % $
-                                 (reduce add-undo-change-parent $ ids)
-                                 (reduce add-undo-change-shape $ ids)))
-        (apply-changes-local))))
+     (-> changes
+         (update :redo-changes #(reduce add-redo-change % ids))
+         (update :undo-changes #(as-> % $
+                                  (reduce add-undo-change-parent $ ids)
+                                  (reduce add-undo-change-shape $ ids)))
+         (apply-changes-local)))))
 
 (defn resize-parents
   [changes ids]

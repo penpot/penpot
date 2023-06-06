@@ -675,7 +675,7 @@
           any-sync? (some need-sync? operations)]
       (when any-sync?
         (let [xform (comp (filter :main-instance?) ; Select shapes that are main component instances
-                          (map :id))]
+                          (map :component-id))]
           (into #{} xform shape-and-parents))))))
 
 (defmethod components-changed :mov-objects
@@ -684,7 +684,7 @@
     (let [page (ctpl/get-page file-data page-id)
 
           xform (comp (filter :main-instance?)
-                      (map :id))
+                      (map :component-id))
 
           check-shape
           (fn [shape-id others]
@@ -703,7 +703,7 @@
           shape-and-parents (map (partial ctn/get-shape page)
                                  (cons id (cph/get-parent-ids (:objects page) id)))
           xform (comp (filter :main-instance?)
-                      (map :id))]
+                      (map :component-id))]
       (into #{} xform shape-and-parents))))
 
 (defmethod components-changed :default
