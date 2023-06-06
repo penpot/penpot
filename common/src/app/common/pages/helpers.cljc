@@ -312,14 +312,13 @@
 (defn components-nesting-loop?
   "Check if a nesting loop would be created if the given shape is moved below the given parent"
   [objects shape-id parent-id]
-  (let [children            (get-children-with-self objects shape-id)
-        xf-get-component-id (keep :component-id)
+  (let [xf-get-component-id (keep :component-id)
+
+        children            (get-children-with-self objects shape-id)
         child-components    (into #{} xf-get-component-id children)
 
         parents             (get-parents-with-self objects parent-id)
-        xf-get-main-id      (comp (filter :main-instance?)
-                                  xf-get-component-id)
-        parent-components   (into #{} xf-get-main-id parents)]
+        parent-components   (into #{} xf-get-component-id parents)]
     (seq (set/intersection child-components parent-components))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
