@@ -2414,7 +2414,8 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   []
-  (let [read-only? (mf/use-ctx ctx/workspace-read-only?)
+  (let [components-v2 (mf/use-ctx ctx/components-v2)
+        read-only? (mf/use-ctx ctx/workspace-read-only?)
         filters*   (mf/use-state
                     {:term ""
                      :section :all
@@ -2489,7 +2490,8 @@
                               :on-change on-section-filter-change}
         [:option {:value ":all"} (tr "workspace.assets.box-filter-all")]
         [:option {:value ":components"} (tr "workspace.assets.components")]
-        [:option {:value ":graphics"} (tr "workspace.assets.graphics")]
+        (when-not components-v2
+          [:option {:value ":graphics"} (tr "workspace.assets.graphics")])
         [:option {:value ":colors"} (tr "workspace.assets.colors")]
         [:option {:value ":typographies"} (tr "workspace.assets.typography")]]]]
 
