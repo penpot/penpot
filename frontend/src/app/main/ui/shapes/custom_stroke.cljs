@@ -336,14 +336,10 @@
                          (> (count (:fills shape)) 1)
                          (some :fill-color-gradient (:fills shape)))
 
-        props        (-> (obj/get child "props")
-                         (obj/clone))
-
-        props        (cond-> props
+        props        (cond-> (obj/create)
                        (or
                         ;; There are any shadows
                         (and (seq (->> (:shadow shape) (remove :hidden))) (not (cph/frame-shape? shape)))
-
                         ;; There is a blur
                         (and (:blur shape) (-> shape :blur :hidden not) (not (cph/frame-shape? shape))))
                        (obj/set! "filter" (dm/fmt "url(#filter_%)" render-id)))
@@ -358,30 +354,33 @@
       url-fill?
       (let [props (obj/set! props
                             "style"
-                            (-> (obj/get props "style")
+                            (-> (obj/get child "props")
+                                (obj/get "style")
                                 (obj/clone)
                                 (obj/without ["fill" "fillOpacity"])))]
         (obj/set! props "fill" (dm/fmt "url(#fill-%-%)" position render-id)))
 
       (and (some? svg-styles) (obj/contains? svg-styles "fill"))
       (let [style
-            (-> (obj/get props "style")
+            (-> (obj/get child "props")
+                (obj/get "style")
                 (obj/clone)
                 (obj/set! "fill" (obj/get svg-styles "fill"))
                 (obj/set! "fillOpacity" (obj/get svg-styles "fillOpacity")))]
         (-> props
             (obj/set! "style" style)))
 
-      (and (some? svg-attrs) (empty? (:fills shape)))
+      (and (some? svg-attrs)
+           (obj/contains? svg-attrs "fill")
+           (empty? (:fills shape)))
       (let [style
-            (-> (obj/get props "style")
+            (-> (obj/get child "props")
+                (obj/get "style")
                 (obj/clone))
 
-            style (cond-> style
-                    (obj/contains? svg-attrs "fill")
-                    (->
-                     (obj/set! "fill" (obj/get svg-attrs "fill"))
-                     (obj/set! "fillOpacity" (obj/get svg-attrs "fillOpacity"))))]
+            style (-> style
+                      (obj/set! "fill" (obj/get svg-attrs "fill"))
+                      (obj/set! "fillOpacity" (obj/get svg-attrs "fillOpacity")))]
         (-> props
             (obj/set! "style" style)))
 
@@ -389,7 +388,8 @@
       (let [fill-props
             (attrs/extract-fill-attrs (get-in shape [:fills 0]) render-id 0 (:type shape))
 
-            style (-> (obj/get props "style")
+            style (-> (obj/get child "props")
+                      (obj/get "style")
                       (obj/clone)
                       (obj/merge! (obj/get fill-props "style")))]
 
@@ -399,14 +399,15 @@
 
       (and (= :path (:type shape)) (empty? (:fills shape)))
       (let [style
-            (-> (obj/get props "style")
+            (-> (obj/get child "props")
+                (obj/get "style")
                 (obj/clone)
                 (obj/set! "fill" "none"))]
         (-> props
             (obj/set! "style" style)))
 
       :else
-      props)))
+      nil)))
 
 (defn build-stroke-props [position child value render-id]
   (let [props (-> (obj/get child "props")
@@ -420,17 +421,20 @@
              (obj/set! "fillOpacity" "none")))
         (add-style (obj/get (attrs/extract-stroke-attrs value position render-id) "style")))))
 
-
 (mf/defc shape-fills
   {::mf/wrap-props false}
   [props]
-  (let [child     (obj/get props "children")
-        shape     (obj/get props "shape")
-        elem-name (obj/get child "type")
-        position  (or (obj/get props "position") 0)
-        render-id (or (obj/get props "render-id") (mf/use-ctx muc/render-id))]
-    [:g.fills {:id (dm/fmt "fills-%" (:id shape))}
-     [:> elem-name (build-fill-props shape child position render-id)]]))
+  (let [child      (obj/get props "children")
+        shape      (obj/get props "shape")
+        elem-name  (obj/get child "type")
+        position   (or (obj/get props "position") 0)
+        render-id  (or (obj/get props "render-id") (mf/use-ctx muc/render-id))
+        fill-props (build-fill-props shape child position render-id)]
+    (when (some? fill-props)
+      [:g.fills {:id (dm/fmt "fills-%" (:id shape))}
+       [:> elem-name (-> (obj/get child "props")
+                         (obj/clone)
+                         (obj/merge! fill-props))]])))
 
 (mf/defc shape-strokes
   {::mf/wrap-props false}
