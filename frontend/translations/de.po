@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-06-04 12:49+0000\n"
+"PO-Revision-Date: 2023-06-09 01:52+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -4672,3 +4672,47 @@ msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Ihre Datei wurde erfolgreich gelöscht"
 msgstr[1] "Ihre Dateien wurden erfolgreich gelöscht"
+
+msgid "workspace.header.menu.undo"
+msgstr "Rückgängig"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Proportionale Skalierung deaktivieren"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Proportionale Skalierung aktivieren"
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Einige E-Mails stammen von aktuellen Teammitgliedern. Ihre Einladungen "
+"werden nicht versendet."
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Buchstabenabstand erhöhen"
+
+msgid "shortcuts.select-prev"
+msgstr "Vorherige Ebene auswählen"
+
+msgid "shortcuts.select-next"
+msgstr "Nächste Ebene auswählen"
+
+msgid "shortcuts.align-justify"
+msgstr "Blocksatz"
+
+msgid "shortcuts.bold"
+msgstr "Umschalten auf Fettdruck"
+
+msgid "shortcuts.italic"
+msgstr "Umschalten auf Kursivdruck"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Buchstabenabstand verringern"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Zeilenhöhe erhöhen"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Zeilenhöhe verringern"
+
+msgid "workspace.header.menu.redo"
+msgstr "Wiederherstellen"
