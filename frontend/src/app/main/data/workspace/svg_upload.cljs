@@ -31,7 +31,6 @@
    [app.util.svg :as usvg]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
@@ -67,10 +66,10 @@
                         str/trim
                         str/lower
                         keyword)]
-    (when-not (s/valid? ::cts/blend-mode clean-value)
+    (when-not (contains? cts/blend-modes clean-value)
       (ex/raise :type :assertion
-        :code :expr-validation
-        :hint (str/ffmt "%1 is not a valid blend mode" clean-value)))
+                :code :expr-validation
+                :hint (str/ffmt "%1 is not a valid blend mode" clean-value)))
     clean-value))
 
 (defn- svg-dimensions [data]
