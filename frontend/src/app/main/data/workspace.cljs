@@ -1756,6 +1756,7 @@
             (let [libraries    (wsh/get-libraries state)
                   file-id      (:current-file-id state)
                   page         (wsh/lookup-page state)
+                  page-objects (:objects page)
                   media-idx    (d/index-by :prev-id media)
 
                   ;; Calculate position for the pasted elements
@@ -1763,18 +1764,24 @@
 
                   process-shape
                   (fn [_ shape]
-                    (-> shape
-                        (assoc :frame-id frame-id :parent-id parent-id)
-
-                        ;; if foreign instance, detach the shape
-                        (cond-> (foreign-instance? shape paste-objects state)
-                          (->
-                             (assoc :saved-component-root? (:component-root? shape)) ;; this is used later, if the paste needs to create a new component from the detached shape
-                             (dissoc :component-id :component-file :component-root?
-                                  :remote-synced? :shape-ref :touched)))
-                        ;; if is a text, remove references to external typographies
-                        (cond-> (= (:type shape) :text)
-                          (ctt/remove-external-typographies file-id))))
+                    (let [parent                 (get page-objects parent-id)
+                          component-shape        (ctn/get-component-shape page-objects shape)
+                          component-shape-parent (ctn/get-component-shape page-objects parent)
+                          ;; if foreign instance, or a shape belonging to another component, detach the shape
+                          detach? (or (foreign-instance? shape paste-objects state)
+                                      (and (ctk/in-component-copy-not-root? shape)
+                                           (not= (:id component-shape)
+                                                 (:id component-shape-parent))))]
+                      (-> shape
+                          (assoc :frame-id frame-id :parent-id parent-id)
+                          (cond-> detach?
+                            (->
+                             ;; this is used later, if the paste needs to create a new component from the detached shape
+                             (assoc :saved-component-root? (:component-root? shape))
+                             ctk/detach-shape))
+                          ;; if is a text, remove references to external typographies
+                          (cond-> (= (:type shape) :text)
+                            (ctt/remove-external-typographies file-id)))))
 
                   paste-objects (->> paste-objects (d/mapm process-shape))
 
