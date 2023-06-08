@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-06-03 00:50+0000\n"
+"PO-Revision-Date: 2023-06-09 01:52+0000\n"
 "Last-Translator: 王世阳 <wangshiyangchina@gmail.com>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hans/>\n"
@@ -4462,3 +4462,9 @@ msgstr "禁用比例尺"
 
 msgid "workspace.header.menu.enable-scale-content"
 msgstr "启用比例尺"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "变焦镜头放大"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "变焦镜头缩小"
