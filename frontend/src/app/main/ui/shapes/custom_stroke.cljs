@@ -370,9 +370,7 @@
         (-> props
             (obj/set! "style" style)))
 
-      (and (some? svg-attrs)
-           (obj/contains? svg-attrs "fill")
-           (empty? (:fills shape)))
+      (and (some? svg-attrs) (empty? (:fills shape)))
       (let [style
             (-> (obj/get child "props")
                 (obj/get "style")
@@ -407,7 +405,7 @@
             (obj/set! "style" style)))
 
       :else
-      nil)))
+      (obj/create))))
 
 (defn build-stroke-props [position child value render-id]
   (let [props (-> (obj/get child "props")
@@ -430,11 +428,10 @@
         position   (or (obj/get props "position") 0)
         render-id  (or (obj/get props "render-id") (mf/use-ctx muc/render-id))
         fill-props (build-fill-props shape child position render-id)]
-    (when (some? fill-props)
-      [:g.fills {:id (dm/fmt "fills-%" (:id shape))}
-       [:> elem-name (-> (obj/get child "props")
-                         (obj/clone)
-                         (obj/merge! fill-props))]])))
+    [:g.fills {:id (dm/fmt "fills-%" (:id shape))}
+     [:> elem-name (-> (obj/get child "props")
+                       (obj/clone)
+                       (obj/merge! fill-props))]]))
 
 (mf/defc shape-strokes
   {::mf/wrap-props false}

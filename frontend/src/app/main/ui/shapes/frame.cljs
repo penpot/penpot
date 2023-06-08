@@ -69,7 +69,10 @@
                             :className "frame-background"}))
         path? (some? (.-d props))]
     [:*
-     [:g {:clip-path (when (not show-content) (frame-clip-url shape render-id))}
+     [:g {:clip-path (when (not show-content) (frame-clip-url shape render-id))
+          :fill "none"}   ;; A frame sets back normal fill behavior (default transparent). It may have
+                          ;; been changed to default black if a shape coming from an imported SVG file
+                          ;; is rendered. See main.ui.shapes.attrs/add-style-attrs.
       [:& frame-clip-def {:shape shape :render-id render-id}]
 
       [:& shape-fills {:shape shape}
