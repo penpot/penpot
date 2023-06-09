@@ -4943,7 +4943,7 @@ msgstr "prototipos, user journeys, flujos, árboles de navegación..."
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "question.design-tool-more-experienced-with"
-msgstr "¿Cuál es la herramienta de deiseño con la que tienes más experiencia?"
+msgstr "¿Cuál es la herramienta de diseño con la que tienes más experiencia?"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.figma"
