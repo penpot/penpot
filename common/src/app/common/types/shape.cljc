@@ -30,7 +30,7 @@
 (def stroke-caps-marker #{:line-arrow :triangle-arrow :square-marker :circle-marker :diamond-marker})
 (def stroke-caps (set/union stroke-caps-line stroke-caps-marker))
 
-(def blend-mode
+(def blend-modes
   #{:normal
     :darken
     :multiply
@@ -139,7 +139,7 @@
     [:vector {:gen/max 2} ::stroke]]
    [:transform {:optional true} ::gmt/matrix]
    [:transform-inverse {:optional true} ::gmt/matrix]
-   [:blend-mode {:optional true} [::sm/one-of blend-mode]]
+   [:blend-mode {:optional true} [::sm/one-of blend-modes]]
    [:interactions {:optional true}
     [:vector {:gen/max 2} ::ctsi/interaction]]
    [:shadow {:optional true}
