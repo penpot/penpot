@@ -1822,10 +1822,7 @@
                   (when (ctl/grid-layout? all-objects parent-id)
                     (gslg/get-drop-cell frame-id all-objects mouse-pos))
 
-                  changes
-                  (-> (pcb/resize-parents changes new-objects-ids)
-                      (cond-> (some? drop-cell)
-                        (pcb/update-shapes [parent-id] #(ctl/add-children-to-cell % (into (d/ordered-set) new-objects-ids) all-objects drop-cell))))
+                  changes (pcb/resize-parents changes new-objects-ids)
 
                   selected  (->> changes
                                  :redo-changes
@@ -1833,6 +1830,13 @@
                                  (filter #(selected (:old-id %)))
                                  (map #(get-in % [:obj :id]))
                                  (into (d/ordered-set)))
+
+                  changes
+                  (cond-> changes
+                    (some? drop-cell)
+                    (pcb/update-shapes [parent-id]
+                                       #(ctl/add-children-to-cell % selected all-objects drop-cell)))
+
                   undo-id (js/Symbol)]
 
               (rx/of (dwu/start-undo-transaction undo-id)
