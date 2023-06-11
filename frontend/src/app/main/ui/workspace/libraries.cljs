@@ -234,9 +234,10 @@
 
 (mf/defc updates-tab
   {::mf/wrap-props false}
-  [{:keys [file-id libraries]}]
-  (let [libraries (mf/with-memo [libraries]
-                    (filter #(> (:modified-at %) (:synced-at %)) (vals libraries)))
+  [{:keys [file-id file-data libraries]}]
+  (let [libraries (mf/with-memo [file-data libraries]
+                    (filter #(seq (dwl/assets-need-sync % file-data))
+                            (vals libraries)))
 
         update    (mf/use-fn
                    (mf/deps file-id)
@@ -267,6 +268,7 @@
    ::mf/register-as :libraries-dialog}
   []
   (let [project       (mf/deref refs/workspace-project)
+        file-data     (mf/deref refs/workspace-data)
         file          (mf/deref ref:workspace-file)
 
         team-id       (:team-id project)
@@ -319,5 +321,6 @@
                              :shared-libraries shared-libraries}]
           :updates
           [:& updates-tab {:file-id file-id
+                           :file-data file-data
                            :libraries libraries}])]]]]))
 

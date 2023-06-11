@@ -211,8 +211,9 @@
                (->> (rp/cmd! :get-file-libraries {:file-id id})
                     (rx/mapcat identity)
                     (rx/merge-map
-                     (fn [{:keys [id]}]
-                       (rp/cmd! :get-file {:id id :features features})))
+                     (fn [{:keys [id synced-at]}]
+                       (->> (rp/cmd! :get-file {:id id :features features})
+                            (rx/map #(assoc % :synced-at synced-at)))))
                     (rx/merge-map
                      (fn [{:keys [id data] :as file}]
                        (->> (resolve-file-data id data)
