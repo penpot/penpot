@@ -328,6 +328,7 @@
 }
 
 .code-block {
+  position: relative;
   margin-top: 0.5rem;
   border-top: 1px solid $color-gray-60;
 
@@ -353,17 +354,86 @@
     .copy-button {
       margin-top: 8px;
     }
+
+    .custom-select {
+      border: 1px solid $color-gray-40;
+      border-radius: 3px;
+      cursor: pointer;
+      padding: 0.25rem 1.5rem 0.25rem 0.25rem;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+
+      .dropdown-button {
+        position: absolute;
+        right: 0.25rem;
+        top: 7px;
+
+        svg {
+          fill: $color-gray-40;
+          height: 10px;
+          width: 10px;
+        }
+      }
+    }
+
+    .custom-select-dropdown {
+      background-color: $color-white;
+      border-radius: 3px;
+      box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+      left: 0;
+      max-height: 30rem;
+      min-width: 7rem;
+      position: absolute;
+      overflow-y: auto;
+      top: 30px;
+      z-index: 12;
+
+      li {
+        color: $color-gray-60;
+        cursor: pointer;
+        font-size: 0.875rem;
+        display: flex;
+        gap: 0 10px;
+        justify-content: flex-start;
+        padding: 0.5rem;
+
+        .checked-element {
+          padding-left: 0;
+        }
+      }
+
+      svg {
+        visibility: hidden;
+        width: 8px;
+        height: 8px;
+        background: none;
+        margin: 0.25rem;
+        fill: $color-black;
+      }
+
+      .is-selected svg {
+        visibility: visible;
+      }
+    }
+
   }
 
   .code-row-display {
+    line-height: 1;
     margin: 0.5rem;
     font-size: $fs14;
+    max-height: var(--code-height, 400px);
+    overflow: auto;
 
     .code-display {
+      font-family: monospace;
       border-radius: $br4;
-      padding: 1rem;
+      padding: 0.5rem 1rem;
       overflow: hidden;
-      white-space: pre-wrap;
+      white-space: pre;
+      min-width: fit-content;
       background: $color-gray-60;
       user-select: text;
 
@@ -377,6 +447,15 @@
         color: #66d9ef;
       }
     }
+  }
+  .resize-area {
+    width: 100%;
+    position: absolute;
+    bottom: -15px;
+    left: 0;
+    height: 18px;
+    z-index: 1;
+    cursor: ns-resize;
   }
 }
 

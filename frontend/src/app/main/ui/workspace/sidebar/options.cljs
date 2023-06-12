@@ -67,7 +67,7 @@
 
 (mf/defc options-content
   {::mf/wrap [mf/memo]}
-  [{:keys [selected section shapes shapes-with-children page-id file-id]}]
+  [{:keys [selected section shapes shapes-with-children page-id file-id on-change-section on-expand]}]
   (let [drawing              (mf/deref refs/workspace-drawing)
         objects              (mf/deref refs/workspace-page-objects)
         shared-libs          (mf/deref refs/workspace-libraries)
@@ -83,9 +83,8 @@
 
         on-change-tab
         (fn [options-mode]
-          (st/emit! (udw/set-options-mode options-mode)
-                    (udw/set-inspect-expanded false))
-          (if (= options-mode :inspect) ;;TODO maybe move this logic to set-options-mode
+          (st/emit! (udw/set-options-mode options-mode))
+          (if (= options-mode :inspect)
             (st/emit! :interrupt (udw/set-workspace-read-only true))
             (st/emit! :interrupt (udw/set-workspace-read-only false))))]
 
@@ -94,7 +93,7 @@
       [:& tabs-container {:on-change-tab on-change-tab
                          :selected section}
        [:& tabs-element {:id :design
-                        :title (tr "workspace.options.design")}
+                         :title (tr "workspace.options.design")}
         [:div.element-options
          [:& align-options]
          [:& bool-options]
@@ -143,13 +142,16 @@
          [:& interactions-menu {:shape (first shapes)}]]]
 
        [:& tabs-element {:id :inspect
-                        :title (tr "workspace.options.inspect")}
-        [:div.element-options
-         [:& hrs/right-sidebar {:page-id  page-id
-                                :file-id  file-id
-                                :frame    shape-parent-frame
-                                :shapes   selected-shapes
-                                :from :workspace}]]]]]]))
+                         :title (tr "workspace.options.inspect")}
+
+        [:div.element-options.element-options-inspect
+         [:& hrs/right-sidebar {:page-id           page-id
+                                :file-id           file-id
+                                :frame             shape-parent-frame
+                                :shapes            selected-shapes
+                                :on-change-section on-change-section
+                                :on-expand         on-expand
+                                :from              :workspace}]]]]]]))
 
 ;; TODO: this need optimizations, selected-objects and
 ;; selected-objects-with-children are derefed always but they only
@@ -161,6 +163,8 @@
   [props]
   (let [section              (obj/get props "section")
         selected             (obj/get props "selected")
+        on-change-section    (obj/get props "on-change-section")
+        on-expand            (obj/get props "on-expand")
         page-id              (mf/use-ctx ctx/current-page-id)
         file-id              (mf/use-ctx ctx/current-file-id)
         shapes               (mf/deref refs/selected-objects)
@@ -171,4 +175,6 @@
                          :shapes-with-children shapes-with-children
                          :file-id file-id
                          :page-id page-id
-                         :section section}]))
+                         :section section
+                         :on-change-section on-change-section
+                         :on-expand on-expand}]))

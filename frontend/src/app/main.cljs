@@ -88,9 +88,9 @@
 
 (defn ^:export reinit
   []
-  (mf/unmount (dom/get-element "app"))
-  (mf/unmount (dom/get-element "modal"))
-  (st/emit! (ev/initialize))
+  #_(mf/unmount (dom/get-element "app"))
+  #_(mf/unmount (dom/get-element "modal"))
+  #_(st/emit! (ev/initialize))
   (init-ui))
 
 (defn ^:dev/after-load after-load

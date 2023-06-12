@@ -464,8 +464,13 @@
         column-add-auto   (/ free-column-space column-autos)
         row-add-auto      (/ free-row-space row-autos)
 
-        column-tracks (add-auto-size column-tracks column-add-auto)
-        row-tracks (add-auto-size row-tracks row-add-auto)
+        column-tracks (cond-> column-tracks
+                        (= :stretch (:layout-align-content parent))
+                        (add-auto-size column-add-auto))
+
+        row-tracks    (cond-> row-tracks
+                        (= :stretch (:layout-justify-content parent))
+                        (add-auto-size row-add-auto))
 
         column-total-size (tracks-total-size column-tracks)
         row-total-size    (tracks-total-size row-tracks)
@@ -556,8 +561,7 @@
      :column-total-size column-total-size
      :column-total-gap column-total-gap
      :row-total-size row-total-size
-     :row-total-gap row-total-gap
-     }))
+     :row-total-gap row-total-gap}))
 
 (defn get-cell-data
   [{:keys [origin row-tracks column-tracks shape-cells]} _transformed-parent-bounds [_ child]]

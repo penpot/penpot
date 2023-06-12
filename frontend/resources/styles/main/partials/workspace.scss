@@ -48,14 +48,11 @@ $height-palette-max: 80px;
   }
 
   .settings-bar.settings-bar-right {
-    transition: width 0.2s;
-    min-width: $width-settings-bar;
-    max-width: $width-settings-bar * 3;
-    width: $width-settings-bar;
+    width: var(--width, $width-settings-bar);
     grid-area: right-sidebar;
 
-    &.expanded {
-      width: $width-settings-bar * 3;
+    &.not-expand {
+      max-width: $width-settings-bar;
     }
   }
 

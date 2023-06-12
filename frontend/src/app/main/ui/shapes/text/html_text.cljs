@@ -83,19 +83,24 @@
   [props ref]
   (let [shape     (obj/get props "shape")
         grow-type (obj/get props "grow-type")
-        {:keys [id x y width height content]} shape]
+        code?     (obj/get props "code?")
+        {:keys [id x y width height content]} shape
+
+        style
+        (when-not code?
+          #js {:position "fixed"
+               :left 0
+               :top 0
+               :background "white"
+               :width  (if (#{:auto-width} grow-type) 100000 width)
+               :height (if (#{:auto-height :auto-width} grow-type) 100000 height)})]
 
     [:div.text-node-html
      {:id (dm/str "html-text-node-" id)
       :ref ref
       :data-x x
       :data-y y
-      :style {:position "fixed"
-              :left 0
-              :top 0
-              :background "white"
-              :width  (if (#{:auto-width} grow-type) 100000 width)
-              :height (if (#{:auto-height :auto-width} grow-type) 100000 height)}}
+      :style style}
      ;; We use a class here because react has a bug that won't use the appropriate selector for
      ;; `background-clip`
      [:style ".text-node { background-clip: text;

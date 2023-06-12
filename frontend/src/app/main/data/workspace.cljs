@@ -2160,20 +2160,6 @@
       (let [orphans (set (into [] (keys (wsh/find-orphan-shapes state))))]
         (rx/of (relocate-shapes orphans uuid/zero 0 true))))))
 
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Inspect
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-(defn set-inspect-expanded
-  [expanded?]
-  (ptk/reify ::set-inspect-expanded
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :inspect-expanded] expanded?))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Sitemap
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

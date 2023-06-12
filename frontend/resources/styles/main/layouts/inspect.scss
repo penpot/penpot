@@ -106,9 +106,6 @@ $width-settings-bar: 256px;
   .settings-bar {
     transition: width 0.2s;
     width: $width-settings-bar;
-    &.expanded {
-      width: $width-settings-bar * 3;
-    }
 
     &.settings-bar-right,
     &.settings-bar-left {

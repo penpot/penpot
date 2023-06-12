@@ -48,7 +48,8 @@
   [_shape data]
   (let [line-height (:line-height data 1.2)
         text-align  (:text-align data "start")
-        base        #js {:fontSize (str (:font-size data (:font-size txt/default-text-attrs)) "px")
+        base        #js {;; Fix a problem when exporting HTML
+                         :fontSize 0 ;;(str (:font-size data (:font-size txt/default-text-attrs)) "px")
                          :lineHeight (:line-height data (:line-height txt/default-text-attrs))
                          :margin 0}]
     (cond-> base

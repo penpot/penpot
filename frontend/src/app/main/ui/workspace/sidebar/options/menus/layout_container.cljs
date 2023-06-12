@@ -125,6 +125,7 @@
     :justify-items
     (if is-col?
       (case val
+        :stretch       i/grid-justify-content-column-around
         :start         i/grid-justify-content-column-start
         :end           i/grid-justify-content-column-end
         :center        i/grid-justify-content-column-center
@@ -133,6 +134,7 @@
         :space-evenly  i/grid-justify-content-column-between)
 
       (case val
+        :stretch       i/grid-justify-content-column-around
         :start         i/grid-justify-content-row-start
         :end           i/grid-justify-content-row-end
         :center        i/grid-justify-content-row-center
@@ -407,7 +409,7 @@
   [{:keys [is-col? justify-items set-justify] :as props}]
   (let [type (if is-col? :column :row)]
     [:div.justify-content-style
-     (for [align [:start :center :end :space-around :space-between :space-evenly]]
+     (for [align [:stretch :start :center :end :space-around :space-between]]
        [:button.align-start.tooltip
         {:class    (dom/classnames :active  (= justify-items align)
                                    :tooltip-bottom-left (not= align :start)
@@ -748,7 +750,7 @@
         align-items-row    (:layout-align-items values)
         align-items-column (:layout-justify-items values)
 
-        set-align-grid
+        set-items-grid
         (fn [value type]
           (if (= type :row)
             (st/emit! (dwsl/update-layout ids {:layout-align-items value}))
@@ -758,7 +760,7 @@
         grid-justify-content-row    (:layout-align-content values)
         grid-justify-content-column (:layout-justify-content values)
 
-        set-justify-grid
+        set-content-grid
         (mf/use-callback
          (mf/deps ids)
          (fn [value type]
@@ -833,25 +835,25 @@
            [:& grid-edit-mode {:id (first ids)}]])]]
 
       [:div.layout-row
-       [:div.align-items-grid.row-title "Align"]
+       [:div.align-items-grid.row-title "Items"]
        [:div.btn-wrapper.align-grid
         [:& align-grid-row {:is-col? false
                             :align-items align-items-row
-                            :set-align set-align-grid}]
+                            :set-align set-items-grid}]
 
         [:& align-grid-row {:is-col? true
                             :align-items align-items-column
-                            :set-align set-align-grid}]]]
+                            :set-align set-items-grid}]]]
 
       [:div.layout-row
-       [:div.jusfiy-content-grid.row-title "Justify"]
+       [:div.jusfiy-content-grid.row-title "Content"]
        [:div.btn-wrapper.align-grid
         [:& justify-grid-row {:is-col? true
                               :justify-items grid-justify-content-column
-                              :set-justify set-justify-grid}]
+                              :set-justify set-content-grid}]
         [:& justify-grid-row {:is-col? false
                               :justify-items grid-justify-content-row
-                              :set-justify set-justify-grid}]]]
+                              :set-justify set-content-grid}]]]
       [:& grid-columns-row {:is-col? true
                             :expanded? @grid-columns-open?
                             :toggle toggle-columns-info
