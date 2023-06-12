@@ -216,8 +216,9 @@
       [:type [:= :del-typography]]
       [:id ::sm/uuid]]]]])
 
-
-
+(sm/def! ::changes
+  [:sequential {:gen/max 2} ::change])
+ 
 (def change?
   (sm/pred-fn ::change))
 
