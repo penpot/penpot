@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## 1.18.5
+
 ## 1.18.4
 
 ### :bug: Bugs fixed

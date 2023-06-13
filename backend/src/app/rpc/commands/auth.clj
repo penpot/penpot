@@ -169,14 +169,16 @@
   [{:keys [::db/pool] :as cfg} params]
 
   (when-not (contains? cf/flags :registration)
-    (if-not (contains? params :invitation-token)
+    (when-not (contains? params :invitation-token)
       (ex/raise :type :restriction
-                :code :registration-disabled)
-      (let [invitation (tokens/verify (::main/props cfg) {:token (:invitation-token params) :iss :team-invitation})]
-        (when-not (= (:email params) (:member-email invitation))
-          (ex/raise :type :restriction
-                    :code :email-does-not-match-invitation
-                    :hint "email should match the invitation")))))
+                :code :registration-disabled)))
+
+  (when (contains? params :invitation-token)
+    (let [invitation (tokens/verify (::main/props cfg) {:token (:invitation-token params) :iss :team-invitation})]
+      (when-not (= (:email params) (:member-email invitation))
+        (ex/raise :type :restriction
+                  :code :email-does-not-match-invitation
+                  :hint "email should match the invitation"))))
 
   (when-let [domains (cf/get :registration-domain-whitelist)]
     (when-not (email-domain-in-whitelist? domains (:email params))
