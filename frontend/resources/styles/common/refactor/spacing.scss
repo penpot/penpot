@@ -6,11 +6,6 @@
 
 @use "sass:math";
 
-:root {
-  --s-4: 0.25rem;
-  --layer-indentation-size: calc(var(--s-4) * 5);
-}
-
 $s-0: 0px;
 $s-2: math.div(0.25rem, 2);
 $s-4: var(--s-4);

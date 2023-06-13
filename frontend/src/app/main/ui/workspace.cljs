@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace
+  (:require-macros [app.main.style :refer [css]])
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
@@ -193,7 +194,8 @@
         [:& (mf/provider ctx/components-v2) {:value components-v2?}
          [:& (mf/provider ctx/new-css-system) {:value new-css?}
           [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
-           [:section#workspace {:style {:background-color background-color
+           [:section#workspace {:class (when new-css? (css :workspace))
+                                :style {:background-color background-color
                                         :touch-action "none"}}
             (when (not (:hide-ui layout))
               [:& header {:file file
