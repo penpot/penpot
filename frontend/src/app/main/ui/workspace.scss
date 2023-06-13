@@ -1,0 +1,38 @@
+@import "refactor/common-refactor.scss";
+
+// Work Sans
+@include font-face("worksans", "WorkSans-Regular", normal);
+@include font-face("worksans", "WorkSans-Medium", "500");
+@include font-face("worksans", "WorkSans-Bold", bold);
+
+// Space mono
+@include font-face("spacemono", "SpaceMono-Regular", normal);
+
+:global(:root) {
+  --s-4: 0.25rem;
+  --layer-indentation-size: calc(var(--s-4) * 5);
+}
+
+.workspace {
+  ::-webkit-scrollbar {
+    background-color: transparent;
+    cursor: pointer;
+    height: $s-12;
+    width: $s-12;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background-color: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(170, 181, 186, 0.3);
+    background-clip: content-box;
+    border: $s-2 solid transparent;
+    border-radius: $br-8;
+    &:hover {
+      background-color: rgba(170, 181, 186, 0.7);
+      outline: none;
+    }
+  }
+}

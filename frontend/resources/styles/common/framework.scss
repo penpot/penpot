@@ -914,9 +914,12 @@ input[type="range"]:focus::-ms-fill-upper {
   height: 8px;
   width: 8px;
 }
-::-webkit-scrollbar-track {
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
   background-color: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background-color: $color-gray-20;
 

@@ -29,11 +29,3 @@ $fs-44: math.div(44, $fs-base) + rem;
 $fw400: 400; // Regular (CSS value: 'normal')
 $fw500: 500; // Medium
 $fw700: 700; // Bold (CSS value: 'bold')
-
-// Work Sans
-@include font-face("worksans", "WorkSans-Regular", normal);
-@include font-face("worksans", "WorkSans-Medium", "500");
-@include font-face("worksans", "WorkSans-Bold", bold);
-
-// Space mono
-@include font-face("spacemono", "SpaceMono-Regular", normal);
