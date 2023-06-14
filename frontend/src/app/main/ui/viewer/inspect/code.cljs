@@ -26,10 +26,24 @@
    [app.main.ui.shapes.text.fontfaces :refer [shapes->fonts]]
    [app.util.code-gen :as cg]
    [app.util.http :as http]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
+
+(def page-template
+  "<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+    %s
+    </style>
+  </head>
+  <body>
+  %s
+  </body>
+</html>")
 
 (defn format-code [code type]
   (let [code (-> code
@@ -41,9 +55,13 @@
 (defn get-flex-elements [page-id shapes from]
   (let [ids (mapv :id shapes)
         ids (hooks/use-equal-memo ids)
-        get-layout-children-refs (mf/use-memo (mf/deps ids page-id from) #(if (= from :workspace)
-                                                                            (refs/workspace-get-flex-child ids)
-                                                                            (refs/get-flex-child-viewer ids page-id)))]
+
+        get-layout-children-refs
+        (mf/use-memo
+         (mf/deps ids page-id from)
+         #(if (= from :workspace)
+            (refs/workspace-get-flex-child ids)
+            (refs/get-flex-child-viewer ids page-id)))]
 
     (mf/deref get-layout-children-refs)))
 
@@ -145,10 +163,16 @@
                                 {::ev/name "copy-inspect-style"
                                  :type style-type}))))
 
-        {on-code-pointer-down :on-pointer-down
-         on-code-lost-pointer-capture :on-lost-pointer-capture
-         on-code-pointer-move :on-pointer-move
-         code-size :size}
+        {on-markup-pointer-down :on-pointer-down
+         on-markup-lost-pointer-capture :on-lost-pointer-capture
+         on-markup-pointer-move :on-pointer-move
+         markup-size :size}
+        (use-resize-hook :code 400 100 800 :y false :bottom)
+
+        {on-style-pointer-down :on-pointer-down
+         on-style-lost-pointer-capture :on-lost-pointer-capture
+         on-style-pointer-move :on-pointer-move
+         style-size :size}
         (use-resize-hook :code 400 100 800 :y false :bottom)
 
         set-style
@@ -159,7 +183,15 @@
         set-markup
         (mf/use-callback
          (fn [value]
-           (reset! markup-type* value)))]
+           (reset! markup-type* value)))
+
+        handle-copy-all-code
+        (mf/use-callback
+         (mf/deps style-code markup-code images-data)
+         (fn []
+           (let [markup-code (replace-map markup-code images-data)
+                 data (str/format page-template style-code markup-code)]
+             (wapi/write-to-clipboard data))))]
 
     (mf/use-effect
      (mf/deps fonts)
@@ -184,6 +216,10 @@
               (reset! images-data* result)))))
 
     [:div.element-options
+     [:div.attributes-block
+      [:button.download-button {:on-click handle-copy-all-code}
+       "Copy all code"]]
+
      [:div.code-block
       [:div.code-row-lang
        [:& select {:default-value style-type
@@ -197,14 +233,13 @@
        [:& copy-button {:data style-code
                         :on-copied on-style-copied}]]
 
-      [:div.code-row-display {:style #js {"--code-height" (str (or code-size 400) "px")}}
+      [:div.code-row-display {:style #js {"--code-height" (str (or style-size 400) "px")}}
        [:& code-block {:type style-type
                        :code style-code}]]
 
-      [:div.resize-area {:on-pointer-down on-code-pointer-down
-                         :on-lost-pointer-capture on-code-lost-pointer-capture
-                         :on-pointer-move on-code-pointer-move}]]
-
+      [:div.resize-area {:on-pointer-down on-style-pointer-down
+                         :on-lost-pointer-capture on-style-lost-pointer-capture
+                         :on-pointer-move on-style-pointer-move}]]
 
      [:div.code-block
       [:div.code-row-lang
@@ -218,10 +253,13 @@
         {:on-click on-expand}
         i/full-screen]
 
-       [:& copy-button {:data (replace-map markup-code images-data)
+       [:& copy-button {:data #(replace-map markup-code images-data)
                         :on-copied on-markup-copied}]]
 
-
-      [:div.code-row-display
+      [:div.code-row-display {:style #js {"--code-height" (str (or markup-size 400) "px")}}
        [:& code-block {:type markup-type
-                       :code markup-code}]]]]))
+                       :code markup-code}]]
+
+      [:div.resize-area {:on-pointer-down on-markup-pointer-down
+                         :on-lost-pointer-capture on-markup-lost-pointer-capture
+                         :on-pointer-move on-markup-pointer-move}]]]))

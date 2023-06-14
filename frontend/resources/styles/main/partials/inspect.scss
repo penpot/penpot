@@ -332,6 +332,10 @@
   margin-top: 0.5rem;
   border-top: 1px solid $color-gray-60;
 
+  &:last-child {
+    margin-bottom: 18px;
+  }
+
   &:hover {
     .code-row-lang {
       .expand-button,

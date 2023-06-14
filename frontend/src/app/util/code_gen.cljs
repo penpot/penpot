@@ -433,9 +433,8 @@
                            :tab-size 2})])))
 
 (defn selector-name [shape]
-  (let [
-        name (-> (:name shape)
-                 #_(subs 0 (min 10 (count (:name shape)))))
+  (let [name (-> (:name shape)
+                 (subs 0 (min 10 (count (:name shape)))))
         ;; selectors cannot start with numbers
         name (if (re-matches #"^\d.*" name) (dm/str "c-" name) name)
         id (-> (dm/str (:id shape))
