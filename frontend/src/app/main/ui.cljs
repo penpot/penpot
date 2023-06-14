@@ -106,7 +106,7 @@
 
        :viewer
        (let [{:keys [query-params path-params]} route
-             {:keys [index share-id section page-id] :or {section :interactions}} query-params
+             {:keys [index share-id section page-id interactions-mode] :or {section :interactions interactions-mode :show-on-click}} query-params
              {:keys [file-id]} path-params]
          (if (:token query-params)
            [:& viewer/breaking-change-notice]
@@ -114,7 +114,12 @@
                                    :file-id file-id
                                    :section section
                                    :index index
-                                   :share-id share-id}]))
+                                   :share-id share-id
+                                   :interactions-mode (keyword interactions-mode)
+                                   :interactions-show? (case (keyword interactions-mode)
+                                                         :hide false
+                                                         :show true
+                                                         :show-on-click false)}]))
 
        :workspace
        (let [project-id (some-> params :path :project-id uuid)

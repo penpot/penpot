@@ -16,7 +16,6 @@
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.hooks :as h]
@@ -201,18 +200,19 @@
             [:span.label (:name flow)]])]]])))
 
 (mf/defc interactions-menu
-  []
-  (let [local           (mf/deref refs/viewer-local)
-        mode            (:interactions-mode local)
-
-        show-dropdown?  (mf/use-state false)
+  [{:keys [interactions-mode]}]
+  (let [show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
         hide-dropdown   (mf/use-fn #(reset! show-dropdown? false))
 
         select-mode
-        (mf/use-callback
-         (fn [mode]
-           (st/emit! (dv/set-interactions-mode mode))))]
+        (mf/use-fn
+          (fn [event]
+            (let [mode (some-> (dom/get-current-target event)
+                         (dom/get-data "mode")
+                         (keyword))]
+              (dom/stop-propagation event)
+              (st/emit! (dv/set-interactions-mode mode)))))]
 
     [:div.view-options {:on-click toggle-dropdown}
      [:span.label (tr "viewer.header.interactions")]
@@ -220,18 +220,21 @@
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
       [:ul.dropdown.with-check
-       [:li {:class (dom/classnames :selected (= mode :hide))
-             :on-click #(select-mode :hide)}
+       [:li {:class (dom/classnames :selected (= interactions-mode :hide))
+             :on-click select-mode
+             :data-mode :hide}
         [:span.icon i/tick]
         [:span.label (tr "viewer.header.dont-show-interactions")]]
 
-       [:li {:class (dom/classnames :selected (= mode :show))
-             :on-click #(select-mode :show)}
+       [:li {:class (dom/classnames :selected (= interactions-mode :show))
+             :on-click select-mode
+             :data-mode :show}
         [:span.icon i/tick]
         [:span.label (tr "viewer.header.show-interactions")]]
 
-       [:li {:class (dom/classnames :selected (= mode :show-on-click))
-             :on-click #(select-mode :show-on-click)}
+       [:li {:class (dom/classnames :selected (= interactions-mode :show-on-click))
+             :on-click select-mode
+             :data-mode :show-on-click}
         [:span.icon i/tick]
         [:span.label (tr "viewer.header.show-interactions-on-click")]]]]]))
 

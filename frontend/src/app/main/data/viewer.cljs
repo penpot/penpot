@@ -30,7 +30,7 @@
   default-local-state
   {:zoom 1
    :fullscreen? false
-   :interactions-mode :hide
+   :interactions-mode :show-on-click
    :interactions-show? false
    :comments-mode :all
    :comments-show :unresolved
@@ -53,7 +53,7 @@
    [:page-id {:optional true} ::sm/uuid]])
 
 (defn initialize
-  [{:keys [file-id share-id] :as params}]
+  [{:keys [file-id share-id interactions-show?] :as params}]
   (dm/assert! (sm/valid? schema:initialize params))
   (ptk/reify ::initialize
     ptk/UpdateEvent
@@ -61,11 +61,12 @@
       (-> state
           (assoc :current-file-id file-id)
           (update :viewer-local
-                  (fn [lstate]
-                    (if (nil? lstate)
-                      default-local-state
-                      lstate)))
-          (assoc-in [:viewer-local :share-id] share-id)))
+            (fn [lstate]
+              (if (nil? lstate)
+                default-local-state
+                lstate)))
+          (assoc-in [:viewer-local :share-id] share-id)
+          (assoc-in [:viewer-local :interactions-show?] interactions-show?)))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -400,7 +401,14 @@
           (assoc-in [:viewer-local :interactions-show?] (case mode
                                                           :hide false
                                                           :show true
-                                                          :show-on-click false))))))
+                                                          :show-on-click false))))
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [route   (:route state)
+            screen  (-> route :data :name keyword)
+            qparams (:query-params route)
+            pparams (:path-params route)]
+        (rx/of (rt/nav screen pparams (assoc qparams :interactions-mode mode)))))))
 
 (declare flash-done)
 
