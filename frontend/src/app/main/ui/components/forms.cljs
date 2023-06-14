@@ -220,7 +220,10 @@
                :disabled disabled
                :data-test data-test}
       (for [item options]
-        [:option {:key (:value item) :value (:value item)} (:label item)])]
+        [:> :option (clj->js (cond-> {:key (:value item) :value (:value item)}
+                               (:disabled item) (assoc :disabled "disabled")
+                               (:hidden item) (assoc :style {:display "none"}))) 
+         (:label item)])]
 
      [:div.input-container {:class (dom/classnames :disabled disabled :focus @focus?)}
       [:div.main-content
