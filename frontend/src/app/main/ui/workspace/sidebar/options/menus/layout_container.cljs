@@ -125,7 +125,7 @@
     :justify-items
     (if is-col?
       (case val
-        :stretch       i/grid-justify-content-column-around
+        :stretch       i/align-items-row-strech
         :start         i/grid-justify-content-column-start
         :end           i/grid-justify-content-column-end
         :center        i/grid-justify-content-column-center
@@ -134,7 +134,7 @@
         :space-evenly  i/grid-justify-content-column-between)
 
       (case val
-        :stretch       i/grid-justify-content-column-around
+        :stretch       i/align-items-column-strech
         :start         i/grid-justify-content-row-start
         :end           i/grid-justify-content-row-end
         :center        i/grid-justify-content-row-center
@@ -389,6 +389,7 @@
       :alt    "Grid edit mode"
       :on-click #(toggle-edit-mode)
       :style {:padding 0}}
+     "Edit grid"
      i/grid-layout-mode]))
 
 (mf/defc align-grid-row
@@ -400,7 +401,9 @@
         {:class    (dom/classnames :active  (= align-items align)
                                    :tooltip-bottom-left (not= align :start)
                                    :tooltip-bottom (= align :start))
-         :alt      (dm/str "Align items " (d/name align))
+         :alt      (if is-col?
+                     (dm/str "justify-items: " (d/name align))
+                     (dm/str "align-items: " (d/name align)))
          :on-click #(set-align align type)
          :key      (dm/str "align-items" (d/name align))}
         (get-layout-flex-icon :align-items align is-col?)])]))
@@ -409,12 +412,14 @@
   [{:keys [is-col? justify-items set-justify] :as props}]
   (let [type (if is-col? :column :row)]
     [:div.justify-content-style
-     (for [align [:stretch :start :center :end :space-around :space-between]]
+     (for [align [:start :center :end :space-around :space-between :stretch]]
        [:button.align-start.tooltip
         {:class    (dom/classnames :active  (= justify-items align)
                                    :tooltip-bottom-left (not= align :start)
                                    :tooltip-bottom (= align :start))
-         :alt      (dm/str "Justify content " (d/name align))
+         :alt      (if is-col?
+                     (dm/str "justify-content: " (d/name align))
+                     (dm/str "align-content: " (d/name align)))
          :on-click #(set-justify align type)
          :key      (dm/str "justify-content" (d/name align))}
         (get-layout-grid-icon :justify-items align is-col?)])]))
@@ -682,15 +687,15 @@
                                      :dir dir
                                      :saved-dir saved-grid-dir
                                      :set-direction #(set-direction dir :grid)
-                                     :icon? false}])]]
+                                     :icon? true}])]]
 
               (when (= 1 (count ids))
                 [:div.edit-mode
                  [:& grid-edit-mode {:id (first ids)}]])]]
 
             [:div.layout-row
-             [:div.align-items-grid.row-title "Align"]
-             [:div.btn-wrapper.align-grid
+             [:div.align-items-grid.row-title "Items"]
+             [:div.btn-wrapper.align-grid-items
               [:& align-grid-row {:is-col? false
                                   :align-items align-items-row
                                   :set-align set-align-grid}]
@@ -700,8 +705,8 @@
                                   :set-align set-align-grid}]]]
 
             [:div.layout-row
-             [:div.jusfiy-content-grid.row-title "Justify"]
-             [:div.btn-wrapper.align-grid
+             [:div.jusfiy-content-grid.row-title "Content"]
+             [:div.btn-wrapper.align-grid-content
               [:& justify-grid-row {:is-col? true
                                     :justify-items grid-justify-content-column
                                     :set-justify set-justify-grid}]
@@ -822,13 +827,12 @@
        [:div.direction-wrap.row-title "Direction"]
        [:div.btn-wrapper
         [:div.direction
-         [:*
-          (for [dir [:row :column]]
-            [:& direction-btn {:key (d/name dir)
-                               :dir dir
-                               :saved-dir saved-grid-dir
-                               :set-direction #(set-direction dir)
-                               :icon? false}])]]
+         (for [dir [:row :column]]
+           [:& direction-btn {:key (d/name dir)
+                              :dir dir
+                              :saved-dir saved-grid-dir
+                              :set-direction #(set-direction dir)
+                              :icon? true}])]
 
         (when (= 1 (count ids))
           [:div.edit-mode

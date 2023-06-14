@@ -1781,20 +1781,31 @@
       }
 
       .edit-mode {
-        display: flex;
-        justify-content: center;
         align-items: center;
+        border-radius: 4px;
+        border: 1px solid $color-gray-60;
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        justify-content: center;
         margin-left: 5px;
+        padding: 0 8px;
+        text-align: left;
+        width: 120px;
 
         button {
+          color: $color-gray-30;
           display: flex;
           justify-content: center;
           align-items: center;
           background: transparent;
           border: none;
           cursor: pointer;
+          gap: 16px;
+
           &.active,
           &:hover {
+            color: $color-primary;
             svg {
               fill: $color-primary;
             }
@@ -1802,7 +1813,17 @@
         }
       }
 
-      &.align-grid {
+      &.align-grid-items {
+        flex-direction: row;
+        gap: 0px;
+        margin: 7px 0;
+
+        .align-items-style {
+          margin-right: 2px;
+        }
+      }
+
+      &.align-grid-content {
         flex-direction: column;
         gap: 7px;
         margin: 7px 0;
