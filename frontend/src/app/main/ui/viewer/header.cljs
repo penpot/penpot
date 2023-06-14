@@ -70,7 +70,7 @@
 
 
 (mf/defc header-options
-  [{:keys [section zoom page file index permissions]}]
+  [{:keys [section zoom page file index permissions interactions-mode]}]
   (let [fullscreen? (mf/deref fullscreen-ref)
 
         toggle-fullscreen
@@ -95,7 +95,7 @@
        :interactions [:*
                       (when index
                         [:& flows-menu {:page page :index index}])
-                      [:& interactions-menu]]
+                      [:& interactions-menu {:interactions-mode interactions-mode}]]
        :comments [:& comments-menu]
 
        [:div.view-options])
@@ -184,7 +184,7 @@
 
 
 (mf/defc header
-  [{:keys [project file page frame zoom section permissions index]}]
+  [{:keys [project file page frame zoom section permissions index interactions-mode]}]
   (let [go-to-dashboard
         #(st/emit! (dv/go-to-dashboard))
 
@@ -238,4 +238,5 @@
                          :page page
                          :file file
                          :index index
-                         :zoom zoom}]]))
+                         :zoom zoom
+                         :interactions-mode interactions-mode}]]))

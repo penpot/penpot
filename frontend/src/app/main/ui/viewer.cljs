@@ -158,7 +158,8 @@
      :index index
      :page page
      :users users
-     :frame frame}]
+     :frame frame
+     :interactions-mode interactions-mode}]
 
    [:div.viewer-wrapper
     {:style {:width (:width wrapper-size)
@@ -178,7 +179,7 @@
           :size orig-size
           :page page
           :users users
-          :interactions-mode :hide}]])
+          :interactions-mode interactions-mode}]])
 
      [:div.viewport-container
       {:ref current-viewport-ref
@@ -214,7 +215,7 @@
 (mf/defc viewer
   [{:keys [params data]}]
 
-  (let [{:keys [page-id section index]} params
+  (let [{:keys [page-id section index interactions-mode]} params
         {:keys [file users project permissions]} data
 
         allowed (or
@@ -280,9 +281,6 @@
         wrapper-size
         (mf/with-memo [size orig-size zoom]
           (calculate-wrapper size orig-size zoom))
-
-        interactions-mode
-        (:interactions-mode local)
 
         click-on-screen
         (mf/use-callback
@@ -484,7 +482,8 @@
                          :frame frame
                          :permissions permissions
                          :zoom zoom
-                         :section section}]
+                         :section section
+                         :interactions-mode interactions-mode}]
       [:div.thumbnail-close {:on-click #(st/emit! dv/close-thumbnails-panel)
                              :class (dom/classnames :invisible (not (:show-thumbnails local false)))}]
       [:& thumbnails-panel {:frames frames
@@ -516,7 +515,8 @@
              :local local
              :size size
              :index index
-             :viewer-pagination viewer-pagination}]
+             :viewer-pagination viewer-pagination
+             :interactions-mode interactions-mode}]
 
 
            [:& (mf/provider ctx/current-zoom) {:value zoom}
