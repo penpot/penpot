@@ -39,7 +39,8 @@ msgstr ""
 "Hau PROBAK EGITEKO zerbitzua da. EZ ERABILI benetako lana egiteko, hemengo "
 "proiektuak noizean behin ezabatu egingo dira."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
 msgstr "Posta elektronikoa"
 
@@ -174,7 +175,8 @@ msgid "common.share-link.all-users"
 msgstr "Penpoten erabiltzaile guztiak"
 
 msgid "common.share-link.confirm-deletion-link-description"
-msgstr "Esteka ezabatu nahi duzu? Hori egiten baduzu, inori ez dio funtzionatuko"
+msgstr ""
+"Esteka ezabatu nahi duzu? Hori egiten baduzu, inori ez dio funtzionatuko"
 
 msgid "common.share-link.current-tag"
 msgstr "(oraingoa)"
@@ -263,7 +265,8 @@ msgstr "Hasi"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "Interfazea ezagutu"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
 msgstr "Gehitu partekatutako liburutegi bezala"
 
@@ -293,7 +296,8 @@ msgstr "Deskargatu Penpot fitxategia (.penpot)"
 msgid "dashboard.download-standard-file"
 msgstr "Deskargatu fitxategi estandarra (.svg + .json)"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "Bikoiztu"
 
@@ -302,7 +306,6 @@ msgid "dashboard.duplicate-multi"
 msgstr "%s fitxategi bizkoiztu"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Oh ez! Oraindik ez duzu fitxategirik! Txantiloi batekin proba egin nahi "
@@ -400,16 +403,13 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "Letra-tipo 1 gehitu da"
 msgstr[1] "%s letra-tipo gehitu dira"
 
-#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Hemen gehitutako edozein letra-tipo pertsonalizatu, talde honen fitxategien "
-"testu propietateetan erabilgarri agertuko da. Familia izen bera duten "
-"letra.tipoak **letra-tipo familia bakar** gisa elkartuko dira. Formatu "
-"honetako letra-tipoak kargatu daitezke: **TTF, OTF and WOFF** (batekin "
-"nahikoa da)."
+"testu propietateetan erabilgarri agertuko da. Familia izen bera duten letra."
+"tipoak **letra-tipo familia bakar** gisa elkartuko dira. Formatu honetako "
+"letra-tipoak kargatu daitezke: **TTF, OTF and WOFF** (batekin nahikoa da)."
 
-#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Zureak diren edo Penpoten erabiltzeko lizentzia duzun letra-tipoak bakarrik "
@@ -459,7 +459,8 @@ msgstr "Fitxategia bidaltzen: %s"
 msgid "dashboard.invite-profile"
 msgstr "Gonbidatu taldera"
 
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
 msgstr "Utzi taldea"
 
@@ -483,7 +484,8 @@ msgstr "zure fitxategiak kargatzen…"
 msgid "dashboard.loading-fonts"
 msgstr "zure letra-tipoak kargatzen…"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
 msgstr "Mugitu"
 
@@ -495,7 +497,8 @@ msgstr "Mugitu %s fitxategi"
 msgid "dashboard.move-to-other-team"
 msgstr "Mugitu beste talde batera"
 
-#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/files.cljs
 msgid "dashboard.new-file"
 msgstr "+ Fitxategi berria"
 
@@ -558,7 +561,8 @@ msgstr "Proiektuak"
 msgid "dashboard.remove-account"
 msgstr "Kontua ezabatu nahi duzu?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
 msgstr "Ezabatu partekatutako liburutegi gisa"
 
@@ -594,7 +598,8 @@ msgstr "Zure proiektua ondo ezabatu da"
 msgid "dashboard.success-duplicate-project"
 msgstr "Zure proiektua ondo bikoiztu da"
 
-#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-move-file"
 msgstr "Zure fitxategia ondo mugitu da"
 
@@ -630,11 +635,13 @@ msgstr "Bilaketaren emaitzak"
 msgid "dashboard.type-something"
 msgstr "Idatzi bilaktzeko zerbaitu"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
 msgstr "Atzera bota liburutegia argitaratzea"
 
-#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/password.cljs,
+#: src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Eguneratu aukerak"
 
@@ -650,7 +657,11 @@ msgstr "Eposta"
 msgid "dashboard.your-name"
 msgstr "Izena"
 
-#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/libraries.cljs,
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
 msgstr "Zure Penpot"
 
@@ -695,7 +706,8 @@ msgstr "Ezin izan dira %s letra-tipoak kargatu"
 msgid "errors.clipboard-not-implemented"
 msgstr "Zure nabigatzaileak ezin du hori egin"
 
-#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
+#: src/app/main/ui/auth/verify_token.cljs,
+#: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-already-exists"
 msgstr "Eposta helbide hori erabilita dago"
 
@@ -706,7 +718,10 @@ msgstr "Eposta helbide hori egiaztatuta dago."
 msgid "errors.email-as-password"
 msgstr "Ezin duzu zure eposta helbidea pasahitz gisa erabiliz"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs,
+#: src/app/main/ui/settings/change_email.cljs,
+#: src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
 msgstr "«%s» helbideak ez ditu mezuak ondo jasotzen, itzuli egiten ditu."
 
@@ -716,10 +731,11 @@ msgstr "Egiaztapenereko epostak bat etorri behar du aurrekoarekin"
 
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr ""
-"«%s» helbideak ez ditu mezuak ondo jasotzen, itzuli egiten ditu edo "
-"spamaren inguruko txostenak ditu."
+"«%s» helbideak ez ditu mezuak ondo jasotzen, itzuli egiten ditu edo spamaren "
+"inguruko txostenak ditu."
 
-#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/verify_token.cljs,
+#: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
 msgstr "Erroreren bat gertatu da."
 
@@ -746,7 +762,7 @@ msgstr "Irudia handiegia da (5mb baino gutxiago izan behar ditu)."
 msgid "errors.media-type-mismatch"
 msgstr "Irudiaren edukia eta luzapena bat ez datozela dirudi."
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
 msgstr "Irudia zuzena ez dela dirudi."
 
@@ -767,7 +783,9 @@ msgstr "Pasahitzak gutxienez 8 karaktere izan behar ditu"
 msgid "errors.profile-blocked"
 msgstr "Profila blokeatuta dago"
 
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/recovery_request.cljs,
+#: src/app/main/ui/settings/change_email.cljs,
+#: src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
 msgstr ""
 "Zure profilak ez ditu eposta mezuak jasotzen (spam gisa markatu delako edo "
@@ -786,9 +804,12 @@ msgid "errors.team-leave.member-does-not-exists"
 msgstr "Izendatu nahi duzun kidea ez da existitzen."
 
 msgid "errors.team-leave.owner-cant-leave"
-msgstr "Jabea ezin da taldetik irten, jabetza beste pertsona bati eman behar diozu."
+msgstr ""
+"Jabea ezin da taldetik irten, jabetza beste pertsona bati eman behar diozu."
 
-#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+#: src/app/main/data/media.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "Errore bat gertatut da."
 
@@ -827,8 +848,8 @@ msgstr "Gaia"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"Idatzi zure mezuaren gaia, arazo bat, ideia bat edo zalantza bat den "
-"esanez. Gure lantaldeko norbaitek ahal bezain laster erantzungo dizu."
+"Idatzi zure mezuaren gaia, arazo bat, ideia bat edo zalantza bat den esanez. "
+"Gure lantaldeko norbaitek ahal bezain laster erantzungo dizu."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -898,7 +919,8 @@ msgstr "Altuera"
 msgid "inspect.attributes.layout.left"
 msgstr "Ezkerra"
 
-#: src/app/main/ui/inspect/attributes/layout.cljs, src/app/main/ui/inspect/attributes/layout.cljs
+#: src/app/main/ui/inspect/attributes/layout.cljs,
+#: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout.radius"
 msgstr "Erradioa"
 
@@ -922,15 +944,12 @@ msgstr "Itzala"
 msgid "inspect.attributes.stroke"
 msgstr "Ertza"
 
-#, permanent
 msgid "inspect.attributes.stroke.alignment.center"
 msgstr "Erdia"
 
-#, permanent
 msgid "inspect.attributes.stroke.alignment.inner"
 msgstr "Barnealdea"
 
-#, permanent
 msgid "inspect.attributes.stroke.alignment.outer"
 msgstr "Kanpoaldea"
 
@@ -1058,7 +1077,7 @@ msgstr "Onartu"
 msgid "labels.add-custom-font"
 msgstr "Gehitu letra-tipo pertsonalizatua"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.admin"
 msgstr "Kudeaketa"
 
@@ -1075,8 +1094,8 @@ msgstr "Itzuli"
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
 msgstr ""
-"Pixkat itxaron eta berriz saiatu behar duzula dirudi; mantentze-lanak "
-"egiten ari gara."
+"Pixkat itxaron eta berriz saiatu behar duzula dirudi; mantentze-lanak egiten "
+"ari gara."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.main-message"
@@ -1114,7 +1133,8 @@ msgstr "Penpot kontu batekin jarraitu dezakezu"
 msgid "labels.create"
 msgstr "Sortu"
 
-#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+#: src/app/main/ui/dashboard/team_form.cljs,
+#: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
 msgstr "Sortu talde berria"
 
@@ -1129,7 +1149,8 @@ msgstr "Pertsonalizatutako letra-tipoak"
 msgid "labels.dashboard"
 msgstr "Lanlekua"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
 msgstr "Ezabatu"
 
@@ -1149,7 +1170,10 @@ msgstr "Ezabatu gonbidapena"
 msgid "labels.delete-multi-files"
 msgstr "Ezabatu %s fitxategi"
 
-#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/files.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.drafts"
 msgstr "Zirriborroak"
 
@@ -1160,7 +1184,7 @@ msgstr "Editatu"
 msgid "labels.edit-file"
 msgstr "Editatu fitxategia"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
 msgstr "Edizioa"
 
@@ -1195,7 +1219,9 @@ msgstr "Letra-tipoak"
 msgid "labels.github-repo"
 msgstr "GitHubeko errepositorioa"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/settings/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "Eman zure iritzia"
 
@@ -1223,7 +1249,8 @@ msgstr ""
 msgid "labels.internal-error.main-message"
 msgstr "Barneko errorea"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.invitations"
 msgstr "Gonbidapenak"
 
@@ -1242,11 +1269,11 @@ msgstr "Sartu edo eman izena"
 msgid "labels.logout"
 msgstr "Irten"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
 msgstr "Kidea"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "Kideak"
 
@@ -1254,7 +1281,8 @@ msgstr "Kideak"
 msgid "labels.new-password"
 msgstr "Pasahitz berria"
 
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+#: src/app/main/ui/workspace/comments.cljs,
+#: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
 msgstr "Ez duzu iruzkinen inguruko jakinarazpenik."
 
@@ -1263,7 +1291,6 @@ msgid "labels.no-invitations"
 msgstr "Ez dago gonbidapenik."
 
 #: src/app/main/ui/dashboard/team.cljs
-#, markdown
 msgid "labels.no-invitations-hint"
 msgstr "Sakatu 'Taldera gonbdiatu' taldekide gehiago izateko."
 
@@ -1307,7 +1334,8 @@ msgstr "edo"
 msgid "labels.owner"
 msgstr "Jabea"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.password"
 msgstr "Pasahitza"
 
@@ -1327,7 +1355,8 @@ msgstr "Proiektuak"
 msgid "labels.release-notes"
 msgstr "Bertsioaren oharrak"
 
-#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/workspace/libraries.cljs,
+#: src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
 msgstr "Kendu"
 
@@ -1335,7 +1364,9 @@ msgstr "Kendu"
 msgid "labels.remove-member"
 msgstr "Kendu kidea"
 
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.rename"
 msgstr "Berrizendatu"
 
@@ -1347,7 +1378,7 @@ msgstr "Berrizendatu taldea"
 msgid "labels.resend-invitation"
 msgstr "Birbidali gonbidapena"
 
-#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
 msgstr "Berriz saiatu"
 
@@ -1377,7 +1408,8 @@ msgstr "Gure sistemaren programatutako mantentze-lanak egiten ari gara."
 msgid "labels.service-unavailable.main-message"
 msgstr "Zerbitzua ez dago martxan"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
 msgstr "Ezarpenak"
 
@@ -1432,7 +1464,7 @@ msgstr "Bistarazlea"
 msgid "labels.write-new-comment"
 msgstr "Idatzi iruzkin berria"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.you"
 msgstr "(zu)"
 
@@ -1440,21 +1472,24 @@ msgstr "(zu)"
 msgid "labels.your-account"
 msgstr "zure kontua"
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Irudia kargatzen…"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.accept"
 msgstr "Gehitu partekatutako liburutegi gisa"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
 "Partekatutako liburutegi gisa gehitu ostean, fitxategi honetako baliabideak "
 "beste fitxategietan erabiltzeko bezala egongo dira."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"
 msgstr "Gehitu \"%s\" partekatutako liburutegi gisa"
 
@@ -1576,19 +1611,22 @@ msgstr "Benetan proiektu hau ezabatu egin nahi duzu?"
 msgid "modals.delete-project-confirm.title"
 msgstr "Ezabatu proiektua"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Ezabatu fitxategia"
 msgstr[1] "Ezabatu fitxategiak"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Benetan fitxategi hau ezabatu nahi duzu?"
 msgstr[1] "Benetan fitxategi hauek ezabatu nahi dituzu?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Ezabatu fitxategia"
@@ -1696,17 +1734,20 @@ msgstr "Taldearen jabea zara. Benetan %s taldearen gabe egin nahi duzu?"
 msgid "modals.promote-owner-confirm.title"
 msgstr "Taldearen jabe berria"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"
 msgstr "Ezabatu partekatutako liburutegi gisa"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
 "Partekatutako liburutegi gisa ezabatu ostean, fitxategi honen liburutegia "
 "ezingo da zure beste fitxategietan erabili."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
 msgstr "Gehitu \"%s\" partekatutako liburutegi bezala"
 
@@ -1714,7 +1755,8 @@ msgstr "Gehitu \"%s\" partekatutako liburutegi bezala"
 msgid "modals.small-nudge"
 msgstr "Gutxienekoa"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.accept"
 msgstr "Argitaratzea atzera bota"
 
@@ -1729,43 +1771,51 @@ msgstr[1] ""
 "fitxategietan agertuko. Elementuak erabiltzen ari bazara fitxategi honetan "
 "geldituko dira (diseinurik ez da apurtuko!)."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Benetan liburutegi honen argitaratzea atzera bota nahi duzu?"
 msgstr[1] "Benetan liburutegi hauen argitaratzea atzera bota nahi duzu?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
 msgid_plural "modals.unpublish-shared-confirm.title"
 msgstr[0] "Liburutegiaren argitaratzea atzera bota"
 msgstr[1] "Liburutegian argitaratzea atzera bota"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
 msgstr ""
 "Partekatutako liburutegi baten osagaiak eguneratzera zoaz. Honek berau "
 "darabilten beste fitxategi batzuengan eragina izan dezake."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.message"
 msgstr "Eguneratu liburutegiaren osagaiak"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
 msgstr "Eguneratu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
 msgstr "Utzi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
 msgstr ""
 "Partekatutako liburutegi baten osagai bat eguneratzera zoaz. Honek berau "
 "darabilten beste fitxategi batzuengan eragina izan dezake."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
 msgstr "Eguneratu liburutegiaren osagaia"
 
@@ -1775,7 +1825,8 @@ msgstr "Gonbidapena ondo bidali da"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
-msgstr "Ezin da zure profila ezabatu. Berresleitu zure taldeak jarraitu aurretik."
+msgstr ""
+"Ezin da zure profila ezabatu. Berresleitu zure taldeak jarraitu aurretik."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -1824,9 +1875,8 @@ msgstr "Zure pribatutasuna zaintzen dugu, hemen irakurri dezakezu gure "
 
 msgid "onboarding-v2.newsletter.privacy2"
 msgstr ""
-"Zuretzat garrantzitsuak diren mezuak bakarrik bidaliko dizkizugu. "
-"Harpidetza zuk nahi duzunean eten dezakezu buletinean dagoen esteka "
-"erabiliz."
+"Zuretzat garrantzitsuak diren mezuak bakarrik bidaliko dizkizugu. Harpidetza "
+"zuk nahi duzunean eten dezakezu buletinean dagoen esteka erabiliz."
 
 msgid "onboarding-v2.newsletter.updates"
 msgstr ""
@@ -1936,7 +1986,12 @@ msgstr "Penpot"
 msgid "profile.recovery.go-to-login"
 msgstr "Sartu"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Batzuk"
 
@@ -2511,11 +2566,13 @@ msgstr "Baliabideak"
 msgid "workspace.assets.box-filter-all"
 msgstr "Guztiak"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.colors"
 msgstr "Koloreak"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.components"
 msgstr "Osagaiak"
 
@@ -2529,19 +2586,24 @@ msgstr ""
 "Zure elementuak berrizendatu egingo dira: \"taldearen izena / elementuaren "
 "izena\""
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.delete"
 msgstr "Ezabatu"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.duplicate"
 msgstr "Bikoiztu"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Editatu"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
 msgstr "Grafikoak"
 
@@ -2564,7 +2626,9 @@ msgstr "liburutegi lokala"
 msgid "workspace.assets.not-found"
 msgstr "Ez da baliabiderik aurkitu"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.rename"
 msgstr "Izena aldatu"
 
@@ -2582,7 +2646,8 @@ msgid_plural "workspace.assets.selected-count"
 msgstr[0] "%s elementu aukeratuta"
 msgstr[1] "Ez da elementurik aukeratu"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "Letra-tipoak"
 
@@ -2610,7 +2675,9 @@ msgstr "Hizkien tartea"
 msgid "workspace.assets.typography.line-height"
 msgstr "Lerroaren altuera"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/inspect/attributes/text.cljs, src/app/main/ui/inspect/attributes/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs,
+#: src/app/main/ui/inspect/attributes/text.cljs,
+#: src/app/main/ui/inspect/attributes/text.cljs
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
 
@@ -2634,11 +2701,13 @@ msgstr "Fokua gehitu"
 msgid "workspace.focus.selection"
 msgstr "Aukeraketa"
 
-#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
+#: src/app/main/data/workspace/libraries.cljs,
+#: src/app/main/ui/components/color_bullet.cljs
 msgid "workspace.gradients.linear"
 msgstr "Gradiente lineala"
 
-#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
+#: src/app/main/data/workspace/libraries.cljs,
+#: src/app/main/ui/components/color_bullet.cljs
 msgid "workspace.gradients.radial"
 msgstr "Gradiente erradiala"
 
@@ -2802,7 +2871,8 @@ msgstr "Gehitu"
 msgid "workspace.libraries.colors"
 msgstr "%s kolore"
 
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs,
+#: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.file-library"
 msgstr "Fitxategien liburutegia"
 
@@ -2810,7 +2880,8 @@ msgstr "Fitxategien liburutegia"
 msgid "workspace.libraries.colors.hsv"
 msgstr "HSV"
 
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs,
+#: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "Azken koloreak"
 
@@ -2961,15 +3032,18 @@ msgstr "Goian eta behean"
 msgid "workspace.options.design"
 msgstr "Diseinua"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export"
 msgstr "Esportatu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export-multiple"
 msgstr "Esportatu aukeraketa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export-object"
 msgid_plural "workspace.options.export-object"
 msgstr[0] "Esportatu elementu 1"
@@ -2979,19 +3053,23 @@ msgstr[1] "Esportatu %s elementu"
 msgid "workspace.options.export.suffix"
 msgstr "Aurrizkia"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-complete"
 msgstr "Esportazioa osatu da"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object"
 msgstr "Esportazen…"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-error"
 msgstr "Esportazioak huts egin du"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-slow"
 msgstr "Esportazio oso geldoa"
 
@@ -3512,7 +3590,8 @@ msgstr "Liburutegiko kolore gehiago"
 msgid "workspace.options.opacity"
 msgstr "Opakotasuna"
 
-#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.position"
 msgstr "Posizioa"
 
@@ -3550,7 +3629,8 @@ msgstr "Behean eskuman"
 msgid "workspace.options.recent-fonts"
 msgstr "Azkenak"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.retry"
 msgstr "Berriz saiatu"
 
@@ -3625,7 +3705,8 @@ msgstr "Erakutsi esportazioan"
 msgid "workspace.options.show-in-viewer"
 msgstr "Erakutsi ikusteko moduan"
 
-#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.size"
 msgstr "Tamaina"
 
@@ -3763,7 +3844,8 @@ msgstr "Lerroaren altuera"
 msgid "workspace.options.text-options.lowercase"
 msgstr "Letra xeheak"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.none"
 msgstr "Bat ere ez"
 
@@ -3870,11 +3952,15 @@ msgstr "Ezabatu"
 msgid "workspace.shape.menu.delete-flow-start"
 msgstr "Ezabatu fluxuaren hasiera"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.detach-instance"
 msgstr "Askatu instantzia"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.detach-instances-in-bulk"
 msgstr "Askatu instantziak"
 
@@ -3915,7 +4001,8 @@ msgstr "Ekarri aurrera"
 msgid "workspace.shape.menu.front"
 msgstr "Ekarri aurrera"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.go-main"
 msgstr "Joan osagai nagusiaren fitxategira"
 
@@ -3937,18 +4024,22 @@ msgstr "Ebakidura"
 msgid "workspace.shape.menu.lock"
 msgstr "Blokeatu"
 
-#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.mask"
 msgstr "Maskara aplikatu"
 
-#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.paste"
 msgstr "Itsatsi"
 
 msgid "workspace.shape.menu.path"
 msgstr "Bidea"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Berrezarri gainidazketak"
 
@@ -3963,11 +4054,13 @@ msgstr "Aukeratu geruza"
 msgid "workspace.shape.menu.show"
 msgstr "Erakutsi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "Ikusi baliabideen panelean"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
 msgstr "Erakutsi osagai nagusia"
 
@@ -3995,11 +4088,15 @@ msgstr "Desblokeatu"
 msgid "workspace.shape.menu.unmask"
 msgstr "Desegin maskara"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-components-in-bulk"
 msgstr "Eguneratu osagai nagusiak"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "Eguneratu osagai nagusia"
 
@@ -4041,7 +4138,8 @@ msgstr "Formak"
 msgid "workspace.sidebar.layers.texts"
 msgstr "Testuak"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/inspect/attributes/svg.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs,
+#: src/app/main/ui/inspect/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "Inportatutako SVG atributuak"
 
@@ -4241,7 +4339,6 @@ msgstr "URLak ez du balidazioa gainditu."
 msgid "dashboard.webhooks.content-type"
 msgstr "Elementu mota"
 
-#, markdown
 msgid "dashboard.fonts.warning-text"
 msgstr ""
 "Zure letra-tipoek sistema eragile desberdinetan metrika bertikalekin arazoak "
@@ -4303,7 +4400,8 @@ msgstr "IKUSTEKO BAKARRIK"
 msgid "modals.create-webhook.url.label"
 msgstr "Informazioaren URLa"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint"
 msgid_plural "modals.delete-shared-confirm.hint"
 msgstr[0] ""
@@ -4318,7 +4416,8 @@ msgstr[1] ""
 msgid "labels.active"
 msgstr "Aktibo"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint-many"
 msgid_plural "modals.delete-shared-confirm.hint-many"
 msgstr[0] ""
@@ -4341,7 +4440,8 @@ msgstr "Birkargatu fitxategia"
 msgid "labels.inactive"
 msgstr "Inaktibo"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint-many"
 msgid_plural "modals.unpublish-shared-confirm.hint-many"
 msgstr[0] ""
@@ -4359,7 +4459,8 @@ msgstr "Erdian lerrokatu"
 msgid "shortcuts.toggle-layout-flex"
 msgstr "Gehitu/kendu flex diseinua"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message-many"
 msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
 msgstr[0] "Liburutegi honetako elementuak hemen ari dira erabiltzen:"
@@ -4442,7 +4543,8 @@ msgstr "Ez dago webhookik."
 msgid "dashboard.webhooks.update.success"
 msgstr "Webhooka ondo aldatu da."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs
 msgid "errors.email-invalid"
 msgstr "Mesedez, idatzi eposta helbide zuzen bat"
 
@@ -4466,7 +4568,8 @@ msgstr "Sortu webhooka"
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.no-files-message"
 msgid_plural "modals.delete-shared-confirm.no-files-message"
 msgstr[0] ""
@@ -4476,10 +4579,12 @@ msgstr[1] ""
 "Fitxategi hautetako liburutegiko elementuak ez dira inon erabiltzen. "
 "Fitxategiarekin batera ezabatuko dira."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message-many"
 msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "Fitxategi honen liburutegiko elementu batzuk hemen erabiltzen ari zara:"
+msgstr[0] ""
+"Fitxategi honen liburutegiko elementu batzuk hemen erabiltzen ari zara:"
 msgstr[1] ""
 "Fitxategi hauen liburutegietako elementu batzuk hemen erabiltzen ari zara:"
 
@@ -4502,7 +4607,8 @@ msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "Eposta helbide batzuk jada taldekideenak dira. Ez da gonbidapenik bidaliko."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.no-files-message"
 msgid_plural "modals.unpublish-shared-confirm.no-files-message"
 msgstr[0] "Liburutegi honetako elementuak ez dira erabiltzen ari."
@@ -4588,3 +4694,138 @@ msgstr "Denbora muga gainditu da"
 
 msgid "errors.webhooks.connection"
 msgstr "Konexio errorea, URLa ezin da ireki"
+
+msgid "dashboard.import.import-message"
+msgstr "%s fitxategi ondo inportatu dira."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Buletineko harpidetza"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgstr "Zure fitxategia ondo ezabatu da"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgstr "Zure fitxategia ondo bikoiztu da"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-subtitle"
+msgstr "Hitz egin nahi duzu? Zatuz gure komunitatearen Gitter txatera"
+
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow.shorthand.offset-x"
+msgstr "X"
+
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow.shorthand.spread"
+msgstr "S"
+
+msgid "labels.images"
+msgstr "Irudiak"
+
+msgid "labels.skip"
+msgstr "Alde batera utzi"
+
+msgid "onboarding.contrib.alt"
+msgstr "Kode Irekia"
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "Hona sar zaitezke"
+
+msgid "onboarding.contrib.link"
+msgstr "proiektua githuben"
+
+msgid "onboarding.slide.0.desc1"
+msgstr "Sortu interfaze ederrak taldeko beste kideekin batera."
+
+msgid "onboarding.slide.0.title"
+msgstr "Diseinu-, estilo- eta osagai-liburutegiak"
+
+msgid "onboarding.slide.1.desc1"
+msgstr "Sortu produktuaren portaera imitatzeko interakzio osoak."
+
+msgid "onboarding.slide.1.title"
+msgstr "Eman bizia zure diseinuen interakzioak erabiliz"
+
+msgid "onboarding.slide.2.desc1"
+msgstr ""
+"Taldekide guztiak fitxategi berberen gainean lanean, aldi berean eta "
+"diseinuen gainean iruzkinak egiteko aukerarekin."
+
+msgid "onboarding.slide.3.alt"
+msgstr "Kodearen ezarpenak"
+
+msgid "onboarding.slide.3.desc2"
+msgstr ""
+"Lortu eta eman kode (SVG, HTML) eta estilorako (CSS, Less, Stylus...) "
+"kodearen zehaztapenak."
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.placeholder"
+msgstr "Partekatzeko esteka hemen agertuko da"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.subtitle"
+msgstr "Esteka duen edonor sar daiteke"
+
+msgid "workspace.library.libraries"
+msgstr "Liburutegiak"
+
+msgid "workspace.library.store"
+msgstr "Gorde liburutegiak"
+
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Geruza"
+
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] ""
+"Ezabatu nahi duzun fitxategiak, fitxategi honetan erabiltzen den liburutegi "
+"bat du:"
+msgstr[1] ""
+"Ezabatu nahi duzuen fitxategiak, fitxategi hauetan erabiltzen den liburutegi "
+"bat du:"
+
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] ""
+"Argitaratzea atzera botatzen baduzu, elementu horiek ez dira beste "
+"fitxategietan agertuko. Elementuak erabiltzen ari bazara fitxategi honetan "
+"geldituko dira (diseinurik ez da apurtuko!)."
+msgstr[1] ""
+"Argitaratzea atzera botatzen baduzu, elementu horiek ez dira beste "
+"fitxategietan agertuko. Elementuak erabiltzen ari bazara fitxategi honetan "
+"geldituko dira (diseinurik ez da apurtuko!)."
+
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "Fitxategi honetan erabiltzen ari da:"
+msgstr[1] "Fitxategi hauetan erabiltzen ari da:"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared"
+msgstr "PARTEKATUTA"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-center"
+msgstr "Lerrokatu erdian"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-justify"
+msgstr "Justifikatu (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-left"
+msgstr "Lerrokatu ezkerrean (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-right"
+msgstr "Lerrokatu eskuman (%s)"
