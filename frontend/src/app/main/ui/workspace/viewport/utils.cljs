@@ -20,19 +20,19 @@
 
 (defn get-cursor [cursor]
   (case cursor
-    :hand cur/hand
-    :comments cur/comments
-    :create-artboard cur/create-artboard
-    :create-rectangle cur/create-rectangle
-    :create-ellipse cur/create-ellipse
-    :pen cur/pen
-    :pencil cur/pencil
-    :create-shape cur/create-shape
-    :duplicate cur/duplicate
-    :zoom cur/zoom
-    :zoom-in cur/zoom-in
-    :zoom-out cur/zoom-out
-    cur/pointer-inner))
+    :hand (cur/get-static "hand")
+    :comments (cur/get-static "comments")
+    :create-artboard (cur/get-static "create-artboard")
+    :create-rectangle (cur/get-static "create-rectangle")
+    :create-ellipse (cur/get-static "create-ellipse")
+    :pen (cur/get-static "pen")
+    :pencil (cur/get-static "pencil")
+    :create-shape (cur/get-static "create-shape")
+    :duplicate (cur/get-static "duplicate")
+    :zoom (cur/get-static "zoom")
+    :zoom-in (cur/get-static "zoom-in")
+    :zoom-out (cur/get-static "zoom-out")
+    (cur/get-static "pointer-inner")))
 
 ;; Ensure that the label has always the same font
 ;; size, regardless of zoom

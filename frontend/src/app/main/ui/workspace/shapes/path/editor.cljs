@@ -99,10 +99,9 @@
                :on-pointer-enter on-enter
                :on-pointer-leave on-leave
                :pointer-events (when-not preview? "visible")
-               :style {:cursor (cond
-                                 (= edit-mode :draw) cur/pen-node
-                                 (= edit-mode :move) cur/pointer-node)
-                       :stroke-width 0
+               :class (cond (= edit-mode :draw) (cur/get-static "pen-node")
+                            (= edit-mode :move) (cur/get-static "pointer-node"))
+               :style {:stroke-width 0
                        :fill "none"}}]]))
 
 (mf/defc path-handler [{:keys [index prefix point handler zoom selected? hover? edit-mode snap-angle?]}]
@@ -160,8 +159,8 @@
                  :on-pointer-down on-pointer-down
                  :on-pointer-enter on-enter
                  :on-pointer-leave on-leave
-                 :style {:cursor (when (= edit-mode :move) cur/pointer-move)
-                         :fill "none"
+                 :class (when (= edit-mode :move) (cur/get-static "pointer-move"))
+                 :style {:fill "none"
                          :stroke-width 0}}]])))
 
 (mf/defc path-preview [{:keys [zoom command from]}]

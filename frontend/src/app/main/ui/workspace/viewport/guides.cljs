@@ -302,9 +302,9 @@
                    :y y
                    :width width
                    :height height
+                   :class (if (= axis :x) (cur/get-dynamic "resize-ew" 0) (cur/get-dynamic "resize-ns" 0))
                    :style {:fill "none"
-                           :pointer-events (if frame-guide-outside? "none" "fill")
-                           :cursor (if (= axis :x) (cur/resize-ew 0) (cur/resize-ns 0))}
+                           :pointer-events (if frame-guide-outside? "none" "fill")}
                    :on-pointer-enter on-pointer-enter
                    :on-pointer-leave on-pointer-leave
                    :on-pointer-down on-pointer-down
@@ -417,9 +417,9 @@
                  :on-pointer-up on-pointer-up
                  :on-lost-pointer-capture on-lost-pointer-capture
                  :on-pointer-move on-pointer-move
+                 :class (if (= axis :x) (cur/get-dynamic "resize-ew" 0) (cur/get-dynamic "resize-ns" 0))
                  :style {:fill "none"
-                         :pointer-events "fill"
-                         :cursor (if (= axis :x) (cur/resize-ew 0) (cur/resize-ns 0))}}]))
+                         :pointer-events "fill"}}]))
 
      (when (:new-position @state)
        [:& guide {:guide {:axis axis

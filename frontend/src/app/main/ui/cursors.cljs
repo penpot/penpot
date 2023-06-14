@@ -7,6 +7,8 @@
 (ns app.main.ui.cursors
   (:require-macros [app.main.ui.cursors :refer [cursor-ref cursor-fn]])
   (:require
+   [app.common.data.macros :as dm]
+   [app.util.css :as css]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -51,6 +53,63 @@
 (def resize-ew-2 (cursor-fn :resize-h-2 0))
 (def resize-ns-2 (cursor-fn :resize-h-2 90))
 
+(defn get-static
+  [name]
+  (dm/str "cursor-" name))
+
+(defn get-dynamic
+  [name rotation]
+  (dm/str "cursor-" name "-" (.floor js/Math rotation)))
+
+(defn init-static-cursor-style
+  [style name value]
+  (.add style (dm/str ".cursor-" name) (js-obj "cursor" (dm/str value " !important"))))
+
+(defn init-dynamic-cursor-style
+  [style name fn]
+  (let [rotations (seq (range 0 360 1))]
+    (doseq [rotation rotations]
+      (.add style (dm/str ".cursor-" name "-" rotation) (js-obj "cursor" (dm/str (fn rotation) " !important"))))))
+
+(defn init-styles
+  []
+  (let [style (css/create-style)]
+    ;; static
+    (init-static-cursor-style style "comments" comments)
+    (init-static-cursor-style style "create-artboard" create-artboard)
+    (init-static-cursor-style style "create-ellipse" create-ellipse)
+    (init-static-cursor-style style "create-polygon" create-polygon)
+    (init-static-cursor-style style "create-rectangle" create-rectangle)
+    (init-static-cursor-style style "create-shape" create-shape)
+    (init-static-cursor-style style "duplicate" duplicate)
+    (init-static-cursor-style style "hand" hand)
+    (init-static-cursor-style style "move-pointer" move-pointer)
+    (init-static-cursor-style style "pen" pen)
+    (init-static-cursor-style style "pen-node" pen-node)
+    (init-static-cursor-style style "pencil" pencil)
+    (init-static-cursor-style style "picker" picker)
+    (init-static-cursor-style style "pointer-inner" pointer-inner)
+    (init-static-cursor-style style "pointer-move" pointer-move)
+    (init-static-cursor-style style "pointer-node" pointer-node)
+    (init-static-cursor-style style "resize-alt" resize-alt)
+    (init-static-cursor-style style "zoom" zoom)
+    (init-static-cursor-style style "zoom-in" zoom-in)
+    (init-static-cursor-style style "zoom-out" zoom-out)
+
+    ;; dynamic
+    (init-dynamic-cursor-style style "resize-ew" resize-ew)
+    (init-dynamic-cursor-style style "resize-nesw" resize-nesw)
+    (init-dynamic-cursor-style style "resize-ns" resize-ns)
+    (init-dynamic-cursor-style style "resize-nwse" resize-nwse)
+    (init-dynamic-cursor-style style "rotate" rotate)
+    (init-dynamic-cursor-style style "text" text)
+    (init-dynamic-cursor-style style "scale-ew" scale-ew)
+    (init-dynamic-cursor-style style "scale-nesw" scale-nesw)
+    (init-dynamic-cursor-style style "scale-ns" scale-ns)
+    (init-dynamic-cursor-style style "scale-nwse" scale-nwse)
+    (init-dynamic-cursor-style style "resize-ew-2" resize-ew-2)
+    (init-dynamic-cursor-style style "resize-ns-2" resize-ns-2)))
+  
 (mf/defc debug-preview
   {::mf/wrap-props false}
   []

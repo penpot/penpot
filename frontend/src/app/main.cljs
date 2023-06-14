@@ -18,6 +18,7 @@
    [app.main.ui :as ui]
    [app.main.ui.alert]
    [app.main.ui.confirm]
+   [app.main.ui.cursors :as cursors]
    [app.main.ui.delete-shared]
    [app.main.ui.modal :refer [modal]]
    [app.main.ui.routes :as rt]
@@ -44,6 +45,7 @@
 
 (defn init-ui
   []
+  (cursors/init-styles)
   (mf/mount (mf/element ui/app) (dom/get-element "app"))
   (mf/mount (mf/element modal)  (dom/get-element "modal")))
 

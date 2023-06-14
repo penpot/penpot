@@ -165,9 +165,9 @@
                 :top-right 90
                 :bottom-right 180
                 :bottom-left 270)]
-    [:rect {:style {:cursor (cur/rotate (+ rotation angle))}
-            :x x
+    [:rect {:x x
             :y y
+            :class (cur/get-dynamic "rotate" (+ rotation angle))
             :width size
             :height size
             :fill (if (debug? :handlers) "blue" "none")
@@ -180,8 +180,8 @@
   (let [layout (mf/deref refs/workspace-layout)
         scale-text (:scale-text layout)
         cursor (if (#{:top-left :bottom-right} position)
-                 (if scale-text (cur/scale-nesw rotation) (cur/resize-nesw rotation)) 
-                 (if scale-text (cur/scale-nwse rotation) (cur/resize-nwse rotation)))
+                 (if scale-text (cur/get-dynamic "scale-nesw" rotation) (cur/get-dynamic "resize-nesw" rotation)) 
+                 (if scale-text (cur/get-dynamic "scale-nwse" rotation) (cur/get-dynamic "resize-nwse" rotation)))
         {cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)]
 
     [:g.resize-handler
@@ -203,21 +203,21 @@
              {cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)]
          [:rect {:x cx'
                  :y cy'
+                 :class cursor
                  :width resize-point-circle-radius
                  :height resize-point-circle-radius
                  :transform (when rotation (dm/fmt "rotate(%, %, %)" rotation cx' cy'))
                  :style {:fill (if (debug? :handlers) "red" "none")
-                         :stroke-width 0
-                         :cursor cursor}
+                         :stroke-width 0}
                  :on-pointer-down #(on-resize {:x cx' :y cy'} %)}])
 
        [:circle {:on-pointer-down #(on-resize {:x cx' :y cy'} %)
                  :r (/ resize-point-circle-radius zoom)
                  :cx cx'
                  :cy cy'
+                 :class cursor
                  :style {:fill (if (debug? :handlers) "red" "none")
-                         :stroke-width 0
-                         :cursor cursor}}])]))
+                         :stroke-width 0}}])]))
 
 (mf/defc resize-side-handler
   "The side handler is always rendered horizontally and then rotated"
@@ -246,13 +246,13 @@
              :y target-y
              :width length
              :height height
+             :class (if (#{:left :right} position)
+                      (if scale-text (cur/get-dynamic "scale-ew" rotation) (cur/get-dynamic "resize-ew" rotation))
+                      (if scale-text (cur/get-dynamic "scale-ns" rotation) (cur/get-dynamic "resize-ns" rotation)))
              :transform transform-str
              :on-pointer-down #(on-resize res-point %)
              :style {:fill (if (debug? :handlers) "yellow" "none")
-                     :stroke-width 0
-                     :cursor (if (#{:left :right} position)
-                               (if scale-text (cur/scale-ew rotation) (cur/resize-ew rotation))
-                               (if scale-text (cur/scale-ns rotation) (cur/resize-ns rotation))) }}]]))
+                     :stroke-width 0}}]]))
 
 (defn minimum-selrect [{:keys [x y width height] :as selrect}]
   (let [final-width (max width min-selrect-side)
