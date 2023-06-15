@@ -892,7 +892,7 @@
 ;; TODO: improve naming
 
 (sv/defmethod ::update-file-library-sync-status
-  "Update the synchronization statos of a file->library link"
+  "Update the synchronization status of a file->library link"
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
