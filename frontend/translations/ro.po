@@ -3966,23 +3966,23 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Aliniază jos"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "Aliniază centru"
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Aliniază centru (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
+msgid "workspace.options.text-options.text-align-justify"
 msgstr "Justifică (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
+msgid "workspace.options.text-options.text-align-left"
 msgstr "Aliniază la stânga (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Aliniază la mijloc (%s)"
+msgstr "Aliniază la mijloc"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
+msgid "workspace.options.text-options.text-align-right"
 msgstr "Aliniază la dreapta (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs

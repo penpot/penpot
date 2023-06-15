@@ -3619,23 +3619,23 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Alinea a baix"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "Alinea el centre"
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Alinea el centre (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
+msgid "workspace.options.text-options.text-align-justify"
 msgstr "Justifica (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
+msgid "workspace.options.text-options.text-align-left"
 msgstr "Alinea a l'esquerra (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Alinea al centre (%s)"
+msgstr "Alinea al centre"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
+msgid "workspace.options.text-options.text-align-right"
 msgstr "Alinea a la dreta (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs

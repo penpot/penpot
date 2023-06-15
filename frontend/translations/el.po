@@ -1792,23 +1792,23 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Στοίχιση κάτω"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "Ευθυγράμμιση κέντρο"
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Ευθυγράμμιση κέντρο (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
+msgid "workspace.options.text-options.text-align-justify"
 msgstr "Δικαιολόγηση (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
+msgid "workspace.options.text-options.text-align-left"
 msgstr "Στοίχιση αριστερά (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Στοίχιση στο κέντρο (%s)"
+msgstr "Στοίχιση στο κέντρο"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
+msgid "workspace.options.text-options.text-align-right"
 msgstr "Για ευθυγράμμιση προς τα δεξιά (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs

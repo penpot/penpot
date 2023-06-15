@@ -3796,23 +3796,23 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Lerrokatu behean"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "Lerrokatu erdian"
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Lerrokatu erdian (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
+msgid "workspace.options.text-options.text-align-justify"
 msgstr "Justifikatu (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
+msgid "workspace.options.text-options.text-align-left"
 msgstr "Lerrokatu ezkerrean (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Lerrokatu erdian (%s)"
+msgstr "Lerrokatu erdian"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
+msgid "workspace.options.text-options.text-align-right"
 msgstr "Lerrokatu eskuman (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs

@@ -3974,24 +3974,24 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Līdzināt lejā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "Līdzināt uz centru"
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Līdzināt uz centru (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
-msgstr "Izlīdzināt"
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "Izlīdzināt (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
-msgstr "Līdzināt pa kreisi"
+msgid "workspace.options.text-options.text-align-left"
+msgstr "Līdzināt pa kreisi (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
 msgstr "Līdzināt pa vidu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
-msgstr "Līdzināt pa labi"
+msgid "workspace.options.text-options.text-align-right"
+msgstr "Līdzināt pa labi (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"

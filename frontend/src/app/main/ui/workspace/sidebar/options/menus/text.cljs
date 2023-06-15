@@ -35,22 +35,22 @@
     ;; --- Align
     [:div.align-icons
      [:span.tooltip.tooltip-bottom
-      {:alt (tr "workspace.options.text-options.align-left" (sc/get-tooltip :text-align-left))
+      {:alt (tr "workspace.options.text-options.text-align-left" (sc/get-tooltip :text-align-left))
        :class (dom/classnames :current (= "left" text-align))
        :on-click #(handle-change % "left")}
       i/text-align-left]
      [:span.tooltip.tooltip-bottom
-      {:alt (tr "workspace.options.text-options.align-center" (sc/get-tooltip :text-align-center))
+      {:alt (tr "workspace.options.text-options.text-align-center" (sc/get-tooltip :text-align-center))
        :class (dom/classnames :current (= "center" text-align))
        :on-click #(handle-change % "center")}
       i/text-align-center]
      [:span.tooltip.tooltip-bottom
-      {:alt (tr "workspace.options.text-options.align-right" (sc/get-tooltip :text-align-right))
+      {:alt (tr "workspace.options.text-options.text-align-right" (sc/get-tooltip :text-align-right))
        :class (dom/classnames :current (= "right" text-align))
        :on-click #(handle-change % "right")}
       i/text-align-right]
      [:span.tooltip.tooltip-bottom
-      {:alt (tr  "workspace.options.text-options.align-justify" (sc/get-tooltip :text-align-justify))
+      {:alt (tr "workspace.options.text-options.text-align-justify" (sc/get-tooltip :text-align-justify))
        :class (dom/classnames :current (= "justify" text-align))
        :on-click #(handle-change % "justify")}
       i/text-align-justify]]))

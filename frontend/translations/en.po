@@ -2691,6 +2691,18 @@ msgstr "Start measurement"
 msgid "shortcuts.stop-measure"
 msgstr "Stop measurement"
 
+msgid "shortcuts.text-align-center"
+msgstr "Align center"
+
+msgid "shortcuts.text-align-left"
+msgstr "Align left"
+
+msgid "shortcuts.text-align-justify"
+msgstr "Align justify"
+
+msgid "shortcuts.text-align-right"
+msgstr "Align right"
+
 msgid "shortcuts.thumbnail-set"
 msgstr "Set thumbnails"
 
@@ -2775,6 +2787,9 @@ msgstr "Zoom lense increase"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom to selected"
+
+
+
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
@@ -4169,23 +4184,23 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Align bottom"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "Align center"
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Align center (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
+msgid "workspace.options.text-options.text-align-justify"
 msgstr "Justify (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
+msgid "workspace.options.text-options.text-align-left"
 msgstr "Align left (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Align middle (%s)"
+msgstr "Align middle"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
+msgid "workspace.options.text-options.text-align-right"
 msgstr "Align right (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs

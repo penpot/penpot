@@ -3991,23 +3991,23 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "יישור לתחתית"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "יישור למרכז"
+msgid "workspace.options.text-options.text-align-center"
+msgstr "יישור למרכז (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
+msgid "workspace.options.text-options.text-align-justify"
 msgstr "יישור לשני הצדדים (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
+msgid "workspace.options.text-options.text-align-left"
 msgstr "יישור שמאלה (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "יישור לאמצע (%s)"
+msgstr "יישור לאמצע"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
+msgid "workspace.options.text-options.text-align-right"
 msgstr "יישור ימינה (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
