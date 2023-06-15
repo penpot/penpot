@@ -328,6 +328,9 @@
   The list of objects are returned in tree traversal order, respecting
   the order of the children of each parent."
 
+  ([object parent-id objects]
+   (clone-object object parent-id objects (fn [object _] object) (fn [object _] object) nil false))
+
   ([object parent-id objects update-new-object]
    (clone-object object parent-id objects update-new-object (fn [object _] object) nil false))
 

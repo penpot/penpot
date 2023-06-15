@@ -214,126 +214,140 @@
           (real-delete-shapes file page objects ids-to-delete it components-v2)
           (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
-(defn- real-delete-shapes
-  [file page objects ids it components-v2]
-  (let [lookup  (d/getf objects)
-
-        groups-to-unmask
-        (reduce (fn [group-ids id]
+(defn- real-delete-shapes-changes
+  ([file page objects ids it components-v2]
+   (let [changes (-> (pcb/empty-changes it (:id page))
+                     (pcb/with-page page)
+                     (pcb/with-objects objects)
+                     (pcb/with-library-data file))]
+     (real-delete-shapes-changes changes file page objects ids it components-v2)))
+  ([changes file page objects ids _it components-v2]
+   (let [lookup  (d/getf objects)
+         groups-to-unmask
+         (reduce (fn [group-ids id]
                   ;; When the shape to delete is the mask of a masked group,
                   ;; the mask condition must be removed, and it must be
                   ;; converted to a normal group.
-                  (let [obj    (lookup id)
-                        parent (lookup (:parent-id obj))]
-                    (if (and (:masked-group? parent)
-                             (= id (first (:shapes parent))))
-                      (conj group-ids (:id parent))
-                      group-ids)))
-                #{}
-                ids)
+                   (let [obj    (lookup id)
+                         parent (lookup (:parent-id obj))]
+                     (if (and (:masked-group? parent)
+                              (= id (first (:shapes parent))))
+                       (conj group-ids (:id parent))
+                       group-ids)))
+                 #{}
+                 ids)
 
-        interacting-shapes
-        (filter (fn [shape]
+         interacting-shapes
+         (filter (fn [shape]
                   ;; If any of the deleted shapes is the destination of
                   ;; some interaction, this must be deleted, too.
-                  (let [interactions (:interactions shape)]
-                    (some #(and (ctsi/has-destination %)
-                                (contains? ids (:destination %)))
-                          interactions)))
-                (vals objects))
+                   (let [interactions (:interactions shape)]
+                     (some #(and (ctsi/has-destination %)
+                                 (contains? ids (:destination %)))
+                           interactions)))
+                 (vals objects))
 
         ;; If any of the deleted shapes is a frame with guides
-        guides (into {}
-                     (comp (map second)
-                           (remove #(contains? ids (:frame-id %)))
-                           (map (juxt :id identity)))
-                     (dm/get-in page [:options :guides]))
+         guides (into {}
+                      (comp (map second)
+                            (remove #(contains? ids (:frame-id %)))
+                            (map (juxt :id identity)))
+                      (dm/get-in page [:options :guides]))
 
-        starting-flows
-        (filter (fn [flow]
+         starting-flows
+         (filter (fn [flow]
                   ;; If any of the deleted is a frame that starts a flow,
                   ;; this must be deleted, too.
-                  (contains? ids (:starting-frame flow)))
-                (-> page :options :flows))
+                   (contains? ids (:starting-frame flow)))
+                 (-> page :options :flows))
 
-        all-parents
-        (reduce (fn [res id]
+         all-parents
+         (reduce (fn [res id]
                   ;; All parents of any deleted shape must be resized.
-                  (into res (cph/get-parent-ids objects id)))
-                (d/ordered-set)
-                ids)
+                   (into res (cph/get-parent-ids objects id)))
+                 (d/ordered-set)
+                 ids)
 
-        all-children
-        (->> ids ;; Children of deleted shapes must be also deleted.
-             (reduce (fn [res id]
-                       (into res (cph/get-children-ids objects id)))
-                     [])
-             (reverse)
-             (into (d/ordered-set)))
+         all-children
+         (->> ids ;; Children of deleted shapes must be also deleted.
+              (reduce (fn [res id]
+                        (into res (cph/get-children-ids objects id)))
+                      [])
+              (reverse)
+              (into (d/ordered-set)))
 
-        find-all-empty-parents
-        (fn recursive-find-empty-parents [empty-parents]
-          (let [all-ids   (into empty-parents ids)
-                contains? (partial contains? all-ids)
-                xform     (comp (map lookup)
-                                (filter cph/group-shape?)
-                                (remove #(->> (:shapes %) (remove contains?) seq))
-                                (map :id))
-                parents   (into #{} xform all-parents)]
-            (if (= empty-parents parents)
-              empty-parents
-              (recursive-find-empty-parents parents))))
+         find-all-empty-parents
+         (fn recursive-find-empty-parents [empty-parents]
+           (let [all-ids   (into empty-parents ids)
+                 contains? (partial contains? all-ids)
+                 xform     (comp (map lookup)
+                                 (filter cph/group-shape?)
+                                 (remove #(->> (:shapes %) (remove contains?) seq))
+                                 (map :id))
+                 parents   (into #{} xform all-parents)]
+             (if (= empty-parents parents)
+               empty-parents
+               (recursive-find-empty-parents parents))))
 
-        empty-parents
+         empty-parents
         ;; Any parent whose children are all deleted, must be deleted too.
-        (into (d/ordered-set) (find-all-empty-parents #{}))
+         (into (d/ordered-set) (find-all-empty-parents #{}))
 
-        components-to-delete
-        (if components-v2
-          (reduce (fn [components id]
-                    (let [shape (get objects id)]
-                      (if (and (= (:component-file shape) (:id file)) ;; Main instances should exist only in local file
-                               (:main-instance? shape))               ;; but check anyway
-                        (conj components (:component-id shape))
-                        components)))
-                  []
-                  (into ids all-children))
-          [])
+         components-to-delete
+         (if components-v2
+           (reduce (fn [components id]
+                     (let [shape (get objects id)]
+                       (if (and (= (:component-file shape) (:id file)) ;; Main instances should exist only in local file
+                                (:main-instance? shape))               ;; but check anyway
+                         (conj components (:component-id shape))
+                         components)))
+                   []
+                   (into ids all-children))
+           [])
 
-        changes (-> (pcb/empty-changes it (:id page))
-                    (pcb/with-page page)
-                    (pcb/with-objects objects)
-                    (pcb/with-library-data file)
-                    (pcb/set-page-option :guides guides))
+         changes (-> changes
+                     (pcb/set-page-option :guides guides))
 
-        changes (reduce (fn [changes component-id]
+         changes (reduce (fn [changes component-id]
                           ;; It's important to delete the component before the main instance, because we
                           ;; need to store the instance position if we want to restore it later.
-                          (pcb/delete-component changes component-id))
-                        changes
-                        components-to-delete)
+                           (pcb/delete-component changes component-id))
+                         changes
+                         components-to-delete)
 
-        changes (-> changes
-                    (pcb/remove-objects all-children {:ignore-touched true})
-                    (pcb/remove-objects ids)
-                    (pcb/remove-objects empty-parents)
-                    (pcb/resize-parents all-parents)
-                    (pcb/update-shapes groups-to-unmask
-                                       (fn [shape]
-                                         (assoc shape :masked-group? false)))
-                    (pcb/update-shapes (map :id interacting-shapes)
-                                       (fn [shape]
-                                         (d/update-when shape :interactions
-                                                        (fn [interactions]
-                                                          (into []
-                                                                (remove #(and (ctsi/has-destination %)
-                                                                              (contains? ids (:destination %))))
-                                                                interactions)))))
-                    (cond-> (seq starting-flows)
-                      (pcb/update-page-option :flows (fn [flows]
-                                                       (->> (map :id starting-flows)
-                                                            (reduce ctp/remove-flow flows))))))
-                    undo-id (js/Symbol)]
+         changes (-> changes
+                     (pcb/remove-objects all-children {:ignore-touched true})
+                     (pcb/remove-objects ids)
+                     (pcb/remove-objects empty-parents)
+                     (pcb/resize-parents all-parents)
+                     (pcb/update-shapes groups-to-unmask
+                                        (fn [shape]
+                                          (assoc shape :masked-group? false)))
+                     (pcb/update-shapes (map :id interacting-shapes)
+                                        (fn [shape]
+                                          (d/update-when shape :interactions
+                                                         (fn [interactions]
+                                                           (into []
+                                                                 (remove #(and (ctsi/has-destination %)
+                                                                               (contains? ids (:destination %))))
+                                                                 interactions)))))
+                     (cond-> (seq starting-flows)
+                       (pcb/update-page-option :flows (fn [flows]
+                                                        (->> (map :id starting-flows)
+                                                             (reduce ctp/remove-flow flows))))))]
+     [changes all-parents])))
+
+
+(defn delete-shapes-changes
+  [changes file page objects ids it components-v2]
+  (let [[changes _all-parents] (real-delete-shapes-changes changes file page objects ids it components-v2)]
+    changes))
+
+
+(defn- real-delete-shapes
+  [file page objects ids it components-v2]
+  (let [[changes all-parents] (real-delete-shapes-changes file page objects ids it components-v2)
+        undo-id (js/Symbol)]
     (rx/of (dwu/start-undo-transaction undo-id)
            (dc/detach-comment-thread ids)
            (dch/commit-changes changes)
@@ -467,7 +481,7 @@
             ;; We have change only the hidden behaviour, to hide only the
             ;; selected shape, block behaviour remains the same.
             ids     (if (boolean? blocked)
-                     (into ids (->> ids (mapcat #(cph/get-children-ids objects %))))
+                      (into ids (->> ids (mapcat #(cph/get-children-ids objects %))))
                       ids)]
         (rx/of (dch/update-shapes ids update-fn))))))
 
