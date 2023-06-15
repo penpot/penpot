@@ -13,15 +13,25 @@
 (defn add-rule
   "Adds a CSS rule to a CSS Style Sheet"
   [styleSheet selector declarations]
-  (.insertRule styleSheet (dm/str selector " {" (declarations->str declarations) "}")))
+  (let [rule (dm/str selector " { " (declarations->str declarations) " }")]
+    (.insertRule styleSheet rule (.-length (.-cssRules styleSheet)))))
+
+(defn wrap-style-sheet
+  [style]
+  #js {:add (partial add-rule (.-sheet style))})
 
 ;; FIXME: Maybe we should rename this to `create-dynamic-style`?
 (defn create-style
   "Creates a new CSS Style Sheet and returns an object that allows adding rules to it"
-  []
-  (let [style (dom/create-element "style")]
-    (dom/set-attribute! style "type" "text/css")
-    (dom/append-child! js/document.head style)
-    (js-obj "add" (partial add-rule (.-sheet style)))))
+  [id]
+  (let [element (dom/get-element id)]
+    (if (some? element)
+      (wrap-style-sheet element)
+      (let [style (dom/create-element "style")]
+        (dom/set-attribute! style "id" id)
+        (dom/set-attribute! style "type" "text/css")
+        (dom/append-child! js/document.head style)
+        (wrap-style-sheet style)))))
+  
 
 

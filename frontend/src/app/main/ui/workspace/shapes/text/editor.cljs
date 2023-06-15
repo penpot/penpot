@@ -17,7 +17,7 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.cursors :as cur]
+   [app.main.ui.css-cursors :as cur]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]

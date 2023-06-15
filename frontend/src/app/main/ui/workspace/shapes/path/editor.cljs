@@ -16,7 +16,7 @@
    [app.main.snap :as snap]
    [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.main.ui.cursors :as cur]
+   [app.main.ui.css-cursors :as cur]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.dom :as dom]

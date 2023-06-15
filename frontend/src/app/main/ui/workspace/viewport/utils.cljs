@@ -9,7 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
-   [app.main.ui.cursors :as cur]
+   [app.main.ui.css-cursors :as cur]
    [app.main.ui.formats :refer [format-number]]))
 
 (defn format-viewbox [vbox]
