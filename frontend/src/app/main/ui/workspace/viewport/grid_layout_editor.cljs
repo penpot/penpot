@@ -15,7 +15,6 @@
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.cursors :as cur]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -230,15 +229,15 @@
     [:rect.resize-handler
      {:x x
       :y y
+      :class (if (= type :column)
+               "resize-ew-0"
+               "resize-ns-0")
       :height height
       :width width
       :on-pointer-down on-pointer-down
       :on-lost-pointer-capture on-lost-pointer-capture
-      :on-pointer-move on-pointer-move
-      :style {:fill "transparent"
-              :cursor (if (= type :column)
-                        (cur/resize-ew 0)
-                        (cur/resize-ns 0))}}]))
+      :on-pointer-move on-pointer-move 
+      :style {:fill "transparent"}}]))
 
 (mf/defc editor
   {::mf/wrap-props false}

@@ -222,8 +222,7 @@
 
     [:div.text-editor
      {:ref self-ref
-      :style {:cursor (cur/text (:rotation shape))
-              :width (:width shape)
+      :style {:width (:width shape)
               :height (:height shape)
               ;; We hide the editor when is blurred because otherwise the selection won't let us see
               ;; the underlying text. Use opacity because display or visibility won't allow to recover
@@ -231,6 +230,7 @@
               :opacity (when @blurred 0)}
       :on-pointer-down on-pointer-down
       :class (dom/classnames
+              (cur/get-dynamic "text" (:rotation shape)) true
               :align-top    (= (:vertical-align content "top") "top")
               :align-center (= (:vertical-align content) "center")
               :align-bottom (= (:vertical-align content) "bottom"))}

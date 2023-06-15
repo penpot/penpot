@@ -358,9 +358,9 @@
                          :on-pointer-down on-pointer-down
                          :on-lost-pointer-capture on-lost-pointer-capture
                          :on-pointer-move on-pointer-move
+                         :class (when (or hover? selected?)
+                                  (if (= (:resize-axis rect-data) :x) (cur/get-dynamic "resize-ew" 0) (cur/get-dynamic "resize-ew" 90)))
                          :style {:fill (if (or hover? selected?) distance-color "none")
-                                 :cursor (when (or hover? selected?)
-                                           (if (= (:resize-axis rect-data) :x) (cur/resize-ew 0) (cur/resize-ew 90)))
                                  :opacity (if selected? 0.5 0.25)}}]))
 
 (mf/defc padding-rects [{:keys [frame zoom alt? shift?]}]
@@ -661,9 +661,9 @@
                       :on-pointer-down on-pointer-down
                       :on-lost-pointer-capture on-lost-pointer-capture
                       :on-pointer-move on-pointer-move
+                      :class (when (or hover? selected?)
+                               (if (= (:resize-axis rect-data) :x) (cur/get-dynamic "resize-ew" 0) (cur/get-dynamic "resize-ew" 90)))
                       :style {:fill (if (or hover? selected?) distance-color "none")
-                              :cursor (when (or hover? selected?)
-                                        (if (= (:resize-axis rect-data) :x) (cur/resize-ew 0) (cur/resize-ew 90)))
                               :opacity (if selected? 0.5 0.25)}}]))
 
 (mf/defc gap-rects [{:keys [frame zoom]}]

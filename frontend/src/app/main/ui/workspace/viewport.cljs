@@ -330,8 +330,8 @@
        :key (str "viewport" page-id)
        :view-box (utils/format-viewbox vbox)
        :ref on-viewport-ref
-       :class (when drawing-tool "drawing")
-       :style {:cursor @cursor :touch-action "none"}
+       :class (dm/str @cursor (when drawing-tool "drawing"))
+       :style {:touch-action "none"}
        :fill "none"
 
        :on-click         on-click
