@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as upg]
+   [app.common.pages.helpers :as cph]
    [app.common.path.commands :as upc]
    [app.common.path.shapes-to-path :as upsp]
    [app.common.path.subpaths :as ups]
@@ -283,9 +284,12 @@
   (ptk/reify ::start-path-edit
     ptk/UpdateEvent
     (update [_ state]
-      (let [edit-path (dm/get-in state [:workspace-local :edit-path id])
+      (let [objects (wsh/lookup-page-objects state)
+            edit-path (dm/get-in state [:workspace-local :edit-path id])
             content (st/get-path state :content)
-            state (st/set-content state (ups/close-subpaths content))]
+            state (cond-> state
+                    (cph/path-shape? objects id)
+                    (st/set-content (ups/close-subpaths content)))]
         (cond-> state
           (or (not edit-path) (= :draw (:edit-mode edit-path)))
           (assoc-in [:workspace-local :edit-path id] {:edit-mode :move

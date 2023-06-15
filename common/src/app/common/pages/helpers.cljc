@@ -73,8 +73,10 @@
   (= type :svg-raw))
 
 (defn path-shape?
-  [{:keys [type]}]
-  (= type :path))
+  ([objects id]
+   (path-shape? (get objects id)))
+  ([{:keys [type]}]
+   (= type :path)))
 
 (defn unframed-shape?
   "Checks if it's a non-frame shape in the top level."
