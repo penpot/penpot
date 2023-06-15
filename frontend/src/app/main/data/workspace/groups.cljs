@@ -12,10 +12,14 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
+   [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [beicon.core :as rx]
@@ -140,7 +144,7 @@
                       (mapv #(get objects %)))
         parent-id     (cph/get-parent-id objects (:id frame))
         idx-in-parent (->> (:id frame)
-                          (cph/get-position-on-parent objects)
+                           (cph/get-position-on-parent objects)
                            inc)]
 
     (-> (pcb/empty-changes it page-id)
@@ -149,6 +153,46 @@
           (pcb/update-shapes (:shapes frame) ctl/remove-layout-item-data))
         (pcb/change-parent parent-id children idx-in-parent)
         (pcb/remove-objects [(:id frame)]))))
+
+
+(defn- clone-component-shapes-changes
+  [changes shape objects]
+  (let [shape-parent-id (:parent-id shape)
+        new-shape-id (uuid/next)
+        [_ new-shapes _]
+        (ctst/clone-object shape
+                      shape-parent-id
+                      objects
+                      (fn [object _]
+                        (cond-> object
+                          (= new-shape-id (:parent-id object))
+                          (assoc :parent-id shape-parent-id)))
+                      (fn [object _] object)
+                      new-shape-id
+                      false)
+
+        new-shapes (->> new-shapes
+                        (filter #(not= (:id %) new-shape-id)))]
+    (reduce
+     (fn [changes shape]
+       (pcb/add-object changes shape))
+     changes
+     new-shapes)))
+
+(defn remove-component-changes
+  [it page-id shape objects file-data file]
+  (let [page (ctpl/get-page file-data page-id)
+        components-v2 (dm/get-in file-data [:options :components-v2])
+        ;; In order to ungroup a component, we first make a clone of its shapes,
+        ;; and then we delete it
+        changes (-> (pcb/empty-changes it page-id)
+                    (pcb/with-objects objects)
+                    (pcb/with-library-data file-data)
+                    (pcb/with-page page)
+                    (clone-component-shapes-changes shape objects)
+                    (dwsh/delete-shapes-changes file page objects [(:id shape)] it components-v2))]
+    ;; TODO: Should we call detach-comment-thread ?
+    changes))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GROUPS
@@ -173,13 +217,18 @@
   (ptk/reify ::ungroup-selected
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id       (:current-page-id state)
-            objects       (wsh/lookup-page-objects state page-id)
+      (let [page-id   (:current-page-id state)
+            objects   (wsh/lookup-page-objects state page-id)
+            file-data (get state :workspace-data)
+            file      (wsh/get-local-file state)
 
             prepare
             (fn [shape-id]
               (let [shape (get objects shape-id)]
                 (cond
+                  (ctk/main-instance? shape)
+                  (remove-component-changes it page-id shape objects file-data file)
+
                   (or (cph/group-shape? shape) (cph/bool-shape? shape))
                   (remove-group-changes it page-id shape objects)
 
