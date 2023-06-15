@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.shortcuts
+  (:require-macros [app.main.style :refer [css]])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -17,6 +18,7 @@
    [app.main.data.workspace.path.shortcuts]
    [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -29,7 +31,8 @@
 
 (mf/defc converted-chars
   [{:keys [char command] :as props}]
-  (let [modified-keys {:up    ds/up-arrow
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        modified-keys {:up    ds/up-arrow
                        :down  ds/down-arrow
                        :left  ds/left-arrow
                        :right ds/right-arrow
@@ -47,8 +50,10 @@
         char          (if (contains? modified-keys (keyword char)) ((keyword char) modified-keys) char)
         char          (if (and is-macos? (contains? macos-keys (keyword char))) ((keyword char) macos-keys) char)
         unique-key    (str (d/name command) "-" char)]
-    [:*
-     [:span.char-box {:key unique-key} char]]))
+    (if new-css-system
+      [:span {:class (css :key)
+              :key unique-key} char]
+      [:span.char-box {:key unique-key} char])))
 
 (defn translation-keyname
   [type keyname]
@@ -212,7 +217,8 @@
 
 (mf/defc shortcuts-keys
   [{:keys [content command] :as props}]
-  (let [managed-list    (if (coll? content)
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        managed-list    (if (coll? content)
                           content
                           (conj () content))
         chars-list      (map ds/split-sc managed-list)
@@ -221,50 +227,90 @@
                           chars-list
                           (drop-last chars-list))
         penultimate     (last short-char-list)]
-    [:span.keys
-     (for [chars short-char-list]
-       [:*
-        (for [char chars]
-          [:& converted-chars {:key (dm/str char "-" (name command))
-                               :char char
-                               :command command}])
-        (when (not= chars penultimate) [:span.space ","])])
-     (when (not= last-element penultimate)
-       [:*
-        [:span.space (tr "shortcuts.or")]
-        (for [char last-element]
-          [:& converted-chars {:key (dm/str char "-" (name command))
-                               :char char
-                               :command command}])])]))
+    (if new-css-system
+      [:span {:class (css :keys)}
+       (for [chars short-char-list]
+         [:*
+          (for [char chars]
+            [:& converted-chars {:key (dm/str char "-" (name command))
+                                 :char char
+                                 :command command}])
+          (when (not= chars penultimate) [:span {:class (css :space)} ","])])
+       (when (not= last-element penultimate)
+         [:*
+          [:span {:class (css :space)} (tr "shortcuts.or")]
+          (for [char last-element]
+            [:& converted-chars {:key (dm/str char "-" (name command))
+                                 :char char
+                                 :command command}])])]
+
+      [:span.keys
+       (for [chars short-char-list]
+         [:*
+          (for [char chars]
+            [:& converted-chars {:key (dm/str char "-" (name command))
+                                 :char char
+                                 :command command}])
+          (when (not= chars penultimate) [:span.space ","])])
+       (when (not= last-element penultimate)
+         [:*
+          [:span.space (tr "shortcuts.or")]
+          (for [char last-element]
+            [:& converted-chars {:key (dm/str char "-" (name command))
+                                 :char char
+                                 :command command}])])])))
 
 (mf/defc shortcut-row
   [{:keys [elements filter-term match-section? match-subsection?] :as props}]
-  (let [shortcut-name         (keys elements)
+  (let [new-css-system        (mf/use-ctx ctx/new-css-system)
+        shortcut-name         (keys elements)
         shortcut-translations (map #(translation-keyname :sc %) shortcut-name)
         match-shortcut?       (some #(matches-search % @filter-term) shortcut-translations)
         filtered              (if (and (or match-section? match-subsection?) (not match-shortcut?))
                                 shortcut-translations
                                 (filter #(matches-search % @filter-term) shortcut-translations))
         sorted-filtered       (sort filtered)]
-    [:ul.sub-menu
-     (for [command-translate sorted-filtered]
-       (let [sc-by-translate  (first (filter #(= (:translation (second %)) command-translate) elements))
-             [command  comand-info] sc-by-translate
-             content                (:command comand-info)]
-         [:li.shortcut-name {:key command-translate}
-          [:span.command-name command-translate]
-          [:& shortcuts-keys {:content content
-                              :command command}]]))]))
+
+    (if new-css-system
+      [:ul {:class (css :sub-menu)}
+       (for [command-translate sorted-filtered]
+         (let [sc-by-translate  (first (filter #(= (:translation (second %)) command-translate) elements))
+               [command  comand-info] sc-by-translate
+               content                (:command comand-info)]
+           [:li {:class (css :shortcuts-name)
+                 :key command-translate}
+            [:span {:class (css :command-name)}
+             command-translate]
+            [:& shortcuts-keys {:content content
+                                :command command}]]))]
+
+      [:ul.sub-menu
+       (for [command-translate sorted-filtered]
+         (let [sc-by-translate  (first (filter #(= (:translation (second %)) command-translate) elements))
+               [command  comand-info] sc-by-translate
+               content                (:command comand-info)]
+           [:li.shortcut-name {:key command-translate}
+            [:span.command-name command-translate]
+            [:& shortcuts-keys {:content content
+                                :command command}]]))])))
 
 (mf/defc section-title
   [{:keys [is-visible? name is-sub?] :as props}]
-  [:div {:class (if is-sub? "subsection-title" "section-title")}
-   [:span.collapesed-shortcuts {:class (when is-visible? "open")} i/arrow-slide]
-   [:span {:class (if is-sub? "subsection-name" "section-name")} name]])
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:div {:class (if is-sub? (css :subsection-title) (css :section-title))}
+       [:span {:class (dom/classnames (css :open) is-visible?
+                                      (css :collapsed-shortcuts) true)} i/arrow-refactor]
+       [:span {:class (if is-sub? (css :subsection-name) (css :section-name))} name]]
+
+      [:div {:class (if is-sub? "subsection-title" "section-title")}
+       [:span.collapesed-shortcuts {:class (when is-visible? "open")} i/arrow-slide]
+       [:span {:class (if is-sub? "subsection-name" "section-name")} name]])))
 
 (mf/defc shortcut-subsection
   [{:keys [subsections manage-sections filter-term match-section? open-sections] :as props}]
-  (let [subsections-names       (keys subsections)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        subsections-names       (keys subsections)
         subsection-translations (if (= :none (first subsections-names))
                                   (map #(translation-keyname :sc %) subsections-names)
                                   (map #(translation-keyname :sub-sec %) subsections-names))
@@ -276,8 +322,9 @@
                           :filter-term filter-term
                           :match-section? match-section?
                           :match-subsection? true}])
-
-      [:ul.subsection-menu
+      
+      [:ul {:class (dom/classnames (css :subsection-menu) new-css-system
+                                   :subsection-menu (not new-css-system))}
        (for [sub-translated sorted-translations]
          (let [sub-by-translate    (first (filter #(= (:translation (second %)) sub-translated) subsections))
                [sub-name sub-info] sub-by-translate
@@ -314,8 +361,10 @@
         translations        (map #(translation-keyname :sc %) (keys subs-bodys))
         match-shortcut?     (some #(matches-search % @filter-term) translations)
         visible?            (some  #(= % section-id) @open-sections)]
+    
     (when (or match-section? match-subsection? match-shortcut?)
-      [:div {:on-click (manage-sections section-id)}
+      [:div {:class (css :section)
+             :on-click (manage-sections section-id)}
        [:& section-title {:is-visible? visible?
                           :is-sub? false
                           :name    section-translation}]
@@ -329,7 +378,8 @@
 
 (mf/defc shortcuts-container
   []
-  (let [workspace-shortcuts          app.main.data.workspace.shortcuts/shortcuts
+  (let [new-css-system               (mf/use-ctx ctx/new-css-system)
+        workspace-shortcuts          app.main.data.workspace.shortcuts/shortcuts
         path-shortcuts               app.main.data.workspace.path.shortcuts/shortcuts
         all-workspace-shortcuts      (->> (d/deep-merge path-shortcuts workspace-shortcuts)
                                           (add-translation :sc)
@@ -468,39 +518,78 @@
              (on-search-clear-click)
              (dom/focus! (dom/get-element "shortcut-search")))))]
 
-      (mf/with-effect []
-        (dom/focus! (dom/get-element "shortcut-search")))
+    (mf/with-effect []
+      (dom/focus! (dom/get-element "shortcut-search")))
 
-    [:div.shortcuts
-     [:div.shortcuts-header
-      [:div.shortcuts-close-button
-       {:on-click close-fn} i/close]
-      [:div.shortcuts-title (tr "shortcuts.title")]]
-     [:div.search-field
-      [:div.search-box
-       [:input.input-text
-        {:id "shortcut-search"
-         :placeholder (tr "shortcuts.search-placeholder")
-         :type "text"
-         :value @filter-term
-         :on-change on-search-term-change
-         :auto-complete "off"
-         :on-key-down manage-key-down}]
-       (if (str/empty? @filter-term)
-         [:span.icon-wrapper
-          i/search]
-         [:button.icon-wrapper
-          {:on-click on-search-clear-click
-           :on-key-down on-key-down}
-          [:span.icon.close
-           i/close]])]]
-     (if match-any?
-       [:div.shortcut-list
-        (for [section all-shortcuts]
-          [:& shortcut-section
-           {:section section
-            :manage-sections manage-sections
-            :open-sections open-sections
-            :filter-term filter-term}])]
+    (if new-css-system
+      [:div {:class (css :shortcuts)}
+       [:div {:class (css :shortcuts-header)}
+        [:div {:class (css :shortcuts-title)} "Keyboard Shortcuts"]
+        [:div {:class (css :shortcuts-close-button)
+               :on-click close-fn}
+         i/close-refactor]]
+       ;; TODO Change this for search  bar component
+       [:div {:class (css :search-field)}
+        [:div {:class (css :search-box)}
+         [:span {:class (css :icon-wrapper)}
+          i/search-refactor]
+         [:input {:class (dom/classnames (css :input-text) true)
+                  :id "shortcut-search"
+                  :placeholder (tr "shortcuts.title")
+                  :type "text"
+                  :value @filter-term
+                  :on-change on-search-term-change
+                  :auto-complete "off"
+                  :on-key-down manage-key-down}]
+         (when (not (str/empty? @filter-term))
 
-       [:div.not-found (tr "shortcuts.not-found")])]))
+           [:button
+            {:class (css :clear-btn)
+             :on-click on-search-clear-click
+             :on-key-down on-key-down}
+            [:span {:class (css :clear-icon)}
+             i/delete-text-refactor]])]]
+
+       (if match-any?
+         [:div {:class (dom/classnames (css :shortcuts-list) true)}
+          (for [section all-shortcuts]
+            [:& shortcut-section
+             {:section section
+              :manage-sections manage-sections
+              :open-sections open-sections
+              :filter-term filter-term}])]
+         [:div {:class (css :not-found)} (tr "shortcuts.not-found")])]
+
+      [:div.shortcuts
+       [:div.shortcuts-header
+        [:div.shortcuts-close-button
+         {:on-click close-fn} i/close]
+        [:div.shortcuts-title (tr "shortcuts.title")]]
+       [:div.search-field
+        [:div.search-box
+         [:input.input-text
+          {:id "shortcut-search"
+           :placeholder (tr "shortcuts.search-placeholder")
+           :type "text"
+           :value @filter-term
+           :on-change on-search-term-change
+           :auto-complete "off"
+           :on-key-down manage-key-down}]
+         (if (str/empty? @filter-term)
+           [:span.icon-wrapper
+            i/search]
+           [:button.icon-wrapper
+            {:on-click on-search-clear-click
+             :on-key-down on-key-down}
+            [:span.icon.close
+             i/close]])]]
+       (if match-any?
+         [:div.shortcut-list
+          (for [section all-shortcuts]
+            [:& shortcut-section
+             {:section section
+              :manage-sections manage-sections
+              :open-sections open-sections
+              :filter-term filter-term}])]
+
+         [:div.not-found (tr "shortcuts.not-found")])])))
