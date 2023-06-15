@@ -126,10 +126,9 @@
             (when (= selected id) i/tick)
             [:div.library-name (str (:name library) " " (str/ffmt "(%)" (count colors)))]
             [:div.color-sample
-             (for [[i {:keys [color]}] (map-indexed vector colors)]
+             (for [[i {:keys [color]}] (map-indexed vector (take 7 colors))]
                [:& cb/color-bullet {:key (dm/str "color-" i)
                                     :color color}])]]))
-
 
        [:li.palette-library
         {:on-click on-select-palette
