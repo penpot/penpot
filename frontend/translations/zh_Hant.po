@@ -2117,8 +2117,8 @@ msgid "workspace.options.stroke.solid"
 msgstr "實線"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "置中"
+msgid "workspace.options.text-options.text-align-center"
+msgstr "置中 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.direction-ltr"

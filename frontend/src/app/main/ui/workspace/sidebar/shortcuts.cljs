@@ -168,6 +168,10 @@
   ;;   shortcuts.start-editing
   ;;   shortcuts.start-measure
   ;;   shortcuts.stop-measure
+  ;;   shortcuts.text-align-center
+  ;;   shortcuts.text-align-left
+  ;;   shortcuts.text-align-justify
+  ;;   shortcuts.text-align-right
   ;;   shortcuts.thumbnail-set
   ;;   shortcuts.toggle-alignment
   ;;   shortcuts.toggle-assets
@@ -276,7 +280,7 @@
        (for [command-translate sorted-filtered]
          (let [sc-by-translate  (first (filter #(= (:translation (second %)) command-translate) elements))
                [command  comand-info] sc-by-translate
-               content                (:command comand-info)]
+               content                (or (:show-command comand-info)(:command comand-info))]
            [:li {:class (css :shortcuts-name)
                  :key command-translate}
             [:span {:class (css :command-name)}
@@ -288,7 +292,7 @@
        (for [command-translate sorted-filtered]
          (let [sc-by-translate  (first (filter #(= (:translation (second %)) command-translate) elements))
                [command  comand-info] sc-by-translate
-               content                (:command comand-info)]
+               content                (or (:show-command comand-info) (:command comand-info))]
            [:li.shortcut-name {:key command-translate}
             [:span.command-name command-translate]
             [:& shortcuts-keys {:content content

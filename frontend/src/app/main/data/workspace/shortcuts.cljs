@@ -356,12 +356,14 @@
    :toggle-grid          {:tooltip (ds/meta "'")
                           ;;https://github.com/ccampbell/mousetrap/issues/85
                           :command [(ds/c-mod "'") (ds/c-mod "219")]
+                          :show-command (ds/c-mod "'")
                           :subsections [:main-menu]
                           :fn #(st/emit! (toggle-layout-flag :display-grid))}
 
    :toggle-snap-grid     {:tooltip (ds/meta-shift "'")
                           ;;https://github.com/ccampbell/mousetrap/issues/85
                           :command [(ds/c-mod "shift+'") (ds/c-mod "shift+219")]
+                          :show-command (ds/c-mod "shift+'")
                           :subsections [:main-menu]
                           :fn #(st/emit! (toggle-layout-flag :snap-grid))}
 

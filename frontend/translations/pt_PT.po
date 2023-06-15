@@ -3793,23 +3793,23 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Alinhar abaixo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "Alinhar ao centro"
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Alinhar ao centro (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
+msgid "workspace.options.text-options.text-align-justify"
 msgstr "Justificar (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
+msgid "workspace.options.text-options.text-align-left"
 msgstr "Alinhar à esquerda (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Alinhar ao meio (%s)"
+msgstr "Alinhar ao meio"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
+msgid "workspace.options.text-options.text-align-right"
 msgstr "Alinhar à direita (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs

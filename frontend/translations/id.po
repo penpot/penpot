@@ -3939,23 +3939,23 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Paskan ke bawah"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "Paskan ke tengah"
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Paskan ke tengah (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
+msgid "workspace.options.text-options.text-align-justify"
 msgstr "Rata Kiri Kanan (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
+msgid "workspace.options.text-options.text-align-left"
 msgstr "Paskan ke kiri (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Paskan ke tengah (%s)"
+msgstr "Paskan ke tengah"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
+msgid "workspace.options.text-options.text-align-right"
 msgstr "Paskan ke kanan (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs

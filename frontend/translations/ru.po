@@ -2647,23 +2647,23 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Выровнять низ"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "Выравнивание по центру"
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Выравнивание по центру (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
+msgid "workspace.options.text-options.text-align-justify"
 msgstr "Выравнивание по ширине (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
+msgid "workspace.options.text-options.text-align-left"
 msgstr "Выравнивание по левому краю (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Выравнивание по центру (%s)"
+msgstr "Выравнивание по центру"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
+msgid "workspace.options.text-options.text-align-right"
 msgstr "Выравнивание по правому краю (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
