@@ -428,6 +428,7 @@
                                   :frame-id frame-id)
                            (dissoc :shapes
                                    :main-instance?
+                                   :shape-ref
                                    :use-for-thumbnail?)
                            (gsh/move delta)
                            (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
