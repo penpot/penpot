@@ -194,8 +194,13 @@
                           (obj/set! "fill" (obj/get svg-attrs "fill"))
                           (obj/set! "fillOpacity" (obj/get svg-attrs "fillOpacity")))
 
-                      ;; If contains svg-attrs the origin is svg. If it's not svg origin
-                      ;; we setup the default fill as black
+                      ;; If the shape comes from an imported SVG (we know because it has
+                      ;; the :svg-attrs atribute), and it does not have an own fill, we
+                      ;; set a default black fill. This will be inherited by child nodes,
+                      ;; and is for emulating the behavior of standard SVG, in that a node
+                      ;; that has no explicit fill has a default fill of black.
+                      ;; This may be reset to normal if a Penpot frame shape appears below
+                      ;; (see main.ui.shapes.frame/frame-container).
                       (and (contains? shape :svg-attrs)
                            (#{:svg-raw :group} (:type shape))
                            (empty? (:fills shape)))
