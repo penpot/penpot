@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-06-09 01:52+0000\n"
+"PO-Revision-Date: 2023-06-17 09:51+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.18-dev\n"
+"X-Generator: Weblate 4.18.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -444,9 +444,6 @@ msgid "dashboard.import.import-error"
 msgstr ""
 "Beim Importieren der Datei ist ein Fehler aufgetreten. Die Datei wurde "
 "nicht importiert."
-
-msgid "dashboard.import.import-message"
-msgstr "%s Dateien wurden erfolgreich importiert."
 
 msgid "dashboard.import.import-warning"
 msgstr "Einige Dateien enthielten ungültige Objekte, die entfernt wurden."
@@ -3800,7 +3797,7 @@ msgstr "Spalte"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.column-reverse"
-msgstr "Spalte-umgekehrt"
+msgstr "Spalte umkehren"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
@@ -3808,7 +3805,7 @@ msgstr "Reihe"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row-reverse"
-msgstr "Reihe-umgekehrt"
+msgstr "Reihe umkehren"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
@@ -3891,7 +3888,7 @@ msgstr "Alle Ecken"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.single-corners"
-msgstr "Individuelle Ecken"
+msgstr "Ecken einzeln anpassen"
 
 msgid "workspace.options.recent-fonts"
 msgstr "Aktuell"
@@ -4716,3 +4713,28 @@ msgstr "Zeilenhöhe verringern"
 
 msgid "workspace.header.menu.redo"
 msgstr "Wiederherstellen"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Wir haben ein mögliches Problem in Ihren Schriften festgestellt, das mit den "
+"vertikalen Metriken für verschiedene Betriebssysteme zusammenhängt. Um dies "
+"zu überprüfen, können Sie Online-Dienste wie [diesen](https://vertical-"
+"metrics.netlify.app/) verwenden. Außerdem empfehlen wir die Verwendung von "
+"[Transfonter](https://transfonter.org/), um Webfonts zu generieren und "
+"Fehler zu beheben. "
+
+msgid "shortcuts.line-through"
+msgstr "Durchgestrichen"
+
+msgid "shortcuts.underline"
+msgstr "Unterstrichen"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Ansicht mit Zoomwerkzeug verkleinern"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Ansicht mit Zoomwerkzeug vergrößern"
+
+msgid "workspace.assets.duplicate-main"
+msgstr "Hauptkomponente duplizieren"
