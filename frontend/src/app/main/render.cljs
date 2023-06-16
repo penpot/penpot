@@ -20,6 +20,7 @@
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
+   [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [app.config :as cfg]
@@ -378,18 +379,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc component-symbol
-  [{:keys [id data] :as props}]
-  (let [name       (:name data)
-        path       (:path data)
-        objects    (-> (:objects data)
-                       (adapt-objects-for-shape id))
-        root-shape (get objects id)
+  [{:keys [component] :as props}]
+  (let [name       (:name component)
+        path       (:path component)
+        root-id    (or (:main-instance-id component)
+                       (:id component))
+        objects    (adapt-objects-for-shape (:objects component)
+                                            root-id)
+        root-shape (get objects root-id)
         selrect    (:selrect root-shape)
 
-        main-instance-id   (:main-instance-id data)
-        main-instance-page (:main-instance-page data)
-        main-instance-x    (:main-instance-x data)
-        main-instance-y    (:main-instance-y data)
+        main-instance-id   (:main-instance-id component)
+        main-instance-page (:main-instance-page component)
+        main-instance-x    (:main-instance-x component)
+        main-instance-y    (:main-instance-y component)
 
         vbox
         (format-viewbox
@@ -406,7 +409,7 @@
          (mf/deps objects)
          (fn [] (frame-wrapper-factory objects)))]
 
-    [:> "symbol" #js {:id (str id)
+    [:> "symbol" #js {:id (str root-id)
                       :viewBox vbox
                       "penpot:path" path
                       "penpot:main-instance-id" main-instance-id
@@ -436,9 +439,10 @@
              :style {:display (when-not (some? children) "none")}
              :fill "none"}
        [:defs
-        (for [[id data] (source data)]
-          [:& component-symbol {:id id :key (dm/str id) :data data}])]
-
+        (for [[id component] (source data)]
+          (let [component (ctf/load-component-objects data component)]
+            [:& component-symbol {:key (dm/str id) :component component}]))]
+       
        children]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -498,6 +502,7 @@
   (let [;; Join all components objects into a single map
         objects (->> (source data)
                      (vals)
+                     (map (partial ctf/load-component-objects data))
                      (map :objects)
                      (reduce conj))]
     (rx/concat
