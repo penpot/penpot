@@ -7,6 +7,7 @@
 (ns app.main.ui.onboarding.questions
   "External form for onboarding questions."
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.users :as du]
    [app.main.store :as st]
@@ -87,14 +88,22 @@
 (defn- step-3-form-validator
   [errors data]
   (let [experience-design-tool (:experience-design-tool data)
-        experience-design-tool-other (:experience-design-tool-other data)]
+        experience-design-tool-other (-> (:experience-design-tool-other data) str/trim)]
     (cond-> errors
       (and (= experience-design-tool "other") (= 0 (count experience-design-tool-other)))
       (assoc :experience-design-tool-other {:code "missing"}))))
 
 (mf/defc step-3
   [{:keys [on-next on-prev form] :as props}]
-  (let [experience-design-tool (dm/get-in @form [:clean-data :experience-design-tool])]
+  (let [experience-design-tool (dm/get-in @form [:clean-data :experience-design-tool])
+        on-design-tool-change
+        (fn [_ _]
+          (let [experience-design-tool (dm/get-in @form [:clean-data :experience-design-tool])]
+            (when (not= experience-design-tool "other")
+              (do
+                (swap! form d/dissoc-in [:data :experience-design-tool-other])
+                (swap! form d/dissoc-in [:errors :experience-design-tool-other])))))]
+
     [:& step-container {:form form :step 3 :on-next on-next :on-prev on-prev}
      [:h3 (tr "question.design-tool-more-experienced-with")]
      [:& fm/radio-buttons {:options [{:label (tr "questions.figma") :value "figma" :image "images/form/figma.png"}
@@ -104,7 +113,8 @@
                                      {:label (tr "questions.invision") :value "invision" :image "images/form/invision.png"}
                                      {:label (tr "questions.never-used-a-tool") :value "never-used-a-tool" :image "images/form/never-used.png"}
                                      {:label (tr "questions.other") :value "other"}]
-                           :name :experience-design-tool}]
+                           :name :experience-design-tool
+                           :on-change-value on-design-tool-change}]
      [:div.other
       [:label (tr "questions.other")]
       [:& fm/input {:name :experience-design-tool-other :label (tr "questions.other") :disabled (not= experience-design-tool "other")}]]]))
@@ -116,14 +126,22 @@
 (defn- step-4-form-validator
   [errors data]
   (let [role (:role data)
-        role-other (:role-other data)]
+        role-other (-> (:role-other data) str/trim)]
     (cond-> errors
       (and (= role "other") (= 0 (count role-other)))
       (assoc :role-other {:code "missing"}))))
 
 (mf/defc step-4
   [{:keys [on-next on-prev form] :as props}]
-  (let [role (dm/get-in @form [:data :role])]
+  (let [role (dm/get-in @form [:data :role])
+        on-role-change
+        (fn [_ _]
+          (let [experience-design-tool (dm/get-in @form [:clean-data :experience-design-tool])]
+            (when (not= experience-design-tool "other")
+              (do
+                (swap! form d/dissoc-in [:data :role-other])
+                (swap! form d/dissoc-in [:errors :role-other])))))]
+
     [:& step-container {:form form :step 4 :on-next on-next :on-prev on-prev}
      [:h3 (tr "questions.role")]
      [:& fm/radio-buttons {:options [{:label (tr "questions.designer") :value "designer"}
@@ -133,7 +151,8 @@
                                      {:label (tr "questions.marketing") :value "marketing"}
                                      {:label (tr "questions.student-teacher") :value "student-teacher"}
                                      {:label (tr "questions.other") :value "other"}]
-                           :name :role}]
+                           :name :role
+                           :on-change-value on-role-change}]
      [:div.other
       [:label (tr "questions.other")]
       [:& fm/input {:name :role-other :label (tr "questions.other") :disabled (not= role "other")}]]
