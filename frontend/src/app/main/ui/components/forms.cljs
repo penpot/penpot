@@ -234,13 +234,15 @@
        i/arrow-slide]]]))
 
 (mf/defc radio-buttons
-  [{:keys [name options form trim] :as props}]
-  (let [form      (or form (mf/use-ctx form-ctx))
-        value     (get-in @form [:data name] "")
+  [{:keys [name options form trim on-change-value] :as props}]
+  (let [form            (or form (mf/use-ctx form-ctx))
+        value           (get-in @form [:data name] "")
+        on-change-value (or on-change-value (constantly nil))        
         on-change (fn [event]
                     (let [value (-> event dom/get-target dom/get-value)]
                       (swap! form assoc-in [:touched name] true)
-                      (fm/on-input-change form name value trim)))]
+                      (fm/on-input-change form name value trim)
+                      (on-change-value name value)))]
     [:div.custom-radio
      (for [item options]
        (let [id (str/ffmt "%-%" name (:value item))
