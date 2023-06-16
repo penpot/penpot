@@ -4760,7 +4760,7 @@ msgid "questions.your-feedback-will-help-us"
 msgstr "Your feedback will help us understand what your habits and preferences are so that we can keep making Penpot such a useful and enjoyable tool."
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions-how-are-you-planning-to-use-penpot"
+msgid "questions.questions-how-are-you-planning-to-use-penpot"
 msgstr "How are you planning to use Penpot?"
 
 #: src/app/main/ui/onboarding/questions.cljs
