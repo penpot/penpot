@@ -195,6 +195,7 @@
       (update [_ state]
         (log/info :msg "commit-changes"
                   :js/undo-group (str undo-group)
+                  :js/file-id (str (or file-id "nil"))
                   :js/redo-changes redo-changes
                   :js/undo-changes undo-changes)
         (let [current-file-id (get state :current-file-id)

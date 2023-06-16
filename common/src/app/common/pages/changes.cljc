@@ -216,8 +216,9 @@
       [:type [:= :del-typography]]
       [:id ::sm/uuid]]]]])
 
-
-
+(sm/def! ::changes
+  [:sequential {:gen/max 2} ::change])
+ 
 (def change?
   (sm/pred-fn ::change))
 
@@ -302,34 +303,34 @@
 
 (defmethod process-change :mod-obj
   [data {:keys [id page-id component-id operations]}]
-  (let [objects (if page-id
-                  (-> data :pages-index (get page-id) :objects)
-                  (-> data :components (get component-id) :objects))
+  (let [changed? (atom false)
 
-        modified-component-ids (atom #{})
-
-        on-touched (fn [shape]
-                     ;; When a shape is modified, if it belongs to a main component instance,
-                     ;; the component needs to be marked as modified.
-                     (let [component-root (ctn/get-component-shape objects shape {:allow-main? true})]
-                       (when (ctk/main-instance? component-root)
-                         (swap! modified-component-ids conj (:component-id component-root)))))
+        process-and-register (partial process-operation
+                                      (fn [_shape] (reset! changed? true)))
 
         update-fn (fn [objects]
-                    (if-let [obj (get objects id)]
-                      (let [result (reduce (partial process-operation on-touched) obj operations)]
-                        (assoc objects id result))
-                      objects))
+                    (d/update-when objects id
+                                   #(reduce process-and-register % operations)))
 
-        modify-components (fn [data]
-                           (reduce ctkl/set-component-modified
-                                   data @modified-component-ids))]
+        check-modify-component (fn [data]
+                                 (if @changed?
+                                   ;; When a shape is modified, if it belongs to a main component instance,
+                                   ;; the component needs to be marked as modified.
+                                   (let [objects (if page-id
+                                                   (-> data :pages-index (get page-id) :objects)
+                                                   (-> data :components (get component-id) :objects))
+                                         shape (get objects id)
+                                         component-root (ctn/get-component-shape objects shape {:allow-main? true})]
+                                     (if (and (some? component-root) (ctk/main-instance? component-root))
+                                       (ctkl/set-component-modified data (:id component-root))
+                                       data))
+                                   data))]
 
     (as-> data $
       (if page-id
         (d/update-in-when $ [:pages-index page-id :objects] update-fn)
         (d/update-in-when $ [:components component-id :objects] update-fn))
-      (modify-components $))))
+      (check-modify-component $))))
 
 (defmethod process-change :del-obj
   [data {:keys [page-id component-id id ignore-touched]}]
@@ -583,7 +584,7 @@
 ;; === Operations
 
 (defmethod process-operation :set
-  [on-touched shape op]
+  [on-changed shape op]
   (let [attr            (:attr op)
         group           (get component-sync-attrs attr)
         val             (:val op)
@@ -608,10 +609,10 @@
                  (gsh/close-attrs? attr val shape-val 1)
                  (gsh/close-attrs? attr val shape-val))]
 
-    (when (and group (not ignore) (not equal?)
-               (not (and ignore-geometry is-geometry?)))
-      ;; Notify touched even if it's not copy, because it may be a main instance
-      (on-touched shape))
+    ;; Notify when value has changed, except when it has not moved relative to the
+    ;; component head.
+    (when (and group (not equal?) (not (and ignore-geometry is-geometry?)))
+      (on-changed shape))
 
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to

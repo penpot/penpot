@@ -842,9 +842,9 @@
   The sequence items are tuples of (page-id shape-id asset-id asset-type)."
   ([library file-data] (assets-need-sync library file-data nil))
   ([library file-data ignore-until]
-    (let [sync-date (max (:synced-at library) (or ignore-until 0))]
-      (when (> (:modified-at library) sync-date)
-        (ctf/used-assets-changed-since file-data library sync-date)))))
+   (let [sync-date (max (:synced-at library) (or ignore-until 0))]
+     (when (> (:modified-at library) sync-date)
+       (ctf/used-assets-changed-since file-data library sync-date)))))
 
 (defn notify-sync-file
   [file-id]
@@ -853,7 +853,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-data (:workspace-data state)
-            libraries-need-sync (filter #(seq (assets-need-sync % file-data))
+            ignore-until (dm/get-in state [:workspace-file :ignore-sync-until])
+            libraries-need-sync (filter #(seq (assets-need-sync % file-data ignore-until))
                                         (vals (get state :workspace-libraries)))
             do-update #(do (apply st/emit! (map (fn [library]
                                                   (sync-file (:current-file-id state)
@@ -904,10 +905,15 @@
             check-changes
             (fn [[event [old-data _mid_data _new-data]]]
               (when old-data
-                (let [{:keys [changes save-undo? undo-group]} (deref event)
-                      components-changed (reduce #(into %1 (ch/components-changed old-data %2))
-                                                 #{}
-                                                 changes)]
+                (let [{:keys [file-id changes save-undo? undo-group]}
+                      (deref event)
+
+                      components-changed
+                      (when (or (nil? file-id) (= file-id (:id old-data)))
+                        (reduce #(into %1 (ch/components-changed old-data %2))
+                                #{}
+                                changes))]
+
                   (when (and (d/not-empty? components-changed) save-undo?)
                     (log/info :msg "DETECTED COMPONENTS CHANGED"
                               :ids (map str components-changed)

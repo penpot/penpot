@@ -211,8 +211,9 @@
                (->> (rp/cmd! :get-file-libraries {:file-id id})
                     (rx/mapcat identity)
                     (rx/merge-map
-                     (fn [{:keys [id]}]
-                       (rp/cmd! :get-file {:id id :features features})))
+                     (fn [{:keys [id synced-at]}]
+                       (->> (rp/cmd! :get-file {:id id :features features})
+                            (rx/map #(assoc % :synced-at synced-at)))))
                     (rx/merge-map
                      (fn [{:keys [id data] :as file}]
                        (->> (resolve-file-data id data)
@@ -231,13 +232,15 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-data     (:workspace-data state)
+      (let [file-id       (dm/get-in state [:workspace-file :id])
             ignore-until  (dm/get-in state [:workspace-file :ignore-sync-until])
-            file-id       (dm/get-in state [:workspace-file :id])
-            needs-update? (seq (filter #(dwl/assets-need-sync % file-data ignore-until)
-                                       libraries))]
-        (when needs-update?
-          (rx/of (dwl/notify-sync-file file-id)))))))
+            needs-check?  (some #(and (> (:modified-at %) (:synced-at %))
+                                      (or (not ignore-until)
+                                          (> (:modified-at %) ignore-until)))
+                                libraries)]
+        (when needs-check?
+          (rx/concat (rx/timer 1000)
+                     (rx/of (dwl/notify-sync-file file-id))))))))
 
 (defn- fetch-thumbnail-blob-uri
   [uri]
