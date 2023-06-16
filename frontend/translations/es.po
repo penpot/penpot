@@ -502,7 +502,7 @@ msgid "dashboard.export.title"
 msgstr "Exportar ficheros"
 
 msgid "dashboard.fonts.deleted-placeholder"
-msgstr "Fuente eliminada"
+msgstr "Fuente no encontrada"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.dismiss-all"

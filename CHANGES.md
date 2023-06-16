@@ -31,6 +31,8 @@
 - Distribute fix enabled when two elements were selected (by @dfelinto) [Github #3266](https://github.com/penpot/penpot/pull/3266)
 - Distribute vertical spacing failing for overlapped text (by @dfelinto) [Github #3267](https://github.com/penpot/penpot/pull/3267)
 
+## 1.18.5
+
 ## 1.18.4
 
 ### :bug: Bugs fixed

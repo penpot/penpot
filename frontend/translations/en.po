@@ -495,7 +495,7 @@ msgid "dashboard.export.title"
 msgstr "Export files"
 
 msgid "dashboard.fonts.deleted-placeholder"
-msgstr "Font deleted"
+msgstr "Missing font"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.dismiss-all"
