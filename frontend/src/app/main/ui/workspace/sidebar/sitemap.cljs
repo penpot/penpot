@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :refer [css]])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
@@ -134,6 +135,7 @@
                  (dom/classnames
                   :element-list-body true
                   :selected selected?))
+        :data-test (dm/str "page-" id)
         :tab-index "0"
         :on-click navigate-fn
         :on-double-click on-double-click
