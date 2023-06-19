@@ -17,7 +17,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.main.ui.cursors :as cur]
+   [app.main.ui.css-cursors :as cur]
    [app.main.ui.formats :as fmt]
    [app.main.ui.workspace.viewport.rules :as rules]
    [app.util.dom :as dom]

@@ -17,7 +17,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.cursors :as cur]
+   [app.main.ui.css-cursors :as cur]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
    [app.util.dom :as dom]
    [app.util.object :as obj]

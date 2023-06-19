@@ -14,7 +14,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.cursors :as cur]
+   [app.main.ui.css-cursors :as cur]
    [app.main.ui.workspace.shapes :as shapes]
    [app.util.dom :as dom]
    [app.util.http :as http]

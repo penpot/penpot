@@ -20,7 +20,7 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.cursors :as cur]
+   [app.main.ui.css-cursors :as cur]
    [app.main.ui.formats :as fmt]
    [app.main.ui.workspace.viewport.viewport-ref :refer [point->viewport]]
    [app.util.dom :as dom]
@@ -516,9 +516,9 @@
                         :on-pointer-down on-pointer-down
                         :on-lost-pointer-capture on-lost-pointer-capture
                         :on-pointer-move on-pointer-move
+                        :class (when (or hover? selected?)
+                                 (if (= (:resize-axis rect-data) :x) (cur/get-dynamic "resize-ew" 0) (cur/get-dynamic "resize-ew" 90)))
                         :style {:fill (if (or hover? selected?) warning-color "none")
-                                :cursor (when (or hover? selected?)
-                                          (if (= (:resize-axis rect-data) :x) (cur/resize-ew 0) (cur/resize-ew 90)))
                                 :opacity (if selected? 0.5 0.25)}}]))
 
 (mf/defc margin-rects [{:keys [shape frame zoom alt? shift?]}]
