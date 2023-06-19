@@ -40,7 +40,7 @@
         type               (unchecked-get props "type")
         values             (unchecked-get props "values")
 
-        current-blend-mode (d/name (or (:blend-mode values) :normal))
+        current-blend-mode (or (:blend-mode values) :normal)
         current-opacity    (:opacity values)
 
         state*             (mf/use-state
@@ -119,24 +119,24 @@
         options
         (mf/with-memo [current-blend-mode]
           (d/concat-vec
-           (when (= "multiple" current-blend-mode)
-             [{:value "multiple" :label "--"}])
-           [{:value "normal" :label (tr "workspace.options.layer-options.blend-mode.normal")}
-            {:value "darken" :label (tr "workspace.options.layer-options.blend-mode.darken")}
-            {:value "multiply" :label (tr "workspace.options.layer-options.blend-mode.multiply")}
-            {:value "color-burn" :label (tr "workspace.options.layer-options.blend-mode.color-burn")}
-            {:value "lighten" :label (tr "workspace.options.layer-options.blend-mode.lighten")}
-            {:value "screen" :label (tr "workspace.options.layer-options.blend-mode.screen")}
-            {:value "color-dodge" :label (tr "workspace.options.layer-options.blend-mode.color-dodge")}
-            {:value "overlay" :label (tr "workspace.options.layer-options.blend-mode.overlay")}
-            {:value "soft-light" :label (tr "workspace.options.layer-options.blend-mode.soft-light")}
-            {:value "hard-light" :label (tr "workspace.options.layer-options.blend-mode.hard-light")}
-            {:value "difference" :label (tr "workspace.options.layer-options.blend-mode.difference")}
-            {:value "exclusion" :label (tr "workspace.options.layer-options.blend-mode.exclusion")}
-            {:value "hue" :label (tr "workspace.options.layer-options.blend-mode.hue")}
-            {:value "saturation" :label (tr "workspace.options.layer-options.blend-mode.saturation")}
-            {:value "color" :label (tr "workspace.options.layer-options.blend-mode.color")}
-            {:value "luminosity" :label (tr "workspace.options.layer-options.blend-mode.luminosity")}]))]
+           (when (= :multiple current-blend-mode)
+             [{:value :multiple :label "--"}])
+           [{:value :normal :label (tr "workspace.options.layer-options.blend-mode.normal")}
+            {:value :darken :label (tr "workspace.options.layer-options.blend-mode.darken")}
+            {:value :multiply :label (tr "workspace.options.layer-options.blend-mode.multiply")}
+            {:value :color-burn :label (tr "workspace.options.layer-options.blend-mode.color-burn")}
+            {:value :lighten :label (tr "workspace.options.layer-options.blend-mode.lighten")}
+            {:value :screen :label (tr "workspace.options.layer-options.blend-mode.screen")}
+            {:value :color-dodge :label (tr "workspace.options.layer-options.blend-mode.color-dodge")}
+            {:value :overlay :label (tr "workspace.options.layer-options.blend-mode.overlay")}
+            {:value :soft-light :label (tr "workspace.options.layer-options.blend-mode.soft-light")}
+            {:value :hard-light :label (tr "workspace.options.layer-options.blend-mode.hard-light")}
+            {:value :difference :label (tr "workspace.options.layer-options.blend-mode.difference")}
+            {:value :exclusion :label (tr "workspace.options.layer-options.blend-mode.exclusion")}
+            {:value :hue :label (tr "workspace.options.layer-options.blend-mode.hue")}
+            {:value :saturation :label (tr "workspace.options.layer-options.blend-mode.saturation")}
+            {:value :color :label (tr "workspace.options.layer-options.blend-mode.color")}
+            {:value :luminosity :label (tr "workspace.options.layer-options.blend-mode.luminosity")}]))]
 
     (mf/with-effect [current-blend-mode
                      option-highlighted?

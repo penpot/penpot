@@ -43,7 +43,6 @@
         (mf/use-fn
          (mf/deps on-change)
          (fn [event]
-           (js/console.log event)
            (let [value (-> (dom/get-current-target event)
                            (dom/get-data "value")
                            (d/read-string))]
