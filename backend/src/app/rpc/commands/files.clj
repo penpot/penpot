@@ -500,6 +500,7 @@
 
 (sm/def! ::get-page
   [:map {:title "GetPage"}
+   [:file-id ::sm/uuid]
    [:page-id {:optional true} ::sm/uuid]
    [:object-id {:optional true} ::sm/uuid]
    [:features {:optional true} ::features]])
