@@ -490,13 +490,17 @@
 
   (let [file     (get-file conn file-id features)
         page-id  (or page-id (-> file :data :pages first))
-        page     (dm/get-in file [:data :pages-index page-id])]
+        page     (dm/get-in file [:data :pages-index page-id])
+        page     (if (pmap/pointer-map? page)
+                   (deref page)
+                   page)]
     (cond-> (prune-thumbnails page)
       (uuid? object-id)
       (prune-objects object-id))))
 
 (sm/def! ::get-page
   [:map {:title "GetPage"}
+   [:file-id ::sm/uuid]
    [:page-id {:optional true} ::sm/uuid]
    [:object-id {:optional true} ::sm/uuid]
    [:features {:optional true} ::features]])
@@ -516,7 +520,10 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
-    (get-page conn params)))
+
+    (binding [pmap/*load-fn* (partial load-pointer conn file-id)]
+      (get-page conn params))))
+
 
 
 ;; --- COMMAND QUERY: get-team-shared-files

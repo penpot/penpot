@@ -14,7 +14,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.uri :as u]
    [app.main.data.fonts :as df]
-   [app.main.features :as features]
+   [app.main.features :as feat]
    [app.main.render :as render]
    [app.main.repo :as repo]
    [app.main.store :as st]
@@ -52,6 +52,7 @@
 
 (defn ^:export init
   []
+  (st/emit! (feat/initialize))
   (init-ui))
 
 (defn reinit
@@ -95,7 +96,7 @@
 
 (mf/defc object-svg
   [{:keys [page-id file-id object-id render-embed?]}]
-  (let [components-v2 (features/use-feature :components-v2)
+  (let [components-v2 (feat/use-feature :components-v2)
         fetch-state   (mf/use-fn
                         (mf/deps file-id page-id object-id components-v2)
                         (fn []
@@ -135,7 +136,7 @@
 
 (mf/defc objects-svg
   [{:keys [page-id file-id object-ids render-embed?]}]
-  (let [components-v2 (features/use-feature :components-v2)
+  (let [components-v2 (feat/use-feature :components-v2)
         fetch-state   (mf/use-fn
                        (mf/deps file-id page-id components-v2)
                        (fn []
