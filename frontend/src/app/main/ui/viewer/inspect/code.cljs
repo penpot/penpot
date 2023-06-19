@@ -133,7 +133,7 @@
 
         style-code
         (mf/use-memo
-         (mf/deps fontfaces-css style-type all-children)
+         (mf/deps fontfaces-css style-type all-children cg/generate-style-code)
          (fn []
            (dm/str
             fontfaces-css "\n"
@@ -144,7 +144,7 @@
         (mf/use-memo
          (mf/deps markup-type shapes images-data)
          (fn []
-           (-> (cg/generate-markup-code objects markup-type (map :id shapes))
+           (-> (cg/generate-markup-code objects markup-type shapes)
                (format-code markup-type))))
 
         on-markup-copied

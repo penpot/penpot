@@ -22,6 +22,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.cursors :as cur]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
@@ -172,10 +173,6 @@
 
         direction (unchecked-get props "direction")
         layout-data (unchecked-get props "layout-data")
-        cursor
-        (if (= direction :row)
-          (cur/scale-ns (:rotation shape))
-          (cur/scale-ew (:rotation shape)))
 
         handle-drag-position
         (mf/use-callback
@@ -227,7 +224,11 @@
       :y y
       :height height
       :width width
-      :style {:fill "transparent" :stroke-width 0 :cursor cursor}
+      :class (if (= direction :row)
+               (cur/get-dynamic "scale-ns" (:rotation shape))
+               (cur/get-dynamic "scale-ew" (:rotation shape)))
+      :style {:fill "transparent"
+              :stroke-width 0}
       :on-pointer-down handle-pointer-down
       :on-lost-pointer-capture handle-lost-pointer-capture
       :on-pointer-move handle-pointer-move}]))
@@ -464,12 +465,12 @@
       :on-lost-pointer-capture handle-lost-pointer-capture
       :on-pointer-move handle-pointer-move
       :transform (dm/str (gmt/transform-in start-p (:transform shape)))
+      :class (if (= type :column)
+               (cur/get-dynamic "resize-ew" (:rotation shape))
+               (cur/get-dynamic "resize-ns" (:rotation shape)))
       :style {:fill "transparent"
               :opacity 0.5
-              :stroke-width 0
-              :cursor (if (= type :column)
-                        (cur/resize-ew (:rotation shape))
-                        (cur/resize-ns (:rotation shape)))}}]))
+              :stroke-width 0}}]))
 
 (mf/defc track-marker
   {::mf/wrap-props false}
@@ -511,11 +512,10 @@
     [:g {:on-pointer-down handle-pointer-down
          :on-lost-pointer-capture handle-lost-pointer-capture
          :on-pointer-move handle-pointer-move
-         :class (css :grid-track-marker)
-         :transform (dm/str (gmt/transform-in center (:transform shape)))
-         :style {:cursor (if (= type :column)
-                           (cur/resize-ew (:rotation shape))
-                           (cur/resize-ns (:rotation shape)))}}
+         :class (dom/classnames (css :grid-track-marker) true
+                                (cur/get-dynamic "resize-ew" (:rotation shape)) (= type :column)
+                                (cur/get-dynamic "resize-ns" (:rotation shape)) (= type :row))
+         :transform (dm/str (gmt/transform-in center (:transform shape)))}
 
      [:polygon {:class (css :marker-shape)
                 :points (->> marker-points

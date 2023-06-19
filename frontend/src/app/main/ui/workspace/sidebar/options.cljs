@@ -146,6 +146,7 @@
 
         [:div.element-options.element-options-inspect
          [:& hrs/right-sidebar {:page-id           page-id
+                                :objects           objects
                                 :file-id           file-id
                                 :frame             shape-parent-frame
                                 :shapes            selected-shapes

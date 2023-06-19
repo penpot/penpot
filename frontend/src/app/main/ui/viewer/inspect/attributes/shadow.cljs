@@ -7,29 +7,12 @@
 (ns app.main.ui.viewer.inspect.attributes.shadow
   (:require
    [app.common.data :as d]
-   [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
-   [app.util.code-gen :as cg]
    [app.util.i18n :refer [tr]]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn has-shadow? [shape]
   (:shadow shape))
-
-(defn shape-copy-data [shape]
-  (cg/generate-css-props
-   shape
-   :shadow
-   {:to-prop "box-shadow"
-    :format #(str/join ", " (map cg/shadow->css (:shadow shape)))}))
-
-(defn shadow-copy-data [shadow]
-  (cg/generate-css-props
-   shadow
-   :style
-   {:to-prop "box-shadow"
-    :format #(cg/shadow->css shadow)}))
 
 (mf/defc shadow-block [{:keys [shadow]}]
   (let [color-format (mf/use-state :hex)]
@@ -48,7 +31,7 @@
       [:div.attributes-shadow {:title  (tr "workspace.options.shadow-options.spread")}
        [:div.attributes-value (str (:spread shadow) "px")]]
 
-      [:& copy-button {:data (shadow-copy-data shadow)}]]
+      #_[:& copy-button {:data (shadow-copy-data shadow)}]]
 
      [:& color-row {:color (:color shadow)
                     :format @color-format

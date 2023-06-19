@@ -8,6 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.transit :as t]
    [clojure.walk :as walk]
    [cuerdas.core :as str]))
@@ -28,6 +29,8 @@
    :text-decoration "none"
    :fills [{:fill-color clr/black
             :fill-opacity 1}]})
+
+(def text-attrs (keys default-text-attrs))
 
 (def typography-fields
   [:font-id
@@ -252,3 +255,34 @@
 
     {:blocks (reduce #(conj %1 (build-block %2)) [] (node-seq #(= (:type %) "paragraph") root))
      :entityMap {}}))
+
+(defn content->text+styles
+  "Given a root node of a text content extracts the texts with its associated styles"
+  [node]
+  (letfn
+      [(rec-style-text-map [acc node style]
+         (let [node-style (merge style (select-keys node text-attrs))
+               head (or (-> acc first) [{} ""])
+               [head-style head-text] head
+
+               new-acc
+               (cond
+                 (:children node)
+                 (reduce #(rec-style-text-map %1 %2 node-style) acc (:children node))
+
+                 (not= head-style node-style)
+                 (cons [node-style (:text node "")] acc)
+
+                 :else
+                 (cons [node-style (dm/str head-text "" (:text node))] (rest acc)))
+
+               ;; We add an end-of-line when finish a paragraph
+               new-acc
+               (if (= (:type node) "paragraph")
+                 (let [[hs ht] (first new-acc)]
+                   (cons [hs (dm/str ht "\n")] (rest new-acc)))
+                 new-acc)]
+           new-acc))]
+
+    (-> (rec-style-text-map [] node {})
+        reverse)))

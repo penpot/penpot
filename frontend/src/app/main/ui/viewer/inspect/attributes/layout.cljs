@@ -6,92 +6,46 @@
 
 (ns app.main.ui.viewer.inspect.attributes.layout
   (:require
-   [app.common.types.shape.radius :as ctsr]
+   [app.common.data :as d]
+   [app.common.types.shape.layout :as ctl]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.formats :as fmt]
-   [app.util.code-gen :as cg]
-   [app.util.i18n :refer [tr]]
-   [cuerdas.core :as str]
+   [app.util.code-gen.style-css :as css]
    [rumext.v2 :as mf]))
 
-(def properties [:width :height :x :y :radius :rx :r1])
-
-(def params
-  {:to-prop {:x "left"
-             :y "top"
-             :rotation "transform"
-             :rx "border-radius"
-             :r1 "border-radius"}
-   :format  {:rotation #(str/fmt "rotate(%sdeg)" %)
-             :r1       #(apply str/fmt "%spx, %spx, %spx, %spx" %)
-             :width    #(cg/get-size :width %)
-             :height   #(cg/get-size :height %)}
-   :multi   {:r1 [:r1 :r2 :r3 :r4]}})
-
-(defn copy-data
-  ([shape]
-   (apply copy-data shape properties))
-  ([shape & properties]
-   (cg/generate-css-props shape properties params)))
+(def properties
+  [:display
+   :flex-direction
+   :flex-wrap
+   :grid-template-rows
+   :grid-template-columns
+   :align-items
+   :align-content
+   :justify-items
+   :justify-content
+   :gap
+   :padding])
 
 (mf/defc layout-block
-  [{:keys [shape]}]
-  (let [selrect (:selrect shape)
-        {:keys [x y width height]} selrect]
-    [:*
-     [:div.attributes-unit-row
-      [:div.attributes-label (tr "inspect.attributes.layout.width")]
-      [:div.attributes-value (fmt/format-size :width width shape)]
-      [:& copy-button {:data (copy-data selrect :width)}]]
-
-     [:div.attributes-unit-row
-      [:div.attributes-label (tr "inspect.attributes.layout.height")]
-      [:div.attributes-value (fmt/format-size :height height shape)]
-      [:& copy-button {:data (copy-data selrect :height)}]]
-
-     (when (not= (:x shape) 0)
+  [{:keys [objects shape]}]
+  [:*
+   (for [property properties]
+     (when-let [value (css/get-css-value objects shape property)]
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "inspect.attributes.layout.left")]
-        [:div.attributes-value (fmt/format-pixels x)]
-        [:& copy-button {:data (copy-data selrect :x)}]])
-
-     (when (not= (:y shape) 0)
-       [:div.attributes-unit-row
-        [:div.attributes-label (tr "inspect.attributes.layout.top")]
-        [:div.attributes-value (fmt/format-pixels y)]
-        [:& copy-button {:data (copy-data selrect :y)}]])
-
-     (when (ctsr/radius-1? shape)
-       [:div.attributes-unit-row
-        [:div.attributes-label (tr "inspect.attributes.layout.radius")]
-        [:div.attributes-value (fmt/format-pixels (:rx shape 0))]
-        [:& copy-button {:data (copy-data shape :rx)}]])
-
-     (when (ctsr/radius-4? shape)
-       [:div.attributes-unit-row
-        [:div.attributes-label (tr "inspect.attributes.layout.radius")]
-        [:div.attributes-value
-         (fmt/format-number (:r1 shape)) ", "
-         (fmt/format-number (:r2 shape)) ", "
-         (fmt/format-number (:r3 shape)) ", "
-         (fmt/format-pixels (:r4 shape))]
-        [:& copy-button {:data (copy-data shape :r1)}]])
-
-     (when (not= (:rotation shape 0) 0)
-       [:div.attributes-unit-row
-        [:div.attributes-label (tr "inspect.attributes.layout.rotation")]
-        [:div.attributes-value (fmt/format-number (:rotation shape)) "deg"]
-        [:& copy-button {:data (copy-data shape :rotation)}]])]))
-
+        [:div.attributes-label (d/name property)]
+        [:div.attributes-value value]
+        [:& copy-button {:data (css/get-css-property objects shape property)}]]))])
 
 (mf/defc layout-panel
-  [{:keys [shapes]}]
-  [:div.attributes-block
-   [:div.attributes-block-title
-    [:div.attributes-block-title-text (tr "inspect.attributes.size")]
-    (when (= (count shapes) 1)
-      [:& copy-button {:data (copy-data (first shapes))}])]
+  [{:keys [objects shapes]}]
+  (let [shapes (->> shapes (filter ctl/any-layout?))] 
+    (when (seq shapes)
+      [:div.attributes-block
+       [:div.attributes-block-title
+        [:div.attributes-block-title-text "Layout"]
+        (when (= (count shapes) 1)
+          [:& copy-button {:data (css/get-shape-properties-css objects (first shapes) properties)}])]
 
-   (for [shape shapes]
-     [:& layout-block {:shape shape
-                       :key (:id shape)}])])
+       (for [shape shapes]
+         [:& layout-block {:shape shape
+                           :objects objects
+                           :key (:id shape)}])])))

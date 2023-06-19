@@ -59,7 +59,8 @@
 (mf/defc render-node
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [type text children] :as parent} (obj/get props "node")]
+  (let [{:keys [type text children] :as parent} (obj/get props "node")
+        code? (obj/get props "code?")]
     (if (string? text)
       [:> render-text props]
       (let [component (case type
@@ -74,7 +75,8 @@
                              (obj/set! "node" node)
                              (obj/set! "parent" parent)
                              (obj/set! "index" index)
-                             (obj/set! "key" index))]
+                             (obj/set! "key" index)
+                             (obj/set! "code?" code?))]
                [:> render-node props]))])))))
 
 (mf/defc text-shape
@@ -103,8 +105,10 @@
       :style style}
      ;; We use a class here because react has a bug that won't use the appropriate selector for
      ;; `background-clip`
-     [:style ".text-node { background-clip: text;
-                           -webkit-background-clip: text; }" ]
+     (when (not code?)
+       [:style ".text-node { background-clip: text;
+                           -webkit-background-clip: text; }" ])
      [:& render-node {:index 0
                       :shape shape
-                      :node content}]]))
+                      :node content
+                      :code? code?}]]))
