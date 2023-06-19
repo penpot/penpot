@@ -4469,6 +4469,9 @@ msgstr "Tablero de selección"
 msgid "workspace.shape.menu.create-component"
 msgstr "Crear componente"
 
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Crear múltiples componentes"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.cut"
 msgstr "Cortar"

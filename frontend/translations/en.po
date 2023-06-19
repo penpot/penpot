@@ -4367,6 +4367,9 @@ msgstr "Selection to board"
 msgid "workspace.shape.menu.create-component"
 msgstr "Create component"
 
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Create multiple components"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.cut"
 msgstr "Cut"

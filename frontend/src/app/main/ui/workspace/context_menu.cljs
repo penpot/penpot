@@ -439,7 +439,8 @@
 
         has-component?      (some true? (map #(contains? % :component-id) shapes))
         is-component?       (and single? (-> shapes first :component-id some?))
-        is-non-root?        (and single? (ctk/in-component-copy-not-root? (first shapes)))
+        in-copy-not-root?   (some true? (map #(ctk/in-component-copy-not-root? %) shapes))
+
         objects             (deref refs/workspace-page-objects)
         touched?            (and single? (cph/component-touched? objects (:id (first shapes))))
         can-update-main?    (or (not components-v2) touched?)
@@ -462,6 +463,7 @@
                                     (ctf/get-component workspace-libraries component-file component-id)))
 
         do-add-component #(st/emit! (dwl/add-component))
+        do-add-multiple-components #(st/emit! (dwl/add-multiple-components))
         do-detach-component #(st/emit! (dwl/detach-component id))
         do-detach-component-in-bulk #(st/emit! dwl/detach-selected-components)
         do-reset-component #(st/emit! (dwl/reset-component id))
@@ -504,12 +506,15 @@
                                            :on-accept do-update-component-in-bulk}))))]
     [:*
      [:*
-      (when (or (not is-non-root?) (and has-component? (not single?)))
+      (when (or (not in-copy-not-root?) (and has-component? (not single?)))
         [:& menu-separator])
-      (when-not is-non-root?
+      (when-not in-copy-not-root?
         [:& menu-entry {:title (tr "workspace.shape.menu.create-component")
                         :shortcut (sc/get-tooltip :create-component)
                         :on-click do-add-component}])
+      (when-not (or single? in-copy-not-root?)
+        [:& menu-entry {:title (tr "workspace.shape.menu.create-multiple-components")
+                        :on-click do-add-multiple-components}])
       (when (and has-component? (not single?))
         [:*
          [:& menu-entry {:title (tr "workspace.shape.menu.detach-instances-in-bulk")

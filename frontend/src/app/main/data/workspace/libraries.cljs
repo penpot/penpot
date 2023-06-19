@@ -317,6 +317,26 @@
             components-v2 (features/active-feature? state :components-v2)]
         (rx/of (add-component2 selected components-v2))))))
 
+
+(defn add-multiple-components
+  "Add several new components to current file library, from the currently selected shapes."
+  []
+  (ptk/reify ::add-multiple-components
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [components-v2    (features/active-feature? state :components-v2)
+            objects       (wsh/lookup-page-objects state)
+            selected      (->> (wsh/lookup-selected state)
+                               (cph/clean-loops objects))
+            added-components (map
+                              #(add-component2 [%] components-v2)
+                              selected)
+            undo-id (js/Symbol)]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (rx/from added-components)
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+
 (defn rename-component
   "Rename the component with the given id, in the current file library."
   [id new-name]
