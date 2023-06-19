@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.text.styles
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.text :as txt]
    [app.common.transit :as transit]
    [app.main.fonts :as fonts]
@@ -17,8 +18,8 @@
 (defn generate-root-styles
   [{:keys [width height]} node]
   (let [valign (:vertical-align node "top")
-        base   #js {:height height
-                    :width  width
+        base   #js {:height (dm/str height "px")
+                    :width  (dm/str width "px")
                     :fontFamily "sourcesanspro"
                     :display "flex"
                     :whiteSpace "break-spaces"}]

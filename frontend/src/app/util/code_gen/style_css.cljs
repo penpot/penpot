@@ -8,6 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.pages.helpers :as cph]
+   [app.common.text :as txt]
+   [app.main.ui.shapes.text.styles :as sts]
    [app.util.code-gen.common :as cgc]
    [app.util.code-gen.style-css-formats :refer [format-value]]
    [app.util.code-gen.style-css-values :refer [get-value]]
@@ -42,6 +45,9 @@ svg {
 * {
   box-sizing: border-box;
 }
+
+.text-node { background-clip: text;
+             -webkit-background-clip: text; }
 
 ")
 
@@ -116,8 +122,6 @@ svg {
                (when-let [value (get-value property shape objects)]
                  [property value])))))
 
-
-
 (defn format-css-value
   ([[property value] options]
    (format-css-value property value options))
@@ -139,7 +143,6 @@ svg {
        (map #(dm/str "  " (format-css-property % options)))
        (str/join "\n")))
 
-
 (defn get-shape-properties-css
   ([objects shape properties]
    (get-shape-properties-css objects shape properties nil))
@@ -148,6 +151,44 @@ svg {
    (-> shape
        (shape->css-properties objects properties)
        (format-css-properties options))))
+
+(defn format-js-styles
+  [properties _options]
+  (format-css-properties
+   (->> (.keys js/Object properties)
+        (remove #(str/starts-with? % "--"))
+        (mapv (fn [key]
+                [(str/kebab key) (unchecked-get properties key)])))
+   nil))
+
+(defn node->css
+  [shape shape-selector node]
+  (let [properties
+        (case (:type node)
+          (:root "root")
+          (sts/generate-root-styles shape node)
+
+          (:paragraph-set "paragraph-set")
+          (sts/generate-paragraph-set-styles shape)
+
+          (:paragraph "paragraph")
+          (sts/generate-paragraph-styles shape node)
+
+          (sts/generate-text-styles shape node))]
+    (dm/fmt
+     ".% {\n%\n}"
+     (dm/str shape-selector " ." (:$id node))
+     (format-js-styles properties nil))))
+
+(defn generate-text-css
+  [shape]
+  (let [selector (cgc/shape->selector shape)]
+    (->> shape
+         :content
+         (txt/index-content)
+         (txt/node-seq)
+         (map #(node->css shape selector %))
+         (str/join "\n"))))
 
 (defn get-shape-css-selector
   ([objects shape]
@@ -159,7 +200,8 @@ svg {
                         (format-css-properties options))
          selector (cgc/shape->selector shape)]
      (str/join "\n" [(str/fmt "/* %s */" (:name shape))
-                     (str/fmt ".%s {\n%s\n}" selector properties)]))))
+                     (str/fmt ".%s {\n%s\n}" selector properties)
+                     (when (cph/text-shape? shape) (generate-text-css shape))]))))
 
 (defn get-css-property
   ([objects shape property]
@@ -187,8 +229,3 @@ svg {
     (->> shapes
          (map #(get-shape-css-selector % objects options))
          (str/join "\n\n")))))
-
-
-#_(defn extract-text-css
-  [node]
-  (cg/parse-style-text-blocks (:content shape) (keys txt/default-text-attrs)))

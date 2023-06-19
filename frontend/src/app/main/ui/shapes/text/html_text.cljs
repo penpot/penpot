@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.text :as txt]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -18,11 +19,14 @@
   (let [node   (obj/get props "node")
         parent (obj/get props "parent")
         shape  (obj/get props "shape")
+        code?  (obj/get props "code?")
         text   (:text node)
-        style  (if (= text "")
-                 (sts/generate-text-styles shape parent)
-                 (sts/generate-text-styles shape node))]
-    [:span.text-node {:style style}
+        style  (when-not code?
+                 (if (= text "")
+                   (sts/generate-text-styles shape parent)
+                   (sts/generate-text-styles shape node)))
+        class  (when code? (:$id node))]
+    [:span.text-node {:style style :class class}
      (if (= text "") "\u00A0" text)]))
 
 (mf/defc render-root
@@ -31,19 +35,25 @@
   (let [node     (obj/get props "node")
         children (obj/get props "children")
         shape    (obj/get props "shape")
-        style    (sts/generate-root-styles shape node)]
+        code?    (obj/get props "code?")
+        style    (when-not code? (sts/generate-root-styles shape node))
+        class  (when code? (:$id node))]
     [:div.root.rich-text
      {:style style
+      :class class
       :xmlns "http://www.w3.org/1999/xhtml"}
      children]))
 
 (mf/defc render-paragraph-set
   {::mf/wrap-props false}
   [props]
-  (let [children (obj/get props "children")
+  (let [node     (obj/get props "node")
+        children (obj/get props "children")
         shape    (obj/get props "shape")
-        style    (sts/generate-paragraph-set-styles shape)]
-    [:div.paragraph-set {:style style} children]))
+        code?    (obj/get props "code?")
+        style    (when-not code? (sts/generate-paragraph-set-styles shape))
+        class    (when code? (:$id node))]
+    [:div.paragraph-set {:style style :class class} children]))
 
 (mf/defc render-paragraph
   {::mf/wrap-props false}
@@ -51,9 +61,11 @@
   (let [node     (obj/get props "node")
         shape    (obj/get props "shape")
         children (obj/get props "children")
-        style    (sts/generate-paragraph-styles shape node)
+        code?    (obj/get props "code?")
+        style    (when-not code? (sts/generate-paragraph-styles shape node))
+        class    (when code? (:$id node))
         dir      (:text-direction node "auto")]
-    [:p.paragraph {:style style :dir dir} children]))
+    [:p.paragraph {:style style :dir dir :class class} children]))
 
 ;; -- Text nodes
 (mf/defc render-node
@@ -88,6 +100,8 @@
         code?     (obj/get props "code?")
         {:keys [id x y width height content]} shape
 
+        content (if code? (txt/index-content content) content)
+
         style
         (when-not code?
           #js {:position "fixed"
@@ -107,7 +121,7 @@
      ;; `background-clip`
      (when (not code?)
        [:style ".text-node { background-clip: text;
-                           -webkit-background-clip: text; }" ])
+                             -webkit-background-clip: text; }" ])
      [:& render-node {:index 0
                       :shape shape
                       :node content

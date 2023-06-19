@@ -286,3 +286,19 @@
 
     (-> (rec-style-text-map [] node {})
         reverse)))
+
+(defn index-content
+  "Adds a property `$id` that identifies the current node inside"
+  ([content]
+   (index-content content nil 0))
+  ([node path index]
+   (let [cur-path (if path (dm/str path "-") (dm/str ""))
+         cur-path (dm/str cur-path (d/name (:type node :text)) "-" index)]
+     (-> node
+         (assoc :$id cur-path)
+         (update :children
+                 (fn [children]
+                   (->> children
+                        (d/enumerate)
+                        (mapv (fn [[idx node]]
+                                (index-content node cur-path idx))))))))))
