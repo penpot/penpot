@@ -322,7 +322,7 @@
                                          shape (get objects id)
                                          component-root (ctn/get-component-shape objects shape {:allow-main? true})]
                                      (if (and (some? component-root) (ctk/main-instance? component-root))
-                                       (ctkl/set-component-modified data (:id component-root))
+                                       (ctkl/set-component-modified data (:component-id component-root))
                                        data))
                                    data))]
 
