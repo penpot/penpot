@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.18.6 (Unreleased)
+
+### :sparkles: Enhancements
+
+- Add the ability to overwrite internal resolver with `PENPOT_INTERNAL_RESOLVER` environment
+  variable [GH #3310](https://github.com/penpot/penpot/issues/3310)
+
 ## 1.18.5
 
 ## 1.18.4
@@ -40,6 +47,7 @@
 ## 1.18.0
 
 ### :sparkles: New features
+
 - Adds more accessibility improvements in dashboard [Taiga #4577](https://tree.taiga.io/project/penpot/us/4577)
 - Adds paddings and gaps prediction on layout creation [Taiga #4838](https://tree.taiga.io/project/penpot/task/4838)
 - Add visual feedback when proportionally scaling text elements with **K** [Taiga #3415](https://tree.taiga.io/project/penpot/us/3415)
