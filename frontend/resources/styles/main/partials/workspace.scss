@@ -48,6 +48,7 @@ $height-palette-max: 80px;
   }
 
   .settings-bar.settings-bar-right {
+    height: 100%;
     width: var(--width, $width-settings-bar);
     grid-area: right-sidebar;
 

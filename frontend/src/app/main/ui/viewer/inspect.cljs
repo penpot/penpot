@@ -6,8 +6,10 @@
 
 (ns app.main.ui.viewer.inspect
   (:require
+   [app.common.data.macros :as dm]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
+   [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.viewer.inspect.left-sidebar :refer [left-sidebar]]
    [app.main.ui.viewer.inspect.render :refer [render-frame-svg]]
    [app.main.ui.viewer.inspect.right-sidebar :refer [right-sidebar]]
@@ -37,6 +39,11 @@
 (mf/defc viewport
   [{:keys [local file page frame index viewer-pagination size share-id]}]
   (let [inspect-svg-container-ref (mf/use-ref nil)
+        current-section* (mf/use-state :info)
+        current-section (deref current-section*)
+
+        can-be-expanded? (= current-section :code)
+
         on-mouse-wheel
         (fn [event]
           (when (kbd/mod? event)
@@ -55,7 +62,22 @@
           (let [key1 (events/listen goog/global EventType.WHEEL
                                     on-mouse-wheel #js {"passive" false})]
             (fn []
-              (events/unlistenByKey key1))))]
+              (events/unlistenByKey key1))))
+
+        {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move]
+         set-right-size :set-size
+         right-size :size}
+        (use-resize-hook :code 256 256 768 :x true :right)
+
+        handle-change-section
+        (mf/use-callback
+         (fn [section]
+           (reset! current-section* section)))
+
+        handle-expand
+        (mf/use-callback
+         (mf/deps right-size)
+         #(set-right-size (if (> right-size 256) 256 768)))]
 
     (mf/use-effect on-mount)
 
@@ -73,8 +95,18 @@
       [:div.inspect-svg-container {:ref inspect-svg-container-ref}
        [:& render-frame-svg {:frame frame :page page :local local :size size}]]]
 
-     [:& right-sidebar {:frame frame
-                        :selected (:selected local)
-                        :page page
-                        :file file
-                        :share-id share-id}]]))
+     [:div.sidebar-container
+      {:class (when (not can-be-expanded?) "not-expand")
+       :style #js {"--width" (when can-be-expanded? (dm/str right-size "px"))}}
+      [:div.resize-area
+       {:on-pointer-down on-pointer-down
+        :on-lost-pointer-capture on-lost-pointer-capture
+        :on-pointer-move on-pointer-move}]
+      [:& right-sidebar {:frame frame
+                         :selected (:selected local)
+                         :page page
+                         :file file
+                         :on-change-section handle-change-section
+                         :on-expand handle-expand
+                         :share-id share-id
+                         }]]]))
