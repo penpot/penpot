@@ -22,14 +22,16 @@
 
 ;; --- Outer Rect
 
-
 (defn translate-to-frame
-  [shape {:keys [x y]}]
-  (gtr/move shape (gpt/negate (gpt/point x y)))  )
+  [shape frame]
+  (->> (gpt/point (- (dm/get-prop frame :x))
+                  (- (dm/get-prop frame :y)))
+       (gtr/move shape)))
 
 (defn translate-from-frame
-  [shape {:keys [x y]}]
-  (gtr/move shape (gpt/point x y))  )
+  [shape frame]
+  (gtr/move shape (gpt/point (dm/get-prop frame :x)
+                             (dm/get-prop frame :y))))
 
 (defn shape->rect
   [shape]
