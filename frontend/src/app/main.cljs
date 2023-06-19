@@ -45,7 +45,6 @@
 
 (defn init-ui
   []
-  (cur/init-styles)
   (mf/mount (mf/element ui/app) (dom/get-element "app"))
   (mf/mount (mf/element modal)  (dom/get-element "modal")))
 
@@ -80,6 +79,7 @@
   (worker/init!)
   (i18n/init! cf/translations)
   (theme/init! cf/themes)
+  (cur/init-styles)
   (init-ui)
   (st/emit! (initialize)))
 
