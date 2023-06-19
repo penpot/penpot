@@ -9,6 +9,13 @@
 
 ## 1.18.5
 
+### :bug: Bugs fixed
+
+- Fix add flow option in contextual menu for frames
+- Fix issues related with invitations
+- Fix problem with undefined gaps
+- Add deleted fonts auto match mechanism
+
 ## 1.18.4
 
 ### :bug: Bugs fixed
