@@ -500,7 +500,7 @@
 
 (defn recover-profile
   [data]
-  (dm/assert! (sm/valid? ::recover-profile data))
+  (dm/assert! (sm/valid? schema:recover-profile data))
   (ptk/reify ::recover-profile
     ptk/WatchEvent
     (watch [_ _ _]
