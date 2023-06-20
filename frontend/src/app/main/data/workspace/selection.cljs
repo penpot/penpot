@@ -15,6 +15,7 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.focus :as cpf]
    [app.common.pages.helpers :as cph]
+   [app.common.record :as cr]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
@@ -68,15 +69,15 @@
 
             calculate-selrect
             (fn [selrect [delta space?]]
-              (let [selrect (-> selrect
-                                (update :x2 + (:x delta))
-                                (update :y2 + (:y delta)))
+              (let [selrect (-> (cr/clone selrect)
+                                (cr/update! :x2 + (:x delta))
+                                (cr/update! :y2 + (:y delta)))
                     selrect (if ^boolean space?
                               (-> selrect
-                                  (update :x1 + (:x delta))
-                                  (update :y1 + (:y delta)))
+                                  (cr/update! :x1 + (:x delta))
+                                  (cr/update! :y1 + (:y delta)))
                               selrect)]
-                (grc/update-rect selrect :corners)))
+                (grc/update-rect! selrect :corners)))
 
             selrect-stream
             (->> ms/mouse-position
