@@ -11,9 +11,10 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
+   [app.common.record :as rc]
    [app.common.transit :as t]))
 
-(defrecord Rect [x y width height x1 y1 x2 y2])
+(rc/defrecord Rect [x y width height x1 y1 x2 y2])
 
 (defn rect?
   [o]
@@ -62,10 +63,7 @@
    (when (d/num? x y width height)
      (let [w (mth/max width 0.01)
            h (mth/max height 0.01)]
-      (->Rect x y w h x y (+ x w) (+ y h)))))
-
-  ([x y w h x1 y1 x2 y2]
-   (->Rect x y w h x1 y1 x2 y2)))
+       (pos->Rect x y w h x y (+ x w) (+ y h))))))
 
 (def empty-rect
   (make-rect 0 0 0.01 0.01))
@@ -104,6 +102,31 @@
              :x2 (+ x w)
              :y2 (+ y h)))))
 
+(defn update-rect!
+  [rect type]
+  (case type
+    (:size :position)
+    (let [x (dm/get-prop rect :x)
+          y (dm/get-prop rect :y)
+          w (dm/get-prop rect :width)
+          h (dm/get-prop rect :height)]
+      (rc/assoc! rect
+                 :x1 x
+                 :y1 y
+                 :x2 (+ x w)
+                 :y2 (+ y h)))
+
+    :corners
+    (let [x1 (dm/get-prop rect :x1)
+          y1 (dm/get-prop rect :y1)
+          x2 (dm/get-prop rect :x2)
+          y2 (dm/get-prop rect :y2)]
+      (rc/assoc! rect
+                 :x (mth/min x1 x2)
+                 :y (mth/min y1 y2)
+                 :width (mth/abs (- x2 x1))
+                 :height (mth/abs (- y2 y1))))))
+
 (defn close-rect?
   [rect1 rect2]
 
@@ -123,7 +146,6 @@
 
 (defn rect->points
   [rect]
-
   (dm/assert!
    "expected rect instance"
    (rect? rect))
@@ -139,6 +161,12 @@
          (gpt/point (+ x w) y)
          (gpt/point (+ x w) (+ y h))
          (gpt/point x (+ y h))]))))
+
+(defn rect->point
+  "Extract the position part of the rect"
+  [rect]
+  (gpt/point (dm/get-prop rect :x)
+             (dm/get-prop rect :y)))
 
 (defn rect->center
   [rect]
@@ -231,17 +259,22 @@
       (when (d/num? minx miny maxx maxy)
         (make-rect minx miny (- maxx minx) (- maxy miny))))))
 
-(defn center->rect [{:keys [x y]} width height]
-  (when (d/num? x y width height)
-    (make-rect (- x (/ width 2))
-               (- y (/ height 2))
-               width
-               height)))
+(defn center->rect
+  [point w h]
+  (when (some? point)
+    (let [x (dm/get-prop point :x)
+          y (dm/get-prop point :y)]
+      (when (d/num? x y w h)
+        (make-rect (- x (/ w 2))
+                   (- y (/ h 2))
+                   w
+                   h)))))
 
 (defn s=
   [a b]
   (mth/almost-zero? (- a b)))
 
+;; FIXME: performance
 (defn overlaps-rects?
   "Check for two rects to overlap. Rects won't overlap only if
    one of them is fully to the left or the top"
