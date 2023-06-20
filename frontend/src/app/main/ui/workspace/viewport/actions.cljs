@@ -337,7 +337,7 @@
 
 (defn on-pointer-move [move-stream]
   (let [last-position (mf/use-var nil)]
-    (mf/use-callback
+    (mf/use-fn
      (fn [event]
        (let [raw-pt   (dom/get-client-position event)
              pt       (uwvv/point->viewport raw-pt)
@@ -347,6 +347,7 @@
              delta (if @last-position
                      (gpt/subtract raw-pt @last-position)
                      (gpt/point 0 0))]
+
          (rx/push! move-stream pt)
          (reset! last-position raw-pt)
          (st/emit! (ms/->PointerEvent :delta delta
