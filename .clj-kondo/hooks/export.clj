@@ -39,6 +39,29 @@
                          other))]
       {:node result})))
 
+
+(defn penpot-defrecord
+  [{:keys [:node]}]
+  (let [[rnode rtype rparams & other] (:children node)
+
+        nodes [(api/token-node (symbol "do"))
+               (api/list-node
+                (into [(api/token-node (symbol (name (:value rnode)))) rtype rparams] other))
+               (api/list-node
+                [(api/token-node (symbol "defn"))
+                 (api/token-node (symbol (str "pos->" (:string-value rtype))))
+                 (api/vector-node
+                  (->> (:children rparams)
+                       (mapv (fn [t]
+                               (api/token-node (symbol (str "_" (:string-value t))))))))
+                 (api/token-node nil)])]
+
+        result (api/list-node nodes)]
+
+    ;; (prn "=====>" (into {} rparams))
+    ;; (prn (api/sexpr result))
+    {:node result}))
+
 (defn clojure-specify
   [{:keys [:node]}]
   (let [[rnode rtype & other] (:children node)
@@ -47,7 +70,6 @@
                         (api/token-node (gensym (:string-value rtype)))]
                        other))]
     {:node result}))
-
 
 (defn service-defmethod
   [{:keys [:node]}]
