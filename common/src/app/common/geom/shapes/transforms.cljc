@@ -5,10 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.geom.shapes.transforms
-  #?(:clj (:import (org.la4j Matrix LinearAlgebra))
-     :cljs (:import goog.math.Matrix))
   (:require
-   #?(:clj [app.common.exceptions :as ex])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
@@ -19,8 +16,8 @@
    [app.common.geom.shapes.path :as gpa]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
-   [app.common.types.modifiers :as ctm]
-   [app.common.uuid :as uuid]))
+   [app.common.record :as cr]
+   [app.common.types.modifiers :as ctm]))
 
 #?(:clj (set! *warn-on-reflection* true))
 
@@ -40,10 +37,6 @@
           y  (dm/get-prop selrect :y)
           w  (dm/get-prop selrect :width)
           h  (dm/get-prop selrect :height)
-          x1 (dm/get-prop selrect :x1)
-          y1 (dm/get-prop selrect :y1)
-          x2 (dm/get-prop selrect :x2)
-          y2 (dm/get-prop selrect :y2)
           dx (dm/get-prop pt :x)
           dy (dm/get-prop pt :y)]
 
@@ -60,19 +53,32 @@
     (mapv #(gpt/add % move-vec) points)
     points))
 
-;; FIXME: revisit performance
+;; FIXME: deprecated
 (defn move-position-data
-  ([position-data {:keys [x y]}]
-   (move-position-data position-data x y))
-
-  ([position-data dx dy]
-   (when (some? position-data)
-     (cond->> position-data
-       (d/num? dx dy)
-       (mapv #(-> %
+  [position-data delta]
+  (when (some? position-data)
+    (let [dx (dm/get-prop delta :x)
+          dy (dm/get-prop delta :y)]
+      (if (d/num? dx dy)
+        (mapv #(-> %
                   (update :x + dx)
-                  (update :y + dy)))))))
+                  (update :y + dy))
+              position-data)
+        position-data))))
 
+(defn transform-position-data
+  [position-data transform]
+  (when (some? position-data)
+    (let [dx (dm/get-prop transform :e)
+          dy (dm/get-prop transform :f)]
+      (if (d/num? dx dy)
+        (mapv #(-> %
+                   (update :x + dx)
+                   (update :y + dy))
+              position-data)
+        position-data))))
+
+;; FIXME: revist usage of mutability
 (defn move
   "Move the shape relatively to its current
   position applying the provided delta."
@@ -89,7 +95,7 @@
         (update :points move-points mvec)
         (d/update-when :x d/safe+ dx)
         (d/update-when :y d/safe+ dy)
-        (d/update-when :position-data move-position-data dx dy)
+        (d/update-when :position-data move-position-data mvec)
         (cond-> (= :bool type) (update :bool-content gpa/move-content mvec))
         (cond-> (= :path type) (update :content gpa/move-content mvec)))))
 
@@ -100,27 +106,12 @@
   [shape pos]
   (let [x  (dm/get-prop pos :x)
         y  (dm/get-prop pos :y)
-        sr (dm/get-prop shape selrect)
+        sr (dm/get-prop shape :selrect)
         px (dm/get-prop sr :x)
         py (dm/get-prop sr :y)
         dx (- (d/check-num x) px)
         dy (- (d/check-num y) py)]
     (move shape (gpt/point dx dy))))
-
-; ---- Geometric operations
-
-(defn- calculate-height
-  "Calculates the height of a parallelogram given by the points"
-  [[p1 _ _ p4]]
-
-  (-> (gpt/to-vec p4 p1)
-      (gpt/length)))
-
-(defn- calculate-width
-  "Calculates the width of a parallelogram given by the points"
-  [[p1 p2 _ _]]
-  (-> (gpt/to-vec p1 p2)
-      (gpt/length)))
 
 ;; --- Transformation matrix operations
 
@@ -160,6 +151,7 @@
      (dm/str (transform-matrix shape params))
      "")))
 
+;; FIXME: performance
 (defn inverse-transform-matrix
   ([shape]
    (let [shape-center (or (gco/shape->center shape)
@@ -174,6 +166,7 @@
        (gmt/multiply (:transform-inverse shape (gmt/matrix)))
        (gmt/translate (gpt/negate center)))))
 
+;; FIXME: move to geom rect?
 (defn transform-rect
   "Transform a rectangles and changes its attributes"
   [rect matrix]
@@ -183,137 +176,127 @@
     (grc/points->rect points)))
 
 (defn transform-points-matrix
-  "Calculate the transform matrix to convert from the selrect to the points bounds
-    TargetM = SourceM * Transform ==> Transform = TargetM * inv(SourceM)"
-  [{:keys [x1 y1 x2 y2]} [d1 d2 _ d4]]
+  [selrect [d1 d2 _ d4]]
   ;; If the coordinates are very close to zero (but not zero) the rounding can mess with the
   ;; transforms. So we round to zero the values
-  (let [x1  (mth/round-to-zero x1)
-        y1  (mth/round-to-zero y1)
-        x2  (mth/round-to-zero x2)
-        y2  (mth/round-to-zero y2)
-        d1x (mth/round-to-zero (:x d1))
-        d1y (mth/round-to-zero (:y d1))
-        d2x (mth/round-to-zero (:x d2))
-        d2y (mth/round-to-zero (:y d2))
-        d4x (mth/round-to-zero (:x d4))
-        d4y (mth/round-to-zero (:y d4))]
-    #?(:clj
-       ;; NOTE: the source matrix may not be invertible we can't
-       ;; calculate the transform, so on exception we return `nil`
-       (ex/ignoring
-        (let [target-points-matrix
-              (->> (list d1x d2x d4x
-                         d1y d2y d4y
-                         1     1   1)
-                   (into-array Double/TYPE)
-                   (Matrix/from1DArray 3 3))
+  (let [x1  (mth/round-to-zero (dm/get-prop selrect :x1))
+        y1  (mth/round-to-zero (dm/get-prop selrect :y1))
+        x2  (mth/round-to-zero (dm/get-prop selrect :x2))
+        y2  (mth/round-to-zero (dm/get-prop selrect :y2))
 
-              source-points-matrix
-              (->> (list x1 x2 x1
-                         y1 y1 y2
-                         1  1  1)
-                   (into-array Double/TYPE)
-                   (Matrix/from1DArray 3 3))
+        det (+ (- (* (- y1 y2) x1)
+                  (* (- y1 y2) x2))
+               (* (- y1 y1) x1))]
 
-              ;; May throw an exception if the matrix is not invertible
-              source-points-matrix-inv
-              (.. source-points-matrix
-                  (withInverter LinearAlgebra/GAUSS_JORDAN)
-                  (inverse))
+    (when-not (zero? det)
+      (let [ma0 (mth/round-to-zero (dm/get-prop d1 :x))
+            ma1 (mth/round-to-zero (dm/get-prop d2 :x))
+            ma2 (mth/round-to-zero (dm/get-prop d4 :x))
+            ma3 (mth/round-to-zero (dm/get-prop d1 :y))
+            ma4 (mth/round-to-zero (dm/get-prop d2 :y))
+            ma5 (mth/round-to-zero (dm/get-prop d4 :y))
 
-              transform-jvm
-              (.. target-points-matrix
-                  (multiply source-points-matrix-inv))]
+            mb0 (/ (- y1 y2) det)
+            mb1 (/ (- x1 x2) det)
+            mb2 (/ (- (* x2 y2) (* x1 y1)) det)
+            mb3 (/ (- y2 y1) det)
+            mb4 (/ (- x1 x1) det)
+            mb5 (/ (- (* x1 y1) (* x1 y2)) det)
+            mb6 (/ (- y1 y1) det)
+            mb7 (/ (- x2 x1) det)
+            mb8 (/ (- (* x1 y1) (* x2 y1)) det)]
 
-          (gmt/matrix (.get transform-jvm 0 0)
-                      (.get transform-jvm 1 0)
-                      (.get transform-jvm 0 1)
-                      (.get transform-jvm 1 1)
-                      (.get transform-jvm 0 2)
-                      (.get transform-jvm 1 2))))
+      (gmt/matrix (+ (* ma0 mb0)
+                     (* ma1 mb3)
+                     (* ma2 mb6))
+                  (+ (* ma3 mb0)
+                     (* ma4 mb3)
+                     (* ma5 mb6))
+                  (+ (* ma0 mb1)
+                     (* ma1 mb4)
+                     (* ma2 mb7))
+                  (+ (* ma3 mb1)
+                     (* ma4 mb4)
+                     (* ma5 mb7))
+                  (+ (* ma0 mb2)
+                     (* ma1 mb5)
+                     (* ma2 mb8))
+                  (+ (* ma3 mb2)
+                     (* ma4 mb5)
+                     (* ma5 mb8)))))))
 
-       :cljs
-       (let [target-points-matrix
-             (Matrix. #js [#js [d1x d2x d4x]
-                           #js [d1y d2y d4y]
-                           #js [  1   1   1]])
+(defn calculate-selrect
+  [points center]
 
-             source-points-matrix
-             (Matrix. #js [#js [x1 x2 x1]
-                           #js [y1 y1 y2]
-                           #js [ 1  1  1]])
+  (let [p1     (nth points 0)
+        p2     (nth points 1)
+        p4     (nth points 3)
 
-             ;; returns nil if not invertible
-             source-points-matrix-inv (.getInverse source-points-matrix)
+        width  (mth/hypot
+                (- (dm/get-prop p2 :x)
+                   (dm/get-prop p1 :x))
+                (- (dm/get-prop p2 :y)
+                   (dm/get-prop p1 :y)))
 
-             ;; TargetM = SourceM * Transform ==> Transform = TargetM * inv(SourceM)
-             transform-js
-             (when source-points-matrix-inv
-               (.multiply target-points-matrix source-points-matrix-inv))]
+        height (mth/hypot
+                (- (dm/get-prop p1 :x)
+                   (dm/get-prop p4 :x))
+                (- (dm/get-prop p1 :y)
+                   (dm/get-prop p4 :y)))]
 
-         (when transform-js
-           (gmt/matrix (.getValueAt transform-js 0 0)
-                       (.getValueAt transform-js 1 0)
-                       (.getValueAt transform-js 0 1)
-                       (.getValueAt transform-js 1 1)
-                       (.getValueAt transform-js 0 2)
-                       (.getValueAt transform-js 1 2)))))))
+    (grc/center->rect center width height)))
 
-(defn calculate-geometry
-  [points]
-  (let [width  (calculate-width points)
-        height (calculate-height points)
-
-        ;; FIXME: looks redundant, we can convert points to rect directly
-        center (gco/points->center points)
-        sr     (grc/center->rect center width height)
-
-        points-transform-mtx (transform-points-matrix sr points)
+(defn calculate-transform
+  [points center selrect]
+  (let [transform (transform-points-matrix selrect points)
 
         ;; Calculate the transform by move the transformation to the center
         transform
-        (when points-transform-mtx
-          (gmt/multiply
-           (gmt/translate-matrix (gpt/negate center))
-           points-transform-mtx
-           (gmt/translate-matrix center)))
+        (when (some? transform)
+          (-> (gmt/translate-matrix-neg center)
+              (gmt/multiply! transform)
+              (gmt/multiply! (gmt/translate-matrix center))))]
 
-        transform-inverse (when transform (gmt/inverse transform))
+    ;; There is a rounding error when the matrix returned have float point values
+    ;; when the matrix is unit we return a "pure" matrix so we don't accumulate
+    ;; rounding problems
+    (when ^boolean (gmt/matrix? transform)
+      (if ^boolean (gmt/unit? transform)
+        gmt/base
+        transform))))
 
-        ;; There is a rounding error when the matrix returned have float point values
-        ;; when the matrix is unit we return a "pure" matrix so we don't accumulate
-        ;; rounding problems
-        [transform transform-inverse]
-        (if (gmt/unit? transform)
-          [(gmt/matrix) (gmt/matrix)]
-          [transform transform-inverse])]
-
-    [sr transform transform-inverse]))
+(defn calculate-geometry
+  [points]
+  (let [center     (gco/points->center points)
+        selrect    (calculate-selrect points center)
+        transform  (calculate-transform points center selrect)]
+    [selrect transform (when (some? transform) (gmt/inverse transform))]))
 
 (defn- adjust-shape-flips
   "After some tranformations the flip-x/flip-y flags can change we need
   to check this before adjusting the selrect"
   [shape points]
+  (let [points' (dm/get-prop shape :points)
+        p0'     (nth points' 0)
+        p0      (nth points 0)
 
-  (let [points' (:points shape)
+        ;; FIXME: unroll and remove point allocation here
+        xv1     (gpt/to-vec p0' (nth points' 1))
+        xv2     (gpt/to-vec p0 (nth points 1))
+        dot-x   (gpt/dot xv1 xv2)
 
-        xv1 (gpt/to-vec (nth points' 0) (nth points' 1))
-        xv2 (gpt/to-vec (nth points 0) (nth points 1))
-        dot-x (gpt/dot xv1 xv2)
-
-        yv1 (gpt/to-vec (nth points' 0) (nth points' 3))
-        yv2 (gpt/to-vec (nth points 0) (nth points 3))
-        dot-y (gpt/dot yv1 yv2)]
+        yv1     (gpt/to-vec p0' (nth points' 3))
+        yv2     (gpt/to-vec p0 (nth points 3))
+        dot-y   (gpt/dot yv1 yv2)]
 
     (cond-> shape
       (neg? dot-x)
       (-> (update :flip-x not)
-          (update :rotation -))
+          (cr/update! :rotation -))
 
       (neg? dot-y)
       (-> (update :flip-y not)
-          (update :rotation -)))))
+          (cr/update! :rotation -)))))
 
 (defn- apply-transform-move
   "Given a new set of points transformed, set up the rectangle so it keeps
@@ -386,7 +369,7 @@
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform-mtx]
-  (if (gmt/move? transform-mtx)
+  (if ^boolean (gmt/move? transform-mtx)
     (apply-transform-move shape transform-mtx)
     (apply-transform-generic shape transform-mtx)))
 
@@ -477,21 +460,16 @@
          (transform-shape modifiers))))
 
   ([shape modifiers]
-   (letfn [(apply-modifiers
-             [shape modifiers]
-             (if (ctm/empty? modifiers)
-               shape
-               (let [transform (ctm/modifiers->transform modifiers)]
-                 (cond-> shape
-                   (and (some? transform) (not= uuid/zero (:id shape))) ;; Never transform the root frame
-                   (apply-transform transform)
+   (if (and (some? modifiers) (not (ctm/empty? modifiers)))
+     (let [transform (ctm/modifiers->transform modifiers)]
+       (cond-> shape
+         (and (some? transform)
+              (not (cph/root? shape)))
+         (apply-transform transform)
 
-                   (ctm/has-structure? modifiers)
-                   (ctm/apply-structure-modifiers modifiers)))))]
-
-     (cond-> shape
-       (and (some? modifiers) (not (ctm/empty? modifiers)))
-       (apply-modifiers modifiers)))))
+         (ctm/has-structure? modifiers)
+         (ctm/apply-structure-modifiers modifiers)))
+     shape)))
 
 (defn apply-objects-modifiers
   ([objects modifiers]
@@ -531,7 +509,6 @@
       (grc/rect->points)
       (gco/transform-points mtx)
       (grc/points->rect)))
-
 
 (declare apply-group-modifiers)
 
