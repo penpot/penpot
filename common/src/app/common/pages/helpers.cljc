@@ -22,8 +22,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn root?
-  [{:keys [id type]}]
-  (and (= type :frame) (= id uuid/zero)))
+  [shape]
+  (and (= (dm/get-prop shape :type) :frame)
+       (= (dm/get-prop shape :id) uuid/zero)))
 
 (defn root-frame?
   ([objects id]
