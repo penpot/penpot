@@ -475,35 +475,37 @@
         column-total-size (tracks-total-size column-tracks)
         row-total-size    (tracks-total-size row-tracks)
 
+        num-columns (count column-tracks)
         column-gap
         (case (:layout-align-content parent)
           auto-width?
           column-gap
 
           :space-evenly
-          (max column-gap (/ (- bound-width column-total-size) (inc (count column-tracks))))
+          (max column-gap (/ (- bound-width column-total-size) (inc num-columns)))
 
           :space-around
-          (max column-gap (/ (- bound-width column-total-size) (count column-tracks)))
+          (max column-gap (/ (- bound-width column-total-size) num-columns))
 
           :space-between
-          (max column-gap (/ (- bound-width column-total-size) (dec (count column-tracks))))
+          (max column-gap (if (= num-columns 1) column-gap (/ (- bound-width column-total-size) (dec num-columns))))
 
           column-gap)
 
+        num-rows (count row-tracks)
         row-gap
         (case (:layout-justify-content parent)
           auto-height?
           row-gap
 
           :space-evenly
-          (max row-gap (/ (- bound-height row-total-size) (inc (count row-tracks))))
+          (max row-gap (/ (- bound-height row-total-size) (inc num-rows)))
 
           :space-around
-          (max row-gap (/ (- bound-height row-total-size) (count row-tracks)))
+          (max row-gap (/ (- bound-height row-total-size) num-rows))
 
           :space-between
-          (max row-gap (/ (- bound-height row-total-size) (dec (count row-tracks))))
+          (max row-gap (if (= num-rows 1) row-gap (/ (- bound-height row-total-size) (dec num-rows))))
 
           row-gap)
 
