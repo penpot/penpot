@@ -192,7 +192,7 @@
 (defn round-to-zero
   "Given a number if it's close enough to zero round to the zero to avoid precision problems"
   [num]
-  (if (almost-zero? num)
+  (if (< (abs num) 1e-4)
     0
     num))
 
