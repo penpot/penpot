@@ -11,7 +11,8 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
-   [app.common.math :as mth]))
+   [app.common.math :as mth]
+   [app.common.record :as cr]))
 
 (def ^:private xf-keep-x (keep #(dm/get-prop % :x)))
 (def ^:private xf-keep-y (keep #(dm/get-prop % :y)))
@@ -47,24 +48,32 @@
    (transform-points points nil matrix))
 
   ([points center matrix]
-   (if (and (gmt/matrix? matrix) (seq points))
-     (let [prev     (if center (gmt/translate-matrix center) (gmt/matrix))
-           post     (if center (gmt/translate-matrix (gpt/negate center)) (gmt/matrix))
-           tr-point #(gpt/transform % (gmt/multiply prev matrix post))]
-       (mapv tr-point points))
+   (if (and ^boolean (gmt/matrix? matrix)
+            ^boolean (seq points))
+     (let [prev (if (some? center) (gmt/translate-matrix center) (cr/clone gmt/base))
+           post (if (some? center) (gmt/translate-matrix-neg center) gmt/base)
+           mtx  (-> prev
+                    (gmt/multiply! matrix)
+                    (gmt/multiply! post))]
+       (mapv #(gpt/transform % mtx) points))
      points)))
 
 (defn transform-selrect
   [selrect matrix]
 
-  (dm/assert! (grc/rect? selrect))
+  (dm/assert!
+   "expected valid rect and matrix instances"
+   (and (grc/rect? selrect)
+        (gmt/matrix? matrix)))
 
   (let [x1 (dm/get-prop selrect :x1)
         y1 (dm/get-prop selrect :y1)
         x2 (dm/get-prop selrect :x2)
         y2 (dm/get-prop selrect :y2)
-        [c1 c2] (transform-points [(gpt/point x1 y1) (gpt/point x2 y2)] matrix)]
-
+        p1 (gpt/point x1 y1)
+        p2 (gpt/point x2 y2)
+        c1 (gpt/transform! p1 matrix)
+        c2 (gpt/transform! p2 matrix)]
     (grc/corners->rect c1 c2)))
 
 (defn invalid-geometry?
