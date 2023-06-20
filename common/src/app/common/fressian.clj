@@ -7,12 +7,8 @@
 (ns app.common.fressian
   (:require
    [app.common.data :as d]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
    [clojure.data.fressian :as fres])
   (:import
-   app.common.geom.matrix.Matrix
-   app.common.geom.point.Point
    clojure.lang.Ratio
    java.io.ByteArrayInputStream
    java.io.ByteArrayOutputStream
@@ -297,39 +293,3 @@
   [data]
   (with-open [^ByteArrayInputStream input (ByteArrayInputStream. ^bytes data)]
     (-> input reader read!)))
-
-;; --- ADDITIONAL
-
-(add-handlers!
- {:name "penpot/point"
-  :class app.common.geom.point.Point
-  :wfn (fn [n w ^Point o]
-         (write-tag! w n 1)
-         (write-list! w (List/of (.-x o) (.-y o))))
-  :rfn (fn [^Reader rdr]
-         (let [^List x (read-object! rdr)]
-           (Point. (.get x 0) (.get x 1))))}
-
- {:name "penpot/matrix"
-  :class app.common.geom.matrix.Matrix
-  :wfn (fn [^String n ^Writer w o]
-         (write-tag! w n 1)
-         (write-list! w (List/of (.-a ^Matrix o)
-                                 (.-b ^Matrix o)
-                                 (.-c ^Matrix o)
-                                 (.-d ^Matrix o)
-                                 (.-e ^Matrix o)
-                                 (.-f ^Matrix o))))
-  :rfn (fn [^Reader rdr]
-         (let [^List x (read-object! rdr)]
-           (Matrix. (.get x 0) (.get x 1) (.get x 2) (.get x 3) (.get x 4) (.get x 5))))})
-
-
-;; Backward compatibility for 1.19 with v1.20;
-
-(add-handlers!
- {:name "penpot/geom/rect"
-  :rfn read-map-like}
- {:name "penpot/shape"
-  :rfn read-map-like})
-

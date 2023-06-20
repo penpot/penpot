@@ -8,6 +8,7 @@
   (:require
    #?(:cljs [cljs.pprint :as pp]
       :clj  [clojure.pprint :as pp])
+   #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
@@ -16,7 +17,12 @@
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.spec :as us]
-   [clojure.spec.alpha :as s]))
+   [app.common.transit :as t]
+   [clojure.spec.alpha :as s])
+  #?(:clj
+     (:import
+      java.util.List)))
+
 
 (def precision 6)
 
@@ -376,3 +382,36 @@
        (mth/almost-zero? b)
        (mth/almost-zero? c)
        (mth/almost-zero? (- d 1))))
+
+#?(:clj
+   (fres/add-handlers!
+    {:name "penpot/matrix"
+     :class Matrix
+     :wfn (fn [n w o]
+            (fres/write-tag! w n 1)
+            (fres/write-list! w (List/of (.-a ^Matrix o)
+                                         (.-b ^Matrix o)
+                                         (.-c ^Matrix o)
+                                         (.-d ^Matrix o)
+                                         (.-e ^Matrix o)
+                                         (.-f ^Matrix o))))
+     :rfn (fn [rdr]
+            (let [^List x (fres/read-object! rdr)]
+              (map->Matrix {:a (.get x 0)
+                            :b (.get x 1)
+                            :c (.get x 2)
+                            :d (.get x 3)
+                            :e (.get x 4)
+                            :f (.get x 5)})))}))
+
+(t/add-handlers!
+ {:id "matrix"
+  :class Matrix
+  :wfn #(into {} %)
+  :rfn (fn [m]
+         (map->Matrix {:a (get m :a)
+                       :b (get m :b)
+                       :c (get m :c)
+                       :d (get m :d)
+                       :e (get m :e)
+                       :f (get m :f)}))})

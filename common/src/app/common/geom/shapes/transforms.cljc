@@ -51,11 +51,7 @@
        (if ^boolean (d/num? x) (+ dx x)  x)
        (if ^boolean (d/num? y)  (+ dy y)  y)
        w
-       h
-       (if ^boolean (d/num? x1) (+ dx x1) x1)
-       (if ^boolean (d/num? y1) (+ dy y1) y1)
-       (if ^boolean (d/num? x2) (+ dx x2) x2)
-       (if ^boolean (d/num? y2) (+ dy y2) y2)))
+       h))
     selrect))
 
 (defn- move-points

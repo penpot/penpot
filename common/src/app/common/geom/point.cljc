@@ -11,6 +11,7 @@
       :clj  [clojure.pprint :as pp])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
+   #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -19,8 +20,12 @@
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.spec :as us]
+   [app.common.transit :as t]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str])
+  #?(:clj
+     (:import
+      java.util.List)))
 
 ;; --- Point Impl
 
@@ -466,3 +471,19 @@
 
 (defmethod pp/simple-dispatch Point [obj] (pr obj))
 
+#?(:clj
+   (fres/add-handlers!
+    {:name "penpot/point"
+     :class Point
+     :wfn (fn [n w ^Point o]
+            (fres/write-tag! w n 1)
+            (fres/write-list! w (List/of (.-x o) (.-y o))))
+     :rfn (fn [rdr]
+            (let [^List x (fres/read-object! rdr)]
+              (pos->Point (.get x 0) (.get x 1))))}))
+
+(t/add-handlers!
+ {:id "point"
+  :class Point
+  :wfn #(into {} %)
+  :rfn map->Point})
