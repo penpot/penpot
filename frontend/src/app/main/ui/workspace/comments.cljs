@@ -77,6 +77,7 @@
 
         on-thread-click
         (mf/use-callback
+         (mf/deps page-id)
          (fn [thread]
            (when (not= page-id (:page-id thread))
              (st/emit! (dw/go-to-page (:page-id thread))))

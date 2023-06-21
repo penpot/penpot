@@ -2,6 +2,10 @@
 
 ## 1.18.6 (Unreleased)
 
+### :bug: Bugs fixed
+
+- Fix comments navigation from workspace [Taiga #5504](https://tree.taiga.io/project/penpot/issue/5504)
+
 ### :sparkles: Enhancements
 
 - Add the ability to overwrite internal resolver with `PENPOT_INTERNAL_RESOLVER` environment
