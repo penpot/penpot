@@ -5,6 +5,18 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :sparkles: New features
+
+### :bug: Bugs fixed
+
+### :arrow_up: Deps updates
+
+### :heart: Community contributions by (Thank you!)
+
+## :rocket: 1.19.0
+
+### :boom: Breaking changes & Deprecations
+
+### :sparkles: New features
 - Default naming of text layers [Taiga #2836](https://tree.taiga.io/project/penpot/us/2836)
 - Create typography style from a selected text layer[Taiga #3041](https://tree.taiga.io/project/penpot/us/3041)
 - Board as ruler origin [Taiga #4833](https://tree.taiga.io/project/penpot/us/4833)
