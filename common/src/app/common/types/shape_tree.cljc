@@ -39,9 +39,7 @@
           (-> parent
               (update :shapes update-parent-shapes)
               (update :shapes d/vec-without-nils)
-              (cond-> (and (:shape-ref parent)
-                           (not= (:id parent) frame-id)
-                           (not ignore-touched))
+              (cond-> (and (ctk/in-component-copy? parent) (not ignore-touched))
                 (-> (update :touched cph/set-touched-group :shapes-group)
                     (dissoc :remote-synced?)))))
 

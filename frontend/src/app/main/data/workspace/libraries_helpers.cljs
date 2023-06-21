@@ -228,6 +228,7 @@
                         (assoc :parent-id parent-id))
          changes      (-> (or changes (pcb/empty-changes it))
                           (pcb/with-page page)
+                          (pcb/with-objects (:objects page))
                           (pcb/with-library-data library-data))
          changes      (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
                         (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers

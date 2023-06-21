@@ -485,7 +485,8 @@
       (let [page      (wsh/lookup-page state)
             libraries (wsh/get-libraries state)
 
-            changes   (pcb/empty-changes it (:id page))
+            changes   (-> (pcb/empty-changes it (:id page))
+                          (pcb/with-objects (:objects page)))
 
             [new-shape changes]
             (dwlh/generate-instantiate-component changes

@@ -108,7 +108,8 @@
              objects  (wsh/lookup-page-objects state page-id)
              selected (wsh/lookup-selected state)
 
-             changes  (pcb/empty-changes it page-id)
+             changes  (-> (pcb/empty-changes it page-id)
+                          (pcb/with-objects objects))
 
              [shape changes]
              (prepare-add-shape changes attrs objects selected)
@@ -433,7 +434,8 @@
              selected (wsh/lookup-selected state)
              selected (cph/clean-loops objects selected)
 
-             changes  (pcb/empty-changes it page-id)
+             changes  (-> (pcb/empty-changes it page-id)
+                          (pcb/with-objects objects))
 
              [frame-shape changes]
              (prepare-create-artboard-from-selection changes
