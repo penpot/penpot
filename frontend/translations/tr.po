@@ -3957,6 +3957,22 @@ msgstr "Tüm köşeler"
 msgid "workspace.options.radius.single-corners"
 msgstr "Bireysel köşeler"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Sol üst"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Sağ üst"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Sol alt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Sağ alt"
+
 msgid "workspace.options.recent-fonts"
 msgstr "Son kullanılanlar"
 

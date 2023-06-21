@@ -3458,6 +3458,22 @@ msgstr "Tots els cantons"
 msgid "workspace.options.radius.single-corners"
 msgstr "Cantons individuals"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Superior esquerra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Superior dreta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Inferior esquerra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Inferior dreta"
+
 msgid "workspace.options.recent-fonts"
 msgstr "Recent"
 

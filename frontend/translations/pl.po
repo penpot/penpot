@@ -3842,6 +3842,22 @@ msgstr "Wszystkie rogi"
 msgid "workspace.options.radius.single-corners"
 msgstr "Poszczególne narożniki"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Górne lewo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Górne prawo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Dolne lewo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Dolne prawo"
+
 msgid "workspace.options.recent-fonts"
 msgstr "Bieżące"
 
