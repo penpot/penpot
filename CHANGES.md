@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.18.6 (Unreleased)
+## 1.18.6
 
 ### :bug: Bugs fixed
 
