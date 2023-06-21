@@ -51,6 +51,10 @@
       border-radius: $br3;
       border: 2px solid lighten($color-gray-20, 15%);
       text-align: initial;
+
+      img {
+        object-fit: contain;
+      }
     }
 
     &.dragged {

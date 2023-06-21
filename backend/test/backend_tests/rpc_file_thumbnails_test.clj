@@ -141,7 +141,7 @@
       )))
 
 
-(t/deftest upsert-file-thumbnail
+(t/deftest create-file-thumbnail
   (let [storage (::sto/storage th/*system*)
         profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
@@ -159,7 +159,6 @@
         data2   {::th/type :create-file-thumbnail
                  ::rpc/profile-id (:id profile)
                  :file-id (:id file)
-                 :props {}
                  :revn 2
                  :media {:filename "sample.jpg"
                          :size 7923
@@ -169,7 +168,6 @@
         data3   {::th/type :create-file-thumbnail
                  ::rpc/profile-id (:id profile)
                  :file-id (:id file)
-                 :props {}
                  :revn 3
                  :media {:filename "sample.jpg"
                          :size 312043
@@ -183,11 +181,11 @@
     (let [out (th/command! data2)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
-      (t/is (nil? (:result out))))
+      (t/is (contains? (:result out) :uri)))
 
     (let [out (th/command! data3)]
       (t/is (nil? (:error out)))
-      (t/is (nil? (:result out))))
+      (t/is (contains? (:result out) :uri)))
 
     (let [[row1 row2 row3 :as rows] (th/db-query :file-thumbnail
                                                  {:file-id (:id file)}

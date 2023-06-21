@@ -50,6 +50,11 @@
    :upsert-file-object-thumbnail {:query-params [:file-id :object-id]}
    :create-file-object-thumbnail {:query-params [:file-id :object-id]
                                   :form-data? true}
+
+   :create-file-thumbnail
+   {:query-params [:file-id :revn]
+    :form-data? true}
+
    :export-binfile {:response-type :blob}
    :import-binfile {:form-data? true}
    :retrieve-list-of-builtin-templates {:query-params :all}

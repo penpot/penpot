@@ -254,7 +254,15 @@
   ([tag]
    (.createElement globals/document tag))
   ([ns tag]
-   (.createElementNS globals/document ns tag)))
+   (.createElementNS globals/document ns tag))
+  ([document ns tag]
+   (.createElementNS document ns tag)))
+
+(defn create-text
+  ([^js text]
+   (create-text globals/document text))
+  ([document ^js text]
+   (.createTextNode document text)))
 
 (defn set-html!
   [^js el html]

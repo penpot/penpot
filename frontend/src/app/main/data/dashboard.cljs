@@ -782,6 +782,15 @@
         (->> (rp/cmd! :set-file-shared params)
              (rx/ignore))))))
 
+(defn set-file-thumbnail
+  [file-id thumbnail-uri]
+  (ptk/reify ::set-file-thumbnail
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (d/update-in-when [:dashboard-files file-id] assoc :thumbnail-uri thumbnail-uri)
+          (d/update-in-when [:dashboard-recent-files file-id] assoc :thumbnail-uri thumbnail-uri)))))
+
 ;; --- EVENT: create-file
 
 (declare file-created)

@@ -18,7 +18,6 @@
    [app.util.webapi :as wapi]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
-   [debug :refer [debug?]]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -45,15 +44,6 @@
                :http-status status
                :http-body body})))
 
-(defn- not-found?
-  [{:keys [type]}]
-  (= :not-found type))
-
-(defn- body-too-large?
-  [{:keys [type code]}]
-  (and (= :validation type)
-       (= :request-body-too-large code)))
-
 (defn- request-data-for-thumbnail
   [file-id revn features]
   (let [path    "api/rpc/command/get-file-data-for-thumbnail"
@@ -69,70 +59,25 @@
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
 
-(defn- request-thumbnail
-  [file-id revn]
-  (let [path    "api/rpc/command/get-file-thumbnail"
-        params  {:file-id file-id
-                 :revn revn}
-        request {:method :get
-                 :uri (u/join @cf/public-uri path)
-                 :credentials "include"
-                 :query params}]
-    (->> (http/send! request)
-         (rx/map http/conditional-decode-transit)
-         (rx/mapcat handle-response))))
-
 (defn- render-thumbnail
   [{:keys [page file-id revn] :as params}]
-  (let [objects (:objects page)
-        frame   (some->> page :thumbnail-frame-id (get objects))
-        element (if frame
-                  (mf/element render/frame-svg #js {:objects objects :frame frame :show-thumbnails? true})
-                  (mf/element render/page-svg #js {:data page :thumbnails? true}))
-        data    (rds/renderToStaticMarkup element)]
+  (let [objects  (:objects page)
+        frame    (some->> page :thumbnail-frame-id (get objects))
+        element  (if frame
+                   (mf/element render/frame-svg #js {:objects objects :frame frame :show-thumbnails? true})
+                   (mf/element render/page-svg #js {:data page :thumbnails? true :render-embed? true}))
+        data     (rds/renderToStaticMarkup element)
+        font-ids (into @fonts/loaded (map first) @fonts/loading)]
+
     {:data data
-     :fonts (into @fonts/loaded (map first) @fonts/loading)
+     :fonts font-ids
      :file-id file-id
      :revn revn}))
 
-(defn- persist-thumbnail
-  [{:keys [file-id data revn fonts]}]
-  (let [path    "api/rpc/command/upsert-file-thumbnail"
-        params  {:file-id file-id
-                 :revn revn
-                 :props {:fonts fonts}
-                 :data data}
-        request {:method :post
-                 :uri (u/join @cf/public-uri path)
-                 :credentials "include"
-                 :body (http/transit-data params)}]
-
-    (->> (http/send! request)
-         (rx/map http/conditional-decode-transit)
-         (rx/mapcat handle-response)
-         (rx/catch body-too-large? (constantly (rx/of nil)))
-         (rx/map (constantly params)))))
-
 (defmethod impl/handler :thumbnails/generate-for-file
   [{:keys [file-id revn features] :as message} _]
-  (letfn [(on-result [{:keys [data props]}]
-            {:data data
-             :fonts (:fonts props)})
-
-          (on-cache-miss [_]
-            (log/debug :hint "request-thumbnail" :file-id file-id :revn revn :cache "miss")
-            (->> (request-data-for-thumbnail file-id revn features)
-                 (rx/map render-thumbnail)
-                 (rx/mapcat persist-thumbnail)))]
-
-    (if (debug? :disable-thumbnail-cache)
-      (->> (request-data-for-thumbnail file-id revn features)
-           (rx/map render-thumbnail))
-      (->> (request-thumbnail file-id revn)
-           (rx/tap (fn [_]
-                     (log/debug :hint "request-thumbnail" :file-id file-id :revn revn :cache "hit")))
-           (rx/catch not-found? on-cache-miss)
-           (rx/map on-result)))))
+  (->> (request-data-for-thumbnail file-id revn features)
+       (rx/map render-thumbnail)))
 
 (defmethod impl/handler :thumbnails/render-offscreen-canvas
   [_ ibpm]

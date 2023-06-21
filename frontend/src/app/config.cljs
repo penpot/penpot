@@ -84,7 +84,6 @@
 (def default-theme  "default")
 (def default-language "en")
 
-(def worker-uri           (obj/get global "penpotWorkerURI" "/js/worker.js"))
 (def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
 
@@ -110,7 +109,14 @@
 (def public-uri
   (atom
    (normalize-uri (or (obj/get global "penpotPublicURI")
-                      (.-origin ^js location)))))
+                      (obj/get location "origin")))))
+
+(def thumbnail-renderer-uri
+  (or (some-> (obj/get global "penpotThumbnailRendererURI") normalize-uri)
+      (deref public-uri)))
+
+(def worker-uri
+  (obj/get global "penpotWorkerURI" "/js/worker.js"))
 
 ;; --- Helper Functions
 

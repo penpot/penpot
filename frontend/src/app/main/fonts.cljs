@@ -9,6 +9,7 @@
   (:require-macros [app.main.fonts :refer [preload-gfonts]])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.text :as txt]
    [app.config :as cf]
@@ -148,15 +149,13 @@
 
 ;; --- LOADER: CUSTOM
 
-(def font-css-template
+(def font-face-template
   "@font-face {
     font-family: '%(family)s';
     font-style: %(style)s;
     font-weight: %(weight)s;
     font-display: block;
-    src: url(%(woff1-uri)s) format('woff'),
-         url(%(ttf-uri)s) format('ttf'),
-         url(%(otf-uri)s) format('otf');
+    src: url(%(uri)s) format('woff');
   }")
 
 (defn- asset-id->uri
@@ -165,14 +164,11 @@
 
 (defn generate-custom-font-variant-css
   [family variant]
-  (str/fmt font-css-template
+  (str/fmt font-face-template
            {:family family
             :style (:style variant)
             :weight (:weight variant)
-            :woff2-uri (asset-id->uri (::woff2-file-id variant))
-            :woff1-uri (asset-id->uri (::woff1-file-id variant))
-            :ttf-uri (asset-id->uri (::ttf-file-id variant))
-            :otf-uri (asset-id->uri (::otf-file-id variant))}))
+            :uri (asset-id->uri (::woff1-file-id variant))}))
 
 (defn- generate-custom-font-css
   [{:keys [family variants] :as font}]
@@ -237,25 +233,18 @@
   (-> (obj/get-in js/document ["fonts" "ready"])
       (p/then cb)))
 
-(defn get-default-variant [{:keys [variants]}]
-  (or
-   (d/seek #(or (= (:id %) "regular") (= (:name %) "regular")) variants)
-   (first variants)))
+(defn get-default-variant
+  [{:keys [variants]}]
+  (or (d/seek #(or (= (:id %) "regular")
+                   (= (:name %) "regular")) variants)
+      (first variants)))
+
+(defn get-variant
+  [{:keys [variants] :as font} font-variant-id]
+  (or (d/seek #(= (:id %) font-variant-id) variants)
+      (get-default-variant font)))
 
 ;; Font embedding functions
-
-;; Template for a CSS font face
-
-(def font-face-template "
-/* latin */
-@font-face {
-  font-family: '%(family)s';
-  font-style: %(style)s;
-  font-weight: %(weight)s;
-  font-display: block;
-  src: url(%(baseurl)sfonts/%(family)s-%(suffix)s.woff) format('woff');
-}
-")
 
 (defn get-content-fonts
   "Extracts the fonts used by the content of a text shape"
@@ -267,38 +256,52 @@
         children-font (->> children (mapv get-content-fonts))]
     (reduce set/union (conj children-font current-font))))
 
-
 (defn fetch-font-css
   "Given a font and the variant-id, retrieves the fontface CSS"
   [{:keys [font-id font-variant-id]
     :or   {font-variant-id "regular"}}]
 
-  (let [{:keys [backend family variants]} (get @fontsdb font-id)]
+  (let [{:keys [backend family] :as font} (get @fontsdb font-id)]
     (cond
+      (nil? font)
+      (rx/empty)
+
       (= :google backend)
-      (let [variant (d/seek #(= (:id %) font-variant-id) variants)]
+      (let [variant (get-variant font font-variant-id)]
         (-> (generate-gfonts-url
              {:family family
               :variants [variant]})
             (http/fetch-text)))
 
       (= :custom backend)
-      (let [variant (d/seek #(= (:id %) font-variant-id) variants)
+      (let [variant (get-variant font font-variant-id)
             result  (generate-custom-font-variant-css family variant)]
-        (p/resolved result))
+        (rx/of result))
 
       :else
-      (let [{:keys [weight style suffix] :as variant}
-            (d/seek #(= (:id %) font-variant-id) variants)
-            font-data {:baseurl (str @cf/public-uri)
-                       :family family
-                       :style style
-                       :suffix (or suffix font-variant-id)
-                       :weight weight}]
-        (rx/of (str/fmt font-face-template font-data))))))
+      (let [{:keys [weight style suffix]} (get-variant font font-variant-id)
+            suffix (or suffix font-variant-id)
+            params {:uri (dm/str @cf/public-uri "fonts/" family "-" suffix ".woff")
+                    :family family
+                    :style style
+                    :weight weight}]
+        (rx/of (str/fmt font-face-template params))))))
 
 (defn extract-fontface-urls
   "Parses the CSS and retrieves the font urls"
   [^string css]
   (->> (re-seq #"url\(([^)]+)\)" css)
        (mapv second)))
+
+(defn render-font-styles
+  [ids]
+  (->> (rx/from ids)
+       (rx/mapcat (fn [font-id]
+                    (let [font (get @fontsdb font-id)]
+                      (->> (:variants font [])
+                           (map :id)
+                           (map (fn [variant-id]
+                                  {:font-id font-id
+                                   :font-variant-id variant-id}))))))
+       (rx/mapcat fetch-font-css)
+       (rx/reduce (fn [acc css] (dm/str acc "\n" css)) "")))
