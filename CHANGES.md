@@ -9,7 +9,7 @@
 - Create typography style from a selected text layer[Taiga #3041](https://tree.taiga.io/project/penpot/us/3041)
 - Board as ruler origin [Taiga #4833](https://tree.taiga.io/project/penpot/us/4833)
 - Access tokens support [Taiga #4460](https://tree.taiga.io/project/penpot/us/4460)
-- Show interactions setting at the view mode [Taiga #1330](https://tree.taiga.io/project/issue/us/1330)
+- Show interactions setting at the view mode [Taiga #1330](https://tree.taiga.io/project/penpot/issue/1330)
 
 ### :bug: Bugs fixed
 - Fix files can be opened from multiple urls [Taiga #5310](https://tree.taiga.io/project/penpot/issue/5310)
