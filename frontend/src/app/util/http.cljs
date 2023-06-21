@@ -51,7 +51,7 @@
   (into {} (map vec) (seq (.entries ^js headers))))
 
 (def default-headers
-  {"x-frontend-version" (:full @cfg/version)})
+  {"x-frontend-version" (:full cfg/version)})
 
 (defn fetch
   [{:keys [method uri query headers body mode omit-default-headers credentials]

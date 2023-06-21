@@ -88,11 +88,11 @@
 (def themes               (obj/get global "penpotThemes"))
 
 (def build-date           (parse-build-date global))
-(def flags                (atom (parse-flags global)))
-(def version              (atom (parse-version global)))
-(def target               (atom (parse-target global)))
-(def browser              (atom (parse-browser)))
-(def platform             (atom (parse-platform)))
+(def flags                (parse-flags global))
+(def version              (parse-version global))
+(def target               (parse-target global))
+(def browser              (parse-browser))
+(def platform             (parse-platform))
 
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI" nil))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" nil))
@@ -121,11 +121,11 @@
 
 (defn ^boolean check-browser? [candidate]
   (dm/assert! (contains? valid-browsers candidate))
-  (= candidate @browser))
+  (= candidate browser))
 
 (defn ^boolean check-platform? [candidate]
   (dm/assert! (contains? valid-platforms candidate))
-  (= candidate @platform))
+  (= candidate platform))
 
 (defn resolve-profile-photo-url
   [{:keys [photo-id fullname name] :as profile}]

@@ -87,7 +87,7 @@
      (log/trace :hint "event:initialize" :fn "features")
      (rx/concat
       ;; Enable all features set on the configuration
-      (->> (rx/from @cf/flags)
+      (->> (rx/from cf/flags)
            (rx/map name)
            (rx/map (fn [flag]
                      (when (str/starts-with? flag "frontend-feature-")
