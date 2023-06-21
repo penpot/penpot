@@ -245,9 +245,9 @@
 
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
                                    (when can-update-main?
-                                     [:*
-                                      [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
-                                      [(tr "workspace.shape.menu.update-main") do-update-component]])
+                                     [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
+                                   (when can-update-main?
+                                     [(tr "workspace.shape.menu.update-main") do-update-component])
                                    [(tr "workspace.shape.menu.show-main") do-show-component]])
 
                                 (if is-dangling?
@@ -258,9 +258,9 @@
                                      [(tr "workspace.shape.menu.restore-main") do-restore-component])]
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
                                    (when can-update-main?
-                                     [:*
-                                      [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
-                                      [(tr "workspace.shape.menu.update-main") do-update-remote-component]])
+                                     [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
+                                   (when can-update-main?
+                                     [(tr "workspace.shape.menu.update-main") do-update-remote-component])
                                    [(tr "workspace.shape.menu.go-main") do-navigate-component-file]])))}]]]
 
         (when components-v2
