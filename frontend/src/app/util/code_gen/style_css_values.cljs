@@ -9,8 +9,18 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
+   ;;[app.common.geom.point :as gpt]
+   ;;[app.common.geom.shapes.points :as gpo]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]))
+
+(defn svg-render?
+  [shape]
+  (or (cph/path-shape? shape)
+      (cph/mask-shape? shape)
+      (cph/bool-shape? shape)
+      (cph/svg-raw-shape? shape)
+      (some? (:svg-attrs shape))))
 
 (defn fill->color
   [{:keys [fill-color fill-opacity fill-color-gradient]}]
@@ -46,6 +56,16 @@
                   (ctl/layout-absolute? shape))
       (- shape-value parent-value))))
 
+#_(defn get-shape-position
+  [shape objects coord]
+  (when-not (or (cph/root-frame? shape)
+                (and (ctl/any-layout-immediate-child? objects shape)
+                     (not (ctl/layout-absolute? shape))))
+    (let [parent (get objects (:parent-id shape))
+          bounds (gpo/parent-coords-bounds (:points shape) (:points parent))
+          vv (gpt/to-vec (first (:points parent)) (first bounds))]
+      (get vv coord))))
+
 (defmethod get-value :left
   [_ shape objects]
   (get-shape-position shape objects :x))
@@ -78,24 +98,21 @@
   (get-shape-size shape :height))
 
 (defmethod get-value :transform
-  [_ {:keys [transform] :as shape} _]
-  (when (and (some? transform) (not (gmt/unit? transform)))
-    (dm/str transform)))
-
-(defn background?
-  [shape]
-  (and (not (cph/path-shape? shape))
-       (not (cph/mask-shape? shape))
-       (not (cph/bool-shape? shape))
-       (not (cph/svg-raw-shape? shape))
-       (nil? (:svg-attrs shape))))
+  [_ {:keys [transform] :as shape} objects]
+  (let [transform
+        (->> (cph/get-parents objects (:id shape))
+             (reduce (fn [mtx {:keys [transform-inverse]}]
+                       (gmt/multiply transform-inverse mtx))
+                     transform))]
+    (when (and (some? transform) (not (gmt/unit? transform)))
+      (dm/str transform))))
 
 (defmethod get-value :background
   [_ {:keys [fills] :as shape} _]
   (let [single-fill? (= (count fills) 1)
         ffill (first fills)
         gradient? (some? (:fill-color-gradient ffill))]
-    (when (and (background? shape) single-fill? gradient?)
+    (when (and (not (svg-render? shape)) single-fill? gradient?)
       (fill->color ffill))))
 
 (defmethod get-value :background-color
@@ -103,12 +120,12 @@
   (let [single-fill? (= (count fills) 1)
         ffill (first fills)
         gradient? (some? (:fill-color-gradient ffill))]
-    (when (and (background? shape) single-fill? (not gradient?))
+    (when (and (not (svg-render? shape)) single-fill? (not gradient?))
       (fill->color ffill))))
 
 (defmethod get-value :background-image
   [_ {:keys [fills] :as shape} _]
-  (when (and (background? shape) (> (count fills) 1))
+  (when (and (not (svg-render? shape)) (> (count fills) 1))
     (->> fills
          (map fill->color))))
 
@@ -127,11 +144,15 @@
 
 (defmethod get-value :border
   [_ shape _]
-  (get-stroke-data (first (:strokes shape))))
+  (when-not (svg-render? shape)
+    (get-stroke-data (first (:strokes shape)))))
 
 (defmethod get-value :border-radius
-  [_ {:keys [rx r1 r2 r3 r4]} _]
+  [_ {:keys [rx r1 r2 r3 r4] :as shape} _]
   (cond
+    (cph/circle-shape? shape)
+    "50%"
+
     (some? rx)
     [rx]
 
@@ -149,8 +170,20 @@
 (defmethod get-value :display
   [_ shape _]
   (cond
+    (:hidden shape) "none"
     (ctl/flex-layout? shape) "flex"
     (ctl/grid-layout? shape) "grid"))
+
+(defmethod get-value :opacity
+  [_ shape _]
+  (when (< (:opacity shape) 1)
+    (:opacity shape)))
+
+(defmethod get-value :overflow
+  [_ shape _]
+  (when (and (cph/frame-shape? shape)
+             (not (:show-content shape)))
+    "hidden"))
 
 (defmethod get-value :flex-direction
   [_ shape _]
@@ -179,8 +212,18 @@
 (defmethod get-value :gap
   [_ shape _]
   (let [[g1 g2] (ctl/gaps shape)]
-    (when (or (not= g1 0) (not= g2 0))
-      [g1 g2])))
+    (when (and (= g1 g2) (or (not= g1 0) (not= g2 0)))
+      [g1])))
+
+(defmethod get-value :row-gap
+  [_ shape _]
+  (let [[g1 _] (ctl/gaps shape)]
+    (when (not= g1 0) [g1])))
+
+(defmethod get-value :column-gap
+  [_ shape _]
+  (let [[_ g2] (ctl/gaps shape)]
+    (when (not= g2 0) [g2])))
 
 (defmethod get-value :padding
   [_ {:keys [layout-padding]} _]

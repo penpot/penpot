@@ -65,6 +65,8 @@ svg {
    :border-radius
    :box-shadow
    :filter
+   :opacity
+   :overflow
 
    ;; Flex/grid related properties
    :display
@@ -73,6 +75,8 @@ svg {
    :justify-items
    :justify-content
    :gap
+   :column-gap
+   :row-gap
    :padding
 
    ;; Flex related properties

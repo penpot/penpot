@@ -21,7 +21,7 @@
    :background-color      :color
    :background-image      :color-array
    :border                :border
-   :border-radius         :size-array
+   :border-radius         :string-or-size-array
    :box-shadow            :shadows
    :filter                :blur
    :gap                   :size-array
@@ -76,6 +76,20 @@
 (defmethod format-value :size-array
   [_ value _options]
   (cond
+    (and (coll? value) (d/not-empty? value))
+    (->> value
+         (map fmt/format-pixels)
+         (str/join " "))
+
+    (some? value)
+    value))
+
+(defmethod format-value :string-or-size-array
+  [_ value _]
+  (cond
+    (string? value)
+    value
+
     (and (coll? value) (d/not-empty? value))
     (->> value
          (map fmt/format-pixels)
