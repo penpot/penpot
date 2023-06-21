@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## :rocket: 1.19.0
+## :rocket: 1.20.0
 
 ### :boom: Breaking changes & Deprecations
 
@@ -12,7 +12,7 @@
 
 ### :heart: Community contributions by (Thank you!)
 
-## :rocket: 1.19.0
+## 1.19.0
 
 ### :boom: Breaking changes & Deprecations
 
