@@ -349,7 +349,7 @@
 (mf/defc context-menu-prototype
   [{:keys [shapes]}]
   (let [options         (mf/deref refs/workspace-page-options)
-        options-mode    (mf/deref refs/options-mode)
+        options-mode    (mf/deref refs/options-mode-global)
         do-add-flow     #(st/emit! (dwi/add-flow-selected-frame))
         do-remove-flow  #(st/emit! (dwi/remove-flow (:id %)))
         flows           (:flows options)

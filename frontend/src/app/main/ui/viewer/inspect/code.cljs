@@ -72,7 +72,9 @@
         page-id    (:page-id (:query-params route))
         flex-items (get-flex-elements page-id shapes from)
         objects    (get-objects from)
-        shapes     (map #(assoc % :flex-items flex-items) shapes)
+        shapes     (->> shapes
+                        (map #(assoc % :parent (get objects (:parent-id %))))
+                        (map #(assoc % :flex-items flex-items)))
         style-code (-> (cg/generate-style-code @style-type shapes)
                        (format-code "css"))
 

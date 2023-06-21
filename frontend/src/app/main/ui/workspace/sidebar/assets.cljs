@@ -1280,7 +1280,8 @@
          :auto-focus true
          :default-value (cph/merge-path-item (:path color) (:name color))}]
 
-       [:div.name-block {:on-double-click rename-color-clicked}
+       [:div.name-block {:title (:name color)
+                         :on-double-click rename-color-clicked}
         (:name color)
         (when-not (= (:name color) default-name)
           [:span default-name])])

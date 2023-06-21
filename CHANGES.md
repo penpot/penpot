@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## 1.18.6 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Fix comments navigation from workspace [Taiga #5504](https://tree.taiga.io/project/penpot/issue/5504)
+
+### :sparkles: Enhancements
+
+- Add the ability to overwrite internal resolver with `PENPOT_INTERNAL_RESOLVER` environment
+  variable [GH #3310](https://github.com/penpot/penpot/issues/3310)
+
+## 1.18.5
+
+### :bug: Bugs fixed
+
+- Fix add flow option in contextual menu for frames
+- Fix issues related with invitations
+- Fix problem with undefined gaps
+- Add deleted fonts auto match mechanism
+
+## 1.18.4
+
+### :bug: Bugs fixed
+
+- Fix zooming while color picker breaks UI [GH #3214](https://github.com/penpot/penpot/issues/3214)
+- Fix problem with layout not reflowing on shape deletion [Taiga #5289](https://tree.taiga.io/project/penpot/issue/5289)
+- Fix extra long typography names on assets and palette [Taiga #5199](https://tree.taiga.io/project/penpot/issue/5199)
+- Fix background-color property on inspect code [Taiga #5300](https://tree.taiga.io/project/penpot/issue/5300)
+
 ## 1.18.3
 
 ### :bug: Bugs fixed
@@ -29,6 +58,7 @@
 ## 1.18.0
 
 ### :sparkles: New features
+
 - Adds more accessibility improvements in dashboard [Taiga #4577](https://tree.taiga.io/project/penpot/us/4577)
 - Adds paddings and gaps prediction on layout creation [Taiga #4838](https://tree.taiga.io/project/penpot/task/4838)
 - Add visual feedback when proportionally scaling text elements with **K** [Taiga #3415](https://tree.taiga.io/project/penpot/us/3415)

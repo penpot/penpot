@@ -44,6 +44,7 @@
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.fix-bool-contents :as fbc]
+   [app.main.data.workspace.fix-deleted-fonts :as fdf]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.highlight :as dwh]
@@ -131,6 +132,7 @@
             components-v2  (features/active-feature? state :components-v2)]
         (rx/merge
          (rx/of (fbc/fix-bool-contents))
+         (rx/of (fdf/fix-deleted-fonts))
          (if (and has-graphics? components-v2)
            (rx/of (remove-graphics (:id file) (:name file)))
            (rx/empty)))))))
@@ -1256,17 +1258,18 @@
             not-group-like? (and (= (count selected) 1)
                                  (not (contains? #{:group :bool} (:type head))))
             no-bool-shapes? (->> all-selected (some (comp #{:frame :text} :type)))]
-
-        (rx/concat
-         (when (and (some? shape) (not (contains? selected (:id shape))))
-           (rx/of (dws/select-shape (:id shape))))
-         (rx/of (show-context-menu
-                 (-> params
-                     (assoc
-                      :kind :shape
-                      :disable-booleans? (or no-bool-shapes? not-group-like?)
-                      :disable-flatten? no-bool-shapes?
-                      :selected (conj selected (:id shape)))))))))))
+        
+          (if (and (some? shape) (not (contains? selected (:id shape))))
+            (rx/concat
+              (rx/of (dws/select-shape (:id shape)))
+              (rx/of (show-shape-context-menu params)))
+            (rx/of (show-context-menu
+                     (-> params
+                         (assoc
+                           :kind :shape
+                           :disable-booleans? (or no-bool-shapes? not-group-like?)
+                           :disable-flatten? no-bool-shapes?
+                           :selected (conj selected (:id shape)))))))))))
 
 (defn show-page-item-context-menu
   [{:keys [position page] :as params}]

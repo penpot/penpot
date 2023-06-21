@@ -499,7 +499,7 @@
                  :font-weight (:font-weight typography)
                  :font-style (:font-style typography)}}
         (tr "workspace.assets.typography.sample")]
-       [:div.typography-name (:name typography)]]
+       [:div.typography-name {:title (:name typography)}(:name typography)]]
       [:div.element-set-actions
        (when on-detach
          [:div.element-set-actions-button
@@ -517,7 +517,7 @@
       (if (not editable?)
         [:div.element-set-content.typography-read-only-data
          [:div.row-flex.typography-name
-          [:span (:name typography)]]
+          [:span {:title (:name typography)} (:name typography)]]
 
          [:div.row-flex
           [:span.label (tr "workspace.assets.typography.font-id")]

@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
+   [app.common.types.shape.layout :as ctl]
    [app.main.ui.formats :as fmt]
    [app.util.color :as uc]
    [cuerdas.core :as str]))
@@ -20,12 +21,6 @@
     (dm/str
      (if (= style :inner-shadow) "inset " "")
      (str/fmt "%spx %spx %spx %spx %s" offset-x offset-y blur spread css-color))))
-
-(defn format-gap
-  [{row-gap :row-gap column-gap :column-gap}]
-  (if (= row-gap column-gap)
-    (str/fmt "%spx" row-gap)
-    (str/fmt "%spx %spx" row-gap column-gap)))
 
 (defn fill-color->background
   [fill]
@@ -58,10 +53,15 @@
       (str/format "%spx %s %s" width style (uc/color->background color)))))
 
 (defn format-position [_ shape]
-  (cond
-    (cph/frame-shape? shape) "relative"
-    (empty? (:flex-items shape)) "absolute"
-    :else "static"))
+  (let [relative? (cph/frame-shape? shape)
+        absolute? (or (empty? (:flex-items shape))
+                      (and (ctl/any-layout? (:parent shape)) (ctl/layout-absolute? shape)))]
+    (cond
+      absolute? "absolute"
+      relative? "relative"
+
+      ;; static is default value in css
+      :else     nil)))
 
 (defn get-size
   [type values]
@@ -80,7 +80,8 @@
   {:position    {:props [:type]
                  :to-prop {:type "position"}
                  :format {:type format-position}}
-   :layout      {:props   (if (empty? (:flex-items shape))
+   :layout      {:props   (if (or (empty? (:flex-items shape))
+                                  (ctl/layout-absolute? shape))
                             [:width :height :x :y :radius :rx :r1]
                             [:width :height :radius :rx :r1])
                  :to-prop {:x "left"
@@ -89,12 +90,12 @@
                            :rx "border-radius"
                            :r1 "border-radius"}
                  :format  {:rotation #(str/fmt "rotate(%sdeg)" %)
-                           :r1       #(apply str/fmt "%spx, %spx, %spx, %spx" %)
+                           :r1       #(apply str/fmt "%spx %spx %spx %spx" %)
                            :width    #(get-size :width %)
                            :height   #(get-size :height %)}
                  :multi   {:r1 [:r1 :r2 :r3 :r4]}}
    :fill        {:props [:fills]
-                 :to-prop {:fills (if (> (count (:fills shape)) 1) "background-image" "background")}
+                 :to-prop {:fills (if (> (count (:fills shape)) 1) "background-image" "background-color")}
                  :format {:fills format-fill-color}}
    :stroke      {:props [:strokes]
                  :to-prop {:strokes "border"}
@@ -124,7 +125,7 @@
                            :layout-align-items d/name
                            :layout-justify-content d/name
                            :layout-wrap-type d/name
-                           :layout-gap format-gap
+                           :layout-gap fmt/format-gap
                            :layout-padding fmt/format-padding}}})
 
 (def style-text

@@ -181,9 +181,9 @@ function build-docker-images {
 
     pushd ./docker/images;
 
-    docker build -t penpotapp/frontend:$CURRENT_BRANCH -f Dockerfile.frontend .;
-    docker build -t penpotapp/backend:$CURRENT_BRANCH -f Dockerfile.backend .;
-    docker build -t penpotapp/exporter:$CURRENT_BRANCH -f Dockerfile.exporter .;
+    docker build -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest -f Dockerfile.frontend .;
+    docker build -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest -f Dockerfile.backend .;
+    docker build -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest -f Dockerfile.exporter .;
 
     popd;
 }

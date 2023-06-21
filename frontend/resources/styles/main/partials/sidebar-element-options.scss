@@ -1095,7 +1095,10 @@
     flex-grow: 1;
     font-size: $fs11;
     margin-top: 4px;
+    max-width: calc(var(--width, 256px) - 100px);
+    overflow: hidden;
     white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .element-set-actions-button svg {
