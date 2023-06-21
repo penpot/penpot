@@ -154,7 +154,8 @@
    (let [page      (current-page state)
          libraries (wsh/get-libraries state)
 
-         changes   (pcb/empty-changes nil (:id page))
+         changes   (-> (pcb/empty-changes nil (:id page))
+                       (pcb/with-objects (:objects page)))
 
          [new-shape changes]
          (dwlh/generate-instantiate-component changes

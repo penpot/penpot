@@ -15,6 +15,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]))
 
@@ -216,9 +217,14 @@
 
   ([changes obj {:keys [index ignore-touched] :or {index ::undefined ignore-touched false}}]
    (assert-page-id changes)
+   (assert-objects changes)
    (let [obj (cond-> obj
                (not= index ::undefined)
                (assoc ::index index))
+
+         objects (lookup-objects changes)
+         parent  (get objects (:parent-id obj))
+
          add-change
          {:type           :add-obj
           :id             (:id obj)
@@ -232,10 +238,20 @@
          del-change
          {:type :del-obj
           :id (:id obj)
-          :page-id (::page-id (meta changes))}]
+          :page-id (::page-id (meta changes))}
+
+         restore-touched-change
+         {:type :mod-obj
+          :page-id (::page-id (meta changes))
+          :id (:id parent)
+          :operations [{:type :set-touched
+                        :touched (:touched parent)}]}]
 
      (-> changes
          (update :redo-changes conj add-change)
+         (cond->
+           (and (ctk/in-component-copy? parent) (not ignore-touched))
+           (update :undo-changes d/preconj restore-touched-change))
          (update :undo-changes d/preconj del-change)
          (apply-changes-local)))))
 
@@ -256,6 +272,8 @@
    (assert-page-id changes)
    (assert-objects changes)
    (let [objects (lookup-objects changes)
+         parent  (get objects parent-id)
+
          set-parent-change
          (cond-> {:type :mov-objects
                   :parent-id parent-id
@@ -275,10 +293,20 @@
               :parent-id (:parent-id shape)
               :shapes [(:id shape)]
               :after-shape prev-sibling
-              :index 0})))] ; index is used in case there is no after-shape (moving bottom shapes)
+              :index 0}))) ; index is used in case there is no after-shape (moving bottom shapes)
+
+         restore-touched-change
+         {:type :mod-obj
+          :page-id (::page-id (meta changes))
+          :id (:id parent)
+          :operations [{:type :set-touched
+                        :touched (:touched parent)}]}]
 
      (-> changes
          (update :redo-changes conj set-parent-change)
+         (cond->
+           (ctk/in-component-copy? parent)
+           (update :undo-changes d/preconj restore-touched-change))
          (update :undo-changes #(reduce mk-undo-change % shapes))
          (apply-changes-local)))))
 
