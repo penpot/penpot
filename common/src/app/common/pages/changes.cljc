@@ -101,7 +101,7 @@
       [:ignore-touched {:optional true} :boolean]
       [:parent-id ::sm/uuid]
       [:shapes :any]
-      [:index {:optional true} :int]
+      [:index {:optional true} [:maybe :int]]
       [:after-shape {:optional true} :any]]]
 
     [:add-page
