@@ -423,7 +423,8 @@
                                            new-component-shapes
                                            []
                                            (:id new-main-instance-shape)
-                                           (:id main-instance-page)))]
+                                           (:id main-instance-page)
+                                           (:annotation component)))]
 
         (rx/of (dch/commit-changes changes))))))
 

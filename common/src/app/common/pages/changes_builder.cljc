@@ -575,7 +575,9 @@
         (apply-changes-local))))
 
 (defn add-component
-  [changes id path name new-shapes updated-shapes main-instance-id main-instance-page]
+  ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page]
+   (add-component changes id path name new-shapes updated-shapes main-instance-id main-instance-page nil))
+  ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page annotation]
   (assert-page-id changes)
   (assert-objects changes)
   (let [page-id (::page-id (meta changes))
@@ -613,7 +615,8 @@
                                      :path path
                                      :name name
                                      :main-instance-id main-instance-id
-                                     :main-instance-page main-instance-page}
+                                     :main-instance-page main-instance-page
+                                     :annotation annotation}
                                     (some? new-shapes)  ;; this will be null in components-v2
                                     (assoc :shapes (vec new-shapes))))
                       (into (map mk-change) updated-shapes))))
@@ -627,7 +630,7 @@
                                   (map lookupf)
                                   (map mk-change))
                             updated-shapes))))
-        (apply-changes-local))))
+        (apply-changes-local)))))
 
 (defn update-component
   [changes id update-fn]
