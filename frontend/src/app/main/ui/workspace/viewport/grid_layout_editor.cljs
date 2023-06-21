@@ -684,11 +684,15 @@
         hover-cells (:hover grid-edition)
         selected-cells (:selected grid-edition)
 
-        children (->> (:shapes shape)
-                      (map (d/getf objects))
-                      (map #(gsh/transform-shape % (dm/get-in modifiers [(:id %) :modifiers])))
-                      (remove :hidden)
-                      (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))
+        children
+        (mf/use-memo
+         (mf/deps shape modifiers)
+         (fn []
+           (->> (:shapes shape)
+                (map (d/getf objects))
+                (map #(gsh/transform-shape % (dm/get-in modifiers [(:id %) :modifiers])))
+                (remove :hidden)
+                (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))))
 
         children (hooks/use-equal-memo children)
 

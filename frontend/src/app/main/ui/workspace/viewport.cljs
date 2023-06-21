@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.refs :as refs]
@@ -591,12 +592,24 @@
           {:id (first selected)
            :zoom zoom}])
 
-       (when  (or show-grid-editor? hover-grid?)
-         [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
+       [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
+        (when (or show-grid-editor? hover-grid?)
           [:& grid-layout/editor
            {:zoom zoom
             :objects base-objects
             :modifiers modifiers
             :shape (or (get base-objects edition)
                        (get base-objects @hover-top-frame-id))
-            :view-only (not show-grid-editor?)}]])]]]))
+            :view-only (not show-grid-editor?)}])
+
+        (for [frame (ctt/get-frames objects)]
+          (when (and (ctl/grid-layout? frame)
+                     (empty? (:shapes frame))
+                     (not= edition (:id frame))
+                     (not= @hover-top-frame-id (:id frame)))
+            [:& grid-layout/editor
+             {:zoom zoom
+              :objects base-objects
+              :modifiers modifiers
+              :shape frame
+              :view-only true}]))]]]]))
