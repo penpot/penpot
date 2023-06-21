@@ -1377,17 +1377,18 @@
                                  (not (contains? #{:group :bool} (:type head))))
 
             no-bool-shapes? (->> all-selected (some (comp #{:frame :text} :type)))]
-
-        (rx/concat
-         (when (and (some? shape) (not (contains? selected (:id shape))))
-           (rx/of (dws/select-shape (:id shape))))
-         (rx/of (show-context-menu
-                 (-> params
-                     (assoc
-                      :kind :shape
-                      :disable-booleans? (or no-bool-shapes? not-group-like?)
-                      :disable-flatten? no-bool-shapes?
-                      :selected (conj selected (:id shape)))))))))))
+        
+          (if (and (some? shape) (not (contains? selected (:id shape))))
+            (rx/concat
+              (rx/of (dws/select-shape (:id shape)))
+              (rx/of (show-shape-context-menu params)))
+            (rx/of (show-context-menu
+                     (-> params
+                         (assoc
+                           :kind :shape
+                           :disable-booleans? (or no-bool-shapes? not-group-like?)
+                           :disable-flatten? no-bool-shapes?
+                           :selected (conj selected (:id shape)))))))))))
 
 (defn show-page-item-context-menu
   [{:keys [position page] :as params}]
