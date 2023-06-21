@@ -461,6 +461,8 @@
         is-dangling?        (nil? (if local-component?
                                     (ctkl/get-component workspace-data component-id)
                                     (ctf/get-component workspace-libraries component-file component-id)))
+        lib-exists?         (and (not local-component?)
+                                 (some? (get workspace-libraries component-file)))
 
         do-add-component #(st/emit! (dwl/add-component))
         do-add-multiple-components #(st/emit! (dwl/add-multiple-components))
@@ -568,7 +570,7 @@
                (when can-update-main?
                  [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
                                :on-click do-reset-component}])
-               (when components-v2
+               (when (and components-v2 lib-exists?)
                  [:& menu-entry {:title (tr "workspace.shape.menu.restore-main")
                                  :on-click do-restore-component}])]
               [:*
