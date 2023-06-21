@@ -25,6 +25,8 @@
    :box-shadow            :shadows
    :filter                :blur
    :gap                   :size-array
+   :row-gap               :size-array
+   :column-gap            :size-array
    :padding               :size-array
    :grid-template-rows    :tracks
    :grid-template-columns :tracks

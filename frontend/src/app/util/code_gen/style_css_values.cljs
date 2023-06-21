@@ -9,8 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
-   ;;[app.common.geom.point :as gpt]
-   ;;[app.common.geom.shapes.points :as gpo]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]))
 
@@ -49,11 +48,21 @@
 
 (defn get-shape-position
   [shape objects coord]
-  (let [shape-value (-> shape :selrect coord)
-        parent-value (dm/get-in objects [(:parent-id shape) :selrect coord])]
-    (when-not (or (cph/root-frame? shape)
-                  (ctl/any-layout-immediate-child? objects shape)
-                  (ctl/layout-absolute? shape))
+  (let [
+        parent (get objects (:parent-id shape))
+        parent-value (dm/get-in parent [:selrect coord])
+
+        [selrect _ _]
+        (-> (:points shape)
+            (gsh/transform-points (gsh/center-shape parent) (:transform-inverse parent))
+            (gsh/calculate-geometry))
+
+        ;;shape (gsh/transform-shape)
+        shape-value (get selrect coord)
+        ]
+    (when (and (not (cph/root-frame? shape))
+               (or (not (ctl/any-layout-immediate-child? objects shape))
+                   (ctl/layout-absolute? shape)))
       (- shape-value parent-value))))
 
 #_(defn get-shape-position
