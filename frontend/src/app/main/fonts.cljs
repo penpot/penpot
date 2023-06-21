@@ -160,7 +160,7 @@
 
 (defn- asset-id->uri
   [asset-id]
-  (str (u/join @cf/public-uri "assets/by-id/" asset-id)))
+  (str (u/join cf/public-uri "assets/by-id/" asset-id)))
 
 (defn generate-custom-font-variant-css
   [family variant]
@@ -281,7 +281,7 @@
       :else
       (let [{:keys [weight style suffix]} (get-variant font font-variant-id)
             suffix (or suffix font-variant-id)
-            params {:uri (dm/str @cf/public-uri "fonts/" family "-" suffix ".woff")
+            params {:uri (dm/str cf/public-uri "fonts/" family "-" suffix ".woff")
                     :family family
                     :style style
                     :weight weight}]

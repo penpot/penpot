@@ -26,7 +26,7 @@
 (declare send-failure!)
 
 (defonce parent-origin
-  (dm/str @cf/public-uri))
+  (dm/str cf/public-uri))
 
 (defn- get-document-element
   [^js svg]
@@ -237,9 +237,10 @@
   []
   (send-answer! nil "ready" nil))
 
-;; Initializes worker
 (defn ^:export init
   []
   (listen)
   (send-ready!)
-  (log/info :hint "initialized" :public-uri @cf/public-uri))
+  (log/info :hint "initialized"
+            :public-uri (dm/str cf/public-uri)
+            :parent-uri (dm/str parent-origin)))

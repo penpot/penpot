@@ -475,7 +475,7 @@
              (rx/map (fn [params]
                        (rt/resolve router :auth-verify-token {} params)))
              (rx/map (fn [fragment]
-                       (assoc @cf/public-uri :fragment fragment)))
+                       (assoc cf/public-uri :fragment fragment)))
              (rx/tap (fn [uri]
                        (wapi/write-to-clipboard (str uri))))
              (rx/tap on-success)

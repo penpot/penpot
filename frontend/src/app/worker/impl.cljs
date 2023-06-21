@@ -54,4 +54,4 @@
   (log/info :hint "configure worker" :key key :val val)
   (case key
     :public-uri
-    (reset! cf/public-uri val)))
+    (set! cf/public-uri val)))

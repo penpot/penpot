@@ -52,7 +52,7 @@
                   :strip-frames-with-thumbnails true
                   :features features}
         request  {:method :get
-                  :uri (u/join @cf/public-uri path)
+                  :uri (u/join cf/public-uri path)
                   :credentials "include"
                   :query params}]
     (->> (http/send! request)

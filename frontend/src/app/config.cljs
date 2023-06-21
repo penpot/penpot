@@ -107,13 +107,12 @@
       (update :path #(str % "/")))))
 
 (def public-uri
-  (atom
-   (normalize-uri (or (obj/get global "penpotPublicURI")
-                      (obj/get location "origin")))))
+  (normalize-uri (or (obj/get global "penpotPublicURI")
+                     (obj/get location "origin"))))
 
 (def thumbnail-renderer-uri
   (or (some-> (obj/get global "penpotThumbnailRendererURI") normalize-uri)
-      (deref public-uri)))
+      public-uri))
 
 (def worker-uri
   (obj/get global "penpotWorkerURI" "/js/worker.js"))
@@ -132,18 +131,19 @@
   [{:keys [photo-id fullname name] :as profile}]
   (if (nil? photo-id)
     (avatars/generate {:name (or fullname name)})
-    (str (u/join @public-uri "assets/by-id/" photo-id))))
+    (dm/str (u/join public-uri "assets/by-id/" photo-id))))
 
 (defn resolve-team-photo-url
   [{:keys [photo-id name] :as team}]
   (if (nil? photo-id)
     (avatars/generate {:name name})
-    (str (u/join @public-uri "assets/by-id/" photo-id))))
+    (dm/str (u/join public-uri "assets/by-id/" photo-id))))
 
 (defn resolve-file-media
   ([media]
    (resolve-file-media media false))
   ([{:keys [id] :as media} thumbnail?]
-   (str (cond-> (u/join @public-uri "assets/by-file-media-id/")
-          (true? thumbnail?) (u/join (str id "/thumbnail"))
-          (false? thumbnail?) (u/join (str id))))))
+   (dm/str
+    (cond-> (u/join public-uri "assets/by-file-media-id/")
+      (true? thumbnail?) (u/join (dm/str id "/thumbnail"))
+      (false? thumbnail?) (u/join (dm/str id))))))

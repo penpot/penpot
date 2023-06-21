@@ -6,6 +6,7 @@
 
 (ns app.main
   (:require
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -40,7 +41,7 @@
             :version (:full @cf/version)
             :asserts *assert*
             :build-date cf/build-date
-            :public-uri (str @cf/public-uri)))
+            :public-uri (dm/str cf/public-uri)))
 
 (declare reinit)
 
