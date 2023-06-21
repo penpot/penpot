@@ -167,6 +167,9 @@
                               (ctkl/get-component workspace-data component-id)
                               (ctf/get-component workspace-libraries library-id component-id))
         is-dangling?        (nil? component)
+        lib-exists?         (and (not local-component?)
+                                 (some? (get workspace-libraries library-id)))
+
 
         on-menu-click
         (mf/use-callback
@@ -251,7 +254,7 @@
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
                                    (when can-update-main?
                                      [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
-                                   (when components-v2
+                                   (when (and components-v2 lib-exists?)
                                      [(tr "workspace.shape.menu.restore-main") do-restore-component])]
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
                                    (when can-update-main?
