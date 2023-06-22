@@ -2418,6 +2418,9 @@
 
   .hidden {
     display: none;
+    svg {
+      display: none;
+    }
   }
 
   .counter {
