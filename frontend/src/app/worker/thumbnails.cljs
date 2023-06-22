@@ -18,6 +18,7 @@
    [app.util.webapi :as wapi]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
+   [okulary.core :as l]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -61,18 +62,18 @@
 
 (defn- render-thumbnail
   [{:keys [page file-id revn] :as params}]
-  (let [objects  (:objects page)
-        frame    (some->> page :thumbnail-frame-id (get objects))
-        element  (if frame
-                   (mf/element render/frame-svg #js {:objects objects :frame frame :show-thumbnails? true})
-                   (mf/element render/page-svg #js {:data page :thumbnails? true :render-embed? true}))
-        data     (rds/renderToStaticMarkup element)
-        font-ids (into @fonts/loaded (map first) @fonts/loading)]
+  (binding [fonts/loaded-hints (l/atom #{})]
+    (let [objects  (:objects page)
+          frame    (some->> page :thumbnail-frame-id (get objects))
+          element  (if frame
+                     (mf/element render/frame-svg #js {:objects objects :frame frame :show-thumbnails? true})
+                     (mf/element render/page-svg #js {:data page :thumbnails? true :render-embed? true}))
+          data     (rds/renderToStaticMarkup element)]
 
-    {:data data
-     :fonts font-ids
-     :file-id file-id
-     :revn revn}))
+      {:data data
+       :fonts @fonts/loaded-hints
+       :file-id file-id
+       :revn revn})))
 
 (defmethod impl/handler :thumbnails/generate-for-file
   [{:keys [file-id revn features] :as message} _]

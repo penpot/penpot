@@ -82,8 +82,12 @@
 ;; FONTS LOADING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce loaded (l/atom #{}))
-(defonce loading (l/atom {}))
+(defonce ^:dynamic loaded (l/atom #{}))
+(defonce ^:dynamic loading (l/atom {}))
+
+;; NOTE: mainly used on worker, when you don't really need load font
+;; only know if the font is needed or not
+(defonce ^:dynamic loaded-hints (l/atom #{}))
 
 (defn- create-link-element
   [uri]
@@ -190,34 +194,35 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn ensure-loaded!
-  [id]
-  (log/debug :action "try-ensure-loaded!" :font-id id)
-  (if-not (exists? js/window)
+  ([font-id] (ensure-loaded! font-id nil))
+  ([font-id variant-id]
+   (log/debug :action "try-ensure-loaded!" :font-id font-id :variant-id variant-id)
+   (if-not (exists? js/window)
     ;; If we are in the worker environment, we just mark it as loaded
     ;; without really loading it.
     (do
-      (swap! loaded conj id)
-      (p/resolved id))
+      (swap! loaded-hints conj {:font-id font-id :font-variant-id variant-id})
+      (p/resolved font-id))
 
-    (let [font (get @fontsdb id)]
+    (let [font (get @fontsdb font-id)]
       (cond
         (nil? font)
-        (p/resolved id)
+        (p/resolved font-id)
 
         ;; Font already loaded, we just continue
-        (contains? @loaded id)
-        (p/resolved id)
+        (contains? @loaded font-id)
+        (p/resolved font-id)
 
         ;; Font is currently downloading. We attach the caller to the promise
-        (contains? @loading id)
-        (p/resolved (get @loading id))
+        (contains? @loading font-id)
+        (p/resolved (get @loading font-id))
 
         ;; First caller, we create the promise and then wait
         :else
         (let [on-load (fn [resolve]
-                        (swap! loaded conj id)
-                        (swap! loading dissoc id)
-                        (resolve id))
+                        (swap! loaded conj font-id)
+                        (swap! loading dissoc font-id)
+                        (resolve font-id))
 
               load-p (p/create
                       (fn [resolve _]
@@ -225,8 +230,8 @@
                             (assoc ::on-loaded (partial on-load resolve))
                             (load-font))))]
 
-          (swap! loading assoc id load-p)
-          load-p)))))
+          (swap! loading assoc font-id load-p)
+          load-p))))))
 
 (defn ready
   [cb]
@@ -294,14 +299,7 @@
        (mapv second)))
 
 (defn render-font-styles
-  [ids]
-  (->> (rx/from ids)
-       (rx/mapcat (fn [font-id]
-                    (let [font (get @fontsdb font-id)]
-                      (->> (:variants font [])
-                           (map :id)
-                           (map (fn [variant-id]
-                                  {:font-id font-id
-                                   :font-variant-id variant-id}))))))
+  [font-refs]
+  (->> (rx/from font-refs)
        (rx/mapcat fetch-font-css)
        (rx/reduce (fn [acc css] (dm/str acc "\n" css)) "")))
