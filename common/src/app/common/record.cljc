@@ -239,7 +239,8 @@
   "A record specific update operation"
   [ssym ksym f & params]
   (if (:ns &env)
-    `(cljs.core/-assoc! ~ssym ~ksym (~f (. ~ssym ~(property-symbol ksym)) ~@params))
+    (let [ssym (with-meta ssym {:tag 'js})]
+      `(cljs.core/assoc! ~ssym ~ksym (~f (. ~ssym ~(property-symbol ksym)) ~@params)))
     `(update ~ssym ~ksym ~f ~@params)))
 
 (defmacro define-properties!

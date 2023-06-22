@@ -28,16 +28,14 @@
   ([type params]
    (if (= type :path)
      (cts/setup-shape
-      (merge
-       {:type :path
-        :content (:content params default-path)}
-       params))
+      (into {:type :path
+             :content (:content params default-path)}
+            params))
      (cts/setup-shape
-      (merge
-       {:type type
-        :width 20
-        :height 20}
-       params)))))
+      (into {:type type
+             :width 20
+             :height 20}
+            params)))))
 
 (t/deftest transform-shapes
   (t/testing "Shape without modifiers should stay the same"
@@ -112,15 +110,14 @@
       :rect :path))
 
   (t/testing "Transform with resize=0"
-    (t/are [type]
-        (let [modifiers (ctm/resize-modifiers (gpt/point 0 0) (gpt/point 0 0))
-              shape-before (create-test-shape type {:modifiers modifiers})
-              shape-after  (gsh/transform-shape shape-before)]
-          (t/is (close? (get-in shape-before [:selrect :width])
-                        (get-in shape-after  [:selrect :width])))
-          (t/is (close? (get-in shape-before [:selrect :height])
-                        (get-in shape-after  [:selrect :height]))))
-      :rect :path))
+    (let [modifiers    (ctm/resize-modifiers (gpt/point 0 0) (gpt/point 0 0))
+          shape-before (create-test-shape :rect {:modifiers modifiers})
+          shape-after  (gsh/transform-shape shape-before)]
+
+      (t/is (close? (get-in shape-before [:selrect :width])
+                    (get-in shape-after  [:selrect :width])))
+      (t/is (close? (get-in shape-before [:selrect :height])
+                      (get-in shape-after  [:selrect :height])))))
 
   (t/testing "Transform shape with rotation modifiers"
     (t/are [type]

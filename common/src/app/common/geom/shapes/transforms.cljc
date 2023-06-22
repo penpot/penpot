@@ -272,7 +272,7 @@
         transform  (calculate-transform points center selrect)]
     [selrect transform (when (some? transform) (gmt/inverse transform))]))
 
-(defn- adjust-shape-flips
+(defn- adjust-shape-flips!
   "After some tranformations the flip-x/flip-y flags can change we need
   to check this before adjusting the selrect"
   [shape points]
@@ -282,88 +282,92 @@
 
         ;; FIXME: unroll and remove point allocation here
         xv1     (gpt/to-vec p0' (nth points' 1))
-        xv2     (gpt/to-vec p0 (nth points 1))
+        xv2     (gpt/to-vec p0  (nth points 1))
         dot-x   (gpt/dot xv1 xv2)
 
         yv1     (gpt/to-vec p0' (nth points' 3))
-        yv2     (gpt/to-vec p0 (nth points 3))
+        yv2     (gpt/to-vec p0  (nth points 3))
         dot-y   (gpt/dot yv1 yv2)]
 
     (cond-> shape
       (neg? dot-x)
-      (-> (update :flip-x not)
+      (-> (cr/update! :flip-x not)
           (cr/update! :rotation -))
 
       (neg? dot-y)
-      (-> (update :flip-y not)
+      (-> (cr/update! :flip-y not)
           (cr/update! :rotation -)))))
 
 (defn- apply-transform-move
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform-mtx]
-  (let [bool?   (= (:type shape) :bool)
-        path?   (= (:type shape) :path)
-        text?   (= (:type shape) :text)
-        {dx :x dy :y} (gpt/transform (gpt/point) transform-mtx)
-        points  (gco/transform-points (:points shape) transform-mtx)
-        selrect (gco/transform-selrect (:selrect shape) transform-mtx)]
+  (let [type    (dm/get-prop shape :type)
+        points  (gco/transform-points  (dm/get-prop shape :points) transform-mtx)
+        selrect (gco/transform-selrect (dm/get-prop shape :selrect) transform-mtx)
+
+        ;; NOTE: ensure we start with a fresh copy of shape for mutabilty
+        shape   (cr/clone shape)
+
+        shape   (if (= type :bool)
+                  (update shape :bool-content gpa/transform-content transform-mtx)
+                  shape)
+        shape   (if (= type :text)
+                  (update shape :position-data move-position-data transform-mtx)
+                  shape)
+        shape   (if (= type :path)
+                  (update shape :content gpa/transform-content transform-mtx)
+                  (cr/assoc! shape
+                             :x (dm/get-prop selrect :x)
+                             :y (dm/get-prop selrect :y)
+                             :width (dm/get-prop selrect :width)
+                             :height (dm/get-prop selrect :height)))]
     (-> shape
-        (cond-> bool?
-          (update :bool-content gpa/transform-content transform-mtx))
-        (cond-> path?
-          (update :content gpa/transform-content transform-mtx))
-        (cond-> text?
-          (update :position-data move-position-data dx dy))
-        (cond-> (not path?)
-          (assoc :x (:x selrect)
-                 :y (:y selrect)
-                 :width (:width selrect)
-                 :height (:height selrect)))
-        (assoc :selrect selrect)
-        (assoc :points points))))
+        (cr/assoc! :selrect selrect)
+        (cr/assoc! :points points))))
+
 
 (defn- apply-transform-generic
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform-mtx]
+  (let [points    (-> (dm/get-prop shape :points)
+                      (gco/transform-points transform-mtx))
 
-  (let [points'  (:points shape)
-        points   (gco/transform-points points' transform-mtx)
-        shape    (-> shape (adjust-shape-flips points))
-        bool?    (= (:type shape) :bool)
-        path?    (= (:type shape) :path)
+        ;; NOTE: ensure we have a fresh shallow copy of shape
+        shape     (cr/clone shape)
+        shape     (adjust-shape-flips! shape points)
 
-        [selrect transform transform-inverse] (calculate-geometry points)
+        center    (gco/points->center points)
+        selrect   (calculate-selrect points center)
+        transform (calculate-transform points center selrect)
+        inverse   (when (some? transform) (gmt/inverse transform))
 
-        base-rotation  (or (:rotation shape) 0)
-        modif-rotation (or (get-in shape [:modifiers :rotation]) 0)
-        rotation       (mod (+ base-rotation modif-rotation) 360)]
+        ]
 
-    (if-not (and transform transform-inverse)
-      ;; When we cannot calculate the transformation we leave the shape as it was
+    (if-not (and (some? inverse) (some? transform))
       shape
-      (-> shape
-          (cond-> bool?
-            (update :bool-content gpa/transform-content transform-mtx))
-          (cond-> path?
-            (update :content gpa/transform-content transform-mtx))
-          (cond-> (not path?)
-            (assoc :x (:x selrect)
-                   :y (:y selrect)
-                   :width (:width selrect)
-                   :height (:height selrect)))
-          (cond-> transform
-            (-> (assoc :transform transform)
-                (assoc :transform-inverse transform-inverse)))
-          (cond-> (not transform)
-            (dissoc :transform :transform-inverse))
-          (cond-> (some? selrect)
-            (assoc :selrect selrect))
+      (let [type     (dm/get-prop shape :type)
+            rotation (mod (+ (d/nilv (:rotation shape) 0)
+                             (d/nilv (dm/get-in shape [:modifiers :rotation]) 0))
+                          360)
+            shape    (if (= type :bool)
+                       (update shape :bool-content gpa/transform-content transform-mtx)
+                       shape)
 
-          (cond-> (d/not-empty? points)
-            (assoc :points points))
-          (assoc :rotation rotation)))))
+            shape    (if (= type :path)
+                       (update shape :content gpa/transform-content transform-mtx)
+                       (cr/assoc! shape
+                                  :x (dm/get-prop selrect :x)
+                                  :y (dm/get-prop selrect :y)
+                                  :width (dm/get-prop selrect :width)
+                                  :height (dm/get-prop selrect :height)))]
+        (-> shape
+            (cr/assoc! :transform transform)
+            (cr/assoc! :transform-inverse inverse)
+            (cr/assoc! :selrect selrect)
+            (cr/assoc! :points points)
+            (cr/assoc! :rotation rotation))))))
 
 (defn- apply-transform
   "Given a new set of points transformed, set up the rectangle so it keeps
