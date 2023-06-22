@@ -51,7 +51,7 @@
 
 (defmethod handler :configure
   [{:keys [key val]}]
-  (log/info :hint "configure worker" :key key :val val)
+  (log/info :hint "configure worker" :key key :val (dm/str val))
   (case key
     :public-uri
-    (reset! cf/public-uri val)))
+    (set! cf/public-uri val)))

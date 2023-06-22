@@ -377,7 +377,7 @@
    (ptk/reify ::mark-onboarding-as-viewed
      ptk/WatchEvent
      (watch [_ _ _]
-       (let [version (or version (:main @cf/version))
+       (let [version (or version (:main cf/version))
              props   {:onboarding-viewed true
                       :release-notes-viewed version}]
          (->> (rp/cmd! :update-profile-props {:props props})

@@ -130,6 +130,10 @@
            (map #(.item file-list %))
            (filter #(str/starts-with? (.-type %) "image/"))))))
 
+(defn create-image-bitmap
+  [image]
+  (js/createImageBitmap image))
+
 (defn request-fullscreen
   [el]
   (cond

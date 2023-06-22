@@ -184,7 +184,7 @@
     (when (seq res)
       (doseq [media-id (into #{} (keep :media-id) res)]
         ;; Mark as deleted the storage object related with the
-        ;; photo-id field.
+        ;; media-id field.
         (l/trace :hint "mark storage object as deleted" :id media-id)
         (sto/del-object! storage media-id))
 

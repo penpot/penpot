@@ -51,6 +51,10 @@
       border-radius: $br3;
       border: 2px solid lighten($color-gray-20, 15%);
       text-align: initial;
+
+      img {
+        object-fit: contain;
+      }
     }
 
     &.dragged {
@@ -360,11 +364,6 @@
   .grid-item {
     .library {
       height: 556px;
-    }
-
-    .info-wrapper {
-      border: 1px solid $color-gray-10;
-      border-radius: 3px;
     }
 
     &.project-th.library {

@@ -38,7 +38,7 @@
      [:div.modal-left.welcome
       [:img {:src "images/onboarding-welcome.png" :border "0" :alt (tr "onboarding.welcome.alt")}]]
      [:div.modal-right
-      [:div.release-container [:span.release "Version " (:main @cf/version)]]
+      [:div.release-container [:span.release "Version " (:main cf/version)]]
       [:div.right-content
        [:div.modal-title
         [:h2 {:data-test "onboarding-welcome"} (tr "onboarding-v2.welcome.title")]]
@@ -73,7 +73,7 @@
      [:div.modal-left.welcome
       [:img {:src "images/onboarding-people.png" :border "0" :alt (tr "onboarding.welcome.alt")}]]
      [:div.modal-right
-      [:div.release-container [:span.release "Version " (:main @cf/version)]]
+      [:div.release-container [:span.release "Version " (:main cf/version)]]
       [:div.right-content
        [:div.modal-title
         [:h2 {:data-test "onboarding-welcome"} (tr "onboarding-v2.before-start.title")]]
@@ -112,7 +112,7 @@
         skip
         (mf/use-fn
          #(st/emit! (modal/hide)
-                    (if (contains? @cf/flags :newsletter-subscription)
+                    (if (contains? cf/flags :newsletter-subscription)
                       (modal/show {:type :onboarding-newsletter-modal})
                       (modal/show {:type :onboarding-team}))
                     (du/mark-onboarding-as-viewed)))]

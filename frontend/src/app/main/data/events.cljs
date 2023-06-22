@@ -39,7 +39,7 @@
   []
   (let [uagent (UAParser.)]
     (merge
-     {:app-version (:full @cf/version)
+     {:app-version (:full cf/version)
       :locale @i18n/locale}
      (let [browser (.getBrowser uagent)]
        {:browser (obj/get browser "name")
@@ -215,7 +215,7 @@
 (defn- persist-events
   [events]
   (if (seq events)
-    (let [uri    (u/join @cf/public-uri "api/rpc/command/push-audit-events")
+    (let [uri    (u/join cf/public-uri "api/rpc/command/push-audit-events")
           params {:uri uri
                   :method :post
                   :credentials "include"
@@ -230,7 +230,7 @@
 
 (defn initialize
   []
-  (when (contains? @cf/flags :audit-log)
+  (when (contains? cf/flags :audit-log)
     (ptk/reify ::initialize
       ptk/EffectEvent
       (effect [_ _ stream]

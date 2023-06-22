@@ -158,7 +158,7 @@
         show-release-notes
         (mf/use-fn
          (fn [event]
-           (let [version (:main @cf/version)]
+           (let [version (:main cf/version)]
              (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
              (if (and (kbd/alt? event) (kbd/mod? event))
                (st/emit! (modal/show {:type :onboarding}))
@@ -186,7 +186,7 @@
        [:span (tr "label.shortcuts")]
        [:span.shortcut (sc/get-tooltip :show-shortcuts)]]
 
-      (when (contains? @cf/flags :user-feedback)
+      (when (contains? cf/flags :user-feedback)
         [:*
          [:li.feedback {:on-click nav-to-feedback}
           [:span (tr "labels.give-feedback")]]])]]))

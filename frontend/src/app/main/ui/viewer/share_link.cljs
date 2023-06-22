@@ -145,7 +145,7 @@
                                       (assoc qparams :zoom zoom-type))
 
                             href    (rt/resolve router :viewer pparams qparams)]
-                        (assoc @cf/public-uri :fragment href)))]
+                        (assoc cf/public-uri :fragment href)))]
          (reset! link (some-> href str)))))
 
     [:div.modal-overlay.transparent.share-modal

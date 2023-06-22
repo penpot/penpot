@@ -6,6 +6,7 @@
 
 (ns app.main.ui.onboarding.templates
   (:require
+   [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
@@ -21,7 +22,7 @@
 (mf/defc template-item
   [{:keys [name path image project-id]}]
   (let [downloading? (mf/use-state false)
-        link         (str (assoc @cf/public-uri :path path))
+        link         (dm/str (assoc cf/public-uri :path path))
 
         on-finish-import
         (fn []

@@ -79,21 +79,21 @@
       "unknown"
       date)))
 
+
 ;; --- Globar Config Vars
 
 (def default-theme  "default")
 (def default-language "en")
 
-(def worker-uri           (obj/get global "penpotWorkerURI" "/js/worker.js"))
 (def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
 
 (def build-date           (parse-build-date global))
-(def flags                (atom (parse-flags global)))
-(def version              (atom (parse-version global)))
-(def target               (atom (parse-target global)))
-(def browser              (atom (parse-browser)))
-(def platform             (atom (parse-platform)))
+(def flags                (parse-flags global))
+(def version              (parse-version global))
+(def target               (parse-target global))
+(def browser              (parse-browser))
+(def platform             (parse-platform))
 
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI" nil))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" nil))
@@ -108,36 +108,43 @@
       (update :path #(str % "/")))))
 
 (def public-uri
-  (atom
-   (normalize-uri (or (obj/get global "penpotPublicURI")
-                      (.-origin ^js location)))))
+  (normalize-uri (or (obj/get global "penpotPublicURI")
+                     (obj/get location "origin"))))
+
+(def thumbnail-renderer-uri
+  (or (some-> (obj/get global "penpotThumbnailRendererURI") normalize-uri)
+      public-uri))
+
+(def worker-uri
+  (obj/get global "penpotWorkerURI" "/js/worker.js"))
 
 ;; --- Helper Functions
 
 (defn ^boolean check-browser? [candidate]
   (dm/assert! (contains? valid-browsers candidate))
-  (= candidate @browser))
+  (= candidate browser))
 
 (defn ^boolean check-platform? [candidate]
   (dm/assert! (contains? valid-platforms candidate))
-  (= candidate @platform))
+  (= candidate platform))
 
 (defn resolve-profile-photo-url
   [{:keys [photo-id fullname name] :as profile}]
   (if (nil? photo-id)
     (avatars/generate {:name (or fullname name)})
-    (str (u/join @public-uri "assets/by-id/" photo-id))))
+    (dm/str (u/join public-uri "assets/by-id/" photo-id))))
 
 (defn resolve-team-photo-url
   [{:keys [photo-id name] :as team}]
   (if (nil? photo-id)
     (avatars/generate {:name name})
-    (str (u/join @public-uri "assets/by-id/" photo-id))))
+    (dm/str (u/join public-uri "assets/by-id/" photo-id))))
 
 (defn resolve-file-media
   ([media]
    (resolve-file-media media false))
   ([{:keys [id] :as media} thumbnail?]
-   (str (cond-> (u/join @public-uri "assets/by-file-media-id/")
-          (true? thumbnail?) (u/join (str id "/thumbnail"))
-          (false? thumbnail?) (u/join (str id))))))
+   (dm/str
+    (cond-> (u/join public-uri "assets/by-file-media-id/")
+      (true? thumbnail?) (u/join (dm/str id "/thumbnail"))
+      (false? thumbnail?) (u/join (dm/str id))))))

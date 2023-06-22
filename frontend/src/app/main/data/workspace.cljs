@@ -1377,7 +1377,7 @@
                                  (not (contains? #{:group :bool} (:type head))))
 
             no-bool-shapes? (->> all-selected (some (comp #{:frame :text} :type)))]
-        
+
           (if (and (some? shape) (not (contains? selected (:id shape))))
             (rx/concat
               (rx/of (dws/select-shape (:id shape)))
@@ -2174,7 +2174,7 @@
   "Update the component with the given annotation"
   [id annotation]
   (dm/assert! (uuid? id))
-  (dm/assert! (string? annotation))
+  (dm/assert! (or (nil? annotation) (string? annotation)))
   (ptk/reify ::update-component-annotation
     ptk/WatchEvent
     (watch [it state _]

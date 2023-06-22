@@ -16,7 +16,9 @@
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg]]
+   [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.thumbnail-renderer :as thr]
    [app.main.ui.components.color-bullet :as bc]
    [app.main.ui.dashboard.file-menu :refer [file-menu]]
    [app.main.ui.dashboard.import :refer [use-import-file]]
@@ -30,7 +32,6 @@
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.perf :as perf]
    [app.util.time :as dt]
    [app.util.timers :as ts]
    [beicon.core :as rx]
@@ -41,44 +42,49 @@
 
 ;; --- Grid Item Thumbnail
 
-(defn ask-for-thumbnail
+(defn- persist-thumbnail
+  [file-id revn blob]
+  (let [params {:file-id file-id :revn revn :media blob}]
+    (->> (rp/cmd! :create-file-thumbnail params)
+         (rx/map :uri))))
+
+(defn- ask-for-thumbnail
   "Creates some hooks to handle the files thumbnails cache"
-  [file]
+  [file-id revn]
   (let [features (cond-> ffeat/enabled
                    (features/active-feature? :components-v2)
                    (conj "components/v2"))]
 
-    (wrk/ask! {:cmd :thumbnails/generate-for-file
-               :revn (:revn file)
-               :file-id (:id file)
-               :file-name (:name file)
-               :features features})))
+    (->> (wrk/ask! {:cmd :thumbnails/generate-for-file
+                    :revn revn
+                    :file-id file-id
+                    :features features})
+         (rx/mapcat (fn [{:keys [fonts] :as result}]
+                      (->> (fonts/render-font-styles fonts)
+                           (rx/map (fn [styles]
+                                     (assoc result :styles styles))))))
+         (rx/mapcat thr/render)
+         (rx/mapcat (partial persist-thumbnail file-id revn)))))
 
 (mf/defc grid-item-thumbnail
-  {::mf/wrap [mf/memo]}
-  [{:keys [file] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [file-id revn thumbnail-uri background-color]}]
   (let [container (mf/use-ref)
-        bgcolor   (dm/get-in file [:data :options :background])
         visible?  (h/use-visible container :once? true)]
 
-    (mf/with-effect [file visible?]
-      (when visible?
-        (let [tp (perf/tpoint)]
-          (->> (ask-for-thumbnail file)
-               (rx/subscribe-on :af)
-               (rx/subs (fn [{:keys [data fonts] :as params}]
-                          (run! fonts/ensure-loaded! fonts)
-                          (log/debug :hint "loaded thumbnail"
-                                     :file-id (dm/str (:id file))
-                                     :file-name (:name file)
-                                     :elapsed (str/ffmt "%ms" (tp)))
-                          (when-let [node (mf/ref-val container)]
-                            (dom/set-html! node data))))))))
+    (mf/with-effect [file-id revn visible? thumbnail-uri]
+      (when (and visible? (not thumbnail-uri))
+        (->> (ask-for-thumbnail file-id revn)
+             (rx/subs (fn [url]
+                        (st/emit! (dd/set-file-thumbnail file-id url)))))))
 
     [:div.grid-item-th
-     {:style {:background-color bgcolor}
+     {:style {:background-color background-color}
       :ref container}
-     i/loader-pencil]))
+     (when visible?
+       (if thumbnail-uri
+         [:img.grid-item-thumbnail-image {:src thumbnail-uri}]
+         i/loader-pencil))]))
 
 ;; --- Grid Item Library
 
@@ -312,7 +318,12 @@
       [:div.overlay]
       (if library-view?
         [:& grid-item-library {:file file}]
-        [:& grid-item-thumbnail {:file file}])
+        [:& grid-item-thumbnail
+         {:file-id (:id file)
+          :revn (:revn file)
+          :thumbnail-uri (:thumbnail-uri file)
+          :background-color (dm/get-in file [:data :options :background])}])
+
       (when (and (:is-shared file) (not library-view?))
         [:div.item-badge i/library])
       [:div.info-wrapper

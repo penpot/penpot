@@ -433,7 +433,7 @@
                            (gsh/move delta)
                            (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
 
-           changes (-> (pcb/add-object changes new-obj {:ignore-touched true})
+           changes (-> (pcb/add-object changes new-obj)
                        (pcb/amend-last-change #(assoc % :old-id (:id obj))))
 
            changes (cond-> changes
