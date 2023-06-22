@@ -447,7 +447,6 @@
 
         first-shape         (first shapes)
         {:keys [id component-id component-file main-instance?]} first-shape
-        lacks-annotation?   (nil? (:annotation first-shape))
         component-shapes    (filter #(contains? % :component-id) shapes)
 
 
@@ -458,9 +457,11 @@
 
         workspace-data      (deref refs/workspace-data)
         workspace-libraries (deref refs/workspace-libraries)
-        is-dangling?        (nil? (if local-component?
-                                    (ctkl/get-component workspace-data component-id)
-                                    (ctf/get-component workspace-libraries component-file component-id)))
+        component           (if local-component?
+                              (ctkl/get-component workspace-data component-id)
+                              (ctf/get-component workspace-libraries component-file component-id))
+        is-dangling?        (nil? component)
+        lacks-annotation?   (nil? (:annotation component))
         lib-exists?         (and (not local-component?)
                                  (some? (get workspace-libraries component-file)))
 
@@ -535,7 +536,7 @@
           [:*
            [:& menu-entry {:title (tr "workspace.shape.menu.show-in-assets")
                            :on-click do-show-in-assets}]
-           (when (and components-v2 lacks-annotation?)
+           (when (and components-v2 local-component? lacks-annotation?)
              [:& menu-entry {:title (tr "workspace.shape.menu.create-annotation")
                              :on-click create-annotation}])]
           (if local-component?
