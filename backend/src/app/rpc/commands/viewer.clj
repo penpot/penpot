@@ -8,14 +8,14 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.schema :as sm]
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.comments :as comments]
    [app.rpc.commands.files :as files]
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
-   [app.util.services :as sv]
-   [clojure.spec.alpha :as s]))
+   [app.util.services :as sv]))
 
 ;; --- QUERY: View Only Bundle
 
@@ -79,18 +79,19 @@
                 :always
                 (update :data select-keys [:id :options :pages :pages-index :components]))))))
 
-(s/def ::get-view-only-bundle
-  (s/keys :req-un [::files/file-id]
-          :opt-un [::files/share-id
-                   ::files/features]
-          :opt [::rpc/profile-id]))
+(sm/def! ::get-view-only-bundle
+  [:map {:title "get-view-only-bundle"}
+   [:file-id ::sm/uuid]
+   [:share-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::files/features]])
 
 (sv/defmethod ::get-view-only-bundle
   {::rpc/auth false
    ::cond/get-object #(files/get-minimal-file %1 (:file-id %2))
    ::cond/key-fn files/get-file-etag
    ::cond/reuse-key? true
-   ::doc/added "1.17"}
+   ::doc/added "1.17"
+   ::sm/params ::get-view-only-bundle}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id] :as params}]
   (dm/with-open [conn (db/open pool)]
     (get-view-only-bundle conn (assoc params :profile-id profile-id))))
