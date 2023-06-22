@@ -3830,6 +3830,22 @@ msgstr "כל הפינות"
 msgid "workspace.options.radius.single-corners"
 msgstr "פינות עצמאיות"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "בראש משמאל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "בראש מימין"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "בתחתית משמאל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "בתחתית מימין"
+
 msgid "workspace.options.recent-fonts"
 msgstr "אחרונים"
 

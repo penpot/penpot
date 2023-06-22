@@ -3645,6 +3645,22 @@ msgstr "Svi kutevi"
 msgid "workspace.options.radius.single-corners"
 msgstr "Jednostruki kutovi"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Gore lijevo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Gore desno"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Dolje lijevo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Dolje desno"
+
 msgid "workspace.options.recent-fonts"
 msgstr "Nedavni"
 

@@ -4025,6 +4025,22 @@ msgstr "All corners"
 msgid "workspace.options.radius.single-corners"
 msgstr "Independent corners"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Top left"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Top right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Bottom left"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Bottom right"
+
 msgid "workspace.options.recent-fonts"
 msgstr "Recent"
 

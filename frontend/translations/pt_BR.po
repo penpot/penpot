@@ -3782,6 +3782,22 @@ msgstr "Todos os cantos"
 msgid "workspace.options.radius.single-corners"
 msgstr "Cantos individuais"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Superior (a esquerda)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Superior (a direita)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Inferior esquerdo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Inferior direito"
+
 msgid "workspace.options.recent-fonts"
 msgstr "Recente"
 
