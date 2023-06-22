@@ -31,7 +31,7 @@
         component-id          (:component-id values)
         annotation            (:annotation component)
         editing?              (mf/use-state false)
-        invalid-text?         (mf/use-state (str/empty? annotation))
+        invalid-text?         (mf/use-state (or (nil? annotation)(str/empty? annotation)))
         size                  (mf/use-state (count annotation))
         textarea-ref          (mf/use-ref)
 
