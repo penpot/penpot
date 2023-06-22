@@ -304,14 +304,17 @@
                         (:id media) (:id media)])))
 
 
-(s/def ::media (s/nilable ::media/upload))
-(s/def ::create-file-object-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::object-id ::media]))
+(def schema:create-file-object-thumbnail
+  [:map {:title "create-file-object-thumbnail"}
+   [:file-id ::sm/uuid]
+   [:object-id :string]
+   [:media ::media/upload]])
 
 (sv/defmethod ::create-file-object-thumbnail
   {:doc/added "1.19"
-   ::audit/skip true}
+   ::audit/skip true
+   ::sm/params schema:create-file-object-thumbnail}
+
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id object-id media]}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
@@ -373,7 +376,6 @@
   (let [props (db/tjson (or props {}))]
     (db/exec-one! conn [sql:upsert-file-thumbnail
                         file-id revn data props data props])))
-
 
 (s/def ::revn ::us/integer)
 (s/def ::props map?)
