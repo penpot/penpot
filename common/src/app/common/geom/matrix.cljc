@@ -417,21 +417,21 @@
                                          (.-f ^Matrix o))))
      :rfn (fn [rdr]
             (let [^List x (fres/read-object! rdr)]
-              (map->Matrix {:a (.get x 0)
-                            :b (.get x 1)
-                            :c (.get x 2)
-                            :d (.get x 3)
-                            :e (.get x 4)
-                            :f (.get x 5)})))}))
+              (pos->Matrix (.get x 0)
+                           (.get x 1)
+                           (.get x 2)
+                           (.get x 3)
+                           (.get x 4)
+                           (.get x 5))))}))
 
 (t/add-handlers!
  {:id "matrix"
   :class Matrix
   :wfn #(into {} %)
   :rfn (fn [m]
-         (map->Matrix {:a (get m :a)
-                       :b (get m :b)
-                       :c (get m :c)
-                       :d (get m :d)
-                       :e (get m :e)
-                       :f (get m :f)}))})
+         (pos->Matrix (get m :a)
+                      (get m :b)
+                      (get m :c)
+                      (get m :d)
+                      (get m :e)
+                      (get m :f)))})
