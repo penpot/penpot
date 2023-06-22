@@ -14,7 +14,6 @@
    [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.types.shape-tree :as ctt]
-   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.loggers.audit :as-alias audit]
@@ -39,10 +38,6 @@
 
 ;; --- COMMAND QUERY: get-file-object-thumbnails
 
-(defn- get-public-uri
-  [media-id]
-  (str (cf/get :public-uri) "/assets/by-id/" media-id))
-
 (defn- get-object-thumbnails
   ([conn file-id]
    (let [sql (str/concat
@@ -52,7 +47,7 @@
          res (db/exec! conn [sql file-id])]
      (->> res
           (d/index-by :object-id (fn [row]
-                                   (or (some-> row :media-id get-public-uri)
+                                   (or (some-> row :media-id files/resolve-public-uri)
                                        (:data row))))
           (d/without-nils))))
 
@@ -65,7 +60,7 @@
          res (db/exec! conn [sql file-id ids])]
      (d/index-by :object-id
                  (fn [row]
-                   (or (some-> row :media-id get-public-uri)
+                   (or (some-> row :media-id files/resolve-public-uri)
                        (:data row)))
                  res))))
 
@@ -85,8 +80,6 @@
 
 ;; --- COMMAND QUERY: get-file-thumbnail
 
-;; FIXME: refactor to support uploading data to storage
-
 (defn get-file-thumbnail
   [conn file-id revn]
   (let [sql (sql/select :file-thumbnail
@@ -95,7 +88,12 @@
                         {:limit 1
                          :order-by [[:revn :desc]]})
         row (db/exec-one! conn sql)]
+
     (when-not row
+      (ex/raise :type :not-found
+                :code :file-thumbnail-not-found))
+
+    (when-not (:data row)
       (ex/raise :type :not-found
                 :code :file-thumbnail-not-found))
 
@@ -113,20 +111,16 @@
           :opt-un [::revn]))
 
 (sv/defmethod ::get-file-thumbnail
-  "Method used in frontend for obtain the file thumbnail (used in the
-  dashboard)."
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::doc/deprecated "1.19"}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id file-id revn]}]
   (dm/with-open [conn (db/open pool)]
     (files/check-read-permissions! conn profile-id file-id)
     (-> (get-file-thumbnail conn file-id revn)
         (rph/with-http-cache long-cache-duration))))
 
-
 ;; --- COMMAND QUERY: get-file-data-for-thumbnail
 
-;; FIXME: performance issue, handle new media_id
-;;
 ;; We need to improve how we set frame for thumbnail in order to avoid
 ;; loading all pages into memory for find the frame set for thumbnail.
 
@@ -310,14 +304,17 @@
                         (:id media) (:id media)])))
 
 
-(s/def ::media (s/nilable ::media/upload))
-(s/def ::create-file-object-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::object-id ::media]))
+(def schema:create-file-object-thumbnail
+  [:map {:title "create-file-object-thumbnail"}
+   [:file-id ::sm/uuid]
+   [:object-id :string]
+   [:media ::media/upload]])
 
 (sv/defmethod ::create-file-object-thumbnail
   {:doc/added "1.19"
-   ::audit/skip true}
+   ::audit/skip true
+   ::sm/params schema:create-file-object-thumbnail}
+
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id object-id media]}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
@@ -380,7 +377,6 @@
     (db/exec-one! conn [sql:upsert-file-thumbnail
                         file-id revn data props data props])))
 
-
 (s/def ::revn ::us/integer)
 (s/def ::props map?)
 
@@ -427,24 +423,27 @@
                                 :bucket "file-thumbnail"})]
     (db/exec-one! conn [sql:create-file-thumbnail file-id revn
                         (:id media) props
-                        (:id media) props])))
-
-(s/def ::media ::media/upload)
-(s/def ::create-file-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::revn ::props ::media]))
+                        (:id media) props])
+    media))
 
 (sv/defmethod ::create-file-thumbnail
   "Creates or updates the file thumbnail. Mainly used for paint the
   grid thumbnails."
   {::doc/added "1.19"
-   ::audit/skip true}
+   ::audit/skip true
+   ::sm/params [:map {:title "create-file-thumbnail"}
+                [:file-id ::sm/uuid]
+                [:revn :int]
+                [:media ::media/upload]]
+   }
+
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (when-not (db/read-only? conn)
-      (-> cfg
-          (update ::sto/storage media/configure-assets-storage)
-          (assoc ::db/conn conn)
-          (create-file-thumbnail! params))
-      nil)))
+      (let [media (-> cfg
+                      (update ::sto/storage media/configure-assets-storage)
+                      (assoc ::db/conn conn)
+                      (create-file-thumbnail! params))]
+
+        {:uri (files/resolve-public-uri (:id media))}))))

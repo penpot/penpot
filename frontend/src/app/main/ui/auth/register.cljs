@@ -141,8 +141,8 @@
 
       [:& login/login-buttons {:params params}]
 
-      (when (or (contains? @cf/flags :login)
-                (contains? @cf/flags :login-with-ldap))
+      (when (or (contains? cf/flags :login)
+                (contains? cf/flags :login-with-ldap))
         [:span.separator
          [:span.line]
          [:span.text (tr "labels.or")]
@@ -157,7 +157,7 @@
    [:h1 {:data-test "registration-title"} (tr "auth.register-title")]
    [:div.subtitle (tr "auth.register-subtitle")]
 
-   (when (contains? @cf/flags :demo-warning)
+   (when (contains? cf/flags :demo-warning)
      [:& demo-warning])
 
    [:& register-methods {:params params}]
@@ -170,7 +170,7 @@
                   :data-test "login-here-link"}
       (tr "auth.login-here")]]
 
-    (when (contains? @cf/flags :demo-users)
+    (when (contains? cf/flags :demo-users)
       [:div.link-entry
        [:span (tr "auth.create-demo-profile") " "]
        [:& lk/link {:action  #(st/emit! (du/create-demo-profile))}
@@ -207,7 +207,7 @@
 (s/def ::accept-terms-and-privacy (s/and ::us/boolean true?))
 (s/def ::accept-newsletter-subscription ::us/boolean)
 
-(if (contains? @cf/flags :terms-and-privacy-checkbox)
+(if (contains? cf/flags :terms-and-privacy-checkbox)
   (s/def ::register-validate-form
     (s/keys :req-un [::token ::fullname ::accept-terms-and-privacy]
             :opt-un [::accept-newsletter-subscription]))
@@ -244,7 +244,7 @@
                     :label (tr "auth.fullname")
                     :type "text"}]]
 
-     (when (contains? @cf/flags :terms-and-privacy-checkbox)
+     (when (contains? cf/flags :terms-and-privacy-checkbox)
        [:div.fields-row.input-visible.accept-terms-and-privacy-wrapper
         [:& fm/input {:name :accept-terms-and-privacy
                       :class "check-primary"

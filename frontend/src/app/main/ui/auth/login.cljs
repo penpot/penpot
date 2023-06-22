@@ -28,7 +28,7 @@
    [rumext.v2 :as mf]))
 
 (def show-alt-login-buttons?
-  (some (partial contains? @cf/flags)
+  (some (partial contains? cf/flags)
         [:login-with-google
          :login-with-github
          :login-with-gitlab
@@ -175,13 +175,13 @@
          :label (tr "auth.password")}]]
 
       [:div.buttons-stack
-       (when (or (contains? @cf/flags :login)
-                 (contains? @cf/flags :login-with-password))
+       (when (or (contains? cf/flags :login)
+                 (contains? cf/flags :login-with-password))
          [:& fm/submit-button
           {:label (tr "auth.login-submit")
            :data-test "login-submit"}])
 
-       (when (contains? @cf/flags :login-with-ldap)
+       (when (contains? cf/flags :login-with-ldap)
          [:& fm/submit-button
           {:label (tr "auth.login-with-ldap-submit")
            :on-click on-submit-ldap}])]]]))
@@ -189,25 +189,25 @@
 (mf/defc login-buttons
   [{:keys [params] :as props}]
   [:div.auth-buttons
-   (when (contains? @cf/flags :login-with-google)
+   (when (contains? cf/flags :login-with-google)
      [:& bl/button-link {:action #(login-with-oidc % :google params)
                          :icon i/brand-google
                          :name (tr "auth.login-with-google-submit")
                          :klass "btn-google-auth"}])
 
-   (when (contains? @cf/flags :login-with-github)
+   (when (contains? cf/flags :login-with-github)
      [:& bl/button-link {:action #(login-with-oidc % :github params)
                          :icon i/brand-github
                          :name (tr "auth.login-with-github-submit")
                          :klass "btn-github-auth"}])
 
-   (when (contains? @cf/flags :login-with-gitlab)
+   (when (contains? cf/flags :login-with-gitlab)
      [:& bl/button-link {:action #(login-with-oidc % :gitlab params)
                          :icon i/brand-gitlab
                          :name (tr "auth.login-with-gitlab-submit")
                          :klass "btn-gitlab-auth"}])
 
-   (when (contains? @cf/flags :login-with-oidc)
+   (when (contains? cf/flags :login-with-oidc)
      [:& bl/button-link {:action #(login-with-oidc % :oidc params)
                          :icon i/brand-openid
                          :name (tr "auth.login-with-oidc-submit")
@@ -215,7 +215,7 @@
 
 (mf/defc login-button-oidc
   [{:keys [params] :as props}]
-  (when (contains? @cf/flags :login-with-oidc)
+  (when (contains? cf/flags :login-with-oidc)
     [:div.link-entry.link-oidc
      [:a {:tab-index "0"
           :on-key-down (fn [event]
@@ -236,17 +236,17 @@
 
       [:& login-buttons {:params params}]
 
-      (when (or (contains? @cf/flags :login)
-                (contains? @cf/flags :login-with-password)
-                (contains? @cf/flags :login-with-ldap))
+      (when (or (contains? cf/flags :login)
+                (contains? cf/flags :login-with-password)
+                (contains? cf/flags :login-with-ldap))
         [:span.separator
          [:span.line]
          [:span.text (tr "labels.or")]
          [:span.line]])])
 
-   (when (or (contains? @cf/flags :login)
-             (contains? @cf/flags :login-with-password)
-             (contains? @cf/flags :login-with-ldap))
+   (when (or (contains? cf/flags :login)
+             (contains? cf/flags :login-with-password)
+             (contains? cf/flags :login-with-ldap))
      [:& login-form {:params params :on-success-callback on-success-callback}])])
 
 (mf/defc login-page
@@ -258,21 +258,21 @@
     [:& login-methods {:params params}]
 
     [:div.links
-     (when (or (contains? @cf/flags :login)
-               (contains? @cf/flags :login-with-password))
+     (when (or (contains? cf/flags :login)
+               (contains? cf/flags :login-with-password))
        [:div.link-entry
         [:& lk/link {:action #(st/emit! (rt/nav :auth-recovery-request))
                      :data-test "forgot-password"}
          (tr "auth.forgot-password")]])
 
-     (when (contains? @cf/flags :registration)
+     (when (contains? cf/flags :registration)
        [:div.link-entry
         [:span (tr "auth.register") " "]
         [:& lk/link {:action #(st/emit! (rt/nav :auth-register {} params))
                      :data-test "register-submit"}
          (tr "auth.register-submit")]])]
 
-    (when (contains? @cf/flags :demo-users)
+    (when (contains? cf/flags :demo-users)
       [:div.links.demo
        [:div.link-entry
         [:span (tr "auth.create-demo-profile") " "]

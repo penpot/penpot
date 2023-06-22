@@ -56,11 +56,11 @@
         (mf/use-callback
           (mf/deps profile)
           #(st/emit! (rt/nav :settings-access-tokens)))
-        
+
         show-release-notes
         (mf/use-callback
           (fn [event]
-            (let [version (:main @cf/version)]
+            (let [version (:main cf/version)]
               (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
               (if (and (kbd/alt? event) (kbd/mod? event))
                 (st/emit! (modal/show {:type :onboarding}))
@@ -91,7 +91,7 @@
         i/tree
         [:span.element-title (tr "labels.settings")]]
 
-       (when (contains? @cf/flags :access-tokens)
+       (when (contains? cf/flags :access-tokens)
          [:li {:class (when access-tokens? "current")
                :on-click go-settings-access-tokens
                :data-test "settings-access-tokens"}
@@ -104,7 +104,7 @@
         i/pencil
         [:span.element-title (tr "labels.release-notes")]]
 
-       (when (contains? @cf/flags :user-feedback)
+       (when (contains? cf/flags :user-feedback)
          [:li {:class (when feedback? "current")
                :on-click go-settings-feedback}
           i/msg-info

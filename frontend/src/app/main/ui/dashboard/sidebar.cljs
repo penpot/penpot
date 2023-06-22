@@ -376,7 +376,7 @@
                              :data-test "team-invitations"}
       (tr "labels.invitations")]
 
-     (when (contains? @cf/flags :webhooks)
+     (when (contains? cf/flags :webhooks)
        [:& dropdown-menu-item {:on-click    go-webhooks
                                :on-key-down (fn [event]
                                               (when (kbd/enter? event)
@@ -459,7 +459,7 @@
         can-rename?           (or (get-in team [:permissions :is-owner]) (get-in team [:permissions :is-admin]))
         options-ids           ["teams-options-members"
                                "teams-options-invitations"
-                               (when (contains? @cf/flags :webhooks)
+                               (when (contains? cf/flags :webhooks)
                                  "teams-options-webhooks")
                                "teams-options-settings"
                                (when can-rename?
@@ -680,7 +680,7 @@
         show-release-notes
         (mf/use-callback
          (fn [event]
-           (let [version (:main @cf/version)]
+           (let [version (:main cf/version)]
              (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
              (if (and (kbd/alt? event) (kbd/mod? event))
                (st/emit! (modal/show {:type :onboarding}))
@@ -769,7 +769,7 @@
                                (dom/open-new-window "https://penpot.app/terms")))}
         [:span (tr "auth.terms-of-service")]]
 
-       (when (contains? @cf/flags :user-feedback)
+       (when (contains? cf/flags :user-feedback)
          [:li.separator {:tab-index (if show
                                       "0"
                                       "-1")

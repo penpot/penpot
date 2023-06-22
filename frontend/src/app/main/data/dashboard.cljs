@@ -475,7 +475,7 @@
              (rx/map (fn [params]
                        (rt/resolve router :auth-verify-token {} params)))
              (rx/map (fn [fragment]
-                       (assoc @cf/public-uri :fragment fragment)))
+                       (assoc cf/public-uri :fragment fragment)))
              (rx/tap (fn [uri]
                        (wapi/write-to-clipboard (str uri))))
              (rx/tap on-success)
@@ -781,6 +781,15 @@
       (let [params {:id id :is-shared is-shared}]
         (->> (rp/cmd! :set-file-shared params)
              (rx/ignore))))))
+
+(defn set-file-thumbnail
+  [file-id thumbnail-uri]
+  (ptk/reify ::set-file-thumbnail
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (d/update-in-when [:dashboard-files file-id] assoc :thumbnail-uri thumbnail-uri)
+          (d/update-in-when [:dashboard-recent-files file-id] assoc :thumbnail-uri thumbnail-uri)))))
 
 ;; --- EVENT: create-file
 

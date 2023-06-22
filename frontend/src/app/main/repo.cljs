@@ -50,6 +50,11 @@
    :upsert-file-object-thumbnail {:query-params [:file-id :object-id]}
    :create-file-object-thumbnail {:query-params [:file-id :object-id]
                                   :form-data? true}
+
+   :create-file-thumbnail
+   {:query-params [:file-id :revn]
+    :form-data? true}
+
    :export-binfile {:response-type :blob}
    :import-binfile {:form-data? true}
    :retrieve-list-of-builtin-templates {:query-params :all}
@@ -79,7 +84,7 @@
                     :else :post)
 
         request   {:method method
-                   :uri (u/join @cf/public-uri "api/rpc/command/" (name id))
+                   :uri (u/join cf/public-uri "api/rpc/command/" (name id))
                    :credentials "include"
                    :headers {"accept" "application/transit+json"}
                    :body (when (= method :post)
@@ -105,7 +110,7 @@
 
 (defmethod cmd! :login-with-oidc
   [_ {:keys [provider] :as params}]
-  (let [uri    (u/join @cf/public-uri "api/auth/oauth/" (d/name provider))
+  (let [uri    (u/join cf/public-uri "api/auth/oauth/" (d/name provider))
         params (dissoc params :provider)]
     (->> (http/send! {:method :post
                       :uri uri
@@ -117,7 +122,7 @@
 (defn- send-export
   [{:keys [blob?] :as params}]
   (->> (http/send! {:method :post
-                    :uri (u/join @cf/public-uri "api/export")
+                    :uri (u/join cf/public-uri "api/export")
                     :body (http/transit-data (dissoc params :blob?))
                     :credentials "include"
                     :response-type (if blob? :blob :text)})
@@ -136,7 +141,7 @@
 (defmethod cmd! ::multipart-upload
   [id params]
   (->> (http/send! {:method :post
-                    :uri  (u/join @cf/public-uri "api/rpc/command/" (name id))
+                    :uri  (u/join cf/public-uri "api/rpc/command/" (name id))
                     :credentials "include"
                     :body (http/form-data params)})
        (rx/map http/conditional-decode-transit)

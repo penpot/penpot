@@ -98,9 +98,9 @@
             [:& app.main.ui.onboarding/onboarding-modal {}]
 
             (and (:onboarding-viewed props)
-                 (not= (:release-notes-viewed props) (:main @cf/version))
-                 (not= "0.0" (:main @cf/version)))
-            [:& app.main.ui.releases/release-notes-modal {:version (:main @cf/version)}]))
+                 (not= (:release-notes-viewed props) (:main cf/version))
+                 (not= "0.0" (:main cf/version)))
+            [:& app.main.ui.releases/release-notes-modal {:version (:main cf/version)}]))
 
         [:& dashboard {:route route :profile profile}]]
 

@@ -22,7 +22,7 @@
 
 (defn- prepare-uri
   [params]
-  (let [base (-> @cf/public-uri
+  (let [base (-> cf/public-uri
                  (u/join "ws/notifications")
                  (assoc :query (u/map->query-string params)))]
     (cond-> base

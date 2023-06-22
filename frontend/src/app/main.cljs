@@ -6,6 +6,7 @@
 
 (ns app.main
   (:require
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -15,6 +16,7 @@
    [app.main.errors]
    [app.main.features :as feat]
    [app.main.store :as st]
+   [app.main.thumbnail-renderer :as tr]
    [app.main.ui :as ui]
    [app.main.ui.alert]
    [app.main.ui.confirm]
@@ -34,12 +36,12 @@
 
 (log/setup! {:app :info})
 
-(when (= :browser @cf/target)
+(when (= :browser cf/target)
   (log/info :message "Welcome to penpot"
-            :version (:full @cf/version)
+            :version (:full cf/version)
             :asserts *assert*
             :build-date cf/build-date
-            :public-uri (str @cf/public-uri)))
+            :public-uri (dm/str cf/public-uri)))
 
 (declare reinit)
 
@@ -80,6 +82,7 @@
   (i18n/init! cf/translations)
   (theme/init! cf/themes)
   (cur/init-styles)
+  (tr/init!)
   (init-ui)
   (st/emit! (initialize)))
 

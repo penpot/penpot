@@ -10,35 +10,30 @@
    [app.main.errors :as err]
    [app.util.worker :as uw]))
 
-(defonce instance (atom nil))
-
-(defn- update-public-uri!
-  [instance val]
-  (uw/ask! instance {:cmd :configure
-                     :key :public-uri
-                     :val val}))
+(defonce instance nil)
 
 (defn init!
   []
   (let [worker (uw/init cf/worker-uri err/on-error)]
-    (update-public-uri! worker @cf/public-uri)
-    (add-watch cf/public-uri ::worker-public-uri (fn [_ _ _ val] (update-public-uri! worker val)))
-    (reset! instance worker)))
+    (uw/ask! worker {:cmd :configure
+                     :key :public-uri
+                     :val cf/public-uri})
+    (set! instance worker)))
 
 (defn ask!
   ([message]
-   (when @instance (uw/ask! @instance message)))
+   (when instance (uw/ask! instance message)))
   ([message transfer]
-   (when @instance (uw/ask! @instance message transfer))))
+   (when instance (uw/ask! instance message transfer))))
 
 (defn ask-buffered!
   ([message]
-   (when @instance (uw/ask-buffered! @instance message)))
+   (when instance (uw/ask-buffered! instance message)))
   ([message transfer]
-   (when @instance (uw/ask-buffered! @instance message transfer))))
+   (when instance (uw/ask-buffered! instance message transfer))))
 
 (defn ask-many!
   ([message]
-   (when @instance (uw/ask-many! @instance message)))
+   (when instance (uw/ask-many! instance message)))
   ([message transfer]
-   (when @instance (uw/ask-many! @instance message transfer))))
+   (when instance (uw/ask-many! instance message transfer))))

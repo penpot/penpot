@@ -16,10 +16,13 @@
 
 (defn- load-fonts!
   [content]
-  (let [default (:font-id txt/default-text-attrs)]
+  (let [extract-fn (juxt :font-id :font-variant-id)
+        default    (extract-fn txt/default-text-attrs)]
     (->> (tree-seq map? :children content)
-         (into #{default} (keep :font-id))
-         (run! fonts/ensure-loaded!))))
+         (into #{default} (keep extract-fn))
+         (run! (fn [[font-id variant-id]]
+                 (when (some? font-id)
+                   (fonts/ensure-loaded! font-id variant-id)))))))
 
 (mf/defc text-shape
   {::mf/wrap-props false}
