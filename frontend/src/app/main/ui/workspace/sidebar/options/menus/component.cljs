@@ -6,20 +6,21 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require
-    [app.common.pages.helpers :as cph]
-    [app.common.types.components-list :as ctkl]
-    [app.common.types.file :as ctf]
-    [app.main.data.modal :as modal]
-    [app.main.data.workspace :as dw]
-    [app.main.data.workspace.libraries :as dwl]
-    [app.main.refs :as refs]
-    [app.main.store :as st]
-    [app.main.ui.components.context-menu :refer [context-menu]]
-    [app.main.ui.context :as ctx]
-    [app.main.ui.icons :as i]
-    [app.util.dom :as dom]
-    [app.util.i18n :as i18n :refer [tr]]
-    [rumext.v2 :as mf]))
+   [app.common.pages.helpers :as cph]
+   [app.common.types.components-list :as ctkl]
+   [app.common.types.file :as ctf]
+   [app.main.data.modal :as modal]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.libraries :as dwl]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.ui.components.context-menu :refer [context-menu]]
+   [app.main.ui.context :as ctx]
+   [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
+   [cuerdas.core :as str]
+   [rumext.v2 :as mf]))
 
 (def component-attrs [:component-id :component-file :shape-ref :main-instance? :annotation])
 
@@ -30,6 +31,7 @@
         component-id          (:component-id values)
         annotation            (:annotation component)
         editing?              (mf/use-state false)
+        invalid-text?         (mf/use-state (str/empty? annotation))
         size                  (mf/use-state (count annotation))
         textarea-ref          (mf/use-ref)
 
@@ -37,6 +39,7 @@
         ;; based on https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/
         autogrow              #(let [textarea (mf/ref-val textarea-ref)
                                      text (when textarea (.-value textarea))]
+                                 (reset! invalid-text? (str/empty? text))
                                  (when textarea
                                    (reset! size (count text))
                                    (aset (.-dataset (.-parentNode textarea)) "replicatedValue" text)))
@@ -55,10 +58,11 @@
                                 (dom/stop-propagation event)
                                 (let [textarea (mf/ref-val textarea-ref)
                                       text (.-value textarea)]
-                                  (reset! editing? false)
-                                  (st/emit!
-                                   (dw/set-annotations-id-for-create nil)
-                                   (dw/update-component-annotation component-id text))))
+                                  (when-not (str/blank? text)
+                                    (reset! editing? false)
+                                    (st/emit!
+                                     (dw/set-annotations-id-for-create nil)
+                                     (dw/update-component-annotation component-id text)))))
         workspace-annotations (mf/deref refs/workspace-annotations)
         annotations-expanded? (:expanded? workspace-annotations)
         creating?             (= id (:id-for-create workspace-annotations))
@@ -71,7 +75,6 @@
                                   (let [textarea (mf/ref-val textarea-ref)]
                                     (reset! editing? true)
                                     (dom/focus! textarea))))
-
         on-delete-annotation
         (mf/use-callback
          (mf/deps shape)
@@ -112,7 +115,8 @@
            (if (or @editing? creating?)
              [:*
               [:div.icon {:title (if creating? (tr "labels.create") (tr "labels.save"))
-                          :on-click save} i/tick]
+                          :on-click save
+                          :class (dom/classnames :hidden @invalid-text?)} i/tick]
               [:div.icon {:title (tr "labels.discard")
                           :on-click discard} i/cross]]
              [:*
