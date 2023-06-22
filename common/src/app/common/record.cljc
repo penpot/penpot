@@ -125,7 +125,9 @@
                       ~@(mapcat
                          (fn [f]
                            [(keyword f) `(set! (. ~this-sym ~(property-symbol f)) ~val-sym)])
-                         base-fields))
+                         base-fields)
+
+                      (set! (. ~this-sym ~'-$extmap) (cljs.core/assoc (. ~this-sym ~'-$extmap) ~key-sym ~val-sym)))
 
                     ~this-sym))
 
