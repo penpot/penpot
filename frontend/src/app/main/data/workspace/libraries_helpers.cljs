@@ -181,12 +181,14 @@
                        (not (nil? parent-id))
                        (assoc :parent-id parent-id))
 
-         changes (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
-                   (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers
-
-         changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
-                         changes
-                         (rest new-shapes))]
+         changes (as-> changes $
+                   (pcb/add-object $ first-shape {:ignore-touched true})
+                   (cond-> $
+                     (some? old-id)
+                     (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers
+                   (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
+                           $
+                           (rest new-shapes)))]
 
      [new-shape changes])))
 
