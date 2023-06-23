@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## :rocket: 1.19.0
+## 1.19.0
 
 ### :boom: Breaking changes & Deprecations
 
@@ -13,6 +13,7 @@
 - Show interactions setting at the view mode [Taiga #1330](https://tree.taiga.io/project/penpot/issue/1330)
 - Improve dashboard performance related to thumbnails; now the thumbnails are
   rendered as bitmap images.
+- Add the ability to disable google fonts provider with the `disable-google-fonts-provider` flag
 
 ### :bug: Bugs fixed
 

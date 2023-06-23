@@ -59,7 +59,8 @@
     :webworker))
 
 (def default-flags
-  [:enable-newsletter-subscription])
+  [:enable-newsletter-subscription
+   :enable-google-fonts-provider])
 
 (defn- parse-flags
   [global]
