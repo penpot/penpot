@@ -493,7 +493,7 @@
       (.remove ^js class-list class-name))))
 
 (defn child? [^js node1 ^js node2]
-  (when (some? node1)
+  (when (and (some? node1) (some? node2))
     (.contains ^js node2 ^js node1)))
 
 (defn get-user-agent []

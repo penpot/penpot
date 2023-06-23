@@ -313,22 +313,25 @@
         (mf/use-fn
          (fn [event]
            (let [event  (.getBrowserEvent ^js event)
-                 norm-event ^js (nw/normalize-wheel event)
-                 mod? (kbd/mod? event)
-                 shift? (kbd/shift? event)
-                 delta (.-pixelY norm-event)
-                 viewer-section (.target event)
-                 scroll-pos (if shift?
-                              (dom/get-h-scroll-pos viewer-section)
-                              (dom/get-scroll-pos viewer-section))
-                 new-scroll-pos (+ scroll-pos delta)]
-             (when-not mod?
-               (do
-                 (dom/prevent-default event)
-                 (dom/stop-propagation event)
-                 (if shift?
-                   (dom/set-h-scroll-pos! viewer-section new-scroll-pos)
-                   (dom/set-scroll-pos! viewer-section new-scroll-pos)))))))
+                 wrapper (dom/get-element-by-class "inspect-svg-wrapper")
+                 section (dom/get-element-by-class "inspect-svg-container")
+                 target (.-target event)]
+             (when (or (dom/child? target wrapper) (dom/class? target "inspect-svg-container"))
+               (let [norm-event ^js (nw/normalize-wheel event)
+                     mod? (kbd/mod? event)
+                     shift? (kbd/shift? event)
+                     delta (.-pixelY norm-event)
+                     scroll-pos (if shift?
+                                  (dom/get-h-scroll-pos section)
+                                  (dom/get-scroll-pos section))
+                     new-scroll-pos (+ scroll-pos delta)]
+                 (when-not mod?
+                   (do
+                     (dom/prevent-default event)
+                     (dom/stop-propagation event)
+                     (if shift?
+                       (dom/set-h-scroll-pos! section new-scroll-pos)
+                       (dom/set-scroll-pos! section new-scroll-pos)))))))))
 
         on-exit-fullscreen
         (mf/use-callback
