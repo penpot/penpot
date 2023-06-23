@@ -14,12 +14,12 @@
    [app.common.text :as txt]
    [app.config :as cf]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.http :as http]
    [app.util.object :as obj]
    [beicon.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
-   [goog.events :as gev]
    [lambdaisland.uri :as u]
    [okulary.core :as l]
    [promesa.core :as p]))
@@ -91,37 +91,14 @@
 ;; only know if the font is needed or not
 (defonce ^:dynamic loaded-hints (l/atom #{}))
 
-(defn- create-link-element
-  [uri]
-  (let [node (.createElement js/document "link")]
-    (unchecked-set node "href" uri)
-    (unchecked-set node "rel" "stylesheet")
-    (unchecked-set node "type" "text/css")
-    node))
-
-(defn- create-style-element
-  [css]
-  (let [node (.createElement js/document "style")]
-    (unchecked-set node "innerHTML" css)
-    node))
-
-(defn- load-font-css!
-  "Creates a link element and attaches it to the dom for correctly
-  load external css resource."
-  [url on-loaded]
-  (let [node (create-link-element url)
-        head (.-head ^js js/document)]
-    (gev/listenOnce node "load" (fn [_]
-                                  (when (fn? on-loaded)
-                                    (on-loaded))))
-    (dom/append-child! head node)))
-
 (defn- add-font-css!
   "Creates a style element and attaches it to the dom."
-  [css]
-  (let [head (.-head ^js js/document)]
-    (->> (create-style-element css)
-         (dom/append-child! head))))
+  [id css]
+  (let [node (dom/create-element "style")]
+    (dom/set-attribute! node "id" id)
+    (dom/set-html! node css)
+    (when-let [head (unchecked-get globals/document "head")]
+      (dom/append-child! head node))))
 
 ;; --- LOADER: BUILTIN
 
@@ -139,18 +116,31 @@
 
 ;; --- LOADER: GOOGLE
 
-(defn generate-gfonts-url
+(defn- generate-gfonts-url
   [{:keys [family variants]}]
-  (let [base (str "https://fonts.googleapis.com/css?family=" family)
-        variants (str/join "," (map :id variants))]
-    (str base ":" variants "&display=block")))
+  (let [query (dm/str "family=" family ":"
+                      (str/join "," (map :id variants))
+                      "&display=block")]
+    (dm/str
+     (-> cf/public-uri
+         (assoc :path "/internal/gfonts/css")
+         (assoc :query query)))))
+
+(defn- fetch-and-process-gfont-css
+  [url]
+  (let [base (dm/str (assoc cf/public-uri :path "/internal/gfonts/font"))]
+    (->> (http/send! {:method :get :uri url :mode :cors :response-type :text})
+         (rx/map :body)
+         (rx/map #(str/replace % "https://fonts.gstatic.com/s" base)))))
 
 (defmethod load-font :google
   [{:keys [id ::on-loaded] :as font}]
   (when (exists? js/window)
     (log/info :hint "load-font" :font-id id :backend "google")
     (let [url (generate-gfonts-url font)]
-      (load-font-css! url (partial on-loaded id))
+      (->> (fetch-and-process-gfont-css url)
+           (rx/tap #(on-loaded id))
+           (rx/subs (partial add-font-css! id)))
       nil)))
 
 ;; --- LOADER: CUSTOM
@@ -187,7 +177,7 @@
   (when (exists? js/window)
     (log/info :hint "load-font" :font-id id :backend "custom")
     (let [css (generate-custom-font-css font)]
-      (add-font-css! css)
+      (add-font-css! id css)
       (when (fn? on-loaded)
         (on-loaded)))))
 

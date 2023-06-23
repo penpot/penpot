@@ -6,6 +6,10 @@
 
 ### :sparkles: New features
 
+- Add support for local caching of google fonts (this avoids exposing
+  the final user IP to goolge and reduces the amount of request sent
+  to google)
+
 ### :bug: Bugs fixed
 
 ### :arrow_up: Deps updates
