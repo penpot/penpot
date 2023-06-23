@@ -11,15 +11,8 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
-   [app.common.types.shape.layout :as ctl]))
-
-(defn svg-render?
-  [shape]
-  (or (cph/path-shape? shape)
-      (cph/mask-shape? shape)
-      (cph/bool-shape? shape)
-      (cph/svg-raw-shape? shape)
-      (some? (:svg-attrs shape))))
+   [app.common.types.shape.layout :as ctl]
+   [app.util.code-gen.markup-html :refer [svg-markup?]]))
 
 (defn fill->color
   [{:keys [fill-color fill-opacity fill-color-gradient]}]
@@ -107,21 +100,17 @@
   (get-shape-size shape :height))
 
 (defmethod get-value :transform
-  [_ {:keys [transform] :as shape} objects]
-  (let [transform
-        (->> (cph/get-parents objects (:id shape))
-             (reduce (fn [mtx {:keys [transform-inverse]}]
-                       (gmt/multiply transform-inverse mtx))
-                     transform))]
-    (when (and (some? transform) (not (gmt/unit? transform)))
-      (dm/str transform))))
+  [_ shape objects]
+  (let [parent (get objects (:parent-id shape))]
+    (dm/str (gmt/multiply (:transform shape (gmt/matrix))
+                          (:transform-inverse parent (gmt/matrix))))))
 
 (defmethod get-value :background
   [_ {:keys [fills] :as shape} _]
   (let [single-fill? (= (count fills) 1)
         ffill (first fills)
         gradient? (some? (:fill-color-gradient ffill))]
-    (when (and (not (svg-render? shape)) single-fill? gradient?)
+    (when (and (not (svg-markup? shape)) single-fill? gradient?)
       (fill->color ffill))))
 
 (defmethod get-value :background-color
@@ -129,12 +118,12 @@
   (let [single-fill? (= (count fills) 1)
         ffill (first fills)
         gradient? (some? (:fill-color-gradient ffill))]
-    (when (and (not (svg-render? shape)) single-fill? (not gradient?))
+    (when (and (not (svg-markup? shape)) single-fill? (not gradient?))
       (fill->color ffill))))
 
 (defmethod get-value :background-image
   [_ {:keys [fills] :as shape} _]
-  (when (and (not (svg-render? shape)) (> (count fills) 1))
+  (when (and (not (svg-markup? shape)) (> (count fills) 1))
     (->> fills
          (map fill->color))))
 
@@ -153,7 +142,7 @@
 
 (defmethod get-value :border
   [_ shape _]
-  (when-not (svg-render? shape)
+  (when-not (svg-markup? shape)
     (get-stroke-data (first (:strokes shape)))))
 
 (defmethod get-value :border-radius
@@ -170,11 +159,13 @@
 
 (defmethod get-value :box-shadow
   [_ shape _]
-  (:shadow shape))
+  (when-not (svg-markup? shape)
+    (:shadow shape)))
 
 (defmethod get-value :filter
   [_ shape _]
-  (get-in shape [:blur :value]))
+  (when-not (svg-markup? shape)
+    (get-in shape [:blur :value])))
 
 (defmethod get-value :display
   [_ shape _]
@@ -226,13 +217,13 @@
 
 (defmethod get-value :row-gap
   [_ shape _]
-  (let [[g1 _] (ctl/gaps shape)]
-    (when (not= g1 0) [g1])))
+  (let [[g1 g2] (ctl/gaps shape)]
+    (when (and (not= g1 g2) (not= g1 0)) [g1])))
 
 (defmethod get-value :column-gap
   [_ shape _]
-  (let [[_ g2] (ctl/gaps shape)]
-    (when (not= g2 0) [g2])))
+  (let [[g1 g2] (ctl/gaps shape)]
+    (when (and (not= g1 g2) (not= g2 0)) [g2])))
 
 (defmethod get-value :padding
   [_ {:keys [layout-padding]} _]

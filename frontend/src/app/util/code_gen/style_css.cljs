@@ -46,8 +46,7 @@ svg {
   box-sizing: border-box;
 }
 
-.text-node { background-clip: text;
-             -webkit-background-clip: text; }
+.text-node { background-clip: text !important; -webkit-background-clip: text !important; }
 
 ")
 

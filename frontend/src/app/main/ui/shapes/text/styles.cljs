@@ -74,16 +74,24 @@
          font-size       (:font-size data)
          fill-color      (or (-> data :fills first :fill-color) (:fill-color data))
          fill-opacity    (or (-> data :fills first :fill-opacity) (:fill-opacity data))
+         fill-gradient   (or (-> data :fills first :fill-color-gradient) (:fill-color-gradient data))
 
          [r g b a]       (uc/hex->rgba fill-color fill-opacity)
          text-color      (when (and (some? fill-color) (some? fill-opacity))
                            (str/format "rgba(%s, %s, %s, %s)" r g b a))
 
+         gradient?       (some? fill-gradient)
+
+         text-color      (if gradient?
+                           (uc/color->background {:gradient fill-gradient})
+                           text-color)
+
          fontsdb         (deref fonts/fontsdb)
 
          base            #js {:textDecoration text-decoration
                               :textTransform text-transform
-                              :color (if show-text? text-color "transparent")
+                              :color (if (and show-text? (not gradient?)) text-color "transparent")
+                              :background (when (and show-text? gradient?) text-color)
                               :caretColor (or text-color "black")
                               :overflowWrap "initial"
                               :lineBreak "auto"

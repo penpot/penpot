@@ -32,6 +32,9 @@
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
+(def embed-images? false)
+(def remove-localhost? true)
+
 (def page-template
   "<!DOCTYPE html>
 <html>
@@ -46,11 +49,13 @@
 </html>")
 
 (defn format-code [code type]
-  (let [code (-> code
-                 (str/replace "<defs></defs>" "")
-                 (str/replace "><" ">\n<"))]
-    (cond-> code
-      (or (= type "svg") (= type "html")) (beautify/html #js {"indent_size" 2}))))
+  (cond-> code
+    (= type "svg")
+    (-> (str/replace "<defs></defs>" "")
+        (str/replace "><" ">\n<"))
+
+    (or (= type "svg") (= type "html"))
+    (beautify/html #js {"indent_size" 2})))
 
 (defn get-flex-elements [page-id shapes from]
   (let [ids (mapv :id shapes)
@@ -189,7 +194,13 @@
         (mf/use-callback
          (mf/deps style-code markup-code images-data)
          (fn []
-           (let [markup-code (replace-map markup-code images-data)
+           (let [markup-code (cond-> markup-code
+                               embed-images? (replace-map images-data))
+
+                 style-code (cond-> style-code
+                              remove-localhost?
+                              (str/replace "http://localhost:3449" ""))
+
                  data (str/format page-template style-code markup-code)]
              (wapi/write-to-clipboard data))))]
 

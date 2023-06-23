@@ -7,6 +7,7 @@
 (ns app.util.code-gen.markup-html
   (:require
    ["react-dom/server" :as rds]
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
@@ -17,6 +18,32 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+(defn svg-markup?
+  "Function to determine whether a shape is rendered in HTML+CSS or is rendered
+  through a SVG"
+  [shape]
+  (or
+   ;; path and path-like shapes
+   (cph/path-shape? shape)
+   (cph/bool-shape? shape)
+
+   ;; imported SVG images
+   (cph/svg-raw-shape? shape)
+   (some? (:svg-attrs shape))
+
+   ;; CSS masks are not enough we need to delegate to SVG
+   (cph/mask-shape? shape)
+
+   ;; Texts with shadows or strokes we render in SVG
+   (and (cph/text-shape? shape)
+        (or (d/not-empty? (:shadow shape))
+            (d/not-empty? (:strokes shape))))
+
+   ;; When a shape has several strokes or the stroke is not a "border"
+   (or (> (count (:strokes shape)) 1)
+       (and (= (count (:strokes shape)) 1)
+            (not= (-> shape :strokes first :stroke-alignment) :center)))))
+
 (defn generate-html
   ([objects shape]
    (generate-html objects shape 0))
@@ -26,6 +53,14 @@
          maybe-reverse (if (ctl/any-layout? shape) reverse identity)]
 
      (cond
+       (svg-markup? shape)
+       (let [svg-markup (generate-svg objects shape)]
+         (dm/fmt "%<div class=\"%\">\n%\n%</div>"
+                 indent
+                 (cgc/shape->selector shape)
+                 svg-markup
+                 indent))
+
        (cph/text-shape? shape)
        (let [text-shape-html (rds/renderToStaticMarkup (mf/element text/text-shape #js {:shape shape :code? true}))]
          (dm/fmt "%<div class=\"%\">\n%\n%</div>"
@@ -41,18 +76,6 @@
                  indent
                  image-url
                  (cgc/shape->selector shape)
-                 indent))
-
-       (or (cph/path-shape? shape)
-           (cph/mask-shape? shape)
-           (cph/bool-shape? shape)
-           (cph/svg-raw-shape? shape)
-           (some? (:svg-attrs shape)))
-       (let [svg-markup (generate-svg objects shape)]
-         (dm/fmt "%<div class=\"%\">\n%\n%</div>"
-                 indent
-                 (cgc/shape->selector shape)
-                 svg-markup
                  indent))
 
        (empty? (:shapes shape))
