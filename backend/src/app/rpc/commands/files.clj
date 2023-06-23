@@ -549,9 +549,11 @@
           f.created_at,
           f.modified_at,
           f.name,
-          f.is_shared
+          f.is_shared,
+          ft.media_id
      from file as f
     inner join project as p on (p.id = f.project_id)
+     left join file_thumbnail as ft on (ft.file_id = f.id and ft.revn = f.revn)
     where f.is_shared = true
       and f.deleted_at is null
       and p.deleted_at is null
@@ -582,6 +584,12 @@
     (->> (db/exec! conn [sql:team-shared-files team-id])
          (into #{} (comp
                     (map decode-row)
+                    (map (fn [row]
+                           (if-let [media-id (:media-id row)]
+                             (-> row
+                                 (dissoc :media-id)
+                                 (assoc :thumbnail-uri (resolve-public-uri media-id)))
+                             (dissoc row :media-id))))
                     (map #(assoc % :library-summary (library-summary %)))
                     (map #(dissoc % :data)))))))
 
