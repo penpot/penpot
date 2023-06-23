@@ -126,19 +126,23 @@
          (assoc :path "/internal/gfonts/css")
          (assoc :query query)))))
 
-(defn- fetch-and-process-gfont-css
-  [url]
+(defn- process-gfont-css
+  [css]
   (let [base (dm/str (assoc cf/public-uri :path "/internal/gfonts/font"))]
-    (->> (http/send! {:method :get :uri url :mode :cors :response-type :text})
-         (rx/map :body)
-         (rx/map #(str/replace % "https://fonts.gstatic.com/s" base)))))
+    (str/replace css "https://fonts.gstatic.com/s" base)))
+
+(defn- fetch-gfont-css
+  [url]
+  (->> (http/send! {:method :get :uri url :mode :cors :response-type :text})
+       (rx/map :body)))
 
 (defmethod load-font :google
   [{:keys [id ::on-loaded] :as font}]
   (when (exists? js/window)
     (log/info :hint "load-font" :font-id id :backend "google")
     (let [url (generate-gfonts-url font)]
-      (->> (fetch-and-process-gfont-css url)
+      (->> (fetch-gfont-css url)
+           (rx/map process-gfont-css)
            (rx/tap #(on-loaded id))
            (rx/subs (partial add-font-css! id)))
       nil)))
@@ -257,7 +261,6 @@
   "Given a font and the variant-id, retrieves the fontface CSS"
   [{:keys [font-id font-variant-id]
     :or   {font-variant-id "regular"}}]
-
   (let [{:keys [backend family] :as font} (get @fontsdb font-id)]
     (cond
       (nil? font)
@@ -265,10 +268,9 @@
 
       (= :google backend)
       (let [variant (get-variant font font-variant-id)]
-        (-> (generate-gfonts-url
-             {:family family
-              :variants [variant]})
-            (http/fetch-text)))
+        (->> (rx/of (generate-gfonts-url {:family family :variants [variant]}))
+             (rx/mapcat fetch-gfont-css)
+             (rx/map process-gfont-css)))
 
       (= :custom backend)
       (let [variant (get-variant font font-variant-id)

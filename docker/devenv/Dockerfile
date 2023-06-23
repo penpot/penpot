@@ -3,10 +3,10 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v18.15.0 \
-    CLOJURE_VERSION=1.11.1.1257 \
-    CLJKONDO_VERSION=2023.03.17 \
-    BABASHKA_VERSION=1.3.176 \
+ENV NODE_VERSION=v18.16.1 \
+    CLOJURE_VERSION=1.11.1.1347 \
+    CLJKONDO_VERSION=2023.05.26 \
+    BABASHKA_VERSION=1.3.181 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -104,16 +104,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='1c4be9aa173cb0deb0d215643d9509c8900e5497290b29eee4bee335fa57984f'; \
-         BINARY_URL='https://github.com/adoptium/temurin19-binaries/releases/download/jdk-19.0.2%2B7/OpenJDK19U-jdk_aarch64_linux_hotspot_19.0.2_7.tar.gz'; \
-         ;; \
-       armhf|armv7l) \
-         ESUM='6a51cb3868b5a3b81848a0d276267230ff3f8639f20ba9ae9ef1d386440bf1fd'; \
-         BINARY_URL='https://github.com/adoptium/temurin19-binaries/releases/download/jdk-19.0.2%2B7/OpenJDK19U-jdk_arm_linux_hotspot_19.0.2_7.tar.gz'; \
+         ESUM='b16c0271899de1f0e277dc0398bfff11b54511765f104fa938929ac484dc926d'; \
+         BINARY_URL='https://github.com/adoptium/temurin20-binaries/releases/download/jdk-20.0.1%2B9/OpenJDK20U-jdk_aarch64_linux_hotspot_20.0.1_9.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='3a3ba7a3f8c3a5999e2c91ea1dca843435a0d1c43737bd2f6822b2f02fc52165'; \
-         BINARY_URL='https://github.com/adoptium/temurin19-binaries/releases/download/jdk-19.0.2%2B7/OpenJDK19U-jdk_x64_linux_hotspot_19.0.2_7.tar.gz'; \
+         ESUM='43ad054f135a7894dc87ad5d10ad45d8e82846186515892acdbc17c2c5cd27e4'; \
+         BINARY_URL='https://github.com/adoptium/temurin20-binaries/releases/download/jdk-20.0.1%2B9/OpenJDK20U-jdk_x64_linux_hotspot_20.0.1_9.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
