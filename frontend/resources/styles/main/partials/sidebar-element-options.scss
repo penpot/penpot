@@ -2414,6 +2414,16 @@
     .title .icon {
       display: flex;
     }
+
+    textarea {
+      min-height: 250px;
+    }
+  }
+
+  &.creating {
+    textarea {
+      min-height: 250px;
+    }
   }
 
   .hidden {
@@ -2445,7 +2455,6 @@
     textarea {
       background-color: $color-gray-60;
       color: $color-white;
-      min-height: 250px;
       padding: 10px;
 
       border: none;
