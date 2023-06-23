@@ -99,7 +99,7 @@
        (fn [] (st/emit! (dw/set-annotations-id-for-create nil))))) ;; cleanup set-annotationsid-for-create on unload
 
     (when (or creating? annotation)
-      [:div.component-annotation {:class (dom/classnames :editing @editing?)}
+      [:div.component-annotation {:class (dom/classnames :editing @editing? :creating creating?)}
        [:div.title {:class (dom/classnames :expandeable (not (or @editing? creating?)))
                     :on-click #(expand (not annotations-expanded?))}
         [:div (if (or @editing? creating?)
