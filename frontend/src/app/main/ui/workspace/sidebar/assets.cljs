@@ -1893,7 +1893,7 @@
 
         create-group
         (mf/use-fn
-         (mf/deps typographies selected on-clear-selection file-id)
+         (mf/deps typographies selected on-clear-selection file-id (:id @state))
          (fn [group-name]
            (on-clear-selection)
            (let [undo-id (js/Symbol)]
@@ -1927,7 +1927,7 @@
 
         on-group
         (mf/use-fn
-         (mf/deps typographies selected)
+         (mf/deps typographies selected create-group)
          (fn [event]
            (dom/stop-propagation event)
            (modal/show! :name-group-dialog {:accept create-group})))
