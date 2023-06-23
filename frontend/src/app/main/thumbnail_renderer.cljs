@@ -62,9 +62,9 @@
 
 (defn render
   "Renders a thumbnail."
-  [{:keys [data styles] :as params}]
+  [{:keys [data styles width] :as params}]
   (let [id      (dm/str (uuid/next))
-        payload #js {:data data :styles styles}
+        payload #js {:data data :styles styles :width width}
         message #js {:id id
                      :scope "penpot/thumbnail-renderer"
                      :payload payload}]

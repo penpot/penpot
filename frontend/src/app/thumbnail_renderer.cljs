@@ -40,7 +40,6 @@
        (obj/set! image "onload" #(do
                                    (rx/push! subs image)
                                    (rx/end! subs)))
-
        (obj/set! image "crossOrigin" "anonymous")
        (obj/set! image "onerror" #(rx/error! subs %))
        (obj/set! image "onabort" #(rx/error! subs (ex/error :type :internal
@@ -157,10 +156,10 @@
 
 (defn- svg-prepare
   "Prepares an SVG for rendering (resolves images to Data URIs and adds intrinsic size)."
-  [data styles]
+  [data styles width]
   (let [svg (svg-parse data)]
     (->> (svg-resolve-all! svg styles)
-         (rx/map #(svg-set-intrinsic-size! % 300))
+         (rx/map #(svg-set-intrinsic-size! % width))
          (rx/map svg-stringify))))
 
 (defn- bitmap->blob
@@ -182,13 +181,15 @@
   "Renders a thumbnail using it's SVG and returns an ArrayBuffer of the image."
   [payload]
   (let [data   (unchecked-get payload "data")
-        styles (unchecked-get payload "styles")]
-    (->> (svg-prepare data styles)
+        styles (unchecked-get payload "styles")
+        width  (d/nilv (unchecked-get payload "width") 300)]
+    (->> (svg-prepare data styles width)
          (rx/map #(wapi/create-blob % "image/svg+xml"))
          (rx/map wapi/create-uri)
          (rx/mapcat (fn [uri]
                       (->> (create-image uri)
-                           (rx/mapcat wapi/create-image-bitmap)
+                           (rx/mapcat #(wapi/create-image-bitmap % #js {:resizeWidth width
+                                                                        :resizeQuality "medium"}))
                            (rx/tap #(wapi/revoke-uri uri)))))
          (rx/mapcat bitmap->blob))))
 
