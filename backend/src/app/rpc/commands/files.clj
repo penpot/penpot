@@ -273,16 +273,13 @@
                (binding [pmap/*tracked* (atom {})]
                  (let [data        (ctf/migrate-to-components-v2 data)
                        features    (conj features "components/v2")
-                       modified-at (dt/now)
                        features'   (db/create-array conn "text" features)]
                    (db/update! conn :file
                                {:data (blob/encode data)
-                                :modified-at modified-at
                                 :features features'}
                                {:id id})
                    (persist-pointers! conn id)
                    (-> file
-                       (assoc :modified-at modified-at)
                        (assoc :features features)
                        (assoc :data data))))
                file)]
