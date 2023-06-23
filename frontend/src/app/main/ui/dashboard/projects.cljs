@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
+   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
@@ -195,7 +196,7 @@
         on-menu-click
         (mf/use-fn
          (fn [event]
-           (dom/prevent-default event) 
+           (dom/prevent-default event)
 
            (let [client-position (dom/get-client-position event)
                  position (if (and (nil? (:y client-position)) (nil? (:x client-position)))
@@ -414,7 +415,9 @@
        (when team-hero?
          [:& team-hero {:team team :close-fn close-banner}])
 
-       (when (or (not tutorial-viewed?) (not walkthrough-viewed?))
+       (when (and (contains? cf/flags :dashboard-templates-section)
+                  (or (not tutorial-viewed?)
+                      (not walkthrough-viewed?)))
          [:div.hero-projects
           (when (and (not tutorial-viewed?) (:is-default team))
             [:& tutorial-project

@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.common.spec :as us]
+   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.dashboard.shortcuts :as sc]
    [app.main.data.events :as ev]
@@ -259,11 +260,13 @@
                               :projects projects
                               :profile profile
                               :default-project-id default-project-id}]
-        [:& templates-section {:profile profile
-                               :project project
-                               :default-project-id default-project-id
-                               :team team
-                               :content-width @content-width}]]
+
+        (when (contains? cf/flags :dashboard-templates-section)
+          [:& templates-section {:profile profile
+                                 :project project
+                                 :default-project-id default-project-id
+                                 :team team
+                                 :content-width @content-width}])]
 
        :dashboard-fonts
        [:& fonts-page {:team team}]
@@ -275,11 +278,12 @@
        (when project
          [:*
           [:& files-section {:team team :project project}]
-          [:& templates-section {:profile profile
-                                 :project project
-                                 :default-project-id default-project-id
-                                 :team team
-                                 :content-width @content-width}]])
+          (when (contains? cf/flags :dashboard-templates-section)
+            [:& templates-section {:profile profile
+                                   :project project
+                                   :default-project-id default-project-id
+                                   :team team
+                                   :content-width @content-width}])])
 
        :dashboard-search
        [:& search-page {:team team

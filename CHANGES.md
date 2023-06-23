@@ -14,6 +14,7 @@
 - Improve dashboard performance related to thumbnails; now the thumbnails are
   rendered as bitmap images.
 - Add the ability to disable google fonts provider with the `disable-google-fonts-provider` flag
+- Add the ability to disable dashboard templates section with the `disable-dashboard-templates-section` flag
 
 ### :bug: Bugs fixed
 
