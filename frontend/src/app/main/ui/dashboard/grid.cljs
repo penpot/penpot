@@ -106,6 +106,22 @@
            typographies (:typographies summary)]
        [:*
 
+        (when (and (zero? (:count components)) (zero? (:count colors)) (zero? (:count typographies)))
+          [:*
+           [:div.asset-section
+            [:div.asset-title
+             [:span (tr "workspace.assets.components")]
+             [:span.num-assets (str "\u00A0(") 0 ")"]]] ;; Unicode 00A0 is non-breaking space
+          [:div.asset-section
+           [:div.asset-title
+            [:span (tr "workspace.assets.colors")]
+            [:span.num-assets (str "\u00A0(") 0 ")"]]] ;; Unicode 00A0 is non-breaking space
+          [:div.asset-section
+           [:div.asset-title
+            [:span (tr "workspace.assets.typography")]
+            [:span.num-assets (str "\u00A0(") 0 ")"]]]]) ;; Unicode 00A0 is non-breaking space
+
+
         (when (pos? (:count components))
           [:div.asset-section
            [:div.asset-title
