@@ -5,19 +5,24 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :sparkles: New features
+
 - Default naming of text layers [Taiga #2836](https://tree.taiga.io/project/penpot/us/2836)
 - Create typography style from a selected text layer[Taiga #3041](https://tree.taiga.io/project/penpot/us/3041)
 - Board as ruler origin [Taiga #4833](https://tree.taiga.io/project/penpot/us/4833)
 - Access tokens support [Taiga #4460](https://tree.taiga.io/project/penpot/us/4460)
 - Show interactions setting at the view mode [Taiga #1330](https://tree.taiga.io/project/penpot/issue/1330)
+- Improve dashboard performance related to thumbnails; now the thumbnails are
+  rendered as bitmap images.
 
 ### :bug: Bugs fixed
+
 - Fix files can be opened from multiple urls [Taiga #5310](https://tree.taiga.io/project/penpot/issue/5310)
 - Fix asset color item was created from the selected layer [Taiga #5180](https://tree.taiga.io/project/penpot/issue/5180)
 
 ### :arrow_up: Deps updates
 
 ### :heart: Community contributions by (Thank you!)
+
 - Update Typography palette order (by @akshay-gupta7) [Github #3156](https://github.com/penpot/penpot/pull/3156)
 - Palettes (color, typographies) empty state (by @akshay-gupta7) [Github #3160](https://github.com/penpot/penpot/pull/3160)
 - Duplicate objects via drag + alt (by @akshay-gupta7) [Github #3147](https://github.com/penpot/penpot/pull/3147)
