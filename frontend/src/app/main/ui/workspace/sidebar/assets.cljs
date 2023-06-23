@@ -1546,11 +1546,16 @@
 
         read-only?      (mf/use-ctx ctx/workspace-read-only?)
 
+        add-color
+        (mf/use-fn
+          (fn [value _]
+            (st/emit! (dwl/add-color value))))
+
         add-color-clicked
         (mf/use-fn
           (fn [event]
             (let [position (dom/get-client-position event)]
-              (st/emit! (dc/select-color position)))))
+              (st/emit! (dc/select-color position add-color)))))
 
         create-group
         (mf/use-fn
@@ -1888,7 +1893,7 @@
 
         create-group
         (mf/use-fn
-         (mf/deps typographies selected on-clear-selection file-id)
+         (mf/deps typographies selected on-clear-selection file-id (:id @state))
          (fn [group-name]
            (on-clear-selection)
            (let [undo-id (js/Symbol)]
@@ -1922,7 +1927,7 @@
 
         on-group
         (mf/use-fn
-         (mf/deps typographies selected)
+         (mf/deps typographies selected create-group)
          (fn [event]
            (dom/stop-propagation event)
            (modal/show! :name-group-dialog {:accept create-group})))

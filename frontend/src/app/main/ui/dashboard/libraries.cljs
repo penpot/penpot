@@ -23,38 +23,39 @@
   [{:keys [team] :as props}]
   (let [files-map       (mf/deref refs/dashboard-shared-files)
         projects        (mf/deref refs/dashboard-projects)
+
         default-project (->> projects vals (d/seek :is-default))
-        files           (if (nil? files-map)
-                          nil
-                          (->> (vals files-map)
-                             (sort-by :modified-at)
-                             (reverse)))
+
+        files           (mf/with-memo [files-map]
+                          (if (nil? files-map)
+                            nil
+                            (->> (vals files-map)
+                                 (sort-by :modified-at)
+                                 (reverse))))
 
         components-v2   (features/use-feature :components-v2)
 
         width           (mf/use-state nil)
         rowref          (mf/use-ref)
-        itemsize        (if (>= @width 1030)
-                          280
-                          230)
+
+        itemsize        (if (>= @width 1030) 280 230)
         ratio           (if (some? @width) (/ @width itemsize) 0)
         nitems          (mth/floor ratio)
         limit           (min 10 nitems)
         limit           (max 1 limit)]
-    (mf/use-effect
-     (mf/deps team)
-     (fn []
-       (when team
-         (let [tname (if (:is-default team)
-                       (tr "dashboard.your-penpot")
-                       (:name team))]
-           (dom/set-html-title (tr "title.dashboard.shared-libraries" tname))))))
 
-    (mf/use-effect
-     #(st/emit! (dd/fetch-shared-files)
+    (mf/with-effect [team]
+      (when team
+        (let [tname (if (:is-default team)
+                      (tr "dashboard.your-penpot")
+                      (:name team))]
+          (dom/set-html-title (tr "title.dashboard.shared-libraries" tname)))))
+
+    (mf/with-effect []
+      (st/emit! (dd/fetch-shared-files)
                 (dd/clear-selected-files)))
 
-    (mf/with-effect
+    (mf/with-effect []
       (let [node (mf/ref-val rowref)
             mnt? (volatile! true)
             sub  (->> (wapi/observe-resize node)
@@ -73,7 +74,7 @@
      [:header.dashboard-header {:ref rowref}
       [:div.dashboard-title#dashboard-libraries-title
        [:h1 (tr "dashboard.libraries-title")]]]
-     [:section.dashboard-container.no-bg.dashboard-shared 
+     [:section.dashboard-container.no-bg.dashboard-shared
       [:& grid {:files files
                 :project default-project
                 :origin :libraries
