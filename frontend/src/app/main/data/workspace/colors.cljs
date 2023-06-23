@@ -21,7 +21,6 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.store :as st]
    [app.util.color :as uc]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -610,7 +609,7 @@
                                               (materialize-color-components))]))))))))))
 
 (defn select-color
-  [position]
+  [position add-color]
   (ptk/reify ::select-color
     ptk/WatchEvent
     (watch [_ state _]
@@ -635,7 +634,7 @@
         (rx/of (md/show :colorpicker
                  {:x (:x position)
                   :y (:y position)
-                  :on-accept #(st/emit! (dwl/add-color data))
+                  :on-accept add-color
                   :data data
                   :position :right})
           (ptk/event ::ev/event {::ev/name "add-asset-to-library"
