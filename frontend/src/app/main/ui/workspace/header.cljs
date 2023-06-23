@@ -465,8 +465,8 @@
         toggle-flag
         (mf/use-fn
          (fn [event]
-           (let [flag (-> (dom/get-target event)
-                          (dom/get-data :flag)
+           (let [flag (-> (dom/get-current-target event)
+                          (dom/get-data "flag")
                           (keyword))]
              (st/emit!
               (-> (dw/toggle-layout-flag flag)
