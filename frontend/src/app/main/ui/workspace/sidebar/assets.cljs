@@ -1546,11 +1546,16 @@
 
         read-only?      (mf/use-ctx ctx/workspace-read-only?)
 
+        add-color
+        (mf/use-fn
+          (fn [value _]
+            (st/emit! (dwl/add-color value))))
+
         add-color-clicked
         (mf/use-fn
           (fn [event]
             (let [position (dom/get-client-position event)]
-              (st/emit! (dc/select-color position)))))
+              (st/emit! (dc/select-color position add-color)))))
 
         create-group
         (mf/use-fn
