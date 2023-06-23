@@ -36,10 +36,10 @@
 
 (defmethod ig/init-key ::routes
   [_ {:keys [::wrk/executor] :as cfg}]
-  (letfn [(handler [request respond _]
+  (letfn [(handler [request]
             (let [data (-> request yrq/body slurp)]
               (px/run! executor #(handle-request cfg data)))
-            (respond {::yrs/status 200}))]
+            {::yrs/status 200})]
     ["/sns" {:handler handler
              :allowed-methods #{:post}}]))
 
