@@ -65,7 +65,9 @@
              (merge db (d/index-by :id fonts))))))
 
 (register! :builtin local-fonts)
-(register! :google google-fonts)
+
+(when (contains? cf/flags :google-fonts-provider)
+  (register! :google google-fonts))
 
 (defn get-font-data [id]
   (get @fontsdb id))
