@@ -7,6 +7,7 @@
 (ns app.auth.oidc
   "OIDC client implementation."
   (:require
+   [app.auth :as auth]
    [app.auth.oidc.providers :as-alias providers]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -430,10 +431,24 @@
    ::yrs/headers {"location" (str uri)}})
 
 (defn- generate-error-redirect
-  [_ error]
-  (let [uri (-> (u/uri (cf/get :public-uri))
-                (assoc :path "/#/auth/login")
-                (assoc :query (u/map->query-string {:error "unable-to-auth" :hint (ex-message error)})))]
+  [_ cause]
+  (let [data   (if (ex/error? cause) (ex-data cause) nil)
+        code   (or (:code data) :unexpected)
+        type   (or (:type data) :internal)
+        hint   (or (:hint data)
+                   (if (ex/exception? cause)
+                     (ex-message cause)
+                     (str cause)))
+
+        params {:error "unable-to-auth"
+                :hint hint
+                :type type
+                :code code}
+
+        uri    (-> (u/uri (cf/get :public-uri))
+                   (assoc :path "/#/auth/login")
+                   (assoc :query (u/map->query-string params)))]
+
     (redirect-response uri)))
 
 (defn- generate-redirect
@@ -463,19 +478,23 @@
       (->> (redirect-response uri)
            (sxf request)))
 
-    (let [info   (assoc info
-                        :iss :prepared-register
-                        :is-active true
-                        :exp (dt/in-future {:hours 48}))
-          token  (tokens/generate (::main/props cfg) info)
-          params (d/without-nils
-                  {:token token
-                   :fullname (:fullname info)})
-          uri    (-> (u/uri (cf/get :public-uri))
-                     (assoc :path "/#/auth/register/validate")
-                     (assoc :query (u/map->query-string params)))]
 
-      (redirect-response uri))))
+    (if (auth/email-domain-in-whitelist? (:email info))
+      (let [info   (assoc info
+                          :iss :prepared-register
+                          :is-active true
+                          :exp (dt/in-future {:hours 48}))
+            token  (tokens/generate (::main/props cfg) info)
+            params (d/without-nils
+                    {:token token
+                     :fullname (:fullname info)})
+            uri    (-> (u/uri (cf/get :public-uri))
+                       (assoc :path "/#/auth/register/validate")
+                       (assoc :query (u/map->query-string params)))]
+
+        (redirect-response uri))
+      (generate-error-redirect cfg "email-domain-not-allowed"))))
+
 
 (defn- auth-handler
   [cfg {:keys [params] :as request}]

@@ -10,7 +10,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.auth :as cauth]
+   [app.auth :as auth]
    [app.tokens :as tokens]
    [app.util.time :as dt]
    [backend-tests.helpers :as th]
@@ -226,11 +226,11 @@
 (t/deftest registration-domain-whitelist
   (let [whitelist #{"gmail.com" "hey.com" "ya.ru"}]
     (t/testing "allowed email domain"
-      (t/is (true? (cauth/email-domain-in-whitelist? whitelist "username@ya.ru")))
-      (t/is (true? (cauth/email-domain-in-whitelist? #{} "username@somedomain.com"))))
+      (t/is (true? (auth/email-domain-in-whitelist? whitelist "username@ya.ru")))
+      (t/is (true? (auth/email-domain-in-whitelist? #{} "username@somedomain.com"))))
 
     (t/testing "not allowed email domain"
-      (t/is (false? (cauth/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
+      (t/is (false? (auth/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
 
 (t/deftest prepare-register-and-register-profile-1
   (let [data  {::th/type :prepare-register-profile
