@@ -38,7 +38,9 @@
         width           (mf/use-state nil)
         rowref          (mf/use-ref)
 
-        itemsize        (if (>= @width 1030) 280 230)
+        itemsize        (if components-v2
+                          350
+                          (if (>= @width 1030) 280 230))
         ratio           (if (some? @width) (/ @width itemsize) 0)
         nitems          (mth/floor ratio)
         limit           (min 10 nitems)
