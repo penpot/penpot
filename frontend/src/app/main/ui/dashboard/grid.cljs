@@ -76,7 +76,12 @@
       (when (and visible? (not thumbnail-uri))
         (->> (ask-for-thumbnail file-id revn)
              (rx/subs (fn [url]
-                        (st/emit! (dd/set-file-thumbnail file-id url)))))))
+                        (st/emit! (dd/set-file-thumbnail file-id url)))
+                      (fn [cause]
+                        (log/error :hint "unable to render thumbnail"
+                                   :file-if file-id
+                                   :revn revn
+                                   :message (ex-message cause)))))))
 
     [:div.grid-item-th
      {:style {:background-color background-color}
