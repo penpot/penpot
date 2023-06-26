@@ -63,7 +63,7 @@
         [:a {:on-click go-members} (tr "labels.members")]]
        [:li {:class (when invitations-section? "active")}
         [:a {:on-click go-invitations} (tr "labels.invitations")]]
-       (when (contains? @cfg/flags :webhooks)
+       (when (contains? cfg/flags :webhooks)
          [:li {:class (when webhooks-section? "active")}
           [:a {:on-click go-webhooks} (tr "labels.webhooks")]])
        [:li {:class (when settings-section? "active")}
