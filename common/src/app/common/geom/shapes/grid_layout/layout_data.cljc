@@ -465,11 +465,11 @@
         row-add-auto      (/ free-row-space row-autos)
 
         column-tracks (cond-> column-tracks
-                        (= :stretch (:layout-align-content parent))
+                        (= :stretch (:layout-justify-content parent))
                         (add-auto-size column-add-auto))
 
         row-tracks    (cond-> row-tracks
-                        (= :stretch (:layout-justify-content parent))
+                        (= :stretch (:layout-align-content parent))
                         (add-auto-size row-add-auto))
 
         column-total-size (tracks-total-size column-tracks)
@@ -477,7 +477,7 @@
 
         num-columns (count column-tracks)
         column-gap
-        (case (:layout-align-content parent)
+        (case (:layout-justify-content parent)
           auto-width?
           column-gap
 
@@ -494,7 +494,7 @@
 
         num-rows (count row-tracks)
         row-gap
-        (case (:layout-justify-content parent)
+        (case (:layout-align-content parent)
           auto-height?
           row-gap
 
@@ -511,28 +511,28 @@
 
         start-p
         (cond-> bound-corner
-          (and (not auto-width?) (= :end (:layout-align-content parent)))
+          (and (not auto-width?) (= :end (:layout-justify-content parent)))
           (gpt/add (hv (- bound-width (+ column-total-size column-total-gap))))
 
-          (and (not auto-width?) (= :center (:layout-align-content parent)))
+          (and (not auto-width?) (= :center (:layout-justify-content parent)))
           (gpt/add (hv (/ (- bound-width (+ column-total-size column-total-gap)) 2)))
 
-          (and (not auto-height?) (= :end (:layout-justify-content parent)))
+          (and (not auto-height?) (= :end (:layout-align-content parent)))
           (gpt/add (vv (- bound-height (+ row-total-size row-total-gap))))
 
-          (and (not auto-height?) (= :center (:layout-justify-content parent)))
+          (and (not auto-height?) (= :center (:layout-align-content parent)))
           (gpt/add (vv (/ (- bound-height (+ row-total-size row-total-gap)) 2)))
 
-          (and (not auto-width?) (= :space-around (:layout-align-content parent)))
+          (and (not auto-width?) (= :space-around (:layout-justify-content parent)))
           (gpt/add (hv (/ column-gap 2)))
 
-          (and (not auto-width?) (= :space-evenly (:layout-align-content parent)))
+          (and (not auto-width?) (= :space-evenly (:layout-justify-content parent)))
           (gpt/add (hv column-gap))
 
-          (and (not auto-height?) (= :space-around (:layout-justify-content parent)))
+          (and (not auto-height?) (= :space-around (:layout-align-content parent)))
           (gpt/add (vv (/ row-gap 2)))
 
-          (and (not auto-height?) (= :space-evenly (:layout-justify-content parent)))
+          (and (not auto-height?) (= :space-evenly (:layout-align-content parent)))
           (gpt/add (vv row-gap)))
 
         column-tracks

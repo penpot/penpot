@@ -101,3 +101,15 @@
     (if (= row-gap column-gap)
       (str/fmt "%spx" (format-number row-gap))
       (str/fmt "%spx %spx" (format-number row-gap) (format-number column-gap)))))
+
+(defn format-matrix
+  ([mtx]
+   (format-matrix mtx 2))
+  ([{:keys [a b c d e f]} precision]
+   (dm/fmt "matrix(%, %, %, %, %, %)"
+           (mth/to-fixed a precision)
+           (mth/to-fixed b precision)
+           (mth/to-fixed c precision)
+           (mth/to-fixed d precision)
+           (mth/to-fixed e precision)
+           (mth/to-fixed f precision))))

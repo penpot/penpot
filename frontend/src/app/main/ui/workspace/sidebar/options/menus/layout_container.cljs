@@ -418,8 +418,8 @@
                                    :tooltip-bottom-left (not= align :start)
                                    :tooltip-bottom (= align :start))
          :alt      (if is-col?
-                     (dm/str "justify-content: " (d/name align))
-                     (dm/str "align-content: " (d/name align)))
+                     (dm/str "align-content: " (d/name align))
+                     (dm/str "justify-content: " (d/name align)))
          :on-click #(set-justify align type)
          :key      (dm/str "justify-content" (d/name align))}
         (get-layout-grid-icon :justify-items align is-col?)])]))
@@ -592,16 +592,16 @@
             (st/emit! (dwsl/update-layout ids {:layout-justify-items value}))))
 
         ;; Justify grid
-        grid-justify-content-row    (:layout-align-content values)
-        grid-justify-content-column (:layout-justify-content values)
+        grid-justify-content-row    (:layout-justify-content values)
+        grid-justify-content-column (:layout-align-content values)
 
         set-justify-grid
         (mf/use-callback
          (mf/deps ids)
          (fn [value type]
            (if (= type :row)
-             (st/emit! (dwsl/update-layout ids {:layout-align-content value}))
-             (st/emit! (dwsl/update-layout ids {:layout-justify-content value})))))]
+             (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))
+             (st/emit! (dwsl/update-layout ids {:layout-align-content value})))))]
 
     [:div.element-set
      [:div.element-set-title

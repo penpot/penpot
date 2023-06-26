@@ -725,21 +725,21 @@
         reorder-grid
         (fn [changes grid]
           (let [old-shapes (:shapes grid)
-                grid     (ctl/reorder-grid-children grid)
+                grid       (ctl/reorder-grid-children grid)
+                new-shapes (->> (:shapes grid)
+                                (filterv #(contains? objects %)))
 
                 redo-change
-                {:type :mov-objects
+                {:type :reorder-children
                  :parent-id (:id grid)
                  :page-id page-id
-                 :shapes (:shapes grid)
-                 :index 0}
+                 :shapes new-shapes}
 
                 undo-change
-                {:type :mov-objects
+                {:type :reorder-children
                  :parent-id (:id grid)
                  :page-id page-id
-                 :shapes old-shapes
-                 :index 0}]
+                 :shapes old-shapes}]
             (-> changes
                 (update :redo-changes conj redo-change)
                 (update :undo-changes d/preconj undo-change)

@@ -7,10 +7,10 @@
 (ns app.main.ui.shapes.text.styles
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.text :as txt]
    [app.common.transit :as transit]
    [app.main.fonts :as fonts]
+   [app.main.ui.formats :as fmt]
    [app.util.color :as uc]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
@@ -18,8 +18,8 @@
 (defn generate-root-styles
   [{:keys [width height]} node]
   (let [valign (:vertical-align node "top")
-        base   #js {:height (dm/str height "px")
-                    :width  (dm/str width "px")
+        base   #js {:height (fmt/format-pixels height)
+                    :width  (fmt/format-pixels width)
                     :fontFamily "sourcesanspro"
                     :display "flex"
                     :whiteSpace "break-spaces"}]

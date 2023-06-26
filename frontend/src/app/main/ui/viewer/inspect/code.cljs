@@ -32,7 +32,7 @@
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
-(def embed-images? false)
+(def embed-images? true)
 (def remove-localhost? true)
 
 (def page-template

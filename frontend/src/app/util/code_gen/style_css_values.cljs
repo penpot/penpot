@@ -77,12 +77,13 @@
   (get-shape-position shape objects :y))
 
 (defn get-shape-size
-  [shape type]
+  [shape objects type]
   (let [sizing (if (= type :width)
                  (:layout-item-h-sizing shape)
                  (:layout-item-v-sizing shape))]
     (cond
-      (or (= sizing :fill) (= sizing :auto))
+      (or (and (ctl/any-layout? shape) (= sizing :auto))
+          (and (ctl/any-layout-immediate-child? shape objects) (= sizing :fill)))
       sizing
 
       (some? (:selrect shape))
@@ -92,18 +93,22 @@
       (get shape type))))
 
 (defmethod get-value :width
-  [_ shape _]
-  (get-shape-size shape :width))
+  [_ shape objects]
+  (get-shape-size shape objects :width))
 
 (defmethod get-value :height
-  [_ shape _]
-  (get-shape-size shape :height))
+  [_ shape objects]
+  (get-shape-size shape objects :height))
 
 (defmethod get-value :transform
   [_ shape objects]
-  (let [parent (get objects (:parent-id shape))]
-    (dm/str (gmt/multiply (:transform shape (gmt/matrix))
-                          (:transform-inverse parent (gmt/matrix))))))
+  (let [parent (get objects (:parent-id shape))
+
+        transform
+        (gmt/multiply (:transform shape (gmt/matrix))
+                      (:transform-inverse parent (gmt/matrix)))]
+    (when-not (gmt/unit? transform)
+      transform)))
 
 (defmethod get-value :background
   [_ {:keys [fills] :as shape} _]

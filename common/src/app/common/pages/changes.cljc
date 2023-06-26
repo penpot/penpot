@@ -104,6 +104,15 @@
       [:index {:optional true} [:maybe :int]]
       [:after-shape {:optional true} :any]]]
 
+    [:reorder-children
+     [:map {:title "ReorderChildrenChange"}
+      [:type [:= :reorder-children]]
+      [:page-id {:optional true} ::sm/uuid]
+      [:component-id {:optional true} ::sm/uuid]
+      [:ignore-touched {:optional true} :boolean]
+      [:parent-id ::sm/uuid]
+      [:shapes :any]]]
+
     [:add-page
      [:map {:title "AddPageChange"}
       [:type [:= :add-page]]
@@ -324,6 +333,51 @@
                                        (ctkl/set-component-modified data (:component-id component-root))
                                        data))
                                    data))]
+
+    (as-> data $
+      (if page-id
+        (d/update-in-when $ [:pages-index page-id :objects] update-fn)
+        (d/update-in-when $ [:components component-id :objects] update-fn))
+      (check-modify-component $))))
+
+(defmethod process-change :reorder-children
+  [data {:keys [parent-id shapes page-id component-id]}]
+  (let [changed? (atom false)
+
+        update-fn
+        (fn [objects]
+          (let [old-shapes (dm/get-in objects [parent-id :shapes])
+
+                id->idx
+                (update-vals
+                 (->> shapes
+                      d/enumerate
+                      (group-by second))
+                 (comp first first))
+
+                new-shapes
+                (into [] (sort-by id->idx < old-shapes))]
+
+            (reset! changed? (not= old-shapes new-shapes))
+
+            (cond-> objects
+              @changed?
+              (assoc-in [parent-id :shapes] new-shapes))))
+
+        check-modify-component
+        (fn [data]
+          (if @changed?
+            ;; When a shape is modified, if it belongs to a main component instance,
+            ;; the component needs to be marked as modified.
+            (let [objects (if page-id
+                            (-> data :pages-index (get page-id) :objects)
+                            (-> data :components (get component-id) :objects))
+                  shape (get objects parent-id)
+                  component-root (ctn/get-component-shape objects shape {:allow-main? true})]
+              (if (and (some? component-root) (ctk/main-instance? component-root))
+                (ctkl/set-component-modified data (:component-id component-root))
+                data))
+            data))]
 
     (as-> data $
       (if page-id

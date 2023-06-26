@@ -12,11 +12,12 @@
 (defn shape->selector
   [shape]
   (let [name (-> (:name shape)
-                 (subs 0 (min 10 (count (:name shape)))))
+                 (subs 0 (min 10 (count (:name shape))))
+                 (str/replace #"[^a-zA-Z0-9\s\:]+" ""))
         ;; selectors cannot start with numbers
         name (if (re-matches #"^\d.*" name) (dm/str "c-" name) name)
         id (-> (dm/str (:id shape))
-               #_(subs 24 36))
+               (subs 24 36))
         selector (str/css-selector (dm/str name " " id))
         selector (if (str/starts-with? selector "-") (subs selector 1) selector)]
     selector))

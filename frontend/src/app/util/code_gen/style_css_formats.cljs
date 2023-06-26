@@ -30,6 +30,7 @@
    :padding               :size-array
    :grid-template-rows    :tracks
    :grid-template-columns :tracks
+   :transform             :matrix
    })
 
 (defmulti format-value
@@ -131,6 +132,10 @@
 (defmethod format-value :blur
   [_ value _options]
   (dm/fmt "blur(%)" (fmt/format-pixels value)))
+
+(defmethod format-value :matrix
+  [_ value _options]
+  (fmt/format-matrix value))
 
 (defmethod format-value :default
   [_ value _options]
