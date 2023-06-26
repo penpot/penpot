@@ -341,7 +341,7 @@
                                (map :content)
                                first)))
                (println "******** end email" (:id email) "**********"))]
-    (l/info ::l/raw out)))
+    (l/raw! :info out)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; EMAIL FACTORIES

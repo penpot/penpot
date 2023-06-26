@@ -239,7 +239,7 @@
 #?(:clj
    (defn slf4j-log-handler
      {:no-doc true}
-     [_ _ _ {:keys [::logger ::level ::props ::cause ::trace ::message]}]
+     [_ _ _ {:keys [::logger ::level ::trace ::message] }]
      (when-let [logger (enabled? logger level)]
        (let [message (cond-> @message
                        (some? trace)
@@ -306,6 +306,18 @@
              (let [logger (if (keyword? logger) (name logger) logger)]
                (l/set-level! logger level)))
            config)))
+
+(defmacro raw!
+  [level message]
+  (let [cljs? (:ns &env)]
+    `(do
+       (~(if cljs?
+         `(partial console-log-handler nil nil nil)
+         `(partial slf4j-log-handler nil nil nil))
+        {::logger ~(str *ns*)
+         ::level ~level
+         ::message (delay ~message)})
+       nil)))
 
 (defmacro info
   [& params]
