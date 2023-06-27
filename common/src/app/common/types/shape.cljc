@@ -437,4 +437,3 @@
         (make-minimal-group uuid/zero geom-props (:name attrs)))
       (setup-shape geom-props)
       (merge attrs)))
-

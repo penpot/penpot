@@ -50,49 +50,51 @@
 
   ([objects shape level]
    (let [indent (str/repeat "  " level)
-         maybe-reverse (if (ctl/any-layout? shape) reverse identity)]
+         maybe-reverse (if (ctl/any-layout? shape) reverse identity)
 
-     (cond
-       (svg-markup? shape)
-       (let [svg-markup (generate-svg objects shape)]
-         (dm/fmt "%<div class=\"%\">\n%\n%</div>"
-                 indent
-                 (cgc/shape->selector shape)
-                 svg-markup
-                 indent))
+         shape-html
+         (cond
+           (svg-markup? shape)
+           (let [svg-markup (generate-svg objects shape)]
+             (dm/fmt "%<div class=\"%\">\n%\n%</div>"
+                     indent
+                     (cgc/shape->selector shape)
+                     svg-markup
+                     indent))
 
-       (cph/text-shape? shape)
-       (let [text-shape-html (rds/renderToStaticMarkup (mf/element text/text-shape #js {:shape shape :code? true}))]
-         (dm/fmt "%<div class=\"%\">\n%\n%</div>"
-                 indent
-                 (cgc/shape->selector shape)
-                 text-shape-html
-                 indent))
+           (cph/text-shape? shape)
+           (let [text-shape-html (rds/renderToStaticMarkup (mf/element text/text-shape #js {:shape shape :code? true}))]
+             (dm/fmt "%<div class=\"%\">\n%\n%</div>"
+                     indent
+                     (cgc/shape->selector shape)
+                     text-shape-html
+                     indent))
 
-       (cph/image-shape? shape)
-       (let [data (or (:metadata shape) (:fill-image shape))
-             image-url (cfg/resolve-file-media data)]
-         (dm/fmt "%<img src=\"%\" class=\"%\">\n%</img>"
-                 indent
-                 image-url
-                 (cgc/shape->selector shape)
-                 indent))
+           (cph/image-shape? shape)
+           (let [data (or (:metadata shape) (:fill-image shape))
+                 image-url (cfg/resolve-file-media data)]
+             (dm/fmt "%<img src=\"%\" class=\"%\">\n%</img>"
+                     indent
+                     image-url
+                     (cgc/shape->selector shape)
+                     indent))
 
-       (empty? (:shapes shape))
-       (dm/fmt "%<div class=\"%\">\n%</div>"
-               indent
-               (cgc/shape->selector shape)
-               indent)
+           (empty? (:shapes shape))
+           (dm/fmt "%<div class=\"%\">\n%</div>"
+                   indent
+                   (cgc/shape->selector shape)
+                   indent)
 
-       :else
-       (dm/fmt "%<div class=\"%\">\n%\n%</div>"
-               indent
-               (cgc/shape->selector shape)
-               (->> (:shapes shape)
-                    (maybe-reverse)
-                    (map #(generate-html objects (get objects %) (inc level)))
-                    (str/join "\n"))
-               indent)))))
+           :else
+           (dm/fmt "%<div class=\"%\">\n%\n%</div>"
+                   indent
+                   (cgc/shape->selector shape)
+                   (->> (:shapes shape)
+                        (maybe-reverse)
+                        (map #(generate-html objects (get objects %) (inc level)))
+                        (str/join "\n"))
+                   indent))]
+     (dm/fmt "%<!-- % -->\n%" indent (dm/str (d/name (:type shape)) ": " (:name shape)) shape-html))))
 
 (defn generate-markup
   [objects shapes]

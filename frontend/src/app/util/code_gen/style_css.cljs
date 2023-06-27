@@ -22,10 +22,10 @@
 (def prelude "
 html, body {
   background-color: #E8E9EA;
-  height: 100%;
   margin: 0;
+  min-height: 100%;
+  min-width: 100%;
   padding: 0;
-  width: 100%;
 }
 
 body {
@@ -33,6 +33,7 @@ body {
   flex-direction: column;
   align-items: center;
   padding: 2rem;
+  gap: 2rem;
 }
 
 svg {

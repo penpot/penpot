@@ -26,10 +26,11 @@
 (defmethod get-value :position
   [_ shape objects]
   (cond
-    (and (ctl/any-layout-immediate-child? objects shape)
-         (not (ctl/layout-absolute? shape))
-         (or (cph/group-shape? shape)
-             (cph/frame-shape? shape)))
+    (or (and (ctl/any-layout-immediate-child? objects shape)
+             (not (ctl/layout-absolute? shape))
+             (or (cph/group-shape? shape)
+                 (cph/frame-shape? shape)))
+        (cph/root-frame? shape))
     :relative
 
     (and (ctl/any-layout-immediate-child? objects shape)
@@ -83,7 +84,7 @@
                  (:layout-item-v-sizing shape))]
     (cond
       (or (and (ctl/any-layout? shape) (= sizing :auto))
-          (and (ctl/any-layout-immediate-child? shape objects) (= sizing :fill)))
+          (and (ctl/any-layout-immediate-child? objects shape) (= sizing :fill)))
       sizing
 
       (some? (:selrect shape))
@@ -102,20 +103,21 @@
 
 (defmethod get-value :transform
   [_ shape objects]
-  (let [parent (get objects (:parent-id shape))
+  (when-not (svg-markup? shape)
+    (let [parent (get objects (:parent-id shape))
 
-        transform
-        (gmt/multiply (:transform shape (gmt/matrix))
-                      (:transform-inverse parent (gmt/matrix)))]
-    (when-not (gmt/unit? transform)
-      transform)))
+          transform
+          (gmt/multiply (:transform shape (gmt/matrix))
+                        (:transform-inverse parent (gmt/matrix)))]
+      (when-not (gmt/unit? transform)
+        transform))))
 
 (defmethod get-value :background
   [_ {:keys [fills] :as shape} _]
   (let [single-fill? (= (count fills) 1)
         ffill (first fills)
         gradient? (some? (:fill-color-gradient ffill))]
-    (when (and (not (svg-markup? shape)) single-fill? gradient?)
+    (when (and (not (svg-markup? shape)) (not (cph/group-shape? shape)) single-fill? gradient?)
       (fill->color ffill))))
 
 (defmethod get-value :background-color
@@ -123,12 +125,12 @@
   (let [single-fill? (= (count fills) 1)
         ffill (first fills)
         gradient? (some? (:fill-color-gradient ffill))]
-    (when (and (not (svg-markup? shape)) single-fill? (not gradient?))
+    (when (and (not (svg-markup? shape)) (not (cph/group-shape? shape)) single-fill? (not gradient?))
       (fill->color ffill))))
 
 (defmethod get-value :background-image
   [_ {:keys [fills] :as shape} _]
-  (when (and (not (svg-markup? shape)) (> (count fills) 1))
+  (when (and (not (svg-markup? shape)) (not (cph/group-shape? shape)) (> (count fills) 1))
     (->> fills
          (map fill->color))))
 
