@@ -4,9 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
+#_:clj-kondo/ignore
 (ns app.common.uuid
-  (:refer-clojure :exclude [next uuid zero?])
+  (:refer-clojure :exclude [next uuid zero? short])
   (:require
+   [app.common.data.macros :as dm]
    #?(:clj [clojure.core :as c])
    #?(:cljs [app.common.uuid-impl :as impl])
    #?(:cljs [cljs.core :as c]))
@@ -66,3 +68,10 @@
      (let [buf (ByteBuffer/wrap o)]
        (UUID. ^long (.getLong buf)
               ^long (.getLong buf)))))
+
+#?(:cljs
+   (defn uuid->short-id
+     "Return a shorter string of a safe subset of bytes of an uuid encoded
+     with base62. It is only safe to use with uuid v4 and penpot custom v8"
+     [id]
+     (impl/short-v8 (dm/str id))))

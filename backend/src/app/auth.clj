@@ -6,7 +6,9 @@
 
 (ns app.auth
   (:require
+   [app.config :as cf]
    [buddy.hashers :as hashers]
+   [cuerdas.core :as str]
    [promesa.exec :as px]))
 
 (def default-params
@@ -26,4 +28,17 @@
     (catch Throwable _
       {:update false
        :valid false})))
+
+(defn email-domain-in-whitelist?
+  "Returns true if email's domain is in the given whitelist or if
+  given whitelist is an empty string."
+  ([email]
+   (let [domains (cf/get :registration-domain-whitelist)]
+     (email-domain-in-whitelist? domains email)))
+  ([domains email]
+   (if (or (nil? domains) (empty? domains))
+     true
+     (let [[_ candidate] (-> (str/lower email)
+                             (str/split #"@" 2))]
+       (contains? domains candidate)))))
 

@@ -229,8 +229,8 @@
 
 (defn- send-failure!
   "Sends a failure message."
-  [id payload]
-  (send-answer! id "failure" payload))
+  [id cause]
+  (send-answer! id "failure" (ex-message cause)))
 
 (defn- send-ready!
   "Sends a ready message."

@@ -305,7 +305,7 @@
   (fn [params]
     (when (contains? cf/flags :smtp)
       (let [session (create-smtp-session cfg)]
-        (with-open [transport (.getTransport session (if (:ssl cfg) "smtps" "smtp"))]
+        (with-open [transport (.getTransport session (if (::ssl cfg) "smtps" "smtp"))]
           (.connect ^Transport transport
                     ^String (::username cfg)
                     ^String (::password cfg))
@@ -341,7 +341,7 @@
                                (map :content)
                                first)))
                (println "******** end email" (:id email) "**********"))]
-    (l/info ::l/raw out)))
+    (l/raw! :info out)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; EMAIL FACTORIES

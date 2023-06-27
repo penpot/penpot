@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.auth
   (:require
+   [app.auth :as auth]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
@@ -37,19 +38,6 @@
 (s/def ::theme ::us/string)
 (s/def ::invitation-token ::us/not-empty-string)
 (s/def ::token ::us/not-empty-string)
-
-;; ---- HELPERS
-
-(defn email-domain-in-whitelist?
-  "Returns true if email's domain is in the given whitelist or if
-  given whitelist is an empty string."
-  [domains email]
-  (if (or (empty? domains)
-          (nil? domains))
-    true
-    (let [[_ candidate] (-> (str/lower email)
-                            (str/split #"@" 2))]
-      (contains? domains candidate))))
 
 ;; ---- COMMAND: login with password
 
@@ -180,10 +168,9 @@
                   :code :email-does-not-match-invitation
                   :hint "email should match the invitation"))))
 
-  (when-let [domains (cf/get :registration-domain-whitelist)]
-    (when-not (email-domain-in-whitelist? domains (:email params))
-      (ex/raise :type :validation
-                :code :email-domain-is-not-allowed)))
+  (when-not (auth/email-domain-in-whitelist? (:email params))
+    (ex/raise :type :validation
+              :code :email-domain-is-not-allowed))
 
   ;; Don't allow proceed in preparing registration if the profile is
   ;; already reported as spammer.

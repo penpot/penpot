@@ -8,12 +8,16 @@
 "use strict";
 
 goog.require("cljs.core");
+goog.require("app.common.encoding_impl");
 goog.provide("app.common.uuid_impl");
 
 goog.scope(function() {
   const core = cljs.core;
   const global = goog.global;
+  const encoding  = app.common.encoding_impl;
   const self = app.common.uuid_impl;
+
+  const timeRef = 1640995200000; // ms since 2022-01-01T00:00:00
 
   const fill = (() => {
     if (typeof global.crypto !== "undefined" &&
@@ -45,12 +49,8 @@ goog.scope(function() {
     }
   })();
 
-  const hexMap = [];
-  for (let i = 0; i < 256; i++) {
-    hexMap[i] = (i + 0x100).toString(16).substr(1);
-  }
-
   function toHexString(buf) {
+    const hexMap = encoding.hexMap;
     let i = 0;
     return  (hexMap[buf[i++]] +
              hexMap[buf[i++]] +
@@ -68,18 +68,7 @@ goog.scope(function() {
              hexMap[buf[i++]] +
              hexMap[buf[i++]] +
              hexMap[buf[i++]]);
-  }
-
-  self.v4 = (function () {
-    const buff8 = new Uint8Array(16);
-
-    return function v4() {
-      fill(buff8);
-      buff8[6] = (buff8[6] & 0x0f) | 0x40;
-      buff8[8] = (buff8[8] & 0x3f) | 0x80;
-      return core.uuid(toHexString(buff8));
-    };
-  })();
+  };
 
   function getBigUint64(view, byteOffset, le) {
     const a = view.getUint32(byteOffset, le);
@@ -103,17 +92,54 @@ goog.scope(function() {
     }
   }
 
-  self.v8 = (function () {
-    const buff  = new ArrayBuffer(16);
+  function currentTimestamp(timeRef) {
+    return BigInt.asUintN(64, "" + (Date.now() - timeRef));
+  }
+
+  const tmpBuff = new ArrayBuffer(8);
+  const tmpView = new DataView(tmpBuff);
+  const tmpInt8 = new Uint8Array(tmpBuff);
+
+  function nextLong() {
+    fill(tmpInt8);
+    return getBigUint64(tmpView, 0, false);
+  }
+
+  self.shortID = (function () {
+    const buff  = new ArrayBuffer(8);
     const int8 = new Uint8Array(buff);
     const view  = new DataView(buff);
 
-    const tmpBuff = new ArrayBuffer(8);
-    const tmpView = new DataView(tmpBuff);
-    const tmpInt8 = new Uint8Array(tmpBuff);
+    const base = 0x0000_0000_0000_0000n;
 
-    const timeRef = 1640995200000; // ms since 2022-01-01T00:00:00
-    const maxCs   = 0x0000_0000_0000_3fffn; // 14 bits space
+    return function shortID(ts) {
+      const tss = currentTimestamp(timeRef);
+      const msb = (base
+                   | (nextLong() & 0xffff_ffff_0000_0000n)
+                   | (tss & 0x0000_0000_ffff_ffffn));
+      setBigUint64(view, 0, msb, false);
+      return encoding.toBase62(int8);
+    };
+  })();
+
+
+  self.v4 = (function () {
+    const arr = new Uint8Array(16);
+
+    return function v4() {
+      fill(arr);
+      arr[6] = (arr[6] & 0x0f) | 0x40;
+      arr[8] = (arr[8] & 0x3f) | 0x80;
+      return core.uuid(encoding.bufferToHex(arr, true));
+    };
+  })();
+
+  self.v8 = (function () {
+    const buff = new ArrayBuffer(16);
+    const int8 = new Uint8Array(buff);
+    const view = new DataView(buff);
+
+    const maxCs = 0x0000_0000_0000_3fffn; // 14 bits space
 
     let countCs = 0n;
     let lastRd  = 0n;
@@ -121,15 +147,6 @@ goog.scope(function() {
     let lastTs  = 0n;
     let baseMsb = 0x0000_0000_0000_8000n;
     let baseLsb = 0x8000_0000_0000_0000n;
-
-    const currentTimestamp = () => {
-      return BigInt.asUintN(64, "" + (Date.now() - timeRef));
-    };
-
-    const nextLong = () => {
-      fill(tmpInt8);
-      return getBigUint64(tmpView, 0, false);
-    };
 
     lastRd = nextLong() & 0xffff_ffff_ffff_f0ffn;
     lastCs = nextLong() & maxCs;
@@ -145,12 +162,12 @@ goog.scope(function() {
       setBigUint64(view, 0, msb, false);
       setBigUint64(view, 8, lsb, false);
 
-      return core.uuid(toHexString(int8));
+      return core.uuid(encoding.bufferToHex(int8, true));
     };
 
     const factory = function v8() {
       while (true) {
-        let ts = currentTimestamp();
+        let ts = currentTimestamp(timeRef);
 
         // Protect from clock regression
         if ((ts - lastTs) < 0) {
@@ -194,6 +211,12 @@ goog.scope(function() {
     return factory;
   })();
 
+
+  self.short_v8 = function(uuid) {
+    const buff = encoding.hexToBuffer(uuid);
+    const short =  new Uint8Array(buff, 4);
+    return encoding.bufferToBase62(short);
+  };
 
   self.custom = function formatAsUUID(mostSigBits, leastSigBits) {
     const most = mostSigBits.toString("16").padStart(16, "0");
