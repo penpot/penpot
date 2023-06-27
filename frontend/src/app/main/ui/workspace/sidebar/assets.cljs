@@ -733,7 +733,7 @@
 
         on-group
         (mf/use-fn
-         (mf/deps components selected)
+         (mf/deps components selected create-group)
          (fn [event]
            (dom/stop-propagation event)
            (modal/show! :name-group-dialog {:accept create-group})))
@@ -1110,7 +1110,7 @@
 
         create-group
         (mf/use-fn
-         (mf/deps objects selected on-clear-selection)
+         (mf/deps objects selected on-clear-selection (:object-id @state))
          (fn [group-name]
            (on-clear-selection)
            (let [undo-id (js/Symbol)]
@@ -1138,7 +1138,7 @@
 
         on-group
         (mf/use-fn
-         (mf/deps objects selected)
+         (mf/deps objects selected create-group)
          (fn [event]
            (dom/stop-propagation event)
            (modal/show! :name-group-dialog {:accept create-group})))
@@ -1868,7 +1868,7 @@
                                  (seq (:colors selected)))
 
         open-groups-ref      (mf/with-memo [open-status-ref]
-                               (-> (l/in [:groups :components])
+                               (-> (l/in [:groups :typographies])
                                    (l/derived open-status-ref)))
 
         open-groups          (mf/deref open-groups-ref)
