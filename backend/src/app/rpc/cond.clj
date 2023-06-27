@@ -27,6 +27,8 @@
    [app.common.logging :as l]
    [app.rpc.helpers :as rph]
    [app.util.services :as-alias sv]
+   [buddy.core.codecs :as bc]
+   [buddy.core.hash :as bh]
    [yetti.response :as yrs]))
 
 (def
@@ -34,9 +36,16 @@
     :doc "Runtime flag for enable/disable conditional processing of RPC methods."}
   *enabled* false)
 
+(defn- encode
+  [s]
+  (-> s
+      bh/blake2b-256
+      bc/bytes->b64u
+      bc/bytes->str))
+
 (defn- fmt-key
   [s]
-  (str "W/\"" s "\""))
+  (str "W/\"" (encode s) "\""))
 
 (defn wrap
   [_ f {:keys [::get-object ::key-fn ::reuse-key?] :as mdata}]
@@ -46,9 +55,8 @@
       (fn [cfg {:keys [::key] :as params}]
         (if *enabled*
           (let [key' (when (or key reuse-key?)
-                       (some-> (get-object cfg params) key-fn fmt-key))]
-            (if (and (some? key)
-                     (= key key'))
+                       (some->> (get-object cfg params) (key-fn params) (fmt-key)))]
+            (if (and (some? key) (= key key'))
               (fn [_] {::yrs/status 304})
               (let [result (f cfg params)
                     etag   (or (and reuse-key? key')

@@ -99,7 +99,7 @@
        (fn [] (st/emit! (dw/set-annotations-id-for-create nil))))) ;; cleanup set-annotationsid-for-create on unload
 
     (when (or creating? annotation)
-      [:div.component-annotation {:class (dom/classnames :editing @editing?)}
+      [:div.component-annotation {:class (dom/classnames :editing @editing? :creating creating?)}
        [:div.title {:class (dom/classnames :expandeable (not (or @editing? creating?)))
                     :on-click #(expand (not annotations-expanded?))}
         [:div (if (or @editing? creating?)
@@ -163,7 +163,6 @@
                               (:main-instance? values)
                               true)
         main-component?     (:main-instance? values)
-        lacks-annotation?   (nil? (:annotation values))
         local-component?    (= library-id current-file-id)
         workspace-data      (deref refs/workspace-data)
         workspace-libraries (deref refs/workspace-libraries)
@@ -171,6 +170,7 @@
                               (ctkl/get-component workspace-data component-id)
                               (ctf/get-component workspace-libraries library-id component-id))
         is-dangling?        (nil? component)
+        lacks-annotation?   (nil? (:annotation component))
         lib-exists?         (and (not local-component?)
                                  (some? (get workspace-libraries library-id)))
 
@@ -237,7 +237,7 @@
                             :options
                             (if main-component?
                               [[(tr "workspace.shape.menu.show-in-assets") do-show-in-assets]
-                               (when (and components-v2 lacks-annotation?)
+                               (when (and components-v2 local-component? lacks-annotation?)
                                  [(tr "workspace.shape.menu.create-annotation") do-create-annotation])]
                               (if local-component?
                                 (if is-dangling?

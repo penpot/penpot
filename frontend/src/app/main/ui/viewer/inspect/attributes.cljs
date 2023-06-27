@@ -7,7 +7,7 @@
 (ns app.main.ui.viewer.inspect.attributes
   (:require
    [app.common.geom.shapes :as gsh]
-   [app.main.data.workspace.annotation-helpers :as dwah]
+   [app.common.types.components-list :as ctkl]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.viewer.inspect.annotation :refer [annotation]]
    [app.main.ui.viewer.inspect.attributes.blur :refer [blur-panel]]
@@ -41,9 +41,7 @@
         type    (if (= (count shapes) 1) (-> shapes first :type) :multiple)
         options (type->options type)
         content (when (= (count shapes) 1)
-                  (if (= from :workspace)
-                    (dwah/get-main-annotation (first shapes) libraries)
-                    (dwah/get-main-annotation-viewer (first shapes) libraries)))]
+                  (ctkl/get-component-annotation (first shapes) libraries))]
 
     [:div.element-options
      (for [[idx option] (map-indexed vector options)]

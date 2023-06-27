@@ -115,3 +115,9 @@
         []
         [[(:id shape) (:component-id shape) :component]]))
     []))
+
+(defn get-component-annotation
+  [shape libraries]
+  (let [library        (dm/get-in libraries [(:component-file shape) :data])
+        component      (get-component library (:component-id shape) true)]
+    (:annotation component)))

@@ -355,8 +355,8 @@
   (db/get pool :file {:id id} {:columns [:id :modified-at :revn]}))
 
 (defn get-file-etag
-  [{:keys [modified-at revn]}]
-  (str (dt/format-instant modified-at :iso) "-" revn))
+  [{:keys [::rpc/profile-id]} {:keys [modified-at revn]}]
+  (str profile-id (dt/format-instant modified-at :iso) revn))
 
 (sv/defmethod ::get-file
   "Retrieve a file by its ID. Only authenticated users."
@@ -371,7 +371,7 @@
       (check-read-permissions! perms)
       (let [file (-> (get-file conn id features project-id)
                      (assoc :permissions perms))]
-        (vary-meta file assoc ::cond/key (get-file-etag file))))))
+        (vary-meta file assoc ::cond/key (get-file-etag params file))))))
 
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
