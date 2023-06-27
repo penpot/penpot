@@ -11,14 +11,10 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
-   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (def blur-attrs [:blur])
-
-(defn select-all [event]
-  (dom/select-text! (dom/get-target event)))
 
 (defn create-blur []
   (let [id (uuid/next)]
@@ -86,7 +82,6 @@
      (cond
        has-value?
        [:div.element-set-content
-        {:on-focus select-all}
         [:& input-row {:label "Value"
                        :class "pixels"
                        :min "0"

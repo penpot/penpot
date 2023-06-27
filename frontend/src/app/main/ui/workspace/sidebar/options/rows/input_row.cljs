@@ -12,7 +12,7 @@
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
-(mf/defc input-row [{:keys [label options value class min max on-change type placeholder default nillable]}]
+(mf/defc input-row [{:keys [label options value class min max on-change type placeholder default nillable on-focus data-select-on-focus]}]
   [:div.row-flex.input-row
    [:span.element-set-subtitle label]
    [:div.input-element {:class class}
@@ -46,6 +46,8 @@
         :default default
         :nillable nillable
         :on-change on-change
+        :on-focus on-focus
+        :data-select-on-focus data-select-on-focus
         :value (or value "")}])]])
 
 

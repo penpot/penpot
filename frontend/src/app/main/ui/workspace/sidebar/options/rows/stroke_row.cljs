@@ -48,7 +48,8 @@
         (second))))
 
 (mf/defc stroke-row
-  [{:keys [index stroke title show-caps on-color-change on-reorder on-color-detach on-remove on-stroke-width-change on-stroke-style-change on-stroke-alignment-change open-caps-select close-caps-select on-stroke-cap-start-change on-stroke-cap-end-change on-stroke-cap-switch disable-drag select-all on-blur disable-stroke-style]}]
+  {::mf/wrap-props false}
+  [{:keys [index stroke title show-caps on-color-change on-reorder on-color-detach on-remove on-stroke-width-change on-stroke-style-change on-stroke-alignment-change open-caps-select close-caps-select on-stroke-cap-start-change on-stroke-cap-end-change on-stroke-cap-switch disable-drag on-focus on-blur disable-stroke-style data-select-on-focus]}]
   (let [start-caps-state (mf/use-state {:open? false
                                         :top 0
                                         :left 0})
@@ -86,7 +87,8 @@
                     :on-detach (on-color-detach index)
                     :on-remove (on-remove index)
                     :disable-drag disable-drag
-                    :select-all select-all
+                    :on-focus on-focus
+                    :data-select-on-focus data-select-on-focus
                     :on-blur on-blur}]
 
      ;; Stroke Width, Alignment & Style
@@ -100,7 +102,8 @@
          :value (-> (:stroke-width stroke) width->string)
          :placeholder (tr "settings.multiple")
          :on-change (on-stroke-width-change index)
-         :on-focus select-all
+         :on-focus on-focus
+         :data-select-on-focus data-select-on-focus
          :on-blur on-blur}]]
 
       [:select#style.input-select {:value (enum->string (:stroke-alignment stroke))

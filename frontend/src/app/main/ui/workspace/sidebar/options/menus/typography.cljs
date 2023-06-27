@@ -36,9 +36,6 @@
     ""
     (ust/format-precision value 2)))
 
-(defn select-all [event]
-  (some-> event dom/get-target dom/select-text!))
-
 (defn- get-next-font
   [{:keys [id] :as current} fonts]
   (if (seq fonts)
@@ -343,7 +340,6 @@
 
 
      [:div.row-flex
-      {:on-focus select-all}
       (let [size-options [8 9 10 11 12 14 16 18 24 36 48 72]
             size-options (if (= font-size :multiple) (into [""] size-options) size-options)]
         [:& editable-select
@@ -399,7 +395,6 @@
         :placeholder (tr "settings.multiple")
         :nillable line-height-nillable
         :on-change #(handle-change % :line-height)
-        :on-focus select-all
         :on-blur on-blur}]]
 
      [:div.input-icon
@@ -413,7 +408,6 @@
         :value (attr->string letter-spacing)
         :placeholder (tr "settings.multiple")
         :on-change #(handle-change % :letter-spacing)
-        :on-focus select-all
         :on-blur on-blur}]]]))
 
 (mf/defc text-transform-options
