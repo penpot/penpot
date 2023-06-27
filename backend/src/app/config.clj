@@ -151,6 +151,7 @@
 (s/def ::oidc-token-uri ::us/string)
 (s/def ::oidc-auth-uri ::us/string)
 (s/def ::oidc-user-uri ::us/string)
+(s/def ::oidc-jwks-uri ::us/string)
 (s/def ::oidc-scopes ::us/set-of-strings)
 (s/def ::oidc-roles ::us/set-of-strings)
 (s/def ::oidc-roles-attr ::us/string)
@@ -245,6 +246,7 @@
                    ::oidc-token-uri
                    ::oidc-auth-uri
                    ::oidc-user-uri
+                   ::oidc-jwks-uri
                    ::oidc-scopes
                    ::oidc-roles-attr
                    ::oidc-email-attr
