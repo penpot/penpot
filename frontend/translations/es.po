@@ -4122,6 +4122,22 @@ msgstr "Todas las esquinas"
 msgid "workspace.options.radius.single-corners"
 msgstr "Esquinas individuales"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Arriba izquierda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Arriba derecha"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Abajo izquierda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Abajo derecha"
+
 msgid "workspace.options.recent-fonts"
 msgstr "Recientes"
 

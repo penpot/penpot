@@ -3815,6 +3815,22 @@ msgstr "Visi stūri"
 msgid "workspace.options.radius.single-corners"
 msgstr "Atsevišķie stūri"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Augšā pa kreisi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Augšā pa labi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Apakšā pa kreisi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Apakšā pa labi"
+
 msgid "workspace.options.recent-fonts"
 msgstr "Pēdējie"
 

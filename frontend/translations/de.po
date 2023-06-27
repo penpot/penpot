@@ -3893,6 +3893,22 @@ msgstr "Alle Ecken"
 msgid "workspace.options.radius.single-corners"
 msgstr "Individuelle Ecken"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Oben links"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Oben rechts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Unten links"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Unten rechts"
+
 msgid "workspace.options.recent-fonts"
 msgstr "Aktuell"
 

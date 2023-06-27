@@ -62,7 +62,9 @@
          (rx/mapcat (fn [{:keys [fonts] :as result}]
                       (->> (fonts/render-font-styles fonts)
                            (rx/map (fn [styles]
-                                     (assoc result :styles styles))))))
+                                     (assoc result
+                                            :styles styles
+                                            :width 250))))))
          (rx/mapcat thr/render)
          (rx/mapcat (partial persist-thumbnail file-id revn)))))
 

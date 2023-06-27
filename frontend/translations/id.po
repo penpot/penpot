@@ -3780,6 +3780,22 @@ msgstr "Semua sudut"
 msgid "workspace.options.radius.single-corners"
 msgstr "Sudut individu"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Kiri atas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Kanan atas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Kiri bawah"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Kanan bawah"
+
 msgid "workspace.options.recent-fonts"
 msgstr "Terkini"
 

@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 1.20.0
+
+### :boom: Breaking changes & Deprecations
+
+### :sparkles: New features
+
+- Add support for local caching of google fonts (this avoids exposing
+  the final user IP to goolge and reduces the amount of request sent
+  to google)
+
+### :bug: Bugs fixed
+
+### :arrow_up: Deps updates
+
+### :heart: Community contributions by (Thank you!)
+
+
 ## 1.19.0
 
 ### :boom: Breaking changes & Deprecations
@@ -39,6 +56,7 @@
 - Open project in new tab from workspace (by @akshay-gupta7) [Github #3246](https://github.com/penpot/penpot/pull/3246)
 - Distribute fix enabled when two elements were selected (by @dfelinto) [Github #3266](https://github.com/penpot/penpot/pull/3266)
 - Distribute vertical spacing failing for overlapped text (by @dfelinto) [Github #3267](https://github.com/penpot/penpot/pull/3267)
+- bug Change independent corner radius input tooltips #3332 (by @astudentinearth) [Github #3332](https://github.com/penpot/penpot/pull/3332)
 
 ## 1.18.6
 

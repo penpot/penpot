@@ -3525,6 +3525,22 @@ msgstr "Všechny rohy"
 msgid "workspace.options.radius.single-corners"
 msgstr "Jednotlivé rohy"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Nahoře vlevo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Nahoře vpravo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Dole vlevo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Dole vpravo"
+
 msgid "workspace.options.recent-fonts"
 msgstr "Nedávné"
 

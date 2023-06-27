@@ -3807,6 +3807,22 @@ msgstr "Toate colţurile"
 msgid "workspace.options.radius.single-corners"
 msgstr "Colțuri individuale"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Stânga sus"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Dreapta sus"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Stânga jos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Dreapta jos"
+
 msgid "workspace.options.recent-fonts"
 msgstr "Recente"
 

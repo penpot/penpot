@@ -126,13 +126,15 @@
   [clipboard-data]
   (when clipboard-data
     (let [file-list (-> (.-files ^js clipboard-data))]
-      (->> (range (.-length file-list))
-           (map #(.item file-list %))
+      (->> (range (.-length ^js file-list))
+           (map #(.item ^js file-list %))
            (filter #(str/starts-with? (.-type %) "image/"))))))
 
 (defn create-image-bitmap
-  [image]
-  (js/createImageBitmap image))
+  ([image]
+   (js/createImageBitmap image))
+  ([image options]
+   (js/createImageBitmap image options)))
 
 (defn request-fullscreen
   [el]

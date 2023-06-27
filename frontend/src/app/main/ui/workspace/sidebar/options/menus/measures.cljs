@@ -403,28 +403,28 @@
 
             (= radius-mode :radius-4)
             [:*
-             [:div.input-element.mini {:title (tr "workspace.options.radius")}
+             [:div.input-element.mini {:title (tr "workspace.options.radius-top-left")}
               [:> numeric-input
                {:placeholder "--"
                 :min 0
                 :on-change on-radius-r1-change
                 :value (:r1 values)}]]
 
-             [:div.input-element.mini {:title (tr "workspace.options.radius")}
+             [:div.input-element.mini {:title (tr "workspace.options.radius-top-right")}
               [:> numeric-input
                {:placeholder "--"
                 :min 0
                 :on-change on-radius-r2-change
                 :value (:r2 values)}]]
 
-             [:div.input-element.mini {:title (tr "workspace.options.radius")}
+             [:div.input-element.mini {:title (tr "workspace.options.radius-bottom-right")}
               [:> numeric-input
                {:placeholder "--"
                 :min 0
                 :on-change on-radius-r3-change
                 :value (:r3 values)}]]
 
-             [:div.input-element.mini {:title (tr "workspace.options.radius")}
+             [:div.input-element.mini {:title (tr "workspace.options.radius-bottom-left")}
               [:> numeric-input
                {:placeholder "--"
                 :min 0
