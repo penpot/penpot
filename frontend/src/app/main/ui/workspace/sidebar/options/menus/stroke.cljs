@@ -146,9 +146,7 @@
 
         disable-drag    (mf/use-state false)
 
-        select-all (fn [event]
-                     (when (not @disable-drag)
-                       (dom/select-text! (dom/get-target event)))
+        on-focus (fn [_]
                      (reset! disable-drag true))
 
         on-blur (fn [_]
@@ -190,6 +188,7 @@
                            :on-remove handle-remove
                            :on-reorder (handle-reorder index)
                            :disable-drag disable-drag
-                           :select-all select-all
+                           :on-focus on-focus
+                           :data-select-on-focus (not @disable-drag)
                            :on-blur on-blur
                            :disable-stroke-style disable-stroke-style}])])]]))

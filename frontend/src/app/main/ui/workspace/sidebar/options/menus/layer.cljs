@@ -14,7 +14,6 @@
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.icons :as i]
-   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -28,10 +27,6 @@
     (dm/str (-> opacity
                 (d/coalesce 1)
                 (* 100)))))
-
-(defn select-all!
-  [event]
-  (some-> event dom/get-target dom/select-text!))
 
 (mf/defc layer-menu
   {::mf/wrap-props false}
@@ -170,7 +165,6 @@
         [:> numeric-input
          {:value (opacity->string current-opacity)
           :placeholder (tr "settings.multiple")
-          :on-focus select-all!
           :on-change handle-opacity-change
           :min 0
           :max 100}]]

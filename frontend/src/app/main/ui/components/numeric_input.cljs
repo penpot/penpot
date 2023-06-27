@@ -23,16 +23,18 @@
   {::mf/wrap-props false
    ::mf/forward-ref true}
   [props external-ref]
-  (let [value-str    (obj/get props "value")
-        min-val-str  (obj/get props "min")
-        max-val-str  (obj/get props "max")
-        step-val-str (obj/get props "step")
-        wrap-value?  (obj/get props "data-wrap")
-        on-change    (obj/get props "onChange")
-        on-blur      (obj/get props "onBlur")
-        title        (obj/get props "title")
-        default-val  (obj/get props "default")
-        nillable     (obj/get props "nillable")
+  (let [value-str        (obj/get props "value")
+        min-val-str      (obj/get props "min")
+        max-val-str      (obj/get props "max")
+        step-val-str     (obj/get props "step")
+        wrap-value?      (obj/get props "data-wrap")
+        on-change        (obj/get props "onChange")
+        on-blur          (obj/get props "onBlur")
+        on-focus         (obj/get props "onFocus")
+        title            (obj/get props "title")
+        default-val      (obj/get props "default")
+        nillable         (obj/get props "nillable")
+        select-on-focus? (obj/get props "data-select-on-focus" true)
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
@@ -197,15 +199,33 @@
                  (when (and (some? current) (not (.contains current target)))
                    (dom/blur! current)))))))
 
+        on-mouse-up
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)))
+
+        handle-focus
+        (mf/use-callback
+         (fn [event]
+           (let [target (dom/get-target event)]
+             (when on-focus
+               (on-focus event))
+
+             (when select-on-focus?
+               (-> event (dom/get-target) (.select))
+               ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
+               (.addEventListener target "mouseup" on-mouse-up #js {"once" true})))))
+
         props (-> props
-                  (obj/without ["value" "onChange" "nillable"])
+                  (obj/without ["value" "onChange" "nillable" "onFocus"])
                   (obj/set! "className" "input-text")
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
                   (obj/set! "defaultValue" (fmt/format-number value))
                   (obj/set! "title" title)
                   (obj/set! "onKeyDown" handle-key-down)
-                  (obj/set! "onBlur" handle-blur))]
+                  (obj/set! "onBlur" handle-blur)
+                  (obj/set! "onFocus" handle-focus))]
 
     (mf/use-effect
      (mf/deps value)

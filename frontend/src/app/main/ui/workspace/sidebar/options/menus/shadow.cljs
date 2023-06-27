@@ -104,13 +104,6 @@
                (when-let [update-node (and update-ref (mf/ref-val update-ref))]
                  (dom/set-value! update-node value))))))
 
-        ;; FIXME: the same as previous function, imposible to
-        ;; implement efficiently because of numeric-input component
-        ;; and probably this affects all callbacks that that component
-        ;; receives
-        select-text
-        (fn [ref] (fn [_] (dom/select-text! (mf/ref-val ref))))
-
         update-color
         (fn [index]
           (fn [color]
@@ -188,7 +181,6 @@
          [:> numeric-input {:ref adv-offset-x-ref
                             :no-validate true
                             :placeholder "--"
-                            :on-focus (select-text adv-offset-x-ref)
                             :on-change (update-attr index :offset-x basic-offset-x-ref)
                             :on-blur on-blur
                             :value (:offset-x value)}]
@@ -198,7 +190,6 @@
          [:> numeric-input {:ref adv-offset-y-ref
                             :no-validate true
                             :placeholder "--"
-                            :on-focus (select-text adv-offset-y-ref)
                             :on-change (update-attr index :offset-y basic-offset-y-ref)
                             :on-blur on-blur
                             :value (:offset-y value)}]
@@ -209,7 +200,6 @@
          [:> numeric-input {:ref adv-blur-ref
                             :no-validate true
                             :placeholder "--"
-                            :on-focus (select-text adv-blur-ref)
                             :on-change (update-attr index :blur basic-blur-ref)
                             :on-blur on-blur
                             :min 0
@@ -220,7 +210,6 @@
          [:> numeric-input {:ref adv-spread-ref
                             :no-validate true
                             :placeholder "--"
-                            :on-focus (select-text adv-spread-ref)
                             :on-change (update-attr index :spread)
                             :on-blur on-blur
                             :value (:spread value)}]

@@ -27,19 +27,21 @@
   {::mf/wrap-props false
    ::mf/forward-ref true}
   [props external-ref]
-  (let [value     (obj/get props "value")
-        on-change (obj/get props "onChange")
-        on-blur   (obj/get props "onBlur")
+  (let [value            (obj/get props "value")
+        on-change        (obj/get props "onChange")
+        on-blur          (obj/get props "onBlur")
+        on-focus         (obj/get props "onFocus")
+        select-on-focus? (obj/get props "data-select-on-focus" true)
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
         ;; So we use the external ref if provided, and the local one if not.
-        local-ref (mf/use-ref)
-        ref       (or external-ref local-ref)
+        local-ref        (mf/use-ref)
+        ref              (or external-ref local-ref)
 
         ;; We need to store the handle-blur ref so we can call it on unmount
-        handle-blur-ref (mf/use-ref nil)
-        dirty-ref (mf/use-ref false)
+        handle-blur-ref  (mf/use-ref nil)
+        dirty-ref        (mf/use-ref false)
 
         parse-value
         (mf/use-callback
@@ -109,14 +111,32 @@
                  (when (and (some? current) (not (.contains current target)))
                    (dom/blur! current)))))))
 
+        on-mouse-up
+        (mf/use-callback
+          (fn [event]
+            (dom/prevent-default event)))
+
+        handle-focus
+        (mf/use-callback
+          (fn [event]
+            (let [target (dom/get-target event)]
+              (when on-focus
+                (on-focus event))
+
+              (when select-on-focus?
+                (-> event (dom/get-target) (.select))
+                ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
+                (.addEventListener target "mouseup" on-mouse-up #js {"once" true})))))
+
         props (-> props
-                  (obj/without ["value" "onChange"])
+                  (obj/without ["value" "onChange" "onFocus"])
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
                   ;; (obj/set! "list" list-id)
                   (obj/set! "defaultValue" value)
                   (obj/set! "onKeyDown" handle-key-down)
-                  (obj/set! "onBlur" handle-blur))]
+                  (obj/set! "onBlur" handle-blur)
+                  (obj/set! "onFocus" handle-focus))]
 
     (mf/use-effect
      (mf/deps value)
