@@ -1,0 +1,9 @@
+{
+    "files.exclude": {
+        "**/.clj-kondo": true,
+        "**/.cpcache": true,
+        "**/.lsp": true,
+        "**/.shadow-cljs": true,
+        "**/node_modules": true
+    }
+}
