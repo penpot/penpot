@@ -22,14 +22,14 @@
   [:map
    [:color ::grid-color]
    [:type [::sm/one-of #{:stretch :left :center :right}]]
-   [:size {:optional true} ::sm/safe-number]
+   [:size {:optional true} [:maybe ::sm/safe-number]]
    [:margin {:optional true} [:maybe ::sm/safe-number]]
    [:item-length {:optional true} [:maybe ::sm/safe-number]]
    [:gutter {:optional true} [:maybe ::sm/safe-number]]])
 
 (sm/def! ::square-params
   [:map
-   [:size ::sm/safe-number]
+   [:size {:optional true} [:maybe ::sm/safe-number]]
    [:color ::grid-color]])
 
 (sm/def! ::grid
