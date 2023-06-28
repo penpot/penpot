@@ -25,6 +25,9 @@
    [app.tokens :as tokens]
    [app.util.json :as json]
    [app.util.time :as dt]
+   [buddy.core.keys :as keys]
+   [buddy.sign.jws :as jws]
+   [buddy.sign.jwt :as jwt]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -48,36 +51,29 @@
 
 (defn- discover-oidc-config
   [cfg {:keys [base-uri] :as opts}]
-  (let [discovery-uri (u/join base-uri ".well-known/openid-configuration")
-        response      (ex/try! (http/req! cfg
-                                          {:method :get :uri (str discovery-uri)}
-                                          {:sync? true}))]
-    (cond
-      (ex/exception? response)
-      (do
-        (l/warn :hint "unable to discover oidc configuration"
-                :discover-uri (str discovery-uri)
-                :cause response)
-        nil)
-
-      (= 200 (:status response))
-      (let [data      (json/decode (:body response))
+  (let [uri (dm/str (u/join base-uri ".well-known/openid-configuration"))
+        rsp (http/req! cfg {:method :get :uri uri} {:sync? true})]
+    (if (= 200 (:status rsp))
+      (let [data      (-> rsp :body json/decode)
             token-uri (get data :token_endpoint)
             auth-uri  (get data :authorization_endpoint)
-            user-uri  (get data :userinfo_endpoint)]
+            user-uri  (get data :userinfo_endpoint)
+            jwks-uri  (get data :jwks_uri)]
+
         (l/debug :hint "oidc uris discovered"
                  :token-uri token-uri
                  :auth-uri auth-uri
-                 :user-uri user-uri)
+                 :user-uri user-uri
+                 :jwks-uri jwks-uri)
+
         {:token-uri token-uri
          :auth-uri  auth-uri
-         :user-uri  user-uri})
-
-      :else
+         :user-uri  user-uri
+         :jwks-uri jwks-uri})
       (do
         (l/warn :hint "unable to discover OIDC configuration"
-                :uri (str discovery-uri)
-                :response-status-code (:status response))
+                :discover-uri uri
+                :http-status (:status rsp))
         nil))))
 
 (defn- prepare-oidc-opts
@@ -88,6 +84,7 @@
               :token-uri     (cf/get :oidc-token-uri)
               :auth-uri      (cf/get :oidc-auth-uri)
               :user-uri      (cf/get :oidc-user-uri)
+              :jwks-uri      (cf/get :oidc-jwks-uri)
               :scopes        (cf/get :oidc-scopes #{"openid" "profile" "email"})
               :roles-attr    (cf/get :oidc-roles-attr)
               :roles         (cf/get :oidc-roles)
@@ -102,8 +99,42 @@
                (string? (:user-uri opts))
                (string? (:auth-uri opts)))
         opts
-        (some-> (discover-oidc-config cfg opts)
-                (merge opts {:discover? true}))))))
+        (try
+          (-> (discover-oidc-config cfg opts)
+              (merge opts {:discover? true}))
+          (catch Throwable cause
+            (l/warn :hint "unable to discover OIDC configuration"
+                    :cause cause)))))))
+
+(defn- process-oidc-jwks
+  [keys]
+  (reduce (fn [result {:keys [kid] :as kdata}]
+            (let [pkey (ex/try! (keys/jwk->public-key kdata))]
+              (if (ex/exception? pkey)
+                (do
+                  (l/warn :hint "unable to create public key"
+                          :kid (:kid kdata)
+                          :cause pkey)
+                  result)
+                (assoc result kid pkey))))
+          {}
+          keys))
+
+(defn- fetch-oidc-jwks
+  [cfg {:keys [jwks-uri]}]
+  (when jwks-uri
+    (try
+      (let [{:keys [status body]} (http/req! cfg {:method :get :uri jwks-uri} {:sync? true})]
+        (if (= 200 status)
+          (-> body json/decode :keys process-oidc-jwks)
+          (do
+            (l/warn :hint "unable to retrieve JWKs (unexpected response status code)"
+                    :http-status status
+                    :http-body  body)
+            nil)))
+      (catch Throwable cause
+        (l/warn :hint "unable to retrieve JWKs (unexpected exception)"
+                :cause cause)))))
 
 (defmethod ig/pre-init-spec ::providers/generic [_]
   (s/keys :req [::http/client]))
@@ -112,7 +143,7 @@
   [_ cfg]
   (when (contains? cf/flags :login-with-oidc)
     (if-let [opts (prepare-oidc-opts cfg)]
-      (do
+      (let [jwks (fetch-oidc-jwks cfg opts)]
         (l/info :hint "provider initialized"
                 :provider "oidc"
                 :method (if (:discover? opts) "discover" "manual")
@@ -123,8 +154,9 @@
                 :user-uri   (:user-uri opts)
                 :token-uri  (:token-uri opts)
                 :roles-attr (:roles-attr opts)
-                :roles      (:roles opts))
-        opts)
+                :roles      (:roles opts)
+                :keys       (str/join "," (map str (keys jwks))))
+        (assoc opts :jwks jwks))
       (do
         (l/warn :hint "unable to initialize auth provider, missing configuration" :provider "oidc")
         nil))))
@@ -165,7 +197,7 @@
   [cfg tdata props]
   (or (some-> props :github/email)
       (let [params {:uri "https://api.github.com/user/emails"
-                    :headers {"Authorization" (dm/str (:type tdata) " " (:token tdata))}
+                    :headers {"Authorization" (dm/str (:token/type tdata) " " (:token/access tdata))}
                     :timeout 6000
                     :method :get}
 
@@ -274,7 +306,7 @@
              {}
              props))
 
-(defn retrieve-access-token
+(defn fetch-access-token
   [{:keys [provider] :as cfg} code]
   (let [params {:client_id (:client-id provider)
                 :client_secret (:client-secret provider)
@@ -298,8 +330,9 @@
       (l/trace :hint "access token response" :status status :body body)
       (if (= status 200)
         (let [data (json/decode body)]
-          {:token (get data :access_token)
-           :type (get data :token_type)})
+          {:token/access (get data :access_token)
+           :token/id     (get data :id_token)
+           :token/type   (get data :token_type)})
 
         (ex/raise :type :internal
                   :code :unable-to-retrieve-token
@@ -307,12 +340,11 @@
                   :http-status status
                   :http-body body)))))
 
-(defn- retrieve-user-info
-  [{:keys [provider] :as cfg} tdata]
+(defn- process-user-info
+  [provider tdata info]
   (letfn [(get-email [props]
             ;; Allow providers hook into this for custom email
             ;; retrieval method.
-
             (if-let [get-email-fn (:get-email-fn provider)]
               (get-email-fn tdata props)
               (let [attr-kw (cf/get :oidc-email-attr "email")
@@ -323,48 +355,53 @@
             (let [attr-kw (cf/get :oidc-name-attr "name")
                   attr-ph (parse-attr-path provider attr-kw)]
               (get-in props attr-ph)))
+          ]
 
-          (process-response [response]
-            (let [info  (-> response :body json/decode)
-                  props (qualify-props provider info)
-                  email (get-email props)]
-              {:backend  (:name provider)
-               :fullname (or (get-name props) email)
-               :email    email
-               :props    props}))]
+    (let [props (qualify-props provider info)
+          email (get-email props)]
+      {:backend  (:name provider)
+       :fullname (or (get-name props) email)
+       :email    email
+       :props    props})))
 
-    (l/trace :hint "request user info"
-             :uri (:user-uri provider)
-             :token (obfuscate-string (:token tdata))
-             :token-type (:type tdata))
+(defn- fetch-user-info
+  [{:keys [provider] :as cfg} tdata]
+  (l/trace :hint "fetch user info"
+           :uri (:user-uri provider)
+           :token (obfuscate-string (:token/access tdata)))
 
-    (let [request  {:uri (:user-uri provider)
-                    :headers {"Authorization" (str (:type tdata) " " (:token tdata))}
-                    :timeout 6000
-                    :method :get}
-          response (http/req! cfg request {:sync? true})]
+  (let [params   {:uri (:user-uri provider)
+                  :headers {"Authorization" (str (:token/type tdata) " " (:token/access tdata))}
+                  :timeout 6000
+                  :method :get}
+        response (http/req! cfg params {:sync? true})]
 
-      (l/trace :hint "user info response"
-               :status (:status response)
-               :body   (:body response))
+    (l/trace :hint "user info response"
+             :status (:status response)
+             :body   (:body response))
 
-      (when-not (s/int-in-range? 200 300 (:status response))
-        (ex/raise :type :internal
-                  :code :unable-to-retrieve-user-info
-                  :hint "unable to retrieve user info"
-                  :http-status (:status response)
-                  :http-body (:body response)))
+    (when-not (s/int-in-range? 200 300 (:status response))
+      (ex/raise :type :internal
+                :code :unable-to-retrieve-user-info
+                :hint "unable to retrieve user info"
+                :http-status (:status response)
+                :http-body (:body response)))
 
-      (let [info (process-response response)]
-        (l/trace :hint "authentication info" :info info)
+    (-> response :body json/decode)))
 
-        (when-not (s/valid? ::info info)
-          (l/warn :hint "received incomplete profile info object (please set correct scopes)" :info info)
-          (ex/raise :type :internal
-                    :code :incomplete-user-info
-                    :hint "inconmplete user info"
-                    :info info))
-        info))))
+(defn- get-user-info
+  [{:keys [provider]} tdata]
+  (try
+    (let [{:keys [kid alg] :as theader} (jws/decode-header (:token/id tdata))]
+      (when-let [key (if (str/starts-with? (name alg) "hs")
+                       (:client-secret provider)
+                       (get-in provider [:jwks kid]))]
+
+        (let [claims (jwt/unsign (:token/id tdata) key {:alg alg})]
+          (dissoc claims :exp :iss :iat :sid :aud :sub))))
+    (catch Throwable cause
+      (l/warn :hint "unable to get user info from JWT token (unexpected exception)"
+              :cause cause))))
 
 (s/def ::backend ::us/not-empty-string)
 (s/def ::email ::us/not-empty-string)
@@ -377,7 +414,7 @@
                    ::props]))
 
 (defn get-info
-  [{:keys [provider] :as cfg} {:keys [params] :as request}]
+  [{:keys [provider ::main/props] :as cfg} {:keys [params] :as request}]
   (when-let [error (get params :error)]
     (ex/raise :type :internal
               :code :error-on-retrieving-code
@@ -386,9 +423,20 @@
 
   (let [state  (get params :state)
         code   (get params :code)
-        state  (tokens/verify (::main/props cfg) {:token state :iss :oauth})
-        token  (retrieve-access-token cfg code)
-        info   (retrieve-user-info cfg token)]
+        state  (tokens/verify props {:token state :iss :oauth})
+        tdata  (fetch-access-token cfg code)
+        info   (or (get-user-info cfg tdata)
+                   (fetch-user-info cfg tdata))
+        info   (process-user-info provider tdata info)]
+
+    (l/trace :hint "user info" :info info)
+
+    (when-not (s/valid? ::info info)
+      (l/warn :hint "received incomplete profile info object (please set correct scopes)" :info info)
+      (ex/raise :type :internal
+                :code :incomplete-user-info
+                :hint "inconmplete user info"
+                :info info))
 
     ;; If the provider is OIDC, we can proceed to check
     ;; roles if they are defined.
