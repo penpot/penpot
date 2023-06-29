@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-06-17 09:51+0000\n"
+"PO-Revision-Date: 2023-07-01 12:52+0000\n"
 "Last-Translator: Mikel Larreategi <mlarreategi@codesyntax.com>\n"
 "Language-Team: Basque <https://hosted.weblate.org/projects/penpot/frontend/"
 "eu/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.18.1\n"
+"X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -77,11 +77,11 @@ msgstr "Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "Sartu LDAP erabiliz"
+msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "OpenID Connect"
+msgstr "OpenID"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -1797,8 +1797,8 @@ msgstr "Profila ondo gorde da!"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "notifications.validation-email-sent"
 msgstr ""
-"Posta elektronikoa egiaztatzeko mezua ondo bidali da %s helbidera. "
-"Egiaztatu zure eposta."
+"Posta elektronikoa egiaztatzeko mezua ondo bidali da %s helbidera. Egiaztatu "
+"zure helbidea!"
 
 msgid "onboarding-v2.before-start.desc1"
 msgstr ""
@@ -1912,9 +1912,6 @@ msgstr "Pribatutasun politika."
 
 msgid "onboarding.newsletter.title"
 msgstr "Penpoti buruzko albisteak jaso nahi dituzu?"
-
-msgid "onboarding.slide.1.title"
-msgstr "Eman bizia zure diseinuen interakzioak erabiliz"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Sortu talde bat"
