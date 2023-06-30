@@ -13,8 +13,8 @@
 
 (def default-params
   {:alg :argon2id
-   :memory (* 32768 2)
-   :iterations 5
+   :memory (* 32768 2) ;; 64 MiB
+   :iterations 7
    :parallelism (px/get-available-processors)})
 
 (defn derive-password
