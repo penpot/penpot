@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-01 16:38+0000\n"
+"PO-Revision-Date: 2023-07-01 12:52+0000\n"
 "Last-Translator: Linerly <linerly@protonmail.com>\n"
-"Language-Team: Indonesian "
-"<https://hosted.weblate.org/projects/penpot/frontend/id/>\n"
+"Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
+"frontend/id/>\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.16-dev\n"
+"X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -430,9 +430,6 @@ msgstr "Aduh! Kami tidak dapat mengimpor berkas ini"
 
 msgid "dashboard.import.import-error"
 msgstr "Terdapat masalah saat mengimpor berkas. Berkasnya tidak terimpor."
-
-msgid "dashboard.import.import-message"
-msgstr "%s berkas telah berhasil diimpor."
 
 msgid "dashboard.import.import-warning"
 msgstr "Beberapa berkas berisi objek yang tidak valid yang telah dihapus."
@@ -924,16 +921,9 @@ msgstr "Akun dukungan Twitter"
 msgid "generic.error"
 msgstr "Sebuah kesalahan telah terjadi"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.width"
-msgstr "Lebar"
-
 #: src/app/main/ui/handoff/attributes/text.cljs
 msgid "handoff.attributes.typography.font-family"
 msgstr "Keluarga Fon"
-
-msgid "handoff.tabs.code.selected.component"
-msgstr "Komponen"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -3666,10 +3656,6 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Kolom"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-row"
-msgstr "Barisan terbalik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
 msgstr "Barisan"
 
@@ -4477,3 +4463,13 @@ msgstr "Perbarui"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik untuk menutup jalur"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Berkas Anda berhasil digandakan"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Berkas Anda berhasil dihapus"
