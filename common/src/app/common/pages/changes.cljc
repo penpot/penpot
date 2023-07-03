@@ -246,9 +246,8 @@
             (let [shape-old (dm/get-in data-old [:pages-index page-id :objects id])
                   shape-new (dm/get-in data-new [:pages-index page-id :objects id])]
 
-              ;; If object has changed verify is correct
-              (when (and (some? shape-old)
-                         (some? shape-new)
+              ;; If object has changed or is new verify is correct
+              (when (and (some? shape-new)
                          (not= shape-old shape-new))
                 (dm/verify! (cts/shape? shape-new)))))]
 
