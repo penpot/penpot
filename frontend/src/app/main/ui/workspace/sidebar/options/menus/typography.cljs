@@ -102,7 +102,10 @@
         input        (mf/use-ref)
 
         fonts        (mf/use-memo (mf/deps @state) #(filter-fonts @state @fonts/fonts))
-        recent-fonts (mf/deref refs/workspace-recent-fonts)
+        fontsdb      (mf/deref fonts/fontsdb)
+        ;; Filtering deleted fonts
+        recent-fonts (->> (mf/deref refs/workspace-recent-fonts)
+                          (into [] (filter #(some? (get fontsdb (:id %))))))
 
         select-next
         (mf/use-callback
@@ -259,7 +262,9 @@
 
         fonts           (mf/deref fonts/fontsdb)
         font            (get fonts font-id)
-        recent-fonts    (mf/deref refs/workspace-recent-fonts)
+        ;; Filtering deleted fonts
+        recent-fonts    (->> (mf/deref refs/workspace-recent-fonts)
+                             (into [] (filter #(some? (get fonts (:id %))))))
         last-font       (mf/use-ref nil)
 
         open-selector?  (mf/use-state false)
