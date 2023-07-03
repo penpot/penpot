@@ -424,8 +424,12 @@
         code   (get params :code)
         state  (tokens/verify props {:token state :iss :oauth})
         tdata  (fetch-access-token cfg code)
-        info   (or (get-user-info cfg tdata)
-                   (fetch-user-info cfg tdata))
+        info   (case (cf/get :oidc-user-info-source)
+                 :token (get-user-info cfg tdata)
+                 :userinfo (fetch-user-info cfg tdata)
+                 (or (get-user-info cfg tdata)
+                     (fetch-user-info cfg tdata)))
+
         info   (process-user-info provider tdata info)]
 
     (l/trace :hint "user info" :info info)

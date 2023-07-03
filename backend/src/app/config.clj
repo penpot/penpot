@@ -146,6 +146,7 @@
 (s/def ::google-client-id ::us/string)
 (s/def ::google-client-secret ::us/string)
 (s/def ::oidc-client-id ::us/string)
+(s/def ::oidc-user-info-source ::us/keyword)
 (s/def ::oidc-client-secret ::us/string)
 (s/def ::oidc-base-uri ::us/string)
 (s/def ::oidc-token-uri ::us/string)
@@ -242,6 +243,7 @@
                    ::google-client-secret
                    ::oidc-client-id
                    ::oidc-client-secret
+                   ::oidc-user-info-source
                    ::oidc-base-uri
                    ::oidc-token-uri
                    ::oidc-auth-uri
