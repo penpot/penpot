@@ -26,7 +26,7 @@
 
 ![feature-readme](https://user-images.githubusercontent.com/1045247/189871786-0b44f7cf-3a0a-4445-a87b-9919ec398bf7.gif)
 
-**Penpot Fest exceeded all expectations - it was a complete success!** Penpot Fest is our first Design event that brought designers and developers from the Open Source communities and beyond. Watch the replay of the talks on our [Youtube channel](https://www.youtube.com/playlist?list=PLgcCPfOv5v56-fghJo2dHNBqL9zlDTslh) or [Peertube channel](https://peertube.kaleidos.net/w/p/1tWgyJTt8sKbWwCEcBimZW)
+🎇**Penpot Fest exceeded all expectations - it was a complete success!**🎇 Penpot Fest is our first Design event that brought designers and developers from the Open Source communities and beyond. Watch the replay of the talks on our [Youtube channel](https://www.youtube.com/playlist?list=PLgcCPfOv5v56-fghJo2dHNBqL9zlDTslh) or [Peertube channel](https://peertube.kaleidos.net/w/p/1tWgyJTt8sKbWwCEcBimZW)
 
 Penpot is the first **Open Source** design and prototyping platform meant for cross-domain teams. Non dependent on operating systems, Penpot is web based and works with open standards (SVG). Penpot invites designers all over the world to fall in love with open source while getting developers excited about the design process in return.
 
