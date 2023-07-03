@@ -355,10 +355,12 @@ span.element-name {
   .pages-tool-bar {
     display: flex;
     justify-content: space-between;
-    height: 32px;
-    margin-top: 8px;
+    height: 40px;
+    padding: 0;
 
     &.search {
+      margin-top: 8px;
+      padding: 8px;
       .search-box {
         border: 1px solid $color-gray-20;
         border-radius: $br4;
@@ -402,6 +404,67 @@ span.element-name {
       height: 16px;
       margin: 0 2px 0 5px;
       cursor: pointer;
+    }
+    .page-name {
+      padding: 8px;
+      margin-top: 8px;
+    }
+    .icon-search {
+      margin-top: 8px;
+    }
+    .focus-title {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      align-items: center;
+      grid-template-columns: 16px 1fr auto;
+      grid-column-gap: 8px;
+      cursor: pointer;
+
+      .back-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        background: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+
+        svg {
+          width: 12px;
+          height: 12px;
+          fill: $color-gray-20;
+          transform: rotate(180deg);
+        }
+
+        &:hover {
+          svg {
+            fill: $color-primary;
+          }
+        }
+      }
+
+      .focus-name {
+        height: 100%;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .focus-mode {
+        color: $color-primary;
+        border: 1px solid $color-primary;
+        border-radius: $br3;
+        font-size: $fs10;
+        text-transform: uppercase;
+        padding: 0px 4px;
+        display: flex;
+        align-items: center;
+      }
     }
   }
 }

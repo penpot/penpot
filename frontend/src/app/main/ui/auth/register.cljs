@@ -22,6 +22,7 @@
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (mf/defc demo-warning
@@ -44,6 +45,13 @@
                        (cond-> error
                          (= code ::us/email)
                          (assoc :message (tr "errors.email-invalid"))))))))
+
+(defn- validate-password
+  [errors data]
+  (let [password (-> data :password str/trim)]
+   (cond-> errors
+      (str/empty? password)
+      (assoc :password {:message (tr "auth.password-not-empty")}))))
 
 (s/def ::fullname ::us/not-empty-string)
 (s/def ::password ::us/not-empty-string)
@@ -87,7 +95,7 @@
   [{:keys [params on-success-callback] :as props}]
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
         form    (fm/use-form :spec ::register-form
-                             :validators [validate]
+                             :validators [validate validate-password]
                              :initial initial)
         submitted? (mf/use-state false)
 

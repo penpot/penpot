@@ -466,20 +466,27 @@
 
 .dashboard-templates-section {
   position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   bottom: 0;
   width: 100%;
-  height: 285px;
+  height: 228px;
   transition: bottom 300ms;
-
+  pointer-events: none;
   &.collapsed {
     bottom: -228px;
     transition: bottom 300ms;
   }
 
   .title {
-    width: 100%;
+    pointer-events: all;
+    width: fit-content;
+    top: -56px;
+    right: -28px;
     text-align: right;
     height: 56px;
+    position: absolute;
     button {
       border: none;
       cursor: pointer;
@@ -529,6 +536,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: all;
     svg {
       width: 12px;
       height: 12px;
@@ -550,6 +558,7 @@
   }
 
   .content {
+    pointer-events: all;
     background-color: $color-white;
     width: 200%;
     height: 229px;
