@@ -192,6 +192,8 @@
                              (if (= align-self value)
                                (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self nil}))
                                (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self value}))))
+        
+        is-absolute? (:layout-item-absolute values)
 
         is-col? (every? ctl/col? selection-parents)
 
@@ -219,6 +221,8 @@
 
         on-change-position
         (fn [value]
+          (when (= value :static)
+            (st/emit! (dwsl/update-layout-child ids {:layout-item-z-index nil})))
           (st/emit! (dwsl/update-layout-child ids {:layout-item-absolute (= value :absolute)})))
 
         on-change-z-index
@@ -254,6 +258,8 @@
             {:placeholder "--"
              :on-focus #(dom/select-target %)
              :on-change #(on-change-z-index %)
+             :nillable true
+             :disabled (not is-absolute?)
              :value (:layout-item-z-index values)}]]]])
 
       (when (not (:layout-item-absolute values))
