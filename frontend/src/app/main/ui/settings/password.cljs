@@ -14,6 +14,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
    [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn- on-error
@@ -24,7 +25,7 @@
            {:message (tr "errors.wrong-old-password")})
     :email-as-password
     (swap! form assoc-in [:errors :password-1]
-       {:message (tr "errors.email-as-password")})
+           {:message (tr "errors.email-as-password")})
 
     (let [msg (tr "generic.error")]
       (st/emit! (dm/error msg)))))
@@ -62,6 +63,17 @@
       (and password-1 (> 8 (count password-1)))
       (assoc :password-1 {:message (tr "errors.password-too-short")}))))
 
+(defn- validate-password
+  [errors data]
+  (let [password-1 (-> data :password-1 str/trim)
+        password-2 (-> data :password-2 str/trim)]
+    (cond-> errors
+      (str/empty? password-1)
+      (assoc :password-1 {:message (tr "auth.password-not-empty")})
+
+      (str/empty? password-2)
+      (assoc :password-2 {:message (tr "auth.password-not-empty")}))))
+
 (s/def ::password-form
   (s/keys :req-un [::password-1
                    ::password-2
@@ -71,8 +83,8 @@
   [{:keys [locale] :as props}]
   (let [initial (mf/use-memo (constantly {:password-old nil}))
         form (fm/use-form :spec ::password-form
-               :validators [password-equality]
-               :initial initial)]
+                          :validators [validate-password password-equality]
+                          :initial initial)]
     [:& fm/form {:class "password-form"
                  :on-submit on-submit
                  :form form}
@@ -105,7 +117,7 @@
 (mf/defc password-page
   [{:keys [locale]}]
   (mf/use-effect
-    #(dom/set-html-title (tr "title.settings.password")))
+   #(dom/set-html-title (tr "title.settings.password")))
 
   [:section.dashboard-settings.form-container
    [:div.form-container
