@@ -225,7 +225,7 @@
   [:map {:title "TextAttrs"}
    [:id ::sm/uuid]
    [:type [:= :text]]
-   [:content ::ctsx/content]])
+   [:content {:optional true} [:maybe ::ctsx/content]]])
 
 (sm/def! ::shape
   [:multi {:dispatch :type :title "Shape"}
