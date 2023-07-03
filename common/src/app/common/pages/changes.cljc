@@ -249,9 +249,6 @@
 
 ;; Changes Processing Impl
 
-(def valid-shape?
-  (sm/pred-fn ::cts/shape))
-
 (defn validate-shapes!
   [data-old data-new items]
   (letfn [(validate-shape! [[page-id id]]
@@ -262,7 +259,7 @@
               (when (and (some? shape-new)
                          (not= shape-old shape-new))
                 (dm/verify! (and (cts/shape? shape-new)
-                                 (valid-shape? shape-new))))))]
+                                 (cts/valid-shape? shape-new))))))]
 
     (->> (into #{} (map :page-id) items)
          (mapcat (fn [page-id]
