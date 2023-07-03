@@ -203,6 +203,7 @@
 
              ids (into
                   (d/ordered-set)
+                  (remove #(dm/get-in objects [% :blocked]))
                   (ctt/sort-z-index objects ids {:bottom-frames? mod?}))
 
              grouped? (fn [id] (contains? #{:group :bool} (get-in objects [id :type])))

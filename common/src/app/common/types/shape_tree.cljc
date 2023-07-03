@@ -260,7 +260,11 @@
 
    (let [frame-ids (cond->> (all-frames-by-position objects position)
                      (some? excluded)
-                     (remove excluded))
+                     (remove excluded)
+
+                     :always
+                     (remove #(or (dm/get-in objects [% :hidden])
+                                  (dm/get-in objects [% :blocked]))))
 
          frame-set (set frame-ids)]
 
@@ -276,7 +280,10 @@
   "Search the top nested frame in a list of ids"
   [objects ids]
 
-  (let [frame-ids (->> ids (filter #(cph/frame-shape? objects %)))
+  (let [frame-ids (->> ids
+                       (filter #(cph/frame-shape? objects %))
+                       (remove #(or (dm/get-in objects [% :hidden])
+                                    (dm/get-in objects [% :blocked]))))
         frame-set (set frame-ids)]
     (loop [current-id (first frame-ids)]
       (let [current-shape (get objects current-id)

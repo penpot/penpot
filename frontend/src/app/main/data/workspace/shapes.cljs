@@ -143,12 +143,14 @@
           (cond-> (ctl/grid-layout? objects frame-id)
             (pcb/update-shapes [frame-id] ctl/assign-cells))))))
 
-(defn move-shapes-into-frame [frame-id shapes]
+(defn move-shapes-into-frame
+  [frame-id shapes]
   (ptk/reify ::move-shapes-into-frame
     ptk/WatchEvent
     (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
+            shapes (->> shapes (remove #(dm/get-in objects [% :blocked])))
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects))
             changes (prepare-move-shapes-into-frame changes

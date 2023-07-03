@@ -196,7 +196,7 @@
     (-> (update-in [:svg-attrs :style] dissoc :mix-blend-mode)
         (assoc :blend-mode (-> (get-in shape [:svg-attrs :style :mix-blend-mode]) assert-valid-blend-mode)))))
 
-(defn create-raw-svg [name frame-id svg-data {:keys [tag attrs] :as data}]
+(defn create-raw-svg [name frame-id svg-data {:keys [attrs] :as data}]
   (let [{:keys [x y width height offset-x offset-y]} svg-data]
     (-> {:id (uuid/next)
          :type :svg-raw

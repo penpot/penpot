@@ -63,20 +63,22 @@
 
              ;; Add & select the created shape to the workspace
              (rx/concat
-              (if (= :text (:type shape))
+              (if (or (= :text (:type shape)) (= :frame (:type shape)))
                 (rx/of (dwu/start-undo-transaction (:id shape)))
                 (rx/empty))
 
               (rx/of (dwsh/add-shape shape {:no-select? (= tool :curve)}))
 
               (if (= :frame (:type shape))
-                (->> (uw/ask! {:cmd :selection/query
-                               :page-id page-id
-                               :rect (:selrect shape)
-                               :include-frames? true
-                               :full-frame? true})
-                     (rx/map #(cph/clean-loops objects %))
-                     (rx/map #(dwsh/move-shapes-into-frame (:id shape) %)))
+                (rx/concat
+                 (->> (uw/ask! {:cmd :selection/query
+                                :page-id page-id
+                                :rect (:selrect shape)
+                                :include-frames? true
+                                :full-frame? true})
+                      (rx/map #(cph/clean-loops objects %))
+                      (rx/map #(dwsh/move-shapes-into-frame (:id shape) %)))
+                 (rx/of (dwu/commit-undo-transaction (:id shape))))
                 (rx/empty)))))
 
          ;; Delay so the mouse event can read the drawing state

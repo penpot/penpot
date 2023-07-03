@@ -33,6 +33,7 @@
 - Fix component and media name validation on assets panel [Taiga #5555](https://tree.taiga.io/project/penpot/issue/5555)
 - Fix problem with selection shortcuts [Taiga #5492](https://tree.taiga.io/project/penpot/issue/5492)
 - Fix issue with paths line to curve and concurrent editing [Taiga #5191](https://tree.taiga.io/project/penpot/issue/5191)
+- Fix problems with locked layers [Taiga #5139](https://tree.taiga.io/project/penpot/issue/5139)
 
 ### :heart: Community contributions by (Thank you!)
 
