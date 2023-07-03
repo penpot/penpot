@@ -246,7 +246,7 @@
   pointer-events: auto;
 
   .thread-groups {
-    height: 100%;
+    height: calc(100% - 34px);
     overflow-y: scroll;
     hr {
       border: 0;

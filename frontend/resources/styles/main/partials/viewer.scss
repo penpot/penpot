@@ -182,7 +182,7 @@
     right: 0;
     top: 50px;
     width: 256px;
-    height: 100%;
+    height: calc(100vh - 48px);
     z-index: 10;
   }
 
