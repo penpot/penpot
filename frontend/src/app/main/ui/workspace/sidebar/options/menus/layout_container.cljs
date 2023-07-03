@@ -93,13 +93,13 @@
         :space-between i/align-content-row-between
         :stretch nil))
 
-      (case val
-        :start         i/align-content-row-start
-        :end           i/align-content-row-end
-        :center        i/align-content-row-center
-        :space-around  i/align-content-row-around
-        :space-between i/align-content-row-between
-        :stretch nil)
+    (case val
+      :start         i/align-content-row-start
+      :end           i/align-content-row-end
+      :center        i/align-content-row-center
+      :space-around  i/align-content-row-around
+      :space-between i/align-content-row-between
+      :stretch nil)
 
     :align-self
     (if is-col?
@@ -275,8 +275,8 @@
           {:placeholder "--"
            :on-change (partial on-change :simple :p1)
            :on-focus #(do
-                       (dom/select-target %)
-                       (select-paddings true false true false))
+                        (dom/select-target %)
+                        (select-paddings true false true false))
            :value p1}]]
 
         [:div.padding-item.tooltip.tooltip-bottom-left
@@ -354,7 +354,7 @@
         i/auto-gap]
        [:> numeric-input {:no-validate true
                           :placeholder "--"
-                        :on-focus (fn [event]
+                          :on-focus (fn [event]
                                       (select-gap :row-gap)
                                       (reset! gap-selected? :row-gap)
                                       (dom/select-target event))
@@ -638,12 +638,12 @@
        (if (and (not multiple) (:layout values))
          [:div.title-actions
           #_[:div.layout-btns
-           [:button {:on-click set-flex
-                     :class (dom/classnames
-                             :active (= :flex layout-type))} "Flex"]
-           [:button {:on-click set-grid
-                     :class (dom/classnames
-                             :active (= :grid layout-type))} "Grid"]]
+             [:button {:on-click set-flex
+                       :class (dom/classnames
+                               :active (= :flex layout-type))} "Flex"]
+             [:button {:on-click set-grid
+                       :class (dom/classnames
+                               :active (= :grid layout-type))} "Grid"]]
           [:button.remove-layout {:on-click on-remove-layout} i/minus]]
 
          [:button.add-page {:on-click #(on-add-layout :flex)} i/close])]]

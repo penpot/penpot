@@ -243,6 +243,7 @@
                                             (when (kbd/enter? event)
                                               (team-selected (:default-team-id profile) event)))
                              :id          "teams-selector-default-team"
+                             :unique-key  "default-team"
                              :klass       "team-name"}
       [:span.team-icon i/logo-icon]
       [:span.team-text (tr "dashboard.your-penpot")]
@@ -256,7 +257,7 @@
                                                 (team-selected (:id team-item) event)))
                                :id          (str "teams-selector-" (:id team-item))
                                :klass       "team-name"
-                               :key         (dm/str (:id team-item))}
+                               :unique-key  (dm/str (:id team-item))}
         [:span.team-icon
          [:img {:src (cf/resolve-team-photo-url team-item)
                 :alt (:name team-item)}]]
@@ -270,7 +271,7 @@
                                               (on-create-clicked event)))
                              :id          "teams-selector-create-team"
                              :klass       "team-name action"
-                             :key         "teams-selector-create-team"}
+                             :unique-key  "teams-selector-create-team"}
       [:span.team-icon.new-team i/close]
       [:span.team-text (tr "dashboard.create-new-team")]]]))
 
@@ -364,16 +365,16 @@
                                             (when (kbd/enter? event)
                                               (go-members)))
                              :id          "teams-options-members"
-                             :key         "teams-options-members"
-                             :data-test "team-members"}
+                             :unique-key  "teams-options-members"
+                             :data-test   "team-members"}
       (tr "labels.members")]
      [:& dropdown-menu-item {:on-click    go-invitations
                              :on-key-down (fn [event]
                                             (when (kbd/enter? event)
                                               (go-invitations)))
                              :id          "teams-options-invitations"
-                             :key         "teams-options-invitations"
-                             :data-test "team-invitations"}
+                             :unique-key  "teams-options-invitations"
+                             :data-test   "team-invitations"}
       (tr "labels.invitations")]
 
      (when (contains? cf/flags :webhooks)
@@ -382,7 +383,7 @@
                                               (when (kbd/enter? event)
                                                 (go-webhooks)))
                                :id          "teams-options-webhooks"
-                               :key         "teams-options-webhooks"}
+                               :unique-key  "teams-options-webhooks"}
         (tr "labels.webhooks")])
 
      [:& dropdown-menu-item {:on-click    go-settings
@@ -390,8 +391,8 @@
                                             (when (kbd/enter? event)
                                               (go-settings)))
                              :id          "teams-options-settings"
-                             :key         "teams-options-settings"
-                             :data-test "team-settings"}
+                             :unique-key  "teams-options-settings"
+                             :data-test   "team-settings"}
       (tr "labels.settings")]
 
      [:hr]
@@ -401,8 +402,8 @@
                                               (when (kbd/enter? event)
                                                 (on-rename-clicked)))
                                :id          "teams-options-rename"
-                               :key         "teams-options-rename"
-                               :data-test "rename-team"}
+                               :unique-key  "teams-options-rename"
+                               :data-test   "rename-team"}
         (tr "labels.rename")])
 
      (cond
@@ -412,7 +413,7 @@
                                               (when (kbd/enter? event)
                                                 (leave-and-close)))
                                :id          "teams-options-leave-team"
-                               :key         "teams-options-leave-team"}
+                               :unique-key  "teams-options-leave-team"}
         (tr "dashboard.leave-team")]
 
 
@@ -422,8 +423,8 @@
                                               (when (kbd/enter? event)
                                                 (on-leave-as-owner-clicked)))
                                :id          "teams-options-leave-team"
-                               :key         "teams-options-leave-team"
-                               :data-test "leave-team"}
+                               :unique-key  "teams-options-leave-team"
+                               :data-test   "leave-team"}
         (tr "dashboard.leave-team")]
 
        (> (count members) 1)
@@ -432,7 +433,7 @@
                                               (when (kbd/enter? event)
                                                 (on-leave-clicked)))
                                :id          "teams-options-leave-team"
-                               :key         "teams-options-leave-team"}
+                               :unique-key  "teams-options-leave-team"}
         (tr "dashboard.leave-team")])
 
 
@@ -442,9 +443,9 @@
                                               (when (kbd/enter? event)
                                                 (on-delete-clicked)))
                                :id          "teams-options-delete-team"
-                               :key         "teams-options-delete-team"
+                               :unique-key  "teams-options-delete-team"
                                :klass       "warning"
-                               :data-test "delete-team"}
+                               :data-test   "delete-team"}
         (tr "dashboard.delete-team")])]))
 
 
