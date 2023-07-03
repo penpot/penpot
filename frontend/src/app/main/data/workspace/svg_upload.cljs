@@ -206,7 +206,6 @@
          :height height
          :x x
          :y y
-         :hidden (= tag :defs)
          :content (cond-> data
                     (map? data) (update :attrs usvg/clean-attrs))}
         (assoc :svg-attrs attrs)
@@ -437,6 +436,7 @@
                 children (cond->> (:content element-data)
                            (contains? usvg/parent-tags tag)
                            (mapv #(usvg/inherit-attributes attrs %)))]
+
             [shape children]))))))
 
 (defn create-svg-children
@@ -537,7 +537,8 @@
         root-shape (create-svg-root frame-id parent-id svg-data)
         root-id (:id root-shape)
 
-        ;; In penpot groups have the size of their children. To respect the imported svg size and empty space let's create a transparent shape as background to respect the imported size
+        ;; In penpot groups have the size of their children. To respect the imported
+        ;; svg size and empty space let's create a transparent shape as background to respect the imported size
         base-background-shape {:tag :rect
                                :attrs {:x      (str vb-x)
                                        :y      (str vb-y)
@@ -588,6 +589,7 @@
 
               [new-shape new-children]
               (create-svg-shapes svg-data position objects frame-id parent-id selected true)
+
               changes   (-> (pcb/empty-changes it page-id)
                             (pcb/with-objects objects)
                             (pcb/add-object new-shape))
