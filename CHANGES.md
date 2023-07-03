@@ -31,6 +31,7 @@
 - Fix context menu outside screen [Taiga #5524](https://tree.taiga.io/project/penpot/issue/5524)
 - Fix graphic item rename on assets pannel [Taiga #5556](https://tree.taiga.io/project/penpot/issue/5556)
 - Fix component and media name validation on assets panel [Taiga #5555](https://tree.taiga.io/project/penpot/issue/5555)
+- Fix problem with selection shortcuts [Taiga #5492](https://tree.taiga.io/project/penpot/issue/5492)
 
 ### :heart: Community contributions by (Thank you!)
 
