@@ -16,9 +16,8 @@
 - Add the ability to disable google fonts provider with the `disable-google-fonts-provider` flag
 - Add the ability to disable dashboard templates section with the `disable-dashboard-templates-section` flag
 - Add the ability to use the registration whitelist with OICD [Github #3348](https://github.com/penpot/penpot/issues/3348)
-- Add support for local caching of google fonts (this avoids exposing
-  the final user IP to goolge and reduces the amount of request sent
-  to google)
+- Add support for local caching of google fonts (this avoids exposing the final user IP to
+  goolge and reduces the amount of request sent to google)
 
 ### :bug: Bugs fixed
 
@@ -30,8 +29,8 @@
 - Fix search font visualitation [Taiga #5523](https://tree.taiga.io/project/penpot/issue/5523)
 - Fix create and account only with spaces [Taiga #5518](https://tree.taiga.io/project/penpot/issue/5518)
 - Fix context menu outside screen [Taiga #5524](https://tree.taiga.io/project/penpot/issue/5524)
-
-### :arrow_up: Deps updates
+- Fix graphic item rename on assets pannel [Taiga #5556](https://tree.taiga.io/project/penpot/issue/5556)
+- Fix component and media name validation on assets panel [Taiga #5555](https://tree.taiga.io/project/penpot/issue/5555)
 
 ### :heart: Community contributions by (Thank you!)
 

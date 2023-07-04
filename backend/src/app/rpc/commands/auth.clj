@@ -8,9 +8,10 @@
   (:require
    [app.auth :as auth]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -26,18 +27,13 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
-(s/def ::email ::us/email)
-(s/def ::fullname ::us/not-empty-string)
-(s/def ::lang ::us/string)
-(s/def ::path ::us/string)
-(s/def ::password ::us/not-empty-string)
-(s/def ::old-password ::us/not-empty-string)
-(s/def ::theme ::us/string)
-(s/def ::invitation-token ::us/not-empty-string)
-(s/def ::token ::us/not-empty-string)
+(def schema:password
+  [::sm/word-string {:max 500}])
+
+(def schema:token
+  [::sm/word-string {:max 1000}])
 
 ;; ---- COMMAND: login with password
 
@@ -101,21 +97,21 @@
             (rph/with-meta {::audit/props (audit/profile->props profile)
                             ::audit/profile-id (:id profile)}))))))
 
-(s/def ::login-with-password
-  (s/keys :req-un [::email ::password]
-          :opt-un [::invitation-token]))
+(def schema:login-with-password
+  [:map {:title "login-with-password"}
+   [:email ::sm/email]
+   [:password schema:password]
+   [:invitation-token {:optional true} schema:token]])
 
 (sv/defmethod ::login-with-password
   "Performs authentication using penpot password."
   {::rpc/auth false
-   ::doc/added "1.15"}
+   ::doc/added "1.15"
+   ::sm/params schema:login-with-password}
   [cfg params]
   (login-with-password cfg params))
 
 ;; ---- COMMAND: Logout
-
-(s/def ::logout
-  (s/keys :opt [::rpc/profile-id]))
 
 (sv/defmethod ::logout
   "Clears the authentication cookie and logout the current session."
@@ -141,13 +137,15 @@
            (update-password conn))
       nil)))
 
-(s/def ::token ::us/not-empty-string)
-(s/def ::recover-profile
-  (s/keys :req-un [::token ::password]))
+(def schema:recover-profile
+  [:map {:title "recover-profile"}
+   [:token schema:token]
+   [:password schema:password]])
 
 (sv/defmethod ::recover-profile
   {::rpc/auth false
-   ::doc/added "1.15"}
+   ::doc/added "1.15"
+   ::sm/params schema:recover-profile}
   [cfg params]
   (recover-profile cfg params))
 
@@ -228,13 +226,16 @@
     (with-meta {:token token}
       {::audit/profile-id uuid/zero})))
 
-(s/def ::prepare-register-profile
-  (s/keys :req-un [::email ::password]
-          :opt-un [::invitation-token]))
+(def schema:prepare-register-profile
+  [:map {:title "prepare-register-profile"}
+   [:email ::sm/email]
+   [:password schema:password]
+   [:invitation-token {:optional true} schema:token]])
 
 (sv/defmethod ::prepare-register-profile
   {::rpc/auth false
-   ::doc/added "1.15"}
+   ::doc/added "1.15"
+   ::sm/params schema:prepare-register-profile}
   [cfg params]
   (prepare-register cfg params))
 
@@ -244,7 +245,7 @@
   "Create the profile entry on the database with limited set of input
   attrs (all the other attrs are filled with default values)."
   [conn {:keys [email] :as params}]
-  (us/assert! ::us/email email)
+  (dm/assert! ::sm/email email)
   (let [id        (or (:id params) (uuid/next))
         props     (-> (audit/extract-utm-params params)
                       (merge (:props params))
@@ -391,12 +392,16 @@
           {::audit/replace-props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})))))
 
-(s/def ::register-profile
-  (s/keys :req-un [::token ::fullname]))
+
+(def schema:register-profile
+  [:map {:title "register-profile"}
+   [:token schema:token]
+   [:fullname [::sm/word-string {:max 100}]]])
 
 (sv/defmethod ::register-profile
   {::rpc/auth false
-   ::doc/added "1.15"}
+   ::doc/added "1.15"
+   ::sm/params schema:register-profile}
   [{:keys [::db/pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (-> (assoc cfg ::db/conn conn)
@@ -448,12 +453,15 @@
              (create-recovery-token)
              (send-email-notification conn))))))
 
-(s/def ::request-profile-recovery
-  (s/keys :req-un [::email]))
+
+(def schema:request-profile-recovery
+  [:map {:title "request-profile-recovery"}
+   [:email ::sm/email]])
 
 (sv/defmethod ::request-profile-recovery
   {::rpc/auth false
-   ::doc/added "1.15"}
+   ::doc/added "1.15"
+   ::sm/params schema:request-profile-recovery}
   [cfg params]
   (request-profile-recovery cfg params))
 

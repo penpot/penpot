@@ -282,7 +282,9 @@
 (def! ::email
   {:type ::email
    :pred (fn [s]
-           (and (string? s) (re-seq email-re s)))
+           (and (string? s)
+                (< (count s) 250)
+                (re-seq email-re s)))
    :type-properties
    {:title "email"
     :description "string with valid email address"
@@ -464,6 +466,7 @@
 (def! ::word-string
   {:type ::word-string
    :pred #(and (string? %) (not (str/blank? %)))
+   :property-pred (m/-min-max-pred count)
    :type-properties
    {:title "string"
     :description "string"
