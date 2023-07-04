@@ -25,8 +25,7 @@
    [app.tokens :as tokens]
    [app.util.json :as json]
    [app.util.time :as dt]
-   [buddy.core.keys :as keys]
-   [buddy.sign.jws :as jws]
+   [buddy.sign.jwk :as jwk]
    [buddy.sign.jwt :as jwt]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]
@@ -109,7 +108,7 @@
 (defn- process-oidc-jwks
   [keys]
   (reduce (fn [result {:keys [kid] :as kdata}]
-            (let [pkey (ex/try! (keys/jwk->public-key kdata))]
+            (let [pkey (ex/try! (jwk/public-key kdata))]
               (if (ex/exception? pkey)
                 (do
                   (l/warn :hint "unable to create public key"
@@ -392,7 +391,7 @@
 (defn- get-user-info
   [{:keys [provider]} tdata]
   (try
-    (let [{:keys [kid alg] :as theader} (jws/decode-header (:token/id tdata))]
+    (let [{:keys [kid alg] :as theader} (jwt/decode-header (:token/id tdata))]
       (when-let [key (if (str/starts-with? (name alg) "hs")
                        (:client-secret provider)
                        (get-in provider [:jwks kid]))]
@@ -425,8 +424,12 @@
         code   (get params :code)
         state  (tokens/verify props {:token state :iss :oauth})
         tdata  (fetch-access-token cfg code)
-        info   (or (get-user-info cfg tdata)
-                   (fetch-user-info cfg tdata))
+        info   (case (cf/get :oidc-user-info-source)
+                 :token (get-user-info cfg tdata)
+                 :userinfo (fetch-user-info cfg tdata)
+                 (or (get-user-info cfg tdata)
+                     (fetch-user-info cfg tdata)))
+
         info   (process-user-info provider tdata info)]
 
     (l/trace :hint "user info" :info info)
