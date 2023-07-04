@@ -252,6 +252,7 @@
                           :components-v2 true
                           :changes changes}
                   out    (th/command! params)]
+              ;; (th/print-result! out)
               (t/is (nil? (:error out)))
               (:result out)))]
 
@@ -278,7 +279,7 @@
        [{:type :add-obj
          :page-id page-id
          :id shid
-                     :parent-id uuid/zero
+         :parent-id uuid/zero
          :frame-id uuid/zero
          :components-v2 true
          :obj {:id shid
@@ -286,7 +287,7 @@
                :frame-id uuid/zero
                :parent-id uuid/zero
                :type :image
-               :metadata {:id (:id fmo1)}}}])
+               :metadata {:id (:id fmo1) :width 200 :height 200 :mtype "image/jpeg"}}}])
 
       ;; Check that reference storage objects on filemediaobjects
       ;; are the same because of deduplication feature.
