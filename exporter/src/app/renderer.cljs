@@ -18,12 +18,14 @@
 (s/def ::type #{:jpeg :png :pdf :svg})
 (s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
+(s/def ::share-id ::us/uuid)
 (s/def ::scale ::us/number)
 (s/def ::token ::us/string)
 (s/def ::filename ::us/string)
 
 (s/def ::object
-  (s/keys :req-un [::id ::name ::suffix ::filename]))
+  (s/keys :req-un [::id ::name ::suffix ::filename]
+          :opt-un [::share-id]))
 
 (s/def ::objects
   (s/coll-of ::object :min-count 1))

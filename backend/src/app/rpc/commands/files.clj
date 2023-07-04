@@ -512,6 +512,7 @@
   [:map {:title "GetPage"}
    [:file-id ::sm/uuid]
    [:page-id {:optional true} ::sm/uuid]
+   [:share-id {:optional true} ::sm/uuid]
    [:object-id {:optional true} ::sm/uuid]
    [:features {:optional true} ::features]])
 
@@ -527,14 +528,12 @@
   Mainly used for rendering purposes."
   {::doc/added "1.17"
    ::sm/params ::get-page}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id share-id] :as params}]
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id file-id)
-
-    (binding [pmap/*load-fn* (partial load-pointer conn file-id)]
-      (get-page conn params))))
-
-
+    (let [perms (get-permissions conn profile-id file-id share-id)]
+      (check-read-permissions! perms)
+      (binding [pmap/*load-fn* (partial load-pointer conn file-id)]
+        (get-page conn params)))))
 
 ;; --- COMMAND QUERY: get-team-shared-files
 
