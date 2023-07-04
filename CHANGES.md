@@ -30,8 +30,7 @@
 - Fix search font visualitation [Taiga #5523](https://tree.taiga.io/project/penpot/issue/5523)
 - Fix create and account only with spaces [Taiga #5518](https://tree.taiga.io/project/penpot/issue/5518)
 - Fix context menu outside screen [Taiga #5524](https://tree.taiga.io/project/penpot/issue/5524)
-
-### :arrow_up: Deps updates
+- Fix graphic item rename on assets pannel [Taiga #5556](https://tree.taiga.io/project/penpot/issue/5556)
 
 ### :heart: Community contributions by (Thank you!)
 
