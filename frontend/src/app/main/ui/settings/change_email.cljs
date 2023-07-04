@@ -6,6 +6,8 @@
 
 (ns app.main.ui.settings.change-email
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dma]
    [app.common.spec :as us]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
@@ -29,7 +31,8 @@
         email-2 (:email-2 data)]
     (cond-> errors
       (and email-1 email-2 (not= email-1 email-2))
-      (assoc :email-2 {:message (tr "errors.email-invalid-confirmation")}))))
+      (assoc :email-2 {:message (tr "errors.email-invalid-confirmation")
+                       :code :different-emails}))))
 
 (s/def ::email-change-form
   (s/keys :req-un [::email-1 ::email-2]))
@@ -81,7 +84,17 @@
         on-submit
         (mf/use-callback
          (mf/deps profile)
-         (partial on-submit profile))]
+         (partial on-submit profile))
+                                     
+        on-email-change
+        (mf/use-callback
+          (fn [_ _]
+            (let [different-emails-error? (= (dma/get-in @form [:errors :email-2 :code]) :different-emails)
+                  email-1                 (dma/get-in @form [:clean-data :email-1])
+                  email-2                 (dma/get-in @form [:clean-data :email-2])]
+              (println "different-emails-error?" (and different-emails-error? (= email-1 email-2)))
+              (when (and different-emails-error? (= email-1 email-2))
+                (swap! form d/dissoc-in [:errors :email-2])))))]
 
     [:div.modal-overlay
      [:div.modal-container.change-email-modal.form-container
@@ -105,12 +118,14 @@
           [:& fm/input {:type "email"
                         :name :email-1
                         :label (tr "modals.change-email.new-email")
-                        :trim true}]]
+                        :trim true
+                        :on-change-value on-email-change}]]
          [:div.fields-row
           [:& fm/input {:type "email"
                         :name :email-2
                         :label (tr "modals.change-email.confirm-email")
-                        :trim true}]]]]
+                        :trim true
+                        :on-change-value on-email-change}]]]]
 
        [:div.modal-footer
         [:div.action-buttons {:data-test "change-email-submit"}

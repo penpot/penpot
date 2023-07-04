@@ -35,6 +35,7 @@
 - Fix issue with paths line to curve and concurrent editing [Taiga #5191](https://tree.taiga.io/project/penpot/issue/5191)
 - Fix problems with locked layers [Taiga #5139](https://tree.taiga.io/project/penpot/issue/5139)
 - Fix export from shared prototype [Taiga #5565](https://tree.taiga.io/project/penpot/issue/5565)
+- Fix email change: validation error displaying even after both fields are identical [Taiga #5514](https://tree.taiga.io/project/penpot/issue/5514)
 
 ### :arrow_up: Deps updates
 
