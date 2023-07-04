@@ -16,9 +16,8 @@
 - Add the ability to disable google fonts provider with the `disable-google-fonts-provider` flag
 - Add the ability to disable dashboard templates section with the `disable-dashboard-templates-section` flag
 - Add the ability to use the registration whitelist with OICD [Github #3348](https://github.com/penpot/penpot/issues/3348)
-- Add support for local caching of google fonts (this avoids exposing
-  the final user IP to goolge and reduces the amount of request sent
-  to google)
+- Add support for local caching of google fonts (this avoids exposing the final user IP to
+  goolge and reduces the amount of request sent to google)
 
 ### :bug: Bugs fixed
 
