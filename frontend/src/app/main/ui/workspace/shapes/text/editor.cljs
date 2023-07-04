@@ -133,6 +133,8 @@
          (fn [event]
            (dom/stop-propagation event)
            (dom/prevent-default event)
+           (st/emit! ::dwt/finalize-editor-state)
+           (st/emit! (dwt/initialize-editor-state shape default-decorator))
            (reset! blurred true)))
 
         on-focus
