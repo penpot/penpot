@@ -495,17 +495,20 @@
         (mf/use-fn
          (mf/deps selected-project)
          (fn [e]
-           (when (dnd/has-type? e "penpot/files")
-             (dom/prevent-default e)
-             (when-not (or (dnd/from-child? e)
+           (cond
+             (dnd/has-type? e "penpot/files")
+             (do
+               (dom/prevent-default e)
+               (when-not (or (dnd/from-child? e)
                            (dnd/broken-event? e))
-               (when (not= selected-project project-id)
-                 (reset! dragging? true))))
+                 (when (not= selected-project project-id)
+                   (reset! dragging? true))))
 
-           (when (or (dnd/has-type? e "Files")
-                     (dnd/has-type? e "application/x-moz-file"))
-             (dom/prevent-default e)
-             (reset! dragging? true))))
+             (or (dnd/has-type? e "Files")
+               (dnd/has-type? e "application/x-moz-file"))
+             (do
+               (dom/prevent-default e)
+               (reset! dragging? true)))))
 
         on-drag-over
         (mf/use-fn
@@ -531,19 +534,22 @@
         (mf/use-fn
          (mf/deps files selected-files)
          (fn [e]
-           (when (or (dnd/has-type? e "Files")
-                     (dnd/has-type? e "application/x-moz-file"))
-             (dom/prevent-default e)
-             (reset! dragging? false)
-             (import-files (.-files (.-dataTransfer e))))
+           (cond
+             (dnd/has-type? e "penpot/files")
+             (do
+               (reset! dragging? false)
+               (when (not= selected-project project-id)
+                 (let [data  {:ids (into #{} (keys selected-files))
+                              :project-id project-id}
+                       mdata {:on-success on-drop-success}]
+                   (st/emit! (dd/move-files (with-meta data mdata))))))
 
-           (when (dnd/has-type? e "penpot/files")
-             (reset! dragging? false)
-             (when (not= selected-project project-id)
-               (let [data  {:ids (into #{} (keys selected-files))
-                            :project-id project-id}
-                     mdata {:on-success on-drop-success}]
-                 (st/emit! (dd/move-files (with-meta data mdata))))))))]
+             (or (dnd/has-type? e "Files")
+               (dnd/has-type? e "application/x-moz-file"))
+             (do
+               (dom/prevent-default e)
+               (reset! dragging? false)
+               (import-files (.-files (.-dataTransfer e)))))))]
 
     [:div.dashboard-grid {:on-drag-enter on-drag-enter
                           :on-drag-over on-drag-over
