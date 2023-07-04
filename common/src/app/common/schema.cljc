@@ -466,6 +466,7 @@
 (def! ::word-string
   {:type ::word-string
    :pred #(and (string? %) (not (str/blank? %)))
+   :property-pred (m/-min-max-pred count)
    :type-properties
    {:title "string"
     :description "string"
