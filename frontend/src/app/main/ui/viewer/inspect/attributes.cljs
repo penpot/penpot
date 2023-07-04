@@ -34,7 +34,7 @@
    :text     [:layout :text :shadow :blur :stroke :layout-flex-item]})
 
 (mf/defc attributes
-  [{:keys [page-id file-id shapes frame from libraries]}]
+  [{:keys [page-id file-id shapes frame from libraries share-id]}]
   (let [shapes  (hooks/use-equal-memo shapes)
         shapes  (mf/with-memo [shapes]
                   (mapv #(gsh/translate-to-frame % frame) shapes))
@@ -66,4 +66,5 @@
       {:shapes shapes
        :type type
        :page-id page-id
-       :file-id file-id}]]))
+       :file-id file-id
+       :share-id share-id}]]))

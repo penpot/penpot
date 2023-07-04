@@ -215,7 +215,7 @@
 (mf/defc viewer
   [{:keys [params data]}]
 
-  (let [{:keys [page-id section index interactions-mode]} params
+  (let [{:keys [page-id share-id section index interactions-mode]} params
         {:keys [file users project permissions]} data
 
         allowed (or
@@ -519,7 +519,8 @@
              :size size
              :index index
              :viewer-pagination viewer-pagination
-             :interactions-mode interactions-mode}]
+             :interactions-mode interactions-mode
+             :share-id share-id}]
 
 
            [:& (mf/provider ctx/current-zoom) {:value zoom}

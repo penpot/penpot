@@ -28,6 +28,7 @@
 (s/def ::name ::us/string)
 (s/def ::object-id ::us/uuid)
 (s/def ::page-id ::us/uuid)
+(s/def ::share-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
 (s/def ::scale ::us/number)
 (s/def ::suffix ::us/string)
@@ -35,7 +36,8 @@
 (s/def ::wait ::us/boolean)
 
 (s/def ::export
-  (s/keys :req-un [::page-id ::file-id ::object-id ::type ::suffix ::scale ::name]))
+  (s/keys :req-un [::page-id ::file-id ::object-id ::type ::suffix ::scale ::name]
+          :opt-un [::share-id]))
 
 (s/def ::exports
   (s/coll-of ::export :kind vector? :min-count 1))
@@ -89,7 +91,6 @@
         proc        (-> (rd/render export on-progress)
                         (p/then (constantly resource))
                         (p/catch on-error))]
-
     (if wait
       (p/then proc #(assoc exchange :response/body (dissoc % :path)))
       (assoc exchange :response/body (dissoc resource :path)))))
@@ -188,6 +189,7 @@
           (process-partition [[part1 :as part]]
             {:file-id (:file-id part1)
              :page-id (:page-id part1)
+             :share-id (:share-id part1)
              :name    (:name part1)
              :token   token
              :type    (:type part1)

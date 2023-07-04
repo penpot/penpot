@@ -36,6 +36,7 @@
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/not-empty-string)
 (s/def ::project-id ::us/uuid)
+(s/def ::share-id ::us/uuid)
 (s/def ::style valid-style)
 (s/def ::team-id ::us/uuid)
 (s/def ::weight valid-weight)
@@ -47,7 +48,8 @@
    (s/keys :req [::rpc/profile-id]
            :opt-un [::team-id
                     ::file-id
-                    ::project-id])
+                    ::project-id
+                    ::share-id])
    (fn [o]
      (or (contains? o :team-id)
          (contains? o :file-id)
@@ -55,7 +57,7 @@
 
 (sv/defmethod ::get-font-variants
   {::doc/added "1.18"}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id file-id project-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id file-id project-id share-id] :as params}]
   (dm/with-open [conn (db/open pool)]
     (cond
       (uuid? team-id)
@@ -74,11 +76,12 @@
 
       (uuid? file-id)
       (let [file    (db/get-by-id conn :file file-id {:columns [:id :project-id]})
-            project (db/get-by-id conn :project (:project-id file) {:columns [:id :team-id]})]
-        (files/check-read-permissions! conn profile-id file-id)
+            project (db/get-by-id conn :project (:project-id file) {:columns [:id :team-id]})
+            perms   (files/get-permissions conn profile-id file-id share-id)]
+        (files/check-read-permissions! perms)
         (db/query conn :team-font-variant
-                  {:team-id (:team-id project)
-                   :deleted-at nil})))))
+          {:team-id (:team-id project)
+           :deleted-at nil})))))
 
 
 (declare create-font-variant)

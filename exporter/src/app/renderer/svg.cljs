@@ -108,7 +108,7 @@
      :height height}))
 
 (defn render
-  [{:keys [page-id file-id objects token scale type]} on-object]
+  [{:keys [page-id file-id share-id objects token scale type]} on-object]
   (letfn [(convert-to-ppm [pngpath]
             (let [ppmpath (str/concat pngpath "origin.ppm")]
               (l/trace :fn :convert-to-ppm :path ppmpath)
@@ -338,9 +338,9 @@
               ;; take the screnshot of requested objects, one by one
               (p/run! (partial render-object page) objects)
               nil))]
-
     (p/let [params {:file-id file-id
                     :page-id page-id
+                    :share-id share-id
                     :render-embed true
                     :object-id (mapv :id objects)
                     :route "objects"}

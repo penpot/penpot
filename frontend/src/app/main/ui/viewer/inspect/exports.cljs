@@ -17,7 +17,7 @@
 
 (mf/defc exports
   {::mf/wrap [#(mf/memo % =)]}
-  [{:keys [shapes page-id file-id type] :as props}]
+  [{:keys [shapes page-id file-id share-id type] :as props}]
   (let [exports     (mf/use-state [])
         xstate      (mf/deref refs/export)
         vstate      (mf/deref refs/viewer-data)
@@ -40,15 +40,17 @@
                                                      :exports @exports
                                                      :filename filename
                                                      :page-id page-id
-                                                     :file-id file-id}))
+                                                     :file-id file-id
+                                                     :share-id share-id}))
 
             ;; In other all cases we only allowed to have a single
             ;; shape-id because multiple shape-ids are handled
             ;; separately by the export-modal.
-            (let [defaults {:page-id page-id
-                            :file-id file-id
-                            :name filename
-                            :object-id (-> shapes first :id)}
+            (let [defaults (-> {:page-id page-id
+                                :file-id file-id
+                                :name filename
+                                :object-id (-> shapes first :id)}
+                               (cond-> share-id (assoc :share-id share-id)))
                   exports  (mapv #(merge % defaults) @exports)]
               (if (= 1 (count exports))
                 (st/emit! (de/request-simple-export {:export (first exports)}))
