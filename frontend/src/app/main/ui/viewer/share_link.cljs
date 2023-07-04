@@ -28,31 +28,36 @@
 (defn prepare-params
   [{:keys [pages who-comment who-inspect]}]
 
-   {:pages pages
-    :who-comment who-comment
-    :who-inspect who-inspect})
+  {:pages pages
+   :who-comment who-comment
+   :who-inspect who-inspect})
 
 (mf/defc share-link-dialog
   {::mf/register modal/components
    ::mf/register-as :share-link}
   [{:keys [file page]}]
   (let [current-page page
-        slinks    (mf/deref refs/share-links)
-        router    (mf/deref refs/router)
-        route     (mf/deref refs/route)
-        zoom-type (mf/deref refs/viewer-zoom-type)
+        slinks          (mf/deref refs/share-links)
+        router          (mf/deref refs/router)
+        route           (mf/deref refs/route)
+        zoom-type       (mf/deref refs/viewer-zoom-type)
 
-        link      (mf/use-state nil)
-        confirm   (mf/use-state false)
-        open-ops  (mf/use-state false)
+        link            (mf/use-state nil)
+        confirm         (mf/use-state false)
+        open-ops        (mf/use-state false)
 
-        opts      (mf/use-state
-                   {:pages-mode "current"
-                    :all-pages false
-                    :pages #{(:id page)}
-                    :who-comment "team"
-                    :who-inspect "team"})
+        opts*           (mf/use-state
+                         {:pages-mode "current"
+                          :all-pages false
+                          :pages #{(:id page)}
+                          :who-comment "team"
+                          :who-inspect "team"})
 
+        opts            (deref opts*)
+
+        selected-pages  (:pages opts)
+        file-pages      (->> (get-in file [:data :pages])
+                             (map #(get-in file [:data :pages-index %])))
 
         close
         (fn [event]
@@ -63,7 +68,7 @@
         toggle-all
         (fn []
           (reset! confirm false)
-          (swap! opts
+          (swap! opts*
                  (fn [state]
                    (if (= true (:all-pages state))
                      (-> state
@@ -74,23 +79,29 @@
                          (assoc :pages (into #{} (get-in file [:data :pages]))))))))
 
         mark-checked-page
-        (fn [event id]
-          (let [target   (dom/get-target event)
-                checked? (.-checked ^js target)
-                dif-pages? (not= id (first (:pages @opts)))
-                no-one-page (< 1 (count (:pages @opts)))
+        (mf/use-fn
+         (mf/deps selected-pages)
+         (fn [event id]
+          (let [target        (dom/get-target event)
+                not-checked?  (.-checked ^js target)
+                dif-pages?    (not= id (first selected-pages))
+                no-one-page   (< 1 (count selected-pages))
                 should-change (or no-one-page dif-pages?)]
             (when should-change
               (reset! confirm false)
-              (swap! opts update :pages
-                     (fn [pages]
-                       (if checked?
-                         (conj pages id)
-                         (disj pages id)))))))
+              (swap! opts*
+                     (fn [state]
+                       (let [actual-pages (:pages state)
+                             updated-pages (if not-checked?
+                                             (conj actual-pages id)
+                                             (disj actual-pages id))]
+                         (-> state
+                             (assoc :pages updated-pages)
+                             (assoc :all-pages (= (count updated-pages) (count file-pages)))))))))))
 
         create-link
         (fn [_]
-          (let [params (prepare-params @opts)
+          (let [params (prepare-params opts)
                 params (assoc params :file-id (:id file))]
             (st/emit! (dc/create-share-link params)
                       (ptk/event ::ev/event {::ev/name "create-shared-link"
@@ -111,7 +122,7 @@
 
         delete-link
         (fn [_]
-          (let [params (prepare-params @opts)
+          (let [params (prepare-params opts)
                 slink  (d/seek #(= (:flags %) (:flags params)) slinks)]
             (reset! confirm false)
             (st/emit! (dc/delete-share-link slink))))
@@ -127,13 +138,13 @@
                 value   (keyword value)]
             (reset! confirm false)
             (if (= type :comment)
-              (swap! opts assoc :who-comment (d/name value))
-              (swap! opts assoc :who-inspect (d/name value)))))]
+              (swap! opts* assoc :who-comment (d/name value))
+              (swap! opts* assoc :who-inspect (d/name value)))))]
 
     (mf/use-effect
-     (mf/deps file slinks @opts)
+     (mf/deps file slinks opts)
      (fn []
-       (let [{:keys [pages who-comment who-inspect] :as params} (prepare-params @opts)
+       (let [{:keys [pages who-comment who-inspect] :as params} (prepare-params opts)
              slink  (d/seek #(and (= (:who-inspect %) who-inspect) (= (:who-comment %) who-comment) (= (:pages %) pages)) slinks)
              href   (when slink
                       (let [pparams (:path-params route)
@@ -204,10 +215,10 @@
         [:div.title (tr "common.share-link.manage-ops")]]
        (when @open-ops
          [:*
-          (let [all-selected? (:all-pages @opts)
+          (let [all-selected? (:all-pages opts)
                 pages   (->> (get-in file [:data :pages])
                              (map #(get-in file [:data :pages-index %])))
-                selected (:pages @opts)]
+                selected selected-pages]
 
             [:*
              [:div.view-mode
@@ -253,7 +264,7 @@
             (tr "common.share-link.permissions-can-comment")]
            [:div.items
             [:select.input-select {:on-change (partial on-who-change :comment)
-                                   :value (:who-comment @opts)}
+                                   :value (:who-comment opts)}
              [:option {:value "team"}  (tr "common.share-link.team-members")]
              [:option {:value "all"}  (tr "common.share-link.all-users")]]]]
           [:div.inspect-mode
@@ -262,7 +273,7 @@
             (tr "common.share-link.permissions-can-inspect")]
            [:div.items
             [:select.input-select {:on-change (partial on-who-change :inspect)
-                                   :value (:who-inspect @opts)}
+                                   :value (:who-inspect opts)}
              [:option {:value "team"}  (tr "common.share-link.team-members")]
              [:option {:value "all"}  (tr "common.share-link.all-users")]]]]])]]]))
 
