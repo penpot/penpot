@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-04 18:22+0000\n"
-"Last-Translator: Zvonimir Juranko <zjuranko@gmail.com>\n"
-"Language-Team: Croatian "
-"<https://hosted.weblate.org/projects/penpot/frontend/hr/>\n"
+"PO-Revision-Date: 2023-07-05 02:17+0000\n"
+"Last-Translator: Kristijan Žic <kristijan.zic@gmail.com>\n"
+"Language-Team: Croatian <https://hosted.weblate.org/projects/penpot/frontend/"
+"hr/>\n"
 "Language: hr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -322,9 +322,8 @@ msgid "dashboard.export-multi"
 msgstr "Izvezi Penpot %s datoteka"
 
 #: src/app/main/ui/export.cljs
-#, fuzzy
 msgid "dashboard.export-multiple.selected"
-msgstr "%s - %s elementa označeno"
+msgstr "% od % elementa označeno"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "dashboard.export-shapes"
@@ -404,13 +403,13 @@ msgstr[0] "1 font dodan"
 msgstr[1] "%s fontova dodano"
 msgstr[2] "%s fontova dodano"
 
-#, fuzzy, markdown
+#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Svaki web-font koji ovdje preneseš biti će dodan na popis fontova koji je "
-"dostupan u tekstualnim svojstvima datoteka ovog tima. Fontovi s istim "
-"nazivom fontova biti će grupirani kao **jedan font**. Možeš učitati fontove "
-"sa sljedećim formatima: **TTF, OTF i WOFF** (biti će potreban samo jedan)."
+"dostupan za korištenje u datotekama ovog tima. Fontovi s istim nazivom biti "
+"će grupirani kao **jedan font**. Možeš učitati fontove sa sljedećim "
+"formatima: **TTF, OTF i WOFF** (biti će potreban samo jedan)."
 
 #, markdown
 msgid "dashboard.fonts.hero-text2"
@@ -918,10 +917,6 @@ msgstr "Širina"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Sjena"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
@@ -1893,9 +1888,6 @@ msgstr "Stvori tim i pošalji pozivnice"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Pozovi s ulogom:"
 
-msgid "onboarding.contrib.desc2.1"
-msgstr "Možeš pristupiti"
-
 msgid "onboarding.newsletter.accept"
 msgstr "Da, pretplati se"
 
@@ -1908,14 +1900,8 @@ msgstr "Politika privatnosti."
 msgid "onboarding.newsletter.title"
 msgstr "Želiš primati Penpot novostii?"
 
-msgid "onboarding.slide.0.title"
-msgstr "Dizajniraj biblioteke, stilove i komponente"
-
 msgid "onboarding.slide.1.title"
 msgstr "Oživi vlastite dizajne interakcijama"
-
-msgid "onboarding.slide.3.alt"
-msgstr "Inspect i lowcode"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Kreiraj tim"
@@ -2488,10 +2474,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Kopiraj poveznicu"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Svatko s poveznicom imat će pristup"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Prikaži interakcije"
 
@@ -2933,9 +2915,6 @@ msgstr "Ažuriranje"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "AŽURIRANJA"
-
-msgid "workspace.library.store"
-msgstr "Pohrani biblioteke"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
@@ -3498,10 +3477,6 @@ msgstr "Minimalna širina"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Dno"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "Obrnuta kolumna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
