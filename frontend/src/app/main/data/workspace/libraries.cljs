@@ -185,21 +185,22 @@
 
 (defn rename-media
   [id new-name]
-  (dm/assert! (uuid? id))
-  (dm/assert! (string? new-name))
+  (dm/verify! (uuid? id))
+  (dm/verify! (string? new-name))
   (ptk/reify ::rename-media
     ptk/WatchEvent
     (watch [it state _]
-      (when (and (some? new-name) (not= "" new-name))
-        (let [data        (get state :workspace-data)
-              [path name] (cph/parse-path-name new-name)
-              object      (get-in data [:media id])
-              new-object  (assoc object :path path :name name)
-              changes     (-> (pcb/empty-changes it)
-                              (pcb/with-library-data data)
-                              (pcb/update-media new-object))]
-          (rx/of (dch/commit-changes changes)))))))
-
+      (let [new-name (str/trim new-name)]
+        (if (str/empty? new-name)
+          (rx/empty)
+          (let [[path name] (cph/parse-path-name new-name)
+                data        (get state :workspace-data)
+                object      (get-in data [:media id])
+                new-object  (assoc object :path path :name name)
+                changes     (-> (pcb/empty-changes it)
+                                (pcb/with-library-data data)
+                                (pcb/update-media new-object))]
+            (rx/of (dch/commit-changes changes))))))))
 
 (defn delete-media
   [{:keys [id] :as params}]
