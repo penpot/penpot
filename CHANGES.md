@@ -39,6 +39,9 @@
 - Fix scroll on viewer comment list [Taiga #5563](https://tree.taiga.io/project/penpot/issue/5563)
 - Fix context menu z-index [Taiga #5561](https://tree.taiga.io/project/penpot/issue/5561)
 - Fix select all checkbox on shared link config [Taiga #5566](https://tree.taiga.io/project/penpot/issue/5566)
+- Fix validation on full name input on account creation [Taiga #5516](https://tree.taiga.io/project/penpot/issue/5516)
+- Fix validation on team name input [Taiga #5510](https://tree.taiga.io/project/penpot/issue/5510)
+
 
 ### :arrow_up: Deps updates
 

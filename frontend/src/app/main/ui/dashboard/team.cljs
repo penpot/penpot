@@ -658,7 +658,8 @@
   (let [initial (mf/use-memo (fn [] (or (some-> webhook (update :uri str))
                                         {:is-active false :mtype "application/json"})))
         form    (fm/use-form :spec ::webhook-form
-                             :initial initial)
+                             :initial initial
+                             :validators [(fm/validate-length :uri fm/max-uri-length-allowed (tr "team.webhooks.max-length"))])
         on-success
         (mf/use-fn
          (fn [_]
@@ -750,8 +751,7 @@
           [:& fm/input {:type "checkbox"
                         :form form
                         :name :is-active
-                        :label (tr "dashboard.webhooks.active")}]
-          ]
+                        :label (tr "dashboard.webhooks.active")}]]
          [:div.explain (tr "dashboard.webhooks.active.explain")]]]
 
        [:div.modal-footer
