@@ -56,7 +56,9 @@
 (mf/defc recovery-form
   [{:keys [params] :as props}]
   (let [form (fm/use-form :spec ::recovery-form
-                          :validators [password-equality]
+                          :validators [password-equality
+                                       (fm/validate-not-empty :password-1 (tr "auth.password-not-empty"))
+                                       (fm/validate-not-empty :password-2 (tr "auth.password-not-empty"))]
                           :initial params)]
     [:& fm/form {:on-submit on-submit
                  :form form}

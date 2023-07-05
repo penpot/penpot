@@ -54,7 +54,9 @@
    ::mf/register-as :onboarding-team}
   []
   (let [form  (fm/use-form :spec ::team-form
-                           :initial {})
+                           :initial {}
+                           :validators [(fm/validate-not-empty :name (tr "auth.name.not-all-space"))
+                                        (fm/validate-length :name fm/max-length-allowed (tr "auth.name.too-long"))])
         on-submit
         (mf/use-callback
          (fn [form _]

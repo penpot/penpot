@@ -56,6 +56,14 @@ msgstr "Nombre completo"
 msgid "auth.login-here"
 msgstr "Inicia sesión aquí"
 
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "El nombre debe contener como máximo 250 caracteres."
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "El nombre debe contener algún carácter diferente de espacio"
+
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "Entrar"
@@ -381,10 +389,6 @@ msgstr "180 días"
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.errors-required-name"
 msgstr "El nombre es obligatorio"
-
-#: src/app/main/ui/settings/team-form.cljs
-msgid "dashboard.team-name.not-empty-name"
-msgstr "El nombre debe contener algún carácter diferente de espacio"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-expire"
@@ -827,6 +831,10 @@ msgstr "No hay ningún webhook aún."
 
 msgid "dashboard.webhooks.update.success"
 msgstr "Webhook modificado con éxito."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "team.webhooks.max-length"
+msgstr "El nombre del webhook debe contener como máximo 2048 caracteres."
 
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"

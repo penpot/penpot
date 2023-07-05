@@ -17,19 +17,11 @@
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (s/def ::name ::us/not-empty-string)
 (s/def ::team-form
   (s/keys :req-un [::name]))
-
-(defn- validate-name
-  [errors data]
-  (let [name (-> data :name str/trim)]
-    (cond-> errors
-      (str/empty? name)
-      (assoc :name {:message (tr "dashboard.team-name.not-empty-name")}))))
 
 (defn- on-create-success
   [_form response]
@@ -78,7 +70,8 @@
   [{:keys [team] :as props}]
   (let [initial (mf/use-memo (fn [] (or team {})))
         form    (fm/use-form :spec ::team-form
-                             :validators [validate-name]
+                             :validators [(fm/validate-not-empty :name (tr "auth.name.not-all-space"))
+                                          (fm/validate-length :name fm/max-length-allowed (tr "auth.name.too-long"))]
                              :initial initial)]
     [:div.modal-overlay
      [:div.modal-container.team-form-modal
