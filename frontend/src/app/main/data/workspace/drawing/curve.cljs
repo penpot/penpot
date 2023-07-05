@@ -16,6 +16,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
@@ -83,7 +84,6 @@
                          content  (gsp/segments->content segments)
                          selrect  (gsh/content->selrect content)
                          points   (grc/rect->points selrect)]
-
                      (-> shape
                          (dissoc :segments)
                          (assoc :content content)
@@ -94,6 +94,7 @@
                                      (<= (count content) 1))
                            (assoc :initialized? false)))))))))
 
+
 (defn handle-drawing []
   (ptk/reify ::handle-drawing
     ptk/WatchEvent
@@ -102,6 +103,8 @@
             mouse  (rx/sample 10 ms/mouse-position)
             shape  (cts/setup-shape {:type :path
                                      :initialized? true
+                                     :frame-id uuid/zero
+                                     :parent-id uuid/zero
                                      :segments []})]
         (rx/concat
          (rx/of #(update % :workspace-drawing assoc :object shape))

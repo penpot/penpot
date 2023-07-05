@@ -450,7 +450,9 @@
 
 (defn setup-path
   [{:keys [content selrect points] :as shape}]
-  (let [selrect (or selrect (gsh/content->selrect content))
+  (let [selrect (or selrect
+                    (gsh/content->selrect content)
+                    (grc/make-rect))
         points  (or points  (grc/rect->points selrect))]
     (-> shape
         (assoc :selrect selrect)
