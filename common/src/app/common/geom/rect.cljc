@@ -34,6 +34,7 @@
   :rfn map->Rect})
 
 (defn make-rect
+  ([] (make-rect 0 0 0.01 0.01))
   ([data]
    (if (rect? data)
      data
