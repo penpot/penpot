@@ -51,15 +51,13 @@
       (db/insert-multi! pool :audit-log event-columns events))))
 
 (def schema:event
-  [:schema {:registry
-            {::valid-any [:or ::sm/inst :int :double [:string {:max 250}]]}}
-   [:map {:title "Event"}
-    [:name [:string {:max 250}]]
-    [:type [:string {:max 250}]]
-    [:props
-     [:map-of :keyword ::valid-any]]
-    [:context {:optional true}
-     [:map-of :keyword ::valid-any]]]])
+  [:map {:title "Event"}
+   [:name [:string {:max 250}]]
+   [:type [:string {:max 250}]]
+   [:props
+    [:map-of :keyword :any]]
+   [:context {:optional true}
+    [:map-of :keyword :any]]])
 
 (def schema:push-audit-events
   [:map {:title "push-audit-events"}
