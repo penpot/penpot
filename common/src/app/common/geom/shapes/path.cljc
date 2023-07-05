@@ -46,11 +46,14 @@
 (defn content->points
   "Returns the points in the given content"
   [content]
-  (->> content
-       (map #(when (-> % :params :x)
-               (gpt/point (-> % :params :x) (-> % :params :y))))
-       (remove nil?)
-       (into [])))
+  (letfn [(segment->point [seg]
+            (let [params (get seg :params)
+                  x      (get params :x)
+                  y      (get params :y)]
+              (when (d/num? x y)
+                (gpt/point x y))))]
+    (some->> (seq content)
+             (into [] (keep segment->point)))))
 
 (defn line-values
   [[from-p to-p] t]
