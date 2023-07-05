@@ -50,12 +50,15 @@
 
 (defn update-curve-to
   [command h1 h2]
-  (-> command
-      (assoc :command :curve-to)
-      (assoc-in [:params :c1x] (:x h1))
-      (assoc-in [:params :c1y] (:y h1))
-      (assoc-in [:params :c2x] (:x h2))
-      (assoc-in [:params :c2y] (:y h2))))
+  (let [params {:x (-> command :params :x)
+                :y (-> command :params :y)
+                :c1x (:x h1)
+                :c1y (:y h1)
+                :c2x (:x h2)
+                :c2y (:y h2)}]
+    (-> command
+        (assoc :command :curve-to)
+        (assoc :params params))))
 
 (defn make-curve-to
   [to h1 h2]

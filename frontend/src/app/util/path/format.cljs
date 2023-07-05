@@ -72,7 +72,7 @@
 
     :curve-to
     (let [{:keys [c1x c1y c2x c2y]} params]
-      (join-params c1x c1y c2x c2y x y))
+      (join-params (or c1x x) (or c1y y) (or c2x x) (or c2y y) x y))
 
     (:smooth-curve-to :quadratic-bezier-curve-to)
     (let [{:keys [cx cy]} params]
