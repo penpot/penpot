@@ -434,6 +434,8 @@
 
       :always
       (assoc :id (uuid/next)
+             :frame-id uuid/zero
+             :parent-id uuid/zero
              :rotation 0)
 
       :always
