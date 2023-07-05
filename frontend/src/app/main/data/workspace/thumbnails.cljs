@@ -6,7 +6,9 @@
 
 (ns app.main.data.workspace.thumbnails
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -20,7 +22,8 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [potok.core :as ptk]
+   [promesa.core :as p]))
 
 (defn force-render-stream
   "Stream that will inform the frame-wrapper to mount into memory"
@@ -31,6 +34,27 @@
        (rx/filter #(= % id))
        (rx/take 1)))
 
+(defn node->ibmp
+  [node]
+  (p/resolved
+   (time
+    (let [width (-> (dom/get-attribute node "width") d/parse-double)
+          height (-> (dom/get-attribute node "height") d/parse-double)
+
+          ;; TODO: maybe extract to a common function
+          [fixed-width fixed-height]
+          (if (> width height)
+            [(mth/clamp width 250 2000)
+             (/ (* height (mth/clamp width 250 2000)) width)]
+            [(/ (* width (mth/clamp height 250 2000)) height)
+             (mth/clamp height 250 2000)])
+
+          canvas (js/OffscreenCanvas. fixed-width fixed-height)
+          ctx    (.getContext ^js canvas "2d")]
+      (.clearRect ^js ctx 0 0 fixed-width fixed-height)
+      (.drawImage ^js ctx node 0 0)
+      (.transferToImageBitmap canvas)))))
+
 (defn get-thumbnail
   [object-id]
   ;; Look for the thumbnail canvas to send the data to the backend
@@ -38,9 +62,10 @@
         stopper (->> st/stream
                      (rx/filter (ptk/type? :app.main.data.workspace/finalize-page))
                      (rx/take 1))]
+
     ;; renders #svg image
     (if (some? node)
-      (->> (rx/from (js/createImageBitmap node))
+      (->> (rx/from (node->ibmp node))
            (rx/switch-map  #(uw/ask! {:cmd :thumbnails/render-offscreen-canvas} %))
            (rx/map :result))
 

@@ -30,10 +30,12 @@
          data (cond-> (wm/encode (dissoc message :transfer))
                 (some? transfer)
                 (obj/set! "transfer" transfer))
-         instance (:instance worker)]
+         instance (:instance worker)
+
+         transfer-arr (when transfer #js [transfer])]
 
      (if (some? instance)
-       (do (.postMessage instance data transfer)
+       (do (.postMessage instance data transfer-arr)
            (->> (:stream worker)
                 (rx/filter #(= (:reply-to %) sender-id))
                 (take-messages)
