@@ -41,7 +41,7 @@
          (rx/of (start-drawing :path)))
 
        (when (= tool :curve)
-         (let [stopper (->> stream (rx/filter dwc/interrupt?))]
+         (let [stopper (rx/filter dwc/interrupt? stream)]
            (->> stream
                 (rx/filter (ptk/type? ::common/handle-finish-drawing))
                 (rx/map (constantly tool))
