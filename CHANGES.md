@@ -44,6 +44,7 @@
 - Fix incorrect uri generation issues on share-link modal [Taiga #5564](https://tree.taiga.io/project/penpot/issue/5564)
 - Fix cache issues with share-links [Taiga #5559](https://tree.taiga.io/project/penpot/issue/5559)
 - Makes height priority for the rows/columns grids [#2774](https://github.com/penpot/penpot/issues/2774)
+- Fix problem with comments mode not staying [#3363](https://github.com/penpot/penpot/issues/3363)
 
 ### :arrow_up: Deps updates
 
