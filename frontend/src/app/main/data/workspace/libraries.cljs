@@ -147,18 +147,20 @@
 
 (defn rename-color
   [file-id id new-name]
-  (dm/assert! (uuid? file-id))
-  (dm/assert! (uuid? id))
-  (dm/assert! (string? new-name))
+  (dm/verify! (uuid? file-id))
+  (dm/verify! (uuid? id))
+  (dm/verify! (string? new-name))
 
   (ptk/reify ::rename-color
     ptk/WatchEvent
     (watch [it state _]
-      (when (and (some? new-name) (not= "" new-name))
-        (let [data        (get state :workspace-data)
-              object      (get-in data [:colors id])
-              new-object  (assoc object :name new-name)]
-          (do-update-color it state new-object file-id))))))
+      (let [new-name (str/trim new-name)]
+        (if (str/empty? new-name)
+          (rx/empty)
+          (let [data   (get state :workspace-data)
+                object (get-in data [:colors id])
+                object (assoc object :name new-name)]
+            (do-update-color it state object file-id)))))))
 
 (defn delete-color
   [{:keys [id] :as params}]
