@@ -87,9 +87,6 @@
 
 (sv/defmethod ::get-view-only-bundle
   {::rpc/auth false
-   ::cond/get-object #(files/get-minimal-file %1 (:file-id %2))
-   ::cond/key-fn files/get-file-etag
-   ::cond/reuse-key? true
    ::doc/added "1.17"
    ::sm/params ::get-view-only-bundle}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id] :as params}]
