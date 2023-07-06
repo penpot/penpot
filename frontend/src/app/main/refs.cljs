@@ -298,6 +298,15 @@
        (into [] (keep #(get objects %)) parent-ids)))
    workspace-page-objects =))
 
+(defn shape-parents
+  [id]
+  (l/derived
+   (fn [objects]
+     (into []
+           (keep (d/getf objects))
+           (cph/get-parent-ids objects id)))
+   workspace-page-objects =))
+
 (defn children-objects
   [id]
   (l/derived
