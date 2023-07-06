@@ -40,6 +40,7 @@
         flex-shrink: 0;
         padding: $size-2;
         overflow: hidden;
+        margin: 0;
 
         svg {
           fill: $color-gray-20;
@@ -134,52 +135,6 @@
           justify-content: center;
           margin-left: auto;
           padding: 0.25rem;
-        }
-      }
-
-      & .focus-title {
-        width: 100%;
-        height: 100%;
-        display: grid;
-        align-items: center;
-        grid-template-columns: auto 1fr auto;
-        grid-column-gap: 8px;
-        cursor: pointer;
-
-        & .back-button {
-          background: none;
-          border: none;
-          padding: 0;
-          margin: 0;
-
-          & svg {
-            fill: $color-white;
-            transform: rotate(180deg);
-            margin-top: 3px;
-          }
-
-          &:hover {
-            svg {
-              fill: $color-primary;
-            }
-          }
-        }
-
-        & .focus-name {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        & .focus-mode {
-          color: $color-primary;
-          border: 1px solid $color-primary;
-          border-radius: $br3;
-          font-size: $fs10;
-          text-transform: uppercase;
-          padding: 0px 4px;
-          display: flex;
-          align-items: center;
         }
       }
     }

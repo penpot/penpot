@@ -53,6 +53,14 @@ msgstr "Full Name"
 msgid "auth.login-here"
 msgstr "Login here"
 
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "The name must contain at most 250 characters."
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "The name must contain some character other than space."
+
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "Login"
@@ -112,6 +120,10 @@ msgstr "Password"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "At least 8 characters"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "Password must contain some character other than space."
 
 msgid "auth.privacy-policy"
 msgstr "Privacy policy"
@@ -803,6 +815,10 @@ msgstr "No webhooks created so far."
 
 msgid "dashboard.webhooks.update.success"
 msgstr "Webhook updated successfully."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "team.webhooks.max-length"
+msgstr "The webhook name must contain at most 2048 characters."
 
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"

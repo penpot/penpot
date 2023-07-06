@@ -28,8 +28,9 @@
 (mf/defc feedback-form
   []
   (let [profile (mf/deref refs/profile)
-        form    (fm/use-form :spec ::feedback-form)
-
+        form    (fm/use-form :spec ::feedback-form
+                             :validators [(fm/validate-length :subject fm/max-length-allowed (tr "auth.name.too-long"))
+                                          (fm/validate-not-empty :subject (tr "auth.name.not-all-space"))])
         loading (mf/use-state false)
 
         on-succes

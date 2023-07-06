@@ -390,7 +390,7 @@
         (mf/use-fn
          (fn []
            (swap! state (fn [state]
-                          (assoc state :renaming (:component-id state))))))
+                          (assoc state :renaming (:object-id state))))))
         cancel-rename
         (mf/use-fn
          (fn []

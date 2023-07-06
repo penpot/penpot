@@ -14,6 +14,7 @@
    [app.common.pages :as cp]
    [app.common.pprint :as pp]
    [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -413,6 +414,14 @@
       (= :spec-validation (:code data))
       (println
        (us/pretty-explain data))
+
+      (= :params-validation (:code data))
+      (app.common.pprint/pprint
+       (sm/humanize-data (::sm/explain data)))
+
+      (= :data-validation (:code data))
+      (app.common.pprint/pprint
+       (sm/humanize-data (::sm/explain data)))
 
       (= :service-error (:type data))
       (print-error! (.getCause ^Throwable error))

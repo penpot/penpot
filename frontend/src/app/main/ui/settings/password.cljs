@@ -24,7 +24,7 @@
            {:message (tr "errors.wrong-old-password")})
     :email-as-password
     (swap! form assoc-in [:errors :password-1]
-       {:message (tr "errors.email-as-password")})
+           {:message (tr "errors.email-as-password")})
 
     (let [msg (tr "generic.error")]
       (st/emit! (dm/error msg)))))
@@ -71,8 +71,10 @@
   [{:keys [locale] :as props}]
   (let [initial (mf/use-memo (constantly {:password-old nil}))
         form (fm/use-form :spec ::password-form
-               :validators [password-equality]
-               :initial initial)]
+                          :validators [(fm/validate-not-empty :password-1 (tr "auth.password-not-empty"))
+                                       (fm/validate-not-empty :password-2 (tr "auth.password-not-empty"))
+                                       password-equality]
+                          :initial initial)]
     [:& fm/form {:class "password-form"
                  :on-submit on-submit
                  :form form}
@@ -105,7 +107,7 @@
 (mf/defc password-page
   [{:keys [locale]}]
   (mf/use-effect
-    #(dom/set-html-title (tr "title.settings.password")))
+   #(dom/set-html-title (tr "title.settings.password")))
 
   [:section.dashboard-settings.form-container
    [:div.form-container

@@ -39,8 +39,8 @@
           params  {::th/type :push-audit-events
                    ::rpc/profile-id (:id prof)
                    :events [{:name "navigate"
-                             :props {:project-id proj-id
-                                     :team-id team-id
+                             :props {:project-id (str proj-id)
+                                     :team-id (str team-id)
                                      :route "dashboard-files"}
                              :context {:engine "blink"}
                              :profile-id (:id prof)
@@ -71,8 +71,8 @@
           params  {::th/type :push-audit-events
                    ::rpc/profile-id (:id prof)
                    :events [{:name "navigate"
-                             :props {:project-id proj-id
-                                     :team-id team-id
+                             :props {:project-id (str proj-id)
+                                     :team-id (str team-id)
                                      :route "dashboard-files"}
                              :context {:engine "blink"}
                              :profile-id uuid/zero
@@ -91,6 +91,8 @@
         (t/is (= 1 (count rows)))
         (t/is (= (:id prof) (:profile-id row)))
         (t/is (= "navigate" (:name row)))
-        (t/is (= "frontend" (:source row)))))))
+        (t/is (= "frontend" (:source row))))
+
+      )))
 
 

@@ -95,16 +95,17 @@
     state))
 
 (mf/defc object-svg
-  [{:keys [page-id file-id object-id render-embed?]}]
+  [{:keys [page-id file-id share-id object-id render-embed?]}]
   (let [components-v2 (feat/use-feature :components-v2)
         fetch-state   (mf/use-fn
-                        (mf/deps file-id page-id object-id components-v2)
+                        (mf/deps file-id page-id share-id object-id components-v2)
                         (fn []
                           (let [features (cond-> #{} components-v2 (conj "components/v2"))]
                             (->> (rx/zip
-                                  (repo/cmd! :get-font-variants {:file-id file-id})
+                                  (repo/cmd! :get-font-variants {:file-id file-id :share-id share-id})
                                   (repo/cmd! :get-page {:file-id file-id
                                                         :page-id page-id
+                                                        :share-id share-id
                                                         :object-id object-id
                                                         :features features}))
                                  (rx/tap (fn [[fonts]]
@@ -135,16 +136,17 @@
         :render-embed? render-embed?}])))
 
 (mf/defc objects-svg
-  [{:keys [page-id file-id object-ids render-embed?]}]
+  [{:keys [page-id file-id share-id object-ids render-embed?]}]
   (let [components-v2 (feat/use-feature :components-v2)
         fetch-state   (mf/use-fn
-                       (mf/deps file-id page-id components-v2)
+                       (mf/deps file-id page-id share-id components-v2)
                        (fn []
                          (let [features (cond-> #{} components-v2 (conj "components/v2"))]
                            (->> (rx/zip
-                                 (repo/cmd! :get-font-variants {:file-id file-id})
+                                 (repo/cmd! :get-font-variants {:file-id file-id :share-id share-id})
                                  (repo/cmd! :get-page {:file-id file-id
                                                        :page-id page-id
+                                                       :share-id share-id
                                                        :features features}))
                                 (rx/tap (fn [[fonts]]
                                           (when (seq fonts)
@@ -164,6 +166,7 @@
 
 (s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
+(s/def ::share-id ::us/uuid)
 (s/def ::object-id
   (s/or :single ::us/uuid
         :multiple (s/coll-of ::us/uuid)))
@@ -171,24 +174,25 @@
 
 (s/def ::render-objects
   (s/keys :req-un [::file-id ::page-id ::object-id]
-          :opt-un [::render-embed]))
+          :opt-un [::render-embed ::share-id]))
 
 (defn- render-objects
   [params]
   (let [{:keys [file-id
                 page-id
-                render-embed]
+                render-embed
+                share-id]
          :as params}
         (us/conform ::render-objects params)
 
         [type object-id] (:object-id params)]
-
     (case type
       :single
       (mf/html
        [:& object-svg
         {:file-id file-id
          :page-id page-id
+         :share-id share-id
          :object-id object-id
          :render-embed? render-embed}])
 
@@ -197,6 +201,7 @@
        [:& objects-svg
         {:file-id file-id
          :page-id page-id
+         :share-id share-id         
          :object-ids (into #{} object-id)
          :render-embed? render-embed}]))))
 

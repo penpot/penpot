@@ -278,7 +278,7 @@
       (let [error (:error out)]
         (t/is (th/ex-info? error))
         (t/is (th/ex-of-type? error :validation))
-        (t/is (th/ex-of-code? error :spec-validation))))
+        (t/is (th/ex-of-code? error :params-validation))))
 
     ;; try correct register
     (let [data  {::th/type :register-profile

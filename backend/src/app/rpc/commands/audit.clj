@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -19,9 +19,7 @@
    [app.rpc.climit :as-alias climit]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.util.services :as sv]
-   [app.util.time :as dt]
-   [clojure.spec.alpha :as s]))
+   [app.util.services :as sv]))
 
 (defn- event->row [event]
   [(uuid/next)
@@ -52,25 +50,23 @@
     (when (seq events)
       (db/insert-multi! pool :audit-log event-columns events))))
 
-(s/def ::name ::us/string)
-(s/def ::type ::us/string)
-(s/def ::props (s/map-of ::us/keyword any?))
-(s/def ::timestamp dt/instant?)
-(s/def ::context (s/map-of ::us/keyword any?))
+(def schema:event
+  [:map {:title "Event"}
+   [:name [:string {:max 250}]]
+   [:type [:string {:max 250}]]
+   [:props
+    [:map-of :keyword :any]]
+   [:context {:optional true}
+    [:map-of :keyword :any]]])
 
-(s/def ::event
-  (s/keys :req-un [::type ::name ::props ::timestamp]
-          :opt-un [::context]))
-
-(s/def ::events (s/every ::event))
-
-(s/def ::push-audit-events
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::events]))
+(def schema:push-audit-events
+  [:map {:title "push-audit-events"}
+   [:events [:vector schema:event]]])
 
 (sv/defmethod ::push-audit-events
   {::climit/id :submit-audit-events-by-profile
    ::climit/key-fn ::rpc/profile-id
+   ::sm/params schema:push-audit-events
    ::audit/skip true
    ::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} params]

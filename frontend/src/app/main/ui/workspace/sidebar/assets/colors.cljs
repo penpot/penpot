@@ -194,7 +194,7 @@
         (let [input (mf/ref-val input-ref)]
           (dom/select-text! input)
           nil)))
-    
+
     (if ^boolean new-css-system
       [:div {:class (dom/classnames (css :asset-list-item) true
                                     (css :selected) (contains? selected (:id color))
@@ -503,6 +503,7 @@
            (st/emit! (dw/set-assets-section-open file-id :colors true)
                      (ptk/event ::ev/event {::ev/name "add-asset-to-library"
                                             :asset-type "color"}))
+           ;; FIXME: replace interop with dom helpers
            (modal/show! :colorpicker
                         {:x (.-clientX event)
                          :y (.-clientY event)
@@ -592,7 +593,7 @@
          [:& cmm/asset-section-block {:role :title-button}
           (when-not read-only?
             [:button {:class (dom/classnames (css :assets-btn) true)
-                   :on-click add-color-clicked}
+                      :on-click add-color-clicked}
              i/add-refactor])])
 
        (when local?

@@ -42,7 +42,10 @@
 (mf/defc profile-form
   []
   (let [profile (mf/deref refs/profile)
-        form    (fm/use-form :spec ::profile-form :initial profile)]
+        form    (fm/use-form :spec ::profile-form
+                             :initial profile
+                             :validators [(fm/validate-length :fullname fm/max-length-allowed (tr "auth.name.too-long"))
+                                          (fm/validate-not-empty :fullname (tr "auth.name.not-all-space"))])]
 
     [:& fm/form {:on-submit on-submit
                  :form form

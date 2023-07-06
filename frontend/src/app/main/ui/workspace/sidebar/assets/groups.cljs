@@ -123,6 +123,8 @@
                  (mf/deps last-path)
                  (constantly {:asset-name last-path}))
         form  (fm/use-form :spec ::name-group-form
+                           :validators [(fm/validate-not-empty :name (tr "auth.name.not-all-space"))
+                                        (fm/validate-length :name fm/max-length-allowed (tr "auth.name.too-long"))]
                            :initial initial)
 
         create? (empty? path)

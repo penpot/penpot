@@ -40,6 +40,7 @@
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]
+   [cuerdas.core :as str]
    [potok.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
@@ -184,21 +185,22 @@
 
 (defn rename-media
   [id new-name]
-  (dm/assert! (uuid? id))
-  (dm/assert! (string? new-name))
+  (dm/verify! (uuid? id))
+  (dm/verify! (string? new-name))
   (ptk/reify ::rename-media
     ptk/WatchEvent
     (watch [it state _]
-      (when (and (some? new-name) (not= "" new-name))
-        (let [data        (get state :workspace-data)
-              [path name] (cph/parse-path-name new-name)
-              object      (get-in data [:media id])
-              new-object  (assoc object :path path :name name)
-              changes     (-> (pcb/empty-changes it)
-                              (pcb/with-library-data data)
-                              (pcb/update-media new-object))]
-          (rx/of (dch/commit-changes changes)))))))
-
+      (let [new-name (str/trim new-name)]
+        (if (str/empty? new-name)
+          (rx/empty)
+          (let [[path name] (cph/parse-path-name new-name)
+                data        (get state :workspace-data)
+                object      (get-in data [:media id])
+                new-object  (assoc object :path path :name name)
+                changes     (-> (pcb/empty-changes it)
+                                (pcb/with-library-data data)
+                                (pcb/update-media new-object))]
+            (rx/of (dch/commit-changes changes))))))))
 
 (defn delete-media
   [{:keys [id] :as params}]
@@ -340,24 +342,20 @@
 (defn rename-component
   "Rename the component with the given id, in the current file library."
   [id new-name]
-  (dm/assert! (uuid? id))
-  (dm/assert! (string? new-name))
+  (dm/verify! (uuid? id))
+  (dm/verify! (string? new-name))
   (ptk/reify ::rename-component
     ptk/WatchEvent
     (watch [it state _]
-      (when (and (some? new-name) (not= "" new-name))
-        (let [data          (get state :workspace-data)
-              [path name]   (cph/parse-path-name new-name)
-              components-v2 (features/active-feature? state :components-v2)
+      (let [new-name (str/trim new-name)]
+        (if (str/empty? new-name)
+          (rx/empty)
+          (let [data          (get state :workspace-data)
+                [path name]   (cph/parse-path-name new-name)
+                components-v2 (features/active-feature? state :components-v2)
 
-              update-fn
-              (fn [component]
-                ;; NOTE: we need to ensure the component exists,
-                ;; because there are small possibilities of race
-                ;; conditions with component deletion.
-                ;;
-                ;; FIXME: this race conditon should be handled in pcb/update-component
-                (when component
+                update-fn
+                (fn [component]
                   (cond-> component
                     :always
                     (assoc :path path
@@ -366,13 +364,13 @@
                     (not components-v2)
                     (update :objects
                             ;; Give the same name to the root shape
-                            #(assoc-in % [id :name] name)))))
+                            #(assoc-in % [id :name] name))))
 
-              changes (-> (pcb/empty-changes it)
-                          (pcb/with-library-data data)
-                          (pcb/update-component id update-fn))]
+                changes (-> (pcb/empty-changes it)
+                            (pcb/with-library-data data)
+                            (pcb/update-component id update-fn))]
 
-          (rx/of (dch/commit-changes changes)))))))
+            (rx/of (dch/commit-changes changes))))))))
 
 (defn rename-component-and-main-instance
   [component-id name]

@@ -38,7 +38,7 @@
                      :data local})))))
 
 (mf/defc right-sidebar
-  [{:keys [frame page file selected shapes page-id file-id from]
+  [{:keys [frame page file selected shapes page-id file-id share-id from]
     :or {from :inspect}}]
   (let [expanded      (mf/use-state false)
         section       (mf/use-state :info #_:code)
@@ -89,7 +89,8 @@
                             :frame frame
                             :shapes shapes
                             :from from
-                            :libraries libraries}]]
+                            :libraries libraries
+                            :share-id share-id}]]
 
            [:& tabs-element {:id :code :title (tr "inspect.tabs.code")}
             [:& code {:frame frame

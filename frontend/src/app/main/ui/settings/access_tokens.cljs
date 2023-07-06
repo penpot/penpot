@@ -42,7 +42,6 @@
       (str/blank? name)
       (assoc :name {:message (tr "dashboard.access-tokens.errors-required-name")}))))
 
-
 (def initial-data
   {:name "" :expiration-date "never"})
 
@@ -53,7 +52,9 @@
   (let [form    (fm/use-form
                  :initial initial-data
                  :spec ::access-token-form
-                 :validators [name-validator])
+                 :validators [name-validator
+                              (fm/validate-not-empty :name (tr "auth.name.not-all-space"))
+                              (fm/validate-length :name fm/max-length-allowed (tr "auth.name.too-long"))])
         created  (mf/deref token-created-ref)
         created? (mf/use-state false)
         locale   (mf/deref i18n/locale)

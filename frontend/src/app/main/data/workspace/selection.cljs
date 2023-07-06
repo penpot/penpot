@@ -249,7 +249,7 @@
                        (lookup uuid/zero))
 
             toselect (->> (cph/get-immediate-children objects (:id parent))
-                          (into (d/ordered-set) (comp (remove :blocked) (map :id))))]
+                          (into (d/ordered-set) (comp (remove :hidden) (remove :blocked) (map :id))))]
 
         (rx/of (select-shapes toselect))))))
 

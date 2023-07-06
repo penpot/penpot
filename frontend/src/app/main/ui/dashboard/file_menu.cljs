@@ -142,7 +142,11 @@
         #(st/emit! (dd/set-file-shared (assoc file :is-shared true)))
 
         del-shared
-        #(st/emit! (dd/set-file-shared (assoc file :is-shared false)))
+        (mf/use-fn
+         (mf/deps files)
+         (fn [_]
+           (run! #(st/emit! (dd/set-file-shared (assoc % :is-shared false))) files)))
+
 
         on-add-shared
         (fn [event]
@@ -216,23 +220,23 @@
 
     (when current-team
       (let [sub-options (concat (vec (for [project current-projects]
-                                        {:option-name (get-project-name project)
-                                         :id (get-project-id project)
-                                         :option-handler (on-move (:id current-team)
-                                                                  (:id project))}))
-                                 (when (seq other-teams)
-                                   [{:option-name (tr "dashboard.move-to-other-team")
-                                     :id "move-to-other-team"
-                                     :sub-options
-                                     (for [team other-teams]
-                                       {:option-name (get-team-name team)
-                                        :id (get-project-id team)
-                                        :sub-options
-                                        (for [sub-project (:projects team)]
-                                          {:option-name (get-project-name sub-project)
-                                           :id (get-project-id sub-project)
-                                           :option-handler (on-move (:id team)
-                                                                    (:id sub-project))})})}]))
+                                       {:option-name (get-project-name project)
+                                        :id (get-project-id project)
+                                        :option-handler (on-move (:id current-team)
+                                                                 (:id project))}))
+                                (when (seq other-teams)
+                                  [{:option-name (tr "dashboard.move-to-other-team")
+                                    :id "move-to-other-team"
+                                    :sub-options
+                                    (for [team other-teams]
+                                      {:option-name (get-team-name team)
+                                       :id (get-project-id team)
+                                       :sub-options
+                                       (for [sub-project (:projects team)]
+                                         {:option-name (get-project-name sub-project)
+                                          :id (get-project-id sub-project)
+                                          :option-handler (on-move (:id team)
+                                                                   (:id sub-project))})})}]))
 
             options (if multi?
                       [{:option-name    (tr "dashboard.duplicate-multi" file-count)

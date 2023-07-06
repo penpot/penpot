@@ -27,7 +27,6 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
 (declare check-profile-existence!)
@@ -41,7 +40,7 @@
 (def schema:profile
   [:map {:title "Profile"}
    [:id ::sm/uuid]
-   [:fullname :string]
+   [:fullname [::sm/word-string {:max 250}]]
    [:email ::sm/email]
    [:is-active {:optional true} :boolean]
    [:is-blocked {:optional true} :boolean]
@@ -82,12 +81,15 @@
 
 ;; --- MUTATION: Update Profile (own)
 
+(def schema:update-profile
+  [:map {:title "update-profile"}
+   [:fullname [::sm/word-string {:max 250}]]
+   [:lang {:optional true} [:string {:max 5}]]
+   [:theme {:optional true} [:string {:max 250}]]])
+
 (sv/defmethod ::update-profile
   {::doc/added "1.0"
-   ::sm/params [:map {:title "UpdateProfileParams"}
-                [:fullname {:min 1} :string]
-                [:lang {:optional true} :string]
-                [:theme {:optional true} :string]]
+   ::sm/params schema:update-profile
    ::sm/result schema:profile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id fullname lang theme] :as params}]
 
@@ -128,11 +130,14 @@
 (declare update-profile-password!)
 (declare invalidate-profile-session!)
 
+(def schema:update-profile-password
+  [:map {:title "update-profile-password"}
+   [:password [::sm/word-string {:max 500}]]
+   [:old-password [::sm/word-string {:max 500}]]])
+
 (sv/defmethod ::update-profile-password
   {:doc/added "1.0"
-   ::sm/params [:map {:title "UpdateProfilePasswordParams"}
-                [:password :string]
-                [:old-password :string]]
+   ::sm/params schema:update-profile-password
    ::sm/result :nil}
 
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id password] :as params}]
@@ -178,10 +183,13 @@
 (declare upload-photo)
 (declare update-profile-photo)
 
+(def schema:update-profile-photo
+  [:map {:title "update-profile-photo"}
+   [:file ::media/upload]])
+
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
-   ::sm/params [:map {:title "UpdateProfilePhotoParams"}
-                [:file ::media/upload]]
+   ::sm/params schema:update-profile-photo
    ::sm/result :nil}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
@@ -239,11 +247,13 @@
 (declare ^:private request-email-change!)
 (declare ^:private change-email-immediately!)
 
-(s/def ::request-email-change
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::email]))
+(def schema:request-email-change
+  [:map {:title "request-email-change"}
+   [:email ::sm/email]])
 
 (sv/defmethod ::request-email-change
+  {::doc/added "1.0"
+   ::sm/params schema:request-email-change}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id email] :as params}]
   (db/with-atomic [conn pool]
     (let [profile (db/get-by-id conn :profile profile-id)
@@ -304,12 +314,13 @@
 
 ;; --- MUTATION: Update Profile Props
 
-(s/def ::props map?)
-(s/def ::update-profile-props
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::props]))
+(def schema:update-profile-props
+  [:map {:title "update-profile-props"}
+   [:props [:map-of :keyword :any]]])
 
 (sv/defmethod ::update-profile-props
+  {::doc/added "1.0"
+   ::sm/params schema:update-profile-props}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id props]}]
   (db/with-atomic [conn pool]
     (let [profile (get-profile conn profile-id ::db/for-update? true)
@@ -329,15 +340,12 @@
 
       (filter-props props))))
 
-
 ;; --- MUTATION: Delete Profile
 
 (declare ^:private get-owned-teams-with-participants)
 
-(s/def ::delete-profile
-  (s/keys :req [::rpc/profile-id]))
-
 (sv/defmethod ::delete-profile
+  {::doc/added "1.0"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (let [teams      (get-owned-teams-with-participants conn profile-id)

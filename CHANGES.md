@@ -28,14 +28,32 @@
 - Add the ability to disable google fonts provider with the `disable-google-fonts-provider` flag
 - Add the ability to disable dashboard templates section with the `disable-dashboard-templates-section` flag
 - Add the ability to use the registration whitelist with OICD [Github #3348](https://github.com/penpot/penpot/issues/3348)
-- Add support for local caching of google fonts (this avoids exposing
-  the final user IP to goolge and reduces the amount of request sent
-  to google)
+- Add support for local caching of google fonts (this avoids exposing the final user IP to
+  goolge and reduces the amount of request sent to google)
 
 ### :bug: Bugs fixed
 
 - Fix files can be opened from multiple urls [Taiga #5310](https://tree.taiga.io/project/penpot/issue/5310)
 - Fix asset color item was created from the selected layer [Taiga #5180](https://tree.taiga.io/project/penpot/issue/5180)
+- Fix unpublish more than one library at the same time [Taiga #5532](https://tree.taiga.io/project/penpot/issue/5532)
+- Fix drag projects on dahsboard [Taiga #5531](https://tree.taiga.io/project/penpot/issue/5531)
+- Fix allow team name to be all blank [Taiga #5527](https://tree.taiga.io/project/penpot/issue/5527)
+- Fix search font visualitation [Taiga #5523](https://tree.taiga.io/project/penpot/issue/5523)
+- Fix create and account only with spaces [Taiga #5518](https://tree.taiga.io/project/penpot/issue/5518)
+- Fix context menu outside screen [Taiga #5524](https://tree.taiga.io/project/penpot/issue/5524)
+- Fix graphic item rename on assets pannel [Taiga #5556](https://tree.taiga.io/project/penpot/issue/5556)
+- Fix component and media name validation on assets panel [Taiga #5555](https://tree.taiga.io/project/penpot/issue/5555)
+- Fix problem with selection shortcuts [Taiga #5492](https://tree.taiga.io/project/penpot/issue/5492)
+- Fix issue with paths line to curve and concurrent editing [Taiga #5191](https://tree.taiga.io/project/penpot/issue/5191)
+- Fix problems with locked layers [Taiga #5139](https://tree.taiga.io/project/penpot/issue/5139)
+- Fix export from shared prototype [Taiga #5565](https://tree.taiga.io/project/penpot/issue/5565)
+- Fix email change: validation error displaying even after both fields are identical [Taiga #5514](https://tree.taiga.io/project/penpot/issue/5514)
+- Fix scroll on viewer comment list [Taiga #5563](https://tree.taiga.io/project/penpot/issue/5563)
+- Fix context menu z-index [Taiga #5561](https://tree.taiga.io/project/penpot/issue/5561)
+- Fix select all checkbox on shared link config [Taiga #5566](https://tree.taiga.io/project/penpot/issue/5566)
+- Fix validation on full name input on account creation [Taiga #5516](https://tree.taiga.io/project/penpot/issue/5516)
+- Fix validation on team name input [Taiga #5510](https://tree.taiga.io/project/penpot/issue/5510)
+
 
 ### :arrow_up: Deps updates
 

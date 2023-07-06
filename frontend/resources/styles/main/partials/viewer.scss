@@ -182,8 +182,8 @@
     right: 0;
     top: 50px;
     width: 256px;
-    height: 100%;
-    z-index: 10;
+    height: calc(100vh - 48px);
+    z-index: 9;
   }
 
   .empty-state {

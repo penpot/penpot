@@ -35,7 +35,7 @@
           (dom/add-class! layout "force-visible"))))))
 
 (mf/defc viewport
-  [{:keys [local file page frame index viewer-pagination size]}]
+  [{:keys [local file page frame index viewer-pagination size share-id]}]
   (let [inspect-svg-container-ref (mf/use-ref nil)
         on-mouse-wheel
         (fn [event]
@@ -76,4 +76,5 @@
      [:& right-sidebar {:frame frame
                         :selected (:selected local)
                         :page page
-                        :file file}]]))
+                        :file file
+                        :share-id share-id}]]))

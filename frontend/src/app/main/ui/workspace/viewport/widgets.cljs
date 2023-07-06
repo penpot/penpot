@@ -149,7 +149,9 @@
         text-pos-x (if (:use-for-thumbnail? frame) 15 0)]
 
     (when (not (:hidden frame))
-      [:g.frame-title {:id (dm/str "frame-title-" (:id frame)) :transform (vwu/title-transform frame zoom)}
+      [:g.frame-title {:id (dm/str "frame-title-" (:id frame))
+                       :transform (vwu/title-transform frame zoom)
+                       :pointer-events (when (:blocked frame) "none")}
        (when (:use-for-thumbnail? frame)
          [:svg {:x 0
                 :y -9

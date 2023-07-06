@@ -24,7 +24,7 @@
 (def use-form fm/use-form)
 
 (mf/defc input
-  [{:keys [label help-icon disabled form hint trim children data-test] :as props}]
+  [{:keys [label help-icon disabled form hint trim children data-test on-change-value] :as props}]
   (let [input-type   (get props :type "text")
         input-name   (get props :name)
         more-classes (get props :class)
@@ -57,6 +57,8 @@
                        :else
                        help-icon)
 
+        on-change-value (or on-change-value (constantly nil))
+
         klass (str more-classes " "
                    (dom/classnames
                     :focus          @focus?
@@ -80,7 +82,8 @@
         on-change (fn [event]
                     (let [value (-> event dom/get-target dom/get-input-value)]
                       (swap! form assoc-in [:touched input-name] true)
-                      (fm/on-input-change form input-name value trim)))
+                      (fm/on-input-change form input-name value trim)
+                      (on-change-value name value)))
 
         on-blur
         (fn [_]
@@ -134,7 +137,6 @@
 
         (string? hint)
         [:span.hint hint])]]))
-
 
 (mf/defc textarea
   [{:keys [label disabled form hint trim] :as props}]
@@ -222,7 +224,7 @@
       (for [item options]
         [:> :option (clj->js (cond-> {:key (:value item) :value (:value item)}
                                (:disabled item) (assoc :disabled "disabled")
-                               (:hidden item) (assoc :style {:display "none"}))) 
+                               (:hidden item) (assoc :style {:display "none"})))
          (:label item)])]
 
      [:div.input-container {:class (dom/classnames :disabled disabled :focus @focus?)}
@@ -237,7 +239,7 @@
   [{:keys [name options form trim on-change-value] :as props}]
   (let [form            (or form (mf/use-ctx form-ctx))
         value           (get-in @form [:data name] "")
-        on-change-value (or on-change-value (constantly nil))        
+        on-change-value (or on-change-value (constantly nil))
         on-change (fn [event]
                     (let [value (-> event dom/get-target dom/get-value)]
                       (swap! form assoc-in [:touched name] true)
@@ -409,3 +411,31 @@
                                                  "caution" (:caution item))}
             [:span.text (:text item)]
             [:span.icon {:on-click #(remove-item! item)} i/cross]]])])]))
+
+;; --- Validators
+
+(defn all-spaces?
+  [value]
+  (let [trimmed (str/trim value)]
+    (str/empty? trimmed)))
+
+(def max-length-allowed 250)
+(def max-uri-length-allowed 2048)
+
+(defn max-length?
+  [value length]
+  (> (count value) length))
+
+(defn validate-length
+  [field length errors-msg ]
+  (fn [errors data]
+    (cond-> errors
+      (max-length? (get data field) length)
+      (assoc field {:message errors-msg}))))
+
+(defn validate-not-empty
+  [field error-msg]
+  (fn [errors data]
+    (cond-> errors
+      (all-spaces? (get data field))
+      (assoc field {:message error-msg}))))

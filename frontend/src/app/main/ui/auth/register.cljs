@@ -87,7 +87,8 @@
   [{:keys [params on-success-callback] :as props}]
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
         form    (fm/use-form :spec ::register-form
-                             :validators [validate]
+                             :validators [validate
+                                          (fm/validate-not-empty :password (tr "auth.password-not-empty"))]
                              :initial initial)
         submitted? (mf/use-state false)
 
@@ -219,6 +220,8 @@
 (mf/defc register-validate-form
   [{:keys [params on-success-callback] :as props}]
   (let [form       (fm/use-form :spec ::register-validate-form
+                                :validators [(fm/validate-not-empty :fullname (tr "auth.name.not-all-space"))
+                                             (fm/validate-length :fullname fm/max-length-allowed (tr "auth.name.too-long"))]
                                 :initial params)
         submitted? (mf/use-state false)
 

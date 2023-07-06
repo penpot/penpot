@@ -75,7 +75,7 @@
                             {:exports (vec exports)})))))))
 
 (defn show-viewer-export-dialog
-  [{:keys [shapes page-id file-id exports]}]
+  [{:keys [shapes page-id file-id share-id exports]}]
   (ptk/reify ::show-viewer-export-dialog
     ptk/WatchEvent
     (watch [_ _ _]
@@ -87,8 +87,9 @@
                           (assoc :file-id file-id)
                           (assoc :object-id (:id shape))
                           (assoc :shape (dissoc shape :exports))
-                          (assoc :name (:name shape))))]
-        (rx/of (modal/show :export-shapes {:exports (vec exports)}))))))
+                          (assoc :name (:name shape))
+                          (cond-> share-id (assoc :share-id share-id))))]
+        (rx/of (modal/show :export-shapes {:exports (vec exports)})))))) #_TODO
 
 (defn show-workspace-export-frames-dialog
   [frames]

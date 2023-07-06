@@ -66,10 +66,12 @@
       (on-create-submit form))))
 
 (mf/defc team-form-modal {::mf/register modal/components
-   ::mf/register-as :team-form}
+                          ::mf/register-as :team-form}
   [{:keys [team] :as props}]
   (let [initial (mf/use-memo (fn [] (or team {})))
         form    (fm/use-form :spec ::team-form
+                             :validators [(fm/validate-not-empty :name (tr "auth.name.not-all-space"))
+                                          (fm/validate-length :name fm/max-length-allowed (tr "auth.name.too-long"))]
                              :initial initial)]
     [:div.modal-overlay
      [:div.modal-container.team-form-modal
