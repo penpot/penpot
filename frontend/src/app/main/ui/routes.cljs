@@ -6,8 +6,10 @@
 
 (ns app.main.ui.routes
   (:require
+   [app.common.data.macros :as dm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -92,17 +94,33 @@
 
 (defn on-navigate
   [router path]
-  (if-let [match (match-path router path)]
-    (st/emit! (rt/navigated match))
+  (let [location (.-location js/document)
+        location-path (dm/str (.-origin location) (.-pathname location))
+        valid-location? (= location-path (dm/str cf/public-uri))
+        match (match-path router path)
+        empty-path? (or (= path "") (= path "/"))]
+    (cond
+      (not valid-location?)
+      (st/emit! (rt/assign-exception {:type :not-found}))
 
-    ;; We just recheck with an additional profile request; this avoids
-    ;; some race conditions that causes unexpected redirects on
-    ;; invitations workflows (and probably other cases).
-    (->> (rp/cmd! :get-profile)
-         (rx/subs (fn [{:keys [id] :as profile}]
-                    (if (= id uuid/zero)
-                      (st/emit! (rt/nav :auth-login))
-                      (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)}))))))))
+      (some? match)
+      (st/emit! (rt/navigated match))
+
+      :else
+      ;; We just recheck with an additional profile request; this avoids
+      ;; some race conditions that causes unexpected redirects on
+      ;; invitations workflows (and probably other cases).
+      (->> (rp/cmd! :get-profile)
+           (rx/subs (fn [{:keys [id] :as profile}]
+                      (cond
+                        (= id uuid/zero)
+                        (st/emit! (rt/nav :auth-login))
+
+                        empty-path?
+                        (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)}))
+
+                        :else
+                        (st/emit! (rt/assign-exception {:type :not-found})))))))))
 
 (defn init-routes
   []
