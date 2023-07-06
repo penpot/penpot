@@ -27,7 +27,7 @@
 (log/set-level! :info)
 
 (def google-fonts
-  (preload-gfonts "fonts/gfonts.2022.07.11.json"))
+  (preload-gfonts "fonts/gfonts.2023.07.07.json"))
 
 (def local-fonts
   [{:id "sourcesanspro"
