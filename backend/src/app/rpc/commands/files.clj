@@ -46,11 +46,14 @@
 (def supported-features
   #{"storage/objects-map"
     "storage/pointer-map"
+    "internal/shape-record"
+    "internal/geom-record"
     "components/v2"})
 
 (defn get-default-features
   []
-  (cond-> #{}
+  (cond-> #{"internal/shape-record"
+            "internal/geom-record"}
     (contains? cf/flags :fdata-storage-pointer-map)
     (conj "storage/pointer-map")
 
