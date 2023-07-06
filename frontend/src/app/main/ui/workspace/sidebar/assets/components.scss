@@ -18,7 +18,6 @@
     grid-auto-rows: calc(10vh + $s-16);
     gap: $s-4;
     margin-left: $s-8;
-    margin-right: $s-12;
     .grid-cell {
       @include flexCenter;
       position: relative;
@@ -107,7 +106,8 @@
     .grid-placeholder {
       width: 100%;
       border-radius: $br-8;
-      background-color: var(--assets-item-background-color);
+      background-color: var(--assets-item-background-color-drag);
+      border: $s-2 solid var(--assets-item-border-color-drag);
     }
   }
   .asset-enum {

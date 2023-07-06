@@ -5,7 +5,9 @@
 // Copyright (c) KALEIDOS INC
 
 @import "refactor/common-refactor.scss";
-
+.tool-window {
+  margin-bottom: $s-24;
+}
 .library-title {
   .file-name {
     @include titleTipography;
@@ -28,7 +30,6 @@
     @extend .button-tertiary;
     height: $s-32;
     width: $s-28;
-    margin-right: $s-12;
     border-radius: $br-8;
     svg {
       @extend .button-icon-small;
@@ -39,13 +40,35 @@
 .library-content {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100% - $s-36);
   width: 100%;
-  overflow-y: auto;
+  overflow-y: hidden;
   overflow-x: hidden;
+  margin-top: $s-4;
 }
 
 .asset-title {
-  @include titleTipography;
   margin-left: $s-28;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $s-8;
+  .no-found-icon {
+    @include flexCenter;
+    background-color: var(--not-found-background-color);
+    border-radius: $br-circle;
+    height: $s-48;
+    width: $s-48;
+    svg {
+      @extend .button-icon;
+      height: $s-24;
+      width: $s-24;
+      stroke: var(--not-found-foreground-color);
+    }
+  }
+
+  .no-found-text {
+    @include titleTipography;
+    color: var(--not-found-foreground-color);
+  }
 }

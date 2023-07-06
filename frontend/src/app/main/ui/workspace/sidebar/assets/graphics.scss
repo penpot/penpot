@@ -17,7 +17,6 @@
     grid-template-columns: repeat(4, 1fr);
     gap: $s-4;
     margin-left: $s-8;
-    margin-right: $s-12;
     .grid-cell {
       @include flexCenter;
       position: relative;

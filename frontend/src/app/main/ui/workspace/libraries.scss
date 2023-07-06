@@ -16,47 +16,62 @@
   background-color: var(--overlay-color);
   pointer-events: none; // This is to allow outside click that closes modal.
   .modal-dialog {
-    height: $s-400;
+    position: relative;
+    height: $s-520;
     max-height: 100%;
-    width: $s-664;
-    border-radius: $br-8;
+    width: $s-712;
+    padding: $s-32;
+    border-radius: $br-10;
     background-color: var(--modal-background-color);
     pointer-events: all;
     .close {
       @extend .button-tertiary;
-      width: $s-32;
+      position: absolute;
+      top: $s-8;
+      right: $s-8;
+      width: $s-28;
       height: $s-32;
       border-radius: $br-8;
       svg {
         @extend .button-icon;
       }
     }
-    .modal-content {
-      .libraries-header {
-        padding: $s-12;
-      }
+    .modal-title {
+      @include tabTitleTipography;
+      margin-bottom: $s-16;
+    }
 
+    .modal-content {
+      height: 100%;
+      .libraries-header {
+        height: 100%;
+      }
       .libraries-content,
       .updates-content {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: $s-24;
-        padding-top: $s-16;
+        padding-top: $s-24;
         height: 100%;
-
+        max-height: $s-400;
         .section {
-          height: 100%;
+          height: calc(100% - $s-12);
           :global(.title-spacing-lib) {
-            margin: 0 0 $s-8 calc(-1 * $s-8);
+            margin: 0 0 $s-24 calc(-1 * $s-8);
           }
-          .section-list {
+          .section-list,
+          .section-list-shared {
             height: 100%;
-            max-height: 250px;
+            max-height: $s-320;
             overflow: auto;
+            scrollbar-gutter: stable;
             .section-list-item {
               display: grid;
               grid-template-columns: 1fr auto;
-              margin-bottom: $s-12;
+              margin-bottom: $s-24;
+              &:last-child {
+                margin-bottom: $s-8;
+              }
 
               .item-name {
                 @include titleTipography;
@@ -74,20 +89,26 @@
                 @include tabTitleTipography;
                 height: $s-32;
                 min-width: $s-92;
-                padding: $s-8 $s-12;
+                padding: $s-8 $s-24;
                 border-radius: $br-8;
               }
               .item-unpublish {
                 @extend .button-secondary;
               }
-              .item-button {
-                @extend .button-tertiary;
-                width: $s-32;
+              .item-button,
+              .item-button-shared {
+                @extend .button-secondary;
+                padding: $s-8 $s-24;
                 height: $s-32;
                 border-radius: $br-8;
+                margin-right: $s-2;
                 svg {
                   @extend .button-icon;
                 }
+              }
+              .item-button-shared {
+                padding: $s-8;
+                width: $s-32;
               }
               .item-button-icon {
                 width: $s-28;
@@ -97,6 +118,9 @@
                 }
               }
             }
+          }
+          .section-list-shared {
+            max-height: $s-272;
           }
 
           .section-title {
@@ -116,8 +140,7 @@
           }
           .section-list-empty {
             @include titleTipography;
-            display: flex;
-            align-items: center;
+            @include flexCenter;
 
             svg {
               @extend .button-icon-small;

@@ -68,19 +68,21 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   []
-  (let [components-v2 (mf/use-ctx ctx/components-v2)
-        read-only?     (mf/use-ctx ctx/workspace-read-only?)
-        new-css-system (mf/use-ctx ctx/new-css-system)
-        filters*   (mf/use-state
-                    {:term ""
-                     :section "all"
-                     :ordering :asc
-                     :list-style :thumbs
-                     :open-menu false})
-        filters    (deref filters*)
-        term       (:term filters)
-        menu-open? (:open-menu filters)
-        section    (:section filters)
+  (let [components-v2   (mf/use-ctx ctx/components-v2)
+        read-only?      (mf/use-ctx ctx/workspace-read-only?)
+        new-css-system  (mf/use-ctx ctx/new-css-system)
+        filters*      (mf/use-state
+                       {:term ""
+                        :section "all"
+                        :ordering :asc
+                        :list-style :thumbs
+                        :open-menu false})
+        filters       (deref filters*)
+        term          (:term filters)
+        menu-open?    (:open-menu filters)
+        section       (:section filters)
+        ordering      (:ordering filters)
+        reverse-sort? (= :desc ordering)
 
         toggle-ordering
         (mf/use-fn #(swap! filters* update :ordering toggle-values [:asc :desc]))
@@ -160,16 +162,17 @@
                   :data-test      "typographies"}]]
 
     (if ^boolean new-css-system
-      [:div  {:class  (dom/classnames (css :assets-bar) true)}
-       [:div {:class  (dom/classnames (css :assets-header) true)}
+      [:div  {:class  (css :assets-bar)}
+       [:div {:class  (css :assets-header)}
         (when-not read-only?
-          [:button {:class  (dom/classnames (css :libraries-button) true)
+          [:button {:class (css :libraries-button)
                     :on-click #(modal/show! :libraries-dialog {})}
-           [:span {:class (dom/classnames (css :libraries-icon) true)}
+           [:span {:class (css :libraries-icon)}
             i/library-refactor]
            (tr "workspace.assets.libraries")])
 
-        [:& search-bar {:on-change on-search-term-change
+        [:div {:class (css :search-wrapper)}
+         [:& search-bar {:on-change on-search-term-change
                         :value term
                         :placeholder (tr "workspace.assets.search")}
          [:button
@@ -186,7 +189,12 @@
           :top 152
           :left 64
           :options options
-          :workspace? true}]]
+          :workspace? true}]
+         [:button {:class (css :sort-button)
+                   :on-click toggle-ordering}
+          (if reverse-sort?
+            i/asc-sort-refactor
+            i/desc-sort-refactor)]]]
 
        [:& (mf/provider cmm/assets-filters) {:value filters}
         [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}

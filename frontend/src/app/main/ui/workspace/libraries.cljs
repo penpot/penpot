@@ -277,7 +277,7 @@
                          :icon (mf/html [:span {:class (css :search-icon)} i/search-refactor])}]]
 
         (if (seq shared-libraries)
-          [:div {:class (css :section-list)}
+          [:div {:class (css :section-list-shared)}
            (for [{:keys [id name] :as library} shared-libraries]
              [:div {:class (css :section-list-item)
                     :key (dm/str id)}
@@ -292,7 +292,7 @@
                                                :graphics-count graphics-count
                                                :colors-count colors-count
                                                :typography-count typography-count}])]]
-              [:button {:class (css :item-button)
+              [:button {:class (css :item-button-shared)
                         :data-library-id (dm/str id)
                         :on-click link-library}
                i/add-refactor]])]
@@ -457,7 +457,8 @@
         (mf/use-fn #(reset! selected-tab* %))
 
         close-dialog
-        (mf/use-fn (fn [_] (modal/hide!)
+        (mf/use-fn (fn [_]
+                     (modal/hide!)
                      (modal/disallow-click-outside!)))]
 
     (mf/with-effect [team-id]
@@ -467,9 +468,13 @@
      (if new-css-system
        [:div {:class (css :modal-overlay)}
         [:div {:class (css :modal-dialog)}
+         [:button {:class (css :close)
+                   :on-click close-dialog }
+          i/close-refactor]
+         [:div {:class (css :modal-title)}
+          "Libraries"]
          [:div  {:class (css :modal-content)}
           [:div {:class (css :libraries-header)}
-
            [:& tab-container
             {:on-change-tab on-tab-change
              :selected selected-tab
