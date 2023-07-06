@@ -41,7 +41,7 @@
 (mf/defc color-row
   [{:keys [index color disable-gradient disable-opacity on-change
            on-reorder on-detach on-open on-close title on-remove
-           disable-drag on-focus on-blur select-only data-select-on-focus]}]
+           disable-drag on-focus on-blur select-only select-on-focus]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
         file-colors     (mf/deref refs/workspace-file-colors)
         shared-libs     (mf/deref refs/workspace-libraries)
@@ -207,7 +207,7 @@
            {:class (dom/classnames :percentail (not= (:opacity color) :multiple))}
            [:> numeric-input {:value (-> color :opacity opacity->string)
                               :placeholder (tr "settings.multiple")
-                              :data-select-on-focus data-select-on-focus
+                              :select-on-focus select-on-focus
                               :on-focus on-focus
                               :on-blur on-blur
                               :on-change handle-opacity-change

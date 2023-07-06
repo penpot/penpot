@@ -461,7 +461,7 @@
           :max 200
           :step 0.1
           :default "1.2"
-          :klass (css :line-height-input)
+          :class (css :line-height-input)
           :value (attr->string line-height)
           :placeholder (tr "settings.multiple")
           :nillable line-height-nillable
@@ -477,7 +477,7 @@
          {:min -200
           :max 200
           :step 0.1
-          :klass (css :letter-spacing-input)
+          :class (css :letter-spacing-input)
           :value (attr->string letter-spacing)
           :placeholder (tr "settings.multiple")
           :on-change #(handle-change % :letter-spacing)

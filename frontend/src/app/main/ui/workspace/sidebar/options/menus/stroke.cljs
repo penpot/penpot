@@ -189,6 +189,6 @@
                            :on-reorder (handle-reorder index)
                            :disable-drag disable-drag
                            :on-focus on-focus
-                           :data-select-on-focus (not @disable-drag)
+                           :select-on-focus (not @disable-drag)
                            :on-blur on-blur
                            :disable-stroke-style disable-stroke-style}])])]]))

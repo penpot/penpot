@@ -6,6 +6,7 @@
 
 (ns app.main.ui.components.color-input
   (:require
+   [app.common.data :as d]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -13,8 +14,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [goog.events :as events]
-   [rumext.v2 :as mf])
-  (:import goog.events.EventType))
+   [rumext.v2 :as mf]))
 
 (defn clean-color
   [value]
@@ -31,7 +31,7 @@
         on-change        (obj/get props "onChange")
         on-blur          (obj/get props "onBlur")
         on-focus         (obj/get props "onFocus")
-        select-on-focus? (obj/get props "data-select-on-focus" true)
+        select-on-focus? (d/nilv (unchecked-get props "selectOnFocus") true)
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
@@ -128,8 +128,10 @@
                 ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
                 (.addEventListener target "mouseup" on-mouse-up #js {"once" true})))))
 
-        props (-> props
-                  (obj/without ["value" "onChange" "onFocus"])
+        props (-> (obj/clone props)
+                  (obj/unset! "selectOnFocus")
+                  (obj/set! "value" mf/undefined)
+                  (obj/set! "onChange" mf/undefined)
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
                   ;; (obj/set! "list" list-id)
@@ -157,8 +159,8 @@
 
     (mf/use-layout-effect
      (fn []
-       (let [keys [(events/listen globals/window EventType.POINTERDOWN on-click)
-                   (events/listen globals/window EventType.CLICK on-click)]]
+       (let [keys [(events/listen globals/window "pointerdown" on-click)
+                   (events/listen globals/window "click" on-click)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 

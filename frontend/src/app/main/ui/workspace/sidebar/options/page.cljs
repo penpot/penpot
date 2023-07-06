@@ -17,31 +17,23 @@
    [rumext.v2 :as mf]))
 
 (mf/defc options
-  {::mf/wrap [mf/memo]}
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
   []
-  (let [options (mf/deref refs/workspace-page-options)
-
-        on-change
-        (fn [value]
-          (st/emit! (dw/change-canvas-color value)))
-
-        on-open
-        (fn []
-          (st/emit! (dwu/start-undo-transaction :options)))
-
-        on-close
-        (fn []
-          (st/emit! (dwu/commit-undo-transaction :options)))]
-
+  (let [options   (mf/deref refs/workspace-page-options)
+        on-change (mf/use-fn #(st/emit! (dw/change-canvas-color %)))
+        on-open   (mf/use-fn #(st/emit! (dwu/start-undo-transaction :options)))
+        on-close  (mf/use-fn #(st/emit! (dwu/commit-undo-transaction :options)))]
     [:div.element-set
      [:div.element-set-title (tr "workspace.options.canvas-background")]
      [:div.element-set-content
-      [:& color-row {:disable-gradient true
-                     :disable-opacity true
-                     :title (tr "workspace.options.canvas-background")
-                     :color {:color (get options :background clr/canvas)
-                             :opacity 1}
-                     :on-change on-change
-                     :on-open on-open
-                     :on-close on-close}]]]))
+      [:& color-row
+       {:disable-gradient true
+        :disable-opacity true
+        :title (tr "workspace.options.canvas-background")
+        :color {:color (get options :background clr/canvas)
+                :opacity 1}
+        :on-change on-change
+        :on-open on-open
+        :on-close on-close}]]]))
 

@@ -151,7 +151,7 @@
                             :on-remove (on-remove index)
                             :disable-drag disable-drag
                             :on-focus on-focus
-                            :data-select-on-focus (not @disable-drag)
+                            :select-on-focus (not @disable-drag)
                             :on-blur on-blur}])])
 
         (when (or (= type :frame)
