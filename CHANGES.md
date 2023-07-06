@@ -10,7 +10,8 @@
 
 ### :arrow_up: Deps updates
 
--### :heart: Community contributions by (Thank you!)
+### :heart: Community contributions by (Thank you!)
+
 
 ## 1.19.0
 
