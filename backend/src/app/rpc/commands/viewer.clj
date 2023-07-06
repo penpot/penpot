@@ -83,7 +83,7 @@
   [:map {:title "get-view-only-bundle"}
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
-   [:features {:optional true} ::files/features]])
+   [:features {:optional true} files/schema:features]])
 
 (sv/defmethod ::get-view-only-bundle
   {::rpc/auth false

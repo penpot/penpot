@@ -215,18 +215,25 @@
           :always
           (update :objects assoc-thumbnails page-id thumbs))))))
 
+(def ^:private schema:get-file-data-for-thumbnail
+  [:map {:title "get-file-data-for-thumbnail"}
+   [:file-id ::sm/uuid]
+   [:features {:optional true} files/schema:features]])
+
+(def ^:private schema:partial-file
+  [:map {:title "PartialFile"}
+   [:id ::sm/uuid]
+   [:revn {:min 0} :int]
+   [:page :any]])
+
 (sv/defmethod ::get-file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used
   mainly for render thumbnails on dashboard."
 
   {::doc/added "1.17"
-   ::sm/params [:map {:title "get-file-data-for-thumbnail"}
-                [:file-id ::sm/uuid]
-                [:features {:optional true} ::files/features]]
-   ::sm/result [:map {:title "PartialFile"}
-                [:id ::sm/uuid]
-                [:revn {:min 0} :int]
-                [:page :any]]}
+   ::sm/params schema:get-file-data-for-thumbnail
+   ::sm/result schema:partial-file}
+
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id features] :as props}]
   (dm/with-open [conn (db/open pool)]
     (files/check-read-permissions! conn profile-id file-id)
