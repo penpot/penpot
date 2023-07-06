@@ -57,7 +57,7 @@
   {::mf/wrap [mf/memo]}
   [{:keys [font current? on-click style]}]
   (let [item-ref (mf/use-ref)
-        on-click (mf/use-callback (mf/deps font) #(on-click font))]
+        on-click (mf/use-fn (mf/deps font) #(on-click font))]
 
     (mf/use-effect
      (mf/deps current?)
@@ -108,7 +108,7 @@
                           (into [] (filter #(some? (get fontsdb (:id %))))))
 
         select-next
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps fonts)
          (fn [event]
            (dom/stop-propagation event)
@@ -116,7 +116,7 @@
            (swap! selected get-next-font fonts)))
 
         select-prev
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps fonts)
          (fn [event]
            (dom/stop-propagation event)
@@ -124,7 +124,7 @@
            (swap! selected get-prev-font fonts)))
 
         on-key-down
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps fonts)
          (fn [event]
            (cond
@@ -135,54 +135,45 @@
              :else                   (dom/focus! (mf/ref-val input)))))
 
         on-filter-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps)
          (fn [event]
            (let [value (dom/get-target-val event)]
              (swap! state assoc :term value))))
 
         on-select-and-close
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-select on-close)
          (fn [font]
            (on-select font)
            (on-close)))]
 
-    (mf/use-effect
-     (fn []
-       (st/emit! (fts/load-recent-fonts))))
+    (mf/with-effect []
+      (st/emit! (fts/load-recent-fonts)))
 
-    (mf/use-effect
-     (mf/deps fonts)
-     (fn []
-       (let [key (events/listen js/document "keydown" on-key-down)]
-         #(events/unlistenByKey key))))
+    (mf/with-effect [fonts]
+      (let [key (events/listen js/document "keydown" on-key-down)]
+        #(events/unlistenByKey key)))
 
-    (mf/use-effect
-     (mf/deps @selected)
-     (fn []
-       (when-let [inst (mf/ref-val flist)]
-         (when-let [index (:index @selected)]
-           (.scrollToRow ^js inst index)))))
+    (mf/with-effect [@selected]
+      (when-let [inst (mf/ref-val flist)]
+        (when-let [index (:index @selected)]
+          (.scrollToRow ^js inst index))))
 
-    (mf/use-effect
-     (mf/deps @selected)
-     (fn []
-       (on-select @selected)))
+    (mf/with-effect [@selected]
+      (on-select @selected))
 
-    (mf/use-effect
-     (fn []
-       (st/emit! (dsc/push-shortcuts :typography {}))
-       (fn []
-         (st/emit! (dsc/pop-shortcuts :typography)))))
+    (mf/with-effect []
+      (st/emit! (dsc/push-shortcuts :typography {}))
+      (fn []
+        (st/emit! (dsc/pop-shortcuts :typography))))
 
-    (mf/use-effect
-     (fn []
-       (let [index  (d/index-of-pred fonts #(= (:id %) (:id current-font)))
-             inst   (mf/ref-val flist)]
-         (tm/schedule
-          #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center" :index index})]
-             (.scrollToPosition ^js inst offset))))))
+    (mf/with-effect []
+      (let [index  (d/index-of-pred fonts #(= (:id %) (:id current-font)))
+            inst   (mf/ref-val flist)]
+        (tm/schedule
+         #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center" :index index})]
+            (.scrollToPosition ^js inst offset)))))
 
     [:div.font-selector
      [:div.font-selector-dropdown
@@ -270,7 +261,7 @@
         open-selector?  (mf/use-state false)
 
         change-font
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-change fonts recent-fonts)
          (fn [new-font-id]
            (let [{:keys [family] :as font} (get fonts new-font-id)
@@ -283,14 +274,14 @@
              (mf/set-ref-val! last-font font))))
 
         on-font-size-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-change)
          (fn [new-font-size]
            (when-not (str/empty? new-font-size)
              (on-change {:font-size (str new-font-size)}))))
 
         on-font-variant-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps font on-change)
          (fn [event]
            (let [new-variant-id (dom/get-target-val event)
@@ -303,7 +294,7 @@
              (dom/blur! (dom/get-target event)))))
 
         on-font-select
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps change-font)
          (fn [font*]
            (when (not= font font*)
@@ -313,7 +304,7 @@
              (on-blur))))
 
         on-font-selector-close
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (reset! open-selector? false)
            (when (some? on-blur)
@@ -476,7 +467,7 @@
         open?                (deref open*)
 
         on-name-blur
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-change)
          (fn [event]
            (let [name (dom/get-target-val event)]
