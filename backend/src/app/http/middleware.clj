@@ -118,8 +118,7 @@
                       (t/write! tw data)))
                   (catch java.io.IOException _)
                   (catch Throwable cause
-                    (l/warn :hint "unexpected error on encoding response"
-                            :cause cause))
+                    (l/error :hint "unexpected error on encoding response" :cause cause))
                   (finally
                     (.close ^OutputStream output-stream))))))
 
@@ -132,8 +131,8 @@
 
                   (catch java.io.IOException _)
                   (catch Throwable cause
-                    (l/warn :hint "unexpected error on encoding response"
-                            :cause cause))
+                    (l/error :hint "unexpected error on encoding response"
+                             :cause cause))
                   (finally
                     (.close ^OutputStream output-stream))))))
 
