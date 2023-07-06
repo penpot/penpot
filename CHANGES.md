@@ -46,6 +46,7 @@
 - Makes height priority for the rows/columns grids [#2774](https://github.com/penpot/penpot/issues/2774)
 - Fix problem with comments mode not staying [#3363](https://github.com/penpot/penpot/issues/3363)
 - Fix problem with comments when user left the team [Taiga #5562](https://tree.taiga.io/project/penpot/issue/5562)
+- Fix problem with images patterns repeating [#3372](https://github.com/penpot/penpot/issues/3372)
 
 ### :arrow_up: Deps updates
 

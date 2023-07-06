@@ -16,6 +16,8 @@
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
+(def no-repeat-padding 1.05)
+
 (mf/defc fills
   {::mf/wrap-props false}
   [props]
@@ -71,7 +73,10 @@
 
            (let [fill-id (dm/str "fill-" shape-index "-" render-id)]
              [:> :pattern (-> (obj/clone pattern-attrs)
-                              (obj/set! "id" fill-id))
+                              (obj/set! "id" fill-id)
+                              (cond-> has-image?
+                                (-> (obj/set! "width" (* width no-repeat-padding))
+                                    (obj/set! "height" (* height no-repeat-padding)))))
               [:g
                (for [[fill-index value] (-> (d/enumerate (:fills shape [])) reverse)]
                  [:> :rect (-> (attrs/extract-fill-attrs value render-id fill-index type)
@@ -80,7 +85,17 @@
                                (obj/set! "height" height))])
 
                (when has-image?
-                 [:image {:href (or (:data-uri shape) (get embed uri uri))
-                          :preserveAspectRatio "none"
-                          :width width
-                          :height height}])]])])))))
+                 [:g
+                  ;; We add this shape to add a padding so the patter won't repeat
+                  ;; Issue: https://tree.taiga.io/project/penpot/issue/5583
+                  [:rect {:x 0
+                          :y 0
+                          :width (* width no-repeat-padding)
+                          :height (* height no-repeat-padding)
+                          :fill "none"}]
+                  [:image {:href (or (:data-uri shape) (get embed uri uri))
+                           :preserveAspectRatio "none"
+                           :x 0
+                           :y 0
+                           :width width
+                           :height height}]])]])])))))
