@@ -69,7 +69,7 @@
                 :target "_blank"
                 :on-click dom/stop-propagation}
             i/open-link-refactor]])]]
-        
+
       [:div.tool-window-bar.library-bar
        {:on-click toggle-open}
        [:div.collapse-library
@@ -301,8 +301,11 @@
                   (not ^boolean show-graphics?)
                   (not ^boolean show-colors?)
                   (not ^boolean show-typography?))
-         [:div  {:class (css :asset-title)} (tr "workspace.assets.not-found")])]
-
+         [:div  {:class (css :asset-title)}
+           [:span {:class (css :no-found-icon)}
+            i/search-refactor]
+           [:span {:class (css :no-found-text)}
+            (tr "workspace.assets.not-found")]])]
       [:div.tool-window-content
        [:div.listing-options
         (when (> selected-count 0)
@@ -378,7 +381,9 @@
                   (not ^boolean show-colors?)
                   (not ^boolean show-typography?))
          [:div.asset-section
-          [:div.asset-title (tr "workspace.assets.not-found")]])])))
+          [:div.asset-title
+           (tr "workspace.assets.not-found")]])])))
+
 
 (mf/defc file-library
   {::mf/wrap-props false}
@@ -388,6 +393,7 @@
         shared?         (:is-shared file)
         project-id      (:project-id file)
         page-id         (dm/get-in file [:data :pages 0])
+        new-css-system  (mf/use-ctx ctx/new-css-system)
 
         open-status-ref (mf/with-memo [file-id]
                           (-> (l/key file-id)
@@ -400,9 +406,10 @@
          (mf/deps file-id)
          (fn []
            (st/emit! (dw/unselect-all-assets file-id))))]
-
-    [:div.tool-window {:on-context-menu dom/prevent-default
-                       :on-click unselect-all}
+    [:div {:class (dom/classnames (css :tool-window) new-css-system
+                                  :tool-window (not new-css-system))
+           :on-context-menu dom/prevent-default
+           :on-click unselect-all}
      [:& file-library-title
       {:project-id project-id
        :file-id file-id

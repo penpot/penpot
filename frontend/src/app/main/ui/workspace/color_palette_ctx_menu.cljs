@@ -14,7 +14,6 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (mf/defc color-palette-ctx-menu
@@ -35,7 +34,11 @@
             :data-palette (dm/str id)}
            [:div {:class (dom/classnames (css :option-wrapper) true)}
             [:div {:class (dom/classnames (css :library-name) true)}
-             (str (:name library) " " (str/ffmt "(%)" (count colors)))
+             [:div {:class (css :lib-name-wrapper)}
+              [:span {:class (css :lib-name)}
+               (dm/str (:name library))]
+              [:span {:class (css :lib-num)}
+               (dm/str "(" (count colors) ")")]]
              (when (= selected id)
                [:span {:class (dom/classnames (css :icon-wrapper) true)}
                 i/tick-refactor])]
@@ -53,9 +56,12 @@
 
        [:div {:class (dom/classnames (css :option-wrapper) true)}
         [:div {:class (dom/classnames (css :library-name) true)}
-         (dm/str
-          (tr "workspace.libraries.colors.file-library")
-          (str/ffmt " (%)" (count file-colors)))
+
+         [:div {:class (css :lib-name-wrapper)}
+          [:span {:class (css :lib-name)}
+                (dm/str (tr "workspace.libraries.colors.file-library"))]
+          [:span {:class (css :lib-num)}
+           (dm/str "(" (count file-colors) ")")]]
 
          (when (= selected :file)
            [:span {:class (dom/classnames  (css :icon-wrapper) true)}
@@ -71,10 +77,14 @@
                                    (css :selected) (= selected :recent))
             :on-click on-select-palette
             :data-palette "recent"}
-       [:div {:class (dom/classnames (css :option-wrapper) true)}
-        [:div {:class (dom/classnames (css :library-name) true)}
-         (str (tr "workspace.libraries.colors.recent-colors")
-              (str/format " (%s)" (count recent-colors)))
+       [:div {:class (css :option-wrapper)}
+        [:div {:class (css :library-name)}
+         [:div {:class (css :lib-name-wrapper)}
+          [:span {:class (css :lib-name)}
+           (dm/str (tr "workspace.libraries.colors.recent-colors"))]
+          [:span {:class (css :lib-num)}
+           (dm/str "("(count recent-colors) ")")]]
+
          (when (= selected :recent)
            [:span {:class (dom/classnames  (css :icon-wrapper) true)}
             i/tick-refactor])]

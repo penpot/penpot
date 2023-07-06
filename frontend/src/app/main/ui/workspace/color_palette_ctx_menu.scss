@@ -9,6 +9,7 @@
 .palette-menu {
   position: absolute;
   left: auto;
+  max-width: $s-480;
   bottom: $s-0;
   padding: $s-4;
   margin: 0 0 $s-4 0;
@@ -22,6 +23,7 @@
     position: relative;
     display: flex;
     align-items: flex-start;
+    width: 100%;
     padding: $s-8;
     border-radius: $br-8;
     margin-bottom: $s-4;
@@ -29,13 +31,32 @@
       margin-bottom: 0;
     }
     .option-wrapper {
+      width: 100%;
       .library-name {
         @include titleTipography;
         color: var(--context-menu-foreground-color);
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: 1fr $s-24;
+        .lib-name-wrapper {
+          display: flex;
+          max-width: $s-400;
+          .lib-name {
+            @include textEllipsis;
+            max-width: $s-380;
+          }
+          .lib-num {
+            margin-left: $s-4;
+          }
+        }
+        .icon-wrapper {
+          margin-left: $s-4;
+          @include flexCenter;
+          svg {
+            @include flexCenter;
+            @extend .button-icon-small;
+          }
+        }
       }
-
       .color-sample {
         display: flex;
         flex-direction: row;
@@ -46,15 +67,16 @@
 
     &.selected,
     &:hover {
-      .icon-wrapper {
-        @include flexCenter;
-        svg {
-          @include flexCenter;
-          @extend .button-icon-small;
-        }
-      }
       .option-wrapper .library-name {
         color: var(--context-menu-foreground-color-selected);
+        .icon-wrapper {
+          @include flexCenter;
+          svg {
+            @include flexCenter;
+            @extend .button-icon-small;
+            stroke: var(--context-menu-foreground-color-selected);
+          }
+        }
       }
     }
 

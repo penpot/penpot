@@ -232,7 +232,7 @@
            (rx/of (dch/commit-changes changes)
                   #(cond-> %
                      edit?
-                     (assoc-in [:workspace-global :rename-typography] (:id typography))))))))))
+                     (assoc-in [:workspace-global :edit-typography] (:id typography))))))))))
 
 (defn- do-update-tipography
   [it state typography file-id]

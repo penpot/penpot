@@ -589,7 +589,7 @@
 
 (mf/defc typography-advanced-options
   {::mf/wrap [mf/memo]}
-  [{:keys [visible?  typography editable? name-input-ref on-close on-change on-name-blur local? navigate-to-library]}]
+  [{:keys [visible?  typography editable? name-input-ref on-close on-change on-name-blur local? navigate-to-library on-key-down]}]
   (let [ref (mf/use-ref nil)]
     (mf/use-effect
      (mf/deps visible?)
@@ -616,6 +616,7 @@
              :type "text"
              :ref name-input-ref
              :default-value (:name typography)
+             :on-key-down on-key-down
              :on-blur on-name-blur}]
 
            [:div {:class (css :action-btn)
@@ -707,7 +708,18 @@
          (mf/deps file-id)
          (fn []
            (when file-id
-             (st/emit! (dw/navigate-to-library file-id)))))]
+             (st/emit! (dw/navigate-to-library file-id)))))
+
+        on-key-down
+        (mf/use-fn
+         (fn [event]
+           (let [enter?     (kbd/enter? event)
+                 esc?       (kbd/esc? event)
+                 input-node (dom/event->target event)]
+             (when ^boolean enter?
+               (dom/blur! input-node))
+             (when ^boolean esc?
+               (dom/blur! input-node)))))]
 
     (mf/with-effect [editing?]
       (when editing?
@@ -742,6 +754,7 @@
              :type "text"
              :ref name-input-ref
              :default-value (:name typography)
+             :on-key-down on-key-down
              :on-blur on-name-blur}]]
           [:div
            {:class (dom/classnames (css :typography-selection-wrapper) true
@@ -779,6 +792,7 @@
          :name-input-ref  name-input-ref
          :on-change  on-change
          :on-name-blur on-name-blur
+         :on-key-down on-key-down
          :local?  local?
          :navigate-to-library navigate-to-library}]]
 

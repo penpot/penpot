@@ -17,7 +17,6 @@ $width-settings-bar-max: 500px;
   max-width: 500px;
   width: var(--width, $width-settings-bar);
   height: 100%;
-  border-radius: $br-8;
   background-color: var(--color-background-primary);
 
   .resize-area {

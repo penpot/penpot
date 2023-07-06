@@ -261,6 +261,7 @@
 
 (def add-refactor (icon-xref :add-refactor))
 (def arrow-refactor (icon-xref :arrow-refactor))
+(def asc-sort-refactor (icon-xref :asc-sort-refactor))
 (def absolute-refactor (icon-xref :absolute-refactor))
 (def align-bottom-refactor (icon-xref :align-bottom-refactor))
 (def align-content-center-refactor (icon-xref :align-content-center-refactor))
@@ -297,6 +298,7 @@
 (def distribute-vertical-sapcing-refactor (icon-xref :distribute-vertical-spacing-refactor))
 (def delete-refactor (icon-xref :delete-refactor))
 (def delete-text-refactor (icon-xref :delete-text-refactor))
+(def desc-sort-refactor (icon-xref :desc-sort-refactor))
 (def detach-refactor (icon-xref :detach-refactor))
 (def document-refactor (icon-xref :document-refactor))
 (def drop-refactor (icon-xref :drop-refactor))

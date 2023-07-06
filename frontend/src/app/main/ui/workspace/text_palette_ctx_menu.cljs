@@ -7,12 +7,12 @@
 (ns app.main.ui.workspace.text-palette-ctx-menu
   (:require-macros [app.main.style :refer [css]])
   (:require
+   [app.common.data.macros :as dm]
    [app.main.refs :as refs]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 
@@ -29,11 +29,14 @@
            {:class (dom/classnames (css :palette-library) true
                                    (css :selected) (= selected (:id cur-library)))
             :key (str "library-" idx)
-            :on-click #(on-select-palette cur-library)} 
+            :on-click #(on-select-palette cur-library)}
            [:div
             {:class (dom/classnames (css :library-name) true)}
-            (str (:name cur-library) " " (str/format "(%s)" (count typographies)))]
-           
+            [:span {:class (css :lib-name)}
+             (dm/str (:name cur-library))]
+            [:span {:class (css :lib-num)}
+             (dm/str "(" (count typographies) ")")]]
+
            (when (= selected (:id cur-library))
              [:span {:class (dom/classnames (css :icon-wrapper) true)}
               i/tick-refactor])]))
@@ -42,11 +45,12 @@
        {:class (dom/classnames (css :file-library) true
                                (css :selected) (= selected :file))
         :on-click #(on-select-palette :file)}
-       
+
        [:div {:class (dom/classnames (css :library-name) true)}
-        (str (tr "workspace.libraries.colors.file-library")
-             (str/format " (%s)" (count file-typographies)))]
+        [:span {:class (css :lib-name)}
+         (tr "workspace.libraries.colors.file-library")]
+        [:span {:class (css :lib-num)}
+         (dm/str "(" (count file-typographies) ")")]]
        (when (= selected :file)
          [:span {:class (dom/classnames (css :icon-wrapper) true)}
-          i/tick-refactor])
-       ]]]))
+          i/tick-refactor])]]]))

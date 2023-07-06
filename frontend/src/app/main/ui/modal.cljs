@@ -5,9 +5,12 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.modal
+  (:require-macros [app.main.style :refer [css]])
   (:require
    [app.main.data.modal :as dm]
+   [app.main.features :as features]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.keyboard :as k]
    [goog.events :as events]
@@ -45,9 +48,10 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  (let [data        (unchecked-get props "data")
-        wrapper-ref (mf/use-ref nil)
-        components  (mf/deref dm/components)
+  (let [data           (unchecked-get props "data")
+        wrapper-ref    (mf/use-ref nil)
+        components     (mf/deref dm/components)
+        new-css-system (mf/use-ctx ctx/new-css-system)
 
         allow-click-outside (:allow-click-outside data)
 
@@ -73,7 +77,9 @@
             (events/unlistenByKey key)))))
 
     (when-let [component (get components (:type data))]
-      [:div.modal-wrapper {:ref wrapper-ref}
+      [:div {:ref wrapper-ref
+             :class (dom/classnames (css :modal-wrapper) new-css-system
+                                    :modal-wrapper (not new-css-system))}
        (mf/element component (:props data))])))
 
 
@@ -82,7 +88,9 @@
 
 (mf/defc modal
   []
-  (let [modal (mf/deref modal-ref)]
+  (let [modal (mf/deref modal-ref)
+        new-css-system (features/use-feature :new-css-system)]
     (when modal
-      [:& modal-wrapper {:data modal
-                         :key (:id modal)}])))
+      [:& (mf/provider ctx/new-css-system) {:value new-css-system}
+       [:& modal-wrapper {:data modal
+                          :key (:id modal)}]])))

@@ -163,3 +163,27 @@
     color: var(--assets-item-name-foreground-color-hover);
   }
 }
+
+.new-scrollbar {
+  ::-webkit-scrollbar {
+    background-color: transparent;
+    cursor: pointer;
+    height: $s-12;
+    width: $s-12;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background-color: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(170, 181, 186, 0.3);
+    background-clip: content-box;
+    border: $s-2 solid transparent;
+    border-radius: $br-8;
+    &:hover {
+      background-color: rgba(170, 181, 186, 0.7);
+      outline: none;
+    }
+  }
+}

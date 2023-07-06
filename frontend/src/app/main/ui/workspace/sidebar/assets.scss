@@ -107,13 +107,25 @@
     overflow: auto;
     display: flex;
     flex-direction: column;
-    height: calc(100% - $s-72);
+    height: calc(100% - $s-80);
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-gutter: stable;
     overflow-y: overlay;
   }
   .assets-header {
-    padding: $s-8 $s-12 $s-4 $s-12;
+    padding: $s-8 $s-12 $s-12 $s-12;
+    .search-wrapper {
+      display: flex;
+      gap: $s-4;
+      .sort-button {
+        @extend .button-secondary;
+        width: $s-32;
+        border-radius: $br-8;
+        svg {
+          @extend .button-icon-small;
+        }
+      }
+    }
   }
 }

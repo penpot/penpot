@@ -33,6 +33,25 @@
     .library-name {
       @include titleTipography;
       color: var(--context-menu-foreground-color);
+      display: grid;
+      grid-template-columns: 1fr $s-24;
+      max-width: $s-400;
+      .lib-name {
+        @include textEllipsis;
+        max-width: $s-380;
+      }
+      .lib-num {
+        background-color: green;
+        margin-left: $s-4;
+      }
+    }
+    .icon-wrapper {
+      margin-left: $s-4;
+      @include flexCenter;
+      svg {
+        @include flexCenter;
+        @extend .button-icon-small;
+      }
     }
     &.selected,
     &:hover {
@@ -41,6 +60,7 @@
         svg {
           @include flexCenter;
           @extend .button-icon-small;
+          stroke: var(--context-menu-foreground-color-selected);
         }
       }
       .library-name {
