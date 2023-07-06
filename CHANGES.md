@@ -41,9 +41,14 @@
 - Fix select all checkbox on shared link config [Taiga #5566](https://tree.taiga.io/project/penpot/issue/5566)
 - Fix validation on full name input on account creation [Taiga #5516](https://tree.taiga.io/project/penpot/issue/5516)
 - Fix validation on team name input [Taiga #5510](https://tree.taiga.io/project/penpot/issue/5510)
+- Fix incorrect uri generation issues on share-link modal [Taiga #5564](https://tree.taiga.io/project/penpot/issue/5564)
+- Fix cache issues with share-links [Taiga #5559](https://tree.taiga.io/project/penpot/issue/5559)
 
 
 ### :arrow_up: Deps updates
+
+- Update google fonts catalog (at 2023/07/06) [Taiga #5592](https://tree.taiga.io/project/penpot/issue/5592)
+
 
 ### :heart: Community contributions by (Thank you!)
 

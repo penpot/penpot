@@ -155,6 +155,9 @@
 
 (defmethod ptk/handle-error ::exceptional-state
   [error]
+  (when-let [cause (::instance error)]
+    (js/console.log (.-stack cause)))
+
   (ts/schedule
    #(st/emit! (rt/assign-exception error))))
 

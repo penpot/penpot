@@ -7,11 +7,12 @@
 (ns app.main.ui.viewer.share-link
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.config :as cf]
    [app.main.data.common :as dc]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -25,52 +26,72 @@
 
 (log/set-level! :warn)
 
-(defn prepare-params
+(defn- prepare-params
   [{:keys [pages who-comment who-inspect]}]
-
   {:pages pages
    :who-comment who-comment
    :who-inspect who-inspect})
 
 (mf/defc share-link-dialog
   {::mf/register modal/components
-   ::mf/register-as :share-link}
+   ::mf/register-as :share-link
+   ::mf/wrap-props false}
   [{:keys [file page]}]
-  (let [current-page page
+  (let [current-page    page
+        current-page-id (:id page)
         slinks          (mf/deref refs/share-links)
         router          (mf/deref refs/router)
         route           (mf/deref refs/route)
         zoom-type       (mf/deref refs/viewer-zoom-type)
+        page-ids        (dm/get-in file [:data :pages])
 
-        link            (mf/use-state nil)
-        confirm         (mf/use-state false)
-        open-ops        (mf/use-state false)
+        perms-visible*  (mf/use-state false)
+        perms-visible?  (deref perms-visible*)
 
-        opts*           (mf/use-state
+        confirm*        (mf/use-state false)
+        confirm?        (deref confirm*)
+
+        options*        (mf/use-state
                          {:pages-mode "current"
                           :all-pages false
                           :pages #{(:id page)}
                           :who-comment "team"
                           :who-inspect "team"})
+        options         (deref options*)
 
-        opts            (deref opts*)
+        current-link
+        (mf/with-memo [slinks options page-ids]
+          (let [{:keys [pages who-comment who-inspect] :as params} (prepare-params options)
+                slink  (d/seek #(and (= (:who-inspect %) who-inspect)
+                                     (= (:who-comment %) who-comment)
+                                     (= (:pages %) pages))
+                               slinks)]
+            (when slink
+              (let [pparams (:path-params route)
+                    page-id (d/seek #(contains? (:pages slink) %) page-ids)
+                    qparams (-> (:query-params route)
+                                (assoc :share-id (:id slink))
+                                (assoc :page-id page-id)
+                                (assoc :index "0"))
+                    qparams (if (nil? zoom-type)
+                              (dissoc qparams :zoom)
+                              (assoc qparams :zoom zoom-type))
 
-        selected-pages  (:pages opts)
-        file-pages      (->> (get-in file [:data :pages])
-                             (map #(get-in file [:data :pages-index %])))
+                    href    (rt/resolve router :viewer pparams qparams)]
+                (dm/str (assoc cf/public-uri :fragment href))))))
 
-        close
+        on-close
         (fn [event]
           (dom/prevent-default event)
           (st/emit! (modal/hide))
           (modal/disallow-click-outside!))
 
-        toggle-all
-        (fn []
-          (reset! confirm false)
-          (swap! opts*
+        on-toggle-all
+        (fn [_event]
+          (reset! confirm* false)
+          (swap! options*
                  (fn [state]
-                   (if (= true (:all-pages state))
+                   (if (true? (:all-pages state))
                      (-> state
                          (assoc :all-pages false)
                          (assoc :pages #{(:id page)}))
@@ -78,30 +99,29 @@
                          (assoc :all-pages true)
                          (assoc :pages (into #{} (get-in file [:data :pages]))))))))
 
-        mark-checked-page
-        (mf/use-fn
-         (mf/deps selected-pages)
-         (fn [event id]
-          (let [target        (dom/get-target event)
-                not-checked?  (.-checked ^js target)
-                dif-pages?    (not= id (first selected-pages))
-                no-one-page   (< 1 (count selected-pages))
-                should-change (or no-one-page dif-pages?)]
-            (when should-change
-              (reset! confirm false)
-              (swap! opts*
-                     (fn [state]
-                       (let [actual-pages (:pages state)
-                             updated-pages (if not-checked?
-                                             (conj actual-pages id)
-                                             (disj actual-pages id))]
+        on-mark-checked-page
+        (fn [event]
+          (let [target         (dom/get-target event)
+                checked?       (dom/checked? target)
+                page-id        (parse-uuid (dom/get-data target "page-id"))
+                dif-pages?     (not= page-id (first (:pages options)))
+                no-one-page    (< 1 (count (:pages options)))
+                should-change? (or ^boolean no-one-page
+                                   ^boolean dif-pages?)]
+            (when ^boolean should-change?
+              (reset! confirm* false)
+              (swap! options*
+                     (fn [{:keys [pages] :as state}]
+                       (let [pages (if checked?
+                                     (conj pages page-id)
+                                     (disj pages page-id))]
                          (-> state
-                             (assoc :pages updated-pages)
-                             (assoc :all-pages (= (count updated-pages) (count file-pages)))))))))))
+                             (assoc :pages pages)
+                             (assoc :all-pages (= (count pages) (count page-ids))))))))))
 
         create-link
         (fn [_]
-          (let [params (prepare-params opts)
+          (let [params (prepare-params options)
                 params (assoc params :file-id (:id file))]
             (st/emit! (dc/create-share-link params)
                       (ptk/event ::ev/event {::ev/name "create-shared-link"
@@ -111,53 +131,35 @@
 
         copy-link
         (fn [_]
-          (wapi/write-to-clipboard @link)
-          (st/emit! (dm/show {:type :info
-                              :content (tr "common.share-link.link-copied-success")
-                              :timeout 1000})))
+          (wapi/write-to-clipboard current-link)
+          (st/emit! (msg/show {:type :info
+                               :content (tr "common.share-link.link-copied-success")
+                               :timeout 1000})))
 
         try-delete-link
         (fn [_]
-          (reset! confirm true))
+          (reset! confirm* true))
 
         delete-link
         (fn [_]
-          (let [params (prepare-params opts)
+          (let [params (prepare-params options)
                 slink  (d/seek #(= (:flags %) (:flags params)) slinks)]
-            (reset! confirm false)
+            (reset! confirm* false)
             (st/emit! (dc/delete-share-link slink))))
 
-        manage-open-ops
+        toggle-perms-visibility
         (fn [_]
-          (swap! open-ops not))
+          (swap! perms-visible* not))
 
         on-who-change
         (fn [type event]
           (let [target  (dom/get-target event)
                 value   (dom/get-value target)
                 value   (keyword value)]
-            (reset! confirm false)
+            (reset! confirm* false)
             (if (= type :comment)
-              (swap! opts* assoc :who-comment (d/name value))
-              (swap! opts* assoc :who-inspect (d/name value)))))]
-
-    (mf/use-effect
-     (mf/deps file slinks opts)
-     (fn []
-       (let [{:keys [pages who-comment who-inspect] :as params} (prepare-params opts)
-             slink  (d/seek #(and (= (:who-inspect %) who-inspect) (= (:who-comment %) who-comment) (= (:pages %) pages)) slinks)
-             href   (when slink
-                      (let [pparams (:path-params route)
-                            qparams (-> (:query-params route)
-                                        (assoc  :share-id (:id slink))
-                                        (assoc  :index "0"))
-                            qparams (if (nil? zoom-type)
-                                      (dissoc qparams :zoom)
-                                      (assoc qparams :zoom zoom-type))
-
-                            href    (rt/resolve router :viewer pparams qparams)]
-                        (assoc cf/public-uri :fragment href)))]
-         (reset! link (some-> href str)))))
+              (swap! options* assoc :who-comment (d/name value))
+              (swap! options* assoc :who-inspect (d/name value)))))]
 
     [:div.modal-overlay.transparent.share-modal
      [:div.modal-container.share-link-dialog
@@ -165,37 +167,38 @@
        [:div.title
         [:h2 (tr "common.share-link.title")]
         [:div.modal-close-button
-         {:on-click close
+         {:on-click on-close
           :title (tr "labels.close")}
          i/close]]]
       [:div.modal-content
        [:div.share-link-section
-        (when (and (not @confirm) (some? @link))
+        (when (and (not confirm?) (some? current-link))
           [:div.custom-input.with-icon
            [:input {:type "text"
-                    :value (or @link "")
+                    :value (or current-link "")
                     :placeholder (tr "common.share-link.placeholder")
                     :read-only true}]
            [:div.help-icon {:title (tr "viewer.header.share.copy-link")
                             :on-click copy-link}
             i/copy]])
         [:div.hint-wrapper
-         (when (not @confirm) [:div.hint (tr "common.share-link.permissions-hint")])
+         (when (not ^boolean confirm?)
+           [:div.hint (tr "common.share-link.permissions-hint")])
          (cond
-           (true? @confirm)
+           (true? confirm?)
            [:div.confirm-dialog
             [:div.description (tr "common.share-link.confirm-deletion-link-description")]
             [:div.actions
              [:input.btn-secondary
               {:type "button"
-               :on-click #(reset! confirm false)
+               :on-click #(reset! confirm* false)
                :value (tr "labels.cancel")}]
              [:input.btn-warning
               {:type "button"
                :on-click delete-link
                :value (tr "common.share-link.destroy-link")}]]]
 
-           (some? @link)
+           (some? current-link)
            [:input.btn-secondary
             {:type "button"
              :class "primary"
@@ -210,16 +213,15 @@
              :value (tr "common.share-link.get-link")}])]]]
       [:div.modal-content.ops-section
        [:div.manage-permissions
-        {:on-click manage-open-ops}
+        {:on-click toggle-perms-visibility}
         [:span.icon i/picker-hsv]
         [:div.title (tr "common.share-link.manage-ops")]]
-       (when @open-ops
+       (when ^boolean perms-visible?
          [:*
-          (let [all-selected? (:all-pages opts)
-                pages   (->> (get-in file [:data :pages])
-                             (map #(get-in file [:data :pages-index %])))
-                selected selected-pages]
-
+          (let [all-selected? (:all-pages options)
+                pages         (->> (get-in file [:data :pages])
+                                   (map #(get-in file [:data :pages-index %])))
+                selected      (:pages options)]
             [:*
              [:div.view-mode
               [:div.subtitle
@@ -229,10 +231,11 @@
                (if (= 1 (count pages))
                  [:div.input-checkbox.check-primary
                   [:input {:type "checkbox"
-                           :id (str "page-" (:id current-page))
-                           :on-change #(mark-checked-page % (:id current-page))
+                           :id (dm/str "page-" current-page-id)
+                           :data-page-id (dm/str current-page-id)
+                           :on-change on-mark-checked-page
                            :checked true}]
-                  [:label {:for (str "page-" (:id current-page))} (:name current-page)]
+                  [:label {:for (str "page-" current-page-id)} (:name current-page)]
                   [:span  (str  " " (tr "common.share-link.current-tag"))]]
 
                  [:*
@@ -242,29 +245,30 @@
                              :id "view-all"
                              :checked all-selected?
                              :name "pages-mode"
-                             :on-change toggle-all}]
+                             :on-change on-toggle-all}]
                     [:label {:for "view-all"} (tr "common.share-link.view-all")]]
                    [:span.count-pages (tr "common.share-link.page-shared" (i18n/c (count selected)))]]
 
                   [:ul.pages-selection
-                   (for [page pages]
-                     [:li.input-checkbox.check-primary {:key (str (:id page))}
+                   (for [{:keys [id name]} pages]
+                     [:li.input-checkbox.check-primary {:key (dm/str id)}
                       [:input {:type "checkbox"
-                               :id (str "page-" (:id page))
-                               :on-change #(mark-checked-page % (:id page))
-                               :checked (contains? selected (:id page))}]
-                      (if (= (:id current-page) (:id page))
+                               :id (dm/str "page-" id)
+                               :data-page-id (dm/str id)
+                               :on-change on-mark-checked-page
+                               :checked (contains? selected id)}]
+                      (if (= current-page-id id)
                         [:*
-                         [:label {:for (str "page-" (:id page))} (:name page)]
-                         [:span.current-tag  (str  " " (tr "common.share-link.current-tag"))]]
-                        [:label {:for (str "page-" (:id page))} (:name page)])])]])]]])
+                         [:label {:for (dm/str "page-" id)} name]
+                         [:span.current-tag  (dm/str  " " (tr "common.share-link.current-tag"))]]
+                        [:label {:for (dm/str "page-" id)} name])])]])]]])
           [:div.access-mode
            [:div.subtitle
             [:span.icon i/chat]
             (tr "common.share-link.permissions-can-comment")]
            [:div.items
             [:select.input-select {:on-change (partial on-who-change :comment)
-                                   :value (:who-comment opts)}
+                                   :value (:who-comment options)}
              [:option {:value "team"}  (tr "common.share-link.team-members")]
              [:option {:value "all"}  (tr "common.share-link.all-users")]]]]
           [:div.inspect-mode
@@ -273,7 +277,7 @@
             (tr "common.share-link.permissions-can-inspect")]
            [:div.items
             [:select.input-select {:on-change (partial on-who-change :inspect)
-                                   :value (:who-inspect opts)}
+                                   :value (:who-inspect options)}
              [:option {:value "team"}  (tr "common.share-link.team-members")]
              [:option {:value "all"}  (tr "common.share-link.all-users")]]]]])]]]))
 

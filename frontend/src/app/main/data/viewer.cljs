@@ -98,9 +98,13 @@
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]])
 
+(def ^:private valid-fetch-bundle-params?
+  (sm/pred-fn schema:fetch-bundle))
+
 (defn- fetch-bundle
   [{:keys [file-id share-id] :as params}]
-  (dm/assert! (sm/valid? schema:fetch-bundle params))
+  (dm/assert! (valid-fetch-bundle-params? params))
+
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
     (watch [_ state _]
