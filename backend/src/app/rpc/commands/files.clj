@@ -189,6 +189,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn check-features-compatibility!
+  "Function responsible to check if provided features are supported by
+  the current backend"
   [features]
   (let [not-supported (set/difference features supported-features)]
     (when (seq not-supported)
@@ -248,46 +250,58 @@
        (into #{} (comp (filter pmap/pointer-map?)
                        (map pmap/get-id)))))
 
+;; FIXME: file locking
+(defn- process-components-v2-feature
+  "A special case handling of the components/v2 feature."
+  [conn {:keys [id features data] :as file}]
+  (binding [pmap/*tracked* (atom {})]
+    (let [data        (ctf/migrate-to-components-v2 data)
+          features    (conj features "components/v2")
+          features'   (db/create-array conn "text" features)]
+      (db/update! conn :file
+                  {:data (blob/encode data)
+                   :features features'}
+                  {:id id})
+      (persist-pointers! conn id)
+      (-> file
+          (assoc :features features)
+          (assoc :data data)))))
+
+(defn handle-file-features!
+  [conn {:keys [features] :as file} client-features]
+
+  ;; Check features compatibility between the currently supported features on
+  ;; the current backend instance and the file retrieved from the database
+  (check-features-compatibility! features)
+
+  (cond-> file
+    (and (contains? features "components/v2")
+         (not (contains? client-features "components/v2")))
+    (as-> file (ex/raise :type :restriction
+                         :code :feature-mismatch
+                         :feature "components/v2"
+                         :hint "file has 'components/v2' feature enabled but frontend didn't specifies it"
+                         :file-id (:id file)))
+
+    ;; This operation is needed because the components migration generates a new
+    ;; page with random id which is returned to the client; without persisting
+    ;; the migration this can cause that two simultaneous clients can have a
+    ;; different view of the file data and end persisting two pages with main
+    ;; components and breaking the whole file."
+    (and (contains? client-features "components/v2")
+         (not (contains? features "components/v2")))
+    (as-> file (process-components-v2-feature conn file))
+
+    ;; This operation is needed for backward comapatibility with frontends that
+    ;; does not support pointer-map resolution mechanism; this just resolves the
+    ;; pointers on backend and return a complete file.
+    (and (contains? features "storage/pointer-map")
+         (not (contains? client-features "storage/pointer-map")))
+    (process-pointers deref)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUERY COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn handle-file-features!
-  [conn {:keys [id features data] :as file} client-features]
-
-  (when (and (contains? features "components/v2")
-             (not (contains? client-features "components/v2")))
-    (ex/raise :type :restriction
-              :code :feature-mismatch
-              :feature "components/v2"
-              :hint "file has 'components/v2' feature enabled but frontend didn't specifies it"))
-
-  ;; NOTE: this operation is needed because the components migration
-  ;; generates a new page with random id which is returned to the
-  ;; client; without persisting the migration this can cause that two
-  ;; simultaneous clients can have a different view of the file data
-  ;; and end persisting two pages with main components and breaking
-  ;; the whole file
-  (let [file (if (and (contains? client-features "components/v2")
-                      (not (contains? features "components/v2")))
-               (binding [pmap/*tracked* (atom {})]
-                 (let [data        (ctf/migrate-to-components-v2 data)
-                       features    (conj features "components/v2")
-                       features'   (db/create-array conn "text" features)]
-                   (db/update! conn :file
-                               {:data (blob/encode data)
-                                :features features'}
-                               {:id id})
-                   (persist-pointers! conn id)
-                   (-> file
-                       (assoc :features features)
-                       (assoc :data data))))
-               file)]
-
-    (cond-> file
-      (and (contains? features "storage/pointer-map")
-           (not (contains? client-features "storage/pointer-map")))
-      (process-pointers deref))))
 
 ;; --- COMMAND QUERY: get-file (by id)
 
@@ -331,7 +345,7 @@
   ([conn id client-features]
    (get-file conn id client-features nil))
   ([conn id client-features project-id]
-  ;; here we check if client requested features are supported
+   ;; here we check if client requested features are supported
    (check-features-compatibility! client-features)
    (binding [pmap/*load-fn* (partial load-pointer conn id)]
      (let [params (merge {:id id}
