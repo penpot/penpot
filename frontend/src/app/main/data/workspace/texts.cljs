@@ -148,9 +148,11 @@
                   (dch/update-shapes
                    [id]
                    (fn [shape]
-                     (let [{:keys [width height]} modifiers]
+                     (let [{:keys [width height position-data]} modifiers]
                        (-> shape
                            (assoc :content content)
+                           (cond-> position-data
+                             (assoc :position-data position-data))
                            (cond-> new-shape?
                              (assoc :name text))
                            (cond-> (or (some? width) (some? height))
