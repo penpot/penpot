@@ -110,7 +110,8 @@
 
     :close-overlay
     (let [dest-frame-id (or (:destination interaction)
-                            (if (= (:type shape) :frame)
+                            (if (and (= (:type shape) :frame)
+                                     (some #(= (:id %) (:id shape)) overlays))
                               (:id shape)
                               (:frame-id shape)))]
       (st/emit! (dv/close-overlay dest-frame-id (:animation interaction))))

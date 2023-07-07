@@ -64,6 +64,7 @@
 - Fix border radius values with decimals [Taiga #5283](https://tree.taiga.io/project/penpot/issue/5283)
 - Fix shortcuts translations not homogenized [Taiga #5141](https://tree.taiga.io/project/penpot/issue/5141)
 - Fix overlay manual position in nested boards [Taiga #5135](https://tree.taiga.io/project/penpot/issue/5135)
+- Fix close overlay from a nested board [Taiga #5587](https://tree.taiga.io/project/penpot/issue/5587)
 
 ### :arrow_up: Deps updates
 
