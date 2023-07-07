@@ -29,12 +29,12 @@
   []
   (let [{cmode :mode cshow :show} (mf/deref refs/comments-local)
         update-mode
-        (mf/use-callback
+        (mf/use-fn
          (fn [mode]
            (st/emit! (dcm/update-filters {:mode mode}))))
 
         update-show
-        (mf/use-callback
+        (mf/use-fn
          (fn [mode]
            (st/emit! (dcm/update-filters {:show mode}))))]
 
@@ -76,7 +76,7 @@
         page-id     (or page-id (mf/use-ctx ctx/current-page-id))
 
         on-thread-click
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps page-id)
          (fn [thread]
            (when (not= page-id (:page-id thread))
