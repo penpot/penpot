@@ -6,6 +6,7 @@
 
 (ns app.main.ui.comments
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.config :as cfg]
@@ -19,24 +20,26 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
    [app.util.time :as dt]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (mf/defc resizing-textarea
-  {::mf/wrap-props false}
-  [props]
-  (let [value       (obj/get props "value" "")
-        on-focus    (obj/get props "on-focus")
-        on-blur     (obj/get props "on-blur")
-        placeholder (obj/get props "placeholder")
-        on-change   (obj/get props "on-change")
-        on-esc      (obj/get props "on-esc")
-        autofocus?  (obj/get props "autofocus")
+  {::mf/wrap-props false
+   ::mf/forward-ref true}
+  [props ref]
+  (let [value            (d/nilv (unchecked-get props "value") "")
+        on-focus         (unchecked-get props "on-focus")
+        on-blur          (unchecked-get props "on-blur")
+        placeholder      (unchecked-get props "placeholder")
+        on-change        (unchecked-get props "on-change")
+        on-esc           (unchecked-get props "on-esc")
+        autofocus?       (unchecked-get props "autofocus")
+        select-on-focus? (unchecked-get props "select-on-focus")
 
-        ref         (mf/use-ref)
+        local-ref   (mf/use-ref)
+        ref         (or ref local-ref)
 
         on-key-down
         (mf/use-fn
@@ -50,7 +53,22 @@
          (mf/deps on-change)
          (fn [event]
            (let [content (dom/get-target-val event)]
-             (on-change content))))]
+             (on-change content))))
+
+        on-focus*
+        (mf/use-fn
+         (mf/deps select-on-focus? on-focus)
+         (fn [event]
+           (when (fn? on-focus)
+             (on-focus event))
+
+           (when ^boolean select-on-focus?
+             (let [target (dom/get-target event)]
+               (dom/select-text! target)
+               ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
+               (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
+        ]
+
 
 
     (mf/use-layout-effect
@@ -64,7 +82,7 @@
      {:ref ref
       :auto-focus autofocus?
       :on-key-down on-key-down
-      :on-focus on-focus
+      :on-focus on-focus*
       :on-blur on-blur
       :value value
       :placeholder placeholder
@@ -185,10 +203,14 @@
         on-submit*
         (mf/use-fn
          (mf/deps @content)
-         (fn [] (on-submit @content)))]
+         (fn [] (on-submit @content)))
+        ]
+
 
     [:div.reply-form.edit-form
      [:& resizing-textarea {:value @content
+                            :autofocus true
+                            :select-on-focus true
                             :on-change on-change}]
      [:div.buttons
       [:input.btn-primary {:type "button" :value "Post" :on-click on-submit*}]
@@ -268,6 +290,7 @@
           (if (:is-resolved thread)
             [:span i/checkbox-checked]
             [:span i/checkbox-unchecked])])
+
        (when (= (:id profile) (:id owner))
          [:div.options
           [:div.options-icon {:on-click on-show-options} i/actions]])]

@@ -54,6 +54,7 @@
 - Fix problem with HSV color picker [#3317](https://github.com/penpot/penpot/issues/3317)
 - Fix problem with slashes in layers names for exporter [#3276](https://github.com/penpot/penpot/issues/3276)
 - Fix incorrect modified data on moving files on dashboard [Taiga #5530](https://tree.taiga.io/project/penpot/issue/5530)
+- Fix focus handling on comments edition [Taiga #5560](https://tree.taiga.io/project/penpot/issue/5560)
 
 ### :arrow_up: Deps updates
 
