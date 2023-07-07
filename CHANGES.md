@@ -52,6 +52,7 @@
 - Fix picking a gradient color in recent colors for a new color in the assets tab [Taiga #5601](https://tree.taiga.io/project/penpot/issue/5601)
 - Fix problem with importation process [Taiga #5597](https://tree.taiga.io/project/penpot/issue/5597)
 - Fix problem with HSV color picker [#3317](https://github.com/penpot/penpot/issues/3317)
+- Fix problem with slashes in layers names for exporter [#3276](https://github.com/penpot/penpot/issues/3276)
 
 ### :arrow_up: Deps updates
 
