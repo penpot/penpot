@@ -929,5 +929,10 @@
                               ::input (:path file)
                               ::project-id project-id
                               ::ignore-index-errors? true))]
+
+      (db/update! conn :project
+                  {:modified-at (dt/now)}
+                  {:id project-id})
+
       (rph/with-meta ids
         {::audit/props {:file nil :file-ids ids}}))))

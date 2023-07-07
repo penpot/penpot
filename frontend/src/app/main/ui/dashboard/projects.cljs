@@ -255,6 +255,7 @@
          (fn []
            (st/emit! (dd/fetch-files {:project-id project-id})
                      (dd/fetch-recent-files (:id team))
+                     (dd/fetch-projects)
                      (dd/clear-selected-files))))]
 
     (mf/with-effect
