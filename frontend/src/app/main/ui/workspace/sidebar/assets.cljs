@@ -998,7 +998,7 @@
                                 :do-rename do-rename
                                 :cancel-rename cancel-rename
                                 :selected-full selected-full
-                                :selected-paths selected-paths}])])
+                                :selected-graphics-paths selected-paths}])])
         (for [[path-item content] groups]
           (when-not (empty? path-item)
             [:& graphics-group {:file-id file-id
@@ -1016,8 +1016,7 @@
                                 :on-rename-group on-rename-group
                                 :on-ungroup on-ungroup
                                 :on-context-menu on-context-menu
-                                :selected-full selected-full
-                                :selected-paths selected-paths}]))])]))
+                                :selected-full selected-full}]))])]))
 
 (mf/defc graphics-section
   {::mf/wrap-props false}
@@ -1200,7 +1199,7 @@
                           :open-groups open-groups
                           :renaming (:renaming @state)
                           :listing-thumbs? listing-thumbs?
-                          :selected selected
+                          :selected-objects selected
                           :on-asset-click on-asset-click
                           :on-drag-start on-drag-start
                           :do-rename do-rename
