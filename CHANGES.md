@@ -51,6 +51,7 @@
 - Fix cut/delete text layer when while creating text [Taiga #5602](https://tree.taiga.io/project/penpot/issue/5602)
 - Fix picking a gradient color in recent colors for a new color in the assets tab [Taiga #5601](https://tree.taiga.io/project/penpot/issue/5601)
 - Fix problem with importation process [Taiga #5597](https://tree.taiga.io/project/penpot/issue/5597)
+- Fix problem with HSV color picker [#3317](https://github.com/penpot/penpot/issues/3317)
 
 ### :arrow_up: Deps updates
 

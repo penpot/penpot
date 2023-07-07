@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.colorpicker.color-inputs
   (:require
+   [app.common.data :as d]
    [app.common.math :as mth]
    [app.util.color :as uc]
    [app.util.dom :as dom]
@@ -16,6 +17,14 @@
   (if (= (first val) \#)
     val
     (str \# val)))
+
+(defn value->hsv-value
+  [val]
+  (* 255 (/ val 100)))
+
+(defn hsv-value->value
+  [val]
+  (* (/ val 255) 100))
 
 (mf/defc color-inputs [{:keys [type color disable-opacity on-change]}]
   (let [{red :r green :g blue :b
@@ -56,8 +65,11 @@
         on-change-property
         (fn [property max-value]
           (fn [e]
-            (let [val (-> e dom/get-target-val (mth/clamp 0 max-value))
-                  val (if (#{:s} property) (/ val 100) val)]
+            (let [val (-> e dom/get-target-val d/parse-double (mth/clamp 0 max-value))
+                  val (case property
+                        :s (/ val 100)
+                        :v (value->hsv-value val)
+                        val)]
               (when (not (nil? val))
                 (if (#{:r :g :b} property)
                   (let [{:keys [r g b]} (merge color (hash-map property val))
@@ -89,10 +101,12 @@
                property-ref (get refs ref-key)]
            (when (and property-val property-ref)
              (when-let [node (mf/ref-val property-ref)]
-               (case ref-key
-                 (:s :alpha) (dom/set-value! node (* property-val 100))
-                 :hex (dom/set-value! node property-val)
-                 (dom/set-value! node property-val))))))))
+               (let [new-val
+                     (case ref-key
+                       (:s :alpha) (mth/precision (* property-val 100) 2)
+                       :v   (mth/precision (hsv-value->value property-val) 2)
+                       property-val)]
+                 (dom/set-value! node new-val))))))))
 
     [:div.color-values
      {:class (when disable-opacity "disable-opacity")}
@@ -149,9 +163,9 @@
                  :ref (:v refs)
                  :type "number"
                  :min 0
-                 :max 255
+                 :max 100
                  :default-value value
-                 :on-change (on-change-property :v 255)}]])
+                 :on-change (on-change-property :v 100)}]])
 
      (when (not disable-opacity)
        [:input.alpha-value {:id "alpha-value"
