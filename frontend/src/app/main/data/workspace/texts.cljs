@@ -142,7 +142,8 @@
               (rx/merge
                (rx/of (update-editor-state shape nil))
                (when (and (not= content (:content shape))
-                          (some? (:current-page-id state)))
+                          (some? (:current-page-id state))
+                          (some? shape))
                  (rx/of
                   (dch/update-shapes
                    [id]
