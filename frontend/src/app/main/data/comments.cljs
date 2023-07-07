@@ -282,7 +282,7 @@
            (fetched [[users comments] state]
              (let [state (-> state
                              (assoc :comment-threads (d/index-by :id comments))
-                             (assoc :current-file-comments-users (d/index-by :id users)))]
+                             (update :current-file-comments-users merge (d/index-by :id users)))]
                (reduce set-comment-threds state comments)))]
 
     (ptk/reify ::retrieve-comment-threads

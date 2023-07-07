@@ -25,28 +25,31 @@
     (mth/floor (/ frame-length-no-margins (+ item-length gutter)))))
 
 (defn- calculate-generic-grid
-  [v width {:keys [size gutter margin item-length type]}]
+  [v total-length {:keys [size gutter margin item-length type]}]
   (let [size   (if (number? size)
                  size
-                 (calculate-size width item-length margin gutter))
-        parts  (/ width size)
+                 (calculate-size total-length item-length margin gutter))
 
-        width' (min (or item-length ##Inf) (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
+        parts  (/ total-length size)
+
+        item-length (if (number? item-length)
+                      item-length
+                      (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
 
         offset (case type
-                 :right (- width (* width' size) (* gutter (dec size)) margin)
-                 :center (/ (- width (* width' size) (* gutter (dec size))) 2)
+                 :right (- total-length (* item-length size) (* gutter (dec size)) margin)
+                 :center (/ (- total-length (* item-length size) (* gutter (dec size))) 2)
                  margin)
 
         gutter (if (= :stretch type)
-                 (let [gutter (/ (- width (* width' size) (* margin 2)) (dec size))]
+                 (let [gutter (max 0 gutter (/ (- total-length (* item-length size) (* margin 2)) (dec size)))]
                    (if (d/num? gutter) gutter 0))
                  gutter)
 
         next-v (fn [cur-val]
-                 (+ offset v (* (+ width' gutter) cur-val)))]
+                 (+ offset v (* (+ item-length gutter) cur-val)))]
 
-    [size width' next-v gutter]))
+    [size item-length next-v gutter]))
 
 (defn- calculate-column-grid
   [{:keys [width height x y] :as frame} params]

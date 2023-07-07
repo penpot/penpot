@@ -43,7 +43,11 @@
 - Fix validation on team name input [Taiga #5510](https://tree.taiga.io/project/penpot/issue/5510)
 - Fix incorrect uri generation issues on share-link modal [Taiga #5564](https://tree.taiga.io/project/penpot/issue/5564)
 - Fix cache issues with share-links [Taiga #5559](https://tree.taiga.io/project/penpot/issue/5559)
-
+- Makes height priority for the rows/columns grids [#2774](https://github.com/penpot/penpot/issues/2774)
+- Fix problem with comments mode not staying [#3363](https://github.com/penpot/penpot/issues/3363)
+- Fix problem with comments when user left the team [Taiga #5562](https://tree.taiga.io/project/penpot/issue/5562)
+- Fix problem with images patterns repeating [#3372](https://github.com/penpot/penpot/issues/3372)
+- Fix grid not being clipped in frames [#3365](https://github.com/penpot/penpot/issues/3365)
 
 ### :arrow_up: Deps updates
 

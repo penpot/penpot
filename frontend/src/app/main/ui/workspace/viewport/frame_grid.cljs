@@ -7,7 +7,10 @@
 (ns app.main.ui.workspace.viewport.frame-grid
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
@@ -109,32 +112,70 @@
                           :strokeOpacity color-opacity
                           :fill "none"}}]]))]))
 
+(defn frame-clip-area
+  [{:keys [selrect]} parents]
+  (reduce
+   (fn [sr parent]
+     (cond-> sr
+       (and (not (cph/root? parent))
+            (cph/frame-shape? parent)
+            (not (:show-content parent)))
+       (gsh/clip-selrect (:selrect parent))))
+   selrect
+   parents))
+
 (mf/defc grid-display-frame
-  [{:keys [frame zoom]}]
-  (for [[index grid] (->> (:grids frame)
-                                                     (filter :display)
-                                                     (map-indexed vector))]
-    (let [props #js {:key (str (:id frame) "-grid-" index)
-                     :frame frame
-                     :zoom zoom
-                     :grid grid}]
-      (case (:type grid)
-        :square [:> square-grid props]
-        :column [:> layout-grid props]
-        :row    [:> layout-grid props]))))
+  {::mf/wrap [mf/memo]}
+  [{:keys [frame zoom transforming]}]
+  (let [frame-id (:id frame)
+        parents-ref (mf/with-memo [frame-id] (refs/shape-parents frame-id))
+        parents     (mf/deref parents-ref)
+        clip-area (frame-clip-area frame parents)
+        clip-id (dm/str (:id frame) "-grid-clip")
+
+        transform?
+        (or (contains? transforming frame-id)
+            (some #(contains? transforming %) (map :id parents)))]
+
+    (when-not transform?
+      [:g {:clip-path (dm/fmt "url(#%)" clip-id)}
+       [:defs
+        [:clipPath {:id clip-id}
+         [:rect {:x (:x clip-area)
+                 :y (:y clip-area)
+                 :width (:width clip-area)
+                 :height (:height clip-area)}]]]
+
+       (for [[index grid] (->> (:grids frame)
+                               (filter :display)
+                               (map-indexed vector))]
+         (let [props #js {:key (str (:id frame) "-grid-" index)
+                          :frame frame
+                          :zoom zoom
+                          :grid grid}]
+           (case (:type grid)
+             :square [:> square-grid props]
+             :column [:> layout-grid props]
+             :row    [:> layout-grid props])))])))
+
+(defn has-grid?
+  [{:keys [grids]}]
+  (and (some? grids)
+       (d/not-empty? (->> grids (filter :display)))))
 
 (mf/defc frame-grid
   {::mf/wrap [mf/memo]}
   [{:keys [zoom transform selected focus]}]
-  (let [frames        (mf/deref refs/workspace-frames)
-        transforming  (when (some? transform) selected)
-        is-transform? #(contains? transforming (:id %))]
+  (let [frames        (->> (mf/deref refs/workspace-frames)
+                           (filter has-grid?))
+        transforming  (when (some? transform) selected)]
 
     [:g.grid-display {:style {:pointer-events "none"}}
      (for [frame frames]
-       (when (and (not (is-transform? frame))
+       (when (and #_(not (is-transform? frame))
                   (not (ctst/rotated-frame? frame))
                   (or (empty? focus) (contains? focus (:id frame))))
          [:& grid-display-frame {:key (str "grid-" (:id frame))
                                  :zoom zoom
-                                 :frame frame}]))]))
+                                 :frame frame
+                                 :transforming transforming}]))]))
