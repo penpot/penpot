@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.inspect.render
   "The main container for a frame in inspect mode"
   (:require
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.main.data.viewer :as dv]
@@ -186,7 +187,7 @@
 (mf/defc render-frame-svg
   [{:keys [page frame local size]}]
   (let [objects (mf/with-memo [page frame size]
-                  (prepare-objects frame size (:objects page)))
+                  (prepare-objects frame size (gpt/point 0 0) (:objects page)))
 
         ;; Retrieve frame again with correct modifier
         frame   (get objects (:id frame))

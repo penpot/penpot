@@ -28,9 +28,10 @@
    [rumext.v2 :as mf]))
 
 (defn prepare-objects
-  [frame size objects]
+  [frame size delta objects]
   (let [frame-id  (:id frame)
         vector  (-> (gpt/point (:x size) (:y size))
+                    (gpt/add delta)
                     (gpt/negate))
         update-fn #(d/update-when %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
     (->> (cph/get-children-ids objects frame-id)
@@ -46,6 +47,7 @@
         base    (unchecked-get props "base")
         offset  (unchecked-get props "offset")
         size    (unchecked-get props "size")
+        delta   (or (unchecked-get props "delta") (gpt/point 0 0))
 
         vbox    (:vbox size)
 
@@ -67,7 +69,7 @@
                                          (map (d/getf (:objects page)))
                                          (concat [frame])
                                          (d/index-by :id)
-                                         (prepare-objects frame size)))
+                                         (prepare-objects frame size delta)))
 
         wrapper-fixed (mf/with-memo [page frame size]
                         (shapes/frame-container-factory (calculate-objects fixed-ids)))
@@ -121,6 +123,7 @@
         mode   (h/use-equal-memo (unchecked-get props "interactions-mode"))
         offset (h/use-equal-memo (unchecked-get props "frame-offset"))
         size   (h/use-equal-memo (unchecked-get props "size"))
+        delta  (unchecked-get props "delta")
 
         page   (unchecked-get props "page")
         frame  (unchecked-get props "frame")
@@ -163,7 +166,8 @@
                       :frame frame
                       :base base
                       :offset offset
-                      :size size}]))
+                      :size size
+                      :delta delta}]))
 
 (mf/defc flows-menu
   {::mf/wrap [mf/memo]}

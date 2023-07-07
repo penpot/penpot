@@ -50,6 +50,8 @@
   (l/derived :viewer-overlays st/state))
 
 (defn- calculate-size
+  "Calculate the total size we must reserve for the frame, including possible paddings
+   added because shadows or blur."
   [objects frame zoom]
   (let [{:keys [x y width height]} (gsb/get-object-bounds objects frame)]
     {:base-width  width
@@ -59,6 +61,23 @@
      :width       (* width zoom)
      :height      (* height zoom)
      :vbox        (dm/fmt "% % % %" 0 0 width height)}))
+
+(defn calculate-delta
+  "Calculate the displacement we need to apply so that the original selrect appears in the
+   same position as if it had no extra paddings, depending on the side the frame will
+   be snapped to."
+  [size selrect [snap-v snap-h] zoom]
+  (let [delta-x (case snap-h
+                  :left   (- (:x1 selrect) (:x size))
+                  :right  (- (:x2 selrect) (+ (:x size) (/ (:width size) zoom)))
+                  :center (- (/ (- (:width selrect) (/ (:width size) zoom)) 2)
+                             (- (:x size) (:x1 selrect))))
+        delta-y (case snap-v
+                  :top    (- (:y1 selrect) (:y size))
+                  :bottom (- (:y2 selrect) (+ (:y size) (/ (:height size) zoom)))
+                  :center (- (/ (- (:height selrect) (/ (:height size) zoom)) 2)
+                             (- (:y size) (:y1 selrect))))]
+    (gpt/point (* delta-x zoom) (* delta-y zoom))))
 
 (defn- calculate-wrapper
   [size1 size2 zoom]
@@ -113,6 +132,10 @@
         (mf/with-memo [page overlay zoom]
           (calculate-size (:objects page) (:frame overlay) zoom))
 
+        delta
+        (mf/with-memo [size overlay-frame overlay zoom]
+          (calculate-delta size (:selrect overlay-frame) (:snap-to overlay) zoom))
+
         on-click
         (mf/use-fn
          (mf/deps overlay close-click-outside?)
@@ -145,6 +168,7 @@
         :base-frame frame
         :frame-offset overlay-position
         :size size
+        :delta delta
         :page page
         :interactions-mode interactions-mode}]]]))
 

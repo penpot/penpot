@@ -142,5 +142,6 @@
       [:> frame-container props
        [:g.frame-children {:opacity (:opacity shape)}
         (for [item childs]
-          [:& shape-wrapper {:key (dm/str (:id item)) :shape item}])]])))
+          (when (:id item)
+            [:& shape-wrapper {:key (dm/str (:id item)) :shape item}]))]])))
 

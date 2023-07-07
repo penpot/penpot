@@ -526,37 +526,46 @@
                                      overlay-position
                                      {:x (- (:x overlay-position) (:x relative-to-adjusted-to-base-frame))
                                       :y (- (:y overlay-position) (:y relative-to-adjusted-to-base-frame))})]
+
         (case (:overlay-pos-type interaction)
           :center
-          (gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
-                     (+ (:y base-position) (/ (- (:height relative-to-shape-size) (:height overlay-size)) 2)))
+          [(gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
+                      (+ (:y base-position) (/ (- (:height relative-to-shape-size) (:height overlay-size)) 2)))
+           [:center :center]]
 
           :top-left
-          (gpt/point (:x base-position) (:y base-position))
+          [(gpt/point (:x base-position) (:y base-position))
+           [:top :left]]
 
           :top-right
-          (gpt/point (+ (:x base-position) (- (:width relative-to-shape-size) (:width overlay-size)))
-                     (:y base-position))
+          [(gpt/point (+ (:x base-position) (- (:width relative-to-shape-size) (:width overlay-size)))
+                      (:y base-position))
+           [:top :right]]
 
           :top-center
-          (gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
-                     (:y base-position))
+          [(gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
+                      (:y base-position))
+           [:top :center]]
 
           :bottom-left
-          (gpt/point (:x base-position)
-                     (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
+          [(gpt/point (:x base-position)
+                      (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
+           [:bottom :left]]
 
           :bottom-right
-          (gpt/point (+ (:x base-position) (- (:width relative-to-shape-size) (:width overlay-size)))
-                     (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
+          [(gpt/point (+ (:x base-position) (- (:width relative-to-shape-size) (:width overlay-size)))
+                      (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
+           [:bottom :right]]
 
           :bottom-center
-          (gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
-                     (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
+          [(gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
+                      (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
+           [:bottom :center]]
 
           :manual
-          (gpt/point (+ (:x base-position) (:x overlay-position))
-                     (+ (:y base-position) (:y overlay-position))))))))
+          [(gpt/point (+ (:x base-position) (:x overlay-position))
+                      (+ (:y base-position) (:y overlay-position)))
+           [:top :left]])))))
 
 (defn has-animation?
   [interaction]

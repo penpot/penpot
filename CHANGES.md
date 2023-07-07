@@ -65,6 +65,7 @@
 - Fix shortcuts translations not homogenized [Taiga #5141](https://tree.taiga.io/project/penpot/issue/5141)
 - Fix overlay manual position in nested boards [Taiga #5135](https://tree.taiga.io/project/penpot/issue/5135)
 - Fix close overlay from a nested board [Taiga #5587](https://tree.taiga.io/project/penpot/issue/5587)
+- Fix overlay position when it has shadow or blur [Taiga #4752](https://tree.taiga.io/project/penpot/issue/4752)
 
 ### :arrow_up: Deps updates
 
