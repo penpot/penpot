@@ -310,40 +310,45 @@
          [:li {:on-click on-delete-thread} (tr "labels.delete-comment-thread")]
          [:li {:on-click on-delete-comment} (tr "labels.delete-comment")])]]]))
 
-(defn comments-ref
-  [{:keys [id] :as thread}]
-  (l/derived (l/in [:comments id]) st/state))
+(defn make-comments-ref
+  [thread-id]
+  (l/derived (l/in [:comments thread-id]) st/state))
 
 (mf/defc thread-comments
   {::mf/wrap [mf/memo]}
   [{:keys [thread zoom users origin position-modifier]}]
-  (let [ref   (mf/use-ref)
-        pos   (cond-> (:position thread)
-                (some? position-modifier)
-                (gpt/transform position-modifier))
+  (let [ref          (mf/use-ref)
 
-        pos-x (+ (* (:x pos) zoom) 14)
-        pos-y (- (* (:y pos) zoom) 14)
 
-        comments-ref (mf/use-memo (mf/deps thread) #(comments-ref thread))
+        thread-id    (:id thread)
+        thread-pos   (:position thread)
+
+        pos          (cond-> thread-pos
+                       (some? position-modifier)
+                       (gpt/transform position-modifier))
+
+        pos-x        (+ (* (:x pos) zoom) 14)
+        pos-y        (- (* (:y pos) zoom) 14)
+
+        comments-ref (mf/with-memo [thread-id]
+                       (make-comments-ref thread-id))
         comments-map (mf/deref comments-ref)
-        comments     (->> (vals comments-map)
-                          (sort-by :created-at))
+
+        comments     (mf/with-memo [comments-map]
+                       (->> (vals comments-map)
+                            (sort-by :created-at)))
+
         comment      (first comments)]
 
-    (mf/use-layout-effect
-     (mf/deps thread)
-     #(st/emit! (dcm/retrieve-comments (:id thread))))
+    (mf/with-effect [thread-id]
+      (st/emit! (dcm/retrieve-comments thread-id)))
 
-    (mf/use-effect
-     (mf/deps thread)
-     #(st/emit! (dcm/update-comment-thread-status thread)))
+    (mf/with-effect [thread-id]
+      (st/emit! (dcm/update-comment-thread-status thread-id)))
 
-    (mf/use-layout-effect
-     (mf/deps thread comments-map)
-     (fn []
-       (when-let [node (mf/ref-val ref)]
-         (dom/scroll-into-view-if-needed! node))))
+    (mf/with-layout-effect [thread-pos comments-map]
+      (when-let [node (mf/ref-val ref)]
+        (dom/scroll-into-view-if-needed! node)))
 
     (when (some? comment)
       [:div.thread-content
@@ -368,12 +373,12 @@
 (defn use-buble
   [zoom {:keys [position frame-id]}]
   (let [dragging-ref (mf/use-ref false)
-        start-ref (mf/use-ref nil)
+        start-ref    (mf/use-ref nil)
 
-        state (mf/use-state {:hover false
-                             :new-position-x nil
-                             :new-position-y nil
-                             :new-frame-id frame-id})
+        state        (mf/use-state {:hover false
+                                    :new-position-x nil
+                                    :new-position-y nil
+                                    :new-frame-id frame-id})
 
         on-pointer-down
         (mf/use-fn
