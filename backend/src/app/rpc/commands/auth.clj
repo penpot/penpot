@@ -33,7 +33,7 @@
   [::sm/word-string {:max 500}])
 
 (def schema:token
-  [::sm/word-string {:max 1000}])
+  [::sm/word-string {:max 6000}])
 
 ;; ---- COMMAND: login with password
 
