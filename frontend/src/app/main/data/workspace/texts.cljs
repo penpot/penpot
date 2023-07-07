@@ -142,14 +142,17 @@
               (rx/merge
                (rx/of (update-editor-state shape nil))
                (when (and (not= content (:content shape))
-                          (some? (:current-page-id state)))
+                          (some? (:current-page-id state))
+                          (some? shape))
                  (rx/of
                   (dch/update-shapes
                    [id]
                    (fn [shape]
-                     (let [{:keys [width height]} modifiers]
+                     (let [{:keys [width height position-data]} modifiers]
                        (-> shape
                            (assoc :content content)
+                           (cond-> position-data
+                             (assoc :position-data position-data))
                            (cond-> new-shape?
                              (assoc :name text))
                            (cond-> (or (some? width) (some? height))

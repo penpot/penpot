@@ -520,7 +520,8 @@
                           stops (mapv split-color-components (:stops gradient))
                           type  (case (:type gradient)
                                   :linear :linear-gradient
-                                  :radial :radial-gradient)]
+                                  :radial :radial-gradient
+                                  (:type state))]
                       (-> state
                           (assoc :type type)
                           (assoc :current-color (nth stops stop))
