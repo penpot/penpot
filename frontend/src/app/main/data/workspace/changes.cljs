@@ -80,6 +80,7 @@
                             (pcb/set-stack-undo? stack-undo?)
                             (pcb/with-objects objects))
                         ids)
+             changes (pcb/reorder-grid-children changes ids)
              changes (add-undo-group changes state)]
          (rx/concat
           (if (seq (:redo-changes changes))

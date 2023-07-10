@@ -45,8 +45,10 @@
    (= type :group)))
 
 (defn mask-shape?
-  [{:keys [type masked-group?]}]
-  (and (= type :group) masked-group?))
+  ([objects id]
+   (mask-shape? (get objects id)))
+  ([{:keys [type masked-group?]}]
+   (and (= type :group) masked-group?)))
 
 (defn bool-shape?
   [{:keys [type]}]
@@ -63,6 +65,10 @@
 (defn rect-shape?
   [{:keys [type]}]
   (= type :rect))
+
+(defn circle-shape?
+  [{:keys [type]}]
+  (= type :circle))
 
 (defn image-shape?
   [{:keys [type]}]
@@ -129,6 +135,15 @@
     (let [parent-id (dm/get-in objects [id :parent-id])]
       (if (and (some? parent-id) (not= parent-id id))
         (recur (conj result parent-id) parent-id)
+        result))))
+
+(defn get-parents
+  "Returns a vector of parents of the specified shape."
+  [objects shape-id]
+  (loop [result [] id shape-id]
+    (let [parent-id (dm/get-in objects [id :parent-id])]
+      (if (and (some? parent-id) (not= parent-id id))
+        (recur (conj result (get objects parent-id)) parent-id)
         result))))
 
 (defn get-parents-with-self

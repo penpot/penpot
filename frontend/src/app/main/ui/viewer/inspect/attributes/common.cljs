@@ -17,7 +17,6 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-
 (def file-colors-ref
   (l/derived (l/in [:viewer :file :data :colors]) st/state))
 

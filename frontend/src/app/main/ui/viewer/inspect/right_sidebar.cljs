@@ -6,9 +6,7 @@
 
 (ns app.main.ui.viewer.inspect.right-sidebar
   (:require
-   [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
-   [app.main.store :as st]
    [app.main.ui.components.shape-icon :as si]
    [app.main.ui.components.tabs-container :refer [tabs-container tabs-element]]
    [app.main.ui.icons :as i]
@@ -38,20 +36,39 @@
                      :data local})))))
 
 (mf/defc right-sidebar
-  [{:keys [frame page file selected shapes page-id file-id share-id from]
+  [{:keys [frame page objects file selected shapes page-id file-id share-id from on-change-section on-expand]
     :or {from :inspect}}]
-  (let [expanded      (mf/use-state false)
-        section       (mf/use-state :info #_:code)
+  (let [section       (mf/use-state :info #_:code)
+        objects       (or objects (:objects page))
         shapes        (or shapes
-                          (resolve-shapes (:objects page) selected))
-
+                          (resolve-shapes objects selected))
         first-shape   (first shapes)
         page-id       (or page-id (:id page))
         file-id       (or file-id (:id file))
 
-        libraries      (get-libraries from)]
+        libraries      (get-libraries from)
 
-    [:aside.settings-bar.settings-bar-right {:class (when @expanded "expanded")}
+        handle-change-tab
+        (mf/use-callback
+         (mf/deps from on-change-section)
+         (fn [new-section]
+           (reset! section new-section)
+           (when on-change-section
+             (on-change-section new-section))))
+
+        handle-expand
+        (mf/use-callback
+         (mf/deps on-expand)
+         (fn []
+           (when on-expand (on-expand))))]
+
+    (mf/use-effect
+     (mf/deps shapes handle-change-tab)
+     (fn []
+       (when-not (seq shapes)
+         (handle-change-tab :info))))
+
+    [:aside.settings-bar.settings-bar-right
      [:div.settings-bar-inside
       (if (seq shapes)
         [:div.tool-window
@@ -77,14 +94,11 @@
              ;;   inspect.tabs.code.selected.text
              [:span.tool-window-bar-title (:name first-shape)]])]
          [:div.tool-window-content.inspect
-          [:& tabs-container {:on-change-tab #(do
-                                               (reset! expanded false)
-                                               (reset! section %)
-                                               (when (= from :workspace)
-                                                 (st/emit! (dw/set-inspect-expanded false))))
-                             :selected @section}
+          [:& tabs-container {:on-change-tab handle-change-tab
+                              :selected @section}
            [:& tabs-element {:id :info :title (tr "inspect.tabs.info")}
             [:& attributes {:page-id page-id
+                            :objects objects
                             :file-id file-id
                             :frame frame
                             :shapes shapes
@@ -95,10 +109,7 @@
            [:& tabs-element {:id :code :title (tr "inspect.tabs.code")}
             [:& code {:frame frame
                       :shapes shapes
-                      :on-expand (fn []
-                                   (when (= from :workspace)
-                                     (st/emit! (dw/set-inspect-expanded (not @expanded))))
-                                   (swap! expanded not))
+                      :on-expand handle-expand
                       :from from}]]]]]
         [:div.empty
          [:span.tool-window-bar-icon i/code]

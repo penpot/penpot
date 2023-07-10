@@ -20,7 +20,7 @@
 (log/set-level! :warn)
 
 (def available-features
-  #{:auto-layout :components-v2 :new-css-system})
+  #{:components-v2 :new-css-system :grid-layout})
 
 (defn- toggle-feature
   [feature]

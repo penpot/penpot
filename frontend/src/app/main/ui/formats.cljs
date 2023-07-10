@@ -16,32 +16,36 @@
    (format-percent value nil))
 
   ([value {:keys [precision] :or {precision 2}}]
-   (when (d/num? value)
-     (let [percent-val (mth/precision (* value 100) precision)]
-       (dm/str percent-val "%")))))
+   (let [value (if (string? value) (d/parse-double value) value)]
+     (when (d/num? value)
+       (let [percent-val (mth/precision (* value 100) precision)]
+         (dm/str percent-val "%"))))))
 
 (defn format-number
   ([value]
    (format-number value nil))
   ([value {:keys [precision] :or {precision 2}}]
-   (when (d/num? value)
-     (let [value (mth/precision value precision)]
-       (dm/str value)))))
+   (let [value (if (string? value) (d/parse-double value) value)]
+     (when (d/num? value)
+       (let [value (mth/precision value precision)]
+         (dm/str value))))))
 
 (defn format-pixels
   ([value]
    (format-pixels value nil))
 
   ([value {:keys [precision] :or {precision 2}}]
-   (when (d/num? value)
-     (let [value (mth/precision value precision)]
-       (dm/str value "px")))))
+   (let [value (if (string? value) (d/parse-double value) value)]
+     (when (d/num? value)
+       (let [value (mth/precision value precision)]
+         (dm/str value "px"))))))
 
 (defn format-int
   [value]
-  (when (d/num? value)
-    (let [value (mth/precision value 0)]
-      (dm/str value))))
+  (let [value (if (string? value) (d/parse-double value) value)]
+    (when (d/num? value)
+      (let [value (mth/precision value 0)]
+        (dm/str value)))))
 
 (defn format-padding-margin-shorthand
   [values]
@@ -97,3 +101,15 @@
     (if (= row-gap column-gap)
       (str/fmt "%spx" (format-number row-gap))
       (str/fmt "%spx %spx" (format-number row-gap) (format-number column-gap)))))
+
+(defn format-matrix
+  ([mtx]
+   (format-matrix mtx 2))
+  ([{:keys [a b c d e f]} precision]
+   (dm/fmt "matrix(%, %, %, %, %, %)"
+           (mth/to-fixed a precision)
+           (mth/to-fixed b precision)
+           (mth/to-fixed c precision)
+           (mth/to-fixed d precision)
+           (mth/to-fixed e precision)
+           (mth/to-fixed f precision))))

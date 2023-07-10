@@ -204,8 +204,11 @@
             [(-> (get-group-bounds objects bounds modif-tree child)
                  (gpo/parent-coords-bounds @transformed-parent-bounds))
              child])
-          (set-child-modifiers [modif-tree cell-data [child-bounds child]]
-            (let [modifiers (gcgl/child-modifiers parent transformed-parent-bounds child child-bounds cell-data)
+
+          (set-child-modifiers [modif-tree grid-data cell-data [child-bounds child]]
+            (let [modifiers
+                  (gcgl/child-modifiers parent transformed-parent-bounds child child-bounds grid-data cell-data)
+
                   modif-tree
                   (cond-> modif-tree
                     (d/not-empty? modifiers)
@@ -217,13 +220,13 @@
                             (map apply-modifiers))
           grid-data    (gcgl/calc-layout-data parent children @transformed-parent-bounds)]
       (loop [modif-tree modif-tree
-             child (first children)
+             bound+child (first children)
              pending (rest children)]
-        (if (some? child)
-          (let [cell-data (gcgl/get-cell-data grid-data @transformed-parent-bounds child)
+        (if (some? bound+child)
+          (let [cell-data (gcgl/get-cell-data grid-data @transformed-parent-bounds bound+child)
                 modif-tree (cond-> modif-tree
                              (some? cell-data)
-                             (set-child-modifiers cell-data child))]
+                             (set-child-modifiers grid-data cell-data bound+child))]
             (recur modif-tree (first pending) (rest pending)))
           modif-tree)))))
 
@@ -253,7 +256,12 @@
 
         content-bounds
         (when (and (d/not-empty? children) (or (ctl/auto-height? parent) (ctl/auto-width? parent)))
-          (gcfl/layout-content-bounds bounds parent children))
+          (cond
+            (ctl/flex-layout? parent)
+            (gcfl/layout-content-bounds bounds parent children)
+
+            (ctl/grid-layout? parent)
+            (gcgl/layout-content-bounds bounds parent children)))
 
         auto-width (when content-bounds (gpo/width-points content-bounds))
         auto-height (when content-bounds (gpo/height-points content-bounds))]
@@ -297,13 +305,13 @@
         transformed-parent-bounds (delay (gtr/transform-bounds @(get bounds parent-id) modifiers))
 
         children-modifiers
-        (if flex-layout?
+        (if (or flex-layout? grid-layout?)
           (->> (:shapes parent)
                (filter #(ctl/layout-absolute? objects %)))
           (:shapes parent))
 
         children-layout
-        (when flex-layout?
+        (when (or flex-layout? grid-layout?)
           (->> (:shapes parent)
                (remove #(ctl/layout-absolute? objects %))))]
 
@@ -421,7 +429,7 @@
 
                       to-reflow
                       (cond-> to-reflow
-                        (and (ctl/flex-layout-descent? objects parent-base)
+                        (and (ctl/any-layout-descent? objects parent-base)
                              (not= uuid/zero (:frame-id parent-base)))
                         (conj (:frame-id parent-base)))]
                   (recur modif-tree

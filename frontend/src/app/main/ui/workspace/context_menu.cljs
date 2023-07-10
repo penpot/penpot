@@ -413,9 +413,10 @@
         is-frame?          (and single? has-frame?)
         is-flex-container? (and is-frame? (= :flex (:layout (first shapes))))
         ids                (->> shapes (map :id))
-        add-flex           #(st/emit! (if is-frame?
-                                        (dwsl/create-layout-from-id ids :flex true)
-                                        (dwsl/create-layout-from-selection :flex)))
+        add-layout         (fn [type]
+                             (st/emit! (if is-frame?
+                                         (dwsl/create-layout-from-id ids type true)
+                                         (dwsl/create-layout-from-selection type))))
         remove-flex        #(st/emit! (dwsl/remove-layout ids))]
 
     [:*
@@ -424,7 +425,10 @@
         [:& menu-separator]
         [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
                         :shortcut (sc/get-tooltip :toggle-layout-flex)
-                        :on-click add-flex}]])
+                        :on-click #(add-layout :flex)}]
+        [:& menu-entry {:title (tr "workspace.shape.menu.add-grid")
+                        :shortcut (sc/get-tooltip :toggle-layout-grid)
+                        :on-click #(add-layout :grid)}]])
      (when  is-flex-container?
        [:div
         [:& menu-separator]

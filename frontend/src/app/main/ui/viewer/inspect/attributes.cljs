@@ -6,16 +6,15 @@
 
 (ns app.main.ui.viewer.inspect.attributes
   (:require
-   [app.common.geom.shapes :as gsh]
    [app.common.types.components-list :as ctkl]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.viewer.inspect.annotation :refer [annotation]]
    [app.main.ui.viewer.inspect.attributes.blur :refer [blur-panel]]
    [app.main.ui.viewer.inspect.attributes.fill :refer [fill-panel]]
+   [app.main.ui.viewer.inspect.attributes.geometry :refer [geometry-panel]]
    [app.main.ui.viewer.inspect.attributes.image :refer [image-panel]]
    [app.main.ui.viewer.inspect.attributes.layout :refer [layout-panel]]
-   [app.main.ui.viewer.inspect.attributes.layout-flex :refer [layout-flex-panel]]
-   [app.main.ui.viewer.inspect.attributes.layout-flex-element :refer [layout-flex-element-panel]]
+   [app.main.ui.viewer.inspect.attributes.layout-element :refer [layout-element-panel]]
    [app.main.ui.viewer.inspect.attributes.shadow :refer [shadow-panel]]
    [app.main.ui.viewer.inspect.attributes.stroke :refer [stroke-panel]]
    [app.main.ui.viewer.inspect.attributes.svg :refer [svg-panel]]
@@ -24,20 +23,18 @@
    [rumext.v2 :as mf]))
 
 (def type->options
-  {:multiple [:fill :stroke :image :text :shadow :blur :layout-flex-item]
-   :frame    [:layout :fill :stroke :shadow :blur :layout-flex :layout-flex-item]
-   :group    [:layout :svg :layout-flex-item]
-   :rect     [:layout :fill :stroke :shadow :blur :svg :layout-flex-item]
-   :circle   [:layout :fill :stroke :shadow :blur :svg :layout-flex-item]
-   :path     [:layout :fill :stroke :shadow :blur :svg :layout-flex-item]
-   :image    [:image :layout :fill :stroke :shadow :blur :svg :layout-flex-item]
-   :text     [:layout :text :shadow :blur :stroke :layout-flex-item]})
+  {:multiple [:fill :stroke :image :text :shadow :blur :layout-element]
+   :frame    [:geometry :fill :stroke :shadow :blur :layout :layout-element]
+   :group    [:geometry :svg :layout-element]
+   :rect     [:geometry :fill :stroke :shadow :blur :svg :layout-element]
+   :circle   [:geometry :fill :stroke :shadow :blur :svg :layout-element]
+   :path     [:geometry :fill :stroke :shadow :blur :svg :layout-element]
+   :image    [:image :geometry :fill :stroke :shadow :blur :svg :layout-element]
+   :text     [:geometry :text :shadow :blur :stroke :layout-element]})
 
 (mf/defc attributes
-  [{:keys [page-id file-id shapes frame from libraries share-id]}]
+  [{:keys [page-id file-id shapes frame from libraries share-id objects]}]
   (let [shapes  (hooks/use-equal-memo shapes)
-        shapes  (mf/with-memo [shapes]
-                  (mapv #(gsh/translate-to-frame % frame) shapes))
         type    (if (= (count shapes) 1) (-> shapes first :type) :multiple)
         options (type->options type)
         content (when (= (count shapes) 1)
@@ -46,9 +43,9 @@
     [:div.element-options
      (for [[idx option] (map-indexed vector options)]
        [:> (case option
+             :geometry         geometry-panel
              :layout           layout-panel
-             :layout-flex      layout-flex-panel
-             :layout-flex-item layout-flex-element-panel
+             :layout-element   layout-element-panel
              :fill             fill-panel
              :stroke           stroke-panel
              :shadow           shadow-panel
@@ -58,6 +55,7 @@
              :svg              svg-panel)
         {:key idx
          :shapes shapes
+         :objects objects
          :frame frame
          :from from}])
      (when content

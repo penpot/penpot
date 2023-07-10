@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.refs :as refs]
@@ -159,7 +160,7 @@
         create-comment?   (= :comments drawing-tool)
         drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
-        node-editing?     (and edition (not= :text (get-in base-objects [edition :type])))
+        node-editing?     (and edition (= :path (get-in base-objects [edition :type])))
         text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
         grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
@@ -168,7 +169,7 @@
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids workspace-read-only?)
-        on-double-click   (actions/on-double-click hover hover-ids drawing-path? base-objects edition drawing-tool z? workspace-read-only?)
+        on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id drawing-path? base-objects edition drawing-tool z? workspace-read-only?)
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file)
@@ -203,6 +204,10 @@
         show-pixel-grid?         (and (contains? layout :show-pixel-grid)
                                       (>= zoom 8))
         show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
+
+        hover-grid?              (and (some? @hover-top-frame-id)
+                                      (ctl/grid-layout? objects @hover-top-frame-id))
+
         show-grid-editor?        (and editing-shape (ctl/grid-layout? editing-shape))
         show-presence?           page-id
         show-prototypes?         (= options-mode :prototype)
@@ -248,7 +253,9 @@
 
         offset-y (if selecting-first-level-frame?
                    (:y (first selected-shapes))
-                   (:y selected-frame))]
+                   (:y selected-frame))
+
+        rule-area-size (/ rules/rule-area-size zoom)]
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -259,7 +266,7 @@
     (hooks/setup-shortcuts node-editing? drawing-path? text-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
-    [:div.viewport
+    [:div.viewport {:style #js {"--zoom" zoom}}
      [:div.viewport-overlays
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
       ;; inside a foreign object "dummy" so this awkward behaviour is take into account
@@ -345,6 +352,14 @@
        :on-pointer-leave on-pointer-leave
        :on-pointer-move  on-pointer-move
        :on-pointer-up    on-pointer-up}
+
+      [:defs
+       ;; This clip is so the handlers are not over the rules
+       [:clipPath {:id "clip-handlers"}
+        [:rect {:x (+ (:x vbox) rule-area-size)
+                :y (+ (:y vbox) rule-area-size)
+                :width (max 0 (- (:width vbox) (* rule-area-size 2)))
+                :height (max 0 (- (:height vbox) (* rule-area-size 2)))}]]]
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
        (when show-text-editor?
@@ -556,15 +571,6 @@
 
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
-          [:defs
-           (let [rule-area-size (/ rules/rule-area-size zoom)]
-             ;; This clip is so the handlers are not over the rules
-             [:clipPath {:id "clip-handlers"}
-              [:rect {:x (+ (:x vbox) rule-area-size)
-                      :y (+ (:y vbox) rule-area-size)
-                      :width (max 0 (- (:width vbox) (* rule-area-size 2)))
-                      :height (max 0 (- (:height vbox) (* rule-area-size 2)))}]])]
-
           [:& selection/selection-handlers
            {:selected selected
             :shapes selected-shapes
@@ -586,8 +592,24 @@
           {:id (first selected)
            :zoom zoom}])
 
-       (when show-grid-editor?
-         [:& grid-layout/editor
-          {:zoom zoom
-           :objects base-objects
-           :shape (get base-objects edition)}])]]]))
+       [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
+        (when (or show-grid-editor? hover-grid?)
+          [:& grid-layout/editor
+           {:zoom zoom
+            :objects base-objects
+            :modifiers modifiers
+            :shape (or (get base-objects edition)
+                       (get base-objects @hover-top-frame-id))
+            :view-only (not show-grid-editor?)}])
+
+        (for [frame (ctt/get-frames objects)]
+          (when (and (ctl/grid-layout? frame)
+                     (empty? (:shapes frame))
+                     (not= edition (:id frame))
+                     (not= @hover-top-frame-id (:id frame)))
+            [:& grid-layout/editor
+             {:zoom zoom
+              :objects base-objects
+              :modifiers modifiers
+              :shape frame
+              :view-only true}]))]]]]))

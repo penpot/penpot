@@ -7,12 +7,11 @@
 (ns app.main.ui.viewer.inspect.attributes.fill
   (:require
    [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
-   [app.util.code-gen :as cg]
-   [app.util.color :as uc]
+   [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(def fill-attributes [:fill-color :fill-color-gradient])
+(def properties [:background :background-color :background-image])
 
 (defn shape->color [shape]
   {:color (:fill-color shape)
@@ -21,21 +20,15 @@
    :id (:fill-color-ref-id shape)
    :file-id (:fill-color-ref-file shape)})
 
-(defn has-color? [shape]
+(defn has-fill? [shape]
   (and
    (not (contains? #{:text :group} (:type shape)))
    (or (:fill-color shape)
        (:fill-color-gradient shape)
        (seq (:fills shape)))))
 
-(defn copy-data [shape]
-  (cg/generate-css-props
-   shape
-   fill-attributes
-   {:to-prop "background"
-    :format #(uc/color->background (shape->color shape))}))
-
-(mf/defc fill-block [{:keys [shape]}]
+(mf/defc fill-block
+  [{:keys [objects shape]}]
   (let [color-format (mf/use-state :hex)
         color (shape->color shape)]
 
@@ -43,11 +36,11 @@
      [:& color-row {:color color
                     :format @color-format
                     :on-change-format #(reset! color-format %)
-                    :copy-data (copy-data shape)}]]))
+                    :copy-data (css/get-shape-properties-css objects {:fills [shape]} properties)}]]))
 
 (mf/defc fill-panel
   [{:keys [shapes]}]
-  (let [shapes (->> shapes (filter has-color?))]
+  (let [shapes (->> shapes (filter has-fill?))]
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title

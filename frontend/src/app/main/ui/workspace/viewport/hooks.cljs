@@ -206,7 +206,9 @@
                   (remove #(dm/get-in objects [% :blocked]))
                   (ctt/sort-z-index objects ids {:bottom-frames? mod?}))
 
-             grouped? (fn [id] (contains? #{:group :bool} (get-in objects [id :type])))
+             grouped? (fn [id]
+                        (and (cph/group-shape? objects id)
+                             (not (cph/mask-shape? objects id))))
 
              selected-with-parents
              (into #{} (mapcat #(cph/get-parent-ids objects %)) selected)
@@ -354,5 +356,5 @@
        (do (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
            #(st/emit! (dsc/pop-shortcuts ::path)))
        text-editing?
-        (do (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
-            #(st/emit! (dsc/pop-shortcuts ::text)))))))
+       (do (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
+           #(st/emit! (dsc/pop-shortcuts ::text)))))))

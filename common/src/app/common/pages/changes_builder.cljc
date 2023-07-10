@@ -17,6 +17,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
@@ -712,3 +713,42 @@
     (-> changes
         (update :redo-changes add-ignore-remote)
         (update :undo-changes add-ignore-remote))))
+
+(defn reorder-grid-children
+  [changes ids]
+  (assert-page-id changes)
+  (assert-objects changes)
+
+  (let [page-id (::page-id (meta changes))
+        objects (lookup-objects changes)
+
+        reorder-grid
+        (fn [changes grid]
+          (let [old-shapes (:shapes grid)
+                grid       (ctl/reorder-grid-children grid)
+                new-shapes (->> (:shapes grid)
+                                (filterv #(contains? objects %)))
+
+                redo-change
+                {:type :reorder-children
+                 :parent-id (:id grid)
+                 :page-id page-id
+                 :shapes new-shapes}
+
+                undo-change
+                {:type :reorder-children
+                 :parent-id (:id grid)
+                 :page-id page-id
+                 :shapes old-shapes}]
+            (-> changes
+                (update :redo-changes conj redo-change)
+                (update :undo-changes d/preconj undo-change)
+                (apply-changes-local))))
+
+        changes
+        (->> ids
+             (map (d/getf objects))
+             (filter ctl/grid-layout?)
+             (reduce reorder-grid changes))]
+
+    changes))

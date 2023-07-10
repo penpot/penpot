@@ -48,6 +48,18 @@
 
     (mf/ref-val fonts-css-ref)))
 
+(mf/defc fontfaces-style-html
+  {::mf/wrap-props false
+   ::mf/wrap [#(mf/memo' % (mf/check-props ["fonts"]))]}
+  [props]
+
+  (let [fonts (obj/get props "fonts")
+
+        ;; Fetch its CSS fontfaces
+        fonts-css (use-fonts-css fonts)]
+
+    [:style fonts-css]))
+
 (mf/defc fontfaces-style-render
   {::mf/wrap-props false
    ::mf/wrap [#(mf/memo' % (mf/check-props ["fonts"]))]}
@@ -62,7 +74,6 @@
         fonts-urls (mf/use-memo
                     (mf/deps fonts-css)
                     #(fonts/extract-fontface-urls fonts-css))
-
 
         ;; Calculate the data-uris for these fonts
         fonts-embed (embed/use-data-uris fonts-urls)

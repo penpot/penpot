@@ -104,11 +104,7 @@ $width-settings-bar: 256px;
   }
 
   .settings-bar {
-    transition: width 0.2s;
     width: $width-settings-bar;
-    &.expanded {
-      width: $width-settings-bar * 3;
-    }
 
     &.settings-bar-right,
     &.settings-bar-left {
@@ -121,6 +117,10 @@ $width-settings-bar: 256px;
         padding-top: 0.5rem;
         overflow-y: auto;
       }
+    }
+
+    &.settings-bar-right {
+      width: 100%;
     }
   }
 
@@ -140,5 +140,21 @@ $width-settings-bar: 256px;
     align-items: center;
     justify-content: safe center;
     margin: 0 auto;
+  }
+}
+
+.sidebar-container {
+  display: flex;
+  flex-direction: column;
+  width: var(--width, $width-settings-bar);
+  height: 100%;
+  overflow: hidden;
+
+  & > .resize-area {
+    position: absolute;
+    width: 8px;
+    height: 100%;
+    z-index: 10;
+    cursor: ew-resize;
   }
 }

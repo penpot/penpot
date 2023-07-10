@@ -490,10 +490,9 @@
                                target-frame   (ctst/top-nested-frame objects position exclude-frames)
                                flex-layout?   (ctl/flex-layout? objects target-frame)
                                grid-layout?   (ctl/grid-layout? objects target-frame)
-                               drop-index     (cond
-                                                flex-layout? (gslf/get-drop-index target-frame objects position)
-                                                grid-layout? (gslg/get-drop-index target-frame objects position))]
-                           [move-vector target-frame drop-index])))
+                               drop-index     (when flex-layout? (gslf/get-drop-index target-frame objects position))
+                               cell-data      (when grid-layout? (gslg/get-drop-cell target-frame objects position))]
+                           [move-vector target-frame drop-index cell-data])))
 
                       (rx/take-until stopper))]
 
@@ -502,7 +501,7 @@
               (->> move-stream
                    (rx/with-latest-from ms/mouse-position-shift)
                    (rx/map
-                    (fn [[[move-vector target-frame drop-index] shift?]]
+                    (fn [[[move-vector target-frame drop-index cell-data] shift?]]
                       (let [x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
                             [move-vector snap-ignore-axis]
                             (cond
@@ -516,7 +515,7 @@
                               [move-vector nil])]
 
                         (-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
-                            (dwm/build-change-frame-modifiers objects selected target-frame drop-index)
+                            (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data)
                             (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
 
               (->> move-stream
@@ -540,8 +539,8 @@
                     (fn [[_ target-frame drop-index]]
                       (let [undo-id (js/Symbol)]
                         (rx/of (dwu/start-undo-transaction undo-id)
-                               (move-shapes-to-frame ids target-frame drop-index)
                                (dwm/apply-modifiers {:undo-transation? false})
+                               (move-shapes-to-frame ids target-frame drop-index)
                                (finish-transform)
                                (dwu/commit-undo-transaction undo-id))))))))))))))
 
@@ -557,57 +556,76 @@
             objects (wsh/lookup-page-objects state)
             page-id (:current-page-id state)
 
-            get-new-position
+            get-move-to-index
             (fn [parent-id position]
               (let [parent (get objects parent-id)]
-                (cond
-                  (ctl/flex-layout? parent)
-                  (if (or
-                       (and (ctl/reverse? parent)
-                            (or (= direction :left)
-                                (= direction :up)))
-                       (and (not (ctl/reverse? parent))
-                            (or (= direction :right)
-                                (= direction :down))))
-                    (dec position)
-                    (+ position 2))
+                (if (or (and (ctl/reverse? parent)
+                             (or (= direction :left)
+                                 (= direction :up)))
+                        (and (not (ctl/reverse? parent))
+                             (or (= direction :right)
+                                 (= direction :down))))
+                  (dec position)
+                  (+ position 2))))
 
-                  ;; TODO: GRID
-                  (ctl/grid-layout? parent)
-                  nil
-                  )))
+            move-flex-children
+            (fn [changes parent-id children]
+              (->> children
+                   ;; Add the position to move the children
+                   (map (fn [id]
+                          (let [position (cph/get-position-on-parent objects id)]
+                            [id (get-move-to-index parent-id position)])))
+                   (sort-by second >)
+                   (reduce (fn [changes [child-id index]]
+                             (pcb/change-parent changes parent-id [(get objects child-id)] index))
+                           changes)))
 
-            add-children-position
-            (fn [[parent-id children]]
-              (let [children+position
+            move-grid-children
+            (fn [changes parent-id children]
+              (let [parent (get objects parent-id)
+
+                    key-prop (case direction
+                               (:up :down) :row
+                               (:right :left) :column)
+                    key-comp (case direction
+                               (:up :left) <
+                               (:down :right) >)
+
+                    {:keys [layout-grid-cells]}
                     (->> children
-                         (keep #(let [new-position (get-new-position
-                                                    parent-id
-                                                    (cph/get-position-on-parent objects %))]
-                                  (when new-position
-                                    (vector % new-position))))
-                         (sort-by second >))]
-                [parent-id children+position]))
-
-            change-parents-and-position
-            (->> selected
-                 (group-by #(dm/get-in objects [% :parent-id]))
-                 (map add-children-position)
-                 (into {}))
+                         (keep #(ctl/get-cell-by-shape-id parent %))
+                         (sort-by key-prop key-comp)
+                         (reduce (fn [parent {:keys [id row column row-span column-span]}]
+                                   (let [[next-row next-column]
+                                         (case direction
+                                           :up    [(dec row) column]
+                                           :right [row (+ column column-span)]
+                                           :down  [(+ row row-span) column]
+                                           :left  [row (dec column)])
+                                         next-cell (ctl/get-cell-by-position parent next-row next-column)]
+                                     (cond-> parent
+                                       (some? next-cell)
+                                       (ctl/swap-shapes id (:id next-cell)))))
+                                 parent))]
+                (-> changes
+                    (pcb/update-shapes [(:id parent)] (fn [shape] (assoc shape :layout-grid-cells layout-grid-cells)))
+                    (pcb/reorder-grid-children [(:id parent)]))))
 
             changes
-            (->> change-parents-and-position
+            (->> selected
+                 (group-by #(dm/get-in objects [% :parent-id]))
                  (reduce
                   (fn [changes [parent-id children]]
-                    (->> children
-                         (reduce
-                          (fn [changes [child-id index]]
-                            (pcb/change-parent changes parent-id
-                                               [(get objects child-id)]
-                                               index))
-                          changes)))
+                    (cond-> changes
+                      (ctl/flex-layout? objects parent-id)
+                      (move-flex-children parent-id children)
+
+                      (ctl/grid-layout? objects parent-id)
+                      (move-grid-children parent-id children)))
+
                   (-> (pcb/empty-changes it page-id)
                       (pcb/with-objects objects))))
+
             undo-id (js/Symbol)]
 
         (rx/of
@@ -795,6 +813,7 @@
                 (pcb/update-shapes moving-shapes-ids #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true)))
                 (pcb/update-shapes shape-ids-to-detach ctk/detach-shape)
                 (pcb/change-parent frame-id moving-shapes drop-index)
+                (pcb/reorder-grid-children [frame-id])
                 (pcb/remove-objects empty-parents))]
 
         (when (and (some? frame-id) (d/not-empty? changes))

@@ -27,7 +27,7 @@
     [:button.copy-button
      {:on-click #(when-not @just-copied
                    (reset! just-copied true)
-                   (wapi/write-to-clipboard data))}
+                   (wapi/write-to-clipboard (if (fn? data) (data) data)))}
      (if @just-copied
        i/tick
        i/copy)]))

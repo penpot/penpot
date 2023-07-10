@@ -26,7 +26,8 @@
         (if (contains? objects id)
           (-> state
               (assoc-in [:workspace-local :selected] #{id})
-              (assoc-in [:workspace-local :edition] id))
+              (assoc-in [:workspace-local :edition] id)
+              (dissoc :workspace-grid-edition))
           state)))
 
     ptk/WatchEvent
@@ -44,4 +45,5 @@
       (let [id (get-in state [:workspace-local :edition])]
         (-> state
             (update :workspace-local dissoc :edition)
+            (dissoc :workspace-grid-edition)
             (cond-> (some? id) (update-in [:workspace-local :edit-path] dissoc id)))))))

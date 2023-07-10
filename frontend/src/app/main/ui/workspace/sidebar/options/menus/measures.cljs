@@ -19,6 +19,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -79,6 +80,8 @@
                      (deref (refs/objects-by-id ids))
                      [shape])
         frames (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
+
+        ids (hooks/use-equal-memo ids)
 
         selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)

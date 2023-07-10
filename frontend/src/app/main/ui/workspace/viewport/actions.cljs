@@ -1,4 +1,4 @@
-; This Source Code Form is subject to the terms of the Mozilla Public
+;; This Source Code Form is subject to the terms of the Mozilla Public
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
@@ -6,9 +6,11 @@
 
 (ns app.main.ui.workspace.viewport.actions
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.workspace :as dw]
@@ -53,9 +55,9 @@
          (.setPointerCapture editor (.-pointerId bevent))
          (.setPointerCapture target (.-pointerId bevent))))
 
-
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
-               (dom/class? (dom/get-target bevent) "viewport-selrect"))
+               (dom/child? (dom/get-target bevent) (dom/query ".viewport-controls")))
+
        (dom/stop-propagation bevent)
 
        (when-not @z?
@@ -78,7 +80,6 @@
                        pt       (uwvv/point->viewport raw-pt)]
                    (st/emit! (dw/start-zooming pt)))
                  (st/emit! (dw/start-panning))))
-
 
              left-click?
              (do
@@ -160,6 +161,7 @@
    (fn [event]
      (when (and (nil? selrect)
                 (or (dom/class? (dom/get-target event) "viewport-controls")
+                    (dom/child? (dom/get-target event) (dom/query ".viewport-controls"))
                     (dom/class? (dom/get-target event) "viewport-selrect")))
        (let [ctrl? (kbd/ctrl? event)
              shift? (kbd/shift? event)
@@ -187,10 +189,10 @@
              (st/emit! (dw/increase-zoom pt)))))))))
 
 (defn on-double-click
-  [hover hover-ids drawing-path? objects edition drawing-tool z? workspace-read-only?]
+  [hover hover-ids hover-top-frame-id drawing-path? objects edition drawing-tool z? workspace-read-only?]
 
   (mf/use-callback
-   (mf/deps @hover @hover-ids drawing-path? edition drawing-tool @z? workspace-read-only?)
+   (mf/deps @hover @hover-ids @hover-top-frame-id drawing-path? edition drawing-tool @z? workspace-read-only?)
    (fn [event]
      (dom/stop-propagation event)
      (when-not @z?
@@ -201,11 +203,16 @@
 
              {:keys [id type] :as shape} (or @hover (get objects (first @hover-ids)))
 
-             editable? (contains? #{:text :rect :path :image :circle} type)]
+             editable? (contains? #{:text :rect :path :image :circle} type)
+
+             hover-shape (->> @hover-ids (filter (partial cph/is-child? objects id)) first)
+             selected-shape (get objects hover-shape)
+
+             grid-layout-id (->> @hover-ids reverse (d/seek (partial ctl/grid-layout? objects)))]
 
          (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt? meta?))
 
-       ;; Emit asynchronously so the double click to exit shapes won't break
+         ;; Emit asynchronously so the double click to exit shapes won't break
          (timers/schedule
           (fn []
             (when (and (not drawing-path?) shape)
@@ -214,27 +221,26 @@
                 (st/emit! (dw/select-shape id)
                           (dw/start-editing-selected))
 
-                :else
-                (let [;; We only get inside childrens of the hovering shape
-                      hover-ids (->> @hover-ids (filter (partial cph/is-child? objects id)))
-                      selected (get objects (first hover-ids))]
-                  (when (some? selected)
-                    (reset! hover selected)
-                    (st/emit! (dw/select-shape (:id selected))))))))))))))
+                (some? selected-shape)
+                (do (reset! hover selected-shape)
+                    (st/emit! (dw/select-shape (:id selected-shape))))
+
+                (and (not selected-shape) (some? grid-layout-id))
+                (st/emit! (dw/start-edition-mode grid-layout-id)))))))))))
 
 (defn on-context-menu
   [hover hover-ids workspace-read-only?]
   (mf/use-fn
    (mf/deps @hover @hover-ids workspace-read-only?)
    (fn [event]
-     (if workspace-read-only?
-       (dom/prevent-default event)
+     (dom/prevent-default event)
+     (when-not workspace-read-only?
        (when (or (dom/class? (dom/get-target event) "viewport-controls")
-                 (dom/class? (dom/get-target event) "viewport-selrect"))
-         (dom/prevent-default event)
-
+                 (dom/child? (dom/get-target event) (dom/query ".viewport-controls"))
+                 (dom/class? (dom/get-target event) "viewport-selrect")
+                 workspace-read-only?)
          (let [position (dom/get-client-position event)]
-         ;; Delayed callback because we need to wait to the previous context menu to be closed
+           ;; Delayed callback because we need to wait to the previous context menu to be closed
            (timers/schedule
             #(st/emit!
               (if (some? @hover)

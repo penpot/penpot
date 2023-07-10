@@ -14,6 +14,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpp]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
@@ -782,6 +783,18 @@
                                  (ctl/change-v-sizing? (:id parent) objects (:shapes parent))
                                  (assoc :layout-item-v-sizing :fix))
                                parent)))
+
+        ;; Update grid layout
+        (cond-> (ctl/grid-layout? objects parent-id)
+          (pcb/update-shapes [parent-id] #(ctl/add-children-to-index % ids objects to-index)))
+
+        (pcb/update-shapes parents
+                           (fn [parent]
+                             (cond-> parent
+                               (ctl/grid-layout? parent)
+                               (ctl/assign-cells))))
+
+        (pcb/reorder-grid-children parents)
 
         ;; Resize parent containers that need to
         (pcb/resize-parents parents))))
@@ -1804,6 +1817,11 @@
 
                   ;; Adds a resize-parents operation so the groups are updated. We add all the new objects
                   new-objects-ids (->> changes :redo-changes (filter #(= (:type %) :add-obj)) (mapv :id))
+
+                  drop-cell
+                  (when (ctl/grid-layout? all-objects parent-id)
+                    (gslg/get-drop-cell frame-id all-objects mouse-pos))
+
                   changes (pcb/resize-parents changes new-objects-ids)
 
                   selected  (->> changes
@@ -1812,6 +1830,13 @@
                                  (filter #(selected (:old-id %)))
                                  (map #(get-in % [:obj :id]))
                                  (into (d/ordered-set)))
+
+                  changes
+                  (cond-> changes
+                    (some? drop-cell)
+                    (pcb/update-shapes [parent-id]
+                                       #(ctl/add-children-to-cell % selected all-objects drop-cell)))
+
                   undo-id (js/Symbol)]
 
               (rx/of (dwu/start-undo-transaction undo-id)
@@ -2134,20 +2159,6 @@
     (watch [_ state _]
       (let [orphans (set (into [] (keys (wsh/find-orphan-shapes state))))]
         (rx/of (relocate-shapes orphans uuid/zero 0 true))))))
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Inspect
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-(defn set-inspect-expanded
-  [expanded?]
-  (ptk/reify ::set-inspect-expanded
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :inspect-expanded] expanded?))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Sitemap

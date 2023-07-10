@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
+   [app.common.math :as mth]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
@@ -65,11 +66,19 @@
                    start-size (mf/ref-val start-size-ref)
                    new-size (-> (+ start-size delta) (max min-val) (min max-val))]
                (reset! size-state new-size)
-               (swap! storage assoc-in [::saved-resize current-file-id key] new-size)))))]
+               (swap! storage assoc-in [::saved-resize current-file-id key] new-size)))))
+
+        set-size
+        (mf/use-callback
+         (fn [new-size]
+           (let [new-size (mth/clamp new-size min-val max-val)]
+             (reset! size-state new-size)
+             (swap! storage assoc-in [::saved-resize current-file-id key] new-size))))]
     {:on-pointer-down on-pointer-down
      :on-lost-pointer-capture on-lost-pointer-capture
      :on-pointer-move on-pointer-move
      :parent-ref parent-ref
+     :set-size set-size
      :size @size-state}))
 
 (defn use-resize-observer

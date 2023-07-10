@@ -219,7 +219,12 @@
    :toggle-layout-flex   {:tooltip (ds/shift "A")
                           :command "shift+a"
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly (dwsl/toggle-layout-flex))}
+                          :fn #(emit-when-no-readonly (dwsl/toggle-layout :flex))}
+
+   :toggle-layout-grid   {:tooltip (ds/meta-shift "A")
+                          :command (ds/c-mod "shift+a")
+                          :subsections [:modify-layers]
+                          :fn #(emit-when-no-readonly (dwsl/toggle-layout :grid))}
 
    ;; TOOLS
 

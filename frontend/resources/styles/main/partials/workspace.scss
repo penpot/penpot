@@ -48,14 +48,12 @@ $height-palette-max: 80px;
   }
 
   .settings-bar.settings-bar-right {
-    transition: width 0.2s;
-    min-width: $width-settings-bar;
-    max-width: $width-settings-bar * 3;
-    width: $width-settings-bar;
+    height: 100%;
+    width: var(--width, $width-settings-bar);
     grid-area: right-sidebar;
 
-    &.expanded {
-      width: $width-settings-bar * 3;
+    &.not-expand {
+      max-width: $width-settings-bar;
     }
   }
 
@@ -367,7 +365,8 @@ $height-palette-max: 80px;
   z-index: 12;
   pointer-events: none;
 
-  .path-actions {
+  .path-actions,
+  .grid-actions {
     pointer-events: initial;
     display: flex;
     flex-direction: row;
@@ -376,6 +375,27 @@ $height-palette-max: 80px;
     padding: 0.5rem;
     border: 1px solid $color-gray-20;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .grid-actions {
+    padding-left: 1rem;
+    gap: 12px;
+    color: var(--color-gray-60);
+    align-items: center;
+    font-size: 12px;
+
+    .btn-primary,
+    .btn-secondary {
+      height: 24px;
+    }
+
+    .grid-edit-title {
+      margin-right: 2rem;
+    }
+
+    .grid-edit-board-name {
+      font-weight: 600;
+    }
   }
 
   .viewport-actions-group {

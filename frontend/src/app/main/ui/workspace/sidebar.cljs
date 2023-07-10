@@ -26,6 +26,7 @@
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
 ;; --- Left Sidebar (Component)
@@ -134,16 +135,45 @@
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)
 
-        expanded?        (mf/deref refs/inspect-expanded)
+        ;;expanded?      (mf/deref refs/inspect-expanded)
+        ;;prev-expanded? (hooks/use-previous expanded?)
+
+        current-section* (mf/use-state :info)
+        current-section (deref current-section*)
+
         can-be-expanded? (and (not is-comments?)
                               (not is-history?)
-                              is-inspect?)]
+                              is-inspect?
+                              (= current-section :code))
 
-    (mf/with-effect [can-be-expanded?]
-      (when (not can-be-expanded?)
-        (st/emit! (dw/set-inspect-expanded false))))
+        {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move set-size size]}
+        (use-resize-hook :code 256 256 768 :x true :right)
 
-    [:aside.settings-bar.settings-bar-right {:class (when (and can-be-expanded? expanded?) "expanded")}
+        handle-change-section
+        (mf/use-callback
+         (fn [section]
+           (reset! current-section* section)))
+
+        handle-expand
+        (mf/use-callback
+         (mf/deps size)
+         (fn []
+           (set-size (if (> size 256) 256 768))))
+
+        props
+        (-> props
+            (obj/clone)
+            (obj/set! "on-change-section" handle-change-section)
+            (obj/set! "on-expand" handle-expand))]
+
+    [:aside.settings-bar.settings-bar-right
+     {:class (when (not can-be-expanded?) "not-expand")
+      :style #js {"--width" (when can-be-expanded? (dm/str size "px"))}}
+     (when can-be-expanded?
+       [:div.resize-area
+        {:on-pointer-down on-pointer-down
+         :on-lost-pointer-capture on-lost-pointer-capture
+         :on-pointer-move on-pointer-move}])
      [:div.settings-bar-inside
       (cond
         (true? is-comments?)

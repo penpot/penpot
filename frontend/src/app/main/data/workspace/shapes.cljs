@@ -82,6 +82,7 @@
                selected)
 
         index (:index (meta attrs))
+        [row column :as cell]  (:cell (meta attrs))
 
         changes (-> changes
                     (pcb/with-objects objects)
@@ -91,9 +92,11 @@
                       (pcb/add-object shape))
                     (cond-> (some? (:parent-id attrs))
                       (pcb/change-parent (:parent-id attrs) [shape] index))
+                    (cond-> (some? cell)
+                      (pcb/update-shapes [(:parent-id shape)] #(ctl/push-into-cell % [id] row column)))
                     (cond-> (ctl/grid-layout? objects (:parent-id shape))
-                      (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells)))]
-
+                      (-> (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells)
+                          (pcb/reorder-grid-children [(:parent-id shape)]))))]
     [shape changes]))
 
 (defn add-shape
@@ -141,7 +144,8 @@
           (pcb/update-shapes ordered-indexes #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true)))
           (pcb/change-parent frame-id to-move-shapes 0)
           (cond-> (ctl/grid-layout? objects frame-id)
-            (pcb/update-shapes [frame-id] ctl/assign-cells))))))
+            (pcb/update-shapes [frame-id] ctl/assign-cells))
+          (pcb/reorder-grid-children [frame-id])))))
 
 (defn move-shapes-into-frame
   [frame-id shapes]
@@ -356,6 +360,7 @@
            (dch/commit-changes changes)
            (ptk/data-event :layout/update all-parents)
            (dwu/commit-undo-transaction undo-id))))
+
 
 (defn create-and-add-shape
   [type frame-x frame-y data]

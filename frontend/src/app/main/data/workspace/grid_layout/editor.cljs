@@ -6,10 +6,12 @@
 
 (ns app.main.data.workspace.grid-layout.editor
   (:require
+   [app.common.geom.shapes :as gsh]
+   [app.main.data.workspace.state-helpers :as wsh]
    [potok.core :as ptk]))
 
 (defn hover-grid-cell
-  [grid-id row column add-to-set]
+  [grid-id cell-id add-to-set]
   (ptk/reify ::hover-grid-cell
     ptk/UpdateEvent
     (update [_ state]
@@ -19,15 +21,15 @@
        (fn [hover-set]
          (let [hover-set (or hover-set #{})]
            (if add-to-set
-             (conj hover-set [row column])
-             (disj hover-set [row column]))))))))
+             (conj hover-set cell-id)
+             (disj hover-set cell-id))))))))
 
 (defn select-grid-cell
-  [grid-id row column]
+  [grid-id cell-id]
   (ptk/reify ::select-grid-cell
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-grid-edition grid-id :selected] [row column]))))
+      (assoc-in state [:workspace-grid-edition grid-id :selected] cell-id))))
 
 (defn remove-selection
   [grid-id]
@@ -42,3 +44,21 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-grid-edition dissoc grid-id))))
+
+(defn locate-board
+  [grid-id]
+  (ptk/reify ::locate-board
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects (wsh/lookup-page-objects state)
+            srect (get-in objects [grid-id :selrect])]
+        (-> state
+            (update :workspace-local
+                    (fn [{:keys [zoom vport] :as local}]
+                      (let [{:keys [x y width height]} srect
+                            x     (+ x (/ width 2) (- (/ (:width vport) 2 zoom)))
+                            y     (+ y (/ height 2) (- (/ (:height vport) 2 zoom)))
+                            srect (gsh/make-selrect x y width height)]
+                        (-> local
+                            (update :vbox merge (select-keys srect [:x :y :x1 :x2 :y1 :y2])))))))))))
+

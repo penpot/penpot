@@ -9,12 +9,14 @@
    [app.common.data :as d]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-attrs component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
+   [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
@@ -36,10 +38,23 @@
         layout-item-values (select-keys shape layout-item-attrs)
         [comp-ids comp-values] [[(:id shape)] (select-keys shape component-attrs)]
 
-        is-flex-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-flex-layout-child? ids))
-        is-flex-layout-child? (mf/deref is-flex-layout-child-ref)
-        is-flex-layout-container? (ctl/flex-layout? shape)
-        is-layout-child-absolute? (ctl/layout-absolute? shape)]
+        ids (hooks/use-equal-memo ids)
+
+        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
+        is-layout-child? (mf/deref is-layout-child-ref)
+
+        is-flex-parent-ref (mf/use-memo (mf/deps ids) #(refs/flex-layout-child? ids))
+        is-flex-parent? (mf/deref is-flex-parent-ref)
+
+        is-grid-parent-ref (mf/use-memo (mf/deps ids) #(refs/grid-layout-child? ids))
+        is-grid-parent? (mf/deref is-grid-parent-ref)
+
+        is-layout-container? (ctl/any-layout? shape)
+        is-layout-child-absolute? (ctl/layout-absolute? shape)
+
+        ids (hooks/use-equal-memo ids)
+        parents-by-ids-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
+        parents (mf/deref parents-by-ids-ref)]
     [:*
      [:& measures-menu {:ids [(:id shape)]
                         :values measure-values
@@ -48,18 +63,25 @@
      [:& component-menu {:ids comp-ids
                          :values comp-values
                          :shape shape}]
-     (when (or (not is-flex-layout-child?) is-layout-child-absolute?)
+     (when (or (not is-layout-child?) is-layout-child-absolute?)
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
      [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
 
-     (when (or is-flex-layout-child? is-flex-layout-container?)
+     (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
+       [:& grid-cell/options
+        {:shape (first parents)
+         :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
+
+     (when (or is-layout-child? is-layout-container?)
        [:& layout-item-menu
         {:ids ids
          :type type
          :values layout-item-values
-         :is-layout-child? is-flex-layout-child?
-         :is-layout-container? is-flex-layout-container?
+         :is-flex-parent? is-flex-parent?
+         :is-grid-parent? is-grid-parent?
+         :is-layout-child? is-layout-child?
+         :is-layout-container? is-layout-container?
          :shape shape}])
 
      [:& layer-menu {:ids ids

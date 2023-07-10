@@ -69,7 +69,8 @@
       (> (:x cand) (:x cur))               cand
       :else                                cur)))
 
-(defn title-transform [{:keys [points] :as shape} zoom]
+(defn title-transform
+  [{:keys [points] :as shape} zoom grid-edition?]
   (let [leftmost  (->> points (reduce left?))
         topmost   (->> points (remove #{leftmost}) (reduce top?))
         rightmost (->> points (remove #{leftmost topmost}) (reduce right?))
@@ -81,14 +82,18 @@
         top-right-angle (gpt/angle top-right)
 
         ;; Choose the position that creates the less angle between left-side and top-side
-        [label-pos angle v-pos]
+        [label-pos angle h-pos v-pos]
         (if (< (mth/abs left-top-angle) (mth/abs top-right-angle))
-          [leftmost left-top-angle (gpt/perpendicular left-top)]
-          [topmost top-right-angle (gpt/perpendicular top-right)])
+          [leftmost left-top-angle left-top (gpt/perpendicular left-top)]
+          [topmost top-right-angle top-right (gpt/perpendicular top-right)])
 
+        delta-x (if grid-edition? 40 0)
+        delta-y (if grid-edition? 50 10)
 
         label-pos
-        (gpt/subtract label-pos (gpt/scale (gpt/unit v-pos) (/ 10 zoom)))]
+        (-> label-pos
+            (gpt/subtract (gpt/scale (gpt/unit v-pos) (/ delta-y zoom)))
+            (gpt/subtract (gpt/scale (gpt/unit h-pos) (/ delta-x zoom))))]
 
     (dm/fmt "rotate(% %,%) scale(%, %) translate(%, %)"
             ;; rotate

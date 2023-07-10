@@ -123,6 +123,10 @@
   padding: $size-1;
   svg {
     fill: $color-gray-20;
+
+    &.icon-close {
+      transform: rotate(45deg);
+    }
   }
   &:hover {
     background: transparent;

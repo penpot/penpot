@@ -63,8 +63,7 @@
       {:height target-height
        :modifiers (ctm/resize-modifiers (gpt/point 1 fill-scale) child-origin transform transform-inverse)})))
 
-(defn layout-child-modifiers
-  "Calculates the modifiers for the layout"
+(defn fill-modifiers
   [parent parent-bounds child child-bounds layout-line]
   (let [child-origin (gpo/origin child-bounds)
         child-width  (gpo/width-points child-bounds)
@@ -83,15 +82,27 @@
           (calc-fill-height-data parent transform transform-inverse child child-origin child-height layout-line))
 
         child-width (or (:width fill-width) child-width)
-        child-height (or (:height fill-height) child-height)
+        child-height (or (:height fill-height) child-height)]
+
+    [child-width
+     child-height
+     (-> (ctm/empty)
+         (cond-> fill-width (ctm/add-modifiers (:modifiers fill-width)))
+         (cond-> fill-height (ctm/add-modifiers (:modifiers fill-height))))]))
+
+(defn layout-child-modifiers
+  "Calculates the modifiers for the layout"
+  [parent parent-bounds child child-bounds layout-line]
+  (let [child-origin (gpo/origin child-bounds)
+
+        [child-width child-height fill-modifiers]
+        (fill-modifiers parent parent-bounds child child-bounds layout-line)
 
         [corner-p layout-line] (fpo/get-child-position parent child child-width child-height layout-line)
-
         move-vec (gpt/to-vec child-origin corner-p)
 
         modifiers
         (-> (ctm/empty)
-            (cond-> fill-width (ctm/add-modifiers (:modifiers fill-width)))
-            (cond-> fill-height (ctm/add-modifiers (:modifiers fill-height)))
+            (ctm/add-modifiers fill-modifiers)
             (ctm/move move-vec))]
     [modifiers layout-line]))

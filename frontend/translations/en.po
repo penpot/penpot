@@ -4379,6 +4379,9 @@ msgstr "Updating %s..."
 msgid "workspace.shape.menu.add-flex"
 msgstr "Add flex layout"
 
+msgid "workspace.shape.menu.add-grid"
+msgstr "Add grid layout"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
 msgstr "Send to back"
@@ -4957,3 +4960,6 @@ msgstr "Marketing"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.student-teacher"
 msgstr "Student or teacher"
+
+msgid "workspace.layout_grid.editor.title"
+msgstr "Editing grid"

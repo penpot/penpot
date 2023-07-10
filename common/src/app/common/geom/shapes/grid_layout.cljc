@@ -7,13 +7,15 @@
 (ns app.common.geom.shapes.grid-layout
   (:require
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes.grid-layout.bounds :as glpb]
    [app.common.geom.shapes.grid-layout.layout-data :as glld]
    [app.common.geom.shapes.grid-layout.positions :as glp]))
 
 (dm/export glld/calc-layout-data)
 (dm/export glld/get-cell-data)
 (dm/export glp/child-modifiers)
-
-(defn get-drop-index
-  [frame objects _position]
-  (dec (count (get-in objects [frame :shapes]))))
+(dm/export glp/get-position-grid-coord)
+(dm/export glp/get-drop-cell)
+(dm/export glp/cell-bounds)
+(dm/export glpb/layout-content-points)
+(dm/export glpb/layout-content-bounds)

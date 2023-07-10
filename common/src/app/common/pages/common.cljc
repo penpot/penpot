@@ -89,11 +89,16 @@
    :layout-gap              :layout-container
    :layout-gap-type         :layout-container
    :layout-justify-content  :layout-container
+   :layout-justify-items    :layout-container
    :layout-wrap-type        :layout-container
    :layout-padding-type     :layout-container
    :layout-padding          :layout-container
    :layout-h-orientation    :layout-container
    :layout-v-orientation    :layout-container
+   :layout-grid-dir         :layout-container
+   :layout-grid-rows        :layout-container
+   :layout-grid-columns     :layout-container
+   :layout-grid-cells       :layout-container
 
    :layout-item-margin      :layout-item
    :layout-item-margin-type :layout-item
