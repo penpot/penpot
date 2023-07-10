@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
    [app.config :as cf]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
@@ -17,6 +16,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.frame :as frame]
    [app.util.dom :as dom]
+   [app.util.thumbnails :as th]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
@@ -41,16 +41,11 @@
   [rect node style-node]
   (let [{:keys [x y width height]} rect
         viewbox (dm/str x " " y " " width " " height)
-        
+
         ;; Calculate the fixed width and height
-        ;; We don't want to generate thumbnails 
+        ;; We don't want to generate thumbnails
         ;; bigger than 2000px
-        [fixed-width fixed-height]
-        (if (> width height)
-          [(mth/clamp width 250 2000)
-           (/ (* height (mth/clamp width 250 2000)) width)]
-          [(/ (* width (mth/clamp height 250 2000)) height)
-           (mth/clamp height 250 2000)])
+        [fixed-width fixed-height] (th/get-proportional-size width height)
 
         ;; This is way faster than creating a node
         ;; through the DOM API
