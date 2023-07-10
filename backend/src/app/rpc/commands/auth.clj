@@ -33,7 +33,7 @@
   [::sm/word-string {:max 500}])
 
 (def schema:token
-  [::sm/word-string {:max 1000}])
+  [::sm/word-string {:max 6000}])
 
 ;; ---- COMMAND: login with password
 
@@ -323,9 +323,9 @@
                 :extra-data ptoken})))
 
 (defn register-profile
-  [{:keys [::db/conn] :as cfg} {:keys [token] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [token fullname] :as params}]
   (let [claims     (tokens/verify (::main/props cfg) {:token token :iss :prepared-register})
-        params     (merge params claims)
+        params     (assoc claims :fullname fullname)
 
         is-active  (or (:is-active params)
                        (not (contains? cf/flags :email-verification)))

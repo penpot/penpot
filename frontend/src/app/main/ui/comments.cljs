@@ -6,6 +6,7 @@
 
 (ns app.main.ui.comments
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.config :as cfg]
@@ -19,38 +20,55 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
    [app.util.time :as dt]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (mf/defc resizing-textarea
-  {::mf/wrap-props false}
-  [props]
-  (let [value       (obj/get props "value" "")
-        on-focus    (obj/get props "on-focus")
-        on-blur     (obj/get props "on-blur")
-        placeholder (obj/get props "placeholder")
-        on-change   (obj/get props "on-change")
-        on-esc      (obj/get props "on-esc")
-        autofocus?  (obj/get props "autofocus")
+  {::mf/wrap-props false
+   ::mf/forward-ref true}
+  [props ref]
+  (let [value            (d/nilv (unchecked-get props "value") "")
+        on-focus         (unchecked-get props "on-focus")
+        on-blur          (unchecked-get props "on-blur")
+        placeholder      (unchecked-get props "placeholder")
+        on-change        (unchecked-get props "on-change")
+        on-esc           (unchecked-get props "on-esc")
+        autofocus?       (unchecked-get props "autofocus")
+        select-on-focus? (unchecked-get props "select-on-focus")
 
-        ref         (mf/use-ref)
+        local-ref   (mf/use-ref)
+        ref         (or ref local-ref)
 
         on-key-down
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (when (and (kbd/esc? event)
                       (fn? on-esc))
              (on-esc event))))
 
         on-change*
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-change)
          (fn [event]
            (let [content (dom/get-target-val event)]
-             (on-change content))))]
+             (on-change content))))
+
+        on-focus*
+        (mf/use-fn
+         (mf/deps select-on-focus? on-focus)
+         (fn [event]
+           (when (fn? on-focus)
+             (on-focus event))
+
+           (when ^boolean select-on-focus?
+             (let [target (dom/get-target event)]
+               (dom/select-text! target)
+               ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
+               (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
+        ]
+
 
 
     (mf/use-layout-effect
@@ -64,7 +82,7 @@
      {:ref ref
       :auto-focus autofocus?
       :on-key-down on-key-down
-      :on-focus on-focus
+      :on-focus on-focus*
       :on-blur on-blur
       :value value
       :placeholder placeholder
@@ -76,24 +94,24 @@
         content       (mf/use-state "")
 
         on-focus
-        (mf/use-callback
+        (mf/use-fn
          #(reset! show-buttons? true))
 
         on-blur
-        (mf/use-callback
+        (mf/use-fn
          #(reset! show-buttons? false))
 
         on-change
-        (mf/use-callback
+        (mf/use-fn
          #(reset! content %))
 
         on-cancel
-        (mf/use-callback
+        (mf/use-fn
          #(do (reset! content "")
               (reset! show-buttons? false)))
 
         on-submit
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps thread @content)
          (fn []
            (st/emit! (dcm/add-comment thread @content))
@@ -128,7 +146,7 @@
         pos-y    (* (:y position) zoom)
 
         on-esc
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps draft)
          (fn [event]
            (dom/stop-propagation event)
@@ -137,13 +155,13 @@
              (st/emit! :interrupt))))
 
         on-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps draft)
          (fn [content]
            (st/emit! (dcm/update-draft-thread {:content content}))))
 
         on-submit
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps draft)
          (partial on-submit draft))]
 
@@ -179,16 +197,20 @@
   (let [content (mf/use-state content)
 
         on-change
-        (mf/use-callback
+        (mf/use-fn
          #(reset! content %))
 
         on-submit*
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps @content)
-         (fn [] (on-submit @content)))]
+         (fn [] (on-submit @content)))
+        ]
+
 
     [:div.reply-form.edit-form
      [:& resizing-textarea {:value @content
+                            :autofocus true
+                            :select-on-focus true
                             :on-change on-change}]
      [:div.buttons
       [:input.btn-primary {:type "button" :value "Post" :on-click on-submit*}]
@@ -202,24 +224,24 @@
         edition? (mf/use-state false)
 
         on-show-options
-        (mf/use-callback #(reset! options true))
+        (mf/use-fn #(reset! options true))
 
         on-hide-options
-        (mf/use-callback #(reset! options false))
+        (mf/use-fn #(reset! options false))
 
         on-edit-clicked
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (reset! options false)
            (reset! edition? true)))
 
         on-delete-comment
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps comment)
          #(st/emit! (dcm/delete-comment comment)))
 
         delete-thread
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps thread)
          #(st/emit! (dcm/close-thread)
                     (if (= origin :viewer)
@@ -228,7 +250,7 @@
 
 
         on-delete-thread
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps thread)
          #(st/emit! (modal/show
                       {:type :confirm
@@ -238,17 +260,17 @@
                        :on-accept delete-thread})))
 
         on-submit
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps comment thread)
          (fn [content]
            (reset! edition? false)
            (st/emit! (dcm/update-comment (assoc comment :content content)))))
 
         on-cancel
-        (mf/use-callback #(reset! edition? false))
+        (mf/use-fn #(reset! edition? false))
 
         toggle-resolved
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps thread)
          (fn [event]
            (dom/stop-propagation event)
@@ -268,6 +290,7 @@
           (if (:is-resolved thread)
             [:span i/checkbox-checked]
             [:span i/checkbox-unchecked])])
+
        (when (= (:id profile) (:id owner))
          [:div.options
           [:div.options-icon {:on-click on-show-options} i/actions]])]
@@ -287,40 +310,45 @@
          [:li {:on-click on-delete-thread} (tr "labels.delete-comment-thread")]
          [:li {:on-click on-delete-comment} (tr "labels.delete-comment")])]]]))
 
-(defn comments-ref
-  [{:keys [id] :as thread}]
-  (l/derived (l/in [:comments id]) st/state))
+(defn make-comments-ref
+  [thread-id]
+  (l/derived (l/in [:comments thread-id]) st/state))
 
 (mf/defc thread-comments
   {::mf/wrap [mf/memo]}
   [{:keys [thread zoom users origin position-modifier]}]
-  (let [ref   (mf/use-ref)
-        pos   (cond-> (:position thread)
-                (some? position-modifier)
-                (gpt/transform position-modifier))
+  (let [ref          (mf/use-ref)
 
-        pos-x (+ (* (:x pos) zoom) 14)
-        pos-y (- (* (:y pos) zoom) 14)
 
-        comments-ref (mf/use-memo (mf/deps thread) #(comments-ref thread))
+        thread-id    (:id thread)
+        thread-pos   (:position thread)
+
+        pos          (cond-> thread-pos
+                       (some? position-modifier)
+                       (gpt/transform position-modifier))
+
+        pos-x        (+ (* (:x pos) zoom) 14)
+        pos-y        (- (* (:y pos) zoom) 14)
+
+        comments-ref (mf/with-memo [thread-id]
+                       (make-comments-ref thread-id))
         comments-map (mf/deref comments-ref)
-        comments     (->> (vals comments-map)
-                          (sort-by :created-at))
+
+        comments     (mf/with-memo [comments-map]
+                       (->> (vals comments-map)
+                            (sort-by :created-at)))
+
         comment      (first comments)]
 
-    (mf/use-layout-effect
-     (mf/deps thread)
-     #(st/emit! (dcm/retrieve-comments (:id thread))))
+    (mf/with-effect [thread-id]
+      (st/emit! (dcm/retrieve-comments thread-id)))
 
-    (mf/use-effect
-     (mf/deps thread)
-     #(st/emit! (dcm/update-comment-thread-status thread)))
+    (mf/with-effect [thread-id]
+      (st/emit! (dcm/update-comment-thread-status thread-id)))
 
-    (mf/use-layout-effect
-     (mf/deps thread comments-map)
-     (fn []
-       (when-let [node (mf/ref-val ref)]
-         (dom/scroll-into-view-if-needed! node))))
+    (mf/with-layout-effect [thread-pos comments-map]
+      (when-let [node (mf/ref-val ref)]
+        (dom/scroll-into-view-if-needed! node)))
 
     (when (some? comment)
       [:div.thread-content
@@ -345,22 +373,22 @@
 (defn use-buble
   [zoom {:keys [position frame-id]}]
   (let [dragging-ref (mf/use-ref false)
-        start-ref (mf/use-ref nil)
+        start-ref    (mf/use-ref nil)
 
-        state (mf/use-state {:hover false
-                             :new-position-x nil
-                             :new-position-y nil
-                             :new-frame-id frame-id})
+        state        (mf/use-state {:hover false
+                                    :new-position-x nil
+                                    :new-position-y nil
+                                    :new-frame-id frame-id})
 
         on-pointer-down
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/capture-pointer event)
            (mf/set-ref-val! dragging-ref true)
            (mf/set-ref-val! start-ref (dom/get-client-position event))))
 
         on-pointer-up
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (select-keys @state [:new-position-x :new-position-y :new-frame-id]))
          (fn [_ thread]
            (when (and
@@ -369,7 +397,7 @@
              (st/emit! (dwcm/update-comment-thread-position thread [(:new-position-x @state) (:new-position-y @state)])))))
 
         on-lost-pointer-capture
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/release-pointer event)
            (mf/set-ref-val! dragging-ref false)
@@ -378,7 +406,7 @@
            (swap! state assoc :new-position-y nil)))
 
         on-pointer-move
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps position zoom)
          (fn [event]
            (when-let [_ (mf/ref-val dragging-ref)]
@@ -416,7 +444,7 @@
         pos-y (* (or (:new-position-y @state) (:y pos)) zoom)
 
         on-pointer-down*
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps origin was-open? open? drag? on-pointer-down)
          (fn [event]
            (when (not= origin :viewer)
@@ -427,7 +455,7 @@
              (on-pointer-down event))))
 
         on-pointer-up*
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps origin thread was-open? drag? on-pointer-up)
          (fn [event]
            (when (not= origin :viewer)
@@ -439,7 +467,7 @@
                (st/emit! (dcm/open-thread thread))))))
 
         on-pointer-move*
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps origin drag? on-pointer-move)
          (fn [event]
            (when (not= origin :viewer)
@@ -448,7 +476,7 @@
              (on-pointer-move event))))
 
         on-click*
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps origin thread on-click)
          (fn [event]
            (dom/stop-propagation event)
@@ -472,7 +500,7 @@
   [{:keys [item users on-click]}]
   (let [owner (get users (:owner-id item))
         on-click*
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps item)
          (fn [event]
            (dom/stop-propagation event)

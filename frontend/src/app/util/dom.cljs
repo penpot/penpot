@@ -234,7 +234,7 @@
 
 (defn select-text!
   [^js node]
-  (when (and (some? node) (or (= "INPUT" (.-tagName node)) (= "TEXTAREA" (.-tagName node))))
+  (when (some? node)
     (.select ^js node)))
 
 (defn ^boolean equals?

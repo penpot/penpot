@@ -96,22 +96,25 @@
   "Get the parent shape linked to a component for this shape, if any"
   ([objects shape] (get-component-shape objects shape nil))
   ([objects shape {:keys [allow-main?] :or {allow-main? false} :as options}]
-  (cond
-    (nil? shape)
-    nil
+   (cond
+     (nil? shape)
+     nil
 
-    (and (not (ctk/in-component-copy? shape)) (not allow-main?))
-    nil
+     (= uuid/zero (:id shape))
+     nil
 
-    (ctk/instance-root? shape)
-    shape
+     (and (not (ctk/in-component-copy? shape)) (not allow-main?))
+     nil
 
-    :else
-    (get-component-shape objects (get objects (:parent-id shape)) options))))
+     (ctk/instance-root? shape)
+     shape
+
+     :else
+     (get-component-shape objects (get objects (:parent-id shape)) options))))
 
 (defn in-component-main?
   "Check if the shape is inside a component non-main instance.
-   
+
    Note that we must iterate on the parents because non-root shapes in
    a main component have not any discriminating attribute."
   [objects shape]
