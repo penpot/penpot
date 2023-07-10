@@ -75,7 +75,7 @@
                              (d/without-nils {:color    (str/lower (dm/get-in shadow [:color :color]))
                                               :opacity  (dm/get-in shadow [:color :opacity])
                                               :gradient (dm/get-in shadow [:color :gradient])}))]
-    
+
 
     {:attrs attrs
      :prop :shadow
@@ -157,41 +157,33 @@
         expand-color     (mf/use-state false)
 
         grouped-colors*  (mf/use-var nil)
-        prev-color*      (mf/use-var nil)
+        prev-colors*     (mf/use-var [])
 
         on-change
         (mf/use-fn
          (fn [new-color old-color from-picker?]
-           (let [old-color       (-> old-color
-                                     (dissoc :name)
-                                     (dissoc :path)
-                                     (d/without-nils))
-
-                 prev-color       (when @prev-color*
-                                    (-> @prev-color*
-                                        (dissoc :name)
-                                        (dissoc :path)
-                                        (d/without-nils)))
+           (let [old-color       (-> old-color (dissoc :name :path) d/without-nils)
 
                  ;; When dragging on the color picker sometimes all the shapes hasn't updated the color to the prev value so we need this extra calculation
                  shapes-by-old-color  (get @grouped-colors* old-color)
+                 prev-color           (d/seek #(get @grouped-colors* %) @prev-colors*)
                  shapes-by-prev-color (get @grouped-colors* prev-color)
                  shapes-by-color (or shapes-by-prev-color shapes-by-old-color)]
 
              (when from-picker?
-               (reset! prev-color* new-color))
+               (swap! prev-colors* conj (-> new-color (dissoc :name :path) d/without-nils)))
 
              (st/emit! (dc/change-color-in-selected new-color shapes-by-color (or prev-color old-color))))))
 
         on-open
         (mf/use-fn
          (fn []
-           (reset! prev-color* nil)))
+           (reset! prev-colors* [])))
 
         on-close
         (mf/use-fn
          (fn []
-           (reset! prev-color* nil)))
+           (reset! prev-colors* [])))
 
         on-detach
         (mf/use-fn
@@ -217,7 +209,7 @@
        [:div.element-set-content
         [:div.selected-colors
          (for [[index color] (d/enumerate (take 3 library-colors))]
-           [:& color-row {:key (dm/str "library-color-" index)
+           [:& color-row {:key (dm/str "library-color-" (:color color))
                           :color color
                           :index index
                           :on-detach on-detach
@@ -231,7 +223,7 @@
             [:span.text (tr "workspace.options.more-lib-colors")]])
          (when @expand-lib-color
            (for [[index color] (d/enumerate (drop 3 library-colors))]
-             [:& color-row {:key (dm/str "library-color-" index)
+             [:& color-row {:key (dm/str "library-color-" (:color color))
                             :color color
                             :index index
                             :on-detach on-detach
@@ -255,7 +247,7 @@
             [:span.text (tr "workspace.options.more-colors")]])
          (when @expand-color
            (for [[index color] (d/enumerate (drop 3 colors))]
-             [:& color-row {:key (dm/str "color-" index)
+             [:& color-row {:key (dm/str "color-" (:color color))
                             :color color
                             :index index
                             :select-only select-only
