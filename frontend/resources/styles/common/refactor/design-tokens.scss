@@ -8,6 +8,8 @@
 .light,
 .default {
   --scrollbar-background-color: var(--color-foreground-secondary);
+  --panel-background-color: var(--color-background-primary);
+  --panel-title-background-color: var(--color-background-secondary);
 
   --button-background-hover: var(--color-background-quaternary);
   --button-foreground-hover: var(--color-accent-primary);
@@ -64,10 +66,9 @@
   --tab-foreground-color-hover: var(--color-foreground-primary);
   --tab-foreground-color-selected: var(--color-accent-primary);
 
-  --title-background-color: var(--color-background-secondary);
+  --title-background-color: var(--color-background-primary);
   --title-foreground-color: var(--color-foreground-secondary);
   --title-foreground-color-hover: var(--color-foreground-primary);
-  --title-background-color: var(--color-background-primary);
 
   --layer-row-background-color: var(--color-background-primary);
   --layer-row-background-color-hover: var(--color-background-secondary);
@@ -139,6 +140,7 @@
   --color-bullet-border-color: var(--color-background-quaternary);
   --palette-handler-background-color: var(--color-background-quaternary);
 
+  --assets-title-background-color: var(--color-background-primary);
   --assets-item-background-color: var(--color-background-tertiary);
   --assets-item-background-color-hover: var(--color-background-quaternary);
   --assets-item-name-foreground-color: var(--color-foreground-secondary);
@@ -163,4 +165,14 @@
 
   --not-found-background-color: var(--color-background-tertiary);
   --not-found-foreground-color: var(--color-foreground-secondary);
+
+  --entry-foreground-color: var(--color-foreground-secondary);
+  --entry-background-color: var(--color-background-tertiary);
+  --entry-background-color-disabled: var(--color-background-primary);
+  --entry-border-color-disabled: var(--color-background-quaternary);
+  --entry-foreground-color-hover: var(--color-foreground-primary);
+  --entry-background-color-hover: var(--color-background-quaternary);
+
+  --empty-message-background-color: var(--color-background-tertiary);
+  --empty-message-foreground-color: var(--color-foreground-secondary);
 }

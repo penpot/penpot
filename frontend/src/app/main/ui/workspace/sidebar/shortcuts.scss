@@ -15,7 +15,7 @@
     padding: $s-2 $s-2 $s-2 0;
     margin: $s-4 $s-4 0 $s-4;
     border-radius: $br-6;
-    background-color: var(--title-background-color);
+    background-color: var(--panel-title-background-color);
 
     .shortcuts-title {
       @include flexCenter;
@@ -31,6 +31,7 @@
       height: $s-28;
       width: $s-28;
       border-radius: $br-5;
+
       svg {
         @extend .button-icon;
       }

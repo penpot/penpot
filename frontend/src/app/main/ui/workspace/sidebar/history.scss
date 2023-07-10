@@ -1,0 +1,155 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.history-toolbox {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--panel-background-color);
+
+  .history-toolbox-title {
+    @include flexCenter;
+    @include tabTitleTipography;
+    position: relative;
+    height: $s-32;
+    min-height: $s-32;
+    margin: $s-4 $s-4 0 $s-4;
+    border-radius: $br-8;
+    background-color: var(--panel-title-background-color);
+
+    span {
+      @include flexCenter;
+      flex-grow: 1;
+      color: var(--title-foreground-color-hover);
+    }
+
+    .close-button {
+      @extend .button-tertiary;
+      position: absolute;
+      right: $s-2;
+      top: $s-2;
+      height: $s-28;
+      width: $s-28;
+      border-radius: $br-6;
+      svg {
+        @extend .button-icon;
+      }
+    }
+  }
+
+  .history-entry-empty {
+    @include flexCenter;
+    flex-direction: column;
+    gap: $s-16;
+    padding: $s-28 $s-16;
+    text-align: center;
+
+    .history-entry-empty-icon {
+      @include flexCenter;
+      height: $s-48;
+      width: $s-48;
+      border-radius: 50%;
+      background-color: var(--empty-message-background-color);
+      svg {
+        @extend .button-icon;
+        height: $s-28;
+        width: $s-28;
+        margin-left: calc(-1 * $s-2);
+        stroke: var(--empty-message-foreground-color);
+      }
+    }
+
+    .history-entry-empty-msg {
+      @include titleTipography;
+      color: var(--title-foreground-secondary);
+    }
+  }
+
+  ul.history-entries {
+    height: 100%;
+    padding: $s-12;
+    overflow-x: hidden;
+    overflow-y: auto;
+    font-size: $fs-12;
+
+    .history-entry {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      min-height: $s-32;
+      margin: $s-4;
+      padding: $s-4 $s-8;
+      border: $s-2 solid transparent;
+      border-radius: $s-8;
+      background-color: var(--entry-background-color);
+      cursor: pointer;
+      transition: border 0.2s;
+
+      &.disabled {
+        border-color: var(--entry-border-color-disabled);
+        background-color: var(--entry-background-color-disabled);
+      }
+
+      &.hover,
+      &:hover {
+        background-color: var(--entry-background-color-hover);
+        color: var(--entry-foreground-color-hover);
+        .history-entry-summary {
+          .history-entry-summary-icon {
+            svg {
+              stroke: var(--entry-foreground-color-hover);
+            }
+          }
+          .history-entry-summary-button {
+            opacity: $op-10;
+            &.button-opened {
+              svg {
+                transform: rotate(90deg);
+              }
+            }
+          }
+        }
+      }
+
+      .history-entry-summary {
+        display: flex;
+        align-items: center;
+        .history-entry-summary-icon {
+          svg {
+            @extend .button-icon-small;
+            stroke: var(--entry-foreground-color);
+          }
+        }
+        .history-entry-summary-text {
+          margin: 0 $s-8;
+        }
+        .history-entry-summary-button {
+          opacity: $op-0;
+          margin-left: auto;
+          &.button-opened {
+            svg {
+              transform: rotate(90deg);
+            }
+          }
+          svg {
+            @extend .button-icon-small;
+            stroke: var(--entry-foreground-color);
+          }
+        }
+      }
+
+      .history-entry-detail {
+        display: block;
+        padding-top: $s-16;
+
+        ul.history-entry-details-list {
+          margin: 0;
+        }
+      }
+    }
+  }
+}
