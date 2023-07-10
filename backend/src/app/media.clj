@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
@@ -226,6 +227,7 @@
 
 (defmethod process-error org.im4java.core.InfoException
   [error]
+  (l/error :hint "unexpected error on processing image" :cause error)
   (ex/raise :type :validation
             :code :invalid-image
             :hint "invalid image"
