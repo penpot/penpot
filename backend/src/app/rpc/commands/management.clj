@@ -233,7 +233,7 @@
 
   (let [project (-> (db/get-by-id conn :project project-id)
                     (assoc :is-pinned false))
-        
+
         files   (db/query conn :file
                   {:project-id (:id project)
                    :deleted-at nil}
@@ -412,10 +412,17 @@
         (binfile/import!))))
 
 
-;; --- COMMAND: Retrieve list of builtin templates
+;; --- COMMAND: Get list of builtin templates
 
 (s/def ::retrieve-list-of-builtin-templates any?)
 
 (sv/defmethod ::retrieve-list-of-builtin-templates
+  {::doc/added "1.10"
+   ::doc/deprecated "1.19"}
+  [cfg _params]
+  (mapv #(select-keys % [:id :name :thumbnail-uri]) (:templates cfg)))
+
+(sv/defmethod ::get-builtin-templates
+  {::doc/added "1.19"}
   [cfg _params]
   (mapv #(select-keys % [:id :name :thumbnail-uri]) (:templates cfg)))

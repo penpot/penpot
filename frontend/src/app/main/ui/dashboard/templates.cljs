@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
+   [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
@@ -225,6 +226,10 @@
            (import-template! template team-id project-id default-project-id section)))
 
         ]
+
+    (mf/with-effect [collapsed]
+      (when-not collapsed
+        (st/emit! (dd/fetch-builtin-templates))))
 
     [:div.dashboard-templates-section
      {:class (when ^boolean collapsed "collapsed")}
