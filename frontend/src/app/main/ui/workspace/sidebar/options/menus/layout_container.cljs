@@ -12,6 +12,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
@@ -602,20 +603,20 @@
            (if (= type :row)
              (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))
              (st/emit! (dwsl/update-layout ids {:layout-align-content value})))))]
-
     [:div.element-set
      [:div.element-set-title
       [:*
        [:span "Layout"]
        (if (and (not multiple) (:layout values))
          [:div.title-actions
-          [:div.layout-btns
+          (when (features/active-feature? :grid-layout)
+            [:div.layout-btns
              [:button {:on-click set-flex
                        :class (dom/classnames
                                :active (= :flex layout-type))} "Flex"]
              [:button {:on-click set-grid
                        :class (dom/classnames
-                               :active (= :grid layout-type))} "Grid"]]
+                               :active (= :grid layout-type))} "Grid"]])
           [:button.remove-layout {:on-click on-remove-layout} i/minus]]
 
          [:button.add-page {:on-click #(on-add-layout :flex)} i/close])]]
