@@ -200,11 +200,6 @@
                  (when (and (some? current) (not (.contains current target)))
                    (dom/blur! current)))))))
 
-        on-mouse-up
-        (mf/use-callback
-         (fn [event]
-           (dom/prevent-default event)))
-
         handle-focus
         (mf/use-callback
          (fn [event]
@@ -213,9 +208,9 @@
                (on-focus event))
 
              (when select-on-focus?
-               (-> event (dom/get-target) (.select))
+               (dom/select-text! event)
                ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
-               (.addEventListener target "mouseup" on-mouse-up #js {"once" true})))))
+               (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
 
         props (-> props
                   (obj/without ["value" "onChange" "nillable" "onFocus"])

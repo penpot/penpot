@@ -134,14 +134,13 @@
                            (rx/throw {:type :comment-error})))))))))
 
 (defn update-comment-thread-status
-  [{:keys [id] :as thread}]
-  (dm/assert! (comment-thread? thread))
+  [thread-id]
   (ptk/reify ::update-comment-thread-status
     ptk/WatchEvent
     (watch [_ state _]
-      (let [done #(d/update-in-when % [:comment-threads id] assoc :count-unread-comments 0)
+      (let [done #(d/update-in-when % [:comment-threads thread-id] assoc :count-unread-comments 0)
             share-id (-> state :viewer-local :share-id)]
-        (->> (rp/cmd! :update-comment-thread-status {:id id :share-id share-id})
+        (->> (rp/cmd! :update-comment-thread-status {:id thread-id :share-id share-id})
              (rx/map (constantly done))
              (rx/catch #(rx/throw {:type :comment-error})))))))
 
@@ -282,7 +281,7 @@
            (fetched [[users comments] state]
              (let [state (-> state
                              (assoc :comment-threads (d/index-by :id comments))
-                             (assoc :current-file-comments-users (d/index-by :id users)))]
+                             (update :current-file-comments-users merge (d/index-by :id users)))]
                (reduce set-comment-threds state comments)))]
 
     (ptk/reify ::retrieve-comment-threads

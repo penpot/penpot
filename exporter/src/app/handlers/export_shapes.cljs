@@ -23,6 +23,9 @@
 (declare ^:private assoc-file-name)
 (declare prepare-exports)
 
+;; Regex to clean namefiles
+(def sanitize-file-regex #"[\\/:*?\"<>|]")
+
 (s/def ::file-id ::us/uuid)
 (s/def ::filename ::us/string)
 (s/def ::name ::us/string)
@@ -134,7 +137,7 @@
                                     :on-progress on-progress)
 
         append      (fn [{:keys [filename path] :as object}]
-                      (rsc/add-to-zip! zip path filename))
+                      (rsc/add-to-zip! zip path (str/replace filename sanitize-file-regex "_")))
 
         proc        (-> (p/do
                           (p/loop [exports (seq exports)]
@@ -144,9 +147,7 @@
                                 (p/recur (rest exports)))))
                           (.finalize zip))
                         (p/then (constantly resource))
-                        (p/catch on-error))
-        ]
-
+                        (p/catch on-error))]
     (if wait
       (p/then proc #(assoc exchange :response/body (dissoc % :path)))
       (assoc exchange :response/body (dissoc resource :path)))))

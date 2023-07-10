@@ -56,7 +56,20 @@
 - Fix validation on team name input [Taiga #5510](https://tree.taiga.io/project/penpot/issue/5510)
 - Fix incorrect uri generation issues on share-link modal [Taiga #5564](https://tree.taiga.io/project/penpot/issue/5564)
 - Fix cache issues with share-links [Taiga #5559](https://tree.taiga.io/project/penpot/issue/5559)
-
+- Makes height priority for the rows/columns grids [#2774](https://github.com/penpot/penpot/issues/2774)
+- Fix problem with comments mode not staying [#3363](https://github.com/penpot/penpot/issues/3363)
+- Fix problem with comments when user left the team [Taiga #5562](https://tree.taiga.io/project/penpot/issue/5562)
+- Fix problem with images patterns repeating [#3372](https://github.com/penpot/penpot/issues/3372)
+- Fix grid not being clipped in frames [#3365](https://github.com/penpot/penpot/issues/3365)
+- Fix cut/delete text layer when while creating text [Taiga #5602](https://tree.taiga.io/project/penpot/issue/5602)
+- Fix picking a gradient color in recent colors for a new color in the assets tab [Taiga #5601](https://tree.taiga.io/project/penpot/issue/5601)
+- Fix problem with importation process [Taiga #5597](https://tree.taiga.io/project/penpot/issue/5597)
+- Fix problem with HSV color picker [#3317](https://github.com/penpot/penpot/issues/3317)
+- Fix problem with slashes in layers names for exporter [#3276](https://github.com/penpot/penpot/issues/3276)
+- Fix incorrect modified data on moving files on dashboard [Taiga #5530](https://tree.taiga.io/project/penpot/issue/5530)
+- Fix focus handling on comments edition [Taiga #5560](https://tree.taiga.io/project/penpot/issue/5560)
+- Fix incorrect fullname use on registring user after OIDC authentication [Taiga #5517](https://tree.taiga.io/project/penpot/issue/5517)
+- Fix incorrect modified-at on project after import file [Taiga #5268](https://tree.taiga.io/project/penpot/issue/5268)
 
 ### :arrow_up: Deps updates
 

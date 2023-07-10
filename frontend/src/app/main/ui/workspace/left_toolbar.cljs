@@ -81,7 +81,11 @@
            (let [tool (-> (dom/get-current-target event)
                           (dom/get-data "tool")
                           (keyword))]
-             (st/emit! :interrupt (dw/select-for-drawing tool)))))
+             (st/emit! :interrupt
+                       dw/clear-edition-mode)
+
+             ;; Delay so anything that launched :interrupt can finish
+             (st/emit! 100 (dw/select-for-drawing tool)))))
 
         toggle-text-palette
         (mf/use-fn

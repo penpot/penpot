@@ -515,27 +515,32 @@
       (let [shape-id (-> state wsh/lookup-selected first)]
         (update state :colorpicker
                 (fn [state]
-                  (if (some? gradient)
-                    (let [stop  (or (:editing-stop state) 0)
-                          stops (mapv split-color-components (:stops gradient))
-                          type  (case (:type gradient)
-                                  :linear :linear-gradient
-                                  :radial :radial-gradient)]
-                      (-> state
-                          (assoc :type type)
-                          (assoc :current-color (nth stops stop))
-                          (assoc :stops stops)
-                          (assoc :gradient (-> gradient
-                                               (dissoc :stops)
-                                               (assoc :shape-id shape-id)))
-                          (assoc :editing-stop stop)))
+                  (let [current-color (:current-color state)]
+                    (if (some? gradient)
+                      (let [stop  (or (:editing-stop state) 0)
+                            stops (mapv split-color-components (:stops gradient))
+                            type  (case (:type gradient)
+                                    :linear :linear-gradient
+                                    :radial :radial-gradient
+                                    (:type state))]
+                        (-> state
+                            (assoc :type type)
+                            (assoc :current-color (nth stops stop))
+                            (assoc :stops stops)
+                            (assoc :gradient (-> gradient
+                                                 (dissoc :stops)
+                                                 (assoc :shape-id shape-id)))
+                            (assoc :editing-stop stop)))
 
-                    (-> state
-                        (assoc :type :color)
-                        (assoc :current-color (split-color-components (dissoc data :gradient)))
-                        (dissoc :editing-stop)
-                        (dissoc :gradient)
-                        (dissoc :stops)))))))))
+                      (-> state
+                          (assoc :type :color)
+                          (cond-> (or (nil? current-color)
+                                      (not= (:color data) (:color current-color))
+                                      (not= (:opacity data) (:opacity current-color)))
+                            (assoc :current-color (split-color-components (dissoc data :gradient))))
+                          (dissoc :editing-stop)
+                          (dissoc :gradient)
+                          (dissoc :stops))))))))))
 
 (defn update-colorpicker-color
   [changes add-recent?]

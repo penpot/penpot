@@ -323,3 +323,13 @@
   :rfn (fn [^Reader rdr]
          (let [^List x (read-object! rdr)]
            (Matrix. (.get x 0) (.get x 1) (.get x 2) (.get x 3) (.get x 4) (.get x 5))))})
+
+
+;; Backward compatibility for 1.19 with v1.20;
+
+(add-handlers!
+ {:name "penpot/geom/rect"
+  :rfn read-map-like}
+ {:name "penpot/shape"
+  :rfn read-map-like})
+

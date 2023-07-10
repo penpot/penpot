@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.pages :as cp]
    [app.common.schema :as sm]
+   [app.common.time :as dt]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -872,10 +873,14 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [origin-project (get-in state [:dashboard-files (first ids) :project-id])]
+      (let [origin-project (get-in state [:dashboard-files (first ids) :project-id])
+            update-project (fn [project]
+                             (-> project
+                                 (update :count #(+ % (count ids)))
+                                 (assoc :modified-at (dt/now))))]
         (-> state
-            (d/update-in-when [:dashboard-projects origin-project] update :count #(- % (count ids)))
-            (d/update-in-when [:dashboard-projects project-id] update :count #(+ % (count ids))))))
+            (d/update-in-when [:dashboard-projects origin-project] update-project)
+            (d/update-in-when [:dashboard-projects project-id] update-project))))
 
     ptk/WatchEvent
     (watch [_ _ _]

@@ -86,16 +86,16 @@
       (ex/raise :type :validation
                 :code :cant-persist-already-persisted-file))
 
-    (loop [revs (seq revs)
-           data (blob/decode (:data file))]
-      (if-let [rev (first revs)]
-        (recur (rest revs)
-               (->> rev :changes blob/decode (cp/process-changes data)))
-        (db/update! conn :file
-                    {:deleted-at nil
-                     :revn revn
-                     :data (blob/encode data)}
-                    {:id id})))
+
+    (let [data
+          (->> revs
+               (mapcat #(->> % :changes blob/decode))
+               (cp/process-changes (blob/decode (:data file))))]
+      (db/update! conn :file
+                  {:deleted-at nil
+                   :revn revn
+                   :data (blob/encode data)}
+                  {:id id}))
     nil))
 
 (s/def ::persist-temp-file

@@ -10,11 +10,10 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as k]
    [goog.events :as events]
-   [rumext.v2 :as mf])
-  (:import goog.events.EventType))
+   [rumext.v2 :as mf]))
 
 (mf/defc alert-dialog
   {::mf/register modal/components
@@ -26,29 +25,27 @@
            hint
            accept-label
            accept-style] :as props}]
-  (let [locale       (mf/deref i18n/locale)
-
-        on-accept    (or on-accept identity)
-        message      (or message (t locale "ds.alert-title"))
+  (let [on-accept    (or on-accept identity)
+        message      (or message (tr "ds.alert-title"))
         accept-label (or accept-label (tr "ds.alert-ok"))
         accept-style (or accept-style :danger)
-        title        (or title (t locale "ds.alert-title"))
+        title        (or title (tr "ds.alert-title"))
 
         accept-fn
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (modal/hide))
            (on-accept props)))]
 
-    (mf/with-effect
+    (mf/with-effect []
       (letfn [(on-keydown [event]
                 (when (k/enter? event)
                   (dom/prevent-default event)
                   (dom/stop-propagation event)
                   (st/emit! (modal/hide))
                   (on-accept props)))]
-        (->> (events/listen js/document EventType.KEYDOWN on-keydown)
+        (->> (events/listen js/document "keydown" on-keydown)
              (partial events/unlistenByKey))))
 
     [:div.modal-overlay
