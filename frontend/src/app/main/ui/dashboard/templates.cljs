@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
+   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
@@ -82,7 +83,8 @@
 (mf/defc card-item
   {::mf/wrap-props false}
   [{:keys [item index is-visible collapsed on-import]}]
-  (let [id (dm/str "card-container-" index)
+  (let [id  (dm/str "card-container-" index)
+        thb (assoc cf/public-uri :path (dm/str "/images/thumbnails/template-" (:id item) ".jpg"))
 
         on-click
         (mf/use-fn
@@ -106,7 +108,7 @@
       :on-key-down on-key-down}
      [:div.template-card
       [:div.img-container
-       [:img {:src (:thumbnail-uri item)
+       [:img {:src (dm/str thb)
               :alt (:name item)}]]
       [:div.card-name [:span (:name item)]
         [:span.icon i/download]]]]))
