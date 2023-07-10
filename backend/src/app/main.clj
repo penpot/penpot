@@ -221,7 +221,7 @@
    {::db/pool (ig/ref ::db/pool)}
 
    ::http.awsns/routes
-   {::props              (ig/ref :app.setup/props)
+   {::props              (ig/ref ::setup/props)
     ::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)
     ::wrk/executor       (ig/ref ::wrk/executor)}
@@ -264,7 +264,7 @@
    ::oidc/routes
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
-    ::props              (ig/ref :app.setup/props)
+    ::props              (ig/ref ::setup/props)
     ::oidc/providers     {:google (ig/ref ::oidc.providers/google)
                           :github (ig/ref ::oidc.providers/github)
                           :gitlab (ig/ref ::oidc.providers/gitlab)
@@ -276,7 +276,7 @@
     ::db/pool            (ig/ref ::db/pool)
     ::rpc/routes         (ig/ref ::rpc/routes)
     ::rpc.doc/routes     (ig/ref ::rpc.doc/routes)
-    ::props              (ig/ref :app.setup/props)
+    ::props              (ig/ref ::setup/props)
     ::mtx/routes         (ig/ref ::mtx/routes)
     ::oidc/routes        (ig/ref ::oidc/routes)
     ::http.debug/routes  (ig/ref ::http.debug/routes)
@@ -324,7 +324,7 @@
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
     ::setup/templates    (ig/ref ::setup/templates)
-    ::props              (ig/ref :app.setup/props)
+    ::props              (ig/ref ::setup/props)
 
     :pool                (ig/ref ::db/pool)
     }
@@ -337,7 +337,7 @@
     ::db/pool         (ig/ref ::db/pool)
     ::wrk/executor    (ig/ref ::wrk/executor)
     ::session/manager (ig/ref ::session/manager)
-    ::props           (ig/ref :app.setup/props)}
+    ::props           (ig/ref ::setup/props)}
 
    ::wrk/registry
    {::mtx/metrics (ig/ref ::mtx/metrics)
@@ -390,7 +390,7 @@
    :app.tasks.telemetry/handler
    {::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)
-    ::props              (ig/ref :app.setup/props)}
+    ::props              (ig/ref ::setup/props)}
 
    [::srepl/urepl ::srepl/server]
    {::srepl/port (cf/get :urepl-port 6062)
@@ -402,7 +402,7 @@
 
    ::setup/templates {}
 
-   :app.setup/props
+   ::setup/props
    {::db/pool    (ig/ref ::db/pool)
     ::key        (cf/get :secret-key)
 
@@ -411,7 +411,7 @@
     ::migrations (ig/ref :app.migrations/migrations)}
 
    ::audit.tasks/archive
-   {::props              (ig/ref :app.setup/props)
+   {::props              (ig/ref ::setup/props)
     ::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)}
 
