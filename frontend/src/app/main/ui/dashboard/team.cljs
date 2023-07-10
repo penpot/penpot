@@ -31,8 +31,9 @@
    [rumext.v2 :as mf]))
 
 (mf/defc header
-  {::mf/wrap [mf/memo]}
-  [{:keys [section team] :as props}]
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
+  [{:keys [section team]}]
   (let [go-members           (mf/use-fn #(st/emit! (dd/go-to-team-members)))
         go-settings          (mf/use-fn #(st/emit! (dd/go-to-team-settings)))
         go-invitations       (mf/use-fn #(st/emit! (dd/go-to-team-invitations)))
@@ -98,26 +99,28 @@
 
 (mf/defc invite-members-modal
   {::mf/register modal/components
-   ::mf/register-as :invite-members}
+   ::mf/register-as :invite-members
+   ::mf/wrap-props false}
   [{:keys [team origin]}]
   (let [members-map (mf/deref refs/dashboard-team-members)
+        perms       (:permissions team)
 
-        perms   (:permissions team)
-
-        roles   (mf/use-memo (mf/deps perms) #(get-available-roles perms))
-        initial (mf/use-memo (constantly {:role "editor" :team-id (:id team)}))
-        form    (fm/use-form :spec ::invite-member-form
-                             :initial initial)
-        error-text (mf/use-state  "")
-
-        on-success
-        (fn []
-          (st/emit! (msg/success (tr "notifications.invitation-email-sent"))
-                    (modal/hide)
-                    (dd/fetch-team-invitations)))
+        roles       (mf/use-memo (mf/deps perms) #(get-available-roles perms))
+        initial     (mf/use-memo (constantly {:role "editor" :team-id (:id team)}))
+        form        (fm/use-form :spec ::invite-member-form
+                                 :initial initial)
+        error-text  (mf/use-state  "")
 
         current-data-emails (into #{} (dm/get-in @form [:clean-data :emails]))
         current-members-emails (into #{} (map (comp :email second)) members-map)
+
+        on-success
+        (fn [form {:keys [total]}]
+          (when (pos? total)
+            (st/emit! (msg/success (tr "notifications.invitation-email-sent"))))
+
+          (st/emit! (modal/hide)
+                    (dd/fetch-team-invitations)))
 
         on-error
         (fn [{:keys [type code] :as error}]

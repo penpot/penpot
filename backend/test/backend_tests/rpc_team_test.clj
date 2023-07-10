@@ -37,7 +37,7 @@
                     :role :editor}]
 
       ;; invite external user without complaints
-      (let [data       (assoc data :email "foo@bar.com")
+      (let [data       (assoc data :emails ["foo@bar.com"])
             out        (th/command! data)
             ;; retrieve the value from the database and check its content
             invitation (db/exec-one!
@@ -52,7 +52,7 @@
 
       ;; invite internal user without complaints
       (th/reset-mock! mock)
-      (let [data (assoc data :email (:email profile2))
+      (let [data (assoc data :emails [(:email profile2)])
             out  (th/command! data)]
         (t/is (th/success? out))
         (t/is (= 1 (:call-count (deref mock)))))
@@ -60,7 +60,7 @@
       ;; invite user with complaint
       (th/create-global-complaint-for pool {:type :complaint :email "foo@bar.com"})
       (th/reset-mock! mock)
-      (let [data (assoc data :email "foo@bar.com")
+      (let [data (assoc data :emails ["foo@bar.com"])
             out  (th/command! data)]
         (t/is (th/success? out))
         (t/is (= 1 (:call-count (deref mock)))))
@@ -79,7 +79,7 @@
       (th/reset-mock! mock)
 
       (th/create-global-complaint-for pool {:type :bounce :email "foo@bar.com"})
-      (let [data  (assoc data :email "foo@bar.com")
+      (let [data  (assoc data :emails ["foo@bar.com"])
             out   (th/command! data)]
 
         (t/is (not (th/success? out)))
@@ -92,7 +92,7 @@
       ;; invite internal user that is muted
       (th/reset-mock! mock)
 
-      (let [data  (assoc data :email (:email profile3))
+      (let [data  (assoc data :emails [(:email profile3)])
             out   (th/command! data)]
 
         (t/is (not (th/success? out)))
@@ -118,7 +118,7 @@
       ;; Try to invite a not existing user
       (let [data {::th/type :create-team-invitations
                   ::rpc/profile-id (:id profile1)
-                  :email "notexisting@example.com"
+                  :emails ["notexisting@example.com"]
                   :team-id (:id team)
                   :role :editor}
             out  (th/command! data)]
@@ -126,15 +126,15 @@
         ;; (th/print-result! out)
         (t/is (th/success? out))
         (t/is (= 1 (:call-count @mock)))
-        (t/is (= 1 (-> out :result count)))
+        (t/is (= 1 (-> out :result :total)))
 
-        (let [token (-> out :result first)
+        (let [token  (-> out :result :invitations first)
               claims (tokens/decode sprops token)]
           (t/is (= :team-invitation (:iss claims)))
           (t/is (= (:id profile1) (:profile-id claims)))
           (t/is (= :editor (:role claims)))
           (t/is (= (:id team) (:team-id claims)))
-          (t/is (= (:email data) (:member-email claims)))
+          (t/is (= (first (:emails data)) (:member-email claims)))
           (t/is (nil? (:member-id claims)))))
 
       (th/reset-mock! mock)
@@ -142,7 +142,7 @@
       ;; Try to invite existing user
       (let [data {::th/type :create-team-invitations
                   ::rpc/profile-id (:id profile1)
-                  :email (:email profile2)
+                  :emails [(:email profile2)]
                   :team-id (:id team)
                   :role :editor}
             out  (th/command! data)]
@@ -150,15 +150,15 @@
         ;; (th/print-result! out)
         (t/is (th/success? out))
         (t/is (= 1 (:call-count @mock)))
-        (t/is (= 1 (-> out :result count)))
+        (t/is (= 1 (-> out :result :total)))
 
-        (let [token (-> out :result first)
+        (let [token (-> out :result :invitations first)
               claims (tokens/decode sprops token)]
           (t/is (= :team-invitation (:iss claims)))
           (t/is (= (:id profile1) (:profile-id claims)))
           (t/is (= :editor (:role claims)))
           (t/is (= (:id team) (:team-id claims)))
-          (t/is (= (:email data) (:member-email claims)))
+          (t/is (= (first (:emails data)) (:member-email claims)))
           (t/is (= (:id profile2) (:member-id claims)))))
 
       )))
@@ -264,7 +264,7 @@
       ;; invite internal user without complaints
       (with-redefs [app.config/flags #{}]
         (th/reset-mock! mock)
-        (let [data (assoc data :email (:email profile2))
+        (let [data (assoc data :emails [(:email profile2)])
               out  (th/command! data)]
           (t/is (th/success? out))
           (t/is (= 0 (:call-count (deref mock)))))
