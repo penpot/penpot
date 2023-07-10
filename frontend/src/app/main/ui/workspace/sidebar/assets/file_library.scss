@@ -19,6 +19,8 @@
   }
 
   .special-title {
+    @include textEllipsis;
+    width: calc(var(--width, 256px) - $s-80);
     color: var(--title-foreground-color-hover);
   }
   .special-subtitle {

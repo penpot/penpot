@@ -10,7 +10,7 @@
   @include flexCenter;
   position: absolute;
   top: $s-48;
-  left: $s-48;
+  left: 0;
   padding: $s-4;
   border-radius: $br-8;
   background: var(--color-background-primary);
@@ -30,7 +30,7 @@
   border-radius: $br-5;
   svg {
     @include flexCenter;
-    height: $s-12;
+    height: $s-16;
     width: $s-16;
     color: transparent;
     fill: none;

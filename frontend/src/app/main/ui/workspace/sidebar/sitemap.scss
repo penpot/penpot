@@ -84,6 +84,7 @@
           transition: none;
           color: var(--layer-row-foreground-color);
           .page-name {
+            @include textEllipsis;
             flex-grow: 1;
             padding-left: $s-2;
           }

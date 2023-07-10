@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.left-toolbar
+  (:require-macros [app.main.style :refer [css]])
   (:require
    [app.common.geom.point :as gpt]
    [app.common.media :as cm]
@@ -51,7 +52,7 @@
       {:title (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
        :aria-label (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
        :on-click on-click}
-      i/image
+      i/img-refactor
       [:& file-uploader
        {:input-id "image-upload"
         :accept cm/str-image-types
@@ -70,6 +71,8 @@
         read-only?           (mf/use-ctx ctx/workspace-read-only?)
 
         show-palette-btn?    (and (not ^boolean read-only?) (not ^boolean new-css-system))
+        hide-toolbar*        (mf/use-state false)
+        hide-toolbar?        (deref hide-toolbar*)
 
 
         interrupt
@@ -131,7 +134,111 @@
               (-> (dw/toggle-layout-flag :debug-panel)
                   (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))))
 
-        ]
+        toggle-toolbar
+        (mf/use-fn
+         (fn []
+           (swap! hide-toolbar* not)))]
+
+   (if new-css-system
+    [:aside {:class (dom/classnames (css :main-toolbar) true
+                                    (css :hidden-toolbar) hide-toolbar?)}
+     [:ul {:class (css :main-toolbar-options)}
+      [:li
+       [:button
+        {:title (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
+         :aria-label (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
+         :class (when (and (nil? selected-drawtool)
+                           (not edition)) "selected")
+         :on-click interrupt}
+        i/move-refactor]]
+      (when-not ^boolean read-only?
+        [:*
+         [:li
+          [:button
+           {:title (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
+            :aria-label (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
+            :class (when (= selected-drawtool :frame) "selected")
+            :on-click select-drawtool
+            :data-tool "frame"
+            :data-test "artboard-btn"}
+           i/board-refactor]]
+         [:li
+          [:button
+           {:title (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
+            :aria-label (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
+            :class (when (= selected-drawtool :rect) "selected")
+            :on-click select-drawtool
+            :data-tool "rect"
+            :data-test "rect-btn"}
+           i/rectangle-refactor]]
+         [:li
+          [:button
+           {:title (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
+            :aria-label (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
+            :class (when (= selected-drawtool :circle) "selected")
+            :on-click select-drawtool
+            :data-tool "circle"
+            :data-test "ellipse-btn"}
+           i/elipse-refactor]]
+         [:li
+          [:button
+           {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
+            :aria-label (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
+            :class (when (= selected-drawtool :text) "selected")
+            :on-click select-drawtool
+            :data-tool "text"}
+           i/text-refactor]]
+
+         [:& image-upload]
+
+         [:li
+          [:button
+           {:title  (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
+            :aria-label (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
+            :class (when (= selected-drawtool :curve) "selected")
+            :on-click select-drawtool
+            :data-tool "curve"
+            :data-test "curve-btn"}
+           i/curve-refactor]]
+         [:li
+          [:button
+           {:title (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
+            :aria-label (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
+            :class (when (= selected-drawtool :path) "selected")
+            :on-click select-drawtool
+            :data-tool "path"
+            :data-test "path-btn"}
+           i/pentool-refactor]]])
+
+      ;; [:li
+      ;;  [:button
+      ;;   {:title (tr "workspace.toolbar.comments" (sc/get-tooltip :add-comment))
+      ;;    :aria-label (tr "workspace.toolbar.comments" (sc/get-tooltip :add-comment))
+      ;;    :class (when (= selected-drawtool :comments) "selected")
+      ;;    :on-click select-drawtool
+      ;;    :data-tool "comments"}
+      ;;   i/comments-refactor]]
+       ]
+     [:button {:class (dom/classnames (css :toolbar-handler) true)
+               :on-click toggle-toolbar}
+      [:div {:class (dom/classnames (css :toolbar-handler-btn) true)}]]
+
+     [:ul {:class (dom/classnames (css :main-toolbar-panels) true)}
+      [:li
+       [:button
+        {:title (tr "workspace.toolbar.shortcuts" (sc/get-tooltip :show-shortcuts))
+         :aria-label (tr "workspace.toolbar.shortcuts" (sc/get-tooltip :show-shortcuts))
+         :class (when (contains? layout :shortcuts) "selected")
+         :on-click toggle-shortcuts}
+        i/shortcut]
+
+       (when *assert*
+         [:button
+          {:title "Debugging tool"
+           :class (when (contains? layout :debug-panel) "selected")
+           :on-click toggle-debug-panel}
+          i/bug])]]]
+
 
     [:aside.left-toolbar
      [:ul.left-toolbar-options
@@ -242,4 +349,6 @@
           {:title "Debugging tool"
            :class (when (contains? layout :debug-panel) "selected")
            :on-click toggle-debug-panel}
-          i/bug])]]]))
+          i/bug])]]])))
+
+
