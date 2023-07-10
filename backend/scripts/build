@@ -18,6 +18,8 @@ cp scripts/manage.py target/dist/manage.py
 chmod +x target/dist/run.sh;
 chmod +x target/dist/manage.py
 
-# Prefetch
+# Prefetch templates
+rm -rf builtin-templates;
+mkdir builtin-templates;
 bb ./scripts/prefetch-templates.clj resources/app/onboarding.edn builtin-templates/
 cp -r builtin-templates target/dist/
