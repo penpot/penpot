@@ -29,6 +29,7 @@
    [app.redis :as-alias rds]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias rpc.doc]
+   [app.setup :as-alias setup]
    [app.srepl :as-alias srepl]
    [app.storage :as-alias sto]
    [app.storage.fs :as-alias sto.fs]
@@ -322,11 +323,10 @@
 
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
-
+    ::setup/templates    (ig/ref ::setup/templates)
     ::props              (ig/ref :app.setup/props)
 
     :pool                (ig/ref ::db/pool)
-    :templates           (ig/ref :app.setup/builtin-templates)
     }
 
    :app.rpc.doc/routes
@@ -400,8 +400,7 @@
    {::srepl/port (cf/get :prepl-port 6063)
     ::srepl/host (cf/get :prepl-host "localhost")}
 
-   :app.setup/builtin-templates
-   {::http.client/client (ig/ref ::http.client/client)}
+   ::setup/templates {}
 
    :app.setup/props
    {::db/pool    (ig/ref ::db/pool)

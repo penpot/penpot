@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.pages.migrations :as pmg]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -20,6 +21,8 @@
    [app.rpc.commands.projects :as proj]
    [app.rpc.commands.teams :as teams :refer [create-project-role create-project]]
    [app.rpc.doc :as-alias doc]
+   [app.setup :as-alias setup]
+   [app.setup.templates :as tmpl]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -361,7 +364,6 @@
 
     nil))
 
-
 (s/def ::move-project
   (s/keys :req [::rpc/profile-id]
           :req-un [::team-id ::project-id]))
@@ -376,41 +378,42 @@
 
 ;; --- COMMAND: Clone Template
 
-(declare clone-template)
-
-(s/def ::template-id ::us/not-empty-string)
-(s/def ::clone-template
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::project-id ::template-id]))
-
-(sv/defmethod ::clone-template
-  "Clone into the specified project the template by its id."
-  {::doc/added "1.16"
-   ::webhooks/event? true}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (db/with-atomic [conn pool]
-    (-> (assoc cfg :conn conn)
-        (clone-template (assoc params :profile-id profile-id)))))
-
-(defn- clone-template
-  [{:keys [conn templates] :as cfg} {:keys [profile-id template-id project-id]}]
-  (let [template (d/seek #(= (:id %) template-id) templates)
+(defn- clone-template!
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id template-id project-id]}]
+  (let [template (tmpl/get-template-stream cfg template-id)
         project  (db/get-by-id conn :project project-id {:columns [:id :team-id]})]
-
-    (teams/check-edition-permissions! conn profile-id (:team-id project))
 
     (when-not template
       (ex/raise :type :not-found
                 :code :template-not-found
                 :hint "template not found"))
 
+    (teams/check-edition-permissions! conn profile-id (:team-id project))
+
     (-> cfg
-        (assoc ::binfile/input (:path template))
+        ;; FIXME: maybe reuse the conn instead of creating more
+        ;; connections in the import process?
+        (dissoc ::db/conn)
+        (assoc ::binfile/input template)
         (assoc ::binfile/project-id (:id project))
         (assoc ::binfile/ignore-index-errors? true)
         (assoc ::binfile/migrate? true)
         (binfile/import!))))
 
+(def schema:clone-template
+  [:map {:title "clone-template"}
+   [:project-id ::sm/uuid]
+   [:template-id ::sm/word-string]])
+
+(sv/defmethod ::clone-template
+  "Clone into the specified project the template by its id."
+  {::doc/added "1.16"
+   ::webhooks/event? true
+   ::sm/params schema:clone-template}
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  (db/with-atomic [conn pool]
+    (-> (assoc cfg ::db/conn conn)
+        (clone-template! (assoc params :profile-id profile-id)))))
 
 ;; --- COMMAND: Get list of builtin templates
 
@@ -420,9 +423,9 @@
   {::doc/added "1.10"
    ::doc/deprecated "1.19"}
   [cfg _params]
-  (mapv #(select-keys % [:id :name :thumbnail-uri]) (:templates cfg)))
+  (mapv #(select-keys % [:id :name :thumbnail-uri]) (::setup/templates cfg)))
 
 (sv/defmethod ::get-builtin-templates
   {::doc/added "1.19"}
   [cfg _params]
-  (mapv #(select-keys % [:id :name :thumbnail-uri]) (:templates cfg)))
+  (mapv #(select-keys % [:id :name :thumbnail-uri]) (::setup/templates cfg)))
