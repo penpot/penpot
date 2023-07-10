@@ -44,7 +44,7 @@
      [:span.hsva-selector-label "V"]
      [:& slider-selector
       {:class "value"
-       :reverse? true
+       :reverse? false
        :max-value 255
        :value value
        :on-change (handle-change-slider :v)
