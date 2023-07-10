@@ -128,7 +128,7 @@
                      (assoc-in [::db/pool ::db/uri] (:database-uri config))
                      (assoc-in [::db/pool ::db/username] (:database-username config))
                      (assoc-in [::db/pool ::db/password] (:database-password config))
-                     (assoc-in [:app.rpc/methods :templates] templates)
+                     (assoc-in [:app.rpc/methods :app.setup/templates] templates)
                      (dissoc :app.srepl/server
                              :app.http/server
                              :app.http/router
@@ -136,7 +136,7 @@
                              :app.auth.oidc/gitlab-provider
                              :app.auth.oidc/github-provider
                              :app.auth.oidc/generic-provider
-                             :app.setup/builtin-templates
+                             :app.setup/templates
                              :app.auth.oidc/routes
                              :app.worker/monitor
                              :app.http.oauth/handler

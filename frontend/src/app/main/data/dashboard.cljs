@@ -34,7 +34,6 @@
 
 (declare fetch-projects)
 (declare fetch-team-members)
-(declare fetch-builtin-templates)
 
 (defn initialize
   [{:keys [id] :as params}]
@@ -62,8 +61,7 @@
        (ptk/watch (fetch-projects) state stream)
        (ptk/watch (fetch-team-members) state stream)
        (ptk/watch (du/fetch-teams) state stream)
-       (ptk/watch (du/fetch-users {:team-id id}) state stream)
-       (ptk/watch (fetch-builtin-templates) state stream)))))
+       (ptk/watch (du/fetch-users {:team-id id}) state stream)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching (context aware: current team)
@@ -275,7 +273,7 @@
   (ptk/reify ::fetch-builtin-templates
     ptk/WatchEvent
     (watch [_ _ _]
-        (->> (rp/cmd! :retrieve-list-of-builtin-templates)
+        (->> (rp/cmd! :get-builtin-templates)
              (rx/map builtin-templates-fetched)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
