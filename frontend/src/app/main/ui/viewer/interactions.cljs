@@ -71,18 +71,24 @@
                                          (d/index-by :id)
                                          (prepare-objects frame size delta)))
 
-        wrapper-fixed (mf/with-memo [page frame size]
-                        (shapes/frame-container-factory (calculate-objects fixed-ids)))
+        objects-fixed (mf/with-memo [fixed-ids page frame size delta]
+                        (calculate-objects fixed-ids))
 
-        objects-not-fixed (mf/with-memo [page frame size]
+        objects-not-fixed (mf/with-memo [not-fixed-ids page frame size delta]
                             (calculate-objects not-fixed-ids))
 
+        all-objects (mf/with-memo [objects-fixed objects-not-fixed]
+                      (merge objects-fixed objects-not-fixed))
+
+        wrapper-fixed (mf/with-memo [page frame size]
+                        (shapes/frame-container-factory objects-fixed all-objects))
+
         wrapper-not-fixed (mf/with-memo [objects-not-fixed]
-                            (shapes/frame-container-factory objects-not-fixed))
+                            (shapes/frame-container-factory objects-not-fixed all-objects))
 
         ;; Retrieve frames again with correct modifier
-        frame   (get objects-not-fixed (:id frame))
-        base    (get objects-not-fixed (:id base))
+        frame   (get all-objects (:id frame))
+        base    (get all-objects (:id base))
 
         non-delay-interactions (->> (:interactions frame)
                                     (filterv #(not= (:event-type %) :after-delay)))

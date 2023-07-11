@@ -495,8 +495,7 @@
    "expected compatible interaction map"
    (has-overlay-opts interaction))
 
-  (let [
-        ;; When the interactive item is inside a nested frame we need to add to the offset the position
+  (let [;; When the interactive item is inside a nested frame we need to add to the offset the position
         ;; of the parent-frame otherwise the position won't match
         shape-frame (cph/get-frame objects shape)
 
@@ -505,10 +504,10 @@
                              (cph/root-frame? shape-frame)
                              (cph/root? shape-frame))
                        frame-offset
-                       (gpt/add frame-offset (gpt/point shape-frame)))
-        ]
+                       (gpt/add frame-offset (gpt/point shape-frame)))]
+
     (if (nil? dest-frame)
-      (gpt/point 0 0)
+      [(gpt/point 0 0) [:top :left]]
       (let [overlay-size           (gsb/get-object-bounds objects dest-frame)
             base-frame-size        (:selrect base-frame)
             relative-to-shape-size (:selrect relative-to-shape)
