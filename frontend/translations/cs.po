@@ -2321,9 +2321,6 @@ msgstr "Přichytit k vodicím lištám"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Přepnout paletu textu"
 
-msgid "shortcuts.toggle-visibility"
-msgstr "Přepnout viditelnost"
-
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Přepnout styl přiblížení"
 

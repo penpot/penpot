@@ -2405,9 +2405,6 @@ msgstr "Pričvrsti na guides"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Promijeni paletu teksta"
 
-msgid "shortcuts.toggle-visibility"
-msgstr "Promijeni vidljivost"
-
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Promijeni stil zooma"
 

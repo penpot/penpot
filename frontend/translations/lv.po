@@ -2592,9 +2592,6 @@ msgstr "Pieķerties vadotnēm"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Pārslēgt teksta paleti"
 
-msgid "shortcuts.toggle-visibility"
-msgstr "Pārslēgt redzamību"
-
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Pārslēgt tālummaiņas stilu"
 
