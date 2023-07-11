@@ -1057,6 +1057,9 @@ msgstr "El email o la contraseña son incorrectos."
 msgid "errors.wrong-old-password"
 msgstr "La contraseña anterior no es correcta"
 
+msgid "errors.cannot-upload"
+msgstr "No se puede subir el fichero"
+
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Descripción"
