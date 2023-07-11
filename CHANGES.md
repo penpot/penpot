@@ -60,6 +60,7 @@
 - Fix incorrect message after sending invitation to already member [Taiga 5599](https://tree.taiga.io/project/penpot/issue/5599)
 - Fix text decoration on button [Taiga #5301](https://tree.taiga.io/project/penpot/issue/5301)
 - Fix menu order on design tab [Taiga #5195](https://tree.taiga.io/project/penpot/issue/5195)
+- Fix search bar width on layer tab [Taiga #5445](https://tree.taiga.io/project/penpot/issue/5445)
 
 ### :arrow_up: Deps updates
 
