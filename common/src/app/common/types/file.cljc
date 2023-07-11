@@ -291,7 +291,7 @@
    been modified after the given date."
   [file-data library since-date]
   (letfn [(used-assets-shape [shape]
-             (concat 
+             (concat
               (ctkl/used-components-changed-since shape library since-date)
               (ctcl/used-colors-changed-since shape library since-date)
               (ctyl/used-typographies-changed-since shape library since-date)))
@@ -299,7 +299,7 @@
           (used-assets-container [container]
            (->> (mapcat used-assets-shape (ctn/shapes-seq container))
                 (map #(cons (:id container) %))))]
-    
+
     (mapcat used-assets-container (containers-seq file-data))))
 
 (defn get-or-add-library-page
@@ -407,7 +407,7 @@
                   (update page :objects update-vals root-to-board))]
 
             (-> file-data
-                (add-instance-grid (sort-by :name components))
+                (add-instance-grid (reverse (sort-by :name components)))
                 (update :pages-index update-vals roots-to-board)
                 (assoc-in [:options :components-v2] true))))))))
 
