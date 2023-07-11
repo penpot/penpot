@@ -59,6 +59,7 @@
 - Fix incorrect modified-at on project after import file [Taiga #5268](https://tree.taiga.io/project/penpot/issue/5268)
 - Fix incorrect message after sending invitation to already member [Taiga 5599](https://tree.taiga.io/project/penpot/issue/5599)
 - Fix text decoration on button [Taiga #5301](https://tree.taiga.io/project/penpot/issue/5301)
+- Fix menu order on design tab [Taiga #5195](https://tree.taiga.io/project/penpot/issue/5195)
 
 ### :arrow_up: Deps updates
 
