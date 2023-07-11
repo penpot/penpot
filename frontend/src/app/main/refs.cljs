@@ -459,6 +459,9 @@
 (def current-file-comments-users
   (l/derived :current-file-comments-users st/state))
 
+(def current-team-comments-users
+  (l/derived :current-team-comments-users st/state))
+
 (def viewer-fullscreen?
   (l/derived (fn [state]
                (dm/get-in state [:viewer-local :fullscreen?]))
