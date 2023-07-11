@@ -207,7 +207,7 @@
                (on-focus event))
 
              (when select-on-focus?
-               (dom/select-text! event)
+               (dom/select-text! target)
                ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
                (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
 
