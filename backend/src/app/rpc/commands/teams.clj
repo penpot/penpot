@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -719,29 +720,22 @@
 
         itoken))))
 
-(s/def ::email ::us/email)
-(s/def ::emails ::us/set-of-valid-emails)
-(s/def ::create-team-invitations
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id ::role]
-          :opt-un [::email ::emails]))
+(def ^:private schema:create-team-invitations
+  [:map {:title "create-team-invitations"}
+   [:team-id ::sm/uuid]
+   [:role [::sm/one-of #{:owner :admin :editor}]]
+   [:emails ::sm/set-of-emails]])
 
 (sv/defmethod ::create-team-invitations
   "A rpc call that allow to send a single or multiple invitations to
   join the team."
-  {::doc/added "1.17"}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email emails role] :as params}]
+  {::doc/added "1.17"
+   ::sm/params schema:create-team-invitations}
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id emails role] :as params}]
   (db/with-atomic [conn pool]
     (let [perms    (get-permissions conn profile-id team-id)
           profile  (db/get-by-id conn :profile profile-id)
-          team     (db/get-by-id conn :team team-id)
-
-          ;; Members emails. We don't re-send inviation to already existing members
-          member?  (into #{}
-                         (map :email)
-                         (db/exec! conn [sql:team-members team-id]))
-
-          emails   (cond-> (or emails #{}) (string? email) (conj email))]
+          team     (db/get-by-id conn :team team-id)]
 
       (run! (partial quotes/check-quote! conn)
             (list {::quotes/id ::quotes/invitations-per-team
@@ -764,9 +758,13 @@
                   :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
 
       (let [cfg         (assoc cfg ::db/conn conn)
-            invitations (into []
+            members     (->> (db/exec! conn [sql:team-members team-id])
+                             (into #{} (map :email)))
+
+            invitations (into #{}
                               (comp
-                               (remove member?)
+                               ;;  We don't re-send inviation to already existing members
+                               (remove (partial contains? members))
                                (map (fn [email]
                                       {:email (str/lower email)
                                        :team team
@@ -774,7 +772,8 @@
                                        :role role}))
                                (keep (partial create-invitation cfg)))
                               emails)]
-        (with-meta invitations
+        (with-meta {:total (count invitations)
+                    :invitations invitations}
           {::audit/props {:invitations (count invitations)}})))))
 
 
