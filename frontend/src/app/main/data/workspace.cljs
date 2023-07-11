@@ -1694,7 +1694,8 @@
                     [(:frame-id base) parent-id delta index])
 
                   ;; Paste inside selected frame otherwise
-                  (let [origin-frame-id (:frame-id first-selected-obj)
+                  (let [selected-frame-obj (get page-objects (first page-selected))
+                        origin-frame-id (:frame-id first-selected-obj)
                         origin-frame-object (get page-objects origin-frame-id)
 
                         margin-x (-> (- (:width origin-frame-object) (+ (:x wrapper) (:width wrapper)))
@@ -1720,7 +1721,7 @@
                               ;;    - Align it to the limits on the x and y axis
                               ;;    - Respect the distance of the object to the right and bottom in the original frame
                                 (gpt/point paste-x paste-y))]
-                    [frame-id frame-id delta]))
+                    [frame-id frame-id delta (dec (count (:shapes selected-frame-obj )))]))
 
                 (empty? page-selected)
                 (let [frame-id (ctst/top-nested-frame page-objects mouse-pos)

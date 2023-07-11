@@ -70,6 +70,7 @@
 - Fix problem when sliding color picker in selected-colors [#3150](https://github.com/penpot/penpot/issues/3150)
 - Fix error screen on upload image error [Taiga #5608](https://tree.taiga.io/project/penpot/issue/5608)
 - Fix bad frame-id for certain componentes [#3205](https://github.com/penpot/penpot/issues/3205)
+- Fix paste elements at bottom of frame [Taig #5253](https://tree.taiga.io/project/penpot/issue/5253)
 
 ### :arrow_up: Deps updates
 
