@@ -2446,9 +2446,6 @@ msgstr "辅助线对齐"
 msgid "shortcuts.toggle-textpalette"
 msgstr "切换文本调色板"
 
-msgid "shortcuts.toggle-visibility"
-msgstr "切换可见度"
-
 msgid "shortcuts.toggle-zoom-style"
 msgstr "切换缩放样式"
 

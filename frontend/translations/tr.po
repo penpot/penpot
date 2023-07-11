@@ -2691,9 +2691,6 @@ msgstr "Kılavuzlara tuttur"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Metin paletini değiştir"
 
-msgid "shortcuts.toggle-visibility"
-msgstr "Görünürlüğü değiştir"
-
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Yakınlaştırma şeklini değiştir"
 

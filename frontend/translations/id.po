@@ -2559,9 +2559,6 @@ msgstr "Tancap ke pemandu"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Alih palet teks"
 
-msgid "shortcuts.toggle-visibility"
-msgstr "Alih keterlihatan"
-
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Alih gaya zum"
 

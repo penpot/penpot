@@ -2612,9 +2612,6 @@ msgstr "Przyciągaj do prowadnic"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Przełącz paletę tekstu"
 
-msgid "shortcuts.toggle-visibility"
-msgstr "Przełącz widoczność"
-
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Przełącz sposób powiększania"
 

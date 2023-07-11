@@ -2589,9 +2589,6 @@ msgstr "Fixare la ghiduri"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Comutați paleta de text"
 
-msgid "shortcuts.toggle-visibility"
-msgstr "Comutați vizibilitatea"
-
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Comutați stilul zoomului"
 

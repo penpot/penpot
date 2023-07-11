@@ -62,6 +62,7 @@
 - Fix menu order on design tab [Taiga #5195](https://tree.taiga.io/project/penpot/issue/5195)
 - Fix search bar width on layer tab [Taiga #5445](https://tree.taiga.io/project/penpot/issue/5445)
 - Fix border radius values with decimals [Taiga #5283](https://tree.taiga.io/project/penpot/issue/5283)
+- Fix shortcuts translations not homogenized [Taiga #5141](https://tree.taiga.io/project/penpot/issue/5141)
  
 ### :arrow_up: Deps updates
 

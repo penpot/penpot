@@ -2592,9 +2592,6 @@ msgstr "הצמדה לקווים מנחים"
 msgid "shortcuts.toggle-textpalette"
 msgstr "החלפת לוח טקסט"
 
-msgid "shortcuts.toggle-visibility"
-msgstr "החלפת מצב הצגה"
-
 msgid "shortcuts.toggle-zoom-style"
 msgstr "החלפת סגנון תקריב"
 
