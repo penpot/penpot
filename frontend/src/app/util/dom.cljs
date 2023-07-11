@@ -234,7 +234,7 @@
 
 (defn select-text!
   [^js node]
-  (when (some? node)
+  (when (and (some? node) (some? (unchecked-get node "select")))
     (.select ^js node)))
 
 (defn ^boolean equals?

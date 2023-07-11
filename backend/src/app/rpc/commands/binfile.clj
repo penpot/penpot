@@ -592,7 +592,7 @@
                   (let [options (-> options
                                     (assoc ::section section)
                                     (assoc ::input input)
-                                    (assoc :conn conn))]
+                                    (assoc ::db/conn conn))]
                     (binding [*options* options]
                       (read-section options))))
                 [:v1/metadata :v1/files :v1/rels :v1/sobjects])
@@ -620,7 +620,7 @@
         (update :components pmap-wrap))))
 
 (defmethod read-section :v1/files
-  [{:keys [conn ::input ::migrate? ::project-id ::timestamp ::overwrite?]}]
+  [{:keys [::db/conn ::input ::migrate? ::project-id ::timestamp ::overwrite?]}]
   (doseq [expected-file-id (-> *state* deref :files)]
     (let [file     (read-obj! input)
           media'   (read-obj! input)
@@ -678,7 +678,7 @@
             (db/delete! conn :file-thumbnail {:file-id file-id'})))))))
 
 (defmethod read-section :v1/rels
-  [{:keys [conn ::input ::timestamp]}]
+  [{:keys [::db/conn ::input ::timestamp]}]
   (let [rels (read-obj! input)]
     ;; Insert all file relations
     (doseq [rel rels]
@@ -693,7 +693,7 @@
         (db/insert! conn :file-library-rel rel)))))
 
 (defmethod read-section :v1/sobjects
-  [{:keys [::sto/storage conn ::input ::overwrite?]}]
+  [{:keys [::sto/storage ::db/conn ::input ::overwrite?]}]
   (let [storage (media/configure-assets-storage storage)
         ids     (read-obj! input)]
 

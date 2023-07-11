@@ -199,9 +199,6 @@
         ext-delay-ref        (mf/use-ref nil)
         ext-duration-ref     (mf/use-ref nil)
 
-        select-text
-        (fn [ref] (fn [_] (dom/select-text! (mf/ref-val ref))))
-
         change-event-type
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value d/read-string)]
@@ -336,7 +333,6 @@
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-delay")]
             [:div.input-element {:title (tr "workspace.options.interaction-ms")}
              [:> numeric-input {:ref ext-delay-ref
-                                :on-focus (select-text ext-delay-ref)
                                 :on-change change-delay
                                 :value (:delay interaction)
                                 :title (tr "workspace.options.interaction-ms")}]
@@ -523,7 +519,6 @@
                 [:span.element-set-subtitle.wide (tr "workspace.options.interaction-duration")]
                 [:div.input-element {:title (tr "workspace.options.interaction-ms")}
                  [:> numeric-input {:ref ext-duration-ref
-                                    :on-focus (select-text ext-duration-ref)
                                     :on-change change-duration
                                     :value (-> interaction :animation :duration)
                                     :title (tr "workspace.options.interaction-ms")}]
