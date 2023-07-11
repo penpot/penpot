@@ -322,6 +322,7 @@
 (def gutter-horizontal-refactor (icon-xref :gutter-horizontal-refactor))
 (def gutter-vertical-refactor (icon-xref :gutter-vertical-refactor))
 (def hide-refactor (icon-xref :hide-refactor))
+(def history-refactor (icon-xref :history-refactor))
 (def img-refactor (icon-xref :img-refactor))
 (def icon-refactor (icon-xref :icon-refactor))
 (def justify-content-center-refactor (icon-xref :justify-content-center-refactor))

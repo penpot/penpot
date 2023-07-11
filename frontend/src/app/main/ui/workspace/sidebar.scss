@@ -17,7 +17,8 @@ $width-settings-bar-max: 500px;
   max-width: 500px;
   width: var(--width, $width-settings-bar);
   height: 100%;
-  background-color: var(--color-background-primary);
+  border-radius: $br-8;
+  background-color: var(--panel-background-color);
 
   .resize-area {
     position: absolute;
