@@ -75,6 +75,14 @@
       (fmt/format-size :width value values)
       (fmt/format-size :heigth value values))))
 
+(defn format-border-radius
+  [values]
+
+  (and (coll? values) (d/not-empty? values))
+  (->> values
+       (map fmt/format-pixels)
+       (str/join " ")))
+
 (defn styles-data
   [shape]
   {:position    {:props [:type]
@@ -90,7 +98,7 @@
                            :rx "border-radius"
                            :r1 "border-radius"}
                  :format  {:rotation #(str/fmt "rotate(%sdeg)" %)
-                           :r1       #(apply str/fmt "%spx %spx %spx %spx" %)
+                           :r1       format-border-radius
                            :width    #(get-size :width %)
                            :height   #(get-size :height %)}
                  :multi   {:r1 [:r1 :r2 :r3 :r4]}}
@@ -236,9 +244,9 @@
           (str/join "\n")))))
 
 (defn shape->properties [shape]
-  (let [;; This property is added in an earlier step (code.cljs), 
+  (let [;; This property is added in an earlier step (code.cljs),
         ;; it will come with a vector of flex-items if any.
-        ;; If there are none it will continue as usual. 
+        ;; If there are none it will continue as usual.
         flex-items (:flex-items shape)
         props      (->> (styles-data shape) vals (mapcat :props))
         to-prop    (->> (styles-data shape) vals (map :to-prop) (reduce merge))

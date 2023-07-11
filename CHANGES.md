@@ -61,7 +61,8 @@
 - Fix text decoration on button [Taiga #5301](https://tree.taiga.io/project/penpot/issue/5301)
 - Fix menu order on design tab [Taiga #5195](https://tree.taiga.io/project/penpot/issue/5195)
 - Fix search bar width on layer tab [Taiga #5445](https://tree.taiga.io/project/penpot/issue/5445)
-
+- Fix border radius values with decimals [Taiga #5283](https://tree.taiga.io/project/penpot/issue/5283)
+ 
 ### :arrow_up: Deps updates
 
 - Update google fonts catalog (at 2023/07/06) [Taiga #5592](https://tree.taiga.io/project/penpot/issue/5592)
