@@ -245,14 +245,14 @@
 
     :dissolve
     (do (dom/animate! orig-viewport
-                      [#js {:opacity "100"}
+                      [#js {:opacity "100%"}
                        #js {:opacity "0"}]
                       #js {:duration (:duration animation)
                            :easing (name (:easing animation))}
                       #(st/emit! (dv/complete-animation)))
         (dom/animate! current-viewport
                       [#js {:opacity "0"}
-                       #js {:opacity "100"}]
+                       #js {:opacity "100%"}]
                       #js {:duration (:duration animation)
                            :easing (name (:easing animation))}))
 
