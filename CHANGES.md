@@ -58,6 +58,7 @@
 - Fix incorrect fullname use on registring user after OIDC authentication [Taiga #5517](https://tree.taiga.io/project/penpot/issue/5517)
 - Fix incorrect modified-at on project after import file [Taiga #5268](https://tree.taiga.io/project/penpot/issue/5268)
 - Fix incorrect message after sending invitation to already member [Taiga 5599](https://tree.taiga.io/project/penpot/issue/5599)
+- Fix text decoration on button [Taiga #5301](https://tree.taiga.io/project/penpot/issue/5301)
 
 ### :arrow_up: Deps updates
 
