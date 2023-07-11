@@ -71,6 +71,7 @@
 - Fix error screen on upload image error [Taiga #5608](https://tree.taiga.io/project/penpot/issue/5608)
 - Fix bad frame-id for certain componentes [#3205](https://github.com/penpot/penpot/issues/3205)
 - Fix paste elements at bottom of frame [Taig #5253](https://tree.taiga.io/project/penpot/issue/5253)
+- Fix new-file button on project not redirecting to the new file [Taiga #5610](https://tree.taiga.io/project/penpot/issue/5610)
 
 ### :arrow_up: Deps updates
 
