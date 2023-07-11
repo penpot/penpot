@@ -73,6 +73,7 @@
 - Fix paste elements at bottom of frame [Taig #5253](https://tree.taiga.io/project/penpot/issue/5253)
 - Fix new-file button on project not redirecting to the new file [Taiga #5610](https://tree.taiga.io/project/penpot/issue/5610)
 - Fix retrieve user comments in dashboard [Taiga #5607](https://tree.taiga.io/project/penpot/issue/5607)
+- Locks shapes when moved inside a locked parent [Taiga #5252](https://tree.taiga.io/project/penpot/issue/5252)
 
 ### :arrow_up: Deps updates
 
