@@ -70,9 +70,9 @@
         image? (= :image (:type shape))
         text?  (= :text (:type shape))
         path?  (= :path (:type shape))
-        mask?  (and group? (:masked-group? shape))
+        mask?  (and group? (:masked-group shape))
         bool?  (= :bool (:type shape))
-        center (gsh/center-shape shape)]
+        center (gsh/shape->center shape)]
     (-> props
         (add! :name)
         (add! :blocked)
@@ -137,8 +137,8 @@
         (add! :typography-ref-file)
         (add! :component-file)
         (add! :component-id)
-        (add! :component-root?)
-        (add! :main-instance?)
+        (add! :component-root)
+        (add! :main-instance)
         (add! :shape-ref))))
 
 (defn prefix-keys [m]

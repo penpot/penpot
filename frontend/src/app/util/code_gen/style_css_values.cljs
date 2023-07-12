@@ -48,7 +48,7 @@
 
         [selrect _ _]
         (-> (:points shape)
-            (gsh/transform-points (gsh/center-shape parent) (:transform-inverse parent))
+            (gsh/transform-points (gsh/shape->center parent) (:transform-inverse parent))
             (gsh/calculate-geometry))
 
         ;;shape (gsh/transform-shape)

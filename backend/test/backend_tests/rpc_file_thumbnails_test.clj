@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-file-thumbnails-test
   (:require
    [app.common.uuid :as uuid]
+   [app.common.types.shape :as cts]
    [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
@@ -46,11 +47,12 @@
                    :parent-id uuid/zero
                    :frame-id uuid/zero
                    :components-v2 true
-                   :obj {:id shid
-                         :name "Artboard"
-                         :frame-id uuid/zero
-                         :parent-id uuid/zero
-                         :type :frame}}])
+                   :obj (cts/setup-shape
+                         {:id shid
+                          :name "Artboard"
+                          :frame-id uuid/zero
+                          :parent-id uuid/zero
+                          :type :frame})}])
 
         data1   {::th/type :create-file-object-thumbnail
                  ::rpc/profile-id (:id profile)

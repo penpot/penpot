@@ -7,9 +7,10 @@
 (ns app.common.types.container
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.common :as common]
+   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -100,7 +101,7 @@
      (nil? shape)
      nil
 
-     (= uuid/zero (:id shape))
+     (cph/root-frame? shape)
      nil
 
      (and (not (ctk/in-component-copy? shape)) (not allow-main?))
@@ -119,7 +120,7 @@
    a main component have not any discriminating attribute."
   [objects shape]
   (let [component-shape (get-component-shape objects shape {:allow-main? true})]
-    (:main-instance? component-shape)))
+    (:main-instance component-shape)))
 
 (defn in-any-component?
   "Check if the shape is part of any component (main or copy), wether it's
@@ -146,7 +147,7 @@
 
                            (cond-> new-shape
                              true
-                             (dissoc :component-root?)
+                             (dissoc :component-root)
 
                              (nil? (:parent-id new-shape))
                              (dissoc :component-id
@@ -165,13 +166,13 @@
                                   (nil? (:parent-id new-shape))
                                   (assoc :component-id (:id new-shape)
                                          :component-file file-id
-                                         :component-root? true)
+                                         :component-root true)
 
                                   (and (nil? (:parent-id new-shape)) components-v2)
-                                  (assoc :main-instance? true)
+                                  (assoc :main-instance true)
 
                                   (some? (:parent-id new-shape))
-                                  (dissoc :component-root?)))
+                                  (dissoc :component-root)))
 
         [new-root-shape new-shapes updated-shapes]
         (ctst/clone-object shape nil objects update-new-shape update-original-shape)
@@ -186,9 +187,10 @@
 (defn make-component-instance
   "Generate a new instance of the component inside the given container.
 
-  Clone the shapes of the component, generating new names and ids, and linking
-  each new shape to the corresponding one of the component. Place the new instance
-  coordinates in the given position."
+  Clone the shapes of the component, generating new names and ids, and
+  linking each new shape to the corresponding one of the
+  component. Place the new instance coordinates in the given
+  position."
   ([container component library-data position components-v2]
    (make-component-instance container component library-data position components-v2 {}))
 
@@ -197,17 +199,19 @@
      :or {main-instance? false force-id nil force-frame-id nil keep-ids? false}}]
    (let [component-page  (when components-v2
                            (ctpl/get-page library-data (:main-instance-page component)))
+
          component-shape (if components-v2
                            (-> (get-shape component-page (:main-instance-id component))
                                (assoc :parent-id nil)
                                (assoc :frame-id uuid/zero))
                            (get-shape component (:id component)))
 
+
          orig-pos        (gpt/point (:x component-shape) (:y component-shape))
          delta           (gpt/subtract position orig-pos)
 
          objects         (:objects container)
-         unames          (volatile! (common/retrieve-used-names objects))
+         unames          (volatile! (cfh/get-used-names objects))
 
          frame-id        (or force-frame-id
                              (ctst/frame-id-by-position objects
@@ -231,10 +235,10 @@
                    (dissoc :touched))
 
                main-instance?
-               (assoc :main-instance? true)
+               (assoc :main-instance true)
 
                (not main-instance?)
-               (dissoc :main-instance?)
+               (dissoc :main-instance)
 
                (and (not main-instance?) (nil? (:shape-ref original-shape)))
                (assoc :shape-ref (:id original-shape))
@@ -242,14 +246,14 @@
                (nil? (:parent-id original-shape))
                (assoc :component-id (:id component)
                       :component-file (:id library-data)
-                      :component-root? true
+                      :component-root true
                       :name new-name)
 
                (and (nil? (:parent-id original-shape)) main-instance? components-v2)
-               (assoc :main-instance? true)
+               (assoc :main-instance true)
 
                (some? (:parent-id original-shape))
-               (dissoc :component-root?))))
+               (dissoc :component-root))))
 
          [new-shape new-shapes _]
          (ctst/clone-object component-shape

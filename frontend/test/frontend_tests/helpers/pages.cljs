@@ -80,7 +80,7 @@
   ([state label type props]
    (let [page  (current-page state)
          frame (cph/get-frame (:objects page))
-         shape (cts/make-shape type {:x 0 :y 0 :width 1 :height 1} props)]
+         shape (cts/setup-shape (merge {:type type :x 0 :y 0 :width 1 :height 1} props))]
      (swap! idmap assoc label (:id shape))
      (update state :workspace-data
              cp/process-changes

@@ -265,7 +265,7 @@
         (mf/use-memo
          (mf/deps selected-shapes)
          #(when (d/not-empty? selected-shapes)
-            (gsh/selection-rect selected-shapes)))]
+            (gsh/shapes->rect selected-shapes)))]
 
     (when (some? vbox)
       [:g.rules {:pointer-events "none"}

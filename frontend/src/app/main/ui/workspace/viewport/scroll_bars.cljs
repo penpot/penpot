@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.scroll-bars
   (:require
    [app.common.colors :as clr]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.main.data.workspace :as dw]
@@ -53,7 +54,7 @@
         base-objects-rect         (mf/with-memo [objects]
                                     (-> objects
                                         (cph/get-immediate-children)
-                                        (gsh/selection-rect)))
+                                        (gsh/shapes->rect)))
 
         inv-zoom                 (/ 1 zoom)
         vbox-height              (- (:height vbox) (* inv-zoom scroll-height))
@@ -163,9 +164,11 @@
                                        :y2 (+ vbox-y (:height vbox))
                                        :width (:width vbox)
                                        :height (:height vbox)}
-                containing-rect               (gsh/join-selrects [base-objects-rect vbox-rect])
-                height-factor                 (/ (:height containing-rect) vbox-height)
-                width-factor                  (/ (:width containing-rect) vbox-width)]
+
+                containing-rect       (grc/join-rects [base-objects-rect vbox-rect])
+                height-factor         (/ (:height containing-rect) vbox-height)
+                width-factor          (/ (:width containing-rect) vbox-width)]
+
             (mf/set-ref-val! start-ref start-pt)
             (mf/set-ref-val! v-scrollbar-y-padding-ref v-scrollbar-y-padding)
             (mf/set-ref-val! h-scrollbar-x-padding-ref h-scrollbar-x-padding)

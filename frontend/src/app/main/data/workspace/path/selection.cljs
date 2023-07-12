@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.path.selection
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.path.state :as st]
@@ -116,7 +117,7 @@
           (rx/concat
            (->> ms/mouse-position
                 (rx/take-until stoper)
-                (rx/map #(gsh/points->rect [from-p %]))
+                (rx/map #(grc/points->rect [from-p %]))
                 (rx/filter (partial valid-rect? zoom))
                 (rx/map update-area-selection))
 

@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.logging :as log]
    [app.common.media :as cm]
    [app.util.globals :as globals]
@@ -16,7 +17,21 @@
    [app.util.webapi :as wapi]
    [cuerdas.core :as str]
    [goog.dom :as dom]
-   [promesa.core :as p]))
+   [promesa.core :as p])
+  (:import goog.events.BrowserEvent))
+
+(extend-type BrowserEvent
+  cljs.core/IDeref
+  (-deref [it] (.getBrowserEvent it)))
+
+
+(defn browser-event?
+  [o]
+  (instance? BrowserEvent o))
+
+(defn native-event?
+  [o]
+  (instance? js/Event o))
 
 (log/set-level! :warn)
 
@@ -337,11 +352,19 @@
           y (.-offsetY event)]
       (gpt/point x y))))
 
+(defn get-delta-position
+  [event]
+  (let [e (if (browser-event? event)
+            (deref event)
+            event)
+        x (.-deltaX ^js e)
+        y (.-deltaY ^js e)]
+    (gpt/point x y)))
+
 (defn get-client-size
   [^js node]
   (when (some? node)
-    {:width (.-clientWidth ^js node)
-     :height (.-clientHeight ^js node)}))
+    (grc/make-rect 0 0 (.-clientWidth node) (.-clientHeight node))))
 
 (defn get-bounding-rect
   [node]

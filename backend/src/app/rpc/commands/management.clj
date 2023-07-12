@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.pages.migrations :as pmg]
+   [app.common.files.migrations :as pmg]
    [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]

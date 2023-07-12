@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.util.geom.grid
+(ns app.common.geom.grid
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]

@@ -9,7 +9,7 @@
   (:require
    ["jszip" :as zip]
    [app.common.data :as d]
-   [app.common.file-builder :as fb]
+   [app.common.files.builder :as fb]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gpa]
    [app.common.logging :as log]

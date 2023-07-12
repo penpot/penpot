@@ -41,7 +41,7 @@
               (update :shapes d/vec-without-nils)
               (cond-> (and (ctk/in-component-copy? parent) (not ignore-touched))
                 (-> (update :touched cph/set-touched-group :shapes-group)
-                    (dissoc :remote-synced?)))))
+                    (dissoc :remote-synced)))))
 
         update-objects
         (fn [objects parent-id]
@@ -86,7 +86,7 @@
                (cond-> parent
                  (and (:shape-ref parent) (not ignore-touched))
                  (-> (update :touched cph/set-touched-group :shapes-group)
-                     (dissoc :remote-synced?)))))
+                     (dissoc :remote-synced)))))
 
            (delete-from-objects [objects]
              (if-let [target (get objects shape-id)]
@@ -322,10 +322,9 @@
   (not (mth/almost-zero? (:rotation frame 0))))
 
 (defn clone-object
-  "Gets a copy of the object and all its children, with new ids
-  and with the parent-children links correctly set. Admits functions
-  to make more transformations to the cloned objects and the
-  original ones.
+  "Gets a copy of the object and all its children, with new ids and with
+  the parent-children links correctly set. Admits functions to make
+  more transformations to the cloned objects and the original ones.
 
   Returns the cloned object, the list of all new objects (including
   the cloned one), and possibly a list of original objects modified.
@@ -357,7 +356,7 @@
 
        (if (empty? child-ids)
          (let [new-object (cond-> object
-                            true
+                            :always
                             (assoc :id new-id
                                    :parent-id parent-id)
 

@@ -13,7 +13,8 @@
 
 
 (mf/defc element-icon-refactor
-  [{:keys [shape main-instance?] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [shape main-instance?]}]
   (if (ctk/instance-head? shape)
     (if main-instance?
       i/component-refactor
@@ -29,7 +30,7 @@
                ;; TODO: GRID ICON
 
                :else
-               i/board-refactor) 
+               i/board-refactor)
       ;; TODO -> THUMBNAIL ICON
       :image i/img-refactor
       :line i/path-refactor
@@ -37,7 +38,7 @@
       :path i/path-refactor
       :rect i/rectangle-refactor
       :text i/text-refactor
-      :group (if (:masked-group? shape)
+      :group (if (:masked-group shape)
                i/mask-refactor
                i/group-refactor)
       :bool (case (:bool-type shape)

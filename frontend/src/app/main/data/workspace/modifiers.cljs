@@ -10,12 +10,13 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages.common :as cpc]
    [app.common.pages.helpers :as cph]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.main.constants :refer [zoom-half-pixel-precision]]
    [app.main.data.workspace.changes :as dch]
@@ -49,7 +50,7 @@
   [shape root transformed-shape transformed-root objects modif-tree]
   (let [root
         (cond
-          (:component-root? shape)
+          (:component-root shape)
           shape
 
           (nil? root)
@@ -59,7 +60,7 @@
 
         transformed-root
         (cond
-          (:component-root? transformed-shape)
+          (:component-root transformed-shape)
           transformed-shape
 
           (nil? transformed-root)
@@ -376,21 +377,25 @@
      (update [_ state]
        (assoc state :workspace-modifiers (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree params))))))
 
-;; Rotation use different algorithm to calculate children modifiers (and do not use child constraints).
+(def ^:private
+  xf-rotation-shape
+  (comp
+   (remove #(get % :blocked false))
+   (filter #(:rotation (get editable-attrs (:type %))))
+   (map :id)))
+
+;; Rotation use different algorithm to calculate children
+;; modifiers (and do not use child constraints).
 (defn set-rotation-modifiers
   ([angle shapes]
-   (set-rotation-modifiers angle shapes (-> shapes gsh/selection-rect gsh/center-selrect)))
+   (set-rotation-modifiers angle shapes (-> shapes gsh/shapes->rect grc/rect->center)))
 
   ([angle shapes center]
    (ptk/reify ::set-rotation-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (let [objects     (wsh/lookup-page-objects state)
-             ids
-             (->> shapes
-                  (remove #(get % :blocked false))
-                  (filter #((cpc/editable-attrs (:type %)) :rotation))
-                  (map :id))
+       (let [objects (wsh/lookup-page-objects state)
+             ids     (sequence xf-rotation-shape shapes)
 
              get-modifier
              (fn [shape]

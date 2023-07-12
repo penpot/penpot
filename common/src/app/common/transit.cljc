@@ -7,8 +7,6 @@
 (ns app.common.transit
   (:require
    [app.common.data :as d]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
    [app.common.uri :as uri]
    [cognitect.transit :as t]
    [lambdaisland.uri :as luri]
@@ -18,8 +16,6 @@
    #?(:cljs ["luxon" :as lxn]))
   #?(:clj
      (:import
-      app.common.geom.matrix.Matrix
-      app.common.geom.point.Point
       java.io.ByteArrayInputStream
       java.io.ByteArrayOutputStream
       java.io.File
@@ -121,23 +117,6 @@
  #?(:cljs
     {:id "u"
      :rfn parse-uuid})
-
- {:id "point"
-  :class #?(:clj Point :cljs gpt/Point)
-  :wfn #(into {} %)
-  :rfn gpt/map->Point}
-
- {:id "matrix"
-  :class #?(:clj Matrix :cljs gmt/Matrix)
-  :wfn #(into {} %)
-  :rfn #?(:cljs gmt/map->Matrix
-          :clj  (fn [{:keys [a b c d e f]}]
-                  (gmt/matrix (double a)
-                              (double b)
-                              (double c)
-                              (double d)
-                              (double e)
-                              (double f))))}
 
  {:id "ordered-set"
   :class #?(:clj LinkedSet :cljs lks/LinkedSet)

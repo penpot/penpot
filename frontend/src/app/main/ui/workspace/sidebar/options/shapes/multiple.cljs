@@ -9,8 +9,8 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.common :as cpc]
    [app.common.text :as txt]
+   [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
@@ -210,7 +210,7 @@
         extract-attrs
         (fn [[ids values] {:keys [id type content] :as shape}]
           (let [read-mode      (get-in type->read-mode [type attr-group])
-                editable-attrs (filter (get cpc/editable-attrs (:type shape)) attrs)]
+                editable-attrs (filter (get editable-attrs (:type shape)) attrs)]
             (case read-mode
               :ignore   [ids values]
 

@@ -8,10 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.defaults :refer [version]]
    [app.common.files.features :as ffeat]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.common :refer [file-version]]
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.types.color :as ctc]
@@ -68,7 +68,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def empty-file-data
-  {:version file-version
+  {:version version
    :pages []
    :pages-index {}})
 
@@ -79,9 +79,8 @@
   ([file-id page-id]
    (let [page (when (some? page-id)
                 (ctp/make-empty-page page-id "Page 1"))]
-     (cond-> (-> empty-file-data
-                 (assoc :id file-id))
 
+     (cond-> (assoc empty-file-data :id file-id)
        (some? page-id)
        (ctpl/add-page page)
 
@@ -291,7 +290,7 @@
    been modified after the given date."
   [file-data library since-date]
   (letfn [(used-assets-shape [shape]
-             (concat 
+             (concat
               (ctkl/used-components-changed-since shape library since-date)
               (ctcl/used-colors-changed-since shape library since-date)
               (ctyl/used-typographies-changed-since shape library since-date)))
@@ -299,7 +298,7 @@
           (used-assets-container [container]
            (->> (mapcat used-assets-shape (ctn/shapes-seq container))
                 (map #(cons (:id container) %))))]
-    
+
     (mapcat used-assets-container (containers-seq file-data))))
 
 (defn get-or-add-library-page
@@ -347,7 +346,7 @@
                                                      file-data
                                                      position
                                                      false
-                                                     {:main-instance? true
+                                                     {:main-instance true
                                                       :force-frame-id uuid/zero
                                                       :keep-ids? true})
                         add-shapes
@@ -430,7 +429,7 @@
                                              library-data
                                              position
                                              (dm/get-in file-data [:options :components-v2])
-                                             {:main-instance? true})
+                                             {:main-instance true})
 
                 main-instance-shapes
                 (map #(cond-> %
@@ -590,9 +589,9 @@
      (letfn [(show-shape [shape-id level objects]
                (let [shape (get objects shape-id)]
                  (println (str/pad (str (str/repeat "  " level)
-                                        (when (:main-instance? shape) "{")
+                                        (when (:main-instance shape) "{")
                                         (:name shape)
-                                        (when (:main-instance? shape) "}")
+                                        (when (:main-instance shape) "}")
                                         (when (seq (:touched shape)) "*")
                                         (when show-ids (str/format " <%s>" (:id shape))))
                                    {:length 20
@@ -603,7 +602,7 @@
                      (println (str (str/repeat "  " level)
                                    "    "
                                    (str (:touched shape)))))
-                   (when (:remote-synced? shape)
+                   (when (:remote-synced shape)
                      (println (str (str/repeat "  " level)
                                    "    (remote-synced)"))))
                  (when (:shapes shape)
@@ -612,7 +611,7 @@
 
              (show-component-info [shape objects]
                (if (nil? (:shape-ref shape))
-                 (if (:component-root? shape) " #" "")
+                 (if (:component-root shape) " #" "")
                  (let [root-shape        (ctn/get-component-shape objects shape)
                        component-id      (when root-shape (:component-id root-shape))
                        component-file-id (when root-shape (:component-file root-shape))
@@ -627,7 +626,7 @@
                                              (get-ref-shape file-data component shape)))]
 
                    (str/format " %s--> %s%s%s"
-                               (cond (:component-root? shape) "#"
+                               (cond (:component-root shape) "#"
                                      (:component-id shape) "@"
                                      :else "-")
 
@@ -635,7 +634,7 @@
 
                                (or (:name component-shape) "?")
 
-                               (if (or (:component-root? shape)
+                               (if (or (:component-root shape)
                                        (nil? (:component-id shape))
                                        true)
                                  ""
@@ -672,4 +671,3 @@
                     (show-shape (:id component) 0 (:objects component)))
                   (when (:main-instance-page component)
                     (show-component-instance component)))))))))
-

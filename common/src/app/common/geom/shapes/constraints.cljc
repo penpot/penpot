@@ -6,7 +6,9 @@
 
 (ns app.common.geom.shapes.constraints
   (:require
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.intersect :as gsi]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
@@ -204,19 +206,22 @@
         disp-start   (displacement start-before start-after before-side-vector after-side-vector)
 
         ;; We get the current axis side and grow it on both side by the end+start displacements
-        before-vec   (side-vector axis child-points-after)
-        after-vec    (side-vector-resize axis child-points-after disp-start disp-end)
+        before-vec        (side-vector axis child-points-after)
+        after-vec         (side-vector-resize axis child-points-after disp-start disp-end)
 
         ;; after-vec will contain the side length of the grown side
         ;; we scale the shape by the diference and translate it by the start
         ;; displacement (so its left+top position is constant)
-        scale        (/ (gpt/length after-vec) (max 0.01 (gpt/length before-vec)))
+        scale             (/ (gpt/length after-vec) (mth/max 0.01 (gpt/length before-vec)))
 
-        resize-origin (gpo/origin child-points-after)
+        resize-origin     (gpo/origin child-points-after)
 
-        [_ transform transform-inverse] (gtr/calculate-geometry parent-points-after)
+        center            (gco/points->center parent-points-after)
+        selrect           (gtr/calculate-selrect parent-points-after center)
+        transform         (gtr/calculate-transform parent-points-after center selrect)
+        transform-inverse (when (some? transform) (gmt/inverse transform))
+        resize-vector     (get-scale axis scale)]
 
-        resize-vector (get-scale axis scale)]
     (-> (ctm/empty)
         (ctm/resize resize-vector resize-origin transform transform-inverse)
         (ctm/move disp-start))))
@@ -276,10 +281,13 @@
 
         resize-vector (gpt/point scale-x scale-y)
         resize-origin (gpo/origin transformed-child-bounds)
-        [_ transform transform-inverse] (gtr/calculate-geometry transformed-parent-bounds)]
 
-    (-> modifiers
-        (ctm/resize resize-vector resize-origin transform transform-inverse))))
+        center            (gco/points->center transformed-child-bounds)
+        selrect           (gtr/calculate-selrect transformed-child-bounds center)
+        transform         (gtr/calculate-transform transformed-child-bounds center selrect)
+        transform-inverse (when (some? transform) (gmt/inverse transform))]
+
+    (ctm/resize modifiers resize-vector resize-origin transform transform-inverse)))
 
 (defn calc-child-modifiers
   [parent child modifiers ignore-constraints child-bounds parent-bounds transformed-parent-bounds]

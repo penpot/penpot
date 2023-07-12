@@ -49,13 +49,11 @@
     (fn [file-data]
       (let [frame-id  (get props :frame-id uuid/zero)
             parent-id (get props :parent-id uuid/zero)
-            shape     (if (= type :group)
-                        (cts/make-minimal-group frame-id
-                                                {:x 0 :y 0 :width 1 :height 1}
-                                                (get props :name "Group1"))
-                        (cts/make-shape type
-                                        {:x 0 :y 0 :width 1 :height 1}
-                                        props))]
+            shape     (cts/setup-shape
+                       (-> {:type type
+                            :width 1
+                            :height 1}
+                           (merge props)))]
 
         (swap! idmap assoc label (:id shape))
         (ctpl/update-page file-data

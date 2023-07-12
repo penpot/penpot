@@ -8,13 +8,12 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.files.features :as ffeat]
+   [app.common.files.migrations :as pmg]
    [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.pages.changes :as cpc]
-   [app.common.pages.migrations :as pmg]
    [app.common.schema :as sm]
    [app.common.schema.generators :as smg]
-   [app.common.spec :as us]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -32,37 +31,7 @@
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.util.time :as dt]
-   [clojure.spec.alpha :as s]))
-
-;; --- SPECS
-
-(s/def ::changes
-  (s/coll-of map? :kind vector?))
-
-(s/def ::hint-origin ::us/keyword)
-(s/def ::hint-events
-  (s/every ::us/keyword :kind vector?))
-
-(s/def ::change-with-metadata
-  (s/keys :req-un [::changes]
-          :opt-un [::hint-origin
-                   ::hint-events]))
-
-(s/def ::changes-with-metadata
-  (s/every ::change-with-metadata :kind vector?))
-
-(s/def ::session-id ::us/uuid)
-(s/def ::revn ::us/integer)
-(s/def ::update-file
-  (s/and
-   (s/keys :req [::rpc/profile-id]
-           :req-un [::files/id ::session-id ::revn]
-           :opt-un [::changes ::changes-with-metadata ::features])
-   (fn [o]
-     (or (contains? o :changes)
-         (contains? o :changes-with-metadata)))))
-
+   [app.util.time :as dt]))
 
 ;; --- SCHEMA
 
@@ -177,6 +146,7 @@
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
     (db/xact-lock! conn id)
+
     (let [cfg    (assoc cfg ::db/conn conn)
           params (assoc params :profile-id profile-id)
           tpoint (dt/tpoint)]

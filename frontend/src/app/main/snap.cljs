@@ -7,15 +7,17 @@
 (ns app.main.snap
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.snap :as sp]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.focus :as cpf]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :refer [zero]]
    [app.main.refs :as refs]
    [app.main.worker :as uw]
-   [app.util.geom.snap-points :as sp]
    [app.util.range-tree :as rt]
    [beicon.core :as rx]
    [clojure.set :as set]))
@@ -53,7 +55,7 @@
       (or (contains? filter-shapes id)
           (not (contains? layout :dynamic-alignment))
           (and (d/not-empty? focus)
-               (not (cp/is-in-focus? objects focus id)))))))
+               (not (cpf/is-in-focus? objects focus id)))))))
 
 (defn- calculate-distance [query-result point coord]
   (->> query-result
@@ -226,15 +228,15 @@
   [page-id shapes objects zoom movev]
   (let [frame-id (snap-frame-id shapes)
         frame (get objects frame-id)
-        selrect (->> shapes (map #(gsh/move % movev)) gsh/selection-rect)]
+        selrect (->> shapes (map #(gsh/move % movev)) gsh/shapes->rect)]
     (->> (rx/of (vector frame selrect))
          (rx/merge-map
           (fn [[frame selrect]]
-            (let [vbox (gsh/rect->selrect @refs/vbox)
+            (let [vbox     (deref refs/vbox)
                   frame-id (->> shapes first :frame-id)
                   selected (into #{} (map :id shapes))
-                  areas (->> (gsh/selrect->areas
-                              (or (gsh/clip-selrect (:selrect frame) vbox)
+                  areas (->> (gsh/get-areas
+                              (or (grc/clip-rect (dm/get-prop frame :selrect) vbox)
                                   vbox)
                               selrect)
                              (d/mapm #(select-shapes-area page-id frame-id selected objects %2)))
@@ -272,8 +274,8 @@
 
         snap-points
         (->> shapes
-             (gsh/selection-rect)
-             (sp/selrect-snap-points)
+             (gsh/shapes->rect)
+             (sp/rect->snap-points)
              ;; Move the points in the translation vector
              (map #(gpt/add % movev)))]
 

@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.proportions :as gpp]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
@@ -28,61 +27,19 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
-   [app.main.streams :as ms]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-(defn get-shape-layer-position
-  [objects selected attrs]
-
-  ;; Calculate the frame over which we're drawing
-  (let [position @ms/mouse-position
-        frame-id (:frame-id attrs (ctst/top-nested-frame objects position))
-        shape    (when-not (empty? selected)
-                   (cph/get-base-shape objects selected))]
-
-    ;; When no shapes has been selected or we're over a different frame
-    ;; we add it as the latest shape of that frame
-    (if (or (not shape) (not= (:frame-id shape) frame-id))
-      [frame-id frame-id nil]
-
-      ;; Otherwise, we add it to next to the selected shape
-      (let [index (cph/get-position-on-parent objects (:id shape))
-            {:keys [frame-id parent-id]} shape]
-        [frame-id parent-id (inc index)]))))
-
-(defn make-new-shape
-  [attrs objects selected]
-  (let [default-attrs (if (= :frame (:type attrs))
-                        cts/default-frame-attrs
-                        cts/default-shape-attrs)
-
-        selected-non-frames
-        (into #{} (comp (map (d/getf objects))
-                        (remove cph/frame-shape?))
-              selected)
-
-        [frame-id parent-id index]
-        (get-shape-layer-position objects selected-non-frames attrs)]
-
-    (-> (merge default-attrs attrs)
-        (gpp/setup-proportions)
-        (assoc :frame-id frame-id
-               :parent-id parent-id
-               :index index))))
+(def valid-shape-map?
+  (sm/pred-fn ::cts/shape))
 
 (defn prepare-add-shape
-  [changes attrs objects selected]
-  (let [id       (or (:id attrs) (uuid/next))
-        name     (:name attrs)
+  [changes shape objects _selected]
+  (let [index   (:index (meta shape))
+        ;; FIXME: revisit
+        id      (:id shape)
 
-        shape (make-new-shape
-               (assoc attrs :id id :name name)
-               objects
-               selected)
-
-        index (:index (meta attrs))
-        [row column :as cell]  (:cell (meta attrs))
+        [row column :as cell]  (:cell (meta shape))
 
         changes (-> changes
                     (pcb/with-objects objects)
@@ -90,8 +47,8 @@
                       (pcb/add-object shape {:index index}))
                     (cond-> (nil? index)
                       (pcb/add-object shape))
-                    (cond-> (some? (:parent-id attrs))
-                      (pcb/change-parent (:parent-id attrs) [shape] index))
+                    (cond-> (some? (:parent-id shape))
+                      (pcb/change-parent (:parent-id shape) [shape] index))
                     (cond-> (some? cell)
                       (pcb/update-shapes [(:parent-id shape)] #(ctl/push-into-cell % [id] row column)))
                     (cond-> (ctl/grid-layout? objects (:parent-id shape))
@@ -100,10 +57,14 @@
     [shape changes]))
 
 (defn add-shape
-  ([attrs]
-   (add-shape attrs {}))
-  ([attrs {:keys [no-select? no-update-layout?]}]
-   (dm/assert! (cts/shape-attrs? attrs))
+  ([shape]
+   (add-shape shape {}))
+  ([shape {:keys [no-select? no-update-layout?]}]
+
+   (dm/verify!
+    "expected a valid shape"
+    (cts/valid-shape? shape))
+
    (ptk/reify ::add-shape
      ptk/WatchEvent
      (watch [it state _]
@@ -111,11 +72,10 @@
              objects  (wsh/lookup-page-objects state page-id)
              selected (wsh/lookup-selected state)
 
-             changes  (-> (pcb/empty-changes it page-id)
-                          (pcb/with-objects objects))
-
              [shape changes]
-             (prepare-add-shape changes attrs objects selected)
+             (-> (pcb/empty-changes it page-id)
+                 (pcb/with-objects objects)
+                 (prepare-add-shape shape objects selected))
 
              undo-id (js/Symbol)]
 
@@ -127,7 +87,7 @@
                  (when-not no-select?
                    (dws/select-shapes (d/ordered-set (:id shape))))
                  (dwu/commit-undo-transaction undo-id))
-          (when (= :text (:type attrs))
+          (when (cph/text-shape? shape)
             (->> (rx/of (dwe/start-edition-mode (:id shape)))
                  (rx/observe-on :async)))))))))
 
@@ -183,7 +143,7 @@
 
              components-v2 (features/active-feature? state :components-v2)
 
-             ids     (cph/clean-loops objects ids)
+             ids           (cph/clean-loops objects ids)
 
              in-component-copy?
              (fn [shape-id]
@@ -237,7 +197,7 @@
                   ;; converted to a normal group.
                    (let [obj    (lookup id)
                          parent (lookup (:parent-id obj))]
-                     (if (and (:masked-group? parent)
+                     (if (and (:masked-group parent)
                               (= id (first (:shapes parent))))
                        (conj group-ids (:id parent))
                        group-ids)))
@@ -305,7 +265,7 @@
            (reduce (fn [components id]
                      (let [shape (get objects id)]
                        (if (and (= (:component-file shape) (:id file)) ;; Main instances should exist only in local file
-                                (:main-instance? shape))               ;; but check anyway
+                                (:main-instance shape))                ;; but check anyway
                          (conj components (:component-id shape))
                          components)))
                    []
@@ -329,7 +289,7 @@
                      (pcb/resize-parents all-parents)
                      (pcb/update-shapes groups-to-unmask
                                         (fn [shape]
-                                          (assoc shape :masked-group? false)))
+                                          (assoc shape :masked-group false)))
                      (pcb/update-shapes (map :id interacting-shapes)
                                         (fn [shape]
                                           (d/update-when shape :interactions
@@ -350,7 +310,6 @@
   (let [[changes _all-parents] (real-delete-shapes-changes changes file page objects ids it components-v2)]
     changes))
 
-
 (defn- real-delete-shapes
   [file page objects ids it components-v2]
   (let [[changes all-parents] (real-delete-shapes-changes file page objects ids it components-v2)
@@ -363,59 +322,78 @@
 
 
 (defn create-and-add-shape
-  [type frame-x frame-y data]
+  [type frame-x frame-y {:keys [width height] :as attrs}]
   (ptk/reify ::create-and-add-shape
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [width height]} data
+      (let [vbc       (wsh/viewport-center state)
+            x         (:x attrs (- (:x vbc) (/ width 2)))
+            y         (:y attrs (- (:y vbc) (/ height 2)))
+            page-id   (:current-page-id state)
+            objects   (wsh/lookup-page-objects state page-id)
+            frame-id  (-> (wsh/lookup-page-objects state page-id)
+                          (ctst/top-nested-frame {:x frame-x :y frame-y}))
 
-            vbc (wsh/viewport-center state)
-            x (:x data (- (:x vbc) (/ width 2)))
-            y (:y data (- (:y vbc) (/ height 2)))
-            page-id (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            frame-id (-> (wsh/lookup-page-objects state page-id)
-                         (ctst/top-nested-frame {:x frame-x :y frame-y}))
-            selected (wsh/lookup-selected state)
-            page-objects  (wsh/lookup-page-objects state)
-            base      (cph/get-base-shape page-objects selected)
-            selected-frame? (and (= 1 (count selected))
-                                 (= :frame (get-in objects [(first selected) :type])))
-            parent-id (if
-                       (or selected-frame? (empty? selected)) frame-id
-                       (:parent-id base))
+            selected  (wsh/lookup-selected state)
+            base      (cph/get-base-shape objects selected)
 
-            shape (-> (cts/make-minimal-shape type)
-                      (merge data)
-                      (merge {:x x :y y})
-                      (assoc :frame-id frame-id :parent-id parent-id)
-                      (cts/setup-rect-selrect))]
+            parent-id (if (or (and (= 1 (count selected))
+                                   (cph/frame-shape? (get objects (first selected))))
+                              (empty? selected))
+                        frame-id
+                        (:parent-id base))
+
+            shape     (cts/setup-shape
+                       (-> attrs
+                           (assoc :type type)
+                           (assoc :x x)
+                           (assoc :y y)
+                           (assoc :frame-id frame-id)
+                           (assoc :parent-id parent-id)))]
+
         (rx/of (add-shape shape))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Artboard
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+;; FIXME: looks
 (defn prepare-create-artboard-from-selection
   [changes id parent-id objects selected index frame-name without-fill?]
   (let [selected-objs (map #(get objects %) selected)
         new-index (or index
                       (cph/get-index-replacement selected objects))]
     (when (d/not-empty? selected)
-      (let [srect     (gsh/selection-rect selected-objs)
-            frame-id  (get-in objects [(first selected) :frame-id])
-            parent-id (or parent-id (get-in objects [(first selected) :parent-id]))
-            shape     (-> (cts/make-minimal-shape :frame)
-                          (merge {:x (:x srect) :y (:y srect) :width (:width srect) :height (:height srect)})
-                          (cond-> id
-                            (assoc :id id))
-                          (cond-> frame-name
-                            (assoc :name frame-name))
-                          (assoc :frame-id frame-id :parent-id parent-id)
-                          (with-meta {:index new-index})
-                          (cond-> (or (not= frame-id uuid/zero) without-fill?)
-                            (assoc :fills [] :hide-in-viewer true))
-                          (cts/setup-rect-selrect))
+      (let [srect       (gsh/shapes->rect selected-objs)
+            selected-id (first selected)
+
+            frame-id    (dm/get-in objects [selected-id :frame-id])
+            parent-id   (or parent-id (dm/get-in objects [selected-id :parent-id]))
+
+            attrs       {:type :frame
+                         :x (:x srect)
+                         :y (:y srect)
+                         :width (:width srect)
+                         :height (:height srect)}
+
+            shape     (cts/setup-shape
+                       (cond-> attrs
+                         (some? id)
+                         (assoc :id id)
+
+                         (some? frame-name)
+                         (assoc :name frame-name)
+
+                         :always
+                         (assoc :frame-id frame-id
+                                :parent-id parent-id)
+
+                         :always
+                         (with-meta {:index new-index})
+
+                         (or (not= frame-id uuid/zero) without-fill?)
+                         (assoc :fills [] :hide-in-viewer true)))
 
             [shape changes]
             (prepare-add-shape changes shape objects selected)
@@ -476,7 +454,7 @@
 
   (dm/assert!
    "expected valid shape-attrs value for `flags`"
-   (cts/shape-attrs? flags))
+   (cts/valid-shape-attrs? flags))
 
   (ptk/reify ::update-shape-flags
     ptk/WatchEvent

@@ -8,34 +8,41 @@
   (:require
    #?(:cljs [cljs.pprint :as pp]
       :clj  [clojure.pprint :as pp])
+   #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
+   [app.common.record :as cr]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.spec :as us]
-   [clojure.spec.alpha :as s]))
+   [app.common.transit :as t]
+   [clojure.spec.alpha :as s])
+  #?(:clj
+     (:import
+      java.util.List)))
+
 
 (def precision 6)
 
 ;; --- Matrix Impl
-(defrecord Matrix [^double a
-                   ^double b
-                   ^double c
-                   ^double d
-                   ^double e
-                   ^double f]
+(cr/defrecord Matrix [^double a
+                      ^double b
+                      ^double c
+                      ^double d
+                      ^double e
+                      ^double f]
   Object
-  (toString [_]
+  (toString [this]
     (dm/fmt "matrix(%, %, %, %, %, %)"
-      (mth/to-fixed a precision)
-      (mth/to-fixed b precision)
-      (mth/to-fixed c precision)
-      (mth/to-fixed d precision)
-      (mth/to-fixed e precision)
-      (mth/to-fixed f precision))))
+            (mth/to-fixed (.-a this) precision)
+            (mth/to-fixed (.-b this) precision)
+            (mth/to-fixed (.-c this) precision)
+            (mth/to-fixed (.-d this) precision)
+            (mth/to-fixed (.-e this) precision)
+            (mth/to-fixed (.-f this) precision))))
 
 (defn matrix?
   "Return true if `v` is Matrix instance."
@@ -45,9 +52,9 @@
 (defn matrix
   "Create a new matrix instance."
   ([]
-   (Matrix. 1 0 0 1 0 0))
+   (pos->Matrix 1 0 0 1 0 0))
   ([a b c d e f]
-   (Matrix. a b c d e f)))
+   (pos->Matrix a b c d e f)))
 
 (def number-regex #"[+-]?\d*(\.\d+)?(e[+-]?\d+)?")
 
@@ -94,7 +101,7 @@
                               (sg/small-double)
                               (sg/small-double)
                               (sg/small-double) )
-                    (sg/fmap #(apply ->Matrix %)))
+                    (sg/fmap #(apply pos->Matrix %)))
       ::oapi/type "string"
       ::oapi/format "matrix"
       ::oapi/decode decode
@@ -114,24 +121,54 @@
 (s/def ::matrix
   (s/and ::matrix-attrs matrix?))
 
-
 (defn close?
   [^Matrix m1 ^Matrix m2]
-  (and (mth/close? (.-a m1) (.-a m2))
-       (mth/close? (.-b m1) (.-b m2))
-       (mth/close? (.-c m1) (.-c m2))
-       (mth/close? (.-d m1) (.-d m2))
-       (mth/close? (.-e m1) (.-e m2))
-       (mth/close? (.-f m1) (.-f m2))))
+  (and ^boolean (mth/close? (.-a m1) (.-a m2))
+       ^boolean (mth/close? (.-b m1) (.-b m2))
+       ^boolean (mth/close? (.-c m1) (.-c m2))
+       ^boolean (mth/close? (.-d m1) (.-d m2))
+       ^boolean (mth/close? (.-e m1) (.-e m2))
+       ^boolean (mth/close? (.-f m1) (.-f m2))))
 
 (defn unit? [^Matrix m1]
-  (and (some? m1)
-       (mth/close? (.-a m1) 1)
-       (mth/close? (.-b m1) 0)
-       (mth/close? (.-c m1) 0)
-       (mth/close? (.-d m1) 1)
-       (mth/close? (.-e m1) 0)
-       (mth/close? (.-f m1) 0)))
+  (and ^boolean (some? m1)
+       ^boolean (mth/close? (.-a m1) 1)
+       ^boolean (mth/close? (.-b m1) 0)
+       ^boolean (mth/close? (.-c m1) 0)
+       ^boolean (mth/close? (.-d m1) 1)
+       ^boolean (mth/close? (.-e m1) 0)
+       ^boolean (mth/close? (.-f m1) 0)))
+
+(defn multiply!
+  [^Matrix m1 ^Matrix m2]
+  (let [m1a (.-a m1)
+        m1b (.-b m1)
+        m1c (.-c m1)
+        m1d (.-d m1)
+        m1e (.-e m1)
+        m1f (.-f m1)
+        m2a (.-a m2)
+        m2b (.-b m2)
+        m2c (.-c m2)
+        m2d (.-d m2)
+        m2e (.-e m2)
+        m2f (.-f m2)]
+    #?@(:cljs
+        [(set! (.-a m1) (+ (* m1a m2a) (* m1c m2b)))
+         (set! (.-b m1) (+ (* m1b m2a) (* m1d m2b)))
+         (set! (.-c m1) (+ (* m1a m2c) (* m1c m2d)))
+         (set! (.-d m1) (+ (* m1b m2c) (* m1d m2d)))
+         (set! (.-e m1) (+ (* m1a m2e) (* m1c m2f) m1e))
+         (set! (.-f m1) (+ (* m1b m2e) (* m1d m2f) m1f))
+         m1]
+        :clj
+        [(pos->Matrix
+          (+ (* m1a m2a) (* m1c m2b))
+          (+ (* m1b m2a) (* m1d m2b))
+          (+ (* m1a m2c) (* m1c m2d))
+          (+ (* m1b m2c) (* m1d m2d))
+          (+ (* m1a m2e) (* m1c m2f) m1e)
+          (+ (* m1b m2e) (* m1d m2f) m1f))])))
 
 (defn multiply
   ([^Matrix m1 ^Matrix m2]
@@ -156,7 +193,7 @@
            m2e (.-e m2)
            m2f (.-f m2)]
 
-       (Matrix.
+       (pos->Matrix
         (+ (* m1a m2a) (* m1c m2b))
         (+ (* m1b m2a) (* m1d m2b))
         (+ (* m1a m2c) (* m1c m2d))
@@ -165,51 +202,28 @@
         (+ (* m1b m2e) (* m1d m2f) m1f)))))
 
   ([m1 m2 & others]
-   (reduce multiply (multiply m1 m2) others)))
-
-(defn multiply!
-  [^Matrix m1 ^Matrix m2]
-  (let [m1a (.-a m1)
-        m1b (.-b m1)
-        m1c (.-c m1)
-        m1d (.-d m1)
-        m1e (.-e m1)
-        m1f (.-f m1)
-        m2a (.-a m2)
-        m2b (.-b m2)
-        m2c (.-c m2)
-        m2d (.-d m2)
-        m2e (.-e m2)
-        m2f (.-f m2)]
-    #?@(:cljs [(set! (.-a m1) (+ (* m1a m2a) (* m1c m2b)))
-               (set! (.-b m1) (+ (* m1b m2a) (* m1d m2b)))
-               (set! (.-c m1) (+ (* m1a m2c) (* m1c m2d)))
-               (set! (.-d m1) (+ (* m1b m2c) (* m1d m2d)))
-               (set! (.-e m1) (+ (* m1a m2e) (* m1c m2f) m1e))
-               (set! (.-f m1) (+ (* m1b m2e) (* m1d m2f) m1f))
-               m1]
-        :clj  [(Matrix.
-                (+ (* m1a m2a) (* m1c m2b))
-                (+ (* m1b m2a) (* m1d m2b))
-                (+ (* m1a m2c) (* m1c m2d))
-                (+ (* m1b m2c) (* m1d m2d))
-                (+ (* m1a m2e) (* m1c m2f) m1e)
-                (+ (* m1b m2e) (* m1d m2f) m1f))])))
+   (reduce multiply! (multiply m1 m2) others)))
 
 (defn add-translate
   "Given two TRANSLATE matrixes (only e and f have significative
   values), combine them. Quicker than multiplying them, for this
   precise case."
-  ([{m1e :e m1f :f} {m2e :e m2f :f}]
-   (Matrix. 1 0 0 1 (+ m1e m2e) (+ m1f m2f)))
+  ([^Matrix m1 ^Matrix m2]
+   (let [m1e (dm/get-prop m1 :e)
+         m1f (dm/get-prop m1 :f)
+         m2e (dm/get-prop m2 :e)
+         m2f (dm/get-prop m2 :f)]
+     (pos->Matrix 1 0 0 1 (+ m1e m2e) (+ m1f m2f))))
 
   ([m1 m2 & others]
    (reduce add-translate (add-translate m1 m2) others)))
 
+;; FIXME: optimize?
+
 (defn substract
   [{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f}
    {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f}]
-  (Matrix.
+  (pos->Matrix
    (- m1a m2a) (- m1b m2b) (- m1c m2c)
    (- m1d m2d) (- m1e m2e) (- m1f m2f)))
 
@@ -221,13 +235,24 @@
 
 (defn translate-matrix
   ([pt]
-   (assert (gpt/point? pt))
-   (Matrix. 1 0 0 1
-            (dm/get-prop pt :x)
-            (dm/get-prop pt :y)))
+   (dm/assert! (gpt/point? pt))
+   (pos->Matrix 1 0 0 1
+                (dm/get-prop pt :x)
+                (dm/get-prop pt :y)))
 
   ([x y]
-   (Matrix. 1 0 0 1 x y)))
+   (pos->Matrix 1 0 0 1 x y)))
+
+
+(defn translate-matrix-neg
+  ([pt]
+   (dm/assert! (gpt/point? pt))
+   (pos->Matrix 1 0 0 1
+            (- (dm/get-prop pt :x))
+            (- (dm/get-prop pt :y))))
+
+  ([x y]
+   (pos->Matrix 1 0 0 1 (- x) (- y))))
 
 (defn scale-matrix
   ([pt center]
@@ -235,10 +260,10 @@
          sy (dm/get-prop pt :y)
          cx (dm/get-prop center :x)
          cy (dm/get-prop center :y)]
-     (Matrix. sx 0 0 sy (- cx (* cx sx)) (- cy (* cy sy)))))
+     (pos->Matrix sx 0 0 sy (- cx (* cx sx)) (- cy (* cy sy)))))
   ([pt]
-   (assert (gpt/point? pt))
-   (Matrix. (dm/get-prop pt :x) 0 0 (dm/get-prop pt :y) 0 0)))
+   (dm/assert! (gpt/point? pt))
+   (pos->Matrix (dm/get-prop pt :x) 0 0 (dm/get-prop pt :y) 0 0)))
 
 (defn rotate-matrix
   ([angle point]
@@ -252,15 +277,15 @@
          ns (- s)
          tx (+ (* c nx) (* ns ny) cx)
          ty (+ (* s nx) (*  c ny) cy)]
-     (Matrix. c s ns c tx ty)))
+     (pos->Matrix c s ns c tx ty)))
   ([angle]
    (let [a (mth/radians angle)]
-     (Matrix. (mth/cos a)
-              (mth/sin a)
-              (- (mth/sin a))
-              (mth/cos a)
-              0
-              0))))
+     (pos->Matrix (mth/cos a)
+                  (mth/sin a)
+                  (- (mth/sin a))
+                  (mth/cos a)
+                  0
+                  0))))
 
 (defn skew-matrix
   ([angle-x angle-y point]
@@ -270,7 +295,7 @@
   ([angle-x angle-y]
    (let [m1 (mth/tan (mth/radians angle-x))
          m2 (mth/tan (mth/radians angle-y))]
-     (Matrix. 1 m2 m1 1 0 0))))
+     (pos->Matrix 1 m2 m1 1 0 0))))
 
 (defn rotate
   "Apply rotation transformation to the matrix."
@@ -331,6 +356,7 @@
         (translate (gpt/negate pt)))
     mtx))
 
+;; FIXME: performance
 (defn determinant
   "Determinant for the affinity transform"
   [{:keys [a b c d _ _]}]
@@ -340,14 +366,14 @@
   "Gets the inverse of the affinity transform `mtx`"
   [{:keys [a b c d e f] :as mtx}]
   (let [det (determinant mtx)]
-    (when-not (mth/almost-zero? det)
+    (when-not ^boolean (mth/almost-zero? det)
       (let [a' (/  d det)
             b' (/ (- b) det)
             c' (/ (- c) det)
             d' (/  a det)
             e' (/ (- (* c f) (* d e)) det)
             f' (/ (- (* b e) (* a f)) det)]
-        (Matrix. a' b' c' d' e' f')))))
+        (pos->Matrix a' b' c' d' e' f')))))
 
 (defn round
   [mtx]
@@ -371,8 +397,41 @@
     point))
 
 (defn move?
-  [{:keys [a b c d _ _]}]
-  (and (mth/almost-zero? (- a 1))
-       (mth/almost-zero? b)
-       (mth/almost-zero? c)
-       (mth/almost-zero? (- d 1))))
+  [m]
+  (and ^boolean (mth/almost-zero? (- (dm/get-prop m :a) 1))
+       ^boolean (mth/almost-zero? (dm/get-prop m :b))
+       ^boolean (mth/almost-zero? (dm/get-prop m :c))
+       ^boolean (mth/almost-zero? (- (dm/get-prop m :d) 1))))
+
+#?(:clj
+   (fres/add-handlers!
+    {:name "penpot/matrix"
+     :class Matrix
+     :wfn (fn [n w o]
+            (fres/write-tag! w n 1)
+            (fres/write-list! w (List/of (.-a ^Matrix o)
+                                         (.-b ^Matrix o)
+                                         (.-c ^Matrix o)
+                                         (.-d ^Matrix o)
+                                         (.-e ^Matrix o)
+                                         (.-f ^Matrix o))))
+     :rfn (fn [rdr]
+            (let [^List x (fres/read-object! rdr)]
+              (pos->Matrix (.get x 0)
+                           (.get x 1)
+                           (.get x 2)
+                           (.get x 3)
+                           (.get x 4)
+                           (.get x 5))))}))
+
+(t/add-handlers!
+ {:id "matrix"
+  :class Matrix
+  :wfn #(into {} %)
+  :rfn (fn [m]
+         (pos->Matrix (get m :a)
+                      (get m :b)
+                      (get m :c)
+                      (get m :d)
+                      (get m :e)
+                      (get m :f)))})

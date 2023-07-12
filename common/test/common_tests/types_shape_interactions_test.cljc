@@ -6,9 +6,10 @@
 
 (ns common-tests.types-shape-interactions-test
   (:require
-   [app.common.geom.shapes :as gsh]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
@@ -17,8 +18,8 @@
 
 (t/deftest set-event-type
   (let [interaction ctsi/default-interaction
-        shape       (cts/make-minimal-shape :rect)
-        frame       (cts/make-minimal-shape :frame)]
+        shape       (cts/setup-shape {:type :rect})
+        frame       (cts/setup-shape {:type :frame})]
 
     (t/testing "Set event type unchanged"
       (let [new-interaction
@@ -46,7 +47,8 @@
             new-interaction
             (ctsi/set-event-type interaction :after-delay frame)]
         (t/is (= :after-delay (:event-type new-interaction)))
-        (t/is (= 300 (:delay new-interaction)))))))
+        (t/is (= 300 (:delay new-interaction)))))
+    ))
 
 
 (t/deftest set-action-type
@@ -148,7 +150,7 @@
         (t/is (= "https://example.com" (:url new-interaction)))))))
 
 (t/deftest option-delay
-  (let [frame (cts/make-minimal-shape :frame)
+  (let [frame (cts/setup-shape {:type :frame})
         i1    ctsi/default-interaction
         i2    (ctsi/set-event-type i1 :after-delay frame)]
 
@@ -159,7 +161,6 @@
     (t/testing "Set delay"
       (let [new-interaction (ctsi/set-delay i2 1000)]
         (t/is (= 1000 (:delay new-interaction)))))))
-
 
 (t/deftest option-destination
   (let [destination (uuid/next)
@@ -211,10 +212,10 @@
 
 
 (t/deftest option-overlay-opts
-  (let [base-frame    (-> (cts/make-minimal-shape :frame)
+  (let [base-frame    (-> (cts/setup-shape {:type :frame})
                           (assoc-in [:selrect :width] 100)
                           (assoc-in [:selrect :height] 100))
-        overlay-frame (-> (cts/make-minimal-shape :frame)
+        overlay-frame (-> (cts/setup-shape {:type :frame})
                           (assoc-in [:selrect :width] 30)
                           (assoc-in [:selrect :height] 20))
         objects       {(:id base-frame) base-frame
@@ -277,37 +278,35 @@
         (t/is (= relative-to-id (:position-relative-to new-interaction)))))))
 
 (defn setup-selrect [{:keys [x y width height] :as obj}]
-  (let [rect    (gsh/make-rect x y width height)
-        center  (gsh/center-rect rect)
-        selrect (gsh/rect->selrect rect)
-        points  (gsh/rect->points rect)]
+  (let [rect    (grc/make-rect x y width height)
+        center  (grc/rect->center rect)
+        points  (grc/rect->points rect)]
     (-> obj
-        (assoc :selrect selrect)
+        (assoc :selrect rect)
         (assoc :points points))))
 
 (t/deftest calc-overlay-position
-  (let [base-frame    (-> (cts/make-minimal-shape :frame)
-                          (assoc :width 100)
-                          (assoc :height 100)
-                          (setup-selrect))
-        popup         (-> (cts/make-minimal-shape :frame)
-                          (assoc :width 50)
-                          (assoc :height 50)
-                          (assoc :x 10)
-                          (assoc :y 10)
-                          (setup-selrect))
+  (let [base-frame    (cts/setup-shape
+                       {:type :frame
+                        :width 100
+                        :height 100})
+        popup         (cts/setup-shape
+                       {:type :frame
+                        :width 50
+                        :height 50
+                        :x 10
+                        :y 10})
+        rect         (cts/setup-shape
+                      {:type :rect
+                       :width 50
+                       :height 50
+                       :x 10
+                       :y 10})
 
-        rect         (-> (cts/make-minimal-shape :rect)
-                         (assoc :width 50)
-                         (assoc :height 50)
-                         (assoc :x 10)
-                         (assoc :y 10)
-                         (setup-selrect))
-
-        overlay-frame (-> (cts/make-minimal-shape :frame)
-                          (assoc :width 30)
-                          (assoc :height 20)
-                          (setup-selrect))
+        overlay-frame (cts/setup-shape
+                       {:type :frame
+                        :width 30
+                        :height 20})
 
         objects       {(:id base-frame) base-frame
                        (:id popup) popup
@@ -798,12 +797,12 @@
 
 
 (t/deftest remap-interactions
-  (let [frame1 (cts/make-minimal-shape :frame)
-        frame2 (cts/make-minimal-shape :frame)
-        frame3 (cts/make-minimal-shape :frame)
-        frame4 (cts/make-minimal-shape :frame)
-        frame5 (cts/make-minimal-shape :frame)
-        frame6 (cts/make-minimal-shape :frame)
+  (let [frame1 (cts/setup-shape {:type :frame})
+        frame2 (cts/setup-shape {:type :frame})
+        frame3 (cts/setup-shape {:type :frame})
+        frame4 (cts/setup-shape {:type :frame})
+        frame5 (cts/setup-shape {:type :frame})
+        frame6 (cts/setup-shape {:type :frame})
 
         objects {(:id frame3) frame3
                  (:id frame4) frame4

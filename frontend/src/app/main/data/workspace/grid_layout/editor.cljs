@@ -6,7 +6,7 @@
 
 (ns app.main.data.workspace.grid-layout.editor
   (:require
-   [app.common.geom.shapes :as gsh]
+   [app.common.geom.rect :as grc]
    [app.main.data.workspace.state-helpers :as wsh]
    [potok.core :as ptk]))
 
@@ -58,7 +58,7 @@
                       (let [{:keys [x y width height]} srect
                             x     (+ x (/ width 2) (- (/ (:width vport) 2 zoom)))
                             y     (+ y (/ height 2) (- (/ (:height vport) 2 zoom)))
-                            srect (gsh/make-selrect x y width height)]
+                            srect (grc/make-rect x y width height)]
                         (-> local
                             (update :vbox merge (select-keys srect [:x :y :x1 :x2 :y1 :y2])))))))))))
 

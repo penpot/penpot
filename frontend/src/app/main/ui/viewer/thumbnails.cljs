@@ -80,7 +80,7 @@
   [{:keys [selected? frame on-click index objects page-id thumbnail-data]}]
 
   (let [children-ids (cph/get-children-ids objects (:id frame))
-        children-bounds (gsh/selection-rect (concat [frame] (->> children-ids (keep (d/getf objects)))))]
+        children-bounds (gsh/shapes->rect (concat [frame] (->> children-ids (keep (d/getf objects)))))]
     [:div.thumbnail-item {:on-click #(on-click % index)}
      [:div.thumbnail-preview
       {:class (dom/classnames :selected selected?)}

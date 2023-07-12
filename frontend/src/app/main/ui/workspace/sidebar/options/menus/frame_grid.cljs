@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.frame-grid
   (:require
+   [app.common.geom.grid :as gg]
    [app.main.data.workspace.grid :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -16,7 +17,6 @@
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row input-row-v2]]
-   [app.util.geom.grid :as gg]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))

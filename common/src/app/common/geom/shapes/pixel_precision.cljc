@@ -8,10 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.points :as gpo]
-   [app.common.geom.shapes.rect :as gpr]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
@@ -19,28 +20,32 @@
 
 (defn size-pixel-precision
   [modifiers shape points precision]
-  (let [origin        (gpo/origin points)
-        curr-width    (gpo/width-points points)
-        curr-height   (gpo/height-points points)
+  (let [origin            (gpo/origin points)
+        curr-width        (gpo/width-points points)
+        curr-height       (gpo/height-points points)
 
-        [_ transform transform-inverse] (gtr/calculate-geometry points)
+        center            (gco/points->center points)
+        selrect           (gtr/calculate-selrect points center)
 
-        path?            (cph/path-shape? shape)
-        vertical-line?   (and path? (<= curr-width 0.01))
-        horizontal-line? (and path? (<= curr-height 0.01))
+        transform         (gtr/calculate-transform points center selrect)
+        transform-inverse (when (some? transform) (gmt/inverse transform))
 
-        target-width  (if vertical-line? curr-width (max 1 (mth/round curr-width precision)))
-        target-height (if horizontal-line? curr-height (max 1 (mth/round curr-height precision)))
+        path?             (cph/path-shape? shape)
+        vertical-line?    (and path? (<= curr-width 0.01))
+        horizontal-line?  (and path? (<= curr-height 0.01))
 
-        ratio-width  (/ target-width curr-width)
-        ratio-height (/ target-height curr-height)
-        scalev       (gpt/point ratio-width ratio-height)]
-    (-> modifiers
-        (ctm/resize scalev origin transform transform-inverse {:precise? true}))))
+        target-width      (if vertical-line? curr-width (mth/max 1 (mth/round curr-width precision)))
+        target-height     (if horizontal-line? curr-height (mth/max 1 (mth/round curr-height precision)))
+
+        ratio-width       (/ target-width curr-width)
+        ratio-height      (/ target-height curr-height)
+        scalev            (gpt/point ratio-width ratio-height)]
+
+    (ctm/resize modifiers scalev origin transform transform-inverse {:precise? true})))
 
 (defn position-pixel-precision
   [modifiers _ points precision ignore-axis]
-  (let [bounds        (gpr/bounds->rect points)
+  (let [bounds        (grc/bounds->rect points)
         corner        (gpt/point bounds)
         target-corner
         (cond-> corner

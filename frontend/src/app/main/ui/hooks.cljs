@@ -7,7 +7,7 @@
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
-   [app.common.pages :as cp]
+   [app.common.pages.focus :as cpf]
    [app.main.broadcast :as mbc]
    [app.main.data.shortcuts :as dsc]
    [app.main.refs :as refs]
@@ -248,16 +248,15 @@
       (mf/set-ref-val! ref val))
     (mf/ref-val ref)))
 
+;; FIXME: rename to use-focus-objects
 (defn with-focus-objects
   ([objects]
    (let [focus (mf/deref refs/workspace-focus-selected)]
      (with-focus-objects objects focus)))
 
   ([objects focus]
-   (let [objects (mf/use-memo
-                  (mf/deps focus objects)
-                  #(cp/focus-objects objects focus))]
-     objects)))
+   (mf/with-memo [focus objects]
+     (cpf/focus-objects objects focus))))
 
 (defn use-debounce
   [ms value]

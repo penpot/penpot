@@ -73,6 +73,11 @@
   (unchecked-set obj key value)
   obj)
 
+(defn unset!
+  [obj key]
+  (js-delete obj key)
+  obj)
+
 (defn update!
   [obj key f & args]
   (let [found (get obj key ::not-found)]

@@ -255,7 +255,7 @@
         has-frame? (->> shapes (d/seek cph/frame-shape?))
         has-group? (->> shapes (d/seek cph/group-shape?))
         has-bool? (->> shapes (d/seek cph/bool-shape?))
-        has-mask? (->> shapes (d/seek :masked-group?))
+        has-mask? (->> shapes (d/seek :masked-group))
 
         is-group? (and single? has-group?)
         is-bool? (and single? has-bool?)

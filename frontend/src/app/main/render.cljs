@@ -16,6 +16,7 @@
    [app.common.colors :as clr]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.math :as mth]
@@ -62,15 +63,15 @@
 
 (defn- calculate-dimensions
   [objects]
-  (let [bounds
-        (->> (ctst/get-root-objects objects)
-             (map (partial gsb/get-object-bounds objects))
-             (gsh/join-rects))]
+  (let [bounds (->> (ctst/get-root-objects objects)
+                    (map (partial gsb/get-object-bounds objects))
+                    (grc/join-rects))]
     (-> bounds
         (update :x mth/finite 0)
         (update :y mth/finite 0)
         (update :width mth/finite 100000)
-        (update :height mth/finite 100000))))
+        (update :height mth/finite 100000)
+        (grc/update-rect :position))))
 
 (declare shape-wrapper-factory)
 
@@ -164,7 +165,7 @@
 (defn adapt-root-frame
   [objects object]
   (let [shapes   (cph/get-immediate-children objects)
-        srect    (gsh/selection-rect shapes)
+        srect    (gsh/shapes->rect shapes)
         object   (merge object (select-keys srect [:x :y :width :height]))]
     (assoc object :fill-color "#f0f0f0")))
 

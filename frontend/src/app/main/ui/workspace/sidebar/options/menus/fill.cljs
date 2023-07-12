@@ -8,7 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
-   [app.common.pages :as cp]
+   [app.common.types.shape.attrs :refer [default-color]]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.hooks :as h]
@@ -57,7 +57,7 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [_]
-           (st/emit! (dc/add-fill ids {:color cp/default-color
+           (st/emit! (dc/add-fill ids {:color default-color
                                        :opacity 1}))))
 
         on-change
@@ -77,7 +77,7 @@
         on-remove
         (fn [index]
           (fn []
-            (st/emit! (dc/remove-fill ids {:color cp/default-color
+            (st/emit! (dc/remove-fill ids {:color default-color
                                            :opacity 1} index))))
         on-remove-all
         (fn [_]
@@ -151,7 +151,7 @@
                             :on-remove (on-remove index)
                             :disable-drag disable-drag
                             :on-focus on-focus
-                            :data-select-on-focus (not @disable-drag)
+                            :select-on-focus (not @disable-drag)
                             :on-blur on-blur}])])
 
         (when (or (= type :frame)

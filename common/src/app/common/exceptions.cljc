@@ -32,11 +32,6 @@
   [& params]
   `(throw (error ~@params)))
 
-;; FIXME deprecate
-(defn try*
-  [f on-error]
-  (try (f) (catch #?(:clj Throwable :cljs :default) e (on-error e))))
-
 ;; http://clj-me.cgrand.net/2013/09/11/macros-closures-and-unexpected-object-retention/
 ;; Explains the use of ^:once metadata
 

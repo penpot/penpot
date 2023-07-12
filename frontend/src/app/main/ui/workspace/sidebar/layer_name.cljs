@@ -5,8 +5,10 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.layer-name
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -16,73 +18,94 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def shape-for-rename-ref
-  (l/derived (l/in [:workspace-local :shape-for-rename]) st/state))
+(def ^:private space-for-icons 110)
+
+(def lens:shape-for-rename
+  (-> (l/in [:workspace-local :shape-for-rename])
+      (l/derived st/state)))
 
 (mf/defc layer-name
-  [{:keys [shape on-start-edit  disabled-double-click on-stop-edit name-ref depth parent-size selected? type-comp type-frame hidden] :as props}]
-  (let [local            (mf/use-state {})
-        shape-for-rename (mf/deref shape-for-rename-ref)
+  {::mf/wrap-props false
+   ::mf/forward-ref true}
+  [{:keys [shape-id shape-name shape-touched? disabled-double-click
+           on-start-edit on-stop-edit depth parent-size selected?
+           type-comp type-frame hidden?]} external-ref]
+  (let [edition*         (mf/use-state false)
+        edition?         (deref edition*)
+
+        local-ref        (mf/use-ref)
+        ref              (d/nilv external-ref local-ref)
+
+        shape-for-rename (mf/deref lens:shape-for-rename)
         new-css-system   (mf/use-ctx ctx/new-css-system)
 
-        start-edit (fn []
-                     (when (not disabled-double-click)
-                       (on-start-edit)
-                       (swap! local assoc :edition true)
-                       (st/emit! (dw/start-rename-shape (:id shape)))))
+        start-edit
+        (mf/use-fn
+         (mf/deps disabled-double-click on-start-edit shape-id)
+         (fn []
+           (when (not disabled-double-click)
+             (on-start-edit)
+             (reset! edition* true)
+             (st/emit! (dw/start-rename-shape shape-id)))))
 
-        accept-edit (fn []
-                      (let [name-input     (mf/ref-val name-ref)
-                            name           (str/trim (dom/get-value name-input))]
-                        (on-stop-edit)
-                        (swap! local assoc :edition false)
-                        (st/emit! (dw/end-rename-shape name))))
+        accept-edit
+        (mf/use-fn
+         (mf/deps on-stop-edit)
+         (fn []
+           (let [name-input     (mf/ref-val ref)
+                 name           (str/trim (dom/get-value name-input))]
+             (on-stop-edit)
+             (reset! edition* false)
+             (st/emit! (dw/end-rename-shape name)))))
 
-        cancel-edit (fn []
-                      (on-stop-edit)
-                      (swap! local assoc :edition false)
-                      (st/emit! (dw/end-rename-shape nil)))
+        cancel-edit
+        (mf/use-fn
+         (mf/deps on-stop-edit)
+         (fn []
+           (on-stop-edit)
+           (reset! edition* false)
+           (st/emit! (dw/end-rename-shape nil))))
 
-        on-key-down (fn [event]
-                      (when (kbd/enter? event) (accept-edit))
-                      (when (kbd/esc? event) (cancel-edit)))
+        on-key-down
+        (mf/use-fn
+         (mf/deps accept-edit cancel-edit)
+         (fn [event]
+           (when (kbd/enter? event) (accept-edit))
+           (when (kbd/esc? event) (cancel-edit))))
 
-        space-for-icons 110
-        parent-size (str (- parent-size space-for-icons) "px")]
+        parent-size (dm/str (- parent-size space-for-icons) "px")]
 
-    (mf/with-effect [shape-for-rename]
-      (when (and (= shape-for-rename (:id shape))
-                 (not (:edition @local)))
+    (mf/with-effect [shape-for-rename edition? start-edit shape-id]
+      (when (and (= shape-for-rename shape-id)
+                 (not ^boolean edition?))
         (start-edit)))
 
-    (mf/with-effect [(:edition @local)]
-      (when (:edition @local)
-        (let [name-input (mf/ref-val name-ref)]
-          (dom/select-text! name-input)
-          nil)))
+    (mf/with-effect [edition?]
+      (when edition?
+        (some-> (mf/ref-val ref) dom/select-text!)
+        nil))
 
-    (if (:edition @local)
+    (if ^boolean edition?
       [:input
-       {:class (if new-css-system
-                 (dom/classnames (css :element-name-input) true)
-                 (dom/classnames :element-name true))
-        :style #js {"--depth" depth "--parent-size" parent-size}
+       {:class (stl/css new-css-system ::stl/element-name ::stl/element-name-input)
+        :style {"--depth" depth "--parent-size" parent-size}
         :type "text"
-        :ref name-ref
+        :ref ref
         :on-blur accept-edit
         :on-key-down on-key-down
         :auto-focus true
-        :default-value (:name shape "")}]
+        :default-value (d/nilv shape-name "")}]
       [:span
-       {:class (if new-css-system
-                 (dom/classnames (css :element-name) true
-                                 (css :selected) selected?
-                                 (css :hidden) hidden
-                                 (css :type-comp) type-comp
-                                 (css :type-frame) type-frame)
-                 (dom/classnames :element-name true))
-        :style #js {"--depth" depth "--parent-size" parent-size}
-        :ref name-ref
+       {:class (if ^boolean new-css-system
+                 (stl/css-case
+                  ::stl/element-name true
+                  ::stl/selected selected?
+                  ::stl/hidden hidden?
+                  ::stl/type-comp type-comp
+                  ::stl/type-frame type-frame)
+                 (stl/css* :element-name))
+        :style {"--depth" depth "--parent-size" parent-size}
+        :ref ref
         :on-double-click start-edit}
-       (:name shape "")
-       (when (seq (:touched shape)) " *")])))
+       (d/nilv shape-name "")
+       (when ^boolean shape-touched? " *")])))

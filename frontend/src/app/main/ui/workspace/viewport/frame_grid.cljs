@@ -8,13 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.shapes :as gsh]
+   [app.common.geom.grid :as gg]
+   [app.common.geom.rect :as grc]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
-   [app.util.geom.grid :as gg]
    [rumext.v2 :as mf]))
 
 (mf/defc square-grid [{:keys [frame zoom grid] :as props}]
@@ -120,7 +120,7 @@
        (and (not (cph/root? parent))
             (cph/frame-shape? parent)
             (not (:show-content parent)))
-       (gsh/clip-selrect (:selrect parent))))
+       (grc/clip-rect (:selrect parent))))
    selrect
    parents))
 

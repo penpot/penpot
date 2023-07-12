@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.config :as cf]
@@ -41,9 +42,9 @@
   [rect node style-node]
   (let [{:keys [x y width height]} rect
         viewbox (dm/str x " " y " " width " " height)
-        
+
         ;; Calculate the fixed width and height
-        ;; We don't want to generate thumbnails 
+        ;; We don't want to generate thumbnails
         ;; bigger than 2000px
         [fixed-width fixed-height]
         (if (> width height)
@@ -81,16 +82,22 @@
                            (refs/all-children-objects id))
         all-children     (mf/deref all-children-ref)
 
-        {:keys [x y width height] :as shape-bb}
+        ;; FIXME: performance rect
+        bounds
         (if (:show-content shape)
-          (gsh/selection-rect (concat [shape] all-children))
-          (-> shape :points gsh/points->selrect))
+          (gsh/shapes->rect (cons shape all-children))
+          (-> shape :points grc/points->rect))
+
+        x                 (dm/get-prop bounds :x)
+        y                 (dm/get-prop bounds :y)
+        width             (dm/get-prop bounds :width)
+        height            (dm/get-prop bounds :height)
 
         svg-uri*          (mf/use-state nil)
         bitmap-uri*       (mf/use-state nil)
         observer*         (mf/use-var nil)
 
-        shape-bb*         (hooks/use-update-var shape-bb)
+        bounds*           (hooks/use-update-var bounds)
         updates-s         (mf/use-memo rx/subject)
 
         thumbnail-uri-ref (mf/with-memo [page-id id]
@@ -134,7 +141,7 @@
                (if (dom/has-children? node)
                  ;; The frame-content need to have children in order to generate the thumbnail
                  (let [style-node (dom/query (dm/str "#frame-container-" id " style"))
-                       url        (create-svg-blob-uri-from @shape-bb* node style-node)]
+                       url        (create-svg-blob-uri-from @bounds* node style-node)]
                    (reset! svg-uri* url))
 
                  ;; Node not yet ready, we schedule a new generation
@@ -228,7 +235,7 @@
     [on-load-frame-dom
      @render-frame*
      (mf/html
-      [:& frame/frame-container {:bounds shape-bb :shape shape}
+      [:& frame/frame-container {:bounds bounds :shape shape}
 
        ;; Safari don't support filters so instead we add a rectangle around the thumbnail
        (when (and (cf/check-browser? :safari)

@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
@@ -79,7 +80,7 @@
   [node modifiers]
 
   (let [{:keys [x y width height]}
-        (-> (gsh/make-selrect
+        (-> (grc/make-rect
              (-> (dom/get-attribute node "data-old-x") d/parse-double)
              (-> (dom/get-attribute node "data-old-y") d/parse-double)
              (-> (dom/get-attribute node "data-old-width") d/parse-double)

@@ -8,8 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bounds :as gsb]
+   [app.common.geom.shapes.text :as gst]
    [app.common.pages.helpers :as cph]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
@@ -50,15 +52,16 @@
 
         selrect
         (if (cph/text-shape? shape)
-          (gsh/position-data-selrect shape)
-          (gsh/points->selrect (:points shape)))
+          (gst/shape->rect shape)
+          (grc/points->rect (:points shape)))
 
         bounding-box
         (-> selrect
             (update :x - (+ stroke-width margin))
             (update :y - (+ stroke-width margin))
             (update :width + (* 2 (+ stroke-width margin)))
-            (update :height + (* 2 (+ stroke-width margin))))]
+            (update :height + (* 2 (+ stroke-width margin)))
+            (grc/update-rect :position))]
 
     [:mask {:id stroke-mask-id
             :x (:x bounding-box)

@@ -9,8 +9,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.migrations :as pmg]
    [app.common.pages.helpers :as cph]
-   [app.common.pages.migrations :as pmg]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
    [app.common.schema.generators :as sg]
@@ -46,11 +46,14 @@
 (def supported-features
   #{"storage/objects-map"
     "storage/pointer-map"
+    "internal/shape-record"
+    "internal/geom-record"
     "components/v2"})
 
 (defn get-default-features
   []
-  (cond-> #{}
+  (cond-> #{"internal/shape-record"
+            "internal/geom-record"}
     (contains? cf/flags :fdata-storage-pointer-map)
     (conj "storage/pointer-map")
 
@@ -305,17 +308,17 @@
 
 ;; --- COMMAND QUERY: get-file (by id)
 
-(sm/def! ::features
+(def schema:features
   [:schema
    {:title "FileFeatures"
     ::smdj/inline true
     :gen/gen (sg/subseq supported-features)}
    ::sm/set-of-strings])
 
-(sm/def! ::file
+(def schema:file
   [:map {:title "File"}
    [:id ::sm/uuid]
-   [:features ::features]
+   [:features schema:features]
    [:has-media-trimmed :boolean]
    [:comment-thread-seqn {:min 0} :int]
    [:name :string]
@@ -326,18 +329,18 @@
    [:created-at ::dt/instant]
    [:data {:optional true} :any]])
 
-(sm/def! ::permissions-mixin
+(def schema:permissions-mixin
   [:map {:title "PermissionsMixin"}
    [:permissions ::perms/permissions]])
 
-(sm/def! ::file-with-permissions
+(def schema:file-with-permissions
   [:merge {:title "FileWithPermissions"}
-   ::file
-   ::permissions-mixin])
+   schema:file
+   schema:permissions-mixin])
 
-(sm/def! ::get-file
+(def schema:get-file
   [:map {:title "get-file"}
-   [:features {:optional true} ::features]
+   [:features {:optional true} schema:features]
    [:id ::sm/uuid]
    [:project-id {:optional true} ::sm/uuid]])
 
@@ -377,8 +380,8 @@
   {::doc/added "1.17"
    ::cond/get-object #(get-minimal-file %1 (:id %2))
    ::cond/key-fn get-file-etag
-   ::sm/params ::get-file
-   ::sm/result ::file-with-permissions}
+   ::sm/params schema:get-file
+   ::sm/result schema:file-with-permissions}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id features project-id] :as params}]
   (dm/with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id id)]
@@ -390,14 +393,14 @@
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
-(sm/def! ::file-fragment
+(def schema:file-fragment
   [:map {:title "FileFragment"}
    [:id ::sm/uuid]
    [:file-id ::sm/uuid]
    [:created-at ::dt/instant]
    [:content any?]])
 
-(sm/def! ::get-file-fragment
+(def schema:get-file-fragment
   [:map {:title "get-file-fragment"}
    [:file-id ::sm/uuid]
    [:fragment-id ::sm/uuid]
@@ -411,8 +414,8 @@
 (sv/defmethod ::get-file-fragment
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.17"
-   ::sm/params ::get-file-fragment
-   ::sm/result ::file-fragment}
+   ::sm/params schema:get-file-fragment
+   ::sm/result schema:file-fragment}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id fragment-id share-id] }]
   (dm/with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id file-id share-id)]
@@ -447,12 +450,18 @@
                      (assoc :thumbnail-uri (resolve-public-uri media-id)))
                  (dissoc row :media-id))))))
 
+(def schema:get-project-files
+  [:map {:title "get-project-files"}
+   [:project-id ::sm/uuid]])
+
+(def schema:files
+  [:vector schema:file])
+
 (sv/defmethod ::get-project-files
   "Get all files for the specified project."
   {::doc/added "1.17"
-   ::sm/params [:map {:title "get-project-files"}
-                [:project-id ::sm/uuid]]
-   ::sm/result [:vector ::file]}
+   ::sm/params schema:get-project-files
+   ::sm/result schema:files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id]}]
   (dm/with-open [conn (db/open pool)]
     (projects/check-read-permissions! conn profile-id project-id)
@@ -463,11 +472,14 @@
 
 (declare get-has-file-libraries)
 
+(def schema:has-file-libraries
+  [:map {:title "has-file-libraries"}
+   [:file-id ::sm/uuid]])
+
 (sv/defmethod ::has-file-libraries
   "Checks if the file has libraries. Returns a boolean"
   {::doc/added "1.15.1"
-   ::sm/params [:map {:title "has-file-libraries"}
-                [:file-id ::sm/uuid]]
+   ::sm/params schema:has-file-libraries
    ::sm/result :boolean}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
   (dm/with-open [conn (db/open pool)]
@@ -522,13 +534,13 @@
       (uuid? object-id)
       (prune-objects object-id))))
 
-(sm/def! ::get-page
+(def schema:get-page
   [:map {:title "GetPage"}
    [:file-id ::sm/uuid]
    [:page-id {:optional true} ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
    [:object-id {:optional true} ::sm/uuid]
-   [:features {:optional true} ::features]])
+   [:features {:optional true} schema:features]])
 
 (sv/defmethod ::get-page
   "Retrieves the page data from file and returns it. If no page-id is
@@ -541,7 +553,7 @@
 
   Mainly used for rendering purposes."
   {::doc/added "1.17"
-   ::sm/params ::get-page}
+   ::sm/params schema:get-page}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id share-id] :as params}]
   (dm/with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id file-id share-id)]

@@ -58,7 +58,7 @@
         shapes          (resolve-shapes objects [hover])
         hover-shape     (or (first shapes) frame)
         selected-shapes (resolve-shapes objects selected)
-        selrect         (gsh/selection-rect selected-shapes)]
+        selrect         (gsh/shapes->rect selected-shapes)]
 
     (when (d/not-empty? selected-shapes)
       [:g.selection-feedback {:pointer-events "none"}

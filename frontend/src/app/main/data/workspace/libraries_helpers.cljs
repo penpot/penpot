@@ -11,7 +11,6 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
-   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -75,8 +74,8 @@
              [(assoc root
                      :component-id new-id
                      :component-file file-id
-                     :component-root? true
-                     :main-instance? true)]]))
+                     :component-root true
+                     :main-instance true)]]))
 
         changes (-> changes
                     (pcb/add-component (:id root-shape)
@@ -136,7 +135,7 @@
 
             position (gpt/point (:x main-instance-shape) (:y main-instance-shape))
 
-            component-instance-extra-data (if components-v2 {:main-instance? true} {})
+            component-instance-extra-data (if components-v2 {:main-instance true} {})
 
             [new-instance-shape new-instance-shapes]
             (when (and (some? main-instance-page) (some? main-instance-shape))
@@ -181,8 +180,9 @@
                        (not (nil? parent-id))
                        (assoc :parent-id parent-id))
 
+         ;; on copy/paste old id is used later to reorder the paster layers
          changes (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
-                   (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers
+                   (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id)))
 
          changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                          changes
@@ -204,7 +204,7 @@
   (let [shape (ctn/get-shape container shape-id)]
     (if (and (ctk/instance-head? shape) (not first))
       ;; Subinstances are not detached, but converted in top instances
-      (pcb/update-shapes changes [(:id shape)] #(assoc % :component-root? true))
+      (pcb/update-shapes changes [(:id shape)] #(assoc % :component-root true))
       ;; Otherwise, detach the shape and all children
       (let [children-ids (:shapes shape)]
         (reduce #(generate-detach-recursive %1 container %2 false)
@@ -499,7 +499,7 @@
 ;;   * IF THE INITIAL SHAPE IS THE SUBINSTANCE, the sync is done against
 ;;     the remote component. Therefore, IShape-2-2-1 is synched with
 ;;     Shape-1-1. Then the "touched" flags are reset, and the
-;;     "remote-synced?" flag is set (it will be set until the shape is
+;;     "remote-synced" flag is set (it will be set until the shape is
 ;;     touched again or it's synced forced normal or inverse with the
 ;;     near component).
 ;;
@@ -509,19 +509,19 @@
 ;;     cleared. Then, the "touched" flags THAT ARE TRUE are copied to
 ;;     Shape-2-2-1. This may cause that Shape-2-2-1 is now touched respect
 ;;     to Shape-1-1, and so, some attributes are not copied in a subsequent
-;;     normal sync. Or, if "remote-synced?" flag is set in IShape-2-2-1,
-;;     all touched flags are cleared in Shape-2-2-1 and "remote-synced?"
+;;     normal sync. Or, if "remote-synced" flag is set in IShape-2-2-1,
+;;     all touched flags are cleared in Shape-2-2-1 and "remote-synced"
 ;;     is removed.
 ;;
 ;;   * IN AN INVERSE SYNC INITIATED IN THE SUBINSTANCE, the update is done
 ;;     to the remote component. E.g. IShape-2-2-1 attributes are copied into
-;;     Shape-1-1, and then touched cleared and "remote-synced?" flag set.
+;;     Shape-1-1, and then touched cleared and "remote-synced" flag set.
 ;;
 ;;     #### WARNING: there are two conditions that are invisible to user:
 ;;       - When the near shape (Shape-2-2-1) is touched respect the remote
 ;;         one (Shape-1-1), there is no asterisk displayed anywhere.
 ;;       - When the instance shape (IShape-2-2-1) is synced with the remote
-;;         shape (remote-synced? = true), the user will see that this shape
+;;         shape (remote-synced = true), the user will see that this shape
 ;;         is different than the one in the near component (Shape-2-2-1)
 ;;         but it's not touched.
 
@@ -540,7 +540,7 @@
             shape-main     (when component
                              (ctf/get-ref-shape library component shape-inst))
 
-            initial-root?  (:component-root? shape-inst)
+            initial-root?  (:component-root shape-inst)
 
             root-inst      shape-inst
             root-main      (when component
@@ -673,7 +673,7 @@
         component      (ctkl/get-component library (:component-id shape-inst))
         shape-main     (ctf/get-ref-shape library component shape-inst)
 
-        initial-root?  (:component-root? shape-inst)
+        initial-root?  (:component-root shape-inst)
 
         root-inst      shape-inst
         root-main      (ctf/get-component-root library component)]
@@ -867,7 +867,7 @@
                                (assoc :shape-ref (:id original-shape))
 
                                set-remote-synced?
-                               (assoc :remote-synced? true))))
+                               (assoc :remote-synced true))))
 
         update-original-shape (fn [original-shape _new-shape]
                                 original-shape)
@@ -967,8 +967,8 @@
                                                 :attr :component-file
                                                 :val (:component-file shape')}
                                                {:type :set
-                                                :attr :component-root?
-                                                :val (:component-root? shape')}
+                                                :attr :component-root
+                                                :val (:component-root shape')}
                                                {:type :set
                                                 :attr :shape-ref
                                                 :val (:shape-ref shape')}
@@ -1087,7 +1087,7 @@
                           reset-touched?
                           nil
                           copy-touched?
-                          (if (:remote-synced? origin-shape)
+                          (if (:remote-synced origin-shape)
                             nil
                             (set/union
                               (:touched dest-shape)
@@ -1117,7 +1117,7 @@
       (log/info :msg (str "CHANGE-REMOTE-SYNCED? "
                           (if (cph/page? container) "[P] " "[C] ")
                           (:name shape))
-                :remote-synced? remote-synced?)
+                :remote-synced remote-synced?)
       (-> changes
           (update :redo-changes conj (make-change
                                        container
@@ -1125,14 +1125,14 @@
                                         :id (:id shape)
                                         :operations
                                         [{:type :set-remote-synced
-                                          :remote-synced? remote-synced?}]}))
+                                          :remote-synced remote-synced?}]}))
           (update :undo-changes d/preconj (make-change
                                             container
                                             {:type :mod-obj
                                              :id (:id shape)
                                              :operations
                                              [{:type :set-remote-synced
-                                               :remote-synced? (:remote-synced? shape)}]}))))))
+                                               :remote-synced (:remote-synced shape)}]}))))))
 
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
@@ -1158,7 +1158,7 @@
         origin-shape (reposition-shape origin-shape origin-root dest-root)
         touched      (get dest-shape :touched #{})]
 
-    (loop [attrs (seq (keys cp/component-sync-attrs))
+    (loop [attrs (seq (keys ctk/sync-attrs))
            roperations []
            uoperations []]
 
@@ -1196,7 +1196,7 @@
                             :val (get dest-shape attr)
                             :ignore-touched true}
 
-                attr-group (get cp/component-sync-attrs attr)]
+                attr-group (get ctk/sync-attrs attr)]
 
             (if (or (= (get origin-shape attr) (get dest-shape attr))
                     (and (touched attr-group) omit-touched?))

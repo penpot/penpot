@@ -19,21 +19,28 @@
 
 ;; ---- Helpers to manage global events
 
+(defn on-error
+  [cause]
+  (js/console.log "[CAUSE]:" (.-stack cause))
+  (js/console.log "[DATA]:" (pr-str (ex-data cause))))
 
 (defn prepare-store
   "Create a store with the given initial state. Wait until
    a :the/end event occurs, and then call the function with
    the final state at this point."
  [state done completed-cb]
- (let [store (ptk/store {:state state})
+ (let [store (ptk/store {:state state :on-error on-error})
        stream (ptk/input-stream store)
        stream (->> stream
                    (rx/take-until (rx/filter #(= :the/end %) stream))
                    (rx/last)
-                   (rx/do
-                     (fn []
-                       (completed-cb @store)))
-                   (rx/subs done #(throw %)))]
+                   (rx/do (fn []
+                            (completed-cb @store)))
+                   (rx/subs (fn [_] (done))
+                            (fn [cause]
+                              (js/console.log "[error]:" cause))
+                            (fn [_]
+                              (js/console.log "[complete]"))))]
    store))
 
 ;; Remove definitely when we ensure that the above method works

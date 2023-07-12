@@ -7,7 +7,7 @@
 #_:clj-kondo/ignore
 (ns app.common.data.macros
   "Data retrieval & manipulation specific macros."
-  (:refer-clojure :exclude [get-in select-keys str with-open])
+  (:refer-clojure :exclude [get-in select-keys str with-open min max])
   #?(:cljs (:require-macros [app.common.data.macros]))
   (:require
    #?(:clj [clojure.core :as c]
@@ -120,13 +120,10 @@
   "A macro based, optimized variant of `get` that access the property
   directly on CLJS, on CLJ works as get."
   [obj prop]
-  ;; `(do
-  ;;    (when-not (record? ~obj)
-  ;;      (js/console.trace (pr-str ~obj)))
-  ;;    (c/get ~obj ~prop)))
   (if (:ns &env)
     (list (symbol ".") (with-meta obj {:tag 'js}) (symbol (str "-" (c/name prop))))
-    `(c/get ~obj ~prop)))
+    (list `c/get obj prop)))
+
 
 (def ^:dynamic *assert-context* nil)
 
@@ -154,7 +151,7 @@
 
 (defmacro verify!
   ([expr]
-   `(assert! nil ~expr))
+   `(verify! nil ~expr))
   ([hint expr]
    (let [hint (cond
                 (vector? hint)
