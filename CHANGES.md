@@ -88,6 +88,7 @@
 - Fix retrieve user comments in dashboard [Taiga #5607](https://tree.taiga.io/project/penpot/issue/5607)
 - Locks shapes when moved inside a locked parent [Taiga #5252](https://tree.taiga.io/project/penpot/issue/5252)
 - Fix rotate several elements in bulk [Taiga #5165](https://tree.taiga.io/project/penpot/issue/5165)
+- Fix onboarding slides height [Taiga #5373](https://tree.taiga.io/project/penpot/issue/5373)
  
 ### :arrow_up: Deps updates
 

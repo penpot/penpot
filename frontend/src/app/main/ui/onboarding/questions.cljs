@@ -24,15 +24,15 @@
     [:div.step-number (str/ffmt "%/4" step)]]
 
    children
+   [:div.buttons
+    [:div.step-next
+     [:& fm/submit-button
+      {:label (if (< step 4) (tr "questions.next") (tr "questions.start"))
+       :class "step-next"}]]
 
-   [:div.step-next
-    [:& fm/submit-button
-     {:label (if (< step 4) (tr "questions.next") (tr "questions.start"))
-      :class "step-next"}]]
-
-   (when on-prev
-     [:div.step-prev
-      [:button {:on-click on-prev} (tr "questions.previous")]])])
+    (when on-prev
+      [:div.step-prev
+       [:button {:on-click on-prev} (tr "questions.previous")]])]])
 
 (s/def ::questions-form-step-1
   (s/keys :req-un [::planning]))

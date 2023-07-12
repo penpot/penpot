@@ -896,7 +896,8 @@
   }
 
   &.onboarding-v2 {
-    min-height: 464px;
+    min-height: unset;
+    height: 100%;
     min-width: 752px;
     .modal-left {
       background-color: $color-gray-50;
