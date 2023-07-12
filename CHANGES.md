@@ -78,7 +78,8 @@
 - Fix onboarding slides height [Taiga #5373](https://tree.taiga.io/project/penpot/issue/5373)
 - Fix create typography with section closed [Taiga #5574](https://tree.taiga.io/project/penpot/issue/5574)
 - Fix exports menu on viewer mode [Taiga #5568](https://tree.taiga.io/project/penpot/issue/5568)
- 
+- Fix create empty comments [Taiga #5536](https://tree.taiga.io/project/penpot/issue/5536)
+
 ### :arrow_up: Deps updates
 
 - Update google fonts catalog (at 2023/07/06) [Taiga #5592](https://tree.taiga.io/project/penpot/issue/5592)

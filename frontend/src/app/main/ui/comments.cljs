@@ -16,6 +16,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -66,8 +67,7 @@
              (let [target (dom/get-target event)]
                (dom/select-text! target)
                ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
-               (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
-        ]
+               (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))]
 
 
 
@@ -129,7 +129,8 @@
          {:type "button"
           :value "Post"
           :on-click on-submit
-          :disabled (str/empty-or-nil? @content)}]
+          :disabled (or (fm/all-spaces? @content)
+                        (str/empty-or-nil? @content))}]
         [:input.btn-secondary
          {:type "button"
           :value "Cancel"
@@ -186,7 +187,8 @@
          {:on-click on-submit
           :type "button"
           :value "Post"
-          :disabled (str/empty-or-nil? content)}]
+          :disabled (or (fm/all-spaces? content)
+                        (str/empty-or-nil? content))}]
         [:input.btn-secondary
          {:on-click on-esc
           :type "button"
@@ -203,8 +205,7 @@
         on-submit*
         (mf/use-fn
          (mf/deps @content)
-         (fn [] (on-submit @content)))
-        ]
+         (fn [] (on-submit @content)))]
 
 
     [:div.reply-form.edit-form
