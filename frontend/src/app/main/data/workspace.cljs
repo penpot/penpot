@@ -21,6 +21,7 @@
    [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
@@ -448,18 +449,49 @@
   (ptk/reify ::duplicate-page
     ptk/WatchEvent
     (watch [it state _]
-      (let [id      (uuid/next)
-            pages   (get-in state [:workspace-data :pages-index])
-            unames  (cp/retrieve-used-names pages)
-            page    (get-in state [:workspace-data :pages-index page-id])
-            name    (cp/generate-unique-name unames (:name page))
+      (let [id                 (uuid/next)
+            pages              (get-in state [:workspace-data :pages-index])
+            unames             (cp/retrieve-used-names pages)
+            page               (get-in state [:workspace-data :pages-index page-id])
+            name               (cp/generate-unique-name unames (:name page))
+            fdata              (:workspace-data state)
+            components-v2      (dm/get-in fdata [:options :components-v2])
+            objects            (->> (:objects page)
+                                    (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))
+            main-instances-ids (set (keep #(when (ctk/main-instance? (val %)) (key %)) objects))
+            ids-to-remove      (set (apply concat (map #(cph/get-children-ids objects %) main-instances-ids)))
+
+            add-component-copy
+            (fn [objs id shape]
+              (let [component (ctkl/get-component fdata (:component-id shape))
+                    [new-shape new-shapes]
+                    (ctn/make-component-instance page
+                                                 component
+                                                 fdata
+                                                 (gpt/point (:x shape) (:y shape))
+                                                 components-v2
+                                                 {:keep-ids? true})
+                    children (into {} (map (fn [shape] [(:id shape) shape]) new-shapes))
+                    objs (assoc objs id new-shape)]
+                (merge objs children)))
+
+            objects
+            (reduce
+             (fn [objs [id shape]]
+               (cond (contains? main-instances-ids id)
+                     (add-component-copy objs id shape)
+                     (contains? ids-to-remove id)
+                     objs
+                     :else
+                     (assoc objs id shape)))
+             {}
+             objects)
 
             page    (-> page
                         (assoc :name name)
                         (assoc :id id)
                         (assoc :objects
-                               (->> (:objects page)
-                                    (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))))
+                               objects))
 
             changes (-> (pcb/empty-changes it)
                         (pcb/add-page id page))]
