@@ -172,16 +172,16 @@
         emit-update!
         (mf/use-callback
          (mf/deps values)
-         (fn [id attrs]
-         (st/emit! (dwt/save-font (-> (merge txt/default-text-attrs values attrs)
-                                      (select-keys dwt/text-attrs)))
-                   (dwt/update-attrs id attrs))))
+         (fn [ids attrs]
+           (st/emit! (dwt/save-font (-> (merge txt/default-text-attrs values attrs)
+                                        (select-keys dwt/text-attrs)))
+                     (dwt/update-all-attrs ids attrs))))
 
         on-change
         (mf/use-callback
          (mf/deps ids emit-update!)
          (fn [attrs]
-           (run! #(emit-update! % attrs) ids)))
+           (emit-update! ids attrs)))
 
         typography
         (mf/use-memo
@@ -211,8 +211,9 @@
                 typography (dwt/generate-typography-name typography)
                 id         (uuid/next)]
             (st/emit! (dwl/add-typography (assoc typography :id id) false))
-            (run! #(emit-update! % {:typography-ref-id id
-                                    :typography-ref-file file-id}) ids)))
+            (emit-update! ids
+                          {:typography-ref-id id
+                           :typography-ref-file file-id})))
 
         handle-detach-typography
         (mf/use-callback

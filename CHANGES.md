@@ -81,6 +81,7 @@
 - Fix exports menu on viewer mode [Taiga #5568](https://tree.taiga.io/project/penpot/issue/5568)
 - Fix create empty comments [Taiga #5536](https://tree.taiga.io/project/penpot/issue/5536)
 - Fix position of text cursor is a bit too high in Invitations section [Taiga #5511](https://tree.taiga.io/project/penpot/issue/5511)
+- Fix undo when updating several texts [Taiga #5197](https://tree.taiga.io/project/penpot/issue/5197)
 
 ### :arrow_up: Deps updates
 
