@@ -125,7 +125,7 @@
            (st/emit! (dch/update-shapes ids
                                         (fn [shape]
                                           (assoc shape :exports []))))))
-        manage-key-down 
+        manage-key-down
         (mf/use-callback
          (fn [event]
            (let [esc?   (kbd/esc? event)]
@@ -165,7 +165,7 @@
                                :placeholder (tr "workspace.options.export.suffix")
                                :on-change (partial on-suffix-change index)
                                :on-key-down manage-key-down}]
-           [:select.input-select {:value (name (:type export))
+           [:select.input-select {:value (d/name (:type export))
                                   :on-change (partial on-type-change index)}
             [:option {:value "png"} "PNG"]
             [:option {:value "jpeg"} "JPEG"]

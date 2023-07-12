@@ -90,6 +90,7 @@
 - Fix rotate several elements in bulk [Taiga #5165](https://tree.taiga.io/project/penpot/issue/5165)
 - Fix onboarding slides height [Taiga #5373](https://tree.taiga.io/project/penpot/issue/5373)
 - Fix create typography with section closed [Taiga #5574](https://tree.taiga.io/project/penpot/issue/5574)
+- Fix exports menu on viewer mode [Taiga #5568](https://tree.taiga.io/project/penpot/issue/5568)
  
 ### :arrow_up: Deps updates
 

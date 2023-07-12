@@ -13,6 +13,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr c]]
+   [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
 (mf/defc exports
@@ -29,6 +30,11 @@
                           (and (= 1 (count @exports)) (some? suffix))
                           (str suffix)))
                       (:name page))
+
+        scale-enabled?
+        (mf/use-callback
+         (fn [export]
+           (#{:png :jpeg} (:type export))))
 
         in-progress? (:in-progress xstate)
 
@@ -97,7 +103,13 @@
            (let [target  (dom/get-target event)
                  value   (dom/get-value target)
                  value   (keyword value)]
-             (swap! exports assoc-in [index :type] value))))]
+             (swap! exports assoc-in [index :type] value))))
+        manage-key-down
+        (mf/use-callback
+         (fn [event]
+           (let [esc?   (kbd/esc? event)]
+             (when esc?
+               (dom/blur! (dom/get-target event))))))]
 
     (mf/use-effect
      (mf/deps shapes)
@@ -117,24 +129,27 @@
         (for [[index export] (d/enumerate @exports)]
           [:div.element-set-options-group
            {:key index}
-           [:select.input-select {:on-change (partial on-scale-change index)
-                                  :value (:scale export)}
-            [:option {:value "0.5"}  "0.5x"]
-            [:option {:value "0.75"} "0.75x"]
-            [:option {:value "1"} "1x"]
-            [:option {:value "1.5"} "1.5x"]
-            [:option {:value "2"} "2x"]
-            [:option {:value "4"} "4x"]
-            [:option {:value "6"} "6x"]]
+           (when (scale-enabled? export)
+             [:select.input-select {:on-change (partial on-scale-change index)
+                                    :value (:scale export)}
+              [:option {:value "0.5"}  "0.5x"]
+              [:option {:value "0.75"} "0.75x"]
+              [:option {:value "1"} "1x"]
+              [:option {:value "1.5"} "1.5x"]
+              [:option {:value "2"} "2x"]
+              [:option {:value "4"} "4x"]
+              [:option {:value "6"} "6x"]])
 
-           [:input.input-text {:on-change (partial on-suffix-change index)
-                               :value (:suffix export)}]
-           [:select.input-select {:on-change (partial on-type-change index)
-                                  :value (d/name (:type export))}
+           [:input.input-text {:value (:suffix export)
+                               :placeholder (tr "workspace.options.export.suffix")
+                               :on-change (partial on-suffix-change index)
+                               :on-key-down manage-key-down}]
+           [:select.input-select {:value (d/name (:type export))
+                                  :on-change (partial on-type-change index)}
             [:option {:value "png"} "PNG"]
             [:option {:value "jpeg"} "JPEG"]
-            [:option {:value "svg"} "SVG"]]
-
+            [:option {:value "svg"} "SVG"]
+            [:option {:value "pdf"} "PDF"]]
            [:div.delete-icon {:on-click (partial delete-export index)}
             i/minus]])
 
