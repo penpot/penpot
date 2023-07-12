@@ -451,7 +451,7 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps component-id)
+         (mf/deps on-context-menu component-id)
          (partial on-context-menu component-id))]
 
     [:div {:ref item-ref
@@ -873,7 +873,7 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps object-id)
+         (mf/deps on-context-menu object-id)
          (partial on-context-menu object-id))
 
         on-asset-click
