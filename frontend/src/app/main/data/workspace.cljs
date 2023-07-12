@@ -717,17 +717,18 @@
                                groups-to-delete groups-to-unmask shapes-to-detach
                                shapes-to-reroot shapes-to-deroot shapes-to-unconstraint]
   (let [ordered-indexes (cph/order-by-indexed-shapes objects ids)
-        shapes (map (d/getf objects) ordered-indexes)]
+        shapes (map (d/getf objects) ordered-indexes)
+        parent (get objects parent-id)]
 
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
 
         ;; Remove layout-item properties when moving a shape outside a layout
-        (cond-> (not (ctl/any-layout? objects parent-id))
+        (cond-> (not (ctl/any-layout? parent))
           (pcb/update-shapes ordered-indexes ctl/remove-layout-item-data))
 
         ;; Remove the hide in viewer flag
-        (cond-> (and (not= uuid/zero parent-id) (cph/frame-shape? objects parent-id))
+        (cond-> (and (not= uuid/zero parent-id) (cph/frame-shape? parent))
           (pcb/update-shapes ordered-indexes #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true))))
 
         ;; Move the shapes
@@ -759,8 +760,7 @@
         ;; Reset constraints depending on the new parent
         (pcb/update-shapes shapes-to-unconstraint
                            (fn [shape]
-                             (let [parent      (get objects parent-id)
-                                   frame-id    (if (= (:type parent) :frame)
+                             (let [frame-id    (if (= (:type parent) :frame)
                                                  (:id parent)
                                                  (:frame-id parent))
                                    moved-shape (assoc shape
@@ -782,6 +782,10 @@
                                  (ctl/change-v-sizing? (:id parent) objects (:shapes parent))
                                  (assoc :layout-item-v-sizing :fix))
                                parent)))
+
+        ;; If parent locked, lock the added shapes
+        (cond-> (:blocked parent)
+          (pcb/update-shapes ordered-indexes #(assoc % :blocked true)))
 
         ;; Resize parent containers that need to
         (pcb/resize-parents parents))))
@@ -1694,7 +1698,8 @@
                     [(:frame-id base) parent-id delta index])
 
                   ;; Paste inside selected frame otherwise
-                  (let [origin-frame-id (:frame-id first-selected-obj)
+                  (let [selected-frame-obj (get page-objects (first page-selected))
+                        origin-frame-id (:frame-id first-selected-obj)
                         origin-frame-object (get page-objects origin-frame-id)
 
                         margin-x (-> (- (:width origin-frame-object) (+ (:x wrapper) (:width wrapper)))
@@ -1720,7 +1725,7 @@
                               ;;    - Align it to the limits on the x and y axis
                               ;;    - Respect the distance of the object to the right and bottom in the original frame
                                 (gpt/point paste-x paste-y))]
-                    [frame-id frame-id delta]))
+                    [frame-id frame-id delta (dec (count (:shapes selected-frame-obj )))]))
 
                 (empty? page-selected)
                 (let [frame-id (ctst/top-nested-frame page-objects mouse-pos)

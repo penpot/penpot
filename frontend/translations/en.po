@@ -1017,6 +1017,9 @@ msgstr "Email or password is incorrect."
 msgid "errors.wrong-old-password"
 msgstr "Old password is incorrect"
 
+msgid "errors.cannot-upload"
+msgstr "Cannot upload the media file."
+
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Description"

@@ -436,7 +436,7 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defmethod migrate 20
+(defmethod migrate 21
   [data]
   (letfn [(update-object [objects object]
             (let [frame-id (:frame-id object)

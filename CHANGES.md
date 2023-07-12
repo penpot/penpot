@@ -67,6 +67,13 @@
 - Fix close overlay from a nested board [Taiga #5587](https://tree.taiga.io/project/penpot/issue/5587)
 - Fix overlay position when it has shadow or blur [Taiga #4752](https://tree.taiga.io/project/penpot/issue/4752)
 - Fix overlay position when there are elements fixed when scrolling [Taiga #4383](https://tree.taiga.io/project/penpot/issue/4383)
+- Fix problem when sliding color picker in selected-colors [#3150](https://github.com/penpot/penpot/issues/3150)
+- Fix error screen on upload image error [Taiga #5608](https://tree.taiga.io/project/penpot/issue/5608)
+- Fix bad frame-id for certain componentes [#3205](https://github.com/penpot/penpot/issues/3205)
+- Fix paste elements at bottom of frame [Taig #5253](https://tree.taiga.io/project/penpot/issue/5253)
+- Fix new-file button on project not redirecting to the new file [Taiga #5610](https://tree.taiga.io/project/penpot/issue/5610)
+- Fix retrieve user comments in dashboard [Taiga #5607](https://tree.taiga.io/project/penpot/issue/5607)
+- Locks shapes when moved inside a locked parent [Taiga #5252](https://tree.taiga.io/project/penpot/issue/5252)
 
 ### :arrow_up: Deps updates
 
