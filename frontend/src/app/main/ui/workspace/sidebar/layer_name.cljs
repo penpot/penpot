@@ -87,7 +87,7 @@
 
     (if ^boolean edition?
       [:input
-       {:class (stl/css new-css-system ::stl/element-name ::stl/element-name-input)
+       {:class (stl/css new-css-system :element-name :element-name-input)
         :style {"--depth" depth "--parent-size" parent-size}
         :type "text"
         :ref ref
@@ -98,11 +98,11 @@
       [:span
        {:class (if ^boolean new-css-system
                  (stl/css-case
-                  ::stl/element-name true
-                  ::stl/selected selected?
-                  ::stl/hidden hidden?
-                  ::stl/type-comp type-comp
-                  ::stl/type-frame type-frame)
+                  :element-name true
+                  :selected selected?
+                  :hidden hidden?
+                  :type-comp type-comp
+                  :type-frame type-frame)
                  (stl/css* :element-name))
         :style {"--depth" depth "--parent-size" parent-size}
         :ref ref

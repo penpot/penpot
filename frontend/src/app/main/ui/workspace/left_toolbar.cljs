@@ -74,7 +74,6 @@
         hide-toolbar*        (mf/use-state false)
         hide-toolbar?        (deref hide-toolbar*)
 
-
         interrupt
         (mf/use-fn #(st/emit! :interrupt))
 
