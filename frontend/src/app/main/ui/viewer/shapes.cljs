@@ -59,19 +59,20 @@
 
     :open-overlay
     (let [dest-frame-id              (:destination interaction)
-          viewer-objects             (deref (refs/get-viewer-objects))
-          dest-frame                 (get viewer-objects dest-frame-id)
+          dest-frame                 (get objects dest-frame-id)
           relative-to-id             (if (= :manual (:overlay-pos-type interaction))
-                                       (:id shape) ;; manual interactions are allways from "self"
+                                       (if (= (:type shape) :frame) ;; manual interactions are always from "self"
+                                         (:frame-id shape)
+                                         (:id shape))
                                        (:position-relative-to interaction))
           relative-to-shape          (or (get objects relative-to-id) base-frame)
           close-click-outside        (:close-click-outside interaction)
           background-overlay         (:background-overlay interaction)
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
-          position                   (ctsi/calc-overlay-position interaction
+          [position snap-to]         (ctsi/calc-overlay-position interaction
                                                                  shape
-                                                                 viewer-objects
+                                                                 objects
                                                                  relative-to-shape
                                                                  relative-to-base-frame
                                                                  dest-frame
@@ -79,20 +80,23 @@
       (when dest-frame-id
         (st/emit! (dv/open-overlay dest-frame-id
                                    position
+                                   snap-to
                                    close-click-outside
                                    background-overlay
                                    (:animation interaction)))))
 
     :toggle-overlay
-    (let [frame-id                   (:destination interaction)
-          dest-frame                 (get objects frame-id)
+    (let [dest-frame-id              (:destination interaction)
+          dest-frame                 (get objects dest-frame-id)
           relative-to-id             (if (= :manual (:overlay-pos-type interaction))
-                                       (:id shape) ;; manual interactions are allways from "self"
+                                       (if (= (:type shape) :frame) ;; manual interactions are always from "self"
+                                         (:frame-id shape)
+                                         (:id shape))
                                        (:position-relative-to interaction))
           relative-to-shape          (or (get objects relative-to-id) base-frame)
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
-          position                   (ctsi/calc-overlay-position interaction
+          [position snap-to]         (ctsi/calc-overlay-position interaction
                                                                  shape
                                                                  objects
                                                                  relative-to-shape
@@ -102,19 +106,21 @@
 
           close-click-outside        (:close-click-outside interaction)
           background-overlay         (:background-overlay interaction)]
-      (when frame-id
-        (st/emit! (dv/toggle-overlay frame-id
+      (when dest-frame-id
+        (st/emit! (dv/toggle-overlay dest-frame-id
                                      position
+                                     snap-to
                                      close-click-outside
                                      background-overlay
                                      (:animation interaction)))))
 
     :close-overlay
-    (let [frame-id (or (:destination interaction)
-                       (if (= (:type shape) :frame)
-                         (:id shape)
-                         (:frame-id shape)))]
-      (st/emit! (dv/close-overlay frame-id (:animation interaction))))
+    (let [dest-frame-id (or (:destination interaction)
+                            (if (and (= (:type shape) :frame)
+                                     (some #(= (:id %) (:id shape)) overlays))
+                              (:id shape)
+                              (:frame-id shape)))]
+      (st/emit! (dv/close-overlay dest-frame-id (:animation interaction))))
 
     :prev-screen
     (st/emit! (rt/nav-back-local))
@@ -136,29 +142,49 @@
       (st/emit! (dv/close-overlay frame-id)))
 
     :toggle-overlay
-    (let [frame-id            (:destination interaction)
-          position            (:overlay-position interaction)
-          close-click-outside (:close-click-outside interaction)
-          background-overlay  (:background-overlay interaction)]
-      (when frame-id
-        (st/emit! (dv/toggle-overlay frame-id
+    (let [dest-frame-id              (:destination interaction)
+          dest-frame                 (get objects dest-frame-id)
+          relative-to-id             (if (= :manual (:overlay-pos-type interaction))
+                                       (if (= (:type shape) :frame) ;; manual interactions are always from "self"
+                                         (:frame-id shape)
+                                         (:id shape))
+                                        (:position-relative-to interaction))
+          relative-to-shape          (or (get objects relative-to-id) base-frame)
+          overlays-ids               (set (map :id overlays))
+          relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
+          [position snap-to]         (ctsi/calc-overlay-position interaction
+                                                                 shape
+                                                                 objects
+                                                                 relative-to-shape
+                                                                 relative-to-base-frame
+                                                                 dest-frame
+                                                                 frame-offset)
+
+          close-click-outside        (:close-click-outside interaction)
+          background-overlay         (:background-overlay interaction)]
+      (when dest-frame-id
+        (st/emit! (dv/toggle-overlay dest-frame-id
                                      position
+                                     snap-to
                                      close-click-outside
                                      background-overlay
                                      (:animation interaction)))))
+
 
     :close-overlay
     (let [dest-frame-id              (:destination interaction)
           dest-frame                 (get objects dest-frame-id)
           relative-to-id             (if (= :manual (:overlay-pos-type interaction))
-                                       (:id shape) ;; manual interactions are allways from "self"
+                                       (if (= (:type shape) :frame) ;; manual interactions are always from "self"
+                                         (:frame-id shape)
+                                         (:id shape))
                                        (:position-relative-to interaction))
           relative-to-shape          (or (get objects relative-to-id) base-frame)
           close-click-outside        (:close-click-outside interaction)
           background-overlay         (:background-overlay interaction)
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
-          position                   (ctsi/calc-overlay-position interaction
+          [position snap-to]         (ctsi/calc-overlay-position interaction
                                                                  shape
                                                                  objects
                                                                  relative-to-shape
@@ -168,6 +194,7 @@
       (when dest-frame-id
         (st/emit! (dv/open-overlay dest-frame-id
                                    position
+                                   snap-to
                                    close-click-outside
                                    background-overlay
                                    (:animation interaction)))))
@@ -258,6 +285,7 @@
                 childs             (unchecked-get props "childs")
                 frame              (unchecked-get props "frame")
                 objects            (unchecked-get props "objects")
+                all-objects        (or (unchecked-get props "all-objects") objects)
                 base-frame         (mf/use-ctx base-frame-ctx)
                 frame-offset       (mf/use-ctx frame-offset-ctx)
                 interactions-show? (mf/deref viewer-interactions-show?)
@@ -266,22 +294,25 @@
                 svg-element?       (and (= :svg-raw (:type shape))
                                         (not= :svg (get-in shape [:content :tag])))
 
+                ;; The objects parameter has the shapes that we must draw. It may be a subset of
+                ;; all-objects in some cases (e.g. if there are fixed elements). But for interactions
+                ;; handling we need access to all objects inside the page.
+
                 on-pointer-down
-                (mf/use-fn (mf/deps shape base-frame frame-offset objects)
-                           #(on-pointer-down % shape base-frame frame-offset objects overlays))
+                (mf/use-fn (mf/deps shape base-frame frame-offset all-objects)
+                           #(on-pointer-down % shape base-frame frame-offset all-objects overlays))
 
                 on-pointer-up
-                (mf/use-fn (mf/deps shape base-frame frame-offset objects)
-                           #(on-pointer-up % shape base-frame frame-offset objects overlays))
+                (mf/use-fn (mf/deps shape base-frame frame-offset all-objects)
+                           #(on-pointer-up % shape base-frame frame-offset all-objects overlays))
 
                 on-pointer-enter
-                (mf/use-fn (mf/deps shape base-frame frame-offset objects)
-                           #(on-pointer-enter % shape base-frame frame-offset objects overlays))
+                (mf/use-fn (mf/deps shape base-frame frame-offset all-objects)
+                           #(on-pointer-enter % shape base-frame frame-offset all-objects overlays))
 
                 on-pointer-leave
-                (mf/use-fn (mf/deps shape base-frame frame-offset objects)
-                           #(on-pointer-leave % shape base-frame frame-offset objects overlays))]
-
+                (mf/use-fn (mf/deps shape base-frame frame-offset all-objects)
+                           #(on-pointer-leave % shape base-frame frame-offset all-objects overlays))]
 
             (mf/with-effect []
               (let [sems (on-load shape base-frame frame-offset objects overlays)]
@@ -350,8 +381,8 @@
 (declare shape-container-factory)
 
 (defn frame-container-factory
-  [objects]
-  (let [shape-container (shape-container-factory objects)
+  [objects all-objects]
+  (let [shape-container (shape-container-factory objects all-objects)
         frame-wrapper   (frame-wrapper shape-container)]
     (mf/fnc frame-container
             {::mf/wrap-props false}
@@ -361,13 +392,14 @@
                   props     (obj/merge! #js {} props
                                         #js {:shape shape
                                              :childs childs
-                                             :objects objects})]
+                                             :objects objects
+                                             :all-objects all-objects})]
 
               [:> frame-wrapper props]))))
 
 (defn group-container-factory
-  [objects]
-  (let [shape-container (shape-container-factory objects)
+  [objects all-objects]
+  (let [shape-container (shape-container-factory objects all-objects)
         group-wrapper (group-wrapper shape-container)]
     (mf/fnc group-container
             {::mf/wrap-props false}
@@ -380,8 +412,8 @@
                 [:> group-wrapper props])))))
 
 (defn bool-container-factory
-  [objects]
-  (let [shape-container (shape-container-factory objects)
+  [objects all-objects]
+  (let [shape-container (shape-container-factory objects all-objects)
         bool-wrapper (bool-wrapper shape-container)]
     (mf/fnc bool-container
             {::mf/wrap-props false}
@@ -394,8 +426,8 @@
               [:> bool-wrapper props]))))
 
 (defn svg-raw-container-factory
-  [objects]
-  (let [shape-container (shape-container-factory objects)
+  [objects all-objects]
+  (let [shape-container (shape-container-factory objects all-objects)
         svg-raw-wrapper (svg-raw-wrapper shape-container)]
     (mf/fnc svg-raw-container
             {::mf/wrap-props false}
@@ -407,7 +439,7 @@
               [:> svg-raw-wrapper props]))))
 
 (defn shape-container-factory
-  [objects]
+  [objects all-objects]
   (let [path-wrapper   (path-wrapper)
         text-wrapper   (text-wrapper)
         rect-wrapper   (rect-wrapper)
@@ -422,26 +454,27 @@
 
                   group-container
                   (mf/with-memo [objects]
-                    (group-container-factory objects))
+                    (group-container-factory objects all-objects))
 
                   frame-container
                   (mf/with-memo [objects]
-                    (frame-container-factory objects))
+                    (frame-container-factory objects all-objects))
 
                   bool-container
                   (mf/with-memo [objects]
-                    (bool-container-factory objects))
+                    (bool-container-factory objects all-objects))
 
                   svg-raw-container
                   (mf/with-memo [objects]
-                    (svg-raw-container-factory objects))]
+                    (svg-raw-container-factory objects all-objects))]
               (when (and shape (not (:hidden shape)))
           (let [shape (-> shape
                           #_(gsh/transform-shape)
                                 (gsh/translate-to-frame frame))
 
                       opts #js {:shape shape
-                                :objects objects}]
+                                :objects objects
+                                :all-objects all-objects}]
                   (case (:type shape)
                     :frame   [:> frame-container opts]
                     :text    [:> text-wrapper opts]

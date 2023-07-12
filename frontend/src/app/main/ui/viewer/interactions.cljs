@@ -28,9 +28,10 @@
    [rumext.v2 :as mf]))
 
 (defn prepare-objects
-  [frame size objects]
+  [frame size delta objects]
   (let [frame-id  (:id frame)
         vector  (-> (gpt/point (:x size) (:y size))
+                    (gpt/add delta)
                     (gpt/negate))
         update-fn #(d/update-when %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
     (->> (cph/get-children-ids objects frame-id)
@@ -46,6 +47,7 @@
         base    (unchecked-get props "base")
         offset  (unchecked-get props "offset")
         size    (unchecked-get props "size")
+        delta   (or (unchecked-get props "delta") (gpt/point 0 0))
 
         vbox    (:vbox size)
 
@@ -67,20 +69,26 @@
                                          (map (d/getf (:objects page)))
                                          (concat [frame])
                                          (d/index-by :id)
-                                         (prepare-objects frame size)))
+                                         (prepare-objects frame size delta)))
 
-        wrapper-fixed (mf/with-memo [page frame size]
-                        (shapes/frame-container-factory (calculate-objects fixed-ids)))
+        objects-fixed (mf/with-memo [fixed-ids page frame size delta]
+                        (calculate-objects fixed-ids))
 
-        objects-not-fixed (mf/with-memo [page frame size]
+        objects-not-fixed (mf/with-memo [not-fixed-ids page frame size delta]
                             (calculate-objects not-fixed-ids))
 
+        all-objects (mf/with-memo [objects-fixed objects-not-fixed]
+                      (merge objects-fixed objects-not-fixed))
+
+        wrapper-fixed (mf/with-memo [page frame size]
+                        (shapes/frame-container-factory objects-fixed all-objects))
+
         wrapper-not-fixed (mf/with-memo [objects-not-fixed]
-                            (shapes/frame-container-factory objects-not-fixed))
+                            (shapes/frame-container-factory objects-not-fixed all-objects))
 
         ;; Retrieve frames again with correct modifier
-        frame   (get objects-not-fixed (:id frame))
-        base    (get objects-not-fixed (:id base))
+        frame   (get all-objects (:id frame))
+        base    (get all-objects (:id base))
 
         non-delay-interactions (->> (:interactions frame)
                                     (filterv #(not= (:event-type %) :after-delay)))
@@ -121,6 +129,7 @@
         mode   (h/use-equal-memo (unchecked-get props "interactions-mode"))
         offset (h/use-equal-memo (unchecked-get props "frame-offset"))
         size   (h/use-equal-memo (unchecked-get props "size"))
+        delta  (unchecked-get props "delta")
 
         page   (unchecked-get props "page")
         frame  (unchecked-get props "frame")
@@ -163,7 +172,8 @@
                       :frame frame
                       :base base
                       :offset offset
-                      :size size}]))
+                      :size size
+                      :delta delta}]))
 
 (mf/defc flows-menu
   {::mf/wrap [mf/memo]}

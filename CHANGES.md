@@ -63,7 +63,11 @@
 - Fix search bar width on layer tab [Taiga #5445](https://tree.taiga.io/project/penpot/issue/5445)
 - Fix border radius values with decimals [Taiga #5283](https://tree.taiga.io/project/penpot/issue/5283)
 - Fix shortcuts translations not homogenized [Taiga #5141](https://tree.taiga.io/project/penpot/issue/5141)
- 
+- Fix overlay manual position in nested boards [Taiga #5135](https://tree.taiga.io/project/penpot/issue/5135)
+- Fix close overlay from a nested board [Taiga #5587](https://tree.taiga.io/project/penpot/issue/5587)
+- Fix overlay position when it has shadow or blur [Taiga #4752](https://tree.taiga.io/project/penpot/issue/4752)
+- Fix overlay position when there are elements fixed when scrolling [Taiga #4383](https://tree.taiga.io/project/penpot/issue/4383)
+
 ### :arrow_up: Deps updates
 
 - Update google fonts catalog (at 2023/07/06) [Taiga #5592](https://tree.taiga.io/project/penpot/issue/5592)

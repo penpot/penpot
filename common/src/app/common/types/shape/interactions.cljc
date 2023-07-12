@@ -495,8 +495,7 @@
    "expected compatible interaction map"
    (has-overlay-opts interaction))
 
-  (let [
-        ;; When the interactive item is inside a nested frame we need to add to the offset the position
+  (let [;; When the interactive item is inside a nested frame we need to add to the offset the position
         ;; of the parent-frame otherwise the position won't match
         shape-frame (cph/get-frame objects shape)
 
@@ -505,10 +504,10 @@
                              (cph/root-frame? shape-frame)
                              (cph/root? shape-frame))
                        frame-offset
-                       (gpt/add frame-offset (gpt/point shape-frame)))
-        ]
+                       (gpt/add frame-offset (gpt/point shape-frame)))]
+
     (if (nil? dest-frame)
-      (gpt/point 0 0)
+      [(gpt/point 0 0) [:top :left]]
       (let [overlay-size           (gsb/get-object-bounds objects dest-frame)
             base-frame-size        (:selrect base-frame)
             relative-to-shape-size (:selrect relative-to-shape)
@@ -526,37 +525,46 @@
                                      overlay-position
                                      {:x (- (:x overlay-position) (:x relative-to-adjusted-to-base-frame))
                                       :y (- (:y overlay-position) (:y relative-to-adjusted-to-base-frame))})]
+
         (case (:overlay-pos-type interaction)
           :center
-          (gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
-                     (+ (:y base-position) (/ (- (:height relative-to-shape-size) (:height overlay-size)) 2)))
+          [(gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
+                      (+ (:y base-position) (/ (- (:height relative-to-shape-size) (:height overlay-size)) 2)))
+           [:center :center]]
 
           :top-left
-          (gpt/point (:x base-position) (:y base-position))
+          [(gpt/point (:x base-position) (:y base-position))
+           [:top :left]]
 
           :top-right
-          (gpt/point (+ (:x base-position) (- (:width relative-to-shape-size) (:width overlay-size)))
-                     (:y base-position))
+          [(gpt/point (+ (:x base-position) (- (:width relative-to-shape-size) (:width overlay-size)))
+                      (:y base-position))
+           [:top :right]]
 
           :top-center
-          (gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
-                     (:y base-position))
+          [(gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
+                      (:y base-position))
+           [:top :center]]
 
           :bottom-left
-          (gpt/point (:x base-position)
-                     (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
+          [(gpt/point (:x base-position)
+                      (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
+           [:bottom :left]]
 
           :bottom-right
-          (gpt/point (+ (:x base-position) (- (:width relative-to-shape-size) (:width overlay-size)))
-                     (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
+          [(gpt/point (+ (:x base-position) (- (:width relative-to-shape-size) (:width overlay-size)))
+                      (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
+           [:bottom :right]]
 
           :bottom-center
-          (gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
-                     (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
+          [(gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
+                      (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
+           [:bottom :center]]
 
           :manual
-          (gpt/point (+ (:x base-position) (:x overlay-position))
-                     (+ (:y base-position) (:y overlay-position))))))))
+          [(gpt/point (+ (:x base-position) (:x overlay-position))
+                      (+ (:y base-position) (:y overlay-position)))
+           [:top :left]])))))
 
 (defn has-animation?
   [interaction]
