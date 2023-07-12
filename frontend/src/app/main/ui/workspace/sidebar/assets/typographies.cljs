@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.main.data.modal :as modal]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -344,6 +345,7 @@
         (mf/use-fn
          (mf/deps file-id)
          (fn [_]
+           (st/emit! (dw/set-assets-section-open file-id :typographies true))
            (st/emit! (dwt/add-typography file-id))))
 
         handle-change
