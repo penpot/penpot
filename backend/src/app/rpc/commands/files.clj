@@ -256,22 +256,16 @@
 ;; FIXME: file locking
 (defn- process-components-v2-feature
   "A special case handling of the components/v2 feature."
-  [conn {:keys [id features data] :as file}]
-  (binding [pmap/*tracked* (atom {})]
-    (let [data        (ctf/migrate-to-components-v2 data)
-          features    (conj features "components/v2")
-          features'   (db/create-array conn "text" features)]
-      (db/update! conn :file
-                  {:data (blob/encode data)
-                   :features features'}
-                  {:id id})
-      (persist-pointers! conn id)
-      (-> file
-          (assoc :features features)
-          (assoc :data data)))))
+  [{:keys [features data] :as file}]
+  (let [data     (ctf/migrate-to-components-v2 data)
+        features (conj features "components/v2")]
+    (-> file
+        (assoc ::pmg/migrated true)
+        (assoc :features features)
+        (assoc :data data))))
 
 (defn handle-file-features!
-  [conn {:keys [features] :as file} client-features]
+  [{:keys [features] :as file} client-features]
 
   ;; Check features compatibility between the currently supported features on
   ;; the current backend instance and the file retrieved from the database
@@ -293,7 +287,7 @@
     ;; components and breaking the whole file."
     (and (contains? client-features "components/v2")
          (not (contains? features "components/v2")))
-    (as-> file (process-components-v2-feature conn file))
+    (as-> file (process-components-v2-feature file))
 
     ;; This operation is needed for backward comapatibility with frontends that
     ;; does not support pointer-map resolution mechanism; this just resolves the
@@ -350,22 +344,31 @@
   ([conn id client-features project-id]
    ;; here we check if client requested features are supported
    (check-features-compatibility! client-features)
-   (binding [pmap/*load-fn* (partial load-pointer conn id)]
+   (binding [pmap/*load-fn* (partial load-pointer conn id)
+             pmap/*tracked* (atom {})]
+
      (let [params (merge {:id id}
-                    (when (some? project-id)
-                      {:project-id project-id}))
+                         (when (some? project-id)
+                           {:project-id project-id}))
+
            file   (-> (db/get conn :file params)
                       (decode-row)
                       (pmg/migrate-file))
 
-           file   (handle-file-features! conn file client-features)]
+           file   (handle-file-features! file client-features)]
 
-      ;; NOTE: if migrations are applied, probably new pointers generated so
-      ;; instead of persiting them on each get-file, we just resolve them until
-      ;; user updates the file and permanently persists the new pointers
-       (cond-> file
-         (pmg/migrated? file)
-         (process-pointers deref))))))
+       ;; NOTE: when file is migrated, we break the rule of no perform
+       ;; mutations on get operations and update the file with all
+       ;; migrations applied
+       (when (pmg/migrated? file)
+         (let [features (db/create-array conn "text" (:features file))]
+           (db/update! conn :file
+                       {:data (blob/encode (:data file))
+                        :features features}
+                       {:id id})
+           (persist-pointers! conn id)))
+
+       file))))
 
 (defn get-minimal-file
   [{:keys [::db/pool] :as cfg} id]
@@ -383,7 +386,7 @@
    ::sm/params schema:get-file
    ::sm/result schema:file-with-permissions}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id features project-id] :as params}]
-  (dm/with-open [conn (db/open pool)]
+  (db/with-atomic [conn pool]
     (let [perms (get-permissions conn profile-id id)]
       (check-read-permissions! perms)
       (let [file (-> (get-file conn id features project-id)
