@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-06-19 11:49+0000\n"
+"PO-Revision-Date: 2023-07-14 08:49+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.18.1\n"
+"X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1179,7 +1179,7 @@ msgstr "Info"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
-msgstr "Tastenkürzel"
+msgstr "Tastaturkürzel"
 
 msgid "labels.accept"
 msgstr "Akzeptieren"
@@ -2495,7 +2495,7 @@ msgid "shortcuts.next-frame"
 msgstr "Nächstes Board"
 
 msgid "shortcuts.not-found"
-msgstr "Kein Tastenkürzel gefunden"
+msgstr "Kein Tastaturkürzel gefunden"
 
 msgid "shortcuts.opacity-0"
 msgstr "Deckkraft auf 100% setzen"
@@ -2564,7 +2564,7 @@ msgid "shortcuts.reset-zoom"
 msgstr "Zoom zurücksetzen"
 
 msgid "shortcuts.search-placeholder"
-msgstr "Tastenkürzel suchen"
+msgstr "Tastaturkürzel suchen"
 
 msgid "shortcuts.select-all"
 msgstr "Alles auswählen"
@@ -2576,7 +2576,7 @@ msgid "shortcuts.show-pixel-grid"
 msgstr "Pixelraster ein-/ausblenden"
 
 msgid "shortcuts.show-shortcuts"
-msgstr "Tastenkürzel ein-/ausblenden"
+msgstr "Tastaturkürzel ein-/ausblenden"
 
 msgid "shortcuts.snap-nodes"
 msgstr "An den Punkten ausrichten"
@@ -2598,7 +2598,7 @@ msgstr "Miniaturansichten festlegen"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs
 msgid "shortcuts.title"
-msgstr "Tastatürkürzel"
+msgstr "Tastaturkürzel"
 
 msgid "shortcuts.toggle-alignment"
 msgstr "Dynamische Ausrichtung umschalten"
@@ -4500,7 +4500,7 @@ msgstr "Rechteck (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.shortcuts"
-msgstr "Tastenkürzel (%s)"
+msgstr "Tastaturkürzel (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
