@@ -156,6 +156,8 @@
                    loading-fonts?  (some? (dom/query (dm/str "#frame-container-" id " > style[data-loading='true']")))]
                (when (and (not loading-images?)
                           (not loading-fonts?))
+                 (reset! svg-uri* nil)
+                 (reset! bitmap-uri* nil)
                  (generate-thumbnail)
                  (reset! regenerate* false))))))
 
