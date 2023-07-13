@@ -11,8 +11,8 @@
    [app.common.uri :as u]
    [app.common.version :as v]
    [app.util.avatars :as avatars]
-   [app.util.dom :as dom]
    [app.util.globals :refer [global location]]
+   [app.util.navigator :as nav]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
 
@@ -28,7 +28,7 @@
 
 (defn- parse-browser
   []
-  (let [user-agent (-> (dom/get-user-agent) str/lower)
+  (let [user-agent (-> (nav/get-user-agent) str/lower)
         check-chrome? (fn [] (str/includes? user-agent "chrom"))
         check-firefox? (fn [] (str/includes? user-agent "firefox"))
         check-edge? (fn [] (str/includes? user-agent "edg"))
@@ -42,7 +42,7 @@
 
 (defn- parse-platform
   []
-  (let [user-agent     (str/lower (dom/get-user-agent))
+  (let [user-agent     (str/lower (nav/get-user-agent))
         check-windows? (fn [] (str/includes? user-agent "windows"))
         check-linux?   (fn [] (str/includes? user-agent "linux"))
         check-macos?   (fn [] (str/includes? user-agent "mac os"))]
