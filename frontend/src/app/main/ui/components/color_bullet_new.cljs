@@ -5,50 +5,57 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.components.color-bullet-new
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.util.color :as uc]
-   [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-
 (mf/defc color-bullet
-  {::mf/wrap [mf/memo]}
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
   [{:keys [color on-click mini?]}]
   (let [on-click (mf/use-fn
                   (mf/deps color on-click)
                   (fn [event]
                     (when (fn? on-click)
                       (^function on-click color event))))]
+
     (if (uc/multiple? color)
-      [:div {:on-click on-click
-             :class (dom/classnames (css :color-bullet) true
-                                    (css :multiple) true)}]
+      [:div {:on-click on-click :class (stl/css :color-bullet :multiple)}]
       ;; No multiple selection
-      (let [color (if (string? color) {:color color :opacity 1} color)]
+      (let [color    (if (string? color) {:color color :opacity 1} color)
+            id       (:id color)
+            gradient (:gradient color)
+            opacity  (:opacity color)]
         [:div
-         {:class (dom/classnames (css :color-bullet) true
-                                 (css :mini) mini?
-                                 (css :is-library-color) (some? (:id color))
-                                 (css :is-not-library-color) (nil? (:id color))
-                                 (css :is-gradient) (some? (:gradient color))
-                                 (css :is-transparent) (and (:opacity color) (> 1 (:opacity color))))
+         {:class (stl/css-case
+                  :color-bullet true
+                  :mini mini?
+                  :is-library-color (some? id)
+                  :is-not-library-color (nil? id)
+                  :is-gradient (some? gradient)
+                  :is-transparent (and opacity (> 1 opacity)))
           :on-click on-click}
-         (if  (:gradient color)
-           [:div {:class (dom/classnames (css :color-bullet-wrapper) true)
+
+         (if (some? gradient)
+           [:div {:class (stl/css :color-bullet-wrapper)
                   :style {:background (uc/color->background color)}}]
-           [:div {:class (dom/classnames (css :color-bullet-wrapper) true)}
-            [:div {:class (dom/classnames (css :color-bullet-left) true)
+
+           [:div {:class (stl/css :color-bullet-wrapper)}
+            [:div {:class (stl/css :color-bullet-left)
                    :style {:background (uc/color->background (assoc color :opacity 1))}}]
-            [:div {:class (dom/classnames (css :color-bullet-right) true)
+            [:div {:class (stl/css :color-bullet-right)
                    :style {:background (uc/color->background color)}}]])]))))
-(mf/defc color-name [{:keys [color size on-click on-double-click]}]
-  (let [color (if (string? color) {:color color :opacity 1} color)
-        {:keys [name color gradient]} color
-        color-str (or name color (uc/gradient-type->string (:type gradient)))
-        text-small (and (>= size 64) (< size 72))]
+
+
+(mf/defc color-name
+  {::mf/wrap-props false}
+  [{:keys [color size on-click on-double-click]}]
+  (let [{:keys [name color gradient]} (if (string? color) {:color color :opacity 1} color)]
     (when (or (not size) (> size 64))
-      [:span {:class (dom/classnames (css :color-text) true
-                                     (css :small-text) text-small)
-              :on-click #(when on-click (on-click %))
-              :on-double-click #(when on-double-click (on-double-click %))} color-str])))
+      [:span {:class (stl/css-case
+                      :color-text true
+                      :small-text (and (>= size 64) (< size 72)))
+              :on-click on-click
+              :on-double-click on-double-click}
+       (or name color (uc/gradient-type->string (:type gradient)))])))
