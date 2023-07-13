@@ -18,6 +18,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.router :as rt]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -142,12 +143,22 @@
                          (sort-by :modified-at)
                          (reverse)))
 
+        on-file-created
+        (mf/use-fn
+         (fn [data]
+           (let [pparams {:project-id (:project-id data)
+                          :file-id (:id data)}
+                 qparams {:page-id (get-in data [:data :pages 0])}]
+             (st/emit! (rt/nav :workspace pparams qparams)))))
+
         create-file
         (mf/use-fn
          (mf/deps project)
          (fn [origin]
-           (st/emit! (with-meta (dd/create-file {:project-id (:id project)})
-                       {::ev/origin origin}))))]
+           (let [mdata  {:on-success on-file-created}
+                 params {:project-id (:id project)}]
+             (st/emit! (-> (dd/create-file (with-meta params mdata))
+                           (with-meta {::ev/origin origin}))))))]
 
     (mf/with-effect []
       (let [node (mf/ref-val rowref)

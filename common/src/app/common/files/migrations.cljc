@@ -436,32 +436,6 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defmethod migrate 20
-  [data]
-  (letfn [(update-object [objects object]
-            (let [frame-id (:frame-id object)
-                  calculated-frame-id
-                  (or (->> (cph/get-parent-ids objects (:id object))
-                           (map (d/getf objects))
-                           (d/seek cph/frame-shape?)
-                           :id)
-                      ;; If we cannot find any we let the frame-id as it was before
-                      frame-id)]
-              (when (not= frame-id calculated-frame-id)
-                (log/info :hint "Fix wrong frame-id"
-                          :shape (:name object)
-                          :id (:id object)
-                          :current (dm/get-in objects [frame-id :name])
-                          :calculated (get-in objects [calculated-frame-id :name])))
-              (assoc object :frame-id calculated-frame-id)))
-
-          (update-container [container]
-            (update container :objects #(update-vals % (partial update-object %))))]
-
-    (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
-
 (defmethod migrate 21
   [data]
   (letfn [(update-object [object]
@@ -513,6 +487,32 @@
 
           (update-container [container]
             (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(defmethod migrate 24
+  [data]
+  (letfn [(update-object [objects object]
+            (let [frame-id (:frame-id object)
+                  calculated-frame-id
+                  (or (->> (cph/get-parent-ids objects (:id object))
+                           (map (d/getf objects))
+                           (d/seek cph/frame-shape?)
+                           :id)
+                      ;; If we cannot find any we let the frame-id as it was before
+                      frame-id)]
+              (when (not= frame-id calculated-frame-id)
+                (log/info :hint "Fix wrong frame-id"
+                          :shape (:name object)
+                          :id (:id object)
+                          :current (dm/get-in objects [frame-id :name])
+                          :calculated (get-in objects [calculated-frame-id :name])))
+              (assoc object :frame-id calculated-frame-id)))
+
+          (update-container [container]
+            (update container :objects #(update-vals % (partial update-object %))))]
 
     (-> data
         (update :pages-index update-vals update-container)

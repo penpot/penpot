@@ -146,8 +146,9 @@
           is-component? (mf/use-ctx muc/is-component?)]
       [:> frame-container props
        [:g.frame-children {:opacity (:opacity shape)}
-        (for [item childs]
-          [:& shape-wrapper {:key (dm/str (:id item)) :shape item}])]
+        (for [{:keys [id] :as item} childs]
+          (when (some? id)
+            [:& shape-wrapper {:key (dm/str (:id item)) :shape item}]))]
        (when (and is-component? (empty? childs))
          [:& grid-layout-viewer {:shape shape :childs childs}])])))
 

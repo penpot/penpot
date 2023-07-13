@@ -2424,9 +2424,6 @@ msgstr "Ajustar às guias"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Alternar paleta de texto"
 
-msgid "shortcuts.toggle-visibility"
-msgstr "Alternar visibilidade"
-
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Alternar estilo de zoom"
 

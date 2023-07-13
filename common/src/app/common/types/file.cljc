@@ -406,7 +406,7 @@
                   (update page :objects update-vals root-to-board))]
 
             (-> file-data
-                (add-instance-grid (sort-by :name components))
+                (add-instance-grid (reverse (sort-by :name components)))
                 (update :pages-index update-vals roots-to-board)
                 (assoc-in [:options :components-v2] true))))))))
 

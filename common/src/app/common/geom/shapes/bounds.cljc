@@ -163,6 +163,7 @@
           :else
           (cph/reduce-objects
            objects
+
            (fn [shape]
              (and (d/not-empty? (:shapes shape))
                   (or (not (cph/frame-shape? shape))

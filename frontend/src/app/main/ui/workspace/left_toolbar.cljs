@@ -87,7 +87,7 @@
                        dw/clear-edition-mode)
 
              ;; Delay so anything that launched :interrupt can finish
-             (st/emit! 100 (dw/select-for-drawing tool)))))
+             (ts/schedule 100 #(st/emit! (dw/select-for-drawing tool))))))
 
         toggle-text-palette
         (mf/use-fn

@@ -378,6 +378,8 @@ span.element-name {
           background-color: $color-gray-50;
           color: $color-white;
           font-size: $fs12;
+          flex-grow: 1;
+          margin: 0;
           height: 16px;
           &:focus {
             outline: none;
@@ -386,10 +388,16 @@ span.element-name {
         div {
           height: 16px;
           overflow: hidden;
+          width: 100%;
+          display: flex;
+          align-items: center;
         }
         .filter,
         .clear {
           width: 35px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
           &.active {
             svg {
               fill: $color-primary;

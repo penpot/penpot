@@ -407,6 +407,32 @@
 
          (assoc state :workspace-modifiers modif-tree))))))
 
+;; This function is similar to set-rotation-modifiers but:
+;; - It consideres the center for everyshape instead of the center of the total selrect
+;; - The angle param is the desired final value, not a delta
+(defn set-delta-rotation-modifiers
+  ([angle shapes]
+   (ptk/reify ::set-delta-rotation-modifiers
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [objects     (wsh/lookup-page-objects state)
+             ids
+             (->> shapes
+                  (remove #(get % :blocked false))
+                  (filter #(contains? (get editable-attrs (:type %)) :rotation))
+                  (map :id))
+
+             get-modifier
+             (fn [shape]
+               (let [delta  (- angle (:rotation shape))
+                     center (gsh/shape->center shape)]
+                 (ctm/rotation-modifiers shape center delta)))
+
+             modif-tree
+             (-> (build-modif-tree ids objects get-modifier)
+                 (gsh/set-objects-modifiers objects))]
+
+         (assoc state :workspace-modifiers modif-tree))))))
 
 (defn apply-modifiers
   ([]

@@ -315,12 +315,12 @@
         [measure-ids    measure-values]    (get-attrs shapes objects :measure)
 
         [layer-ids            layer-values
+         text-ids             text-values
          constraint-ids       constraint-values
          fill-ids             fill-values
          shadow-ids           shadow-values
          blur-ids             blur-values
          stroke-ids           stroke-values
-         text-ids             text-values
          exports-ids          exports-values
          layout-container-ids layout-container-values
          layout-item-ids      layout-item-values]
@@ -331,12 +331,12 @@
             []
             (mapcat identity)
             [(get-attrs shapes objects-no-measures :layer)
+             (get-attrs shapes objects-no-measures :text)
              (get-attrs shapes objects-no-measures :constraint)
              (get-attrs shapes objects-no-measures :fill)
              (get-attrs shapes objects-no-measures :shadow)
              (get-attrs shapes objects-no-measures :blur)
              (get-attrs shapes objects-no-measures :stroke)
-             (get-attrs shapes objects-no-measures :text)
              (get-attrs shapes objects-no-measures :exports)
              (get-attrs shapes objects-no-measures :layout-container)
              (get-attrs shapes objects-no-measures :layout-item)
@@ -364,6 +364,9 @@
      (when-not (empty? layer-ids)
        [:& layer-menu {:type type :ids layer-ids :values layer-values}])
 
+     (when-not (empty? text-ids)
+       [:& ot/text-menu {:type type :ids text-ids :values text-values}])
+
      (when-not (empty? fill-ids)
        [:& fill-menu {:type type :ids fill-ids :values fill-values}])
 
@@ -379,9 +382,6 @@
 
      (when-not (empty? blur-ids)
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])
-
-     (when-not (empty? text-ids)
-       [:& ot/text-menu {:type type :ids text-ids :values text-values}])
 
      (when-not (empty? exports-ids)
        [:& exports-menu {:type type :ids exports-ids :values exports-values :page-id page-id :file-id file-id}])]))

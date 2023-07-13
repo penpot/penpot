@@ -323,209 +323,275 @@
         interaction-rect (ctsi/set-position-relative-to interaction (:id rect))]
     (t/testing "Overlay top-left relative to auto"
       (let [i2 (ctsi/set-overlay-pos-type interaction-auto :top-left base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 0))
-        (t/is (= (:y overlay-pos) 0))))
+        (t/is (= (:y overlay-pos) 0))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :left))))
 
     (t/testing "Overlay top-center relative to auto"
       (let [i2 (ctsi/set-overlay-pos-type interaction-auto :top-center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 35))
-        (t/is (= (:y overlay-pos) 0))))
+        (t/is (= (:y overlay-pos) 0))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay top-right relative to auto"
       (let [i2 (ctsi/set-overlay-pos-type interaction-auto :top-right base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 70))
-        (t/is (= (:y overlay-pos) 0))))
+        (t/is (= (:y overlay-pos) 0))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :right))))
 
     (t/testing "Overlay bottom-left relative to auto"
       (let [i2 (ctsi/set-overlay-pos-type interaction-auto :bottom-left base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 0))
-        (t/is (= (:y overlay-pos) 80))))
+        (t/is (= (:y overlay-pos) 80))
+        (t/is (= snap-v :bottom))
+        (t/is (= snap-h :left))))
 
     (t/testing "Overlay bottom-center relative to auto"
       (let [i2 (ctsi/set-overlay-pos-type interaction-auto :bottom-center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 35))
-        (t/is (= (:y overlay-pos) 80))))
+        (t/is (= (:y overlay-pos) 80))
+        (t/is (= snap-v :bottom))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay bottom-right relative to auto"
       (let [i2 (ctsi/set-overlay-pos-type interaction-auto :bottom-right base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 70))
-        (t/is (= (:y overlay-pos) 80))))
+        (t/is (= (:y overlay-pos) 80))
+        (t/is (= snap-v :bottom))
+        (t/is (= snap-h :right))))
 
     (t/testing "Overlay center relative to auto"
       (let [i2 (ctsi/set-overlay-pos-type interaction-auto :center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 35))
-        (t/is (= (:y overlay-pos) 40))))
+        (t/is (= (:y overlay-pos) 40))
+        (t/is (= snap-v :center))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay manual relative to auto"
       (let [i2 (ctsi/set-overlay-pos-type interaction-auto :center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 35))
-        (t/is (= (:y overlay-pos) 40))))
+        (t/is (= (:y overlay-pos) 40))
+        (t/is (= snap-v :center))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay manual relative to auto"
       (let [i2 (-> interaction-auto
                    (ctsi/set-overlay-pos-type :manual base-frame objects)
                    (ctsi/set-overlay-position (gpt/point 12 62)))
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 17))
-        (t/is (= (:y overlay-pos) 67))))
+        (t/is (= (:y overlay-pos) 67))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :left))))
 
     (t/testing "Overlay top-left relative to base-frame"
       (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :top-left base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 5))
-        (t/is (= (:y overlay-pos) 5))))
+        (t/is (= (:y overlay-pos) 5))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :left))))
 
     (t/testing "Overlay top-center relative to base-frame"
       (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :top-center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 40))
-        (t/is (= (:y overlay-pos) 5))))
+        (t/is (= (:y overlay-pos) 5))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay top-right relative to base-frame"
       (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :top-right base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 75))
-        (t/is (= (:y overlay-pos) 5))))
+        (t/is (= (:y overlay-pos) 5))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :right))))
 
     (t/testing "Overlay bottom-left relative to base-frame"
       (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :bottom-left base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 5))
-        (t/is (= (:y overlay-pos) 85))))
+        (t/is (= (:y overlay-pos) 85))
+        (t/is (= snap-v :bottom))
+        (t/is (= snap-h :left))))
 
     (t/testing "Overlay bottom-center relative to base-frame"
       (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :bottom-center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 40))
-        (t/is (= (:y overlay-pos) 85))))
+        (t/is (= (:y overlay-pos) 85))
+        (t/is (= snap-v :bottom))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay bottom-right relative to base-frame"
       (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :bottom-right base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 75))
-        (t/is (= (:y overlay-pos) 85))))
+        (t/is (= (:y overlay-pos) 85))
+        (t/is (= snap-v :bottom))
+        (t/is (= snap-h :right))))
 
     (t/testing "Overlay center relative to base-frame"
       (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 40))
-        (t/is (= (:y overlay-pos) 45))))
+        (t/is (= (:y overlay-pos) 45))
+        (t/is (= snap-v :center))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay manual relative to base-frame"
       (let [i2 (-> interaction-base-frame
                    (ctsi/set-overlay-pos-type :manual base-frame objects)
                    (ctsi/set-overlay-position (gpt/point 12 62)))
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 17))
-        (t/is (= (:y overlay-pos) 67))))
+        (t/is (= (:y overlay-pos) 67))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :left))))
 
     (t/testing "Overlay top-left relative to popup"
       (let [i2 (ctsi/set-overlay-pos-type interaction-popup :top-left base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 15))
-        (t/is (= (:y overlay-pos) 15))))
+        (t/is (= (:y overlay-pos) 15))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :left))))
 
     (t/testing "Overlay top-center relative to popup"
       (let [i2 (ctsi/set-overlay-pos-type interaction-popup :top-center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 25))
-        (t/is (= (:y overlay-pos) 15))))
+        (t/is (= (:y overlay-pos) 15))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay top-right relative to popup"
       (let [i2 (ctsi/set-overlay-pos-type interaction-popup :top-right base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 35))
-        (t/is (= (:y overlay-pos) 15))))
+        (t/is (= (:y overlay-pos) 15))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :right))))
 
     (t/testing "Overlay bottom-left relative to popup"
       (let [i2 (ctsi/set-overlay-pos-type interaction-popup :bottom-left base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 15))
-        (t/is (= (:y overlay-pos) 45))))
+        (t/is (= (:y overlay-pos) 45))
+        (t/is (= snap-v :bottom))
+        (t/is (= snap-h :left))))
 
     (t/testing "Overlay bottom-center relative to popup"
       (let [i2 (ctsi/set-overlay-pos-type interaction-popup :bottom-center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 25))
-        (t/is (= (:y overlay-pos) 45))))
+        (t/is (= (:y overlay-pos) 45))
+        (t/is (= snap-v :bottom))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay bottom-right relative to popup"
       (let [i2 (ctsi/set-overlay-pos-type interaction-popup :bottom-right base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 35))
-        (t/is (= (:y overlay-pos) 45))))
+        (t/is (= (:y overlay-pos) 45))
+        (t/is (= snap-v :bottom))
+        (t/is (= snap-h :right))))
 
     (t/testing "Overlay center relative to popup"
       (let [i2 (ctsi/set-overlay-pos-type interaction-popup :center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 25))
-        (t/is (= (:y overlay-pos) 30))))
+        (t/is (= (:y overlay-pos) 30))
+        (t/is (= snap-v :center))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay manual relative to popup"
       (let [i2 (-> interaction-popup
                    (ctsi/set-overlay-pos-type :manual base-frame objects)
                    (ctsi/set-overlay-position (gpt/point 12 62)))
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 27))
-        (t/is (= (:y overlay-pos) 77))))
+        (t/is (= (:y overlay-pos) 77))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :left))))
 
     (t/testing "Overlay top-left relative to popup"
       (let [i2 (ctsi/set-overlay-pos-type interaction-popup :top-left base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects popup base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 15))
-        (t/is (= (:y overlay-pos) 15))))
+        (t/is (= (:y overlay-pos) 15))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :left))))
 
     (t/testing "Overlay top-center relative to rect"
       (let [i2 (ctsi/set-overlay-pos-type interaction-rect :top-center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 25))
-        (t/is (= (:y overlay-pos) 15))))
+        (t/is (= (:y overlay-pos) 15))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay top-right relative to rect"
       (let [i2 (ctsi/set-overlay-pos-type interaction-rect :top-right base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 35))
-        (t/is (= (:y overlay-pos) 15))))
+        (t/is (= (:y overlay-pos) 15))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :right))))
 
     (t/testing "Overlay bottom-left relative to rect"
       (let [i2 (ctsi/set-overlay-pos-type interaction-rect :bottom-left base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 15))
-        (t/is (= (:y overlay-pos) 45))))
+        (t/is (= (:y overlay-pos) 45))
+        (t/is (= snap-v :bottom))
+        (t/is (= snap-h :left))))
 
     (t/testing "Overlay bottom-center relative to rect"
       (let [i2 (ctsi/set-overlay-pos-type interaction-rect :bottom-center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 25))
-        (t/is (= (:y overlay-pos) 45))))
+        (t/is (= (:y overlay-pos) 45))
+        (t/is (= snap-v :bottom))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay bottom-right relative to rect"
       (let [i2 (ctsi/set-overlay-pos-type interaction-rect :bottom-right base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 35))
-        (t/is (= (:y overlay-pos) 45))))
+        (t/is (= (:y overlay-pos) 45))
+        (t/is (= snap-v :bottom))
+        (t/is (= snap-h :right))))
 
     (t/testing "Overlay center relative to rect"
       (let [i2 (ctsi/set-overlay-pos-type interaction-rect :center base-frame objects)
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 25))
-        (t/is (= (:y overlay-pos) 30))))
+        (t/is (= (:y overlay-pos) 30))
+        (t/is (= snap-v :center))
+        (t/is (= snap-h :center))))
 
     (t/testing "Overlay manual relative to rect"
       (let [i2 (-> interaction-rect
                    (ctsi/set-overlay-pos-type :manual base-frame objects)
                    (ctsi/set-overlay-position (gpt/point 12 62)))
-            overlay-pos (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
+            [overlay-pos [snap-v snap-h]] (ctsi/calc-overlay-position i2 rect objects rect base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 17))
-        (t/is (= (:y overlay-pos) 67))))))
+        (t/is (= (:y overlay-pos) 67))
+        (t/is (= snap-v :top))
+        (t/is (= snap-h :left))))))
 
 
 (t/deftest animation-checks

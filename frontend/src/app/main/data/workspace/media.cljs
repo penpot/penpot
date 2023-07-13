@@ -181,7 +181,9 @@
                 (on-error error)
 
                 :else
-                (rx/throw error))))]
+                (do
+                  (.error js/console "ERROR" error)
+                  (rx/of (msg/error (tr "errors.cannot-upload")))))))]
 
     (ptk/reify ::process-media-objects
       ptk/WatchEvent

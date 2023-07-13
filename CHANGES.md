@@ -70,7 +70,25 @@
 - Fix focus handling on comments edition [Taiga #5560](https://tree.taiga.io/project/penpot/issue/5560)
 - Fix incorrect fullname use on registring user after OIDC authentication [Taiga #5517](https://tree.taiga.io/project/penpot/issue/5517)
 - Fix incorrect modified-at on project after import file [Taiga #5268](https://tree.taiga.io/project/penpot/issue/5268)
-
+- Fix incorrect message after sending invitation to already member [Taiga 5599](https://tree.taiga.io/project/penpot/issue/5599)
+- Fix text decoration on button [Taiga #5301](https://tree.taiga.io/project/penpot/issue/5301)
+- Fix menu order on design tab [Taiga #5195](https://tree.taiga.io/project/penpot/issue/5195)
+- Fix search bar width on layer tab [Taiga #5445](https://tree.taiga.io/project/penpot/issue/5445)
+- Fix border radius values with decimals [Taiga #5283](https://tree.taiga.io/project/penpot/issue/5283)
+- Fix shortcuts translations not homogenized [Taiga #5141](https://tree.taiga.io/project/penpot/issue/5141)
+- Fix overlay manual position in nested boards [Taiga #5135](https://tree.taiga.io/project/penpot/issue/5135)
+- Fix close overlay from a nested board [Taiga #5587](https://tree.taiga.io/project/penpot/issue/5587)
+- Fix overlay position when it has shadow or blur [Taiga #4752](https://tree.taiga.io/project/penpot/issue/4752)
+- Fix overlay position when there are elements fixed when scrolling [Taiga #4383](https://tree.taiga.io/project/penpot/issue/4383)
+- Fix problem when sliding color picker in selected-colors [#3150](https://github.com/penpot/penpot/issues/3150)
+- Fix error screen on upload image error [Taiga #5608](https://tree.taiga.io/project/penpot/issue/5608)
+- Fix bad frame-id for certain componentes [#3205](https://github.com/penpot/penpot/issues/3205)
+- Fix paste elements at bottom of frame [Taig #5253](https://tree.taiga.io/project/penpot/issue/5253)
+- Fix new-file button on project not redirecting to the new file [Taiga #5610](https://tree.taiga.io/project/penpot/issue/5610)
+- Fix retrieve user comments in dashboard [Taiga #5607](https://tree.taiga.io/project/penpot/issue/5607)
+- Locks shapes when moved inside a locked parent [Taiga #5252](https://tree.taiga.io/project/penpot/issue/5252)
+- Fix rotate several elements in bulk [Taiga #5165](https://tree.taiga.io/project/penpot/issue/5165)
+ 
 ### :arrow_up: Deps updates
 
 - Update google fonts catalog (at 2023/07/06) [Taiga #5592](https://tree.taiga.io/project/penpot/issue/5592)

@@ -23,6 +23,7 @@
    [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
@@ -450,18 +451,49 @@
   (ptk/reify ::duplicate-page
     ptk/WatchEvent
     (watch [it state _]
-      (let [id      (uuid/next)
-            pages   (get-in state [:workspace-data :pages-index])
-            unames  (cfh/get-used-names pages)
-            page    (get-in state [:workspace-data :pages-index page-id])
-            name    (cfh/generate-unique-name unames (:name page))
+      (let [id                 (uuid/next)
+            pages              (get-in state [:workspace-data :pages-index])
+            unames             (cfh/get-used-names pages)
+            page               (get-in state [:workspace-data :pages-index page-id])
+            name               (cfh/generate-unique-name unames (:name page))
+            fdata              (:workspace-data state)
+            components-v2      (dm/get-in fdata [:options :components-v2])
+            objects            (->> (:objects page)
+                                    (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))
+            main-instances-ids (set (keep #(when (ctk/main-instance? (val %)) (key %)) objects))
+            ids-to-remove      (set (apply concat (map #(cph/get-children-ids objects %) main-instances-ids)))
+
+            add-component-copy
+            (fn [objs id shape]
+              (let [component (ctkl/get-component fdata (:component-id shape))
+                    [new-shape new-shapes]
+                    (ctn/make-component-instance page
+                                                 component
+                                                 fdata
+                                                 (gpt/point (:x shape) (:y shape))
+                                                 components-v2
+                                                 {:keep-ids? true})
+                    children (into {} (map (fn [shape] [(:id shape) shape]) new-shapes))
+                    objs (assoc objs id new-shape)]
+                (merge objs children)))
+
+            objects
+            (reduce
+             (fn [objs [id shape]]
+               (cond (contains? main-instances-ids id)
+                     (add-component-copy objs id shape)
+                     (contains? ids-to-remove id)
+                     objs
+                     :else
+                     (assoc objs id shape)))
+             {}
+             objects)
 
             page    (-> page
                         (assoc :name name)
                         (assoc :id id)
                         (assoc :objects
-                               (->> (:objects page)
-                                    (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))))
+                               objects))
 
             changes (-> (pcb/empty-changes it)
                         (pcb/add-page id page))]
@@ -719,17 +751,18 @@
                                groups-to-delete groups-to-unmask shapes-to-detach
                                shapes-to-reroot shapes-to-deroot shapes-to-unconstraint]
   (let [ordered-indexes (cph/order-by-indexed-shapes objects ids)
-        shapes (map (d/getf objects) ordered-indexes)]
+        shapes (map (d/getf objects) ordered-indexes)
+        parent (get objects parent-id)]
 
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
 
         ;; Remove layout-item properties when moving a shape outside a layout
-        (cond-> (not (ctl/any-layout? objects parent-id))
+        (cond-> (not (ctl/any-layout? parent))
           (pcb/update-shapes ordered-indexes ctl/remove-layout-item-data))
 
         ;; Remove the hide in viewer flag
-        (cond-> (and (not= uuid/zero parent-id) (cph/frame-shape? objects parent-id))
+        (cond-> (and (not= uuid/zero parent-id) (cph/frame-shape? parent))
           (pcb/update-shapes ordered-indexes #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true))))
 
         ;; Move the shapes
@@ -761,8 +794,7 @@
         ;; Reset constraints depending on the new parent
         (pcb/update-shapes shapes-to-unconstraint
                            (fn [shape]
-                             (let [parent      (get objects parent-id)
-                                   frame-id    (if (= (:type parent) :frame)
+                             (let [frame-id    (if (= (:type parent) :frame)
                                                  (:id parent)
                                                  (:frame-id parent))
                                    moved-shape (assoc shape
@@ -796,6 +828,10 @@
                                (ctl/assign-cells))))
 
         (pcb/reorder-grid-children parents)
+
+        ;; If parent locked, lock the added shapes
+        (cond-> (:blocked parent)
+          (pcb/update-shapes ordered-indexes #(assoc % :blocked true)))
 
         ;; Resize parent containers that need to
         (pcb/resize-parents parents))))
@@ -1706,7 +1742,8 @@
                     [(:frame-id base) parent-id delta index])
 
                   ;; Paste inside selected frame otherwise
-                  (let [origin-frame-id (:frame-id first-selected-obj)
+                  (let [selected-frame-obj (get page-objects (first page-selected))
+                        origin-frame-id (:frame-id first-selected-obj)
                         origin-frame-object (get page-objects origin-frame-id)
 
                         margin-x (-> (- (:width origin-frame-object) (+ (:x wrapper) (:width wrapper)))
@@ -1735,7 +1772,7 @@
                                 ;; - Align it to the limits on the x and y axis
                                 ;; - Respect the distance of the object to the right and bottom in the original frame
                                 (gpt/point paste-x paste-y))]
-                    [frame-id frame-id delta]))
+                    [frame-id frame-id delta (dec (count (:shapes selected-frame-obj )))]))
 
                 (empty? page-selected)
                 (let [frame-id (ctst/top-nested-frame page-objects mouse-pos)

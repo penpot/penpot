@@ -1017,6 +1017,9 @@ msgstr "Email or password is incorrect."
 msgid "errors.wrong-old-password"
 msgstr "Old password is incorrect"
 
+msgid "errors.cannot-upload"
+msgstr "Cannot upload the media file."
+
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Description"
@@ -2528,7 +2531,7 @@ msgid "shortcuts.h-distribute"
 msgstr "Distribute horizontally"
 
 msgid "shortcuts.hide-ui"
-msgstr "Show/hide UI"
+msgstr "Show / Hide UI"
 
 msgid "shortcuts.increase-zoom"
 msgstr "Zoom in"
@@ -2687,10 +2690,10 @@ msgid "shortcuts.separate-nodes"
 msgstr "Separate nodes"
 
 msgid "shortcuts.show-pixel-grid"
-msgstr "Show/hide pixel grid"
+msgstr "Show / Hide pixel grid"
 
 msgid "shortcuts.show-shortcuts"
-msgstr "Show/hide shortcuts"
+msgstr "Show / Hide shortcuts"
 
 msgid "shortcuts.snap-nodes"
 msgstr "Snap to nodes"
@@ -2742,7 +2745,7 @@ msgid "shortcuts.toggle-fullscreen"
 msgstr "Toggle fullscreen"
 
 msgid "shortcuts.toggle-grid"
-msgstr "Show/hide grid"
+msgstr "Show / Hide grid"
 
 msgid "shortcuts.toggle-history"
 msgstr "Toggle history"
@@ -2751,16 +2754,16 @@ msgid "shortcuts.toggle-layers"
 msgstr "Toggle layers"
 
 msgid "shortcuts.toggle-layout-flex"
-msgstr "Add/remove flex layout"
+msgstr "Add / Remove flex layout"
 
 msgid "shortcuts.toggle-lock"
-msgstr "Lock selected"
+msgstr "Lock / Unlock"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "Lock proportions"
 
 msgid "shortcuts.toggle-rules"
-msgstr "Show/hide rulers"
+msgstr "Show / Hide rulers"
 
 msgid "shortcuts.toggle-scale-text"
 msgstr "Toggle scale text"
@@ -2775,7 +2778,7 @@ msgid "shortcuts.toggle-textpalette"
 msgstr "Toggle text palette"
 
 msgid "shortcuts.toggle-visibility"
-msgstr "Toggle visibility"
+msgstr "Show / Hide"
 
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Toggle zoom style"
@@ -4475,7 +4478,7 @@ msgid "workspace.shape.menu.hide"
 msgstr "Hide"
 
 msgid "workspace.shape.menu.hide-ui"
-msgstr "Show/Hide UI"
+msgstr "Show / Hide UI"
 
 msgid "workspace.shape.menu.intersection"
 msgstr "Intersection"

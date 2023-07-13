@@ -344,12 +344,10 @@
 
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            rotate-shape (fn [shape]
-                           (let [delta (- rotation (:rotation shape))]
-                             (dwm/set-rotation-modifiers delta [shape])))]
+            shapes  (->> ids (map #(get objects %)))]
         (rx/concat
-         (rx/from (->> ids (map #(get objects %)) (map rotate-shape)))
-         (rx/of (dwm/apply-modifiers)))))))
+          (rx/of (dwm/set-delta-rotation-modifiers rotation shapes))
+          (rx/of (dwm/apply-modifiers)))))))
 
 
 ;; -- Move ----------------------------------------------------------
