@@ -317,7 +317,7 @@
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform-mtx]
 
-  (let [points'  (:points shape)
+  (let [points'  (gco/shape->points shape)
         points   (gco/transform-points points' transform-mtx)
         shape    (-> shape (adjust-shape-flips points))
         bool?    (= (:type shape) :bool)

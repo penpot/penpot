@@ -83,6 +83,7 @@
 - Fix position of text cursor is a bit too high in Invitations section [Taiga #5511](https://tree.taiga.io/project/penpot/issue/5511)
 - Fix undo when updating several texts [Taiga #5197](https://tree.taiga.io/project/penpot/issue/5197)
 - Fix assets right click button for multiple selection [Taiga #5545](https://tree.taiga.io/project/penpot/issue/5545)
+- Fix problem with precision in resizes [Taiga #5623](https://tree.taiga.io/project/penpot/issue/5623)
 
 ### :arrow_up: Deps updates
 
