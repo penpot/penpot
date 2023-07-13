@@ -80,6 +80,7 @@
 - Fix create typography with section closed [Taiga #5574](https://tree.taiga.io/project/penpot/issue/5574)
 - Fix exports menu on viewer mode [Taiga #5568](https://tree.taiga.io/project/penpot/issue/5568)
 - Fix create empty comments [Taiga #5536](https://tree.taiga.io/project/penpot/issue/5536)
+- Fix text changes not propagated to copy [Taiga #5364](https://tree.taiga.io/project/penpot/issue/5364)
 
 ### :arrow_up: Deps updates
 
