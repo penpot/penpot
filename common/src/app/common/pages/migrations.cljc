@@ -45,8 +45,9 @@
 
 (defn migrated?
   [{:keys [data] :as file}]
-  (> (:version data)
-     (::orig-version file)))
+  (or (::migrated file)
+      (> (:version data)
+         (::orig-version file))))
 
 ;; Default handler, noop
 (defmethod migrate :default [data] data)
