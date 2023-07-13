@@ -31,6 +31,7 @@
 - Add the ability to use the registration whitelist with OICD [Github #3348](https://github.com/penpot/penpot/issues/3348)
 - Add support for local caching of google fonts (this avoids exposing the final user IP to
   goolge and reduces the amount of request sent to google)
+- Set smooth/instant autoscroll depending on distance [GitHub #3377](https://github.com/penpot/penpot/issues/3377)
 
 ### :bug: Bugs fixed
 

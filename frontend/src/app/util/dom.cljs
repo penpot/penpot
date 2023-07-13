@@ -158,9 +158,16 @@
   (when (some? node)
     (.-parentElement ^js node)))
 
+(defn get-parent-at
+  [^js node count]
+  (when (some? node)
+    (loop [current node current-count count]
+      (if (or (nil? current) (= current-count 0))
+        current
+        (recur (.-parentElement current) (dec current-count))))))
+
 (defn get-parent-with-selector
   [^js node selector]
-
   (loop [current node]
     (if (or (nil? current) (.matches current selector))
       current
@@ -194,6 +201,22 @@
      :scroll-left   (.-scrollLeft event)
      :scroll-top    (.-scrollTop event)
      :scroll-width  (.-scrollWidth event)}))
+
+(defn get-scroll-height-ratio
+  [^js node]
+  (when (some? node)
+    (/ (.-scrollHeight node) (.-clientHeight node))))
+
+(defn get-scroll-distance
+  [^js node scroll-node]
+  (when (and (some? node) (some? scroll-node))
+    (abs (- (.-scrollTop scroll-node) (.-offsetTop node)))))
+
+(defn get-scroll-distance-ratio
+  [^js node scroll-node]
+  (let [distance (get-scroll-distance node scroll-node)
+        height   (.-clientHeight scroll-node)]
+    (/ distance height)))
 
 (def get-target-val (comp get-value get-target))
 
@@ -573,6 +596,13 @@
    (when (some? element)
      (.scrollIntoView element options))))
 
+;; NOTE: scrollIntoViewIfNeeded is not supported in Firefox
+;; because it is not a standard API. BTW it only supports
+;; centerIfNeeded as boolean option.
+;; @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoViewIfNeeded
+;; @see https://www.w3.org/Bugs/Public/show_bug.cgi?id=17152
+;; @see https://github.com/w3c/csswg-drafts/pull/1805
+;; @see https://github.com/w3c/csswg-drafts/pull/5677
 (defn scroll-into-view-if-needed!
   ([^js element]
    (scroll-into-view-if-needed! element false))

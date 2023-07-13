@@ -185,19 +185,25 @@
 
     (mf/with-effect [selected? selected]
       (let [single? (= (count selected) 1)
-            node    (mf/ref-val ref)
-            parent  (dom/get-parent (dom/get-parent node))
+            node (mf/ref-val ref)
+            ;; NOTE: Neither get-parent-at nor get-parent-with-selector
+            ;; work if the component template changes, so we need to
+            ;; seek for an alternate solution. Maybe use-context?
+            scroll-node (dom/get-parent-with-selector node ".tool-window-content")
+            parent-node (dom/get-parent-at node 2)
 
             subid
             (when (and single? selected?)
               (let [scroll-to @scroll-to-middle?]
                 (ts/schedule
                  100
-                 #(if scroll-to
-                    (dom/scroll-into-view! parent {:block "center" :behavior "smooth"  :inline "start"})
-                    (do
-                      (dom/scroll-into-view-if-needed! parent {:block "center" :behavior "smooth" :inline "start"})
-                      (reset! scroll-to-middle? true))))))]
+                 #(let [scroll-distance-ratio (dom/get-scroll-distance-ratio node scroll-node)
+                        scroll-behavior (if (> scroll-distance-ratio 1) "instant" "smooth")]
+                    (if scroll-to
+                      (dom/scroll-into-view! parent-node #js {:block "center" :behavior scroll-behavior  :inline "start"})
+                      (do
+                        (dom/scroll-into-view-if-needed! parent-node #js {:block "center" :behavior scroll-behavior :inline "start"})
+                        (reset! scroll-to-middle? true)))))))]
 
         #(when (some? subid)
            (rx/dispose! subid))))
