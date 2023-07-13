@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.path.selection
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
@@ -43,20 +44,27 @@
       (let [id (st/get-path-id state)]
         (update-in state [:workspace-local :edit-path id :hover-handlers] disj [index prefix])))))
 
-(defn select-node-area [shift?]
+(defn select-node-area
+  [shift?]
   (ptk/reify ::select-node-area
     ptk/UpdateEvent
     (update [_ state]
-      (let [selrect (get-in state [:workspace-local :selrect])
-            id (get-in state [:workspace-local :edition])
-            content (st/get-path state :content)
-            selected-point? #(gsh/has-point-rect? selrect %)
-            selected-points (or (get-in state [:workspace-local :edit-path id :selected-points]) #{})
-            positions (into (if shift? selected-points #{})
-                            (comp (filter #(not (= (:command %) :close-path)))
+      (let [selrect         (dm/get-in state [:workspace-local :selrect])
+            id              (dm/get-in state [:workspace-local :edition])
+            content         (st/get-path state :content)
+
+            selected-point? (if (some? selrect)
+                              (partial gsh/has-point-rect? selrect)
+                              (constantly false))
+
+            selected-points (dm/get-in state [:workspace-local :edit-path id :selected-points])
+            selected-points (or selected-points #{})
+
+            xform           (comp (filter #(not (= (:command %) :close-path)))
                                   (map (comp gpt/point :params))
                                   (filter selected-point?))
-                            content)]
+            positions       (into (if shift? selected-points #{}) xform content)]
+
         (cond-> state
           (some? id)
           (assoc-in [:workspace-local :edit-path id :selected-points] positions))))))
