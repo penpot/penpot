@@ -13,23 +13,14 @@
 
 (mf/defc title-bar
   {::mf/wrap-props false}
-  [props]
-  (let [collapsable? (unchecked-get props "collapsable?")
-        collapsed?   (unchecked-get props "collapsed?")
-        on-collapsed (unchecked-get props "on-collapsed")
-        title        (unchecked-get props "title")
-        children     (unchecked-get props "children")
-        on-btn-click (unchecked-get props "on-btn-click")
-        btn-children (unchecked-get props "btn-children")
-        klass        (dm/str (stl/css :title-bar) " "
-                             (unchecked-get props "klass"))]
-
+  [{:keys [collapsable? collapsed? on-collapsed title children on-btn-click btn-children klass]}]
+  (let [klass (dm/str (stl/css :title-bar) " " klass)]
     [:div {:class klass}
      (if collapsable?
        [:button {:class (stl/css :toggle-btn) :on-click on-collapsed}
         [:span {:class (stl/css-case
                         :collased-icon true
-                        :rotated collapsed?)}
+                         :rotated collapsed?)}
          i/arrow-refactor]
         [:div {:class (stl/css :title)} title]]
        [:div {:class (stl/css :title-only)} title])
