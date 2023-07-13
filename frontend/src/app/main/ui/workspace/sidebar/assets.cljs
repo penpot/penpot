@@ -1879,6 +1879,7 @@
         (mf/use-fn
          (mf/deps file-id)
          (fn [_]
+           (st/emit! (dw/set-assets-section-open file-id :typographies true))
            (st/emit! (dwt/add-typography file-id))))
 
         handle-change

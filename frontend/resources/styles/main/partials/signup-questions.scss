@@ -7,12 +7,16 @@
 .signup-questions {
   background-color: $color-white;
   color: $color-gray-60;
-  height: 710px;
   max-width: 646px;
   overflow-y: auto;
   padding: 1.5rem 1rem;
   position: relative;
   width: 100%;
+  form {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
 
   h1,
   h3 {
@@ -32,6 +36,9 @@
   .step-header {
     height: 2.5rem;
     width: 100%;
+  }
+  .custom-select {
+    margin-bottom: 10px;
   }
 
   .step-number {
@@ -71,30 +78,38 @@
       margin: 0.75rem 0 2rem 0;
     }
   }
-
-  .step-prev {
-    position: absolute;
-    left: 1rem;
-    bottom: 1.25rem;
-    button {
-      background-color: transparent;
-      border: none;
-      cursor: pointer;
-      font-size: $fs15;
+  .buttons {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 50% 50%;
+    grid-template-areas: "previous next";
+    .step-prev {
+      display: flex;
+      align-items: end;
+      justify-content: flex-start;
+      grid-area: previous;
+      button {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        height: 40px;
+        font-size: $fs15;
+      }
     }
-  }
 
-  .step-next {
-    display: flex;
-    position: absolute;
-    right: 1rem;
-    bottom: 0rem;
-    input {
-      font-size: $fs15;
-      color: $color-black;
-      background-color: $color-primary;
-      width: 11rem;
-      margin-left: auto;
+    .step-next {
+      display: flex;
+      align-items: end;
+      justify-content: flex-end;
+      grid-area: next;
+      input {
+        font-size: $fs15;
+        color: $color-black;
+        background-color: $color-primary;
+        width: 11rem;
+        margin-left: auto;
+        margin: 0;
+      }
     }
   }
 
