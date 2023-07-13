@@ -40,7 +40,7 @@
                      (rx/take 1))]
     ;; renders #svg image
     (if (some? node)
-      (->> (rx/from (js/createImageBitmap node))
+      (->> (rx/from (wapi/create-image-bitmap-with-workaround node))
            (rx/switch-map  #(uw/ask! {:cmd :thumbnails/render-offscreen-canvas} %))
            (rx/map :result))
 
