@@ -80,17 +80,18 @@
         node-ref (use-resize-observer on-resize)]
     [:*
      (if new-css-system
-      [:& palette {:layout layout}]
-      [:*
-       (when (and colorpalette? (not hide-ui?))
-       [:& colorpalette])
+       [:& palette {:layout layout}]
+       [:*
+        (when (and colorpalette? (not hide-ui?))
+          [:& colorpalette])
 
-     (when (and textpalette? (not hide-ui?))
-       [:& textpalette])])
+        (when (and textpalette? (not hide-ui?))
+          [:& textpalette])])
 
      [:section.workspace-content
       {:key (dm/str "workspace-" page-id)
        :ref node-ref}
+
       [:section.workspace-viewport
        (when (debug? :coordinates)
          [:& coordinates/coordinates {:colorpalette? colorpalette?}])

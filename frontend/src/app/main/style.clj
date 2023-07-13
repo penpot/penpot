@@ -17,10 +17,7 @@
 (def ^:private xform-css
   (map (fn [k]
          (let [cn (name k)]
-           (if (and (qualified-keyword? k)
-                    (= "app.main.style" (namespace k)))
-             (or (get *css-data* (keyword cn)) cn)
-             cn)))))
+           (or (get *css-data* (keyword cn)) cn)))))
 
 (defmacro css*
   "Just coerces all params to strings and concats them with
@@ -39,6 +36,7 @@
         path  (str (subs fname 0 (- (count fname) 4)) "css.json")
         data  (-> (slurp (io/resource path))
                   (json/read-str :key-fn keyword))]
+
     (if (symbol? (first selectors))
       `(if ~(with-meta (first selectors) {:tag 'boolean})
          (css* ~@(binding [*css-data* data]
@@ -60,14 +58,9 @@
    (partition-all 2)
    (keep (fn [[k v]]
            (let [cls (cond
-                       (and (qualified-keyword? k)
-                            (= "app.main.style" (namespace k)))
+                       (keyword? k)
                        (let [cn (name k)]
                          (or (get *css-data* (keyword cn)) cn))
-
-                       (simple-keyword? k)
-                       (name k)
-
                        (string? k)
                        k)]
              (when cls
