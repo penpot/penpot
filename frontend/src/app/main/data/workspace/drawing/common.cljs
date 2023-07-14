@@ -63,7 +63,7 @@
 
              ;; Add & select the created shape to the workspace
              (rx/concat
-              (if (or (= :text (:type shape)) (= :frame (:type shape)))
+              (if (= :frame (:type shape))
                 (rx/of (dwu/start-undo-transaction (:id shape)))
                 (rx/empty))
 

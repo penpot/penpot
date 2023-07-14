@@ -114,6 +114,10 @@
              [shape changes]
              (prepare-add-shape changes attrs objects selected)
 
+             changes (cond-> changes
+                       (cph/text-shape? shape)
+                       (pcb/set-undo-group (:id shape)))
+
              undo-id (js/Symbol)]
 
          (rx/concat
