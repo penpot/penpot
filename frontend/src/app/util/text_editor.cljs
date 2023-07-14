@@ -73,6 +73,10 @@
   (let [block (impl/getCurrentBlock state)]
     (get-editor-block-data block)))
 
+(defn is-current-empty
+  [state]
+  (impl/isCurrentEmpty state))
+
 (defn get-editor-current-inline-styles
   [state]
   (if (impl/isCurrentEmpty state)
