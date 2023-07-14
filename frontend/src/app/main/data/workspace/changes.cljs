@@ -51,7 +51,7 @@
 
 (defn update-shapes
   ([ids update-fn] (update-shapes ids update-fn nil))
-  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-remote? ignore-touched]
+  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-remote? ignore-touched undo-group]
                    :or {reg-objects? false save-undo? true stack-undo? false ignore-remote? false ignore-touched false}}]
    (dm/assert! (sm/coll-of-uuid? ids))
    (dm/assert! (fn? update-fn))
@@ -78,7 +78,9 @@
                         (-> (pcb/empty-changes it page-id)
                             (pcb/set-save-undo? save-undo?)
                             (pcb/set-stack-undo? stack-undo?)
-                            (pcb/with-objects objects))
+                            (pcb/with-objects objects)
+                            (cond-> undo-group
+                              (pcb/set-undo-group undo-group)))
                         ids)
              changes (add-undo-group changes state)]
          (rx/concat
