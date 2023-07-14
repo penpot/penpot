@@ -6,6 +6,7 @@
 
 (ns app.common.geom.align
   (:require
+   [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :refer [get-children]]))
@@ -32,9 +33,9 @@
   move also all of its recursive children."
   [shape rect axis objects]
   (let [wrapper-rect (gsh/shapes->rect [shape])
-        align-pos (calc-align-pos wrapper-rect rect axis)
-        delta {:x (- (:x align-pos) (:x wrapper-rect))
-               :y (- (:y align-pos) (:y wrapper-rect))}]
+        align-pos    (calc-align-pos wrapper-rect rect axis)
+        delta        (gpt/point (- (:x align-pos) (:x wrapper-rect))
+                                (- (:y align-pos) (:y wrapper-rect)))]
     (recursive-move shape delta objects)))
 
 (defn calc-align-pos
