@@ -437,7 +437,7 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defmethod migrate 21
+(defmethod migrate 25
   [data]
   (letfn [(update-object [object]
             (-> object
@@ -449,7 +449,7 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defmethod migrate 22
+(defmethod migrate 26
   [data]
   (letfn [(update-object [object]
             (cond-> object
@@ -466,7 +466,7 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defmethod migrate 23
+(defmethod migrate 27
   [data]
   (letfn [(update-object [object]
             (cond-> object
@@ -493,7 +493,7 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defmethod migrate 24
+(defmethod migrate 28
   [data]
   (letfn [(update-object [objects object]
             (let [frame-id (:frame-id object)
