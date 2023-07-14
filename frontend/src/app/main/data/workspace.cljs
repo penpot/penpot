@@ -1056,10 +1056,10 @@
 
 (defn align-object-to-parent
   [objects object-id axis]
-  (let [object (get objects object-id)
-        parent (:parent-id (get objects object-id))
-        parent-obj (get objects parent)]
-    (gal/align-to-rect object parent-obj axis objects)))
+  (let [object     (get objects object-id)
+        parent-id  (:parent-id (get objects object-id))
+        parent     (get objects parent-id)]
+    (gal/align-to-rect object parent axis objects)))
 
 (defn align-objects-list
   [objects selected axis]
