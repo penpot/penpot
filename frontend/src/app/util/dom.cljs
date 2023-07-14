@@ -542,9 +542,6 @@
   (when (and (some? node1) (some? node2))
     (.contains ^js node2 ^js node1)))
 
-(defn get-user-agent []
-  (.-userAgent globals/navigator))
-
 (defn get-active []
   (.-activeElement globals/document))
 
