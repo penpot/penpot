@@ -11,7 +11,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc color-bullet
-  {::mf/wrap [mf/memo]}
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
   [{:keys [color on-click]}]
   (let [on-click (mf/use-fn
                   (mf/deps color on-click)
@@ -36,7 +37,9 @@
             [:div.color-bullet-left {:style {:background (uc/color->background (assoc color :opacity 1))}}]
             [:div.color-bullet-right {:style {:background (uc/color->background color)}}]])]))))
 
-(mf/defc color-name [{:keys [color size on-click on-double-click]}]
+(mf/defc color-name
+  {::mf/wrap-props false}
+  [{:keys [color size on-click on-double-click]}]
   (let [color (if (string? color) {:color color :opacity 1} color)
         {:keys [name color gradient]} color
         color-str (or name color (uc/gradient-type->string (:type gradient)))]
