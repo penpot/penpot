@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as log]
+   [app.config :as cf]
    [app.util.object :as obj]
    [app.util.thumbnails :as th]
    [beicon.core :as rx]
@@ -150,20 +151,41 @@
   ([image options]
    (js/createImageBitmap image options)))
 
+(defn create-image
+  [src width height]
+  (p/create
+   (fn [resolve reject]
+     (let [img (.createElement js/document "img")]
+       (obj/set! img "width" width)
+       (obj/set! img "height" height)
+       (obj/set! img "src" src)
+       (obj/set! img "onload" #(resolve img))
+       (obj/set! img "onerror" reject)))))
+
 ;; Why this? Because as described in https://bugs.chromium.org/p/chromium/issues/detail?id=1463435
 ;; the createImageBitmap seems to apply premultiplied alpha multiples times on the same image
 ;; which results in harsh borders around text being rendered. This is a workaround to avoid this issue.
 (defn create-image-bitmap-with-workaround
   ([image]
    (create-image-bitmap-with-workaround image nil))
-  ([image options]
+  ([^js image options]
    (let [width (.-value (.-baseVal (.-width image)))
          height (.-value (.-baseVal (.-height image)))
          [width height] (th/get-proportional-size width height)
-         offscreen-canvas (create-offscreen-canvas width height)
-         offscreen-context (.getContext offscreen-canvas "2d")]
-     (.drawImage offscreen-context image 0 0)
-     (create-image-bitmap offscreen-canvas options))))
+
+         image-source
+         (if (cf/check-browser? :safari)
+           (let [src (.-baseVal (.-href image))]
+             (create-image src width height))
+           (p/resolved image))]
+
+     (-> image-source
+         (p/then
+          (fn [html-img]
+            (let [offscreen-canvas (create-offscreen-canvas width height)
+                  offscreen-context (.getContext offscreen-canvas "2d")]
+              (.drawImage offscreen-context html-img 0 0)
+              (create-image-bitmap offscreen-canvas options))))))))
 
 (defn request-fullscreen
   [el]
