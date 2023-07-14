@@ -78,11 +78,11 @@
 
        (if local?
          [:*
-          [:span file-name " (" (tr "workspace.assets.local-library") ")"]
+          [:span.library-title file-name " (" (tr "workspace.assets.local-library") ")"]
           (when shared?
             [:span.tool-badge (tr "workspace.assets.shared")])]
          [:*
-          [:span file-name]
+          [:span.library-title file-name]
           [:span.tool-link.tooltip.tooltip-left {:alt "Open library file"}
            [:a {:href (str "#" url)
                 :target "_blank"

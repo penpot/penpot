@@ -155,6 +155,7 @@
 (dm/export gco/shapes->rect)
 (dm/export gco/points->center)
 (dm/export gco/transform-points)
+(dm/export gco/shape->points)
 
 (dm/export gtr/move)
 (dm/export gtr/absolute-move)

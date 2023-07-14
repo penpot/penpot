@@ -473,7 +473,7 @@
          (cond-> modif-tree
            snap-pixel? (gpp/adjust-pixel-precision objects snap-precision snap-ignore-axis))
 
-         bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points]))
+         bounds (d/lazy-map (keys objects) #(gco/shape->points (get objects %)))
          bounds (cond-> bounds
                   (some? old-modif-tree)
                   (transform-bounds objects old-modif-tree))

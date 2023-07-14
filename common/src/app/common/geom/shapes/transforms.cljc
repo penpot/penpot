@@ -337,13 +337,11 @@
         ;; NOTE: ensure we have a fresh shallow copy of shape
         shape     (cr/clone shape)
         shape     (adjust-shape-flips! shape points)
-
+        
         center    (gco/points->center points)
         selrect   (calculate-selrect points center)
         transform (calculate-transform points center selrect)
-        inverse   (when (some? transform) (gmt/inverse transform))
-
-        ]
+        inverse   (when (some? transform) (gmt/inverse transform))]
 
     (if-not (and (some? inverse) (some? transform))
       shape

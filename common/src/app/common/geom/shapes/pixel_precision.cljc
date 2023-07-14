@@ -63,7 +63,7 @@
 (defn set-pixel-precision
   "Adjust modifiers so they adjust to the pixel grid"
   [modifiers shape precision ignore-axis]
-  (let [points (-> shape :points (gco/transform-points (ctm/modifiers->transform modifiers)))
+  (let [points (-> shape gco/shape->points (gco/transform-points (ctm/modifiers->transform modifiers)))
         has-resize? (not (ctm/only-move? modifiers))
 
         [modifiers points]

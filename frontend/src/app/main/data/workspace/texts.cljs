@@ -627,6 +627,18 @@
            (rx/of (update-text-attrs {:id id :attrs attrs}))
            (rx/empty)))))))
 
+(defn update-all-attrs
+  [ids attrs]
+  (ptk/reify ::update-all-attrs
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (->> (rx/from ids)
+              (rx/map #(update-attrs % attrs)))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+
 
 (defn apply-typography
   "A higher level event that has the resposability of to apply the

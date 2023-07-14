@@ -130,11 +130,13 @@
         (mf/use-callback
          (mf/deps shape state)
          (fn [event]
-           (dom/stop-propagation event)
-           (dom/prevent-default event)
-           (st/emit! ::dwt/finalize-editor-state)
-           (st/emit! (dwt/initialize-editor-state shape default-decorator))
-           (reset! blurred true)))
+           (let [is-empty? (ted/is-current-empty state)]
+             (dom/stop-propagation event)
+             (dom/prevent-default event)
+             (when (not is-empty?)
+               (st/emit! ::dwt/finalize-editor-state)
+               (st/emit! (dwt/initialize-editor-state shape default-decorator)))
+             (reset! blurred true))))
 
         on-focus
         (mf/use-callback

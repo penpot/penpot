@@ -407,9 +407,9 @@
 
 (defn- prepare-duplicate-shape-change
   ([changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id]
-   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id (:frame-id obj) (:parent-id obj)))
+   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id (:frame-id obj) (:parent-id obj) false))
 
-  ([changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id frame-id parent-id]
+  ([changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id frame-id parent-id duplicating-component?]
    (cond
      (nil? obj)
      changes
@@ -423,8 +423,9 @@
            parent-id   (or parent-id frame-id)
            name        (:name obj)
 
-           is-component-root? (:saved-component-root obj)
-           is-component-main? (:main-instance obj)
+           is-component-root? (or (:saved-component-root? obj) (ctk/instance-root? obj))
+           duplicating-component? (or duplicating-component? is-component-root?)
+           is-component-main? (ctk/main-instance? obj)
            regenerate-component
            (fn [changes shape]
              (let [components-v2 (dm/get-in library-data [:options :components-v2])
@@ -437,20 +438,20 @@
                                   :parent-id parent-id
                                   :frame-id frame-id)
                            (dissoc :shapes
-                                   :main-instance
-                                   :shape-ref
-                                   :use-for-thumbnail)
+                                   :main-instance?
+                                   :use-for-thumbnail?)
                            (gsh/move delta)
                            (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))
 
                            (cond-> (ctl/grid-layout? obj)
                              (remap-grid-cells ids-map)))
 
-           changes (-> (pcb/add-object changes new-obj)
-                       (pcb/amend-last-change #(assoc % :old-id (:id obj)))
-                       (cond-> (ctl/grid-layout? objects (:parent-id obj))
-                         (-> (pcb/update-shapes [(:parent-id obj)] ctl/assign-cells)
-                             (pcb/reorder-grid-children [(:parent-id obj)]))))
+           new-obj (cond-> new-obj
+                     (not duplicating-component?)
+                     (dissoc :shape-ref))
+
+           changes (-> (pcb/add-object changes new-obj {:ignore-touched duplicating-component?})
+                       (pcb/amend-last-change #(assoc % :old-id (:id obj))))
 
            changes (cond-> changes
                      (and is-component-root? is-component-main?)
@@ -470,7 +471,8 @@
                                                  it
                                                  file-id
                                                  (if frame? new-id frame-id)
-                                                 new-id))
+                                                 new-id
+                                                 duplicating-component?))
                changes
                (map (d/getf objects) (:shapes obj)))))))
 
