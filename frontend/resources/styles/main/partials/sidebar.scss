@@ -85,6 +85,15 @@
           }
         }
 
+        span.library-title {
+          color: $color-gray-10;
+          font-size: $fs14;
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
         .tool-window-bar-icon {
           height: 21px;
           display: flex;
