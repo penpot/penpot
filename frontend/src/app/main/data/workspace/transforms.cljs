@@ -712,18 +712,18 @@
   (ptk/reify ::update-position
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
-            shape   (get objects id)
+      (let [page-id    (:current-page-id state)
+            objects    (wsh/lookup-page-objects state page-id)
+            shape      (get objects id)
 
             ;; FIXME: performance rect
-            bbox (-> shape :points grc/points->rect)
+            bbox       (-> shape :points grc/points->rect)
 
-            cpos (gpt/point (:x bbox) (:y bbox))
-            pos  (gpt/point (or (:x position) (:x bbox))
-                            (or (:y position) (:y bbox)))
+            cpos       (gpt/point (:x bbox) (:y bbox))
+            pos        (gpt/point (or (:x position) (:x bbox))
+                               (or (:y position) (:y bbox)))
 
-            delta (gpt/subtract pos cpos)
+            delta      (gpt/subtract pos cpos)
 
             modif-tree (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
 
