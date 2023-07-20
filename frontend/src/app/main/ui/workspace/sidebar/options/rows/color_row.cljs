@@ -14,7 +14,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
-   [app.main.ui.components.color-input :refer [color-input]]
+   [app.main.ui.components.color-input :refer [color-input*]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.formats :as fmt]
@@ -193,13 +193,13 @@
        :else
        [:*
         [:div.color-info
-         [:> color-input {:value (if (uc/multiple? color)
-                                   ""
-                                   (-> color :color uc/remove-hash))
-                          :placeholder (tr "settings.multiple")
-                          :on-focus on-focus
-                          :on-blur on-blur
-                          :on-change handle-value-change}]]
+         [:> color-input* {:value (if (uc/multiple? color)
+                                    ""
+                                    (-> color :color uc/remove-hash))
+                           :placeholder (tr "settings.multiple")
+                           :on-focus on-focus
+                           :on-blur on-blur
+                           :on-change handle-value-change}]]
 
         (when (and (not disable-opacity)
                    (not (:gradient color)))

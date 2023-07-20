@@ -23,7 +23,7 @@
       (uc/parse-color)
       (uc/prepend-hash)))
 
-(mf/defc color-input
+(mf/defc color-input*
   {::mf/wrap-props false
    ::mf/forward-ref true}
   [props external-ref]
