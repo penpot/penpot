@@ -39,6 +39,20 @@
                          other))]
       {:node result})))
 
+(defn penpot-with-atomic
+  [{:keys [node]}]
+  (let [[_ params & other] (:children node)
+
+        result (if (api/vector-node? params)
+                 (api/list-node
+                  (into [(api/token-node (symbol "clojure.core" "with-open")) params] other))
+                 (api/list-node
+                  (into [(api/token-node (symbol "clojure.core" "with-open"))
+                         (api/vector-node [params params])]
+                        other)))
+
+        ]
+    {:node result}))
 
 (defn penpot-defrecord
   [{:keys [:node]}]
