@@ -5,58 +5,73 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.components.radio-buttons
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.math :as math]
    [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-(def ctx-radio-button (mf/create-context nil))
+(def context
+  (mf/create-context nil))
 
 (mf/defc radio-button
   {::mf/wrap-props false}
   [props]
-  (let [ctx (mf/use-ctx ctx-radio-button)
-        icon  (unchecked-get props "icon")
-        id (unchecked-get props "id")
-        on-change (:on-change ctx)
-        selected (:selected ctx)
-        value (unchecked-get props "value")
-        checked? (= selected value)
-        name (:name ctx)]
+  (let [context   (mf/use-ctx context)
+
+        icon      (unchecked-get props "icon")
+        id        (unchecked-get props "id")
+        value     (unchecked-get props "value")
+
+        on-change (unchecked-get context "on-change")
+        selected  (unchecked-get context "selected")
+        name      (unchecked-get context "name")
+
+        encode-fn (unchecked-get context "encode-fn")
+        checked?  (= selected value)]
+
     [:label {:for id
-             :class (dom/classnames (css :radio-icon) true
-                                    (css :checked) checked?)}
-     icon
+             :class (stl/css-case
+                     :radio-icon true
+                     :checked checked?)}
+
+     (when (some? icon) icon)
+
      [:input {:id id
               :on-change on-change
               :type "radio"
               :name name
-              :value value
-              :checked  checked?}]]))
+              :value (encode-fn value)
+              :checked checked?}]]))
 
 (mf/defc nilable-option
   {::mf/wrap-props false}
   [props]
-  (let [ctx (mf/use-ctx ctx-radio-button)
-        icon  (unchecked-get props "icon")
-        id (unchecked-get props "id")
-        on-change (:on-change ctx)
-        selected (:selected ctx)
-        value (unchecked-get props "value")
-        checked? (= selected value)
-        name (:name ctx)]
+  (let [context   (mf/use-ctx context)
+        icon      (unchecked-get props "icon")
+        id        (unchecked-get props "id")
+        value     (unchecked-get props "value")
+
+        on-change (unchecked-get context "on-change")
+        selected  (unchecked-get context "selected")
+        name      (unchecked-get context "name")
+
+        encode-fn (unchecked-get context "encode-fn")
+        checked?  (= selected value)]
+
     [:label {:for id
-             :class (dom/classnames (css :radio-icon) true
-                                    (css :checked) checked?)}
+             :class (stl/css-case
+                     :radio-icon true
+                     :checked checked?)}
      icon
      [:input {:id id
               :on-change on-change
               :type "checkbox"
               :name name
-              :value value
-              :checked  checked?}]]))
+              :value (encode-fn value)
+              :checked checked?}]]))
 
 (mf/defc radio-buttons
   {::mf/wrap-props false}
@@ -65,14 +80,36 @@
         on-change (unchecked-get props "on-change")
         selected  (unchecked-get props "selected")
         name      (unchecked-get props "name")
-        calculate-width (fmt/format-pixels (+ (math/pow 2 (count children)) (* 28 (count children))))
-        handle-change
+
+        encode-fn (d/nilv (unchecked-get props "encode-fn") identity)
+        decode-fn (d/nilv (unchecked-get props "encode-fn") identity)
+
+        nitems    (if (array? children)
+                    (alength children)
+                    1)
+
+        width     (mf/with-memo [nitems]
+                    (fmt/format-pixels
+                     (+ (math/pow 2 nitems)
+                        (* 28 nitems))))
+
+        on-change'
         (mf/use-fn
          (mf/deps on-change)
          (fn [event]
            (let [value (dom/get-target-val event)]
-             (on-change value event))))]
-    [:& (mf/provider ctx-radio-button) {:value {:selected selected :on-change handle-change :name name}}
-     [:div {:class (css :radio-btn-wrapper)
-                          :style {:width calculate-width}}
+             (when (fn? on-change)
+               (on-change (decode-fn value) event)))))
+
+        context-value
+        (mf/with-memo [selected on-change' name encode-fn decode-fn]
+          #js {:selected selected
+               :on-change on-change'
+               :name name
+               :encode-fn encode-fn
+               :decode-fn decode-fn})]
+
+    [:& (mf/provider context) {:value context-value}
+     [:div {:class (stl/css :radio-btn-wrapper)
+            :style {:width width}}
       children]]))
