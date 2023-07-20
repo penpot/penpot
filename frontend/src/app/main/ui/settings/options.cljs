@@ -35,6 +35,7 @@
     (st/emit! (du/update-profile (with-meta data mdata)))))
 
 (mf/defc options-form
+  {::mf/wrap-props false}
   []
   (let [profile (mf/deref refs/profile)
         initial (mf/with-memo [profile]
@@ -66,7 +67,7 @@
                        :options [{:label "Penpot Dark (default)" :value "default"}
                                  {:label "Penpot Light" :value "light"}]
                        :data-test "setting-theme"}]])
-     [:& fm/submit-button
+     [:> fm/submit-button*
       {:label (tr "dashboard.update-settings")
        :data-test "submit-lang-change"}]]))
 

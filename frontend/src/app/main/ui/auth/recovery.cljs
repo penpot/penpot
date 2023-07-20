@@ -72,7 +72,7 @@
                     :name :password-2
                     :label (tr "auth.confirm-password")}]]
 
-     [:& fm/submit-button
+     [:> fm/submit-button*
       {:label (tr "auth.recovery-submit")}]]))
 
 ;; --- Recovery Request Page

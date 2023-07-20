@@ -177,12 +177,12 @@
       [:div.buttons-stack
        (when (or (contains? cf/flags :login)
                  (contains? cf/flags :login-with-password))
-         [:& fm/submit-button
+         [:> fm/submit-button*
           {:label (tr "auth.login-submit")
            :data-test "login-submit"}])
 
        (when (contains? cf/flags :login-with-ldap)
-         [:& fm/submit-button
+         [:> fm/submit-button*
           {:label (tr "auth.login-with-ldap-submit")
            :on-click on-submit-ldap}])]]]))
 

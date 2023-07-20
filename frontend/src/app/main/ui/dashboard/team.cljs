@@ -185,9 +185,10 @@
                            :on-submit  on-submit}]]
 
       [:div.action-buttons
-       [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")
-                             :disabled (and (boolean (some current-data-emails current-members-emails))
-                                            (empty? (remove current-members-emails current-data-emails)))}]]]]))
+       [:> fm/submit-button*
+        {:label (tr "modals.invite-member-confirm.accept")
+         :disabled (and (boolean (some current-data-emails current-members-emails))
+                        (empty? (remove current-members-emails current-data-emails)))}]]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MEMBERS SECTION
@@ -814,7 +815,7 @@
           {:type "button"
            :value (tr "labels.cancel")
            :on-click #(modal/hide!)}]
-         [:& fm/submit-button
+         [:> fm/submit-button*
           {:label (if webhook
                     (tr "modals.edit-webhook.submit-label")
                     (tr "modals.create-webhook.submit-label"))}]]]]]]))

@@ -26,7 +26,7 @@
    children
    [:div.buttons
     [:div.step-next
-     [:& fm/submit-button
+     [:> fm/submit-button*
       {:label (if (< step 4) (tr "questions.next") (tr "questions.start"))
        :class "step-next"}]]
 
@@ -114,7 +114,7 @@
                                      {:label (tr "questions.never-used-a-tool") :value "never-used-a-tool" :image "images/form/never-used.png"}
                                      {:label (tr "questions.other") :value "other"}]
                            :name :experience-design-tool
-                           :on-change-value on-design-tool-change}]
+                           :on-change on-design-tool-change}]
      [:div.other
       [:label (tr "questions.other")]
       [:& fm/input {:name :experience-design-tool-other :label (tr "questions.other") :disabled (not= experience-design-tool "other")}]]]))
@@ -152,7 +152,7 @@
                                      {:label (tr "questions.student-teacher") :value "student-teacher"}
                                      {:label (tr "questions.other") :value "other"}]
                            :name :role
-                           :on-change-value on-role-change}]
+                           :on-change on-role-change}]
      [:div.other
       [:label (tr "questions.other")]
       [:& fm/input {:name :role-other :label (tr "questions.other") :disabled (not= role "other")}]]

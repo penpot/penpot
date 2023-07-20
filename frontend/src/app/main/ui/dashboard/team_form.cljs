@@ -95,7 +95,7 @@
 
        [:div.modal-footer
         [:div.action-buttons
-         [:& fm/submit-button
+         [:> fm/submit-button*
           {:label (if team
                     (tr "labels.update-team")
                     (tr "labels.create-team"))}]]]]]]))

@@ -76,7 +76,7 @@
         :name :content
         :rows 5}]]
 
-     [:& fm/submit-button
+     [:> fm/submit-button*
       {:label (if @loading (tr "labels.sending") (tr "labels.send"))
        :disabled @loading}]
 

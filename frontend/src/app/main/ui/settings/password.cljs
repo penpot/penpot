@@ -98,7 +98,7 @@
         :name :password-2
         :label (t locale "labels.confirm-password")}]]
 
-     [:& fm/submit-button
+     [:> fm/submit-button*
       {:label (t locale "dashboard.update-settings")
        :data-test "submit-password"}]]))
 
