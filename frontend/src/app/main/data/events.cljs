@@ -222,9 +222,7 @@
                   :body (http/transit-data {:events events})}]
       (->> (http/send! params)
            (rx/mapcat rp/handle-response)
-           (rx/catch (fn [_]
-                       (l/error :hint "unexpected error on persisting audit events")
-                       (rx/of nil)))))
+           (rx/catch (fn [_] (rx/of nil)))))
 
     (rx/of nil)))
 
