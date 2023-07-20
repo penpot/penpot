@@ -9,13 +9,19 @@
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
-(mf/defc link [{:keys [action klass data-test keyboard-action children]}]
-  (let [keyboard-action (or keyboard-action action)]
-    [:a {:on-click action
-         :class klass
-         :on-key-down (fn [event]
-                        (when (kbd/enter? event)
-                          (keyboard-action event)))
+(mf/defc link
+  {::mf/wrap-props false}
+  [{:keys [on-click class data-test on-key-enter children]}]
+  (let [on-key-enter (or on-key-enter on-click)
+        on-key-down
+        (mf/use-fn
+         (mf/deps on-key-enter)
+         (fn [event]
+           (when (and (kbd/enter? event) (fn? on-key-enter))
+             (on-key-enter event))))]
+    [:a {:on-click on-click
+         :on-key-down on-key-down
+         :class class
          :tab-index "0"
          :data-test data-test}
-   [:* children]]))
+     children]))
