@@ -13,6 +13,7 @@
    [app.main.ui.settings.delete-account]
    [app.main.ui.settings.feedback :refer [feedback-page]]
    [app.main.ui.settings.options :refer [options-page]]
+   [app.main.ui.settings.passkeys :refer [passkeys-page]]
    [app.main.ui.settings.password :refer [password-page]]
    [app.main.ui.settings.profile :refer [profile-page]]
    [app.main.ui.settings.sidebar :refer [sidebar]]
@@ -59,5 +60,8 @@
          [:& options-page {:locale locale}]
 
          :settings-access-tokens
-         [:& access-tokens-page])]]]))
+         [:& access-tokens-page]
+
+         :settings-passkeys
+         [:& passkeys-page])]]]))
 

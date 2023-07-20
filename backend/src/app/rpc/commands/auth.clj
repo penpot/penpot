@@ -22,11 +22,13 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.commands.webauthn :as webauthn]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.util.totp :as totp]
    [cuerdas.core :as str]))
 
 (def schema:password
@@ -37,8 +39,65 @@
 
 ;; ---- COMMAND: login with password
 
+(defn- check-password!
+  [cfg profile {:keys [password]}]
+  (if (= (:password profile) "!")
+    (ex/raise :type :validation
+              :code :account-without-password
+              :hint "the current account does not have password")
+    (let [result (profile/verify-password cfg password (:password profile))]
+      (when (:update result)
+        (l/trace :hint "updating profile password" :id (:id profile) :email (:email profile))
+        (profile/update-profile-password! cfg (assoc profile :password password)))
+      (:valid result))))
+
+(defn validate-profile!
+  [cfg {:keys [totp] :as params} {:keys [props] :as profile}]
+
+  (when-not profile
+    (ex/raise :type :validation
+              :code :wrong-credentials))
+
+  (when-not (:is-active profile)
+    (ex/raise :type :validation
+              :code :wrong-credentials))
+
+  (when (:is-blocked profile)
+    (ex/raise :type :restriction
+              :code :profile-blocked))
+
+  (when (= :totp (:2fa props))
+    (if (some? totp)
+      (when-not (totp/valid-code? (:2fa/secret props) totp)
+        (ex/raise :type :negotiation
+                  :code :invalid-totp))
+      (ex/raise :type :negotiation
+                :code :totp)))
+
+  (when-not (check-password! cfg profile params)
+    (ex/raise :type :validation
+              :code :wrong-credentials))
+
+  (when (= :passkey (:2fa props))
+    ;; NOTE: as we raise negotiation exception the current transaction
+    ;; will be aborted; so for passkey we need another, parallel
+    ;; transaction for persist the new challege
+    (let [data (db/with-atomic cfg
+                 (webauthn/prepare-login-with-passkey cfg profile))]
+      (ex/raise :type :negotiation
+                :code :passkey
+                ::ex/data data)))
+
+  (when-let [deleted-at (:deleted-at profile)]
+    (when (dt/is-after? (dt/now) deleted-at)
+      (ex/raise :type :validation
+                :code :wrong-credentials)))
+
+  profile)
+
+
 (defn login-with-password
-  [{:keys [::db/pool] :as cfg} {:keys [email password] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [email] :as params}]
 
   (when-not (or (contains? cf/flags :login)
                 (contains? cf/flags :login-with-password))
@@ -46,61 +105,32 @@
               :code :login-disabled
               :hint "login is disabled in this instance"))
 
-  (letfn [(check-password [conn profile password]
-            (if (= (:password profile) "!")
-              (ex/raise :type :validation
-                        :code :account-without-password
-                        :hint "the current account does not have password")
-              (let [result (profile/verify-password cfg password (:password profile))]
-                (when (:update result)
-                  (l/trace :hint "updating profile password" :id (:id profile) :email (:email profile))
-                  (profile/update-profile-password! conn (assoc profile :password password)))
-                (:valid result))))
+  (db/with-atomic [conn pool]
+    (let [cfg        (assoc cfg ::db/conn conn)
+          profile    (->> (profile/get-profile-by-email conn email)
+                          (validate-profile! cfg params)
+                          (profile/strip-private-attrs))
 
-          (validate-profile [conn profile]
-            (when-not profile
-              (ex/raise :type :validation
-                        :code :wrong-credentials))
-            (when-not (:is-active profile)
-              (ex/raise :type :validation
-                        :code :wrong-credentials))
-            (when (:is-blocked profile)
-              (ex/raise :type :restriction
-                        :code :profile-blocked))
-            (when-not (check-password conn profile password)
-              (ex/raise :type :validation
-                        :code :wrong-credentials))
-            (when-let [deleted-at (:deleted-at profile)]
-              (when (dt/is-after? (dt/now) deleted-at)
-                (ex/raise :type :validation
-                          :code :wrong-credentials)))
+          invitation (when-let [token (:invitation-token params)]
+                       (tokens/verify (::main/props cfg) {:token token :iss :team-invitation}))
 
-            profile)]
-
-    (db/with-atomic [conn pool]
-      (let [profile    (->> (profile/get-profile-by-email conn email)
-                            (validate-profile conn)
-                            (profile/strip-private-attrs))
-
-            invitation (when-let [token (:invitation-token params)]
-                         (tokens/verify (::main/props cfg) {:token token :iss :team-invitation}))
-
-            ;; If invitation member-id does not matches the profile-id, we just proceed to ignore the
-            ;; invitation because invitations matches exactly; and user can't login with other email and
-            ;; accept invitation with other email
-            response   (if (and (some? invitation) (= (:id profile) (:member-id invitation)))
-                         {:invitation-token (:invitation-token params)}
-                         (assoc profile :is-admin (let [admins (cf/get :admins)]
-                                                    (contains? admins (:email profile)))))]
-        (-> response
-            (rph/with-transform (session/create-fn cfg (:id profile)))
-            (rph/with-meta {::audit/props (audit/profile->props profile)
-                            ::audit/profile-id (:id profile)}))))))
+          ;; If invitation member-id does not matches the profile-id, we just proceed to ignore the
+          ;; invitation because invitations matches exactly; and user can't login with other email and
+          ;; accept invitation with other email
+          response   (if (and (some? invitation) (= (:id profile) (:member-id invitation)))
+                       {:invitation-token (:invitation-token params)}
+                       (assoc profile :is-admin (let [admins (cf/get :admins)]
+                                                  (contains? admins (:email profile)))))]
+      (-> response
+          (rph/with-transform (session/create-fn cfg (:id profile)))
+          (rph/with-meta {::audit/props (audit/profile->props profile)
+                          ::audit/profile-id (:id profile)})))))
 
 (def schema:login-with-password
   [:map {:title "login-with-password"}
    [:email ::sm/email]
    [:password schema:password]
+   [:totp {:optional true} ::sm/word-string]
    [:invitation-token {:optional true} schema:token]])
 
 (sv/defmethod ::login-with-password
@@ -464,5 +494,3 @@
    ::sm/params schema:request-profile-recovery}
   [cfg params]
   (request-profile-recovery cfg params))
-
-

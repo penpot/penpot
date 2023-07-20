@@ -38,6 +38,7 @@
   width: 100%;
   justify-content: center;
   align-items: center;
+  flex-direction: column;
 
   .form-container {
     margin-top: 50px;
@@ -153,6 +154,17 @@
     h2 {
       font-size: $fs14;
       margin-bottom: 20px;
+    }
+  }
+
+  .auth-settings {
+    h2 {
+      color: $color-black;
+    }
+
+    .options-form {
+      margin-top: 40px;
+      width: 368px;
     }
   }
 }
@@ -299,5 +311,96 @@
   .token-created-info {
     font-size: $fs12;
     color: $color-gray-40;
+  }
+}
+
+.dashboard-passkeys {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .passkeys-hero-container {
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .passkeys-hero {
+    font-size: $fs14;
+    padding: $size-6;
+    background-color: $color-white;
+    margin-top: $size-6;
+    display: flex;
+    justify-content: space-between;
+
+    .desc {
+      width: 80%;
+      color: $color-gray-40;
+      h2 {
+        margin-bottom: $size-4;
+        color: $color-black;
+      }
+      p {
+        font-size: $fs16;
+      }
+    }
+
+    .btn-primary {
+      flex-shrink: 0;
+    }
+  }
+
+  .passkeys-empty {
+    text-align: center;
+    max-width: 1000px;
+    width: 100%;
+    padding: $size-6;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 1px dashed $color-gray-20;
+    color: $color-gray-40;
+    margin-top: 12px;
+    min-height: 136px;
+  }
+
+  .table-row {
+    background-color: $color-white;
+    display: grid;
+    grid-template-columns: 1fr 25% 40px 12px;
+    height: 63px;
+    &:not(:first-child) {
+      margin-top: 8px;
+    }
+  }
+
+  .table-field {
+    &.name {
+      color: $color-gray-60;
+      width: 150px;
+    }
+
+    &.create-date {
+      color: $color-gray-40;
+      font-size: $fs14;
+      .content {
+        padding: 2px 5px;
+        &.expired {
+          background-color: $color-warning-lighter;
+          border-radius: $br4;
+          color: $color-gray-40;
+        }
+      }
+    }
+
+    &.passkey-created {
+      word-break: break-all;
+    }
+
+    &.actions {
+      position: relative;
+    }
   }
 }

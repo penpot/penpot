@@ -12,6 +12,7 @@
    [app.config :as cf]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
+   [app.main.errors :as err]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.button-link :as bl]
@@ -79,8 +80,8 @@
 (s/def ::invitation-token ::us/not-empty-string)
 
 (s/def ::login-form
-  (s/keys :req-un [::email ::password]
-          :opt-un [::invitation-token]))
+  (s/keys :req-un [::email]
+          :opt-un [::password ::invitation-token]))
 
 (defn handle-error-messages
   [errors _data]
@@ -94,6 +95,9 @@
   [{:keys [params on-success-callback] :as props}]
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
 
+        totp*   (mf/use-state false)
+        totp?   (deref totp*)
+
         error   (mf/use-state false)
         form    (fm/use-form :spec ::login-form
                              :validators [handle-error-messages]
@@ -101,7 +105,27 @@
 
         on-error
         (fn [cause]
+          (when (map? cause)
+            (err/print-trace! cause)
+            (err/print-data! cause)
+            (err/print-explain! cause))
+
           (cond
+            (and (= :totp (:code cause))
+                 (= :negotiation (:type cause)))
+            (do
+              (reset! totp* true)
+              (reset! error (tr "errors.missing-totp"))
+              (swap! form (fn [form]
+                            (-> form
+                                (update :errors assoc :totp {:message (tr "errors.missing-totp")})
+                                (update :touched assoc :totp true)))))
+
+
+            (and (= :restriction (:type cause))
+                 (= :passkey-disabled (:code cause)))
+            (reset! error (tr "errors.wrong-credentials"))
+
             (and (= :restriction (:type cause))
                  (= :profile-blocked (:code cause)))
             (reset! error (tr "errors.profile-blocked"))
@@ -133,13 +157,25 @@
             (on-success-callback)))
 
         on-submit
-        (mf/use-callback
-         (fn [form _event]
-           (reset! error nil)
-           (let [params (with-meta (:clean-data @form)
-                          {:on-error on-error
-                           :on-success on-success})]
-             (st/emit! (du/login params)))))
+        (mf/use-fn
+         (fn [form event]
+           (let [event      (dom/event->native-event event)
+                 submitter  (unchecked-get event "submitter")
+                 submitter  (dom/get-data submitter "role")]
+
+             (case submitter
+               "login-with-passkey"
+               (let [params (with-meta (:clean-data @form)
+                              {:on-error on-error
+                               :on-success on-success})]
+                 (st/emit! (du/login-with-passkey params)))
+
+               "login-with-password"
+               (let [params (with-meta (:clean-data @form)
+                              {:on-error on-error
+                               :on-success on-success})]
+                 (st/emit! (du/login-with-password params)))
+               nil))))
 
         on-submit-ldap
         (mf/use-callback
@@ -174,17 +210,35 @@
          :help-icon i/eye
          :label (tr "auth.password")}]]
 
+      (when totp?
+        [:div.fields-row
+         [:& fm/input
+          {:type "text"
+           :name :totp
+           :label (tr "auth.totp")}]])
+
       [:div.buttons-stack
        (when (or (contains? cf/flags :login)
                  (contains? cf/flags :login-with-password))
          [:> fm/submit-button*
           {:label (tr "auth.login-submit")
+           :data-role "login-with-password"
            :data-test "login-submit"}])
 
        (when (contains? cf/flags :login-with-ldap)
          [:> fm/submit-button*
           {:label (tr "auth.login-with-ldap-submit")
-           :on-click on-submit-ldap}])]]]))
+           :data-role "login-with-ldap"
+           :on-click on-submit-ldap}])]
+
+      [:section.passkey
+       [:> fm/submit-button*
+        {:data-role "login-with-passkey"
+         :class "btn-passkey-auth"}
+        [:img {:src "/images/passkey.png"}]]]
+
+
+      ]]))
 
 (mf/defc login-buttons
   [{:keys [params] :as props}]

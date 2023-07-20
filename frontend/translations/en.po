@@ -391,6 +391,48 @@ msgstr "The token will expire on %s"
 msgid "dashboard.access-tokens.token-will-not-expire"
 msgstr "The token has no expiration date"
 
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.password.page-title"
+msgstr "Profile - PassKeys"
+
+#: src/app/main/ui/settings/passkeys.cljs
+msgid "dashboard.passkeys.title"
+msgstr "PassKeys"
+
+
+#: src/app/main/ui/settings/passkeys.cljs
+msgid "dashboard.passkeys.description"
+msgstr "Passkeys are a safer and easier alternative to passwords. With passkeys, users can sign in to apps and websites with a biometric sensor (such as a fingerprint or facial recognition), PIN, or pattern, freeing them from having to remember and manage passwords."
+
+#: src/app/main/ui/settings/passkeys.cljs
+msgid "dashboard.passkeys.create"
+msgstr "Add Passkey"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "dashboard.passkeys.sidebar-label"
+msgstr "PassKeys"
+
+#: src/app/main/ui/settings/passkeys.cljs
+msgid "dashboard.passkeys.empty.no-passkeys"
+msgstr "You have no passkeys so far."
+
+#: src/app/main/ui/settings/passkeys.cljs
+msgid "dashboard.passkeys.empty.add-one"
+msgstr "Press the button \"Add PassKey\" to create one."
+
+#: src/app/main/ui/settings/passkeys.cljs
+msgid "modals.delete-passkey.title"
+msgstr "Delete PassKey"
+
+#: src/app/main/ui/settings/passkeys.cljs
+msgid "modals.delete-passkey.message"
+msgstr "Are you sure you want to delete this PassKey?"
+
+#: src/app/main/ui/settings/passkeys.cljs
+msgid "modals.delete-passkey.accept"
+msgstr "Delete PassKey"
+
 #: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
 msgid "dashboard.copy-suffix"
 msgstr "(copy)"
@@ -863,6 +905,14 @@ msgstr "Are you sure?"
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
 msgstr "Authentication provider not configured."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.invalid-totp"
+msgstr "The 2FA token looks invalid"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.totp"
+msgstr "2FA Token"
 
 msgid "errors.auth.unable-to-login"
 msgstr "Looks like you are not authenticated or session expired."

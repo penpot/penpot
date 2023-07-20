@@ -18,6 +18,9 @@
   io.lettuce/lettuce-core {:mvn/version "6.2.6.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
+  com.webauthn4j/webauthn4j-core {:mvn/version "0.21.3.RELEASE"}
+  dev.samstevens.totp/totp {:mvn/version "1.7.1"}
+
   funcool/yetti
   {:git/tag "v9.16"
    :git/sha "7df3e08"
@@ -32,9 +35,6 @@
   com.zaxxer/HikariCP {:mvn/version "5.0.1"}
 
   io.whitfin/siphash {:mvn/version "2.0.0"}
-
-  buddy/buddy-hashers {:mvn/version "2.0.167"}
-  buddy/buddy-sign {:mvn/version "3.5.351"}
 
   com.github.ben-manes.caffeine/caffeine {:mvn/version "3.1.8"}
 

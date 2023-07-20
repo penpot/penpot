@@ -21,7 +21,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
-(defn- print-data!
+(defn print-data!
   [data]
   (-> data
       (dissoc ::sm/explain)
@@ -30,13 +30,13 @@
       (dissoc ::instance)
       (pp/pprint {:width 70})))
 
-(defn- print-explain!
+(defn print-explain!
   [data]
   (when-let [explain (::sm/explain data)]
     (-> (sm/humanize-data explain)
         (pp/pprint {:width 70}))))
 
-(defn- print-trace!
+(defn print-trace!
   [data]
   (some-> data ::trace js/console.log))
 

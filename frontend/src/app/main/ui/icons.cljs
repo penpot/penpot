@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.icons
-  (:refer-clojure :exclude [import mask])
+  (:refer-clojure :exclude [import mask key])
   (:require-macros [app.main.ui.icons :refer [icon-xref]])
   (:require [rumext.v2 :as mf]))
 
@@ -150,7 +150,7 @@
 (def justify-content-row-center (icon-xref :justify-content-row-center))
 (def justify-content-row-end (icon-xref :justify-content-row-end))
 (def justify-content-row-start (icon-xref :justify-content-row-start))
-(def icon-key (icon-xref :icon-key))
+(def key (icon-xref :key))
 (def layers (icon-xref :layers))
 (def layout-columns (icon-xref :layout-columns))
 (def layout-rows (icon-xref :layout-rows))

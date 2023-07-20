@@ -15,9 +15,10 @@
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.media :as di]
+   [app.main.data.messages :as msg]
    [app.main.data.websocket :as ws]
    [app.main.repo :as rp]
-   [app.util.i18n :as i18n]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
    [beicon.core :as rx]
@@ -119,6 +120,40 @@
 
 ;; --- EVENT: login
 
+(defn- create-passkey-assertion
+  "A mandatory step on passkey authentication ceremony"
+  [{:keys [credentials challenge rp-id]}]
+  (let [challenge   (js/Uint8Array. challenge)
+        credentials (->> credentials
+                         (map (fn [credential]
+                                #js {:id credential :type "public-key"}))
+                         (into-array))
+        options     #js {:challenge challenge
+                         :rpId rp-id
+                         :userVerification "preferred"
+                         :allowCredentials credentials
+                         :timeout 30000}
+        platform    (.-credentials js/navigator)]
+
+    (.get ^js platform #js {:publicKey options})))
+
+(defn- login-with-passkey*
+  [assertion data]
+  (js/console.log "login-with-passkey*" assertion)
+  (let [credential-id (unchecked-get assertion "rawId")
+        response      (unchecked-get assertion "response")
+        auth-data     (unchecked-get response "authenticatorData")
+        client-data   (unchecked-get response "clientDataJSON")
+        user-handle   (unchecked-get response "userHandle")
+        signature     (unchecked-get response "signature")
+        params        (-> data
+                          (assoc :credential-id (js/Uint8Array. credential-id))
+                          (assoc :auth-data (js/Uint8Array. auth-data))
+                          (assoc :client-data (js/Uint8Array. client-data))
+                          (assoc :user-handle (some-> user-handle (js/Uint8Array.)))
+                          (assoc :signature (js/Uint8Array. signature)))]
+    (rp/cmd! :login-with-passkey params)))
+
 (defn- logged-in
   "This is the main event that is executed once we have logged in
   profile. The profile can proceed from standard login or from
@@ -148,9 +183,10 @@
 
 (declare login-from-register)
 
-(defn login
-  [{:keys [email password invitation-token] :as data}]
-  (ptk/reify ::login
+(defn login-with-password
+  [{:keys [email password invitation-token totp] :as data}]
+  (prn "login-with-password" data)
+  (ptk/reify ::login-with-password
     ptk/WatchEvent
     (watch [_ _ stream]
       (let [{:keys [on-error on-success]
@@ -159,6 +195,7 @@
 
             params {:email email
                     :password password
+                    :totp totp
                     :invitation-token invitation-token}]
 
         ;; NOTE: We can't take the profile value from login because
@@ -171,6 +208,12 @@
         ;; proceed to logout and show an error message.
 
         (->> (rp/cmd! :login-with-password (d/without-nils params))
+             (rx/catch (fn [cause]
+                         (if (and (= :negotiation (:type cause))
+                                  (= :passkey (:code cause)))
+                           (->> (rx/from (create-passkey-assertion cause))
+                                (rx/mapcat #(login-with-passkey* % data)))
+                           (rx/throw cause))))
              (rx/merge-map (fn [data]
                              (rx/merge
                               (rx/of (fetch-profile))
@@ -267,26 +310,16 @@
 
 (defn update-profile
   [data]
-  (dm/assert! (profile? data))
   (ptk/reify ::update-profile
     ptk/WatchEvent
-    (watch [_ _ stream]
+    (watch [_ _ _]
       (let [mdata      (meta data)
             on-success (:on-success mdata identity)
             on-error   (:on-error mdata rx/throw)]
-        (->> (rp/cmd! :update-profile (dissoc data :props))
-             (rx/mapcat
-              (fn [_]
-                (rx/merge
-                 (->> stream
-                      (rx/filter (ptk/type? ::profile-fetched))
-                      (rx/take 1)
-                      (rx/tap on-success)
-                      (rx/ignore))
-                 (rx/of (profile-fetched data)))))
+        (->> (rp/cmd! :update-profile data)
+             (rx/tap on-success)
+             (rx/map profile-fetched)
              (rx/catch on-error))))))
-
-
 
 ;; --- Request Email Change
 
@@ -501,7 +534,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :create-demo-profile {})
-           (rx/map login)))))
+           (rx/map login-with-password)))))
 
 ;; --- EVENT: fetch-team-webhooks
 
@@ -555,4 +588,122 @@
                   on-error rx/throw}} (meta params)]
         (->> (rp/cmd! :delete-access-token params)
              (rx/tap on-success)
+             (rx/catch on-error))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PASSKEYS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn fetch-passkeys
+  []
+  (ptk/reify ::fetch-passkeys
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :get-profile-passkeys)
+           (rx/map (fn [passkeys]
+                     (fn [state]
+                       (assoc state :passkeys passkeys))))))))
+
+(defn delete-passkey
+  [{:keys [id] :as params}]
+  (us/assert! ::us/uuid id)
+  (ptk/reify ::delete-passkey
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+        (->> (rp/cmd! :delete-profile-passkey params)
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
+(defn create-passkey
+  []
+  (letfn [(create-pubkey [{:keys [challenge user-id user-name user-email rp-id rp-name]}]
+            (let [user     #js {:id user-id
+                                :name user-email
+                                :displayName user-name}
+                  auths    #js {:authenticatorAttachment "cross-platform"
+                                :residentKey "preferred"
+                                :requireResidentKey false
+                                :userVerification "preferred"}
+                  options  #js {:challenge challenge
+                                :rp #js {:id rp-id :name rp-name}
+                                :user user
+                                :pubKeyCredParams #js [#js {:alg -7 :type "public-key"}
+                                                       #js {:alg -257 :type "public-key"}]
+                                :authenticatorSelection auths
+                                :timeout 30000,
+                                :attestation "direct"}
+                  platform (. js/navigator -credentials)]
+              (.create ^js platform #js {:publicKey options})))
+
+          (persist-pubkey [pubkey]
+            (let [response    (unchecked-get pubkey "response")
+                  id          (unchecked-get pubkey "rawId")
+                  attestation (unchecked-get response "attestationObject")
+                  client-data (unchecked-get response "clientDataJSON")
+                  params      {:credential-id (js/Uint8Array. id)
+                               :attestation   (js/Uint8Array. attestation)
+                               :client-data   (js/Uint8Array. client-data)}]
+              (rp/cmd! :create-profile-passkey params)))
+          ]
+
+    (ptk/reify ::create-passkey
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (->> (rp/cmd! :prepare-profile-passkey-registration {})
+             (rx/mapcat create-pubkey)
+             (rx/mapcat persist-pubkey)
+             (rx/map (fn [_] (fetch-passkeys)))
+             (rx/catch (fn [cause]
+                         (if (instance? js/DOMException cause)
+                           (rx/of (msg/show {:type :error
+                                             :tag :passkey
+                                             :timeout 5000
+                                             :content (tr "errors.passkey-rejection-or-timeout")}))
+                           (rx/throw cause)))))))))
+
+(defn login-with-passkey
+  [data]
+  (ptk/reify ::login-with-passkey
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (let [{:keys [on-error on-success]
+             :or {on-error rx/throw
+                  on-success identity}} (meta data)]
+
+        (->> (rp/cmd! :prepare-login-with-passkey data)
+             (rx/mapcat create-passkey-assertion)
+             (rx/mapcat #(login-with-passkey* % data))
+             (rx/merge-map (fn [data]
+                             (rx/merge
+                              (rx/of (fetch-profile))
+                              (->> stream
+                                   (rx/filter profile-fetched?)
+                                   (rx/take 1)
+                                   (rx/map deref)
+                                   (rx/filter (complement is-authenticated?))
+                                   (rx/tap on-error)
+                                   (rx/map #(ex/raise :type :authentication))
+                                   (rx/observe-on :async))
+                              (->> stream
+                                   (rx/filter profile-fetched?)
+                                   (rx/take 1)
+                                   (rx/map deref)
+                                   (rx/filter is-authenticated?)
+                                   (rx/map (fn [profile]
+                                             (with-meta (merge data profile)
+                                               {::ev/source "login"})))
+                                   (rx/tap on-success)
+                                   (rx/map logged-in)
+                                   (rx/observe-on :async)))))
+             (rx/catch (fn [cause]
+                         (if (instance? js/DOMException cause)
+                           (rx/of (msg/show {:type :error
+                                             :tag :passkey
+                                             :timeout 5000
+                                             :content (tr "errors.passkey-rejection-or-timeout")}))
+                           (rx/throw cause))))
              (rx/catch on-error))))))

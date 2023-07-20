@@ -8,6 +8,7 @@
   (:refer-clojure :exclude [deref merge parse-uuid])
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
+   #?(:clj [buddy.core.codecs :as bc])
    [app.common.data.macros :as dm]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
@@ -488,6 +489,26 @@
     ::oapi/type "string"
     ::oapi/format "uri"
     ::oapi/decode (comp u/uri str/trim)}})
+
+#?(:clj
+   (def! ::bytes
+     {:type ::bytes
+      :pred bytes?
+      :type-properties
+      {:title "bytes"
+       :description "bytes"
+       :error/message "expected a bytes instance"
+       :gen/gen (sg/word-string)
+       ::oapi/decode (fn [v]
+                       (if (string? v)
+                         (-> v bc/str->bytes bc/b64->bytes)
+                         v))
+       ::oapi/encode (fn [v]
+                       (if (bytes? v)
+                         (-> v bc/bytes->b64 bc/bytes->str)
+                         v))
+       ::oapi/type "bytes"
+       ::oapi/format "string"}}))
 
 ;; ---- PREDICATES
 
