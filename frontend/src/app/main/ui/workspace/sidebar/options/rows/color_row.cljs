@@ -15,7 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.color-input :refer [color-input]]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
@@ -205,14 +205,14 @@
                    (not (:gradient color)))
           [:div.input-element
            {:class (dom/classnames :percentail (not= (:opacity color) :multiple))}
-           [:> numeric-input {:value (-> color :opacity opacity->string)
-                              :placeholder (tr "settings.multiple")
-                              :select-on-focus select-on-focus
-                              :on-focus on-focus
-                              :on-blur on-blur
-                              :on-change handle-opacity-change
-                              :min 0
-                              :max 100}]])
+           [:> numeric-input* {:value (-> color :opacity opacity->string)
+                               :placeholder (tr "settings.multiple")
+                               :select-on-focus select-on-focus
+                               :on-focus on-focus
+                               :on-blur on-blur
+                               :on-change handle-opacity-change
+                               :min 0
+                               :max 100}]])
         (when select-only
           [:div.element-set-actions-button {:on-click handle-select}
            i/pointer-inner])])
