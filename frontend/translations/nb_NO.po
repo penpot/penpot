@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-05-09 00:37+0000\n"
-"Last-Translator: Allan Nordhøy <epost@anotheragency.no>\n"
+"Last-Translator: Hareland <packagist@proton.me>\n"
 "Language-Team: Norwegian Bokmål "
 "<https://hosted.weblate.org/projects/penpot/frontend/nb_NO/>\n"
 "Language: nb_NO\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.7-dev\n"
+"X-Generator: PHPStorm\n"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -76,15 +76,15 @@ msgstr "Din Penpot"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.delete-team"
-msgstr "Slett lag"
+msgstr "Slett team"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "Inviter til lag"
+msgstr "Inviter til team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
-msgstr "Forlat lag"
+msgstr "Forlat team"
 
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
@@ -101,7 +101,7 @@ msgstr "Flytt %s filer til"
 #: src/app/main/ui/dashboard/file_menu.cljs
 #, fuzzy
 msgid "dashboard.move-to-other-team"
-msgstr "Flytt til annet lag"
+msgstr "Flytt til annet team"
 
 #: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
 #, fuzzy
@@ -157,7 +157,7 @@ msgstr "Velg grensesnittsspråk"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.select-ui-theme"
-msgstr "Velg drakt"
+msgstr "Velg tema"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.show-all-files"
@@ -165,11 +165,11 @@ msgstr "Vis alle filer"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
-msgstr "Laginfo"
+msgstr "Teaminfo"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-members"
-msgstr "Lagmedlemmer"
+msgstr "Teammedlemmer"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-projects"
@@ -177,7 +177,7 @@ msgstr "Lagprosjekter"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.theme-change"
-msgstr "Grensesnittsdrakt"
+msgstr "Utseende"
 
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
@@ -319,7 +319,7 @@ msgstr "Opprett nytt lag"
 
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team.placeholder"
-msgstr "Skriv inn nytt lagnavn"
+msgstr "Skriv inn nytt teamnavn"
 
 msgid "labels.custom-fonts"
 msgstr "Egendefinerte skrifter"
@@ -509,11 +509,11 @@ msgstr "Slett medlem"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
-msgstr "Slett lagmedlem"
+msgstr "Slett teammedlem"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.accept"
-msgstr "Forlat lag"
+msgstr "Forlat team"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
