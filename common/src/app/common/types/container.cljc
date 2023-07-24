@@ -101,7 +101,7 @@
      (nil? shape)
      nil
 
-     (cph/root-frame? shape)
+     (cph/root? shape)
      nil
 
      (and (not (ctk/in-component-copy? shape)) (not allow-main?))
