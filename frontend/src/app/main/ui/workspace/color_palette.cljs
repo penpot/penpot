@@ -12,7 +12,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet-new :as cb]
-   [app.main.ui.hooks :as h]
+   ;; [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.color :as uc]
    [app.util.dom :as dom]
@@ -37,8 +37,9 @@
 
 (mf/defc palette
   [{:keys [current-colors size width]}]
-  (let [;; We had to do this due to a bug that leave some bugged colors
-        current-colors (h/use-equal-memo (filter #(or (:gradient %) (:color %)) current-colors))
+  (let [;; FIXME: see colorpalette.cljs (line 39)
+        ;; We had to do this due to a bug that leave some bugged colors
+        ;; current-colors (h/use-equal-memo (filter #(or (:gradient %) (:color %)) current-colors))
         state          (mf/use-state {:show-menu false})
         offset-step (cond
                       (<= size 64) 40
@@ -138,7 +139,6 @@
            (vals))))
 
 (mf/defc color-palette
-  {::mf/wrap [mf/memo]}
   [{:keys [size width selected] :as props}]
   (let [recent-colors (mf/deref refs/workspace-recent-colors)
         file-colors   (mf/deref refs/workspace-file-colors)

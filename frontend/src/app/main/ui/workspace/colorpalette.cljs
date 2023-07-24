@@ -36,8 +36,13 @@
 
 (mf/defc palette
   [{:keys [current-colors recent-colors file-colors shared-libs selected on-select]}]
-  (let [;; We had to do this due to a bug that leave some bugged colors
-        current-colors (h/use-equal-memo (filter #(or (:gradient %) (:color %)) current-colors))
+  (let [;; FIXME: This was introduced in https://github.com/penpot/penpot/pull/2316 to fix a bug
+        ;;        but it doesn't seem (I'm not 100% sure) to fix anything. In fact it introduces
+        ;;        a bug where the file colors aren't updated after being added with the color
+        ;;        picker/color assets. But maybe I'm wrong and it fixes something that I have not
+        ;;        been able to reproduce so I leave it here for future references.
+        ;; We had to do this due to a bug that leave some bugged colors
+        ;; current-colors (h/use-equal-memo (filter #(or (:gradient %) (:color %)) current-colors))
         state          (mf/use-state {:show-menu false})
 
         width          (:width @state 0)
@@ -163,7 +168,7 @@
         [:div.color-palette-empty {:style {:position "absolute"
                                            :left "50%"
                                            :top "50%"
-                                           :transform "translate(-50%, -50%)"}} 
+                                           :transform "translate(-50%, -50%)"}}
               (tr "workspace.libraries.colors.empty-palette")]
         [:div.color-palette-inside {:style {:position "relative"
                                           :right (str (* 66 offset) "px")}}
