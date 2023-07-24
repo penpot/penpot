@@ -11,7 +11,11 @@
    [app.common.logging :as log]
    [app.common.pages.changes :as cpc]
    [app.common.schema :as sm]
+   [app.util.time :as dt]
+   [beicon.core :as rx]
    [potok.core :as ptk]))
+
+(def discard-transaction-time-millis (* 20 1000))
 
 ;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
@@ -107,10 +111,18 @@
 (def empty-tx
   {:undo-changes [] :redo-changes []})
 
+(declare check-open-transactions)
+
 (defn start-undo-transaction
   "Start a transaction, so that every changes inside are added together in a single undo entry."
   [id]
   (ptk/reify ::start-undo-transaction
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rx/of (check-open-transactions))
+           ;; Wait the configured time
+           (rx/delay discard-transaction-time-millis)))
+
     ptk/UpdateEvent
     (update [_ state]
       (log/info :msg "start-undo-transaction")
@@ -120,21 +132,24 @@
         (cond-> state
           (nil? current-tx)  (assoc-in [:workspace-undo :transaction] empty-tx)
           (nil? pending-tx)  (assoc-in [:workspace-undo :transactions-pending] #{id})
-          (some? pending-tx) (update-in [:workspace-undo :transactions-pending] conj id))))))
+          (some? pending-tx) (update-in [:workspace-undo :transactions-pending] conj id)
+          :always            (update-in [:workspace-undo :transactions-pending-ts] assoc id (dt/now)))))))
 
 (defn discard-undo-transaction []
   (ptk/reify ::discard-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
       (log/info :msg "discard-undo-transaction")
-      (update state :workspace-undo dissoc :transaction :transactions-pending))))
+      (update state :workspace-undo dissoc :transaction :transactions-pending :transactions-pending-ts))))
 
 (defn commit-undo-transaction [id]
   (ptk/reify ::commit-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
       (log/info :msg "commit-undo-transaction")
-      (let [state (update-in state [:workspace-undo :transactions-pending] disj id)]
+      (let [state (-> state
+                      (update-in [:workspace-undo :transactions-pending] disj id)
+                      (update-in [:workspace-undo :transactions-pending-ts] dissoc id))]
         (if (empty? (get-in state [:workspace-undo :transactions-pending]))
           (-> state
               (add-undo-entry (get-in state [:workspace-undo :transaction]))
@@ -147,3 +162,17 @@
     (update [_ state]
       (assoc state :workspace-undo {}))))
 
+(defn check-open-transactions
+  []
+  (ptk/reify ::check-open-transactions
+    ptk/WatchEvent
+    (watch [_ state _]
+      (log/info :msg "check-open-transactions")
+      (let [pending-ts (-> (dm/get-in state [:workspace-undo :transactions-pending-ts])
+                           (update-vals #(.toMillis (dt/diff (dt/now) %))))]
+        (->> pending-ts
+             (filter (fn [[_ ts]] (>= ts discard-transaction-time-millis)))
+             (rx/from)
+             (rx/tap #(js/console.warn (dm/str "FORCE COMMIT TRANSACTION AFTER " (second %) "MS")))
+             (rx/map first)
+             (rx/map commit-undo-transaction))))))

@@ -156,8 +156,8 @@
                            (cond-> new-shape?
                              (assoc :name text))
                            (cond-> (or (some? width) (some? height))
-                             (gsh/transform-shape (ctm/change-size shape width height)))))))
-                  (dwu/commit-undo-transaction (:id shape))))))
+                             (gsh/transform-shape (ctm/change-size shape width height))))))
+                   {:undo-group (when new-shape? id)})))))
 
             (when (some? id)
               (rx/of (dws/deselect-shape id)

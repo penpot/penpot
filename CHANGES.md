@@ -98,6 +98,7 @@
 - Fix undo when updating several texts [Taiga #5197](https://tree.taiga.io/project/penpot/issue/5197)
 - Fix assets right click button for multiple selection [Taiga #5545](https://tree.taiga.io/project/penpot/issue/5545)
 - Fix problem with precision in resizes [Taiga #5623](https://tree.taiga.io/project/penpot/issue/5623)
+- Fix absolute positioned layouts not showing flex properties [Taiga #5630](https://tree.taiga.io/project/penpot/issue/5630)
 
 ### :arrow_up: Deps updates
 
