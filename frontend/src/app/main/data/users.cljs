@@ -337,7 +337,8 @@
   [:map {:closed true}
    [:password-1 :string]
    [:password-2 :string]
-   [:password-old :string]])
+   ;; Social registered users don't have old-password
+   [:password-old {:optional true} [:maybe :string]]])
 
 (defn update-password
   [data]
