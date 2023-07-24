@@ -51,7 +51,7 @@
   (cond
     (and (some? frame)
          (not ^boolean (ctst/rotated-frame? frame))
-         (not ^boolean (cph/root-frame? frame)))
+         (not ^boolean (cph/is-direct-child-of-root? frame)))
     #{}
 
     (= :x (:axis guide))

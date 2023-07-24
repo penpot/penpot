@@ -74,7 +74,7 @@
           {:shape shape
            :key (:id shape)}]
 
-         (cph/root-frame? shape)
+         (cph/is-direct-child-of-root? shape)
          [:& shapes/root-frame-wrapper
           {:shape shape
            :key (:id shape)

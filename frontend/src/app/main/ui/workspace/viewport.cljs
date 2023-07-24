@@ -141,7 +141,7 @@
                            (fn []
                              (let [parent-id
                                    (->> @hover-ids
-                                        (d/seek (partial cph/root-frame? base-objects)))]
+                                        (d/seek (partial cph/is-direct-child-of-root? base-objects)))]
                                (when (some? parent-id)
                                  (get base-objects parent-id)))))
 
@@ -244,7 +244,7 @@
 
         first-selected-shape (first selected-shapes)
         selecting-first-level-frame? (and one-selected-shape?
-                                          (cph/root-frame? first-selected-shape))
+                                          (cph/is-direct-child-of-root? first-selected-shape))
 
         offset-x (if selecting-first-level-frame?
                    (:x first-selected-shape)

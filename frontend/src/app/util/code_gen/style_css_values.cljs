@@ -30,7 +30,7 @@
              (not (ctl/layout-absolute? shape))
              (or (cph/group-shape? shape)
                  (cph/frame-shape? shape)))
-        (cph/root-frame? shape))
+        (cph/is-direct-child-of-root? shape))
     :relative
 
     (and (ctl/any-layout-immediate-child? objects shape)
@@ -54,14 +54,14 @@
         ;;shape (gsh/transform-shape)
         shape-value (get selrect coord)
         ]
-    (when (and (not (cph/root-frame? shape))
+    (when (and (not (cph/is-direct-child-of-root? shape))
                (or (not (ctl/any-layout-immediate-child? objects shape))
                    (ctl/layout-absolute? shape)))
       (- shape-value parent-value))))
 
 #_(defn get-shape-position
   [shape objects coord]
-  (when-not (or (cph/root-frame? shape)
+  (when-not (or (cph/is-direct-child-of-root? shape)
                 (and (ctl/any-layout-immediate-child? objects shape)
                      (not (ctl/layout-absolute? shape))))
     (let [parent (get objects (:parent-id shape))

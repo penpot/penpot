@@ -293,7 +293,7 @@
              (not (is-guide-inside-frame? (assoc guide :position pos) frame)))]
 
     (when (or (nil? frame)
-              (and (cph/root-frame? frame)
+              (and (cph/is-direct-child-of-root? frame)
                    (not (ctst/rotated-frame? frame))))
       [:g.guide-area {:opacity (when frame-guide-outside? 0)}
        (when-not disabled-guides?
