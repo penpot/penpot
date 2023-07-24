@@ -555,6 +555,12 @@
     margin-right: $size-2;
   }
 
+  .component-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
+
   .row-actions {
     margin-left: auto;
     cursor: pointer;

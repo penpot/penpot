@@ -224,7 +224,7 @@
          (if main-instance?
            i/component
            i/component-copy)
-         shape-name
+         [:div.component-name shape-name]
          [:div.row-actions
           {:on-click on-menu-click}
           i/actions
