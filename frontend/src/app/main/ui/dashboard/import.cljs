@@ -400,7 +400,7 @@
 
       [:div.modal-footer
        [:div.action-buttons
-        (when (or (= :analyzing (:status @state)) pending-import?)
+        (when (= :analyzing (:status @state))
           [:input.cancel-button
            {:type "button"
             :value (tr "labels.cancel")
