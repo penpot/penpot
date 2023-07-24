@@ -501,7 +501,7 @@
 
         frame-offset (if (or (not= :manual (:overlay-pos-type interaction))
                              (nil? shape-frame)
-                             (cph/root-frame? shape-frame)
+                             (cph/is-direct-child-of-root? shape-frame)
                              (cph/root? shape-frame))
                        frame-offset
                        (gpt/add frame-offset (gpt/point shape-frame)))]

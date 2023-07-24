@@ -217,7 +217,7 @@
 
              root-frame-with-data?
              #(as-> (get objects %) obj
-                (and (cph/root-frame? obj)
+                (and (cph/is-direct-child-of-root? obj)
                      (d/not-empty? (:shapes obj))
                      (not (ctk/instance-head? obj))
                      (not (ctk/main-instance? obj))))
@@ -241,7 +241,7 @@
              no-fill-nested-frames?
              (fn [id]
                (and (cph/frame-shape? objects id)
-                    (not (cph/root-frame? objects id))
+                    (not (cph/is-direct-child-of-root? objects id))
                     (empty? (dm/get-in objects [id :fills]))))
 
              hover-shape
@@ -276,7 +276,7 @@
   (let [all-frames             (mf/use-memo (mf/deps objects) #(ctt/get-root-frames-ids objects))
         selected-frames        (mf/use-memo (mf/deps selected) #(->> all-frames (filter selected)))
 
-        xf-selected-frame      (comp (remove cph/root-frame?)
+        xf-selected-frame      (comp (remove cph/is-direct-child-of-root?)
                                      (map #(cph/get-shape-id-root-frame objects %)))
 
         selected-shapes-frames (mf/use-memo (mf/deps selected) #(into #{} xf-selected-frame selected))

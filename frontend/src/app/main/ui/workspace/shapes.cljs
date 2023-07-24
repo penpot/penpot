@@ -74,7 +74,7 @@
             [:& shape-wrapper
              {:shape shape}]
 
-            (cph/root-frame? shape)
+            (cph/is-direct-child-of-root? shape)
             [:& root-frame-wrapper
              {:shape shape
               :objects (get frame-objects (:id shape))
@@ -92,7 +92,7 @@
   (let [shape (obj/get props "shape")
 
         active-frames
-        (when (cph/root-frame? shape) (mf/use-ctx ctx/active-frames))
+        (when (cph/is-direct-child-of-root? shape) (mf/use-ctx ctx/active-frames))
 
         thumbnail?
         (and (some? active-frames)
