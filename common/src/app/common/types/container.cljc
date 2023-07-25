@@ -113,7 +113,12 @@
      :else
      (get-component-shape objects (get objects (:parent-id shape)) options))))
 
-
+(defn get-copy-root
+  "Get the top shape of the copy."
+  [objects shape]
+  (when (:shape-ref shape)
+    (let [parent (cph/get-parent objects (:id shape))]
+      (or (get-copy-root objects parent) shape))))
 
 (defn component-main?
   "Check if the shape is a component main instance or is inside one."
@@ -244,7 +249,9 @@
                (not main-instance?)
                (dissoc :main-instance)
 
-               (and (not main-instance?) (nil? (:shape-ref original-shape)))
+               (and (not main-instance?)
+                    (or components-v2                        ; In v1, shape-ref points to the remote instance
+                        (nil? (:shape-ref original-shape)))) ; in v2, shape-ref points to the near instance
                (assoc :shape-ref (:id original-shape))
 
                (nil? (:parent-id original-shape))

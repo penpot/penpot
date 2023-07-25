@@ -131,7 +131,7 @@
   (mapv (d/getf objects) (get-children-ids-with-self objects id)))
 
 (defn get-parent
-  "Retrieve the id of the parent for the shape-id (if exists)"
+  "Retrieve the parent for the shape-id (if exists)"
   [objects id]
   (when-let [shape (get objects id)]
     (get objects (dm/get-prop shape :parent-id))))
