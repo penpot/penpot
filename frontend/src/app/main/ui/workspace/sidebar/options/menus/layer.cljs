@@ -62,6 +62,7 @@
              :selected-blend-mode value
              :option-highlighted? false
              :preview-complete? true)
+           (st/emit! (dw/unset-preview-blend-mode ids))
            (on-change :blend-mode value)))
 
         handle-blend-mode-enter
