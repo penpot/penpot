@@ -11,8 +11,8 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.types.page :as ctp]
+   [app.main.data.changes :as dwc]
    [app.main.data.events :as ev]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -42,7 +42,7 @@
             (-> (pcb/empty-changes it)
                 (pcb/with-page page)
                 (pcb/update-page-option :guides assoc (:id guide) guide))]
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guide
   [guide]
@@ -66,7 +66,7 @@
             (-> (pcb/empty-changes it)
                 (pcb/with-page page)
                 (pcb/update-page-option :guides dissoc (:id guide)))]
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guides
   [ids]

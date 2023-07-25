@@ -11,7 +11,7 @@
    [app.common.data.macros :as dm]
    [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -304,7 +304,7 @@
                                 :show-detail @show-detail?)
            :on-pointer-enter #(reset! hover? true)
            :on-pointer-leave #(reset! hover? false)
-           :on-click #(st/emit! (dwc/undo-to-index idx-entry))}
+           :on-click #(st/emit! (dwu/undo-to-index idx-entry))}
 
      [:div {:class (stl/css :history-entry-summary)}
       [:div {:class (stl/css :history-entry-summary-icon)}

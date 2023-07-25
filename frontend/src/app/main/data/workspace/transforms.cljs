@@ -25,7 +25,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dws]

@@ -14,7 +14,6 @@
    [app.main.data.users :as du]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.libraries :as dwl]
@@ -51,12 +50,12 @@
    :undo                 {:tooltip (ds/meta "Z")
                           :command (ds/c-mod "z")
                           :subsections [:edit]
-                          :fn #(emit-when-no-readonly dwc/undo)}
+                          :fn #(emit-when-no-readonly dwu/undo)}
 
    :redo                 {:tooltip (ds/meta "Y")
                           :command [(ds/c-mod "shift+z") (ds/c-mod "y")]
                           :subsections [:edit]
-                          :fn #(emit-when-no-readonly dwc/redo)}
+                          :fn #(emit-when-no-readonly dwu/redo)}
 
    :clear-undo           {:tooltip (ds/alt "Q")
                           :command "alt+q"

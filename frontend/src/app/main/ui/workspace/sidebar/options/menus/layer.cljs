@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
@@ -55,7 +55,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [prop value]
-           (st/emit! (dch/update-shapes ids #(assoc % prop value)))))
+           (st/emit! (dwsh/update-shapes ids #(assoc % prop value)))))
 
         handle-change-blend-mode
         (mf/use-fn

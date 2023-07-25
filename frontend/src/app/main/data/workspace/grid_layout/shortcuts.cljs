@@ -8,7 +8,7 @@
   (:require
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -38,11 +38,11 @@
 
    :undo            {:tooltip (ds/meta "Z")
                      :command (ds/c-mod "z")
-                     :fn #(st/emit! dwc/undo)}
+                     :fn #(st/emit! dwu/undo)}
 
    :redo            {:tooltip (ds/meta "Y")
                      :command [(ds/c-mod "shift+z") (ds/c-mod "y")]
-                     :fn #(st/emit! dwc/redo)}
+                     :fn #(st/emit! dwu/redo)}
 
    ;; ZOOM
 

@@ -10,7 +10,8 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
    [app.common.thumbnails :as thc]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.changes :as dch]
+   [app.main.data.persistence :as-alias dps]
    [app.main.data.workspace.notifications :as-alias wnt]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.rasterizer :as thr]
@@ -24,9 +25,10 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
-(l/set-level! :info)
+(l/set-level! :warn)
 
 (declare update-thumbnail)
 
@@ -65,10 +67,9 @@
      ptk/EffectEvent
      (effect [_ _ _]
        (l/dbg :hint "request thumbnail" :requester requester :file-id file-id :page-id page-id :shape-id shape-id :tag tag)
-       (q/enqueue-unique
-        queue
-        (create-request file-id page-id shape-id tag)
-        (partial find-request file-id page-id shape-id tag))))))
+       (q/enqueue-unique queue
+                         (create-request file-id page-id shape-id tag)
+                         (partial find-request file-id page-id shape-id tag))))))
 
 ;; This function first renders the HTML calling `render/render-frame` that
 ;; returns HTML as a string, then we send that data to the iframe rasterizer
@@ -92,24 +93,36 @@
 
 (defn clear-thumbnail
   ([file-id page-id frame-id tag]
-   (clear-thumbnail (thc/fmt-object-id file-id page-id frame-id tag)))
-  ([object-id]
-   (let [emit-rpc? (volatile! false)]
+   (clear-thumbnail file-id (thc/fmt-object-id file-id page-id frame-id tag)))
+  ([file-id object-id]
+   (let [pending (volatile! false)]
      (ptk/reify ::clear-thumbnail
        cljs.core/IDeref
        (-deref [_] object-id)
 
        ptk/UpdateEvent
        (update [_ state]
-         (let [uri (dm/get-in state [:workspace-thumbnails object-id])]
-           (if (some? uri)
-             (do
-               (l/dbg :hint "clear thumbnail" :object-id object-id)
-               (vreset! emit-rpc? true)
-               (tm/schedule-on-idle (partial wapi/revoke-uri uri))
-               (update state :workspace-thumbnails dissoc object-id))
+         (update state :workspace-thumbnails
+                 (fn [thumbs]
+                   (if-let [uri (get thumbs object-id)]
+                     (do (vreset! pending uri)
+                         (dissoc thumbs object-id))
+                     thumbs))))
 
-             state)))))))
+       ptk/WatchEvent
+       (watch [_ _ _]
+         (if-let [uri @pending]
+           (do
+             (l/trc :hint "clear-thumbnail" :uri uri)
+             (when (str/starts-with? uri "blob:")
+               (tm/schedule-on-idle (partial wapi/revoke-uri uri)))
+
+             (let [params {:file-id file-id
+                           :object-id object-id}]
+               (->> (rp/cmd! :delete-file-object-thumbnail params)
+                    (rx/catch rx/empty)
+                    (rx/ignore))))
+           (rx/empty)))))))
 
 (defn- assoc-thumbnail
   [object-id uri]
@@ -181,7 +194,7 @@
 (defn- extract-root-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"
   [page-id [event [old-data new-data]]]
-  (let [changes (-> event deref :changes)
+  (let [changes (:changes event)
 
         extract-ids
         (fn [{:keys [page-id type] :as change}]
@@ -239,58 +252,53 @@
                  (rx/buffer 2 1)
                  (rx/share))
 
-            local-changes-s
+            ;; All commits stream, indepentendly of the source of the commit
+            all-commits-s
             (->> stream
-                 (rx/filter dch/commit-changes?)
-                 (rx/with-latest-from workspace-data-s)
-                 (rx/merge-map (partial extract-root-frame-changes page-id))
-                 (rx/tap #(l/trc :hint "incoming change" :origin "local" :frame-id (dm/str %))))
-
-            notification-changes-s
-            (->> stream
-                 (rx/filter (ptk/type? ::wnt/handle-file-change))
+                 (rx/filter dch/commit?)
+                 (rx/map deref)
                  (rx/observe-on :async)
                  (rx/with-latest-from workspace-data-s)
                  (rx/merge-map (partial extract-root-frame-changes page-id))
-                 (rx/tap #(l/trc :hint "incoming change" :origin "notifications" :frame-id (dm/str %))))
-
-            persistence-changes-s
-            (->> stream
-                 (rx/filter (ptk/type? ::update))
-                 (rx/map deref)
-                 (rx/filter (fn [[file-id page-id]]
-                              (and (= file-id file-id)
-                                   (= page-id page-id))))
-                 (rx/map (fn [[_ _ frame-id]] frame-id))
-                 (rx/tap #(l/trc :hint "incoming change" :origin "persistence" :frame-id (dm/str %))))
-
-            all-changes-s
-            (->> (rx/merge
-                  ;; LOCAL CHANGES
-                  local-changes-s
-                  ;; NOTIFICATIONS CHANGES
-                  notification-changes-s
-                  ;; PERSISTENCE CHANGES
-                  persistence-changes-s)
-
+                 (rx/tap #(l/trc :hint "inconming change" :origin "local" :frame-id (dm/str %)))
                  (rx/share))
 
-            ;; BUFFER NOTIFIER (window of 5s of inactivity)
+            local-commits-s
+            (->> stream
+                 (rx/filter dch/commit?)
+                 (rx/map deref)
+                 (rx/filter #(= :local (:source %)))
+                 (rx/observe-on :async)
+                 (rx/with-latest-from workspace-data-s)
+                 (rx/merge-map (partial extract-root-frame-changes page-id))
+                 (rx/tap #(l/trc :hint "inconming change" :origin "local" :frame-id (dm/str %)))
+                 (rx/share))
+
+            ;; BUFFER NOTIFIER: only on local changes, remote changes
+            ;; we expect to receive thumbnail uri once it is
+            ;; generated va notifications subsystem
             notifier-s
-            (->> all-changes-s
-                 (rx/debounce 1000)
+            (->> stream
+                 (rx/filter (ptk/type? ::dps/commit-persisted))
+                 (rx/map deref)
+                 (rx/observe-on :async)
+                 (rx/with-latest-from workspace-data-s)
+                 (rx/merge-map (partial extract-root-frame-changes page-id))
+                 (rx/tap #(l/trc :hint "inconming change" :origin "local" :frame-id (dm/str %)))
+                 (rx/debounce 5000)
                  (rx/tap #(l/trc :hint "buffer initialized")))]
 
         (->> (rx/merge
               ;; Perform instant thumbnail cleaning of affected frames
               ;; and interrupt any ongoing update-thumbnail process
               ;; related to current frame-id
-              (->> all-changes-s
-                   (rx/map #(clear-thumbnail file-id page-id % "frame")))
+              (->> all-commits-s
+                   (rx/map (fn [frame-id]
+                             (clear-thumbnail file-id page-id frame-id "frame"))))
 
               ;; Generate thumbnails in batchs, once user becomes
-              ;; inactive for some instant
-              (->> all-changes-s
+              ;; inactive for some instant only for local changes
+              (->> local-commits-s
                    (rx/buffer-until notifier-s)
                    (rx/mapcat #(into #{} %))
                    (rx/map #(request-thumbnail file-id page-id % "frame" "watch-state-changes"))))

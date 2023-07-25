@@ -14,7 +14,7 @@
    [app.common.text :as txt]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.changes :as ch]
+   [app.main.data.changes :as ch]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
    [app.main.store :as st]

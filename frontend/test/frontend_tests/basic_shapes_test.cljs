@@ -3,12 +3,13 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) KALEIDOS INC
+
 (ns frontend-tests.basic-shapes-test
   (:require
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.shapes :as dwsh]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]))
 
@@ -21,12 +22,12 @@
            (-> (cthf/sample-file :file1 :page-label :page1)
                (cths/add-sample-shape :shape1)))
 
-         ;; ==== Action
+          ;; ==== Action
           events
-          [(dch/update-shapes [(cthi/id :shape1)]
-                              #(assoc % :fills
-                                      (cths/sample-fills-color :fill-color
-                                                               "#fabada")))]]
+          [(dwsh/update-shapes [(cthi/id :shape1)]
+                               #(assoc % :fills
+                                       (cths/sample-fills-color :fill-color
+                                                                "#fabada")))]]
 
       (ths/run-store
        store done events
@@ -40,7 +41,7 @@
                fills'      (:fills shape1')
                fill'       (first fills')]
 
-          ;; ==== Check
+           ;; ==== Check
            (t/is (some? shape1'))
            (t/is (= (count fills') 1))
            (t/is (= (:fill-color fill') "#fabada"))

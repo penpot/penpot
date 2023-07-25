@@ -15,7 +15,8 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.changes :as dch]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.streams :as ms]
@@ -125,13 +126,13 @@
                                      :flows] [])
              flow     (ctp/get-frame-flow flows (:id frame))]
          (rx/concat
-          (rx/of (dch/update-shapes [(:id shape)]
-                                    (fn [shape]
-                                      (let [new-interaction (-> ctsi/default-interaction
-                                                                (ctsi/set-destination destination)
-                                                                (assoc :position-relative-to (:id shape)))]
-                                        (update shape :interactions
-                                                ctsi/add-interaction new-interaction)))))
+          (rx/of (dwsh/update-shapes [(:id shape)]
+                                     (fn [shape]
+                                       (let [new-interaction (-> ctsi/default-interaction
+                                                                 (ctsi/set-destination destination)
+                                                                 (assoc :position-relative-to (:id shape)))]
+                                         (update shape :interactions
+                                                 ctsi/add-interaction new-interaction)))))
           (when (and (not (connected-frame? objects (:id frame)))
                      (nil? flow))
             (rx/of (add-flow (:id frame))))))))))
@@ -141,20 +142,19 @@
   (ptk/reify ::remove-interaction
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes [(:id shape)]
-                                (fn [shape]
-                                  (update shape :interactions
-                                          ctsi/remove-interaction index)))))))
-
+      (rx/of (dwsh/update-shapes [(:id shape)]
+                                 (fn [shape]
+                                   (update shape :interactions
+                                           ctsi/remove-interaction index)))))))
 (defn update-interaction
   [shape index update-fn]
   (ptk/reify ::update-interaction
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes [(:id shape)]
-                                (fn [shape]
-                                  (update shape :interactions
-                                          ctsi/update-interaction index update-fn)))))))
+      (rx/of (dwsh/update-shapes [(:id shape)]
+                                 (fn [shape]
+                                   (update shape :interactions
+                                           ctsi/update-interaction index update-fn)))))))
 
 (defn remove-all-interactions-nav-to
   "Remove all interactions that navigate to the given frame."
@@ -171,9 +171,9 @@
                     new-interactions (ctsi/remove-interactions #(ctsi/navs-to? % frame-id)
                                                                interactions)]
                 (when (not= (count interactions) (count new-interactions))
-                  (dch/update-shapes [(:id shape)]
-                                     (fn [shape]
-                                       (assoc shape :interactions new-interactions))))))]
+                  (dwsh/update-shapes [(:id shape)]
+                                      (fn [shape]
+                                        (assoc shape :interactions new-interactions))))))]
 
         (rx/from (->> (vals objects)
                       (map remove-interactions-shape)
@@ -260,20 +260,20 @@
          (dwu/start-undo-transaction undo-id)
 
          (when (:hide-in-viewer target-frame)
-            ; If the target frame is hidden, we need to unhide it so
-            ; users can navigate to it.
-           (dch/update-shapes [(:id target-frame)]
-                              #(dissoc % :hide-in-viewer)))
+           ;; If the target frame is hidden, we need to unhide it so
+           ;; users can navigate to it.
+           (dwsh/update-shapes [(:id target-frame)]
+                               #(dissoc % :hide-in-viewer)))
 
          (cond
            (or (nil? shape)
-                ;; Didn't changed the position for the interaction
+               ;; Didn't changed the position for the interaction
                (= position initial-pos)
-                ;; New interaction but invalid target
+               ;; New interaction but invalid target
                (and (nil? index) (nil? target-frame)))
            nil
 
-            ;; Dropped interaction in an invalid target. We remove it
+           ;; Dropped interaction in an invalid target. We remove it
            (and (some? index) (nil? target-frame))
            (remove-interaction shape index)
 
@@ -364,5 +364,5 @@
             (update interactions index
                     #(ctsi/set-overlay-position % overlay-pos))]
 
-        (rx/of (dch/update-shapes [(:id shape)] #(merge % {:interactions new-interactions})))))))
+        (rx/of (dwsh/update-shapes [(:id shape)] #(merge % {:interactions new-interactions})))))))
 

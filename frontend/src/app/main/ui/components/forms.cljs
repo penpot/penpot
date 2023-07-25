@@ -101,7 +101,7 @@
                   (cond-> (and value is-checkbox?) (assoc :default-checked value))
                   (cond-> (and touched? (:message error)) (assoc "aria-invalid" "true"
                                                                  "aria-describedby" (dm/str "error-" input-name)))
-                  (obj/clj->props))
+                  (obj/map->obj obj/prop-key-fn))
 
         checked? (and is-checkbox? (= value true))
         show-valid? (and show-success? touched? (not error))
@@ -201,7 +201,7 @@
                          :on-blur on-blur
                          ;; :placeholder label
                          :on-change on-change)
-                  (obj/clj->props))]
+                  (obj/map->obj obj/prop-key-fn))]
 
     [:div {:class (dm/str klass " " (stl/css :textarea-wrapper))}
      [:label {:class (stl/css :textarea-label)} label]

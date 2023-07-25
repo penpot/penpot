@@ -15,8 +15,9 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.changes :as dch]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -117,7 +118,7 @@
             change-to-bool
             (fn [shape] (group->bool shape bool-type objects))]
         (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
-          (rx/of (dch/update-shapes [shape-id] change-to-bool {:reg-objects? true})))))))
+          (rx/of (dwsh/update-shapes [shape-id] change-to-bool {:reg-objects? true})))))))
 
 (defn bool-to-group
   [shape-id]
@@ -128,7 +129,7 @@
             change-to-group
             (fn [shape] (bool->group shape objects))]
         (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
-          (rx/of (dch/update-shapes [shape-id] change-to-group {:reg-objects? true})))))))
+          (rx/of (dwsh/update-shapes [shape-id] change-to-group {:reg-objects? true})))))))
 
 
 (defn change-bool-type
@@ -140,4 +141,4 @@
             change-type
             (fn [shape] (assoc shape :bool-type bool-type))]
         (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
-          (rx/of (dch/update-shapes [shape-id] change-type {:reg-objects? true})))))))
+          (rx/of (dwsh/update-shapes [shape-id] change-type {:reg-objects? true})))))))

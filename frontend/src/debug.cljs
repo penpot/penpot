@@ -17,11 +17,11 @@
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.changes :as dwc]
    [app.main.data.dashboard.shortcuts]
    [app.main.data.preview :as dp]
    [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.path.shortcuts]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shortcuts]
@@ -52,8 +52,6 @@
 (def debug-exclude-events
   #{:app.main.data.workspace.notifications/handle-pointer-update
     :app.main.data.workspace.notifications/handle-pointer-send
-    :app.main.data.workspace.persistence/update-persistence-status
-    :app.main.data.workspace.changes/update-indices
     :app.main.data.websocket/send-message
     :app.main.data.workspace.selection/change-hover-state})
 
@@ -303,7 +301,7 @@
 
   (let [file-id (:current-file-id @st/state)
         changes (t/decode-str changes*)]
-    (st/emit! (dch/commit-changes {:redo-changes changes
+    (st/emit! (dwc/commit-changes {:redo-changes changes
                                    :undo-changes []
                                    :save-undo? true
                                    :file-id file-id}))))

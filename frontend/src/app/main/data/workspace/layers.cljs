@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.math :as mth]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -48,7 +48,7 @@
             shapes     (map #(get objects %) selected)
             shapes-ids (->> shapes
                             (map :id))]
-        (rx/of (dch/update-shapes shapes-ids #(assoc % :opacity opacity)))))))
+        (rx/of (dwsh/update-shapes shapes-ids #(assoc % :opacity opacity)))))))
 
 (defn pressed-opacity
   [opacity]

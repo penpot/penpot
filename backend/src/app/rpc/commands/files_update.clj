@@ -262,8 +262,8 @@
       ;; Send asynchronous notifications
       (send-notifications! cfg params)
 
-      ;; Retrieve and return lagged data
-      (get-lagged-changes conn params))))
+      {:revn (:revn file)
+       :lagged (get-lagged-changes conn params)})))
 
 (defn- soft-validate-file-schema!
   [file]

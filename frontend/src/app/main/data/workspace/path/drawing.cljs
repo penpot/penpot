@@ -15,7 +15,6 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
@@ -24,6 +23,7 @@
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.streams :as streams]
    [app.main.data.workspace.path.undo :as undo]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
@@ -333,7 +333,7 @@
             edit-mode (get-in state [:workspace-local :edit-path id :edit-mode])]
         (if (= :draw edit-mode)
           (rx/concat
-           (rx/of (dch/update-shapes [id] upsp/convert-to-path))
+           (rx/of (dwsh/update-shapes [id] upsp/convert-to-path))
            (rx/of (handle-drawing id))
            (->> stream
                 (rx/filter (ptk/type? ::common/finish-path))

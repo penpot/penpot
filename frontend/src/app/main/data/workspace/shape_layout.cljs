@@ -20,8 +20,8 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [app.main.data.changes :as dch]
    [app.main.data.events :as ev]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
@@ -148,8 +148,8 @@
             layout-initializer (get-layout-initializer type from-frame? calculate-params?)]
 
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/update-shapes [id] layout-initializer {:with-objects? true})
-               (dch/update-shapes (dm/get-prop parent :shapes) #(dissoc % :constraints-h :constraints-v))
+               (dwsh/update-shapes [id] layout-initializer {:with-objects? true})
+               (dwsh/update-shapes (dm/get-prop parent :shapes) #(dissoc % :constraints-h :constraints-v))
                (ptk/data-event :layout/update {:ids [id]})
                (dwu/commit-undo-transaction undo-id))))))
 
@@ -188,8 +188,8 @@
               (dwsh/create-artboard-from-selection new-shape-id parent-id group-index (:name (first selected-shapes)))
               (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
               (create-layout-from-id new-shape-id type)
-              (dch/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
-              (dch/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))
+              (dwsh/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
+              (dwsh/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))
               (dwsh/delete-shapes page-id selected)
               (ptk/data-event :layout/update {:ids [new-shape-id]})
               (dwu/commit-undo-transaction undo-id)))
@@ -199,8 +199,8 @@
             (dwsh/create-artboard-from-selection new-shape-id)
             (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
             (create-layout-from-id new-shape-id type)
-            (dch/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
-            (dch/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))))
+            (dwsh/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
+            (dwsh/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))))
 
          (rx/of (ptk/data-event :layout/update {:ids [new-shape-id]})
                 (dwu/commit-undo-transaction undo-id)))))))
@@ -213,7 +213,7 @@
       (let [undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
-         (dch/update-shapes ids #(apply dissoc % layout-keys))
+         (dwsh/update-shapes ids #(apply dissoc % layout-keys))
          (ptk/data-event :layout/update {:ids ids})
          (dwu/commit-undo-transaction undo-id))))))
 
@@ -266,7 +266,7 @@
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/update-shapes ids (d/patch-object changes))
+               (dwsh/update-shapes ids (d/patch-object changes))
                (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
@@ -280,7 +280,7 @@
      (watch [_ _ _]
        (let [undo-id (js/Symbol)]
          (rx/of (dwu/start-undo-transaction undo-id)
-                (dch/update-shapes
+                (dwsh/update-shapes
                  ids
                  (fn [shape]
                    (case type
@@ -313,7 +313,7 @@
                  (if shapes-to-delete
                    (dwsh/delete-shapes shapes-to-delete)
                    (rx/empty))
-                 (dch/update-shapes
+                 (dwsh/update-shapes
                   ids
                   (fn [shape objects]
                     (case type
@@ -387,7 +387,7 @@
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/update-shapes
+               (dwsh/update-shapes
                 ids
                 (fn [shape]
                   (case type
@@ -433,7 +433,7 @@
                        :row :layout-grid-rows
                        :column :layout-grid-columns)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/update-shapes
+               (dwsh/update-shapes
                 ids
                 (fn [shape]
                   (-> shape
@@ -525,9 +525,9 @@
             parent-ids (->> ids (map #(cfh/get-parent-id objects %)))
             undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/update-shapes ids (d/patch-object changes))
-               (dch/update-shapes children-ids (partial fix-child-sizing objects changes))
-               (dch/update-shapes
+               (dwsh/update-shapes ids (d/patch-object changes))
+               (dwsh/update-shapes children-ids (partial fix-child-sizing objects changes))
+               (dwsh/update-shapes
                 parent-ids
                 (fn [parent objects]
                   (-> parent
@@ -546,8 +546,7 @@
       (let [undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
-
-         (dch/update-shapes
+         (dwsh/update-shapes
           [layout-id]
           (fn [shape]
             (->> ids
@@ -570,7 +569,7 @@
       (let [undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
-         (dch/update-shapes
+         (dwsh/update-shapes
           [layout-id]
           (fn [shape objects]
             (case mode
@@ -636,7 +635,7 @@
       (let [undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
-         (dch/update-shapes
+         (dwsh/update-shapes
           [layout-id]
           (fn [shape objects]
             (let [cells (->> ids (map #(get-in shape [:layout-grid-cells %])))
@@ -668,7 +667,7 @@
       (let [undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
-         (dch/update-shapes
+         (dwsh/update-shapes
           [layout-id]
           (fn [shape objects]
             (let [prev-data (-> (dm/get-in shape [:layout-grid-cells cell-id])

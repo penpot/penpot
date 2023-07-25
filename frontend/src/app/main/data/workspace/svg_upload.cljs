@@ -14,7 +14,7 @@
    [app.common.svg.shapes-builder :as csvg.shapes-builder]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.changes :as dch]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
