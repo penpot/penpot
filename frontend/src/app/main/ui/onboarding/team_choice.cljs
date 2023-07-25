@@ -87,7 +87,7 @@
                         :name :name
                         :label (tr "onboarding.choice.team-up.create-team-placeholder")}]
 
-          [:& fm/submit-button
+          [:> fm/submit-button*
            {:label (tr "labels.continue")}]]
 
          [:button.skip-action {:on-click on-skip} (tr "onboarding.choice.team-up.create-later")]]
@@ -199,8 +199,9 @@
                                                        :name name
                                                        :step 2}))}
           (tr "labels.back")]
-         [:& fm/submit-button
+         [:> fm/submit-button*
           {:label (tr "onboarding.choice.team-up.invite-members-submit")}]]
+
         [:div.skip-action
          {:on-click on-skip}
          [:div.action (tr "onboarding.choice.team-up.invite-members-skip")]]]]

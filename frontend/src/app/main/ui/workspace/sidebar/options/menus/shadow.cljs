@@ -15,7 +15,7 @@
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
@@ -127,11 +127,11 @@
 
         on-toggle-open-shadow
         (fn []
-            (swap! open-state-ref update shadow-id not))]
+          (swap! open-state-ref update shadow-id not))]
     [:*
      [:div.shadow-option {:class (dom/classnames
-                                   :dnd-over-top (= (:over dprops) :top)
-                                   :dnd-over-bot (= (:over dprops) :bot))
+                                  :dnd-over-top (= (:over dprops) :top)
+                                  :dnd-over-bot (= (:over dprops) :bot))
                           :ref dref}
       [:div.shadow-option-main {:style {:display (when open-shadow "none")}}
        [:div.element-set-actions-button
@@ -178,41 +178,41 @@
 
        [:div.row-grid-2
         [:div.input-element {:title (tr "workspace.options.shadow-options.offsetx")}
-         [:> numeric-input {:ref adv-offset-x-ref
-                            :no-validate true
-                            :placeholder "--"
-                            :on-change (update-attr index :offset-x basic-offset-x-ref)
-                            :on-blur on-blur
-                            :value (:offset-x value)}]
+         [:> numeric-input* {:ref adv-offset-x-ref
+                             :no-validate true
+                             :placeholder "--"
+                             :on-change (update-attr index :offset-x basic-offset-x-ref)
+                             :on-blur on-blur
+                             :value (:offset-x value)}]
          [:span.after (tr "workspace.options.shadow-options.offsetx")]]
 
         [:div.input-element {:title (tr "workspace.options.shadow-options.offsety")}
-         [:> numeric-input {:ref adv-offset-y-ref
-                            :no-validate true
-                            :placeholder "--"
-                            :on-change (update-attr index :offset-y basic-offset-y-ref)
-                            :on-blur on-blur
-                            :value (:offset-y value)}]
+         [:> numeric-input* {:ref adv-offset-y-ref
+                             :no-validate true
+                             :placeholder "--"
+                             :on-change (update-attr index :offset-y basic-offset-y-ref)
+                             :on-blur on-blur
+                             :value (:offset-y value)}]
          [:span.after (tr "workspace.options.shadow-options.offsety")]]]
 
        [:div.row-grid-2
         [:div.input-element {:title (tr "workspace.options.shadow-options.blur")}
-         [:> numeric-input {:ref adv-blur-ref
-                            :no-validate true
-                            :placeholder "--"
-                            :on-change (update-attr index :blur basic-blur-ref)
-                            :on-blur on-blur
-                            :min 0
-                            :value (:blur value)}]
+         [:> numeric-input* {:ref adv-blur-ref
+                             :no-validate true
+                             :placeholder "--"
+                             :on-change (update-attr index :blur basic-blur-ref)
+                             :on-blur on-blur
+                             :min 0
+                             :value (:blur value)}]
          [:span.after (tr "workspace.options.shadow-options.blur")]]
 
         [:div.input-element {:title (tr "workspace.options.shadow-options.spread")}
-         [:> numeric-input {:ref adv-spread-ref
-                            :no-validate true
-                            :placeholder "--"
-                            :on-change (update-attr index :spread)
-                            :on-blur on-blur
-                            :value (:spread value)}]
+         [:> numeric-input* {:ref adv-spread-ref
+                             :no-validate true
+                             :placeholder "--"
+                             :on-change (update-attr index :spread)
+                             :on-blur on-blur
+                             :value (:spread value)}]
          [:span.after (tr "workspace.options.shadow-options.spread")]]]
 
        [:div.color-row-wrap

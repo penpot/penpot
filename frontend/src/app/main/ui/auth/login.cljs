@@ -177,41 +177,46 @@
       [:div.buttons-stack
        (when (or (contains? cf/flags :login)
                  (contains? cf/flags :login-with-password))
-         [:& fm/submit-button
+         [:> fm/submit-button*
           {:label (tr "auth.login-submit")
            :data-test "login-submit"}])
 
        (when (contains? cf/flags :login-with-ldap)
-         [:& fm/submit-button
+         [:> fm/submit-button*
           {:label (tr "auth.login-with-ldap-submit")
            :on-click on-submit-ldap}])]]]))
 
 (mf/defc login-buttons
   [{:keys [params] :as props}]
-  [:div.auth-buttons
-   (when (contains? cf/flags :login-with-google)
-     [:& bl/button-link {:action #(login-with-oidc % :google params)
-                         :icon i/brand-google
-                         :name (tr "auth.login-with-google-submit")
-                         :klass "btn-google-auth"}])
+  (let [login-with-google (mf/use-fn (mf/deps params) #(login-with-oidc % :google params))
+        login-with-github (mf/use-fn (mf/deps params) #(login-with-oidc % :github params))
+        login-with-gitlab (mf/use-fn (mf/deps params) #(login-with-oidc % :gitlab params))
+        login-with-oidc   (mf/use-fn (mf/deps params) #(login-with-oidc % :oidc params))]
 
-   (when (contains? cf/flags :login-with-github)
-     [:& bl/button-link {:action #(login-with-oidc % :github params)
-                         :icon i/brand-github
-                         :name (tr "auth.login-with-github-submit")
-                         :klass "btn-github-auth"}])
+    [:div.auth-buttons
+     (when (contains? cf/flags :login-with-google)
+       [:& bl/button-link {:on-click login-with-google
+                           :icon i/brand-google
+                           :label (tr "auth.login-with-google-submit")
+                           :class "btn-google-auth"}])
 
-   (when (contains? cf/flags :login-with-gitlab)
-     [:& bl/button-link {:action #(login-with-oidc % :gitlab params)
-                         :icon i/brand-gitlab
-                         :name (tr "auth.login-with-gitlab-submit")
-                         :klass "btn-gitlab-auth"}])
+     (when (contains? cf/flags :login-with-github)
+       [:& bl/button-link {:on-click login-with-github
+                           :icon i/brand-github
+                           :label (tr "auth.login-with-github-submit")
+                           :class "btn-github-auth"}])
 
-   (when (contains? cf/flags :login-with-oidc)
-     [:& bl/button-link {:action #(login-with-oidc % :oidc params)
-                         :icon i/brand-openid
-                         :name (tr "auth.login-with-oidc-submit")
-                         :klass "btn-github-auth"}])])
+     (when (contains? cf/flags :login-with-gitlab)
+       [:& bl/button-link {:on-click login-with-gitlab
+                           :icon i/brand-gitlab
+                           :label (tr "auth.login-with-gitlab-submit")
+                           :class "btn-gitlab-auth"}])
+
+     (when (contains? cf/flags :login-with-oidc)
+       [:& bl/button-link {:on-click login-with-oidc
+                           :icon i/brand-openid
+                           :label (tr "auth.login-with-oidc-submit")
+                           :class "btn-github-auth"}])]))
 
 (mf/defc login-button-oidc
   [{:keys [params] :as props}]

@@ -20,7 +20,7 @@
    [goog.events :as events]
    [rumext.v2 :as mf]))
 
-(mf/defc numeric-input
+(mf/defc numeric-input*
   {::mf/wrap-props false
    ::mf/forward-ref true}
   [props external-ref]

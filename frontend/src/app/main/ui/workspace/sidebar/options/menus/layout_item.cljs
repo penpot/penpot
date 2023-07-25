@@ -13,7 +13,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [get-layout-flex-icon]]
    [app.util.dom :as dom]
@@ -68,7 +68,7 @@
         [:div.margin-item.tooltip.tooltip-bottom-left
          {:alt "Vertical margin"}
          [:span.icon i/auto-margin-both-sides]
-         [:> numeric-input
+         [:> numeric-input*
           {:placeholder "--"
            :on-focus (fn [event]
                        (select-margins true false true false)
@@ -80,7 +80,7 @@
         [:div.margin-item.tooltip.tooltip-bottom-left
          {:alt "Horizontal margin"}
          [:span.icon.rotated i/auto-margin-both-sides]
-         [:> numeric-input
+         [:> numeric-input*
           {:placeholder "--"
            :on-focus (fn [event]
                        (select-margins false true false true)
@@ -100,7 +100,7 @@
                    :m3 "Bottom"
                    :m4 "Left")}
            [:div.input-element.auto
-            [:> numeric-input
+            [:> numeric-input*
              {:placeholder "--"
               :on-focus (fn [event]
                           (select-margin num)
@@ -269,7 +269,7 @@
 
           [:div.tooltip.tooltip-bottom-left.z-index {:alt "z-index"}
            i/layers
-           [:> numeric-input
+           [:> numeric-input*
             {:placeholder "--"
              :on-focus #(dom/select-target %)
              :on-change #(on-change-z-index %)
@@ -317,7 +317,7 @@
                                     "minW" (= item :layout-item-min-w))}
             [:div.input-element
              {:alt   (tr (dm/str "workspace.options.layout-item." (d/name item)))}
-             [:> numeric-input
+             [:> numeric-input*
               {:no-validate true
                :min 0
                :data-wrap true

@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.rows.input-row
   (:require
    [app.main.ui.components.editable-select :refer [editable-select]]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -40,7 +40,7 @@
                :class "input-text"
                :on-change on-change} ]
 
-      [:> numeric-input
+      [:> numeric-input*
        {:placeholder placeholder
         :min min
         :max max

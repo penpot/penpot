@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
@@ -97,7 +97,7 @@
        {:class (dom/classnames :pixels (not= (:stroke-width stroke) :multiple))
         :title (tr "workspace.options.stroke-width")}
 
-       [:> numeric-input
+       [:> numeric-input*
         {:min 0
          :value (-> (:stroke-width stroke) width->string)
          :placeholder (tr "settings.multiple")

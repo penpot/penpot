@@ -10,7 +10,7 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -49,12 +49,12 @@
        [:div.input-wrapper
         [:span
          [:p.nudge-subtitle (tr "modals.small-nudge")]
-         [:> numeric-input {:min 0.01
-                            :value (:small nudge)
-                            :on-change update-small}]]]
+         [:> numeric-input* {:min 0.01
+                             :value (:small nudge)
+                             :on-change update-small}]]]
        [:div.input-wrapper
         [:span
          [:p.nudge-subtitle (tr "modals.big-nudge")]
-         [:> numeric-input {:min 0.01
-                            :value (:big nudge)
-                            :on-change update-big}]]]]]]))
+         [:> numeric-input* {:min 0.01
+                             :value (:big nudge)
+                             :on-change update-big}]]]]]]))

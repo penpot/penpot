@@ -236,56 +236,98 @@
        i/arrow-slide]]]))
 
 (mf/defc radio-buttons
-  [{:keys [name options form trim on-change-value] :as props}]
-  (let [form            (or form (mf/use-ctx form-ctx))
-        value           (get-in @form [:data name] "")
-        on-change-value (or on-change-value (constantly nil))
-        on-change (fn [event]
-                    (let [value (-> event dom/get-target dom/get-value)]
-                      (swap! form assoc-in [:touched name] true)
-                      (fm/on-input-change form name value trim)
-                      (on-change-value name value)))]
-    [:div.custom-radio
-     (for [item options]
-       (let [id (str/ffmt "%-%" name (:value item))
-             image (:image item)]
-         [:div.input-radio {:key id :class (when image "with-image")}
-          [:input {:on-change on-change
-                   :type "radio"
-                   :id id
-                   :name name
-                   :value (:value item)
-                   :checked (= value (:value item))}]
-          [:label {:for id
-                   :style {:background-image (when image (str/ffmt "url(%)" image))}
-                   :class (when image "with-image")}
-           (:label item)]]))]))
+  {::mf/wrap-props false}
+  [props]
+  (let [form          (or (unchecked-get props "form")
+                          (mf/use-ctx form-ctx))
+        name          (unchecked-get props "name")
 
-(mf/defc submit-button
-  [{:keys [label form on-click disabled data-test] :as props}]
-  (let [form (or form (mf/use-ctx form-ctx))]
-    [:input.btn-primary.btn-large
-     {:name "submit"
-      :class (when (or (not (:valid @form)) (true? disabled)) "btn-disabled")
-      :disabled (or (not (:valid @form)) (true? disabled))
-      :tab-index "0"
-      :on-click on-click
-      :on-key-down (fn [event]
-                     (when (kbd/enter? event)
-                       (on-click)))
-      :value label
-      :data-test data-test
-      :type "submit"}]))
+        current-value (or (dm/get-in @form [:data name] "")
+                          (unchecked-get props "value"))
+        on-change     (unchecked-get props "on-change")
+        options       (unchecked-get props "options")
+        trim?         (unchecked-get props "trim")
+        encode-fn     (d/nilv (unchecked-get props "encode-fn") identity)
+        decode-fn     (d/nilv (unchecked-get props "decode-fn") identity)
+
+        on-change'
+        (mf/use-fn
+         (mf/deps on-change form name)
+         (fn [event]
+           (let [value (-> event dom/get-target dom/get-value decode-fn)]
+             (when (some? form)
+               (swap! form assoc-in [:touched name] true)
+               (fm/on-input-change form name value trim?))
+
+             (when (fn? on-change)
+               (on-change name value)))))]
+
+    [:div.custom-radio
+     (for [{:keys [image value label]} options]
+       (let [image? (some? image)
+             value' (encode-fn value)
+             key    (str/ffmt "%-%" name value')]
+         [:div.input-radio {:key key :class (when image? "with-image")}
+          [:input {:on-change on-change'
+                   :type "radio"
+                   :id key
+                   :name name
+                   :value value'
+                   :checked (= value current-value)}]
+          [:label {:for key
+                   :style {:background-image (when image? (str/ffmt "url(%)" image))}
+                   :class (when image? "with-image")}
+           label]]))]))
+
+(mf/defc submit-button*
+  {::mf/wrap-props false}
+  [props]
+  (let [form      (or (unchecked-get props "form")
+                      (mf/use-ctx form-ctx))
+
+        label     (unchecked-get props "label")
+        on-click  (unchecked-get props "onClick")
+        children  (unchecked-get props "children")
+
+        class     (d/nilv (unchecked-get props "className") "btn-primary btn-large")
+        name      (d/nilv (unchecked-get props "name") "submit")
+
+        disabled? (or (and (some? form) (not (:valid @form)))
+                      (true? (unchecked-get props "disabled")))
+
+        klass     (dm/str class " " (if disabled? "btn-disabled" ""))
+
+        on-key-down
+        (mf/use-fn
+         (mf/deps on-click)
+         (fn [event]
+           (when (and (kbd/enter? event) (fn? on-click))
+             (on-click event))))
+
+        props     (-> (obj/clone props)
+                      (obj/unset! "children")
+                      (obj/set! "disabled" disabled?)
+                      (obj/set! "onKeyDown" on-key-down)
+                      (obj/set! "name" name)
+                      (obj/set! "label" mf/undefined)
+                      (obj/set! "className" klass)
+                      (obj/set! "type" "submit"))]
+
+    [:> "button" props
+     (if (some? children)
+       children
+       [:span label])]))
 
 (mf/defc form
-  [{:keys [on-submit form children class] :as props}]
-  (let [on-submit (or on-submit (constantly nil))]
+  {::mf/wrap-props false}
+  [{:keys [on-submit form children class]}]
+  (let [on-submit' (mf/use-fn
+                    (fn [event]
+                      (dom/prevent-default event)
+                      (when (fn? on-submit)
+                        (on-submit form event))))]
     [:& (mf/provider form-ctx) {:value form}
-     [:form {:class class
-             :on-submit (fn [event]
-                          (dom/prevent-default event)
-                          (on-submit form event))}
-      children]]))
+     [:form {:class class :on-submit on-submit'} children]]))
 
 (defn- conj-dedup
   "A helper that adds item into a vector and removes possible

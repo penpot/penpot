@@ -11,16 +11,17 @@
 
 (mf/defc button-link
   {::mf/wrap-props false}
-  [{:keys [action icon name klass]}]
+  [{:keys [on-click icon label class]}]
   (let [on-key-down (mf/use-fn
-                     (mf/deps action)
+                     (mf/deps on-click)
                      (fn [event]
                        (when (kbd/enter? event)
-                         (action event))))]
+                         (when (fn? on-click)
+                           (on-click event)))))]
     [:a.btn-primary.btn-large.button-link
-     {:class klass
+     {:class class
       :tab-index "0"
-      :on-click action
+      :on-click on-click
       :on-key-down on-key-down}
      [:span.logo icon]
-     name]))
+     label]))

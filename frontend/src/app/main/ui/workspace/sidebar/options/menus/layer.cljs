@@ -11,7 +11,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
@@ -162,7 +162,7 @@
 
        [:div.input-element {:title (tr "workspace.options.opacity")
                             :class "percentail"}
-        [:> numeric-input
+        [:> numeric-input*
          {:value (opacity->string current-opacity)
           :placeholder (tr "settings.multiple")
           :on-change handle-opacity-change

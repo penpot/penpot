@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :as lyc]
    [app.util.dom :as dom]
@@ -125,7 +125,7 @@
           [:div.grid-columns-auto
            [:span.icon i/layout-rows]
            [:div.input-wrapper
-            [:> numeric-input
+            [:> numeric-input*
              {:placeholder "--"
               :on-click #(dom/select-target %)
               :on-change (partial on-change :all :column)
@@ -133,7 +133,7 @@
           [:div.grid-rows-auto
            [:span.icon i/layout-columns]
            [:div.input-wrapper
-            [:> numeric-input
+            [:> numeric-input*
              {:placeholder "--"
               :on-click #(dom/select-target %)
               :on-change (partial on-change :all :row)
@@ -156,12 +156,12 @@
           [:div.grid-columns-auto
            [:span.icon i/layout-rows]
            [:div.input-wrapper
-            [:> numeric-input
+            [:> numeric-input*
              {:placeholder "--"
               :on-pointer-down #(dom/select-target %)
               :on-change (partial on-change :start :column)
               :value column}]
-            [:> numeric-input
+            [:> numeric-input*
              {:placeholder "--"
               :on-pointer-down #(dom/select-target %)
               :on-change (partial on-change :end :column)
@@ -169,12 +169,12 @@
           [:div.grid-rows-auto
            [:span.icon i/layout-columns]
            [:div.input-wrapper
-            [:> numeric-input
+            [:> numeric-input*
              {:placeholder "--"
               :on-pointer-down #(dom/select-target %)
               :on-change (partial on-change :start :row)
               :value row}]
-            [:> numeric-input
+            [:> numeric-input*
              {:placeholder "--"
               :on-pointer-down #(dom/select-target %)
               :on-change (partial on-change :end :row)

@@ -69,7 +69,7 @@
         [:a {:on-click #(modal/show! :change-email {})}
          (tr "dashboard.change-email")]]]]
 
-     [:& fm/submit-button
+     [:> fm/submit-button*
       {:label (tr "dashboard.save-settings")
        :disabled (empty? (:touched @form))}]
 

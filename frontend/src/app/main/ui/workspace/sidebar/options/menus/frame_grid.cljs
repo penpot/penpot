@@ -11,7 +11,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.editable-select :refer [editable-select]]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
@@ -138,10 +138,10 @@
 
       (if (= type :square)
         [:div.input-element.pixels {:title (tr "workspace.options.size")}
-         [:> numeric-input {:min 0.01
-                            :value (or (:size params) "")
-                            :no-validate true
-                            :on-change (handle-change :params :size)}]]
+         [:> numeric-input* {:min 0.01
+                             :value (or (:size params) "")
+                             :no-validate true
+                             :on-change (handle-change :params :size)}]]
 
         [:& editable-select {:value (:size params)
                              :type  "number"
@@ -202,7 +202,7 @@
           :label (if (= :row type)
                    (tr "workspace.options.grid.params.height")
                    (tr "workspace.options.grid.params.width"))}
-         [:> numeric-input
+         [:> numeric-input*
           {:placeholder "Auto"
            :value (or (:item-length params) "")
            :nillable true

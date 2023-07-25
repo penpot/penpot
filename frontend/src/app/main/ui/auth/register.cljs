@@ -124,7 +124,7 @@
                     :label (tr "auth.password")
                     :type "password"}]]
 
-     [:& fm/submit-button
+     [:> fm/submit-button*
       {:label (tr "auth.register-submit")
        :disabled @submitted?
        :data-test "register-form-submit"}]]))
@@ -259,7 +259,7 @@
          [:span ",\u00A0"]
          [:a {:href "https://penpot.app/privacy" :target "_blank"} (tr "auth.privacy-policy")]]])
 
-     [:& fm/submit-button
+     [:> fm/submit-button*
       {:label (tr "auth.register-submit")
        :disabled @submitted?}]]))
 

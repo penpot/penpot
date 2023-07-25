@@ -32,7 +32,7 @@
 
 (mf/defc recovery-form
   [{:keys [on-success-callback] :as props}]
-  (let [form      (fm/use-form :spec ::recovery-request-form 
+  (let [form      (fm/use-form :spec ::recovery-request-form
                                :validators [handle-error-messages]
                                :initial {})
         submitted (mf/use-state false)
@@ -82,7 +82,7 @@
                     :help-icon i/at
                     :type "text"}]]
 
-     [:& fm/submit-button
+     [:> fm/submit-button*
       {:label (tr "auth.recovery-request-submit")
        :data-test "recovery-resquest-submit"}]]))
 

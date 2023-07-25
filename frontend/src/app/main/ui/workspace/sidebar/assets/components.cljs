@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.assets.components
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl :refer [css]])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -146,15 +146,15 @@
           (let [renaming? (= renaming (:id component))]
             [:*
              [:& editable-label
-              {:class-name (dom/classnames
-                            (css :cell-name) listing-thumbs?
-                            (css :item-name) (not listing-thumbs?)
-                            (css :editing) renaming?)
+              {:class (dom/classnames
+                       (css :cell-name) listing-thumbs?
+                       (css :item-name) (not listing-thumbs?)
+                       (css :editing) renaming?)
                :value (cph/merge-path-item (:path component) (:name component))
                :tooltip (cph/merge-path-item (:path component) (:name component))
                :display-value (:name component)
-               :editing? renaming?
-               :disable-dbl-click? true
+               :editing renaming?
+               :disable-dbl-click true
                :on-change do-rename
                :on-cancel cancel-rename}]
 
@@ -185,15 +185,15 @@
           (let [renaming? (= renaming (:id component))]
             [:*
              [:& editable-label
-              {:class-name (dom/classnames
-                            :cell-name listing-thumbs?
-                            :item-name (not listing-thumbs?)
-                            :editing renaming?)
+              {:class (dom/classnames
+                       :cell-name listing-thumbs?
+                       :item-name (not listing-thumbs?)
+                       :editing renaming?)
                :value (cph/merge-path-item (:path component) (:name component))
                :tooltip (cph/merge-path-item (:path component) (:name component))
                :display-value (:name component)
-               :editing? renaming?
-               :disable-dbl-click? true
+               :editing renaming?
+               :disable-dbl-click true
                :on-change do-rename
                :on-cancel cancel-rename}]
 
@@ -569,29 +569,27 @@
                            :open? open?}
      (if ^boolean new-css-system
        [:& cmm/asset-section-block {:role :title-button}
+        [:*
+         (when open?
+           [:div {:class (stl/css :listing-options)}
+            [:& radio-buttons {:selected (if listing-thumbs? "grid" "list")
+                               :on-change toggle-list-style
+                               :name "listing-style"}
+             [:& radio-button {:icon i/view-as-list-refactor
+                               :value "list"
+                               :id :list}]
+             [:& radio-button {:icon i/flex-grid-refactor
+                               :value "grid"
+                               :id :grid}]]])
 
-        (when open?
-          [:div {:class (dom/classnames (css :listing-options) true)}
-           (let [option-selected (if listing-thumbs?
-                                   "grid"
-                                   "list")]
-             [:& radio-buttons {:selected option-selected
-                                :on-change toggle-list-style
-                                :name "listing-style"}
-              [:& radio-button {:icon (mf/html i/view-as-list-refactor)
-                                :value "list"
-                                :id :list}]
-              [:& radio-button {:icon (mf/html i/flex-grid-refactor)
-                                :value "grid"
-                                :id :grid}]])])
-        (when (and components-v2 (not read-only?) local?)
-          [:div {:on-click add-component
-                 :class (dom/classnames (css :add-component) true)}
-           i/add-refactor
-           [:& file-uploader {:accept cm/str-image-types
-                              :multi true
-                              :ref input-ref
-                              :on-selected on-file-selected}]])]
+         (when (and components-v2 (not read-only?) local?)
+           [:div {:on-click add-component
+                  :class (dom/classnames (css :add-component) true)}
+            i/add-refactor
+            [:& file-uploader {:accept cm/str-image-types
+                               :multi true
+                               :ref input-ref
+                               :on-selected on-file-selected}]])]]
        (when local?
          [:& cmm/asset-section-block {:role :title-button}
           (when (and components-v2 (not read-only?))

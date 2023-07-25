@@ -218,7 +218,13 @@
 
 (defmacro with-atomic
   [& args]
-  `(jdbc/with-transaction ~@args))
+  (if (symbol? (first args))
+    (let [cfgs (first args)
+          body (rest args)]
+      `(jdbc/with-transaction [conn# (::pool ~cfgs)]
+         (let [~cfgs (assoc ~cfgs ::conn conn#)]
+           ~@body)))
+    `(jdbc/with-transaction ~@args)))
 
 (defn open
   [pool]

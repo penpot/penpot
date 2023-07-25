@@ -9,12 +9,13 @@
    ["highlight.js" :as hljs]
    [rumext.v2 :as mf]))
 
-(mf/defc code-block [{:keys [code type]}]
+(mf/defc code-block
+  {::mf/wrap-props false}
+  [{:keys [code type]}]
   (let [block-ref (mf/use-ref)]
-    (mf/use-effect
-     (mf/deps code type block-ref)
-     (fn []
-       (hljs/highlightElement (mf/ref-val block-ref))))
-    [:pre.code-display {:class type
-                        :ref block-ref} code]))
+    (mf/with-effect [code type]
+      (when-let [node (mf/ref-val block-ref)]
+        (hljs/highlightElement node)))
+
+    [:pre.code-display {:class type :ref block-ref} code]))
 

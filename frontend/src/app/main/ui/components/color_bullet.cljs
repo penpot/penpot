@@ -40,10 +40,10 @@
 (mf/defc color-name
   {::mf/wrap-props false}
   [{:keys [color size on-click on-double-click]}]
-  (let [color (if (string? color) {:color color :opacity 1} color)
-        {:keys [name color gradient]} color
-        color-str (or name color (uc/gradient-type->string (:type gradient)))]
+  (let [{:keys [name color gradient]} (if (string? color) {:color color :opacity 1} color)]
     (when (or (not size) (= size :big))
-      [:span.color-text {:on-click #(when on-click (on-click %))
-                         :on-double-click #(when on-double-click (on-double-click %))
-                         :title name} color-str])))
+      [:span.color-text
+       {:on-click on-click
+        :on-double-click on-double-click
+        :title name}
+       (or name color (uc/gradient-type->string (:type gradient)))])))

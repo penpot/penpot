@@ -18,7 +18,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -316,20 +316,20 @@
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.size")]
           [:div.input-element.width {:title (tr "workspace.options.width")}
-           [:> numeric-input {:min 0.01
-                              :no-validate true
-                              :placeholder "--"
-                              :on-change on-width-change
-                              :disabled disabled-width-sizing?
-                              :value (:width values)}]]
+           [:> numeric-input* {:min 0.01
+                               :no-validate true
+                               :placeholder "--"
+                               :on-change on-width-change
+                               :disabled disabled-width-sizing?
+                               :value (:width values)}]]
 
           [:div.input-element.height {:title (tr "workspace.options.height")}
-           [:> numeric-input {:min 0.01
-                              :no-validate true
-                              :placeholder "--"
-                              :on-change on-height-change
-                              :disabled disabled-height-sizing?
-                              :value (:height values)}]]
+           [:> numeric-input* {:min 0.01
+                               :no-validate true
+                               :placeholder "--"
+                               :on-change on-height-change
+                               :disabled disabled-height-sizing?
+                               :value (:height values)}]]
 
           [:div.lock-size {:class (dom/classnames
                                    :selected (true? proportion-lock)
@@ -344,24 +344,24 @@
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.position")]
           [:div.input-element.Xaxis {:title (tr "workspace.options.x")}
-           [:> numeric-input {:no-validate true
-                              :placeholder "--"
-                              :on-change on-pos-x-change
-                              :disabled disabled-position-x?
-                              :value (:x values)}]]
+           [:> numeric-input* {:no-validate true
+                               :placeholder "--"
+                               :on-change on-pos-x-change
+                               :disabled disabled-position-x?
+                               :value (:x values)}]]
           [:div.input-element.Yaxis {:title (tr "workspace.options.y")}
-           [:> numeric-input {:no-validate true
-                              :placeholder "--"
-                              :disabled disabled-position-y?
-                              :on-change on-pos-y-change
-                              :value (:y values)}]]])
+           [:> numeric-input* {:no-validate true
+                               :placeholder "--"
+                               :disabled disabled-position-y?
+                               :on-change on-pos-y-change
+                               :value (:y values)}]]])
 
        ;; ROTATION
        (when (options :rotation)
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.rotation")]
           [:div.input-element.degrees {:title (tr "workspace.options.rotation")}
-           [:> numeric-input
+           [:> numeric-input*
             {:no-validate true
              :min 0
              :max 359
@@ -390,7 +390,7 @@
           (cond
             (= radius-mode :radius-1)
             [:div.input-element.mini {:title (tr "workspace.options.radius")}
-             [:> numeric-input
+             [:> numeric-input*
               {:placeholder "--"
                :ref radius-input-ref
                :min 0
@@ -409,28 +409,28 @@
             (= radius-mode :radius-4)
             [:*
              [:div.input-element.mini {:title (tr "workspace.options.radius-top-left")}
-              [:> numeric-input
+              [:> numeric-input*
                {:placeholder "--"
                 :min 0
                 :on-change on-radius-r1-change
                 :value (:r1 values)}]]
 
              [:div.input-element.mini {:title (tr "workspace.options.radius-top-right")}
-              [:> numeric-input
+              [:> numeric-input*
                {:placeholder "--"
                 :min 0
                 :on-change on-radius-r2-change
                 :value (:r2 values)}]]
 
              [:div.input-element.mini {:title (tr "workspace.options.radius-bottom-right")}
-              [:> numeric-input
+              [:> numeric-input*
                {:placeholder "--"
                 :min 0
                 :on-change on-radius-r3-change
                 :value (:r3 values)}]]
 
              [:div.input-element.mini {:title (tr "workspace.options.radius-bottom-left")}
-              [:> numeric-input
+              [:> numeric-input*
                {:placeholder "--"
                 :min 0
                 :on-change on-radius-r4-change

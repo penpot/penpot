@@ -15,7 +15,7 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -278,7 +278,7 @@
         [:div.padding-item.tooltip.tooltip-bottom-left
          {:alt "Vertical padding"}
          [:span.icon.rotated i/auto-padding-both-sides]
-         [:> numeric-input
+         [:> numeric-input*
           {:placeholder "--"
            :on-change (partial on-change :simple :p1)
            :on-focus #(do
@@ -289,7 +289,7 @@
         [:div.padding-item.tooltip.tooltip-bottom-left
          {:alt "Horizontal padding"}
          [:span.icon i/auto-padding-both-sides]
-         [:> numeric-input
+         [:> numeric-input*
           {:placeholder "--"
            :on-change (partial on-change :simple :p2)
            :on-focus #(do (dom/select-target %)
@@ -308,7 +308,7 @@
                    :p3 "Bottom"
                    :p4 "Left")}
            [:div.input-element.auto
-            [:> numeric-input
+            [:> numeric-input*
              {:placeholder "--"
               :on-change (partial on-change :multiple num)
               :on-focus #(do (dom/select-target %)
@@ -342,35 +342,35 @@
        {:alt "Column gap"}
        [:span.icon
         i/auto-gap]
-       [:> numeric-input {:no-validate true
-                          :placeholder "--"
-                          :on-focus (fn [event]
-                                      (select-gap :column-gap)
-                                      (reset! gap-selected? :column-gap)
-                                      (dom/select-target event))
-                          :on-change (partial set-gap (= :nowrap wrap-type) :column-gap)
-                          :on-blur (fn [_]
-                                     (select-gap nil)
-                                     (reset! gap-selected? :none))
-                          :value (:column-gap gap-value)
-                          :disabled (and (= :nowrap wrap-type) is-col?)}]]
+       [:> numeric-input* {:no-validate true
+                           :placeholder "--"
+                           :on-focus (fn [event]
+                                       (select-gap :column-gap)
+                                       (reset! gap-selected? :column-gap)
+                                       (dom/select-target event))
+                           :on-change (partial set-gap (= :nowrap wrap-type) :column-gap)
+                           :on-blur (fn [_]
+                                      (select-gap nil)
+                                      (reset! gap-selected? :none))
+                           :value (:column-gap gap-value)
+                           :disabled (and (= :nowrap wrap-type) is-col?)}]]
 
       [:div.gap-row.tooltip.tooltip-bottom-left
        {:alt "Row gap"}
        [:span.icon.rotated
         i/auto-gap]
-       [:> numeric-input {:no-validate true
-                          :placeholder "--"
-                          :on-focus (fn [event]
-                                      (select-gap :row-gap)
-                                      (reset! gap-selected? :row-gap)
-                                      (dom/select-target event))
-                          :on-change (partial set-gap (= :nowrap wrap-type) :row-gap)
-                          :on-blur (fn [_]
-                                     (select-gap nil)
-                                     (reset! gap-selected? :none))
-                          :value (:row-gap gap-value)
-                          :disabled (and (= :nowrap wrap-type) (not is-col?))}]]]]))
+       [:> numeric-input* {:no-validate true
+                           :placeholder "--"
+                           :on-focus (fn [event]
+                                       (select-gap :row-gap)
+                                       (reset! gap-selected? :row-gap)
+                                       (dom/select-target event))
+                           :on-change (partial set-gap (= :nowrap wrap-type) :row-gap)
+                           :on-blur (fn [_]
+                                      (select-gap nil)
+                                      (reset! gap-selected? :none))
+                           :value (:row-gap gap-value)
+                           :disabled (and (= :nowrap wrap-type) (not is-col?))}]]]]))
 
 (mf/defc grid-edit-mode
   [{:keys [id] :as props}]
@@ -465,11 +465,11 @@
               i/layout-columns)]
 
            [:div.grid-column-value
-            [:> numeric-input {:no-validate true
-                               :value (:value column)
-                               :on-change #(set-column-value type index %)
-                               :placeholder "--"
-                               :disabled (= :auto (:type column))}]]
+            [:> numeric-input* {:no-validate true
+                                :value (:value column)
+                                :on-change #(set-column-value type index %)
+                                :placeholder "--"
+                                :disabled (= :auto (:type column))}]]
            [:div.grid-column-unit
             [:& select
              {:class "grid-column-unit-selector"

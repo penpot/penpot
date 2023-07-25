@@ -129,7 +129,7 @@
 
        [:div.modal-footer
         [:div.action-buttons {:data-test "change-email-submit"}
-         [:& fm/submit-button
+         [:> fm/submit-button*
           {:label (tr "modals.change-email.submit")}]]]]]]))
 
 

@@ -108,15 +108,15 @@
           (let [renaming? (= renaming (:id object))]
             [:*
              [:& editable-label
-              {:class-name (dom/classnames
-                            (css :cell-name) listing-thumbs?
-                            (css :item-name) (not listing-thumbs?)
-                            (css :editing) renaming?)
+              {:class (dom/classnames
+                       (css :cell-name) listing-thumbs?
+                       (css :item-name) (not listing-thumbs?)
+                       (css :editing) renaming?)
                :value (cph/merge-path-item (:path object) (:name object))
                :tooltip (cph/merge-path-item (:path object) (:name object))
                :display-value (:name object)
-               :editing? renaming?
-               :disable-dbl-click? true
+               :editing renaming?
+               :disable-dbl-click true
                :on-change do-rename
                :on-cancel cancel-rename}]
 
@@ -145,15 +145,15 @@
           (let [renaming? (= renaming (:id object))]
             [:*
              [:& editable-label
-              {:class-name (dom/classnames
-                            :cell-name listing-thumbs?
-                            :item-name (not listing-thumbs?)
-                            :editing renaming?)
+              {:class (dom/classnames
+                       :cell-name listing-thumbs?
+                       :item-name (not listing-thumbs?)
+                       :editing renaming?)
                :value (cph/merge-path-item (:path object) (:name object))
                :tooltip (cph/merge-path-item (:path object) (:name object))
                :display-value (:name object)
-               :editing? renaming?
-               :disable-dbl-click? true
+               :editing renaming?
+               :disable-dbl-click true
                :on-change do-rename
                :on-cancel cancel-rename}]
 

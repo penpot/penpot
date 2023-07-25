@@ -6,7 +6,6 @@
   rumext.v2/defc clojure.core/defn
   rumext.v2/fnc clojure.core/fn
   app.common.data/export clojure.core/def
-  app.db/with-atomic clojure.core/with-open
   app.common.data.macros/get-in clojure.core/get-in
   app.common.data.macros/with-open clojure.core/with-open
   app.common.data.macros/select-keys clojure.core/select-keys
@@ -18,6 +17,7 @@
    potok.core/reify hooks.export/potok-reify
    app.util.services/defmethod hooks.export/service-defmethod
    app.common.record/defrecord hooks.export/penpot-defrecord
+   app.db/with-atomic hooks.export/penpot-with-atomic
    }}
 
  :output
