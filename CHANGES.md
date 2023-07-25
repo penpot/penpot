@@ -89,7 +89,9 @@
 - Fix when user deletes one file during import it is impossible to finish importing of second file [Taiga #5656](https://tree.taiga.io/project/penpot/issue/5656)
 - Fix export multiple images when only one of them has export settings [Taiga #5649](https://tree.taiga.io/project/penpot/issue/5649)
 - Fix error when a user different than the thread creator edits a comment [Taiga #5647](https://tree.taiga.io/project/penpot/issue/5647)
-
+- Fix unnecessary button [Taiga #3312](https://tree.taiga.io/project/penpot/issue/3312)
+- Fix copy color information in several formats [Taiga #4723](https://tree.taiga.io/project/penpot/issue/4723)
+- Fix dropdown width [Taiga #5541](https://tree.taiga.io/project/penpot/issue/5541)
 ### :arrow_up: Deps updates
 
 - Update google fonts catalog (at 2023/07/06) [Taiga #5592](https://tree.taiga.io/project/penpot/issue/5592)

@@ -152,7 +152,7 @@
      [:div.element-set-content
       [:div.row-flex
        [:& select
-        {:class "flex-grow"
+        {:class "flex-grow no-check"
          :default-value selected-blend-mode
          :options options
          :on-change handle-change-blend-mode
