@@ -9,11 +9,17 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.pprint :refer [pprint]]
+   [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
+   [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
+   [app.rpc.commands.files :as files]
    [app.rpc.commands.files :as files]
    [app.srepl.helpers :as h]))
 
@@ -140,3 +146,79 @@
 
       (prn (str "Updating " (:name file) " " (:id file)))
       (update file :data h/update-pages update-page))))
+
+(defn fix-component-root
+  [file]
+  (let [update-shape (fn [page shape]
+                       (let [parent (get (:objects page) (:parent-id shape))]
+                         (if (and parent
+                                  (:component-root shape)
+                                  (:shape-ref parent))
+                           (do
+                             (prn (str "   Shape " (:name shape) " " (:id shape)))
+                             (dissoc shape :component-root))
+                           shape)))
+
+        update-page (fn [page]
+                      (prn (str "Page " (:name page)))
+                      (h/update-shapes page (partial update-shape page)))]
+
+    (prn (str "Updating " (:name file) " " (:id file)))
+    (update file :data h/update-pages update-page)))
+
+(defn update-near-components
+  ([file]
+   (prn (str "Updating " (:name file) " " (:id file)))
+   (if-not (contains? (:features file) "components/v2")
+     (prn "   This file is not v2")
+     (let [libs (->> (files/get-file-libraries h/*conn* (:id file))
+                     (cons file)
+                     (map #(files/get-file h/*conn* (:id %) (:features file)))
+                     (d/index-by :id))
+
+           update-shape (fn [page shape]
+                          (if-not (:shape-ref shape)
+                            shape
+                            (do
+                              ;; Uncomment to debug
+                              ;; (prn (str "  -> Shape " (:name shape) " " (:id shape) " shape-ref " (:shape-ref shape)))
+                              (let [root-shape (ctn/get-copy-root (:objects page) shape)]
+                                (if root-shape
+                                  (let [component (ctf/get-component libs (:component-file root-shape) (:component-id root-shape) {:included-delete? true})
+                                        component-file (get libs (:component-file root-shape))
+                                        component-shapes (ctf/get-component-shapes (:data component-file) component)
+                                        ref-shape (d/seek #(= (:id %) (:shape-ref shape)) component-shapes)]
+                                    (if-not (and component component-file component-shapes)
+                                      (do
+                                        (prn (str "  -> Shape " (:name shape) " " (:id shape) " shape-ref " (:shape-ref shape)))
+                                        (when-not component (prn "     (component not found)"))
+                                        (when-not component-file (prn "     (component-file not found)"))
+                                        (when-not component-shapes (prn "     (component-shapes not found)")))
+                                      (if ref-shape
+                                        shape  ; This means that the copy is not nested, or this script already was run
+                                        (let [near-shape (d/seek #(= (:shape-ref %) (:shape-ref shape)) component-shapes)]
+                                          ;; (prn (str "     new ref-shape " (:id near-shape)))
+                                          (if near-shape
+                                            (assoc shape :shape-ref (:id near-shape))
+                                            (do
+                                              ;; We assume in this case that this is a fostered sub instance, so we do nothing
+                                              ;; (prn (str "  -> Shape " (:name shape) " " (:id shape) " shape-ref " (:shape-ref shape)))
+                                              ;; (prn "     (near-shape not found)")
+                                              shape))))))
+                                  (do
+                                    (prn (str "  -> Shape " (:name shape) " " (:id shape) " shape-ref " (:shape-ref shape)))
+                                    (prn "     (root shape not found)")
+                                    shape))))))
+
+           update-page (fn [page]
+                         (prn (str "Page " (:name page)))
+                         (h/update-shapes page (partial update-shape page)))]
+
+       (update file :data h/update-pages update-page))))
+
+  ([file state]
+   (if (contains? (:features file) "components/v2")
+     (do
+       (update-near-components file)
+       (update state :total (fnil inc 0)))
+     state)))

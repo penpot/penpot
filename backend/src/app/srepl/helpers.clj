@@ -104,7 +104,7 @@
           (dissoc file :data))))))
 
 (def ^:private sql:retrieve-files-chunk
-  "SELECT id, name, created_at, data FROM file
+  "SELECT id, name, features, created_at, data FROM file
     WHERE created_at < ? AND deleted_at is NULL
     ORDER BY created_at desc LIMIT ?")
 
@@ -126,7 +126,9 @@
                               :kf first
                               :initk (or start-at (dt/now)))
                  (take max-items)
-                 (map #(update % :data blob/decode))))
+                 (map #(-> %
+                           (update :data blob/decode)
+                           (update :features db/decode-pgarray #{})))))
 
           (on-error* [cause file]
             (println "unexpected exception happened on processing file: " (:id file))
