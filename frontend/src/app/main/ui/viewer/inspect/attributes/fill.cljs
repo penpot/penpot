@@ -35,6 +35,13 @@
    {:to-prop "background"
     :format #(uc/color->background (shape->color shape))}))
 
+(defn copy-data-format [shape format]
+  (cg/generate-css-props
+   shape
+   fill-attributes
+   {:to-prop "background-color"
+    :format #(uc/color->format->background (shape->color shape) format)}))
+
 (mf/defc fill-block [{:keys [shape]}]
   (let [color-format (mf/use-state :hex)
         color (shape->color shape)]
@@ -43,7 +50,7 @@
      [:& color-row {:color color
                     :format @color-format
                     :on-change-format #(reset! color-format %)
-                    :copy-data (copy-data shape)}]]))
+                    :copy-data (copy-data-format shape  @color-format)}]]))
 
 (mf/defc fill-panel
   [{:keys [shapes]}]

@@ -7,6 +7,7 @@
 (ns app.util.color
   "Color conversion utils."
   (:require
+   [app.common.data :as d]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.strings :as ust]
@@ -147,6 +148,24 @@
       (not= color :multiple)
       (let [[r g b] (hex->rgb (or color value))]
         (str/fmt "rgba(%s, %s, %s, %s)" r g b opacity))
+
+      :else "transparent")))
+
+(defn color->format->background [{:keys [color opacity gradient]} format]
+  (let [opacity (or opacity 1)]
+    (cond
+      (and gradient (not= :multiple gradient))
+      (gradient->css gradient)
+
+      (not= color :multiple)
+      (case format
+        :rgba (let [[r g b] (hex->rgb color)]
+               (str/fmt "rgba(%s, %s, %s, %s)" r g b opacity))
+
+        :hsla (let [[h s l] (hex->hsl color)]
+                (str/fmt "hsla(%s, %s, %s, %s)" h (* 100 s) (* 100 l) opacity))
+
+        :hex (str color (str/upper (d/opacity-to-hex opacity))))
 
       :else "transparent")))
 
