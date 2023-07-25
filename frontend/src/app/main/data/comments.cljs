@@ -322,7 +322,7 @@
                 (rx/concat
                  (rx/of (partial fetched-comments comments))
 
-                 (->> (rx/from (map :file-id comments))
+                 (->> (rx/from (into #{} (map :file-id) comments))
                       (rx/merge-map #(rp/cmd! :get-profiles-for-file-comments {:file-id %}))
                       (rx/reduce #(merge %1 (d/index-by :id %2)) {})
                       (rx/map #(partial fetched-users %))))))
