@@ -714,8 +714,6 @@
        (rx/map #(update-component-sync (:id %) file-id (uuid/next)) (rx/from shapes))
        (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
-(declare sync-file-2nd-stage)
-
 (def valid-asset-types
   #{:colors :components :typographies})
 
@@ -803,44 +801,7 @@
               (rx/concat (rx/timer 3000)
                          (rp/cmd! :update-file-library-sync-status
                                   {:file-id file-id
-                                   :library-id library-id})))
-            (when (and (seq (:redo-changes library-changes))
-                       sync-components?)
-              (rx/of (sync-file-2nd-stage file-id library-id asset-id undo-group))))))))))
-
-(defn- sync-file-2nd-stage
-  "If some components have been modified, we need to launch another synchronization
-  to update the instances of the changed components."
-  ;; TODO: this does not work if there are multiple nested components. Only the
-  ;;       first level will be updated.
-  ;;       To solve this properly, it would be better to launch another sync-file
-  ;;       recursively. But for this not to cause an infinite loop, we need to
-  ;;       implement updated-at at component level, to detect what components have
-  ;;       not changed, and then not to apply sync and terminate the loop.
-  [file-id library-id asset-id undo-group]
-  (dm/assert! (uuid? file-id))
-  (dm/assert! (uuid? library-id))
-  (dm/assert! (or (nil? asset-id)
-                  (uuid? asset-id)))
-  (ptk/reify ::sync-file-2nd-stage
-    ptk/WatchEvent
-    (watch [it state _]
-      (log/info :msg "SYNC-FILE (2nd stage)"
-                :file (dwlh/pretty-file file-id state)
-                :library (dwlh/pretty-file library-id state))
-      (let [file    (wsh/get-file state file-id)
-            changes (reduce
-                     pcb/concat-changes
-                     (-> (pcb/empty-changes it)
-                         (pcb/set-undo-group undo-group))
-                     [(dwlh/generate-sync-file it file-id :components asset-id library-id state)
-                      (dwlh/generate-sync-library it file-id :components asset-id library-id state)])]
-
-        (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
-                                                                       (:redo-changes changes)
-                                                                       file))
-        (when (seq (:redo-changes changes))
-          (rx/of (dch/commit-changes (assoc changes :file-id file-id))))))))
+                                   :library-id library-id}))))))))))
 
 (def ignore-sync
   "Mark the file as ignore syncs. All library changes before this moment will not

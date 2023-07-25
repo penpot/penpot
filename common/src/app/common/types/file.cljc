@@ -120,7 +120,7 @@
 (defn get-component
   "Retrieve a component from a library."
   [libraries library-id component-id & {:keys [included-delete?] :or {included-delete? false}}]
-   (ctkl/get-component (dm/get-in libraries [library-id :data]) component-id included-delete?))
+  (ctkl/get-component (dm/get-in libraries [library-id :data]) component-id included-delete?))
 
 (defn get-component-library
   "Retrieve the library the component belongs to."
@@ -587,7 +587,7 @@
    (let [page       (ctpl/get-page file-data page-id)
          objects    (:objects page)
          components (ctkl/components file-data)
-         root       (d/seek #(nil? (:parent-id %)) (vals objects))]
+         root       (get objects uuid/zero)]
 
      (letfn [(show-shape [shape-id level objects]
                (let [shape (get objects shape-id)]
@@ -628,7 +628,7 @@
                                              (get-ref-shape (:data component-file) component shape)
                                              (get-ref-shape file-data component shape)))]
 
-                   (str/format " %s--> %s%s%s"
+                   (str/format " %s--> %s%s%s%s"
                                (cond (:component-root shape) "#"
                                      (:component-id shape) "@"
                                      :else "-")
@@ -636,6 +636,9 @@
                                (when component-file (str/format "<%s> " (:name component-file)))
 
                                (or (:name component-shape) "?")
+                               
+                               (when (and show-ids component-shape)
+                                 (str/format " <%s>" (:id component-shape)))
 
                                (if (or (:component-root shape)
                                        (nil? (:component-id shape))

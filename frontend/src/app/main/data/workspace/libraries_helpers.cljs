@@ -543,8 +543,7 @@
             initial-root?  (:component-root shape-inst)
 
             root-inst      shape-inst
-            root-main      (when component
-                             (ctf/get-component-root library component))]
+            root-main      shape-main]
 
         (if component
           (generate-sync-shape-direct-recursive changes
@@ -608,13 +607,13 @@
 
           only-inst (fn [changes child-inst]
                       (if-not (and omit-touched?
-                                        (contains? (:touched shape-inst)
-                                                   :shapes-group))
-                             (remove-shape changes
-                                           child-inst
-                                           container
-                                           omit-touched?)
-                             changes))
+                                   (contains? (:touched shape-inst)
+                                              :shapes-group))
+                        (remove-shape changes
+                                      child-inst
+                                      container
+                                      omit-touched?)
+                        changes))
 
           only-main (fn [changes child-main]
                       (if-not (and omit-touched?
