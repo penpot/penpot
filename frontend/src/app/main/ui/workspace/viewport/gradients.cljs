@@ -312,8 +312,7 @@
         editing-stop (:editing-stop state)]
 
     (when (and (some? gradient)
-               (= id (:shape-id gradient))
-               (not= (:type shape) :text))
+               (= id (:shape-id gradient)))
       [:& gradient-handlers*
        {:zoom zoom
         :gradient gradient
