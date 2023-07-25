@@ -77,6 +77,10 @@
                  (pcb/with-objects objects)
                  (prepare-add-shape shape objects selected))
 
+             changes (cond-> changes
+                       (cph/text-shape? shape)
+                       (pcb/set-undo-group (:id shape)))
+
              undo-id (js/Symbol)]
 
          (rx/concat

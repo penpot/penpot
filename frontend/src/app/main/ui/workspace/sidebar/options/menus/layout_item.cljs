@@ -231,7 +231,9 @@
 
         on-change-z-index
         (fn [value]
-          (st/emit! (dwsl/update-layout-child ids {:layout-item-z-index value})))]
+          (st/emit! (dwsl/update-layout-child ids {:layout-item-z-index value})))
+
+        is-layout-child? (and is-layout-child? (not is-absolute?))]
 
     [:div.element-set
      [:div.element-set-title
@@ -249,7 +251,7 @@
                "Layout element")]]
 
      [:div.element-set-content.layout-item-menu
-      (when is-layout-child?
+      (when (or is-layout-child? is-absolute?)
         [:div.layout-row
          [:div.row-title.sizing "Position"]
          [:div.btn-wrapper
@@ -275,53 +277,52 @@
              :disabled (not is-absolute?)
              :value (:layout-item-z-index values)}]]]])
 
-      (when (not (:layout-item-absolute values))
-        [:*
+      [:*
+       [:div.layout-row
+        [:div.row-title.sizing "Sizing"]
+        [:& element-behavior {:is-layout-child? is-layout-child?
+                              :is-layout-container? is-layout-container?
+                              :layout-item-v-sizing (or (:layout-item-v-sizing values) :fix)
+                              :layout-item-h-sizing (or (:layout-item-h-sizing values) :fix)
+                              :on-change-behavior on-change-behavior}]]
+
+       (when is-layout-child?
          [:div.layout-row
-          [:div.row-title.sizing "Sizing"]
-          [:& element-behavior {:is-layout-child? is-layout-child?
-                                :is-layout-container? is-layout-container?
-                                :layout-item-v-sizing (or (:layout-item-v-sizing values) :fix)
-                                :layout-item-h-sizing (or (:layout-item-h-sizing values) :fix)
-                                :on-change-behavior on-change-behavior}]]
+          [:div.row-title "Align"]
+          [:div.btn-wrapper
+           [:& align-self-row {:is-col? is-col?
+                               :align-self align-self
+                               :set-align-self set-align-self}]]])
 
-         (when (and is-layout-child? is-flex-parent?)
-           [:div.layout-row
-            [:div.row-title "Align"]
-            [:div.btn-wrapper
-             [:& align-self-row {:is-col? is-col?
-                                 :align-self align-self
-                                 :set-align-self set-align-self}]]])
+       (when is-layout-child?
+         [:& margin-section {:values values
+                             :change-margin-style change-margin-style
+                             :on-margin-change on-margin-change}])
 
-         (when is-layout-child?
-           [:& margin-section {:values values
-                               :change-margin-style change-margin-style
-                               :on-margin-change on-margin-change}])
+       [:div.advanced-ops-body
+        [:div.input-wrapper
+         (for  [item (cond-> []
+                       (= (:layout-item-h-sizing values) :fill)
+                       (conj :layout-item-min-w :layout-item-max-w)
 
-         [:div.advanced-ops-body
-          [:div.input-wrapper
-           (for  [item (cond-> []
-                         (= (:layout-item-h-sizing values) :fill)
-                         (conj :layout-item-min-w :layout-item-max-w)
+                       (= (:layout-item-v-sizing values) :fill)
+                       (conj :layout-item-min-h :layout-item-max-h))]
 
-                         (= (:layout-item-v-sizing values) :fill)
-                         (conj :layout-item-min-h :layout-item-max-h))]
-
-             [:div.tooltip.tooltip-bottom
-              {:key   (d/name item)
-               :alt   (tr (dm/str "workspace.options.layout-item.title." (d/name item)))
-               :class (dom/classnames "maxH" (= item :layout-item-max-h)
-                                      "minH" (= item :layout-item-min-h)
-                                      "maxW" (= item :layout-item-max-w)
-                                      "minW" (= item :layout-item-min-w))}
-              [:div.input-element
-               {:alt   (tr (dm/str "workspace.options.layout-item." (d/name item)))}
-               [:> numeric-input
-                {:no-validate true
-                 :min 0
-                 :data-wrap true
-                 :placeholder "--"
-                 :on-focus #(dom/select-target %)
-                 :on-change (partial on-size-change item)
-                 :value (get values item)
-                 :nillable true}]]])]]])]]))
+           [:div.tooltip.tooltip-bottom
+            {:key   (d/name item)
+             :alt   (tr (dm/str "workspace.options.layout-item.title." (d/name item)))
+             :class (dom/classnames "maxH" (= item :layout-item-max-h)
+                                    "minH" (= item :layout-item-min-h)
+                                    "maxW" (= item :layout-item-max-w)
+                                    "minW" (= item :layout-item-min-w))}
+            [:div.input-element
+             {:alt   (tr (dm/str "workspace.options.layout-item." (d/name item)))}
+             [:> numeric-input
+              {:no-validate true
+               :min 0
+               :data-wrap true
+               :placeholder "--"
+               :on-focus #(dom/select-target %)
+               :on-change (partial on-size-change item)
+               :value (get values item)
+               :nillable true}]]])]]]]]))
