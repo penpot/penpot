@@ -86,6 +86,9 @@
 - Fix problem with precision in resizes [Taiga #5623](https://tree.taiga.io/project/penpot/issue/5623)
 - Fix absolute positioned layouts not showing flex properties [Taiga #5630](https://tree.taiga.io/project/penpot/issue/5630)
 - Fix text gradient handlers [Taiga #4047](https://tree.taiga.io/project/penpot/issue/4047)
+- Fix when user deletes one file during import it is impossible to finish importing of second file [Taiga #5656](https://tree.taiga.io/project/penpot/issue/5656)
+- Fix export multiple images when only one of them has export settings [Taiga #5649](https://tree.taiga.io/project/penpot/issue/5649)
+- Fix error when a user different than the thread creator edits a comment [Taiga #5647](https://tree.taiga.io/project/penpot/issue/5647)
 
 ### :arrow_up: Deps updates
 

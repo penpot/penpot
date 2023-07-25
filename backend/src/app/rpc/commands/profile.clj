@@ -133,7 +133,8 @@
 (def schema:update-profile-password
   [:map {:title "update-profile-password"}
    [:password [::sm/word-string {:max 500}]]
-   [:old-password [::sm/word-string {:max 500}]]])
+   ;; Social registered users don't have old-password
+   [:old-password {:optional true} [:maybe [::sm/word-string {:max 500}]]]])
 
 (sv/defmethod ::update-profile-password
   {:doc/added "1.0"
