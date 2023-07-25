@@ -1,0 +1,36 @@
+Arguments: 
+  /home/aitor/.nvm/versions/node/v18.17.0/bin/node /home/aitor/.cache/node/corepack/yarn/1.22.19/bin/yarn.js add rumext
+
+PATH: 
+  /home/aitor/.nimble/bin:/home/aitor/.local/share/pnpm:/home/aitor/.local/bin:/home/aitor/.cargo/bin:/home/aitor/.nvm/versions/node/v18.17.0/bin:/home/aitor/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/home/aitor/Android/tools:/home/aitor/Android/platform-tools
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  18.17.0
+
+Platform: 
+  linux x64
+
+Trace: 
+  Error: https://registry.yarnpkg.com/rumext: Not found
+      at params.callback [as _callback] (/home/aitor/.cache/node/corepack/yarn/1.22.19/lib/cli.js:66145:18)
+      at self.callback (/home/aitor/.cache/node/corepack/yarn/1.22.19/lib/cli.js:140890:22)
+      at Request.emit (node:events:514:28)
+      at Request.<anonymous> (/home/aitor/.cache/node/corepack/yarn/1.22.19/lib/cli.js:141862:10)
+      at Request.emit (node:events:514:28)
+      at IncomingMessage.<anonymous> (/home/aitor/.cache/node/corepack/yarn/1.22.19/lib/cli.js:141784:12)
+      at Object.onceWrapper (node:events:628:28)
+      at IncomingMessage.emit (node:events:526:35)
+      at endReadableNT (node:internal/streams/readable:1359:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+
+npm manifest: 
+  No manifest
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
