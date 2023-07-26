@@ -1627,12 +1627,6 @@ msgstr[0] "Tens a certeza de que pretendes eliminar este ficheiro?"
 msgstr[1] "Tens a certeza de que pretendes eliminar estes ficheiros?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Este ficheiro tem bibliotecas utilizadas neste ficheiro:"
-msgstr[1] "Este ficheiro tem bibliotecas utilizadas nestes ficheiros:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Eliminando ficheiro"
@@ -1768,26 +1762,10 @@ msgid "modals.unpublish-shared-confirm.accept"
 msgstr "Cancelar publicação"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Se cancelares a publicação, os recursos nele tornam-se uma biblioteca deste "
-"ficheiro."
-msgstr[1] ""
-"Se cancelares a publicação, os recursos nele tornam-se uma biblioteca "
-"destes ficheiros."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Tens a certeza de que queres cancelar a publicação desta biblioteca?"
 msgstr[1] "Tens a certeza de que queres cancelar a publicação destas bibliotecas?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Está em uso neste ficheiro:"
-msgstr[1] "Está em uso nestes ficheiros:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"

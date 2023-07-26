@@ -1720,64 +1720,11 @@ msgstr[1] "Șterge fișiere"
 msgstr[2] "Șterge fișierele"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"Dacă îl ștergeți, acele materiale se vor muta în biblioteca locală a "
-"acestui fișier. Orice bunuri neutilizate vor fi pierdute."
-msgstr[1] ""
-"Dacă le ștergeți, acele materiale se vor muta în biblioteca locală a "
-"acestui fișier. Orice bunuri neutilizate vor fi pierdute."
-msgstr[2] ""
-"Dacă le ștergeți, acele materiale se vor muta în biblioteca locală a "
-"acestui fișier. Orice bunuri neutilizate vor fi pierdute."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"Dacă îl ștergeți, acele elemente se vor muta în bibliotecile locale ale "
-"acestor fișiere. Orice bunuri neutilizate vor fi pierdute."
-msgstr[1] ""
-"Dacă le ștergeți, acele elemente se vor muta în bibliotecile locale ale "
-"acestor fișiere. Orice bunuri neutilizate vor fi pierdute."
-msgstr[2] ""
-"Dacă le ștergeți, acele elemente se vor muta în bibliotecile locale ale "
-"acestor fișiere. Orice bunuri neutilizate vor fi pierdute."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Ești sigur că vrei sa ștergi acest fișier?"
 msgstr[1] "Ești sigur că vrei sa ștergi aceste fișiere?"
 msgstr[2] "Ești sigur că vrei sa ștergi aceste fișiere?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] ""
-"Niciunul dintre elementele din biblioteca acestui fișier nu este în uz. Ele "
-"vor fi șterse împreună cu fișierul."
-msgstr[1] ""
-"Niciunul dintre elementele din biblioteca acestor fișiere nu este în uz. "
-"Ele vor fi șterse împreună cu fișierele."
-msgstr[2] ""
-"Niciunul dintre elementele din biblioteca acestor fișiere nu este în uz. "
-"Ele vor fi șterse împreună cu fișierele."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Unele elemente din biblioteca acestui fișier sunt în uz aici:"
-msgstr[1] "Unele elemente din biblioteca acestor fișiere sunt în uz aici:"
-msgstr[2] "Unele elemente din biblioteca acestor fișiere sunt în uz aici:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "Unele dintre elementele din biblioteca acestui fișier sunt utilizate aici:"
-msgstr[1] "Unele dintre elementele din biblioteca acestor fișiere sunt utilizate aici:"
-msgstr[2] "Unele dintre elementele din biblioteca acestor fișiere sunt utilizate aici:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -1922,58 +1869,11 @@ msgid "modals.small-nudge"
 msgstr "Înghiont mic"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Dacă anulați publicarea, materialul va fi mutat la o bibliotecă locală a "
-"acestui fișier."
-msgstr[1] ""
-"Dacă anulați publicarea lor, materialele vor fi mutate la o bibliotecă "
-"locală a acestor fișiere."
-msgstr[2] ""
-"Dacă anulați publicarea lor, materialele vor fi mutate la o bibliotecă "
-"locală a acestor fișiere."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] ""
-"Dacă îl anulați, acele materiale se vor muta în bibliotecile locale ale "
-"acestor fișiere."
-msgstr[1] ""
-"Dacă le anulați, acele materiale se vor muta în bibliotecile locale ale "
-"acestor fișiere."
-msgstr[2] ""
-"Dacă le anulați, acele materiale se vor muta în bibliotecile locale ale "
-"acestor fișiere."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Sigur doriți să anulați publicarea acestei biblioteci?"
 msgstr[1] "Sigur doriți să anulați publicarea acestor biblioteci?"
 msgstr[2] "Sigur doriți să anulați publicarea acestor biblioteci?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Niciunul dintre materialele din această bibliotecă nu este utilizat."
-msgstr[1] "Niciunul dintre materialele din aceste biblioteci nu este utilizat."
-msgstr[2] "Niciunul dintre materialele din aceste biblioteci nu este utilizat."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Unele dintre elementele din această bibliotecă sunt în uz aici:"
-msgstr[1] "Unele dintre elementele din aceste biblioteci sunt în uz aici:"
-msgstr[2] "Unele dintre elementele din aceste biblioteci sunt în uz aici:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Unele dintre materialele din această bibliotecă sunt utilizate aici:"
-msgstr[1] "Unele dintre materialele din aceste biblioteci sunt utilizate aici:"
-msgstr[2] "Unele dintre materialele din aceste biblioteci sunt utilizate aici:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"

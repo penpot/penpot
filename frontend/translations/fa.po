@@ -1616,12 +1616,6 @@ msgstr[0] "آیا مطمئن هستید که می‌خواهید این فایل
 msgstr[1] "آیا مطمئن هستید که می‌خواهید این فایل‌ها را حذف کنید؟"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "این فایل دارای کتابخانه‌هایی است که در این فایل استفاده می‌شوند:"
-msgstr[1] "این فایل دارای کتابخانه‌هایی است که در این فایل‌ها استفاده می‌شوند:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "درحال حذف فایل"

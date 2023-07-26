@@ -1718,37 +1718,6 @@ msgstr[1] "מחיקת קבצים"
 msgstr[2] "מחיקת קבצים"
 msgstr[3] "מחיקת קבצים"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"מחיקה תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
-"בשימוש יאבדו."
-msgstr[1] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
-"בשימוש יאבדו."
-msgstr[2] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
-"בשימוש יאבדו."
-msgstr[3] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקובץ הזה. משאבים שאינם "
-"בשימוש יאבדו."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"מחיקה תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים שאינם "
-"בשימוש יאבדו."
-msgstr[1] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים "
-"שאינם בשימוש יאבדו."
-msgstr[2] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים "
-"שאינם בשימוש יאבדו."
-msgstr[3] ""
-"מחיקה שלהם תוביל להעברת המשאבים לספרייה המקומית של הקבצים האלה. משאבים "
-"שאינם בשימוש יאבדו."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1758,31 +1727,6 @@ msgstr[0] "למחוק את הקובץ?"
 msgstr[1] "למחוק את הקבצים?"
 msgstr[2] "למחוק את הקבצים?"
 msgstr[3] "למחוק את הקבצים?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] "אף אחד מהמשאבים שבספרייה של הקובץ הזה בשימוש. הם יימחקו יחד עם הקובץ."
-msgstr[1] "אף אחד מהמשאבים שבספרייה של הקבצים האלה בשימוש. הם יימחקו יחד עם הקבצים."
-msgstr[2] "אף אחד מהמשאבים שבספרייה של הקבצים האלה בשימוש. הם יימחקו יחד עם הקבצים."
-msgstr[3] "אף אחד מהמשאבים שבספרייה של הקבצים האלה בשימוש. הם יימחקו יחד עם הקבצים."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "בחלק מהמשאבים בספרייה של הקובץ הזה נעשה שימוש כאן:"
-msgstr[1] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
-msgstr[2] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
-msgstr[3] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "בחלק מהמשאבים בספרייה של הקובץ הזה נעשה שימוש כאן:"
-msgstr[1] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
-msgstr[2] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
-msgstr[3] "בחלק מהמשאבים בספרייה של הקבצים האלה נעשה שימוש כאן:"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1929,54 +1873,12 @@ msgstr "הינד קטן"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] "ביטול הפרסום יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-msgstr[1] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-msgstr[2] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-msgstr[3] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
-msgstr[1] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
-msgstr[2] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
-msgstr[3] "ביטול הפרסום יעביר את המשאבים לספריות המקומיות של הקבצים האלה."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "לבטל את פרסום הספרייה הזאת?"
 msgstr[1] "לבטל את פרסום הספריות האלו?"
 msgstr[2] "לבטל את פרסום הספריות האלו?"
 msgstr[3] "לבטל את פרסום הספריות האלו?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "אף אחד מהמשאבים שבספרייה הזאת נמצא בשימוש."
-msgstr[1] "אף אחד מהמשאבים שבספריות האלה נמצא בשימוש."
-msgstr[2] "אף אחד מהמשאבים שבספריות האלה נמצא בשימוש."
-msgstr[3] "אף אחד מהמשאבים שבספריות האלה נמצא בשימוש."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "בחלק מהמשאבים בספרייה הזאת נעשה שימוש כאן:"
-msgstr[1] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
-msgstr[2] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
-msgstr[3] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "בחלק מהמשאבים בספרייה הזאת נעשה שימוש כאן:"
-msgstr[1] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
-msgstr[2] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
-msgstr[3] "בחלק מהמשאבים בספריות האלה נעשה שימוש כאן:"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs

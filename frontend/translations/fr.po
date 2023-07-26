@@ -1698,12 +1698,6 @@ msgstr[0] "Êtes-vous sûr de vouloir supprimer ce fichier ?"
 msgstr[1] "Êtes-vous sûr de vouloir supprimer ces fichiers ?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Certaines ressources de la bibliothèque de ce fichier sont utilisées ici :"
-msgstr[1] "Certaines ressources des bibliothèques de ce fichier sont utilisées ici :"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Suppression du fichier"
@@ -1833,26 +1827,10 @@ msgid "modals.small-nudge"
 msgstr "Petit nudge"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Si vous annulez la publication, ces ressources seront déplacées vers la "
-"bibliothèque locale du fichier."
-msgstr[1] ""
-"Si vous annulez leur publication, ces ressources seront déplacées vers la "
-"bibliothèque locale du fichier."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Vous êtes sûr de vouloir retirer cette bibliothèque ?"
 msgstr[1] "Vous êtes sûr de vouloir retirer ces bibliothèques ?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Certaines ressources de cette bibliothèque sont utilisées ici :"
-msgstr[1] "Certaines ressources de ces bibliothèques sont utilisées ici :"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"

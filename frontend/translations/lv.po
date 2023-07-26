@@ -1726,58 +1726,11 @@ msgstr[1] "Dzēst failu"
 msgstr[2] "Dzēst failus"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] "Nav līdzekļu dzēšanai."
-msgstr[1] ""
-"Ja šo izdzēsīsiet, šie līdzekļi tiks pārvietoti uz šī faila lokālo "
-"bibliotēku. Tiks zaudēti visi neizmantotie līdzekļi."
-msgstr[2] ""
-"Ja šo izdzēsīsiet, šie līdzekļi tiks pārvietoti uz šo failu lokālo "
-"bibliotēku. Tiks zaudēti visi neizmantotie līdzekļi."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] "Nav līdzekļu dzēšanai."
-msgstr[1] ""
-"Ja šo izdzēsīsiet, šie līdzekļi tiks pārvietoti uz šī faila lokālo "
-"bibliotēku. Tiks zaudēti visi neizmantotie līdzekļi."
-msgstr[2] ""
-"Ja šo izdzēsīsiet, šie līdzekļi tiks pārvietoti uz šo failu lokālo "
-"bibliotēku. Tiks zaudēti visi neizmantotie līdzekļi."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Nav failu dzēšanai?"
 msgstr[1] "Vai tiešām vēlaties izdzēst šo failu?"
 msgstr[2] "Vai tiešām vēlaties izdzēst šos failus?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] "Nav bibliotēku līdzekļu dzēšanai."
-msgstr[1] ""
-"Neviens no šī faila bibliotēku līdzekļiem netiek lietots. Tie tiks izdzēsti "
-"kopā ar failiem."
-msgstr[2] ""
-"Neviens no šo failu bibliotēku līdzekļiem netiek lietots. Tie tiks izdzēsti "
-"kopā ar failiem."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Nav bibliotēku līdzekļu dzēšanai:"
-msgstr[1] "Daži šī faila bibliotēku līdzekļi tiek izmantoti šeit:"
-msgstr[2] "Daži šo failu bibliotēku līdzekļi tiek izmantoti šeit:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "Nav bibliotēku līdzekļu dzēšanai:"
-msgstr[1] "Daži šī faila bibliotēku līdzekļi tiek izmantoti šeit:"
-msgstr[2] "Daži šo failu bibliotēku līdzekļi tiek izmantoti šeit:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -1933,54 +1886,11 @@ msgstr[1] "Atcelt publicēšanu"
 msgstr[2] "Atcelt publicēšanu"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] "Nav atlasīto publikāciju."
-msgstr[1] ""
-"Ja beigsiet publikāciju, šīs līdzeklis tiks pārvietots uz šī faila lokālo "
-"bibliotēku."
-msgstr[2] ""
-"Ja beigsiet publikāciju, šie līdzekļi tiks pārvietoti uz šī faila lokālo "
-"bibliotēku."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] "Nav atlasīto publikāciju."
-msgstr[1] ""
-"Ja beigsiet publikāciju, šīs līdzeklis tiks pārvietots uz šī faila lokālo "
-"bibliotēku."
-msgstr[2] ""
-"Ja beigsiet publikāciju, šie līdzekļi tiks pārvietoti uz šī faila lokālo "
-"bibliotēku."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Nav izvēlēto bibliotēku?"
 msgstr[1] "Vai tiešām vēlaties atcelt šīs bibliotēkas publicēšanu?"
 msgstr[2] "Vai tiešām vēlaties atcelt šo bibliotēku publicēšanu?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Neviens līdzeklis no šīs bibliotēkas netiek izmantots."
-msgstr[1] "Neviens līdzeklis no šīs bibliotēkas netiek izmantots."
-msgstr[2] "Neviens līdzeklis no šīm bibliotēkām netiek izmantots."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Daži līdzekļi no šīs bibliotēkās tiek izmantoti šeit:"
-msgstr[1] "Daži līdzekļi no šīs bibliotēkās tiek izmantoti šeit:"
-msgstr[2] "Daži līdzekļi no šīm bibliotēkām tiek izmantoti šeit:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Daži līdzekļi no šīs bibliotēkās tiek izmantoti šeit:"
-msgstr[1] "Daži līdzekļi no šīs bibliotēkās tiek izmantoti šeit:"
-msgstr[2] "Daži līdzekļi no šīm bibliotēkām tiek izmantoti šeit:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
