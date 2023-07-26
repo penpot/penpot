@@ -72,7 +72,9 @@
           (reset! current-colors (into [] (filter check-valid-color?) colors)))))
 
     [:div.libraries
-     [:select {:on-change on-library-change :value (name @selected)}
+     [:select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+               :on-change on-library-change
+               :value (name @selected)}
       [:option {:value "recent"} (tr "workspace.libraries.colors.recent-colors")]
       [:option {:value "file"} (tr "workspace.libraries.colors.file-library")]
 

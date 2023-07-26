@@ -139,7 +139,8 @@
         i/actions]
 
        [:select.input-select
-        {:default-value shadow-style
+        {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+         :default-value shadow-style
          :on-change (fn [event]
                       (let [value (-> event dom/get-target dom/get-value d/read-string)]
                         (st/emit! (dch/update-shapes ids #(assoc-in % [:shadow index :style] value)))))}
@@ -165,7 +166,8 @@
          {:on-click on-toggle-open-shadow}
          i/actions]
         [:select.input-select
-         {:default-value shadow-style
+         {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+          :default-value shadow-style
           :on-change (fn [event]
                        (let [value (-> event dom/get-target dom/get-value d/read-string)]
                          (st/emit! (dch/update-shapes ids #(assoc-in % [:shadow index :style] value)))))}

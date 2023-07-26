@@ -350,7 +350,8 @@
           :on-blur on-blur}])
 
       [:select.input-select.variant-option
-       {:disabled (= font-id :multiple)
+       {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+        :disabled (= font-id :multiple)
         :value (attr->string font-variant-id)
         :on-change on-font-variant-change
         :on-blur on-blur}
