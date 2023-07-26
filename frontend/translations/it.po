@@ -1629,13 +1629,6 @@ msgstr[1] "Eliminare questi file?"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Questo file contiene librerie usate nel file:"
-msgstr[1] "Questo file contiene librerie usate nei file:"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Eliminazione del file"
@@ -1767,28 +1760,10 @@ msgstr "Annulla pubblicazione"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Se annulli la pubblicazione, gli elementi diventeranno parte della libreria "
-"di questo file."
-msgstr[1] ""
-"Se annulli la pubblicazione, gli elementi diventeranno parte della libreria "
-"di questi file."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Annullare la pubblicazione di questa libreria?"
 msgstr[1] "Annullare la pubblicazione di queste librerie?"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "È utilizzata in questo file:"
-msgstr[1] "È utilizzata in questi file:"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs

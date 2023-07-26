@@ -1779,55 +1779,12 @@ msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Dosyayı sil"
 msgstr[1] "Dosyaları sil"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"Eğer silerseniz, bu varlıklar bu dosyanın yerel kütüphanesine taşınacaktır. "
-"Kullanılmayan tüm varlıklar kaybolacaktır."
-msgstr[1] ""
-"Eğer silerseniz, bu varlıklar bu dosyanın yerel kütüphanesine taşınacaktır. "
-"Kullanılmayan tüm varlıklar kaybolacaktır."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"Eğer silerseniz, bu varlıklar bu dosyaların yerel kütüphanelerine "
-"taşınacaktır. Kullanılmayan tüm varlıklar kaybolacaktır."
-msgstr[1] ""
-"Eğer silerseniz, bu varlıklar bu dosyaların yerel kütüphanelerine "
-"taşınacaktır. Kullanılmayan tüm varlıklar kaybolacaktır."
-
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Bu dosyayı silmek istediğinizden emin misiniz?"
 msgstr[1] "Bu dosyaları silmek istediğinizden emin misiniz?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] ""
-"Bu dosyanın kütüphanesindeki varlıkların hiçbiri kullanılmıyor. Dosyayla "
-"birlikte silineceklerdir."
-msgstr[1] ""
-"Bu dosyaların kütüphanesindeki varlıkların hiçbiri kullanılmıyor. "
-"Dosyalarla birlikte silineceklerdir."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Bu dosyanın kütüphanesindeki varlıklardan bazıları burada kullanılıyor:"
-msgstr[1] "Bu dosyalarnın kütüphanesindeki varlıklardan bazıları burada kullanılıyor:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "Bu dosyanın kütüphanesindeki varlıklardan bazıları burada kullanılıyor:"
-msgstr[1] "Bu dosyalarnın kütüphanesindeki varlıklardan bazıları burada kullanılıyor:"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1985,50 +1942,10 @@ msgstr "Yayından kaldır"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Yayından kaldırırsanız, bu varlıklar bu dosyanın yerel kütüphanesine "
-"taşınacaktır."
-msgstr[1] ""
-"Yayından kaldırırsanız, bu varlıklar bu dosyanın yerel kütüphanesine "
-"taşınacaktır."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] ""
-"Yayından kaldırırsanız, bu varlıklar bu dosyaların yerel kütüphanelerine "
-"taşınacaktır."
-msgstr[1] ""
-"Yayından kaldırırsanız, bu varlıklar bu dosyaların yerel kütüphanelerine "
-"taşınacaktır."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Bu kütüphaneyi yayından kaldırmak istediğinizden emin misiniz?"
 msgstr[1] "Bu kütüphaneleri yayından kaldırmak istediğinizden emin misiniz?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Bu kütüphanedeki varlıkların hiçbiri kullanılmıyor."
-msgstr[1] "Bu kütüphanelerdeki varlıkların hiçbiri kullanılmıyor."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Bu kütüphanedeki varlıklardan bazıları burada kullanılıyor:"
-msgstr[1] "Bu kütüphanelerdeki varlıklardan bazıları burada kullanılıyor:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Bu kütüphanedeki varlıklardan bazıları burada kullanılıyor:"
-msgstr[1] "Bu kütüphanelerdeki varlıklardan bazıları burada kullanılıyor:"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs

@@ -1581,12 +1581,6 @@ msgstr[0] "Вы уверены, что хотите удалить этот фа
 msgstr[1] "Вы уверены, что хотите удалить эти файлы?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Файл содержит библиотеки, которые используются в этом файле:"
-msgstr[1] "Файл содержит библиотеки, которые используются в этих файлах:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Удаление файла"
@@ -1693,26 +1687,10 @@ msgid "modals.remove-shared-confirm.message"
 msgstr ""
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Если вы отмените публикацию, эти ресурсы будут перемещены в локальную "
-"библиотеку этого файла."
-msgstr[1] ""
-"Если вы отмените их публикацию, эти ресурсы будут перемещены в локальную "
-"библиотеку этого файла."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Вы уверены, что хотите снять с публикации эту библиотеку?"
 msgstr[1] "Вы уверены, что хотите снять с публикации эти библиотеки?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Некоторые ресурсы этой библиотеки используются здесь:"
-msgstr[1] "Некоторые ресурсы этих библиотек используются здесь:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"

@@ -1721,64 +1721,11 @@ msgstr[1] "Usuń pliki"
 msgstr[2] "Usuń pliki"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"Jeśli go usuniesz, te zasoby zostaną przeniesione do lokalnej biblioteki "
-"tego pliku. Wszelkie niewykorzystane zasoby zostaną utracone."
-msgstr[1] ""
-"Jeśli je usuniesz, te zasoby zostaną przeniesione do lokalnej biblioteki "
-"tego pliku. Wszelkie niewykorzystane zasoby zostaną utracone."
-msgstr[2] ""
-"Jeśli je usuniesz, te zasoby zostaną przeniesione do lokalnej biblioteki "
-"tego pliku. Wszelkie niewykorzystane zasoby zostaną utracone."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"Jeśli go usuniesz, te zasoby zostaną przeniesione do lokalnych bibliotek "
-"tych plików. Wszelkie niewykorzystane zasoby zostaną utracone."
-msgstr[1] ""
-"Jeśli je usuniesz, te zasoby zostaną przeniesione do lokalnych bibliotek "
-"tych plików. Wszelkie niewykorzystane zasoby zostaną utracone."
-msgstr[2] ""
-"Jeśli je usuniesz, te zasoby zostaną przeniesione do lokalnych bibliotek "
-"tych plików. Wszelkie niewykorzystane zasoby zostaną utracone."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Czy na pewno chcesz usunąć ten plik?"
 msgstr[1] "Czy na pewno chcesz usunąć te pliki?"
 msgstr[2] "Czy na pewno chcesz usunąć te pliki?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] ""
-"Żaden z zasobów w bibliotece tego pliku nie jest używany. Zostaną one "
-"usunięte wraz z plikiem."
-msgstr[1] ""
-"Żaden z zasobów w bibliotekach tych plików nie jest używany. Zostaną one "
-"usunięte wraz z plikami."
-msgstr[2] ""
-"Żaden z zasobów w bibliotekach tych plików nie jest używany. Zostaną one "
-"usunięte wraz z plikami."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Niektóre zasoby z biblioteki tego pliku są tutaj używane:"
-msgstr[1] "Niektóre zasoby z biblioteki tych plików są tutaj używane:"
-msgstr[2] "Niektóre zasoby z biblioteki tych plików są tutaj używane:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "Niektóre zasoby z biblioteki tego pliku są tutaj używane:"
-msgstr[1] "Niektóre zasoby w bibliotekach tych plików są tutaj używane:"
-msgstr[2] "Niektóre zasoby w bibliotekach tych plików są tutaj używane:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -1934,58 +1881,11 @@ msgstr[1] "Cofnij publikacje"
 msgstr[2] "Cofnij publikacje"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Jeśli cofniesz publikację, te zasoby zostaną przeniesione do lokalnej "
-"biblioteki tego pliku."
-msgstr[1] ""
-"Jeśli cofniesz ich publikację, te zasoby zostaną przeniesione do lokalnej "
-"biblioteki tego pliku."
-msgstr[2] ""
-"Jeśli cofniesz ich publikację, te zasoby zostaną przeniesione do lokalnej "
-"biblioteki tego pliku."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] ""
-"Jeśli cofniesz publikację, te zasoby zostaną przeniesione do lokalnych "
-"bibliotek tych plików."
-msgstr[1] ""
-"Jeśli cofniesz ich publikację, te zasoby zostaną przeniesione do lokalnych "
-"bibliotek tych plików."
-msgstr[2] ""
-"Jeśli cofniesz ich publikację, te zasoby zostaną przeniesione do lokalnych "
-"bibliotek tych plików."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Czy na pewno chcesz cofnąć publikację tej biblioteki?"
 msgstr[1] "Czy na pewno chcesz cofnąć publikację tych bibliotek?"
 msgstr[2] "Czy na pewno chcesz cofnąć publikację tych bibliotek?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Żaden z zasobów w tej bibliotece nie jest używany."
-msgstr[1] "Żaden z zasobów w tych bibliotekach nie jest używany."
-msgstr[2] "Żaden z zasobów w tych bibliotekach nie jest używany."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Niektóre zasoby z tej biblioteki są tutaj używane:"
-msgstr[1] "Niektóre zasoby w tych bibliotekach są tutaj używane:"
-msgstr[2] "Niektóre zasoby w tych bibliotekach są tutaj używane:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Niektóre zasoby z tej biblioteki są tutaj używane:"
-msgstr[1] "Niektóre zasoby w tych bibliotekach są tutaj używane:"
-msgstr[2] "Niektóre zasoby w tych bibliotekach są tutaj używane:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"

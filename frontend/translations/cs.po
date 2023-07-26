@@ -1529,13 +1529,6 @@ msgstr[1] "Opravdu chcete smazat tyto soubory?"
 msgstr[2] "Opravdu chcete smazat tyto soubory?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Tento soubor obsahuje knihovny, které se v tomto souboru používají:"
-msgstr[1] "Tento soubor obsahuje knihovny, které se používají v těchto souborech:"
-msgstr[2] "Tento soubor obsahuje knihovny, které se používají v těchto souborech:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Mazání souboru"
@@ -1671,31 +1664,11 @@ msgid "modals.unpublish-shared-confirm.accept"
 msgstr "Zrušit publikování"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Pokud zrušíte jeho publikování, položky v něm se stanou knihovnou tohoto "
-"souboru."
-msgstr[1] ""
-"Pokud zrušíte jeho publikování, položky v něm se stanou knihovnou těchto "
-"souborů."
-msgstr[2] ""
-"Pokud zrušíte jeho publikování, položky v něm se stanou knihovnou těchto "
-"souborů."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Opravdu chcete zrušit publikování této knihovny?"
 msgstr[1] "Opravdu chcete zrušit publikování těchto knihoven?"
 msgstr[2] "Opravdu chcete zrušit publikování těchto knihoven?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Používá se v tomto souboru:"
-msgstr[1] "Používá se v těchto souborech:"
-msgstr[2] "Používá se v těchto souborech:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"

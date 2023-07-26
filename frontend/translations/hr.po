@@ -1623,13 +1623,6 @@ msgstr[1] "Jesi li siguran/na da želiš izbrisati ove datoteke?"
 msgstr[2] "Jesi li siguran/na da želiš izbrisati ove datoteke?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Ova datoteka ima biblioteke koje se koriste u ovoj datoteci:"
-msgstr[1] "Ova datoteka ima biblioteke koje se koriste u ovim datotekama:"
-msgstr[2] "Ova datoteka ima biblioteke koje se koriste u ovim datotekama:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Brisanje datoteke"
@@ -1763,25 +1756,11 @@ msgid "modals.unpublish-shared-confirm.accept"
 msgstr "Poništi objavu"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] "Ako poništiš objavu, stavke u njoj postaju biblioteka ove datoteke."
-msgstr[1] "Ako poništiš objavu, stavke u njoj postaju biblioteka ovih datoteka."
-msgstr[2] "Ako poništiš objavu, stavke u njoj postaju biblioteka ovih datoteka."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Jesi li siguran/na da želiš poništiti objavu ove biblioteke?"
 msgstr[1] "Jesi li siguran/na da želiš poništiti objavu ovih biblioteka?"
 msgstr[2] "Jesi li siguran/na da želiš poništiti objavu ovih biblioteka?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Koristi se u ovoj datoteci:"
-msgstr[1] "Koristi se u ovim datotekama:"
-msgstr[2] "Koristi se u ovim datotekama:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"

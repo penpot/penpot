@@ -1776,55 +1776,12 @@ msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Datei löschen"
 msgstr[1] "Dateien löschen"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"Wenn Sie es löschen, werden diese Assets in die lokale Bibliothek dieser "
-"Datei verschoben. Unbenutzte Assets gehen verloren."
-msgstr[1] ""
-"Wenn Sie sie löschen, werden diese Assets in die lokale Bibliothek dieser "
-"Datei verschoben. Unbenutzte Assets gehen verloren."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"Wenn Sie es löschen, werden diese Assets in die lokalen Bibliotheken dieser "
-"Dateien verschoben. Unbenutzte Assets gehen verloren."
-msgstr[1] ""
-"Wenn Sie sie löschen, werden diese Assets in die lokalen Bibliotheken "
-"dieser Dateien verschoben. Unbenutzte Assets gehen verloren."
-
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Möchten Sie diese Datei wirklich löschen?"
 msgstr[1] "Möchten Sie diese Dateien wirklich löschen?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] ""
-"Keines der Assets in der Bibliothek dieser Datei ist in Gebrauch. Sie "
-"werden zusammen mit der Datei gelöscht."
-msgstr[1] ""
-"Keines der Assets in den Bibliotheken dieser Datei ist in Gebrauch. Sie "
-"werden zusammen mit der Datei gelöscht."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Einige Assets aus der Bibliothek dieser Datei werden hier verwendet:"
-msgstr[1] "Einige Assets aus den Bibliotheken dieser Datei werden hier verwendet:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "Einige Assets aus der Bibliothek dieser Datei werden hier verwendet:"
-msgstr[1] "Einige der Assets aus den Bibliotheken dieser Datei werden hier verwendet:"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1974,50 +1931,10 @@ msgstr "Minimal"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokale "
-"Bibliothek dieser Datei verschoben."
-msgstr[1] ""
-"Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokale "
-"Bibliothek dieser Datei verschoben."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] ""
-"Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokalen "
-"Bibliotheken dieser Dateien verschoben."
-msgstr[1] ""
-"Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokalen "
-"Bibliotheken dieser Dateien verschoben."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Möchten Sie die Veröffentlichung dieser Bibliothek wirklich aufheben?"
 msgstr[1] "Möchten Sie die Veröffentlichung dieser Bibliotheken wirklich aufheben?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Keines der Assets in dieser Bibliothek wird verwendet."
-msgstr[1] "Keines der Assets in diesen Bibliotheken wird verwendet."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Einige Assets in dieser Bibliothek werden hier verwendet:"
-msgstr[1] "Einige Assets in diesen Bibliotheken werden hier verwendet:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Einige Assets in dieser Bibliothek werden hier verwendet:"
-msgstr[1] "Einige Assets in diesen Bibliotheken werden hier verwendet:"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs

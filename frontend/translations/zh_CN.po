@@ -1652,40 +1652,10 @@ msgstr[0] "删除文件"
 msgstr[1] "批量删除文件"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] "如果将其删除，这些资源将移动到此文件的本地库中。任何未使用的资产都将丢失。"
-msgstr[1] "如果删除它们，这些资源将移动到此文件的本地库中。任何未使用的资产都将丢失。"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] "如果将其删除，这些资源将移动到这些文件的本地库中。任何未使用的资产都将丢失。"
-msgstr[1] "如果删除它们，这些资源将移动到这些文件的本地库中。任何未使用的资产都将丢失。"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "你是否确认要删除这个文件?"
 msgstr[1] "你是否确认要删除这些文件?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] "此文件库中的任何资源均未在使用中。它们将与文件一起删除。"
-msgstr[1] "这些文件库中的所有资源均未在使用中。它们将与文件一起删除。"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "此处使用此文件库中的某些资源："
-msgstr[1] "这些文件库中的一些资源正在这里使用："
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "此处使用此文件库中的某些资源："
-msgstr[1] "这些文件库中的一些资源正在这里使用："
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -1819,40 +1789,10 @@ msgid "modals.small-nudge"
 msgstr "小幅微调"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] "如果取消发布它，这些资产将移动到此文件的本地库。"
-msgstr[1] "如果取消发布它们，这些资源将移动到此文件的本地库中。"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] "如果取消发布，这些资源将移动到这些文件的本地库中。"
-msgstr[1] "如果取消发布它们，这些资源将移动到这些文件的本地库中。"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "你是否确认取消发布这个库?"
 msgstr[1] "你是否确认取消发布这些库?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "此库中的所有资源均未在使用中。"
-msgstr[1] "这些库中的所有资源均未在使用中。"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "此处使用此库中的某些资源："
-msgstr[1] "此处使用了这些库中的一些资源："
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "此处使用此库中的某些资源："
-msgstr[1] "此处使用了这些库中的一些资源："
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
