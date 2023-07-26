@@ -119,7 +119,7 @@
     (watch [it state _]
       (let [edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
-        (when-not (or (some? edition) (not-empty drawing))
+        (when-not (or (some? edition) (some? (:object drawing)))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]

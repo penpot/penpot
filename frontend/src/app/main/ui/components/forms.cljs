@@ -439,3 +439,13 @@
     (cond-> errors
       (all-spaces? (get data field))
       (assoc field {:message error-msg}))))
+
+(defn validate-not-all-spaces
+  [field error-msg]
+  (fn [errors data]
+    (let [value (get data field)]
+      (cond-> errors
+        (and
+          (all-spaces? value)
+          (> (count value) 0))
+        (assoc field {:message error-msg})))))

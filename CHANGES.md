@@ -92,6 +92,11 @@
 - Fix unnecessary button [Taiga #3312](https://tree.taiga.io/project/penpot/issue/3312)
 - Fix copy color information in several formats [Taiga #4723](https://tree.taiga.io/project/penpot/issue/4723)
 - Fix dropdown width [Taiga #5541](https://tree.taiga.io/project/penpot/issue/5541)
+- Fix enable comment mode and insert image keeps on comment mode [Taiga #5678](https://tree.taiga.io/project/penpot/issue/5678)
+- Fix enable undo just after using pencil [Taiga #5674](https://tree.taiga.io/project/penpot/issue/5674)
+- Fix 400 error when user changes password [Taiga #5643](https://tree.taiga.io/project/penpot/issue/5643)
+- Fix cannot undo layer styles [Taiga #5676](https://tree.taiga.io/project/penpot/issue/5676)
+
 ### :arrow_up: Deps updates
 
 - Update google fonts catalog (at 2023/07/06) [Taiga #5592](https://tree.taiga.io/project/penpot/issue/5592)
