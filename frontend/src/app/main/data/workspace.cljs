@@ -2287,6 +2287,44 @@
       (reduce #(update %1 :workspace-preview-blend dissoc %2) state ids))))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Components
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn find-components-norefs
+  []
+  (ptk/reify ::find-components-norefs
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            copies  (->> objects
+                         vals
+                         (filter #(and (:component-root %) (not (:main-instance %)))))
+            copies-no-ref (filter #(not (:shape-ref %)) copies)
+            find-childs-no-ref (fn [acc-map item]
+                                 (let [id (:id item)
+                                       childs (->> (cph/get-children objects id)
+                                                   (filter #(not (:shape-ref %))))]
+                                   (if (seq childs)
+                                     (assoc acc-map id childs)
+                                     acc-map)))
+            childs-no-ref (reduce
+                           find-childs-no-ref
+                           {}
+                           copies)]
+        (js/console.log "Copies no ref" (clj->js copies-no-ref))
+        (js/console.log "Childs no ref" (clj->js childs-no-ref))))))
+
+(defn set-shape-ref
+  [id shape-ref]
+  (ptk/reify ::set-shape-ref
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (update-shape (uuid/uuid id) {:shape-ref (uuid/uuid shape-ref)})))))
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
