@@ -299,6 +299,10 @@
                 :hint "database object not found"))
     row))
 
+(defn plan
+  [ds sql]
+  (jdbc/plan ds sql sql/default-opts))
+
 (defn get-by-id
   [ds table id & {:as opts}]
   (get ds table {:id id} opts))
