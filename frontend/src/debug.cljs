@@ -401,3 +401,12 @@
 (defn ^:export fix-orphan-shapes
   []
   (st/emit! (dw/fix-orphan-shapes)))
+
+(defn ^:export find-components-norefs
+  []
+  (st/emit! (dw/find-components-norefs)))
+
+(defn ^:export set-shape-ref
+  [id shape-ref]
+  (st/emit! (dw/set-shape-ref id shape-ref)))
+
