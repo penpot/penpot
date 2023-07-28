@@ -224,7 +224,7 @@
     [:vector {:gen/max 2}
      [:map
       [:command :keyword]
-      [:relative :boolean]
+      [:relative {:optional true} :boolean]
       [:params [:map-of {:gen/max 5} :keyword ::sm/safe-number]]]]]])
 
 (sm/def! ::rect-attrs
