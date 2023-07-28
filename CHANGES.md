@@ -99,6 +99,17 @@
 - Fix assets right click button for multiple selection [Taiga #5545](https://tree.taiga.io/project/penpot/issue/5545)
 - Fix problem with precision in resizes [Taiga #5623](https://tree.taiga.io/project/penpot/issue/5623)
 - Fix absolute positioned layouts not showing flex properties [Taiga #5630](https://tree.taiga.io/project/penpot/issue/5630)
+- Fix text gradient handlers [Taiga #4047](https://tree.taiga.io/project/penpot/issue/4047)
+- Fix when user deletes one file during import it is impossible to finish importing of second file [Taiga #5656](https://tree.taiga.io/project/penpot/issue/5656)
+- Fix export multiple images when only one of them has export settings [Taiga #5649](https://tree.taiga.io/project/penpot/issue/5649)
+- Fix error when a user different than the thread creator edits a comment [Taiga #5647](https://tree.taiga.io/project/penpot/issue/5647)
+- Fix unnecessary button [Taiga #3312](https://tree.taiga.io/project/penpot/issue/3312)
+- Fix copy color information in several formats [Taiga #4723](https://tree.taiga.io/project/penpot/issue/4723)
+- Fix dropdown width [Taiga #5541](https://tree.taiga.io/project/penpot/issue/5541)
+- Fix enable comment mode and insert image keeps on comment mode [Taiga #5678](https://tree.taiga.io/project/penpot/issue/5678)
+- Fix enable undo just after using pencil [Taiga #5674](https://tree.taiga.io/project/penpot/issue/5674)
+- Fix 400 error when user changes password [Taiga #5643](https://tree.taiga.io/project/penpot/issue/5643)
+- Fix cannot undo layer styles [Taiga #5676](https://tree.taiga.io/project/penpot/issue/5676)
 
 ### :arrow_up: Deps updates
 

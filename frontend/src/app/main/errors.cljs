@@ -66,7 +66,8 @@
 
 (defmethod ptk/handle-error :default
   [error]
-  (ts/schedule #(st/emit! (rt/assign-exception (::instance error))))
+  (when-let [cause (::instance error)]
+    (ts/schedule #(st/emit! (rt/assign-exception cause))))
   (print-group! "Unhandled Error"
                 (fn []
                   (print-trace! error)

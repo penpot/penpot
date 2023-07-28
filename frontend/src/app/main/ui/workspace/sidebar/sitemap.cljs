@@ -269,7 +269,7 @@
       [:div#sitemap.tool-window {:ref parent-ref
                                  :style #js {"--height" (str size "px")}}
        [:div.tool-window-bar
-        [:span (tr "workspace.sidebar.sitemap")]
+        [:span.pages-title (tr "workspace.sidebar.sitemap")]
         (if workspace-read-only?
           [:div.view-only-mode (tr "labels.view-only")]
           [:div.add-page {:on-click create} i/close])

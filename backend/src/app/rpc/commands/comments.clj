@@ -468,8 +468,8 @@
   {::doc/added "1.15"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at id share-id content] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [thread-id] :as comment} (get-comment conn id ::db/for-update? true)
-          {:keys [file-id page-id owner-id] :as thread} (get-comment-thread conn thread-id ::db/for-update? true)]
+    (let [{:keys [thread-id owner-id] :as comment} (get-comment conn id ::db/for-update? true)
+          {:keys [file-id page-id] :as thread} (get-comment-thread conn thread-id ::db/for-update? true)]
 
       (files/check-comment-permissions! conn profile-id file-id share-id)
 

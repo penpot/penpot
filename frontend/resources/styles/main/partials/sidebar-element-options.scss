@@ -316,6 +316,22 @@
     &:hover {
       border: 1px solid $color-gray-20;
     }
+
+    &.no-check {
+      .custom-select-dropdown {
+        width: 100%;
+        min-width: unset;
+        .check-icon {
+          display: none;
+        }
+        li.checked-element {
+          padding-left: 0.5rem;
+          &.is-selected {
+            background-color: $color-primary;
+          }
+        }
+      }
+    }
   }
   .opened {
     border: 1px solid $color-primary;

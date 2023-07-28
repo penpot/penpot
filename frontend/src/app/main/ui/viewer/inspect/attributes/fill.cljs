@@ -28,19 +28,25 @@
        (seq (:fills shape)))))
 
 (mf/defc fill-block
+  {::mf/wrap-props false}
   [{:keys [objects shape]}]
-  (let [color-format (mf/use-state :hex)
-        color (shape->color shape)]
+  (let [format*   (mf/use-state :hex)
+        format    (deref format*)
+
+        color     (shape->color shape)
+        on-change (mf/use-fn #(reset! format* %))]
 
     [:div.attributes-fill-block
-     [:& color-row {:color color
-                    :format @color-format
-                    :on-change-format #(reset! color-format %)
-                    :copy-data (css/get-shape-properties-css objects {:fills [shape]} properties)}]]))
+     [:& color-row
+      {:color color
+       :format format
+       :on-change-format on-change
+       :copy-data (css/get-shape-properties-css objects {:fills [shape]} properties)}]]))
 
 (mf/defc fill-panel
+  {::mf/wrap-props false}
   [{:keys [shapes]}]
-  (let [shapes (->> shapes (filter has-fill?))]
+  (let [shapes (filter has-fill? shapes)]
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title
@@ -48,9 +54,9 @@
 
        [:div.attributes-fill-blocks
         (for [shape shapes]
-         (if (seq (:fills shape))
-           (for [value (:fills shape [])]
-             [:& fill-block {:key (str "fill-block-" (:id shape) value)
-                             :shape value}])
-           [:& fill-block {:key (str "fill-block-only" (:id shape))
-                           :shape shape}]))]])))
+          (if (seq (:fills shape))
+            (for [value (:fills shape [])]
+              [:& fill-block {:key (str "fill-block-" (:id shape) value)
+                              :shape value}])
+            [:& fill-block {:key (str "fill-block-only" (:id shape))
+                            :shape shape}]))]])))

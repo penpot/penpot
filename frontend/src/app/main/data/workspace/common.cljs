@@ -129,7 +129,7 @@
       (let [objects (wsh/lookup-page-objects state)
             edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
-        (when-not (and (or (some? edition) (not-empty drawing))
+        (when-not (and (or (some? edition) (some? (:object drawing)))
                        (not (ctl/grid-layout? objects edition)))
           (let [undo  (:workspace-undo state)
                 items (:items undo)

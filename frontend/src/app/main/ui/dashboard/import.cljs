@@ -337,18 +337,18 @@
            (st/emit! (modal/hide))
            (when on-finish-import (on-finish-import))))
 
+        files (->> (:files @state) (filterv (comp not :deleted?)))
+
         num-importing (+
-                       (->> @state :files (filter #(= (:status %) :importing)) count)
+                       (->> files (filter #(= (:status %) :importing)) count)
                        (:importing-templates @state))
 
 
-        warning-files (->> @state :files (filter #(and (= (:status %) :import-finish) (d/not-empty? (:errors %)))) count)
-        success-files (->> @state :files (filter #(and (= (:status %) :import-finish) (empty? (:errors %)))) count)
-        pending-analysis? (> (->> @state :files (filter #(= (:status %) :analyzing)) count) 0)
+        warning-files (->> files (filter #(and (= (:status %) :import-finish) (d/not-empty? (:errors %)))) count)
+        success-files (->> files (filter #(and (= (:status %) :import-finish) (empty? (:errors %)))) count)
+        pending-analysis? (> (->> files (filter #(= (:status %) :analyzing)) count) 0)
         pending-import? (> num-importing 0)
-        files (->> (:files @state) (filterv (comp not :deleted?)))
-        ;; pending-import? (> (->> @state :files (filter #(= (:status %) :importing)) count) 0)
-        ;; files (->> (:files @state) (filterv (comp not :deleted?)))
+        
         valid-files? (or (some? template)
                          (> (+ (->> files (filterv (fn [x] (not= (:status x) :analyze-error))) count)) 0))]
 
@@ -400,7 +400,7 @@
 
       [:div.modal-footer
        [:div.action-buttons
-        (when (or (= :analyzing (:status @state)) pending-import?)
+        (when (= :analyzing (:status @state))
           [:input.cancel-button
            {:type "button"
             :value (tr "labels.cancel")

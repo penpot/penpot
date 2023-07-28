@@ -62,6 +62,7 @@
              :selected-blend-mode value
              :option-highlighted? false
              :preview-complete? true)
+           (st/emit! (dw/unset-preview-blend-mode ids))
            (on-change :blend-mode value)))
 
         handle-blend-mode-enter
@@ -152,7 +153,7 @@
      [:div.element-set-content
       [:div.row-flex
        [:& select
-        {:class "flex-grow"
+        {:class "flex-grow no-check"
          :default-value selected-blend-mode
          :options options
          :on-change handle-change-blend-mode

@@ -60,6 +60,15 @@
           white-space: nowrap;
         }
 
+        span.pages-title {
+          color: #e3e3e3;
+          font-size: 0.875rem;
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
         span.tool-badge {
           border: 1px solid $color-primary;
           border-radius: $br2;

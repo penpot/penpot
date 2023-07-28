@@ -776,6 +776,12 @@
                [key (delay (generator-fn key))]))
         keys))
 
+(defn opacity-to-hex [opacity]
+  (let [opacity (* opacity 255)
+        value   (mth/round opacity)]
+    (.. value
+        (toString 16)
+        (padStart 2 "0"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; String Functions

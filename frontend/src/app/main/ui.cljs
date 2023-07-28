@@ -145,6 +145,7 @@
 
     (mf/with-effect [theme]
       (dom/set-html-theme-color theme))
+
     [:& (mf/provider ctx/current-route) {:value route}
      [:& (mf/provider ctx/current-profile) {:value profile}
       (if edata

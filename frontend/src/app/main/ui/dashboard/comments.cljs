@@ -22,17 +22,12 @@
 
 (mf/defc comments-section
   [{:keys [profile team]}]
-
-  (mf/use-effect
-   (mf/deps team)
-   (fn []
-     (st/emit! (dcm/retrieve-unread-comment-threads (:id team)))))
-
   (let [show-dropdown? (mf/use-state false)
         show-dropdown  (mf/use-fn #(reset! show-dropdown? true))
         hide-dropdown  (mf/use-fn #(reset! show-dropdown? false))
         threads-map    (mf/deref refs/comment-threads)
         users          (mf/deref refs/current-team-comments-users)
+        team-id        (:id team)
 
         tgroups        (->> (vals threads-map)
                             (sort-by :modified-at)
@@ -46,6 +41,11 @@
            (st/emit! (-> (dwcm/navigate thread)
                          (with-meta {::ev/origin "dashboard"})))))]
 
+    (mf/use-effect
+      (mf/deps team-id)
+      (fn []
+        (st/emit! (dcm/retrieve-unread-comment-threads team-id))))
+    
     (mf/use-effect
      (mf/deps @show-dropdown?)
      (fn []

@@ -31,7 +31,10 @@
         file-id (mf/use-ctx ctx/current-file-id)
 
         on-click
-        (mf/use-fn #(dom/click (mf/ref-val ref)))
+        (mf/use-fn 
+          (fn []
+            (st/emit! :interrupt dw/clear-edition-mode)
+            (dom/click (mf/ref-val ref))))
 
         on-selected
         (mf/use-fn
