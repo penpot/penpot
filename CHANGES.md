@@ -96,6 +96,7 @@
 - Fix enable undo just after using pencil [Taiga #5674](https://tree.taiga.io/project/penpot/issue/5674)
 - Fix 400 error when user changes password [Taiga #5643](https://tree.taiga.io/project/penpot/issue/5643)
 - Fix cannot undo layer styles [Taiga #5676](https://tree.taiga.io/project/penpot/issue/5676)
+- Fix unexpected exception on boolean shapes [Taiga #5685](https://tree.taiga.io/project/penpot/issue/5685)
 
 ### :arrow_up: Deps updates
 
