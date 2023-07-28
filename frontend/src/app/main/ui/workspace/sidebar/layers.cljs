@@ -506,7 +506,8 @@
        filter-component)
      (if (some? filtered-objects)
        [:*
-        [:div {:class (if new-css-system
+        [:div {:data-scroll-container true
+               :class (if new-css-system
                         (dom/classnames (css :tool-window-content) true)
                         (dom/classnames :tool-window-content true))
                :ref on-render-container  :key "filters"}
@@ -517,6 +518,7 @@
                      :key "lazy-load"
                      :style {:min-height 16}}]]
         [:div {:on-scroll on-scroll
+               :data-scroll-container true
                :class (if new-css-system
                         (dom/classnames (css :tool-window-content) true)
                         (dom/classnames :tool-window-content true))
@@ -526,6 +528,7 @@
                           :filtered? true
                           :parent-size size-parent}]]]
        [:div {:on-scroll on-scroll
+              :data-scroll-container true
               :class (if new-css-system
                        (dom/classnames (css :tool-window-content) true)
                        (dom/classnames :tool-window-content true))
