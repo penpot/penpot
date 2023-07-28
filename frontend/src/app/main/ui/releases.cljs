@@ -19,6 +19,7 @@
    [app.main.ui.releases.v1-16]
    [app.main.ui.releases.v1-17]
    [app.main.ui.releases.v1-18]
+   [app.main.ui.releases.v1-19]
    [app.main.ui.releases.v1-4]
    [app.main.ui.releases.v1-5]
    [app.main.ui.releases.v1-6]
