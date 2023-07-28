@@ -28,7 +28,8 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [clojure.walk :as walk]))
+   [clojure.walk :as walk]
+   [promesa.exec :as px]))
 
 ;; --- COMMAND: Duplicate File
 
@@ -321,6 +322,18 @@
 
     ;; delete possible broken relations on moved files
     (db/exec-one! conn [sql:delete-broken-relations pids])
+
+    ;; Update the modification date of the all affected projects
+    ;; ensuring that the destination project is the most recent one.
+    (doseq [project-id (into (list project-id) source)]
+
+      ;; NOTE: as this is executed on virtual thread, sleeping does
+      ;; not causes major issues, and allows an easy way to set a
+      ;; trully different modification date to each file.
+      (px/sleep 10)
+      (db/update! conn :project
+                  {:modified-at (dt/now)}
+                  {:id project-id}))
 
     nil))
 
