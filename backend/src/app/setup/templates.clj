@@ -23,7 +23,6 @@
   [:map {:title "Template"}
    [:id ::sm/word-string]
    [:name ::sm/word-string]
-   [:thumbnail-uri ::sm/word-string]
    [:file-uri ::sm/word-string]])
 
 (def ^:private schema:templates

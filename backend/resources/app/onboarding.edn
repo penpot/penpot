@@ -1,36 +1,30 @@
 [{:id "material-design-3"
   :name "Material Design 3"
-  :thumbnail-uri "https://penpot.app/images/libraries/cover-md3.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/main/Material%20Design%203.penpot"}
  {:id "tutorial-for-beginners"
   :name "Tutorial for beginners"
-  :thumbnail-uri "https://penpot.app/images/libraries/tutorial-for-beginners.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/tutorial-for-beginners.penpot"}
  {:id "penpot-design-system"
   :name "Penpot Design System"
-  :thumbnail-uri "https://penpot.app/images/libraries/cover-ds-penpot.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Penpot-Design-system.penpot"}
+ {:id "flex-layout-playground"
+  :name "Flex Layout Playground"
+  :file-uri "https://github.com/penpot/penpot-files/raw/main/Flex%20Layout%20Playground.penpot"}
  {:id "wireframing-kit"
   :name "Wireframing Kit"
-  :thumbnail-uri "https://penpot.app/images/libraries/cover-wireframes.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/wireframing-kit.penpot"}
  {:id "ant-design"
   :name "Ant Design UI Kit (lite)"
-  :thumbnail-uri "https://penpot.app/images/libraries/cover-ant-design.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Ant-Design-UI-Kit-Lite.penpot"}
  {:id "cocomaterial"
   :name "Cocomaterial"
-  :thumbnail-uri "https://penpot.app/images/libraries/cover-cocomaterial.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Cocomaterial.penpot"}
  {:id "circum-icons"
   :name "Circum Icons pack"
-  :thumbnail-uri "https://penpot.app/images/libraries/cover-circum.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/CircumIcons.penpot"}
  {:id "coreui"
   :name "CoreUI"
-  :thumbnail-uri "https://penpot.app/images/libraries/cover-coreui.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/main/CoreUI%20DesignSystem%20(DEMO).penpot"}
  {:id "whiteboarding-kit"
   :name "Whiteboarding Kit"
-  :thumbnail-uri "https://penpot.app/images/libraries/cover-whiteboards.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Whiteboarding-mapping-kit.penpot"}]

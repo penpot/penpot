@@ -423,9 +423,9 @@
   {::doc/added "1.10"
    ::doc/deprecated "1.19"}
   [cfg _params]
-  (mapv #(select-keys % [:id :name :thumbnail-uri]) (::setup/templates cfg)))
+  (mapv #(select-keys % [:id :name]) (::setup/templates cfg)))
 
 (sv/defmethod ::get-builtin-templates
   {::doc/added "1.19"}
   [cfg _params]
-  (mapv #(select-keys % [:id :name :thumbnail-uri]) (::setup/templates cfg)))
+  (mapv #(select-keys % [:id :name]) (::setup/templates cfg)))
