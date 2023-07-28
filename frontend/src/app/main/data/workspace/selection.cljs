@@ -424,7 +424,7 @@
            name        (:name obj)
 
            is-component-root? (or (:saved-component-root? obj) (ctk/instance-root? obj))
-           duplicating-component? (or duplicating-component? is-component-root?)
+           duplicating-component? (or duplicating-component? (ctk/instance-head? obj))
            is-component-main? (ctk/main-instance? obj)
            regenerate-component
            (fn [changes shape]
