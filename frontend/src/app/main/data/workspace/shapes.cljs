@@ -57,6 +57,11 @@
                         cts/default-frame-attrs
                         cts/default-shape-attrs)
 
+        default-attrs (if (or (= :group (:type attrs))
+                              (= :bool (:type attrs)))
+                        (assoc default-attrs :shapes [])
+                        default-attrs)
+
         selected-non-frames
         (into #{} (comp (map (d/getf objects))
                         (remove cph/frame-shape?))
