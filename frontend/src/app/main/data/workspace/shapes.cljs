@@ -288,7 +288,7 @@
            (let [all-ids   (into empty-parents ids)
                  contains? (partial contains? all-ids)
                  xform     (comp (map lookup)
-                                 (filter cph/group-shape?)
+                                 (filter #(or (cph/group-shape? %) (cph/bool-shape? %)))
                                  (remove #(->> (:shapes %) (remove contains?) seq))
                                  (map :id))
                  parents   (into #{} xform all-parents)]
