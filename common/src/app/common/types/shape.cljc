@@ -75,7 +75,7 @@
   [:map {:title "Fill"}
    [:fill-color {:optional true} ::ctc/rgb-color]
    [:fill-opacity {:optional true} ::sm/safe-number]
-   [:fill-color-gradient {:optional true} ::ctc/gradient]
+   [:fill-color-gradient {:optional true} [:maybe ::ctc/gradient]]
    [:fill-color-ref-file {:optional true} [:maybe ::sm/uuid]]
    [:fill-color-ref-id {:optional true} [:maybe ::sm/uuid]]])
 
@@ -177,13 +177,14 @@
    ;; FIXME: improve this schema
    [:bool-type :keyword]
 
-   ;; FIXME: improve this schema
    [:bool-content
     [:vector {:gen/max 2}
      [:map
       [:command :keyword]
       [:relative {:optional true} :boolean]
-      [:params [:map-of {:gen/max 5} :keyword ::sm/safe-number]]]]]])
+      [:prev-pos {:optional true} ::gpt/point]
+      [:params {:optional true}
+       [:map-of {:gen/max 5} :keyword ::sm/safe-number]]]]]])
 
 (sm/def! ::rect-attrs
   [:map {:title "RectAttrs"}
