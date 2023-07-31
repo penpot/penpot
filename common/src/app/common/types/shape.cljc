@@ -75,7 +75,7 @@
   [:map {:title "Fill"}
    [:fill-color {:optional true} ::ctc/rgb-color]
    [:fill-opacity {:optional true} ::sm/safe-number]
-   [:fill-color-gradient {:optional true} ::ctc/gradient]
+   [:fill-color-gradient {:optional true} [:maybe ::ctc/gradient]]
    [:fill-color-ref-file {:optional true} [:maybe ::sm/uuid]]
    [:fill-color-ref-id {:optional true} [:maybe ::sm/uuid]]])
 
