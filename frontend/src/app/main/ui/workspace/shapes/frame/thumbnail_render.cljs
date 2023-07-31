@@ -96,7 +96,6 @@
         render-frame*     (mf/use-state (not thumbnail-uri))
         debug?            (debug? :thumbnails)
 
-
         on-bitmap-load
         (mf/use-fn
          (fn []
@@ -164,6 +163,8 @@
              (when (not= "false" (dom/get-data image-node "ready"))
                (dom/set-data! image-node "ready" "false")))
            (when-not ^boolean @disable*
+             (reset! svg-uri* nil)
+             (reset! bitmap-uri* nil)
              (reset! render-frame* true)
              (reset! regenerate* true))))
 

@@ -98,6 +98,7 @@
 - Fix cannot undo layer styles [Taiga #5676](https://tree.taiga.io/project/penpot/issue/5676)
 - Fix unexpected exception on boolean shapes [Taiga #5685](https://tree.taiga.io/project/penpot/issue/5685)
 - Fix ctrl+z on select not working [Taiga #5677](https://tree.taiga.io/project/penpot/issue/5677)
+- Fix thubmnail rendering flashing [Taiga #5675](https://tree.taiga.io/project/penpot/issue/5675)
 
 ### :arrow_up: Deps updates
 
