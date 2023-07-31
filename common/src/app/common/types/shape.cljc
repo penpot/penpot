@@ -72,7 +72,7 @@
   [:vector {:gen/max 5} ::gpt/point])
 
 (sm/def! ::fill
-  [:map {:title "Fill" :min 1}
+  [:map {:title "Fill"}
    [:fill-color {:optional true} ::ctc/rgb-color]
    [:fill-opacity {:optional true} ::sm/safe-number]
    [:fill-color-gradient {:optional true} ::ctc/gradient]
@@ -156,7 +156,7 @@
   [:map {:title "GroupAttrs"}
    [:type [:= :group]]
    [:id ::sm/uuid]
-   [:shapes [:vector {:min 1 :gen/max 10 :gen/min 1} ::sm/uuid]]])
+   [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]])
 
 (sm/def! ::frame-attrs
   [:map {:title "FrameAttrs"}
@@ -172,7 +172,7 @@
   [:map {:title "BoolAttrs"}
    [:type [:= :bool]]
    [:id ::sm/uuid]
-   [:shapes [:vector {:min 1 :gen/max 10 :gen/min 1} ::sm/uuid]]
+   [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
 
    ;; FIXME: improve this schema
    [:bool-type :keyword]
