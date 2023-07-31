@@ -7,8 +7,14 @@
 (ns app.srepl.fixes
   "A collection of adhoc fixes scripts."
   (:require
+   [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
+   [app.rpc.commands.files :as files]
    [app.srepl.helpers :as h]))
 
 (defn repair-orphaned-shapes
@@ -73,3 +79,64 @@
    ([file state]
     (rename-layout-attrs file)
     (update state :total (fnil inc 0))))
+
+(defn fix-components-shaperefs
+  [file]
+  (if-not (contains? (:features file) "components/v2")
+    (ex/raise :type :invalid-file
+              :code :invalid-file
+              :hint "this file is not v2")
+    (let [libs (->> (files/get-file-libraries app.srepl.helpers/*conn* (:id file))
+                    (cons file)
+                    (map #(files/get-file app.srepl.helpers/*conn* (:id %) (:features file)))
+                    (d/index-by :id))
+
+          fix-copy-item
+          (fn fix-copy-item [allow-head shapes-copy shapes-base copy-id base-id]
+            (let [copy (first (filter #(= (:id %) copy-id) shapes-copy))
+                  ;; do nothing if it is a copy inside of a copy. It will be treated later
+                  stop? (and (not allow-head) (ctk/instance-head? copy))
+                  base (first (filter #(= (:id %) base-id) shapes-base))
+                  fci (partial fix-copy-item false shapes-copy shapes-base)
+
+                  updates (if (and
+                               (not stop?)
+                               (not= (:shape-ref copy) base-id))
+                            [[(:id copy) base-id]]
+                            [])
+
+                  child-updates (if (and
+                                     (not stop?)
+                                     ;; If the base has the same number of childrens than the copy, we asume
+                                     ;; that the shaperefs can be fixed ad pointed in the same order
+                                     (= (count (:shapes copy)) (count (:shapes base))))
+                                  (apply concat (mapv fci (:shapes copy) (:shapes base)))
+                                  [])]
+              (concat updates child-updates)))
+
+          fix-copy
+          (fn [objects updates copy]
+            (let [component        (ctf/find-component libs (:component-id copy) {:included-delete? true})
+                  component-file   (get libs (:component-file copy))
+                  component-shapes (ctf/get-component-shapes (:data component-file) component)
+                  copy-shapes      (cph/get-children-with-self objects (:id copy))
+
+                  copy-updates (fix-copy-item true copy-shapes component-shapes (:id copy) (:main-instance-id component))]
+              (concat updates copy-updates)))
+
+          update-page (fn [page]
+                        (let [objects      (:objects page)
+                              fc           (partial fix-copy objects)
+                              copies       (->> objects
+                                                vals
+                                                (filter #(and (ctk/instance-head? %) (not (ctk/main-instance? %)))))
+                              updates      (reduce fc [] copies)
+                              updated-page (reduce (fn [p [id shape-ref]]
+                                                     (assoc-in p [:objects id :shape-ref] shape-ref))
+                                                   page
+                                                   updates)]
+                          (prn (str "Page " (:name page) " - Fixing " (count updates)))
+                          updated-page))]
+
+      (prn (str "Updating " (:name file) " " (:id file)))
+      (update file :data h/update-pages update-page))))

@@ -2291,7 +2291,6 @@
 ;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defn find-components-norefs
   []
   (ptk/reify ::find-components-norefs
@@ -2300,7 +2299,8 @@
       (let [objects (wsh/lookup-page-objects state)
             copies  (->> objects
                          vals
-                         (filter #(and (:component-root %) (not (:main-instance %)))))
+                         (filter #(and (ctk/instance-head? %) (not (ctk/main-instance? %)))))
+
             copies-no-ref (filter #(not (:shape-ref %)) copies)
             find-childs-no-ref (fn [acc-map item]
                                  (let [id (:id item)
@@ -2313,8 +2313,8 @@
                            find-childs-no-ref
                            {}
                            copies)]
-        (js/console.log "Copies no ref" (clj->js copies-no-ref))
-        (js/console.log "Childs no ref" (clj->js childs-no-ref))))))
+        (js/console.log "Copies no ref" (count copies-no-ref) (clj->js copies-no-ref))
+        (js/console.log "Childs no ref" (count childs-no-ref) (clj->js childs-no-ref))))))
 
 (defn set-shape-ref
   [id shape-ref]
