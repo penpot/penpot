@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.main.ui.context :as ctx]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as hooks]
    [app.util.object :as obj]
@@ -22,6 +23,7 @@
 (def rule-area-size 22)
 (def rule-area-half-size (/ rule-area-size 2))
 (def rules-background "var(--color-gray-50)")
+(def new-css-rules-background "var(--dark-gray-1)")
 (def selection-area-color "var(--color-primary)")
 (def selection-area-opacity 0.3)
 (def over-number-size 50)
@@ -116,7 +118,9 @@
   [{:keys [zoom zoom-inverse vbox axis offset]}]
   (let [rules-width (* rules-width zoom-inverse)
         step (calculate-step-size zoom)
-        clip-id (str "clip-rule-" (d/name axis))]
+        clip-id (str "clip-rule-" (d/name axis))
+        new-css-system (mf/use-ctx ctx/new-css-system)
+        rules-background (if new-css-system new-css-rules-background rules-background)]
 
     [:*
      (let [{:keys [x y width height]} (get-background-area vbox zoom-inverse axis)]
@@ -134,11 +138,11 @@
             minv (* (mth/ceil (/ minv step)) step)
             maxv (min end 100000)
             maxv (* (mth/floor (/ maxv step)) step)
-            
+
             ;; These extra operations ensure that we are selecting a frame its initial location is rendered in the rule
             minv (+ minv (mod offset step))
             maxv (+ maxv (mod offset step))]
-        
+
         (for [step-val (range minv (inc maxv) step)]
           (let [{:keys [text-x text-y line-x1 line-y1 line-x2 line-y2]}
                 (get-rule-axis step-val vbox zoom-inverse axis)]
@@ -165,7 +169,9 @@
 (mf/defc selection-area
   [{:keys [vbox zoom-inverse selection-rect offset-x offset-y]}]
   ;; When using the format-number callls we consider if the guide is associated to a frame and we show the position relative to it with the offset
-  [:g.selection-area
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        rules-background (if new-css-system new-css-rules-background rules-background)]
+    [:g.selection-area
    [:g
     [:rect {:x (:x selection-rect)
             :y (:y vbox)
@@ -247,7 +253,7 @@
               :style {:font-size (* font-size zoom-inverse)
                       :font-family font-family
                       :fill selection-area-color}}
-       (fmt/format-number (- (:y1 selection-rect) offset-y))]])])
+       (fmt/format-number (- (:y1 selection-rect) offset-y))]])]))
 
 (mf/defc rules
   {::mf/wrap-props false

@@ -85,7 +85,7 @@
     grid-template-areas: "previous next";
     .step-prev {
       display: flex;
-      align-items: end;
+      align-items: flex-end;
       justify-content: flex-start;
       grid-area: previous;
       button {
@@ -99,7 +99,7 @@
 
     .step-next {
       display: flex;
-      align-items: end;
+      align-items: flex-end;
       justify-content: flex-end;
       grid-area: next;
       input {

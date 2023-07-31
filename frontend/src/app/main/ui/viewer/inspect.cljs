@@ -67,7 +67,7 @@
         {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move]
          set-right-size :set-size
          right-size :size}
-        (use-resize-hook :code 256 256 768 :x true :right)
+        (use-resize-hook :code 276 276 768 :x true :right)
 
         handle-change-section
         (mf/use-callback
@@ -77,7 +77,7 @@
         handle-expand
         (mf/use-callback
          (mf/deps right-size)
-         #(set-right-size (if (> right-size 256) 256 768)))]
+         #(set-right-size (if (> right-size 276) 276 768)))]
 
     (mf/use-effect on-mount)
 
@@ -108,5 +108,4 @@
                          :file file
                          :on-change-section handle-change-section
                          :on-expand handle-expand
-                         :share-id share-id
-                         }]]]))
+                         :share-id share-id}]]]))

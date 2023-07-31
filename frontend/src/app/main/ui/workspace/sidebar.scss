@@ -6,24 +6,22 @@
 
 @import "refactor/common-refactor.scss";
 
-$width-settings-bar: 256px;
-$width-settings-bar-min: 255px;
-$width-settings-bar-max: 500px;
+$width-settings-bar: $s-276;
+$width-settings-bar-max: $s-500;
 
 .left-settings-bar {
   position: relative;
   grid-area: left-sidebar;
   min-width: $width-settings-bar;
-  max-width: 500px;
+  max-width: $width-settings-bar-max;
   width: var(--width, $width-settings-bar);
   height: 100%;
-  border-radius: $br-8;
   background-color: var(--panel-background-color);
 
   .resize-area {
     position: absolute;
     right: -8px;
-    z-index: $z-index-10;
+    z-index: $z-index-3;
     width: $s-8;
     height: 100%;
     cursor: ew-resize;
@@ -32,7 +30,7 @@ $width-settings-bar-max: 500px;
     display: grid;
     grid-template-columns: 100%;
     grid-template-rows: 100%;
-    height: calc(100% - 2px);
+    height: calc(100% - 50px);
     .tabs-wrapper {
       .layers-tab {
         display: grid;
@@ -46,4 +44,15 @@ $width-settings-bar-max: 500px;
 }
 :global(.tab-spacing) {
   margin: $s-4 $s-4 0 $s-4;
+}
+.right-settings-bar {
+  grid-area: right-sidebar;
+  width: $width-settings-bar;
+
+  &.not-expand {
+    max-width: $width-settings-bar;
+  }
+  &.expanded {
+    width: var(--width, $width-settings-bar);
+  }
 }

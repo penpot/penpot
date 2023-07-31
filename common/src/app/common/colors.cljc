@@ -21,3 +21,9 @@
 (def primary "#31EFB8")
 (def danger "#E65244")
 (def warning "#FC8802")
+
+;; new-css-system colors
+(def new-primary "#91fadb")
+(def new-danger "#ff4986")
+(def new-warning "#ff9b49")
+(def canvas-background "#1d1f20")

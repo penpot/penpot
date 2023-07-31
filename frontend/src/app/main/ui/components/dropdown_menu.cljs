@@ -20,18 +20,20 @@
   {::mf/wrap-props false}
   [props]
 
-  (let [children    (gobj/get props "children")
-        on-click    (gobj/get props "on-click")
-        on-key-down (gobj/get props "on-key-down")
-        id          (gobj/get props "id")
-        klass       (gobj/get props "klass")
-        key         (gobj/get props "unique-key")
-        data-test   (gobj/get props "data-test")]
+  (let [children         (gobj/get props "children")
+        on-click         (gobj/get props "on-click")
+        on-key-down      (gobj/get props "on-key-down")
+        on-pointer-enter (gobj/get props "on-pointer-enter")
+        id               (gobj/get props "id")
+        klass            (gobj/get props "klass")
+        key              (gobj/get props "unique-key")
+        data-test        (gobj/get props "data-test")]
     [:li {:id id
           :class klass
           :tab-index "0"
           :on-key-down on-key-down
           :on-click on-click
+          :on-pointer-enter on-pointer-enter
           :key key
           :role "menuitem"
           :data-test data-test}
