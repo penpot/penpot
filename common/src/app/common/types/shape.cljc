@@ -215,6 +215,10 @@
   [:map {:title "PathAttrs"}
    [:type [:= :path]]
    [:id ::sm/uuid]
+   [:x {:optional true} [:maybe ::sm/safe-number]]
+   [:y {:optional true} [:maybe ::sm/safe-number]]
+   [:width {:optional true} [:maybe ::sm/safe-number]]
+   [:height {:optional true} [:maybe ::sm/safe-number]]
    [:content
     [:vector
      [:map
