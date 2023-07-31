@@ -106,7 +106,8 @@
          :select-on-focus select-on-focus
          :on-blur on-blur}]]
 
-      [:select#style.input-select {:value (enum->string (:stroke-alignment stroke))
+      [:select#style.input-select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                                   :value (enum->string (:stroke-alignment stroke))
                                    :on-change (on-stroke-alignment-change index)}
        (when (= (:stroke-alignment stroke) :multiple)
          [:option {:value ""} "--"])
@@ -115,7 +116,8 @@
        [:option {:value ":outer"} (tr "workspace.options.stroke.outer")]]
 
       (when-not disable-stroke-style
-        [:select#style.input-select {:value (enum->string (:stroke-style stroke))
+        [:select#style.input-select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                                     :value (enum->string (:stroke-style stroke))
                                      :on-change (on-stroke-style-change index)}
          (when (= (:stroke-style stroke) :multiple)
            [:option {:value ""} "--"])

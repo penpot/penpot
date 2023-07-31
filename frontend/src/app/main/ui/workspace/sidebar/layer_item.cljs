@@ -189,7 +189,7 @@
             ;; NOTE: Neither get-parent-at nor get-parent-with-selector
             ;; work if the component template changes, so we need to
             ;; seek for an alternate solution. Maybe use-context?
-            scroll-node (dom/get-parent-with-selector node ".tool-window-content")
+            scroll-node (dom/get-parent-with-data node "scrollContainer")
             parent-node (dom/get-parent-at node 2)
 
             subid

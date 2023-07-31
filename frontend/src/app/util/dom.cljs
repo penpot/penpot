@@ -166,6 +166,13 @@
         current
         (recur (.-parentElement current) (dec current-count))))))
 
+(defn get-parent-with-data
+  [^js node name]
+  (loop [current node]
+    (if (or (nil? current) (obj/in? (.-dataset current) name))
+      current
+      (recur (.-parentElement current)))))
+
 (defn get-parent-with-selector
   [^js node selector]
   (loop [current node]

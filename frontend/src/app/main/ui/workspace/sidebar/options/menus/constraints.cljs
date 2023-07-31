@@ -147,7 +147,8 @@
           [:div.constraints-form
            [:div.row-flex
             [:span.left-right i/full-screen]
-            [:select.input-select {:on-change (on-constraint-select-changed :constraints-h)
+            [:select.input-select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                                   :on-change (on-constraint-select-changed :constraints-h)
                                    :value (d/name constraints-h "scale")}
              (when (= constraints-h :multiple)
                [:option {:value ""} (tr "settings.multiple")])
@@ -158,7 +159,8 @@
              [:option {:value "scale"} (tr "workspace.options.constraints.scale")]]]
            [:div.row-flex
             [:span.top-bottom i/full-screen]
-            [:select.input-select {:on-change (on-constraint-select-changed :constraints-v)
+            [:select.input-select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                                   :on-change (on-constraint-select-changed :constraints-v)
                                    :value (d/name constraints-v "scale")}
              (when (= constraints-v :multiple)
                [:option {:value ""} (tr "settings.multiple")])

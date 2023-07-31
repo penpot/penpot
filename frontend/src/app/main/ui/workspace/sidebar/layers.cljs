@@ -538,6 +538,7 @@
      (if (some? filtered-objects)
        [:*
         [:div {:class (stl/css new-css-system :tool-window-content)
+               :data-scroll-container true
                :ref on-render-container}
          [:& filters-tree {:objects filtered-objects
                            :key (dm/str (:id page))
@@ -546,6 +547,7 @@
                      :style {:min-height 16}}]]
         [:div {:on-scroll on-scroll
                :class (stl/css new-css-system :tool-window-content)
+               :data-scroll-container true
                :style {:display (when (some? filtered-objects) "none")}}
          [:& layers-tree {:objects filtered-objects
                           :key (dm/str (:id page))
@@ -554,6 +556,7 @@
 
        [:div {:on-scroll on-scroll
               :class (stl/css new-css-system :tool-window-content)
+              :data-scroll-container true
               :style {:display (when (some? filtered-objects) "none")}}
         [:& layers-tree {:objects objects
                          :key (dm/str (:id page))

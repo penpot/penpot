@@ -164,7 +164,7 @@
     (if ^boolean new-css-system
       [:div  {:class  (css :assets-bar)}
        [:div {:class  (css :assets-header)}
-        (when-not read-only?
+        (when-not ^boolean read-only?
           [:button {:class (css :libraries-button)
                     :on-click #(modal/show! :libraries-dialog {})}
            [:span {:class (css :libraries-icon)}
@@ -229,6 +229,7 @@
              i/close])]
 
          [:select.input-select {:value (:section filters)
+                                :data-mousetrap-dont-stop true
                                 :on-change on-section-filter-change}
           [:option {:value "all"} (tr "workspace.assets.box-filter-all")]
           [:option {:value "components"} (tr "workspace.assets.components")]

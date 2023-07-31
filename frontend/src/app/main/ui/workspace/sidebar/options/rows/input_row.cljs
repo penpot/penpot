@@ -20,7 +20,8 @@
 
     (case type
       :select
-      [:& select {:default-value value
+      [:& select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                  :default-value value
                   :class "input-option"
                   :options options
                   :on-change on-change}]

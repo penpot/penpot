@@ -10,7 +10,6 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
-   [app.common.time :as dt]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -23,6 +22,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
+   [app.util.time :as dt]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
@@ -863,6 +863,7 @@
   [{:keys [ids project-id] :as params}]
   (dm/assert! (sm/set-of-uuid? ids))
   (dm/assert! (uuid? project-id))
+
   (ptk/reify ::move-files
     IDeref
     (-deref [_]
@@ -872,13 +873,13 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [origin-project (get-in state [:dashboard-files (first ids) :project-id])
-            update-project (fn [project]
+            update-project (fn [project delta]
                              (-> project
                                  (update :count #(+ % (count ids)))
-                                 (assoc :modified-at (dt/now))))]
+                                 (assoc :modified-at (dt/plus (dt/now) {:milliseconds delta}))))]
         (-> state
-            (d/update-in-when [:dashboard-projects origin-project] update-project)
-            (d/update-in-when [:dashboard-projects project-id] update-project))))
+            (d/update-in-when [:dashboard-projects origin-project] update-project 0)
+            (d/update-in-when [:dashboard-projects project-id] update-project 10))))
 
     ptk/WatchEvent
     (watch [_ _ _]
