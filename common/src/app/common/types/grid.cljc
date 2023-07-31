@@ -21,7 +21,7 @@
 (sm/def! ::column-params
   [:map
    [:color ::grid-color]
-   [:type [::sm/one-of #{:stretch :left :center :right}]]
+   [:type {:optional true} [::sm/one-of #{:stretch :left :center :right}]]
    [:size {:optional true} [:maybe ::sm/safe-number]]
    [:margin {:optional true} [:maybe ::sm/safe-number]]
    [:item-length {:optional true} [:maybe ::sm/safe-number]]
