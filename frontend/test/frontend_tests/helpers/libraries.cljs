@@ -112,7 +112,7 @@
          main-instance? (:main-instance root-inst)
 
          libs           (wsh/get-libraries state)
-         component      (ctf/get-component libs (:component-id root-inst))
+         component      (ctf/find-component libs (:component-id root-inst))
          library        (ctf/get-component-library libs root-inst)
 
          shapes-inst    (cph/get-children-with-self (:objects page) root-inst-id)
@@ -152,7 +152,7 @@
         root-inst     (ctn/get-shape page root-inst-id)
 
         libs          (wsh/get-libraries state)
-        component     (ctf/get-component libs (:component-id root-inst))
+        component     (ctf/find-component libs (:component-id root-inst))
         library       (ctf/get-component-library libs root-inst)
 
         shapes-inst   (cph/get-children-with-self (:objects page) root-inst-id)
@@ -167,7 +167,7 @@
   "Get the component with the given id and all its shapes."
   [state component-id]
   (let [libs        (wsh/get-libraries state)
-        component   (ctf/get-component libs component-id)
+        component   (ctf/find-component libs component-id)
         library     (ctf/get-component-library libs component)
         shapes-main (ctf/get-component-shapes (:data library) component)]
 

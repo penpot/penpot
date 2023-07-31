@@ -112,13 +112,15 @@
 
 ;; Asset helpers
 
+(defn find-component
+  "Retrieve a component from libraries, iterating over all of them."
+  [libraries component-id & {:keys [included-delete?] :or {included-delete? false}}]
+  (some #(ctkl/get-component (:data %) component-id included-delete?) (vals libraries)))
+
 (defn get-component
-  "Retrieve a component from libraries, if no library-id is provided, we
-  iterate over all libraries and find the component on it."
-  ([libraries component-id]
-   (some #(ctkl/get-component (:data %) component-id) (vals libraries)))
-  ([libraries library-id component-id]
-   (ctkl/get-component (dm/get-in libraries [library-id :data]) component-id)))
+  "Retrieve a component from a library."
+  [libraries library-id component-id & {:keys [included-delete?] :or {included-delete? false}}]
+   (ctkl/get-component (dm/get-in libraries [library-id :data]) component-id included-delete?))
 
 (defn get-component-library
   "Retrieve the library the component belongs to."
@@ -170,7 +172,8 @@
   "Retrieve all shapes of the component"
   [file-data component]
   (let [components-v2 (dm/get-in file-data [:options :components-v2])]
-    (if components-v2
+    (if (and components-v2
+             (not (:deleted component))) ;; the deleted components have its children in the :objects property
       (let [instance-page (get-component-page file-data component)]
         (cph/get-children-with-self (:objects instance-page) (:main-instance-id component)))
       (vals (:objects component)))))
