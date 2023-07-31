@@ -296,10 +296,9 @@
          :on-import on-import}]
 
        [:span.info (str (tr "labels.num-of-files" (i18n/c file-count)))]
-       (when (> file-count 0)
-         (let [time (-> (:modified-at project)
-                        (dt/timeago {:locale locale}))]
-           [:span.recent-files-row-title-info (str ", " time)]))
+       (let [time (-> (:modified-at project)
+                      (dt/timeago {:locale locale}))]
+         [:span.recent-files-row-title-info (str ", " time)])
        [:div.project-actions
         (when-not (:is-default project)
           [:button.pin-icon.tooltip.tooltip-bottom

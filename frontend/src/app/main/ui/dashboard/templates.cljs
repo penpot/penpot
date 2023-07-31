@@ -150,8 +150,9 @@
 (mf/defc templates-section
   {::mf/wrap-props false}
   [{:keys [default-project-id profile project-id team-id content-width]}]
-  (let [templates      (->>  (mf/deref builtin-templates)
-                             (filter #(not= (:id %) "tutorial-for-beginners")))
+  (let [templates      (mf/deref builtin-templates)
+        templates      (mf/with-memo [templates]
+                         (filterv #(not= (:id %) "tutorial-for-beginners") templates))
 
         route          (mf/deref refs/route)
         route-name     (get-in route [:data :name])
