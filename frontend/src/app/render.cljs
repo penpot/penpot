@@ -7,6 +7,7 @@
 (ns app.render
   "The main entry point for UI part needed by the exporter."
   (:require
+   ["react-dom/client" :as rdom]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as l]
    [app.common.math :as mth]
@@ -32,6 +33,10 @@
 
 (l/setup! {:app :info})
 
+(defonce app-root
+  (let [el (dom/get-element "app")]
+    (rdom/createRoot el)))
+
 (declare ^:private render-single-object)
 (declare ^:private render-components)
 (declare ^:private render-objects)
@@ -48,7 +53,7 @@
                            "objects"    (render-objects params)
                            "components" (render-components params)
                            nil)]
-      (mf/mount component (dom/get-element "app")))))
+      (.render app-root component))))
 
 (defn ^:export init
   []
@@ -57,7 +62,7 @@
 
 (defn reinit
   []
-  (mf/unmount (dom/get-element "app"))
+  (.unmount app-root)
   (init-ui))
 
 (defn ^:dev/after-load after-load
@@ -201,7 +206,7 @@
        [:& objects-svg
         {:file-id file-id
          :page-id page-id
-         :share-id share-id         
+         :share-id share-id
          :object-ids (into #{} object-id)
          :render-embed? render-embed}]))))
 

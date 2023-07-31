@@ -6,6 +6,7 @@
 
 (ns app.main
   (:require
+   ["react-dom/client" :as rdom]
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.uuid :as uuid]
@@ -46,15 +47,17 @@
 (declare reinit)
 
 (defonce app-root
-  (mf/create-root (dom/get-element "app")))
+  (let [el (dom/get-element "app")]
+    (rdom/createRoot el)))
 
 (defonce modal-root
-  (mf/create-root (dom/get-element "modal")))
+  (let [el (dom/get-element "modal")]
+    (rdom/createRoot el)))
 
 (defn init-ui
   []
-  (mf/mount app-root (mf/element ui/app))
-  (mf/mount modal-root (mf/element modal)))
+  (.render app-root (mf/element ui/app))
+  (.render modal-root (mf/element modal)))
 
 (defn initialize
   []
@@ -94,10 +97,10 @@
 
 (defn ^:export reinit
   []
-  (mf/unmount app-root)
-  (mf/unmount modal-root)
-  (set! app-root (mf/create (dom/get-element "app")))
-  (set! modal-root (mf/create (dom/get-element "modal")))
+  (.unmount app-root)
+  (.unmount modal-root)
+  (set! app-root (mf/create-root (dom/get-element "app")))
+  (set! modal-root (mf/create-root (dom/get-element "modal")))
   (st/emit! (ev/initialize))
   (init-ui))
 
