@@ -17,17 +17,20 @@ if (Mousetrap.addKeycodes) {
 
 const target = Mousetrap.prototype || Mousetrap;
 target.stopCallback = function(e, element, combo) {
-  // if the element has the class "mousetrap" then no need to stop
-  if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
-      return false;
+  // if the element has the data attribute "mousetrap-dont-stop" then no need
+  // to stop. It should be used like <div data-mousetrap-dont-stop>...</div>
+  // or :div {:data-mousetrap-dont-stop true}
+  if ('mousetrapDontStop' in element.dataset) {
+    return false
   }
 
   // stop for input, select, textarea and button
-  return element.tagName == 'INPUT' || 
-         element.tagName == 'SELECT' || 
-         element.tagName == 'TEXTAREA' || 
-         (element.tagName == 'BUTTON' && combo.includes("tab")) ||
-         (element.contentEditable && element.contentEditable == 'true');
+  const shouldStop = element.tagName == "INPUT" ||
+    element.tagName == "SELECT" ||
+    element.tagName == "TEXTAREA" ||
+    (element.tagName == "BUTTON" && combo.includes("tab")) ||
+    (element.contentEditable && element.contentEditable == "true");
+  return shouldStop;
 }
 
 export default Mousetrap;

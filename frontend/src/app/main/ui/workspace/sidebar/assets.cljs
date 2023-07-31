@@ -2494,7 +2494,8 @@
            {:on-click on-search-clear-click}
            i/close])]
 
-       [:select.input-select {:value (:section filters)
+       [:select.input-select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                              :value (:section filters)
                               :on-change on-section-filter-change}
         [:option {:value ":all"} (tr "workspace.assets.box-filter-all")]
         [:option {:value ":components"} (tr "workspace.assets.components")]

@@ -169,7 +169,8 @@
           [:div.element-set-options-group
            {:key index}
            (when (scale-enabled? export)
-             [:select.input-select {:on-change (partial on-scale-change index)
+             [:select.input-select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                                    :on-change (partial on-scale-change index)
                                     :value (:scale export)}
               [:option {:value "0.5"}  "0.5x"]
               [:option {:value "0.75"} "0.75x"]
@@ -182,7 +183,8 @@
                                :placeholder (tr "workspace.options.export.suffix")
                                :on-change (partial on-suffix-change index)
                                :on-key-down manage-key-down}]
-           [:select.input-select {:value (d/name (:type export))
+           [:select.input-select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                                  :value (d/name (:type export))
                                   :on-change (partial on-type-change index)}
             [:option {:value "png"} "PNG"]
             [:option {:value "jpeg"} "JPEG"]
