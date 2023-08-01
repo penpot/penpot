@@ -221,6 +221,7 @@
    [:width {:optional true} [:maybe ::sm/safe-number]]
    [:height {:optional true} [:maybe ::sm/safe-number]]
    [:content
+    {:optional true}
     [:vector
      [:map
       [:command :keyword]
