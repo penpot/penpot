@@ -117,28 +117,6 @@
       (->> (rp/cmd! :get-profile)
            (rx/map profile-fetched)))))
 
-;; --- EVENT: INITIALIZE PROFILE
-
-(defn initialize-profile
-  "Event used mainly on application bootstrap; it fetches the profile
-  and if and only if the fetched profile corresponds to an
-  authenticated user; proceed to fetch teams."
-  []
-  (ptk/reify ::initialize-profile
-    ptk/WatchEvent
-    (watch [_ _ stream]
-      (rx/merge
-       (rx/of (fetch-profile))
-       (->> stream
-            (rx/filter (ptk/type? ::profile-fetched))
-            (rx/take 1)
-            (rx/map deref)
-            (rx/mapcat (fn [profile]
-                         (if (= uuid/zero (:id profile))
-                           (rx/empty)
-                           (rx/of (fetch-teams)))))
-            (rx/observe-on :async))))))
-
 ;; --- EVENT: login
 
 (defn- logged-in
@@ -164,7 +142,8 @@
         (when (is-authenticated? profile)
           (->> (rx/of (profile-fetched profile)
                       (fetch-teams)
-                      (get-redirect-event))
+                      (get-redirect-event)
+                      (ws/initialize))
                (rx/observe-on :async)))))))
 
 (declare login-from-register)
