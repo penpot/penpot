@@ -156,7 +156,7 @@
   [:map {:title "GroupAttrs"}
    [:type [:= :group]]
    [:id ::sm/uuid]
-   [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]])
+   [:shapes {:optional true} [:maybe [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]]])
 
 (sm/def! ::frame-attrs
   [:map {:title "FrameAttrs"}
@@ -172,7 +172,7 @@
   [:map {:title "BoolAttrs"}
    [:type [:= :bool]]
    [:id ::sm/uuid]
-   [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
+   [:shapes {:optional true} [:maybe [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]]
 
    ;; FIXME: improve this schema
    [:bool-type :keyword]

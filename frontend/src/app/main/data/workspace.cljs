@@ -1817,9 +1817,14 @@
                           detach? (or (foreign-instance? shape paste-objects state)
                                       (and (ctk/in-component-copy-not-root? shape)
                                            (not= (:id component-shape)
-                                                 (:id component-shape-parent))))]
+                                                 (:id component-shape-parent))))
+                          assign-shapes? (and (or (cph/group-shape? shape)
+                                                  (cph/bool-shape? shape))
+                                              (nil? (:shapes shape)))]
                       (-> shape
                           (assoc :frame-id frame-id :parent-id parent-id)
+                          (cond-> assign-shapes?
+                            (assoc :shapes []))
                           (cond-> detach?
                             (->
                              ;; this is used later, if the paste needs to create a new component from the detached shape
