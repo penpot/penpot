@@ -50,6 +50,23 @@
   (mf/mount (mf/element ui/app) (dom/get-element "app"))
   (mf/mount (mf/element modal)  (dom/get-element "modal")))
 
+(defn- initialize-profile
+  "Event used mainly on application bootstrap; it fetches the profile
+  and if and only if the fetched profile corresponds to an
+  authenticated user; proceed to fetch teams."
+  [stream]
+  (rx/merge
+   (rx/of (du/fetch-profile))
+   (->> stream
+        (rx/filter (ptk/type? ::profile-fetched))
+        (rx/take 1)
+        (rx/map deref)
+        (rx/mapcat (fn [profile]
+                     (if (du/is-authenticated? profile)
+                       (rx/of (du/fetch-teams))
+                       (rx/empty))))
+        (rx/observe-on :async))))
+
 (defn initialize
   []
   (ptk/reify ::initialize
@@ -61,14 +78,19 @@
     (watch [_ _ stream]
       (rx/merge
        (rx/of (ev/initialize)
-              (feat/initialize)
-              (du/initialize-profile))
+              (feat/initialize))
 
+       (initialize-profile stream)
+
+       ;; Once profile is fetched, initialize all penpot application
+       ;; routes
        (->> stream
             (rx/filter du/profile-fetched?)
             (rx/take 1)
             (rx/map #(rt/init-routes)))
 
+       ;; Once profile fetched and the current user is authenticated,
+       ;; proceed to initialize the websockets connection.
        (->> stream
             (rx/filter du/profile-fetched?)
             (rx/map deref)
