@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes :as cpc]
@@ -205,6 +206,7 @@
               path            (if (= file-id current-file-id)
                                 [:workspace-data]
                                 [:workspace-libraries file-id :data])]
+
           (try
             (dm/assert!
              "expect valid vector of changes"
@@ -217,7 +219,11 @@
                                         (ctst/update-object-indices page-id))))
 
             (catch :default err
-              (log/error :js/error err)
+              (when-let [data (ex-data err)]
+                (js/console.log (ex/explain data)))
+
+              (when (ex/error? err)
+                (js/console.log (.-stack ^js err)))
               (vreset! error err)
               state))))
 
