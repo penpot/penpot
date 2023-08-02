@@ -50,9 +50,9 @@
                    (assoc :logger-name logger)
                    (assoc :logger-level level)
                    (dissoc :params)
-                   (pp/pprint-str :width 200))
+                   (pp/pprint-str :width 200 :length 50 :level 10))
 
-      :props   (pp/pprint-str props :width 200)
+      :props   (pp/pprint-str props :width 200 :length 50)
       :hint    (or (ex-message cause) @message)
       :trace   (ex/format-throwable cause :data? false :explain? false :header? false :summary? false)}
 
@@ -62,10 +62,7 @@
      (when-let [data (some-> data (dissoc ::s/problems ::s/value ::s/spec ::sm/explain :hint))]
        {:data (pp/pprint-str data :width 200)})
 
-     (when-let [value (-> data ::sm/explain :value)]
-       {:value (pp/pprint-str value :width 200)})
-
-     (when-let [explain (ex/explain data)]
+     (when-let [explain (ex/explain data {:level 10 :length 50})]
        {:explain explain}))))
 
 
