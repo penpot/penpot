@@ -104,7 +104,7 @@ WORKDIR /opt/penpot/exporter
 USER penpot:penpot
 
 RUN set -ex; \
-    yarn; \
-    yarn run playwright install chromium;
+    yarn --network-timeout 1000000; \
+    yarn --network-timeout 1000000 run playwright install chromium;
 
 CMD ["node", "app.js"]
