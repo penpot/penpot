@@ -319,7 +319,8 @@
          [:div.interactions-element.separator
           [:span.element-set-subtitle.wide (tr "workspace.options.interaction-trigger")]
           [:select.input-select
-           {:value (str (:event-type interaction))
+           {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+            :value (str (:event-type interaction))
             :on-change change-event-type}
            (for [[value name] (event-type-names)]
              (when-not (and (= value :after-delay)
@@ -342,7 +343,8 @@
          [:div.interactions-element.separator
           [:span.element-set-subtitle.wide (tr "workspace.options.interaction-action")]
           [:select.input-select
-           {:value (str (:action-type interaction))
+           {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+            :value (str (:action-type interaction))
             :on-change change-action-type}
            (for [[value name] (action-type-names)]
              [:option {:key (dm/str "action-" value)
@@ -353,7 +355,8 @@
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-destination")]
             [:select.input-select
-             {:value (str (:destination interaction))
+             {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+              :value (str (:destination interaction))
               :on-change change-destination}
              (if (= (:action-type interaction) :close-overlay)
                [:option {:value ""} (tr "workspace.options.interaction-self")]
@@ -390,7 +393,8 @@
             [:div.interactions-element
              [:span.element-set-subtitle.wide (tr "workspace.options.interaction-relative-to")]
              [:select.input-select
-              {:value (str (:position-relative-to interaction))
+              {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+               :value (str (:position-relative-to interaction))
                :on-change change-position-relative-to}
               (when (not= (:overlay-pos-type interaction) :manual)
                 [:*
@@ -405,7 +409,8 @@
             [:div.interactions-element
              [:span.element-set-subtitle.wide (tr "workspace.options.interaction-position")]
              [:select.input-select
-              {:value (str (:overlay-pos-type interaction))
+              {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+               :value (str (:overlay-pos-type interaction))
                :on-change (partial change-overlay-pos-type (:id shape))}
               (for [[value name] (overlay-pos-type-names)]
                 [:option {:value (str value)} name])]]
@@ -467,7 +472,8 @@
              [:div.interactions-element.separator
               [:span.element-set-subtitle.wide (tr "workspace.options.interaction-animation")]
               [:select.input-select
-               {:value (str (-> interaction :animation :animation-type))
+               {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                :value (str (-> interaction :animation :animation-type))
                 :on-change change-animation-type}
                [:option {:value ""} (tr "workspace.options.interaction-animation-none")]
                (for [[value name] (animation-type-names interaction)]
@@ -529,7 +535,8 @@
                [:div.interactions-element
                 [:span.element-set-subtitle.wide (tr "workspace.options.interaction-easing")]
                 [:select.input-select
-                 {:value (str (-> interaction :animation :easing))
+                 {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                  :value (str (-> interaction :animation :easing))
                   :on-change change-easing}
                  (for [[value name] (easing-names)]
                    [:option {:value (str value)} name])]
