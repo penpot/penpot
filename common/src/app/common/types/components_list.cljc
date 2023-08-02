@@ -13,9 +13,12 @@
    [app.common.types.component :as ctk]))
 
 (defn components
-  [file-data]
-  (d/removem (fn [[_ component]] (:deleted component))
-             (:components file-data)))
+  ([file-data] (components file-data nil))
+  ([file-data {:keys [include-deleted?] :or {include-deleted? false}}]
+   (if include-deleted?
+     (:components file-data)
+     (d/removem (fn [[_ component]] (:deleted component))
+                (:components file-data)))))
 
 (defn components-seq
   [file-data]
