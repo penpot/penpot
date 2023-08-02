@@ -113,6 +113,22 @@
      :else
      (get-component-shape objects (get objects (:parent-id shape)) options))))
 
+(defn get-instance-root
+  "Get the parent shape at the top of the component instance (main or copy)."
+  [objects shape]
+  (cond
+    (nil? shape)
+    nil
+    
+    (cph/root? shape)
+    nil
+    
+    (ctk/instance-root? shape)
+    shape
+    
+    :else
+    (get-instance-root objects (get objects (:parent-id shape)))))
+
 (defn get-copy-root
   "Get the top shape of the copy."
   [objects shape]
