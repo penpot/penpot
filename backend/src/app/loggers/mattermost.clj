@@ -30,7 +30,9 @@
                   "```\n"
                   "- host: `" (:host report) "`\n"
                   "- tenant: `" (:tenant report) "`\n"
-                  "- version: `" (:version report) "`\n"
+                  "- request-path: `" (:request-path report) "`\n"
+                  "- frontend-version: `" (:frontend-version report) "`\n"
+                  "- backend-version: `" (:backend-version report) "`\n"
                   "\n"
                   "Trace:\n"
                   (:trace report)
@@ -50,13 +52,15 @@
 (defn record->report
   [{:keys [::l/context ::l/id ::l/cause] :as record}]
   (us/assert! ::l/record record)
-  {:id         id
-   :tenant     (cf/get :tenant)
-   :host       (cf/get :host)
-   :public-uri (cf/get :public-uri)
-   :version    (:full cf/version)
-   :profile-id (:profile-id context)
-   :trace      (ex/format-throwable cause :detail? false :header? false)})
+  {:id               id
+   :tenant           (cf/get :tenant)
+   :host             (cf/get :host)
+   :public-uri       (cf/get :public-uri)
+   :backend-version  (or (:version/backend context) (:full cf/version))
+   :frontend-version (:version/frontend context)
+   :profile-id       (:request/profile-id context)
+   :request-path     (:request/path context)
+   :trace            (ex/format-throwable cause :detail? false :header? false)})
 
 (defn handle-event
   [cfg record]
