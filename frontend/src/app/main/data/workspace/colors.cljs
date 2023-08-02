@@ -353,9 +353,12 @@
           (-> state
               (assoc-in [:workspace-global :picking-color?] true)
               (assoc ::md/modal {:id (random-uuid)
-                                 :data {:color colors/black :opacity 1}
                                  :type :colorpicker
-                                 :props {:on-change handle-change-color}
+                                 :props {:data {:color colors/black
+                                                :opacity 1}
+                                         :disable-opacity false
+                                         :disable-gradient false
+                                         :on-change handle-change-color}
                                  :allow-click-outside true})))))))
 
 (defn color-att->text
