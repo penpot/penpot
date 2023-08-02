@@ -430,12 +430,14 @@
                                   :parent-id parent-id
                                   :frame-id frame-id)
 
+                           (dissoc :shapes
+                                   :main-instance?
+                                   :use-for-thumbnail?)
+
                            (cond->
                              (or group? bool?)
                              (assoc :shapes []))
 
-                           (dissoc :main-instance?
-                                   :use-for-thumbnail?)
                            (gsh/move delta)
                            (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
 
