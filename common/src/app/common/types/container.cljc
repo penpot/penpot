@@ -119,13 +119,13 @@
   (cond
     (nil? shape)
     nil
-    
+
     (cph/root? shape)
     nil
-    
+
     (ctk/instance-root? shape)
     shape
-    
+
     :else
     (get-instance-root objects (get objects (:parent-id shape)))))
 
@@ -302,3 +302,16 @@
      [(remap-frame-id new-shape)
       (map remap-frame-id new-shapes)])))
 
+(defn get-top-instance
+  "The case of having an instance that contains another instances.
+  The topmost one, that is not part of other instance, is the Top instance"
+  [objects shape current-top]
+  (let [current-top (if (and
+                         (not (ctk/main-instance? shape))
+                         (ctk/instance-head? shape))
+                      shape current-top)
+        parent-id   (:parent-id shape)
+        parent      (get objects parent-id)]
+    (if (= parent-id uuid/zero)
+      current-top
+      (get-top-instance objects parent current-top))))
