@@ -532,13 +532,26 @@
   (log/debug :msg "Sync shape direct" :shape (str shape-id) :reset? reset?)
   (let [shape-inst     (ctn/get-shape container shape-id)]
     (if (ctk/in-component-copy? shape-inst)
-      (let [library        (dm/get-in libraries [(:component-file shape-inst) :data])
-            component      (or (ctkl/get-component library (:component-id shape-inst))
-                               (and reset?
-                                    (ctkl/get-deleted-component library (:component-id shape-inst))))
+      (let [redirect-shaperef ;;Set the :shape-ref of a shape pointing to the :id of its remote-shape
+            (fn redirect-shaperef
+              ([shape]
+               (redirect-shaperef shape (ctf/find-remote-shape container libraries shape)))
+              ([shape remote-shape]
+               (assoc shape :shape-ref (:id remote-shape))))
 
-            shape-main     (when component
-                             (ctf/get-ref-shape library component shape-inst))
+            library    (dm/get-in libraries [(:component-file shape-inst) :data])
+            component  (or (ctkl/get-component library (:component-id shape-inst))
+                           (and reset?
+                                (ctkl/get-deleted-component library (:component-id shape-inst))))
+
+            shape-main (when component
+                         (if (and reset? components-v2)
+                           (ctf/find-remote-shape container libraries shape-inst)
+                           (ctf/get-ref-shape library component shape-inst)))
+
+            shape-inst (if (and reset? components-v2)
+                         (redirect-shaperef shape-inst shape-main)
+                         shape-inst)
 
             initial-root?  (:component-root shape-inst)
 
@@ -556,6 +569,7 @@
                                                 root-main
                                                 reset?
                                                 initial-root?
+                                                redirect-shaperef
                                                 components-v2)
       ; If the component is not found, because the master component has been
       ; deleted or the library unlinked, do nothing in v2 or detach in v1.
@@ -565,7 +579,7 @@
       changes)))
 
 (defn- generate-sync-shape-direct-recursive
-  [changes container shape-inst component library shape-main root-inst root-main reset? initial-root? components-v2]
+  [changes container shape-inst component library shape-main root-inst root-main reset? initial-root? redirect-shaperef components-v2]
   (log/debug :msg "Sync shape direct recursive"
              :shape (str (:name shape-inst))
              :component (:name component))
@@ -605,6 +619,9 @@
           children-inst       (vec (ctn/get-direct-children container shape-inst))
           children-main       (vec (ctn/get-direct-children component-container shape-main))
 
+          children-inst (if (and reset? components-v2)
+                          (map #(redirect-shaperef %) children-inst) children-inst)
+
           only-inst (fn [changes child-inst]
                       (if-not (and omit-touched?
                                    (contains? (:touched shape-inst)
@@ -642,6 +659,7 @@
                                                        root-main
                                                        reset?
                                                        initial-root?
+                                                       redirect-shaperef
                                                        components-v2))
 
           moved (fn [changes child-inst child-main]
