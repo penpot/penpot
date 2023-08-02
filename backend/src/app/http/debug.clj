@@ -264,7 +264,7 @@
           content->>'~:hint' AS hint
      FROM server_error_report
     ORDER BY created_at DESC
-    LIMIT 100")
+    LIMIT 200")
 
 (defn error-list-handler
   [{:keys [::db/pool]} request]
