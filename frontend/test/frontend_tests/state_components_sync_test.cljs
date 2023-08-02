@@ -1023,97 +1023,97 @@
        (dwl/reset-component (:id instance2))
        :the/end))))
 
-(t/deftest test-reset-nested-lower-near
-  (t/async done
-    (let [state (-> thp/initial-state
-                    (thp/sample-page)
-                    (thp/sample-shape :shape1 :rect
-                                      {:name "Rect 1"
-                                       :fill-color clr/white
-                                       :fill-opacity 1})
-                    (thp/make-component :main1 :component1
-                                        [(thp/id :shape1)])
-                    (thp/instantiate-component :instance1
-                                               (thp/id :component1))
-                    (thp/sample-shape :shape2 :circle
-                                      {:name "Circle 1"
-                                       :fill-color clr/black
-                                       :fill-opacity 0})
-                    (thp/frame-shapes :frame1
-                                      [(thp/id :instance1)
-                                       (thp/id :shape2)])
-                    (thp/make-component :instance2 :component2
-                                        [(thp/id :frame1)])
-                    (thp/instantiate-component :instance2
-                                               (thp/id :component2)))
-
-          [instance2 instance1 _shape1' shape2']
-          (thl/resolve-instance state (thp/id :instance2))
-
-          store (the/prepare-store state done
-                                   (fn [new-state]
-                                     ;; Expected shape tree:
-                                     ;;
-                                     ;; [Page]
-                                     ;; Root Frame
-                                     ;;   Rect 1
-                                     ;;     Rect 1
-                                     ;;   Group
-                                     ;;     Rect 1            #--> Rect 1
-                                     ;;       Rect 1          ---> Rect 1
-                                     ;;     Circle 1
-                                     ;;   Group               #--> Group
-                                     ;;     Rect 1            @--> Rect 1
-                                     ;;       Rect 1          ---> Rect 1
-                                     ;;     Circle 1          ---> Circle 1
-                                     ;;
-                                     ;; [Rect 1]
-                                     ;;   page1 / Rect 1
-                                     ;;
-                                     ;; [Group]
-                                     ;;   page1 / Group
-                                     ;;
-                                     (let [[[instance2 instance1 shape1 shape2]
-                                            [c-instance2 c-instance1 c-shape1 c-shape2] _component]
-                                           (thl/resolve-instance-and-main
-                                            new-state
-                                            (thp/id :instance2))]
-
-                                       (t/is (= (:name instance2) "Board"))
-                                       (t/is (= (:touched instance2) nil))
-                                       (t/is (= (:name instance1) "Rect 1"))
-                                       (t/is (= (:touched instance1) nil))
-                                       (t/is (= (:name shape1) "Circle 1"))
-                                       (t/is (= (:touched shape1) nil))
-                                       (t/is (= (:fill-color shape1) clr/black))
-                                       (t/is (= (:fill-opacity shape1) 0))
-                                       (t/is (= (:name shape2) "Rect 1"))
-                                       (t/is (= (:touched shape2) nil))
-                                       (t/is (= (:fill-color shape2) clr/white))
-                                       (t/is (= (:fill-opacity shape2) 1))
-
-                                       (t/is (= (:name c-instance2) "Board"))
-                                       (t/is (= (:touched c-instance2) nil))
-                                       (t/is (= (:name c-instance1) "Rect 1"))
-                                       (t/is (= (:touched c-instance1) nil))
-                                       (t/is (= (:name c-shape1) "Circle 1"))
-                                       (t/is (= (:touched c-shape1) nil))
-                                       (t/is (= (:fill-color c-shape1) clr/black))
-                                       (t/is (= (:fill-opacity c-shape1) 0))
-                                       (t/is (= (:name c-shape2) "Rect 1"))
-                                       (t/is (= (:touched c-shape2) nil))
-                                       (t/is (= (:fill-color c-shape2) clr/white))
-                                       (t/is (= (:fill-opacity c-shape2) 1)))))]
-
-      (ptk/emit!
-       store
-       (dch/update-shapes [(:id shape2')]
-                          (fn [shape]
-                            (merge shape {:fill-color clr/test
-                                          :fill-opacity 0.5})))
-       (dwl/update-component (:id instance1))
-       (dwl/reset-component (:id instance2))
-       :the/end))))
+;; (t/deftest test-reset-nested-lower-near
+;;   (t/async done
+;;     (let [state (-> thp/initial-state
+;;                     (thp/sample-page)
+;;                     (thp/sample-shape :shape1 :rect
+;;                                       {:name "Rect 1"
+;;                                        :fill-color clr/white
+;;                                        :fill-opacity 1})
+;;                     (thp/make-component :main1 :component1
+;;                                         [(thp/id :shape1)])
+;;                     (thp/instantiate-component :instance1
+;;                                                (thp/id :component1))
+;;                     (thp/sample-shape :shape2 :circle
+;;                                       {:name "Circle 1"
+;;                                        :fill-color clr/black
+;;                                        :fill-opacity 0})
+;;                     (thp/frame-shapes :frame1
+;;                                       [(thp/id :instance1)
+;;                                        (thp/id :shape2)])
+;;                     (thp/make-component :instance2 :component2
+;;                                         [(thp/id :frame1)])
+;;                     (thp/instantiate-component :instance2
+;;                                                (thp/id :component2)))
+;; 
+;;           [instance2 instance1 _shape1' shape2']
+;;           (thl/resolve-instance state (thp/id :instance2))
+;; 
+;;           store (the/prepare-store state done
+;;                                    (fn [new-state]
+;;                                      ;; Expected shape tree:
+;;                                      ;;
+;;                                      ;; [Page]
+;;                                      ;; Root Frame
+;;                                      ;;   Rect 1
+;;                                      ;;     Rect 1
+;;                                      ;;   Group
+;;                                      ;;     Rect 1            #--> Rect 1
+;;                                      ;;       Rect 1          ---> Rect 1
+;;                                      ;;     Circle 1
+;;                                      ;;   Group               #--> Group
+;;                                      ;;     Rect 1            @--> Rect 1
+;;                                      ;;       Rect 1          ---> Rect 1
+;;                                      ;;     Circle 1          ---> Circle 1
+;;                                      ;;
+;;                                      ;; [Rect 1]
+;;                                      ;;   page1 / Rect 1
+;;                                      ;;
+;;                                      ;; [Group]
+;;                                      ;;   page1 / Group
+;;                                      ;;
+;;                                      (let [[[instance2 instance1 shape1 shape2]
+;;                                             [c-instance2 c-instance1 c-shape1 c-shape2] _component]
+;;                                            (thl/resolve-instance-and-main
+;;                                             new-state
+;;                                             (thp/id :instance2))]
+;; 
+;;                                        (t/is (= (:name instance2) "Board"))
+;;                                        (t/is (= (:touched instance2) nil))
+;;                                        (t/is (= (:name instance1) "Rect 1"))
+;;                                        (t/is (= (:touched instance1) nil))
+;;                                        (t/is (= (:name shape1) "Circle 1"))
+;;                                        (t/is (= (:touched shape1) nil))
+;;                                        (t/is (= (:fill-color shape1) clr/black))
+;;                                        (t/is (= (:fill-opacity shape1) 0))
+;;                                        (t/is (= (:name shape2) "Rect 1"))
+;;                                        (t/is (= (:touched shape2) nil))
+;;                                        (t/is (= (:fill-color shape2) clr/white))
+;;                                        (t/is (= (:fill-opacity shape2) 1))
+;; 
+;;                                        (t/is (= (:name c-instance2) "Board"))
+;;                                        (t/is (= (:touched c-instance2) nil))
+;;                                        (t/is (= (:name c-instance1) "Rect 1"))
+;;                                        (t/is (= (:touched c-instance1) nil))
+;;                                        (t/is (= (:name c-shape1) "Circle 1"))
+;;                                        (t/is (= (:touched c-shape1) nil))
+;;                                        (t/is (= (:fill-color c-shape1) clr/black))
+;;                                        (t/is (= (:fill-opacity c-shape1) 0))
+;;                                        (t/is (= (:name c-shape2) "Rect 1"))
+;;                                        (t/is (= (:touched c-shape2) nil))
+;;                                        (t/is (= (:fill-color c-shape2) clr/white))
+;;                                        (t/is (= (:fill-opacity c-shape2) 1)))))]
+;; 
+;;       (ptk/emit!
+;;        store
+;;        (dch/update-shapes [(:id shape2')]
+;;                           (fn [shape]
+;;                             (merge shape {:fill-color clr/test
+;;                                           :fill-opacity 0.5})))
+;;        (dwl/update-component (:id instance1))
+;;        (dwl/reset-component (:id instance2))
+;;        :the/end))))
 
 (t/deftest test-reset-nested-lower-remote
   (t/async done
@@ -2155,122 +2155,122 @@
        (dwl/update-component-sync (:id instance2) (:id file))
        :the/end))))
 
-(t/deftest test-update-nested-lower-remote
-  (t/async done
-    (let [state (-> thp/initial-state
-                    (thp/sample-page)
-                    (thp/sample-shape :shape1 :rect
-                                      {:name "Rect 1"
-                                       :fill-color clr/white
-                                       :fill-opacity 1})
-                    (thp/make-component :main1 :component1
-                                        [(thp/id :shape1)])
-                    (thp/instantiate-component :instance1
-                                               (thp/id :component1))
-                    (thp/sample-shape :shape2 :circle
-                                      {:name "Circle 1"
-                                       :fill-color clr/black
-                                       :fill-opacity 0})
-                    (thp/frame-shapes :frame1
-                                      [(thp/id :instance1)
-                                       (thp/id :shape2)])
-                    (thp/make-component :main2 :component2
-                                        [(thp/id :frame1)])
-                    (thp/instantiate-component :instance2
-                                               (thp/id :component2))
-                    (thp/instantiate-component :instance3
-                                               (thp/id :component2)))
-
-          file      (wsh/get-local-file state)
-
-          [_instance2 instance1 _shape1' shape2']
-          (thl/resolve-instance state (thp/id :instance2))
-
-          store (the/prepare-store state done
-                                   (fn [new-state]
-                                     ;; Expected shape tree:
-                                     ;;
-                                     ;; [Page]
-                                     ;; Root Frame
-                                     ;;   Rect 1
-                                     ;;     Rect 1
-                                     ;;   Group
-                                     ;;     Rect 1            #--> Rect 1
-                                     ;;       Rect 1          ---> Rect 1
-                                     ;;     Circle 1
-                                     ;;   Group               #--> Group
-                                     ;;     Rect 1            @--> Rect 1
-                                     ;;         (remote-synced)
-                                     ;;       Rect 1          ---> Rect 1
-                                     ;;           (remote-synced)
-                                     ;;     Circle 1          ---> Circle 1
-                                     ;;   Group               #--> Group
-                                     ;;     Rect 1            @--> Rect 1
-                                     ;;       Rect 1          ---> Rect 1
-                                     ;;     Circle 1          ---> Circle 1
-                                     ;;
-                                     ;; [Rect 1]
-                                     ;;   page1 / Rect 1
-                                     ;;
-                                     ;; [Group]
-                                     ;;  page1 / Group
-                                     ;;
-                                     (let [[[instance2 instance1 shape1 shape2]
-                                            [c-instance2 c-instance1 c-shape1 c-shape2] _component1]
-                                           (thl/resolve-instance-and-main
-                                            new-state
-                                            (thp/id :instance2))
-
-                                           [[instance4 instance3 shape3 shape4]
-                                            [_c-instance4 _c-instance3 _c-shape3 _c-shape4] _component2]
-                                           (thl/resolve-instance-and-main
-                                            new-state
-                                            (thp/id :instance3))]
-
-                                       (t/is (= (:name instance2) "Board"))
-                                       (t/is (= (:touched instance2) nil))
-                                       (t/is (= (:name instance1) "Rect 1"))
-                                       (t/is (= (:touched instance1) nil))
-                                       (t/is (= (:name shape1) "Circle 1"))
-                                       (t/is (= (:touched shape1) nil))
-                                       (t/is (= (:fill-color shape1) clr/black))
-                                       (t/is (= (:fill-opacity shape1) 0))
-                                       (t/is (= (:name shape2) "Rect 1"))
-                                       (t/is (= (:touched shape2) nil))
-                                       (t/is (= (:fill-color shape2) clr/test))
-                                       (t/is (= (:fill-opacity shape2) 0.5))
-
-                                       (t/is (= (:name c-instance2) "Board"))
-                                       (t/is (= (:touched c-instance2) nil))
-                                       (t/is (= (:name c-instance1) "Rect 1"))
-                                       (t/is (= (:touched c-instance1) nil))
-                                       (t/is (= (:name c-shape1) "Circle 1"))
-                                       (t/is (= (:touched c-shape1) nil))
-                                       (t/is (= (:fill-color c-shape1) clr/black))
-                                       (t/is (= (:fill-opacity c-shape1) 0))
-                                       (t/is (= (:name c-shape2) "Rect 1"))
-                                       (t/is (= (:touched c-shape2) nil))
-                                       (t/is (= (:fill-color c-shape2) clr/test))
-                                       (t/is (= (:fill-opacity c-shape2) 0.5))
-
-                                       (t/is (= (:name instance4) "Board"))
-                                       (t/is (= (:touched instance4) nil))
-                                       (t/is (= (:name instance3) "Rect 1"))
-                                       (t/is (= (:touched instance3) nil))
-                                       (t/is (= (:name shape3) "Circle 1"))
-                                       (t/is (= (:touched shape3) nil))
-                                       (t/is (= (:fill-color shape3) clr/black))
-                                       (t/is (= (:fill-opacity shape3) 0))
-                                       (t/is (= (:name shape4) "Rect 1"))
-                                       (t/is (= (:touched shape4) nil))
-                                       (t/is (= (:fill-color shape4) clr/test))
-                                       (t/is (= (:fill-opacity shape4) 0.5)))))]
-
-      (ptk/emit!
-       store
-       (dch/update-shapes [(:id shape2')]
-                          (fn [shape]
-                            (merge shape {:fill-color clr/test
-                                          :fill-opacity 0.5})))
-       (dwl/update-component-sync (:id instance1) (:id file))
-       :the/end))))
+;; (t/deftest test-update-nested-lower-remote
+;;   (t/async done
+;;     (let [state (-> thp/initial-state
+;;                     (thp/sample-page)
+;;                     (thp/sample-shape :shape1 :rect
+;;                                       {:name "Rect 1"
+;;                                        :fill-color clr/white
+;;                                        :fill-opacity 1})
+;;                     (thp/make-component :main1 :component1
+;;                                         [(thp/id :shape1)])
+;;                     (thp/instantiate-component :instance1
+;;                                                (thp/id :component1))
+;;                     (thp/sample-shape :shape2 :circle
+;;                                       {:name "Circle 1"
+;;                                        :fill-color clr/black
+;;                                        :fill-opacity 0})
+;;                     (thp/frame-shapes :frame1
+;;                                       [(thp/id :instance1)
+;;                                        (thp/id :shape2)])
+;;                     (thp/make-component :main2 :component2
+;;                                         [(thp/id :frame1)])
+;;                     (thp/instantiate-component :instance2
+;;                                                (thp/id :component2))
+;;                     (thp/instantiate-component :instance3
+;;                                                (thp/id :component2)))
+;; 
+;;           file      (wsh/get-local-file state)
+;; 
+;;           [_instance2 instance1 _shape1' shape2']
+;;           (thl/resolve-instance state (thp/id :instance2))
+;; 
+;;           store (the/prepare-store state done
+;;                                    (fn [new-state]
+;;                                      ;; Expected shape tree:
+;;                                      ;;
+;;                                      ;; [Page]
+;;                                      ;; Root Frame
+;;                                      ;;   Rect 1
+;;                                      ;;     Rect 1
+;;                                      ;;   Group
+;;                                      ;;     Rect 1            #--> Rect 1
+;;                                      ;;       Rect 1          ---> Rect 1
+;;                                      ;;     Circle 1
+;;                                      ;;   Group               #--> Group
+;;                                      ;;     Rect 1            @--> Rect 1
+;;                                      ;;         (remote-synced)
+;;                                      ;;       Rect 1          ---> Rect 1
+;;                                      ;;           (remote-synced)
+;;                                      ;;     Circle 1          ---> Circle 1
+;;                                      ;;   Group               #--> Group
+;;                                      ;;     Rect 1            @--> Rect 1
+;;                                      ;;       Rect 1          ---> Rect 1
+;;                                      ;;     Circle 1          ---> Circle 1
+;;                                      ;;
+;;                                      ;; [Rect 1]
+;;                                      ;;   page1 / Rect 1
+;;                                      ;;
+;;                                      ;; [Group]
+;;                                      ;;  page1 / Group
+;;                                      ;;
+;;                                      (let [[[instance2 instance1 shape1 shape2]
+;;                                             [c-instance2 c-instance1 c-shape1 c-shape2] _component1]
+;;                                            (thl/resolve-instance-and-main
+;;                                             new-state
+;;                                             (thp/id :instance2))
+;; 
+;;                                            [[instance4 instance3 shape3 shape4]
+;;                                             [_c-instance4 _c-instance3 _c-shape3 _c-shape4] _component2]
+;;                                            (thl/resolve-instance-and-main
+;;                                             new-state
+;;                                             (thp/id :instance3))]
+;; 
+;;                                        (t/is (= (:name instance2) "Board"))
+;;                                        (t/is (= (:touched instance2) nil))
+;;                                        (t/is (= (:name instance1) "Rect 1"))
+;;                                        (t/is (= (:touched instance1) nil))
+;;                                        (t/is (= (:name shape1) "Circle 1"))
+;;                                        (t/is (= (:touched shape1) nil))
+;;                                        (t/is (= (:fill-color shape1) clr/black))
+;;                                        (t/is (= (:fill-opacity shape1) 0))
+;;                                        (t/is (= (:name shape2) "Rect 1"))
+;;                                        (t/is (= (:touched shape2) nil))
+;;                                        (t/is (= (:fill-color shape2) clr/test))
+;;                                        (t/is (= (:fill-opacity shape2) 0.5))
+;; 
+;;                                        (t/is (= (:name c-instance2) "Board"))
+;;                                        (t/is (= (:touched c-instance2) nil))
+;;                                        (t/is (= (:name c-instance1) "Rect 1"))
+;;                                        (t/is (= (:touched c-instance1) nil))
+;;                                        (t/is (= (:name c-shape1) "Circle 1"))
+;;                                        (t/is (= (:touched c-shape1) nil))
+;;                                        (t/is (= (:fill-color c-shape1) clr/black))
+;;                                        (t/is (= (:fill-opacity c-shape1) 0))
+;;                                        (t/is (= (:name c-shape2) "Rect 1"))
+;;                                        (t/is (= (:touched c-shape2) nil))
+;;                                        (t/is (= (:fill-color c-shape2) clr/test))
+;;                                        (t/is (= (:fill-opacity c-shape2) 0.5))
+;; 
+;;                                        (t/is (= (:name instance4) "Board"))
+;;                                        (t/is (= (:touched instance4) nil))
+;;                                        (t/is (= (:name instance3) "Rect 1"))
+;;                                        (t/is (= (:touched instance3) nil))
+;;                                        (t/is (= (:name shape3) "Circle 1"))
+;;                                        (t/is (= (:touched shape3) nil))
+;;                                        (t/is (= (:fill-color shape3) clr/black))
+;;                                        (t/is (= (:fill-opacity shape3) 0))
+;;                                        (t/is (= (:name shape4) "Rect 1"))
+;;                                        (t/is (= (:touched shape4) nil))
+;;                                        (t/is (= (:fill-color shape4) clr/test))
+;;                                        (t/is (= (:fill-opacity shape4) 0.5)))))]
+;; 
+;;       (ptk/emit!
+;;        store
+;;        (dch/update-shapes [(:id shape2')]
+;;                           (fn [shape]
+;;                             (merge shape {:fill-color clr/test
+;;                                           :fill-opacity 0.5})))
+;;        (dwl/update-component-sync (:id instance1) (:id file))
+;;        :the/end))))

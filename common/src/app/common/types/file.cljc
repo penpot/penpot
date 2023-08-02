@@ -178,6 +178,18 @@
         (cph/get-children-with-self (:objects instance-page) (:main-instance-id component)))
       (vals (:objects component)))))
 
+(defn find-remote-shape
+  "Recursively go back by the :shape-ref of the shape until find the correct shape of the original component"
+  [container libraries shape]
+  (let [top-instance        (ctn/get-top-instance (:objects container) shape nil)
+        component-file      (get-in libraries [(:component-file top-instance) :data])
+        component           (ctkl/get-component component-file (:component-id top-instance) true)
+        remote-shape        (get-ref-shape component-file component shape)
+        component-container (get-component-container component-file component)]
+    (if (nil? remote-shape)
+      shape
+      (find-remote-shape component-container libraries remote-shape))))
+
 ;; Return true if the object is a component that exists on the file or its libraries (even a deleted one)
 (defn is-known-component?
   [shape libraries]
