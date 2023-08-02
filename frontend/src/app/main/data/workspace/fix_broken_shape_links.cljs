@@ -31,8 +31,10 @@
                      (mapcat (partial generate-changes :component-id)
                              (vals (:components data))))]
 
-        (rx/of (dch/commit-changes
-                {:origin it
-                 :redo-changes (vec changes)
-                 :undo-changes []
-                 :save-undo? false}))))))
+        (if (seq changes)
+          (rx/of (dch/commit-changes
+                  {:origin it
+                   :redo-changes (vec changes)
+                   :undo-changes []
+                   :save-undo? false}))
+          (rx/empty))))))
