@@ -58,6 +58,9 @@
      (when-let [params (:request/params context)]
        {:params (pp/pprint-str params :width 200)})
 
+     (when-let [value (:value context)]
+       {:value (pp/pprint-str value :width 200 :length 50 :level 10)})
+
      (when-let [data (some-> data (dissoc ::s/problems ::s/value ::s/spec ::sm/explain :hint))]
        {:data (pp/pprint-str data :width 200)})
 
