@@ -65,7 +65,7 @@
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail data"
-  [page-id {:keys [id] :as shape} node-ref rendered? disable? force-render]
+  [page-id {:keys [id] :as shape} root* node* rendered? disable? force-render]
 
   (let [frame-image-ref  (mf/use-ref nil)
 
@@ -125,7 +125,7 @@
            (try
              ;; When starting generating the canvas we mark it as not ready so its not send to back until
              ;; we have time to update it
-             (let [node @node-ref]
+             (let [node @node*]
                (if (dom/has-children? node)
                  ;; The frame-content need to have children in order to generate the thumbnail
                  (let [style-node (dom/query (dm/str "#frame-container-" id " style"))
@@ -142,10 +142,10 @@
         (mf/use-fn
          (mf/deps id)
          (fn []
-           (when (and ^boolean @node-ref
+           (when (and ^boolean @node*
                       ^boolean @rendered?
                       ^boolean @regenerate*)
-             (let [loading-images? (some? (dom/query @node-ref "[data-loading='true']"))
+             (let [loading-images? (some? (dom/query @node* "[data-loading='true']"))
                    loading-fonts?  (some? (dom/query (dm/str "#frame-container-" id " > style[data-loading='true']")))]
                (when (and (not loading-images?)
                           (not loading-fonts?))
@@ -213,10 +213,10 @@
 
     (mf/with-effect []
       (fn []
-        (when (and (some? @node-ref)
+        (when (and (some? @node*)
                    ^boolean @rendered?)
-          (mf/unmount @node-ref)
-          (reset! node-ref nil)
+          (.unmount @root*)
+          (reset! node* nil)
           (reset! rendered? false)
           (when (some? @observer*)
             (.disconnect @observer*)

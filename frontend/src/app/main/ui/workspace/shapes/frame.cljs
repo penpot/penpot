@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.shapes.frame
   (:require
+   ["react-dom/client" :as rdom]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
@@ -86,6 +87,7 @@
 
             objects            (wsh/lookup-page-objects @st/state)
 
+            root*              (mf/use-var nil)
             node*              (mf/use-var nil)
             force-render*      (mf/use-state false)
             force-render?      (deref force-render*)
@@ -105,7 +107,7 @@
             disable-thumbnail? (d/not-empty? (dm/get-in modifiers [frame-id :modifiers]))
 
             [on-load-frame-dom render-frame? thumbnail-renderer]
-            (ftr/use-render-thumbnail page-id shape node* rendered* disable-thumbnail? force-render?)
+            (ftr/use-render-thumbnail page-id shape root* node* rendered* disable-thumbnail? force-render?)
 
             on-frame-load
             (fns/use-node-store thumbnail? node* rendered* render-frame?)]
@@ -127,9 +129,10 @@
                          force-render?
                          render-frame?))
             (let [elem (mf/element frame-shape #js {:ref on-load-frame-dom :shape shape :fonts fonts})]
-              (mf/mount elem @node*)
               (when (not @rendered*)
-                (reset! rendered* true)))))
+                (reset! root* (rdom/createRoot @node*))
+                (reset! rendered* true))
+              (.render @root* elem))))
 
         [:& shape-container {:shape shape}
          [:g.frame-container {:id (dm/str "frame-container-" frame-id)

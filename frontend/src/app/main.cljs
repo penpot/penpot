@@ -99,8 +99,8 @@
   []
   (.unmount app-root)
   (.unmount modal-root)
-  (set! app-root (mf/create-root (dom/get-element "app")))
-  (set! modal-root (mf/create-root (dom/get-element "modal")))
+  (set! app-root (rdom/createRoot (dom/get-element "app")))
+  (set! modal-root (rdom/createRoot (dom/get-element "modal")))
   (st/emit! (ev/initialize))
   (init-ui))
 

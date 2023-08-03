@@ -256,7 +256,6 @@
                    (:y (first selected-shapes))
                    (:y selected-frame))]
 
-    (js/console.log "-> rendering viewport" (clj->js vbox) (clj->js vport))
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? workspace-read-only?)
@@ -265,7 +264,6 @@
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path? text-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
-    (js/console.log "<- rendering viewport" (clj->js vbox) (clj->js vport))
 
     [:div.viewport
      [:div.viewport-overlays
