@@ -68,6 +68,7 @@
    ::climit/key-fn ::rpc/profile-id
    ::sm/params schema:push-audit-events
    ::audit/skip true
+   ::doc/skip true
    ::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} params]
   (if (or (db/read-only? pool)
