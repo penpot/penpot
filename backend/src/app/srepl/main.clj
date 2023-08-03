@@ -17,6 +17,7 @@
    [app.media :as media]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.profile :as profile]
+   [app.rpc.commands.files-snapshot :as fsnap]
    [app.srepl.fixes :as f]
    [app.srepl.helpers :as h]
    [app.storage :as sto]
@@ -105,7 +106,6 @@
         (db/delete! conn :http-session {:profile-id (:id profile)})
         :blocked))))
 
-
 (defn enable-objects-map-feature-on-file!
   [system & {:keys [save? id]}]
   (letfn [(update-file [{:keys [features] :as file}]
@@ -172,94 +172,28 @@
   "An internal helper that persist the file snapshot using non-gc
   collectable file-changes entry."
   [system & {:keys [file-id label]}]
-  (let [label   (or label (str "Snapshot at " (dt/format-instant (dt/now) :rfc1123)))
-        file-id (h/parse-uuid file-id)
-        id      (uuid/next)]
+  (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! system
-                (fn [{:keys [::db/conn]}]
-                  (when-let [file (db/get* conn :file {:id file-id})]
-                    (h/println! "=> persisting snapshot for" file-id)
-                    (db/insert! conn :file-change
-                                {:id id
-                                 :revn (:revn file)
-                                 :data (:data file)
-                                 :features (:features file)
-                                 :file-id (:id file)
-                                 :label label})
-                    id)))))
+                (fn [cfg]
+                  (fsnap/take-file-snapshot! cfg {:file-id file-id :label label})))))
 
 (defn restore-file-snapshot!
-  [system & {:keys [file-id id label]}]
-  (letfn [(restore-snapshot! [{:keys [::db/conn ::sto/storage]} file-id snapshot]
-            (when (and (some? snapshot)
-                       (some? (:data snapshot)))
+  [system & {:keys [file-id id]}]
+  (db/tx-run! system
+              (fn [cfg]
+                (let [file-id (h/parse-uuid file-id)
+                      id      (h/parse-uuid id)]
 
-              (h/println! "-> snapshot found:" (:id snapshot))
-              (h/println! "-> restoring it on file:" file-id)
-              (db/update! conn :file
-                          {:data (:data snapshot)}
-                          {:id file-id})
+                  (if (and (uuid? id) (uuid? file-id))
+                    (fsnap/restore-file-snapshot! cfg {:id id :file-id file-id})
+                    (println "=> invalid parameters"))))))
 
-              ;; clean object thumbnails
-              (let [sql (str "delete from file_object_thumbnail "
-                             " where file_id=? returning media_id")
-                    res (db/exec! conn [sql file-id])]
-                (doseq [media-id (into #{} (keep :media-id) res)]
-                  (sto/del-object! storage media-id)))))
-
-          (execute [{:keys [::db/conn] :as cfg}]
-            (let [file-id (h/parse-uuid file-id)
-                  id      (h/parse-uuid id)
-                  cfg     (update cfg ::sto/storage media/configure-assets-storage conn)]
-
-              (cond
-                (and (uuid? id) (uuid? file-id))
-                (let [params   {:id id :file-id file-id}
-                      options  {:columns [:id :data :revn]}
-                      snapshot (db/get* conn :file-change params options)]
-                  (restore-snapshot! cfg file-id snapshot))
-
-                (uuid? file-id)
-                (let [params   (cond-> {:file-id file-id}
-                                 (string? label)
-                                 (assoc :label label))
-                      options  {:columns [:id :data :revn]}
-                      snapshot (db/get* conn :file-change params options)]
-                  (restore-snapshot! cfg file-id snapshot))
-
-                :else
-                (println "=> invalid parameters"))))]
-
-    (db/tx-run! system execute)))
 
 (defn list-file-snapshots!
-  [system & {:keys [file-id limit chunk-size start-at]
-             :or {chunk-size 10 limit Long/MAX_VALUE}}]
-
-  (letfn [(get-chunk [ds cursor]
-            (let [query   (str "select id, label, revn, created_at "
-                               "  from file_change "
-                               " where file_id = ? "
-                               "   and created_at < ? "
-                               "   and label is not null "
-                               "   and data is not null "
-                               " order by created_at desc "
-                               "  limit ?")
-                  file-id (if (string? file-id)
-                            (d/parse-uuid file-id)
-                            file-id)
-                  rows    (db/exec! ds [query file-id cursor chunk-size])]
-              [(some->> rows peek :created-at) (seq rows)]))
-
-          (get-candidates [ds]
-            (->> (d/iteration (partial get-chunk ds)
-                              :vf second
-                              :kf first
-                              :initk (or start-at (dt/now)))
-                 (take limit)))]
-
-    (db/tx-run! system (fn [system]
-                         (->> (fsnap/get-file-snapshots
-                              (map (fn [row]
-                                     (update row :created-at dt/format-instant :rfc1123)))
+  [system & {:keys [file-id limit]}]
+  (db/tx-run! system (fn [system]
+                       (let [params {:file-id (h/parse-uuid file-id)
+                                     :limit limit}]
+                         (->> (fsnap/get-file-snapshots system (d/without-nils params))
                               (print-table [:id :revn :created-at :label]))))))
+
