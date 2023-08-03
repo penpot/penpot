@@ -6,6 +6,7 @@
 
 (ns app.srepl.helpers
   "A  main namespace for server repl."
+  (:refer-clojure :exclude [parse-uuid])
   #_:clj-kondo/ignore
   (:require
    [app.auth :refer [derive-password]]
@@ -38,6 +39,26 @@
 
 (def ^:dynamic *conn*)
 (def ^:dynamic *pool*)
+
+(defn println!
+  [& params]
+  (locking println
+    (apply println params)))
+
+(defn parse-uuid
+  [v]
+  (if (uuid? v)
+    v
+    (d/parse-uuid v)))
+
+(defn resolve-connectable
+  [o]
+  (if (db/connection? o)
+    o
+    (if (db/pool? o)
+      o
+      (or (::db/conn o)
+          (::db/pool o)))))
 
 (defn reset-password!
   "Reset a password to a specific one for a concrete user or all users
@@ -104,7 +125,7 @@
           (dissoc file :data))))))
 
 (def ^:private sql:retrieve-files-chunk
-  "SELECT id, name, created_at, data FROM file
+  "SELECT id, name, created_at, revn, data FROM file
     WHERE created_at < ? AND deleted_at is NULL
     ORDER BY created_at desc LIMIT ?")
 
@@ -149,11 +170,6 @@
               ((or on-error on-error*) cause file))))))
 
     (when (fn? on-end) (on-end))))
-
-(defn- println!
-  [& params]
-  (locking println
-    (apply println params)))
 
 (defn process-files!
   "Apply a function to all files in the database, reading them in
