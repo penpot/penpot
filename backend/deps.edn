@@ -21,8 +21,8 @@
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
   funcool/yetti
-  {:git/tag "v9.15"
-   :git/sha "aa9b967"
+  {:git/tag "v9.16"
+   :git/sha "7df3e08"
    :git/url "https://github.com/funcool/yetti.git"
    :exclusions [org.slf4j/slf4j-api]}
 
