@@ -21,6 +21,7 @@
 (defn initialize-viewport
   [{:keys [width height] :as size}]
 
+  (js/console.log "initialize-viewport" width height)
   (letfn [(update* [{:keys [vport] :as local}]
             (let [wprop (/ (:width vport) width)
                   hprop (/ (:height vport) height)]

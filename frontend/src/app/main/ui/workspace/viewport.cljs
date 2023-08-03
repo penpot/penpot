@@ -69,7 +69,13 @@
 
 (mf/defc viewport
   [{:keys [wlocal wglobal selected layout file] :as props}]
-  (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
+  (let [;; This solves the problem of vport and vbox being "memoized"
+        ;; on every rendering. I don't know why this is different between
+        ;; react 17 and 18.
+        wglobal           (mf/deref refs/workspace-global)
+        wlocal            (mf/deref refs/workspace-local)
+
+        ;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
         {:keys [edit-path
                 panning
@@ -250,6 +256,7 @@
                    (:y (first selected-shapes))
                    (:y selected-frame))]
 
+    (js/console.log "-> rendering viewport" (clj->js vbox) (clj->js vport))
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? workspace-read-only?)
@@ -258,6 +265,7 @@
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path? text-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
+    (js/console.log "<- rendering viewport" (clj->js vbox) (clj->js vport))
 
     [:div.viewport
      [:div.viewport-overlays
