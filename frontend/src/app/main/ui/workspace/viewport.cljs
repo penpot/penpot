@@ -68,7 +68,7 @@
    selected))
 
 (mf/defc viewport
-  [{:keys [wlocal wglobal selected layout file] :as props}]
+  [{:keys [selected layout file] :as props}]
   (let [;; This solves the problem of vport and vbox being "memoized"
         ;; on every rendering. I don't know why this is different between
         ;; react 17 and 18.

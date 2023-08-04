@@ -101,8 +101,6 @@
           [:& history-toolbox]])
 
        [:& viewport {:file file
-                     :wlocal wlocal
-                     :wglobal wglobal
                      :selected selected
                      :layout layout}]]]
 
