@@ -47,7 +47,7 @@
                     (assoc :public-uri (cf/get :public-uri))
                     (assoc :logger/name logger)
                     (assoc :logger/level level)
-                    (dissoc :request/params))]
+                    (dissoc :request/params :value :params :data))]
     (merge
      {:context (-> (into (sorted-map) context)
                    (pp/pprint-str :width 200 :length 50 :level 10))
@@ -55,7 +55,7 @@
       :hint    (or (ex-message cause) @message)
       :trace   (ex/format-throwable cause :data? false :explain? false :header? false :summary? false)}
 
-     (when-let [params (:request/params context)]
+     (when-let [params (or (:request/params context) (:params context))]
        {:params (pp/pprint-str params :width 200)})
 
      (when-let [value (:value context)]
@@ -66,7 +66,6 @@
 
      (when-let [explain (ex/explain data {:level 10 :length 50})]
        {:explain explain}))))
-
 
 (defn error-record?
   [{:keys [::l/level ::l/cause]}]
