@@ -8,6 +8,7 @@
   "Color conversion utils."
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.strings :as ust]
@@ -176,14 +177,16 @@
       (= id :multiple)
       (= file-id :multiple)))
 
-(defn color? [^string color-str]
-  (and (not (nil? color-str))
-       (seq color-str)
-       (gcolor/isValidColor color-str)))
+(defn color?
+  [color]
+  (and (string? color)
+       (gcolor/isValidColor color)))
 
-(defn parse-color [^string color-str]
-  (let [result (gcolor/parse color-str)]
-    (str (.-hex ^js result))))
+(defn parse-color
+  [color]
+  (when (color? color)
+    (let [result (gcolor/parse color)]
+      (dm/str (.-hex ^js result)))))
 
 (def color-names
   (obj/get-keys ^js gcolor/names))
