@@ -99,7 +99,6 @@
                                  (refs/workspace-modifiers-by-frame-id frame-id))
             modifiers          (mf/deref modifiers-ref)
 
-
             fonts              (mf/with-memo [shape objects]
                                  (ff/shape->fonts shape objects))
             fonts              (hooks/use-equal-memo fonts)
