@@ -489,16 +489,8 @@
           (l/error :hint "worker: unhandled exception" :cause cause))))))
 
 (defn- get-error-context
-  [error item]
-  (let [data (ex-data error)]
-    (merge
-     {:hint          (ex-message error)
-      :spec-problems (some->> data ::s/problems (take 10) seq vec)
-      :spec-value    (some->> data ::s/value)
-      :data          (some-> data (dissoc ::s/problems ::s/value ::s/spec))
-      :params        item}
-     (when-let [explain (ex/explain data)]
-       {:spec-explain explain}))))
+  [_ item]
+  {:params item})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CRON
@@ -597,10 +589,10 @@
       (catch InterruptedException _
         (l/debug :hint "cron: task interrupted" :task-id id))
       (catch Throwable cause
-        (l/error :hint "cron: unhandled exception on running task"
-                 ::l/context (get-error-context cause task)
-                 :task-id id
-                 :cause cause))
+        (binding [l/*context* (get-error-context cause task)]
+          (l/error :hint "cron: unhandled exception on running task"
+                   :task-id id
+                   :cause cause)))
       (finally
         (when-not (px/interrupted? :current)
           (schedule-cron-task cfg task))))))
