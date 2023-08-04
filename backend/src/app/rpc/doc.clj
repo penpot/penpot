@@ -75,6 +75,7 @@
      (->> methods
           (map val)
           (map first)
+          (remove ::skip)
           (map get-context)
           (sort-by (juxt :module :name)))}))
 

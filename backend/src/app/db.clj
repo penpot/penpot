@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.db
-  (:refer-clojure :exclude [get])
+  (:refer-clojure :exclude [get run!])
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -390,6 +390,52 @@
    (.rollback conn))
   ([^Connection conn ^Savepoint sp]
    (.rollback conn sp)))
+
+(defn tx-run!
+  [cfg f]
+  (cond
+    (connection? cfg)
+    (tx-run! {::conn cfg} f)
+
+    (pool? cfg)
+    (tx-run! {::pool cfg} f)
+
+    (::conn cfg)
+    (let [conn (::conn cfg)
+          sp   (savepoint conn)]
+      (try
+        (let [result (f cfg)]
+          (release! conn sp)
+          result)
+        (catch Throwable cause
+          (rollback! sp)
+          (throw cause))))
+
+    (::pool cfg)
+    (with-atomic [conn (::pool cfg)]
+      (f (assoc cfg ::conn conn)))
+
+    :else
+    (throw (IllegalArgumentException. "invalid arguments"))))
+
+(defn run!
+  [cfg f]
+  (cond
+    (connection? cfg)
+    (run! {::conn cfg} f)
+
+    (pool? cfg)
+    (run! {::pool cfg} f)
+
+    (::conn cfg)
+    (f cfg)
+
+    (::pool cfg)
+    (with-open [^Connection conn (open (::pool cfg))]
+      (f (assoc cfg ::conn conn)))
+
+    :else
+    (throw (IllegalArgumentException. "invalid arguments"))))
 
 (defn interval
   [o]

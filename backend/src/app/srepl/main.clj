@@ -8,20 +8,25 @@
   "A collection of adhoc fixes scripts."
   #_:clj-kondo/ignore
   (:require
+   [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.pprint :as p]
    [app.common.spec :as us]
+   [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.media :as media]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.profile :as profile]
+   [app.rpc.commands.files-snapshot :as fsnap]
    [app.srepl.fixes :as f]
    [app.srepl.helpers :as h]
+   [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.pprint :refer [pprint]]
+   [clojure.pprint :refer [pprint print-table]]
    [cuerdas.core :as str]))
 
 (defn print-available-tasks
@@ -101,7 +106,6 @@
         (db/delete! conn :http-session {:profile-id (:id profile)})
         :blocked))))
 
-
 (defn enable-objects-map-feature-on-file!
   [system & {:keys [save? id]}]
   (letfn [(update-file [{:keys [features] :as file}]
@@ -163,4 +167,33 @@
   [var]
   (alter-var-root var (fn [f]
                         (or (::original (meta f)) f))))
+
+(defn take-file-snapshot!
+  "An internal helper that persist the file snapshot using non-gc
+  collectable file-changes entry."
+  [system & {:keys [file-id label]}]
+  (let [file-id (h/parse-uuid file-id)]
+    (db/tx-run! system
+                (fn [cfg]
+                  (fsnap/take-file-snapshot! cfg {:file-id file-id :label label})))))
+
+(defn restore-file-snapshot!
+  [system & {:keys [file-id id]}]
+  (db/tx-run! system
+              (fn [cfg]
+                (let [file-id (h/parse-uuid file-id)
+                      id      (h/parse-uuid id)]
+
+                  (if (and (uuid? id) (uuid? file-id))
+                    (fsnap/restore-file-snapshot! cfg {:id id :file-id file-id})
+                    (println "=> invalid parameters"))))))
+
+
+(defn list-file-snapshots!
+  [system & {:keys [file-id limit]}]
+  (db/tx-run! system (fn [system]
+                       (let [params {:file-id (h/parse-uuid file-id)
+                                     :limit limit}]
+                         (->> (fsnap/get-file-snapshots system (d/without-nils params))
+                              (print-table [:id :revn :created-at :label]))))))
 

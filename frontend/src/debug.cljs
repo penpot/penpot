@@ -11,7 +11,9 @@
    [app.common.math :as mth]
    [app.common.transit :as t]
    [app.common.types.file :as ctf]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.dashboard.shortcuts]
    [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
@@ -20,6 +22,7 @@
    [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
    [app.util.dom :as dom]
+   [app.util.http :as http]
    [app.util.object :as obj]
    [app.util.timers :as timers]
    [beicon.core :as rx]
@@ -410,3 +413,47 @@
   [id shape-ref]
   (st/emit! (dw/set-shape-ref id shape-ref)))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SNAPSHOTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn ^:export list-available-snapshots
+  [file-id]
+  (let [file-id (d/parse-uuid file-id)]
+    (->> (http/send! {:method :post
+                      :uri (u/join cf/public-uri "api/rpc/command/get-file-snapshots")
+                      :body (http/transit-data {:file-id file-id})})
+         (rx/map http/conditional-decode-transit)
+         (rx/map :body)
+         (rx/subs (fn [result]
+                    (let [result (->> result
+                                      (map (fn [row]
+                                             (update row :id str))))]
+                      (js/console.table (clj->js result))))))))
+
+
+(defn ^:export take-snapshot
+  [file-id label]
+  (let [file-id (d/parse-uuid file-id)]
+    (->> (http/send! {:method :post
+                      :uri (u/join cf/public-uri "api/rpc/command/take-file-snapshot")
+                      :body (http/transit-data {:file-id file-id :label label})})
+         (rx/map http/conditional-decode-transit)
+         (rx/map :body)
+         (rx/subs (fn [{:keys [id]}]
+                    (println "Snapshot saved:" (str id)))))))
+
+(defn ^:export restore-snapshot
+  [file-id id]
+  (let [file-id (d/parse-uuid file-id)
+        id      (d/parse-uuid id)]
+    (->> (http/send! {:method :post
+                      :uri (u/join cf/public-uri "api/rpc/command/restore-file-snapshot")
+                      :body (http/transit-data {:file-id file-id :id id})})
+         (rx/map http/conditional-decode-transit)
+         (rx/map :body)
+         (rx/subs (fn [_]
+                    (println "Snapshot restored " id)
+                    #_(.reload js/location))))))
