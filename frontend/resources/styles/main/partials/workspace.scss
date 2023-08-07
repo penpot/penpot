@@ -161,7 +161,7 @@ $height-palette-max: 80px;
   justify-content: center;
   align-items: center;
 
-  svg#loader-pencil {
+  svg {
     fill: $color-gray-50;
   }
 }
@@ -171,7 +171,7 @@ $height-palette-max: 80px;
   display: flex;
   padding: 0;
   margin: 0;
-
+  grid-area: viewport;
   &.scrolling {
     cursor: grab;
   }

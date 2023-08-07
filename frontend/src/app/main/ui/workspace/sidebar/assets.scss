@@ -78,6 +78,7 @@
     }
   }
   .sections-container {
+    @include menuShadow;
     position: absolute;
     top: $s-84;
     left: $s-12;
@@ -88,8 +89,7 @@
     padding: $s-4;
     border-radius: $br-8;
     background-color: var(--menu-background-color);
-    z-index: $z-index-4;
-    box-shadow: 0px 0px 10px 0px var(--menu-shadow-color);
+    z-index: $z-index-2;
     .section-item {
       @include titleTipography;
       display: flex;

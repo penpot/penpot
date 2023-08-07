@@ -17,6 +17,11 @@
   --green-30: rgba(145, 250, 219, 0.3);
   --lilac: #bb97d8;
   --strong-green: #00d1b8;
+  // NOTIFICATION
+  --dark-ok-color: var(--strong-green);
+  --dark-warning-color: #ff9b49;
+  --dark-pending-color: var(--lilac);
+  --dark-error-color: #ff4986;
 
   // LIGHT
   --light-gray-1: #fff;
@@ -30,4 +35,13 @@
   --purple-30: rgba(105, 17, 212, 0.2);
   --blue: #1345aa;
   --strong-purple: #8c33eb;
+
+  // NOTIFICATION WILL CHANGE
+  --light-ok-color: var(--strong-green);
+  --light-warning-color: #ff9b49;
+  --light-pending-color: var(--lilac);
+  --light-error-color: #ff4986;
+
+  //GENERIC
+  --color-canvas: #e8e9ea;
 }

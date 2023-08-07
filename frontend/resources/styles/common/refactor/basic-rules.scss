@@ -187,3 +187,57 @@
     }
   }
 }
+
+.menu-dropdown {
+  @include menuShadow;
+  display: flex;
+  flex-direction: column;
+  gap: $s-4;
+  width: $s-192;
+  padding: $s-4;
+  border-radius: $br-8;
+  background-color: var(--menu-background-color);
+  z-index: $z-index-10;
+}
+
+.menu-item {
+  @include titleTipography;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $s-28;
+  width: 100%;
+  padding: $s-6;
+  border-radius: $br-8;
+  cursor: pointer;
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+}
+
+.shortcut {
+  @include flexCenter;
+  gap: $s-2;
+  color: var(--menu-shortcut-foreground-color);
+}
+
+.shortcut-key {
+  @include titleTipography;
+  @include flexCenter;
+  height: $s-20;
+  padding: $s-2 $s-6;
+  border-radius: $br-6;
+  background-color: var(--menu-shortcut-background-color);
+}
+
+.user-icon {
+  @include flexCenter;
+  @include titleTipography;
+  height: $s-24;
+  width: $s-24;
+  border-radius: $br-circle;
+  img {
+    border-radius: $br-circle;
+    border: $s-2 solid var(--user-count-foreground-color);
+  }
+}

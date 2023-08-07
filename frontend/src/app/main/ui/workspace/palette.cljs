@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.palette
   (:require-macros [app.main.style :refer [css]])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
@@ -32,6 +33,18 @@
 
 (def viewport
   (l/derived :vport refs/workspace-local))
+
+(defn calculate-palette-padding []
+  (let [left-sidebar           (dom/get-element "left-sidebar-aside")
+        left-sidebar-size      (d/parse-integer (dom/get-data left-sidebar  "size"))
+        rulers?                (:rules (mf/deref refs/workspace-layout))
+        rulers-width           (if rulers? 26 4)
+        min-left-sidebar-width  27
+        calculate-padding-left  (+ rulers-width (or left-sidebar-size
+                                                    min-left-sidebar-width))]
+
+    #js {"paddingLeft" (dm/str calculate-padding-left "px")
+         "paddingRight" "280px"}))
 
 (mf/defc palette
   [{:keys [layout]}]
@@ -99,78 +112,81 @@
             width (obj/get dom "clientWidth")]
         (swap! state assoc :width width)))
 
-    [:div {:ref parent-ref
-           :class (dom/classnames (css :palettes) true
-                                  size-classname true
-                                  (css :wide) any-palette?
-                                  (css :hidden-bts) (:hide-palettes @state))
-           :style #js {"--height" (dm/str size "px")}}
-
-     [:div {:class (dom/classnames (css :resize-area) true)
-            :on-pointer-down on-pointer-down
-            :on-lost-pointer-capture on-lost-pointer-capture
-            :on-pointer-move on-pointer-move}]
+    [:div {:class (dom/classnames (css :palette-wrapper) true)
+           :style  (calculate-palette-padding)}
      (when-not workspace-read-only?
-       [:ul {:class (dom/classnames (css :palette-btn-list) true
-                                    (css :hidden-bts) (:hide-palettes @state)
-                                    size-classname true)}
-        [:li {:class (dom/classnames (css :palette-item) true)}
-         [:button
-          {:title (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
-           :aria-label (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
-           :class (dom/classnames (css :palette-btn) true
-                                  (css :selected) color-palette?)
-           :on-click (fn [event]
-                       (let [node (dom/get-current-target event)]
-                         (r/set-resize-type! :top)
-                         (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
-                         (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :textpalette)
-                                                     (-> (dw/toggle-layout-flag :colorpalette)
-                                                         (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))
+       [:div {:ref parent-ref
+              :class (dom/classnames (css :palettes) true
+                                     size-classname true
+                                     (css :wide) any-palette?
+                                     (css :hidden-bts) (:hide-palettes @state))
+              :style #js {"--height" (dm/str size "px")}}
 
-                         (dom/blur! node)))}
-          i/drop-refactor]]
-         
-        [:li {:class (dom/classnames (css :palette-item) true)}
-         [:button
-          {:title (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
-           :aria-label (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
-           :class (dom/classnames (css :palette-btn) true
-                                  (css :selected) text-palette?)
-           :on-click (fn [event]
-                       (let [node (dom/get-current-target event)]
-                         (r/set-resize-type! :top)
-                         (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
-                         (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :colorpalette)
-                                                     (-> (dw/toggle-layout-flag :textpalette)
-                                                         (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))
-                         (dom/blur! node)))}
-          i/text-palette-refactor]]])
+        [:div {:class (dom/classnames (css :resize-area) true)
+               :on-pointer-down on-pointer-down
+               :on-lost-pointer-capture on-lost-pointer-capture
+               :on-pointer-move on-pointer-move}]
+        [:ul {:class (dom/classnames (css :palette-btn-list) true
+                                     (css :hidden-bts) (:hide-palettes @state)
+                                     size-classname true)}
+         [:li {:class (dom/classnames (css :palette-item) true)}
+          [:button
+           {:title (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
+            :aria-label (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
+            :class (dom/classnames (css :palette-btn) true
+                                   (css :selected) color-palette?)
+            :on-click (fn [event]
+                        (let [node (dom/get-current-target event)]
+                          (r/set-resize-type! :top)
+                          (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
+                          (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :textpalette)
+                                                      (-> (dw/toggle-layout-flag :colorpalette)
+                                                          (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))
 
-     (if any-palette?
-       [:*
-        [:button {:class (dom/classnames (css :palette-actions) true)
-                  :on-click #(swap! state update :show-menu not)}
-         i/menu-refactor]
-        [:div {:class (dom/classnames (css :palette) true)
-               :ref container}
-         (when text-palette?
-           [:*
-            [:& text-palette-ctx-menu {:show-menu? (:show-menu @state)
-                                       :close-menu on-close-menu
-                                       :on-select-palette on-select-text-palette
-                                       :selected @selected-text}]
-            [:& text-palette {:size size
-                              :selected @selected-text
-                              :width vport-width}]])
-         (when color-palette?
-           [:* [:& color-palette-ctx-menu {:show-menu? (:show-menu @state)
-                                           :close-menu on-close-menu
-                                           :on-select-palette on-select-palette
-                                           :selected @selected}]
-            [:& color-palette {:size size
-                               :selected @selected
-                               :width vport-width}]])]]
-       [:div {:class (dom/classnames (css :handler) true)
-              :on-click toggle-palettes}
-        [:div {:class (dom/classnames (css :handler-btn) true)}]])]))
+                          (dom/blur! node)))}
+           i/drop-refactor]]
+
+         [:li {:class (dom/classnames (css :palette-item) true)}
+          [:button
+           {:title (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
+            :aria-label (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
+            :class (dom/classnames (css :palette-btn) true
+                                   (css :selected) text-palette?)
+            :on-click (fn [event]
+                        (let [node (dom/get-current-target event)]
+                          (r/set-resize-type! :top)
+                          (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
+                          (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :colorpalette)
+                                                      (-> (dw/toggle-layout-flag :textpalette)
+                                                          (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))
+                          (dom/blur! node)))}
+           i/text-palette-refactor]]]
+
+
+        (if any-palette?
+          [:*
+           [:button {:class (dom/classnames (css :palette-actions) true)
+                     :on-click #(swap! state update :show-menu not)}
+            i/menu-refactor]
+           [:div {:class (dom/classnames (css :palette) true)
+                  :ref container}
+            (when text-palette?
+              [:*
+               [:& text-palette-ctx-menu {:show-menu? (:show-menu @state)
+                                          :close-menu on-close-menu
+                                          :on-select-palette on-select-text-palette
+                                          :selected @selected-text}]
+               [:& text-palette {:size size
+                                 :selected @selected-text
+                                 :width vport-width}]])
+            (when color-palette?
+              [:* [:& color-palette-ctx-menu {:show-menu? (:show-menu @state)
+                                              :close-menu on-close-menu
+                                              :on-select-palette on-select-palette
+                                              :selected @selected}]
+               [:& color-palette {:size size
+                                  :selected @selected
+                                  :width vport-width}]])]]
+          [:div {:class (dom/classnames (css :handler) true)
+                 :on-click toggle-palettes}
+           [:div {:class (dom/classnames (css :handler-btn) true)}]])])]))

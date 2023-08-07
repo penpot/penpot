@@ -121,6 +121,7 @@ $width-settings-bar: 256px;
 
     &.settings-bar-right {
       width: 100%;
+      grid-area: right-sidebar;
     }
   }
 

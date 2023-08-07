@@ -6,7 +6,15 @@
 
 @import "refactor/common-refactor.scss";
 
+.palette-wrapper {
+  position: absolute;
+  width: 100vw;
+  left: 0;
+  bottom: 0;
+  padding-bottom: $s-4;
+}
 .palettes {
+  z-index: $z-index-2;
   position: relative;
   right: 0;
   grid-area: color-palette;
@@ -22,7 +30,7 @@
   padding: $s-0 $s-0 $s-8 $s-8;
   border-radius: $br-8;
   background-color: var(--palette-background-color);
-  transition: right 1s ease, opacity 1s ease;
+  transition: right 1s, opacity 1s, width 1s;
   &.wide {
     width: 100%;
   }
@@ -33,7 +41,7 @@
   .resize-area {
     grid-area: resize;
     height: $s-8;
-    z-index: $z-index-4;
+    z-index: $z-index-3;
     width: calc(100% - $s-8);
     border-radius: $br-circle;
     cursor: ns-resize;
@@ -46,7 +54,7 @@
     width: $s-32;
     margin: $s-0;
     list-style: none;
-    z-index: $z-index-1;
+    z-index: $z-index-2;
     &.mid-palette,
     &.small-palette {
       display: flex;
@@ -90,7 +98,7 @@
     margin-left: $s-4;
     border-radius: $br-8;
     background-color: var(--palette-background-color);
-    z-index: $z-index-1;
+    z-index: $z-index-2;
     svg {
       @extend .button-icon;
     }
@@ -104,7 +112,6 @@
     @include flexCenter;
     width: $s-12;
     height: 100%;
-
     .handler-btn {
       width: $s-4;
       height: 100%;
@@ -116,18 +123,40 @@
     }
   }
   &.hidden-bts {
-    right: $s-40;
-    z-index: 0;
+    right: 10px;
+    z-index: 1;
+    width: 22px;
+    grid-template-columns: $s-8 auto 1fr;
+    padding: 0;
     &.small-palette,
     &.mid-palette {
-      right: $s-72;
+      right: 10px;
     }
     .palette-btn-list {
+      opacity: $op-0;
+      visibility: hidden;
+      width: 0;
       .palette-item {
         opacity: $op-0;
         visibility: hidden;
         z-index: 0;
       }
+    }
+    .resize-area {
+      visibility: hidden;
+      z-index: 0;
+      width: 0;
+    }
+    .palette-actions {
+      visibility: hidden;
+      z-index: 0;
+    }
+    .palette {
+      visibility: hidden;
+      z-index: 0;
+    }
+    .handler {
+      padding-bottom: $s-8;
     }
   }
 }

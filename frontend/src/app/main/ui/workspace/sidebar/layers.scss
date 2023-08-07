@@ -157,18 +157,10 @@
     }
   }
   .filters-container {
+    @extend .menu-dropdown;
     position: absolute;
     top: $s-44;
     left: $s-12;
-    display: flex;
-    flex-direction: column;
-    gap: $s-4;
-    width: $s-192;
-    padding: $s-4;
-    border-radius: $br-8;
-    background-color: var(--menu-background-color);
-    z-index: $z-index-4;
-    box-shadow: 0px 0px 10px 0px var(--menu-shadow-color);
     .filter-menu-item {
       @include titleTipography;
       display: flex;

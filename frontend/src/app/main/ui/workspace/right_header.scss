@@ -1,0 +1,216 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+.workspace-header-right {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: $s-256;
+  padding: $s-8;
+  gap: $s-2;
+  background-color: var(--panel-background-color);
+  .users-section {
+    position: relative;
+    min-width: $s-32;
+  }
+  .zoom-section {
+    .zoom-widget {
+      @include buttonStyle;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      height: $s-28;
+      width: $s-72;
+      max-width: $s-72;
+      padding: $s-4;
+      border-radius: $br-8;
+      .label {
+        @include titleTipography;
+        color: var(--menu-foreground-color);
+      }
+      .icon {
+        @include flexCenter;
+        svg {
+          @extend .button-icon;
+          stroke: var(--menu-foreground-color);
+          transform: rotate(90deg);
+        }
+      }
+
+      &:hover {
+        background-color: var(--button-tertiary-background-color-hover);
+        .label {
+          color: var(--button-tertiary-foreground-color-hover);
+        }
+        .icon svg {
+          stroke: var(--button-tertiary-foreground-color-hover);
+        }
+      }
+      &.selected {
+        background-color: var(--button-tertiary-background-color-selected);
+        border: $s-2 solid var(--button-tertiary-border-color-selected);
+        .label {
+          color: var(--button-tertiary-foreground-color-selected);
+        }
+        .icon svg {
+          stroke: var(--button-tertiary-foreground-color-selected);
+        }
+      }
+    }
+    .dropdown {
+      @extend .menu-dropdown;
+      position: absolute;
+      right: 0;
+      top: $s-48;
+      width: $s-280;
+      .basic-zoom-bar {
+        display: flex;
+        justify-content: space-between;
+        padding: $s-6;
+        cursor: auto;
+        .zoom-btns {
+          display: flex;
+          .zoom-btn {
+            @extend .button-tertiary;
+            height: $s-28;
+            width: $s-28;
+            border-radius: $br-8;
+            .zoom-icon {
+              @include flexCenter;
+              svg {
+                @extend .button-icon;
+              }
+            }
+            &:hover {
+              .zoom-icon svg {
+                stroke: var(--button-tertiary-foreground-color-hover);
+              }
+            }
+          }
+          .zoom-text {
+            @include flexCenter;
+            height: 100%;
+            min-width: $s-68;
+            padding: 0 $s-8;
+            margin: 0;
+            color: var(--modal-foreground-color);
+          }
+        }
+        .reset-btn {
+          @extend .button-tertiary;
+          height: $s-28;
+          border-radius: $br-8;
+        }
+      }
+      .zoom-option {
+        @extend .menu-item;
+        .shortcuts {
+          @extend .shortcut;
+          .shortcut-key {
+            @extend .shortcut-key;
+          }
+        }
+        &:hover {
+          color: var(--menu-foreground-color-hover);
+          .shortcuts {
+            .shortcut-key {
+              color: var(--menu-foreground-color-hover);
+            }
+          }
+        }
+      }
+    }
+  }
+  .comments-section {
+    .comments-btn {
+      @extend .button-tertiary;
+      border-radius: $br-8;
+      margin: 0;
+      height: $s-28;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+        height: $s-16;
+        width: $s-16;
+      }
+      &.selected {
+        background-color: var(--button-tertiary-background-color-selected);
+        border: $s-2 solid var(--button-tertiary-border-color-selected);
+        svg {
+          stroke: var(--button-tertiary-foreground-color-selected);
+        }
+      }
+    }
+  }
+  .history-section {
+    .history-button {
+      @extend .button-tertiary;
+      border-radius: $br-8;
+      margin: 0;
+      height: $s-28;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+        height: $s-16;
+        width: $s-16;
+      }
+      &.selected {
+        background-color: var(--button-tertiary-background-color-selected);
+        border: $s-2 solid var(--button-tertiary-border-color-selected);
+        svg {
+          stroke: var(--button-tertiary-foreground-color-selected);
+        }
+      }
+    }
+  }
+  .persistence-status-widget {
+    @include flexCenter;
+    width: $s-28;
+    height: $s-28;
+    .status-icon {
+      @include flexCenter;
+      margin: 0;
+      width: $s-16;
+      height: $s-16;
+      border-radius: $br-circle;
+      svg {
+        @extend .button-icon;
+        height: $s-12;
+        width: $s-12;
+        stroke: var(--status-icon-foreground-color);
+      }
+    }
+    .pending-status {
+      background-color: var(--status-warning-background-color);
+    }
+    .saving-status {
+      background-color: var(--status-pending-background-color);
+      svg {
+        animation: spin-animation 1s infinite;
+        animation-timing-function: linear;
+      }
+    }
+    .saved-status {
+      background-color: var(--status-ok-background-color);
+    }
+    .error-status {
+      background-color: var(--status-error-background-color);
+    }
+  }
+  .viewer-btn {
+    @extend .button-tertiary;
+    border-radius: $br-8;
+    margin: 0;
+    width: $s-28;
+    height: $s-28;
+    svg {
+      @extend .button-icon;
+      height: $s-16;
+      width: $s-16;
+    }
+  }
+}
