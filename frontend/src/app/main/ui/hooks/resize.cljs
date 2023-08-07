@@ -115,7 +115,7 @@
 
              (mf/set-ref-val! prev-val-ref node))))]
 
-    (mf/with-effect []
+    (mf/with-layout-effect []
       ;; On dismount we need to disconnect the current observer
       (fn []
         (when-let [observer (mf/ref-val observer-ref)]

@@ -21,44 +21,46 @@
    [:type [:= "root"]]
    [:key {:optional true} :string]
    [:children
-    [:vector {:min 1 :gen/max 2 :gen/min 1}
-     [:map
-      [:type [:= "paragraph-set"]]
-      [:key {:optional true} :string]
-      [:children
-       [:vector {:min 1 :gen/max 2 :gen/min 1}
-        [:map
-         [:type [:= "paragraph"]]
-         [:key {:optional true} :string]
-         [:fills {:optional true}
-          [:maybe
-           [:vector {:gen/max 2} ::shape/fill]]]
-         [:font-family {:optional true} :string]
-         [:font-size {:optional true} :string]
-         [:font-style {:optional true} :string]
-         [:font-weight {:optional true} :string]
-         [:direction {:optional true} :string]
-         [:text-decoration {:optional true} :string]
-         [:text-transform {:optional true} :string]
-         [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
-         [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]
-         [:children
-          [:vector {:min 1 :gen/max 2 :gen/min 1}
-           [:map
-            [:text :string]
-            [:key {:optional true} :string]
-            [:fills {:optional true}
-             [:maybe
-              [:vector {:gen/max 2} ::shape/fill]]]
-            [:font-family {:optional true} :string]
-            [:font-size {:optional true} :string]
-            [:font-style {:optional true} :string]
-            [:font-weight {:optional true} :string]
-            [:direction {:optional true} :string]
-            [:text-decoration {:optional true} :string]
-            [:text-transform {:optional true} :string]
-            [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
-            [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]]]]]]]]]]])
+    {:optional true}
+    [:maybe
+     [:vector {:min 1 :gen/max 2 :gen/min 1}
+      [:map
+       [:type [:= "paragraph-set"]]
+       [:key {:optional true} :string]
+       [:children
+        [:vector {:min 1 :gen/max 2 :gen/min 1}
+         [:map
+          [:type [:= "paragraph"]]
+          [:key {:optional true} :string]
+          [:fills {:optional true}
+           [:maybe
+            [:vector {:gen/max 2} ::shape/fill]]]
+          [:font-family {:optional true} :string]
+          [:font-size {:optional true} :string]
+          [:font-style {:optional true} :string]
+          [:font-weight {:optional true} :string]
+          [:direction {:optional true} :string]
+          [:text-decoration {:optional true} :string]
+          [:text-transform {:optional true} :string]
+          [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
+          [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]
+          [:children
+           [:vector {:min 1 :gen/max 2 :gen/min 1}
+            [:map
+             [:text :string]
+             [:key {:optional true} :string]
+             [:fills {:optional true}
+              [:maybe
+               [:vector {:gen/max 2} ::shape/fill]]]
+             [:font-family {:optional true} :string]
+             [:font-size {:optional true} :string]
+             [:font-style {:optional true} :string]
+             [:font-weight {:optional true} :string]
+             [:direction {:optional true} :string]
+             [:text-decoration {:optional true} :string]
+             [:text-transform {:optional true} :string]
+             [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
+             [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]]]]]]]]]]]])
 
 
 

@@ -116,56 +116,64 @@
           (assoc-in [:fills 0 :fill-opacity] (-> (dm/get-in shape [:svg-attrs :style :fill-opacity])
                                                  (d/parse-double 1)))))))
 
-(defn setup-stroke [shape]
-  (let [stroke-linecap (-> (or (dm/get-in shape [:svg-attrs :stroke-linecap])
-                               (dm/get-in shape [:svg-attrs :style :stroke-linecap]))
-                           ((d/nilf str/trim))
-                           ((d/nilf keyword)))
-        color-attr (str/trim (dm/get-in shape [:svg-attrs :stroke]))
-        color-attr (if (= color-attr "currentColor") clr/black color-attr)
-        color-style (str/trim (dm/get-in shape [:svg-attrs :style :stroke]))
-        color-style (if (= color-style "currentColor") clr/black color-style)
+(defn- setup-stroke
+  [shape]
+  (let [attrs   (get shape :svg-attrs)
+        style   (get attrs :style)
 
-        shape
-        (cond-> shape
-          ;; Color present as attribute
-          (uc/color? color-attr)
-          (-> (update :svg-attrs dissoc :stroke)
-              (assoc-in [:strokes 0 :stroke-color] (uc/parse-color color-attr)))
+        stroke  (or (str/trim (:stroke attrs))
+                    (str/trim (:stroke style)))
 
-          ;; Color present as style
-          (uc/color? color-style)
-          (-> (update-in [:svg-attrs :style] dissoc :stroke)
-              (assoc-in [:strokes 0 :stroke-color] (uc/parse-color color-style)))
+        color   (cond
+                  (= stroke "currentColor") clr/black
+                  (= stroke "none")         nil
+                  :else                     (uc/parse-color stroke))
 
-          (dm/get-in shape [:svg-attrs :stroke-opacity])
-          (-> (update :svg-attrs dissoc :stroke-opacity)
-              (assoc-in [:strokes 0 :stroke-opacity] (-> (dm/get-in shape [:svg-attrs :stroke-opacity])
-                                                         (d/parse-double 1))))
+        opacity (when (some? color)
+                  (d/parse-double
+                   (or (:stroke-opacity attrs)
+                       (:stroke-opacity style))
+                   1))
 
-          (dm/get-in shape [:svg-attrs :style :stroke-opacity])
-          (-> (update-in [:svg-attrs :style] dissoc :stroke-opacity)
-              (assoc-in [:strokes 0 :stroke-opacity] (-> (dm/get-in shape [:svg-attrs :style :stroke-opacity])
-                                                         (d/parse-double 1))))
+        width   (when (some? color)
+                  (d/parse-double
+                   (or (:stroke-width attrs)
+                       (:stroke-width style))
+                   1))
 
-          (dm/get-in shape [:svg-attrs :stroke-width])
-          (-> (update :svg-attrs dissoc :stroke-width)
-              (assoc-in [:strokes 0 :stroke-width] (-> (dm/get-in shape [:svg-attrs :stroke-width])
-                                                       (d/parse-double))))
+        linecap (or (get attrs :stroke-linecap)
+                    (get style :stroke-linecap))
+        linecap (some-> linecap str/trim keyword)
 
-          (dm/get-in shape [:svg-attrs :style :stroke-width])
-          (-> (update-in [:svg-attrs :style] dissoc :stroke-width)
-              (assoc-in [:strokes 0 :stroke-width] (-> (dm/get-in shape [:svg-attrs :style :stroke-width])
-                                                       (d/parse-double))))
+        attrs   (-> attrs
+                    (dissoc :stroke)
+                    (dissoc :stroke-width)
+                    (dissoc :stroke-opacity)
+                    (update :style (fn [style]
+                                     (-> style
+                                         (dissoc :stroke)
+                                         (dissoc :stroke-linecap)
+                                         (dissoc :stroke-width)
+                                         (dissoc :stroke-opacity)))))]
 
-          (and stroke-linecap (= (:type shape) :path))
-          (-> (update-in [:svg-attrs :style] dissoc :stroke-linecap)
-              (cond-> (#{:round :square} stroke-linecap)
-                (assoc :stroke-cap-start stroke-linecap
-                       :stroke-cap-end   stroke-linecap))))]
+    (cond-> (assoc shape :svg-attrs attrs)
+      (some? color)
+      (assoc-in [:strokes 0 :stroke-color] color)
 
-    (cond-> shape
-      (d/any-key? (dm/get-in shape [:strokes 0]) :stroke-color :stroke-opacity :stroke-width :stroke-cap-start :stroke-cap-end)
+      (and (some? color) (some? opacity))
+      (assoc-in [:strokes 0 :stroke-opacity] opacity)
+
+      (and (some? color) (some? width))
+      (assoc-in [:strokes 0 :stroke-width] width)
+
+      (and (some? linecap) (= (:type shape) :path)
+           (or (= linecap :round) (= linecap :square)))
+      (assoc :stroke-cap-start linecap
+             :stroke-cap-end linecap)
+
+      (d/any-key? (dm/get-in shape [:strokes 0])
+                  :stroke-color :stroke-opacity :stroke-width
+                  :stroke-cap-start :stroke-cap-end)
       (assoc-in [:strokes 0 :stroke-style] :svg))))
 
 (defn setup-opacity [shape]

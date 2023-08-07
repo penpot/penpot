@@ -89,7 +89,7 @@
      (obj/merge! attrs (clj->js fill-attrs)))))
 
 (defn add-stroke [attrs stroke-data render-id index]
-  (let [stroke-style (:stroke-style stroke-data :none)
+  (let [stroke-style (:stroke-style stroke-data :solid)
         stroke-color-gradient-id (str "stroke-color-gradient_" render-id "_" index)
         stroke-width (:stroke-width stroke-data 1)]
     (if (not= stroke-style :none)

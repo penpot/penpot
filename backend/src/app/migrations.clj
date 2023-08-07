@@ -327,6 +327,9 @@
    {:name "0105-mod-file-change-table"
     :fn (mg/resource "app/migrations/sql/0105-mod-file-change-table.sql")}
 
+   {:name "0105-mod-server-error-report-table"
+    :fn (mg/resource "app/migrations/sql/0105-mod-server-error-report-table.sql")}
+
    ])
 
 (defn apply-migrations!

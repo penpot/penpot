@@ -93,6 +93,13 @@
       [:component-id {:optional true} ::sm/uuid]
       [:ignore-touched {:optional true} :boolean]]]
 
+    [:fix-obj
+     [:map {:title "FixObjChange"}
+      [:type [:= :fix-obj]]
+      [:id ::sm/uuid]
+      [:page-id {:optional true} ::sm/uuid]
+      [:component-id {:optional true} ::sm/uuid]]]
+
     [:mov-objects
      [:map {:title "MovObjectsChange"}
       [:type [:= :mov-objects]]
@@ -391,6 +398,12 @@
   (if page-id
     (d/update-in-when data [:pages-index page-id] ctst/delete-shape id ignore-touched)
     (d/update-in-when data [:components component-id] ctst/delete-shape id ignore-touched)))
+
+(defmethod process-change :fix-obj
+  [data {:keys [page-id component-id] :as params}]
+  (if page-id
+    (d/update-in-when data [:pages-index page-id] ctst/fix-shape-children params)
+    (d/update-in-when data [:components component-id] ctst/fix-shape-children params)))
 
 ;; FIXME: remove, seems like this method is already unused
 ;; reg-objects operation "regenerates" the geometry and selrect of the parent groups

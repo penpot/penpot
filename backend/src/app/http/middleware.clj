@@ -22,9 +22,10 @@
   (:import
    com.fasterxml.jackson.core.JsonParseException
    com.fasterxml.jackson.core.io.JsonEOFException
+   com.fasterxml.jackson.databind.exc.MismatchedInputException
    io.undertow.server.RequestTooBigException
-   java.io.OutputStream
-   java.io.InputStream))
+   java.io.InputStream
+   java.io.OutputStream))
 
 (set! *warn-on-reflection* true)
 
@@ -78,11 +79,13 @@
 
 
               (or (instance? JsonEOFException cause)
-                  (instance? JsonParseException cause))
+                  (instance? JsonParseException cause)
+                  (instance? MismatchedInputException cause))
               (raise (ex/error :type :validation
                                :code :malformed-json
                                :hint (ex-message cause)
                                :cause cause))
+
               :else
               (raise cause)))]
 
@@ -118,7 +121,9 @@
                       (t/write! tw data)))
                   (catch java.io.IOException _)
                   (catch Throwable cause
-                    (l/error :hint "unexpected error on encoding response" :cause cause))
+                    (binding [l/*context* {:value data}]
+                      (l/error :hint "unexpected error on encoding response"
+                               :cause cause)))
                   (finally
                     (.close ^OutputStream output-stream))))))
 
@@ -131,8 +136,9 @@
 
                   (catch java.io.IOException _)
                   (catch Throwable cause
-                    (l/error :hint "unexpected error on encoding response"
-                             :cause cause))
+                    (binding [l/*context* {:value data}]
+                      (l/error :hint "unexpected error on encoding response"
+                               :cause cause)))
                   (finally
                     (.close ^OutputStream output-stream))))))
 

@@ -103,7 +103,7 @@
   [:map {:title "Fill"}
    [:fill-color {:optional true} ::ctc/rgb-color]
    [:fill-opacity {:optional true} ::sm/safe-number]
-   [:fill-color-gradient {:optional true} ::ctc/gradient]
+   [:fill-color-gradient {:optional true} [:maybe ::ctc/gradient]]
    [:fill-color-ref-file {:optional true} [:maybe ::sm/uuid]]
    [:fill-color-ref-id {:optional true} [:maybe ::sm/uuid]]])
 
@@ -201,7 +201,7 @@
 (sm/def! ::group-attrs
   [:map {:title "GroupAttrs"}
    [:type [:= :group]]
-   [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]])
+   [:shapes {:optional true} [:maybe [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]]])
 
 (sm/def! ::frame-attrs
   [:map {:title "FrameAttrs"}
@@ -214,18 +214,19 @@
 (sm/def! ::bool-attrs
   [:map {:title "BoolAttrs"}
    [:type [:= :bool]]
-   [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
+   [:shapes {:optional true} [:maybe [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]]
 
    ;; FIXME: improve this schema
    [:bool-type :keyword]
 
-   ;; FIXME: improve this schema
    [:bool-content
     [:vector {:gen/max 2}
      [:map
       [:command :keyword]
       [:relative {:optional true} :boolean]
-      [:params [:map-of {:gen/max 5} :keyword ::sm/safe-number]]]]]])
+      [:prev-pos {:optional true} ::gpt/point]
+      [:params {:optional true}
+       [:map-of {:gen/max 5} :keyword ::sm/safe-number]]]]]])
 
 (sm/def! ::rect-attrs
   [:map {:title "RectAttrs"}
@@ -252,7 +253,12 @@
 (sm/def! ::path-attrs
   [:map {:title "PathAttrs"}
    [:type [:= :path]]
+   [:x {:optional true} [:maybe ::sm/safe-number]]
+   [:y {:optional true} [:maybe ::sm/safe-number]]
+   [:width {:optional true} [:maybe ::sm/safe-number]]
+   [:height {:optional true} [:maybe ::sm/safe-number]]
    [:content
+    {:optional true}
     [:vector
      [:map
       [:command :keyword]

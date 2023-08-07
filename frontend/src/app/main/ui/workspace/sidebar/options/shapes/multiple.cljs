@@ -325,7 +325,7 @@
          layout-container-ids layout-container-values
          layout-item-ids      layout-item-values]
         (mf/use-memo
-         (mf/deps objects-no-measures)
+         (mf/deps shapes objects-no-measures)
          (fn []
            (into
             []

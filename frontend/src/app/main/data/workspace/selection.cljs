@@ -419,6 +419,8 @@
 
      :else
      (let [frame?      (cph/frame-shape? obj)
+           group?      (cph/group-shape? obj)
+           bool?       (cph/bool-shape? obj)
            new-id      (ids-map (:id obj))
            parent-id   (or parent-id frame-id)
            name        (:name obj)
@@ -437,9 +439,15 @@
                                   :name name
                                   :parent-id parent-id
                                   :frame-id frame-id)
+
                            (dissoc :shapes
                                    :main-instance?
                                    :use-for-thumbnail?)
+
+                           (cond->
+                             (or group? bool?)
+                             (assoc :shapes []))
+
                            (gsh/move delta)
                            (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))
 

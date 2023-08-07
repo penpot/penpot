@@ -29,7 +29,7 @@
 (defn- event-type-names
   []
   {:click (tr "workspace.options.interaction-on-click")
-                                        ; TODO: need more UX research
+   ;; TODO: need more UX research
    ;; :mouse-over (tr "workspace.options.interaction-while-hovering")
    ;; :mouse-press (tr "workspace.options.interaction-while-pressing")
    :mouse-enter (tr "workspace.options.interaction-mouse-enter")
@@ -315,11 +315,12 @@
       (when @extended-open?
         [:div.element-set-content
 
-                                        ; Trigger select
+         ;; Trigger select
          [:div.interactions-element.separator
           [:span.element-set-subtitle.wide (tr "workspace.options.interaction-trigger")]
           [:select.input-select
-           {:value (str (:event-type interaction))
+           {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+            :value (str (:event-type interaction))
             :on-change change-event-type}
            (for [[value name] (event-type-names)]
              (when-not (and (= value :after-delay)
@@ -327,7 +328,7 @@
                [:option {:key (dm/str value)
                          :value (dm/str value)} name]))]]
 
-                                        ; Delay
+         ;; Delay
          (when (ctsi/has-delay interaction)
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-delay")]
@@ -338,22 +339,24 @@
                                  :title (tr "workspace.options.interaction-ms")}]
              [:span.after (tr "workspace.options.interaction-ms")]]])
 
-                                        ; Action select
+         ;; Action select
          [:div.interactions-element.separator
           [:span.element-set-subtitle.wide (tr "workspace.options.interaction-action")]
           [:select.input-select
-           {:value (str (:action-type interaction))
+           {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+            :value (str (:action-type interaction))
             :on-change change-action-type}
            (for [[value name] (action-type-names)]
              [:option {:key (dm/str "action-" value)
                        :value (str value)} name])]]
 
-                                        ; Destination
+         ;; Destination
          (when (ctsi/has-destination interaction)
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-destination")]
             [:select.input-select
-             {:value (str (:destination interaction))
+             {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+              :value (str (:destination interaction))
               :on-change change-destination}
              (if (= (:action-type interaction) :close-overlay)
                [:option {:value ""} (tr "workspace.options.interaction-self")]
@@ -364,7 +367,7 @@
                  [:option {:key (dm/str "destination-" (:id frame))
                            :value (str (:id frame))} (:name frame)]))]])
 
-                                        ; Preserve scroll
+         ;; Preserve scroll
          (when (ctsi/has-preserve-scroll interaction)
            [:div.interactions-element
             [:div.input-checkbox
@@ -375,7 +378,7 @@
              [:label {:for (str "preserve-" index)}
               (tr "workspace.options.interaction-preserve-scroll")]]])
 
-                                        ; URL
+         ;; URL
          (when (ctsi/has-url interaction)
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-url")]
@@ -386,11 +389,12 @@
 
          (when (ctsi/has-overlay-opts interaction)
            [:*
-                                        ; Overlay position relative-to (select)
+            ;; Overlay position relative-to (select)
             [:div.interactions-element
              [:span.element-set-subtitle.wide (tr "workspace.options.interaction-relative-to")]
              [:select.input-select
-              {:value (str (:position-relative-to interaction))
+              {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+               :value (str (:position-relative-to interaction))
                :on-change change-position-relative-to}
               (when (not= (:overlay-pos-type interaction) :manual)
                 [:*
@@ -401,16 +405,17 @@
               [:option {:key (dm/str "position-relative-to-" (:id shape))
                         :value (str (:id shape))} (:name shape) " (" (tr "workspace.options.interaction-self") ")"]]]
 
-                                        ; Overlay position (select)
+            ;; Overlay position (select)
             [:div.interactions-element
              [:span.element-set-subtitle.wide (tr "workspace.options.interaction-position")]
              [:select.input-select
-              {:value (str (:overlay-pos-type interaction))
+              {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+               :value (str (:overlay-pos-type interaction))
                :on-change (partial change-overlay-pos-type (:id shape))}
               (for [[value name] (overlay-pos-type-names)]
                 [:option {:value (str value)} name])]]
 
-                                        ; Overlay position (buttons)
+            ;; Overlay position (buttons)
             [:div.interactions-element.interactions-pos-buttons
              [:div.element-set-actions-button
               {:class (dom/classnames :active (= overlay-pos-type :center))
@@ -441,7 +446,7 @@
                :on-click #(toggle-overlay-pos-type :bottom-center)}
               i/position-bottom-center]]
 
-                                        ; Overlay click outside
+            ;; Overlay click outside
             [:div.interactions-element
              [:div.input-checkbox
               [:input {:type "checkbox"
@@ -451,7 +456,7 @@
               [:label {:for (str "close-" index)}
                (tr "workspace.options.interaction-close-outside")]]]
 
-                                        ; Overlay background
+            ;; Overlay background
             [:div.interactions-element
              [:div.input-checkbox
               [:input {:type "checkbox"
@@ -463,17 +468,18 @@
 
          (when (ctsi/has-animation? interaction)
            [:*
-                                        ; Animation select
+            ;; Animation select
             [:div.interactions-element.separator
              [:span.element-set-subtitle.wide (tr "workspace.options.interaction-animation")]
              [:select.input-select
-              {:value (str (-> interaction :animation :animation-type))
+              {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+               :value (str (-> interaction :animation :animation-type))
                :on-change change-animation-type}
               [:option {:value ""} (tr "workspace.options.interaction-animation-none")]
               (for [[value name] (animation-type-names interaction)]
                 [:option {:value (str value)} name])]]
 
-                                        ; Direction
+            ;; Direction
             (when (ctsi/has-way? interaction)
               [:div.interactions-element.interactions-way-buttons
                [:div.input-radio
@@ -493,7 +499,7 @@
                          :on-change change-way}]
                 [:label {:for "way-out"} (tr "workspace.options.interaction-out")]]])
 
-                                        ; Direction
+            ;; Direction
             (when (ctsi/has-direction? interaction)
               [:div.interactions-element.interactions-direction-buttons
                [:div.element-set-actions-button
@@ -513,7 +519,7 @@
                  :on-click #(change-direction :up)}
                 i/animate-up]])
 
-                                        ; Duration
+            ;; Duration
             (when (ctsi/has-duration? interaction)
               [:div.interactions-element
                [:span.element-set-subtitle.wide (tr "workspace.options.interaction-duration")]
@@ -524,12 +530,13 @@
                                     :title (tr "workspace.options.interaction-ms")}]
                 [:span.after (tr "workspace.options.interaction-ms")]]])
 
-                                        ; Easing
+            ;; Easing
             (when (ctsi/has-easing? interaction)
               [:div.interactions-element
                [:span.element-set-subtitle.wide (tr "workspace.options.interaction-easing")]
                [:select.input-select
-                {:value (str (-> interaction :animation :easing))
+                {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                 :value (str (-> interaction :animation :easing))
                  :on-change change-easing}
                 (for [[value name] (easing-names)]
                   [:option {:value (str value)} name])]
@@ -541,7 +548,7 @@
                   :ease-out i/easing-ease-out
                   :ease-in-out i/easing-ease-in-out)]])
 
-                                        ; Offset effect
+            ;; Offset effect
             (when (ctsi/has-offset-effect? interaction)
               [:div.interactions-element
                [:div.input-checkbox

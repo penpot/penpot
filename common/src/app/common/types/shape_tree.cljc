@@ -90,15 +90,23 @@
 
            (delete-from-objects [objects]
              (if-let [target (get objects shape-id)]
-               (let [parent-id     (or (:parent-id target)
-                                       (:frame-id target))
-                     children-ids  (cph/get-children-ids objects shape-id)]
-                 (-> (reduce dissoc objects children-ids)
-                     (dissoc shape-id)
+               (let [parent-id    (or (:parent-id target)
+                                      (:frame-id target))
+                     children-ids (cph/get-children-ids objects shape-id)]
+                 (-> (reduce dissoc objects (cons shape-id children-ids))
                      (d/update-when parent-id delete-from-parent)))
                objects))]
 
      (update container :objects delete-from-objects))))
+
+(defn fix-shape-children
+  "Checks and fix the children relations of the shape. If a children does not
+  exists on the objects tree, it will be removed from shape."
+  [{:keys [objects] :as container} {:keys [id] :as params}]
+  (let [contains? (partial contains? objects)]
+    (d/update-in-when container [:objects id :shapes]
+                      (fn [shapes]
+                        (into [] (filter contains?) shapes)))))
 
 (defn get-frames
   "Retrieves all frame objects as vector"
@@ -349,6 +357,7 @@
                   (some? force-id) force-id
                   keep-ids? (:id object)
                   :else (uuid/next))]
+
      (loop [child-ids (seq (:shapes object))
             new-direct-children []
             new-children []
