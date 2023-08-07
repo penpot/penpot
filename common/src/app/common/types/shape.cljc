@@ -226,7 +226,8 @@
       [:relative {:optional true} :boolean]
       [:prev-pos {:optional true} ::gpt/point]
       [:params {:optional true}
-       [:map-of {:gen/max 5} :keyword ::sm/safe-number]]]]]])
+       [:maybe
+        [:map-of {:gen/max 5} :keyword ::sm/safe-number]]]]]]])
 
 (sm/def! ::rect-attrs
   [:map {:title "RectAttrs"}
