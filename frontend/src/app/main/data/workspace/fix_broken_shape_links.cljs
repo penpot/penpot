@@ -11,13 +11,28 @@
    [potok.core :as ptk]))
 
 (defn- generate-changes
-  [attr {:keys [objects id]}]
+  [attr {:keys [objects id] :as container}]
   (let [base      {:type :fix-obj attr id}
         contains? (partial contains? objects)
         xform     (comp
-                   (remove #(every? contains? (:shapes %)))
-                   (map #(assoc base :id (:id %))))]
-    (sequence xform (vals objects))))
+                   ;; FIXME: Ensure all obj have id field (this is needed
+                   ;; because some bug adds an ephimeral shape with id ZERO,
+                   ;; with a single attr `:shapes` having a vector of ids
+                   ;; pointing to not existing shapes). That happens on
+                   ;; components. THIS IS A WORKAOURD
+                   (map (fn [[id obj]]
+                          (if (some? (:id obj))
+                            obj
+                            (assoc obj :id id))))
+
+                   ;; Remove all valid shapes
+                   (remove (fn [obj]
+                             (every? contains? (:shapes obj))))
+
+                   (map (fn [obj]
+                          (assoc base :id (:id obj)))))]
+
+    (sequence xform objects)))
 
 (defn fix-broken-shapes
   []
