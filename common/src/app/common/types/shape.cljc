@@ -210,7 +210,7 @@
     [:map
      [:width :int]
      [:height :int]
-     [:mtype :string]
+     [:mtype {:optional true} [:maybe :string]]
      [:id ::sm/uuid]]]])
 
 (sm/def! ::path-attrs
