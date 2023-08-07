@@ -6,6 +6,7 @@
 
 (ns app.main.ui.export
   "Assets exportation common components."
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
@@ -14,6 +15,7 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.shapes :refer [shape-wrapper]]
    [app.util.dom :as dom]
@@ -169,7 +171,8 @@
 (mf/defc export-progress-widget
   {::mf/wrap [mf/memo]}
   []
-  (let [state           (mf/deref refs/export)
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        state           (mf/deref refs/export)
         error?          (:error state)
         healthy?        (:healthy? state)
         detail-visible? (:detail-visible state)
@@ -184,10 +187,15 @@
         pwidth (if error?
                  280
                  (/ (* progress 280) total))
-        color  (cond
+        color  (if new-css-system
+                 (cond
+                   error?         clr/new-danger
+                   healthy?       clr/new-primary
+                   (not healthy?) clr/new-warning)
+                 (cond
                  error?         clr/danger
                  healthy?       clr/primary
-                 (not healthy?) clr/warning)
+                 (not healthy?) clr/warning))
         title  (cond
                  error?          (tr "workspace.options.exporting-object-error")
                  complete?       (tr "workspace.options.exporting-complete")
@@ -200,7 +208,36 @@
         toggle-detail-visibility
         (mf/use-fn #(st/emit! (de/toggle-detail-visibililty)))]
 
-    [:*
+    (if new-css-system
+      (when detail-visible?
+        [:div {:class (stl/css :export-progress-modal-overlay)}
+         [:div {:class (stl/css :export-progress-modal-container)}
+          [:div {:class (stl/css :export-progress-modal-header)}
+           [:p {:class (stl/css :export-progress-modal-title)}
+            [:span {:class (stl/css :title-text)}
+             title]
+            (if error?
+              [:button {:class (stl/css :retry-btn)
+                        :on-click retry-last-export} (tr "workspace.options.retry")]
+              [:p {:class (stl/css :progress)} (dm/str progress " / " total)])]
+
+           [:button {:class (stl/css :modal-close-button)
+                     :on-click toggle-detail-visibility} i/close-refactor]]
+
+          [:svg {:class (stl/css :progress-bar)
+                 :height 5 :width 280}
+           [:g
+            [:path {:d "M0 0 L280 0"
+                    :stroke clr/black
+                    :stroke-width 30}]
+            [:path {:d (dm/str "M0 0 L280 0")
+                    :stroke color
+                    :stroke-width 30
+                    :fill "transparent"
+                    :stroke-dasharray 280
+                    :stroke-dashoffset (- 280 pwidth)
+                    :style {:transition "stroke-dashoffset 1s ease-in-out"}}]]]]])
+      [:*
      (when widget-visible?
        [:div.export-progress-widget {:on-click toggle-detail-visibility}
         [:svg {:width "32" :height "32"}
@@ -243,5 +280,5 @@
                    :fill "transparent"
                    :stroke-dasharray 280
                    :stroke-dashoffset (- 280 pwidth)
-                   :style {:transition "stroke-dashoffset 1s ease-in-out"}}]]]]])]))
+                   :style {:transition "stroke-dashoffset 1s ease-in-out"}}]]]]])])))
 

@@ -7,6 +7,9 @@
 
 .light,
 .default {
+  --canvas-background-color: var(--color-background-primary);
+  --canvas-fill-color: var(--canvas-color);
+
   --scrollbar-background-color: var(--color-foreground-secondary);
   --panel-background-color: var(--color-background-primary);
   --panel-title-background-color: var(--color-background-secondary);
@@ -175,4 +178,17 @@
 
   --empty-message-background-color: var(--color-background-tertiary);
   --empty-message-foreground-color: var(--color-foreground-secondary);
+
+  --status-ok-background-color: var(--ok-color);
+  --status-warning-background-color: var(--warning-color);
+  --status-pending-background-color: var(--pending-color);
+  --status-error-background-color: var(--error-color);
+  --status-icon-foreground-color: var(--color-background-primary);
+
+  --user-count-background-color: var(--color-background-secondary);
+  --user-count-foreground-color: var(--color-accent-primary);
+
+  --modal-background-color: var(--color-background-quaternary);
+  --modal-foreground-color: var(--color-foreground-primary);
+  --modal-foreground-color-secondary: var(--color-foreground-secondary);
 }

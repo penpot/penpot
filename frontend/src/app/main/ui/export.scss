@@ -1,0 +1,67 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.export-progress-modal-overlay {
+  display: flex;
+  justify-content: center;
+  position: fixed;
+  right: $s-16;
+  top: $s-48;
+  background-color: var(--modal-background-color);
+  border-radius: $br-8;
+  z-index: $z-index-20;
+  overflow: hidden;
+
+  .export-progress-modal-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    height: 100%;
+    width: 100%;
+    .export-progress-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: stretch;
+      padding: $s-8;
+      .export-progress-modal-title {
+        display: flex;
+        flex-grow: 1;
+        padding: 0;
+        margin: 0;
+        .title-text {
+          @include flexCenter;
+          @include titleTipography;
+          padding: 0;
+          margin: 0;
+          color: var(--modal-foreground-color);
+          padding-left: $s-4;
+        }
+        .progress {
+          @include titleTipography;
+          padding-left: $s-8;
+          margin: 0;
+          color: var(--modal-foreground-color-secondary);
+        }
+        .retry-btn {
+          @extend .button-tertiary;
+          @include titleTipography;
+        }
+      }
+
+      .modal-close-button {
+        @extend .button-tertiary;
+        svg {
+          @extend .button-icon-small;
+        }
+      }
+    }
+    .progress-bar {
+      margin-top: 0;
+    }
+  }
+}

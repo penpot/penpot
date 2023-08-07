@@ -8,6 +8,7 @@
 
 .workspace-context-menu,
 .workspace-context-submenu {
+  @include menuShadow;
   position: absolute;
   top: $s-40;
   left: $s-736;
@@ -17,8 +18,7 @@
   padding: $s-4;
   border-radius: $br-8;
   background-color: var(--menu-background-color);
-  z-index: $z-index-20;
-  box-shadow: 0px 0px $s-12 0px var(--menu-shadow-color);
+  z-index: $z-index-3;
   .separator {
     height: $s-12;
   }

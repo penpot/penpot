@@ -21,7 +21,9 @@
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
         on-click (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))]
     (if ^boolean new-css-system
-      [:div {:class (dom/classnames (css :collapsed-sidebar) true)}
+      [:div {:id "left-sidebar-aside"
+             :data-size 0
+             :class (dom/classnames (css :collapsed-sidebar) true)}
        [:div {:class (dom/classnames (css :collapsed-title) true)}
         [:button {:class (dom/classnames (css :collapsed-button) true)
                   :on-click on-click

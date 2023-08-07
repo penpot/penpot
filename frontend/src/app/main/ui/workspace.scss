@@ -1,3 +1,9 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
 @import "refactor/common-refactor.scss";
 
 // Work Sans
@@ -15,4 +21,21 @@
 
 .workspace {
   @extend .new-scrollbar;
+  width: 100vw;
+  height: 100%;
+  user-select: none;
+  display: grid;
+  grid-template-areas: "left-sidebar viewport right-sidebar";
+  grid-template-rows: 1fr;
+  grid-template-columns: auto 1fr auto;
+
+  .workspace-loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    grid-area: viewport;
+    svg {
+      fill: var(--icon-foreground);
+    }
+  }
 }

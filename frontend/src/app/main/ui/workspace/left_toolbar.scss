@@ -16,9 +16,9 @@
   height: $s-56;
   padding: $s-8 $s-16;
   border-radius: $s-8;
-  z-index: $z-index-20;
+  z-index: $z-index-2;
   background-color: var(--color-background-primary);
-  transition: top 1s ease;
+  transition: top 1s, height 1s, opacity 1s;
 
   .main-toolbar-options {
     position: relative;
@@ -65,8 +65,10 @@
     }
   }
   &.hidden-toolbar {
-    top: 0;
+    top: $s-20;
+    height: $s-16;
     z-index: $z-index-1;
+    border-radius: 0 0 $s-8 $s-8;
     .main-toolbar-options {
       opacity: $op-0;
     }

@@ -258,7 +258,7 @@
               [:button
                {:on-click toggle-filters
                 :class (stl/css-case
-                        :filters-button true
+                        :filter-button true
                         :active active?)}
                i/filter-refactor]]
 

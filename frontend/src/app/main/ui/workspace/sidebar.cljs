@@ -17,6 +17,8 @@
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.comments :refer [comments-sidebar]]
+   [app.main.ui.workspace.left-header :refer [left-header]]
+   [app.main.ui.workspace.right-header :refer [right-header]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox]]
    [app.main.ui.workspace.sidebar.debug :refer [debug-panel]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
@@ -34,9 +36,10 @@
 (mf/defc left-sidebar
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
-  [{:keys [layout] :as props}]
+  [{:keys [layout file page-id] :as props}]
   (let [options-mode   (mf/deref refs/options-mode-global)
         mode-inspect?  (= options-mode :inspect)
+        project          (mf/deref refs/workspace-project)
 
         section        (cond (or mode-inspect? (contains? layout :layers)) :layers
                              (contains? layout :assets) :assets)
@@ -45,7 +48,7 @@
         new-css-system (mf/use-ctx ctx/new-css-system)
 
         {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move parent-ref size]}
-        (use-resize-hook :left-sidebar 255 255 500 :x false :left)
+        (use-resize-hook :left-sidebar 275 275 500 :x false :left)
 
         handle-collapse
         (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
@@ -54,6 +57,8 @@
         (mf/use-fn #(st/emit! (dw/go-to-layout %)))]
 
     [:aside {:ref parent-ref
+             :id "left-sidebar-aside"
+             :data-size size
              :class (if ^boolean new-css-system
                       (dom/classnames (css :left-settings-bar) true
                                       :two-row   (<= size 300)
@@ -65,6 +70,8 @@
                                       :three-row (and (> size 300) (<= size 400))
                                       :four-row  (> size 400)))
              :style #js {"--width" (dm/str size "px")}}
+     (when new-css-system
+       [:& left-header {:file file :layout layout :project project :page-id page-id}])
 
      [:div {:on-pointer-down on-pointer-down
             :on-lost-pointer-capture on-lost-pointer-capture
@@ -128,8 +135,9 @@
 (mf/defc right-sidebar
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
-  [{:keys [layout section] :as props}]
+  [{:keys [layout section file page-id ] :as props}]
   (let [drawing-tool     (:tool (mf/deref refs/workspace-drawing))
+        new-css-system   (mf/use-ctx ctx/new-css-system)
 
         is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
@@ -139,7 +147,7 @@
         ;;prev-expanded? (hooks/use-previous expanded?)
 
         current-section* (mf/use-state :info)
-        current-section (deref current-section*)
+        current-section  (deref current-section*)
 
         can-be-expanded? (and (not is-comments?)
                               (not is-history?)
@@ -147,7 +155,7 @@
                               (= current-section :code))
 
         {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move set-size size]}
-        (use-resize-hook :code 256 256 768 :x true :right)
+        (use-resize-hook :code 276 276 768 :x true :right)
 
         handle-change-section
         (mf/use-callback
@@ -158,7 +166,7 @@
         (mf/use-callback
          (mf/deps size)
          (fn []
-           (set-size (if (> size 256) 256 768))))
+           (set-size (if (> size 276) 276 768))))
 
         props
         (-> props
@@ -166,14 +174,25 @@
             (obj/set! "on-change-section" handle-change-section)
             (obj/set! "on-expand" handle-expand))]
 
-    [:aside.settings-bar.settings-bar-right
-     {:class (when (not can-be-expanded?) "not-expand")
-      :style #js {"--width" (when can-be-expanded? (dm/str size "px"))}}
+    [:aside {:class (if ^boolean new-css-system
+                      (dom/classnames (css :settings-bar) true
+                                      (css :right-settings-bar) true
+                                      (css :not-expand) (not can-be-expanded?)
+                                      (css :expanded) (> size 276))
+                      (dom/classnames :settings-bar true
+                                      :settings-bar-right true
+                                      :not-expand (not can-be-expanded?)))
+             :id "right-sidebar-aside"
+             :data-size size
+             :style #js {"--width" (when can-be-expanded? (dm/str size "px"))}}
      (when can-be-expanded?
        [:div.resize-area
         {:on-pointer-down on-pointer-down
          :on-lost-pointer-capture on-lost-pointer-capture
          :on-pointer-move on-pointer-move}])
+     (when new-css-system
+       [:& right-header {:file file :layout layout :page-id page-id}])
+
      [:div.settings-bar-inside
       (cond
         (true? is-comments?)
