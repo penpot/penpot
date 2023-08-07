@@ -40,16 +40,16 @@
   [{:keys [::l/context ::l/message ::l/props ::l/logger ::l/level ::l/cause] :as record}]
   (us/assert! ::l/record record)
 
-  (let [data    (ex-data cause)
-        context (-> context
-                    (assoc :tenant (cf/get :tenant))
-                    (assoc :host (cf/get :host))
-                    (assoc :public-uri (cf/get :public-uri))
-                    (assoc :logger/name logger)
-                    (assoc :logger/level level)
-                    (dissoc :request/params :value :params :data))]
+  (let [data (ex-data cause)
+        ctx  (-> context
+                 (assoc :tenant (cf/get :tenant))
+                 (assoc :host (cf/get :host))
+                 (assoc :public-uri (cf/get :public-uri))
+                 (assoc :logger/name logger)
+                 (assoc :logger/level level)
+                 (dissoc :request/params :value :params :data))]
     (merge
-     {:context (-> (into (sorted-map) context)
+     {:context (-> (into (sorted-map) ctx)
                    (pp/pprint-str :width 200 :length 50 :level 10))
       :props   (pp/pprint-str props :width 200 :length 50)
       :hint    (or (ex-message cause) @message)
