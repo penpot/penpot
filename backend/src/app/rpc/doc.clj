@@ -54,7 +54,7 @@
             {:name (::sv/name mdata)
              :module (or (some-> (::module mdata) d/name)
                          (-> (:ns mdata) (str/split ".") last))
-             :auth (:auth mdata true)
+             :auth (::rpc/auth mdata true)
              :webhook (::webhooks/event? mdata false)
              :docs (::sv/docstring mdata)
              :deprecated (::deprecated mdata)
