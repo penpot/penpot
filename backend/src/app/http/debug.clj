@@ -238,9 +238,9 @@
             (-> (io/resource "app/templates/error-report.v2.tmpl")
                 (tmpl/render report)))
 
-          (render-template-v3 [{report :content}]
+          (render-template-v3 [{report :content id :id}]
             (-> (io/resource "app/templates/error-report.v3.tmpl")
-                (tmpl/render report)))
+                (tmpl/render (assoc report :id id))))
           ]
 
     (when-not (authorized? pool request)
