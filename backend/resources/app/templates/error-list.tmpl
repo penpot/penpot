@@ -6,13 +6,19 @@ penpot - error list
 
 {% block content %}
 <nav>
-  <h1>Latest error reports:</h1>
+  <div class="title">
+    <h1>Error reports (last 200)</h1>
+  </div>
 </nav>
 <main class="horizontal-list">
   <ul>
     {% for item in items %}
-    <li><a class="date" href="/dbg/error/{{item.id}}">{{item.created-at}}</a> 
-        <span class="title">{{item.hint|abbreviate:150}}</span></li>
+      <li>
+        <a class="date" href="/dbg/error/{{item.id}}">{{item.created-at}}</a>
+        <a class="hint" href="/dbg/error/{{item.id}}">
+          <span class="title">{{item.hint|abbreviate:150}}</span>
+        </a>
+      </li>
     {% endfor %}
   </ul>
 </main>
