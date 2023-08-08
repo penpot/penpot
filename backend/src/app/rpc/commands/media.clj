@@ -171,7 +171,8 @@
           :opt-un [::id ::name]))
 
 (sv/defmethod ::create-file-media-object-from-url
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::doc/deprecated "1.19"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (files/check-edition-permissions! pool profile-id file-id)

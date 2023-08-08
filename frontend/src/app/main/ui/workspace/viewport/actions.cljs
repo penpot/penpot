@@ -451,8 +451,8 @@
          (dnd/has-type? event "text/uri-list")
          (let [data   (dnd/get-data event "text/uri-list")
                lines  (str/lines data)
-               uris   (->> lines (filter #(str/starts-with? % "http")))
-               data   (->> lines (filter #(str/starts-with? % "data:image/")))
+               uris   (filterv #(str/starts-with? % "http") lines)
+               data   (filterv #(str/starts-with? % "data:image/") lines)
                params {:file-id (:id file)
                        :position viewport-coord}
                params (if (seq uris)
