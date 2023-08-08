@@ -56,7 +56,7 @@
       :trace   (ex/format-throwable cause :data? false :explain? false :header? false :summary? false)}
 
      (when-let [params (or (:request/params context) (:params context))]
-       {:params (pp/pprint-str params :width 200)})
+       {:params (pp/pprint-str params :width 200 :length 50 :level 10)})
 
      (when-let [value (:value context)]
        {:value (pp/pprint-str value :width 200 :length 50 :level 10)})
