@@ -64,6 +64,7 @@
           :opt-un [::search-term]))
 
 (sv/defmethod ::search-files
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::doc/module :files}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id team-id search-term]}]
   (some->> search-term (search-files pool profile-id team-id)))
