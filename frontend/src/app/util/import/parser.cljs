@@ -737,12 +737,13 @@
                             :fill-color-ref-file (get-meta fill-node :fill-color-ref-file uuid/uuid)
                             :fill-color-ref-id (get-meta fill-node :fill-color-ref-id uuid/uuid)
                             :fill-opacity (get-meta fill-node :fill-opacity d/parse-double)}))
-                   (mapv d/without-nils))]
+                   (mapv d/without-nils)
+                   (filterv #(not= (:fill-color %) "none")))]
     (if (seq fills)
       fills
       (->> [(-> (add-fill {} node svg-data)
                 (d/without-nils))]
-           (filterv not-empty)))))
+           (filterv #(and (not-empty %) (not= (:fill-color %) "none")))))))
 
 (defn parse-strokes
   [node svg-data]
@@ -761,12 +762,13 @@
                               :stroke-alignment (get-meta stroke-node :stroke-alignment keyword)
                               :stroke-cap-start (get-meta stroke-node :stroke-cap-start keyword)
                               :stroke-cap-end (get-meta stroke-node :stroke-cap-end keyword)}))
-                     (mapv d/without-nils))]
+                     (mapv d/without-nils)
+                     (filterv #(not= (:stroke-color %) "none")))]
     (if (seq strokes)
       strokes
       (->> [(-> (add-stroke {} node svg-data)
                 (d/without-nils))]
-           (filterv #(and (not-empty %) (not= (:stroke-style %) :none)))))))
+           (filterv #(and (not-empty %) (not= (:stroke-color %) "none") (not= (:stroke-style %) :none)))))))
 
 (defn add-svg-content
   [props node]
