@@ -73,16 +73,20 @@
            (rx/map #(svg/add-svg-shapes (assoc svg-data :image-data %) position))))))
 
 (defn- process-uris
-  [{:keys [file-id local? name uris mtype on-image on-svg]}]
+  [{:keys [file-id local? name uris mtype on-image on-svg] }]
   (letfn [(svg-url? [url]
             (or (and mtype (= mtype "image/svg+xml"))
                 (str/ends-with? url ".svg")))
 
-          (prepare [uri]
-            {:file-id file-id
-             :is-local local?
-             :name (or name (svg/extract-name uri))
-             :url uri})
+          (upload [uri]
+            (->> (http/send! {:method :get :uri uri :mode :no-cors :response-type :blob})
+                 (rx/map :body)
+                 (rx/map (fn [content]
+                           {:file-id file-id
+                            :name (or name (svg/extract-name uri))
+                            :is-local local?
+                            :content content}))
+                 (rx/mapcat #(rp/cmd! :upload-file-media-object %))))
 
           (fetch-svg [name uri]
             (->> (http/send! {:method :get :uri uri :mode :no-cors})
@@ -93,8 +97,7 @@
     (rx/merge
      (->> (rx/from uris)
           (rx/filter (comp not svg-url?))
-          (rx/map prepare)
-          (rx/mapcat #(rp/cmd! :create-file-media-object-from-url %))
+          (rx/mapcat upload)
           (rx/do on-image))
 
      (->> (rx/from uris)
@@ -142,7 +145,7 @@
    [:local? :boolean]
    [:name {:optional true} :string]
    [:data {:optional true} :any] ; FIXME
-   [:uris {:optional true} [:vector :string]]
+   [:uris {:optional true} [:sequential :string]]
    [:mtype {:optional true} :string]])
 
 (defn- process-media-objects
@@ -213,8 +216,6 @@
                       :on-image #(st/emit! (dwl/add-media %)))]
     (process-media-objects params)))
 
-;; TODO: it is really need handle SVG here, looks like it already
-;; handled separately
 (defn upload-media-workspace
   [{:keys [position file-id] :as params}]
   (let [params (assoc params
