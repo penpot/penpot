@@ -12,10 +12,10 @@
 (defmethod c/render-release-notes "1.18"
   [{:keys [slide klass next finish navigate version]}]
   (mf/html
-   (case @slide
+   (case slide
      :start
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/onboarding-version.jpg" :border "0" :alt "What's new release 1.18"}]]
@@ -33,7 +33,7 @@
 
      0
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/1.18-spacing.gif" :border "0" :alt "Spacing management"}]]
@@ -46,13 +46,13 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 4}]]]]]]
 
      1
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/1.18-absolute.gif" :border "0" :alt "Position absolute feature"}]]
@@ -60,18 +60,18 @@
          [:div.modal-title
           [:h2 "Absolute position elements in Flex layout"]]
          [:div.modal-content
-          [:p "Sometimes you need to freely position an element in a specific place regardless of the size of the layout where it belongs."] 
+          [:p "Sometimes you need to freely position an element in a specific place regardless of the size of the layout where it belongs."]
           [:p "Now you can exclude elements from the Flex layout flow using absolute position."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 4}]]]]]]
 
      2
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/1.18-z-index.gif" :border "0" :alt "Z-index feature"}]]
@@ -84,13 +84,13 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 4}]]]]]]
 
      3
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/1.18-scale.gif" :border "0" :alt "Scale content proportionally"}]]
@@ -103,6 +103,6 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 4}]]]]]])))

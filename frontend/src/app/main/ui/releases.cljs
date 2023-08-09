@@ -33,40 +33,41 @@
 ;;; --- RELEASE NOTES MODAL
 
 (mf/defc release-notes
-  [{:keys [version] :as props}]
-  (let [slide (mf/use-state :start)
-        klass (mf/use-state "fadeInDown")
+  {::mf/wrap-props false}
+  [{:keys [version]}]
+  (let [slide* (mf/use-state :start)
+        slide  (deref slide*)
+
+        klass* (mf/use-state "fadeInDown")
+        klass  (deref klass*)
 
         navigate
-        (mf/use-callback #(reset! slide %))
+        (mf/use-fn #(reset! slide* %))
 
         next
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps slide)
          (fn []
-           (if (= @slide :start)
+           (if (= slide :start)
              (navigate 0)
-             (navigate (inc @slide)))))
+             (navigate (inc slide)))))
 
         finish
-        (mf/use-callback
+        (mf/use-fn
+         (mf/deps version)
          #(st/emit! (modal/hide)
                     (du/mark-onboarding-as-viewed {:version version})))]
 
-    (mf/use-effect
-     (mf/deps)
-     (fn []
-       #(st/emit! (du/mark-onboarding-as-viewed {:version version}))))
+    (mf/with-effect []
+      #(st/emit! (du/mark-onboarding-as-viewed {:version version})))
 
-    (mf/use-layout-effect
-     (mf/deps @slide)
-     (fn []
-       (when (not= :start @slide)
-         (reset! klass "fadeIn"))
-       (let [sem (tm/schedule 300 #(reset! klass nil))]
-         (fn []
-           (reset! klass nil)
-           (tm/dispose! sem)))))
+    (mf/with-effect [slide]
+      (when (not= :start slide)
+        (reset! klass* "fadeIn"))
+      (let [sem (tm/schedule 300 #(reset! klass* nil))]
+        (fn []
+          (reset! klass* nil)
+          (tm/dispose! sem))))
 
     (rc/render-release-notes
      {:next next
