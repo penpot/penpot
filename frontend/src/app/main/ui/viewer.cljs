@@ -295,7 +295,8 @@
 
         size
         (mf/with-memo [frame zoom]
-          (calculate-size (:objects page) frame zoom))
+          (when frame
+            (calculate-size (:objects page) frame zoom)))
 
         orig-size
         (mf/with-memo [orig-frame zoom]
