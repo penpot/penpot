@@ -313,7 +313,7 @@
                   (update shape :bool-content gpa/transform-content transform-mtx)
                   shape)
         shape   (if (= type :text)
-                  (update shape :position-data move-position-data transform-mtx)
+                  (update shape :position-data transform-position-data transform-mtx)
                   shape)
         shape   (if (= type :path)
                   (update shape :content gpa/transform-content transform-mtx)
