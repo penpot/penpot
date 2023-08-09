@@ -10,7 +10,6 @@
   display: flex;
   align-items: center;
   height: $s-48;
-  max-width: var(--width, $s-256);
   padding: $s-8 $s-8 $s-4 $s-8;
   .main-icon {
     @include flexCenter;
@@ -49,7 +48,7 @@
       border: 0;
       border-radius: $br-8;
       background-color: var(--input-background-color);
-      font-size: $fs-12;
+      font-size: $fs-14;
       color: var(--input-foreground-color);
       z-index: 20;
       white-space: break-spaces;
