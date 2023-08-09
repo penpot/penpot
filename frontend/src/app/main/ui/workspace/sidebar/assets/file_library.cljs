@@ -58,8 +58,7 @@
                       :collapsed?   (not open?)
                       :on-collapsed  toggle-open
                       :title        (if local?
-                                      (mf/html [:div {:class (dom/classnames (css :special-title) true)} (tr "workspace.assets.local-library")
-                                                [:span {:class (dom/classnames (css :special-subtitle) true)} file-name]])
+                                      (mf/html [:div {:class (dom/classnames (css :special-title) true)} (tr "workspace.assets.local-library")])
 
                                       (mf/html [:div {:class (dom/classnames (css :special-title) true)} file-name]))}
         (when-not local?

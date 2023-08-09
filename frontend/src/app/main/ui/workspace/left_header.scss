@@ -46,7 +46,7 @@
       width: 100%;
       margin: 0;
       border: 0;
-      border-radius: $br-8;
+      border-radius: $br-4;
       background-color: var(--input-background-color);
       font-size: $fs-14;
       color: var(--input-foreground-color);
@@ -81,7 +81,7 @@
     @extend .menu-dropdown;
     position: absolute;
     top: $s-48;
-    left: calc(var(--width, $s-256) - $s-32);
+    left: calc(var(--width, $s-256) - $s-16);
     margin: 0;
 
     .menu-item {
@@ -121,7 +121,7 @@
   .sub-menu {
     @extend .menu-dropdown;
     position: absolute;
-    left: calc(var(--width, $s-256) + $s-168);
+    left: calc(var(--width, $s-256) + $s-180);
     width: 270px;
     .shortcut {
       @extend .shortcut;
