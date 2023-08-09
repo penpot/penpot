@@ -151,9 +151,9 @@
                                 (rx/tap (fn [[fonts]]
                                           (when (seq fonts)
                                             (st/emit! (df/fonts-fetched fonts)))))
-                                (rx/map (comp :objects second))))))
+                                (rx/map (fn [[_ page]] {:objects (:objects page)}))))))
 
-        objects (use-resource fetch-state)]
+        {:keys [objects]} (use-resource fetch-state)]
 
     (when objects
       (for [object-id object-ids]

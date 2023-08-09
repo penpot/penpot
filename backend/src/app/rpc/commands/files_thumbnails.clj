@@ -67,6 +67,7 @@
 (sv/defmethod ::get-file-object-thumbnails
   "Retrieve a file object thumbnails."
   {::doc/added "1.17"
+   ::doc/module :files
    ::sm/params [:map {:title "get-file-object-thumbnails"}
                 [:file-id ::sm/uuid]]
    ::sm/result [:map-of :string :string]
@@ -112,6 +113,7 @@
 
 (sv/defmethod ::get-file-thumbnail
   {::doc/added "1.17"
+   ::doc/module :files
    ::doc/deprecated "1.19"}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id file-id revn]}]
   (dm/with-open [conn (db/open pool)]
@@ -229,11 +231,10 @@
 (sv/defmethod ::get-file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used
   mainly for render thumbnails on dashboard."
-
   {::doc/added "1.17"
+   ::doc/module :files
    ::sm/params schema:get-file-data-for-thumbnail
    ::sm/result schema:partial-file}
-
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id features] :as props}]
   (dm/with-open [conn (db/open pool)]
     (files/check-read-permissions! conn profile-id file-id)
@@ -274,6 +275,7 @@
 
 (sv/defmethod ::upsert-file-object-thumbnail
   {::doc/added "1.17"
+   ::doc/module :files
    ::doc/deprecated "1.19"
    ::audit/skip true}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
@@ -319,6 +321,7 @@
 
 (sv/defmethod ::create-file-object-thumbnail
   {:doc/added "1.19"
+   ::doc/module :files
    ::audit/skip true
    ::sm/params schema:create-file-object-thumbnail}
 
@@ -357,6 +360,7 @@
 
 (sv/defmethod ::delete-file-object-thumbnail
   {:doc/added "1.19"
+   ::doc/module :files
    ::audit/skip true}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id object-id]}]
 
@@ -395,6 +399,7 @@
   "Creates or updates the file thumbnail. Mainly used for paint the
   grid thumbnails."
   {::doc/added "1.17"
+   ::doc/module :files
    ::doc/deprecated "1.19"
    ::audit/skip true}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
@@ -437,6 +442,7 @@
   "Creates or updates the file thumbnail. Mainly used for paint the
   grid thumbnails."
   {::doc/added "1.19"
+   ::doc/module :files
    ::audit/skip true
    ::sm/params [:map {:title "create-file-thumbnail"}
                 [:file-id ::sm/uuid]

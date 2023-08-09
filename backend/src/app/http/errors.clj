@@ -74,7 +74,7 @@
      ::yrs/headers headers}))
 
 (defmethod handle-exception :validation
-  [err _]
+  [err request]
   (let [{:keys [code] :as data} (ex-data err)]
     (cond
       (= code :spec-validation)
@@ -94,6 +94,11 @@
 
       (= code :request-body-too-large)
       {::yrs/status 413 ::yrs/body data}
+
+      (= code :invalid-image)
+      (binding [l/*context* (request->context request)]
+        (l/error :hint "unexpected error on processing image" :cause err)
+        {::yrs/status 400 ::yrs/body data})
 
       :else
       {::yrs/status 400 ::yrs/body data})))

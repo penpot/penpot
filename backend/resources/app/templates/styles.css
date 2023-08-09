@@ -50,7 +50,13 @@ nav {
   background: #e3e3e3;
 }
 
-nav > h1 {
+nav > .title {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+nav > .title > h1 {
   padding: 0px;
   margin: 0px;
   font-size: 11px;
@@ -151,7 +157,6 @@ nav > div:not(:last-child) {
   line-height: 18px;
   min-width: 210px;
   margin: 0px 20px;
-  cursor: pointer;
   display: flex;
   border-radius: 3px;
 }

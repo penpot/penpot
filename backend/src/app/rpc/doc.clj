@@ -54,14 +54,14 @@
             {:name (::sv/name mdata)
              :module (or (some-> (::module mdata) d/name)
                          (-> (:ns mdata) (str/split ".") last))
-             :auth (:auth mdata true)
+             :auth (::rpc/auth mdata true)
              :webhook (::webhooks/event? mdata false)
              :docs (::sv/docstring mdata)
              :deprecated (::deprecated mdata)
              :added (::added mdata)
              :changes (some->> (::changes mdata) (partition-all 2) (map vec))
              :spec (fmt-spec mdata)
-             :entrypoint (str (cf/get :public-uri) "/api/rpc/commands/" (::sv/name mdata))
+             :entrypoint (str (cf/get :public-uri) "/api/rpc/command/" (::sv/name mdata))
 
              :params-schema-js   (fmt-schema :js mdata ::sm/params)
              :result-schema-js   (fmt-schema :js mdata ::sm/result)
@@ -156,7 +156,7 @@
                          (map (partial gen-method-doc options))
                          (sort-by (juxt :module :name))
                          (map (fn [doc]
-                                [(str/ffmt "/commands/%" (:name doc)) (:repr doc)]))
+                                [(str/ffmt "/command/%" (:name doc)) (:repr doc)]))
                          (into {})))]
     {:openapi "3.0.0"
      :info {:version (:main cf/version)}
