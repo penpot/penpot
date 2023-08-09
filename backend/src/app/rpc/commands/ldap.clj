@@ -38,7 +38,8 @@
   "Performs the authentication using LDAP backend. Only works if LDAP
   is properly configured and enabled with `login-with-ldap` flag."
   {::rpc/auth false
-   ::doc/added "1.15"}
+   ::doc/added "1.15"
+   ::doc/module :auth}
   [{:keys [::main/props ::ldap/provider] :as cfg} params]
   (when-not provider
     (ex/raise :type :restriction
