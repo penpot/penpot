@@ -154,18 +154,18 @@
     (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
     (mf/with-effect [team-id]
-      (st/emit! (dd/initialize {:id team-id})))
+      (st/emit! (dd/initialize {:id team-id}))
+      (fn []
+        (dd/finalize {:id team-id})))
 
-    (mf/use-effect
-     (fn []
-       (let [events [(events/listen goog/global "keydown"
-                                    (fn [event]
-                                      (when (kbd/enter? event)
-                                        (dom/stop-propagation event)
-                                        (st/emit! (dd/open-selected-file)))))]]
-         (fn []
-           (doseq [key events]
-             (events/unlistenByKey key))))))
+    (mf/with-effect []
+      (let [key (events/listen goog/global "keydown"
+                               (fn [event]
+                                 (when (kbd/enter? event)
+                                   (dom/stop-propagation event)
+                                   (st/emit! (dd/open-selected-file)))))]
+        (fn []
+          (events/unlistenByKey key))))
 
     [:& (mf/provider ctx/current-team-id) {:value team-id}
      [:& (mf/provider ctx/current-project-id) {:value project-id}
