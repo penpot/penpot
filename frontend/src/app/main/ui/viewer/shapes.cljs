@@ -38,11 +38,10 @@
 
 (defn- find-relative-to-base-frame
   [shape objects overlays-ids base-frame]
-  (if (or (empty? overlays-ids) (nil? shape) (cph/root? shape))
-    base-frame
-    (if (contains? overlays-ids (:id shape))
-      shape
-      (find-relative-to-base-frame (cph/get-parent objects (:id shape)) objects overlays-ids base-frame))))
+  (cond
+    (cph/frame-shape? shape) shape
+    (or (empty? overlays-ids) (nil? shape) (cph/root? shape)) base-frame
+    :else (find-relative-to-base-frame (cph/get-parent objects (:id shape)) objects overlays-ids base-frame)))
 
 (defn- activate-interaction
   [interaction shape base-frame frame-offset objects overlays]
