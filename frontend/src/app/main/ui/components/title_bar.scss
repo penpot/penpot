@@ -15,7 +15,6 @@
   min-height: $s-32;
   margin: $s-4 0;
   background-color: var(--title-background-color);
-  padding-right: $s-8;
   .title,
   .title-only {
     @include tabTitleTipography;
