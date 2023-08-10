@@ -484,7 +484,11 @@
 
               (contains? object :masked-group?)
               (-> (assoc :masked-group (:masked-group? object))
-                  (dissoc :masked-group?))))
+                  (dissoc :masked-group?))
+
+              (contains? object :saved-component-root?)
+              (-> (assoc :saved-component-root (:saved-component-root? object))
+                  (dissoc :saved-component-root?))))
 
           (update-container [container]
             (d/update-when container :objects update-vals update-object))]

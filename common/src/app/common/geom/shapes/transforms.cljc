@@ -313,7 +313,7 @@
                   (update shape :bool-content gpa/transform-content transform-mtx)
                   shape)
         shape   (if (= type :text)
-                  (update shape :position-data move-position-data transform-mtx)
+                  (update shape :position-data transform-position-data transform-mtx)
                   shape)
         shape   (if (= type :path)
                   (update shape :content gpa/transform-content transform-mtx)
@@ -337,7 +337,7 @@
         ;; NOTE: ensure we have a fresh shallow copy of shape
         shape     (cr/clone shape)
         shape     (adjust-shape-flips! shape points)
-        
+
         center    (gco/points->center points)
         selrect   (calculate-selrect points center)
         transform (calculate-transform points center selrect)
