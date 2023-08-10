@@ -425,7 +425,10 @@
            parent-id   (or parent-id frame-id)
            name        (:name obj)
 
-           is-component-root? (or (:saved-component-root? obj) (ctk/instance-root? obj))
+           is-component-root? (or (:saved-component-root obj)
+                                  ;; Backward compatibility
+                                  (:saved-component-root? obj)
+                                  (ctk/instance-root? obj))
            duplicating-component? (or duplicating-component? (ctk/instance-head? obj))
            is-component-main? (ctk/main-instance? obj)
            regenerate-component

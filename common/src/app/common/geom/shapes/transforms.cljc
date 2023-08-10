@@ -337,7 +337,7 @@
         ;; NOTE: ensure we have a fresh shallow copy of shape
         shape     (cr/clone shape)
         shape     (adjust-shape-flips! shape points)
-        
+
         center    (gco/points->center points)
         selrect   (calculate-selrect points center)
         transform (calculate-transform points center selrect)
