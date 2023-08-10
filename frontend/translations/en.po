@@ -4960,3 +4960,7 @@ msgstr "Marketing"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.student-teacher"
 msgstr "Student or teacher"
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "A new version is available, please refresh the page"

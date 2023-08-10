@@ -11,6 +11,7 @@
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.spec :as us]
+   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http.session :as session]
    [app.metrics :as mtx]
@@ -99,7 +100,10 @@
     (sp/pipe ch output-ch false)
 
     ;; Subscribe to the profile topic on msgbus/redis
-    (mbus/sub! msgbus :topic profile-id :chan ch)))
+    (mbus/sub! msgbus :topic profile-id :chan ch)
+
+    ;; Subscribe to the system topic on msgbus/redis
+    (mbus/sub! msgbus :topic (str uuid/zero) :chan ch)))
 
 (defmethod handle-message :close
   [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::profile-id ::session-id]} _]

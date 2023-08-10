@@ -13,10 +13,12 @@
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.common :refer [handle-notification]]
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.media :as di]
    [app.main.data.users :as du]
+   [app.main.data.websocket :as dws]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.util.dom :as dom]
@@ -61,7 +63,23 @@
        (ptk/watch (fetch-projects) state stream)
        (ptk/watch (fetch-team-members) state stream)
        (ptk/watch (du/fetch-teams) state stream)
-       (ptk/watch (du/fetch-users {:team-id id}) state stream)))))
+       (ptk/watch (du/fetch-users {:team-id id}) state stream)
+
+       (let [stoper    (rx/filter (ptk/type? ::finalize) stream)
+            profile-id (:profile-id state)]
+         (->> stream
+              (rx/filter (ptk/type? ::dws/message))
+              (rx/map deref)
+              (rx/filter (fn [{:keys [subs-id type] :as msg}]
+                           (and (or (= subs-id uuid/zero)
+                                    (= subs-id profile-id))
+                                (= :notification type))))
+              (rx/map handle-notification)
+              (rx/take-until stoper)))))))
+
+(defn finalize
+  [params]
+  (ptk/data-event ::finalize params))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching (context aware: current team)

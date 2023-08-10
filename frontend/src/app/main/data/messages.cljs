@@ -120,6 +120,17 @@
           :position :fixed
           :timeout timeout})))
 
+(defn dialog
+  [& {:keys [content controls actions position tag type]
+      :or {controls :none position :floating type :info}}]
+  (show (d/without-nils
+         {:content content
+          :type type
+          :position position
+          :controls controls
+          :actions actions
+          :tag tag})))
+
 (defn info-dialog
   ([content controls actions]
    (info-dialog content controls actions nil))
