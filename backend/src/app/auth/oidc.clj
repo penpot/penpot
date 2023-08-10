@@ -567,7 +567,7 @@
           profile (get-profile cfg info)]
       (generate-redirect cfg request info profile))
     (catch Throwable cause
-      (l/error :hint "error on oauth process" :cause cause)
+      (l/warn :hint "error on oauth process" :cause cause)
       (generate-error-redirect cfg cause))))
 
 (def provider-lookup
