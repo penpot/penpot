@@ -32,11 +32,12 @@
       height: $s-16;
       width: 100%;
       padding-bottom: $s-2;
+      margin-top: -2px;
       color: var(--title-foreground-color);
       cursor: pointer;
     }
     .file-name {
-      @include titleTipography;
+      @include titleBigTipography;
       text-transform: none;
       color: var(--title-foreground-color-hover);
     }

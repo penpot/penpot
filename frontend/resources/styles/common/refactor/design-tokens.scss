@@ -159,8 +159,6 @@
   --radio-btn-foreground-color-selected: var(--color-accent-primary);
   --radio-btn-border-color-selected: var(--color-background-quaternary);
 
-  --modal-background-color: var(--color-background-primary);
-
   --library-name-foreground-color: var(--color-foreground-primary);
   --library-content-foreground-color: var(--color-foreground-secondary);
 
@@ -188,7 +186,7 @@
   --user-count-background-color: var(--color-background-secondary);
   --user-count-foreground-color: var(--color-accent-primary);
 
-  --modal-background-color: var(--color-background-quaternary);
+  --modal-background-color: var(--color-background-primary);
   --modal-foreground-color: var(--color-foreground-primary);
   --modal-foreground-color-secondary: var(--color-foreground-secondary);
 }
