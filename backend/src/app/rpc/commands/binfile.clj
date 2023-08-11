@@ -685,12 +685,19 @@
       (let [rel (-> rel
                     (assoc :synced-at timestamp)
                     (update :file-id lookup-index)
-                    (update :library-file-id lookup-index))]
-        (l/debug :hint "create file library link"
-                 :file-id (:file-id rel)
-                 :lib-id (:library-file-id rel)
-                 ::l/sync? true)
-        (db/insert! conn :file-library-rel rel)))))
+                    (update :library-file-id lookup-index))
+            valid-rel-lib-id? (some #(= (:library-file-id rel) %) (-> *state* deref :files))]
+        (if valid-rel-lib-id?
+          (do
+            (l/debug :hint "create file library link"
+              :file-id (:file-id rel)
+              :lib-id (:library-file-id rel)
+              ::l/sync? true)
+            (db/insert! conn :file-library-rel rel))
+          (l/warn :hint "ignoring file library link"
+            :file-id (:file-id rel)
+            :lib-id (:library-file-id rel)
+            ::l/sync? true))))))
 
 (defmethod read-section :v1/sobjects
   [{:keys [::sto/storage ::db/conn ::input ::overwrite?]}]
