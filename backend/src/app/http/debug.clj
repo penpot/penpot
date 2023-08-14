@@ -238,9 +238,11 @@
             (-> (io/resource "app/templates/error-report.v2.tmpl")
                 (tmpl/render report)))
 
-          (render-template-v3 [{report :content id :id}]
+          (render-template-v3 [{:keys [content id created-at]}]
             (-> (io/resource "app/templates/error-report.v3.tmpl")
-                (tmpl/render (assoc report :id id))))
+                (tmpl/render (-> content
+                                 (assoc :id id)
+                                 (assoc :created-at (dt/format-instant created-at :rfc1123))))))
           ]
 
     (when-not (authorized? pool request)

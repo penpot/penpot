@@ -8,10 +8,15 @@
   "A collection of adhoc fixes scripts."
   #_:clj-kondo/ignore
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.logging :as l]
    [app.common.pprint :as p]
    [app.common.spec :as us]
+   [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
+   [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.profile :as profile]
    [app.srepl.fixes :as f]
@@ -164,3 +169,106 @@
   (alter-var-root var (fn [f]
                         (or (::original (meta f)) f))))
 
+(defn notify!
+  [{:keys [::mbus/msgbus ::db/pool]} & {:keys [dest code message level]
+                                        :or {code :generic level :info}
+                                        :as params}]
+  (dm/verify!
+   ["invalid level %" level]
+   (contains? #{:success :error :info :warning} level))
+
+  (dm/verify!
+   ["invalid code: %" code]
+   (contains? #{:generic :upgrade-version} code))
+
+  (letfn [(send [dest]
+            (l/inf :hint "sending notification" :dest (str dest))
+            (let [message {:type :notification
+                           :code code
+                           :level level
+                           :version (:full cf/version)
+                           :subs-id dest
+                           :message message}
+                  message (->> (dissoc params :dest :code :message :level)
+                               (merge message))]
+              (mbus/pub! msgbus
+                         :topic (str dest)
+                         :message message)))
+
+          (resolve-profile [email]
+            (some-> (db/get* pool :profile {:email (str/lower email)} {:columns [:id]}) :id vector))
+
+          (resolve-team [team-id]
+            (->> (db/query pool :team-profile-rel
+                           {:team-id team-id}
+                           {:columns [:profile-id]})
+                 (map :profile-id)))
+
+          (parse-uuid [v]
+            (if (uuid? v)
+              v
+              (d/parse-uuid v)))
+
+          (resolve-dest [dest]
+            (cond
+              (uuid? dest)
+              [dest]
+
+              (string? dest)
+              (some-> dest parse-uuid resolve-dest)
+
+              (nil? dest)
+              (resolve-dest uuid/zero)
+
+              (map? dest)
+              (sequence (comp
+                         (map vec)
+                         (mapcat resolve-dest))
+                        dest)
+
+              (and (coll? dest)
+                   (every? coll? dest))
+              (sequence (comp
+                         (map vec)
+                         (mapcat resolve-dest))
+                        dest)
+
+              (vector? dest)
+              (let [[op param] dest]
+                (cond
+                  (= op :email)
+                  (cond
+                    (and (coll? param)
+                         (every? string? param))
+                    (sequence (comp
+                               (keep resolve-profile)
+                               (mapcat identity))
+                              param)
+
+                    (string? param)
+                    (resolve-profile param))
+
+                  (= op :team-id)
+                  (cond
+                    (coll? param)
+                    (sequence (comp
+                               (mapcat resolve-team)
+                               (keep parse-uuid))
+                              param)
+
+                    (uuid? param)
+                    (resolve-team param)
+
+                    (string? param)
+                    (some-> param parse-uuid resolve-team))
+
+                  (= op :profile-id)
+                  (if (coll? param)
+                    (sequence (keep parse-uuid) param)
+                    (resolve-dest param))))))
+          ]
+
+    (->> (resolve-dest dest)
+         (filter some?)
+         (into #{})
+         (run! send))))
