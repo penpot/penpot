@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-08-12 12:49+0000\n"
+"PO-Revision-Date: 2023-08-15 13:49+0000\n"
 "Last-Translator: Sebastiaan Pasma <sebastiaan@enkodo.nl>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -1047,11 +1047,11 @@ msgid_plural "modals.unpublish-shared-confirm.hint-many"
 msgstr[0] ""
 "Als u de publicatie ongedaan maakt, zijn die elementen niet langer "
 "beschikbaar vanuit andere bestanden. Elementen die al gebruikt zijn, blijven "
-"in dit bestand staan (er gaat geen ontwerp kapot!)."
+"in deze bestanden staan (er gaat geen ontwerp kapot!)."
 msgstr[1] ""
 "Als u de publicatie ervan ongedaan maakt, zijn die elementen niet langer "
 "beschikbaar vanuit andere bestanden. Elementen die al gebruikt zijn, blijven "
-"in dit bestand staan (er gaat geen ontwerp kapot!)."
+"in deze bestanden staan (er gaat geen ontwerp kapot!)."
 
 #: src/app/main/ui/workspace.cljs
 msgid "workspace.remove-graphics.error-hint"
@@ -2612,3 +2612,849 @@ msgstr ""
 
 msgid "onboarding-v2.before-start.desc3"
 msgstr "Je kunt onze tutorials en de tutorials van onze community bekijken."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.add-interaction"
+msgstr "Klik op de knop + om interacties toe te voegen."
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.no-shared-libraries-available"
+msgstr "Er zijn geen gedeelde bibliotheken beschikbaar"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-email-sent"
+msgstr "Uitnodiging succesvol verstuurd"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.accept"
+msgstr "Update"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Uitnodigingslink gekopieerd"
+
+#: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
+msgid "notifications.profile-saved"
+msgstr "Profiel is opgeslagen!"
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Video-tutorials"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "Voordat je begint"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Zoomen"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Zoomen"
+
+msgid "shortcuts.italic"
+msgstr "Schakel cursief in/uit"
+
+msgid "shortcuts.opacity-0"
+msgstr "Zet dekking op 100%"
+
+msgid "shortcuts.merge-nodes"
+msgstr "Knooppunten samenvoegen"
+
+msgid "shortcuts.not-found"
+msgstr "Geen sneltoets gevonden"
+
+msgid "shortcuts.move"
+msgstr "Verplaats"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "Vergrendel proporties"
+
+msgid "shortcuts.move-fast-down"
+msgstr "Snel naar beneden verplaatsen"
+
+msgid "shortcuts.move-fast-left"
+msgstr "Snel naar links verplaatsen"
+
+msgid "shortcuts.ungroup"
+msgstr "Degroeperen"
+
+msgid "shortcuts.v-distribute"
+msgstr "Verticaal verdelen"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Zoomlens verkleinen"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "title.dashboard.projects"
+msgstr "Projecten - %s - Penpot"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vdistribute"
+msgstr "Verdeel verticale tussenruimte (%s)"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vtop"
+msgstr "Bovenkant uitlijnen (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.box-filter-all"
+msgstr "Alle elementen"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group"
+msgstr "Groep aanmaken"
+
+msgid "workspace.assets.local-library"
+msgstr "Lokale bibliotheek"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group-name"
+msgstr "Groepnaam"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.not-found"
+msgstr "Geen elementen gevonden"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename-group"
+msgstr "Groep hernoemen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.text-transform"
+msgstr "Tekst transformeren"
+
+msgid "workspace.focus.focus-off"
+msgstr "Focus uit"
+
+msgid "workspace.focus.focus-on"
+msgstr "Focus aan"
+
+msgid "workspace.focus.focus-mode"
+msgstr "Focusmodus"
+
+#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
+msgid "workspace.gradients.linear"
+msgstr "Lineair verloop"
+
+#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
+msgid "workspace.gradients.radial"
+msgstr "Radiaal verloop"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "Uitlijnen op hulplijnen"
+
+msgid "shortcuts.toggle-snap-guide"
+msgstr "Uitlijnen op hulplijnen"
+
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "Verberg pixelraster"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-rules"
+msgstr "Verberg linialen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "Toon lettertype-palet"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text2"
+msgstr "Deze update is een eenmalige actie."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-msg"
+msgstr "Sommige afbeeldingen kunnen niet worden bijgewerkt."
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.empty"
+msgstr "Er zijn tot nu toe geen wijzigingen in de historie"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.there-are-updates"
+msgstr "Er zijn updates in gedeelde bibliotheken"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.message"
+msgstr "Weet je zeker dat je dit team wilt verlaten?"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.select-member-to-promote"
+msgstr "Selecteer een lid om te promoveren"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.message"
+msgstr "Verwijder \"%s\" als gedeelde bibliotheek"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.promote-and-leave"
+msgstr "Promoveer en verlaat"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.title"
+msgstr "Voordat je gaat"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.accept"
+msgstr "Verlaat team"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.title"
+msgstr "Team verlaten"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "Aantal nudges"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.accept"
+msgstr "Eigendom overdragen"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.title"
+msgstr "Nieuwe teameigenaar"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.accept"
+msgstr "Verwijder als gedeelde bibliotheek"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "Kleine nudge"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Publicatie ongedaan maken"
+msgstr[1] "Publicaties ongedaan maken"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"Vergeet niet om iedereen mee te nemen. Ontwikkelaars, ontwerpers, "
+"managers... diversiteit is alleen maar beter :)"
+
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "Maak een team en nodig later uit"
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "Maak een team en verstuur uitnodigingen"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "Uitnodigen met rol:"
+
+msgid "onboarding.newsletter.accept"
+msgstr "Ja, abonneren"
+
+msgid "onboarding.newsletter.title"
+msgstr "Penpot nieuws ontvangen?"
+
+msgid "onboarding.newsletter.policy"
+msgstr "Privacybeleid."
+
+msgid "onboarding.team-modal.create-team"
+msgstr "Team aanmaken"
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "Oneindig veel bestanden en projecten"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Multiplayer-editie"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Rollenbeheer"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Oneindig veel leden"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "100% gratis!"
+
+msgid "onboarding.templates.subtitle"
+msgstr "Hier zijn wat sjablonen."
+
+msgid "onboarding.templates.title"
+msgstr "Start met ontwerpen"
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "profile.recovery.go-to-login"
+msgstr "Ga naar inlogscherm"
+
+msgid "shortcuts.go-to-search"
+msgstr "Zoeken"
+
+msgid "shortcuts.group"
+msgstr "Groep"
+
+msgid "shortcuts.h-distribute"
+msgstr "Verdeel horizontaal"
+
+msgid "shortcuts.hide-ui"
+msgstr "Toon/verberg UI"
+
+msgid "shortcuts.increase-zoom"
+msgstr "Inzoomen"
+
+msgid "shortcuts.insert-image"
+msgstr "Afbeelding invoegen"
+
+msgid "shortcuts.join-nodes"
+msgstr "Sluit knooppunten aan"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Verklein de letterafstand"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Vergroot de letterafstand"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Verklein lijnhoogte"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Vergroot lijnhoogte"
+
+msgid "shortcuts.line-through"
+msgstr "Schakel doorstreept in/uit"
+
+msgid "shortcuts.make-corner"
+msgstr "Maak hoek"
+
+msgid "shortcuts.make-curve"
+msgstr "Maak curve"
+
+msgid "shortcuts.mask"
+msgstr "Masker"
+
+msgid "shortcuts.move-fast-right"
+msgstr "Snel naar rechts verplaatsen"
+
+msgid "shortcuts.move-fast-up"
+msgstr "Snel naar boven verplaatsen"
+
+msgid "shortcuts.move-nodes"
+msgstr "Verplaats knooppunt"
+
+msgid "shortcuts.move-unit-down"
+msgstr "Naar beneden verplaatsen"
+
+msgid "shortcuts.move-unit-left"
+msgstr "Naar links verplaatsen"
+
+msgid "shortcuts.move-unit-right"
+msgstr "Naar rechts verplaatsen"
+
+msgid "shortcuts.move-unit-up"
+msgstr "Naar boven verplaatsen"
+
+msgid "shortcuts.next-frame"
+msgstr "Volgend bord"
+
+msgid "shortcuts.opacity-1"
+msgstr "Zet dekking op 10%"
+
+msgid "shortcuts.opacity-2"
+msgstr "Zet dekking op 20%"
+
+msgid "shortcuts.opacity-3"
+msgstr "Zet dekking op 30%"
+
+msgid "shortcuts.opacity-4"
+msgstr "Zet dekking op 40%"
+
+msgid "shortcuts.opacity-5"
+msgstr "Zet dekking op 50%"
+
+msgid "shortcuts.opacity-6"
+msgstr "Zet dekking op 60%"
+
+msgid "shortcuts.opacity-7"
+msgstr "Zet dekking op 70%"
+
+msgid "shortcuts.opacity-8"
+msgstr "Zet dekking op 80%"
+
+msgid "shortcuts.opacity-9"
+msgstr "Zet dekking op 90%"
+
+msgid "shortcuts.open-color-picker"
+msgstr "Kleurkiezer"
+
+msgid "shortcuts.open-comments"
+msgstr "Ga naar het commentaargedeelte van de kijker"
+
+msgid "shortcuts.open-dashboard"
+msgstr "Ga naar dashboard"
+
+msgid "shortcuts.open-inspect"
+msgstr "Ga naar de sectie voor het inspecteren van kijkers"
+
+msgid "shortcuts.open-interactions"
+msgstr "Ga naar de kijkersinteracties-sectie"
+
+msgid "shortcuts.open-viewer"
+msgstr "Ga naar de kijkersinteracties-sectie"
+
+msgid "shortcuts.snap-nodes"
+msgstr "Uitlijnen op knooppunten"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Uitlijnen op pixelraster"
+
+msgid "shortcuts.start-editing"
+msgstr "Start met bewerken"
+
+msgid "shortcuts.start-measure"
+msgstr "Begin meting"
+
+msgid "shortcuts.stop-measure"
+msgstr "Stop meting"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "Stel miniaturen in"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.title"
+msgstr "Toetsenbord sneltoetsen"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "Schakel dynamisch uitlijnen in/uit"
+
+msgid "shortcuts.toggle-assets"
+msgstr "Schakel assets in/uit"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Schakel kleurpalet in/uit"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Schakel focusmodus in/uit"
+
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Schakel Volledig scherm in/uit"
+
+msgid "shortcuts.toggle-grid"
+msgstr "Toon/verberg raster"
+
+msgid "shortcuts.toggle-history"
+msgstr "Schakel historie in/uit"
+
+msgid "shortcuts.toggle-layers"
+msgstr "Schakel lagen in/uit"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Flex layout toevoegen/verwijderen"
+
+msgid "shortcuts.toggle-lock"
+msgstr "Geselecteerde vergrendelen"
+
+msgid "shortcuts.toggle-rules"
+msgstr "Toon/verberg linialen"
+
+msgid "shortcuts.toggle-scale-text"
+msgstr "Schaaltekst wisselen"
+
+msgid "shortcuts.toggle-snap-grid"
+msgstr "Uitlijnen op raster"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "Schakel tekstpalet in/uit"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Schakel zichtbaarheid"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Schakel zoomstijl"
+
+msgid "shortcuts.underline"
+msgstr "Schakel onderstreept"
+
+msgid "shortcuts.undo"
+msgstr "Ongedaan maken"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Lettertypeaanbieders - %s - Penpot"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Zoomlens vergroten"
+
+msgid "shortcuts.zoom-selected"
+msgstr "Zoomen naar geslecteerde"
+
+#: src/app/main/ui/dashboard/files.cljs
+msgid "title.dashboard.files"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "Lettertypes - %s - Penpot"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "title.dashboard.search"
+msgstr "Zoeken - %s - Penpot"
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "title.dashboard.shared-libraries"
+msgstr "Gedeelde bibliotheken - %s - Penpot"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
+msgid "title.default"
+msgstr "Penpot - Ontwerpvrijheid voor teams"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "title.settings.feedback"
+msgstr "Feedback geven - Penpot"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "title.settings.options"
+msgstr "Instellingen - Penpot"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "title.settings.password"
+msgstr "Wachtwoord - Penpot"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "title.settings.profile"
+msgstr "Profiel - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-invitations"
+msgstr "Uitnodigingen - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-settings"
+msgstr "Instellingen - %s - Penpot"
+
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
+msgid "title.viewer"
+msgstr "%s - Weergavemodus - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-members"
+msgstr "Leden - %s - Penpot"
+
+msgid "title.team-webhooks"
+msgstr "Webhooks - %s - Penpot"
+
+#: src/app/main/ui/workspace.cljs
+msgid "title.workspace"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
+msgid "viewer.empty-state"
+msgstr "Geen borden gevonden op de pagina."
+
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
+msgid "viewer.frame-not-found"
+msgstr "Bord niet gevonden."
+
+msgid "viewer.header.comments-section"
+msgstr "Commentaar (%s)"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.dont-show-interactions"
+msgstr "Interacties niet tonen"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.fullscreen"
+msgstr "Volledig scherm"
+
+msgid "viewer.header.inspect-section"
+msgstr "Inspecteren (%s)"
+
+msgid "viewer.header.interactions-section"
+msgstr "Interacties (%s)"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.copy-link"
+msgstr "Link kopieëren"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.show-interactions"
+msgstr "Interacties tonen"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.show-interactions-on-click"
+msgstr "Interacties tonen bij aanklikken"
+
+msgid "webhooks.last-delivery.success"
+msgstr "De laatste levering was succesvol."
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hcenter"
+msgstr "Horizontaal gecentreerd uitlijnen (%s)"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hdistribute"
+msgstr "Verdeel horizontale tussenruimte (%s)"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hleft"
+msgstr "Links uitlijnen (%s)"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hright"
+msgstr "Rechts uitlijnen (%s)"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vbottom"
+msgstr "Onderkant uitlijnen (%s)"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vcenter"
+msgstr "Verticaal gecentreerd uitlijnen (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.go-to-edit"
+msgstr "Ga naar het stijl-bibliotheekbestand om te bewerken"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "%s item geselecteerd"
+msgstr[1] "%s items geselecteerd"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.search"
+msgstr "Zoek elementen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.letter-spacing"
+msgstr "Letterafstand"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.line-height"
+msgstr "Lijnhoogte"
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "Tekststijlen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-dynamic-alignment"
+msgstr "Schakel dynamische uitlijning uit"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Schakel proportionele schaal uit"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-scale-text"
+msgstr "Schaaltekst uitschakelen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-grid"
+msgstr "Uitlijnen op raster uitschakelen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "Uitlijnen op hulplijnen uitschakelen"
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Uitlijnen op pixel uitschakelen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-dynamic-alignment"
+msgstr "Schakel dynamische uitlijning in"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Schakel proportionele schaal in"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "Schaaltekst inschakelen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-grid"
+msgstr "Uitlijnen op raster"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Uitlijnen op pixel"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "Verberg bornnamen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-grid"
+msgstr "Verberg rasters"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-palette"
+msgstr "Verberg kleurpalet"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "Verberg lettertype-palet"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.help-info"
+msgstr "Help & informatie"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.select-all"
+msgstr "Alles selecteren"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Toon bordnamen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-grid"
+msgstr "Toon raster"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-palette"
+msgstr "Toon kleurpalen"
+
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Toon pixelraster"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-rules"
+msgstr "Toon linialen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.save-error"
+msgstr "Fout tijdens opslaan"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.unsaved"
+msgstr "Niet-opgeslagen wijzigingen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.viewer"
+msgstr "Kijkmodus (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit"
+msgstr "Passend maken - Verkleinen om te passen"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.no-libraries-need-sync"
+msgstr "Er zijn geen gedeelde bibliotheken die moeten worden bijgewerkt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "Exporteer 1 element"
+msgstr[1] "Exporteer %s elementen"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Leden uitnodigen"
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Deelnemen aan de Penpotgemeenschap"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Bijdragen"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Welkom bij Penpot!"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Later een team aanmaken"
+
+msgid "onboarding.choice.team-up.create-team"
+msgstr "Jouw teamnaam"
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Voer de naam van het team in"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "notifications.profile-deletion-not-allowed"
+msgstr ""
+"Je kunt je profiel niet verwijderen. Wijs je teams opnieuw toe voordat je "
+"verder gaat."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Stuur mij nieuws over Penpot (blogposts, video-tutorials, streamings...)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Wij geven om privacy, lees hier onze "
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "notifications.validation-email-sent"
+msgstr "Verificatie-e-mail verzonden naar %s. Check je e-mail!"
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr "Stuur mij productupdates (nieuwe functies, releases, fixes...)."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.message"
+msgstr "Werk een component in een gedeelde bibliotheek bij"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "Werk componenten in een gedeelde bibliotheek bij"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Publicatie bibliotheek ongedaan maken"
+msgstr[1] "Publicatie bibliotheken ongedaan maken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.cancel"
+msgstr "Annuleren"
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Gebruikershandleiding"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "settings.multiple"
+msgstr "Gemixt"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Basis"
+
+msgid "shortcut-section.dashboard"
+msgstr "Dashboard"
+
+msgid "shortcut-section.viewer"
+msgstr "Bekijker"
+
+msgid "shortcut-section.workspace"
+msgstr "Werkruimte"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Uitlijning"
+
+msgid "shortcut-subsection.edit"
+msgstr "Bewerken"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Algemeen"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "Algemeen"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "Hoofdmenu"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "Lagen wijzigen"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Navigatie"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Navigatie"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "Navigatie"
+
+msgid "shortcut-subsection.panels"
+msgstr "Panelen"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "Paden"
+
+msgid "shortcut-subsection.shape"
+msgstr "Vormen"
+
+msgid "shortcut-subsection.text-editor"
+msgstr "Teksten"
+
+msgid "shortcut-subsection.tools"
+msgstr "Tools"
