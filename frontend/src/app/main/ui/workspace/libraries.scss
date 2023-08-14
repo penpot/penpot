@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @import "refactor/common-refactor.scss";
+
 .modal-overlay {
   @include flexCenter;
   position: fixed;
@@ -15,6 +16,7 @@
   z-index: $z-index-modal;
   background-color: var(--overlay-color);
   pointer-events: none; // This is to allow outside click that closes modal.
+
   .modal-dialog {
     position: relative;
     height: $s-520;
@@ -50,11 +52,13 @@
       .updates-content {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: $s-24;
+        gap: $s-32;
         padding-top: $s-24;
         height: 100%;
         max-height: $s-400;
         .section {
+          display: flex;
+          flex-direction: column;
           height: calc(100% - $s-12);
           :global(.title-spacing-lib) {
             margin: 0 0 $s-24 calc(-1 * $s-8);
@@ -63,8 +67,8 @@
           .section-list-shared {
             height: 100%;
             max-height: $s-320;
+            margin-top: $s-12;
             overflow: auto;
-            scrollbar-gutter: stable;
             .section-list-item {
               display: grid;
               grid-template-columns: 1fr auto;
@@ -128,7 +132,7 @@
             margin-bottom: $s-12;
           }
           .libraries-search {
-            margin-bottom: $s-12;
+            margin: $s-12 0;
             .search-icon {
               @include flexCenter;
               padding: 0 0 0 $s-8;

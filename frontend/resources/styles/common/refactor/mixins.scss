@@ -36,6 +36,13 @@
   line-height: 1.2;
 }
 
+@mixin titleBigTipography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-14;
+  font-weight: $fw400;
+  line-height: 1.2;
+}
+
 @mixin textEllipsis {
   max-width: 99%;
   overflow: hidden;

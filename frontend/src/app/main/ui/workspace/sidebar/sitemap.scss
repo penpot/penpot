@@ -14,10 +14,17 @@
   width: 100%;
   height: var(--height, 200px);
 
+  .title-bar {
+    .title {
+      margin-left: $s-2;
+    }
+  }
+
   .add-page {
     @extend .button-tertiary;
     height: $s-32;
     width: calc($s-24 + $s-4);
+    margin-right: $s-8;
     padding: 0;
     border-radius: $br-8;
     svg {
@@ -52,7 +59,7 @@
     flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
-    scrollbar-gutter: stable;
+    // scrollbar-gutter: stable;
     overflow-y: overlay;
     height: 100%;
     width: 100%;

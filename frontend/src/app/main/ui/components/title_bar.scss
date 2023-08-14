@@ -13,6 +13,7 @@
   height: $s-32;
   width: 100%;
   min-height: $s-32;
+  margin: $s-4 0;
   background-color: var(--title-background-color);
   .title,
   .title-only {
@@ -26,7 +27,7 @@
     color: var(--title-foreground-color);
   }
   .title-only {
-    margin-left: $s-8;
+    // margin-left: $s-8;
   }
 
   .toggle-btn {
@@ -34,16 +35,14 @@
     display: flex;
     align-items: center;
     flex-grow: 1;
-    gap: $s-4;
     padding: 0;
     color: var(--title-foreground-color);
     stroke: var(--title-foreground-color);
     .collased-icon {
       @include flexCenter;
       height: $s-24;
-      width: $s-24;
       border-radius: $br-8;
-      padding: 0 $s-4 0 $s-8;
+      padding-left: $s-8;
       svg {
         @extend .button-icon-small;
         transform: rotate(90deg);

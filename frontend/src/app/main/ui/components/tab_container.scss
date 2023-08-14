@@ -26,7 +26,6 @@
   flex-direction: row;
   gap: $s-2;
   height: $s-32;
-  padding: $s-2 $s-2 $s-2 $s-2;
   border-radius: $br-8;
   background: var(--color-background-secondary);
   cursor: pointer;
@@ -40,7 +39,7 @@
     .tab-container-tab-title {
       @include flexCenter;
       @include tabTitleTipography;
-      height: $s-28;
+      height: 100%;
       width: 100%;
       padding: 0 $s-8;
       margin: 0;
@@ -65,7 +64,7 @@
     height: 100%;
     width: $s-24;
     min-width: $s-24;
-    padding: 0 $s-6 0 0;
+    padding: 0 $s-6;
     border-radius: $br-5;
     svg {
       @include flexCenter;

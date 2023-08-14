@@ -10,7 +10,6 @@
   display: flex;
   align-items: center;
   height: $s-48;
-  max-width: var(--width, $s-256);
   padding: $s-8 $s-8 $s-4 $s-8;
   .main-icon {
     @include flexCenter;
@@ -33,11 +32,12 @@
       height: $s-16;
       width: 100%;
       padding-bottom: $s-2;
+      margin-top: -2px;
       color: var(--title-foreground-color);
       cursor: pointer;
     }
     .file-name {
-      @include titleTipography;
+      @include titleBigTipography;
       text-transform: none;
       color: var(--title-foreground-color-hover);
     }
@@ -47,9 +47,9 @@
       width: 100%;
       margin: 0;
       border: 0;
-      border-radius: $br-8;
+      border-radius: $br-4;
       background-color: var(--input-background-color);
-      font-size: $fs-12;
+      font-size: $fs-14;
       color: var(--input-foreground-color);
       z-index: 20;
       white-space: break-spaces;
@@ -82,7 +82,7 @@
     @extend .menu-dropdown;
     position: absolute;
     top: $s-48;
-    left: calc(var(--width, $s-256) - $s-32);
+    left: calc(var(--width, $s-256) - $s-16);
     margin: 0;
 
     .menu-item {
@@ -122,7 +122,7 @@
   .sub-menu {
     @extend .menu-dropdown;
     position: absolute;
-    left: calc(var(--width, $s-256) + $s-168);
+    left: calc(var(--width, $s-256) + $s-180);
     width: 270px;
     .shortcut {
       @extend .shortcut;

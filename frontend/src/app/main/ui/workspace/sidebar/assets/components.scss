@@ -10,7 +10,7 @@
   .drop-space {
     height: $s-12;
     border-radius: $br-8;
-    background-color: var(--assets-item-background-color);
+    background-color: var(--color-foreground-secondary);
   }
   .asset-grid {
     display: grid;
@@ -24,7 +24,7 @@
       padding: $s-8;
       border: $s-2 solid transparent;
       border-radius: $br-8;
-      background-color: var(--assets-item-background-color);
+      background-color: var(--color-foreground-secondary);
       overflow: hidden;
       cursor: pointer;
       img {
@@ -126,11 +126,12 @@
       svg,
       img {
         @include flexCenter;
+        flex-shrink: 0;
         padding: $s-2;
         height: $s-32;
         width: $s-32;
         border-radius: $br-6;
-        background-color: var(--assets-item-background-color);
+        background-color: var(--color-foreground-secondary);
       }
 
       .item-name {

@@ -15,7 +15,7 @@
     width: 100%;
     .section-icon {
       @include flexCenter;
-      padding-right: $s-8;
+      padding-right: $s-2;
       svg {
         @include flexCenter;
         height: $s-16;
@@ -27,6 +27,7 @@
     .section-name {
       display: flex;
       align-items: center;
+      margin: 0 $s-2;
     }
     .num-assets {
       @include flexCenter;

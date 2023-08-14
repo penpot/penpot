@@ -18,7 +18,7 @@
   border-radius: $s-8;
   z-index: $z-index-2;
   background-color: var(--color-background-primary);
-  transition: top 1s, height 1s, opacity 1s;
+  transition: top 0.3s, height 0.3s, opacity 0.3s;
 
   .main-toolbar-options {
     position: relative;
@@ -26,18 +26,19 @@
     align-items: center;
     margin: 0;
     opacity: $op-10;
-    transition: opacity 1s ease;
+    transition: opacity 0.3s ease;
     li {
       position: relative;
 
       button {
-        @extend .button-primary;
+        @extend .button-tertiary;
         height: $s-36;
         width: $s-36;
         flex-shrink: 0;
         background-color: transparent;
         border-radius: $s-8;
         border: none;
+        margin: 0 $s-2;
 
         svg {
           @extend .button-icon;

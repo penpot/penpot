@@ -21,6 +21,7 @@
     margin-top: $s-2;
     margin-bottom: $s-4;
     padding-right: $s-8;
+    margin-left: $s-8;
     .page-name {
       @include tabTitleTipography;
       padding: 0 $s-12;
@@ -238,7 +239,7 @@
     width: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    scrollbar-gutter: stable;
+    // scrollbar-gutter: stable;
     overflow-y: overlay;
     .element-list {
       width: 100%;

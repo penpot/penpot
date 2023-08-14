@@ -80,7 +80,7 @@
   --layer-row-foreground-color: var(--color-foreground-secondary);
   --layer-row-foreground-color-hover: var(--color-accent-primary);
   --layer-row-foreground-color-selected: var(--color-accent-primary);
-  --layer-row-foreground-color-drag: var(--color-accent-primary);
+  --layer-row-foreground-color-drag: var(--color-select);
   --layer-row-foreground-color-focus: var(--color-foreground-primary);
   --layer-row-border-color-focus: var(--color-accent-primary);
   --layer-child-row-background-color: var(--color-background-tertiary);
@@ -150,7 +150,7 @@
   --assets-item-name-foreground-color-hover: var(--color-foreground-primary);
   --assets-item-border-color: var(--color-accent-primary);
   --assets-item-background-color-drag: var(--color-accent-primary-muted);
-  --assets-item-border-color-drag: var(--color-accent-primary);
+  --assets-item-border-color-drag: var(--color-select);
   --assets-component-background-color: var(--white); // We don't want this color to change with palette
 
   --radio-btns-background-color: var(--color-background-tertiary);
@@ -158,8 +158,6 @@
   --radio-btn-foreground-color: var(--color-foreground-secondary);
   --radio-btn-foreground-color-selected: var(--color-accent-primary);
   --radio-btn-border-color-selected: var(--color-background-quaternary);
-
-  --modal-background-color: var(--color-background-primary);
 
   --library-name-foreground-color: var(--color-foreground-primary);
   --library-content-foreground-color: var(--color-foreground-secondary);
@@ -188,7 +186,7 @@
   --user-count-background-color: var(--color-background-secondary);
   --user-count-foreground-color: var(--color-accent-primary);
 
-  --modal-background-color: var(--color-background-quaternary);
+  --modal-background-color: var(--color-background-primary);
   --modal-foreground-color: var(--color-foreground-primary);
   --modal-foreground-color-secondary: var(--color-foreground-secondary);
 }

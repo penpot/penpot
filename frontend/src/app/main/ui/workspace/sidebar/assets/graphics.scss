@@ -10,7 +10,7 @@
   .drop-space {
     height: $s-12;
     border-radius: $br-8;
-    background-color: var(--assets-item-background-color);
+    background-color: var(--color-foreground-secondary);
   }
   .asset-grid {
     display: grid;
@@ -24,7 +24,7 @@
       border: $s-2 solid transparent;
       border-radius: $br-8;
       aspect-ratio: 1/1;
-      background-color: var(--assets-item-background-color);
+      background-color: var(--color-foreground-secondary);
       overflow: hidden;
       cursor: pointer;
       img {

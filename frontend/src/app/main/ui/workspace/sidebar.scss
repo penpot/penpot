@@ -43,7 +43,7 @@ $width-settings-bar-max: $s-500;
   }
 }
 :global(.tab-spacing) {
-  margin: $s-4 $s-4 0 $s-4;
+  margin: $s-4 $s-8 0 $s-8;
 }
 .right-settings-bar {
   grid-area: right-sidebar;

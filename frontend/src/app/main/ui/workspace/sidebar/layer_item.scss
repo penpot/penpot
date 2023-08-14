@@ -19,6 +19,7 @@
     height: $s-32;
     width: calc(100% - (var(--depth) * var(--layer-indentation-size)));
     padding-right: $s-12;
+    cursor: pointer;
 
     &.filtered {
       width: calc(100% - $s-12);
