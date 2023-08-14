@@ -620,10 +620,11 @@
      ptk/WatchEvent
      (watch [it state _]
        (log/info :msg "UPDATE-COMPONENT of shape" :id (str id) :undo-group undo-group)
-       (let [page-id     (get state :current-page-id)
-             local-file  (wsh/get-local-file state)
-             container   (cph/get-container local-file :page page-id)
-             shape       (ctn/get-shape container id)]
+       (let [page-id       (get state :current-page-id)
+             local-file    (wsh/get-local-file state)
+             container     (cph/get-container local-file :page page-id)
+             shape         (ctn/get-shape container id)
+             components-v2 (features/active-feature? state :components-v2)]
 
          (when (ctk/instance-head? shape)
            (let [libraries (wsh/get-libraries state)
@@ -632,7 +633,7 @@
                  (-> (pcb/empty-changes it)
                      (pcb/set-undo-group undo-group)
                      (pcb/with-container container)
-                     (dwlh/generate-sync-shape-inverse libraries container id))
+                     (dwlh/generate-sync-shape-inverse libraries container id components-v2))
 
                  file-id   (:component-file shape)
                  file      (wsh/get-file state file-id)
