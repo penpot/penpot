@@ -16,6 +16,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.text :as txt]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
@@ -465,3 +466,38 @@
 
 ;; TODO: pending to do a migration for delete already not used fill
 ;; and stroke props. This should be done for >1.14.x version.
+
+(defmethod migrate 22
+  [data]
+  (letfn [(valid-ref? [ref]
+            (or (uuid? ref)
+                (nil? ref)))
+
+          (valid-node? [node]
+            (and (valid-ref? (:typography-ref-file node))
+                 (valid-ref? (:typography-ref-id node))
+                 (valid-ref? (:fill-color-ref-file node))
+                 (valid-ref? (:fill-color-ref-id node))))
+
+          (fix-ref [ref]
+            (if (valid-ref? ref) ref nil))
+
+          (fix-node [node]
+            (-> node
+                (d/update-when :typography-ref-file fix-ref)
+                (d/update-when :typography-ref-id fix-ref)
+                (d/update-when :fill-color-ref-file fix-ref)
+                (d/update-when :fill-color-ref-id fix-ref)))
+
+          (update-object [object]
+            (let [invalid-node? (complement valid-node?)]
+              (cond-> object
+                (cph/text-shape? object)
+                (update :content #(txt/transform-nodes invalid-node? fix-node %)))))
+
+          (update-container [container]
+            (update container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
