@@ -32,8 +32,14 @@
         emit-blur? (mf/use-ref nil)
         font-size-wrapper-ref (mf/use-ref)
 
-        open-dropdown #(swap! state assoc :is-open? true)
-        close-dropdown #(swap! state assoc :is-open? false)
+        open-dropdown
+        (fn [event]
+          (dom/stop-propagation event)
+          (swap! state assoc :is-open? true))
+        close-dropdown
+        (fn [event]
+          (dom/stop-propagation event)
+          (swap! state assoc :is-open? false))
         select-item (fn [value]
                       (fn [_]
                         (swap! state assoc :current-value value)

@@ -45,10 +45,18 @@
 
 (declare reinit)
 
+(defonce app-root
+  (let [el (dom/get-element "app")]
+    (mf/create-root el)))
+
+(defonce modal-root
+  (let [el (dom/get-element "modal")]
+    (mf/create-root el)))
+
 (defn init-ui
   []
-  (mf/mount (mf/element ui/app) (dom/get-element "app"))
-  (mf/mount (mf/element modal)  (dom/get-element "modal")))
+  (mf/render! app-root (mf/element ui/app))
+  (mf/render! modal-root (mf/element modal)))
 
 (defn- initialize-profile
   "Event used mainly on application bootstrap; it fetches the profile
@@ -110,9 +118,15 @@
 
 (defn ^:export reinit
   []
-  #_(mf/unmount (dom/get-element "app"))
-  #_(mf/unmount (dom/get-element "modal"))
-  #_(st/emit! (ev/initialize))
+  ;; NOTE: in cases of some strange behavior after hot-reload,
+  ;; uncomment this lines; they make a hard-rerender instead
+  ;; soft-rerender.
+  ;;
+  ;; (mf/unmount! app-root)
+  ;; (mf/unmount! modal-root)
+  ;; (set! app-root (mf/create-root (dom/get-element "app")))
+  ;; (set! modal-root (mf/create-root (dom/get-element "modal")))
+  (st/emit! (ev/initialize))
   (init-ui))
 
 (defn ^:dev/after-load after-load

@@ -82,11 +82,11 @@
                                     :modal-wrapper (not new-css-system))}
        (mf/element component (:props data))])))
 
-
 (def modal-ref
   (l/derived ::dm/modal st/state))
 
 (mf/defc modal
+  {::mf/wrap-props false}
   []
   (let [modal (mf/deref modal-ref)
         new-css-system (features/use-feature :new-css-system)]

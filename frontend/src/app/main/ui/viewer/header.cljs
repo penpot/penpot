@@ -42,7 +42,10 @@
            on-zoom-fill]
     :as props}]
   (let [show-dropdown? (mf/use-state false)]
-    [:div.zoom-widget {:on-click #(reset! show-dropdown? true)}
+    [:div.zoom-widget {:on-click
+                       (fn [event]
+                         (dom/stop-propagation event)
+                         (reset! show-dropdown? true))}
      [:span.label (fmt/format-percent zoom)]
      [:span.icon i/arrow-down]
      [:& dropdown {:show @show-dropdown?

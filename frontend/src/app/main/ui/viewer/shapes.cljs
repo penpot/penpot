@@ -272,7 +272,6 @@
               :transform (gsh/transform-str shape)}])))
 
 
-
 ;; TODO: use-memo use-fn
 
 (defn generic-wrapper-factory

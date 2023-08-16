@@ -72,10 +72,16 @@
         open?           (deref open*)
 
         open-dropdown
-        (mf/use-fn #(reset! open* true))
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! open* true)))
 
         close-dropdown
-        (mf/use-fn #(reset! open* false))
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! open* false)))
 
         on-increase
         (mf/use-fn

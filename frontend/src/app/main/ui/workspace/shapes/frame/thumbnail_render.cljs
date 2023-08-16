@@ -66,18 +66,17 @@
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail data"
-  [page-id {:keys [id] :as shape} node-ref rendered? disable? force-render]
+  [page-id {:keys [id] :as shape} root-ref node-ref rendered-ref disable? force-render]
 
   (let [frame-image-ref  (mf/use-ref nil)
 
-        disable*         (mf/use-var disable?)
-        regenerate*      (mf/use-var false)
+        disable-ref      (mf/use-ref disable?)
+        regenerate-ref   (mf/use-ref false)
 
         all-children-ref (mf/with-memo [id]
                            (refs/all-children-objects id))
         all-children     (mf/deref all-children-ref)
 
-        ;; FIXME: performance rect
         bounds
         (if (:show-content shape)
           (gsh/shapes->rect (cons shape all-children))
@@ -89,37 +88,44 @@
         height            (dm/get-prop bounds :height)
 
         svg-uri*          (mf/use-state nil)
-        bitmap-uri*       (mf/use-state nil)
-        observer*         (mf/use-var nil)
+        svg-uri           (deref svg-uri*)
 
-        bounds*           (hooks/use-update-var bounds)
+        bitmap-uri*       (mf/use-state nil)
+        bitmap-uri        (deref bitmap-uri*)
+
+        observer-ref      (mf/use-ref nil)
+
+        bounds-ref        (hooks/use-update-ref bounds)
         updates-s         (mf/use-memo rx/subject)
 
-        thumbnail-uri-ref (mf/with-memo [page-id id]
-                            (refs/thumbnail-frame-data page-id id))
-        thumbnail-uri     (mf/deref thumbnail-uri-ref)
+        thumbnail-uri* (mf/with-memo [page-id id]
+                         (refs/thumbnail-frame-data page-id id))
+        thumbnail-uri  (mf/deref thumbnail-uri*)
 
         ;; State to indicate to the parent that should render the frame
         render-frame*     (mf/use-state (not thumbnail-uri))
+        render-frame?     (deref render-frame*)
+
         debug?            (debug? :thumbnails)
 
         on-bitmap-load
         (mf/use-fn
+         (mf/deps svg-uri)
          (fn []
            ;; We revoke the SVG Blob URI to free memory only when we
            ;; are sure that it is not used anymore.
-           (wapi/revoke-uri @svg-uri*)
+           (some-> svg-uri wapi/revoke-uri)
            (reset! svg-uri* nil)))
 
         on-svg-load
-        (mf/use-callback
+        (mf/use-fn
+         (mf/deps thumbnail-uri)
          (fn []
            (let [image-node (mf/ref-val frame-image-ref)]
              (dom/set-data! image-node "ready" "true")
-
              ;; If we don't have the thumbnail data saved (normally the first load) we update the data
              ;; when available
-             (when (not ^boolean @thumbnail-uri-ref)
+             (when-not (some? thumbnail-uri)
                (st/emit! (dwt/update-thumbnail page-id id)))
 
              (reset! render-frame* false))))
@@ -131,34 +137,37 @@
            (try
              ;; When starting generating the canvas we mark it as not ready so its not send to back until
              ;; we have time to update it
-             (let [node @node-ref]
+
+             (when-let [node (mf/ref-val node-ref)]
                (if (dom/has-children? node)
                  ;; The frame-content need to have children in order to generate the thumbnail
                  (let [style-node (dom/query (dm/str "#frame-container-" id " style"))
-                       url        (create-svg-blob-uri-from @bounds* node style-node)]
+                       bounds     (mf/ref-val bounds-ref)
+                       url        (create-svg-blob-uri-from bounds node style-node)]
+
                    (reset! svg-uri* url))
 
                  ;; Node not yet ready, we schedule a new generation
                  (ts/raf generate-thumbnail)))
-
              (catch :default e
                (.error js/console e)))))
 
         on-change-frame
         (mf/use-fn
-         (mf/deps id)
+         (mf/deps id generate-thumbnail)
          (fn []
-           (when (and ^boolean @node-ref
-                      ^boolean @rendered?
-                      ^boolean @regenerate*)
-             (let [loading-images? (some? (dom/query @node-ref "[data-loading='true']"))
+           (when (and (some? (mf/ref-val node-ref))
+                      (some? (mf/ref-val rendered-ref))
+                      (some? (mf/ref-val regenerate-ref)))
+             (let [node            (mf/ref-val node-ref)
+                   loading-images? (some? (dom/query node "[data-loading='true']"))
                    loading-fonts?  (some? (dom/query (dm/str "#frame-container-" id " > style[data-loading='true']")))]
                (when (and (not loading-images?)
                           (not loading-fonts?))
                  (reset! svg-uri* nil)
                  (reset! bitmap-uri* nil)
                  (generate-thumbnail)
-                 (reset! regenerate* false))))))
+                 (mf/set-ref-val! regenerate-ref false))))))
 
         ;; When the frame is updated, it is marked as not ready
         ;; so that it is not sent to the background until
@@ -169,23 +178,27 @@
            (let [image-node (mf/ref-val frame-image-ref)]
              (when (not= "false" (dom/get-data image-node "ready"))
                (dom/set-data! image-node "ready" "false")))
-           (when-not ^boolean @disable*
+
+           (when-not ^boolean (mf/ref-val disable-ref)
              (reset! svg-uri* nil)
              (reset! bitmap-uri* nil)
              (reset! render-frame* true)
-             (reset! regenerate* true))))
+             (mf/set-ref-val! regenerate-ref true))))
 
         on-load-frame-dom
         (mf/use-fn
          (fn [node]
-           (when (and (some? node)
-                      (nil? @observer*))
-             (when-not (some? @thumbnail-uri-ref)
+           (when (and (nil? (mf/ref-val observer-ref)) (some? node))
+             (when-not (some? @thumbnail-uri*)
                (rx/push! updates-s :update))
 
              (let [observer (js/MutationObserver. (partial rx/push! updates-s))]
-               (.observe observer node #js {:childList true :attributes true :attributeOldValue true :characterData true :subtree true})
-               (reset! observer* observer)))))]
+               (.observe observer node #js {:childList true
+                                            :attributes true
+                                            :attributeOldValue true
+                                            :characterData true
+                                            :subtree true})
+               (mf/set-ref-val! observer-ref observer)))))]
 
     (mf/with-effect [thumbnail-uri]
       (when (some? thumbnail-uri)
@@ -213,25 +226,30 @@
         (partial rx/dispose! subid)))
 
     (mf/with-effect [disable?]
-      (when (and ^boolean disable?
-                 (not @disable*))
+      (when (and ^boolean disable? (not (mf/ref-val disable-ref)))
         (rx/push! updates-s :update))
-      (reset! disable* disable?)
+
+      (mf/set-ref-val! disable-ref disable?)
       nil)
 
     (mf/with-effect []
       (fn []
-        (when (and (some? @node-ref)
-                   ^boolean @rendered?)
-          (mf/unmount @node-ref)
-          (reset! node-ref nil)
-          (reset! rendered? false)
-          (when (some? @observer*)
-            (.disconnect @observer*)
-            (reset! observer* nil)))))
+        (when (and (some? (mf/ref-val node-ref))
+                   (true? (mf/ref-val rendered-ref)))
+          (when-let [root (mf/ref-val root-ref)]
+            ;; NOTE: the unmount should be always scheduled to be
+            ;; executed asynchronously of the current flow (react
+            ;; rules).
+            (ts/schedule #(mf/unmount! ^js root)))
 
-    [on-load-frame-dom
-     @render-frame*
+          (mf/set-ref-val! node-ref nil)
+          (mf/set-ref-val! rendered-ref false)
+
+          (when-let [observer (mf/ref-val observer-ref)]
+            (.disconnect ^js observer)
+            (mf/set-ref-val! observer-ref nil)))))
+
+    [on-load-frame-dom render-frame?
      (mf/html
       [:& frame/frame-container {:bounds bounds :shape shape}
 
@@ -251,18 +269,18 @@
        ;; to be rendered on screen. Then we remove the
        ;; svg and keep the bitmap one.
        ;; This is the "buffer" that keeps the bitmap image.
-       (when ^boolean @bitmap-uri*
+       (when (some? bitmap-uri)
          [:image.thumbnail-bitmap
           {:x x
            :y y
            :width width
            :height height
-           :href @bitmap-uri*
+           :href bitmap-uri
            :style {:filter (when ^boolean debug? "sepia(1)")}
            :on-load on-bitmap-load}])
 
        ;; This is the "buffer" that keeps the SVG image.
-       (when ^boolean @svg-uri*
+       (when (some? svg-uri)
          [:image.thumbnail-canvas
           {:x x
            :y y
@@ -271,6 +289,6 @@
            :width width
            :height height
            :ref frame-image-ref
-           :href @svg-uri*
+           :href svg-uri
            :style {:filter (when ^boolean debug? "sepia(0.5)")}
            :on-load on-svg-load}])])]))

@@ -154,7 +154,10 @@
                                 :color color}])]]]]
 
      [:div.color-palette-actions
-      {:on-click #(swap! state assoc :show-menu true)}
+      {:on-click
+       (fn [event]
+         (dom/stop-propagation event)
+         (swap! state assoc :show-menu true))}
       [:div.color-palette-actions-button i/actions]]
 
      [:span.left-arrow {:on-click on-left-arrow-click} i/arrow-slide]
@@ -163,7 +166,7 @@
         [:div.color-palette-empty {:style {:position "absolute"
                                            :left "50%"
                                            :top "50%"
-                                           :transform "translate(-50%, -50%)"}} 
+                                           :transform "translate(-50%, -50%)"}}
               (tr "workspace.libraries.colors.empty-palette")]
         [:div.color-palette-inside {:style {:position "relative"
                                           :right (str (* 66 offset) "px")}}

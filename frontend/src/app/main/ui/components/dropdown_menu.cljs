@@ -97,21 +97,17 @@
                 (dom/focus! (dom/get-element next-id))))
 
             (when (kbd/tab? event)
-              (on-close))))
+              (on-close))))]
 
-        on-mount
-        (fn []
-          (let [keys [(events/listen globals/document EventType.CLICK on-click)
-                      (events/listen globals/document EventType.CONTEXTMENU on-click)
-                      (events/listen globals/document EventType.KEYUP on-keyup)
-                      (events/listen globals/document EventType.KEYDOWN on-key-down)]]
-            #(doseq [key keys]
-               (events/unlistenByKey key))))]
+    (mf/with-effect []
+      (let [keys [(events/listen globals/document EventType.CLICK on-click)
+                  (events/listen globals/document EventType.CONTEXTMENU on-click)
+                  (events/listen globals/document EventType.KEYUP on-keyup)
+                  (events/listen globals/document EventType.KEYDOWN on-key-down)]]
+        #(doseq [key keys]
+           (events/unlistenByKey key))))
 
-    (mf/use-effect on-mount)
-    [:ul {:class list-class
-          :role "menu"}
-     children]))
+    [:ul {:class list-class :role "menu"} children]))
 
 (mf/defc dropdown-menu
   {::mf/wrap-props false}

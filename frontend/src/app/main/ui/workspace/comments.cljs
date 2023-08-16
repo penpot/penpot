@@ -92,7 +92,10 @@
     [:div.comments-section.comment-threads-section
      [:div.workspace-comment-threads-sidebar-header
       [:div.label (tr "labels.comments")]
-      [:div.options {:on-click #(reset! options? true)}
+      [:div.options {:on-click
+                     (fn [event]
+                       (dom/stop-propagation event)
+                       (reset! options? true))}
        [:div.label (case (:mode local)
                      (nil :all) (tr "labels.all")
                      :yours     (tr "labels.only-yours"))]

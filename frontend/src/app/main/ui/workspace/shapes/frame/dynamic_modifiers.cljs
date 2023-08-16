@@ -18,7 +18,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
-   [app.util.globals :as globals]
+   [app.util.timers :as ts]
    [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
@@ -230,85 +230,87 @@
 
 (defn use-dynamic-modifiers
   [objects node modifiers]
-
   (let [transforms
-        (mf/use-memo
-         (mf/deps modifiers)
-         (fn []
-           (when (some? modifiers)
-             (d/mapm (fn [id {current-modifiers :modifiers}]
-                       (let [shape (get objects id)
-                             adapt-text? (and (= :text (:type shape)) (not (ctm/only-move? current-modifiers)))
+        (mf/with-memo [modifiers]
+          (when (some? modifiers)
+            (d/mapm (fn [id {current-modifiers :modifiers}]
+                      (let [shape (get objects id)
+                            adapt-text? (and (= :text (:type shape)) (not (ctm/only-move? current-modifiers)))
 
-                             current-modifiers
-                             (cond-> current-modifiers
-                               adapt-text?
-                               (adapt-text-modifiers shape))]
-                         (ctm/modifiers->transform current-modifiers)))
-                     modifiers))))
+                            current-modifiers
+                            (cond-> current-modifiers
+                              adapt-text?
+                              (adapt-text-modifiers shape))]
+                        (ctm/modifiers->transform current-modifiers)))
+                    modifiers)))
 
-        add-children (mf/use-memo (mf/deps modifiers) #(ctm/added-children-frames modifiers))
-        add-children (hooks/use-equal-memo add-children)
-        add-children-prev (hooks/use-previous add-children)
+        add-children
+        (mf/with-memo [modifiers]
+          (ctm/added-children-frames modifiers))
 
         shapes
-        (mf/use-memo
-         (mf/deps transforms)
-         (fn []
-           (->> (keys transforms)
-                (filter #(some? (get transforms %)))
-                (mapv (comp (add-masking-child? objects) (d/getf objects))))))
+        (mf/with-memo [transforms]
+          (->> (keys transforms)
+               (filter #(some? (get transforms %)))
+               (mapv (comp (add-masking-child? objects) (d/getf objects)))))
 
-        prev-shapes (mf/use-var nil)
-        prev-modifiers (mf/use-var nil)
-        prev-transforms (mf/use-var nil)]
+        add-children      (hooks/use-equal-memo add-children)
+        add-children-prev (hooks/use-previous add-children)
+        prev-shapes       (mf/use-var nil)
+        prev-modifiers    (mf/use-var nil)
+        prev-transforms   (mf/use-var nil)]
 
-    (mf/use-effect
-     (mf/deps add-children)
-     (fn []
-       (doseq [{:keys [shape]} add-children-prev]
-         (let [shape-node (get-shape-node shape)
-               mirror-node (dom/query (dm/fmt ".mirror-shape[href='#shape-%'" shape))]
-           (when mirror-node (.remove mirror-node))
-           (dom/remove-attribute! (dom/get-parent shape-node) "display")))
+    (mf/with-effect [add-children]
+      (ts/raf
+       #(doseq [{:keys [shape]} add-children-prev]
+          (let [shape-node  (get-shape-node shape)
+                mirror-node (dom/query (dm/fmt ".mirror-shape[href='#shape-%'" shape))]
+            (when mirror-node (.remove mirror-node))
+            (dom/remove-attribute! (dom/get-parent shape-node) "display"))))
 
-       (doseq [{:keys [frame shape]} add-children]
-         (let [frame-node (get-shape-node frame)
-               shape-node (get-shape-node shape)
+      (ts/raf
+       #(doseq [{:keys [frame shape]} add-children]
+          (let [frame-node (get-shape-node frame)
+                shape-node (get-shape-node shape)
 
-               clip-id
-               (dom/get-attribute (dom/query frame-node ":scope > defs > .frame-clip-def") "id")
+                clip-id
+                (-> (dom/query frame-node ":scope > defs > .frame-clip-def")
+                    (dom/get-attribute "id"))
 
-               use-node
-               (.createElementNS globals/document "http://www.w3.org/2000/svg" "use")
+                use-node
+                (dom/create-element "http://www.w3.org/2000/svg" "use")
 
-               contents-node
-               (or (dom/query frame-node ".frame-children") frame-node)]
+                contents-node
+                (or (dom/query frame-node ".frame-children") frame-node)]
 
-           (dom/set-attribute! use-node "href" (dm/fmt "#shape-%" shape))
-           (dom/set-attribute! use-node "clip-path" (dm/fmt "url(#%)" clip-id))
-           (dom/add-class! use-node "mirror-shape")
-           (dom/append-child! contents-node use-node)
-           (dom/set-attribute! (dom/get-parent shape-node) "display" "none")))))
+            (dom/set-attribute! use-node "href" (dm/fmt "#shape-%" shape))
+            (dom/set-attribute! use-node "clip-path" (dm/fmt "url(#%)" clip-id))
+            (dom/add-class! use-node "mirror-shape")
+            (dom/append-child! contents-node use-node)
+            (dom/set-attribute! (dom/get-parent shape-node) "display" "none")))))
 
-    (mf/use-layout-effect
-     (mf/deps transforms)
-     (fn []
-       (let [curr-shapes-set (into #{} (map :id) shapes)
-             prev-shapes-set (into #{} (map :id) @prev-shapes)
+    (mf/with-effect [transforms]
+      (let [curr-shapes-set (into #{} (map :id) shapes)
+            prev-shapes-set (into #{} (map :id) @prev-shapes)
 
-             new-shapes      (->> shapes (remove #(contains? prev-shapes-set (:id %))))
-             removed-shapes  (->> @prev-shapes (remove #(contains? curr-shapes-set (:id %))))]
+            new-shapes      (->> shapes (remove #(contains? prev-shapes-set (:id %))))
+            removed-shapes  (->> @prev-shapes (remove #(contains? curr-shapes-set (:id %))))]
 
-         (when (d/not-empty? new-shapes)
-           (start-transform! node new-shapes))
+        ;; NOTE: we schedule the dom modifications to be executed
+        ;; asynchronously for avoid component flickering when react18
+        ;; is used.
 
-         (when (d/not-empty? shapes)
-           (update-transform! node shapes transforms modifiers))
+        (when (d/not-empty? new-shapes)
+          (ts/raf #(start-transform! node new-shapes)))
 
-         (when (d/not-empty? removed-shapes)
-           (remove-transform! node removed-shapes)))
+        (when (d/not-empty? shapes)
+          (ts/raf #(update-transform! node shapes transforms modifiers)))
 
-       (reset! prev-modifiers modifiers)
-       (reset! prev-transforms transforms)
-       (reset! prev-shapes shapes)))))
+        (when (d/not-empty? removed-shapes)
+          (ts/raf #(remove-transform! node removed-shapes))))
+
+      (reset! prev-modifiers modifiers)
+      (reset! prev-transforms transforms)
+      (reset! prev-shapes shapes))
+
+    ))

@@ -39,8 +39,15 @@
         current-label  (get label-index current-value)
         is-open?       (:is-open? state)
 
-        open-dropdown  (mf/use-fn #(swap! state* assoc :is-open? true))
-        close-dropdown (mf/use-fn #(swap! state* assoc :is-open? false))
+        open-dropdown  (mf/use-fn
+                        (fn [event]
+                          (dom/stop-propagation event)
+                          (swap! state* assoc :is-open? true)))
+
+        close-dropdown (mf/use-fn
+                        (fn [event]
+                          (dom/stop-propagation event)
+                          (swap! state* assoc :is-open? false)))
 
         select-item
         (mf/use-fn
@@ -77,8 +84,9 @@
     (mf/with-effect [default-value]
       (swap! state* assoc :current-value default-value))
     (if new-css-system
-      [:div {:on-click open-dropdown :class (dom/classnames (css class) true
-                                                            (css :custom-select) true)}
+      [:div {:on-click open-dropdown
+             :class (dom/classnames (css class) true
+                                    (css :custom-select) true)}
        [:span {:class (css :current-label)} current-label]
        [:span {:class (css :dropdown-button)} i/arrow-refactor]
        [:& dropdown {:show is-open? :on-close close-dropdown}
@@ -98,8 +106,8 @@
                  :on-click select-item}
                 [:span {:class (css :label)} label]
                 [:span {:class (css :check-icon)} i/tick-refactor]])))]]]
-      
-      
+
+
 
       [:div.custom-select {:on-click open-dropdown :class class}
        [:span current-label]
