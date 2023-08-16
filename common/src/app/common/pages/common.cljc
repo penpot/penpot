@@ -12,7 +12,7 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]))
 
-(def file-version 21)
+(def file-version 22)
 (def default-color clr/gray-20)
 (def root uuid/zero)
 
