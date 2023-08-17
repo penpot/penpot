@@ -18,20 +18,20 @@
   [shape]
   (t/is (some? (:shape-ref shape)))
   (t/is (some? (:component-id shape)))
-  (t/is (= (:component-root? shape) true)))
+  (t/is (= (:component-root shape) true)))
 
 (defn check-instance-subroot
   [shape]
   (t/is (some? (:shape-ref shape)))
   (t/is (some? (:component-id shape)))
-  (t/is (nil? (:component-root? shape))))
+  (t/is (nil? (:component-root shape))))
 
 (defn check-instance-child
   [shape]
   (t/is (some? (:shape-ref shape)))
   (t/is (nil? (:component-id shape)))
   (t/is (nil? (:component-file shape)))
-  (t/is (nil? (:component-root? shape))))
+  (t/is (nil? (:component-root shape))))
 
 (defn check-instance-inner
   [shape]
@@ -44,7 +44,7 @@
   (t/is (nil? (:shape-ref shape)))
   (t/is (nil? (:component-id shape)))
   (t/is (nil? (:component-file shape)))
-  (t/is (nil? (:component-root? shape)))
+  (t/is (nil? (:component-root shape)))
   (t/is (nil? (:remote-synced? shape)))
   (t/is (nil? (:touched shape))))
 

@@ -122,6 +122,13 @@
   [libraries library-id component-id & {:keys [include-deleted?] :or {include-deleted? false}}]
   (ctkl/get-component (dm/get-in libraries [library-id :data]) component-id include-deleted?))
 
+(defn resolve-component
+  "Retrieve the referenced component, from the local file or from a library"
+  [shape file libraries & params]
+  (if (= (:component-file shape) (:id file))
+    (ctkl/get-component (:data file) (:component-id shape) params)
+    (get-component libraries (:component-file shape) (:component-id shape) params)))
+
 (defn get-component-library
   "Retrieve the library the component belongs to."
   [libraries instance-root]
@@ -162,21 +169,23 @@
       (dm/get-in component [:objects shape-id]))))
 
 (defn get-ref-shape
-  "Retrieve the shape in the component that is referenced by the
-  instance shape."
+  "Retrieve the shape in the component that is referenced by the instance shape."
   [file-data component shape]
   (when (:shape-ref shape)
     (get-component-shape file-data component (:shape-ref shape))))
 
-(defn get-component-shapes
-  "Retrieve all shapes of the component"
-  [file-data component]
-  (let [components-v2 (dm/get-in file-data [:options :components-v2])]
-    (if (and components-v2
-             (not (:deleted component))) ;; the deleted components have its children in the :objects property
-      (let [instance-page (get-component-page file-data component)]
-        (cph/get-children-with-self (:objects instance-page) (:main-instance-id component)))
-      (vals (:objects component)))))
+(defn find-ref-shape
+  "Locate the near component in the local file or libraries, and retrieve the shape
+   referenced by the instance shape."
+  [file page libraries shape]
+  (let [root-shape     (ctn/get-component-shape (:objects page) shape)
+        component-file (if (= (:component-file root-shape) (:id file))
+                         file
+                         (get libraries (:component-file root-shape)))
+        component      (when component-file
+                         (ctkl/get-component (:data component-file) (:component-id root-shape)))]
+    (when component
+      (get-ref-shape (:data component-file) component shape))))
 
 (defn find-remote-shape
   "Recursively go back by the :shape-ref of the shape until find the correct shape of the original component"
@@ -189,6 +198,16 @@
     (if (nil? remote-shape)
       shape
       (find-remote-shape component-container libraries remote-shape))))
+
+(defn get-component-shapes
+  "Retrieve all shapes of the component"
+  [file-data component]
+  (let [components-v2 (dm/get-in file-data [:options :components-v2])]
+    (if (and components-v2
+             (not (:deleted component))) ;; the deleted components have its children in the :objects property
+      (let [instance-page (get-component-page file-data component)]
+        (cph/get-children-with-self (:objects instance-page) (:main-instance-id component)))
+      (vals (:objects component)))))
 
 ;; Return true if the object is a component that exists on the file or its libraries (even a deleted one)
 (defn is-known-component?
@@ -583,7 +602,6 @@
       (d/not-empty? used-typographies)
       (absorb-typographies used-typographies))))
 
-
 ;; Debug helpers
 
 (declare dump-shape-component-info)
@@ -838,3 +856,283 @@
                                   (when-not (:deleted component)
                                     (println)
                                     (dump-page page file libraries* (assoc flags :root-id (:id root))))))))))))))))
+
+;; Validation
+
+(declare validate-shape)
+
+(defn validate-parent-children
+  "Validate parent and children exists, and the link is bidirectional."
+  [shape file page report-error]
+  (let [parent (ctst/get-shape page (:parent-id shape))]
+    (if (nil? parent)
+      (report-error :parent-not-found
+                    (str/format "Parent %s not found" (:parent-id shape))
+                    shape file page)
+      (do
+        (when-not (cph/root? shape)
+          (when-not (some #{(:id shape)} (:shapes parent))
+            (report-error :child-not-in-parent
+                          (str/format "Shape %s not in parent's children list" (:id shape))
+                          shape file page)))
+
+        (doseq [child-id (:shapes shape)]
+          (when (nil? (ctst/get-shape page child-id))
+            (report-error :child-not-found
+                          (str/format "Child %s not found" child-id)
+                          shape file page)))))))
+
+(defn validate-component-main-head
+  "Validate shape is a main instance head, component exists and its main-instance points to this shape."
+  [shape file page libraries report-error]
+  (when (nil? (:main-instance shape))
+    (report-error :component-not-main
+                  (str/format "Shape expected to be main instance")
+                  shape file page))
+  (let [component (resolve-component shape file libraries {:include-deleted? true})]
+    (if (nil? component)
+      (report-error :component-not-found
+                    (str/format "Component %s not found in file" (:component-id shape) (:component-file shape))
+                    shape file page)
+      (do
+        (when-not (= (:main-instance-id component) (:id shape))
+          (report-error :invalid-main-instance-id
+                        (str/format "Main instance id of component %s is not valid" (:component-id shape))
+                        shape file page))
+        (when-not (= (:main-instance-page component) (:id page))
+          (report-error :invalid-main-instance-page
+                        (str/format "Main instance page of component %s is not valid" (:component-id shape))
+                        shape file page))))))
+
+(defn validate-component-not-main-head
+  "Validate shape is a not-main instance head, component exists and its main-instance does not point to this shape."
+  [shape file page libraries report-error]
+  (when (some? (:main-instance shape))
+    (report-error :component-not-main
+                  (str/format "Shape not expected to be main instance")
+                  shape file page))
+  (let [component (resolve-component shape file libraries {:include-deleted? true})]
+    (if (nil? component)
+      (report-error :component-not-found
+                    (str/format "Component %s not found in file" (:component-id shape) (:component-file shape))
+                    shape file page)
+      (do
+        (when (and (= (:main-instance-id component) (:id shape))
+                   (= (:main-instance-page component) (:id page)))
+          (report-error :invalid-main-instance
+                        (str/format "Main instance of component %s should not be this shape" (:id component))
+                        shape file page))))))
+
+(defn validate-component-not-main-not-head
+  "Validate that this shape is not main instance and not head."
+  [shape file page report-error]
+  (when (some? (:main-instance shape))
+    (report-error :component-main
+                  (str/format "Shape not expected to be main instance")
+                  shape file page))
+  (when (or (some? (:component-id shape))
+            (some? (:component-file shape)))
+    (report-error :component-main
+                  (str/format "Shape not expected to be component head")
+                  shape file page)))
+
+(defn validate-component-root
+  "Validate that this shape is an instance root."
+  [shape file page report-error]
+  (when (nil? (:component-root shape))
+    (report-error :missing-component-root
+                  (str/format "Shape should be component root")
+                  shape file page)))
+
+(defn validate-component-not-root
+  "Validate that this shape is not an instance root."
+  [shape file page report-error]
+  (when (some? (:component-root shape))
+    (report-error :missing-component-root
+                  (str/format "Shape should not be component root")
+                  shape file page)))
+
+(defn validate-component-ref
+  "Validate that the referenced shape exists in the near component."
+  [shape file page libraries report-error]
+  (let [ref-shape (find-ref-shape file page libraries shape)]
+    (when (nil? ref-shape)
+      (report-error :missing-component-root
+                    (str/format "Referenced shape %s not found in near component" (:shape-ref shape))
+                    shape file page))))
+ 
+(defn validate-component-not-ref
+  "Validate that this shape does not reference other one."
+  [shape file page report-error]
+  (when (some? (:shape-ref shape))
+    (report-error :shape-ref-in-main
+                  (str/format "Shape inside main instance should not have shape-ref")
+                  shape file page)))
+
+(defn validate-shape-main-root-top
+  "Root shape of a top main instance
+     :main-instance
+     :component-id
+     :component-file
+     :component-root"
+  [shape file page libraries report-error]
+  (validate-component-main-head shape file page libraries report-error)
+  (validate-component-root shape file page report-error)
+  (validate-component-not-ref shape file page report-error)
+  (doseq [child-id (:shapes shape)]
+    (validate-shape child-id file page libraries :context :main-top :report-error report-error)))
+
+(defn validate-shape-main-root-nested
+  "Root shape of a nested main instance
+     :main-instance
+     :component-id
+     :component-file"
+  [shape file page libraries report-error]
+  (validate-component-main-head shape file page libraries report-error)
+  (validate-component-not-root shape file page report-error)
+  (validate-component-not-ref shape file page report-error)
+  (doseq [child-id (:shapes shape)]
+    (validate-shape child-id file page libraries :context :main-nested :report-error report-error)))
+
+(defn validate-shape-copy-root-top
+  "Root shape of a top copy instance
+     :component-id
+     :component-file
+     :component-root
+     :shape-ref"
+  [shape file page libraries report-error]
+  (validate-component-not-main-head shape file page libraries report-error)
+  (validate-component-root shape file page report-error)
+  (validate-component-ref shape file page libraries report-error)
+  (doseq [child-id (:shapes shape)]
+    (validate-shape child-id file page libraries :context :copy-top :report-error report-error)))
+
+(defn validate-shape-copy-root-nested
+  "Root shape of a nested copy instance
+     :component-id
+     :component-file
+     :shape-ref"
+  [shape file page libraries report-error]
+  (validate-component-not-main-head shape file page libraries report-error)
+  (validate-component-not-root shape file page report-error)
+  (validate-component-ref shape file page libraries report-error)
+  (doseq [child-id (:shapes shape)]
+    (validate-shape child-id file page libraries :context :copy-nested :report-error report-error)))
+
+(defn validate-shape-main-not-root
+  "Not-root shape of a main instance
+     (not any attribute)"
+  [shape file page libraries report-error]
+  (validate-component-not-main-not-head shape file page report-error)
+  (validate-component-not-root shape file page report-error)
+  (validate-component-not-ref shape file page report-error)
+  (doseq [child-id (:shapes shape)]
+    (validate-shape child-id file page libraries :context :main-any :report-error report-error)))
+
+(defn validate-shape-copy-not-root
+  "Not-root shape of a copy instance
+     :shape-ref"
+  [shape file page libraries report-error]
+  (validate-component-not-main-not-head shape file page report-error)
+  (validate-component-not-root shape file page report-error)
+  (validate-component-ref shape file page libraries report-error)
+  (doseq [child-id (:shapes shape)]
+    (validate-shape child-id file page libraries :context :copy-any :report-error report-error)))
+
+(defn validate-shape-not-component
+  "Shape is not in a component or is a fostered children
+     (not any attribute)"
+  [shape file page libraries report-error]
+  (validate-component-not-main-not-head shape file page report-error)
+  (validate-component-not-root shape file page report-error)
+  (validate-component-not-ref shape file page report-error)
+  (doseq [child-id (:shapes shape)]
+    (validate-shape child-id file page libraries :context :not-component :report-error report-error)))
+
+(defn validate-shape
+  "Validate referential integrity and semantic coherence of a shape and all its children.
+   
+   The context is the situation of the parent in respect to components:
+     :not-component
+     :main-top
+     :main-nested
+     :copy-top
+     :copy-nested
+     :main-any
+     :copy-any"
+  [shape-id file page libraries & {:keys [context throw? report-error]
+                                   :or {context :not-component throw? false}}]
+  (let [shape (ctst/get-shape page shape-id)
+        errors (volatile! [])
+
+        report-error (or report-error
+                         (fn [code msg shape file page]
+                           (if throw?
+                             (throw (ex-info msg {:type :validation
+                                                  :code code
+                                                  :hint msg
+                                                  ::explain (str/format "file %s\npage %s\nshape %s"
+                                                                        (:id file)
+                                                                        (:id page)
+                                                                        (:id shape))}))
+                             (vswap! errors conj {:hint msg
+                                                  :code code
+                                                  :shape shape
+                                                  :file file
+                                                  :page page}))))]
+
+    (dm/assert! (str/format "Shape %s not found" shape-id) (some? shape))
+
+    (validate-parent-children shape file page report-error)
+
+    (if (ctk/main-instance? shape)
+
+      (if (ctk/instance-root? shape)
+        (if (not= context :not-component)
+          (report-error :root-main-not-allowed
+                        (str/format "Root main component not allowed inside other component")
+                        shape file page)
+          (validate-shape-main-root-top shape file page libraries report-error))
+
+        (if (= context :not-component)
+          (report-error :nested-main-not-allowed
+                        (str/format "Nested main component only allowed inside other component")
+                        shape file page)
+          (validate-shape-main-root-nested shape file page libraries report-error)))
+
+      (if (ctk/instance-head? shape)
+
+        (if (ctk/instance-root? shape)
+          (if (not= context :not-component)
+            (report-error :root-copy-not-allowed
+                          (str/format "Root copy not allowed inside other component")
+                          shape file page)
+            (validate-shape-copy-root-top shape file page libraries report-error))
+
+          (if (= context :not-component)
+            (report-error :nested-copy-not-allowed
+                          (str/format "Nested copy only allowed inside other component")
+                          shape file page)
+            (validate-shape-copy-root-nested shape file page libraries report-error)))
+
+        (if (ctn/component-main? (:objects page) shape)
+          (if-not (#{:main-top :main-nested :main-any} context)
+            (report-error :not-head-main-not-allowed
+                          (str/format "Non-root main only allowed inside a main component")
+                          shape file page)
+            (validate-shape-main-not-root shape file page libraries report-error))
+
+          (if (ctk/in-component-copy? shape)
+            (if-not (#{:copy-top :copy-nested :copy-any} context)
+              (report-error :not-head-copy-not-allowed
+                            (str/format "Non-root copy only allowed inside a copy")
+                            shape file page)
+              (validate-shape-copy-not-root shape file page libraries report-error))
+
+            (if (#{:main-top :main-nested :main-any} context)
+              (report-error :not-component-not-allowed
+                            (str/format "Not compoments are not allowed inside a main")
+                            shape file page)
+              (validate-shape-not-component shape file page libraries report-error))))))
+
+    @errors))

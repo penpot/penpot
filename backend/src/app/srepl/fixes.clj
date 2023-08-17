@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.pages.helpers :as cph]
+   [app.common.pprint :refer [pprint]]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
@@ -18,6 +19,21 @@
    [app.rpc.commands.files :as files]
    [app.srepl.helpers :as h]
    [app.util.blob :as blob]))
+
+(defn validate-file
+  [file]
+  (let [libs (->> (files/get-file-libraries app.srepl.helpers/*conn* (:id file))
+                  (cons file)
+                  (map #(files/get-file app.srepl.helpers/*conn* (:id %) (:features file)))
+                  (d/index-by :id))
+
+        update-page (fn [page]
+                      (let [errors (ctf/validate-shape uuid/zero file page libs)]
+                        (when (seq errors)
+                          (prn "******Errors in file " (:id file) " page " (:id page))
+                          (pprint errors {:level 3}))))]
+
+    (update file :data h/update-pages update-page)))
 
 (defn repair-orphaned-shapes
   "There are some shapes whose parent has been deleted. This function
