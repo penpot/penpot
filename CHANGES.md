@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.19.1
+
+### :bug: Bugs fixed
+
+- Fix components not registered as updated [Taiga #5725](https://tree.taiga.io/project/penpot/issue/5725)
+
 ## 1.19.0
 
 ### :boom: Breaking changes & Deprecations
