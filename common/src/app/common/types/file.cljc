@@ -444,7 +444,8 @@
                                              library-data
                                              position
                                              (dm/get-in file-data [:options :components-v2])
-                                             {:main-instance true})
+                                             {:main-instance? true
+                                              :keep-ids? true})
 
                 main-instance-shapes
                 (map #(cond-> %
