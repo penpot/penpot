@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
@@ -167,7 +168,9 @@
          (mf/deps (:id frame) on-frame-leave)
          (fn [_]
            (on-frame-leave (:id frame))))
-        text-pos-x (if (or (:use-for-thumbnail? frame) grid-edition?) 15 0)]
+
+        main-instance? (ctk/main-instance? frame)
+        text-pos-x (if (or (:use-for-thumbnail? frame) grid-edition? main-instance?) 15 0)]
 
     (when (not (:hidden frame))
       [:g.frame-title {:id (dm/str "frame-title-" (:id frame))
@@ -175,7 +178,7 @@
                        :transform (vwu/title-transform frame zoom grid-edition?)
                        :pointer-events (when (:blocked frame) "none")}
        (cond
-         (or (:use-for-thumbnail? frame) grid-edition?)
+         (or (:use-for-thumbnail? frame) grid-edition? main-instance?)
          [:svg {:x 0
                 :y -9
                 :width 12
@@ -188,7 +191,10 @@
             [:use {:href "#icon-set-thumbnail"}]
 
             grid-edition?
-            [:use {:href "#icon-grid-layout-mode"}])])
+            [:use {:href "#icon-grid-layout-mode"}]
+
+            main-instance?
+            [:use {:href "#icon-component"}])])
 
        [:text {:x text-pos-x
                :y 0
