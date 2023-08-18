@@ -2208,6 +2208,15 @@ msgstr "¿Seguro que quieres borrar esta nota?"
 msgid "modals.delete-component-annotation.title"
 msgstr "Borrar nota"
 
+msgid "modals.publish-empty-library.title"
+msgstr "Publicar biblioteca vacía"
+
+msgid "modals.publish-empty-library.message"
+msgstr "Tu biblioteca está vacía. ¿Seguro que quieres publicarla?"
+
+msgid "modals.publish-empty-library.accept"
+msgstr "Publicar"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
 msgstr "Invitación enviada con éxito"
