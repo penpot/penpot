@@ -74,8 +74,8 @@
         read-only?           (mf/use-ctx ctx/workspace-read-only?)
 
         show-palette-btn?    (and (not ^boolean read-only?) (not ^boolean new-css-system))
-        hide-toolbar*        (mf/use-state false)
-        hide-toolbar?        (deref hide-toolbar*)
+
+        hide-toolbar?         (mf/deref refs/toolbar-visibility)
 
         interrupt
         (mf/use-fn #(st/emit! :interrupt))
@@ -138,8 +138,7 @@
 
         toggle-toolbar
         (mf/use-fn
-         (fn []
-           (swap! hide-toolbar* not)))]
+         #(st/emit! (dw/toggle-toolbar-visibility)))]
 
     (if new-css-system
       (when-not ^boolean read-only?
@@ -230,8 +229,6 @@
                :class (when (contains? layout :debug-panel) "selected")
                :on-click toggle-debug-panel}
               i/bug])]]])
-
-
 
       [:aside.left-toolbar
        [:ul.left-toolbar-options

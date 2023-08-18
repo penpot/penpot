@@ -97,7 +97,6 @@
 
 ;; --- Initialize Workspace
 
-
 (defn initialize-layout
   [lname]
   ;; (dm/assert!
@@ -640,7 +639,6 @@
     (watch [_ _ _]
       (rx/of (dch/update-shapes [id] #(merge % attrs))))))
 
-
 (defn start-rename-shape
   "Start shape renaming process"
   [id]
@@ -673,9 +671,7 @@
               (when-let [component-id (:component-id shape)]
                 (rx/of (dwl/rename-component component-id name)))))))))))
 
-
 ;; --- Update Selected Shapes attrs
-
 
 (defn update-selected-shapes
   [attrs]
@@ -748,7 +744,6 @@
                (dch/commit-changes changes)
                (ptk/data-event :layout/update selected-ids)
                (dwu/commit-undo-transaction undo-id))))))
-
 
 ;; --- Change Shape Order (D&D Ordering)
 
@@ -965,7 +960,6 @@
     (watch [_ state _]
       (let [selected (wsh/lookup-selected state)]
         (rx/of (relocate-shapes selected parent-id to-index))))))
-
 
 (defn start-editing-selected
   []
@@ -1329,7 +1323,6 @@
             (some->> (:main-instance-page component)
                      (redirect-to-file file-id))))))))
 
-
 (defn go-to-component
   [component-id]
   (ptk/reify ::go-to-component
@@ -1425,6 +1418,31 @@
       (let [team-id (:current-team-id state)]
         (rx/of ::dwp/force-persist
                (rt/nav :dashboard-fonts {:team-id team-id}))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Toolbar
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn toggle-toolbar-visibility
+   []
+  (ptk/reify ::toggle-toolbar-visibility
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :hide-toolbar] not))))
+
+(defn hide-toolbar
+  []
+  (ptk/reify ::hide-toolbar
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :hide-toolbar] true))))
+
+(defn show-toolbar
+  []
+  (ptk/reify ::show-toolbar
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :hide-toolbar] false))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context Menu
@@ -1687,7 +1705,6 @@
    (= (:width (:selrect (first (vals paste-obj))))
       (:width (:selrect frame-obj)))))
 
-
 (defn- paste-shape
   [{selected :selected
     paste-objects :objects ;; rename this because here comes only the clipboard shapes,
@@ -1923,7 +1940,6 @@
                  (rx/merge-map (partial upload-media file-id))
                  (rx/reduce conj [])
                  (rx/mapcat (partial do-paste it state mouse-pos)))))))))
-
 
 (defn as-content [text]
   (let [paragraphs (->> (str/lines text)
@@ -2169,7 +2185,6 @@
 ;; Read only
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defn set-workspace-read-only
   [read-only?]
   (ptk/reify ::set-workspace-read-only
@@ -2185,7 +2200,6 @@
                (remove-layout-flag :colorpalette)
                (remove-layout-flag :textpalette))
         (rx/empty)))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Measurements
@@ -2212,11 +2226,9 @@
     (update [_ state]
       (assoc-in state [:workspace-global :margins-selected] margins-selected))))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Orphan Shapes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defn fix-orphan-shapes
   []
@@ -2277,8 +2289,6 @@
 
           (rx/of (dch/commit-changes changes))))))
 
-
-
 (defn set-annotations-expanded
   [expanded?]
   (ptk/reify ::set-annotations-expanded
@@ -2295,7 +2305,6 @@
         (-> (assoc-in state [:workspace-annotations :id-for-create] id)
             (assoc-in [:workspace-annotations :expanded?] true))
         (d/dissoc-in state [:workspace-annotations :id-for-create])))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Preview blend modes
@@ -2314,7 +2323,6 @@
     ptk/UpdateEvent
     (update [_ state]
       (reduce #(update %1 :workspace-preview-blend dissoc %2) state ids))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
@@ -2351,8 +2359,6 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (update-shape (uuid/uuid id) {:shape-ref (uuid/uuid shape-ref)})))))
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports

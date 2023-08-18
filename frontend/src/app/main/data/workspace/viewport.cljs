@@ -42,7 +42,7 @@
                   objects (wsh/lookup-page-objects state page-id)
                   shapes  (cph/get-immediate-children objects)
                   srect   (gsh/shapes->rect shapes)
-                  local   (assoc local :vport size :zoom 1 :zoom-inverse 1)]
+                  local   (assoc local :vport size :zoom 1 :zoom-inverse 1 :hide-toolbar false)]
 
               (cond
                 (or (not (d/num? (:width srect)))

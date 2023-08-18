@@ -75,6 +75,13 @@
 
         grid-edition? (and single? editing? (ctl/grid-layout? shape))]
 
+    (mf/use-effect
+     (mf/deps editing?)
+     (fn []
+       (if editing?
+         (st/emit! (dw/hide-toolbar))
+         (st/emit! (dw/show-toolbar)))))
+
     (cond
       path-edition?
       [:div.viewport-actions

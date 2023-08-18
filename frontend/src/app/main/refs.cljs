@@ -183,6 +183,9 @@
 (def context-menu
   (l/derived :context-menu workspace-local))
 
+(def toolbar-visibility
+  (l/derived :hide-toolbar workspace-local))
+
 ;; page item that it is being edited
 (def editing-page-item
   (l/derived :page-item workspace-local))
