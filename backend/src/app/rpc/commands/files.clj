@@ -375,6 +375,21 @@
   [{:keys [::rpc/profile-id]} {:keys [modified-at revn]}]
   (str profile-id (dt/format-instant modified-at :iso) revn))
 
+
+
+(sv/defmethod ::hey
+  {::doc/added "1.17"
+   ::rpc/auth false}
+  [_ _]
+  (str (rand-int 100)))
+
+(sv/defmethod ::ho
+  {::doc/added "1.17"
+   ::rpc/auth false}
+  [_ _]
+  (str (rand-int 1000)))
+
+
 (sv/defmethod ::get-file
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.17"
