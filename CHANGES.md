@@ -33,6 +33,7 @@
   goolge and reduces the amount of request sent to google)
 - Set smooth/instant autoscroll depending on distance [GitHub #3377](https://github.com/penpot/penpot/issues/3377)
 - New component icon [Taiga #5290](https://tree.taiga.io/project/penpot/us/5290)
+- Show a confirmation dialog when an user tries to publish an empty library [Taiga #5294](https://tree.taiga.io/project/penpot/us/5294)
 
 ### :bug: Bugs fixed
 

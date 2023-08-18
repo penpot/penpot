@@ -46,21 +46,22 @@
 
 (defn- describe-library
   [components-count graphics-count colors-count typography-count]
-  (str
-   (str/join " · "
-             (cond-> []
-               (pos? components-count)
-               (conj (tr "workspace.libraries.components" components-count))
+  (let [all-zero? (and (zero? components-count) (zero? graphics-count) (zero? colors-count) (zero? typography-count))]
+    (str
+     (str/join " · "
+               (cond-> []
+                 (or all-zero? (pos? components-count))
+                 (conj (tr "workspace.libraries.components" components-count))
 
-               (pos? graphics-count)
-               (conj (tr "workspace.libraries.graphics" graphics-count))
+                 (or all-zero? (pos? graphics-count))
+                 (conj (tr "workspace.libraries.graphics" graphics-count))
 
-               (pos? colors-count)
-               (conj (tr "workspace.libraries.colors" colors-count))
+                 (or all-zero? (pos? colors-count))
+                 (conj (tr "workspace.libraries.colors" colors-count))
 
-               (pos? typography-count)
-               (conj (tr "workspace.libraries.typography" typography-count))))
-   "\u00A0"))
+                 (or all-zero? (pos? typography-count))
+                 (conj (tr "workspace.libraries.typography" typography-count))))
+     "\u00A0")))
 
 (mf/defc describe-library-blocks
   [{:keys [components-count graphics-count colors-count typography-count] :as props}]
@@ -124,6 +125,12 @@
         components     (:components library)
         media          (:media library)
         typographies   (:typographies library)
+
+        empty-library? (and
+                        (zero? (count colors))
+                        (zero? (count components))
+                        (zero? (count media))
+                        (zero? (count typographies)))
 
         shared-libraries
         (mf/with-memo [shared-libraries linked-libraries file-id search-term]
@@ -191,8 +198,18 @@
         (mf/use-fn
          (mf/deps file-id)
          (fn [event]
-           (let [input-node (dom/event->target event)]
-             (st/emit! (dwl/set-file-shared file-id true))
+           (let [input-node (dom/event->target event)
+                 publish-library #(st/emit! (dwl/set-file-shared file-id true))
+                 cancel-publish #(st/emit! (modal/show :libraries-dialog {}))]
+             (if empty-library?
+               (st/emit! (modal/show
+                          {:type :confirm
+                           :title (tr "modals.publish-empty-library.title")
+                           :message (tr "modals.publish-empty-library.message")
+                           :accept-label (tr "modals.publish-empty-library.accept")
+                           :on-accept publish-library
+                           :on-cancel cancel-publish}))
+               (publish-library))
              (dom/blur! input-node))))
 
         unpublish
