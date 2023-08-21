@@ -36,6 +36,11 @@ small {
   color: #888;
 }
 
+.not-important {
+  color: #888;
+  font-weight: 200;
+}
+
 small > strong {
   font-size: 9px;
 }

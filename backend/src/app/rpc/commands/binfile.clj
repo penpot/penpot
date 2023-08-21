@@ -294,28 +294,40 @@
   [output & {:keys [level] :or {level 0}}]
   (ZstdOutputStream. ^OutputStream output (int level)))
 
-(defn- retrieve-file
-  [pool file-id]
-  (dm/with-open [conn (db/open pool)]
-    (binding [pmap/*load-fn* (partial files/load-pointer conn file-id)]
-      (some-> (db/get* conn :file {:id file-id})
-              (files/decode-row)
-              (files/process-pointers deref)))))
+(defn- get-files
+  [cfg ids]
+  (letfn [(get-files* [{:keys [::db/conn]}]
+            (let [sql (str "SELECT id FROM file "
+                           " WHERE id = ANY(?) ")
+                  ids (db/create-array conn "uuid" ids)]
+              (->> (db/exec! conn [sql ids])
+                   (into [] (map :id))
+                   (not-empty))))]
 
-(def ^:private sql:file-media-objects
-  "SELECT * FROM file_media_object WHERE id = ANY(?)")
+    (db/run! cfg get-files*)))
 
-(defn- retrieve-file-media
-  [pool {:keys [data id] :as file}]
+(defn- get-file
+  [cfg file-id]
+  (letfn [(get-file* [{:keys [::db/conn]}]
+            (binding [pmap/*load-fn* (partial files/load-pointer conn file-id)]
+              (some-> (db/get* conn :file {:id file-id} {::db/remove-deleted? false})
+                      (files/decode-row)
+                      (files/process-pointers deref))))]
+
+    (db/run! cfg get-file*)))
+
+(defn- get-file-media
+  [{:keys [::db/pool]} {:keys [data id] :as file}]
   (dm/with-open [conn (db/open pool)]
     (let [ids (app.tasks.file-gc/collect-used-media data)
-          ids (db/create-array conn "uuid" ids)]
+          ids (db/create-array conn "uuid" ids)
+          sql (str "SELECT * FROM file_media_object WHERE id = ANY(?)")]
 
       ;; We assoc the file-id again to the file-media-object row
       ;; because there are cases that used objects refer to other
       ;; files and we need to ensure in the exportation process that
       ;; all ids matches
-      (->> (db/exec! conn [sql:file-media-objects ids])
+      (->> (db/exec! conn [sql ids])
            (mapv #(assoc % :file-id id))))))
 
 (def ^:private storage-object-id-xf
@@ -325,34 +337,32 @@
 
 (def ^:private sql:file-libraries
   "WITH RECURSIVE libs AS (
-     SELECT fl.id, fl.deleted_at
+     SELECT fl.id
        FROM file AS fl
        JOIN file_library_rel AS flr ON (flr.library_file_id = fl.id)
       WHERE flr.file_id = ANY(?)
     UNION
-     SELECT fl.id, fl.deleted_at
+     SELECT fl.id
        FROM file AS fl
        JOIN file_library_rel AS flr ON (flr.library_file_id = fl.id)
        JOIN libs AS l ON (flr.file_id = l.id)
    )
    SELECT DISTINCT l.id
-     FROM libs AS l
-    WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
+     FROM libs AS l")
 
-(defn- retrieve-libraries
-  [pool ids]
+(defn- get-libraries
+  [{:keys [::db/pool]} ids]
   (dm/with-open [conn (db/open pool)]
     (let [ids (db/create-array conn "uuid" ids)]
       (map :id (db/exec! pool [sql:file-libraries ids])))))
 
-(def ^:private sql:file-library-rels
-  "SELECT * FROM file_library_rel
-    WHERE file_id = ANY(?)")
-
-(defn- retrieve-library-relations
-  [pool ids]
-  (dm/with-open [conn (db/open pool)]
-    (db/exec! conn [sql:file-library-rels (db/create-array conn "uuid" ids)])))
+(defn- get-library-relations
+  [cfg ids]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (let [ids (db/create-array conn "uuid" ids)
+                       sql (str "SELECT flr.* FROM file_library_rel AS flr "
+                                " WHERE flr.file_id = ANY(?)")]
+                   (db/exec! conn [sql ids])))))
 
 (defn- create-or-update-file
   [conn params]
@@ -378,7 +388,7 @@
 ;; --- EXPORT WRITER
 
 (defn- embed-file-assets
-  [data conn file-id]
+  [data cfg file-id]
   (letfn [(walk-map-form [form state]
             (cond
               (uuid? (:fill-color-ref-file form))
@@ -408,7 +418,7 @@
             ;; NOTE: there is a possibility that shape refers to an
             ;; non-existant file because the file was removed. In this
             ;; case we just ignore the asset.
-            (if-let [lib (retrieve-file conn lib-id)]
+            (if-let [lib (get-file cfg lib-id)]
               (reduce (partial process-asset lib) data items)
               data))
 
@@ -476,28 +486,33 @@
               [:v1/metadata :v1/files :v1/rels :v1/sobjects])))))
 
 (defmethod write-section :v1/metadata
-  [{:keys [::db/pool ::output ::file-ids ::include-libraries?]}]
-  (let [libs  (when include-libraries?
-                (retrieve-libraries pool file-ids))
-        files (into file-ids libs)]
-    (write-obj! output {:version cf/version :files files})
-    (vswap! *state* assoc :files files)))
+  [{:keys [::output ::file-ids ::include-libraries?] :as cfg}]
+  (if-let [fids (get-files cfg file-ids)]
+    (let [lids (when include-libraries?
+                 (get-libraries cfg file-ids))
+          ids  (into fids lids)]
+      (write-obj! output {:version cf/version :files ids})
+      (vswap! *state* assoc :files ids))
+    (ex/raise :type :not-found
+              :code :files-not-found
+              :hint "unable to retrieve files for export")))
 
 (defmethod write-section :v1/files
-  [{:keys [::db/pool ::output ::embed-assets?]}]
+  [{:keys [::output ::embed-assets?] :as cfg}]
 
   ;; Initialize SIDS with empty vector
   (vswap! *state* assoc :sids [])
 
   (doseq [file-id (-> *state* deref :files)]
-    (let [file  (cond-> (retrieve-file pool file-id)
+    (let [file  (cond-> (get-file cfg file-id)
                   embed-assets?
-                  (update :data embed-file-assets pool file-id))
+                  (update :data embed-file-assets cfg file-id))
 
-          media (retrieve-file-media pool file)]
+          media (get-file-media cfg file)]
 
       (l/debug :hint "write penpot file"
                :id file-id
+               :name (:name file)
                :media (count media)
                ::l/sync? true)
 
@@ -508,9 +523,10 @@
       (vswap! *state* update :sids into storage-object-id-xf media))))
 
 (defmethod write-section :v1/rels
-  [{:keys [::db/pool ::output ::include-libraries?]}]
-  (let [rels  (when include-libraries?
-                (retrieve-library-relations pool (-> *state* deref :files)))]
+  [{:keys [::output ::include-libraries?] :as cfg}]
+  (let [ids  (-> *state* deref :files)
+        rels (when include-libraries?
+               (get-library-relations cfg ids))]
     (l/debug :hint "found rels" :total (count rels) ::l/sync? true)
     (write-obj! output rels)))
 
@@ -518,6 +534,7 @@
   [{:keys [::sto/storage ::output]}]
   (let [sids    (-> *state* deref :sids)
         storage (media/configure-assets-storage storage)]
+
     (l/debug :hint "found sobjects"
              :items (count sids)
              ::l/sync? true)
@@ -630,6 +647,8 @@
       (when (not= file-id expected-file-id)
         (ex/raise :type :validation
                   :code :inconsistent-penpot-file
+                  :found-id file-id
+                  :expected-id expected-file-id
                   :hint "the penpot file seems corrupt, found unexpected uuid (file-id)"))
 
       ;; Update index using with media
@@ -679,18 +698,27 @@
 
 (defmethod read-section :v1/rels
   [{:keys [::db/conn ::input ::timestamp]}]
-  (let [rels (read-obj! input)]
+  (let [rels (read-obj! input)
+        ids  (into #{} (-> *state* deref :files))]
     ;; Insert all file relations
-    (doseq [rel rels]
+    (doseq [{:keys [library-file-id] :as rel} rels]
       (let [rel (-> rel
                     (assoc :synced-at timestamp)
                     (update :file-id lookup-index)
                     (update :library-file-id lookup-index))]
-        (l/debug :hint "create file library link"
-                 :file-id (:file-id rel)
-                 :lib-id (:library-file-id rel)
-                 ::l/sync? true)
-        (db/insert! conn :file-library-rel rel)))))
+
+        (if (contains? ids library-file-id)
+          (do
+            (l/debug :hint "create file library link"
+                     :file-id (:file-id rel)
+                     :lib-id (:library-file-id rel)
+                     ::l/sync? true)
+            (db/insert! conn :file-library-rel rel))
+
+          (l/warn :hint "ignoring file library link"
+                  :file-id (:file-id rel)
+                  :lib-id (:library-file-id rel)
+                  ::l/sync? true))))))
 
 (defmethod read-section :v1/sobjects
   [{:keys [::sto/storage ::db/conn ::input ::overwrite?]}]

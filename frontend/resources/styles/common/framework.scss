@@ -1161,6 +1161,7 @@ input[type="range"]:focus::-ms-fill-upper {
 
     .wrapper {
       display: flex;
+      align-items: center;
 
       .icon {
         padding: $size-2;
@@ -1177,6 +1178,9 @@ input[type="range"]:focus::-ms-fill-upper {
         padding: $size-2;
         width: 100%;
         align-items: center;
+
+        padding: 10px 15px;
+        min-height: 48px;
       }
     }
 

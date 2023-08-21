@@ -6,4 +6,4 @@
 
 (ns app.common.files.defaults)
 
-(def version 28)
+(def version 29)

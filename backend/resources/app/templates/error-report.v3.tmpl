@@ -7,7 +7,7 @@ Report: {{hint|abbreviate:150}} - {{id}} - Penpot Error Report (v3)
 {% block content %}
 <nav>
   <div>[<a href="/dbg/error">⮜</a>]</div>
-  <div>[<a href="#message">message</a>]</div>
+  <div>[<a href="#head">head</a>]</div>
   <div>[<a href="#props">props</a>]</div>
   <div>[<a href="#context">context</a>]</div>
   {% if params %}
@@ -29,10 +29,11 @@ Report: {{hint|abbreviate:150}} - {{id}} - Penpot Error Report (v3)
 <main>
   <div class="table">
     <div class="table-row multiline">
-      <div id="message" class="table-key">MESSAGE: </div>
-
+      <div id="head" class="table-key">HEAD</div>
       <div class="table-val">
-        <h1>{{hint}}</h1>
+        <h1><span class="not-important">Hint:</span> <br/> {{hint}}</h1>
+        <h2><span class="not-important">Reported at:</span> <br/> {{created-at}}</h2>
+        <h2><span class="not-important">Report ID:</span> <br/> {{id}}</h2>
       </div>
     </div>
 

@@ -518,6 +518,29 @@
       (->> (rp/cmd! :get-access-tokens)
            (rx/map access-tokens-fetched)))))
 
+
+
+
+
+(defn heyhey-fetched
+  [value]
+  (ptk/reify ::heyhey-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :hey-value value))))
+
+
+
+(defn fetch-heyhey
+  []
+  (ptk/reify ::fetch-heyhey
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :hey)
+           (rx/map heyhey-fetched)))))
+
+
+
 ;; --- EVENT: create-access-token
 
 (defn access-token-created

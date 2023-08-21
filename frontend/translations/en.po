@@ -4960,3 +4960,7 @@ msgstr "Student or teacher"
 
 msgid "workspace.layout_grid.editor.title"
 msgstr "Editing grid"
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "A new version is available, please refresh the page"

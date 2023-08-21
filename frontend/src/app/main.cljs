@@ -37,7 +37,7 @@
 (log/setup! {:app :info})
 
 (when (= :browser cf/target)
-  (log/info :message "Welcome to penpot"
+  (log/info :message "Hey!,Welcome to penpot"
             :version (:full cf/version)
             :asserts *assert*
             :build-date cf/build-date

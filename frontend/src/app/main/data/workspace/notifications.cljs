@@ -10,6 +10,8 @@
    [app.common.data.macros :as dm]
    [app.common.pages.changes :as cpc]
    [app.common.schema :as sm]
+   [app.common.uuid :as uuid]
+   [app.main.data.common :refer [handle-notification]]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
@@ -57,8 +59,9 @@
                                   (rx/filter (ptk/type? ::dws/message))
                                   (rx/map deref)
                                   (rx/filter (fn [{:keys [subs-id] :as msg}]
-                                               (or (= subs-id team-id)
+                                               (or (= subs-id uuid/zero)
                                                    (= subs-id profile-id)
+                                                   (= subs-id team-id)
                                                    (= subs-id file-id))))
                                   (rx/map process-message))
 
@@ -96,6 +99,7 @@
     :pointer-update (handle-pointer-update msg)
     :file-change    (handle-file-change msg)
     :library-change (handle-library-change msg)
+    :notification   (handle-notification msg)
     nil))
 
 (defn- handle-pointer-send

@@ -260,16 +260,21 @@
       [:& access-token-actions
        {:on-delete on-delete}]]]))
 
+(def hey-ref
+  (l/derived :hey-value st/state))
+
 (mf/defc access-tokens-page
   []
   (mf/with-effect []
     (dom/set-html-title (tr "title.settings.access-tokens"))
-    (st/emit! (du/fetch-access-tokens)))
+    (st/emit! (du/fetch-access-tokens))
+    (st/emit! (du/fetch-heyhey)))
 
-  (let [tokens (mf/deref tokens-ref)]
-    [:div.dashboard-access-tokens
+  (let [tokens (mf/deref tokens-ref)
+        hey (mf/deref hey-ref)]
+    [:div.dashboard-access-tokens {:style {:background "pink"}}
      [:div
-      [:& access-tokens-hero]
+      [:div {:on-click #(st/emit! (du/fetch-heyhey))} hey]
       (if (empty? tokens)
         [:div.access-tokens-empty
          [:div (tr "dashboard.access-tokens.empty.no-access-tokens")]
