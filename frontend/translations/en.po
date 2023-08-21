@@ -2142,6 +2142,15 @@ msgstr "Are you sure you want to delete this annotation?"
 msgid "modals.delete-component-annotation.title"
 msgstr "Delete annotation"
 
+msgid "modals.publish-empty-library.title"
+msgstr "Publish empty library"
+
+msgid "modals.publish-empty-library.message"
+msgstr "Your library is empty. Are you sure you want to publish it?"
+
+msgid "modals.publish-empty-library.accept"
+msgstr "Publish"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
 msgstr "Invitation sent successfully"
