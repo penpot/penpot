@@ -468,13 +468,13 @@
                   (mf/with-memo [objects]
                     (svg-raw-container-factory objects all-objects))]
               (when (and shape (not (:hidden shape)))
-          (let [shape (-> shape
-                          #_(gsh/transform-shape)
-                                (gsh/translate-to-frame frame))
-
-                      opts #js {:shape shape
-                                :objects objects
-                                :all-objects all-objects}]
+          (let [shape (if frame
+                        (gsh/translate-to-frame shape frame)
+                        shape)
+                
+                opts #js {:shape shape
+                          :objects objects
+                          :all-objects all-objects}]
                   (case (:type shape)
                     :frame   [:> frame-container opts]
                     :text    [:> text-wrapper opts]
