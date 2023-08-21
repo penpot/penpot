@@ -53,4 +53,6 @@
        txt/node-seq
        (keep #(get-ref-typography (:data library) %))
        (remove #(< (:modified-at %) since-date))  ;; Note that :modified-at may be nil
-       (map #(vector (:id shape) (:id %) :typography))))
+       (map (fn [node] {:shape-id (:id shape)
+                        :asset-id (:id node)
+                        :asset-type :typography}))))

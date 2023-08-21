@@ -45,7 +45,6 @@
                          (:value color) (dissoc :value)
                          true           (assoc :file-id file-id)))
 
-
         color-id    (:id color)
 
         item-ref    (mf/use-ref)

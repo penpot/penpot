@@ -193,7 +193,7 @@
               {:type "button"
                :on-click #(reset! confirm* false)
                :value (tr "labels.cancel")}]
-             [:input.btn-warning
+             [:input.btn-danger
               {:type "button"
                :on-click delete-link
                :value (tr "common.share-link.destroy-link")}]]]

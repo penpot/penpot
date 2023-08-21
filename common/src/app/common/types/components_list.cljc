@@ -116,7 +116,9 @@
     (let [component (get-component (:data library) (:component-id shape))]
       (if (< (:modified-at component) since-date)  ;; Note that :modified-at may be nil
         []
-        [[(:id shape) (:component-id shape) :component]]))
+        [{:shape-id (:id shape)
+          :asset-id (:component-id shape)
+          :asset-type :component}]))
     []))
 
 (defn get-component-annotation

@@ -96,6 +96,22 @@
                 padding: $s-8 $s-24;
                 border-radius: $br-8;
               }
+              .item-update {
+                margin-right: $s-2;
+                &.btn-gray {
+                  background: var(--light-gray-4);
+                  border-color: var(--light-gray-4);
+                  color: var(--dark-gray-4);
+                  cursor: unset;
+                  &:hover {
+                    color: var(--dark-gray-4);
+                  }
+                }
+                &.btn-warning {
+                  background: var(--light-warning-color);
+                  border-color: var(--light-warning-color);
+                }
+              }
               .item-unpublish {
                 @extend .button-secondary;
               }
@@ -152,6 +168,60 @@
               height: $s-16;
             }
           }
+        }
+        .libraries-updates {
+          display: grid;
+          grid-column: span 3;
+          grid-template-columns: repeat(auto-fill, minmax($s-160, 1fr));
+          grid-gap: $s-24;
+          font-size: $fs12;
+          margin-top: $s-16;
+
+          .libraries-updates-item {
+            display: flex;
+            align-items: center;
+
+            &:not(:first-child) {
+              margin-top: $s-8;
+            }
+
+            & svg {
+              background-color: var(--canvas-color);
+              border-radius: $br-4;
+              border: $s-2 solid transparent;
+              height: $s-24;
+              width: $s-24;
+              min-height: $s-24;
+              min-width: $s-24;
+            }
+
+            & .name-block {
+              color: var(--gray-20-color);
+              margin-left: $s-8;
+              width: $s-168;
+
+              &.ellipsis {
+                padding-left: calc($s-24 + #{$s-8});
+              }
+            }
+
+            & .item-name {
+              display: block;
+              margin: 0;
+              text-overflow: ellipsis;
+              overflow: hidden;
+              white-space: nowrap;
+            }
+          }
+        }
+        .libraries-updates-see-all {
+          grid-column: span 3;
+          margin-top: $s-8;
+          margin-right: $s-8;
+          text-align: right;
+          cursor: pointer;
+          color: var (--info-color);
+          text-decoration: underline;
         }
       }
       .updates-content {

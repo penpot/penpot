@@ -3441,6 +3441,10 @@ msgid "workspace.libraries.library"
 msgstr "BIBLIOTECA"
 
 #: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library-updates"
+msgstr "ACTUALIZACIONES DE BIBLIOTECAS"
+
+#: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "No hay bibliotecas que necesiten ser actualizadas"
 
@@ -3479,6 +3483,10 @@ msgstr "Actualizar"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "ACTUALIZACIONES"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.see-all-changes"
+msgstr "ver todos los cambios"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
@@ -4901,6 +4909,10 @@ msgstr "Operación sobre %s"
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.title"
 msgstr "Histórico"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.more-info"
+msgstr "Más información"
 
 #: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.dismiss"

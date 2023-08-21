@@ -9,17 +9,24 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.colors-list :as ctcl]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.file :as ctf]
+   [app.common.types.typographies-list :as ctyl]
+   [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.features :as features]
    [app.main.refs :as refs]
+   [app.main.render :refer [component-svg]]
    [app.main.store :as st]
+   [app.main.ui.components.color-bullet :as bc]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
+   [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -390,8 +397,65 @@
 (mf/defc updates-tab
   {::mf/wrap-props false}
   [{:keys [file-id file-data libraries]}]
-  (let [libraries      (mf/with-memo [file-data libraries]
-                         (filter #(seq (dwl/assets-need-sync % file-data)) (vals libraries)))
+  (let [summary?*  (mf/use-state true)
+        updating?* (mf/use-state false)
+        summary?   (deref summary?*)
+        updating?  (deref updating?*)
+
+        see-all-assets
+        (fn []
+          (reset! summary?* false))
+
+        extract-assets
+        (fn [library]
+          (let [exceeded (volatile! {:components false
+                                     :colors false
+                                     :typographies false})
+
+                truncate (fn [asset-type items]
+                           (if (and summary? (> (count items) 5))
+                             (do
+                               (vswap! exceeded assoc asset-type true)
+                               (take 5 items))
+                             items))
+
+                assets (dwl/assets-need-sync library file-data)
+
+                component-ids  (into #{} (->> assets
+                                              (filter #(= (:asset-type %) :component))
+                                              (map :asset-id)))
+                color-ids      (into #{} (->> assets
+                                              (filter #(= (:asset-type %) :color))
+                                              (map :asset-id)))
+                typography-ids (into #{} (->> assets
+                                              (filter #(= (:asset-type %) :typography))
+                                              (map :asset-id)))
+
+                components   (->> component-ids
+                                  (map #(ctkl/get-component (:data library) %))
+                                  (sort-by #(str/lower (:name %)))
+                                  (truncate :components))
+                colors       (->> color-ids
+                                  (map #(ctcl/get-color (:data library) %))
+                                  (sort-by #(str/lower (:name %)))
+                                  (truncate :colors))
+                typographies (->> typography-ids
+                                  (map #(ctyl/get-typography (:data library) %))
+                                  (sort-by #(str/lower (:name %)))
+                                  (truncate :typographies))]
+
+            [library @exceeded {:components components
+                                :colors colors
+                                :typographies typographies}]))
+
+        libs-assets (mf/with-memo [file-data libraries summary?*]
+                      (->> (vals libraries)
+                           (map extract-assets)
+                           (filter (fn [[_ _ {:keys [components colors typographies]}]]
+                                     (or (seq components)
+                                         (seq colors)
+                                         (seq typographies))))))
+
         new-css-system (mf/use-ctx ctx/new-css-system)
 
         update         (mf/use-fn
@@ -400,51 +464,205 @@
                           (let [library-id (some-> (dom/get-target event)
                                                    (dom/get-data "library-id")
                                                    (parse-uuid))]
+                            (reset! updating?* true)
                             (st/emit! (dwl/sync-file file-id library-id)))))]
+
     (if new-css-system
       [:div {:class (css :section)}
-       (if (empty? libraries)
+       (if (empty? libs-assets)
          [:div {:class (css :section-list-empty)}
           (tr "workspace.libraries.no-libraries-need-sync")]
          [:*
-          [:div {:class (css :section-title)} (tr "workspace.libraries.library")]
+          [:div {:class (css :section-title)} (tr "workspace.libraries.library-updates")]
 
           [:div {:class (css :section-list)}
-           (for [{:keys [id name] :as library} libraries]
+           (for [[{:keys [id name] :as library}
+                  exceeded
+                  {:keys [components colors typographies]}] libs-assets]
              [:div {:class (css :section-list-item)
                     :key (dm/str id)}
               [:div
                [:div {:class (css :item-name)} name]
-               [:div {:class (css :item-contents)} (describe-external-library library)]]
-              [:input {:class (css :item-update)
-                       :type "button"
+               [:div {:class (css :item-contents)} (describe-library
+                                                    (count components)
+                                                    0
+                                                    (count colors)
+                                                    (count typographies))]]
+              [:input {:type "button"
+                       :class (dom/classnames (css :item-update) true
+                                              (css :btn-gray) updating?
+                                              (css :btn-warning) (not updating?))
                        :value (tr "workspace.libraries.update")
                        :data-library-id (dm/str id)
-                       :on-click update}]])]])]
+                       :on-click update}]
+
+              [:div {:class (css :libraries-updates)}
+               (when-not (empty? components)
+                 [:div {:class (css :libraries-updates-column)}
+                  (for [component components]
+                    [:div {:class (css :libraries-updates-item)
+                           :key (dm/str (:id component))}
+                     (let [component (ctf/load-component-objects (:data library) component)
+                           root-shape (ctf/get-component-root (:data library) component)]
+                       [:*
+                        [:& component-svg {:root-shape root-shape
+                                           :objects (:objects component)}]
+                        [:div {:class (css :name-block)}
+                         [:span {:class (css :item-name)
+                                 :title (:name component)}
+                          (:name component)]]])])
+                  (when (:components exceeded)
+                    [:div {:class (css :libraries-updates-item)
+                           :key (uuid/next)}
+                     [:div {:class (css :name-block.ellipsis)}
+                      [:span {:class (css :item-name)} "(...)"]]])])
+
+               (when-not (empty? colors)
+                 [:div {:class (css :libraries-updates-column)
+                        :style #js {"--bullet-size" "24px"}}
+                  (for [color colors]
+                    (let [default-name (cond
+                                         (:gradient color) (uc/gradient-type->string (get-in color [:gradient :type]))
+                                         (:color color) (:color color)
+                                         :else (:value color))]
+                      [:div {:class (css :libraries-updates-item)
+                             :key (dm/str (:id color))}
+                       [:*
+                        [:& bc/color-bullet {:color {:color (:color color)
+                                                     :opacity (:opacity color)}}]
+                        [:div {:class (css :name-block)}
+                         [:span {:class (css :item-name)
+                                 :title (:name color)}
+                          (:name color)]
+                         (when-not (= (:name color) default-name)
+                           [:span.color-value (:color color)])]]]))
+                  (when (:colors exceeded)
+                    [:div {:class (css :libraries-updates-item)
+                           :key (uuid/next)}
+                     [:div {:class (css :name-block.ellipsis)}
+                      [:span {:class (css :item-name)} "(...)"]]])])
+
+               (when-not (empty? typographies)
+                 [:div {:class (css :libraries-updates-column)}
+                  (for [typography typographies]
+                    [:div {:class (css :libraries-updates-item)
+                           :key (dm/str (:id typography))}
+                     [:*
+                      [:div {:style {:font-family (:font-family typography)
+                                     :font-weight (:font-weight typography)
+                                     :font-style (:font-style typography)}}
+                       (tr "workspace.assets.typography.sample")]
+                      [:div {:class (css :name-block)}
+                       [:span {:class (css :item-name)
+                               :title (:name typography)}
+                        (:name typography)]]]])
+                  (when (:typographies exceeded)
+                    [:div {:class (css :libraries-updates-item)
+                           :key (uuid/next)}
+                     [:div {:class (css :name-block.ellipsis)}
+                      [:span {:class (css :item-name)} "(...)"]]])])]
+
+              (when (or (pos? (:components exceeded))
+                        (pos? (:colors exceeded))
+                        (pos? (:typographies exceeded)))
+                [:div {:class (css :libraries-updates-see-all)
+                       :on-click see-all-assets}
+                 "(" (tr "workspace.libraries.update.see-all-changes") ")"])])]])]
 
       [:div.section
-       (if (empty? libraries)
+       (if (empty? libs-assets)
          [:div.section-list-empty
           i/library
           (tr "workspace.libraries.no-libraries-need-sync")]
          [:*
-          [:div.section-title (tr "workspace.libraries.library")]
+          [:div.section-title (tr "workspace.libraries.library-updates")]
 
           [:div.section-list
-           (for [{:keys [id name] :as library} libraries]
+           (for [[{:keys [id name] :as library}
+                  exceeded
+                  {:keys [components colors typographies]}] libs-assets]
              [:div.section-list-item {:key (dm/str id)}
               [:div.item-name name]
-              [:div.item-contents (describe-external-library library)]
+              [:div.item-contents (describe-library
+                                   (count components)
+                                   0
+                                   (count colors)
+                                   (count typographies))]
               [:input.item-button {:type "button"
+                                   :class (dom/classnames :btn-gray updating?
+                                                          :btn-warning (not updating?))
                                    :value (tr "workspace.libraries.update")
                                    :data-library-id (dm/str id)
-                                   :on-click update}]])]])])))
+                                   :on-click update}]
+
+              [:div.libraries-updates
+               (when-not (empty? components)
+                 [:div.libraries-updates-column
+                  (for [component components]
+                    [:div.libraries-updates-item {:key (dm/str (:id component))}
+                     (let [component (ctf/load-component-objects (:data library) component)
+                           root-shape (ctf/get-component-root (:data library) component)]
+                       [:*
+                        [:& component-svg {:root-shape root-shape
+                                           :objects (:objects component)}]
+                        [:div.name-block
+                         [:span.item-name {:title (:name component)}
+                          (:name component)]]])])
+                  (when (:components exceeded)
+                    [:div.libraries-updates-item {:key (uuid/next)}
+                     [:div.name-block.ellipsis
+                      [:span.item-name "(...)"]]])])
+
+               (when-not (empty? colors)
+                 [:div.libraries-updates-column {:style #js {"--bullet-size" "24px"}}
+                  (for [color colors]
+                    (let [default-name (cond
+                                         (:gradient color) (uc/gradient-type->string (get-in color [:gradient :type]))
+                                         (:color color) (:color color)
+                                         :else (:value color))]
+                      [:div.libraries-updates-item {:key (dm/str (:id color))}
+                       [:*
+                        [:& bc/color-bullet {:color {:color (:color color)
+                                                     :opacity (:opacity color)}}]
+                        [:div.name-block
+                         [:span.item-name {:title (:name color)}
+                          (:name color)]
+                         (when-not (= (:name color) default-name)
+                           [:span.color-value (:color color)])]]]))
+                  (when (:colors exceeded)
+                    [:div.libraries-updates-item {:key (uuid/next)}
+                     [:div.name-block.ellipsis
+                      [:span.item-name "(...)"]]])])
+
+               (when-not (empty? typographies)
+                 [:div.libraries-updates-column
+                  (for [typography typographies]
+                    [:div.libraries-updates-item {:key (dm/str (:id typography))}
+                     [:*
+                      [:div.typography-sample
+                       {:style {:font-family (:font-family typography)
+                                :font-weight (:font-weight typography)
+                                :font-style (:font-style typography)}}
+                       (tr "workspace.assets.typography.sample")]
+                      [:div.name-block
+                       [:span.item-name {:title (:name typography)}
+                        (:name typography)]]]])
+                  (when (:typographies exceeded)
+                    [:div.libraries-updates-item {:key (uuid/next)}
+                     [:div.name-block.ellipsis
+                      [:span.item-name "(...)"]]])])]
+
+              (when (or (pos? (:components exceeded))
+                        (pos? (:colors exceeded))
+                        (pos? (:typographies exceeded)))
+                [:div.libraries-updates-see-all {:on-click see-all-assets}
+                 "(" (tr "workspace.libraries.update.see-all-changes") ")"])])]])])))
 
 (mf/defc libraries-dialog
   {::mf/register modal/components
    ::mf/register-as :libraries-dialog}
-  []
-  (let [new-css-system (features/use-feature :new-css-system)
+  [{:keys [starting-tab] :as props :or {starting-tab :libraries}}]
+   (let [new-css-system (features/use-feature :new-css-system)
         project        (mf/deref refs/workspace-project)
         file-data      (mf/deref refs/workspace-data)
         file           (mf/deref ref:workspace-file)
@@ -453,7 +671,7 @@
         file-id        (:id file)
         shared?        (:is-shared file)
 
-        selected-tab*  (mf/use-state :libraries)
+        selected-tab*  (mf/use-state starting-tab)
         selected-tab   (deref selected-tab*)
 
         libraries      (mf/deref refs/workspace-libraries)

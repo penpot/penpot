@@ -223,7 +223,7 @@
   "Add an :objects property to the component, with only the shapes that belong to it"
   [file-data component]
   (let [components-v2 (dm/get-in file-data [:options :components-v2])]
-    (if (and components-v2 component (nil? (:objects component))) ;; This operation may be called twice, e.g. in an idempotent change
+    (if (and components-v2 component (empty? (:objects component))) ;; This operation may be called twice, e.g. in an idempotent change
       (let [component-page (get-component-page file-data component)
             page-objects   (:objects component-page)
             objects        (->> (cons (:main-instance-id component)
@@ -324,14 +324,15 @@
    been modified after the given date."
   [file-data library since-date]
   (letfn [(used-assets-shape [shape]
-             (concat
-              (ctkl/used-components-changed-since shape library since-date)
-              (ctcl/used-colors-changed-since shape library since-date)
-              (ctyl/used-typographies-changed-since shape library since-date)))
+            (concat
+             (ctkl/used-components-changed-since shape library since-date)
+             (ctcl/used-colors-changed-since shape library since-date)
+             (ctyl/used-typographies-changed-since shape library since-date)))
 
           (used-assets-container [container]
-           (->> (mapcat used-assets-shape (ctn/shapes-seq container))
-                (map #(cons (:id container) %))))]
+            (->> (ctn/shapes-seq container)
+                 (mapcat used-assets-shape)
+                 (map #(assoc % :container-id (:id container)))))]
 
     (mapcat used-assets-container (containers-seq file-data))))
 

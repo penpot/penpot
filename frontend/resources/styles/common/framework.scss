@@ -63,6 +63,16 @@
 
 .btn-warning {
   @extend %btn;
+  background: $color-warning;
+  color: $color-white;
+  &:hover {
+    background: $color-warning-dark;
+    color: $color-white;
+  }
+}
+
+.btn-danger {
+  @extend %btn;
   background: $color-danger;
   color: $color-white;
   &:hover {
@@ -1093,6 +1103,10 @@ input[type="range"]:focus::-ms-fill-upper {
         }
       }
     }
+
+    .link {
+      color: $color-info;
+    }
   }
 
   .btn-close {
@@ -1215,7 +1229,7 @@ input[type="range"]:focus::-ms-fill-upper {
     top: 70px;
     left: 0;
     right: 0;
-    width: 35rem;
+    width: 40rem;
     margin-left: auto;
     margin-right: auto;
     z-index: 20;

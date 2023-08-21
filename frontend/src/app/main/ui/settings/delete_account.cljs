@@ -51,7 +51,7 @@
 
       [:div.modal-footer
        [:div.action-buttons
-        [:button.btn-warning.btn-large {:on-click on-accept
+        [:button.btn-danger.btn-large {:on-click on-accept
                                         :data-test "delete-account-btn"}
          (tr "modals.delete-account.confirm")]
         [:button.btn-secondary.btn-large {:on-click on-close}

@@ -15,7 +15,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc banner
-  [{:keys [type position status controls content actions on-close data-test role] :as props}]
+  [{:keys [type position status controls content links actions on-close data-test role] :as props}]
   [:div.banner {:class (dom/classnames
                         :warning  (= type :warning)
                         :error    (= type :error)
@@ -37,7 +37,12 @@
                            :bottom-actions (= controls :bottom-actions))
                    :data-test data-test
                    :role role}
-     content
+     [:span
+      content
+      (for [link links]
+        [:* {:key (uuid/next)}
+         " " [:a.link {:on-click (:callback link)}
+              (:label link)]])]
      (when (or (= controls :bottom-actions) (= controls :inline-actions))
        [:div.actions
         (for [action actions]
