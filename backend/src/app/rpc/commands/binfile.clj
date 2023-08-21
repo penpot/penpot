@@ -516,6 +516,9 @@
                :media (count media)
                ::l/sync? true)
 
+      (doseq [item media]
+        (l/debug :hint "write penpot file media object" :id (:id item) ::l/sync? true))
+
       (doto output
         (write-obj! file)
         (write-obj! media))
@@ -770,7 +773,7 @@
 (defn- lookup-index
   [id]
   (let [val (get-in @*state* [:index id])]
-    (l/trace :fn "lookup-index" :id id :val val ::l/sync? true)
+    (l/debug :fn "lookup-index" :id id :val val ::l/sync? true)
     (when (and (not (::ignore-index-errors? *options*)) (not val))
       (ex/raise :type :validation
                 :code :incomplete-index
@@ -783,7 +786,7 @@
          index index]
     (if-let [id (first items)]
       (let [new-id (if (::overwrite? *options*) id (uuid/next))]
-        (l/trace :fn "update-index" :id id :new-id new-id ::l/sync? true)
+        (l/debug :fn "update-index" :id id :new-id new-id ::l/sync? true)
         (recur (rest items)
                (assoc index id new-id)))
       index)))
@@ -801,8 +804,7 @@
               (update-in [:metadata :id] lookup-index)
 
               ;; Relink paths with fill image
-              (and (map? (:fill-image form))
-                   (= :path (:type form)))
+              (map? (:fill-image form))
               (update-in [:fill-image :id] lookup-index)
 
               ;; This covers old shapes and the new :fills.

@@ -113,8 +113,15 @@
                (mapcat vals)
                (keep (fn [{:keys [type] :as obj}]
                        (case type
-                         :path (get-in obj [:fill-image :id])
+                         :path  (get-in obj [:fill-image :id])
+                         :bool  (get-in obj [:fill-image :id])
+                         ;; NOTE: because of some bug, we ended with
+                         ;; many shape types having the ability to
+                         ;; have fill-image attribute (which initially
+                         ;; designed for :path shapes).
+                         :group (get-in obj [:fill-image :id])
                          :image (get-in obj [:metadata :id])
+
                          nil))))
         pages (concat
                (vals (:pages-index data))
