@@ -450,7 +450,8 @@
         can-update-main?    (or (not components-v2) touched?)
 
         first-shape         (first shapes)
-        {:keys [id component-id component-file main-instance?]} first-shape
+        {:keys [id component-id component-file]} first-shape
+        main-instance?      (ctk/main-instance? first-shape)
         component-shapes    (filter #(contains? % :component-id) shapes)
 
 
