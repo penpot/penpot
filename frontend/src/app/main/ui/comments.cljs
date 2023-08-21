@@ -229,10 +229,16 @@
         edition? (mf/use-state false)
 
         on-show-options
-        (mf/use-fn #(reset! options true))
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! options true)))
 
         on-hide-options
-        (mf/use-fn #(reset! options false))
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! options false)))
 
         on-edit-clicked
         (mf/use-fn

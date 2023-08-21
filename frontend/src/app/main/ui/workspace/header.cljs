@@ -79,10 +79,16 @@
         open? (deref open*)
 
         open-dropdown
-        (mf/use-fn #(reset! open* true))
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! open* true)))
 
         close-dropdown
-        (mf/use-fn #(reset! open* false))
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! open* false)))
 
         on-increase
         (mf/use-fn
@@ -449,9 +455,23 @@
         sub-menu*      (mf/use-state false)
         sub-menu       (deref sub-menu*)
 
-        open-menu      (mf/use-fn #(reset! show-menu* true))
-        close-menu     (mf/use-fn #(reset! show-menu* false))
-        close-sub-menu (mf/use-fn #(reset! sub-menu* nil))
+        open-menu
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu* true)))
+
+        close-menu
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu* false)))
+
+        close-sub-menu
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! sub-menu* nil)))
 
         on-menu-click
         (mf/use-fn
@@ -465,6 +485,7 @@
         toggle-flag
         (mf/use-fn
          (fn [event]
+           (dom/stop-propagation event)
            (let [flag (-> (dom/get-current-target event)
                           (dom/get-data "flag")
                           (keyword))]

@@ -32,6 +32,10 @@
 
 (l/setup! {:app :info})
 
+(defonce app-root
+  (let [el (dom/get-element "app")]
+    (mf/create-root el)))
+
 (declare ^:private render-single-object)
 (declare ^:private render-components)
 (declare ^:private render-objects)
@@ -48,7 +52,7 @@
                            "objects"    (render-objects params)
                            "components" (render-components params)
                            nil)]
-      (mf/mount component (dom/get-element "app")))))
+      (mf/render! app-root component))))
 
 (defn ^:export init
   []
@@ -57,7 +61,7 @@
 
 (defn reinit
   []
-  (mf/unmount (dom/get-element "app"))
+  (mf/unmount! app-root)
   (init-ui))
 
 (defn ^:dev/after-load after-load
@@ -201,7 +205,7 @@
        [:& objects-svg
         {:file-id file-id
          :page-id page-id
-         :share-id share-id         
+         :share-id share-id
          :object-ids (into #{} object-id)
          :render-embed? render-embed}]))))
 

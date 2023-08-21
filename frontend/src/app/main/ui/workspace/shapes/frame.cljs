@@ -57,15 +57,14 @@
       {::mf/wrap [#(mf/memo' % check-props)]
        ::mf/wrap-props false}
       [props]
-
       (let [shape         (unchecked-get props "shape")
             frame-id      (:id shape)
             objects       (wsh/lookup-page-objects @st/state)
-            node-ref      (mf/use-var nil)
+            node-ref      (mf/use-ref nil)
             modifiers-ref (mf/use-memo (mf/deps frame-id) #(refs/workspace-modifiers-by-frame-id frame-id))
             modifiers     (mf/deref modifiers-ref)]
 
-        (fdm/use-dynamic-modifiers objects @node-ref modifiers)
+        (fdm/use-dynamic-modifiers objects (mf/ref-val node-ref) modifiers)
         (let [shape (unchecked-get props "shape")]
           [:& frame-shape {:shape shape :ref node-ref}])))))
 
@@ -86,17 +85,18 @@
 
             objects            (wsh/lookup-page-objects @st/state)
 
-            node*              (mf/use-var nil)
+            node-ref           (mf/use-ref nil)
+            root-ref           (mf/use-ref nil)
+
             force-render*      (mf/use-state false)
             force-render?      (deref force-render*)
 
             ;; when `true` we've called the mount for the frame
-            rendered*          (mf/use-var false)
+            rendered-ref       (mf/use-ref false)
 
             modifiers-ref      (mf/with-memo [frame-id]
                                  (refs/workspace-modifiers-by-frame-id frame-id))
             modifiers          (mf/deref modifiers-ref)
-
 
             fonts              (mf/with-memo [shape objects]
                                  (ff/shape->fonts shape objects))
@@ -104,44 +104,52 @@
 
             disable-thumbnail? (d/not-empty? (dm/get-in modifiers [frame-id :modifiers]))
 
-            [on-load-frame-dom render-frame? thumbnail-renderer]
-            (ftr/use-render-thumbnail page-id shape node* rendered* disable-thumbnail? force-render?)
+            [on-load-frame-dom render-frame? children]
+            (ftr/use-render-thumbnail page-id shape root-ref node-ref rendered-ref disable-thumbnail? force-render?)
 
             on-frame-load
-            (fns/use-node-store thumbnail? node* rendered* render-frame?)]
+            (fns/use-node-store node-ref rendered-ref thumbnail? render-frame?)
+            ]
 
-        (fdm/use-dynamic-modifiers objects @node* modifiers)
+        (fdm/use-dynamic-modifiers objects (mf/ref-val node-ref) modifiers)
 
         (mf/with-effect []
           ;; When a change in the data is received a "force-render" event is emitted
           ;; that will force the component to be mounted in memory
           (let [sub (->> (dwt/force-render-stream frame-id)
-                         (rx/take-while #(not @rendered*))
+                         (rx/take-while #(not (mf/ref-val rendered-ref)))
                          (rx/subs #(reset! force-render* true)))]
             #(some-> sub rx/dispose!)))
 
         (mf/with-effect [shape fonts thumbnail? on-load-frame-dom force-render? render-frame?]
-          (when (and (some? @node*)
-                     (or @rendered*
-                         (not thumbnail?)
-                         force-render?
-                         render-frame?))
-            (let [elem (mf/element frame-shape #js {:ref on-load-frame-dom :shape shape :fonts fonts})]
-              (mf/mount elem @node*)
-              (when (not @rendered*)
-                (reset! rendered* true)))))
+          (when (and (some? (mf/ref-val node-ref))
+                     (or (mf/ref-val rendered-ref)
+                         (false? thumbnail?)
+                         (true? force-render?)
+                         (true? render-frame?)))
+
+            (when (false? (mf/ref-val rendered-ref))
+              (when-let [node (mf/ref-val node-ref)]
+                (mf/set-ref-val! root-ref (mf/create-root node))
+                (mf/set-ref-val! rendered-ref true)))
+
+            (when-let [root (mf/ref-val root-ref)]
+              (mf/render! root (mf/element frame-shape #js {:ref on-load-frame-dom :shape shape :fonts fonts})))
+
+            (constantly nil)))
 
         [:& shape-container {:shape shape}
-         [:g.frame-container {:id (dm/str "frame-container-" frame-id)
-                              :key "frame-container"
-                              :ref on-frame-load
-                              :opacity (when (:hidden shape) 0)}
+         [:g.frame-container
+          {:id (dm/str "frame-container-" frame-id)
+           :key "frame-container"
+           :ref on-frame-load
+           :opacity (when (:hidden shape) 0)}
           [:& ff/fontfaces-style {:fonts fonts}]
           [:g.frame-thumbnail-wrapper
            {:id (dm/str "thumbnail-container-" frame-id)
             ;; Hide the thumbnail when not displaying
             :opacity (when-not thumbnail? 0)}
-           thumbnail-renderer]]
+           children]]
 
          ]))))
 

@@ -191,6 +191,7 @@
                            (rx/mapcat #(wapi/create-image-bitmap % #js {:resizeWidth width
                                                                         :resizeQuality "medium"}))
                            (rx/tap #(wapi/revoke-uri uri)))))
+
          (rx/mapcat bitmap->blob))))
 
 (defn- on-message

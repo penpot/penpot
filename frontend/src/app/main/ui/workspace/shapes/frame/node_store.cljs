@@ -7,40 +7,49 @@
 (ns app.main.ui.workspace.shapes.frame.node-store
   (:require
    [app.util.dom :as dom]
-   [app.util.globals :as globals]
    [rumext.v2 :as mf]))
 
 (defn use-node-store
   "Hook responsible of storing the rendered DOM node in memory while not being used"
-  [thumbnail? node-ref rendered? render-frame?]
+  [node-ref rendered-ref thumbnail? render-frame?]
 
-  (let [;; when `true` the node is in memory
-        in-memory? (mf/use-state true)
-
-        ;; State just for re-rendering
-        re-render  (mf/use-state 0)
-
-        parent-ref (mf/use-var nil)
+  (let [re-render*  (mf/use-state 0)
+        parent-ref  (mf/use-ref nil)
+        present-ref (mf/use-ref false)
 
         on-frame-load
-        (mf/use-callback
+        (mf/use-fn
          (fn [node]
-           (when (and (some? node) (nil? @node-ref))
-             (let [content (-> (.createElementNS globals/document "http://www.w3.org/2000/svg" "g")
+           (when (and (some? node)
+                      (nil? (mf/ref-val node-ref)))
+             (let [content (-> (dom/create-element "http://www.w3.org/2000/svg" "g")
                                (dom/add-class! "frame-content"))]
-               (reset! node-ref content)
-               (reset! parent-ref node)
-               (swap! re-render inc)))))]
+               (mf/set-ref-val! node-ref content)
+               (mf/set-ref-val! parent-ref node)
+               (swap! re-render* inc)))))]
 
-    (mf/use-layout-effect
-     (mf/deps thumbnail? render-frame?)
-     (fn []
-       (when (and (some? @parent-ref) (some? @node-ref) @rendered? (and thumbnail? (not render-frame?)))
-         (.removeChild @parent-ref @node-ref)
-         (reset! in-memory? true))
+    (mf/with-effect [thumbnail? render-frame?]
+      (let [rendered? (mf/ref-val rendered-ref)
+            present?  (mf/ref-val present-ref)]
 
-       (when (and (some? @node-ref) @in-memory? (or (not thumbnail?) render-frame?))
-         (.appendChild @parent-ref @node-ref)
-         (reset! in-memory? false))))
+        (when (and (true? rendered?)
+                   (true? thumbnail?)
+                   (false? render-frame?)
+                   (true? present?))
+          (when-let [parent (mf/ref-val parent-ref)]
+            (when-let [node (mf/ref-val node-ref)]
+              (dom/remove-child! parent node)
+              (mf/set-ref-val! present-ref false)
+              (swap! re-render* inc))))
+
+        (when (and (false? present?)
+                   (or (false? thumbnail?)
+                       (true? render-frame?)))
+          (when-let [parent (mf/ref-val parent-ref)]
+            (when-let [node (mf/ref-val node-ref)]
+              (when-not (dom/child? parent node)
+                (dom/append-child! parent node)
+                (mf/set-ref-val! present-ref true)
+                (swap! re-render* inc)))))))
 
     on-frame-load))

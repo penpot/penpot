@@ -226,6 +226,13 @@
       (reset! ptr value))
     ptr))
 
+(defn use-update-ref
+  [value]
+  (let [ref (mf/use-ref value)]
+    (mf/with-effect [value]
+      (mf/set-ref-val! ref value))
+    ref))
+
 (defn use-ref-callback
   "Returns a stable callback pointer what calls the interned
   callback. The interned callback will be automatically updated on

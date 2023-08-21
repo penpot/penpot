@@ -227,6 +227,7 @@
         i/search])]))
 
 (mf/defc teams-selector-dropdown-items
+  {::mf/wrap-props false}
   [{:keys [team profile teams] :as props}]
   (let [on-create-clicked
         (mf/use-callback
@@ -257,6 +258,7 @@
                                                 (team-selected (:id team-item) event)))
                                :id          (str "teams-selector-" (:id team-item))
                                :klass       "team-name"
+                               :key         (str "teams-selector-" (:id team-item))
                                :unique-key  (dm/str (:id team-item))}
         [:span.team-icon
          [:img {:src (cf/resolve-team-photo-url team-item)
@@ -472,7 +474,9 @@
     [:div.sidebar-team-switch
      [:div.switch-content
       [:button.current-team {:tab-index "0"
-                             :on-click #(reset! show-teams-ddwn? true)
+                             :on-click (fn [event]
+                                         (dom/stop-propagation event)
+                                         (reset! show-teams-ddwn? true))
                              :on-key-down (fn [event]
                                             (when (or (kbd/space? event) (kbd/enter? event))
                                               (dom/prevent-default event)
@@ -496,7 +500,9 @@
         i/arrow-down]]
 
       (when-not (:is-default team)
-        [:button.switch-options {:on-click #(reset! show-team-opts-ddwn? true)
+        [:button.switch-options {:on-click (fn [event]
+                                             (dom/stop-propagation event)
+                                             (reset! show-team-opts-ddwn? true))
                                  :tab-index "0"
                                  :on-key-down (fn [event]
                                                 (when (or (kbd/space? event) (kbd/enter? event))
@@ -674,6 +680,7 @@
         (mf/use-callback
          (fn [section event]
            (dom/stop-propagation event)
+           (reset! show false)
            (if (keyword? section)
              (st/emit! (rt/nav section))
              (st/emit! section))))
@@ -689,7 +696,9 @@
 
     [:div.profile-section
      [:div.profile {:tab-index "0"
-                    :on-click #(reset! show true)
+                    :on-click (fn [event]
+                                (dom/stop-propagation event)
+                                (reset! show true))
                     :on-key-down (fn [event]
                                    (when (kbd/enter? event)
                                      (reset! show true)))
@@ -698,7 +707,9 @@
              :alt (:fullname profile)}]
       [:span (:fullname profile)]]
 
-     [:& dropdown-menu {:on-close #(reset! show false)
+     [:& dropdown-menu {:on-close (fn [event]
+                                    (dom/stop-propagation event)
+                                    (reset! show false))
                         :show @show}
       [:ul.dropdown
        [:li {:tab-index (if show

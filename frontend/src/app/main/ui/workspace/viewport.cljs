@@ -69,7 +69,7 @@
    selected))
 
 (mf/defc viewport
-  [{:keys [wlocal wglobal selected layout file] :as props}]
+  [{:keys [selected wglobal wlocal layout file] :as props}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
         {:keys [edit-path
