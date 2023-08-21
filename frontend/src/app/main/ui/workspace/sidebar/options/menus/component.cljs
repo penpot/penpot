@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.main.data.modal :as modal]
@@ -158,7 +159,7 @@
         library-id          (:component-file values)
         show?               (some? component-id)
         main-instance?      (if components-v2
-                              (:main-instance values)
+                              (ctk/main-instance? values)
                               true)
         main-component?     (:main-instance values)
         lacks-annotation?   (nil? (:annotation values))
