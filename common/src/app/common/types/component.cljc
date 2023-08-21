@@ -63,6 +63,7 @@
    :constraints-v           :constraints-group
    :fixed-scroll            :constraints-group
    :exports                 :exports-group
+   :grids                   :grids-group
 
    :layout                  :layout-container
    :layout-align-content    :layout-container
