@@ -97,11 +97,12 @@
 (defn- svg-update-image!
   "Updates an image in an SVG to a Data URI."
   [image]
-  (when-let [href (dom/get-attribute image "href")]
+  (if-let [href (dom/get-attribute image "href")]
     (->> (fetch-as-data-uri href)
          (rx/map (fn [url]
                    (dom/set-attribute! image "href" url)
-                   image)))))
+                   image)))
+    (rx/empty)))
 
 (defn- svg-resolve-images!
   "Resolves all images in an SVG to Data URIs."
