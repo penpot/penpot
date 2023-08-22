@@ -241,7 +241,8 @@
          frame-id        (or force-frame-id
                              (ctst/frame-id-by-position objects
                                                         (gpt/add orig-pos delta)
-                                                        {:skip-components? true}))
+                                                        {:skip-components? true
+                                                         :bottom-frames? true}))
          frame-ids-map   (volatile! {})
 
          update-new-shape

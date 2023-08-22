@@ -237,9 +237,11 @@
   ([objects position] (frame-id-by-position objects position nil))
   ([objects position options]
    (assert (gpt/point? position))
-   (let [top-frame
+   (let [sort-with-options (fn [objects ids]
+                             (sort-z-index objects ids options))
+         top-frame
          (->> (get-frames-ids objects options)
-              (sort-z-index objects)
+              (sort-with-options objects)
               (d/seek #(and position (gsh/has-point? (get objects %) position))))]
      (or top-frame uuid/zero))))
 
