@@ -236,12 +236,9 @@
   "Return a map without the keys provided
   in the `keys` parameter."
   [data keys]
-  (persistent!
-   (reduce dissoc!
-           (if (editable-collection? data)
-             (transient data)
-             (transient {}))
-           keys)))
+  (if (editable-collection? data)
+    (persistent! (reduce dissoc! (transient data) keys))
+    (reduce dissoc data keys)))
 
 (defn remove-at-index
   "Takes a vector and returns a vector with an element in the
