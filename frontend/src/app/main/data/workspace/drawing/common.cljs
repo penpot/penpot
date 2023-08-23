@@ -52,7 +52,12 @@
                    (assoc :grow-type :fixed)
 
                    (and ^boolean click-draw? (not ^boolean text?))
-                   (-> (assoc :width min-side :height min-side)
+                   (-> (assoc :width min-side)
+                       (assoc :height min-side)
+                       ;; NOTE: we need to recalculate the selrect and
+                       ;; points, so we assign `nil` to it
+                       (assoc :selrect nil)
+                       (assoc :points nil)
                        (cts/setup-shape)
                        (gsh/transform-shape (ctm/move-modifiers (- (/ min-side 2)) (- (/ min-side 2)))))
 
