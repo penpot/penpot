@@ -11,6 +11,7 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.path.shapes-to-path :as stp]
+   [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -45,6 +46,7 @@
              :name name
              :shapes (->> shapes (mapv :id))}
             (merge head-data)
+            (cts/setup-shape)
             (gsh/update-bool-selrect shapes objects))]
 
     [bool-shape (cph/get-position-on-parent objects (:id head))]))
