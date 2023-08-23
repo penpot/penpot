@@ -2638,10 +2638,6 @@ msgid_plural "workspace.assets.selected-count"
 msgstr[0] "已选中%s个物件"
 msgstr[1] "已选中%s个物件"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "共享的"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "排版"

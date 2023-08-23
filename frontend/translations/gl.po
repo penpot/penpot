@@ -1251,9 +1251,6 @@ msgstr "Bibliotecas"
 msgid "workspace.assets.rename"
 msgstr "Mudar o nome"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "COMPARTIDA"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs

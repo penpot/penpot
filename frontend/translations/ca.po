@@ -2538,10 +2538,6 @@ msgid_plural "workspace.assets.selected-count"
 msgstr[0] "%s element seleccionat"
 msgstr[1] "%s elements seleccionats"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "COMPARTIT"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "Tipografies"

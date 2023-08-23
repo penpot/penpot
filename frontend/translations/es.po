@@ -3132,8 +3132,11 @@ msgstr[0] "%s elemento seleccionado"
 msgstr[1] "%s elementos seleccionados"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "COMPARTIDA"
+msgid "workspace.assets.shared-library"
+msgstr "Biblioteca compartida"
+
+msgid "workspace.assets.open-library"
+msgstr "Abrir el fichero de la biblioteca"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs

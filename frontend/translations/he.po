@@ -2755,10 +2755,6 @@ msgstr[1] "%s פריטים נבחרו"
 msgstr[2] "%s פריטים נבחרו"
 msgstr[3] "%s פריטים נבחרו"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "משותף"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"

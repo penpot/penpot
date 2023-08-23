@@ -2875,10 +2875,6 @@ msgid_plural "workspace.assets.selected-count"
 msgstr[0] "%s öge seçildi"
 msgstr[1] "%s öge seçildi"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "PAYLAŞILDI"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"

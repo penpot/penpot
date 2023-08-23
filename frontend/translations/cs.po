@@ -2544,10 +2544,6 @@ msgstr[0] "%s položka vybrána"
 msgstr[1] "Počet vybraných položek: %s"
 msgstr[2] "Počet vybraných položek: %s"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "SDÍLENÉ"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "Typografie"

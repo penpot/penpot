@@ -2740,10 +2740,6 @@ msgstr[0] "%s obiect selectat"
 msgstr[1] "%s obiecte selectate"
 msgstr[2] "%s obiecte selectate"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "DISTRIBUITE"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "Tipografii"

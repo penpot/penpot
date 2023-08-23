@@ -2755,10 +2755,6 @@ msgstr[0] "atlasīts %s vienums"
 msgstr[1] "atlasīts %s vienums"
 msgstr[2] "atlasīti %s vienumi"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "KOPĪGIE"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "Tipogrāfijas"
