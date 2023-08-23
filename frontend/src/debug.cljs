@@ -7,6 +7,7 @@
 (ns debug
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.logging :as l]
    [app.common.math :as mth]
    [app.common.transit :as t]
@@ -421,6 +422,23 @@
   [read-only?]
   (st/emit! (dw/set-workspace-read-only read-only?)))
 
+
+;; Validation and repair
+
+(defn ^:export validate
+  ([] (validate nil))
+  ([shape-id]
+   (let [file      (assoc (get @st/state :workspace-file)
+                          :data (get @st/state :workspace-data))
+         page      (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])
+         libraries (get @st/state :workspace-libraries)
+         
+         errors    (ctf/validate-shape (or shape-id uuid/zero)
+                                       file
+                                       page
+                                       libraries)]
+   (clj->js errors))))
+
 (defn ^:export fix-orphan-shapes
   []
   (st/emit! (dw/fix-orphan-shapes)))
@@ -433,11 +451,9 @@
   [id shape-ref]
   (st/emit! (dw/set-shape-ref id shape-ref)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SNAPSHOTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defn ^:export list-available-snapshots
   [file-id]
@@ -452,7 +468,6 @@
                                       (map (fn [row]
                                              (update row :id str))))]
                       (js/console.table (clj->js result))))))))
-
 
 (defn ^:export take-snapshot
   [file-id label]
