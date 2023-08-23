@@ -3049,8 +3049,12 @@ msgstr[0] "%s item selected"
 msgstr[1] "%s items selected"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "SHARED"
+msgid "workspace.assets.shared-library"
+msgstr "Shared library"
+
+msgid "workspace.assets.open-library"
+msgstr "Open library file"
+
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"

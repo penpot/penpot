@@ -2635,10 +2635,6 @@ msgstr[0] "%s odabrana stavka"
 msgstr[1] "%s odabranih stavki"
 msgstr[2] "%s odabranih stavki"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "PODIJELJENO"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "Tipografija"

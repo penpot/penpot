@@ -2160,10 +2160,6 @@ msgid_plural "workspace.assets.selected-count"
 msgstr[0] "Выбран ресурс"
 msgstr[1] "Выбраны ресурсы (%s)"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "ОБЩИЕ"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "Типографика"

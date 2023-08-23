@@ -1715,10 +1715,6 @@ msgstr "檔案庫"
 msgid "workspace.assets.rename"
 msgstr "重新命名"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "共用"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "字體排版設計"

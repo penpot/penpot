@@ -720,10 +720,6 @@ msgstr "Бібліотеки"
 msgid "workspace.assets.rename"
 msgstr "Перейменувати"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "СПІЛЬНІ"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "Типографіка"

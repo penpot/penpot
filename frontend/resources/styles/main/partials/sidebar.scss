@@ -78,20 +78,21 @@
           margin-left: auto;
         }
 
-        span.tool-link {
+        span.tool-link,
+        span.shared-library {
           margin-left: auto;
+          padding-left: 17px;
+          display: flex;
 
           svg {
             fill: $color-gray-30;
-            height: 16px;
-            width: 16px;
+            height: 20px;
+            width: 20px;
           }
+        }
 
-          &:hover {
-            svg {
-              fill: $color-primary;
-            }
-          }
+        span.tool-link:hover svg {
+          fill: $color-primary;
         }
 
         span.library-title {
@@ -101,6 +102,9 @@
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+          &:first-letter {
+            text-transform: uppercase;
+          }
         }
 
         .tool-window-bar-icon {
