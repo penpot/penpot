@@ -667,7 +667,7 @@
               (rx/of (update-shape shape-id {:name name})))
 
             ;; Update the component in case if shape is a main instance
-            (when (:main-instance shape)
+            (when (and (string? name) (not (str/blank? name)) (:main-instance shape))
               (when-let [component-id (:component-id shape)]
                 (rx/of (dwl/rename-component component-id name)))))))))))
 
