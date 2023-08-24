@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.19.2
+
+### :sparkles: New features
+
+- Navigate up in layer lierarchy with Shift+Enter shortcut [Taiga #5734](https://tree.taiga.io/project/penpot/us/5734)
+
 ## 1.19.1
 
 ### :bug: Bugs fixed

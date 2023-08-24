@@ -988,6 +988,23 @@
               (rx/of (dwe/start-edition-mode id)
                      (dwdp/start-path-edit id)))))))))
 
+(defn select-parent-layer
+  []
+  (ptk/reify ::select-parent-layer
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected (wsh/lookup-selected state)
+            objects (wsh/lookup-page-objects state)
+            shapes-to-select
+            (->> selected
+                 (reduce
+                   (fn [result shape-id]
+                     (let [parent-id (dm/get-in objects [shape-id :parent-id])]
+                       (if (and (some? parent-id)  (not= parent-id uuid/zero))
+                         (conj result parent-id)
+                         (conj result shape-id))))
+                   (d/ordered-set)))]
+        (rx/of (dws/select-shapes shapes-to-select))))))
 
 ;; --- Change Page Order (D&D Ordering)
 

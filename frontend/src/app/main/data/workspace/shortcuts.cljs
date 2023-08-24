@@ -509,6 +509,10 @@
                           :subsections [:navigation-workspace]
                           :fn #(st/emit! (dw/select-next-shape))}
 
+   :select-parent-layer  {:tooltip (ds/shift ds/enter)
+                          :command "shift+enter"
+                          :subsections [:navigation-workspace]
+                          :fn #(emit-when-no-readonly (dw/select-parent-layer))}
    ;; SHAPE
 
 
