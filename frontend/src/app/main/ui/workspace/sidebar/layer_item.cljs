@@ -175,6 +175,7 @@
             ;; seek for an alternate solution. Maybe use-context?
             scroll-node (dom/get-parent-with-data node "scrollContainer")
             parent-node (dom/get-parent-at node 2)
+            first-child-node (dom/get-first-child parent-node)
 
             subid
             (when (and single? selected?)
@@ -184,9 +185,9 @@
                  #(let [scroll-distance-ratio (dom/get-scroll-distance-ratio node scroll-node)
                         scroll-behavior (if (> scroll-distance-ratio 1) "instant" "smooth")]
                     (if scroll-to
-                      (dom/scroll-into-view! parent-node #js {:block "center" :behavior scroll-behavior  :inline "start"})
+                      (dom/scroll-into-view! first-child-node #js {:block "center" :behavior scroll-behavior  :inline "start"})
                       (do
-                        (dom/scroll-into-view-if-needed! parent-node #js {:block "center" :behavior scroll-behavior :inline "start"})
+                        (dom/scroll-into-view-if-needed! first-child-node #js {:block "center" :behavior scroll-behavior :inline "start"})
                         (reset! scroll-to-middle? true)))))))]
 
         #(when (some? subid)
