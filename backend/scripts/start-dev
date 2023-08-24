@@ -15,7 +15,7 @@ export PENPOT_FLAGS="\
        enable-fdata-storage-objets-map \
        disable-secure-session-cookies \
        enable-smtp \
-       enable-webhooks";
+       enable-access-tokens";
 
 set -ex
 

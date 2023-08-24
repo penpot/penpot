@@ -81,7 +81,7 @@
       (let [explain (ex/explain data)]
         {::yrs/status 400
          ::yrs/body   (-> data
-                          (dissoc ::s/problems ::s/value)
+                          (dissoc ::s/problems ::s/value ::s/spec)
                           (cond-> explain (assoc :explain explain)))})
 
       (= code :params-validation)
