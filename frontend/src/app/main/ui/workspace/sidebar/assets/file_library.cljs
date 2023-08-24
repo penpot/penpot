@@ -83,7 +83,7 @@
               i/library]
             )]
          [:*
-          [:span.library-title file-name]
+          [:span.library-title {:title file-name} file-name]
           [:span.tool-link {:alt (tr "workspace.assets.open-library") :title (tr "workspace.assets.open-library")}
            [:a {:href (str "#" url)
                 :target "_blank"
