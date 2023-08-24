@@ -382,8 +382,10 @@
                                   keyword
                                   identity)}}))})
 
-(def max-safe-int (int 1e6))
-(def min-safe-int (int -1e6))
+;; Integer/MAX_VALUE
+(def max-safe-int 2147483647)
+;; Integer/MIN_VALUE
+(def min-safe-int -2147483648)
 
 (def! ::safe-int
   {:type ::safe-int

@@ -574,8 +574,11 @@
       (l/trace :hint "register cron task" :id id :cron (str cron))
       (db/exec-one! conn [sql:upsert-cron-task id (str cron) (str cron)]))))
 
-(def sql:lock-cron-task
-  "select id from scheduled_task where id=? for update skip locked")
+(defn- lock-scheduled-task!
+  [conn id]
+  (let [sql (str "SELECT id FROM scheduled_task "
+                 " WHERE id=? FOR UPDATE SKIP LOCKED")]
+    (some? (db/exec-one! conn [sql (d/name id)]))))
 
 (defn- execute-cron-task
   [{:keys [::db/pool] :as cfg} {:keys [id] :as task}]
@@ -583,11 +586,16 @@
     {:name (str "penpot/cront-task/" id)}
     (try
       (db/with-atomic [conn pool]
-        (when (db/exec-one! conn [sql:lock-cron-task (d/name id)])
+        (db/exec-one! conn ["SET statement_timeout=0;"])
+        (db/exec-one! conn ["SET idle_in_transaction_session_timeout=0;"])
+        (when (lock-scheduled-task! conn id)
           (l/trace :hint "cron: execute task" :task-id id)
-          ((:fn task) task)))
+          ((:fn task) task))
+        (db/rollback! conn))
+
       (catch InterruptedException _
         (l/debug :hint "cron: task interrupted" :task-id id))
+
       (catch Throwable cause
         (binding [l/*context* (get-error-context cause task)]
           (l/error :hint "cron: unhandled exception on running task"
