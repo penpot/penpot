@@ -38,7 +38,6 @@
                       "  from file_change "
                       " where file_id = ? "
                       "   and created_at < ? "
-                      "   and label is not null "
                       "   and data is not null "
                       " order by created_at desc "
                       " limit ?")
