@@ -318,8 +318,7 @@
             ;; We need to reverse the children because if two children
             ;; overlap we want to select the one that's over (and it's
             ;; in the later vector position
-            selected (->> children
-                          reverse
+            selected (->> (reverse children)
                           (d/seek #(gsh/has-point? % position)))]
         (when selected
           (rx/of (select-shape (:id selected))))))))

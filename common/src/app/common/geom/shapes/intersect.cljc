@@ -7,13 +7,15 @@
 (ns app.common.geom.shapes.intersect
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpp]
    [app.common.geom.shapes.text :as gte]
-   [app.common.math :as mth]))
+   [app.common.math :as mth]
+   [app.common.pages.helpers :as cph]))
 
 (defn orientation
   "Given three ordered points gives the orientation
@@ -335,12 +337,32 @@
   (let [lines (grc/rect->lines rect)]
     (is-point-inside-evenodd? point lines)))
 
-(defn has-point?
-  "Check if the shape contains a point"
+(defn slow-has-point?
   [shape point]
-  (let [lines (points->lines (:points shape))]
-    ;; TODO: Will only work for simple shapes
+  (let [lines (points->lines (dm/get-prop shape :points))]
     (is-point-inside-evenodd? point lines)))
+
+(defn fast-has-point?
+  [shape point]
+  (let [x1 (dm/get-prop shape :x)
+        y1 (dm/get-prop shape :x)
+        x2 (+ x1 (dm/get-prop shape :width))
+        y2 (+ y1 (dm/get-prop shape :height))
+        px (dm/get-prop point :x)
+        py (dm/get-prop point :y)]
+
+    (and (>= px x1)
+         (<= px x2)
+         (>= py y1)
+         (<= py y2))))
+
+(defn has-point?
+  [shape point]
+  (if (or ^boolean (cph/path-shape? shape)
+          ^boolean (cph/bool-shape? shape)
+          ^boolean (cph/circle-shape? shape))
+    (slow-has-point? shape point)
+    (fast-has-point? shape point)))
 
 (defn rect-contains-shape?
   [rect shape]
