@@ -118,7 +118,7 @@
   ;; Cast a ray from the point in any direction and count the intersections
   ;; if it's odd the point is inside the polygon
   (->> lines
-       (filter #(intersect-ray? p %))
+       (filterv #(intersect-ray? p %))
        (count)
        (odd?)))
 
