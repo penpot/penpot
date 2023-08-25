@@ -394,6 +394,48 @@
                 (tr "workspace.libraries.no-shared-libraries-available")
                 (tr "workspace.libraries.no-matches-for" search-term))])])]])))
 
+(defn- extract-assets
+  [file-data library summary?]
+  (let [exceeded (volatile! {:components false
+                             :colors false
+                             :typographies false})
+
+        truncate (fn [asset-type items]
+                   (if (and summary? (> (count items) 5))
+                     (do
+                       (vswap! exceeded assoc asset-type true)
+                       (take 5 items))
+                     items))
+
+        assets (dwl/assets-need-sync library file-data)
+
+        component-ids  (into #{} (->> assets
+                                      (filter #(= (:asset-type %) :component))
+                                      (map :asset-id)))
+        color-ids      (into #{} (->> assets
+                                      (filter #(= (:asset-type %) :color))
+                                      (map :asset-id)))
+        typography-ids (into #{} (->> assets
+                                      (filter #(= (:asset-type %) :typography))
+                                      (map :asset-id)))
+
+        components   (->> component-ids
+                          (map #(ctkl/get-component (:data library) %))
+                          (sort-by #(str/lower (:name %)))
+                          (truncate :components))
+        colors       (->> color-ids
+                          (map #(ctcl/get-color (:data library) %))
+                          (sort-by #(str/lower (:name %)))
+                          (truncate :colors))
+        typographies (->> typography-ids
+                          (map #(ctyl/get-typography (:data library) %))
+                          (sort-by #(str/lower (:name %)))
+                          (truncate :typographies))]
+
+    [library @exceeded {:components components
+                        :colors colors
+                        :typographies typographies}]))
+
 (mf/defc updates-tab
   {::mf/wrap-props false}
   [{:keys [file-id file-data libraries]}]
@@ -403,54 +445,13 @@
         updating?  (deref updating?*)
 
         see-all-assets
-        (fn []
-          (reset! summary?* false))
-
-        extract-assets
-        (fn [library]
-          (let [exceeded (volatile! {:components false
-                                     :colors false
-                                     :typographies false})
-
-                truncate (fn [asset-type items]
-                           (if (and summary? (> (count items) 5))
-                             (do
-                               (vswap! exceeded assoc asset-type true)
-                               (take 5 items))
-                             items))
-
-                assets (dwl/assets-need-sync library file-data)
-
-                component-ids  (into #{} (->> assets
-                                              (filter #(= (:asset-type %) :component))
-                                              (map :asset-id)))
-                color-ids      (into #{} (->> assets
-                                              (filter #(= (:asset-type %) :color))
-                                              (map :asset-id)))
-                typography-ids (into #{} (->> assets
-                                              (filter #(= (:asset-type %) :typography))
-                                              (map :asset-id)))
-
-                components   (->> component-ids
-                                  (map #(ctkl/get-component (:data library) %))
-                                  (sort-by #(str/lower (:name %)))
-                                  (truncate :components))
-                colors       (->> color-ids
-                                  (map #(ctcl/get-color (:data library) %))
-                                  (sort-by #(str/lower (:name %)))
-                                  (truncate :colors))
-                typographies (->> typography-ids
-                                  (map #(ctyl/get-typography (:data library) %))
-                                  (sort-by #(str/lower (:name %)))
-                                  (truncate :typographies))]
-
-            [library @exceeded {:components components
-                                :colors colors
-                                :typographies typographies}]))
+        (mf/use-fn
+         (fn []
+           (reset! summary?* false)))
 
         libs-assets (mf/with-memo [file-data libraries summary?*]
                       (->> (vals libraries)
-                           (map extract-assets)
+                           (map #(extract-assets file-data % summary?))
                            (filter (fn [[_ _ {:keys [components colors typographies]}]]
                                      (or (seq components)
                                          (seq colors)

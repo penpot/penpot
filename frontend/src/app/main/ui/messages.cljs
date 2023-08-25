@@ -6,8 +6,10 @@
 
 (ns app.main.ui.messages
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as dmsg]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -39,8 +41,8 @@
                    :role role}
      [:span
       content
-      (for [link links]
-        [:* {:key (uuid/next)}
+      (for [[index link] (d/enumerate links)]
+        [:* {:key (dm/str "link-" index)}
          " " [:a.link {:on-click (:callback link)}
               (:label link)]])]
      (when (or (= controls :bottom-actions) (= controls :inline-actions))
@@ -55,7 +57,7 @@
 (mf/defc notifications
   []
   (let [message  (mf/deref refs/message)
-        on-close #(st/emit! dm/hide)]
+        on-close #(st/emit! dmsg/hide)]
     (when message
       [:& banner (assoc message
                         :position (or (:position message) :fixed)
