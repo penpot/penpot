@@ -73,12 +73,10 @@
    (points->lines points true))
 
   ([points closed?]
-   (map vector
-        points
-        (-> (rest points)
-            (vec)
-            (cond-> closed?
-              (conj (first points)))))))
+   (map vector points
+        (cond-> (rest points)
+          (true? closed?)
+          (concat (list (first points)))))))
 
 (defn intersects-lines?
   "Checks if two sets of lines intersect in any point"
