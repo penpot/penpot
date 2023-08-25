@@ -15,8 +15,8 @@
    [app.main.data.websocket :as ws]
    [app.main.errors]
    [app.main.features :as feat]
+   [app.main.rasterizer :as thr]
    [app.main.store :as st]
-   [app.main.thumbnail-renderer :as tr]
    [app.main.ui :as ui]
    [app.main.ui.alert]
    [app.main.ui.confirm]
@@ -112,7 +112,7 @@
   (i18n/init! cf/translations)
   (theme/init! cf/themes)
   (cur/init-styles)
-  (tr/init!)
+  (thr/init!)
   (init-ui)
   (st/emit! (initialize)))
 

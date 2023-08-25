@@ -121,14 +121,12 @@
         (mf/use-fn
          (mf/deps thumbnail-uri)
          (fn []
-           (let [image-node (mf/ref-val frame-image-ref)]
-             (dom/set-data! image-node "ready" "true")
-             ;; If we don't have the thumbnail data saved (normally the first load) we update the data
-             ;; when available
-             (when-not (some? thumbnail-uri)
-               (st/emit! (dwt/update-thumbnail page-id id)))
+           ;; If we don't have the thumbnail data saved (normally the first load) we update the data
+           ;; when available
+           (when-not (some? thumbnail-uri)
+             (st/emit! (dwt/update-thumbnail page-id id)))
 
-             (reset! render-frame* false))))
+           (reset! render-frame* false)))
 
         generate-thumbnail
         (mf/use-fn
@@ -175,10 +173,6 @@
         on-update-frame
         (mf/use-fn
          (fn []
-           (let [image-node (mf/ref-val frame-image-ref)]
-             (when (not= "false" (dom/get-data image-node "ready"))
-               (dom/set-data! image-node "ready" "false")))
-
            (when-not ^boolean (mf/ref-val disable-ref)
              (reset! svg-uri* nil)
              (reset! bitmap-uri* nil)

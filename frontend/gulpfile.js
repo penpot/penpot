@@ -132,7 +132,7 @@ function readManifest() {
       "main": "js/main.js",
       "shared": "js/shared.js",
       "worker": "js/worker.js",
-      "thumbnail-renderer": "js/thumbnail-renderer.js"
+      "rasterizer": "js/rasterizer.js"
     };
   }
 }
@@ -243,9 +243,9 @@ gulp.task("template:render", templatePipeline({
   output: paths.output
 }));
 
-gulp.task("template:thumbnail-renderer", templatePipeline({
-  name: "thumbnail-renderer.html",
-  input: paths.resources + "templates/thumbnail-renderer.mustache",
+gulp.task("template:rasterizer", templatePipeline({
+  name: "rasterizer.html",
+  input: paths.resources + "templates/rasterizer.mustache",
   output: paths.output
 }));
 
@@ -253,7 +253,7 @@ gulp.task("templates", gulp.series("svg:sprite:icons",
                                    "svg:sprite:cursors",
                                    "template:main",
                                    "template:render",
-                                   "template:thumbnail-renderer"));
+                                   "template:rasterizer"));
 
 gulp.task("polyfills", function() {
   return gulp.src(paths.resources + "polyfills/*.js")
