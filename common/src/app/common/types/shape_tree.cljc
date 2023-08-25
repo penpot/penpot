@@ -320,12 +320,12 @@
    (get-viewer-frames objects nil))
 
   ([objects {:keys [all-frames?]}]
-   (into []
-         (comp (map (d/getf objects))
-               (if all-frames?
-                 identity
-                 (remove :hide-in-viewer)))
-         (sort-z-index objects (get-frames-ids objects)))))
+   (->> (get-frames objects)
+        (sort-z-index-objects objects)
+        (into []
+              (if all-frames?
+                (map identity)
+                (remove :hide-in-viewer))))))
 
 (defn start-page-index
   [objects]
