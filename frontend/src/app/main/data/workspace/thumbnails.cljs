@@ -34,7 +34,7 @@
 (defn get-thumbnail
   [object-id]
   ;; Look for the thumbnail canvas to send the data to the backend
-  (let [node    (dom/query (dm/fmt "image.thumbnail-canvas[data-object-id='%'][data-ready='true']" object-id))
+  (let [node    (dom/query (dm/fmt "image.thumbnail-bitmap[data-object-id='%']" object-id))
         stopper (->> st/stream
                      (rx/filter (ptk/type? :app.main.data.workspace/finalize-page))
                      (rx/take 1))]

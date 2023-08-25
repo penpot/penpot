@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.config :as cf]
    [app.main.data.workspace.thumbnails :as dwt]
+   [app.main.rasterizer :as thr]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
@@ -56,19 +57,17 @@
                 fixed-width
                 fixed-height
                 (if (some? style-node) (dom/node->xml style-node) "")
-                (dom/node->xml node))
+                (dom/node->xml node))]
 
-        ;; create SVG blob
-        blob (wapi/create-blob svg-data "image/svg+xml;charset=utf-8")
-        url  (dm/str (wapi/create-uri blob) "#svg")]
-    ;; returns the url and the node
-    url))
+        (->> (rx/of {:data svg-data :width fixed-width :styles ""})
+             (rx/mapcat thr/render)
+             (rx/map wapi/create-uri))))
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail data"
   [page-id {:keys [id] :as shape} root-ref node-ref rendered-ref disable? force-render]
 
-  (let [frame-image-ref  (mf/use-ref nil)
+  (let [;; frame-image-ref  (mf/use-ref nil)
 
         disable-ref      (mf/use-ref disable?)
         regenerate-ref   (mf/use-ref false)
@@ -87,8 +86,9 @@
         width             (dm/get-prop bounds :width)
         height            (dm/get-prop bounds :height)
 
-        svg-uri*          (mf/use-state nil)
-        svg-uri           (deref svg-uri*)
+        ;; TODO: Si usamos rasterizer ya no necesitamos esto.
+        ;; svg-uri*          (mf/use-state nil)
+        ;; svg-uri           (deref svg-uri*)
 
         bitmap-uri*       (mf/use-state nil)
         bitmap-uri        (deref bitmap-uri*)
@@ -108,16 +108,10 @@
 
         debug?            (debug? :thumbnails)
 
+        ;; FIXME: Esto habría que sacarlo de aquí y llamarlo inmediatamente cuando se crea el frame
+        ;;        además ya no tiene sentido utilizar el elemento del DOM porque no lo vamos a usar
+        ;;        para nada.
         on-bitmap-load
-        (mf/use-fn
-         (mf/deps svg-uri)
-         (fn []
-           ;; We revoke the SVG Blob URI to free memory only when we
-           ;; are sure that it is not used anymore.
-           (some-> svg-uri wapi/revoke-uri)
-           (reset! svg-uri* nil)))
-
-        on-svg-load
         (mf/use-fn
          (mf/deps thumbnail-uri)
          (fn []
@@ -134,18 +128,18 @@
          (fn generate-thumbnail []
            (try
              ;; When starting generating the canvas we mark it as not ready so its not send to back until
-             ;; we have time to update it
-
+             ;; we have time to update it.
              (when-let [node (mf/ref-val node-ref)]
                (if (dom/has-children? node)
-                 ;; The frame-content need to have children in order to generate the thumbnail
+                 ;; The frame-content need to have children in order to generate the thumbnail.
                  (let [style-node (dom/query (dm/str "#frame-container-" id " style"))
                        bounds     (mf/ref-val bounds-ref)
-                       url        (create-svg-blob-uri-from bounds node style-node)]
+                       stream     (create-svg-blob-uri-from bounds node style-node)]
 
-                   (reset! svg-uri* url))
+                   (->> stream
+                        (rx/subs (fn [uri] (reset! bitmap-uri* uri)))))
 
-                 ;; Node not yet ready, we schedule a new generation
+                 ;; Node not yet ready, we schedule a new generation.
                  (ts/raf generate-thumbnail)))
              (catch :default e
                (.error js/console e)))))
@@ -162,7 +156,7 @@
                    loading-fonts?  (some? (dom/query (dm/str "#frame-container-" id " > style[data-loading='true']")))]
                (when (and (not loading-images?)
                           (not loading-fonts?))
-                 (reset! svg-uri* nil)
+                 ;; (reset! svg-uri* nil)
                  (reset! bitmap-uri* nil)
                  (generate-thumbnail)
                  (mf/set-ref-val! regenerate-ref false))))))
@@ -174,7 +168,7 @@
         (mf/use-fn
          (fn []
            (when-not ^boolean (mf/ref-val disable-ref)
-             (reset! svg-uri* nil)
+             ;; (reset! svg-uri* nil)
              (reset! bitmap-uri* nil)
              (reset! render-frame* true)
              (mf/set-ref-val! regenerate-ref true))))
@@ -257,32 +251,15 @@
                  :stroke "blue"
                  :stroke-width 2}])
 
-       ;; This is similar to how double-buffering works.
-       ;; In svg-uri* we keep the SVG image that is used to
-       ;; render the bitmap until the bitmap is ready
-       ;; to be rendered on screen. Then we remove the
-       ;; svg and keep the bitmap one.
-       ;; This is the "buffer" that keeps the bitmap image.
+       ;; The frame content is the only thing that we want to render
        (when (some? bitmap-uri)
          [:image.thumbnail-bitmap
-          {:x x
-           :y y
-           :width width
-           :height height
-           :href bitmap-uri
-           :style {:filter (when ^boolean debug? "sepia(1)")}
-           :on-load on-bitmap-load}])
-
-       ;; This is the "buffer" that keeps the SVG image.
-       (when (some? svg-uri)
-         [:image.thumbnail-canvas
           {:x x
            :y y
            :key (dm/str "thumbnail-canvas-" id)
            :data-object-id (dm/str page-id id)
            :width width
            :height height
-           :ref frame-image-ref
-           :href svg-uri
-           :style {:filter (when ^boolean debug? "sepia(0.5)")}
-           :on-load on-svg-load}])])]))
+           :href bitmap-uri
+           :style {:filter (when ^boolean debug? "sepia(1)")}
+           :on-load on-bitmap-load}])])]))
