@@ -201,13 +201,12 @@
      (mf/deps page-id objects show-measures?)
      (fn [ids]
        (let [selected (mf/ref-val selected-ref)
-             focus (mf/ref-val focus-ref)
-             mod? (mf/ref-val mod-ref)
+             focus    (mf/ref-val focus-ref)
+             mod?     (mf/ref-val mod-ref)
 
-             ids (into
-                  (d/ordered-set)
-                  (remove #(dm/get-in objects [% :blocked]))
-                  (ctt/sort-z-index objects ids {:bottom-frames? mod?}))
+             ids      (into (d/ordered-set)
+                            (remove #(dm/get-in objects [% :blocked]))
+                            (ctt/sort-z-index objects ids {:bottom-frames? mod?}))
 
              grouped? (fn [id]
                         (and (cph/group-shape? objects id)
