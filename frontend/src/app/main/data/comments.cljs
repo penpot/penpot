@@ -83,7 +83,7 @@
     (watch [_ state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            frame-id (ctst/frame-id-by-position objects (:position params))
+            frame-id (ctst/get-frame-id-by-position objects (:position params))
             params (assoc params :frame-id frame-id)]
         (->> (rp/cmd! :create-comment-thread params)
              (rx/mapcat #(rp/cmd! :get-comment-thread {:file-id (:file-id %) :id (:id %)}))

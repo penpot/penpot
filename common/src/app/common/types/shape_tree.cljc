@@ -256,23 +256,27 @@
             -1))))
     items)))
 
-(defn frame-id-by-position
-  ([objects position] (frame-id-by-position objects position nil))
-  ([objects position options]
-   (assert (gpt/point? position))
-   (let [sort-with-options (fn [objects ids]
-                             (sort-z-index objects ids options))
-         top-frame
-         (->> (get-frames-ids objects options)
-              (sort-with-options objects)
-              (d/seek #(and position (gsh/has-point? (get objects %) position))))]
-     (or top-frame uuid/zero))))
+(defn get-frame-by-position
+  ([objects position]
+   (get-frame-by-position objects position nil))
 
-(defn frame-by-position
-  ([objects position] (frame-by-position objects position nil))
   ([objects position options]
-   (let [frame-id (frame-id-by-position objects position options)]
-     (get objects frame-id))))
+   (dm/assert!
+    "expected a point"
+    (gpt/point? position))
+
+   (let [frames    (get-frames objects options)
+         frames    (sort-z-index-objects objects frames options)]
+     (or (d/seek #(and ^boolean (some? position)
+                       ^boolean (gsh/has-point? % position))
+                 frames)
+         (get objects uuid/zero)))))
+
+(defn get-frame-id-by-position
+  ([objects position] (get-frame-id-by-position objects position nil))
+  ([objects position options]
+   (when-let [frame (get-frame-by-position objects position options)]
+     (dm/get-prop frame :id))))
 
 (defn get-frames-by-position
   ([objects position] (get-frames-by-position objects position nil))

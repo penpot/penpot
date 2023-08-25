@@ -206,7 +206,7 @@
         from-frame-id (if (cph/frame-shape? from-shape)
                         from-id (:frame-id from-shape))
 
-        target-frame (ctst/frame-by-position objects position)]
+        target-frame (ctst/get-frame-by-position objects position)]
 
     (when (and (not= (:id target-frame) uuid/zero)
                (not= (:id target-frame) from-frame-id))
