@@ -154,19 +154,20 @@
 
         over-shapes-stream
         (mf/with-memo [move-stream mod-str]
-          (rx/merge
-           ;; This stream works to "refresh" the outlines when the control is pressed
-           ;; but the mouse has not been moved from its position.
-           (->> mod-str
-                (rx/observe-on :async)
-                (rx/map #(deref last-point-ref))
-                (rx/filter some?)
-                (rx/merge-map query-point))
+          (->> (rx/merge
+                ;; This stream works to "refresh" the outlines when the control is pressed
+                ;; but the mouse has not been moved from its position.
+                (->> mod-str
+                     (rx/observe-on :async)
+                     (rx/map #(deref last-point-ref))
+                     (rx/filter some?)
+                     (rx/merge-map query-point))
 
-           (->> move-stream
-                (rx/tap #(reset! last-point-ref %))
-                ;; When transforming shapes we stop querying the worker
-                (rx/merge-map query-point))))]
+                (->> move-stream
+                     (rx/tap #(reset! last-point-ref %))
+                     ;; When transforming shapes we stop querying the worker
+                     (rx/merge-map query-point)))
+               (rx/throttle 100)))]
 
     ;; Refresh the refs on a value change
     (mf/use-effect
