@@ -127,7 +127,7 @@
             page-id (:id page)
             objects (wsh/lookup-page-objects state page-id)
             new-frame-id (if (nil? frame-id)
-                           (ctst/frame-id-by-position objects (gpt/point new-x new-y))
+                           (ctst/get-frame-id-by-position objects (gpt/point new-x new-y))
                            (:frame-id thread))
             thread (assoc thread
                           :position (gpt/point new-x new-y)
