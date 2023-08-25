@@ -220,8 +220,7 @@
           margin-right: $s-8;
           text-align: right;
           cursor: pointer;
-          color: var (--info-color);
-          text-decoration: underline;
+          color: var(--link-foreground-color);
         }
       }
       .updates-content {

@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.libraries
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -80,27 +80,27 @@
     [:*
      (when (pos? components-count)
        [:*
-        [:span {:class (css :element-count)}
+        [:span {:class (stl/css :element-count)}
          (tr "workspace.libraries.components" components-count)]
         (when (not= last-one :components)
           [:span " · "])])
 
      (when (pos? graphics-count)
        [:*
-        [:span {:class (css :element-count)}
+        [:span {:class (stl/css :element-count)}
          (tr "workspace.libraries.graphics" graphics-count)]
         (when (not= last-one :graphics)
           [:span "  · "])])
 
      (when (pos? colors-count)
        [:*
-        [:span {:class (css :element-count)}
+        [:span {:class (stl/css :element-count)}
          (tr "workspace.libraries.colors" colors-count)]
         (when (not= last-one :colors)
           [:span "  · "])])
 
      (when (pos? typography-count)
-       [:span {:class (css :element-count)}
+       [:span {:class (stl/css :element-count)}
         (tr "workspace.libraries.typography" typography-count)])]))
 
 (defn- describe-linked-library
@@ -244,37 +244,37 @@
 
     (if new-css-system
       [:*
-       [:div {:class (css :section)}
+       [:div {:class (stl/css :section)}
         [:& title-bar {:collapsable? false
                        :title        (tr "workspace.libraries.in-this-file")
                        :klass        :title-spacing-lib}]
-        [:div {:class (css :section-list)}
+        [:div {:class (stl/css :section-list)}
 
-         [:div {:class (css :section-list-item)}
+         [:div {:class (stl/css :section-list-item)}
           [:div
-           [:div {:class (css :item-name)} (tr "workspace.libraries.file-library")]
-           [:div {:class (css :item-contents)}
+           [:div {:class (stl/css :item-name)} (tr "workspace.libraries.file-library")]
+           [:div {:class (stl/css :item-contents)}
             [:& describe-library-blocks {:components-count (count components)
                                          :graphics-count (count media)
                                          :colors-count (count colors)
                                          :typography-count (count typographies)}]]]
           [:div
            (if ^boolean shared?
-             [:input {:class (css :item-unpublish)
+             [:input {:class (stl/css :item-unpublish)
                       :type "button"
                       :value (tr "common.unpublish")
                       :on-click unpublish}]
-             [:input {:class (css :item-publish)
+             [:input {:class (stl/css :item-publish)
                       :type "button"
                       :value (tr "common.publish")
                       :on-click publish}])]]
 
          (for [{:keys [id name] :as library} linked-libraries]
-           [:div {:class (css :section-list-item)
+           [:div {:class (stl/css :section-list-item)
                   :key (dm/str id)}
             [:div
-             [:div {:class (css :item-name)} name]
-             [:div {:class (css :item-contents)}
+             [:div {:class (stl/css :item-name)} name]
+             [:div {:class (stl/css :item-contents)}
               (let [components-count (count (or (ctkl/components-seq (:data library)) []))
                     graphics-count   (count (dm/get-in library [:data :media] []))
                     colors-count     (count (dm/get-in library [:data :colors] []))
@@ -284,30 +284,30 @@
                                              :colors-count colors-count
                                              :typography-count typography-count}])]]
 
-            [:button {:class (css :item-button)
+            [:button {:class (stl/css :item-button)
                       :type "button"
                       :data-library-id (dm/str id)
                       :on-click unlink-library}
              i/delete-refactor]])]]
 
-       [:div {:class (css :section)}
+       [:div {:class (stl/css :section)}
         [:& title-bar {:collapsable? false
                        :title        (tr "workspace.libraries.shared-libraries")
                        :klass        :title-spacing-lib}]
-        [:div {:class (css :libraries-search)}
+        [:div {:class (stl/css :libraries-search)}
          [:& search-bar {:on-change change-search-term
                          :value search-term
                          :placeholder (tr "workspace.libraries.search-shared-libraries")
-                         :icon (mf/html [:span {:class (css :search-icon)} i/search-refactor])}]]
+                         :icon (mf/html [:span {:class (stl/css :search-icon)} i/search-refactor])}]]
 
         (if (seq shared-libraries)
-          [:div {:class (css :section-list-shared)}
+          [:div {:class (stl/css :section-list-shared)}
            (for [{:keys [id name] :as library} shared-libraries]
-             [:div {:class (css :section-list-item)
+             [:div {:class (stl/css :section-list-item)
                     :key (dm/str id)}
               [:div
-               [:div {:class (css :item-name)} name]
-               [:div {:class (css :item-contents)}
+               [:div {:class (stl/css :item-name)} name]
+               [:div {:class (stl/css :item-contents)}
                 (let [components-count (dm/get-in library [:library-summary :components :count] 0)
                       graphics-count   (dm/get-in library [:library-summary :media :count] 0)
                       colors-count     (dm/get-in library [:library-summary :colors :count] 0)
@@ -316,12 +316,12 @@
                                                :graphics-count graphics-count
                                                :colors-count colors-count
                                                :typography-count typography-count}])]]
-              [:button {:class (css :item-button-shared)
+              [:button {:class (stl/css :item-button-shared)
                         :data-library-id (dm/str id)
                         :on-click link-library}
                i/add-refactor]])]
 
-          [:div {:class (css :section-list-empty)}
+          [:div {:class (stl/css :section-list-empty)}
            (if (nil? shared-libraries)
              i/loader-pencil
              (if (str/empty? search-term)
@@ -469,104 +469,104 @@
                             (st/emit! (dwl/sync-file file-id library-id)))))]
 
     (if new-css-system
-      [:div {:class (css :section)}
+      [:div {:class (stl/css :section)}
        (if (empty? libs-assets)
-         [:div {:class (css :section-list-empty)}
+         [:div {:class (stl/css :section-list-empty)}
           (tr "workspace.libraries.no-libraries-need-sync")]
          [:*
-          [:div {:class (css :section-title)} (tr "workspace.libraries.library-updates")]
+          [:div {:class (stl/css :section-title)} (tr "workspace.libraries.library-updates")]
 
-          [:div {:class (css :section-list)}
+          [:div {:class (stl/css :section-list)}
            (for [[{:keys [id name] :as library}
                   exceeded
                   {:keys [components colors typographies]}] libs-assets]
-             [:div {:class (css :section-list-item)
+             [:div {:class (stl/css :section-list-item)
                     :key (dm/str id)}
               [:div
-               [:div {:class (css :item-name)} name]
-               [:div {:class (css :item-contents)} (describe-library
-                                                    (count components)
-                                                    0
-                                                    (count colors)
-                                                    (count typographies))]]
+               [:div {:class (stl/css :item-name)} name]
+               [:div {:class (stl/css :item-contents)} (describe-library
+                                                        (count components)
+                                                        0
+                                                        (count colors)
+                                                        (count typographies))]]
               [:input {:type "button"
-                       :class (dom/classnames (css :item-update) true
-                                              (css :btn-gray) updating?
-                                              (css :btn-warning) (not updating?))
+                       :class (stl/css-case :item-update true
+                                            :btn-gray updating?
+                                            :btn-warning (not updating?))
                        :value (tr "workspace.libraries.update")
                        :data-library-id (dm/str id)
                        :on-click update}]
 
-              [:div {:class (css :libraries-updates)}
+              [:div {:class (stl/css :libraries-updates)}
                (when-not (empty? components)
-                 [:div {:class (css :libraries-updates-column)}
+                 [:div {:class (stl/css :libraries-updates-column)}
                   (for [component components]
-                    [:div {:class (css :libraries-updates-item)
+                    [:div {:class (stl/css :libraries-updates-item)
                            :key (dm/str (:id component))}
                      (let [component (ctf/load-component-objects (:data library) component)
                            root-shape (ctf/get-component-root (:data library) component)]
                        [:*
                         [:& component-svg {:root-shape root-shape
                                            :objects (:objects component)}]
-                        [:div {:class (css :name-block)}
-                         [:span {:class (css :item-name)
+                        [:div {:class (stl/css :name-block)}
+                         [:span {:class (stl/css :item-name)
                                  :title (:name component)}
                           (:name component)]]])])
                   (when (:components exceeded)
-                    [:div {:class (css :libraries-updates-item)
+                    [:div {:class (stl/css :libraries-updates-item)
                            :key (uuid/next)}
-                     [:div {:class (css :name-block.ellipsis)}
-                      [:span {:class (css :item-name)} "(...)"]]])])
+                     [:div {:class (stl/css :name-block.ellipsis)}
+                      [:span {:class (stl/css :item-name)} "(...)"]]])])
 
                (when-not (empty? colors)
-                 [:div {:class (css :libraries-updates-column)
+                 [:div {:class (stl/css :libraries-updates-column)
                         :style #js {"--bullet-size" "24px"}}
                   (for [color colors]
                     (let [default-name (cond
                                          (:gradient color) (uc/gradient-type->string (get-in color [:gradient :type]))
                                          (:color color) (:color color)
                                          :else (:value color))]
-                      [:div {:class (css :libraries-updates-item)
+                      [:div {:class (stl/css :libraries-updates-item)
                              :key (dm/str (:id color))}
                        [:*
                         [:& bc/color-bullet {:color {:color (:color color)
                                                      :opacity (:opacity color)}}]
-                        [:div {:class (css :name-block)}
-                         [:span {:class (css :item-name)
+                        [:div {:class (stl/css :name-block)}
+                         [:span {:class (stl/css :item-name)
                                  :title (:name color)}
                           (:name color)]
                          (when-not (= (:name color) default-name)
                            [:span.color-value (:color color)])]]]))
                   (when (:colors exceeded)
-                    [:div {:class (css :libraries-updates-item)
+                    [:div {:class (stl/css :libraries-updates-item)
                            :key (uuid/next)}
-                     [:div {:class (css :name-block.ellipsis)}
-                      [:span {:class (css :item-name)} "(...)"]]])])
+                     [:div {:class (stl/css :name-block.ellipsis)}
+                      [:span {:class (stl/css :item-name)} "(...)"]]])])
 
                (when-not (empty? typographies)
-                 [:div {:class (css :libraries-updates-column)}
+                 [:div {:class (stl/css :libraries-updates-column)}
                   (for [typography typographies]
-                    [:div {:class (css :libraries-updates-item)
+                    [:div {:class (stl/css :libraries-updates-item)
                            :key (dm/str (:id typography))}
                      [:*
                       [:div {:style {:font-family (:font-family typography)
                                      :font-weight (:font-weight typography)
                                      :font-style (:font-style typography)}}
                        (tr "workspace.assets.typography.sample")]
-                      [:div {:class (css :name-block)}
-                       [:span {:class (css :item-name)
+                      [:div {:class (stl/css :name-block)}
+                       [:span {:class (stl/css :item-name)
                                :title (:name typography)}
                         (:name typography)]]]])
                   (when (:typographies exceeded)
-                    [:div {:class (css :libraries-updates-item)
+                    [:div {:class (stl/css :libraries-updates-item)
                            :key (uuid/next)}
-                     [:div {:class (css :name-block.ellipsis)}
-                      [:span {:class (css :item-name)} "(...)"]]])])]
+                     [:div {:class (stl/css :name-block.ellipsis)}
+                      [:span {:class (stl/css :item-name)} "(...)"]]])])]
 
               (when (or (pos? (:components exceeded))
                         (pos? (:colors exceeded))
                         (pos? (:typographies exceeded)))
-                [:div {:class (css :libraries-updates-see-all)
+                [:div {:class (stl/css :libraries-updates-see-all)
                        :on-click see-all-assets}
                  "(" (tr "workspace.libraries.update.see-all-changes") ")"])])]])]
 
@@ -590,8 +590,9 @@
                                    (count colors)
                                    (count typographies))]
               [:input.item-button {:type "button"
-                                   :class (dom/classnames :btn-gray updating?
-                                                          :btn-warning (not updating?))
+                                   :class (stl/css-case new-css-system
+                                                        :btn-gray updating?
+                                                        :btn-warning (not updating?))
                                    :value (tr "workspace.libraries.update")
                                    :data-library-id (dm/str id)
                                    :on-click update}]
@@ -663,7 +664,7 @@
   {::mf/register modal/components
    ::mf/register-as :libraries-dialog}
   [{:keys [starting-tab] :as props :or {starting-tab :libraries}}]
-   (let [new-css-system (features/use-feature :new-css-system)
+  (let [new-css-system (features/use-feature :new-css-system)
         project        (mf/deref refs/workspace-project)
         file-data      (mf/deref refs/workspace-data)
         file           (mf/deref ref:workspace-file)
@@ -702,27 +703,27 @@
         (st/emit! (dwl/fetch-shared-files {:team-id team-id}))))
     [:& (mf/provider ctx/new-css-system) {:value new-css-system}
      (if new-css-system
-       [:div {:class (css :modal-overlay)}
-        [:div {:class (css :modal-dialog)}
-         [:button {:class (css :close)
-                   :on-click close-dialog }
+       [:div {:class (stl/css :modal-overlay)}
+        [:div {:class (stl/css :modal-dialog)}
+         [:button {:class (stl/css :close)
+                   :on-click close-dialog}
           i/close-refactor]
-         [:div {:class (css :modal-title)}
+         [:div {:class (stl/css :modal-title)}
           "Libraries"]
-         [:div  {:class (css :modal-content)}
-          [:div {:class (css :libraries-header)}
+         [:div  {:class (stl/css :modal-content)}
+          [:div {:class (stl/css :libraries-header)}
            [:& tab-container
             {:on-change-tab on-tab-change
              :selected selected-tab
              :collapsable? false}
             [:& tab-element {:id :libraries :title (tr "workspace.libraries.libraries")}
-             [:div {:class (dom/classnames (css :libraries-content) true)}
+             [:div {:class (stl/css :libraries-content)}
               [:& libraries-tab {:file-id file-id
                                  :shared? shared?
                                  :linked-libraries libraries
                                  :shared-libraries shared-libraries}]]]
             [:& tab-element {:id :updates :title (tr "workspace.libraries.updates")}
-             [:div {:class (dom/classnames (css :updates-content) true)}
+             [:div {:class (stl/css :updates-content)}
               [:& updates-tab {:file-id file-id
                                :file-data file-data
                                :libraries libraries}]]]]]]]]
@@ -733,11 +734,11 @@
          [:div.modal-content
           [:div.libraries-header
            [:div.header-item
-            {:class (dom/classnames :active (= selected-tab :libraries))
+            {:class (stl/css-case new-css-system :active (= selected-tab :libraries))
              :on-click select-libraries-tab}
             (tr "workspace.libraries.libraries")]
            [:div.header-item
-            {:class (dom/classnames :active (= selected-tab :updates))
+            {:class (stl/css-case new-css-system :active (= selected-tab :updates))
              :on-click select-updates-tab}
             (tr "workspace.libraries.updates")]]
           [:div.libraries-content
