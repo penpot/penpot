@@ -12,6 +12,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.rasterizer :as thr]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
@@ -166,9 +167,12 @@
          (fn []
            (let [img-node (mf/ref-val img-ref)
                  svg-node (dom/get-element "render")]
-             (->> (svg-as-data-url svg-node)
+             (->> (rx/of {:node svg-node})
+                  (rx/mapcat thr/render-node)
+                  (rx/map wapi/create-uri)
+                  (rx/tap #(js/console.log %))
                   (rx/subs (fn [uri]
-                             (obj/set! img-node "src" uri)))))))
+                     (obj/set! img-node "src" uri)))))))
 
         handle-svg-change
         (mf/use-callback

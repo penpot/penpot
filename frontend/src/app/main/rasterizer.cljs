@@ -61,7 +61,7 @@
   (.push ^js queue message))
 
 (defn render
-  "Renders a thumbnail."
+  "Renders an SVG"
   [{:keys [data styles width] :as params}]
   (let [id      (dm/str (uuid/next))
         payload #js {:data data :styles styles :width width}
@@ -80,6 +80,14 @@
                         "success" (rx/of (unchecked-get msg "payload"))
                         "failure" (rx/throw (js/Error. (unchecked-get msg "payload"))))))
          (rx/take 1))))
+
+(defn render-node
+  "Renders an SVG using a node"
+  [{:keys [node styles width] :as params}]
+  (let [width (or width (dom/get-attribute node "width"))
+        styles (or styles "")
+        data  (dom/node->xml node)]
+    (render {:data data :styles styles :width width})))
 
 (defn init!
   "Initializes the thumbnail renderer."
