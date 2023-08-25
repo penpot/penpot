@@ -4,8 +4,8 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.thumbnail-renderer
-  "A main entry point for the thumbnail renderer API interface.
+(ns app.main.rasterizer
+  "A main entry point for the rasterizer API interface.
 
   This ns is responsible to provide an API for create thumbnail
   renderer iframes and interact with them using asyncrhonous
@@ -23,7 +23,7 @@
 (defonce instance nil)
 (defonce msgbus (rx/subject))
 (defonce origin
-  (dm/str (assoc cf/thumbnail-renderer-uri :path "/thumbnail-renderer.html")))
+  (dm/str (assoc cf/rasterizer-uri :path "/rasterizer.html")))
 
 (declare send-message!)
 
@@ -43,7 +43,7 @@
     (when (and (object? evdata) (str/starts-with? origin evorigin))
       (let [scope (unchecked-get evdata "scope")
             type  (unchecked-get evdata "type")]
-        (when (= "penpot/thumbnail-renderer" scope)
+        (when (= "penpot/rasterizer" scope)
           (when (= type "ready")
             (set! ready? true)
             (process-queued-messages!))
@@ -66,7 +66,7 @@
   (let [id      (dm/str (uuid/next))
         payload #js {:data data :styles styles :width width}
         message #js {:id id
-                     :scope "penpot/thumbnail-renderer"
+                     :scope "penpot/rasterizer"
                      :payload payload}]
 
     (if ^boolean ready?

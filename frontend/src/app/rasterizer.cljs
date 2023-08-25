@@ -4,8 +4,8 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.thumbnail-renderer
-  "A main entry point for the thumbnail renderer process that is
+(ns app.rasterizer
+  "A main entry point for the rasterizer process that is
   executed on a separated iframe."
   (:require
    [app.common.data :as d]
@@ -205,7 +205,7 @@
             payload (unchecked-get evdata "payload")
             scope   (unchecked-get evdata "scope")]
         (when (and (some? payload)
-                   (= scope "penpot/thumbnail-renderer"))
+                   (= scope "penpot/rasterizer"))
           (->> (render payload)
                (rx/subs (partial send-success! id)
                         (partial send-failure! id))))))))
@@ -220,7 +220,7 @@
   [id type payload]
   (let [message #js {:id id
                      :type type
-                     :scope "penpot/thumbnail-renderer"
+                     :scope "penpot/rasterizer"
                      :payload payload}]
     (when-not (identical? js/window js/parent)
       (.postMessage js/parent message parent-origin))))
