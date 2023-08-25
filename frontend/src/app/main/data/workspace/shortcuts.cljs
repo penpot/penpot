@@ -279,8 +279,8 @@
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dw/toggle-lock-selected))}
 
-   :toggle-lock-size     {:tooltip (ds/meta (ds/alt "L"))
-                          :command (ds/c-mod "alt+l")
+   :toggle-lock-size     {:tooltip (ds/shift "L")
+                          :command "shift+l"
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dw/toggle-proportion-lock))}
 
