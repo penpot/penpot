@@ -222,11 +222,13 @@
         (mf/use-callback
          (mf/deps (:id frame) on-frame-select)
          (fn [bevent]
-           (let [event  (.-nativeEvent bevent)]
+           (let [event  (.-nativeEvent bevent)
+                 params {:section "interactions"
+                         :frame-id (:id frame)}]
              (when (= 1 (.-which event))
                (dom/prevent-default event)
                (dom/stop-propagation event)
-               (on-frame-select event (:id frame))))))
+               (st/emit! (dw/go-to-viewer params))))))
 
         on-double-click
         (mf/use-callback

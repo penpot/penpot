@@ -5,6 +5,7 @@
 ### :sparkles: New features
 
 - Navigate up in layer hierarchy with Shift+Enter shortcut [Taiga #5734](https://tree.taiga.io/project/penpot/us/5734)
+- Click on the flow tags open viewer with the selected frame [Taiga #5044](https://tree.taiga.io/project/penpot/us/5044)
 
 ## 1.19.1
 

@@ -155,6 +155,8 @@
                 (rx/of (df/fonts-fetched fonts)
                        (bundle-fetched (merge bundle params))))))))))
 
+(declare go-to-frame)
+(declare go-to-frame-by-index)
 (declare go-to-frame-auto)
 
 (defn bundle-fetched
@@ -182,16 +184,20 @@
 
       ptk/WatchEvent
       (watch [_ state _]
-        (let [route   (:route state)
-              qparams (:query-params route)
-              index   (:index qparams)]
+        (let [route    (:route state)
+              qparams  (:query-params route)
+              index    (:index qparams)
+              frame-id (:frame-id qparams)]
           (rx/merge
            (rx/of (case (:zoom qparams)
                     "fit" zoom-to-fit
                     "fill" zoom-to-fill
                     nil))
-           (when (nil? index)
-             (rx/of (go-to-frame-auto)))))))))
+           (rx/of
+             (cond
+               (some? frame-id) (go-to-frame (uuid frame-id))
+               (some? index) (go-to-frame-by-index index)
+               :else (go-to-frame-auto)))))))))
 
 (defn fetch-comment-threads
   [{:keys [file-id page-id share-id] :as params}]
