@@ -1119,7 +1119,7 @@
 
 (defn toggle-proportion-lock
   []
-  (ptk/reify ::toggle-propotion-lock
+  (ptk/reify ::toggle-proportion-lock
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id       (:current-page-id state)
