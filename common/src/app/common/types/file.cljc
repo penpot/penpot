@@ -882,6 +882,19 @@
                           (str/format "Child %s not found" child-id)
                           shape file page)))))))
 
+(defn validate-frame
+  "Validate that the frame-id shape exists and is indeed a frame."
+  [shape file page report-error]
+  (let [frame (ctst/get-shape page (:frame-id shape))]
+    (if (nil? frame)
+      (report-error :frame-not-found
+                    (str/format "Frame %s not found" (:frame-id shape))
+                    shape file page)
+      (when (not= (:type frame) :frame)
+        (report-error :invalid-frame
+                      (str/format "Frame %s is not actually a frame" (:frame-id shape))
+                      shape file page)))))
+
 (defn validate-component-main-head
   "Validate shape is a main instance head, component exists and its main-instance points to this shape."
   [shape file page libraries report-error]
@@ -1077,13 +1090,12 @@
                                                                         (:id shape))}))
                              (vswap! errors conj {:hint msg
                                                   :code code
-                                                  :shape shape
-                                                  :file file
-                                                  :page page}))))]
+                                                  :shape shape}))))]
 
     (dm/assert! (str/format "Shape %s not found" shape-id) (some? shape))
 
     (validate-parent-children shape file page report-error)
+    (validate-frame shape file page report-error)
 
     (if (ctk/main-instance? shape)
 

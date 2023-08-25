@@ -438,7 +438,7 @@
                                        file
                                        page
                                        libraries)]
-   (clj->js errors))))
+     (clj->js errors))))
 
 (defn ^:export fix-orphan-shapes
   []
