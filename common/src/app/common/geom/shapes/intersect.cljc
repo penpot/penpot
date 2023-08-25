@@ -34,10 +34,10 @@
 (defn on-segment?
   "Given three colinear points p, q, r checks if q lies on segment pr"
   [{qx :x qy :y} {px :x py :y} {rx :x ry :y}]
-  (and (<= qx (max px rx))
-       (>= qx (min px rx))
-       (<= qy (max py ry))
-       (>= qy (min py ry))))
+  (and (<= qx (mth/max px rx))
+       (>= qx (mth/min px rx))
+       (<= qy (mth/max py ry))
+       (>= qy (mth/min py ry))))
 
 ;; Based on solution described here
 ;; https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
