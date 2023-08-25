@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.intersect :as gsin]
    [app.common.geom.shapes.transforms :as gsht]
    [app.common.math :as mth :refer [close?]]
    [app.common.types.modifiers :as ctm]
@@ -224,3 +225,14 @@
           (grc/rect->points)
           (gsh/transform-points (gmt/rotate-matrix 45)))
       (gmt/matrix (* (mth/cos g45) 2) (* (mth/sin g45) 2) (* (- (mth/sin g45)) 4) (* (mth/cos g45) 4) 0 0))))
+
+
+(t/deftest shape-has-point-pred
+  (let [{:keys [points] :as shape} (create-test-shape :rect {})
+        point1 (first points)
+        point2 (update point1 :x - 100)]
+    (t/is (true? (gsin/fast-has-point? shape point1)))
+    (t/is (true? (gsin/slow-has-point? shape point1)))
+    (t/is (false? (gsin/fast-has-point? shape point2)))
+    (t/is (false? (gsin/fast-has-point? shape point2)))
+    ))
