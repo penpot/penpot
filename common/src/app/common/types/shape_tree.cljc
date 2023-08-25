@@ -274,13 +274,13 @@
    (let [frame-id (frame-id-by-position objects position options)]
      (get objects frame-id))))
 
-(defn all-frames-by-position
-  ([objects position] (all-frames-by-position objects position nil))
+(defn get-frames-by-position
+  ([objects position] (get-frames-by-position objects position nil))
   ([objects position options]
    (->> (get-frames objects options)
         (filter #(and ^boolean (some? position)
                       ^boolean (gsh/has-point? % position)))
-        (sort-z-index-objets objects))))
+        (sort-z-index-objects objects))))
 
 (defn top-nested-frame
   "Search for the top nested frame for positioning shapes when moving or creating.
@@ -292,7 +292,7 @@
   ([objects position excluded]
    (assert (or (nil? excluded) (set? excluded)))
 
-   (let [frames (cond->> (all-frames-by-position objects position)
+   (let [frames (cond->> (get-frames-by-position objects position)
                   (some? excluded)
                   (remove (fn [obj]
                             (let [id (dm/get-prop obj :id)]
