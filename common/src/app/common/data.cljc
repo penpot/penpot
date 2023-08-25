@@ -18,6 +18,7 @@
       :clj [clojure.edn :as r])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
+   #?(:cljs [goog.array :as garray])
    [app.common.math :as mth]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -779,6 +780,18 @@
     (.. value
         (toString 16)
         (padStart 2 "0"))))
+
+(defn unstable-sort
+  ([items]
+   (unstable-sort compare items))
+  ([comp-fn items]
+   #?(:cljs
+      (let [items (to-array items)]
+        (garray/sort items comp-fn)
+        (seq items))
+      :clj
+      (sort comp-fn items))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; String Functions
