@@ -6,97 +6,34 @@
 
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
-   [app.common.data :as d]
-   [app.common.pages.helpers :as cph]
-   [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.undo :as dwu]
    [app.main.rasterizer :as thr]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
-   [app.main.ui.workspace.shapes :as shapes]
    [app.util.dom :as dom]
-   [app.util.http :as http]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [app.util.webapi :as wapi]
    [beicon.core :as rx]
-   [cuerdas.core :as str]
    [goog.events :as events]
-   [promesa.core :as p]
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
-
-(defn- resolve-svg-images!
-  [svg-node]
-  (let [image-nodes (dom/query-all svg-node "image:not([href^=data])")
-        noop-fn     (constantly nil)]
-    (->> (rx/from image-nodes)
-         (rx/mapcat
-          (fn [image]
-            (let [href (dom/get-attribute image "href")]
-              (->> (http/fetch {:method :get :uri href})
-                   (rx/mapcat (fn [response] (.blob ^js response)))
-                   (rx/mapcat wapi/read-file-as-data-url)
-                   (rx/tap (fn [data]
-                             (dom/set-attribute! image "href" data)))
-                   (rx/reduce noop-fn))))))))
-
-(defn- svg-as-data-url
-  "Transforms SVG as data-url resolving any blob, http or https url to
-  its data equivalent."
-  [svg]
-  (let [svg-clone (.cloneNode svg true)]
-    (->> (resolve-svg-images! svg-clone)
-         (rx/map (fn [_] (dom/svg-node->data-uri svg-clone))))))
-
-(defn format-viewbox [vbox]
-  (str/join " " [(:x vbox 0)
-                 (:y vbox 0)
-                 (:width vbox 0)
-                 (:height vbox 0)]))
-
-(mf/defc overlay-frames
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  []
-  (let [data     (mf/deref refs/workspace-page)
-        objects  (:objects data)
-        root     (get objects uuid/zero)
-        shapes   (->> (:shapes root)
-                      (map (d/getf objects)))]
-    [:g.shapes
-     (for [shape shapes]
-       (cond
-         (not (cph/frame-shape? shape))
-         [:& shapes/shape-wrapper
-          {:shape shape
-           :key (:id shape)}]
-
-         (cph/is-direct-child-of-root? shape)
-         [:& shapes/root-frame-wrapper
-          {:shape shape
-           :key (:id shape)
-           :objects objects}]
-
-         :else
-         [:& shapes/nested-frame-wrapper
-          {:shape shape
-           :key (:id shape)
-           :objects objects}]))]))
 
 (mf/defc pixel-overlay
   {::mf/wrap-props false}
   [props]
-  (let [vport         (unchecked-get props "vport")
-        viewport-ref  (unchecked-get props "viewport-ref")
-        viewport-node (mf/ref-val viewport-ref)
-        canvas-ref    (mf/use-ref nil)
-        img-ref       (mf/use-ref nil)
+  (let [vport          (unchecked-get props "vport")
 
-        update-str (rx/subject)
+        viewport-ref   (unchecked-get props "viewport-ref")
+        viewport-node  (mf/ref-val viewport-ref)
+
+        canvas            (js/OffscreenCanvas. (:width vport) (:height vport))
+        canvas-context    (.getContext canvas "2d" #js {:willReadFrequently true})
+        canvas-image-data (mf/use-ref nil)
+        zoom-view-context (mf/use-ref nil)
+
+        update-str     (rx/subject)
 
         handle-keydown
         (mf/use-callback
@@ -111,29 +48,39 @@
         (mf/use-callback
          (mf/deps viewport-node)
          (fn [event]
-           (when-let [zoom-view-node (.getElementById js/document "picker-detail")]
-             (let [canvas-node   (mf/ref-val canvas-ref)
+           (when-let [image-data (mf/ref-val canvas-image-data)]
+             (when-let [zoom-view-node (.getElementById js/document "picker-detail")]
+               (when-not (mf/ref-val zoom-view-context)
+                 (mf/set-ref-val! zoom-view-context (.getContext zoom-view-node "2d")))
+               (let [{brx :left bry :top} (dom/get-bounding-rect viewport-node)
 
-                   {brx :left bry :top} (dom/get-bounding-rect viewport-node)
-                   x (- (.-clientX event) brx)
-                   y (- (.-clientY event) bry)
+                     x (- (.-clientX event) brx)
+                     y (- (.-clientY event) bry)
 
-                   zoom-context (.getContext zoom-view-node "2d" #js {:willReadFrequently true})
-                   canvas-context (.getContext canvas-node "2d" #js {:willReadFrequently true})
-                   pixel-data (.getImageData canvas-context x y 1 1)
-                   rgba (.-data pixel-data)
-                   r (obj/get rgba 0)
-                   g (obj/get rgba 1)
-                   b (obj/get rgba 2)
-                   a (obj/get rgba 3)
-                   area-data (.getImageData canvas-context (- x 25) (- y 20) 50 40)]
-               (-> (js/createImageBitmap area-data)
-                   (p/then
-                    (fn [image]
-                      ;; Draw area
-                      (obj/set! zoom-context "imageSmoothingEnabled" false)
-                      (.drawImage zoom-context image 0 0 200 160))))
-               (st/emit! (dwc/pick-color [r g b a]))))))
+                     zoom-context (mf/ref-val zoom-view-context)
+
+                     offset (* (+ (* y (unchecked-get image-data "width")) x) 4)
+                     rgba (unchecked-get image-data "data")
+
+                     r (obj/get rgba (+ 0 offset))
+                     g (obj/get rgba (+ 1 offset))
+                     b (obj/get rgba (+ 2 offset))
+                     a (obj/get rgba (+ 3 offset))
+
+                     ;; I don't know why, but the zoom view is offset by 24px
+                     ;; instead of 25.
+                     sx (- x 24)
+                     sy (- y 20)
+                     sw 50
+                     sh 40
+                     dx 0
+                     dy 0
+                     dw 200
+                     dh 160]
+                 (when (obj/get zoom-context "imageSmoothingEnabled")
+                   (obj/set! zoom-context "imageSmoothingEnabled" false))
+                 (.drawImage zoom-context canvas sx sy sw sh dx dy dw dh)
+                 (st/emit! (dwc/pick-color [r g b a])))))))
 
         handle-pointer-down-picker
         (mf/use-callback
@@ -152,32 +99,28 @@
                      (dwc/stop-picker))
            (modal/disallow-click-outside!)))
 
-        handle-image-load
-        (mf/use-callback
-         (mf/deps img-ref)
-         (fn []
-           (let [canvas-node (mf/ref-val canvas-ref)
-                 img-node (mf/ref-val img-ref)
-                 canvas-context (.getContext canvas-node "2d")]
-             (.drawImage canvas-context img-node 0 0))))
-
         handle-draw-picker-canvas
         (mf/use-callback
-         (mf/deps img-ref)
          (fn []
-           (let [img-node (mf/ref-val img-ref)
-                 svg-node (dom/get-element "render")]
-             (->> (rx/of {:node svg-node})
+           (let [svg-node (dom/get-element "render")]
+             (->> (rx/of {:node svg-node
+                          :width (:width vport)
+                          :result "image-bitmap"})
                   (rx/mapcat thr/render-node)
-                  (rx/map wapi/create-uri)
-                  (rx/tap #(js/console.log %))
-                  (rx/subs (fn [uri]
-                     (obj/set! img-node "src" uri)))))))
+                  (rx/subs (fn [image-bitmap]
+                             (.drawImage canvas-context image-bitmap 0 0)
+                             (let [width (unchecked-get canvas "width")
+                                   height (unchecked-get canvas "height")
+                                   image-data (.getImageData canvas-context 0 0 width height)]
+                               (mf/set-ref-val! canvas-image-data image-data))))))))
 
         handle-svg-change
         (mf/use-callback
          (fn []
            (rx/push! update-str :update)))]
+
+    (when (obj/get canvas-context "imageSmoothingEnabled")
+      (obj/set! canvas-context "imageSmoothingEnabled" false))
 
     (mf/use-effect
      (fn []
@@ -198,8 +141,7 @@
                          :subtree true
                          :characterData true}
              svg-node (dom/get-element "render")
-             observer (js/MutationObserver. handle-svg-change)
-             ]
+             observer (js/MutationObserver. handle-svg-change)]
          (.observe observer svg-node config)
          (handle-svg-change)
 
@@ -213,16 +155,4 @@
        :class (cur/get-static "picker")
        :on-pointer-down handle-pointer-down-picker
        :on-pointer-up handle-pointer-up-picker
-       :on-pointer-move handle-pointer-move-picker}
-      [:div {:style {:display "none"}}
-       [:img {:ref img-ref
-              :on-load handle-image-load
-              :style {:position "absolute"
-                      :width "100%"
-                      :height "100%"}}]
-       [:canvas {:ref canvas-ref
-                 :width (:width vport 0)
-                 :height (:height vport 0)
-                 :style {:position "absolute"
-                         :width "100%"
-                         :height "100%"}}]]]]))
+       :on-pointer-move handle-pointer-move-picker}]]))
