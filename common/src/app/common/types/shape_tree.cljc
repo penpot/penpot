@@ -132,7 +132,7 @@
   ([objects] (get-frames-ids objects nil))
   ([objects options]
    (->> (get-frames objects options)
-        (mapv :id))))
+        (map :id))))
 
 (defn get-nested-frames
   [objects frame-id]
