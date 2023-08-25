@@ -200,11 +200,13 @@
     (cond
       ;; The base the base shape, so the other item is below (if not bottom-frames)
       (= base-id base-shape-id)
-      (and bottom-frames? (cph/frame-shape? objects base-id))
+      (and ^boolean bottom-frames?
+           ^boolean (cph/frame-shape? objects base-id))
 
       ;; The base is the testing over, so it's over (if not bottom-frames)
       (= base-id over-shape-id)
-      (or (not bottom-frames?) (not (cph/frame-shape? objects base-id)))
+      (or (not ^boolean bottom-frames?)
+          (not ^boolean (cph/frame-shape? objects base-id)))
 
       ;; Check which index is lower
       :else
