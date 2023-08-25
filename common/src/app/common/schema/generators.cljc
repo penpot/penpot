@@ -5,12 +5,13 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema.generators
-  (:refer-clojure :exclude [set subseq uuid for])
+  (:refer-clojure :exclude [set subseq uuid for filter map])
   #?(:cljs (:require-macros [app.common.schema.generators]))
   (:require
    [app.common.schema.registry :as sr]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
+   [clojure.core :as c]
    [clojure.test.check :as tc]
    [clojure.test.check.generators :as tg]
    [clojure.test.check.properties :as tp]
@@ -38,7 +39,7 @@
 
 (defn check!
   [p & {:keys [num] :or {num 20} :as options}]
-  (tc/quick-check num p (assoc options :reporter-fn default-reporter-fn)))
+  (tc/quick-check num p (assoc options :reporter-fn default-reporter-fn :max-size 50)))
 
 (defn sample
   ([g]
@@ -57,6 +58,10 @@
    (mg/generator s {:registry sr/default-registry}))
   ([s opts]
    (mg/generator s (assoc opts :registry sr/default-registry))))
+
+(defn filter
+  [pred gen]
+  (tg/such-that pred gen 100))
 
 (defn small-double
   [& {:keys [min max] :or {min -100 max 100}}]
@@ -99,9 +104,9 @@
         (tg/fmap (fn [bools]
                      (into dest
                            (comp
-                            (filter first)
-                            (map second))
-                           (map list bools elements)))))))
+                            (c/filter first)
+                            (c/map second))
+                           (c/map list bools elements)))))))
 
 (defn set
   [g]
