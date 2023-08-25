@@ -55,16 +55,16 @@
      (and (not= o1 o2) (not= o3 o4))
 
      ;; p1, q1 and p2 colinear and p2 lies on p1q1
-     (and (= o1 :coplanar) (on-segment? p2 p1 q1))
+     (and (= o1 :coplanar) ^boolean (on-segment? p2 p1 q1))
 
      ;; p1, q1 and q2 colinear and q2 lies on p1q1
-     (and (= o2 :coplanar) (on-segment? q2 p1 q1))
+     (and (= o2 :coplanar) ^boolean (on-segment? q2 p1 q1))
 
      ;; p2, q2 and p1 colinear and p1 lies on p2q2
-     (and (= o3 :coplanar) (on-segment? p1 p2 q2))
+     (and (= o3 :coplanar) ^boolean (on-segment? p1 p2 q2))
 
      ;; p2, q2 and p1 colinear and q1 lies on p2q2
-     (and (= o4 :coplanar) (on-segment? q1 p2 q2)))))
+     (and (= o4 :coplanar) ^boolean (on-segment? q1 p2 q2)))))
 
 (defn points->lines
   "Given a set of points for a polygon will return
