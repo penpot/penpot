@@ -11,6 +11,7 @@
   renderer iframes and interact with them using asyncrhonous
   messages."
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -62,9 +63,11 @@
 
 (defn render
   "Renders an SVG"
-  [{:keys [data styles width] :as params}]
-  (let [id      (dm/str (uuid/next))
-        payload #js {:data data :styles styles :width width}
+  [{:keys [data styles width result] :as params}]
+  (let [styles  (d/nilv styles "")
+        result  (d/nilv result "blob")
+        id      (dm/str (uuid/next))
+        payload #js {:data data :styles styles :width width :result result}
         message #js {:id id
                      :scope "penpot/rasterizer"
                      :payload payload}]
@@ -83,11 +86,12 @@
 
 (defn render-node
   "Renders an SVG using a node"
-  [{:keys [node styles width] :as params}]
-  (let [width (or width (dom/get-attribute node "width"))
-        styles (or styles "")
-        data  (dom/node->xml node)]
-    (render {:data data :styles styles :width width})))
+  [{:keys [node styles width result] :as params}]
+  (let [width  (d/nilv width (dom/get-attribute node "width"))
+        styles (d/nilv styles "")
+        data   (dom/node->xml node)
+        result (d/nilv result "blob")]
+    (render {:data data :styles styles :width width :result result})))
 
 (defn init!
   "Initializes the thumbnail renderer."

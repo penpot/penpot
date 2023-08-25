@@ -59,7 +59,7 @@
                 (if (some? style-node) (dom/node->xml style-node) "")
                 (dom/node->xml node))]
 
-        (->> (rx/of {:data svg-data :width fixed-width :styles ""})
+        (->> (rx/of {:data svg-data :width fixed-width})
              (rx/mapcat thr/render)
              (rx/map wapi/create-uri))))
 
