@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-08-26 13:54+0000\n"
+"PO-Revision-Date: 2023-08-28 14:57+0000\n"
 "Last-Translator: Sebastiaan Pasma <sebastiaan@enkodo.nl>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -3894,3 +3894,741 @@ msgstr "Omgekeerde rij"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout.margin-all"
 msgstr "Alle kanten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Rechts"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.position"
+msgstr "Positie"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.offsety"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.round"
+msgstr "Rond"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "Hoofdcomponenten bijwerken"
+
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.paste"
+msgstr "Plakken"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "Hoofdcomponent herstellen"
+
+msgid "workspace.undo.entry.single.rect"
+msgstr "rechthoek"
+
+msgid "workspace.undo.entry.single.shape"
+msgstr "vorm"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.dismiss"
+msgstr "Afwijzen"
+
+msgid "workspace.undo.entry.single.text"
+msgstr "tekst"
+
+msgid "workspace.undo.entry.single.typography"
+msgstr "typografie"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.unknown"
+msgstr "Voortgang van %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.title"
+msgstr "Geschiedenis"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Bovenkant"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "Meer kleuren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-lib-colors"
+msgstr "Meer bibliotheek kleuren"
+
+msgid "workspace.options.opacity"
+msgstr "Doorzichtigheid"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs
+msgid "workspace.options.prototype"
+msgstr "Prototype"
+
+msgid "workspace.options.radius"
+msgstr "Radius"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.all-corners"
+msgstr "Alle hoeken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.single-corners"
+msgstr "Onafhankelijke hoeken"
+
+msgid "workspace.options.recent-fonts"
+msgstr "Recent"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.retry"
+msgstr "Opnieuw proberen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.rotation"
+msgstr "Rotatie"
+
+msgid "workspace.options.search-font"
+msgstr "Zoek lettertype"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color"
+msgstr "Geselecteerde kleuren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.selection-fill"
+msgstr "Selectie vullen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.selection-stroke"
+msgstr "Selectie lijn"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.blur"
+msgstr "Vervagen"
+
+msgid "workspace.options.shadow-options.color"
+msgstr "Schaduwkleur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.drop-shadow"
+msgstr "Slagschaduw"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.inner-shadow"
+msgstr "Innerlijke schaduw"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.offsetx"
+msgstr "X"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.spread"
+msgstr "Spreiding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title"
+msgstr "Schaduw"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title.group"
+msgstr "Groepsschaduw"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title.multiple"
+msgstr "Selectie schaduwen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.show-fill-on-export"
+msgstr "Meenemen in exports"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.size"
+msgstr "Maat"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs
+msgid "workspace.options.size-presets"
+msgstr "Voorinstellingen voor afmetingen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke"
+msgstr "Lijn"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker"
+msgstr "Cirkelmarkering"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "Diamant marker"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "Lijn pijl"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.none"
+msgstr "Geen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square"
+msgstr "Vierkant"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "Vierkante markering"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "Driehoek pijl"
+
+msgid "workspace.options.stroke-color"
+msgstr "Lijnkleur"
+
+msgid "workspace.options.stroke-width"
+msgstr "Lijndikte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.center"
+msgstr "Center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.dashed"
+msgstr "Onderbroken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.dotted"
+msgstr "Gestippeld"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.inner"
+msgstr "Binnen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.mixed"
+msgstr "Gemengd"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.outer"
+msgstr "Buiten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.solid"
+msgstr "Solide"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-bottom"
+msgstr "Lijn beneden uit"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-center"
+msgstr "Lijn gecentreerd uit"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-justify"
+msgstr "Justify (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-left"
+msgstr "Links uitlijnen (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-middle"
+msgstr "Midden uitlijnen (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-right"
+msgstr "Rechts uitlijnen (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-top"
+msgstr "Boven uitlijnen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.direction-ltr"
+msgstr "Links naar rechts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.direction-rtl"
+msgstr "Rechts naar links"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-auto-height"
+msgstr "Automatische hoogte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-auto-width"
+msgstr "Automatische breedte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-fixed"
+msgstr "Vast"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.letter-spacing"
+msgstr "Letterafstand"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.line-height"
+msgstr "Lijnhoogte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.lowercase"
+msgstr "Kleine letters"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.none"
+msgstr "Geen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.strikethrough"
+msgstr "Doorstreept (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title"
+msgstr "Tekst"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title-group"
+msgstr "Groepstekst"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title-selection"
+msgstr "Selectie tekst"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.titlecase"
+msgstr "Beginhoofdletters"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.underline"
+msgstr "Onderstreept (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.uppercase"
+msgstr "Hoofdletters"
+
+msgid "workspace.options.width"
+msgstr "Breedte"
+
+msgid "workspace.options.x"
+msgstr "X-as"
+
+msgid "workspace.options.y"
+msgstr "Y-as"
+
+msgid "workspace.path.actions.add-node"
+msgstr "Knooppunt toevoegen (%s)"
+
+msgid "workspace.path.actions.delete-node"
+msgstr "Knooppunt verwijderen (%s)"
+
+msgid "workspace.path.actions.draw-nodes"
+msgstr "Teken knooppunten (%s)"
+
+msgid "workspace.path.actions.join-nodes"
+msgstr "Knooppunten verbinden (%s)"
+
+msgid "workspace.path.actions.make-corner"
+msgstr "Naar hoek (%s)"
+
+msgid "workspace.path.actions.make-curve"
+msgstr "Naar curve (%s)"
+
+msgid "workspace.path.actions.merge-nodes"
+msgstr "Knooppunten samenvoegen (%s)"
+
+msgid "workspace.path.actions.move-nodes"
+msgstr "Verplaats knooppunten (%s)"
+
+msgid "workspace.path.actions.separate-nodes"
+msgstr "Verschillende knooppunten (%s)"
+
+msgid "workspace.path.actions.snap-nodes"
+msgstr "Snap knooppunten (%s)"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.progress"
+msgstr "%s/%s converteren"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.title"
+msgstr "%s bijwerken..."
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "Flex-indeling toevoegen"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.back"
+msgstr "Naar achtergrond verplaatsen"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.backward"
+msgstr "Naar achteren verplaatsen"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.copy"
+msgstr "Kopieëren"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Selectie naar bord"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-component"
+msgstr "Creëer component"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.cut"
+msgstr "Knippen"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete"
+msgstr "Verwijderen"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete-flow-start"
+msgstr "Verwijder flow-start"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instance"
+msgstr "Instantie losmaken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "Instanties losmaken"
+
+msgid "workspace.shape.menu.difference"
+msgstr "Verschil"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.duplicate"
+msgstr "Dupliceren"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.edit"
+msgstr "Bewerken"
+
+msgid "workspace.shape.menu.exclude"
+msgstr "Uitsluiten"
+
+msgid "workspace.shape.menu.flatten"
+msgstr "Afvlakken"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "Draai horizontaal"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-vertical"
+msgstr "Draai verticaal"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flow-start"
+msgstr "Flow-start"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.forward"
+msgstr "Breng naar voren"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.front"
+msgstr "Breng naar voorgrond"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.group"
+msgstr "Groep"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.hide"
+msgstr "Verbergen"
+
+msgid "workspace.shape.menu.hide-ui"
+msgstr "Toon/Verberg gebruikersinterface"
+
+msgid "workspace.shape.menu.intersection"
+msgstr "Kruispunt"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.lock"
+msgstr "Vergrendel"
+
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.mask"
+msgstr "Masker"
+
+msgid "workspace.shape.menu.path"
+msgstr "Pad"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Verwijder flex-indeling"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.reset-overrides"
+msgstr "Overschrijvingen opnieuw instellen"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.select-layer"
+msgstr "Selecteer laag"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show"
+msgstr "Toon"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-main"
+msgstr "Toon hoofdcomponent"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Miniatuur verwijderen"
+
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "Instellen als miniatuur"
+
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "Transformeren naar pad"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.ungroup"
+msgstr "Degroeperen"
+
+msgid "workspace.shape.menu.union"
+msgstr "Verenig"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unlock"
+msgstr "Ontgrendelen"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unmask"
+msgstr "Ontmaskeren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-main"
+msgstr "Hoofdcomponent bijwerken"
+
+msgid "workspace.sidebar.collapse"
+msgstr "Zijbalk samenvouwen"
+
+msgid "workspace.sidebar.expand"
+msgstr "Vouw zijbalk uit"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.history"
+msgstr "Geschiedenis (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.layers"
+msgstr "Lagen"
+
+msgid "workspace.sidebar.layers.components"
+msgstr "Componenten"
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "Borden"
+
+msgid "workspace.sidebar.layers.groups"
+msgstr "Groepen"
+
+msgid "workspace.sidebar.layers.images"
+msgstr "Afbeeldingen"
+
+msgid "workspace.sidebar.layers.masks"
+msgstr "Maskers"
+
+msgid "workspace.sidebar.layers.search"
+msgstr "Zoek lagen"
+
+msgid "workspace.sidebar.layers.shapes"
+msgstr "Vormen"
+
+msgid "workspace.sidebar.layers.texts"
+msgstr "Teksten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/inspect/attributes/svg.cljs
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "Geïmporteerde SVG-kenmerken"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "workspace.sidebar.sitemap"
+msgstr "Pagina's"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.sitemap"
+msgstr "Sitemap"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.assets"
+msgstr "Middelen"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.color-palette"
+msgstr "Kleurpalet (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.comments"
+msgstr "Commentaar (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.curve"
+msgstr "Curve (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.ellipse"
+msgstr "Ovaal (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.frame"
+msgstr "Bord (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.image"
+msgstr "Afbeelding (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.move"
+msgstr "Verplaatsen (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.path"
+msgstr "Pad (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.rect"
+msgstr "Rechthoek (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "Snelkoppelingen (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text"
+msgstr "Tekst (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "Typografieën (%s)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.delete"
+msgstr "%s verwijderd"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.modify"
+msgstr "%s gewijzigd"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.move"
+msgstr "Verplaatste objecten"
+
+msgid "workspace.undo.entry.multiple.circle"
+msgstr "cirkels"
+
+msgid "workspace.undo.entry.multiple.color"
+msgstr "kleuren"
+
+msgid "workspace.undo.entry.multiple.component"
+msgstr "componenten"
+
+msgid "workspace.undo.entry.multiple.curve"
+msgstr "curves"
+
+msgid "workspace.undo.entry.multiple.frame"
+msgstr "bord"
+
+msgid "workspace.undo.entry.multiple.group"
+msgstr "groepen"
+
+msgid "workspace.undo.entry.multiple.media"
+msgstr "grafische middelen"
+
+msgid "workspace.undo.entry.multiple.multiple"
+msgstr "objecten"
+
+msgid "workspace.undo.entry.multiple.page"
+msgstr "pagina's"
+
+msgid "workspace.undo.entry.multiple.path"
+msgstr "paden"
+
+msgid "workspace.undo.entry.multiple.rect"
+msgstr "rechthoeken"
+
+msgid "workspace.undo.entry.multiple.shape"
+msgstr "vormen"
+
+msgid "workspace.undo.entry.multiple.text"
+msgstr "teksten"
+
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "typografie middelen"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.new"
+msgstr "Nieuw: %s"
+
+msgid "workspace.undo.entry.single.circle"
+msgstr "cirkel"
+
+msgid "workspace.undo.entry.single.color"
+msgstr "kleur"
+
+msgid "workspace.undo.entry.single.component"
+msgstr "component"
+
+msgid "workspace.undo.entry.single.curve"
+msgstr "curve"
+
+msgid "workspace.undo.entry.single.frame"
+msgstr "bord"
+
+msgid "workspace.undo.entry.single.group"
+msgstr "groep"
+
+msgid "workspace.undo.entry.single.image"
+msgstr "afbeelding"
+
+msgid "workspace.undo.entry.single.media"
+msgstr "grafisch middel"
+
+msgid "workspace.undo.entry.single.multiple"
+msgstr "object"
+
+msgid "workspace.undo.entry.single.page"
+msgstr "pagina"
+
+msgid "workspace.undo.entry.single.path"
+msgstr "pad"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.update"
+msgstr "Bewerken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "Eenvoudige marge"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.packed"
+msgstr "ingepakt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "Padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-all"
+msgstr "Alle kanten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-simple"
+msgstr "Eenvoudige opvulling"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "ruimte rondom"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "ruimte tussen"
