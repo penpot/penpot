@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.common.record :as cr]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
@@ -25,17 +26,36 @@
    [beicon.core :as rx]
    [rumext.v2 :as mf]))
 
+(def ^:private excluded-attrs
+  #{:blocked
+    :hide-fill-on-export
+    :collapsed
+    :remote-synced
+    :exports})
+
+(defn check-shape
+  [new-shape old-shape]
+  (cr/-equiv-with-exceptions old-shape new-shape excluded-attrs))
+
+(defn check-frame-props
+  [np op]
+  (check-shape (unchecked-get np "shape")
+               (unchecked-get op "shape")))
+
 (defn frame-shape-factory
   [shape-wrapper]
   (let [frame-shape (frame/frame-shape shape-wrapper)]
     (mf/fnc frame-shape-inner
-      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
+      {::mf/wrap [#(mf/memo' % check-frame-props)]
        ::mf/wrap-props false
        ::mf/forward-ref true}
       [props ref]
 
       (let [shape      (unchecked-get props "shape")
-            childs-ref (mf/use-memo (mf/deps (:id shape)) #(refs/children-objects (:id shape)))
+            shape-id   (dm/get-prop shape :id)
+
+            childs-ref (mf/with-memo [shape-id]
+                         (refs/children-objects shape-id))
             childs     (mf/deref childs-ref)]
 
         [:& (mf/provider embed/context) {:value true}
@@ -46,8 +66,8 @@
   [new-props old-props]
   (and (= (unchecked-get new-props "thumbnail?")
           (unchecked-get old-props "thumbnail?"))
-       (= (unchecked-get new-props "shape")
-          (unchecked-get old-props "shape"))))
+       (check-shape (unchecked-get new-props "shape")
+                    (unchecked-get old-props "shape"))))
 
 (defn nested-frame-wrapper-factory
   [shape-wrapper]
