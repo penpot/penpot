@@ -29,9 +29,10 @@
 (defn is-direct-child-of-root?
   ([objects id]
    (is-direct-child-of-root? (get objects id)))
-  ([{:keys [frame-id type]}]
-   (and (= type :frame)
-        (= frame-id uuid/zero))))
+  ([shape]
+   (and (some? shape)
+        (= (dm/get-prop shape :type) :frame)
+        (= (dm/get-prop shape :frame-id) uuid/zero))))
 
 (defn frame-shape?
   ([objects id]
