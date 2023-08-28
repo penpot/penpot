@@ -474,7 +474,7 @@
             ids     (if (boolean? blocked)
                       (into ids (->> ids (mapcat #(cph/get-children-ids objects %))))
                       ids)]
-        (rx/of (dch/update-shapes ids update-fn))))))
+        (rx/of (dch/update-shapes ids update-fn {:attrs #{:blocked :hidden}}))))))
 
 (defn toggle-visibility-selected
   []
