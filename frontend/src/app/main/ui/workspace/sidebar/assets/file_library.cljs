@@ -248,7 +248,7 @@
            :local? local?
            :components components
            :listing-thumbs? listing-thumbs?
-           :open? (get open-status :components true)
+           :open? (get open-status :components false)
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -263,7 +263,7 @@
            :local? local?
            :objects media
            :listing-thumbs? listing-thumbs?
-           :open? (get open-status :graphics true)
+           :open? (get open-status :graphics false)
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -276,7 +276,7 @@
           {:file-id file-id
            :local? local?
            :colors colors
-           :open? (get open-status :colors true)
+           :open? (get open-status :colors false)
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -290,7 +290,7 @@
            :file-id (:id file)
            :local? local?
            :typographies typographies
-           :open? (get open-status :typographies true)
+           :open? (get open-status :typographies false)
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -327,7 +327,7 @@
            :local? local?
            :components components
            :listing-thumbs? listing-thumbs?
-           :open? (get open-status :components true)
+           :open? (get open-status :components false)
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -342,7 +342,7 @@
            :local? local?
            :objects media
            :listing-thumbs? listing-thumbs?
-           :open? (get open-status :graphics true)
+           :open? (get open-status :graphics false)
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -355,7 +355,7 @@
           {:file-id file-id
            :local? local?
            :colors colors
-           :open? (get open-status :colors true)
+           :open? (get open-status :colors false)
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -369,7 +369,7 @@
            :file-id (:id file)
            :local? local?
            :typographies typographies
-           :open? (get open-status :typographies true)
+           :open? (get open-status :typographies false)
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
