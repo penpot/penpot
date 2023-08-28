@@ -53,9 +53,8 @@
         ;; We group the objects together per frame-id so if an object of a different
         ;; frame changes won't affect the rendering frame
         frame-objects
-        (mf/use-memo
-         (mf/deps objects)
-         #(cph/objects-by-frame objects))]
+        (mf/with-memo [objects]
+          (cph/objects-by-frame objects))]
 
     [:g {:id (dm/str "shape-" uuid/zero)}
      [:& (mf/provider ctx/active-frames) {:value active-frames}
@@ -69,17 +68,12 @@
       [:g.frame-children
        (for [shape shapes]
          [:g.ws-shape-wrapper {:key (dm/str (dm/get-prop shape :id))}
-          (if (not ^boolean (cph/frame-shape? shape))
-            [:& shape-wrapper
-             {:shape shape}]
-            (if ^boolean (cph/is-direct-child-of-root? shape)
-              [:& root-frame-wrapper
-               {:shape shape
-                :objects (get frame-objects (dm/get-prop shape :id))
-                :thumbnail? (not (contains? active-frames (dm/get-prop shape :id)))}]
-              [:& nested-frame-wrapper
-               {:shape shape
-                :objects (get frame-objects (dm/get-prop shape :id))}]))])]]]))
+          (if ^boolean (cph/frame-shape? shape)
+            [:& root-frame-wrapper
+             {:shape shape
+              :objects (get frame-objects (dm/get-prop shape :id))
+              :thumbnail? (not (contains? active-frames (dm/get-prop shape :id)))}]
+            [:& shape-wrapper {:shape shape}])])]]]))
 
 (defn- check-shape-wrapper-props
   [np op]
