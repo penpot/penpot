@@ -90,7 +90,7 @@
 
         ;; FIXME: WARN: this breaks react rule of hooks (hooks can't be under conditional)
         active-frames
-        (when (cph/is-direct-child-of-root? shape)
+        (when (cph/root-frame? shape)
           (mf/use-ctx ctx/active-frames))
 
         thumbnail?
@@ -125,4 +125,3 @@
 (def bool-wrapper (bool/bool-wrapper-factory shape-wrapper))
 (def root-frame-wrapper (frame/root-frame-wrapper-factory shape-wrapper))
 (def nested-frame-wrapper (frame/nested-frame-wrapper-factory shape-wrapper))
-
