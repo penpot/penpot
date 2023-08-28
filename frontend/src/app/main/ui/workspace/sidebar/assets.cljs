@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.assets
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
@@ -80,7 +80,6 @@
                         :open-menu false})
         filters        (deref filters*)
         term           (:term filters)
-        ordering       (:ordering filters)
         list-style     (:list-style filters)
         menu-open?     (:open-menu filters)
         section        (:section filters)
@@ -175,22 +174,22 @@
                   :data-test      "typographies"}]]
 
     (if ^boolean new-css-system
-      [:div  {:class  (css :assets-bar)}
-       [:div {:class  (css :assets-header)}
+      [:div  {:class (stl/css :assets-bar)}
+       [:div {:class (stl/css :assets-header)}
         (when-not ^boolean read-only?
-          [:button {:class (css :libraries-button)
-                    :on-click #(modal/show! :libraries-dialog {})}
-           [:span {:class (css :libraries-icon)}
+          [:button {:class (stl/css :libraries-button)
+                    :on-click show-libraries-dialog}
+           [:span {:class (stl/css :libraries-icon)}
             i/library-refactor]
            (tr "workspace.assets.libraries")])
 
-        [:div {:class (css :search-wrapper)}
+        [:div {:class (stl/css :search-wrapper)}
          [:& search-bar {:on-change on-search-term-change
                         :value term
                         :placeholder (tr "workspace.assets.search")}
          [:button
           {:on-click on-open-menu
-           :class (dom/classnames (css :section-button) true)}
+           :class (stl/css :section-button)}
           i/filter-refactor]]
         [:& context-menu-a11y
          {:on-close on-menu-close
@@ -203,7 +202,7 @@
           :left 64
           :options options
           :workspace? true}]
-         [:button {:class (css :sort-button)
+         [:button {:class (stl/css :sort-button)
                    :on-click toggle-ordering}
           (if reverse-sort?
             i/asc-sort-refactor
@@ -212,7 +211,7 @@
        [:& (mf/provider cmm/assets-filters) {:value filters}
         [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}
          [:& (mf/provider cmm/assets-toggle-list-style) {:value toggle-list-style}
-          [:div {:class (dom/classnames (css :libraries-wrapper) true)}
+          [:div {:class (stl/css :libraries-wrapper)}
            [:& assets-local-library {:filters filters}]
            [:& assets-libraries {:filters filters}]]]]]]
 
