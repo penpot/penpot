@@ -170,7 +170,9 @@
             (mf/use-memo (mf/deps objects)
                          #(svg-raw-container-factory objects))]
         (when (and shape (not (:hidden shape)))
-          (let [shape (gsh/translate-to-frame shape frame)
+          (let [shape (if frame
+                        (gsh/translate-to-frame shape frame)
+                        shape)
                 opts #js {:shape shape
                           :frame frame}]
             (case (:type shape)
