@@ -9,8 +9,7 @@
   (:refer-clojure :exclude [defrecord assoc! clone])
   #?(:cljs (:require-macros [app.common.record]))
   #?(:clj
-     (:import java.util.Map
-              java.util.Map$Entry)))
+     (:import java.util.Map$Entry)))
 
 #_:clj-kondo/ignore
 (defmacro caching-hash
@@ -44,11 +43,12 @@
            key-sym  (gensym "key-")
            val-sym  (gensym "val-")
            this-sym (with-meta 'this {:tag tagname})]
-       ['cljs.core/ICloneable
+       ['cljs.core/IRecord
+        'cljs.core/ICloneable
         `(~'-clone [~this-sym]
           (new ~tagname ~@(generate-field-access this-sym val-sym fields)))
 
-        'IHash
+        'cljs.core/IHash
         `(~'-hash [~this-sym]
           (caching-hash ~this-sym
                         (fn [coll#]
@@ -175,16 +175,17 @@
            val-sym  'val
            this-sym (with-meta 'this {:tag tagname})]
 
-       ['clojure.lang.MapEquivalence
+       ['clojure.lang.IRecord
         'clojure.lang.IPersistentMap
-
-        `(~'equiv [~this-sym ~'other]
-          (and (instance? java.util.Map ~'other) (= (.count ~this-sym) (.size ^Map ~'other))
-               (every? (fn [^clojure.lang.MapEntry e#]
-                         (let [k# (.key e#)]
-                           (and (.containsKey ^Map ~'other k#)
-                                (= (.val e#) (.get ^Map ~'other k#)))))
-                       (.seq ~this-sym))))
+        `(~'equiv [~this-sym ~val-sym]
+          (and (some? ~val-sym)
+               (instance? ~tagname ~val-sym)
+               ~@(map (fn [field]
+                        `(= (.. ~this-sym ~(property-symbol field))
+                            (.. ~(with-meta val-sym {:tag tagname}) ~(property-symbol field))))
+                      base-fields)
+               (= (. ~this-sym ~'-$extmap)
+                  (. ~(with-meta val-sym {:tag tagname}) ~'-$extmap))))
 
         `(~'entryAt [~this-sym ~key-sym]
           (let [v# (.valAt ~this-sym ~key-sym ::not-found)]
