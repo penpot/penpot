@@ -12,6 +12,7 @@
    [app.main.data.messages :as dmsg]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.link-button :as lb]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
@@ -43,8 +44,10 @@
       content
       (for [[index link] (d/enumerate links)]
         [:* {:key (dm/str "link-" index)}
-         " " [:a.link {:on-click (:callback link)}
-              (:label link)]])]
+         " " [:& lb/link-button {:class "link"
+                                 :on-click (:callback link)
+                                 :value (:label link)}]])]
+
      (when (or (= controls :bottom-actions) (= controls :inline-actions))
        [:div.actions
         (for [action actions]

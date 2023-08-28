@@ -21,6 +21,7 @@
    [app.main.render :refer [component-svg]]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as bc]
+   [app.main.ui.components.link-button :as lb]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.components.title-bar :refer [title-bar]]
@@ -462,11 +463,12 @@
         update         (mf/use-fn
                         (mf/deps file-id)
                         (fn [event]
-                          (let [library-id (some-> (dom/get-target event)
-                                                   (dom/get-data "library-id")
-                                                   (parse-uuid))]
-                            (reset! updating?* true)
-                            (st/emit! (dwl/sync-file file-id library-id)))))]
+                          (when-not updating?
+                            (let [library-id (some-> (dom/get-target event)
+                                                     (dom/get-data "library-id")
+                                                     (parse-uuid))]
+                              (reset! updating?* true)
+                              (st/emit! (dwl/sync-file file-id library-id))))))]
 
     (if new-css-system
       [:div {:class (stl/css :section)}
@@ -491,8 +493,7 @@
                                                         (count typographies))]]
               [:input {:type "button"
                        :class (stl/css-case :item-update true
-                                            :btn-gray updating?
-                                            :btn-warning (not updating?))
+                                            :disabled updating?)
                        :value (tr "workspace.libraries.update")
                        :data-library-id (dm/str id)
                        :on-click update}]
@@ -566,9 +567,9 @@
               (when (or (pos? (:components exceeded))
                         (pos? (:colors exceeded))
                         (pos? (:typographies exceeded)))
-                [:div {:class (stl/css :libraries-updates-see-all)
-                       :on-click see-all-assets}
-                 "(" (tr "workspace.libraries.update.see-all-changes") ")"])])]])]
+                [:div {:class (stl/css :libraries-updates-see-all)}
+                 [:& lb/link-button {:on-click see-all-assets
+                                     :value (str "(" (tr "workspace.libraries.update.see-all-changes") ")")}]])])]])]
 
       [:div.section
        (if (empty? libs-assets)
@@ -589,13 +590,12 @@
                                    0
                                    (count colors)
                                    (count typographies))]
-              [:input.item-button {:type "button"
-                                   :class (stl/css-case new-css-system
-                                                        :btn-gray updating?
-                                                        :btn-warning (not updating?))
-                                   :value (tr "workspace.libraries.update")
-                                   :data-library-id (dm/str id)
-                                   :on-click update}]
+              [:input.item-button.item-update {:type "button"
+                                               :class (stl/css-case new-css-system
+                                                                    :disabled updating?)
+                                               :value (tr "workspace.libraries.update")
+                                               :data-library-id (dm/str id)
+                                               :on-click update}]
 
               [:div.libraries-updates
                (when-not (empty? components)
@@ -657,8 +657,9 @@
               (when (or (pos? (:components exceeded))
                         (pos? (:colors exceeded))
                         (pos? (:typographies exceeded)))
-                [:div.libraries-updates-see-all {:on-click see-all-assets}
-                 "(" (tr "workspace.libraries.update.see-all-changes") ")"])])]])])))
+                [:div.libraries-updates-see-all
+                 [:& lb/link-button {:on-click see-all-assets
+                                     :value (str "(" (tr "workspace.libraries.update.see-all-changes") ")")}]])])]])])))
 
 (mf/defc libraries-dialog
   {::mf/register modal/components

@@ -724,20 +724,17 @@
             background: $color-black;
           }
 
-          &.btn-gray {
-            background: $color-gray-10;
-            border-color: $color-gray-10;
-            color: $color-black;
-            cursor: unset;
-
-            &:hover {
-              color: $color-black;
-            }
-          }
-
-          &.btn-warning {
+          &.item-update {
             background: $color-warning;
             border-color: $color-warning;
+            color: $color-black;
+
+            &.disabled {
+              background: $color-gray-10;
+              border-color: $color-gray-10;
+              color: $color-black;
+              cursor: unset;
+            }
           }
         }
       }
@@ -863,10 +860,14 @@
 
     .libraries-updates-see-all {
       margin-top: $size-2;
-      text-align: right;
-      cursor: pointer;
-      color: $color-info;
-      text-decoration: underline;
+      direction: rtl;
+      & input {
+        border: none;
+        color: $color-info;
+        cursor: pointer;
+        margin-bottom: 0;
+        text-decoration: underline;
+      }
     }
   }
 }

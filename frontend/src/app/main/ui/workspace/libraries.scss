@@ -87,8 +87,7 @@
               }
 
               .item-publish,
-              .item-unpublish,
-              .item-update {
+              .item-unpublish {
                 @extend .button-primary;
                 @include tabTitleTipography;
                 height: $s-32;
@@ -97,19 +96,15 @@
                 border-radius: $br-8;
               }
               .item-update {
+                @extend .button-warning;
+                @include tabTitleTipography;
+                height: $s-32;
+                min-width: $s-92;
+                padding: $s-8 $s-24;
+                border-radius: $br-8;
                 margin-right: $s-2;
-                &.btn-gray {
-                  background: var(--light-gray-4);
-                  border-color: var(--light-gray-4);
-                  color: var(--dark-gray-4);
-                  cursor: unset;
-                  &:hover {
-                    color: var(--dark-gray-4);
-                  }
-                }
-                &.btn-warning {
-                  background: var(--light-warning-color);
-                  border-color: var(--light-warning-color);
+                &.disabled {
+                  @extend .button-disabled;
                 }
               }
               .item-unpublish {
@@ -215,12 +210,14 @@
           }
         }
         .libraries-updates-see-all {
+          direction: rtl;
           grid-column: span 3;
           margin-top: $s-8;
           margin-right: $s-8;
-          text-align: right;
-          cursor: pointer;
-          color: var(--link-foreground-color);
+          & input {
+            @extend .link;
+            margin: 0;
+          }
         }
       }
       .updates-content {
