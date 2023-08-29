@@ -25,6 +25,7 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
@@ -64,6 +65,8 @@
         components-v2  (mf/use-ctx ctx/components-v2)
         new-css-system (mf/use-ctx ctx/new-css-system)
         component-id   (:id component)
+
+        visible?       (h/use-visible item-ref :once? true)
 
         ;; NOTE: we don't use reactive deref for it because we don't
         ;; really need rerender on any change on the file change. If
@@ -180,8 +183,9 @@
        (when (and (some? root-shape)
                   (some? container))
          [:*
-          [:& component-svg {:root-shape root-shape
-                             :objects (:objects container)}]
+          (when visible?
+            [:& component-svg {:root-shape root-shape
+                               :objects (:objects container)}])
           (let [renaming? (= renaming (:id component))]
             [:*
              [:& editable-label
