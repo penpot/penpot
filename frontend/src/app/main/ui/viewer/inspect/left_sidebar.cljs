@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.inspect.left-sidebar
   (:require
    [app.common.data :as d]
+   [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
@@ -26,6 +27,9 @@
 (mf/defc layer-item
   [{:keys [item selected objects disable-collapse?] :as props}]
   (let [id        (:id item)
+        name              (:name item)
+        hidden?           (:hidden item)
+        touched?          (-> item :touched seq boolean)
         selected? (contains? selected id)
         item-ref  (mf/use-ref nil)
 
@@ -74,7 +78,13 @@
        (when absolute?
          [:div.absolute i/position-absolute])
        [:& si/element-icon {:shape item}]]
-      [:& layer-name {:shape item :disabled-double-click true}]
+      [:& layer-name {:shape-id id
+                      :shape-name name
+                      :shape-touched? touched?
+                      :hidden? hidden?
+                      :selected? selected?
+                      :type-frame (cph/frame-shape? item)
+                      :disabled-double-click true}]
 
       (when (and (not disable-collapse?) (:shapes item))
         [:span.toggle-content
