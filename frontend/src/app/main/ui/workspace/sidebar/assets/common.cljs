@@ -39,11 +39,10 @@
     (->> coll
          (filter (fn [item]
                    (or (matches-search (:name item "!$!") term)
+                       (matches-search (:path item "!$!") term)
                        (matches-search (:value item "!$!") term))))
-                                        ; Sort by folder order, but
-                                        ; putting all "root" items
-                                        ; always first, independently
-                                        ; of sort order.
+         ;; Sort by folder order, but putting all "root" items always
+         ;; first, independently of sort order.
          (sort-by #(str/lower (cph/merge-path-item (if (empty? (:path %))
                                                      (if reverse? "z" "a")
                                                      (:path %))
