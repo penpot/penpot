@@ -448,7 +448,7 @@
                                    :use-for-thumbnail?)
 
                            (cond->
-                             (or group? bool?)
+                             (or frame? group? bool?)
                              (assoc :shapes []))
 
                            (gsh/move delta)
