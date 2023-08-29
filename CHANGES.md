@@ -7,6 +7,10 @@
 - Navigate up in layer hierarchy with Shift+Enter shortcut [Taiga #5734](https://tree.taiga.io/project/penpot/us/5734)
 - Click on the flow tags open viewer with the selected frame [Taiga #5044](https://tree.taiga.io/project/penpot/us/5044)
 
+### :bug: Bugs fixed
+
+- Fix unexpected output on get-page rpc method when invalid object-id is provided [Github #3546](https://github.com/penpot/penpot/issues/3546)
+
 ## 1.19.1
 
 ### :bug: Bugs fixed
