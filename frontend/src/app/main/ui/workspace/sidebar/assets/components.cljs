@@ -206,7 +206,7 @@
            on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-context-menu
            selected-full]}]
 
-  (let [group-open?    (get open-groups prefix true)
+  (let [group-open?    (get open-groups prefix (if (= prefix "") true false))
         new-css-system (mf/use-ctx ctx/new-css-system)
         dragging*      (mf/use-state false)
         dragging?      (deref dragging*)
@@ -232,6 +232,7 @@
          (mf/deps dragging* prefix selected-paths selected-full)
          (fn [event]
            (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full dwl/rename-component)))]
+
     (if ^boolean new-css-system
       [:div {:class (dom/classnames (css :component-group) true)
              :on-drag-enter on-drag-enter
@@ -599,24 +600,26 @@
                                 :multi true
                                 :ref input-ref
                                 :on-selected on-file-selected}]])]))
+
      [:& cmm/asset-section-block {:role :content}
-      [:& components-group {:file-id file-id
-                            :prefix ""
-                            :groups groups
-                            :open-groups open-groups
-                            :renaming (when ^boolean renaming? current-component-id)
-                            :listing-thumbs? listing-thumbs?
-                            :selected selected
-                            :on-asset-click on-asset-click
-                            :on-drag-start on-drag-start
-                            :do-rename do-rename
-                            :cancel-rename cancel-rename
-                            :on-rename-group on-rename-group
-                            :on-group on-group
-                            :on-ungroup on-ungroup
-                            :on-context-menu on-context-menu
-                            :selected-full selected-full}]
-      (when local?
+      (when ^boolean open?
+        [:& components-group {:file-id file-id
+                              :prefix ""
+                              :groups groups
+                              :open-groups open-groups
+                              :renaming (when ^boolean renaming? current-component-id)
+                              :listing-thumbs? listing-thumbs?
+                              :selected selected
+                              :on-asset-click on-asset-click
+                              :on-drag-start on-drag-start
+                              :do-rename do-rename
+                              :cancel-rename cancel-rename
+                              :on-rename-group on-rename-group
+                              :on-group on-group
+                              :on-ungroup on-ungroup
+                              :on-context-menu on-context-menu
+                              :selected-full selected-full}])
+      (when ^boolean local?
         [:& cmm/assets-context-menu
          {:on-close on-close-menu
           :state @menu-state
