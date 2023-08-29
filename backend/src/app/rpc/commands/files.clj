@@ -510,7 +510,8 @@
   other not needed objects removed from the `:objects` data
   structure."
   [{:keys [objects] :as page} object-id]
-  (let [objects (cph/get-children-with-self objects object-id)]
+  (let [objects (->> (cph/get-children-with-self objects object-id)
+                     (filter some?))]
     (assoc page :objects (d/index-by :id objects))))
 
 (defn- prune-thumbnails

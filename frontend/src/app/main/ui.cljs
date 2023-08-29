@@ -109,7 +109,7 @@
 
        :viewer
        (let [{:keys [query-params path-params]} route
-             {:keys [index share-id section page-id interactions-mode] :or {section :interactions interactions-mode :show-on-click}} query-params
+             {:keys [index share-id section page-id interactions-mode frame-id] :or {section :interactions interactions-mode :show-on-click}} query-params
              {:keys [file-id]} path-params]
          (if (:token query-params)
            [:& viewer/breaking-change-notice]
@@ -122,7 +122,8 @@
                                    :interactions-show? (case (keyword interactions-mode)
                                                          :hide false
                                                          :show true
-                                                         :show-on-click false)}]))
+                                                         :show-on-click false)
+                                   :frame-id frame-id}]))
 
        :workspace
        (let [project-id (some-> params :path :project-id uuid)

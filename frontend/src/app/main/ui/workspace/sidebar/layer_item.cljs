@@ -23,6 +23,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.layer-name :refer [layer-name]]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.timers :as ts]
    [beicon.core :as rx]
@@ -191,6 +192,7 @@
             ;; seek for an alternate solution. Maybe use-context?
             scroll-node (dom/get-parent-with-data node "scrollContainer")
             parent-node (dom/get-parent-at node 2)
+            first-child-node (dom/get-first-child parent-node)
 
             subid
             (when (and single? selected?)
@@ -200,9 +202,9 @@
                  #(let [scroll-distance-ratio (dom/get-scroll-distance-ratio node scroll-node)
                         scroll-behavior (if (> scroll-distance-ratio 1) "instant" "smooth")]
                     (if scroll-to
-                      (dom/scroll-into-view! parent-node #js {:block "center" :behavior scroll-behavior  :inline "start"})
+                      (dom/scroll-into-view! first-child-node #js {:block "center" :behavior scroll-behavior  :inline "start"})
                       (do
-                        (dom/scroll-into-view-if-needed! parent-node #js {:block "center" :behavior scroll-behavior :inline "start"})
+                        (dom/scroll-into-view-if-needed! first-child-node #js {:block "center" :behavior scroll-behavior :inline "start"})
                         (reset! scroll-to-middle? true)))))))]
 
         #(when (some? subid)
@@ -291,11 +293,17 @@
           [:button {:class (stl/css-case
                             :toggle-element true
                             :selected hidden?)
+                    :title (if hidden?
+                             (tr "workspace.shape.menu.show")
+                             (tr "workspace.shape.menu.hide"))
                     :on-click toggle-visibility}
            (if ^boolean hidden? i/hide-refactor i/shown-refactor)]
           [:button {:class (stl/css-case
                             :block-element true
                             :selected blocked?)
+                    :title (if (:blocked item)
+                             (tr "workspace.shape.menu.unlock")
+                             (tr "workspace.shape.menu.lock"))
                     :on-click toggle-blocking}
            (if ^boolean blocked? i/lock-refactor i/unlock-refactor)]]]]
 

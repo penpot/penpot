@@ -2703,6 +2703,9 @@ msgstr "Snap to pixel grid"
 msgid "shortcuts.start-editing"
 msgstr "Start editing"
 
+msgid "shortcuts.select-parent-layer"
+msgstr "Select parent layer"
+
 msgid "shortcuts.start-measure"
 msgstr "Start measurement"
 

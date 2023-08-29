@@ -13,6 +13,20 @@
 ### :heart: Community contributions by (Thank you!)
 
 
+## 1.19.2
+
+### :sparkles: New features
+
+- Navigate up in layer hierarchy with Shift+Enter shortcut [Taiga #5734](https://tree.taiga.io/project/penpot/us/5734)
+- Click on the flow tags open viewer with the selected frame [Taiga #5044](https://tree.taiga.io/project/penpot/us/5044)
+
+### :bug: Bugs fixed
+
+- Fix unexpected output on get-page rpc method when invalid object-id is provided [Github #3546](https://github.com/penpot/penpot/issues/3546)
+- Fix Invalid files amount after moving file from Project to Drafts [Taiga #5638](https://tree.taiga.io/project/penpot/us/5638)
+- Fix deleted pages comments shown in right sidebar [Taiga #5648](https://tree.taiga.io/project/penpot/us/5648)
+- Fix tooltip on toggle visibility and toggle lock buttons [Taiga #5141](https://tree.taiga.io/project/penpot/issue/5141)
+
 ## 1.19.1
 
 ### :bug: Bugs fixed

@@ -176,6 +176,7 @@
 }
 
 .flow-badge {
+  cursor: pointer;
   display: flex;
 
   & .content {
@@ -199,7 +200,8 @@
     }
   }
 
-  &.selected .content {
+  &.selected .content,
+  &:hover .content {
     background-color: $color-primary;
 
     & svg {

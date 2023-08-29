@@ -2778,6 +2778,9 @@ msgstr "Activar alineación a rejilla de pixel"
 msgid "shortcuts.start-editing"
 msgstr "Comenzar edición"
 
+msgid "shortcuts.select-parent-layer"
+msgstr "Seleccionar capa padre"
+
 msgid "shortcuts.start-measure"
 msgstr "Comenzar medida"
 
