@@ -30,7 +30,7 @@ $width-settings-bar-max: $s-500;
     display: grid;
     grid-template-columns: 100%;
     grid-template-rows: 100%;
-    height: calc(100% - 50px);
+    height: calc(100vh - $s-52);
     .tabs-wrapper {
       .layers-tab {
         display: grid;
