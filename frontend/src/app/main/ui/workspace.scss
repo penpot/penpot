@@ -34,7 +34,7 @@
     justify-content: center;
     align-items: center;
     grid-area: viewport;
-    svg {
+    :global(svg#loader-pencil) {
       fill: var(--icon-foreground);
     }
   }

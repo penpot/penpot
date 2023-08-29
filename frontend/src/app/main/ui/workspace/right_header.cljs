@@ -119,7 +119,6 @@
                    :on-click on-increase}
           [:span {:class (stl/css :zoom-icon)}
            i/add-refactor]]]
-
         [:button {:class (stl/css :reset-btn)
                   :on-click on-zoom-reset}
          (tr "workspace.header.reset-zoom")]]
@@ -128,13 +127,15 @@
         (tr "workspace.header.zoom-fit-all")
         [:span {:class (stl/css :shortcuts)}
          (for [sc (scd/split-sc (sc/get-tooltip :fit-all))]
-           [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+           [:span {:class (dom/classnames (stl/css :shortcut-key) true)
+                   :key (str "zoom-fit-" sc)} sc])]]
        [:li {:class (stl/css :zoom-option)
              :on-click on-zoom-selected}
         (tr "workspace.header.zoom-selected")
         [:span {:class (stl/css :shortcuts)}
          (for [sc (scd/split-sc (sc/get-tooltip :zoom-selected))]
-           [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]]]]))
+           [:span {:class (dom/classnames (stl/css :shortcut-key) true)
+                   :key (str "zoom-selected-" sc)} sc])]]]]]))
 
 ;; --- Header Component
 

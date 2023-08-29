@@ -60,14 +60,16 @@
   }
   .shared-badge {
     @include flexCenter;
-    width: $s-32;
+    width: $s-16;
     height: $s-32;
+    margin-right: $s-4;
     svg {
-      height: $s-28;
-      width: $s-28;
+      stroke: var(--button-secondary-foreground-color-rest);
+      fill: none;
+      height: $s-16;
+      width: $s-16;
     }
   }
-
   .menu-btn {
     @extend .button-tertiary;
     height: $s-32;

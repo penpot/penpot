@@ -819,7 +819,6 @@
        {:class (stl/css :project-name)
         :on-click nav-to-project}
        (:name project)]
-
       (if ^boolean editing?
         [:input
          {:class (stl/css :file-name-input)
@@ -833,9 +832,9 @@
          {:class (stl/css :file-name)
           :title file-name
           :on-double-click start-editing-name}
-         file-name])
-      (when ^boolean shared?
-        [:div {:class (stl/css :shared-badge)} i/library-refactor])]
+         file-name])]
+     (when ^boolean shared?
+       [:span {:class (stl/css :shared-badge)} i/library-refactor])
      [:div {:class (stl/css :menu-section)}
       [:& menu {:layout layout
                 :file file
