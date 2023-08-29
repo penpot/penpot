@@ -34,20 +34,23 @@
 
 (defn apply-filters
   [coll {:keys [ordering term] :as filters}]
-  (let [reverse? (= :desc ordering)
-        comp-fn  (if ^boolean reverse? > <)]
-    (->> coll
-         (filter (fn [item]
-                   (or (matches-search (:name item "!$!") term)
-                       (matches-search (:path item "!$!") term)
-                       (matches-search (:value item "!$!") term))))
-         ;; Sort by folder order, but putting all "root" items always
-         ;; first, independently of sort order.
-         (sort-by #(str/lower (cph/merge-path-item (if (empty? (:path %))
-                                                     (if reverse? "z" "a")
-                                                     (:path %))
-                                                   (:name %)))
-                  comp-fn))))
+  (let [reverse? (= :desc ordering)]
+    (cond->> coll
+      (not ^boolean (str/empty? term))
+      (filter (fn [item]
+                (or (matches-search (:name item "!$!") term)
+                    (matches-search (:path item "!$!") term)
+                    (matches-search (:value item "!$!") term))))
+
+      ;; Sort by folder order, but putting all "root" items always
+      ;; first, independently of sort order.
+      :always
+      (sort-by (fn [{:keys [path name] :as item}]
+                 (let [path (if (str/empty? path)
+                              (if reverse? "z" "a")
+                              path)]
+                   (str/lower (cph/merge-path-item path name))))
+               (if ^boolean reverse? > <)))))
 
 (defn add-group
   [asset group-name]
