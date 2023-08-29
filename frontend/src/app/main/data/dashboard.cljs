@@ -891,13 +891,13 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [origin-project (get-in state [:dashboard-files (first ids) :project-id])
-            update-project (fn [project delta]
+            update-project (fn [project delta op]
                              (-> project
-                                 (update :count #(+ % (count ids)))
+                                 (update :count #(op % (count ids)))
                                  (assoc :modified-at (dt/plus (dt/now) {:milliseconds delta}))))]
         (-> state
-            (d/update-in-when [:dashboard-projects origin-project] update-project 0)
-            (d/update-in-when [:dashboard-projects project-id] update-project 10))))
+            (d/update-in-when [:dashboard-projects origin-project] update-project 0 -)
+            (d/update-in-when [:dashboard-projects project-id] update-project 10 +))))
 
     ptk/WatchEvent
     (watch [_ _ _]

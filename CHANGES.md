@@ -10,6 +10,8 @@
 ### :bug: Bugs fixed
 
 - Fix unexpected output on get-page rpc method when invalid object-id is provided [Github #3546](https://github.com/penpot/penpot/issues/3546)
+- Fix Invalid files amount after moving file from Project to Drafts [Taiga #5638](https://tree.taiga.io/project/penpot/us/5638)
+- Fix deleted pages comments shown in right sidebar [Taiga #5648](https://tree.taiga.io/project/penpot/us/5648)
 
 ## 1.19.1
 
