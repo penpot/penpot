@@ -22,6 +22,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.layer-name :refer [layer-name]]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.timers :as ts]
    [beicon.core :as rx]
@@ -269,10 +270,16 @@
                                        (css :selected) (:blocked item))}
           [:button {:class (dom/classnames (css :toggle-element) true
                                            (css :selected) (:hidden item))
+                    :title (if (:hidden item)
+                             (tr "workspace.shape.menu.show")
+                             (tr "workspace.shape.menu.hide"))
                     :on-click toggle-visibility}
            (if (:hidden item) i/hide-refactor i/shown-refactor)]
           [:button {:class (dom/classnames (css :block-element) true
                                            (css :selected) (:blocked item))
+                    :title (if (:blocked item)
+                             (tr "workspace.shape.menu.unlock")
+                             (tr "workspace.shape.menu.lock"))
                     :on-click toggle-blocking}
            (if (:blocked item) i/lock-refactor i/unlock-refactor)]]]]
        (when (and (:shapes item) expanded?)
