@@ -140,6 +140,8 @@
        (when visible?
          [:*
           [:img {:src (when visible? (cf/resolve-file-media object true))
+                 :loading "lazy"
+                 :decoding "async"
                  :draggable false}] ;; Also need to add css pointer-events: none
 
           (let [renaming? (= renaming (:id object))]
