@@ -56,7 +56,8 @@
          (.setPointerCapture target (.-pointerId bevent))))
 
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
-               (dom/child? (dom/get-target bevent) (dom/query ".viewport-controls")))
+               (dom/class? (dom/get-target bevent) "viewport-selrect")
+               (dom/child? (dom/get-target bevent) (dom/query ".grid-layout-editor")))
 
        (dom/stop-propagation bevent)
 
@@ -161,7 +162,7 @@
    (fn [event]
      (when (and (nil? selrect)
                 (or (dom/class? (dom/get-target event) "viewport-controls")
-                    (dom/child? (dom/get-target event) (dom/query ".viewport-controls"))
+                    (dom/child? (dom/get-target event) (dom/query ".grid-layout-editor"))
                     (dom/class? (dom/get-target event) "viewport-selrect")))
        (let [ctrl? (kbd/ctrl? event)
              shift? (kbd/shift? event)
@@ -236,7 +237,7 @@
      (dom/prevent-default event)
      (when-not workspace-read-only?
        (when (or (dom/class? (dom/get-target event) "viewport-controls")
-                 (dom/child? (dom/get-target event) (dom/query ".viewport-controls"))
+                 (dom/child? (dom/get-target event) (dom/query ".grid-layout-editor"))
                  (dom/class? (dom/get-target event) "viewport-selrect")
                  workspace-read-only?)
          (let [position (dom/get-client-position event)]
