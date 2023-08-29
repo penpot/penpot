@@ -248,7 +248,7 @@
        [:div {:class (stl/css :section)}
         [:& title-bar {:collapsable? false
                        :title        (tr "workspace.libraries.in-this-file")
-                       :klass        :title-spacing-lib}]
+                       :class        (stl/css :title-spacing-lib)}]
         [:div {:class (stl/css :section-list)}
 
          [:div {:class (stl/css :section-list-item)}
@@ -294,7 +294,7 @@
        [:div {:class (stl/css :section)}
         [:& title-bar {:collapsable? false
                        :title        (tr "workspace.libraries.shared-libraries")
-                       :klass        :title-spacing-lib}]
+                       :class        (stl/css :title-spacing-lib)}]
         [:div {:class (stl/css :libraries-search)}
          [:& search-bar {:on-change change-search-term
                          :value search-term

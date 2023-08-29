@@ -86,6 +86,33 @@
                  :else     `(if ~v ~cls ""))))))
    (interpose " ")))
 
+;; A macro that simplifies setting up classes using css-modules and enhaces the
+;; migration process from the old approach.
+;;
+;; Using this as example:
+;;
+;;  (stl/css-case new-css-system
+;;                :left-settings-bar    true
+;;                :old-css/settings-bar true
+;;                :global/two-row       (<= size 300))
+;;
+;; The first argument to the `css-case` macro is optional an if you don't
+;; provide it, it will behave in the same ways as if the `new-css-system` has
+;; value of `true`.
+;;
+;; The non-namespaces keywords passed are treated conditionally on the
+;; `new-css-system` value. If is `true`, it will perform a lookup on modules for
+;; corresponding (hashed) class-name; if no class name is found, the keyword
+;; will be stringigied and used as-is (with no changes). If the `new-css-system`
+;; is false, it will perform the same operation as if no class is found on
+;; modules (leaving it as string with no modification).
+;;
+;; Later, we have two modifiers (namespaces): `global` which specifies
+;; explicitly that no modules lookup should be performed; and `old-css` which
+;; only puts the class if `new-css-system` is `false`.
+;;
+;; NOTE: the same behavior applies to the `css` macro
+
 (defmacro css-case
   [& params]
   (let [fname (-> *ns* meta :file)

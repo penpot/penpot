@@ -83,6 +83,9 @@
         layout-item-values (select-keys shape layout-item-attrs)]
 
     [:*
+     [:& layer-menu {:ids ids
+                     :type type
+                     :values layer-values}]
      [:& measures-menu
       {:ids ids
        :type type
@@ -94,7 +97,6 @@
        [:& grid-cell/options
         {:shape (first parents)
          :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
-
      (when is-layout-child?
        [:& layout-item-menu
         {:ids ids
@@ -110,9 +112,7 @@
         {:ids ids
          :values (select-keys shape constraint-attrs)}])
 
-     [:& layer-menu {:ids ids
-                     :type type
-                     :values layer-values}]
+
 
      [:& text-menu
       {:ids ids

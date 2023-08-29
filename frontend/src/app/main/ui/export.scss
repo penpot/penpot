@@ -57,6 +57,7 @@
         @extend .button-tertiary;
         svg {
           @extend .button-icon-small;
+          stroke: var(--icon-foreground);
         }
       }
     }

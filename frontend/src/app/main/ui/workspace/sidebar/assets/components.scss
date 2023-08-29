@@ -224,6 +224,7 @@
   border-radius: $br-8;
   svg {
     @extend .button-icon;
+    stroke: var(--icon-foreground);
   }
 }
 :global(.three-row) {

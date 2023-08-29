@@ -77,6 +77,7 @@
         padding: 0;
         svg {
           @extend .button-icon-small;
+          stroke: var(--icon-foreground);
         }
         &.selected {
           border: $s-2 solid var(--palette-btn-border-color-selected);
@@ -104,6 +105,7 @@
     z-index: $z-index-2;
     svg {
       @extend .button-icon;
+      stroke: var(--icon-foreground);
     }
   }
   .palette {

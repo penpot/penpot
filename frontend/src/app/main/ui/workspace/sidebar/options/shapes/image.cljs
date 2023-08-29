@@ -49,6 +49,9 @@
         parents-by-ids-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         parents (mf/deref parents-by-ids-ref)]
     [:*
+     [:& layer-menu {:ids ids
+                     :type type
+                     :values layer-values}]
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values
@@ -59,7 +62,7 @@
        [:& grid-cell/options
         {:shape (first parents)
          :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
-     
+
      (when is-layout-child?
        [:& layout-item-menu
         {:ids ids
@@ -74,9 +77,7 @@
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
 
-     [:& layer-menu {:ids ids
-                     :type type
-                     :values layer-values}]
+
 
      [:& fill-menu {:ids ids
                     :type type

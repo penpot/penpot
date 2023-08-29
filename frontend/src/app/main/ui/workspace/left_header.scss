@@ -78,6 +78,7 @@
     border-radius: $br-8;
     svg {
       @extend .button-icon;
+      stroke: var(--icon-foreground);
     }
   }
   .menu {
@@ -106,6 +107,7 @@
         @include flexCenter;
         svg {
           @extend .button-icon;
+          stroke: var(--icon-foreground);
         }
       }
       &:hover {

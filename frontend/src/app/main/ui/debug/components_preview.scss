@@ -83,6 +83,7 @@
     padding: $s-20;
     display: flex;
     flex-wrap: wrap;
+    gap: $s-20;
     .component-group {
       @include flexCenter;
       justify-content: flex-start;
@@ -105,6 +106,27 @@
           @include tabTitleTipography;
           font-weight: bold;
         }
+      }
+    }
+    .button-primary {
+      @extend .button-primary;
+      height: $s-32;
+      svg {
+        @extend .button-icon;
+      }
+    }
+    .button-secondary {
+      @extend .button-secondary;
+      height: $s-32;
+      svg {
+        @extend .button-icon;
+      }
+    }
+    .button-tertiary {
+      @extend .button-tertiary;
+      height: $s-32;
+      svg {
+        @extend .button-icon;
       }
     }
   }

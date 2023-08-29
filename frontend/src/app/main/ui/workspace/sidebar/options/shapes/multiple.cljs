@@ -343,6 +343,9 @@
              ])))]
 
     [:div.options
+     (when-not (empty? layer-ids)
+       [:& layer-menu {:type type :ids layer-ids :values layer-values}])
+
      (when-not (empty? measure-ids)
        [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
 
@@ -361,8 +364,6 @@
      (when-not (or (empty? constraint-ids) is-layout-child?)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
-     (when-not (empty? layer-ids)
-       [:& layer-menu {:type type :ids layer-ids :values layer-values}])
 
      (when-not (empty? text-ids)
        [:& ot/text-menu {:type type :ids text-ids :values text-values}])

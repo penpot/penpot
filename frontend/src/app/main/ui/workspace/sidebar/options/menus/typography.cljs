@@ -529,13 +529,13 @@
        [:& radio-buttons {:selected text-transform
                           :on-change handle-change
                           :name "text-transform"}
-        [:& nilable-option {:icon (mf/html i/text-uppercase-refactor)
+        [:& nilable-option {:icon i/text-uppercase-refactor
                             :value "uppercase"
                             :id :uppercase}]
-        [:& nilable-option {:icon (mf/html i/text-lowercase-refactor)
+        [:& nilable-option {:icon i/text-lowercase-refactor
                             :value "lowercase"
                             :id :lowercase}]
-        [:& nilable-option {:icon "Aa"
+        [:& nilable-option {:icon i/text-mixed-refactor
                             :value "capitalize"
                             :id :capitalize}]]]
 

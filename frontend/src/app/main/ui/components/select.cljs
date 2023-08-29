@@ -107,8 +107,6 @@
                 [:span {:class (css :label)} label]
                 [:span {:class (css :check-icon)} i/tick-refactor]])))]]]
 
-
-
       [:div.custom-select {:on-click open-dropdown :class class}
        [:span current-label]
        [:span.dropdown-button i/arrow-down]

@@ -1,0 +1,198 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  .element-title {
+    .title-spacing-layout-element {
+      margin: 0 0 $s-4 0;
+      .position-options {
+        width: $s-140;
+      }
+    }
+  }
+  .flex-element-menu {
+    display: flex;
+    flex-direction: column;
+    gap: $s-4;
+    .first-row {
+      display: flex;
+      gap: $s-4;
+      .behaviour-menu {
+        display: flex;
+        gap: $s-4;
+        .horizontal-behaviour {
+          &.one-element {
+            width: $s-28;
+          }
+          &.two-element {
+            width: $s-60;
+          }
+          &.three-element {
+            width: $s-92;
+          }
+        }
+        .vertical-behaviour {
+          .rotated {
+            transform: rotate(90deg);
+          }
+          &.one-element {
+            width: $s-28;
+          }
+          &.two-element {
+            width: $s-60;
+          }
+          &.three-element {
+            width: $s-92;
+          }
+        }
+        &.wrap {
+        }
+      }
+      .z-index-wrapper {
+        @extend .input-element;
+        width: $s-124;
+        padding-left: $s-8;
+        .icon-text {
+          @include flexCenter;
+          height: $s-32;
+          margin-right: $s-4;
+          padding-top: $s-2;
+        }
+        .numeric-input {
+          @include removeInputStyle;
+          @include titleTipography;
+          height: $s-32;
+          width: 100%;
+          margin: 0;
+          color: var(--input-foreground-color-active);
+        }
+      }
+    }
+    .second-row {
+      display: flex;
+      gap: $s-4;
+    }
+
+    .third-row {
+      .margin-row {
+        display: flex;
+        align-items: flex-start;
+        gap: $s-4;
+        .margin-mode {
+          @extend .button-tertiary;
+          height: $s-32;
+          width: $s-28;
+          svg {
+            @extend .button-icon;
+          }
+          &.selected {
+            background-color: var(--button-tertiary-background-color-active);
+            color: var(--button-tertiary-foreground-color-active);
+            svg {
+              stroke: var(--button-tertiary-foreground-color-active);
+            }
+          }
+        }
+        .inputs-wrapper {
+          .margin-simple {
+            display: flex;
+            gap: $s-4;
+            .vertical-margin,
+            .horizontal-margin {
+              @extend .input-element;
+              width: $s-108;
+              padding-left: $s-8;
+              .icon {
+                @include flexCenter;
+                height: $s-32;
+                margin-right: $s-4;
+                svg {
+                  @extend .button-icon-small;
+                  stroke: var(--icon-foreground);
+                }
+              }
+              .numeric-input {
+                @include removeInputStyle;
+                @include titleTipography;
+                height: $s-32;
+                width: 100%;
+                margin: 0;
+                color: var(--input-foreground-color-active);
+              }
+            }
+          }
+          .margin-multiple {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: $s-4;
+            .top-margin,
+            .bottom-margin,
+            .left-margin,
+            .right-margin {
+              @extend .input-element;
+              width: $s-108;
+              padding-left: $s-8;
+              .icon {
+                @include flexCenter;
+                height: $s-32;
+                margin-right: $s-4;
+                svg {
+                  @extend .button-icon-small;
+                  stroke: var(--icon-foreground);
+                }
+              }
+              .numeric-input {
+                @include removeInputStyle;
+                @include titleTipography;
+                height: $s-32;
+                width: 100%;
+                margin: 0;
+                color: var(--input-foreground-color-active);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .forth-row .advanced-options {
+      display: flex;
+      flex-direction: column;
+      gap: $s-4;
+      .horizontal-fill,
+      .vertical-fill {
+        display: flex;
+        gap: $s-4;
+        .layout-item-min-w,
+        .layout-item-min-h,
+        .layout-item-max-w,
+        .layout-item-max-h {
+          @extend .input-element;
+          width: $s-108;
+          padding-left: $s-8;
+          .icon-text {
+            display: flex;
+            align-items: center;
+            height: $s-32;
+            width: $s-80;
+            margin-right: $s-4;
+            padding-top: $s-2;
+          }
+          .numeric-input {
+            @include removeInputStyle;
+            @include titleTipography;
+            height: $s-32;
+            width: 100%;
+            margin: 0;
+            color: var(--input-foreground-color-active);
+          }
+        }
+      }
+    }
+  }
+}

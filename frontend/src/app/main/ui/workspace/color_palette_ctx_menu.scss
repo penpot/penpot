@@ -54,6 +54,7 @@
           svg {
             @include flexCenter;
             @extend .button-icon-small;
+            stroke: var(--icon-foreground);
           }
         }
       }

@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.options
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -14,6 +15,7 @@
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.components.tabs-container :refer [tabs-container tabs-element]]
    [app.main.ui.context :as ctx]
    [app.main.ui.viewer.inspect.right-sidebar :as hrs]
@@ -68,7 +70,8 @@
 (mf/defc options-content
   {::mf/wrap [mf/memo]}
   [{:keys [selected section shapes shapes-with-children page-id file-id on-change-section on-expand]}]
-  (let [drawing              (mf/deref refs/workspace-drawing)
+  (let [new-css-system       (mf/use-ctx ctx/new-css-system)
+        drawing              (mf/deref refs/workspace-drawing)
         objects              (mf/deref refs/workspace-page-objects)
         shared-libs          (mf/deref refs/workspace-libraries)
         edition              (mf/deref refs/selected-edition)
@@ -87,72 +90,137 @@
           (if (= options-mode :inspect)
             (st/emit! :interrupt (udw/set-workspace-read-only true))
             (st/emit! :interrupt (udw/set-workspace-read-only false))))]
-
-    [:div.tool-window
-     [:div.tool-window-content
-      [:& tabs-container {:on-change-tab on-change-tab
-                         :selected section}
-       [:& tabs-element {:id :design
+    (if ^boolean new-css-system
+      [:div {:class (stl/css :tool-window)}
+       [:& tab-container
+        {:on-change-tab on-change-tab
+         :selected section
+         :collapsable? false
+         :content-class (stl/css :content-class)
+         :klass (stl/css :tab-spacing)}
+        [:& tab-element {:id :design
                          :title (tr "workspace.options.design")}
-        [:div.element-options
-         [:& align-options]
-         [:& bool-options]
-         (cond
-           (some? selected-cell)
-           [:& grid-cell/options
-            {:shape (get objects edition)
-             :cell (dm/get-in objects [edition :layout-grid-cells selected-cell])}]
+         [:div {:class (stl/css :element-options)}
+          [:& align-options]
+          [:& bool-options]
 
-           edit-grid?
-           [:& layout-container/grid-layout-edition
-            {:ids [edition]
-             :values (get objects edition)}]
+          (cond
+            (some? selected-cell)
+            [:& grid-cell/options
+             {:shape (get objects edition)
+              :cell (dm/get-in objects [edition :layout-grid-cells selected-cell])}]
 
-           (d/not-empty? drawing)
-           [:& shape-options
-            {:shape (:object drawing)
-             :page-id page-id
-             :file-id file-id
-             :shared-libs shared-libs}]
+            edit-grid?
+            [:& layout-container/grid-layout-edition
+             {:ids [edition]
+              :values (get objects edition)}]
 
-           (= 0 (count selected))
-           [:& page/options]
+            (d/not-empty? drawing)
+            [:& shape-options
+             {:shape (:object drawing)
+              :page-id page-id
+              :file-id file-id
+              :shared-libs shared-libs}]
 
-           (= 1 (count selected))
-           [:& shape-options
-            {:shape (first selected-shapes)
-             :page-id page-id
-             :file-id file-id
-             :shared-libs shared-libs
-             :shapes-with-children shapes-with-children}]
+            (= 0 (count selected))
+            [:& page/options]
 
-           :else
-           [:& multiple/options
-            {:shapes-with-children shapes-with-children
-             :shapes selected-shapes
-             :page-id page-id
-             :file-id file-id
-             :shared-libs shared-libs}])]]
+            (= 1 (count selected))
+            [:& shape-options
+             {:shape (first selected-shapes)
+              :page-id page-id
+              :file-id file-id
+              :shared-libs shared-libs
+              :shapes-with-children shapes-with-children}]
 
-       [:& tabs-element
-        {:id :prototype
-         :title (tr "workspace.options.prototype")}
-
-        [:div.element-options
-         [:& interactions-menu {:shape (first shapes)}]]]
-
-       [:& tabs-element {:id :inspect
+            :else
+            [:& multiple/options
+             {:shapes-with-children shapes-with-children
+              :shapes selected-shapes
+              :page-id page-id
+              :file-id file-id
+              :shared-libs shared-libs}])]]
+        [:& tab-element {:id :prototype
+                         :title (tr "workspace.options.prototype")}
+         [:div {:class (stl/css :element-options)}
+          [:& interactions-menu {:shape (first shapes)}]]]
+        [:& tab-element {:id :inspect
                          :title (tr "workspace.options.inspect")}
+         [:div {:class (stl/css :element-options)}
+          [:& hrs/right-sidebar {:page-id           page-id
+                                 :objects           objects
+                                 :file-id           file-id
+                                 :frame             shape-parent-frame
+                                 :shapes            selected-shapes
+                                 :on-change-section on-change-section
+                                 :on-expand         on-expand
+                                 :from              :workspace}]]]]]
 
-        [:div.element-options.element-options-inspect
-         [:& hrs/right-sidebar {:page-id           page-id
-                                :objects           objects
-                                :file-id           file-id
-                                :frame             shape-parent-frame
-                                :shapes            selected-shapes
-                                :on-change-section on-change-section
-                                :on-expand         on-expand
-                                :from              :workspace}]]]]]]))
+      [:div.tool-window
+       [:div.tool-window-content
+        [:& tabs-container {:on-change-tab on-change-tab
+                            :selected section}
+         [:& tabs-element {:id :design
+                           :title (tr "workspace.options.design")}
+          [:div.element-options
+           [:& align-options]
+           [:& bool-options]
+           (cond
+             (some? selected-cell)
+             [:& grid-cell/options
+              {:shape (get objects edition)
+               :cell (dm/get-in objects [edition :layout-grid-cells selected-cell])}]
+
+             edit-grid?
+             [:& layout-container/grid-layout-edition
+              {:ids [edition]
+               :values (get objects edition)}]
+
+             (d/not-empty? drawing)
+             [:& shape-options
+              {:shape (:object drawing)
+               :page-id page-id
+               :file-id file-id
+               :shared-libs shared-libs}]
+
+             (= 0 (count selected))
+             [:& page/options]
+
+             (= 1 (count selected))
+             [:& shape-options
+              {:shape (first selected-shapes)
+               :page-id page-id
+               :file-id file-id
+               :shared-libs shared-libs
+               :shapes-with-children shapes-with-children}]
+
+             :else
+             [:& multiple/options
+              {:shapes-with-children shapes-with-children
+               :shapes selected-shapes
+               :page-id page-id
+               :file-id file-id
+               :shared-libs shared-libs}])]]
+
+         [:& tabs-element
+          {:id :prototype
+           :title (tr "workspace.options.prototype")}
+
+          [:div.element-options
+           [:& interactions-menu {:shape (first shapes)}]]]
+
+         [:& tabs-element {:id :inspect
+                           :title (tr "workspace.options.inspect")}
+
+          [:div.element-options.element-options-inspect
+           [:& hrs/right-sidebar {:page-id           page-id
+                                  :objects           objects
+                                  :file-id           file-id
+                                  :frame             shape-parent-frame
+                                  :shapes            selected-shapes
+                                  :on-change-section on-change-section
+                                  :on-expand         on-expand
+                                  :from              :workspace}]]]]]])))
 
 ;; TODO: this need optimizations, selected-objects and
 ;; selected-objects-with-children are derefed always but they only

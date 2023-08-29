@@ -56,6 +56,9 @@
         parents-by-ids-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         parents (mf/deref parents-by-ids-ref)]
     [:*
+     [:& layer-menu {:ids ids
+                     :type type
+                     :values layer-values}]
      [:& measures-menu {:ids [(:id shape)]
                         :values measure-values
                         :type type
@@ -84,9 +87,7 @@
          :is-layout-container? is-layout-container?
          :shape shape}])
 
-     [:& layer-menu {:ids ids
-                     :type type
-                     :values layer-values}]
+
      [:& fill-menu {:ids ids
                     :type type
                     :values (select-keys shape fill-attrs-shape)}]

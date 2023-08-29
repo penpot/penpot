@@ -22,6 +22,7 @@
     svg {
       @extend .button-icon;
       transform: rotate(90deg);
+      stroke: var(--icon-foreground);
     }
   }
   .custom-select-dropdown {
@@ -42,7 +43,7 @@
     display: flex;
     align-items: center;
     height: $s-32;
-    padding: $s-8;
+    padding: 0 $s-8;
     border-radius: $br-6;
     color: var(--menu-foreground-color);
     .label {
@@ -55,6 +56,7 @@
       svg {
         @extend .button-icon-small;
         visibility: hidden;
+        stroke: var(--icon-foreground);
       }
     }
 
