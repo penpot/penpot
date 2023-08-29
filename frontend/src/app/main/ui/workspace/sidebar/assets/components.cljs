@@ -202,11 +202,12 @@
 
 (mf/defc components-group
   {::mf/wrap-props false}
-  [{:keys [file-id prefix groups open-groups renaming listing-thumbs? selected on-asset-click
+  [{:keys [file-id prefix groups open-groups force-open? renaming listing-thumbs? selected on-asset-click
            on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-context-menu
            selected-full]}]
 
-  (let [group-open?    (get open-groups prefix (if (= prefix "") true false))
+  (let [group-open?    (or ^boolean force-open?
+                           ^boolean (get open-groups prefix (if (= prefix "") true false)))
         new-css-system (mf/use-ctx ctx/new-css-system)
         dragging*      (mf/use-state false)
         dragging?      (deref dragging*)
@@ -295,6 +296,7 @@
                                     :prefix (cph/merge-path-item prefix path-item)
                                     :groups content
                                     :open-groups open-groups
+                                    :force-open? force-open?
                                     :renaming renaming
                                     :listing-thumbs? listing-thumbs?
                                     :selected selected
@@ -368,6 +370,7 @@
                                     :prefix (cph/merge-path-item prefix path-item)
                                     :groups content
                                     :open-groups open-groups
+                                    :force-open? force-open?
                                     :renaming renaming
                                     :listing-thumbs? listing-thumbs?
                                     :selected selected
@@ -382,8 +385,9 @@
 
 (mf/defc components-section
   {::mf/wrap-props false}
-  [{:keys [file-id local? components listing-thumbs? open? reverse-sort? selected
-           on-asset-click on-assets-delete on-clear-selection open-status-ref]}]
+  [{:keys [file-id local? components listing-thumbs? open? force-open?
+           reverse-sort? selected on-asset-click on-assets-delete
+           on-clear-selection open-status-ref]}]
 
   (let [input-ref                (mf/use-ref nil)
 
@@ -607,6 +611,7 @@
                               :prefix ""
                               :groups groups
                               :open-groups open-groups
+                              :force-open? force-open?
                               :renaming (when ^boolean renaming? current-component-id)
                               :listing-thumbs? listing-thumbs?
                               :selected selected

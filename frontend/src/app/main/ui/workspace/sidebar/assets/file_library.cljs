@@ -149,7 +149,6 @@
                                 (or (pos? (count typographies))
                                     (str/empty? filters-term)))
 
-
         selected-lens      (mf/with-memo [file-id]
                              (-> (l/key file-id)
                                  (l/derived lens:selected)))
@@ -159,6 +158,12 @@
                               (count (get selected :graphics))
                               (count (get selected :colors))
                               (count (get selected :typographies)))
+
+        has-term?                (not ^boolean (str/empty? filters-term))
+        force-open-components?   (when ^boolean has-term? (> 60 (count components)))
+        force-open-colors?       (when ^boolean has-term? (> 60 (count colors)))
+        force-open-graphics?     (when ^boolean has-term? (> 60 (count media)))
+        force-open-typographies? (when ^boolean has-term? (> 60 (count typographies)))
 
         extend-selected
         (fn [type asset-groups asset-id]
@@ -248,7 +253,9 @@
            :local? local?
            :components components
            :listing-thumbs? listing-thumbs?
-           :open? (get open-status :components false)
+           :open? (or ^boolean force-open-components?
+                      ^boolean (get open-status :components false))
+           :force-open? force-open-components?
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -263,7 +270,9 @@
            :local? local?
            :objects media
            :listing-thumbs? listing-thumbs?
-           :open? (get open-status :graphics false)
+           :open? (or ^boolean force-open-graphics?
+                      ^boolean (get open-status :graphics false))
+           :force-open? force-open-graphics?
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -276,7 +285,9 @@
           {:file-id file-id
            :local? local?
            :colors colors
-           :open? (get open-status :colors false)
+           :open? (or ^boolean force-open-colors?
+                      ^boolean (get open-status :colors false))
+           :force-open? force-open-colors?
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -290,7 +301,9 @@
            :file-id (:id file)
            :local? local?
            :typographies typographies
-           :open? (get open-status :typographies false)
+           :open? (or ^boolean force-open-typographies?
+                      ^boolean (get open-status :typographies false))
+           :force-open? force-open-typographies?
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -327,7 +340,9 @@
            :local? local?
            :components components
            :listing-thumbs? listing-thumbs?
-           :open? (get open-status :components false)
+           :open? (or ^boolean force-open-components?
+                      ^boolean (get open-status :components false))
+           :force-open? force-open-components?
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -342,7 +357,9 @@
            :local? local?
            :objects media
            :listing-thumbs? listing-thumbs?
-           :open? (get open-status :graphics false)
+           :open? (or ^boolean force-open-graphics?
+                      ^boolean (get open-status :graphics false))
+           :force-open? force-open-graphics?
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -355,7 +372,9 @@
           {:file-id file-id
            :local? local?
            :colors colors
-           :open? (get open-status :colors false)
+           :open? (or ^boolean force-open-colors?
+                      ^boolean (get open-status :colors false))
+           :force-open? force-open-colors?
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
@@ -369,7 +388,9 @@
            :file-id (:id file)
            :local? local?
            :typographies typographies
-           :open? (get open-status :typographies false)
+           :open? (or ^boolean force-open-typographies?
+                      ^boolean (get open-status :typographies false))
+           :force-open? force-open-typographies?
            :open-status-ref open-status-ref
            :reverse-sort? reverse-sort?
            :selected selected
