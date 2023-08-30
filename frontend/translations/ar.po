@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-04 18:22+0000\n"
-"Last-Translator: Youkho <youkho@gmail.com>\n"
-"Language-Team: Arabic "
-"<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
+"PO-Revision-Date: 2023-07-02 17:52+0000\n"
+"Last-Translator: Amine Gdoura <amine2gdoura@gmail.com>\n"
+"Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
+"ar/>\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -515,10 +515,6 @@ msgstr "+ مشروع جديد"
 msgid "dashboard.new-project-prefix"
 msgstr "مشروع جديد"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "الإشتراك في"
-
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "لم يتم العثور على مطابقات ل \"%s\""
@@ -826,10 +822,6 @@ msgid "errors.wrong-old-password"
 msgstr "كلمة المرور القديمة غير صحيحة"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "ترغب في الكلام؟ تحدث معنا في Gitter"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "وصف"
 
@@ -943,14 +935,6 @@ msgstr "عرض"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "ظل"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
@@ -1248,9 +1232,6 @@ msgstr "مركز المساعدة"
 msgid "labels.hide-resolved-comments"
 msgstr "إخفاء التعليقات التي تم حلها"
 
-msgid "labels.images"
-msgstr "الصور"
-
 msgid "labels.installed-fonts"
 msgstr "الخطوط المتوفرة"
 
@@ -1457,9 +1438,6 @@ msgstr "قائمة التعليقات"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "إظهار تعليقاتك فقط"
-
-msgid "labels.skip"
-msgstr "تخطي"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1884,15 +1862,6 @@ msgstr "أنشئ فريقًا وأرسل الدعوات"
 msgid "onboarding.choice.team-up.roles"
 msgstr "دعوة مع الدور:"
 
-msgid "onboarding.contrib.alt"
-msgstr "مصدر مفتوح"
-
-msgid "onboarding.contrib.desc2.1"
-msgstr "يمكنك الوصول إلى"
-
-msgid "onboarding.contrib.link"
-msgstr "مشروع على github"
-
 msgid "onboarding.newsletter.accept"
 msgstr "نعم ، اشترك"
 
@@ -1905,27 +1874,8 @@ msgstr "سياسة الخصوصية."
 msgid "onboarding.newsletter.title"
 msgstr "هل تريد تلقي أخبار Penpot؟"
 
-msgid "onboarding.slide.0.desc1"
-msgstr "قم بإنشاء واجهات مستخدم جميلة بالتعاون مع جميع أعضاء الفريق."
-
-msgid "onboarding.slide.0.title"
-msgstr "مكتبات التصميم والأنماط والمكونات"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "أنشئ تفاعلات غنية لتقليد سلوك المنتج."
-
 msgid "onboarding.slide.1.title"
 msgstr "اجعل تصميماتك تنبض بالحياة من خلال التفاعلات"
-
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"يعمل جميع أعضاء الفريق في وقت واحد مع تصميمات متعددة اللاعبين في الوقت "
-"الفعلي وتعليقات وأفكار وتعليقات مركزية مباشرة على التصميمات."
-
-msgid "onboarding.slide.3.desc1"
-msgstr ""
-"قم بمزامنة التصميم والرمز لجميع المكونات والأنماط الخاصة بك واحصل على "
-"مقتطفات التعليمات البرمجية."
 
 msgid "onboarding.team-modal.create-team"
 msgstr "أنشئ فريقًا"
@@ -2344,14 +2294,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "نسخ الرابط"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "سيظهر رابط المشاركة هنا"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "أي شخص لديه الرابط سيكون لديه حق الوصول"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "إظهار التفاعلات"
 
@@ -2697,15 +2639,6 @@ msgstr "تحديث"
 msgid "workspace.libraries.updates"
 msgstr "التحديثات"
 
-msgid "workspace.library.libraries"
-msgstr "المكتبات"
-
-msgid "workspace.library.store"
-msgstr "المكتبات المخزنة"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "طبقة"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
 msgstr "الضبابية"
@@ -2907,3 +2840,70 @@ msgstr "تحديث"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "انقر لإغلاق المسار"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"لقد اكتشفنا مشكلة محتملة في الخطوط الخاصة بك تتعلق بالمقاييس الرأسية لأنظمة "
+"التشغيل المختلفة. للتحقق من ذلك ، يمكنك استخدام خدمات المقاييس العمودية "
+"للخطوط مثل [هذه] (https://vertical-metrics.netlify.app/). بالإضافة إلى ذلك ، "
+"نوصي باستخدام [Transfonter] (https://transfonter.org/) لإنشاء خطوط الويب "
+"وإصلاح الأخطاء. "
+
+msgid "dashboard.webhooks.active"
+msgstr "نشط"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "عندما يتم تشغيل هذا الخطاف ، سيتم تسليم تفاصيل الحدث"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "أدخل بريدًا إلكترونيًا صالحًا من فضلك"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"يبدو أنك تفتح ملفًا تم تمكين الميزة \"٪ s\" فيه ولكن الواجهة الأمامية لـ "
+"penpot لا تدعمه أو تم تعطيله."
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "حالة غير متوقعة٪ s"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "وزن الخط"
+
+msgid "inspect.empty.help"
+msgstr ""
+"إذا كنت تريد معرفة المزيد عن فحص التصميم ، فتفضل بزيارة مركز مساعدة لPenpot"
+
+msgid "dashboard.webhooks.create"
+msgstr "إنشاء الرد التلقائي على الويب"
+
+msgid "errors.bad-font"
+msgstr "تعذر تحميل الخط٪ s"
+
+msgid "errors.bad-font-plural"
+msgstr "تعذر تحميل الخطوط٪ s"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "نوع المحتوى"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "الميزة '٪ s' غير مدعومة."
+
+msgid "errors.profile-blocked"
+msgstr "هذا الملف الشخصي محظور"
+
+msgid "errors.webhooks.connection"
+msgstr "خطأ في الاتصال ، عنوان إلكتروني لا يمكن الوصول إليه"
+
+msgid "errors.webhooks.last-delivery"
+msgstr "آخر تسليم لم يكن ناجحًا."
+
+msgid "errors.webhooks.timeout"
+msgstr "نفذ الوقت"
+
+msgid "errors.webhooks.unexpected"
+msgstr "خطأ غير متوقع في التحقق"

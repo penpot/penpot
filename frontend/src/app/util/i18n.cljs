@@ -25,6 +25,7 @@
    {:label "Español" :value "es"}
    {:label "Català" :value "ca"}
    {:label "Deutsch (community)" :value "de"}
+   {:label "Dutch (community)" :value "nl"}
    {:label "Euskera (community)" :value "eu"}
    {:label "Français (community)" :value "fr"}
    {:label "Gallego (Community)" :value "gl"}
