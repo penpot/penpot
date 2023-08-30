@@ -18,7 +18,8 @@ msgstr "هل لديك حساب؟"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
-msgstr "تحقق من بريدك الإلكتروني وانقر على الرابط للتحقق والبدء في استخدام Penpot."
+msgstr ""
+"تحقق من بريدك الإلكتروني وانقر على الرابط للتحقق والبدء في استخدام Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -34,7 +35,8 @@ msgstr "ترغب في التجربة فحسب؟"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
-msgstr "هذه خدمة تجريبية ، لا تستخدمها للعمل الحقيقي ، سيتم مسح المشاريع بشكل دوري."
+msgstr ""
+"هذه خدمة تجريبية ، لا تستخدمها للعمل الحقيقي ، سيتم مسح المشاريع بشكل دوري."
 
 #: src/app/main/ui/auth/register.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
@@ -157,7 +159,8 @@ msgstr "شروط الخدمة"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
-msgstr "عند إنشاء حساب جديد ، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا."
+msgstr ""
+"عند إنشاء حساب جديد ، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -171,8 +174,7 @@ msgstr "جميع مستخدمي Penpot"
 
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
-"هل أنت متأكد أنك تريد إزالة هذا الرابط؟ إذا قمت بذلك ، فلن يكون متاحًا لأي "
-"شخص"
+"هل أنت متأكد أنك تريد إزالة هذا الرابط؟ إذا قمت بذلك ، فلن يكون متاحًا لأي شخص"
 
 msgid "common.share-link.current-tag"
 msgstr "(الحالي)"
@@ -239,7 +241,8 @@ msgstr "إعمل فريق!"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
-msgstr "تعلم أساسيات برنامج Penpot بينما تستمع بتجربته في هذه الدورة التعليمية."
+msgstr ""
+"تعلم أساسيات برنامج Penpot بينما تستمع بتجربته في هذه الدورة التعليمية."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
@@ -358,15 +361,15 @@ msgstr ""
 "أصولهم*؟"
 
 msgid "dashboard.export.options.all.message"
-msgstr "سيتم ادراج الملفات التي لها مكتبات مشتركة في التصدير، مع الحفاظ على روابطهم."
+msgstr ""
+"سيتم ادراج الملفات التي لها مكتبات مشتركة في التصدير، مع الحفاظ على روابطهم."
 
 msgid "dashboard.export.options.all.title"
 msgstr "صدر المكتبات المشتركة"
 
 msgid "dashboard.export.options.detach.message"
 msgstr ""
-"لن يتم تضمين المكتبات المشتركة في التصدير ولن يتم إضافة أي أصول إلى "
-"المكتبة. "
+"لن يتم تضمين المكتبات المشتركة في التصدير ولن يتم إضافة أي أصول إلى المكتبة. "
 
 msgid "dashboard.export.options.detach.title"
 msgstr "عامل أصول المكتبة المشتركة كعناصر بسيطة"
@@ -400,7 +403,6 @@ msgstr[3] "عدد قليل من الخطوط المضافة"
 msgstr[4] "تمت إضافة العديد من الخطوط"
 msgstr[5] ""
 
-#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "ستتم إضافة أي خط ويب تقوم بتحميله هنا إلى قائمة عائلة الخطوط المتوفرة في "
@@ -408,13 +410,11 @@ msgstr ""
 "عائلة الخطوط على أنها ** عائلة خط واحدة **. يمكنك تحميل الخطوط بالتنسيقات "
 "التالية: ** TTF و OTF و WOFF ** (ستحتاج إلى تنسيق واحد فقط)."
 
-#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "يجب عليك فقط تحميل الخطوط التي تمتلكها أو لديك ترخيص لاستخدامها في Penpot. "
-"اكتشف المزيد في قسم حقوق المحتوى في [شروط خدمة Penpot] "
-"(https://penpot.app/terms.html). قد ترغب أيضًا في القراءة عن [ترخيص الخطوط] "
-"(2)."
+"اكتشف المزيد في قسم حقوق المحتوى في [شروط خدمة Penpot] (https://penpot.app/"
+"terms.html). قد ترغب أيضًا في القراءة عن [ترخيص الخطوط] (2)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -844,8 +844,8 @@ msgstr "موضوع"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"يرجى وصف سبب بريدك الإلكتروني ، وتحديد ما إذا كانت مشكلة أم فكرة أم شك. "
-"سيرد أحد أعضاء فريقنا في أسرع وقت ممكن."
+"يرجى وصف سبب بريدك الإلكتروني ، وتحديد ما إذا كانت مشكلة أم فكرة أم شك. سيرد "
+"أحد أعضاء فريقنا في أسرع وقت ممكن."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -1237,7 +1237,8 @@ msgstr "الخطوط المتوفرة"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
-msgstr "شيء سيء حدث الرجاء إعادة محاولة العملية وإذا استمرت المشكلة، اتصل بالدعم."
+msgstr ""
+"شيء سيء حدث الرجاء إعادة محاولة العملية وإذا استمرت المشكلة، اتصل بالدعم."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"
@@ -1285,9 +1286,9 @@ msgid "labels.no-invitations"
 msgstr "لا توجد دعوات."
 
 #: src/app/main/ui/dashboard/team.cljs
-#, markdown
 msgid "labels.no-invitations-hint"
-msgstr "اضغط على الزر \"دعوة إلى الفريق\" لدعوة المزيد من الأعضاء إلى هذا الفريق."
+msgstr ""
+"اضغط على الزر \"دعوة إلى الفريق\" لدعوة المزيد من الأعضاء إلى هذا الفريق."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1581,14 +1582,14 @@ msgstr "حذف %s الملفات"
 
 msgid "modals.delete-font-variant.message"
 msgstr ""
-"هل أنت متأكد أنك تريد حذف نمط هذا الخط؟ لن يتم تحميله إذا تم استخدامه في "
-"ملف."
+"هل أنت متأكد أنك تريد حذف نمط هذا الخط؟ لن يتم تحميله إذا تم استخدامه في ملف."
 
 msgid "modals.delete-font-variant.title"
 msgstr "حذف نمط الخط"
 
 msgid "modals.delete-font.message"
-msgstr "هل أنت متأكد أنك تريد حذف هذا الخط؟ لن يتم تحميله إذا تم استخدامه في ملف."
+msgstr ""
+"هل أنت متأكد أنك تريد حذف هذا الخط؟ لن يتم تحميله إذا تم استخدامه في ملف."
 
 msgid "modals.delete-font.title"
 msgstr "حذف الخط"
@@ -1652,7 +1653,8 @@ msgstr "ادعُ الأعضاء إلى الفريق"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
-msgstr "نظرًا لأنك العضو الوحيد في هذا الفريق ، فسيتم حذف الفريق مع مشاريعه وملفاته."
+msgstr ""
+"نظرًا لأنك العضو الوحيد في هذا الفريق ، فسيتم حذف الفريق مع مشاريعه وملفاته."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.message"
@@ -1722,8 +1724,8 @@ msgstr "إزالة كمكتبة مشتركة"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
-"بمجرد إزالتها كمكتبة مشتركة ، ستتوقف مكتبة الملفات لهذا الملف عن كونها "
-"متاحة للاستخدام بين بقية ملفاتك."
+"بمجرد إزالتها كمكتبة مشتركة ، ستتوقف مكتبة الملفات لهذا الملف عن كونها متاحة "
+"للاستخدام بين بقية ملفاتك."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1826,8 +1828,8 @@ msgstr "المشاركة في المجتمع"
 
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
-"حيث ستجد كيفية التعاون في الترجمات وطلبات الميزات والمساهمات الأساسية "
-"والبحث عن الأخطاء …"
+"حيث ستجد كيفية التعاون في الترجمات وطلبات الميزات والمساهمات الأساسية والبحث "
+"عن الأخطاء …"
 
 msgid "onboarding-v2.welcome.desc3.title"
 msgstr "دليل المساهمة"
@@ -1873,9 +1875,6 @@ msgstr "سياسة الخصوصية."
 
 msgid "onboarding.newsletter.title"
 msgstr "هل تريد تلقي أخبار Penpot؟"
-
-msgid "onboarding.slide.1.title"
-msgstr "اجعل تصميماتك تنبض بالحياة من خلال التفاعلات"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "أنشئ فريقًا"
@@ -2837,7 +2836,6 @@ msgstr "تحديث"
 msgid "workspace.viewport.click-to-close-path"
 msgstr "انقر لإغلاق المسار"
 
-#, markdown
 msgid "dashboard.fonts.warning-text"
 msgstr ""
 "لقد اكتشفنا مشكلة محتملة في الخطوط الخاصة بك تتعلق بالمقاييس الرأسية لأنظمة "
@@ -2852,7 +2850,8 @@ msgstr "نشط"
 msgid "dashboard.webhooks.active.explain"
 msgstr "عندما يتم تشغيل هذا الخطاف ، سيتم تسليم تفاصيل الحدث"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs
 msgid "errors.email-invalid"
 msgstr "أدخل بريدًا إلكترونيًا صالحًا من فضلك"
 

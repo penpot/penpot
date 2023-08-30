@@ -2054,9 +2054,6 @@ msgstr "Polityka prywatności."
 msgid "onboarding.newsletter.title"
 msgstr "Chcesz otrzymywać informacje o Penpot?"
 
-msgid "onboarding.slide.1.title"
-msgstr "Ożyw swoje projekty dzięki interakcjom"
-
 msgid "onboarding.team-modal.create-team"
 msgstr "Utwórz zespół"
 
@@ -3620,10 +3617,6 @@ msgstr "Dół"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.column"
 msgstr "Kolumna"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-row"
-msgstr "Odwróć wiersze"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"

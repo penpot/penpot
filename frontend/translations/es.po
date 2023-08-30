@@ -1912,7 +1912,6 @@ msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Borrar archivo"
 msgstr[1] "Borrar archivos"
 
-
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.activated.hint"
 msgid_plural "modals.delete-shared-confirm.activated.hint"
@@ -1938,7 +1937,6 @@ msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "¿Seguro que quieres borrar este archivo?"
 msgstr[1] "¿Seguro que quieres borrar estos archivos?"
-
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.activated.no-files-message"
@@ -3486,10 +3484,6 @@ msgstr "Actualizar"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "ACTUALIZACIONES"
-
-#: src/app/main/data/workspace/libraries.cljs
-msgid "workspace.updates.see-all-changes"
-msgstr "ver todos los cambios"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"

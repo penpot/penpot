@@ -17,7 +17,8 @@ msgstr "Уже есть аккаунт?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
-msgstr "Перейдите по ссылке в электронном письме, чтобы начать работу с Penpot."
+msgstr ""
+"Перейдите по ссылке в электронном письме, чтобы начать работу с Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -37,7 +38,8 @@ msgstr ""
 "Это ДЕМОНСТРАЦИЯ, НЕ ИСПОЛЬЗУЙТЕ для работы, проекты будут периодически "
 "удаляться."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
 msgstr "Эл. почта"
 
@@ -173,8 +175,7 @@ msgstr "Все пользователи Penpot"
 
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
-"Вы точно хотите удалить эту ссылку? После этого она перестанет быть "
-"доступной"
+"Вы точно хотите удалить эту ссылку? После этого она перестанет быть доступной"
 
 msgid "common.share-link.current-tag"
 msgstr "(текущее)"
@@ -251,7 +252,8 @@ msgstr "Практическое руководство"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.info"
-msgstr "Прогуляйтесь по возможностям Penpot и познакомьтесь с основными функциями."
+msgstr ""
+"Прогуляйтесь по возможностям Penpot и познакомьтесь с основными функциями."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.start"
@@ -261,7 +263,8 @@ msgstr "Начать тур"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "Руководство по интерфейсу"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
 msgstr "Добавить как общую библиотеку"
 
@@ -291,7 +294,8 @@ msgstr "Скачать файл Penpot (.penpot)"
 msgid "dashboard.download-standard-file"
 msgstr "Скачать стандартный файл (.svg + .json)"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "Дублировать"
 
@@ -300,12 +304,11 @@ msgid "dashboard.duplicate-multi"
 msgstr "Дублировать файлы (%s)"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Файлы, добавленные в Библиотеки, появятся здесь. Попробуйте поделиться "
-"своими файлами или добавить их из наших [Библиотек и "
-"шаблонов](https://penpot.app/libraries-templates.html)."
+"своими файлами или добавить их из наших [Библиотек и шаблонов](https://"
+"penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Скачать файлы Penpot (.penpot) (%s)"
@@ -331,8 +334,8 @@ msgstr "Экспорт"
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
-"Вы можете добавить настройки экспорта элементам из свойств дизайна (в "
-"нижней части правой боковой панели)."
+"Вы можете добавить настройки экспорта элементам из свойств дизайна (в нижней "
+"части правой боковой панели)."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to-link"
@@ -358,23 +361,24 @@ msgstr ""
 "сделать с их ресурсами*?"
 
 msgid "dashboard.export.options.all.message"
-msgstr "Файлы с общих библиотек будут включены в экспорт, сохраняя свою привязку."
+msgstr ""
+"Файлы с общих библиотек будут включены в экспорт, сохраняя свою привязку."
 
 msgid "dashboard.export.options.all.title"
 msgstr "Экспорт общих библиотек"
 
 msgid "dashboard.export.options.detach.message"
 msgstr ""
-"Общие библиотеки не будут включены в экспорт, и вложенные ресурсы не "
-"попадут в библиотеку экспорта. "
+"Общие библиотеки не будут включены в экспорт, и вложенные ресурсы не попадут "
+"в библиотеку экспорта. "
 
 msgid "dashboard.export.options.detach.title"
 msgstr "Воспринимать ресурсы общей библиотеки как обычные объекты"
 
 msgid "dashboard.export.options.merge.message"
 msgstr ""
-"Ваш файл будет экспортирован с включением всех внешних ресурсов в "
-"библиотеку экспорта."
+"Ваш файл будет экспортирован с включением всех внешних ресурсов в библиотеку "
+"экспорта."
 
 msgid "dashboard.export.options.merge.title"
 msgstr "Включить ресурсы общей библиотеки в файловые библиотеки"
@@ -390,7 +394,8 @@ msgid "dashboard.fonts.dismiss-all"
 msgstr "Отменить все"
 
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "Пользовательские шрифты, которые вы загружаете, будут отображаться здесь."
+msgstr ""
+"Пользовательские шрифты, которые вы загружаете, будут отображаться здесь."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.fonts-added"
@@ -398,23 +403,20 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "Шрифт добавлен"
 msgstr[1] "Шрифты добавлены (%s)"
 
-#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"Любой загружаемый сюда шрифт будет добавлен в семейство шрифтов и доступен "
-"в свойствах файлов, редактируемых командой. Шрифты из одного и того же "
-"семейства будут сгруппированы по **названию семейства шрифта**. Для "
-"загрузки допустимы следующие форматы: **TTF, OTF и WOFF** (используйте один "
-"из них)."
+"Любой загружаемый сюда шрифт будет добавлен в семейство шрифтов и доступен в "
+"свойствах файлов, редактируемых командой. Шрифты из одного и того же "
+"семейства будут сгруппированы по **названию семейства шрифта**. Для загрузки "
+"допустимы следующие форматы: **TTF, OTF и WOFF** (используйте один из них)."
 
-#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"Вам следует загружать только собственные шрифты, или у которых есть "
-"лицензия на использование в Penpot. Больше информации в разделе \"Content "
-"rights\" в [Условиях использования Penpot](https://penpot.app/terms.html). "
-"Также можете прочитать о [лицензированием "
-"шрифтов](https://www.typography.com/faq) в целом."
+"Вам следует загружать только собственные шрифты, или у которых есть лицензия "
+"на использование в Penpot. Больше информации в разделе \"Content rights\" в "
+"[Условиях использования Penpot](https://penpot.app/terms.html). Также можете "
+"прочитать о [лицензированием шрифтов](https://www.typography.com/faq) в "
+"целом."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -460,7 +462,8 @@ msgstr "Загрузка файла: %s"
 msgid "dashboard.invite-profile"
 msgstr "Пригласить людей"
 
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
 msgstr "Покинуть команду"
 
@@ -484,7 +487,8 @@ msgstr "загрузка ваших файлов …"
 msgid "dashboard.loading-fonts"
 msgstr "загрузка ваших шрифтов …"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
 msgstr "Переместить"
 
@@ -496,7 +500,8 @@ msgstr "Переместить файлы (%s)"
 msgid "dashboard.move-to-other-team"
 msgstr "Перевести в другую команду"
 
-#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/files.cljs
 msgid "dashboard.new-file"
 msgstr "+ Новый файл"
 
@@ -559,7 +564,8 @@ msgstr "Проекты"
 msgid "dashboard.remove-account"
 msgstr "Хотите удалить свой аккаунт?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
 msgstr "Снять статус общей библиотеки"
 
@@ -595,7 +601,8 @@ msgstr "Ваш проект удалён"
 msgid "dashboard.success-duplicate-project"
 msgstr "Ваш проект продублирован"
 
-#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-move-file"
 msgstr "Ваш файл успешно перемещён"
 
@@ -631,11 +638,14 @@ msgstr "Результаты поиска"
 msgid "dashboard.type-something"
 msgstr "Введите для поиска"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
 msgstr "Снять библиотеку с публикации"
 
-#: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/profile.cljs,
+#: src/app/main/ui/settings/password.cljs,
+#: src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Обновить настройки"
 
@@ -651,7 +661,11 @@ msgstr "Эл. почта"
 msgid "dashboard.your-name"
 msgstr "Ваше имя"
 
-#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/libraries.cljs,
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
 msgstr "Ваш Penpot"
 
@@ -696,7 +710,8 @@ msgstr "Шрифты %s не могут быть загружены"
 msgid "errors.clipboard-not-implemented"
 msgstr "Ваш браузер не поддерживает эту операцию"
 
-#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
+#: src/app/main/ui/auth/verify_token.cljs,
+#: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-already-exists"
 msgstr "Такая эл. почта уже используется"
 
@@ -707,7 +722,10 @@ msgstr "Эл. почта уже подтверждена."
 msgid "errors.email-as-password"
 msgstr "Нельзя указывать в качестве пароля адрес эл. почты"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs,
+#: src/app/main/ui/settings/change_email.cljs,
+#: src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
 msgstr "Эл. почта «%s» постоянно недоступна."
 
@@ -718,7 +736,8 @@ msgstr "Эл. почта для подтверждения должна совп
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "Эл. почта «%s» была отмечена как спам или постоянно недоступна."
 
-#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/verify_token.cljs,
+#: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
 msgstr "Что-то пошло не так."
 
@@ -741,13 +760,14 @@ msgstr "Изображение слишком большое для вставк
 msgid "errors.media-type-mismatch"
 msgstr "Формат медиа не соответует расширению файла."
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
 msgstr "Неверное медиа."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.member-is-muted"
-msgstr "Невозможно пригласить адресата с недоступным адресом электронной почты."
+msgstr ""
+"Невозможно пригласить адресата с недоступным адресом электронной почты."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-invalid-confirmation"
@@ -760,7 +780,9 @@ msgstr "Пароль должен быть минимум 8 символов"
 msgid "errors.profile-blocked"
 msgstr "Профиль заблокирован"
 
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/recovery_request.cljs,
+#: src/app/main/ui/settings/change_email.cljs,
+#: src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
 msgstr "Ваш адрес электронной почты не доступен."
 
@@ -779,7 +801,9 @@ msgstr "Участник, которого вы пытаетесь назнач�
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "Нужно переназначить роль владельца перед тем, как покинуть команду."
 
-#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+#: src/app/main/data/media.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "Произошла ошибка."
 
@@ -820,8 +844,8 @@ msgstr "Краткое описание"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"Пожалуйста, опишите причину обращения: проблема в работе, идея или "
-"сомнение. Участник нашей команды даст ответ в ближайшее время."
+"Пожалуйста, опишите причину обращения: проблема в работе, идея или сомнение. "
+"Участник нашей команды даст ответ в ближайшее время."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -891,7 +915,8 @@ msgstr "Высота"
 msgid "inspect.attributes.layout.left"
 msgstr "Слева"
 
-#: src/app/main/ui/inspect/attributes/layout.cljs, src/app/main/ui/inspect/attributes/layout.cljs
+#: src/app/main/ui/inspect/attributes/layout.cljs,
+#: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout.radius"
 msgstr "Радиус"
 
@@ -915,15 +940,12 @@ msgstr "Тень"
 msgid "inspect.attributes.stroke"
 msgstr "Обводка"
 
-#, permanent
 msgid "inspect.attributes.stroke.alignment.center"
 msgstr "Центр"
 
-#, permanent
 msgid "inspect.attributes.stroke.alignment.inner"
 msgstr "Внутрь"
 
-#, permanent
 msgid "inspect.attributes.stroke.alignment.outer"
 msgstr "Наружу"
 
@@ -1051,7 +1073,7 @@ msgstr "Принять"
 msgid "labels.add-custom-font"
 msgstr "Добавить произвольный шрифт"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.admin"
 msgstr "Администратор"
 
@@ -1105,7 +1127,8 @@ msgstr "Вы можете продолжить с аккаунтом Penpot"
 msgid "labels.create"
 msgstr "Создать"
 
-#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+#: src/app/main/ui/dashboard/team_form.cljs,
+#: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
 msgstr "Создать новую команду"
 
@@ -1120,7 +1143,8 @@ msgstr "Произвольные шрифты"
 msgid "labels.dashboard"
 msgstr "Панель управления"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
 msgstr "Удалить"
 
@@ -1140,7 +1164,10 @@ msgstr "Удалить приглашение"
 msgid "labels.delete-multi-files"
 msgstr "Удалить файлы (%s)"
 
-#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/files.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.drafts"
 msgstr "Черновики"
 
@@ -1151,7 +1178,7 @@ msgstr "Редактировать"
 msgid "labels.edit-file"
 msgstr "Редактировать"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
 msgstr "Редактор"
 
@@ -1186,7 +1213,9 @@ msgstr "Шрифты"
 msgid "labels.github-repo"
 msgstr "Репозиторий на Github"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/settings/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "Оставить отзыв"
 
@@ -1212,7 +1241,8 @@ msgstr "Что-то пошло не так. Пожалуйста, повтори
 msgid "labels.internal-error.main-message"
 msgstr "Внутренняя ошибка"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.invitations"
 msgstr "Приглашения"
 
@@ -1231,11 +1261,11 @@ msgstr "Войти или зарегистрироваться"
 msgid "labels.logout"
 msgstr "Выйти"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
 msgstr "Участник"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "Участники"
 
@@ -1243,7 +1273,8 @@ msgstr "Участники"
 msgid "labels.new-password"
 msgstr "Новый пароль"
 
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+#: src/app/main/ui/workspace/comments.cljs,
+#: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
 msgstr "Вы попались! Здесь будут появляться уведомления о новых комментариях."
 
@@ -1252,7 +1283,6 @@ msgid "labels.no-invitations"
 msgstr "Нет ожидающих приглашений."
 
 #: src/app/main/ui/dashboard/team.cljs
-#, markdown
 msgid "labels.no-invitations-hint"
 msgstr "Нажмите кнопку **Пригласить людей**, чтобы пригласить в эту команду."
 
@@ -1296,7 +1326,8 @@ msgstr "или"
 msgid "labels.owner"
 msgstr "Владелец"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.password"
 msgstr "Пароль"
 
@@ -1304,7 +1335,8 @@ msgstr "Пароль"
 msgid "labels.pending-invitation"
 msgstr "Ожидание"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.profile"
 msgstr "Профиль"
 
@@ -1316,7 +1348,8 @@ msgstr "Проекты"
 msgid "labels.release-notes"
 msgstr "Примечания к выпуску"
 
-#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/workspace/libraries.cljs,
+#: src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
 msgstr "Удалить"
 
@@ -1324,7 +1357,9 @@ msgstr "Удалить"
 msgid "labels.remove-member"
 msgstr "Удалить участника"
 
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.rename"
 msgstr "Переименовать"
 
@@ -1336,7 +1371,7 @@ msgstr "Переименовать команду"
 msgid "labels.resend-invitation"
 msgstr "Снова отправить приглашение"
 
-#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
 msgstr "Заново"
 
@@ -1366,11 +1401,12 @@ msgstr "Мы проводим диагностику наших систем."
 msgid "labels.service-unavailable.main-message"
 msgstr "Сервис недоступен"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
 msgstr "Настройки"
 
-#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
+#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.share-prototype"
 msgstr "Поделиться ссылкой"
 
@@ -1422,7 +1458,7 @@ msgstr "Наблюдатель"
 msgid "labels.write-new-comment"
 msgstr "Написать комментарий"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.you"
 msgstr "(вы)"
 
@@ -1430,21 +1466,24 @@ msgstr "(вы)"
 msgid "labels.your-account"
 msgstr "Ваш аккаунт"
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Загрузка изображения…"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.accept"
 msgstr "Добавить как общую библиотеку"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
 "При выдаче статуса общей библиотеки, ресурсы этого проекта будут доступны к "
 "использованию в остальных файлах."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"
 msgstr "Добавить \"%s\" как общую библиотеку"
 
@@ -1459,8 +1498,8 @@ msgstr "Подтвердить новую эл. почту"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
 msgstr ""
-"Мы отправим эл. письмо для подтверждения личности на текущую эл. почту "
-"\"%s\"."
+"Мы отправим эл. письмо для подтверждения личности на текущую эл. почту \"%s"
+"\"."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1564,19 +1603,22 @@ msgstr "Вы уверены, что хотите удалить этот про�
 msgid "modals.delete-project-confirm.title"
 msgstr "Удаление проекта"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Удалить файл"
 msgstr[1] "Удалить файлы"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Вы уверены, что хотите удалить этот файл?"
 msgstr[1] "Вы уверены, что хотите удалить эти файлы?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Удаление файла"
@@ -1589,8 +1631,8 @@ msgstr "Удалить команду"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.message"
 msgstr ""
-"Вы уверены, что хотите удалить эту команду? Все проекты и файлы этой "
-"команды также будут безвозвратно удалены."
+"Вы уверены, что хотите удалить эту команду? Все проекты и файлы этой команды "
+"также будут безвозвратно удалены."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.title"
@@ -1670,55 +1712,66 @@ msgstr ""
 msgid "modals.promote-owner-confirm.title"
 msgstr "Новый владелец команды"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"
 msgstr "Удалить из общих библиотек"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
 msgstr ""
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Вы уверены, что хотите снять с публикации эту библиотеку?"
 msgstr[1] "Вы уверены, что хотите снять с публикации эти библиотеки?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
 msgid_plural "modals.unpublish-shared-confirm.title"
 msgstr[0] "Снять библиотеку с публикации"
 msgstr[1] "Снять библиотеки с публикации"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
 msgstr ""
-"Вы собираетесь обновить компоненты в общей библиотеке. Это может повлиять "
-"на другие файлы, которые её используют."
+"Вы собираетесь обновить компоненты в общей библиотеке. Это может повлиять на "
+"другие файлы, которые её используют."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.message"
 msgstr "Обновить компоненты в общей библиотеке"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
 msgstr "Обновить"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
 msgstr "Отменить"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
 msgstr ""
 "Вы собираетесь обновить компонент в общей библиотеке. Это может повлиять на "
 "другие файлы, которые её используют."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
 msgstr "Обновить компонент в общей библиотеке"
 
@@ -1736,13 +1789,13 @@ msgstr ""
 "сообществом."
 
 msgid "onboarding-v2.newsletter.updates"
-msgstr "Присылать мне обновления продукта (новые функции, выпуски, исправления...)."
+msgstr ""
+"Присылать мне обновления продукта (новые функции, выпуски, исправления...)."
 
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
-"Penpot — проект с открытым исходным кодом, созданный Kaleidos и "
-"сообществом, где многие люди уже помогают друг другу. Каждый может начать "
-"сотрудничество:"
+"Penpot — проект с открытым исходным кодом, созданный Kaleidos и сообществом, "
+"где многие люди уже помогают друг другу. Каждый может начать сотрудничество:"
 
 msgid "onboarding-v2.welcome.desc3.title"
 msgstr "Руководство по участию в проекте"
@@ -1814,7 +1867,12 @@ msgstr "Penpot"
 msgid "profile.recovery.go-to-login"
 msgstr "Перейти к входу"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Смешаный"
 
@@ -2081,11 +2139,13 @@ msgstr "Ресурсы"
 msgid "workspace.assets.box-filter-all"
 msgstr "Все ресурсы"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.colors"
 msgstr "Цвета"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.components"
 msgstr "Компоненты"
 
@@ -2093,19 +2153,24 @@ msgstr "Компоненты"
 msgid "workspace.assets.create-group"
 msgstr "Создать группу"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.delete"
 msgstr "Удалить"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.duplicate"
 msgstr "Дублировать"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Редактировать"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
 msgstr "Графика"
 
@@ -2125,7 +2190,9 @@ msgstr "Библиотеки"
 msgid "workspace.assets.not-found"
 msgstr "Ресурсы не найдены"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.rename"
 msgstr "Переименовать"
 
@@ -2143,7 +2210,8 @@ msgid_plural "workspace.assets.selected-count"
 msgstr[0] "Выбран ресурс"
 msgstr[1] "Выбраны ресурсы (%s)"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "Типографика"
 
@@ -2262,7 +2330,8 @@ msgstr "Добавить"
 msgid "workspace.libraries.colors"
 msgstr ""
 
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs,
+#: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.file-library"
 msgstr "Библиотека файлов"
 
@@ -2270,7 +2339,8 @@ msgstr "Библиотека файлов"
 msgid "workspace.libraries.colors.hsv"
 msgstr "HSV"
 
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs,
+#: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "Недавние цвета"
 
@@ -2362,25 +2432,30 @@ msgstr "Фон холста"
 msgid "workspace.options.design"
 msgstr "Дизайн"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export"
 msgstr "Экспорт"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export-object"
 msgid_plural "workspace.options.export-object"
 msgstr[0] "Экспорт 1 элемента"
 msgstr[1] "Экспорт %s элементов"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-complete"
 msgstr "Экспорт завершён"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.exporting-object"
 msgstr "Экспортирование…"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-error"
 msgstr "Экспорт не удался"
 
@@ -2508,7 +2583,8 @@ msgstr "Группировать слои"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Выделенные слои"
 
-#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.position"
 msgstr "Позиция"
 
@@ -2556,7 +2632,8 @@ msgstr "Тень"
 msgid "workspace.options.show-in-viewer"
 msgstr "Показать в режиме просмотра"
 
-#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.size"
 msgstr "Размер"
 
@@ -2656,7 +2733,8 @@ msgstr "Высота строки"
 msgid "workspace.options.text-options.lowercase"
 msgstr "Нижний регистр"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.none"
 msgstr "Не задано"
 
@@ -2770,7 +2848,8 @@ msgstr "Исключить"
 msgid "workspace.shape.menu.flow-start"
 msgstr "Начало потока"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.go-main"
 msgstr "Перейти к основному файлу компонента"
 
@@ -2784,7 +2863,9 @@ msgstr "Показать/скрыть UI"
 msgid "workspace.shape.menu.path"
 msgstr "Контур"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Сбросить переопределения"
 
@@ -2799,7 +2880,8 @@ msgstr "Выбрать слой"
 msgid "workspace.shape.menu.show"
 msgstr "Показать"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
 msgstr "Показать основной компонент"
 
@@ -2816,11 +2898,15 @@ msgstr "Преобразовать в контур"
 msgid "workspace.shape.menu.ungroup"
 msgstr "Разгруппировать"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-components-in-bulk"
 msgstr "Обновить основные компоненты"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "Обновить основной компонент"
 
