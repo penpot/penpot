@@ -926,10 +926,6 @@ msgstr "Larghezza"
 msgid "inspect.attributes.shadow"
 msgstr "Ombra"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
-
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
 msgstr "Contorno"
@@ -1880,9 +1876,6 @@ msgstr "Crea un team e manda inviti"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Invita con il ruolo:"
 
-msgid "onboarding.contrib.desc2.1"
-msgstr "Puoi accedere al"
-
 msgid "onboarding.newsletter.accept"
 msgstr "Si, iscrivimi"
 
@@ -1896,9 +1889,6 @@ msgstr "Condizioni sulla Privacy."
 
 msgid "onboarding.newsletter.title"
 msgstr "Vuoi ricevere le news di Pentot?"
-
-msgid "onboarding.slide.0.title"
-msgstr "Librerie di design, stili e componenti"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-invitations"

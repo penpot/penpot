@@ -945,10 +945,6 @@ msgstr "عرض"
 msgid "inspect.attributes.shadow"
 msgstr "سایه"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
-
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 #, fuzzy
 msgid "inspect.attributes.stroke"
@@ -2002,10 +1998,6 @@ msgstr "تعاملات (%s)"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
 msgstr "کپی کردن لینک"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "هر کسی که لینک را داشته باشد دسترسی خواهد داشت"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"

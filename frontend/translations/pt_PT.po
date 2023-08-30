@@ -959,10 +959,6 @@ msgstr "Largura"
 msgid "inspect.attributes.shadow"
 msgstr "Sombra"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
-
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
 msgstr "Traço"
@@ -1955,9 +1951,6 @@ msgstr "Criar equipa e enviar convites"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Convidar com a função:"
 
-msgid "onboarding.contrib.desc2.1"
-msgstr "Podes aceder o"
-
 msgid "onboarding.newsletter.accept"
 msgstr "Sim, subscreve"
 
@@ -1971,15 +1964,6 @@ msgstr "Política de Privacidade."
 
 msgid "onboarding.newsletter.title"
 msgstr "Queres receber as novidades do Penpot?"
-
-msgid "onboarding.slide.0.title"
-msgstr "Bibliotecas de design, estilos e componentes"
-
-msgid "onboarding.slide.1.title"
-msgstr "Dá vida aos teus designs com interações"
-
-msgid "onboarding.slide.3.alt"
-msgstr "Inspect e low code"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Cria uma equipa"
@@ -2543,10 +2527,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Copiar link"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Qualquer pessoa com o link terá acesso"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Mostrar interações"
 
@@ -2992,9 +2972,6 @@ msgstr "Atualizar"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "ATUALIZAÇÕES"
-
-msgid "workspace.library.store"
-msgstr "Bibliotecas de lojas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
@@ -3545,10 +3522,6 @@ msgstr "Largura mínima"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Abaixo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "Coluna inversa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"

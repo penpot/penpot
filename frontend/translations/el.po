@@ -557,10 +557,6 @@ msgstr "Πλάτος"
 msgid "inspect.attributes.shadow"
 msgstr "Σκιά "
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
-
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
 msgstr "περίγραμμα"
@@ -1199,10 +1195,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Αντιγραφή  link"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Όποιος έχει τον link θα έχει πρόσβαση"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Εμφάνιση αλληλεπιδράσεων"
 
@@ -1501,9 +1493,6 @@ msgstr "Ενημέρωση"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "ΕΝΗΜΕΡΩΣΕΙΣ"
-
-msgid "workspace.library.store"
-msgstr "Προκαθορισμένες"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"

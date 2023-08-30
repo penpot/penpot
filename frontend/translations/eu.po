@@ -4400,34 +4400,8 @@ msgstr "IKUSTEKO BAKARRIK"
 msgid "modals.create-webhook.url.label"
 msgstr "Informazioaren URLa"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"Ezabatzen baduzu, bere elementuak ezingo dira beste fitxategietan erabili. "
-"Jada erabiltzen ari zaren elementuak fitxategi honetan geldituko dira (ez da "
-"diseinurik apurtuko!)."
-msgstr[1] ""
-"Ezabatzen badituzu, bere elementuak ezingo dira beste fitxategietan erabili. "
-"Jada erabiltzen ari zaren elementuak fitxategi honetan geldituko dira (ez da "
-"diseinurik apurtuko!)."
-
 msgid "labels.active"
 msgstr "Aktibo"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"Ezabatzen baduzu, bere elementuak ezingo dira beste fitxategietan erabili. "
-"Jada erabiltzen ari zaren elementuak fitxategi honetan geldituko dira (ez da "
-"diseinurik apurtuko!)."
-msgstr[1] ""
-"Ezabatzen badituzu, bere elementuak ezingo dira beste fitxategietan erabili. "
-"Jada erabiltzen ari zaren elementuak fitxategi honetan geldituko dira (ez da "
-"diseinurik apurtuko!)."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.copy-invitation-link"
@@ -4440,31 +4414,11 @@ msgstr "Birkargatu fitxategia"
 msgid "labels.inactive"
 msgstr "Inaktibo"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] ""
-"Argitaratzea atzera botatzen baduzu, elementu horiek ezingo dira beste "
-"fitxategietan erabili. Jada erabiltzen diren elementuak fitxategi horietan "
-"geldituko dira (diseinurik ez da apurtuko!)."
-msgstr[1] ""
-"Argitaratzea atzera botatzen baduzu, elementu horiek ezingo dira beste "
-"fitxategietan erabili. Jada erabiltzen diren elementuak fitxategi horietan "
-"geldituko dira (diseinurik ez da apurtuko!)."
-
 msgid "shortcuts.align-center"
 msgstr "Erdian lerrokatu"
 
 msgid "shortcuts.toggle-layout-flex"
 msgstr "Gehitu/kendu flex diseinua"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Liburutegi honetako elementuak hemen ari dira erabiltzen:"
-msgstr[1] "Liburutegi hauetako elementuak hemen ari dira erabiltzen:"
 
 msgid "shortcut-subsection.text-editor"
 msgstr "Testuak"
@@ -4568,26 +4522,6 @@ msgstr "Sortu webhooka"
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] ""
-"Fitxategi honetako liburutegiko elementuak ez dira inon erabiltzen. "
-"Fitxategiarekin batera ezabatuko dira."
-msgstr[1] ""
-"Fitxategi hautetako liburutegiko elementuak ez dira inon erabiltzen. "
-"Fitxategiarekin batera ezabatuko dira."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] ""
-"Fitxategi honen liburutegiko elementu batzuk hemen erabiltzen ari zara:"
-msgstr[1] ""
-"Fitxategi hauen liburutegietako elementu batzuk hemen erabiltzen ari zara:"
-
 msgid "modals.delete-webhook.accept"
 msgstr "Ezabatu webhooka"
 
@@ -4606,13 +4540,6 @@ msgstr "Aldatu webhooka"
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "Eposta helbide batzuk jada taldekideenak dira. Ez da gonbidapenik bidaliko."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Liburutegi honetako elementuak ez dira erabiltzen ari."
-msgstr[1] "Liburutegi hauetako elementuak ez dira erabiltzen ari."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-link-copied"
@@ -4698,10 +4625,6 @@ msgstr "Konexio errorea, URLa ezin da ireki"
 msgid "dashboard.import.import-message"
 msgstr "%s fitxategi ondo inportatu dira."
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Buletineko harpidetza"
-
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-delete-file"
 msgstr "Zure fitxategia ondo ezabatu da"
@@ -4709,123 +4632,3 @@ msgstr "Zure fitxategia ondo ezabatu da"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-duplicate-file"
 msgstr "Zure fitxategia ondo bikoiztu da"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Hitz egin nahi duzu? Zatuz gure komunitatearen Gitter txatera"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
-
-msgid "labels.images"
-msgstr "Irudiak"
-
-msgid "labels.skip"
-msgstr "Alde batera utzi"
-
-msgid "onboarding.contrib.alt"
-msgstr "Kode Irekia"
-
-msgid "onboarding.contrib.desc2.1"
-msgstr "Hona sar zaitezke"
-
-msgid "onboarding.contrib.link"
-msgstr "proiektua githuben"
-
-msgid "onboarding.slide.0.desc1"
-msgstr "Sortu interfaze ederrak taldeko beste kideekin batera."
-
-msgid "onboarding.slide.0.title"
-msgstr "Diseinu-, estilo- eta osagai-liburutegiak"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "Sortu produktuaren portaera imitatzeko interakzio osoak."
-
-msgid "onboarding.slide.1.title"
-msgstr "Eman bizia zure diseinuen interakzioak erabiliz"
-
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"Taldekide guztiak fitxategi berberen gainean lanean, aldi berean eta "
-"diseinuen gainean iruzkinak egiteko aukerarekin."
-
-msgid "onboarding.slide.3.alt"
-msgstr "Kodearen ezarpenak"
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"Lortu eta eman kode (SVG, HTML) eta estilorako (CSS, Less, Stylus...) "
-"kodearen zehaztapenak."
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "Partekatzeko esteka hemen agertuko da"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Esteka duen edonor sar daiteke"
-
-msgid "workspace.library.libraries"
-msgstr "Liburutegiak"
-
-msgid "workspace.library.store"
-msgstr "Gorde liburutegiak"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Geruza"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] ""
-"Ezabatu nahi duzun fitxategiak, fitxategi honetan erabiltzen den liburutegi "
-"bat du:"
-msgstr[1] ""
-"Ezabatu nahi duzuen fitxategiak, fitxategi hauetan erabiltzen den liburutegi "
-"bat du:"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Argitaratzea atzera botatzen baduzu, elementu horiek ez dira beste "
-"fitxategietan agertuko. Elementuak erabiltzen ari bazara fitxategi honetan "
-"geldituko dira (diseinurik ez da apurtuko!)."
-msgstr[1] ""
-"Argitaratzea atzera botatzen baduzu, elementu horiek ez dira beste "
-"fitxategietan agertuko. Elementuak erabiltzen ari bazara fitxategi honetan "
-"geldituko dira (diseinurik ez da apurtuko!)."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Fitxategi honetan erabiltzen ari da:"
-msgstr[1] "Fitxategi hauetan erabiltzen ari da:"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "PARTEKATUTA"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "Lerrokatu erdian"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
-msgstr "Justifikatu (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
-msgstr "Lerrokatu ezkerrean (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
-msgstr "Lerrokatu eskuman (%s)"

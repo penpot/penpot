@@ -872,30 +872,6 @@ msgstr "Účet podpory na Twitteru"
 msgid "generic.error"
 msgstr "Došlo k chybě"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.height"
-msgstr "Výška"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.width"
-msgstr "Šířka"
-
-msgid "handoff.attributes.stroke.alignment.inner"
-msgstr "Uvnitř"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-family"
-msgstr "Rodina písem"
-
-msgid "handoff.attributes.typography.text-decoration.underline"
-msgstr "Podtrhnout"
-
-msgid "handoff.tabs.code.selected.component"
-msgstr "Komponenta"
-
-msgid "handoff.tabs.code.selected.rect"
-msgstr "Obdélník"
-
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
 msgstr "Zkratky"
@@ -1787,9 +1763,6 @@ msgstr "Zásady ochrany osobních údajů."
 
 msgid "onboarding.newsletter.title"
 msgstr "Chcete dostávat novinky Penpot?"
-
-msgid "onboarding.slide.1.title"
-msgstr "Oživte své návrhy pomocí interakce"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Vytvořte tým"
@@ -3311,10 +3284,6 @@ msgstr "Vybrané vrstvy"
 msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Rozšířené možnosti"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-h"
-msgstr "Minimální výška"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Dole"
@@ -4265,23 +4234,6 @@ msgstr "Texty"
 msgid "shortcuts.align-center"
 msgstr "Zarovnat na střed"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"Pokud jej smažete, tyto položky již nebudou dostupné z jiných souborů. "
-"Položky, které již byly použity, zůstanou v těchto souborech (nebude porušen "
-"žádný návrh!)."
-msgstr[1] ""
-"Pokud je smažete, tyto položky již nebudou dostupné z jiných souborů. "
-"Položky, které již byly použity, zůstanou v těchto souborech (nebude porušen "
-"žádný návrh!)."
-msgstr[2] ""
-"Pokud je smažete, tyto položky již nebudou dostupné z jiných souborů. "
-"Položky, které již byly použity, zůstanou v těchto souborech (nebude porušen "
-"žádný návrh!)."
-
 msgid "workspace.assets.duplicate-main"
 msgstr "Duplikovat hlavní"
 
@@ -4413,14 +4365,6 @@ msgstr "Webhooks"
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "Některé položky v knihovně tohoto souboru se používají zde:"
-msgstr[1] "Některá položky v knihovnách těchto souborů se používají zde:"
-msgstr[2] "Některá položky v knihovnách těchto souborů se používají zde:"
-
 msgid "modals.delete-webhook.accept"
 msgstr "Smazat webhook"
 
@@ -4444,22 +4388,6 @@ msgstr ""
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-link-copied"
 msgstr "Odkaz na pozvánku zkopírován"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Žádný z prostředků v této knihovně se nepoužívá."
-msgstr[1] "Žádné z prostředků v těchto knihovnách se nepoužívá."
-msgstr[2] "Žádné z prostředků v těchto knihovnách se nepoužívá."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Některé položky v této knihovně se používají zde:"
-msgstr[1] "Některé položky v těchto knihovnách se používají zde:"
-msgstr[2] "Některé položky v těchto knihovnách se používají zde:"
 
 msgid "shortcuts.align-justify"
 msgstr "Zarovnat do bloku"
@@ -4633,20 +4561,6 @@ msgstr "Adresa URL datové části"
 msgid "inspect.attributes.layout.rotation"
 msgstr "Otáčení"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] ""
-"Žádné položky v knihovně tohoto souboru se nepoužívají. Budou odstraněny "
-"spolu se souborem."
-msgstr[1] ""
-"Žádné položky v knihovně těchto souborů se nepoužívají. Budou odstraněny "
-"spolu se soubory."
-msgstr[2] ""
-"Žádné položky v knihovně těchto souborů se nepoužívají. Budou odstraněny "
-"spolu se soubory."
-
 #: src/app/main/ui/inspect/attributes/common.cljs
 msgid "inspect.attributes.color.hex"
 msgstr "HEX"
@@ -4694,23 +4608,6 @@ msgstr "Mezery mezi písmeny"
 msgid "inspect.attributes.typography.line-height"
 msgstr "Výška řádku"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"Pokud jej smažete, tyto položky již nebudou dostupné z jiných souborů. "
-"Položky, které již byly použity, zůstanou v tomto souboru (žádný návrh "
-"nebude neúplný!)."
-msgstr[1] ""
-"Pokud je smažete, tyto položky již nebudou dostupné z jiných souborů. "
-"Položky, které již byly použity, zůstanou v tomto souboru (žádný návrh "
-"nebude neúplný!)."
-msgstr[2] ""
-"Pokud je smažete, tyto položky již nebudou dostupné z jiných souborů. "
-"Položky, které již byly použity, zůstanou v tomto souboru (žádný návrh "
-"nebude neúplný!)."
-
 msgid "shortcuts.bold"
 msgstr "Přepnout tučné písmo"
 
@@ -4719,23 +4616,6 @@ msgstr "Webhooks - %s - Penpot"
 
 msgid "shortcuts.letter-spacing-inc"
 msgstr "Zvětšit mezery mezi písmeny"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] ""
-"Pokud zrušíte jeho publikování, tyto podklady již nebudou dostupné z jiných "
-"souborů. Položky, které již byl\\ použity, zůstanou v těchto souborech "
-"(nebude porušen žádný návrh!)."
-msgstr[1] ""
-"Pokud zrušíte jejich publikování, tyto podklady již nebudou dostupné z "
-"jiných souborů. Položky, které již byl\\ použity, zůstanou v těchto "
-"souborech (nebude porušen žádný návrh!)."
-msgstr[2] ""
-"Pokud zrušíte jejich publikování, tyto podklady již nebudou dostupné z "
-"jiných souborů. Položky, které již byl\\ použity, zůstanou v těchto "
-"souborech (nebude porušen žádný návrh!)."
 
 msgid "workspace.assets.typography.text-styles"
 msgstr "Styly textu"
@@ -4753,10 +4633,6 @@ msgstr "Minimální výška"
 msgid "dashboard.import.import-message"
 msgstr "Soubory %s byly úspěšně importovány."
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Přihlášení k odběru novinek"
-
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-delete-file"
 msgstr "Váš soubor byl úspěšně smazán"
@@ -4765,234 +4641,5 @@ msgstr "Váš soubor byl úspěšně smazán"
 msgid "dashboard.success-duplicate-file"
 msgstr "Váš soubor byl úspěšně duplikován"
 
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Chcete si popovídat? Chatujte s námi na Gitteru"
-
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur.value"
-msgstr "Hodnota"
-
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hsla"
-msgstr "HSLA"
-
-#: src/app/main/ui/handoff/attributes/fill.cljs
-msgid "handoff.attributes.fill"
-msgstr "Výplň"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout"
-msgstr "Rozložení"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.left"
-msgstr "Vlevo"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.rotation"
-msgstr "Rotace"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.blur"
-msgstr "B"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-y"
-msgstr "Y"
-
-#: src/app/main/ui/handoff/attributes/stroke.cljs
-msgid "handoff.attributes.stroke"
-msgstr "Tah"
-
-msgid "handoff.attributes.stroke.style.dotted"
-msgstr "Tečkované"
-
-msgid "handoff.attributes.stroke.style.none"
-msgstr "Žádné"
-
-#: src/app/main/ui/handoff/attributes/stroke.cljs
-msgid "handoff.attributes.stroke.width"
-msgstr "Šířka"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-style"
-msgstr "Styl písma"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.line-height"
-msgstr "Výška řádku"
-
-msgid "handoff.attributes.typography.text-decoration.none"
-msgstr "Žádné"
-
-msgid "handoff.attributes.typography.text-transform.lowercase"
-msgstr "Malá písmena"
-
-msgid "handoff.attributes.typography.text-transform.titlecase"
-msgstr "Kapitálky"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code"
-msgstr "Kód"
-
-msgid "handoff.tabs.code.selected.frame"
-msgstr "Tabule"
-
-msgid "handoff.tabs.code.selected.image"
-msgstr "Obrázek"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code.selected.multiple"
-msgstr "%s Vybráno"
-
-msgid "handoff.tabs.code.selected.text"
-msgstr "Text"
-
-msgid "history.alert-message"
-msgstr "Vidíte verzi %s"
-
-msgid "labels.images"
-msgstr "Obrázky"
-
-msgid "labels.skip"
-msgstr "Přeskočit"
-
-msgid "onboarding.contrib.alt"
-msgstr "Open Source"
-
-msgid "onboarding.contrib.desc2.1"
-msgstr "Můžete přistupovat k"
-
-msgid "onboarding.contrib.link"
-msgstr "projekt na githubu"
-
-msgid "onboarding.slide.0.desc1"
-msgstr ""
-"Vytvářejte krásná uživatelská rozhraní ve spolupráci se všemi členy týmu."
-
-msgid "onboarding.slide.0.title"
-msgstr "Designové knihovny, styly a komponenty"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "Vytvářejte bohaté interakce, které napodobují chování produktu."
-
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"Všichni členové týmu pracují současně s návrhem v reálném čase a sdílejí "
-"komentáře, nápady a zpětnou vazbu."
-
-msgid "onboarding.slide.3.alt"
-msgstr "Předání"
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"Získejte a poskytněte specifikace kódu, jako je typ (SVG, HTML) nebo styly "
-"(CSS, Less, Stylus…)."
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "Zde se zobrazí odkaz pro sdílení"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Kdokoli s odkazem bude mít přístup"
-
-msgid "workspace.library.libraries"
-msgstr "Knihovny"
-
-msgid "workspace.library.store"
-msgstr "Uložit knihovny"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Vrstva"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-max-w"
-msgstr "Maximální šířka"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-min-w"
-msgstr "Minimální šířka"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-max-h"
-msgstr "Maximální výška"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
-msgstr "Řádek"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "Obrátit sloupec"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.left"
-msgstr "vlevo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.center"
-msgstr "střed"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.wrap"
-msgstr "zalomit"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Tento soubor obsahuje knihovny, které se v tomto souboru používají:"
-msgstr[1] ""
-"Tento soubor obsahuje knihovny, které se používají v těchto souborech:"
-msgstr[2] ""
-"Tento soubor obsahuje knihovny, které se používají v těchto souborech:"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Pokud zrušíte jeho publikování, tyto podklady již nebudou dostupné z jiných "
-"souborů. Aktiva, která již byla použita, zůstanou v tomto souboru (žádný "
-"návrh nebude porušen!)."
-msgstr[1] ""
-"Pokud jejich publikování zrušíte, tyto podklady již nebudou dostupné z "
-"jiných souborů. Aktiva, která již byla použita, zůstanou v tomto souboru "
-"(žádný návrh nebude porušen!)."
-msgstr[2] ""
-"Pokud jejich publikování zrušíte, tyto podklady již nebudou dostupné z "
-"jiných souborů. Aktiva, která již byla použita, zůstanou v tomto souboru "
-"(žádný návrh nebude porušen!)."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Používá se v tomto souboru:"
-msgstr[1] "Používá se v těchto souborech:"
-msgstr[2] "Používá se v těchto souborech:"
-
 msgid "shortcuts.toggle-visibility"
 msgstr "Přepnout viditelnost"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "SDÍLENÉ"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "Zarovnat doprostřed"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
-msgstr "Zarovnat (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
-msgstr "Zarovnat vlevo (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
-msgstr "Zarovnat vpravo (%s)"

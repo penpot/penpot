@@ -1876,9 +1876,6 @@ msgstr "سياسة الخصوصية."
 msgid "onboarding.newsletter.title"
 msgstr "هل تريد تلقي أخبار Penpot؟"
 
-msgid "onboarding.slide.1.title"
-msgstr "اجعل تصميماتك تنبض بالحياة من خلال التفاعلات"
-
 msgid "onboarding.team-modal.create-team"
 msgstr "أنشئ فريقًا"
 
@@ -2905,74 +2902,3 @@ msgstr "نفذ الوقت"
 
 msgid "errors.webhooks.unexpected"
 msgstr "خطأ غير متوقع في التحقق"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "الإشتراك في"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "ترغب في الكلام؟ تحدث معنا في Gitter"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
-
-msgid "labels.images"
-msgstr "الصور"
-
-msgid "labels.skip"
-msgstr "تخطي"
-
-msgid "onboarding.contrib.alt"
-msgstr "مصدر مفتوح"
-
-msgid "onboarding.contrib.desc2.1"
-msgstr "يمكنك الوصول إلى"
-
-msgid "onboarding.contrib.link"
-msgstr "مشروع على github"
-
-msgid "onboarding.slide.0.desc1"
-msgstr "قم بإنشاء واجهات مستخدم جميلة بالتعاون مع جميع أعضاء الفريق."
-
-msgid "onboarding.slide.0.title"
-msgstr "مكتبات التصميم والأنماط والمكونات"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "أنشئ تفاعلات غنية لتقليد سلوك المنتج."
-
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"يعمل جميع أعضاء الفريق في وقت واحد مع تصميمات متعددة اللاعبين في الوقت "
-"الفعلي وتعليقات وأفكار وتعليقات مركزية مباشرة على التصميمات."
-
-msgid "onboarding.slide.3.desc1"
-msgstr ""
-"قم بمزامنة التصميم والرمز لجميع المكونات والأنماط الخاصة بك واحصل على "
-"مقتطفات التعليمات البرمجية."
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "سيظهر رابط المشاركة هنا"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "أي شخص لديه الرابط سيكون لديه حق الوصول"
-
-msgid "workspace.library.libraries"
-msgstr "المكتبات"
-
-msgid "workspace.library.store"
-msgstr "المكتبات المخزنة"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "طبقة"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "متشاركة"

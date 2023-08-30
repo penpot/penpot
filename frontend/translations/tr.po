@@ -1023,10 +1023,6 @@ msgstr "Genişlik"
 msgid "inspect.attributes.shadow"
 msgstr "Gölge"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
-
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.size"
 msgstr "Boyut ve konum"
@@ -2089,9 +2085,6 @@ msgstr "Takım oluştur ve davet gönder"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Rol ile davet et:"
 
-msgid "onboarding.contrib.desc2.1"
-msgstr "Projeye"
-
 msgid "onboarding.newsletter.accept"
 msgstr "Evet, abone ol"
 
@@ -2104,15 +2097,6 @@ msgstr "Gizlilik Politikası."
 
 msgid "onboarding.newsletter.title"
 msgstr "Penpot haberlerini almak ister misiniz?"
-
-msgid "onboarding.slide.0.title"
-msgstr "Kütüphaneler, biçimler ve bileşenler tasarlayın"
-
-msgid "onboarding.slide.1.title"
-msgstr "Etkileşimlerle tasarımlarınıza hayat verin"
-
-msgid "onboarding.slide.3.alt"
-msgstr "Teslim ve kod özellikleri"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Bir takım oluştur"
@@ -2136,9 +2120,6 @@ msgstr "Sınırsız üye"
 
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "%100 özgür!"
-
-msgid "onboarding.team.start.title"
-msgstr "Tasarlamaya başla"
 
 msgid "onboarding.templates.subtitle"
 msgstr "İşte bazı şablonlar."
@@ -2691,10 +2672,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Bağlantıyı kopyala"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Bağlantıya sahip herkes erişebilecek"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Etkileşimleri göster"
 
@@ -3145,9 +3122,6 @@ msgstr "Güncelle"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "GÜNCELLEMELER"
-
-msgid "workspace.library.store"
-msgstr "Mağaza kütüphaneleri"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
