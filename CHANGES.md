@@ -6,6 +6,7 @@
 
 - List view is discarded on tab change on Workspace Assets Sidebar tab [Github #3547](https://github.com/penpot/penpot/issues/3547)
 - Fix message popup remains open when exiting workspace with browser back button [Taiga #5747](https://tree.taiga.io/project/penpot/issue/5747)
+- When editing text if font is changed, the proportions of the rendered shape are wrong [Taiga #5786](https://tree.taiga.io/project/penpot/issue/5786)
 
 ## 1.19.2
 
