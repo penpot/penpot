@@ -35,6 +35,11 @@
     [:vector
      [:map
       [:label :string]
+      [:callback ::sm/fn]]]]
+   [:links {:optional true}
+    [:vector
+     [:map
+      [:label :string]
       [:callback ::sm/fn]]]]])
 
 (def message?
@@ -132,12 +137,13 @@
           :tag tag})))
 
 (defn info-dialog
-  ([content controls actions]
-   (info-dialog content controls actions nil))
-  ([content controls actions tag]
-   (show {:content content
+  [& {:keys [content controls links actions tag]
+      :or {controls :none links nil tag nil}}]
+  (show (d/without-nils
+         {:content content
           :type :info
           :position :floating
           :controls controls
+          :links links
           :actions actions
           :tag tag})))

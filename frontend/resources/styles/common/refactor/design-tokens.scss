@@ -60,8 +60,18 @@
   --button-tertiary-border-color-focus: var(--color-accent-primary);
   --button-tertiary-foreground-color-focus: var(--color-foreground-primary);
 
+  --button-warning-background-color-rest: var(--warning-color);
+  --button-warning-border-color-rest: var(--warning-color);
+  --button-warning-foreground-color-rest: var(--color-background-secondary);
+
+  --button-disabled-background-color-rest: var(--color-background-disabled);
+  --button-disabled-border-color-rest: var(--color-background-disabled);
+  --button-disabled-foreground-color-rest: var(--color-foreground-disabled);
+
   --icon-foreground: var(--color-foreground-secondary);
   --icon-foreground-hover: var(--color-foreground-primary);
+
+  --link-foreground-color: var(--color-accent-primary);
 
   --tab-background-color-hover: var(--color-background-primary);
   --tab-background-color-selected: var(--color-background-quaternary);

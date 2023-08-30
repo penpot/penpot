@@ -104,6 +104,23 @@
   }
 }
 
+.button-warning {
+  @include buttonStyle;
+  @include flexCenter;
+  background-color: var(--button-warning-background-color-rest);
+  border: $s-1 solid var(--button-warning-border-color-rest);
+  color: var(--button-warning-foreground-color-rest);
+}
+
+.button-disabled {
+  @include buttonStyle;
+  @include flexCenter;
+  background-color: var(--button-disabled-background-color-rest);
+  border: $s-1 solid var(--button-disabled-border-color-rest);
+  color: var(--button-disabled-foreground-color-rest);
+  cursor: unset;
+}
+
 .button-tag {
   @include buttonStyle;
   @include flexCenter;
@@ -145,6 +162,14 @@
   height: $s-12;
   width: $s-12;
   stroke-width: 1.33px;
+}
+
+.link {
+  background: unset;
+  border: none;
+  color: var(--link-foreground-color);
+  cursor: pointer;
+  text-decoration: none;
 }
 
 .asset-element {

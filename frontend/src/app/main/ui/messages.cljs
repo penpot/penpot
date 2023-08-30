@@ -6,16 +6,19 @@
 
 (ns app.main.ui.messages
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as dmsg]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.link-button :as lb]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
 (mf/defc banner
-  [{:keys [type position status controls content actions on-close data-test role] :as props}]
+  [{:keys [type position status controls content links actions on-close data-test role] :as props}]
   [:div.banner {:class (dom/classnames
                         :warning  (= type :warning)
                         :error    (= type :error)
@@ -37,7 +40,14 @@
                            :bottom-actions (= controls :bottom-actions))
                    :data-test data-test
                    :role role}
-     content
+     [:span
+      content
+      (for [[index link] (d/enumerate links)]
+        [:* {:key (dm/str "link-" index)}
+         " " [:& lb/link-button {:class "link"
+                                 :on-click (:callback link)
+                                 :value (:label link)}]])]
+
      (when (or (= controls :bottom-actions) (= controls :inline-actions))
        [:div.actions
         (for [action actions]
@@ -50,7 +60,7 @@
 (mf/defc notifications
   []
   (let [message  (mf/deref refs/message)
-        on-close #(st/emit! dm/hide)]
+        on-close #(st/emit! dmsg/hide)]
     (when message
       [:& banner (assoc message
                         :position (or (:position message) :fixed)
