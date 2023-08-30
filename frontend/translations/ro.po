@@ -1761,40 +1761,6 @@ msgstr[2] "Șterge fișierele"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.activated.hint"
-msgid_plural "modals.delete-shared-confirm.activated.hint"
-msgstr[0] ""
-"Dacă îl ștergeți, acele elemente nu vor mai fi disponibile din alte fișiere. "
-"Elementele care au fost deja utilizate vor rămâne în acest fișier (niciun "
-"design nu va fi stricat!)."
-msgstr[1] ""
-"Dacă le ștergeți, acele elemente nu vor mai fi disponibile din alte fișiere. "
-"Elementele care au fost deja utilizate vor rămâne în acest fișier (niciun "
-"design nu va fi stricat!)."
-msgstr[2] ""
-"Dacă le ștergeți, acele elemente nu vor mai fi disponibile din alte fișiere. "
-"Elementele care au fost deja utilizate vor rămâne în acest fișier (niciun "
-"design nu va fi stricat!)."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.activated.hint-many"
-msgid_plural "modals.delete-shared-confirm.activated.hint-many"
-msgstr[0] ""
-"Dacă îl ștergeți, acele elemente nu vor mai fi disponibile din alte fișiere. "
-"Elementele care au fost deja utilizate vor rămâne în acest fișier (niciun "
-"design nu va fi stricat!)."
-msgstr[1] ""
-"Dacă le ștergeți, acele elemente nu vor mai fi disponibile din alte fișiere. "
-"Elementele care au fost deja utilizate vor rămâne în acest fișier (niciun "
-"design nu va fi stricat!)."
-msgstr[2] ""
-"Dacă le ștergeți, acele elemente nu vor mai fi disponibile din alte fișiere. "
-"Elementele care au fost deja utilizate vor rămâne în acest fișier (niciun "
-"design nu va fi stricat!)."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Ești sigur că vrei sa ștergi acest fișier?"
@@ -1947,40 +1913,6 @@ msgstr "Șterge “%s” din Colecții Distribuite"
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.small-nudge"
 msgstr "Înghiont mic"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.hint"
-msgid_plural "modals.unpublish-shared-confirm.activated.hint"
-msgstr[0] ""
-"Dacă anulați publicarea, acele elemente nu vor mai fi valabile din alte "
-"fișiere. Elementele care au fost deja utilizate vor rămâne în acest fișier "
-"(niciun proiect nu va fi distrus!)."
-msgstr[1] ""
-"Dacă anulați publicarea lor, acele elemente nu vor mai fi valabile din alte "
-"fișiere. Elementele care au fost deja utilizate vor rămâne în acest fișier "
-"(niciun proiect nu va fi distrus!)."
-msgstr[2] ""
-"Dacă anulați publicarea lor, acele elemente nu vor mai fi valabile din alte "
-"fișiere. Elementele care au fost deja utilizate vor rămâne în acest fișier "
-"(niciun proiect nu va fi distrus!)."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.activated.hint-many"
-msgstr[0] ""
-"Dacă anulați publicarea, acele elemente nu vor mai fi valabile din alte "
-"fișiere. Elementele care au fost deja utilizate vor rămâne în acest fișier "
-"(niciun proiect nu va fi distrus!)."
-msgstr[1] ""
-"Dacă anulați publicarea lor, acele elemente nu vor mai fi valabile din alte "
-"fișiere. Elementele care au fost deja utilizate vor rămâne în acest fișier "
-"(niciun proiect nu va fi distrus!)."
-msgstr[2] ""
-"Dacă anulați publicarea lor, acele elemente nu vor mai fi valabile din alte "
-"fișiere. Elementele care au fost deja utilizate vor rămâne în acest fișier "
-"(niciun proiect nu va fi distrus!)."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs

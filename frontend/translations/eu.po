@@ -1760,17 +1760,6 @@ msgstr "Gutxienekoa"
 msgid "modals.unpublish-shared-confirm.accept"
 msgstr "Argitaratzea atzera bota"
 
-msgid "modals.unpublish-shared-confirm.activated.hint"
-msgid_plural "modals.unpublish-shared-confirm.activated.hint"
-msgstr[0] ""
-"Argitaratzea atzera botatzen baduzu, elementu horiek ez dira beste "
-"fitxategietan agertuko. Elementuak erabiltzen ari bazara fitxategi honetan "
-"geldituko dira (diseinurik ez da apurtuko!)."
-msgstr[1] ""
-"Argitaratzea atzera botatzen baduzu, elementu horiek ez dira beste "
-"fitxategietan agertuko. Elementuak erabiltzen ari bazara fitxategi honetan "
-"geldituko dira (diseinurik ez da apurtuko!)."
-
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
