@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-01-26 16:52+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -309,9 +309,9 @@ msgstr "%s dosyanın kopyasını oluştur"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"Kütüphanelere eklenen dosyalar burada görünecektir. Dosyalarınızı "
-"paylaşmayı deneyin veya [Kütüphaneler ve "
-"şablonlarımızdan](https://penpot.app/libraries-templates.html) ekleyin."
+"Kütüphanelere eklenen dosyalar burada görünecektir. Dosyalarınızı paylaşmayı "
+"deneyin veya [Kütüphaneler ve şablonlarımızdan](https://penpot.app/libraries-"
+"templates.html) ekleyin."
 
 msgid "dashboard.export-binary-multi"
 msgstr "%s Penpot dosyasını indir (.penpot)"
@@ -409,19 +409,18 @@ msgstr[1] "%s yazı tipi eklendi"
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Buraya yüklediğiniz herhangi bir web yazı tipi, bu takımın dosyalarının "
-"metin özelliklerinde bulunan yazı tipi ailesi listesine eklenecek. Aynı "
-"yazı tipi ailesi adına sahip yazı tipleri, **tek yazı tipi ailesi** olarak "
-"gruplandırılacak. Yazı tiplerini şu biçimlerde yükleyebilirsiniz: **TTF, "
-"OTF ve WOFF** (yalnızca bir tane gerekli olacak)."
+"metin özelliklerinde bulunan yazı tipi ailesi listesine eklenecek. Aynı yazı "
+"tipi ailesi adına sahip yazı tipleri, **tek yazı tipi ailesi** olarak "
+"gruplandırılacak. Yazı tiplerini şu biçimlerde yükleyebilirsiniz: **TTF, OTF "
+"ve WOFF** (yalnızca bir tane gerekli olacak)."
 
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Sadece kendinize ait veya Penpot'ta kullanılabilecek bir lisansa sahip olan "
-"yazi tiplerini yükleyebilirsiniz. [Penpot'un Kullanım "
-"Şartları](https://penpot.app/terms.html) içindeki İçerik hakları bölümünden "
-"ayrıntılı bilgi alabilirsiniz. Ayrıca [yazı tipi "
-"lisanslama](https://www.typography.com/faq) hakkında daha fazla bilgi almak "
-"isteyebilirsiniz."
+"yazi tiplerini yükleyebilirsiniz. [Penpot'un Kullanım Şartları](https://"
+"penpot.app/terms.html) içindeki İçerik hakları bölümünden ayrıntılı bilgi "
+"alabilirsiniz. Ayrıca [yazı tipi lisanslama](https://www.typography.com/faq) "
+"hakkında daha fazla bilgi almak isteyebilirsiniz."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -772,7 +771,8 @@ msgstr "E-postanızı parola olarak kullanamazsınız"
 msgid "errors.email-has-permanent-bounces"
 msgstr "«%s» adresi için çok fazla geri dönme raporu var."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs
 msgid "errors.email-invalid"
 msgstr "Lütfen geçerli bir e-posta adresi girin"
 
@@ -851,8 +851,8 @@ msgstr "Profil engellendi"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
 msgstr ""
-"Profilinizde sessize alınmış e-postalar var (spam raporları veya yüksek "
-"geri dönüşler sebebiyle)."
+"Profilinizde sessize alınmış e-postalar var (spam raporları veya yüksek geri "
+"dönüşler sebebiyle)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
@@ -1405,7 +1405,6 @@ msgid "labels.no-invitations"
 msgstr "Bekleyen davetiye yok."
 
 #: src/app/main/ui/dashboard/team.cljs
-#, markdown
 msgid "labels.no-invitations-hint"
 msgstr ""
 "Kişileri bu takıma davet etmek için **İnsanları davet et** düğmesine "
@@ -1637,8 +1636,7 @@ msgstr "Yeni e-postayı doğrulayın"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
 msgstr ""
-"“%s” e-posta adresinize kimliğinizi doğrulamak için bir e-posta "
-"göndereceğiz."
+"“%s” e-posta adresinize kimliğinizi doğrulamak için bir e-posta göndereceğiz."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1687,8 +1685,7 @@ msgstr "Konuşmayı sil"
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.message"
 msgstr ""
-"Bu konuşmayı silmek istediğinden emin misin? Konudaki tüm yorumlar "
-"silinecek."
+"Bu konuşmayı silmek istediğinden emin misin? Konudaki tüm yorumlar silinecek."
 
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.title"
@@ -1980,7 +1977,8 @@ msgstr "Davet bağlantısı kopyalandı"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
-msgstr "Profilinizi silemezsiniz. Devam etmeden önce takımlarınızı birine atayın."
+msgstr ""
+"Profilinizi silemezsiniz. Devam etmeden önce takımlarınızı birine atayın."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -1992,8 +1990,8 @@ msgstr "%s adresine doğrulama e-postası gönderildi. E-posta kutunuza bakın!"
 
 msgid "onboarding-v2.before-start.desc1"
 msgstr ""
-"Kullanıcı Kılavuzu ve Youtube kanalımız gibi Penpot'u kullanmaya "
-"başlamanıza yardımcı olacak birçok kaynak olduğunu bilmelisiniz."
+"Kullanıcı Kılavuzu ve Youtube kanalımız gibi Penpot'u kullanmaya başlamanıza "
+"yardımcı olacak birçok kaynak olduğunu bilmelisiniz."
 
 msgid "onboarding-v2.before-start.desc2"
 msgstr ""
@@ -2004,7 +2002,8 @@ msgid "onboarding-v2.before-start.desc2.title"
 msgstr "Kullanıcı kılavuzu"
 
 msgid "onboarding-v2.before-start.desc3"
-msgstr "Bizim ve topluluğumuz tarafından hazırlanan öğreticileri izleyebilirsiniz."
+msgstr ""
+"Bizim ve topluluğumuz tarafından hazırlanan öğreticileri izleyebilirsiniz."
 
 msgid "onboarding-v2.before-start.desc3.title"
 msgstr "Video öğreticiler"
@@ -2032,7 +2031,8 @@ msgstr ""
 "aboneliğinizi iptal edebilirsiniz."
 
 msgid "onboarding-v2.newsletter.updates"
-msgstr "Bana ürün güncellemeleri gönder (yeni özellikler, sürümler, düzeltmeler...)."
+msgstr ""
+"Bana ürün güncellemeleri gönder (yeni özellikler, sürümler, düzeltmeler...)."
 
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
@@ -2066,7 +2066,8 @@ msgid "onboarding.choice.team-up.create-team"
 msgstr "Takımınızın adı"
 
 msgid "onboarding.choice.team-up.create-team-desc"
-msgstr "Takımınızı adlandırdıktan sonra, insanları katılmaya davet edebileceksiniz."
+msgstr ""
+"Takımınızı adlandırdıktan sonra, insanları katılmaya davet edebileceksiniz."
 
 msgid "onboarding.choice.team-up.create-team-placeholder"
 msgstr "Takımın adını girin"
@@ -2076,8 +2077,8 @@ msgstr "Üyeleri davet edin"
 
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
-"Herkesi dahil etmeyi unutmayın. Geliştiriciler, tasarımcılar, "
-"yöneticiler... çeşitlilik iyidir :)"
+"Herkesi dahil etmeyi unutmayın. Geliştiriciler, tasarımcılar, yöneticiler... "
+"çeşitlilik iyidir :)"
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Takım oluştur ve daha sonra davet et"
@@ -2095,7 +2096,8 @@ msgid "onboarding.newsletter.accept"
 msgstr "Evet, abone ol"
 
 msgid "onboarding.newsletter.acceptance-message"
-msgstr "Abonelik talebiniz iletildi, size onaylamak için bir e-posta göndereceğiz."
+msgstr ""
+"Abonelik talebiniz iletildi, size onaylamak için bir e-posta göndereceğiz."
 
 msgid "onboarding.newsletter.policy"
 msgstr "Gizlilik Politikası."
@@ -2649,8 +2651,8 @@ msgstr "%s - Penpot"
 
 msgid "viewer.breaking-change.description"
 msgstr ""
-"Bu paylaşılabilir bağlantı artık geçerli değil. Yeni bir tane oluşturun "
-"veya sahibinden yeni bir tane isteyin."
+"Bu paylaşılabilir bağlantı artık geçerli değil. Yeni bir tane oluşturun veya "
+"sahibinden yeni bir tane isteyin."
 
 msgid "viewer.breaking-change.message"
 msgstr "Üzgünüm!"
@@ -2763,7 +2765,8 @@ msgstr "Grup oluştur"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.create-group-hint"
-msgstr "Ögeleriniz otomatik olarak \"grup adı / öge adı\" olarak adlandırılacak"
+msgstr ""
+"Ögeleriniz otomatik olarak \"grup adı / öge adı\" olarak adlandırılacak"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
@@ -3837,8 +3840,8 @@ msgstr "Yazı tipi ara"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-a-shape"
 msgstr ""
-"Diğer çalışma yüzeyine bağlantı taşımak için bir şekil, çalışma yüzeyi ya "
-"da grup seçin."
+"Diğer çalışma yüzeyine bağlantı taşımak için bir şekil, çalışma yüzeyi ya da "
+"grup seçin."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.selection-color"
@@ -4072,7 +4075,8 @@ msgstr "Büyük Harf"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
-msgstr "Prototip görünümünü çalıştırmak için başlıktaki oynatma düğmesini kullan."
+msgstr ""
+"Prototip görünümünü çalıştırmak için başlıktaki oynatma düğmesini kullan."
 
 msgid "workspace.options.width"
 msgstr "Genişlik"
@@ -4562,3 +4566,64 @@ msgstr "Güncelle"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
+
+#~ msgid "dashboard.newsletter-title"
+#~ msgstr "Bülten aboneliği"
+
+#~ msgid "feedback.chat-subtitle"
+#~ msgstr "Sohbet etmek ister misin? Glitter'da bizimle sohbet edebilirsin"
+
+#~ msgid "inspect.attributes.shadow.shorthand.offset-x"
+#~ msgstr "X"
+
+#~ msgid "labels.images"
+#~ msgstr "Görseller"
+
+#~ msgid "labels.skip"
+#~ msgstr "Atla"
+
+#~ msgid "onboarding.contrib.alt"
+#~ msgstr "Açık Kaynak"
+
+#~ msgid "onboarding.contrib.link"
+#~ msgstr "github'da erişebilir"
+
+#~ msgid "onboarding.slide.0.desc1"
+#~ msgstr ""
+#~ "Tüm takım üyeleriyle iş birliği içinde güzel kullanıcı arayüzleri "
+#~ "oluşturun."
+
+#~ msgid "onboarding.slide.1.desc1"
+#~ msgstr "Ürün davranışını taklit etmek için zengin etkileşimler oluşturun."
+
+#~ msgid "onboarding.slide.2.desc1"
+#~ msgstr ""
+#~ "Tüm takım üyeleri tasarımlar üzerinde gerçek zamanlı tasarım, çok "
+#~ "oyunculu ve merkezi yorumlar, fikirler ve geri bildirimler ile aynı anda "
+#~ "çalışır."
+
+#~ msgid "onboarding.slide.3.desc2"
+#~ msgstr ""
+#~ "İşaretleme (SVG, HTML) veya biçimler (CSS, Less, Stylus…) gibi kod "
+#~ "özellikleri alın ve sağlayın."
+
+#~ msgid "onboarding.team.create.title"
+#~ msgstr "Takım oluştur"
+
+#~ msgid "onboarding.welcome.title"
+#~ msgstr "Penpot'a Hoş Geldiniz"
+
+#~ msgid "viewer.header.share.placeholder"
+#~ msgstr "Paylaşım adresi burada görünecek"
+
+#~ msgid "workspace.library.libraries"
+#~ msgstr "Kütüphaneler"
+
+#~ msgid "workspace.options.blur-options.layer-blur"
+#~ msgstr "Katman"
+
+#~ msgid "workspace.options.layout-item.min-w"
+#~ msgstr "Asgari Genişlik"
+
+#~ msgid "workspace.options.layout-item.title.min-w"
+#~ msgstr "Asgari genişlik"

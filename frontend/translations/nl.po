@@ -1029,30 +1029,6 @@ msgstr "Webhook verwijderen"
 msgid "modals.edit-webhook.submit-label"
 msgstr "Wijzig webhook"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Als u de publicatie ongedaan maakt, zijn die elementen niet langer "
-"beschikbaar vanuit andere bestanden. Elementen die al gebruikt zijn, blijven "
-"in dit bestand staan (er gaat geen ontwerp kapot!)."
-msgstr[1] ""
-"Als u de publicatie ervan ongedaan maakt, zijn die elementen niet langer "
-"beschikbaar vanuit andere bestanden. Elementen die al gebruikt zijn, blijven "
-"in dit bestand staan (er gaat geen ontwerp kapot!)."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] ""
-"Als u de publicatie ongedaan maakt, zijn die elementen niet langer "
-"beschikbaar vanuit andere bestanden. Elementen die al gebruikt zijn, blijven "
-"in deze bestanden staan (er gaat geen ontwerp kapot!)."
-msgstr[1] ""
-"Als u de publicatie ervan ongedaan maakt, zijn die elementen niet langer "
-"beschikbaar vanuit andere bestanden. Elementen die al gebruikt zijn, blijven "
-"in deze bestanden staan (er gaat geen ontwerp kapot!)."
-
 #: src/app/main/ui/workspace.cljs
 msgid "workspace.remove-graphics.error-hint"
 msgstr ""
@@ -1071,12 +1047,6 @@ msgid "onboarding-v2.newsletter.privacy2"
 msgstr ""
 "We sturen u alleen relevante e-mails. U kunt zich op elk moment afmelden via "
 "de afmeldlink in al onze nieuwsbrieven."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Enkele van de elementen in deze bibliotheek worden hier gebruikt:"
-msgstr[1] "Enkele van de middelen in deze bibliotheken worden hier gebruikt:"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
@@ -1986,60 +1956,10 @@ msgstr[0] "Verwijder bestand"
 msgstr[1] "Verwijder bestanden"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"Als u het verwijdert, zijn die middelen niet langer beschikbaar vanuit "
-"andere bestanden. Middelen die al gebruikt zijn, blijven in dit bestand "
-"staan (er gaat geen ontwerp kapot!)."
-msgstr[1] ""
-"Als u ze verwijdert, zijn die middelen niet langer beschikbaar vanuit andere "
-"bestanden. Middelen die al gebruikt zijn, blijven in dit bestand staan (er "
-"gaat geen ontwerp kapot!)."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"Als u het verwijdert, zijn die middelen niet langer beschikbaar vanuit "
-"andere bestanden. Middelen die al zijn gebruikt, blijven in deze bestanden "
-"staan (er wordt geen ontwerp verbroken!)."
-msgstr[1] ""
-"Als u ze verwijdert, zijn die middelen niet langer beschikbaar vanuit andere "
-"bestanden. Middelen die al gebruikt zijn, blijven in dit bestand staan (er "
-"gaat geen ontwerp kapot!)."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Weet u zeker dat u dit bestand wilt verwijderen?"
 msgstr[1] "Weet u zeker dat u deze bestanden wilt verwijderen?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] ""
-"Geen van de elementen in de bibliotheek van dit bestand is in gebruik. Ze "
-"worden samen met het bestand verwijderd."
-msgstr[1] ""
-"Geen van de elementen in de bibliotheek van deze bestanden is in gebruik. Ze "
-"worden samen met de bestanden verwijderd."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] ""
-"Sommige elementen in de bibliotheek van dit bestand worden hier gebruikt:"
-msgstr[1] ""
-"Sommige elementen in de bibliotheek van deze bestanden worden hier gebruikt:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] ""
-"Sommige elementen in de bibliotheek van dit bestand worden hier gebruikt:"
-msgstr[1] ""
-"Sommige elementen in de bibliotheek van deze bestanden worden hier gebruikt:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -2281,10 +2201,6 @@ msgstr "Bibliotheken"
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.rename"
 msgstr "Hernoemen"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "GEDEELD"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
@@ -2572,18 +2488,6 @@ msgid "onboarding-v2.before-start.desc1"
 msgstr ""
 "U moet weten dat er veel bronnen beschikbaar zijn om u op weg te helpen met "
 "Penpot, zoals de gebruikershandleiding en ons YouTube-kanaal."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Enkele van de elementen in deze bibliotheek worden hier gebruikt:"
-msgstr[1] "Enkele van de elementen in deze biliotheken worden hier gebruikt:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Geen van de elementen in deze bibliotheek is in gebruik."
-msgstr[1] "Geen van de elementen in deze bibliotheken is in gebruik."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
@@ -4120,24 +4024,8 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Lijn beneden uit"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-center"
-msgstr "Lijn gecentreerd uit"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-justify"
-msgstr "Justify (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-left"
-msgstr "Links uitlijnen (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
 msgstr "Midden uitlijnen (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-right"
-msgstr "Rechts uitlijnen (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"

@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-12-06 21:48+0000\n"
 "Last-Translator: María Ozámiz <ozamiz.m@gmail.com>\n"
-"Language-Team: Galician "
-"<https://hosted.weblate.org/projects/penpot/frontend/gl/>\n"
+"Language-Team: Galician <https://hosted.weblate.org/projects/penpot/frontend/"
+"gl/>\n"
 "Language: gl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -102,7 +102,8 @@ msgstr "Perfil sen verificar, valida o perfil antes de continuar."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
-msgstr "Enviouse ó teu correo electrónico un enlace co que recuperar o contrasinal."
+msgstr ""
+"Enviouse ó teu correo electrónico un enlace co que recuperar o contrasinal."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
@@ -239,8 +240,8 @@ msgstr ""
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
 msgstr ""
-"Aprende os conceptos básicos de Penpot mentres te divirtes con este "
-"titorial práctico."
+"Aprende os conceptos básicos de Penpot mentres te divirtes con este titorial "
+"práctico."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
@@ -360,8 +361,8 @@ msgstr ""
 
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"os ficheiros con bibliotecas compartidas incluiranse na exportación "
-"mantendo os vínculos."
+"os ficheiros con bibliotecas compartidas incluiranse na exportación mantendo "
+"os vínculos."
 
 msgid "dashboard.export.options.all.title"
 msgstr "Exportar bibliotecas compartidas"
@@ -380,7 +381,8 @@ msgstr ""
 "biblioteca do ficheiro."
 
 msgid "dashboard.export.options.merge.title"
-msgstr "Incluir os recursos de bibliotecas compartidas na biblioteca do ficheiro"
+msgstr ""
+"Incluir os recursos de bibliotecas compartidas na biblioteca do ficheiro"
 
 msgid "dashboard.export.title"
 msgstr "Exportar ficheiros"
@@ -401,7 +403,6 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "Engadiuse 1 fonte"
 msgstr[1] "Engadíronse % fontes"
 
-#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Calquera fonte que cargues aquí engadirase na listaxe de familias de fontes "
@@ -410,7 +411,6 @@ msgstr ""
 "Podes cargar fontes cos seguintes formatos: **TTF, OFT e WOFF** (só se "
 "precisa un)."
 
-#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Só debes cargar fontes da túa propiedade ou das que teñas licenza para usar "
@@ -429,7 +429,8 @@ msgid "dashboard.import.analyze-error"
 msgstr "Vaia! Non se puido importar o ficheiro"
 
 msgid "dashboard.import.import-error"
-msgstr "Houbo un problema ao importar o ficheiro. Non se puido importar o ficheiro."
+msgstr ""
+"Houbo un problema ao importar o ficheiro. Non se puido importar o ficheiro."
 
 msgid "dashboard.import.import-message"
 msgstr "% ficheiros importáronse correctamente."
@@ -560,7 +561,8 @@ msgstr "Proxectos"
 msgid "dashboard.remove-account"
 msgstr "Queres borrar a túa conta?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
 msgstr "Eliminar das bibliotecas compartidas"
 
@@ -604,7 +606,8 @@ msgstr "Duplicouse o ficheiro"
 msgid "dashboard.success-duplicate-project"
 msgstr "Duplicouse o proxecto"
 
-#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-move-file"
 msgstr "Moveuse o ficheiro"
 
@@ -640,11 +643,13 @@ msgstr "Resultados da procura"
 msgid "dashboard.type-something"
 msgstr "Escribe algo para procurar"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
 msgstr "Cancelar publicación da Biblioteca"
 
-#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/password.cljs,
+#: src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Actualizar configuración"
 
@@ -660,7 +665,11 @@ msgstr "Correo electrónico"
 msgid "dashboard.your-name"
 msgstr "Nome"
 
-#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/libraries.cljs,
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
 msgstr "O teu Penpot"
 
@@ -1234,7 +1243,6 @@ msgstr "Bibliotecas"
 msgid "workspace.assets.rename"
 msgstr "Mudar o nome"
 
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
@@ -1488,3 +1496,21 @@ msgstr "Nada"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.edit"
 msgstr "Editar"
+
+#~ msgid "dashboard.newsletter-title"
+#~ msgstr "Subscrición ao boletín"
+
+#~ msgid "inspect.attributes.shadow.shorthand.offset-x"
+#~ msgstr "X"
+
+#~ msgid "labels.images"
+#~ msgstr "Imaxes"
+
+#~ msgid "labels.next"
+#~ msgstr "Seguinte"
+
+#~ msgid "labels.start"
+#~ msgstr "Comezar"
+
+#~ msgid "workspace.options.blur-options.background-blur"
+#~ msgstr "Fondo"
