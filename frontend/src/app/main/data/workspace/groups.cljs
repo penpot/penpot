@@ -91,6 +91,10 @@
                                     :name gname
                                     :shapes (mapv :id shapes)
                                     :selrect selrect
+                                    :x (:x selrect)
+                                    :y (:y selrect)
+                                    :width (:width selrect)
+                                    :height (:height selrect)
                                     :parent-id parent-id
                                     :frame-id frame-id
                                     :index group-idx})
