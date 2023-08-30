@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-01-06 10:47+0000\n"
-"Last-Translator: K.B.Dharun Krishna <kbdharunkrishna@gmail.com>\n"
-"Language-Team: Tamil "
-"<https://hosted.weblate.org/projects/penpot/frontend/ta/>\n"
+"PO-Revision-Date: 2023-06-17 09:51+0000\n"
+"Last-Translator: \"K.B.Dharun Krishna\" <kbdharunkrishna@gmail.com>\n"
+"Language-Team: Tamil <https://hosted.weblate.org/projects/penpot/frontend/ta/"
+">\n"
 "Language: ta\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.15.1-dev\n"
+"X-Generator: Weblate 4.18.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -65,7 +65,7 @@ msgstr "உங்களை மீண்டும் சந்திப்பத�
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "கிட்ஹப்"
+msgstr "GitHub"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
@@ -147,3 +147,67 @@ msgstr "ஒரு கணக்கை உருவாக்கவும்"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-subtitle"
 msgstr "இது இலவசம், இது திறந்த மூலமானது"
+
+msgid "common.share-link.link-copied-success"
+msgstr "இணைப்பு வெற்றிகரமாக நகலெடுக்கப்பட்டது"
+
+msgid "common.share-link.manage-ops"
+msgstr "அனுமதிகளை நிர்வகிக்கவும்"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "ஒரு கணக்கை உருவாக்கவும்"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "வடிவமைப்பு மற்றும் முன்மாதிரிக்கான திறந்த மூல தீர்வு."
+
+msgid "auth.terms-of-service"
+msgstr "சேவை விதிமுறைகள்"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "சரிபார்ப்பு மின்னஞ்சலை அனுப்பியுள்ளோம் இந்த முகவரிக்கு"
+
+msgid "common.share-link.all-users"
+msgstr "அனைத்து Penpot பயனர்களும்"
+
+msgid "common.publish"
+msgstr "வெளியிடுங்கள்"
+
+msgid "common.share-link.current-tag"
+msgstr "(தற்போதைய)"
+
+msgid "common.share-link.destroy-link"
+msgstr "இணைப்பை அழிக்கவும்"
+
+msgid "common.share-link.get-link"
+msgstr "இணைப்பைப் பெறுங்கள்"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "கருத்து தெரிவிக்கலாம்"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "குறியீட்டை ஆய்வு செய்யலாம்"
+
+msgid "common.share-link.permissions-hint"
+msgstr "இணைப்பு உள்ள எவருக்கும் அணுகல் இருக்கும்"
+
+msgid "common.share-link.permissions-pages"
+msgstr "பக்கங்கள் பகிரப்பட்டன"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"புதிய கணக்கை உருவாக்கும் போது, எங்கள் சேவை விதிமுறைகள் மற்றும் தனியுரிமைக் "
+"கொள்கையை ஏற்கிறீர்கள்."
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"இந்த இணைப்பை நிச்சயமாக அகற்ற விரும்புகிறீர்களா? நீங்கள் அதைச் செய்தால், அது "
+"இனி யாருக்கும் கிடைக்காது"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 பக்கம் பகிரப்பட்டது"
+msgstr[1] "%s பக்கங்கள் பகிரப்பட்டன"

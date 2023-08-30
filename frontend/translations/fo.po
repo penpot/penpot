@@ -439,10 +439,6 @@ msgstr "+ Nýggj verkætlan"
 msgid "dashboard.new-project-prefix"
 msgstr "Nýggj verkætlan"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Hald til frásagnarblað"
-
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "Onki samsvar funnið fyri \"%\""

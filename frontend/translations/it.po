@@ -519,10 +519,6 @@ msgstr "+ Nuovo progetto"
 msgid "dashboard.new-project-prefix"
 msgstr "Nuovo progetto"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Iscrizione alla newsletter"
-
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "Nessuna corrispondenza trovata per \"%s\""
@@ -814,10 +810,6 @@ msgid "errors.wrong-old-password"
 msgstr "La password precedente non è corretta"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Hai voglia di parlare? Chatta con noi su Gitter"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Descrizione"
 
@@ -934,10 +926,6 @@ msgstr "Larghezza"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Ombra"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1236,9 +1224,6 @@ msgstr "Supporto"
 msgid "labels.hide-resolved-comments"
 msgstr "Non mostrare i commenti risolti"
 
-msgid "labels.images"
-msgstr "Immagini"
-
 msgid "labels.installed-fonts"
 msgstr "Font installati"
 
@@ -1431,9 +1416,6 @@ msgstr "Mostra la lista dei commenti"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Mostra solo i tuoi commenti"
-
-msgid "labels.skip"
-msgstr "Saltare"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1898,14 +1880,8 @@ msgstr "Crea un team e manda inviti"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Invita con il ruolo:"
 
-msgid "onboarding.contrib.alt"
-msgstr "Open Source"
-
 msgid "onboarding.contrib.desc2.1"
 msgstr "Puoi accedere al"
-
-msgid "onboarding.contrib.link"
-msgstr "progetto su github"
 
 msgid "onboarding.newsletter.accept"
 msgstr "Si, iscrivimi"
@@ -1921,16 +1897,8 @@ msgstr "Condizioni sulla Privacy."
 msgid "onboarding.newsletter.title"
 msgstr "Vuoi ricevere le news di Pentot?"
 
-msgid "onboarding.slide.0.desc1"
-msgstr ""
-"Crea splendide interfacce utente in collaborazione con tutti i membri del "
-"team."
-
 msgid "onboarding.slide.0.title"
 msgstr "Librerie di design, stili e componenti"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-invitations"

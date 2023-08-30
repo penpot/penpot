@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-06 15:38+0000\n"
+"PO-Revision-Date: 2023-07-24 19:05+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 4.16-dev\n"
+"X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -419,9 +419,6 @@ msgstr "אופס! לא הצלחנו לייבא את הקובץ הזה"
 msgid "dashboard.import.import-error"
 msgstr "אירעה תקלה בייבוא הקובץ. הוא לא ייובא."
 
-msgid "dashboard.import.import-message"
-msgstr "%s קבצים עברו ייבוא כרגיל."
-
 msgid "dashboard.import.import-warning"
 msgstr "חלק מהקבצים הכילו פריטים שגויים שהוסרו."
 
@@ -760,8 +757,8 @@ msgstr "כתובת הדוא״ל „%s” דווחה כספאם או שההודע
 #: src/app/main/errors.cljs
 msgid "errors.feature-mismatch"
 msgstr ""
-"נראה שניסית לפתוח קובץ בו פעילה היכולת ‚%s’ אבל מנשק ה־Penpot שלך לא תומך "
-"בה או שהיא מושבתת."
+"נראה שניסית לפתוח קובץ בו פעילה היכולת ‚%s’ אבל מנשק ה־Penpot שלך לא תומך בה "
+"או שהיא מושבתת."
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-not-supported"
@@ -1873,6 +1870,31 @@ msgstr "הינד קטן"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.unpublish-shared-confirm.activated.hint"
+msgstr[0] "ביטול הפרסום יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
+msgstr[1] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
+msgstr[2] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
+msgstr[3] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.activated.hint-many"
+msgstr[0] ""
+"ביטול הפרסום יחסום את הגישה למשאבים מקבצים אחרים. משאבים שכבר היו בשימוש "
+"יישארו בקבצים האלה (העיצוב לא יישבר!)."
+msgstr[1] ""
+"ביטול הפרסום יחסום את הגישה למשאבים מקבצים אחרים. משאבים שכבר היו בשימוש "
+"יישארו בקבצים האלה (העיצוב לא יישבר!)."
+msgstr[2] ""
+"ביטול הפרסום יחסום את הגישה למשאבים מקבצים אחרים. משאבים שכבר היו בשימוש "
+"יישארו בקבצים האלה (העיצוב לא יישבר!)."
+msgstr[3] ""
+"ביטול הפרסום יחסום את הגישה למשאבים מקבצים אחרים. משאבים שכבר היו בשימוש "
+"יישארו בקבצים האלה (העיצוב לא יישבר!)."
+
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "לבטל את פרסום הספרייה הזאת?"
@@ -2471,7 +2493,7 @@ msgid "shortcuts.toggle-layers"
 msgstr "החלפת הצגת שכבות"
 
 msgid "shortcuts.toggle-layout-flex"
-msgstr "הוספת/הסרת flex פריסה"
+msgstr "הוספת/הסרת פריסת flex"
 
 msgid "shortcuts.toggle-lock"
 msgstr "נעילת הנבחרים"
@@ -4061,7 +4083,7 @@ msgstr "%s מתעדכן…"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
-msgstr "הוספת flex פריסה"
+msgstr "הוספת פריסת flex"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
@@ -4182,7 +4204,7 @@ msgstr "נתיב"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-flex"
-msgstr "הסרת flex פריסה"
+msgstr "הסרת פריסת flex"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,
@@ -4479,3 +4501,116 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "ייצוא רכיב"
+msgstr[1] "ייצוא %s רכיבים"
+msgstr[2] "ייצוא %s רכיבים"
+msgstr[3] "ייצוא %s רכיבים"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "משקל גופן"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "הקובץ שלך שוכפל בהצלחה"
+msgstr[1] "הקבצים שלך שוכפלו בהצלחה"
+msgstr[2] "הקבצים שלך שוכפלו בהצלחה"
+msgstr[3] "הקבצים שלך שוכפלו בהצלחה"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "הקובץ שלך נמחק בהצלחה"
+msgstr[1] "הקבצים שלך נמחקו בהצלחה"
+msgstr[2] "הקבצים שלך נמחקו בהצלחה"
+msgstr[3] "הקבצים שלך נמחקו בהצלחה"
+
+msgid "shortcut-subsection.text-editor"
+msgstr "טקסטים"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "ביטול פרסום"
+msgstr[1] "ביטול פרסום"
+msgstr[2] "ביטול פרסום"
+msgstr[3] "ביטול פרסום"
+
+msgid "shortcuts.align-center"
+msgstr "יישור למרכז"
+
+msgid "shortcuts.align-justify"
+msgstr "יישור משני הצדדים"
+
+msgid "shortcuts.bold"
+msgstr "החלפת מצב מודגש"
+
+msgid "shortcuts.font-size-dec"
+msgstr "הקטנת גודל הכתב"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "הקטנת ריווח תווים"
+
+msgid "shortcuts.font-size-inc"
+msgstr "הגדלת גודל הכתב"
+
+msgid "shortcuts.line-height-dec"
+msgstr "הנמכת שורה"
+
+msgid "shortcuts.underline"
+msgstr "החלפת מצב קו תחתי"
+
+msgid "shortcuts.italic"
+msgstr "החלפת מצב נטוי"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "הגדלת ריווח תווים"
+
+msgid "shortcuts.line-height-inc"
+msgstr "הגבהת שורה"
+
+msgid "shortcuts.select-prev"
+msgstr "בחירת השכבה הקודמת"
+
+msgid "shortcuts.line-through"
+msgstr "החלפת מצב קו חוצה"
+
+msgid "shortcuts.select-next"
+msgstr "בחירת השכבה הבאה"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "הקטנת עדשת תקריב"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "הגדלת עדשת תקריב"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "השבתת קנה מידה יחסי"
+
+msgid "workspace.header.menu.undo"
+msgstr "החזרה"
+
+msgid "workspace.assets.duplicate-main"
+msgstr "שכפול הראשי"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "הפעלת קנה מידה יחסי"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"זיהינו בעיה אפשרית בגודפים שלך ביחס למדדים אנכיים למערכת הפעלה שונות. כדי "
+"לבדוק את זה אפשר להשתמש בשירות מדידות אנכיות של גופנים כגון [זה]](https"
+"://vertical-metrics.netlify.app/). בנוסף, המלצתנו היא להשתמש "
+"ב־[Transfonter](https://transfonter.org/) כדי לייצר גופני רשת ולתקן שגיאות. "
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr "חלק מכתובות הדוא״ל הן של חברי צוות נוכחיים. ההזמנות לא תישלחנה אליהם."
+
+msgid "workspace.header.menu.redo"
+msgstr "ביצוע מחדש"

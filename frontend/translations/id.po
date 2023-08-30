@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-01 16:38+0000\n"
+"PO-Revision-Date: 2023-07-02 17:52+0000\n"
 "Last-Translator: Linerly <linerly@protonmail.com>\n"
-"Language-Team: Indonesian "
-"<https://hosted.weblate.org/projects/penpot/frontend/id/>\n"
+"Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
+"frontend/id/>\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.16-dev\n"
+"X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -430,9 +430,6 @@ msgstr "Aduh! Kami tidak dapat mengimpor berkas ini"
 
 msgid "dashboard.import.import-error"
 msgstr "Terdapat masalah saat mengimpor berkas. Berkasnya tidak terimpor."
-
-msgid "dashboard.import.import-message"
-msgstr "%s berkas telah berhasil diimpor."
 
 msgid "dashboard.import.import-warning"
 msgstr "Beberapa berkas berisi objek yang tidak valid yang telah dihapus."
@@ -923,31 +920,6 @@ msgstr "Akun dukungan Twitter"
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
 msgstr "Sebuah kesalahan telah terjadi"
-
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.height"
-msgstr "Tinggi"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.width"
-msgstr "Lebar"
-
-#, permanent
-msgid "handoff.attributes.stroke.alignment.inner"
-msgstr "Dalam"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-family"
-msgstr "Keluarga Fon"
-
-msgid "handoff.attributes.typography.text-decoration.underline"
-msgstr "Garis Bawah"
-
-msgid "handoff.tabs.code.selected.component"
-msgstr "Komponen"
-
-msgid "handoff.tabs.code.selected.rect"
-msgstr "Persegi Panjang"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -1731,6 +1703,22 @@ msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Hapus berkas"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.hint"
+msgid_plural "modals.delete-shared-confirm.activated.hint"
+msgstr[0] ""
+"Jika Anda menghapusnya, asetnya tidak akan tersedia lagi dari berkas yang "
+"lain. Aset yang telah digunakan akan tetap dalam berkas ini (tidak ada "
+"desain yang akan rusak!)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.hint-many"
+msgid_plural "modals.delete-shared-confirm.activated.hint-many"
+msgstr[0] ""
+"Jika Anda menghapusnya, asetnya tidak akan tersedia lagi dari berkas yang "
+"lain. Aset yang telah digunakan akan tetap dalam berkas ini (tidak ada "
+"desain yang akan rusak!)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Apakah Anda yakin ingin menghapus berkas ini?"
@@ -1878,6 +1866,22 @@ msgstr "Hapus “%s” sebagai Pustaka Terbagi"
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.small-nudge"
 msgstr "Dorongan kecil"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Jika Anda membatalkan penerbitannya, asetnya tidak akan tersedia lagi dari "
+"berkas yang lain. Aset yang telah digunakan akan tetap dalam berkas ini ("
+"tidak ada desain yang akan rusak!)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.activated.hint-many"
+msgstr[0] ""
+"Jika Anda membatalkan penerbitannya, asetnya tidak akan tersedia lagi dari "
+"berkas yang lain. Aset yang telah digunakan akan tetap dalam berkas ini ("
+"tidak ada desain yang akan rusak!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -2053,9 +2057,6 @@ msgstr "Kebijakan Privasi kami."
 
 msgid "onboarding.newsletter.title"
 msgstr "Ingin menerima berita Penpot?"
-
-msgid "onboarding.slide.1.title"
-msgstr "Buat desain Anda nyata dengan interaksi"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Buat sebuah tim"
@@ -2476,7 +2477,7 @@ msgid "shortcuts.toggle-layers"
 msgstr "Alih lapisan"
 
 msgid "shortcuts.toggle-layout-flex"
-msgstr "Tambahkan/hapus flex tata letak"
+msgstr "Tambahkan/hapus tata letak flex"
 
 msgid "shortcuts.toggle-lock"
 msgstr "Kunci dipilih"
@@ -3607,10 +3608,6 @@ msgstr "Tinggi minimum"
 msgid "workspace.options.layout-item.title.layout-item-min-w"
 msgstr "Lebar minimum"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-h"
-msgstr "Tinggi minimum"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Bawah"
@@ -3618,14 +3615,6 @@ msgstr "Bawah"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.column"
 msgstr "Kolom"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Kolom terbalik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-row"
-msgstr "Barisan terbalik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
@@ -3711,7 +3700,7 @@ msgstr "Semua sudut"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.single-corners"
-msgstr "Sudut individu"
+msgstr "Sudut tersendiri"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius-top-left"
@@ -4049,7 +4038,7 @@ msgstr "Memperbarui %s..."
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
-msgstr "Tambahkan flex tata letak"
+msgstr "Tambahkan tata letak flex"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
@@ -4163,7 +4152,7 @@ msgstr "Jalur"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-flex"
-msgstr "Hapus flex tata letak"
+msgstr "Hapus tata letak flex"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
@@ -4451,3 +4440,111 @@ msgstr "Perbarui"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik untuk menutup jalur"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Berkas Anda berhasil digandakan"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Berkas Anda berhasil dihapus"
+
+msgid "shortcuts.italic"
+msgstr "Miring"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Kurangi spasi huruf"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Tambahkan spasi huruf"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Kurangi ketinggian baris"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Tambahkan ketinggian baris"
+
+msgid "shortcuts.line-through"
+msgstr "Coret"
+
+msgid "shortcuts.select-next"
+msgstr "Pilih lapisan berikutnya"
+
+msgid "shortcuts.select-prev"
+msgstr "Pilih lapisan sebelumnya"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Kurangi lensa zum"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Tambahkan lensa zum"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Nonaktifkan skala proporsional"
+
+msgid "workspace.assets.duplicate-main"
+msgstr "Gandakan utama"
+
+msgid "workspace.header.menu.redo"
+msgstr "Ulangi"
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Beberapa surel berasal dari anggota tim saat ini. Undangan mereka tidak akan "
+"dikirim."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Batalkan penerbitan"
+
+msgid "shortcut-subsection.text-editor"
+msgstr "Teks"
+
+msgid "shortcuts.align-center"
+msgstr "Paskan ke tengah"
+
+msgid "shortcuts.align-justify"
+msgstr "Paskan secara rata"
+
+msgid "shortcuts.bold"
+msgstr "Tebal"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Tambahkan ukuran fon"
+
+msgid "shortcuts.underline"
+msgstr "Garis bawah"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Berat Fon"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Kami telah mendeteksi masalah yang mungkin ada dalam fon Anda terkair dengan "
+"metrik vertikal untuk berbagai sistem operasi. Supaya bisa diperiksa, Anda "
+"dapat menggunakan layanan metrik vertikal fon seperti [yang ini](https"
+"://vertical-metrics.netlify.app/). Sebagai tambahan, kami juga menyarankan "
+"menggunakan [Transfonter](https://transfonter.org/) untuk membuat fon web "
+"dan memperbaiki kesalahan. "
+
+msgid "shortcuts.font-size-dec"
+msgstr "Kurangi ukuran fon"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "Kolom terbalik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "Baris terbalik"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Aktifkan skala proporsional"
+
+msgid "workspace.header.menu.undo"
+msgstr "Urungkan"

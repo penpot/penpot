@@ -519,10 +519,6 @@ msgstr "+ پروژه جدید"
 msgid "dashboard.new-project-prefix"
 msgstr "پروژه جدید"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "اشتراک خبرنامه"
-
 #: src/app/main/ui/dashboard/search.cljs
 #, fuzzy
 msgid "dashboard.no-matches-for"
@@ -866,10 +862,6 @@ msgstr "حساب پشتیبانی در توییتر"
 msgid "generic.error"
 msgstr "خطایی رخ داده است"
 
-#, fuzzy
-msgid "handoff.attributes.typography.text-transform.titlecase"
-msgstr "مورد عنوان"
-
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
 msgstr "محو"
@@ -937,10 +929,6 @@ msgstr "عرض"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "سایه"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1232,9 +1220,6 @@ msgstr "مرکز کمک"
 msgid "labels.hide-resolved-comments"
 msgstr "پنهان کردن نظرات حل شده"
 
-msgid "labels.images"
-msgstr "تصاویر"
-
 msgid "labels.installed-fonts"
 msgstr "فونت‌های نصب‌شده"
 
@@ -1426,9 +1411,6 @@ msgstr "نمایش لیست نظرات"
 #, fuzzy
 msgid "labels.show-your-comments"
 msgstr "فقط نظرات خودتان را نشان دهید"
-
-msgid "labels.skip"
-msgstr "رد"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1982,10 +1964,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "کپی کردن لینک"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "لینک اشتراک‌گذاری در اینجا ظاهر می‌شود"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "هر کسی که لینک را داشته باشد دسترسی خواهد داشت"
 
@@ -2205,9 +2183,6 @@ msgstr "به‌روزرسانی"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "به‌روزرسانی‌ها"
-
-msgid "workspace.options.blur-options.background-blur"
-msgstr "پس‌زمینه"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"

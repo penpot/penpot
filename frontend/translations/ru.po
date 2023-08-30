@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-10 21:35+0000\n"
-"Last-Translator: Vin <k3kelm4vw@mozmail.com>\n"
-"Language-Team: Russian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ru/>\n"
+"PO-Revision-Date: 2023-06-19 11:49+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
+"Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ru/>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 4.16-dev\n"
+"X-Generator: Weblate 4.18.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -911,10 +911,6 @@ msgstr "Ширина"
 msgid "inspect.attributes.shadow"
 msgstr "Тень"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "Р"
-
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
 msgstr "Обводка"
@@ -1782,15 +1778,6 @@ msgstr "Создать команду и пригласить позже"
 msgid "onboarding.choice.team-up.invite-members-submit"
 msgstr "Создать команду и отправить приглашения"
 
-msgid "onboarding.contrib.link"
-msgstr "проект на Github"
-
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"Все участники команды работают одновременно в режиме реального времени и "
-"централизованно комментируют, отправляют идеи и отзывы напрямую в проект "
-"дизайна."
-
 msgid "onboarding.team-modal.create-team"
 msgstr "Создать команду"
 
@@ -2041,10 +2028,6 @@ msgstr "Интерактив (%s)"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
 msgstr "Скопировать ссылку"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Любой, у кого есть ссылка будет иметь доступ"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
@@ -2366,9 +2349,6 @@ msgstr "Обновить"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "ОБНОВЛЕНИЯ"
-
-msgid "workspace.library.store"
-msgstr "Сохраненные библиотеки"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
@@ -2962,3 +2942,18 @@ msgstr "Обновить"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Нажмите для замыкания контура"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Ваш файл успешно удален"
+msgstr[1] "Ваши файлы успешно удалены"
+
+msgid "dashboard.webhooks.active"
+msgstr "Активен"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "Тип контента"
+
+msgid "dashboard.webhooks.create"
+msgstr "Создать вебхук"

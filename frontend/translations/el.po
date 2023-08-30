@@ -444,10 +444,6 @@ msgid "errors.wrong-old-password"
 msgstr "Ο παλιός κωδικός πρόσβασης είναι λάθος "
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Νιώθετε σαν να μιλάτε; Συνομιλήστε μαζί μας στο Gitter"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Περιγραφή"
 
@@ -537,10 +533,6 @@ msgstr "Πλάτος"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Σκιά "
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -753,9 +745,6 @@ msgstr "Πίσω"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "Απόκρυψη επιλυμένων σχολίων"
-
-msgid "labels.images"
-msgstr "εικόνες"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
@@ -1162,10 +1151,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Αντιγραφή  link"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "Μοιραστείτε το link θα εμφανιστεί εδώ"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Όποιος έχει τον link θα έχει πρόσβαση"
 
@@ -1453,14 +1438,8 @@ msgstr "Ενημέρωση"
 msgid "workspace.libraries.updates"
 msgstr "ΕΝΗΜΕΡΩΣΕΙΣ"
 
-msgid "workspace.library.libraries"
-msgstr "βιβλιοθήκες"
-
 msgid "workspace.library.store"
 msgstr "Προκαθορισμένες"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Στρώμα"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
@@ -1810,10 +1789,6 @@ msgstr "Για ευθυγράμμιση προς τα δεξιά (%s)"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
 msgstr "Ευθυγραμμίστε την κορυφή"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.options.text-options.google"
-msgstr "Google"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.grow-auto-height"

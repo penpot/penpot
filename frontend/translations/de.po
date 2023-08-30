@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-08 14:36+0000\n"
+"PO-Revision-Date: 2023-08-19 11:55+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.16-dev\n"
+"X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -444,9 +444,6 @@ msgid "dashboard.import.import-error"
 msgstr ""
 "Beim Importieren der Datei ist ein Fehler aufgetreten. Die Datei wurde "
 "nicht importiert."
-
-msgid "dashboard.import.import-message"
-msgstr "%s Dateien wurden erfolgreich importiert."
 
 msgid "dashboard.import.import-warning"
 msgstr "Einige Dateien enthielten ungültige Objekte, die entfernt wurden."
@@ -1182,7 +1179,7 @@ msgstr "Info"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
-msgstr "Tastenkürzel"
+msgstr "Tastaturkürzel"
 
 msgid "labels.accept"
 msgstr "Akzeptieren"
@@ -1776,6 +1773,30 @@ msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Datei löschen"
 msgstr[1] "Dateien löschen"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.hint"
+msgid_plural "modals.delete-shared-confirm.hint"
+msgstr[0] ""
+"Wenn Sie es löschen, werden diese Assets nicht mehr in anderen Dateien "
+"verfügbar sein. Die bereits verwendeten Assets, bleiben in dieser Datei "
+"erhalten (das Design wird dadurch nicht zerstört!)."
+msgstr[1] ""
+"Wenn Sie die Assets löschen, werden diese Assets nicht mehr in anderen "
+"Dateien verfügbar sein. Die bereits verwendeten Assets, bleiben in dieser "
+"Datei erhalten (das Design wird dadurch nicht zerstört!)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
+msgstr[0] ""
+"Wenn Sie es löschen, werden diese Assets nicht mehr in anderen Dateien "
+"verfügbar sein. Die bereits verwendeten Assets, bleiben in dieser Datei "
+"erhalten (das Design wird dadurch nicht zerstört!)."
+msgstr[1] ""
+"Wenn Sie die Assets löschen, werden diese Assets nicht mehr in anderen "
+"Dateien verfügbar sein. Die bereits verwendeten Assets, bleiben in dieser "
+"Datei erhalten (das Design wird dadurch nicht zerstört!)."
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
@@ -1928,6 +1949,31 @@ msgstr "Entfernen Sie “%s” als gemeinsam genutzte Bibliothek"
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.small-nudge"
 msgstr "Minimal"
+
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Wenn Sie die Veröffentlichung aufheben, sind diese Assets nicht mehr in "
+"anderen Dateien verfügbar. Bereits verwendete Assets bleiben in dieser Datei "
+"erhalten (das Design wird nicht beeinträchtigt!)."
+msgstr[1] ""
+"Wenn Sie die Veröffentlichung aufheben, sind diese Assets nicht mehr in "
+"anderen Dateien verfügbar. Bereits verwendete Assets bleiben in dieser Datei "
+"erhalten (das Design wird nicht beeinträchtigt!)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.activated.hint-many"
+msgstr[0] ""
+"Wenn Sie die Veröffentlichung aufheben, sind diese Assets nicht mehr in "
+"anderen Dateien verfügbar. Bereits verwendete Assets bleiben in diesen "
+"Dateien erhalten (das Design wird nicht beeinträchtigt!)."
+msgstr[1] ""
+"Wenn Sie die Veröffentlichung aufheben, sind diese Assets nicht mehr in "
+"anderen Dateien verfügbar. Bereits verwendete Assets bleiben in diesen "
+"Dateien erhalten (das Design wird nicht beeinträchtigt!)."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2411,7 +2457,7 @@ msgid "shortcuts.next-frame"
 msgstr "Nächstes Board"
 
 msgid "shortcuts.not-found"
-msgstr "Kein Tastenkürzel gefunden"
+msgstr "Kein Tastaturkürzel gefunden"
 
 msgid "shortcuts.opacity-0"
 msgstr "Deckkraft auf 100% setzen"
@@ -2480,7 +2526,7 @@ msgid "shortcuts.reset-zoom"
 msgstr "Zoom zurücksetzen"
 
 msgid "shortcuts.search-placeholder"
-msgstr "Tastenkürzel suchen"
+msgstr "Tastaturkürzel suchen"
 
 msgid "shortcuts.select-all"
 msgstr "Alles auswählen"
@@ -2492,7 +2538,7 @@ msgid "shortcuts.show-pixel-grid"
 msgstr "Pixelraster ein-/ausblenden"
 
 msgid "shortcuts.show-shortcuts"
-msgstr "Tastenkürzel ein-/ausblenden"
+msgstr "Tastaturkürzel ein-/ausblenden"
 
 msgid "shortcuts.snap-nodes"
 msgstr "An den Punkten ausrichten"
@@ -2514,7 +2560,7 @@ msgstr "Miniaturansichten festlegen"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs
 msgid "shortcuts.title"
-msgstr "Tastatürkürzel"
+msgstr "Tastaturkürzel"
 
 msgid "shortcuts.toggle-alignment"
 msgstr "Dynamische Ausrichtung umschalten"
@@ -3713,7 +3759,7 @@ msgstr "Spalte"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.column-reverse"
-msgstr "Spalte-umgekehrt"
+msgstr "Spalte umkehren"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
@@ -3721,7 +3767,7 @@ msgstr "Reihe"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row-reverse"
-msgstr "Reihe-umgekehrt"
+msgstr "Reihe umkehren"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
@@ -3804,7 +3850,7 @@ msgstr "Alle Ecken"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.single-corners"
-msgstr "Individuelle Ecken"
+msgstr "Ecken einzeln anpassen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius-top-left"
@@ -4428,7 +4474,7 @@ msgstr "Rechteck (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.shortcuts"
-msgstr "Tastenkürzel (%s)"
+msgstr "Tastaturkürzel (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
@@ -4567,3 +4613,106 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Ihre Datei wurde erfolgreich dupliziert"
+msgstr[1] "Ihre Dateien wurden erfolgreich dupliziert"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Strichstärke"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Veröffentlichung aufheben"
+msgstr[1] "Veröffentlichung aufheben"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Schriftgröße erhöhen"
+
+msgid "shortcut-subsection.text-editor"
+msgstr "Texte"
+
+msgid "shortcuts.align-center"
+msgstr "Zentrieren"
+
+msgid "shortcuts.font-size-dec"
+msgstr "Schriftgröße verkleinern"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Ihre Datei wurde erfolgreich gelöscht"
+msgstr[1] "Ihre Dateien wurden erfolgreich gelöscht"
+
+msgid "workspace.header.menu.undo"
+msgstr "Rückgängig"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Proportionale Skalierung deaktivieren"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Proportionale Skalierung aktivieren"
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Einige E-Mails stammen von aktuellen Teammitgliedern. Ihre Einladungen "
+"werden nicht versendet."
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Buchstabenabstand erhöhen"
+
+msgid "shortcuts.select-prev"
+msgstr "Vorherige Ebene auswählen"
+
+msgid "shortcuts.select-next"
+msgstr "Nächste Ebene auswählen"
+
+msgid "shortcuts.align-justify"
+msgstr "Blocksatz"
+
+msgid "shortcuts.bold"
+msgstr "Umschalten auf Fettdruck"
+
+msgid "shortcuts.italic"
+msgstr "Umschalten auf Kursivdruck"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Buchstabenabstand verringern"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Zeilenhöhe erhöhen"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Zeilenhöhe verringern"
+
+msgid "workspace.header.menu.redo"
+msgstr "Wiederherstellen"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Wir haben ein mögliches Problem in Ihren Schriften festgestellt, das mit den "
+"vertikalen Metriken für verschiedene Betriebssysteme zusammenhängt. Um dies "
+"zu überprüfen, können Sie Online-Dienste wie [diesen](https://vertical-"
+"metrics.netlify.app/) verwenden. Außerdem empfehlen wir die Verwendung von "
+"[Transfonter](https://transfonter.org/), um Webfonts zu generieren und "
+"Fehler zu beheben. "
+
+msgid "shortcuts.line-through"
+msgstr "Durchgestrichen"
+
+msgid "shortcuts.underline"
+msgstr "Unterstrichen"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Ansicht mit Zoomwerkzeug verkleinern"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Ansicht mit Zoomwerkzeug vergrößern"
+
+msgid "workspace.assets.duplicate-main"
+msgstr "Hauptkomponente duplizieren"

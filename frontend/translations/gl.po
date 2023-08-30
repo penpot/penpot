@@ -517,10 +517,6 @@ msgstr "+ Novo proxecto"
 msgid "dashboard.new-project-prefix"
 msgstr "Novo proxecto"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Subscrición ao boletín"
-
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "Non se atoparon resultados para “%s“"
@@ -774,10 +770,6 @@ msgid "inspect.attributes.shadow"
 msgstr "Sombra"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
 msgstr "S"
 
@@ -943,9 +935,6 @@ msgstr "Estilos"
 msgid "labels.fonts"
 msgstr "Fontes"
 
-msgid "labels.images"
-msgstr "Imaxes"
-
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.invitations"
@@ -966,9 +955,6 @@ msgstr "Integrante"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "Integrantes"
-
-msgid "labels.next"
-msgstr "Seguinte"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
@@ -1032,9 +1018,6 @@ msgstr "Configuración"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
 msgstr "Bibliotecas"
-
-msgid "labels.start"
-msgstr "Comezar"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1333,9 +1316,6 @@ msgstr "Actualizar"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "Actualizacións"
-
-msgid "workspace.options.blur-options.background-blur"
-msgstr "Fondo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"

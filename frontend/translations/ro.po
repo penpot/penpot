@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-22 18:37+0000\n"
-"Last-Translator: Alex Howell <alextec70@outlook.com>\n"
-"Language-Team: Romanian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ro/>\n"
+"PO-Revision-Date: 2023-07-18 13:02+0000\n"
+"Last-Translator: AlexTECPlayz <alextec70@outlook.com>\n"
+"Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ro/>\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
 "20)) ? 1 : 2;\n"
-"X-Generator: Weblate 4.16-dev\n"
+"X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -438,9 +438,6 @@ msgstr "Hopa! Nu am putut importa acest fișier"
 
 msgid "dashboard.import.import-error"
 msgstr "A apărut o problemă la importul fișierului. Fișierul nu a fost importat."
-
-msgid "dashboard.import.import-message"
-msgstr "%s fișiere au fost importate cu succes."
 
 msgid "dashboard.import.import-warning"
 msgstr "Unele fișiere conțineau obiecte nevalide care au fost eliminate."
@@ -1720,6 +1717,38 @@ msgstr[1] "Șterge fișiere"
 msgstr[2] "Șterge fișierele"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.hint"
+msgid_plural "modals.delete-shared-confirm.activated.hint"
+msgstr[0] ""
+"Dacă îl ștergeți, acele elemente nu vor mai fi disponibile din alte fișiere. "
+"Elementele care au fost deja utilizate vor rămâne în acest fișier (niciun "
+"design nu va fi stricat!)."
+msgstr[1] ""
+"Dacă le ștergeți, acele elemente nu vor mai fi disponibile din alte fișiere. "
+"Elementele care au fost deja utilizate vor rămâne în acest fișier (niciun "
+"design nu va fi stricat!)."
+msgstr[2] ""
+"Dacă le ștergeți, acele elemente nu vor mai fi disponibile din alte fișiere. "
+"Elementele care au fost deja utilizate vor rămâne în acest fișier (niciun "
+"design nu va fi stricat!)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.hint-many"
+msgid_plural "modals.delete-shared-confirm.activated.hint-many"
+msgstr[0] ""
+"Dacă îl ștergeți, acele elemente nu vor mai fi disponibile din alte fișiere. "
+"Elementele care au fost deja utilizate vor rămâne în acest fișier (niciun "
+"design nu va fi stricat!)."
+msgstr[1] ""
+"Dacă le ștergeți, acele elemente nu vor mai fi disponibile din alte fișiere. "
+"Elementele care au fost deja utilizate vor rămâne în acest fișier (niciun "
+"design nu va fi stricat!)."
+msgstr[2] ""
+"Dacă le ștergeți, acele elemente nu vor mai fi disponibile din alte fișiere. "
+"Elementele care au fost deja utilizate vor rămâne în acest fișier (niciun "
+"design nu va fi stricat!)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Ești sigur că vrei sa ștergi acest fișier?"
@@ -1867,6 +1896,38 @@ msgstr "Șterge “%s” din Colecții Distribuite"
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.small-nudge"
 msgstr "Înghiont mic"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Dacă anulați publicarea, acele elemente nu vor mai fi valabile din alte "
+"fișiere. Elementele care au fost deja utilizate vor rămâne în acest fișier ("
+"niciun proiect nu va fi distrus!)."
+msgstr[1] ""
+"Dacă anulați publicarea lor, acele elemente nu vor mai fi valabile din alte "
+"fișiere. Elementele care au fost deja utilizate vor rămâne în acest fișier ("
+"niciun proiect nu va fi distrus!)."
+msgstr[2] ""
+"Dacă anulați publicarea lor, acele elemente nu vor mai fi valabile din alte "
+"fișiere. Elementele care au fost deja utilizate vor rămâne în acest fișier ("
+"niciun proiect nu va fi distrus!)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.activated.hint-many"
+msgstr[0] ""
+"Dacă anulați publicarea, acele elemente nu vor mai fi valabile din alte "
+"fișiere. Elementele care au fost deja utilizate vor rămâne în acest fișier ("
+"niciun proiect nu va fi distrus!)."
+msgstr[1] ""
+"Dacă anulați publicarea lor, acele elemente nu vor mai fi valabile din alte "
+"fișiere. Elementele care au fost deja utilizate vor rămâne în acest fișier ("
+"niciun proiect nu va fi distrus!)."
+msgstr[2] ""
+"Dacă anulați publicarea lor, acele elemente nu vor mai fi valabile din alte "
+"fișiere. Elementele care au fost deja utilizate vor rămâne în acest fișier ("
+"niciun proiect nu va fi distrus!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -2043,9 +2104,6 @@ msgstr "Politica de Confidențialitate."
 
 msgid "onboarding.newsletter.title"
 msgstr "Vrei să primești știri Penpot?"
-
-msgid "onboarding.slide.1.title"
-msgstr "Dați viață designurilor dvs. prin interacțiuni"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Creați o echipă"
@@ -2466,7 +2524,7 @@ msgid "shortcuts.toggle-layers"
 msgstr "Comutați straturile"
 
 msgid "shortcuts.toggle-layout-flex"
-msgstr "Adăugați/eliminați layout flex"
+msgstr "Adăugare/eliminare aspect flexibil"
 
 msgid "shortcuts.toggle-lock"
 msgstr "Blocați selecția"
@@ -3594,10 +3652,6 @@ msgstr "Înălțime minimă"
 msgid "workspace.options.layout-item.title.layout-item-min-w"
 msgstr "Lățime minimă"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-h"
-msgstr "Înălțime minimă"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Jos"
@@ -3605,14 +3659,6 @@ msgstr "Jos"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.column"
 msgstr "Coloană"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Coloană inversă"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-row"
-msgstr "Rând invers"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
@@ -3698,7 +3744,7 @@ msgstr "Toate colţurile"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.single-corners"
-msgstr "Colțuri individuale"
+msgstr "Colțuri independente"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius-top-left"
@@ -4036,7 +4082,7 @@ msgstr "Actualizare %s..."
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
-msgstr "Adăugați layout flex"
+msgstr "Adăugați aspect flexibil"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
@@ -4150,7 +4196,7 @@ msgstr "Drum"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-flex"
-msgstr "Îndepărtați layout flex"
+msgstr "Îndepărtați aspect flexibil"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
@@ -4362,7 +4408,7 @@ msgid "workspace.undo.entry.multiple.shape"
 msgstr "forme"
 
 msgid "workspace.undo.entry.multiple.text"
-msgstr "text"
+msgstr "texte"
 
 msgid "workspace.undo.entry.multiple.typography"
 msgstr "obiecte tipografice"
@@ -4438,3 +4484,124 @@ msgstr "Actualizează"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click pentru a închide calea"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Fișierul dumneavoastră a fost șters cu succes"
+msgstr[1] "Fișierele dumneavoastră au fost șterse cu succes"
+msgstr[2] "Fișierele dumneavoastră au fost șterse cu succes"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Am detectat o posibilă problemă în fonturile dvs. în legătură cu metricile "
+"verticale pentru diferite sisteme operaționale. Pentru a o verifica, puteți "
+"utiliza servicii de măsurare verticală a fonturilor, cum ar fi [acesta](https"
+"://vertical-metrics.netlify.app/). În plus, vă recomandăm să utilizați "
+"[Transfonter](https://transfonter.org/) pentru a genera fonturi web și a "
+"remedia erorile. "
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Greutate Font"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Fișierul dumneavoastră a fost duplicat cu succes"
+msgstr[1] "Fișierele dumneavoastră au fost duplicate cu succes"
+msgstr[2] "Fișierele dumneavoastră au fost duplicate cu succes"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Anulați publicarea"
+msgstr[1] "Anulați publicarea"
+msgstr[2] "Anulați publicarea"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "Exportați 1 element"
+msgstr[1] "Exportați %s elemente"
+msgstr[2] "Exportați %s elemente"
+
+msgid "shortcut-subsection.text-editor"
+msgstr "Texte"
+
+msgid "shortcuts.align-justify"
+msgstr "Aliniere justificată"
+
+msgid "workspace.assets.duplicate-main"
+msgstr "Duplicare principală"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Creștere înălțime linie"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Reducere obiectiv de zoom"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Activare scară proporțională"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Dezactivare scară proporțională"
+
+msgid "workspace.header.menu.undo"
+msgstr "Anulare"
+
+msgid "workspace.header.menu.redo"
+msgstr "Refacere"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "Rând inversat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "Coloană inversată"
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Unele e-mailuri provin de la membri actuali ai echipei. Invitațiile lor nu "
+"vor fi trimise."
+
+msgid "shortcuts.align-center"
+msgstr "Aliniere la centru"
+
+msgid "shortcuts.bold"
+msgstr "Comutare bold"
+
+msgid "shortcuts.font-size-dec"
+msgstr "Reducere dimensiune font"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Creștere dimensiune font"
+
+msgid "shortcuts.italic"
+msgstr "Comutare cursiv"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Reducere spațiere litere"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Creștere spațiere litere"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Reducere înălțime linie"
+
+msgid "shortcuts.line-through"
+msgstr "Comutare tăiere"
+
+msgid "shortcuts.select-next"
+msgstr "Selectare strat următor"
+
+msgid "shortcuts.select-prev"
+msgstr "Selectare strat anterior"
+
+msgid "shortcuts.underline"
+msgstr "Comutare subliniere"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Creștere obiectiv de zoom"

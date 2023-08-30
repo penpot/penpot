@@ -517,10 +517,6 @@ msgstr "+ Novo projeto"
 msgid "dashboard.new-project-prefix"
 msgstr "Novo Projeto"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Subscrição de Newsletter"
-
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "Não há resultados para \"%s\""
@@ -822,10 +818,6 @@ msgid "errors.wrong-old-password"
 msgstr "Palavra-passe antiga está incorreta"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Sentes vontade de falar? Conversa connosco no Gitter"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Descrição"
 
@@ -941,10 +933,6 @@ msgstr "Largura"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Sombra"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1242,9 +1230,6 @@ msgstr "Centro de Ajuda"
 msgid "labels.hide-resolved-comments"
 msgstr "Ocultar comentários resolvidos"
 
-msgid "labels.images"
-msgstr "Imagens"
-
 msgid "labels.installed-fonts"
 msgstr "Fontes instaladas"
 
@@ -1435,9 +1420,6 @@ msgstr "Mostrar lista de comentários"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Mostrar apenas os teus comentários"
-
-msgid "labels.skip"
-msgstr "Saltar"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1918,14 +1900,8 @@ msgstr "Criar equipa e enviar convites"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Convidar com a função:"
 
-msgid "onboarding.contrib.alt"
-msgstr "Código aberto"
-
 msgid "onboarding.contrib.desc2.1"
 msgstr "Podes aceder o"
-
-msgid "onboarding.contrib.link"
-msgstr "projeto no GitHub"
 
 msgid "onboarding.newsletter.accept"
 msgstr "Sim, subscreve"
@@ -1941,30 +1917,14 @@ msgstr "Política de Privacidade."
 msgid "onboarding.newsletter.title"
 msgstr "Queres receber as novidades do Penpot?"
 
-msgid "onboarding.slide.0.desc1"
-msgstr "Cria interfaces maravilhosas em colaboração com todos os membros da equipa."
-
 msgid "onboarding.slide.0.title"
 msgstr "Bibliotecas de design, estilos e componentes"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "Cria interações ricas para simular o comportamento do produto."
 
 msgid "onboarding.slide.1.title"
 msgstr "Dá vida aos teus designs com interações"
 
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"Todos os membros da equipa a colaborar em tempo real, com comentários, "
-"ideias e feedback centralizados diretamente nos designs."
-
 msgid "onboarding.slide.3.alt"
 msgstr "Inspect e low code"
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"Recebe e fornece especificações de código como markup (SVG, HTML) ou "
-"estilos (CSS, Less, Stylus...)."
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Cria uma equipa"
@@ -2523,10 +2483,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Copiar link"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "Links partilhados aparecerão aqui"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Qualquer pessoa com o link terá acesso"
 
@@ -2961,18 +2917,12 @@ msgstr "Atualizar"
 msgid "workspace.libraries.updates"
 msgstr "ATUALIZAÇÕES"
 
-msgid "workspace.library.libraries"
-msgstr "Bibliotecas"
-
 msgid "workspace.library.store"
 msgstr "Bibliotecas de lojas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
 msgstr "Clica no botão + para adicionar interações."
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Camada"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
@@ -3512,10 +3462,6 @@ msgstr "Largura mínima"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Abaixo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
-msgstr "Linha"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.top"

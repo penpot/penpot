@@ -522,10 +522,6 @@ msgstr "+ Yeni Proje"
 msgid "dashboard.new-project-prefix"
 msgstr "Yeni Proje"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Bülten aboneliği"
-
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "\"%s\" için sonuç bulunamadı"
@@ -911,10 +907,6 @@ msgid "errors.wrong-old-password"
 msgstr "Eski parola yanlış"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Sohbet etmek ister misin? Glitter'da bizimle sohbet edebilirsin"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Açıklama"
 
@@ -1030,10 +1022,6 @@ msgstr "Genişlik"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Gölge"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1359,9 +1347,6 @@ msgstr "Yardım Merkezi"
 msgid "labels.hide-resolved-comments"
 msgstr "Çözülmüş yorumları gizle"
 
-msgid "labels.images"
-msgstr "Görseller"
-
 msgid "labels.inactive"
 msgstr "Etkin değil"
 
@@ -1568,9 +1553,6 @@ msgstr "Yorum listesini göster"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Yalnızca kendi yorumlarımı göster"
-
-msgid "labels.skip"
-msgstr "Atla"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -2106,14 +2088,8 @@ msgstr "Takım oluştur ve davet gönder"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Rol ile davet et:"
 
-msgid "onboarding.contrib.alt"
-msgstr "Açık Kaynak"
-
 msgid "onboarding.contrib.desc2.1"
 msgstr "Projeye"
-
-msgid "onboarding.contrib.link"
-msgstr "github'da erişebilir"
 
 msgid "onboarding.newsletter.accept"
 msgstr "Evet, abone ol"
@@ -2127,30 +2103,14 @@ msgstr "Gizlilik Politikası."
 msgid "onboarding.newsletter.title"
 msgstr "Penpot haberlerini almak ister misiniz?"
 
-msgid "onboarding.slide.0.desc1"
-msgstr "Tüm takım üyeleriyle iş birliği içinde güzel kullanıcı arayüzleri oluşturun."
-
 msgid "onboarding.slide.0.title"
 msgstr "Kütüphaneler, biçimler ve bileşenler tasarlayın"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "Ürün davranışını taklit etmek için zengin etkileşimler oluşturun."
 
 msgid "onboarding.slide.1.title"
 msgstr "Etkileşimlerle tasarımlarınıza hayat verin"
 
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"Tüm takım üyeleri tasarımlar üzerinde gerçek zamanlı tasarım, çok oyunculu "
-"ve merkezi yorumlar, fikirler ve geri bildirimler ile aynı anda çalışır."
-
 msgid "onboarding.slide.3.alt"
 msgstr "Teslim ve kod özellikleri"
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"İşaretleme (SVG, HTML) veya biçimler (CSS, Less, Stylus…) gibi kod "
-"özellikleri alın ve sağlayın."
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Bir takım oluştur"
@@ -2175,9 +2135,6 @@ msgstr "Sınırsız üye"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "%100 özgür!"
 
-msgid "onboarding.team.create.title"
-msgstr "Takım oluştur"
-
 msgid "onboarding.team.start.title"
 msgstr "Tasarlamaya başla"
 
@@ -2189,9 +2146,6 @@ msgstr "Tasarlamaya başla"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.title"
-msgstr "Penpot'a Hoş Geldiniz"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
@@ -2735,10 +2689,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Bağlantıyı kopyala"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "Paylaşım adresi burada görünecek"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Bağlantıya sahip herkes erişebilecek"
 
@@ -3193,18 +3143,12 @@ msgstr "Güncelle"
 msgid "workspace.libraries.updates"
 msgstr "GÜNCELLEMELER"
 
-msgid "workspace.library.libraries"
-msgstr "Kütüphaneler"
-
 msgid "workspace.library.store"
 msgstr "Mağaza kütüphaneleri"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
 msgstr "Etkileşimler eklemek için + düğmesine tıklayın."
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Katman"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
@@ -3741,10 +3685,6 @@ msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "Asgari Genişlik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-w"
-msgstr "Asgari Genişlik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-item-max-h"
 msgstr "Azami yükseklik"
 
@@ -3758,10 +3698,6 @@ msgstr "Asgari yükseklik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-item-min-w"
-msgstr "Asgari genişlik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-w"
 msgstr "Asgari genişlik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs

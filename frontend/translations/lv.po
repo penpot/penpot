@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-04-06 10:35+0000\n"
+"PO-Revision-Date: 2023-06-03 00:50+0000\n"
 "Last-Translator: \"Ņikita K.\" <nikita.kozlovs@gmail.com>\n"
-"Language-Team: Latvian "
-"<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
+"Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
+"lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
-"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 4.17-dev\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
+"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 4.18-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -436,9 +436,6 @@ msgstr "Oopss! Šo failu nevarēja importēt"
 
 msgid "dashboard.import.import-error"
 msgstr "Importējot failu, radās problēma. Fails netika importēts."
-
-msgid "dashboard.import.import-message"
-msgstr "%s faili tika veiksmīgi importēti."
 
 msgid "dashboard.import.import-warning"
 msgstr "Dažos failos bija nederīgi objekti, kuri tika noņemti."
@@ -1726,6 +1723,28 @@ msgstr[1] "Dzēst failu"
 msgstr[2] "Dzēst failus"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.hint"
+msgid_plural "modals.delete-shared-confirm.activated.hint"
+msgstr[0] "Nav līdzekļu dzēšanai."
+msgstr[1] ""
+"Ja šo izdzēsīsit, šie līdzekļi vairs nebūs pieejami no citiem failiem. Jau "
+"izmantotie līdzekļi paliks šajā failā (noformējums netiks grozīts!)."
+msgstr[2] ""
+"Ja šo izdzēsīsit, šie līdzekļi vairs nebūs pieejami no citiem failiem. Jau "
+"izmantotie līdzekļi paliks šajā failā (noformējums netiks grozīts!)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.hint-many"
+msgid_plural "modals.delete-shared-confirm.activated.hint-many"
+msgstr[0] "Nav līdzekļu dzēšanai."
+msgstr[1] ""
+"Ja šo izdzēsīsit, šie līdzekļi vairs nebūs pieejami no citiem failiem. Jau "
+"izmantotie līdzekļi paliks šajā failā (noformējums netiks grozīts!)."
+msgstr[2] ""
+"Ja šo izdzēsīsit, šie līdzekļi vairs nebūs pieejami no citiem failiem. Jau "
+"izmantotie līdzekļi paliks šajā failā (noformējums netiks grozīts!)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Nav failu dzēšanai?"
@@ -1884,6 +1903,32 @@ msgid_plural "modals.unpublish-shared-confirm.accept"
 msgstr[0] "Nav atlases"
 msgstr[1] "Atcelt publicēšanu"
 msgstr[2] "Atcelt publicēšanu"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.unpublish-shared-confirm.activated.hint"
+msgstr[0] "Nav atlasīto publikāciju."
+msgstr[1] ""
+"Ja beigsiet publikāciju, šie līdzekļi vairs nebūs pieejami no citiem "
+"failiem. Jau izmantotie līdzekļi paliks šajā failā (noformējums netiks "
+"grozīts!)."
+msgstr[2] ""
+"Ja beigsiet publikāciju, šie līdzekļi vairs nebūs pieejami no citiem "
+"failiem. Jau izmantotie līdzekļi paliks šajā failā (noformējums netiks "
+"grozīts!)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.activated.hint-many"
+msgstr[0] "Nav atlasīto publikāciju."
+msgstr[1] ""
+"Ja beigsiet publikāciju, šie līdzekļi vairs nebūs pieejami no citiem "
+"failiem. Jau izmantotie līdzekļi paliks šajā failā (noformējums netiks "
+"grozīts!)."
+msgstr[2] ""
+"Ja beigsiet publikāciju, šie līdzekļi vairs nebūs pieejami no citiem "
+"failiem. Jau izmantotie līdzekļi paliks šajā failā (noformējums netiks "
+"grozīts!)."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -2479,7 +2524,7 @@ msgid "shortcuts.toggle-layers"
 msgstr "Pārslēgt slāņus"
 
 msgid "shortcuts.toggle-layout-flex"
-msgstr "Pievienot/noņemt izkārtojuma elastīgumu"
+msgstr "Pievienot/noņemt elastīgo izkārtojumu"
 
 msgid "shortcuts.toggle-lock"
 msgstr "Bloķēt atlasi"
@@ -3625,14 +3670,6 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Kolona"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Apvērst kolonu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-row"
-msgstr "Apvērst rindu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
 msgstr "Rinda"
 
@@ -3862,7 +3899,7 @@ msgstr "Vilkuma biezums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.center"
-msgstr "CEntrs"
+msgstr "Centrs"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.dashed"
@@ -3906,7 +3943,7 @@ msgstr "Līdzināt pa kreisi (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Līdzināt pa vidu"
+msgstr "Līdzināt pa vidu (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-align-right"
@@ -3954,7 +3991,7 @@ msgstr "Nav"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "Pārsvītrots"
+msgstr "Pārsvītrots (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -3974,7 +4011,7 @@ msgstr "Virsraksta stils"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "Pasvītrojums"
+msgstr "Pasvītrojums (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"
@@ -4053,7 +4090,7 @@ msgstr "Notiek %s atjaunināšana..."
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
-msgstr "Pievienot izkārtojuma saliekšanu"
+msgstr "Pievienot elastīgo izkārtojumu"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
@@ -4167,7 +4204,7 @@ msgstr "Ceļš"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-flex"
-msgstr "Noņemt izkārtojuma saliekšanu"
+msgstr "Noņemt elastīgo izkārtojumu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
@@ -4455,3 +4492,51 @@ msgstr "Atjaunināt"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Noklikšķiniet, lai aizvērtu ceļu"
+
+msgid "shortcuts.align-center"
+msgstr "Centrēt"
+
+msgid "shortcuts.align-justify"
+msgstr "Līdzināt taisnoti"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Samazināt burtstarpu"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Palielināt burtstarpu"
+
+msgid "shortcuts.italic"
+msgstr "Pārslēgt slīprakstu"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Fonta Treknums"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Esam konstatējuši iespējamu problēmu Jūsu fontos, kas saistīta ar vertikālām "
+"metrikam dažādām operētājsistēmām. Lai to pārbaudītu, varat izmantot tādus "
+"fontu vertikālās metrikas pakalpojumus kā [šis] (https://vertical-metrics."
+"netlify.app/). Turklāt ieteicams izmantot [Transfonter] (https://transfonter."
+"org/), lai ģenerētu tīmekļa fontus un labotu to kļūdas. "
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Daži e-pasta ziņojumi ir no pašreizējiem grupas dalībniekiem. Ielūgumi "
+"viņiem netiks nosūtīti."
+
+msgid "shortcut-subsection.text-editor"
+msgstr "Teksti"
+
+msgid "shortcuts.bold"
+msgstr "Pārslēgt treknrakstu"
+
+msgid "shortcuts.underline"
+msgstr "Pārslēgt pasvītrojumu"
+
+msgid "shortcuts.font-size-dec"
+msgstr "Samazināt fonta izmēru"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Palielināt fonta izmēru"

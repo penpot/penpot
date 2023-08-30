@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-01-24 14:27+0000\n"
+"PO-Revision-Date: 2023-07-01 12:52+0000\n"
 "Last-Translator: Mikel Larreategi <mlarreategi@codesyntax.com>\n"
-"Language-Team: Basque "
-"<https://hosted.weblate.org/projects/penpot/frontend/eu/>\n"
+"Language-Team: Basque <https://hosted.weblate.org/projects/penpot/frontend/"
+"eu/>\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.16-dev\n"
+"X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -77,11 +77,11 @@ msgstr "Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "Sartu LDAP erabiliz"
+msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "OpenID Connect"
+msgstr "OpenID"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -231,7 +231,7 @@ msgstr "Taldearen kudeaketa"
 msgid "dasboard.team-hero.text"
 msgstr ""
 "Penpot taldeentzat sortuta dago. Gonbidatu beste pertsona batzuk proiektu "
-"eta fitxategietan batera lan egiteko."
+"eta fitxategietan batera lan egiteko"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.title"
@@ -306,8 +306,8 @@ msgstr "%s fitxategi bizkoiztu"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Oh ez! Oraindik ez duzu fitxategirik! Txantiloi batekin proba egin nahi "
-"baduzu joan [Liburutegi eta "
-"txantiloiak](https://penpot.app/libraries-templates.html) atalera"
+"baduzu joan [Liburutegi eta txantiloiak](https://penpot.app/libraries-"
+"templates.html) atalera."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Deskargatu %s Penpot fitxategi (.penpot)"
@@ -412,12 +412,11 @@ msgstr ""
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"Zurak diren edo Penpoten erabiltzeko lizentzia duzun letra-tipoak bakarrik "
-"kargatu ditzakezu. Informazio gehiago lortzeko irakurri Edukiaren "
-"eskubideen atala: [Penpoten erabilpen "
-"baldintzak](https://penpot.app/terms.html). Letra-tipoen lizentzien "
-"inguruan irakurtzea ere interesgarria izan daiteke: [letra-tipoen "
-"lizentziak](https://www.typography.com/faq)."
+"Zureak diren edo Penpoten erabiltzeko lizentzia duzun letra-tipoak bakarrik "
+"kargatu ditzakezu. Informazio gehiago lortzeko irakurri Edukiaren eskubideen "
+"atala: [Penpoten erabilpen baldintzak](https://penpot.app/terms.html). Letra-"
+"tipoen lizentzien inguruan irakurtzea ere interesgarria izan daiteke: [letra-"
+"tipoen lizentziak](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -431,9 +430,6 @@ msgstr "Ezin izan dugu fitxategia inportatu"
 
 msgid "dashboard.import.import-error"
 msgstr "Errorea gertatu da fitxategia inportatzean. Ezin izan da inportatu."
-
-msgid "dashboard.import.import-message"
-msgstr "%s fitxategi ondo inportatu dira."
 
 msgid "dashboard.import.import-warning"
 msgstr "Fitxategi batzuk inportatu ez diren objektu akasdunak dituzte."
@@ -515,10 +511,6 @@ msgstr "+ Proiektu berria"
 msgid "dashboard.new-project-prefix"
 msgstr "Proiektu berria"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Buletineko harpidetza"
-
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "Ez da \"%s\" aurkitu"
@@ -594,17 +586,9 @@ msgstr "Aukeratu gaia"
 msgid "dashboard.show-all-files"
 msgstr "Ikusi fitxategi guztiak"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-delete-file"
-msgstr "Zure fitxategia ondo ezabatu da"
-
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
 msgstr "Zure proiektua ondo ezabatu da"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-duplicate-file"
-msgstr "Zure fitxategia ondo bikoiztu da"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
@@ -821,10 +805,6 @@ msgid "errors.wrong-old-password"
 msgstr "Aurreko pasahitza ez da zuzena"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Hitz egin nahi duzu? Zatuz gure komunitatearen Gitter txatera"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Deskribapena"
 
@@ -937,14 +917,6 @@ msgstr "Zabalera"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Itzala"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
@@ -1238,9 +1210,6 @@ msgstr "Laguntza zentroa"
 msgid "labels.hide-resolved-comments"
 msgstr "Ezkutatu ebatzitzako iruzkinak"
 
-msgid "labels.images"
-msgstr "Irudiak"
-
 msgid "labels.installed-fonts"
 msgstr "Instalatutako letra-tipoak"
 
@@ -1287,7 +1256,7 @@ msgstr "Pasahitz berria"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "Ez duzu iruzkinen inguruko jakinarazpenik"
+msgstr "Ez duzu iruzkinen inguruko jakinarazpenik."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
@@ -1429,9 +1398,6 @@ msgstr "Erakutsi iruzkinen zerrenda"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Erakutsi zure iruzkinak bakarrik"
-
-msgid "labels.skip"
-msgstr "Alde batera utzi"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1752,6 +1718,17 @@ msgstr "Gutxienekoa"
 msgid "modals.unpublish-shared-confirm.accept"
 msgstr "Argitaratzea atzera bota"
 
+msgid "modals.unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Argitaratzea atzera botatzen baduzu, elementu horiek ez dira beste "
+"fitxategietan agertuko. Elementuak erabiltzen ari bazara fitxategi honetan "
+"geldituko dira (diseinurik ez da apurtuko!)."
+msgstr[1] ""
+"Argitaratzea atzera botatzen baduzu, elementu horiek ez dira beste "
+"fitxategietan agertuko. Elementuak erabiltzen ari bazara fitxategi honetan "
+"geldituko dira (diseinurik ez da apurtuko!)."
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
@@ -1807,8 +1784,8 @@ msgstr "Profila ondo gorde da!"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "notifications.validation-email-sent"
 msgstr ""
-"Posta elektronikoa egiaztatzeko mezua ondo bidali da %s helbidera. "
-"Egiaztatu zure eposta."
+"Posta elektronikoa egiaztatzeko mezua ondo bidali da %s helbidera. Egiaztatu "
+"zure helbidea!"
 
 msgid "onboarding-v2.before-start.desc1"
 msgstr ""
@@ -1909,15 +1886,6 @@ msgstr "Sortu taldea eta bidali gonbidapenak"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Gonbidatu rol honekin:"
 
-msgid "onboarding.contrib.alt"
-msgstr "Kode Irekia"
-
-msgid "onboarding.contrib.desc2.1"
-msgstr "Hona sar zaitezke"
-
-msgid "onboarding.contrib.link"
-msgstr "proiektua githuben"
-
 msgid "onboarding.newsletter.accept"
 msgstr "Bai, harpidetu"
 
@@ -1931,31 +1899,6 @@ msgstr "Pribatutasun politika."
 
 msgid "onboarding.newsletter.title"
 msgstr "Penpoti buruzko albisteak jaso nahi dituzu?"
-
-msgid "onboarding.slide.0.desc1"
-msgstr "Sortu interfaze ederrak taldeko beste kideekin batera."
-
-msgid "onboarding.slide.0.title"
-msgstr "Diseinu-, estilo- eta osagai-liburutegiak"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "Sortu produktuaren portaera imitatzeko interakzio osoak."
-
-msgid "onboarding.slide.1.title"
-msgstr "Eman bizia zure diseinuen interakzioak erabiliz"
-
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"Taldekide guztiak fitxategi berberen gainean lanean, aldi berean eta "
-"diseinuen gainean iruzkinak egiteko aukerarekin."
-
-msgid "onboarding.slide.3.alt"
-msgstr "Kodearen ezarpenak"
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"Lortu eta eman kode (SVG, HTML) eta estilorako (CSS, Less, Stylus...) "
-"kodearen zehaztapenak."
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Sortu talde bat"
@@ -2517,14 +2460,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Kopiatu esteka"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "Partekatzeko esteka hemen agertuko da"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Esteka duen edonor sar daiteke"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Erakutsi interakzioak"
 
@@ -2955,18 +2890,9 @@ msgstr "Eguneratu"
 msgid "workspace.libraries.updates"
 msgstr "EGUNERAKETAK"
 
-msgid "workspace.library.libraries"
-msgstr "Liburutegiak"
-
-msgid "workspace.library.store"
-msgstr "Gorde liburutegiak"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
 msgstr "Sakatu + botoia interakzioak gehitzeko."
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Geruza"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
@@ -3603,7 +3529,7 @@ msgstr "Ertz guztiak"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.single-corners"
-msgstr "Ertz bakarrak"
+msgstr "Ertz independenteak"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius-top-left"
@@ -4308,3 +4234,357 @@ msgstr "Eguneratu"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Egin klik bidea ixteko"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "URLak ez du balidazioa gainditu."
+
+msgid "dashboard.webhooks.content-type"
+msgstr "Elementu mota"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Zure letra-tipoek sistema eragile desberdinetan metrika bertikalekin arazoak "
+"izan ditzaketela detektatu dugu. Zure letra-tipoa nola ikusten den zerbitzu "
+"[hau](https://vertical-metrics.netlify.app) erabiliz egiaztatu dezakezu. "
+"Gainera, weberako letra-tipoak sortzeko [Transfonter](https://transfonter."
+"org/) erabiltzea gomendatzen dugu. "
+
+msgid "dashboard.webhooks.active"
+msgstr "Aktibo"
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Webhookak beste webgune batzuei Penpoten zerbait gertatu dela jakinarazteko "
+"modu bat dira. Adierazitako URLtara POST eskaera bat bidaliko dugu."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Ezaugarria ezin da erabili: '%s'."
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "Espero ez zen egoera %s"
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr ""
+"Kuotaren maximora heldu zara: '%s'. Jarri kontaktuan laguntza zerbitzuarekin."
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Errorea gertatu da SSL balidazioan."
+
+msgid "errors.webhooks.unexpected"
+msgstr "Errore ezezaguna balidazioan"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Tamaina eta posizioa"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Letra tipoaren lodiera"
+
+msgid "inspect.empty.help"
+msgstr ""
+"Diseinua ikuskatzeari buruz gehiago jakin nahi baduzu zoaz Penpoten laguntza "
+"zentrora"
+
+msgid "inspect.empty.more-info"
+msgstr "Informazio gehiago ikuskatzeari buruz"
+
+msgid "inspect.empty.select"
+msgstr ""
+"Aukeratu forma bat, taula bat edo talde bat beren propietateak eta kodea "
+"ikuskatzeko"
+
+msgid "labels.view-only"
+msgstr "IKUSTEKO BAKARRIK"
+
+msgid "modals.create-webhook.url.label"
+msgstr "Informazioaren URLa"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint"
+msgid_plural "modals.delete-shared-confirm.hint"
+msgstr[0] ""
+"Ezabatzen baduzu, bere elementuak ezingo dira beste fitxategietan erabili. "
+"Jada erabiltzen ari zaren elementuak fitxategi honetan geldituko dira (ez da "
+"diseinurik apurtuko!)."
+msgstr[1] ""
+"Ezabatzen badituzu, bere elementuak ezingo dira beste fitxategietan erabili. "
+"Jada erabiltzen ari zaren elementuak fitxategi honetan geldituko dira (ez da "
+"diseinurik apurtuko!)."
+
+msgid "labels.active"
+msgstr "Aktibo"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
+msgstr[0] ""
+"Ezabatzen baduzu, bere elementuak ezingo dira beste fitxategietan erabili. "
+"Jada erabiltzen ari zaren elementuak fitxategi honetan geldituko dira (ez da "
+"diseinurik apurtuko!)."
+msgstr[1] ""
+"Ezabatzen badituzu, bere elementuak ezingo dira beste fitxategietan erabili. "
+"Jada erabiltzen ari zaren elementuak fitxategi honetan geldituko dira (ez da "
+"diseinurik apurtuko!)."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Kopiatu esteka"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Birkargatu fitxategia"
+
+msgid "labels.inactive"
+msgstr "Inaktibo"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.hint-many"
+msgstr[0] ""
+"Argitaratzea atzera botatzen baduzu, elementu horiek ezingo dira beste "
+"fitxategietan erabili. Jada erabiltzen diren elementuak fitxategi horietan "
+"geldituko dira (diseinurik ez da apurtuko!)."
+msgstr[1] ""
+"Argitaratzea atzera botatzen baduzu, elementu horiek ezingo dira beste "
+"fitxategietan erabili. Jada erabiltzen diren elementuak fitxategi horietan "
+"geldituko dira (diseinurik ez da apurtuko!)."
+
+msgid "shortcuts.align-center"
+msgstr "Erdian lerrokatu"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Gehitu/kendu flex diseinua"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message-many"
+msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
+msgstr[0] "Liburutegi honetako elementuak hemen ari dira erabiltzen:"
+msgstr[1] "Liburutegi hauetako elementuak hemen ari dira erabiltzen:"
+
+msgid "shortcut-subsection.text-editor"
+msgstr "Testuak"
+
+msgid "shortcuts.italic"
+msgstr "Aktibatu/desaktibatu etzana"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Hizkien arteko espazioa txikitu"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Hizkien arteko espazioa handitu"
+
+msgid "workspace.header.menu.redo"
+msgstr "Berregin"
+
+msgid "shortcuts.select-next"
+msgstr "Aukeratu hurrengo geruza"
+
+msgid "workspace.assets.duplicate-main"
+msgstr "Bikoiztu nagusia"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Zooma handitu"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Desaktibatu eskala proportzionala"
+
+msgid "workspace.header.menu.undo"
+msgstr "Desegin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Honekiko erlatiboa"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-hint"
+msgstr ""
+"Berriz saiatzeko, fitxategi hau berriz kargatu dezakezu. Hala ere arazoa "
+"izaten jarraitzen baduzu, begiratu zerrenda eta ezabatu apurtutako grafikoak."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text1"
+msgstr ""
+"Liburutegiko grafikoak osagaiak izango dira orain, horrek ahaltsuago egingo "
+"ditu."
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Ezabatu flex diseinua"
+
+msgid "labels.webhooks"
+msgstr "Webhookak"
+
+msgid "title.team-webhooks"
+msgstr "Webhookak - %s - Penpot"
+
+msgid "webhooks.last-delivery.success"
+msgstr "Azken bidalketa ondo joan da."
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "Webhook hau aktibatzen denean gertaeraren xehetasunak bidaliko dira"
+
+msgid "dashboard.webhooks.create"
+msgstr "Sortu webhooka"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhooka ondo sortu da."
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Sakatu \"Sortu webhooka\" botoia bat gehitzeko."
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Ez dago webhookik."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhooka ondo aldatu da."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Mesedez, idatzi eposta helbide zuzen bat"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"Badirudi '%s' ezaugarria aktibo duen fitxategi bat irekitzen ari zarela "
+"baina zure penpot frontendak ezin du hori egin edo ezaugarri hori "
+"desaktibatuta du."
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "%s fitxategi argitaratzeari utzi"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "Sortu webhooka"
+
+msgid "modals.create-webhook.title"
+msgstr "Sortu webhooka"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://example.com/postreceive"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.no-files-message"
+msgid_plural "modals.delete-shared-confirm.no-files-message"
+msgstr[0] ""
+"Fitxategi honetako liburutegiko elementuak ez dira inon erabiltzen. "
+"Fitxategiarekin batera ezabatuko dira."
+msgstr[1] ""
+"Fitxategi hautetako liburutegiko elementuak ez dira inon erabiltzen. "
+"Fitxategiarekin batera ezabatuko dira."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-many"
+msgid_plural "modals.delete-shared-confirm.scd-message-many"
+msgstr[0] "Fitxategi honen liburutegiko elementu batzuk hemen erabiltzen ari zara:"
+msgstr[1] ""
+"Fitxategi hauen liburutegietako elementu batzuk hemen erabiltzen ari zara:"
+
+msgid "modals.delete-webhook.accept"
+msgstr "Ezabatu webhooka"
+
+msgid "modals.delete-webhook.message"
+msgstr "Benetan webhook hau ezabatu egin nahi duzu?"
+
+msgid "modals.delete-webhook.title"
+msgstr "Webhooka ezabatzen"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Aldatu webhooka"
+
+msgid "modals.edit-webhook.title"
+msgstr "Aldatu webhooka"
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Eposta helbide batzuk jada taldekideenak dira. Ez da gonbidapenik bidaliko."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.no-files-message"
+msgstr[0] "Liburutegi honetako elementuak ez dira erabiltzen ari."
+msgstr[1] "Liburutegi hauetako elementuak ez dira erabiltzen ari."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Gonbidapenaren esteka kopiatu da"
+
+msgid "shortcuts.align-justify"
+msgstr "Justifikatuta lerrokatu"
+
+msgid "shortcuts.bold"
+msgstr "Aktibatu/desaktibatu beltza"
+
+msgid "shortcuts.font-size-dec"
+msgstr "Letra tipoaren tamaina txikitu"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Letra tipoaren tamaina handitu"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Lerroen arteko tartea txikitu"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Lerroen arteko tartea handitu"
+
+msgid "shortcuts.line-through"
+msgstr "Aktibatu/desaktibatu marratzea"
+
+msgid "shortcuts.open-inspect"
+msgstr "Ikuskagailura joan"
+
+msgid "shortcuts.select-prev"
+msgstr "Aukeratu aurreko geruza"
+
+msgid "shortcuts.underline"
+msgstr "Aktibatu/desaktibatu azpimarraketa"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Zooma txikitu"
+
+msgid "viewer.header.inspect-section"
+msgstr "Ikuskagailua (%s)"
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "Testuen estiloak"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Aktibatu eskala proportzionala"
+
+msgid "workspace.options.inspect"
+msgstr "Ikuskatu"
+
+msgid "workspace.options.interaction-auto"
+msgstr "automatikoa"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-msg"
+msgstr "Grafiko batzuk ezin izan dira eguneratu."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.progress"
+msgstr "Bihurtzen %s/%s"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text2"
+msgstr "Eguneraketa hau behin bakarrik gertatuko da."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.title"
+msgstr "Eguneratzen %s..."
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "Gehitu flex diseinua"
+
+msgid "errors.webhooks.last-delivery"
+msgstr "Errore bat gertatu da azken bidalketan."
+
+msgid "errors.webhooks.timeout"
+msgstr "Denbora muga gainditu da"
+
+msgid "errors.webhooks.connection"
+msgstr "Konexio errorea, URLa ezin da ireki"
