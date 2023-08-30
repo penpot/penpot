@@ -3686,10 +3686,6 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Coluna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Coluna invertida"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.reverse-row"
 msgstr "Linha invertida"
 

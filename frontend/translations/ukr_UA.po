@@ -258,10 +258,6 @@ msgstr "Ширина"
 msgid "inspect.attributes.shadow"
 msgstr "Тінь"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
-
 #, permanent
 msgid "inspect.attributes.stroke.alignment.center"
 msgstr "Центр"
@@ -423,9 +419,6 @@ msgstr "Стилі"
 msgid "labels.fonts"
 msgstr "Шрифти"
 
-msgid "labels.images"
-msgstr "Зображення"
-
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.invitations"
 msgstr "Запрошення"
@@ -445,9 +438,6 @@ msgstr "Учасник"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "Учасники"
-
-msgid "labels.next"
-msgstr "Далі"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
@@ -510,9 +500,6 @@ msgstr "Налаштування"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
 msgstr "Бібліотеки"
-
-msgid "labels.start"
-msgstr "Почати"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -802,9 +789,6 @@ msgstr "Оновити"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "ОНОВЛЕННЯ"
-
-msgid "workspace.options.blur-options.background-blur"
-msgstr "Фон"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"

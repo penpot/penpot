@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-09 00:37+0000\n"
-"Last-Translator: Allan Nordhøy <epost@anotheragency.no>\n"
-"Language-Team: Norwegian Bokmål "
-"<https://hosted.weblate.org/projects/penpot/frontend/nb_NO/>\n"
+"PO-Revision-Date: 2023-08-22 09:49+0000\n"
+"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"Language-Team: Norwegian Bokmål <https://hosted.weblate.org/projects/penpot/"
+"frontend/nb_NO/>\n"
 "Language: nb_NO\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.7-dev\n"
+"X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -80,11 +80,11 @@ msgstr "Slett lag"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "Inviter til lag"
+msgstr "Inviter til team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
-msgstr "Forlat lag"
+msgstr "Forlat team"
 
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
@@ -99,9 +99,8 @@ msgid "dashboard.move-to-multi"
 msgstr "Flytt %s filer til"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
-#, fuzzy
 msgid "dashboard.move-to-other-team"
-msgstr "Flytt til annet lag"
+msgstr "Flytt til annet team"
 
 #: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
 #, fuzzy
@@ -165,11 +164,11 @@ msgstr "Vis alle filer"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
-msgstr "Laginfo"
+msgstr "Teaminfo"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-members"
-msgstr "Lagmedlemmer"
+msgstr "Teammedlemmer"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-projects"
@@ -177,7 +176,7 @@ msgstr "Lagprosjekter"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.theme-change"
-msgstr "Grensesnittsdrakt"
+msgstr "Utseende"
 
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
@@ -361,9 +360,6 @@ msgstr "Skrifttilbydere"
 msgid "labels.fonts"
 msgstr "Skrifter"
 
-msgid "labels.images"
-msgstr "Bilder"
-
 msgid "labels.installed-fonts"
 msgstr "Installerte skrifter"
 
@@ -509,11 +505,11 @@ msgstr "Slett medlem"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
-msgstr "Slett lagmedlem"
+msgstr "Slett teammedlem"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.accept"
-msgstr "Forlat lag"
+msgstr "Forlat team"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
@@ -553,10 +549,6 @@ msgstr "Innstillinger - %s - Penpot"
 #, fuzzy
 msgid "title.workspace"
 msgstr "%s - Penpot"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.remove-link"
-msgstr "Fjern lenke"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.colors"
@@ -649,9 +641,6 @@ msgstr "%s komponenter"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.file-library"
 msgstr "Filbibliotek"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Lag"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"
