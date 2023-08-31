@@ -37,8 +37,8 @@
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]))
 
-(def ^:dynamic *conn*)
-(def ^:dynamic *pool*)
+(def ^:dynamic *conn* nil)
+(def ^:dynamic *pool* nil)
 
 (defn println!
   [& params]
