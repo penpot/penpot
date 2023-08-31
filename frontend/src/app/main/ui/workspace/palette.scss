@@ -30,7 +30,10 @@
   padding: $s-0 $s-0 $s-8 $s-8;
   border-radius: $br-8;
   background-color: var(--palette-background-color);
-  transition: right 0.3s, opacity 0.2s, width 0.3s;
+  transition:
+    right 0.3s,
+    opacity 0.2s,
+    width 0.3s;
   &.wide {
     width: 100%;
   }

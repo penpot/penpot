@@ -232,7 +232,9 @@
       border-radius: $br6;
       z-index: 1;
       border: 1px solid $color-white;
-      box-shadow: rgb(255, 255, 255) 0px 0px 0px 1px inset, rgb(0 0 0 / 0.25) 0px 4px 4px inset,
+      box-shadow:
+        rgb(255, 255, 255) 0px 0px 0px 1px inset,
+        rgb(0 0 0 / 0.25) 0px 4px 4px inset,
         rgb(0 0 0 / 0.25) 0px 4px 4px;
       transform: translate(-6px, -6px);
       left: 50%;
@@ -381,7 +383,9 @@
         border-radius: $br6;
         z-index: 1;
         border: 1px solid $color-white;
-        box-shadow: rgb(255, 255, 255) 0px 0px 0px 1px inset, rgb(0 0 0 / 0.25) 0px 4px 4px inset,
+        box-shadow:
+          rgb(255, 255, 255) 0px 0px 0px 1px inset,
+          rgb(0 0 0 / 0.25) 0px 4px 4px inset,
           rgb(0 0 0 / 0.25) 0px 4px 4px;
         transform: translate(-6px, -6px);
         left: 50%;

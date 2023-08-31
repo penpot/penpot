@@ -18,7 +18,10 @@
   border-radius: $s-8;
   z-index: $z-index-2;
   background-color: var(--color-background-primary);
-  transition: top 0.3s, height 0.3s, opacity 0.3s;
+  transition:
+    top 0.3s,
+    height 0.3s,
+    opacity 0.3s;
 
   .main-toolbar-options {
     position: relative;
