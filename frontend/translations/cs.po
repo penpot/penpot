@@ -1574,21 +1574,6 @@ msgstr "Malé posunutí"
 msgid "modals.unpublish-shared-confirm.accept"
 msgstr "Zrušit publikování"
 
-msgid "modals.unpublish-shared-confirm.activated.hint"
-msgid_plural "modals.unpublish-shared-confirm.activated.hint"
-msgstr[0] ""
-"Pokud zrušíte jeho publikování, tyto podklady již nebudou dostupné z jiných "
-"souborů. Aktiva, která již byla použita, zůstanou v tomto souboru (žádný "
-"návrh nebude porušen!)."
-msgstr[1] ""
-"Pokud jejich publikování zrušíte, tyto podklady již nebudou dostupné z "
-"jiných souborů. Aktiva, která již byla použita, zůstanou v tomto souboru "
-"(žádný návrh nebude porušen!)."
-msgstr[2] ""
-"Pokud jejich publikování zrušíte, tyto podklady již nebudou dostupné z "
-"jiných souborů. Aktiva, která již byla použita, zůstanou v tomto souboru "
-"(žádný návrh nebude porušen!)."
-
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"

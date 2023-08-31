@@ -1929,32 +1929,6 @@ msgstr "Minimal"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.hint"
-msgid_plural "modals.unpublish-shared-confirm.activated.hint"
-msgstr[0] ""
-"Wenn Sie die Veröffentlichung aufheben, sind diese Assets nicht mehr in "
-"anderen Dateien verfügbar. Bereits verwendete Assets bleiben in dieser Datei "
-"erhalten (das Design wird nicht beeinträchtigt!)."
-msgstr[1] ""
-"Wenn Sie die Veröffentlichung aufheben, sind diese Assets nicht mehr in "
-"anderen Dateien verfügbar. Bereits verwendete Assets bleiben in dieser Datei "
-"erhalten (das Design wird nicht beeinträchtigt!)."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.activated.hint-many"
-msgstr[0] ""
-"Wenn Sie die Veröffentlichung aufheben, sind diese Assets nicht mehr in "
-"anderen Dateien verfügbar. Bereits verwendete Assets bleiben in diesen "
-"Dateien erhalten (das Design wird nicht beeinträchtigt!)."
-msgstr[1] ""
-"Wenn Sie die Veröffentlichung aufheben, sind diese Assets nicht mehr in "
-"anderen Dateien verfügbar. Bereits verwendete Assets bleiben in diesen "
-"Dateien erhalten (das Design wird nicht beeinträchtigt!)."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] ""

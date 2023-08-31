@@ -54,19 +54,10 @@
                        (tr "modals.unpublish-shared-confirm.activated.no-files-message" (i18n/c count-libraries)))
 
         scd-msg      (if ^boolean is-delete?
-                       (if (= count-files 1)
-                         (tr "modals.delete-shared-confirm.activated.scd-message" (i18n/c count-libraries))
-                         (tr "modals.delete-shared-confirm.activated.scd-message-many" (i18n/c count-libraries)))
-                       (if (= count-files 1)
-                         (tr "modals.unpublish-shared-confirm.activated.scd-message" (i18n/c count-libraries))
-                         (tr "modals.unpublish-shared-confirm.activated.scd-message-many" (i18n/c count-libraries))))
-        hint         (if ^boolean is-delete?
-                       (if (= count-files 1)
-                         (tr "modals.delete-shared-confirm.activated.hint" (i18n/c count-libraries))
-                             (tr "modals.delete-shared-confirm.activated.hint-many" (i18n/c count-libraries)))
-                       (if (= count-files 1)
-                         (tr "modals.unpublish-shared-confirm.activated.hint" (i18n/c count-libraries))
-                         (tr "modals.unpublish-shared-confirm.activated.hint-many" (i18n/c count-libraries))))
+                       (tr "modals.delete-shared-confirm.activated.scd-message" (i18n/c count-libraries))
+                       (tr "modals.unpublish-shared-confirm.activated.scd-message" (i18n/c count-libraries)))
+
+        hint         (tr "modals.delete-unpublish-shared-confirm.activated.hint" (i18n/c count-files))
 
         accept-fn
         (mf/use-fn

@@ -1692,28 +1692,6 @@ msgstr[1] "批量删除文件"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.activated.hint"
-msgid_plural "modals.delete-shared-confirm.activated.hint"
-msgstr[0] ""
-"如果你删除它，这些资产将不再能从其他文件中获得。已经使用过的资产将保留在这个"
-"文件中（没有设计会被破坏！）。"
-msgstr[1] ""
-"如果你删除它们，这些资产将不再能从其他文件中获得。已经使用过的资产将保留在这"
-"个文件中（没有设计会被破坏！）。"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.activated.hint-many"
-msgid_plural "modals.delete-shared-confirm.activated.hint-many"
-msgstr[0] ""
-"如果你删除它，这些资产将不再能从其他文件中获得。已经使用过的资产将保留在这些"
-"文件中（没有设计会被破坏！）。"
-msgstr[1] ""
-"如果你删除它们，这些资产将不再能从其他文件中获得。已经使用过的资产将保留在这"
-"些文件中（没有设计会被破坏！）。"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "你是否确认要删除这个文件?"
@@ -1855,28 +1833,6 @@ msgstr "不再将“%s”作为共享库"
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.small-nudge"
 msgstr "小幅微调"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.hint"
-msgid_plural "modals.unpublish-shared-confirm.activated.hint"
-msgstr[0] ""
-"如果你取消发布，这些资产将不再能从其他文件中获得。已经使用过的资产将保留在这"
-"个文件中（没有设计会被破坏！）。"
-msgstr[1] ""
-"如果你取消发布它们，这些资产将不再能从其他文件中获得。已经使用过的资产将保留"
-"在这个文件中（没有设计会被破坏！）。"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.activated.hint-many"
-msgstr[0] ""
-"如果你取消发布，这些资产将不再能从其他文件中获得。已经使用过的资产将保留在这"
-"些文件中（没有设计会被破坏！）。"
-msgstr[1] ""
-"如果你取消发布它们，这些资产将不再能从其他文件中获得。已经使用过的资产将保留"
-"在这些文件中（没有设计会被破坏！）。"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs

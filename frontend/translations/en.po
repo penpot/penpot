@@ -1857,20 +1857,10 @@ msgstr[0] "Delete file"
 msgstr[1] "Delete files"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.activated.hint"
-msgid_plural "modals.delete-shared-confirm.activated.hint"
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
 msgstr[0] ""
 "Assets that have already been used in this file will remain there "
-"(no design will be broken)."
-msgstr[1] ""
-"Assets that have already been used in this file will remain there "
-"(no design will be broken)."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.activated.hint-many"
-msgid_plural "modals.delete-shared-confirm.activated.hint-many"
-msgstr[0] ""
-"Assets that have already been used in those files will remain there "
 "(no design will be broken)."
 msgstr[1] ""
 "Assets that have already been used in those files will remain there "
@@ -1893,12 +1883,6 @@ msgstr[1] ""
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.activated.scd-message"
 msgid_plural "modals.delete-shared-confirm.activated.scd-message"
-msgstr[0] "This library is activated here: "
-msgstr[1] "This libraries are activated here: "
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.activated.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.activated.scd-message-many"
 msgstr[0] "This library is activated here: "
 msgstr[1] "This libraries are activated here: "
 
@@ -2059,26 +2043,6 @@ msgstr[0] "Unpublish"
 msgstr[1] "Unpublish"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.hint"
-msgid_plural "modals.unpublish-shared-confirm.activated.hint"
-msgstr[0] ""
-"Assets that have already been used in this file will remain there "
-"(no design will be broken)."
-msgstr[1] ""
-"Assets that have already been used in this file will remain there "
-"(no design will be broken)."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.activated.hint-many"
-msgstr[0] ""
-"Assets that have already been used in those files will remain there "
-"(no design will be broken)."
-msgstr[1] ""
-"Assets that have already been used in those files will remain there "
-"(no design will be broken)."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Are you sure you want to unpublish this library?"
@@ -2093,12 +2057,6 @@ msgstr[1] "They aren't activated in any file."
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.activated.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
-msgstr[0] "This library is activated here:"
-msgstr[1] "This libraries are activated here:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.activated.scd-message-many"
 msgstr[0] "This library is activated here:"
 msgstr[1] "This libraries are activated here:"
 

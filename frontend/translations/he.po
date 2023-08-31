@@ -1874,32 +1874,6 @@ msgstr "הינד קטן"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.hint"
-msgid_plural "modals.unpublish-shared-confirm.activated.hint"
-msgstr[0] "ביטול הפרסום יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-msgstr[1] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-msgstr[2] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-msgstr[3] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.activated.hint-many"
-msgstr[0] ""
-"ביטול הפרסום יחסום את הגישה למשאבים מקבצים אחרים. משאבים שכבר היו בשימוש "
-"יישארו בקבצים האלה (העיצוב לא יישבר!)."
-msgstr[1] ""
-"ביטול הפרסום יחסום את הגישה למשאבים מקבצים אחרים. משאבים שכבר היו בשימוש "
-"יישארו בקבצים האלה (העיצוב לא יישבר!)."
-msgstr[2] ""
-"ביטול הפרסום יחסום את הגישה למשאבים מקבצים אחרים. משאבים שכבר היו בשימוש "
-"יישארו בקבצים האלה (העיצוב לא יישבר!)."
-msgstr[3] ""
-"ביטול הפרסום יחסום את הגישה למשאבים מקבצים אחרים. משאבים שכבר היו בשימוש "
-"יישארו בקבצים האלה (העיצוב לא יישבר!)."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "לבטל את פרסום הספרייה הזאת?"
