@@ -86,7 +86,7 @@
    (progress! context type file nil nil))
 
   ([context type current total]
-   (keyword? type)
+   (assert (keyword? type))
    (assert (number? current))
    (assert (number? total))
    (progress! context type nil current total))
