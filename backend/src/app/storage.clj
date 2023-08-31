@@ -251,53 +251,59 @@
 
 (defmethod ig/init-key ::gc-deleted-task
   [_ {:keys [::db/pool ::storage ::min-age]}]
-  (letfn [(retrieve-deleted-objects-chunk [conn min-age cursor]
-            (let [min-age (db/interval min-age)
-                  rows    (db/exec! conn [sql:retrieve-deleted-objects-chunk min-age cursor])]
-              [(some-> rows peek :created-at)
+  (letfn [(get-to-delete-chunk [cursor]
+            (let [sql  (str "select s.* "
+                            "  from storage_object as s "
+                            " where s.deleted_at is not null "
+                            "   and s.deleted_at < ? "
+                            " order by s.deleted_at desc "
+                            " limit 25")
+                  rows (db/exec! pool [sql cursor])]
+              [(some-> rows peek :deleted-at)
                (some->> (seq rows) (d/group-by #(-> % :backend keyword) :id #{}) seq)]))
 
-          (retrieve-deleted-objects [conn min-age]
-            (d/iteration (partial retrieve-deleted-objects-chunk conn min-age)
-                         :initk (dt/now)
+          (get-to-delete-chunks [min-age]
+            (d/iteration get-to-delete-chunk
+                         :initk (dt/minus (dt/now) min-age)
                          :vf second
                          :kf first))
 
-          (delete-in-bulk [backend-id ids]
-            (let [backend (impl/resolve-backend storage backend-id)]
+          (delete-in-bulk! [backend-id ids]
+            (try
+              (db/with-atomic [conn pool]
+                (let [sql   "delete from storage_object where id = ANY(?)"
+                      ids'  (db/create-array conn "uuid" ids)
 
-              (doseq [id ids]
-                (l/debug :hint "gc-deleted: permanently delete storage object" :backend backend-id :id id))
+                      total (-> (db/exec-one! conn [sql ids'])
+                                (db/get-update-count))]
 
-              (impl/del-objects-in-bulk backend ids)))]
+                  (-> (impl/resolve-backend storage backend-id)
+                      (impl/del-objects-in-bulk ids))
+
+                  (doseq [id ids]
+                    (l/dbg :hint "gc-deleted: permanently delete storage object" :backend backend-id :id id))
+
+                  total))
+
+              (catch Throwable cause
+                (l/err :hint "gc-deleted: unexpected error on bulk deletion"
+                       :ids (vec ids)
+                       :cause cause)
+                0)))]
 
     (fn [params]
-      (let [min-age (or (:min-age params) min-age)]
-        (db/with-atomic [conn pool]
-          (loop [total  0
-                 groups (retrieve-deleted-objects conn min-age)]
-            (if-let [[backend-id ids] (first groups)]
-              (do
-                (delete-in-bulk backend-id ids)
-                (recur (+ total (count ids))
-                       (rest groups)))
-              (do
-                (l/info :hint "gc-deleted: task finished" :min-age (dt/format-duration min-age) :total total)
-                {:deleted total}))))))))
-
-(def sql:retrieve-deleted-objects-chunk
-  "with items_part as (
-     select s.id
-       from storage_object as s
-      where s.deleted_at is not null
-        and s.deleted_at < (now() - ?::interval)
-        and s.created_at < ?
-      order by s.created_at desc
-      limit 25
-   )
-   delete from storage_object
-    where id in (select id from items_part)
-   returning *;")
+      (let [min-age (or (some-> params :min-age dt/duration) min-age)]
+        (loop [total  0
+               chunks (get-to-delete-chunks min-age)]
+          (if-let [[backend-id ids] (first chunks)]
+            (let [deleted (delete-in-bulk! backend-id ids)]
+              (recur (+ total deleted)
+                     (rest chunks)))
+            (do
+              (l/inf :hint "gc-deleted: task finished"
+                     :min-age (dt/format-duration min-age)
+                     :total total)
+              {:deleted total})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Garbage Collection: Analyze touched objects
