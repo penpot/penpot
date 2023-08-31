@@ -26,6 +26,7 @@
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as tsp]
+   [app.util.timers :as ts]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -79,25 +80,29 @@
 
 (defn- update-text-modifier
   [{:keys [grow-type id] :as shape} node]
+  (->> (tsp/calc-position-data id)
+       (p/fmap (fn [position-data]
+                 (let [props {:position-data position-data}]
+                   (if (contains? #{:auto-height :auto-width} grow-type)
+                     (let [{:keys [width height]} (-> (dom/query node ".paragraph-set") (dom/get-client-size))
+                           width (mth/ceil width)
+                           height (mth/ceil height)]
+                       (if (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
+                         (cond-> props
+                           (= grow-type :auto-width)
+                           (assoc :width width)
 
-  (p/let [position-data (tsp/calc-position-data id)
-          props {:position-data position-data}
-
-          props
-          (if (contains? #{:auto-height :auto-width} grow-type)
-            (let [{:keys [width height]} (-> (dom/query node ".paragraph-set") (dom/get-client-size))
-                  width (mth/ceil width)
-                  height (mth/ceil height)]
-              (if (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
-                (cond-> props
-                  (= grow-type :auto-width)
-                  (assoc :width width)
-
-                  (or (= grow-type :auto-height) (= grow-type :auto-width))
-                  (assoc :height height))
-                props))
-            props)]
-    (st/emit! (dwt/update-text-modifier id props))))
+                           (or (= grow-type :auto-height) (= grow-type :auto-width))
+                           (assoc :height height))
+                         props))
+                     props))))
+       (p/fmap (fn [props]
+                 ;; We need to wait for the text modifier to be updated before
+                 ;; we can update the position data. Otherwise the position data
+                 ;; will be wrong.
+                 ;; TODO: This is a hack. We need to find a better way to do this.
+                 (st/emit! (dwt/update-text-modifier id props))
+                 (ts/schedule 30 #(update-text-shape shape node))))))
 
 (mf/defc text-container
   {::mf/wrap-props false
