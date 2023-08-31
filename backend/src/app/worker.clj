@@ -678,13 +678,13 @@
                     (-> (db/exec-one! conn [sql:remove-not-started-tasks task queue label])
                         :next.jdbc/update-count))]
 
-    (l/debug :hint "submit task"
-             :name task
-             :queue queue
-             :label label
-             :dedupe (boolean dedupe)
-             :deleted (or deleted 0)
-             :in (dt/format-duration duration))
+    (l/trc :hint "submit task"
+           :name task
+           :queue queue
+           :label label
+           :dedupe (boolean dedupe)
+           :deleted (or deleted 0)
+           :in (dt/format-duration duration))
 
     (db/exec-one! conn [sql:insert-new-task id task props queue
                         label priority max-retries interval])
