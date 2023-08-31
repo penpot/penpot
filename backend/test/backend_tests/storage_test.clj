@@ -100,6 +100,7 @@
                     (configure-storage-backend))
         content1 (sto/content "content1")
         content2 (sto/content "content2")
+        content3 (sto/content "content3")
         object1  (sto/put-object! storage {::sto/content content1
                                            ::sto/expired-at (dt/now)
                                            :content-type "text/plain"
@@ -107,16 +108,20 @@
         object2  (sto/put-object! storage {::sto/content content2
                                            ::sto/expired-at (dt/in-past {:hours 2})
                                            :content-type "text/plain"
+                                           })
+        object3  (sto/put-object! storage {::sto/content content3
+                                           ::sto/expired-at (dt/in-past {:hours 1})
+                                           :content-type "text/plain"
                                            })]
+
 
     (th/sleep 200)
 
-    (let [task (:app.storage/gc-deleted-task th/*system*)
-          res  (task {})]
+    (let [res (th/run-task! :storage-gc-deleted {})]
       (t/is (= 1 (:deleted res))))
 
     (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object;"])]
-      (t/is (= 1 (:count res))))))
+      (t/is (= 2 (:count res))))))
 
 (t/deftest test-touched-gc-task-1
   (let [storage (-> (:app.storage/storage th/*system*)
