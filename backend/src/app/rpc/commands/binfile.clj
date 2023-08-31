@@ -382,8 +382,8 @@
 
 ;; --- GENERAL PURPOSE DYNAMIC VARS
 
-(def ^:dynamic *state*)
-(def ^:dynamic *options*)
+(def ^:dynamic *state* nil)
+(def ^:dynamic *options* nil)
 
 ;; --- EXPORT WRITER
 

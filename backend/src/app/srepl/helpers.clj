@@ -33,7 +33,7 @@
    [cuerdas.core :as str]
    [expound.alpha :as expound]))
 
-(def ^:dynamic *conn*)
+(def ^:dynamic *conn* nil)
 
 (defn reset-password!
   "Reset a password to a specific one for a concrete user or all users
