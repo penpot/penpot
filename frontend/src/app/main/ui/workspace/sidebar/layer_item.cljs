@@ -336,10 +336,16 @@
 
         [:div.element-actions {:class (when (:shapes item) "is-parent")}
          [:div.toggle-element {:class (when (:hidden item) "selected")
+                               :title (if (:hidden item)
+                                        (tr "workspace.shape.menu.show")
+                                        (tr "workspace.shape.menu.hide"))
                                :on-click toggle-visibility}
           (if (:hidden item) i/eye-closed i/eye)]
          [:div.block-element {:class (when (:blocked item) "selected")
-                              :on-click toggle-blocking}
+                              :on-click toggle-blocking
+                              :title (if (:blocked item)
+                                       (tr "workspace.shape.menu.unlock")
+                                       (tr "workspace.shape.menu.lock"))}
           (if (:blocked item) i/lock i/unlock)]]
 
         (when (:shapes item)
