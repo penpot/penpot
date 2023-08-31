@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.19.3
+
+### :bug: Bugs fixed
+
+- List view is discarded on tab change on Workspace Assets Sidebar tab [Github #3547](https://github.com/penpot/penpot/issues/3547)
+
 ## 1.19.2
 
 ### :sparkles: New features

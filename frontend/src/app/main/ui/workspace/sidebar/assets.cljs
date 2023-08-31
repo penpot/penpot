@@ -16,6 +16,7 @@
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.assets :as dwa]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.media :as dwm]
@@ -2424,19 +2425,32 @@
   []
   (let [components-v2 (mf/use-ctx ctx/components-v2)
         read-only? (mf/use-ctx ctx/workspace-read-only?)
+
         filters*   (mf/use-state
                     {:term ""
                      :section :all
-                     :ordering :asc
-                     :list-style :thumbs})
+                     :ordering (dwa/get-current-assets-ordering)
+                     :list-style (dwa/get-current-assets-list-style)})
         filters    (deref filters*)
         term       (:term filters)
+        ordering   (:ordering filters)
+        list-style (:list-style filters)
 
         toggle-ordering
-        (mf/use-fn #(swap! filters* update :ordering toggle-values [:asc :desc]))
+        (mf/use-fn
+          (mf/deps ordering)
+          (fn []
+            (let [new-value (toggle-values ordering [:asc :desc])]
+              (swap! filters* assoc :ordering new-value)
+              (dwa/set-current-assets-ordering! new-value))))
 
         toggle-list-style
-        (mf/use-fn #(swap! filters* update :list-style toggle-values [:thumbs :list]))
+        (mf/use-fn
+          (mf/deps list-style)
+          (fn []
+            (let [new-value (toggle-values list-style [:thumbs :list])]
+              (swap! filters* assoc :list-style new-value)
+              (dwa/set-current-assets-list-style! new-value))))
 
         on-search-term-change
         (mf/use-fn
