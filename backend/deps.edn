@@ -4,9 +4,7 @@
  :deps
  {penpot/common {:local/root "../common"}
   org.clojure/clojure {:mvn/version "1.11.1"}
-  org.clojure/core.async {:mvn/version "1.6.673"}
-
-  com.github.luben/zstd-jni {:mvn/version "1.5.5-4"}
+  com.github.luben/zstd-jni {:mvn/version "1.5.5-5"}
 
   io.prometheus/simpleclient {:mvn/version "0.16.0"}
   io.prometheus/simpleclient_hotspot {:mvn/version "0.16.0"}
@@ -17,7 +15,7 @@
 
   io.prometheus/simpleclient_httpserver {:mvn/version "0.16.0"}
 
-  io.lettuce/lettuce-core {:mvn/version "6.2.4.RELEASE"}
+  io.lettuce/lettuce-core {:mvn/version "6.2.6.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
   funcool/yetti
@@ -38,7 +36,7 @@
   buddy/buddy-hashers {:mvn/version "2.0.167"}
   buddy/buddy-sign {:mvn/version "3.5.351"}
 
-  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.1.6"}
+  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.1.8"}
 
   org.jsoup/jsoup {:mvn/version "1.16.1"}
   org.im4java/im4java
@@ -56,7 +54,7 @@
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.20.96"}
+  software.amazon.awssdk/s3 {:mvn/version "2.20.138"}
   }
 
  :paths ["src" "resources" "target/classes"]
@@ -73,7 +71,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.9.3" :git/sha "e537cd1"}}
+   {io.github.clojure/tools.build {:git/tag "v0.9.5" :git/sha "24f2894"}}
    :ns-default build}
 
   :test

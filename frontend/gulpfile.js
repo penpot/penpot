@@ -15,7 +15,7 @@ const autoprefixer = require("autoprefixer")
 const modules = require("postcss-modules");
 
 const clean = require("postcss-clean");
-const mkdirp = require("mkdirp");
+const {mkdirp} = require("mkdirp");
 const rimraf = require("rimraf");
 const sass = require("sass");
 const gettext = require("gettext-parser");

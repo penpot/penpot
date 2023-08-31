@@ -9,19 +9,19 @@
   "author": "UXBOX LABS SL",
   "license": "SEE LICENSE IN <LICENSE>",
   "dependencies": {
-    "archiver": "^5.3.1",
+    "archiver": "^6.0.0",
     "cookies": "^0.8.0",
     "generic-pool": "^3.9.0",
     "inflation": "^2.0.0",
-    "ioredis": "^5.2.4",
-    "luxon": "^3.1.1",
-    "playwright": "^1.29.1",
-    "raw-body": "^2.5.1",
+    "ioredis": "^5.3.2",
+    "luxon": "^3.4.2",
+    "playwright": "^1.37.1",
+    "raw-body": "^2.5.2",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.1"
   },
   "devDependencies": {
-    "shadow-cljs": "^2.20.16",
+    "shadow-cljs": "^2.25.3",
     "source-map-support": "^0.5.21"
   }
 }
