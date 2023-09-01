@@ -10,6 +10,7 @@
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes :as cpc]
+   [app.common.types.file-repair :as ctfr]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -272,5 +273,33 @@
 
         state))))
 
+;; --- Repair file
 
+(defn repair-current-file
+  [errors]
+  (log/debug :hint "repair current file" :errors (count errors))
+  (ptk/reify ::repair-current-file
+    ;; ptk/UpdateEvent
+    ;; (update [_ state]
+    ;;   (let [file      (assoc (get state :workspace-file)
+    ;;                          :data (get state :workspace-data))
+    ;;         libraries (get state :workspace-libraries)
+    ;;         file      (ctfr/repair-file file libraries errors)]
+    ;;     (update state :workspace-data (:data file))))
 
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file (get state :workspace-file)]
+        (->> (rp/cmd! :repair-file {:id (:id file)
+                                    :errors errors})
+            ;;  (rx/mapcat (fn [lagged]
+            ;;               (log/debug :hint "changes persisted" :lagged (count lagged))))
+             (rx/catch (fn [cause]
+                         (cond
+                           (= :authentication (:type cause))
+                           (rx/throw cause)
+
+                           :else
+                           (rx/concat
+                            (rx/of (rt/assign-exception cause))
+                            (rx/throw cause))))))))))

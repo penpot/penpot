@@ -12,6 +12,7 @@
    [app.common.math :as mth]
    [app.common.transit :as t]
    [app.common.types.file :as ctf]
+   [app.common.types.file-validate :as ctfv]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -20,6 +21,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.path.shortcuts]
+   [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.shortcuts]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -434,11 +436,29 @@
          page      (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])
          libraries (get @st/state :workspace-libraries)
 
-         errors    (ctf/validate-shape (or shape-id uuid/zero)
+         errors    (ctfv/validate-shape (if shape-id
+                                          (uuid shape-id)
+                                          uuid/zero)
+                                        file
+                                        page
+                                        libraries)]
+     (clj->js (d/group-by :code errors)))))
+
+(defn ^:export repair
+  []
+  (let [file      (assoc (get @st/state :workspace-file)
+                         :data (get @st/state :workspace-data))
+        page      (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])
+        libraries (get @st/state :workspace-libraries)
+
+        errors    (ctfv/validate-shape uuid/zero
                                        file
                                        page
                                        libraries)]
-     (clj->js errors))))
+
+    (st/emit! (dwp/repair-current-file errors))
+    ;(dom/reload-current-window)
+    ))
 
 (defn ^:export fix-orphan-shapes
   []

@@ -14,6 +14,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.file-validate :as ctfv]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc.commands.files :as files]
@@ -28,7 +29,7 @@
                   (d/index-by :id))
 
         update-page (fn [page]
-                      (let [errors (ctf/validate-shape uuid/zero file page libs)]
+                      (let [errors (ctfv/validate-shape uuid/zero file page libs)]
                         (when (seq errors)
                           (prn "******Errors in file " (:id file) " page " (:id page))
                           (pprint errors {:level 3}))))]

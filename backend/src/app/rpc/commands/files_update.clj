@@ -15,6 +15,8 @@
    [app.common.schema :as sm]
    [app.common.schema.generators :as smg]
    [app.common.types.file :as ctf]
+   [app.common.types.file-repair :as ctfr]
+   [app.common.types.file-validate :as ctfv]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -65,6 +67,14 @@
     [:id ::sm/uuid]
     [:revn {:min 0} :int]
     [:session-id ::sm/uuid]]])
+
+(sm/def! ::repair-file-params
+  [:map {:title "RepairFileParams"}
+   [:id ::sm/uuid]
+   [:errors [:vector {:gen/max 2} ::ctfv/validation-error]]])
+
+(sm/def! ::repair-file-result
+  [:map {:title "RepairFileResult"}])
 
 ;; --- HELPERS
 
@@ -124,6 +134,7 @@
 (declare send-notifications!)
 (declare update-file)
 (declare update-file*)
+(declare update-file-data)
 (declare take-snapshot?)
 
 ;; If features are specified from params and the final feature
@@ -208,26 +219,6 @@
                         :project-id (:project-id file)
                         :team-id    (:team-id file)}))))))
 
-(defn- update-file-data
-  [file changes]
-  (-> file
-      (update :revn inc)
-      (update :data (fn [data]
-                      (cond-> data
-                        :always
-                        (-> (blob/decode)
-                            (assoc :id (:id file))
-                            (pmg/migrate-data))
-
-                        (and (contains? ffeat/*current* "components/v2")
-                             (not (contains? ffeat/*previous* "components/v2")))
-                        (ctf/migrate-to-components-v2)
-
-                        :always
-                        (-> (cp/process-changes changes)
-                            (blob/encode)))))))
-
-
 (defn- update-file*
   [{:keys [::db/conn] :as cfg} {:keys [profile-id file changes session-id ::created-at] :as params}]
   (let [;; Process the file data in the CLIMIT context; scheduling it
@@ -266,6 +257,25 @@
 
       ;; Retrieve and return lagged data
       (get-lagged-changes conn params))))
+
+(defn- update-file-data
+  [file changes]
+  (-> file
+      (update :revn inc)
+      (update :data (fn [data]
+                      (cond-> data
+                        :always
+                        (-> (blob/decode)
+                            (assoc :id (:id file))
+                            (pmg/migrate-data))
+
+                        (and (contains? ffeat/*current* "components/v2")
+                             (not (contains? ffeat/*previous* "components/v2")))
+                        (ctf/migrate-to-components-v2)
+
+                        :always
+                        (-> (cp/process-changes changes)
+                            (blob/encode)))))))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."
@@ -319,3 +329,83 @@
                              :revn (:revn file)
                              :modified-at (dt/now)
                              :changes lchanges})))))
+
+;; --- MUTATION COMMAND: repair-file
+
+(declare repair-file)
+(declare repair-file*)
+(declare repair-file-data)
+
+(sv/defmethod ::repair-file
+  "Update the synchronization status of a file->library link"
+  {::sm/params ::repair-file-params
+   ::sm/result ::repair-file-result
+   ::doc/module :files
+   ::doc/added "1.21"} ; TODO: put correct version here
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  (db/with-atomic [conn pool]
+    (files/check-edition-permissions! conn profile-id id)
+    (db/xact-lock! conn id) ; TODO ?
+    (let [cfg    (assoc cfg ::db/conn conn)
+          params (assoc params :profile-id profile-id)
+          tpoint (dt/tpoint)]
+      (-> (repair-file cfg params)
+          (rph/with-defer #(let [elapsed (tpoint)]
+                             (l/trace :hint "repair-file" :time (dt/format-duration elapsed))))))))
+
+(defn repair-file
+  [{:keys [::db/conn ::mtx/metrics] :as cfg} {:keys [profile-id id errors] :as params}]
+  (let [file     (get-file conn id)
+        features (:features file)]
+
+    (files/check-edition-permissions! conn profile-id (:id file)) ; TODO: redundant?
+
+    (binding [ffeat/*current*  features
+              ffeat/*previous* features]
+
+      (let [repair-fn (cond-> repair-file*
+                        (contains? features "storage/pointer-map")
+                        (wrap-with-pointer-map-context)
+
+                        (contains? features "storage/objects-map")
+                        (wrap-with-objects-map-context))
+
+            file      (assoc file :features features)
+
+            params    (-> params
+                          (assoc :file file)
+                          (assoc :errors errors))]
+
+        (mtx/run! metrics {:id :repair-file-errors :inc (count errors)})
+
+        (-> (repair-fn cfg params)
+            (vary-meta assoc ::audit/replace-props
+                       {:id         (:id file)
+                        :name       (:name file)
+                        :features   (:features file)
+                        :project-id (:project-id file)
+                        :team-id    (:team-id file)}))))))
+
+(defn- repair-file*
+  [{:keys [::db/conn] :as cfg} {:keys [file errors] :as params}]
+  (let [;; Process the file data in the CLIMIT context; scheduling it
+        ;; to be executed on a separated executor for avoid to do the
+        ;; CPU intensive operation on vthread.
+        file (-> (climit/configure cfg :update-file) ; TODO ?
+                 (climit/submit! (partial repair-file-data file errors)))]
+
+    (db/update! conn :file
+                {:data (:data file)}
+                {:id (:id file)})
+
+    {}))
+
+(defn- repair-file-data
+  [file errors]
+  (-> file
+      (update :data (fn [data]
+                      (-> data
+                          (blob/decode)
+                          (assoc :id (:id file))
+                          (ctfr/repair-file {} errors)
+                          (blob/encode))))))

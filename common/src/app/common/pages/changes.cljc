@@ -22,6 +22,8 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+  ;;  [app.common.types.file-validate :as ctfv]
+  ;;  [app.common.types.file-repair :as ctfr]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
@@ -75,7 +77,6 @@
       [:parent-id {:optional true} [:maybe ::sm/uuid]]
       [:index {:optional true} [:maybe :int]]
       [:ignore-touched {:optional true} :boolean]]]
-
 
     [:mod-obj
      [:map {:title "ModObjChange"}
@@ -231,7 +232,12 @@
     [:del-typography
      [:map {:title "DelTypogrphyChange"}
       [:type [:= :del-typography]]
-      [:id ::sm/uuid]]]]])
+      [:id ::sm/uuid]]]
+
+    ;; [:repair-file
+    ;;  [:map {:title "RepairFileChange"}
+    ;;   [:vector {:gen/max 2} ::ctfv/validation-error]]]
+    ]])
 
 (sm/def! ::changes
   [:sequential {:gen/max 2} ::change])
@@ -657,6 +663,12 @@
   [data {:keys [id]}]
   (ctyl/delete-typography data id))
 
+;; ;; -- Repair file
+;; 
+;; (defmethod process-change :repair-file
+;;   [data errors]
+;;   (ctfr/repair-file data {} errors))
+ 
 ;; === Operations
 
 (defmethod process-operation :set
