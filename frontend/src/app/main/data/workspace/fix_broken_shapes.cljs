@@ -4,15 +4,15 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.data.workspace.fix-broken-shape-links
+(ns app.main.data.workspace.fix-broken-shapes
   (:require
    [app.main.data.workspace.changes :as dch]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-(defn- generate-changes
+(defn- generate-broken-link-changes
   [attr {:keys [objects id] :as container}]
-  (let [base      {:type :fix-obj attr id}
+  (let [base      {:type :fix-obj :fix :broken-children attr id}
         contains? (partial contains? objects)
         xform     (comp
                    ;; FIXME: Ensure all obj have id field (this is needed
@@ -36,14 +36,14 @@
 
 (defn fix-broken-shapes
   []
-  (ptk/reify ::fix-broken-shape-links
+  (ptk/reify ::fix-broken-shapes
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (get state :workspace-data)
             changes (concat
-                     (mapcat (partial generate-changes :page-id)
+                     (mapcat (partial generate-broken-link-changes :page-id)
                              (vals (:pages-index data)))
-                     (mapcat (partial generate-changes :component-id)
+                     (mapcat (partial generate-broken-link-changes :component-id)
                              (vals (:components data))))]
 
         (if (seq changes)

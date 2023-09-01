@@ -97,6 +97,7 @@
      [:map {:title "FixObjChange"}
       [:type [:= :fix-obj]]
       [:id ::sm/uuid]
+      [:fix {:optional true} :keyword]
       [:page-id {:optional true} ::sm/uuid]
       [:component-id {:optional true} ::sm/uuid]]]
 
@@ -402,10 +403,16 @@
     (d/update-in-when data [:components component-id] ctst/delete-shape id ignore-touched)))
 
 (defmethod process-change :fix-obj
-  [data {:keys [page-id component-id] :as params}]
-  (if page-id
-    (d/update-in-when data [:pages-index page-id] ctst/fix-shape-children params)
-    (d/update-in-when data [:components component-id] ctst/fix-shape-children params)))
+  [data {:keys [page-id component-id id] :as params}]
+  (letfn [(fix-container [container]
+            (case (:fix params :broken-children)
+              :broken-children (ctst/fix-broken-children container id)
+              (ex/raise :type :internal
+                        :code :fix-not-implemented
+                        :fix (:fix params))))]
+    (if page-id
+      (d/update-in-when data [:pages-index page-id] fix-container)
+      (d/update-in-when data [:components component-id] fix-container))))
 
 ;; FIXME: remove, seems like this method is already unused
 ;; reg-objects operation "regenerates" the geometry and selrect of the parent groups
