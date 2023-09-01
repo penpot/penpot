@@ -41,18 +41,22 @@
 
 (defn penpot-with-atomic
   [{:keys [node]}]
-  (let [[_ params & other] (:children node)
+  (let [[params & body] (rest (:children node))]
+    (if (api/vector-node? params)
+      (let [[sym val opts] (:children params)]
+        (when-not (and sym val)
+          (throw (ex-info "No sym and val provided" {})))
+        {:node (api/list-node
+                (list*
+                 (api/token-node 'let)
+                 (api/vector-node [sym val])
+                 opts
+                 body))})
 
-        result (if (api/vector-node? params)
-                 (api/list-node
-                  (into [(api/token-node (symbol "clojure.core" "with-open")) params] other))
-                 (api/list-node
-                  (into [(api/token-node (symbol "clojure.core" "with-open"))
-                         (api/vector-node [params params])]
-                        other)))
-
-        ]
-    {:node result}))
+      {:node (api/list-node
+              (into [(api/token-node 'let)
+                     (api/vector-node [params params])]
+                    body))})))
 
 (defn penpot-defrecord
   [{:keys [:node]}]
