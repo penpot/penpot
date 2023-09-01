@@ -146,10 +146,6 @@
      (transient-concat c1 more)
      (transient-concat [] (cons c1 more)))))
 
-(defn preconj
-  [coll elem]
-  (into [elem] coll))
-
 (defn enumerate
   ([items] (enumerate items 0))
   ([items start]

@@ -16,12 +16,25 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
+
+(def schema:changes
+  [:map
+   [:redo-changes vector?]
+   [:undo-changes seq?]
+   [:origin {:optional true} any?]
+   [:save-undo? {:optional true} boolean?]
+   [:stack-undo? {:optional true} boolean?]
+   [:undo-group {:optional true} any?]])
+
+(def valid-changes?
+  (sm/pred-fn schema:changes))
 
 (defn empty-changes
   ([origin page-id]
@@ -31,7 +44,7 @@
 
   ([origin]
    {:redo-changes []
-    :undo-changes []
+    :undo-changes '()
     :origin origin}))
 
 (defn set-save-undo?
@@ -87,34 +100,45 @@
 
 (defn concat-changes
   [changes1 changes2]
-  {:redo-changes (d/concat-vec (:redo-changes changes1) (:redo-changes changes2))
-   :undo-changes (d/concat-vec (:undo-changes changes1) (:undo-changes changes2))
+  {:redo-changes (d/concat-vec (:redo-changes changes1)
+                               (:redo-changes changes2))
+   :undo-changes (concat (:undo-changes changes1)
+                         (:undo-changes changes2))
    :origin (:origin changes1)
    :undo-group (:undo-group changes1)
    :tags (:tags changes1)})
 
 ; TODO: remove this when not needed
-(defn- assert-page-id
+(defn- assert-page-id!
   [changes]
-  (assert (contains? (meta changes) ::page-id) "Give a page-id or call (with-page) before using this function"))
+  (dm/assert!
+   "Give a page-id or call (with-page) before using this function"
+   (contains? (meta changes) ::page-id)))
 
-(defn- assert-container-id
+(defn- assert-container-id!
   [changes]
-  (assert (or (contains? (meta changes) ::page-id)
-              (contains? (meta changes) ::component-id))
-          "Give a page-id or call (with-container) before using this function"))
+  (dm/assert!
+   "Give a page-id or call (with-container) before using this function"
+   (or (contains? (meta changes) ::page-id)
+       (contains? (meta changes) ::component-id))))
 
-(defn- assert-page
+(defn- assert-page!
   [changes]
-  (assert (contains? (meta changes) ::page) "Call (with-page) before using this function"))
+  (dm/assert!
+   "Call (with-page) before using this function"
+   (contains? (meta changes) ::page)))
 
-(defn- assert-objects
+(defn- assert-objects!
   [changes]
-  (assert (contains? (meta changes) ::file-data) "Call (with-objects) before using this function"))
+  (dm/assert!
+   "Call (with-objects) before using this function"
+   (contains? (meta changes) ::file-data)))
 
-(defn- assert-library
+(defn- assert-library!
   [changes]
-  (assert (contains? (meta changes) ::library-data) "Call (with-library-data) before using this function"))
+  (dm/assert!
+   "Call (with-library-data) before using this function"
+   (contains? (meta changes) ::library-data)))
 
 (defn- lookup-objects
   [changes]
@@ -123,6 +147,10 @@
 
 (defn- apply-changes-local
   [changes]
+  (dm/assert!
+   "expected valid changes"
+   (valid-changes? changes))
+
   (if-let [file-data (::file-data (meta changes))]
     (let [index         (::applied-changes-count (meta changes))
           redo-changes  (:redo-changes changes)
@@ -143,40 +171,40 @@
   [changes id name]
   (-> changes
       (update :redo-changes conj {:type :add-page :id id :name name})
-      (update :undo-changes d/preconj {:type :del-page :id id})
+      (update :undo-changes conj {:type :del-page :id id})
       (apply-changes-local)))
 
 (defn add-page
   [changes id page]
   (-> changes
       (update :redo-changes conj {:type :add-page :id id :page page})
-      (update :undo-changes d/preconj {:type :del-page :id id})
+      (update :undo-changes conj {:type :del-page :id id})
       (apply-changes-local)))
 
 (defn mod-page
   [changes page new-name]
   (-> changes
       (update :redo-changes conj {:type :mod-page :id (:id page) :name new-name})
-      (update :undo-changes d/preconj {:type :mod-page :id (:id page) :name (:name page)})
+      (update :undo-changes conj {:type :mod-page :id (:id page) :name (:name page)})
       (apply-changes-local)))
 
 (defn del-page
   [changes page]
   (-> changes
       (update :redo-changes conj {:type :del-page :id (:id page)})
-      (update :undo-changes d/preconj {:type :add-page :id (:id page) :page page})
+      (update :undo-changes conj {:type :add-page :id (:id page) :page page})
       (apply-changes-local)))
 
 (defn move-page
   [changes page-id index prev-index]
   (-> changes
       (update :redo-changes conj {:type :mov-page :id page-id :index index})
-      (update :undo-changes d/preconj {:type :mov-page :id page-id :index prev-index})
+      (update :undo-changes conj {:type :mov-page :id page-id :index prev-index})
       (apply-changes-local)))
 
 (defn set-page-option
   [changes option-key option-val]
-  (assert-page changes)
+  (assert-page! changes)
   (let [page-id (::page-id (meta changes))
         page (::page (meta changes))
         old-val (get-in page [:options option-key])]
@@ -186,7 +214,7 @@
                                     :page-id page-id
                                     :option option-key
                                     :value option-val})
-        (update :undo-changes d/preconj {:type :set-option
+        (update :undo-changes conj {:type :set-option
                                          :page-id page-id
                                          :option option-key
                                          :value old-val})
@@ -194,7 +222,7 @@
 
 (defn update-page-option
   [changes option-key update-fn & args]
-  (assert-page changes)
+  (assert-page! changes)
   (let [page-id (::page-id (meta changes))
         page (::page (meta changes))
         old-val (get-in page [:options option-key])
@@ -205,7 +233,7 @@
                                     :page-id page-id
                                     :option option-key
                                     :value new-val})
-        (update :undo-changes d/preconj {:type :set-option
+        (update :undo-changes conj {:type :set-option
                                          :page-id page-id
                                          :option option-key
                                          :value old-val})
@@ -221,8 +249,8 @@
 
    ;; FIXME: add shape validation
 
-   (assert-page-id changes)
-   (assert-objects changes)
+   (assert-page-id! changes)
+   (assert-objects! changes)
    (let [obj (cond-> obj
                (not= index ::undefined)
                (assoc ::index index))
@@ -256,8 +284,8 @@
          (update :redo-changes conj add-change)
          (cond->
            (and (ctk/in-component-copy? parent) (not ignore-touched))
-           (update :undo-changes d/preconj restore-touched-change))
-         (update :undo-changes d/preconj del-change)
+           (update :undo-changes conj restore-touched-change))
+         (update :undo-changes conj del-change)
          (apply-changes-local)))))
 
 (defn add-objects
@@ -274,8 +302,8 @@
    (change-parent changes parent-id shapes nil))
 
   ([changes parent-id shapes index]
-   (assert-page-id changes)
-   (assert-objects changes)
+   (assert-page-id! changes)
+   (assert-objects! changes)
    (let [objects (lookup-objects changes)
          parent  (get objects parent-id)
 
@@ -289,16 +317,15 @@
            (assoc :index index))
 
          mk-undo-change
-         (fn [change-set shape]
+         (fn [undo-changes shape]
            (let [prev-sibling (cph/get-prev-sibling objects (:id shape))]
-           (d/preconj
-             change-set
-             {:type :mov-objects
-              :page-id (::page-id (meta changes))
-              :parent-id (:parent-id shape)
-              :shapes [(:id shape)]
-              :after-shape prev-sibling
-              :index 0}))) ; index is used in case there is no after-shape (moving bottom shapes)
+           (conj undo-changes
+                 {:type :mov-objects
+                  :page-id (::page-id (meta changes))
+                  :parent-id (:parent-id shape)
+                  :shapes [(:id shape)]
+                  :after-shape prev-sibling
+                  :index 0}))) ; index is used in case there is no after-shape (moving bottom shapes)
 
          restore-touched-change
          {:type :mod-obj
@@ -311,7 +338,7 @@
          (update :redo-changes conj set-parent-change)
          (cond->
            (ctk/in-component-copy? parent)
-           (update :undo-changes d/preconj restore-touched-change))
+           (update :undo-changes conj restore-touched-change))
          (update :undo-changes #(reduce mk-undo-change % shapes))
          (apply-changes-local)))))
 
@@ -336,24 +363,28 @@
 
   ([changes ids update-fn {:keys [attrs ignore-geometry? ignore-touched]
                            :or {ignore-geometry? false ignore-touched false}}]
-   (assert-container-id changes)
-   (assert-objects changes)
+   (assert-container-id! changes)
+   (assert-objects! changes)
    (let [page-id      (::page-id (meta changes))
          component-id (::component-id (meta changes))
-         objects (lookup-objects changes)
+         objects      (lookup-objects changes)
 
-         generate-operation
-         (fn [operations attr old new ignore-geometry?]
-           (let [old-val (get old attr)
-                 new-val (get new attr)]
-             (if (= old-val new-val)
-               operations
-               (-> operations
-                   (update :rops conj {:type :set :attr attr :val new-val
-                                       :ignore-geometry ignore-geometry?
-                                       :ignore-touched ignore-touched})
-                   (update :uops d/preconj {:type :set :attr attr :val old-val
-                                            :ignore-touched true})))))
+         generate-operations
+         (fn [attrs old new]
+           (loop [rops  []
+                  uops  '()
+                  attrs (seq attrs)]
+             (if-let [attr (first attrs)]
+               (let [old-val (get old attr)
+                     new-val (get new attr)]
+
+                 (recur (conj rops {:type :set :attr attr :val new-val
+                                    :ignore-geometry ignore-geometry?
+                                    :ignore-touched ignore-touched})
+                        (conj uops {:type :set :attr attr :val old-val
+                                    :ignore-touched true})
+                        (rest attrs)))
+               [rops uops])))
 
          update-shape
          (fn [changes id]
@@ -361,41 +392,35 @@
                  new-obj (update-fn old-obj)]
              (if (= old-obj new-obj)
                changes
-               (let [attrs (or attrs (d/concat-set (keys old-obj) (keys new-obj)))
+               (let [[rops uops] (-> (or attrs (d/concat-set (keys old-obj) (keys new-obj)))
+                                     (generate-operations old-obj new-obj))
 
-                     {rops :rops uops :uops}
-                     (reduce #(generate-operation %1 %2 old-obj new-obj ignore-geometry?)
-                             {:rops [] :uops []}
-                             attrs)
+                     uops        (cond-> uops
+                                   (seq uops)
+                                   (conj {:type :set-touched :touched (:touched old-obj)}))
 
-                     uops (cond-> uops
-                            (seq uops)
-                            (d/preconj {:type :set-touched :touched (:touched old-obj)}))
+                     change      (cond-> {:type :mod-obj :id id}
+                                   (some? page-id)
+                                   (assoc :page-id page-id)
 
-                     change (cond-> {:type :mod-obj
-                                     :id id}
-
-                              (some? page-id)
-                              (assoc :page-id page-id)
-
-                              (some? component-id)
-                              (assoc :component-id component-id))]
+                                   (some? component-id)
+                                   (assoc :component-id component-id))]
 
                  (cond-> changes
                    (seq rops)
                    (update :redo-changes conj (assoc change :operations rops))
 
                    (seq uops)
-                   (update :undo-changes d/preconj (assoc change :operations uops)))))))]
+                   (update :undo-changes conj (assoc change :operations (vec uops))))))))]
 
-             (-> (reduce update-shape changes ids)
-                 (apply-changes-local)))))
+     (-> (reduce update-shape changes ids)
+         (apply-changes-local)))))
 
 (defn remove-objects
   ([changes ids] (remove-objects changes ids nil))
   ([changes ids {:keys [ignore-touched] :or {ignore-touched false}}]
-   (assert-page-id changes)
-   (assert-objects changes)
+   (assert-page-id! changes)
+   (assert-objects! changes)
    (let [page-id (::page-id (meta changes))
          objects (lookup-objects changes)
 
@@ -410,7 +435,7 @@
          add-undo-change-shape
          (fn [change-set id]
            (let [shape (get objects id)]
-             (d/preconj
+             (conj
               change-set
               {:type :add-obj
                :id id
@@ -426,7 +451,7 @@
          (fn [change-set id]
            (let [shape (get objects id)
                  prev-sibling (cph/get-prev-sibling objects (:id shape))]
-             (d/preconj
+             (conj
               change-set
               {:type :mov-objects
                :page-id page-id
@@ -445,8 +470,8 @@
 
 (defn resize-parents
   [changes ids]
-  (assert-page-id changes)
-  (assert-objects changes)
+  (assert-page-id! changes)
+  (assert-objects! changes)
   (let [page-id (::page-id (meta changes))
 
         objects (lookup-objects changes)
@@ -481,7 +506,7 @@
               operations
               (-> operations
                   (update :rops conj {:type :set :attr attr :val new-val :ignore-touched true})
-                  (update :uops d/preconj {:type :set :attr attr :val old-val :ignore-touched true})))))
+                  (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
 
         resize-parent
         (fn [changes parent]
@@ -511,7 +536,7 @@
                 (if (seq rops)
                   (-> changes
                       (update :redo-changes conj (assoc change :operations rops))
-                      (update :undo-changes d/preconj (assoc change :operations uops))
+                      (update :undo-changes conj (assoc change :operations uops))
                       (apply-changes-local))
                   changes))
               changes)))]
@@ -530,89 +555,89 @@
   [changes color]
   (-> changes
       (update :redo-changes conj {:type :add-color :color color})
-      (update :undo-changes d/preconj {:type :del-color :id (:id color)})
+      (update :undo-changes conj {:type :del-color :id (:id color)})
       (apply-changes-local)))
 
 (defn update-color
   [changes color]
-  (assert-library changes)
+  (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-color (get-in library-data [:colors (:id color)])]
     (-> changes
         (update :redo-changes conj {:type :mod-color :color color})
-        (update :undo-changes d/preconj {:type :mod-color :color prev-color})
+        (update :undo-changes conj {:type :mod-color :color prev-color})
         (apply-changes-local))))
 
 (defn delete-color
   [changes color-id]
-  (assert-library changes)
+  (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-color (get-in library-data [:colors color-id])]
     (-> changes
         (update :redo-changes conj {:type :del-color :id color-id})
-        (update :undo-changes d/preconj {:type :add-color :color prev-color})
+        (update :undo-changes conj {:type :add-color :color prev-color})
         (apply-changes-local))))
 
 (defn add-media
   [changes object]
   (-> changes
       (update :redo-changes conj {:type :add-media :object object})
-      (update :undo-changes d/preconj {:type :del-media :id (:id object)})
+      (update :undo-changes conj {:type :del-media :id (:id object)})
       (apply-changes-local)))
 
 (defn update-media
   [changes object]
-  (assert-library changes)
+  (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-object (get-in library-data [:media (:id object)])]
     (-> changes
         (update :redo-changes conj {:type :mod-media :object object})
-        (update :undo-changes d/preconj {:type :mod-media :object prev-object})
+        (update :undo-changes conj {:type :mod-media :object prev-object})
         (apply-changes-local))))
 
 (defn delete-media
   [changes id]
-  (assert-library changes)
+  (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-object (get-in library-data [:media id])]
     (-> changes
         (update :redo-changes conj {:type :del-media :id id})
-        (update :undo-changes d/preconj {:type :add-media :object prev-object})
+        (update :undo-changes conj {:type :add-media :object prev-object})
         (apply-changes-local))))
 
 (defn add-typography
   [changes typography]
   (-> changes
       (update :redo-changes conj {:type :add-typography :typography typography})
-      (update :undo-changes d/preconj {:type :del-typography :id (:id typography)})
+      (update :undo-changes conj {:type :del-typography :id (:id typography)})
       (apply-changes-local)))
 
 (defn update-typography
   [changes typography]
-  (assert-library changes)
+  (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-typography (get-in library-data [:typographies (:id typography)])]
     (-> changes
         (update :redo-changes conj {:type :mod-typography :typography typography})
-        (update :undo-changes d/preconj {:type :mod-typography :typography prev-typography})
+        (update :undo-changes conj {:type :mod-typography :typography prev-typography})
         (apply-changes-local))))
 
 (defn delete-typography
   [changes typography-id]
-  (assert-library changes)
+  (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-typography (get-in library-data [:typographies typography-id])]
     (-> changes
         (update :redo-changes conj {:type :del-typography :id typography-id})
-        (update :undo-changes d/preconj {:type :add-typography :typography prev-typography})
+        (update :undo-changes conj {:type :add-typography :typography prev-typography})
         (apply-changes-local))))
 
 (defn add-component
   ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page]
    (add-component changes id path name new-shapes updated-shapes main-instance-id main-instance-page nil))
   ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page annotation]
-  (assert-page-id changes)
-  (assert-objects changes)
+  (assert-page-id! changes)
+  (assert-objects! changes)
   (let [page-id (::page-id (meta changes))
         objects (lookup-objects changes)
         lookupf (d/getf objects)
@@ -656,7 +681,7 @@
         (update :undo-changes
                 (fn [undo-changes]
                   (-> undo-changes
-                      (d/preconj {:type :del-component
+                      (conj {:type :del-component
                                   :id id
                                   :skip-undelete? true})
                       (into (comp (map :id)
@@ -667,7 +692,7 @@
 
 (defn update-component
   [changes id update-fn]
-  (assert-library changes)
+  (assert-library! changes)
   (let [library-data   (::library-data (meta changes))
         prev-component (get-in library-data [:components id])
         new-component  (update-fn prev-component)]
@@ -679,7 +704,7 @@
                                       :path (:path new-component)
                                       :annotation (:annotation new-component)
                                       :objects (:objects new-component)}) ;; this won't exist in components-v2
-          (update :undo-changes d/preconj {:type :mod-component
+          (update :undo-changes conj {:type :mod-component
                                            :id id
                                            :name (:name prev-component)
                                            :path (:path prev-component)
@@ -689,23 +714,23 @@
 
 (defn delete-component
   [changes id]
-  (assert-library changes)
+  (assert-library! changes)
   (-> changes
       (update :redo-changes conj {:type :del-component
                                   :id id})
-      (update :undo-changes d/preconj {:type :restore-component
+      (update :undo-changes conj {:type :restore-component
                                         :id id})))
 
 (defn restore-component
   ([changes id]
    (restore-component changes id nil))
   ([changes id page-id]
-   (assert-library changes)
+   (assert-library! changes)
    (-> changes
        (update :redo-changes conj {:type :restore-component
                                    :id id
                                    :page-id page-id})
-       (update :undo-changes d/preconj {:type :del-component
+       (update :undo-changes conj {:type :del-component
                                         :id id}))))
 
 (defn ignore-remote
@@ -720,8 +745,8 @@
 
 (defn reorder-grid-children
   [changes ids]
-  (assert-page-id changes)
-  (assert-objects changes)
+  (assert-page-id! changes)
+  (assert-objects! changes)
 
   (let [page-id (::page-id (meta changes))
         objects (lookup-objects changes)
@@ -746,7 +771,7 @@
                  :shapes old-shapes}]
             (-> changes
                 (update :redo-changes conj redo-change)
-                (update :undo-changes d/preconj undo-change)
+                (update :undo-changes conj undo-change)
                 (apply-changes-local))))
 
         changes

@@ -15,9 +15,6 @@
    [linked.core :as lks]
    [potok.core :as ptk]))
 
-(.on js/process "uncaughtException" (fn [cause]
-                                      (js/console.log "EE" cause)))
-
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
 

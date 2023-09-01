@@ -1046,10 +1046,10 @@
 ;;                                         [(thp/id :frame1)])
 ;;                     (thp/instantiate-component :instance2
 ;;                                                (thp/id :component2)))
-;; 
+;;
 ;;           [instance2 instance1 _shape1' shape2']
 ;;           (thl/resolve-instance state (thp/id :instance2))
-;; 
+;;
 ;;           store (the/prepare-store state done
 ;;                                    (fn [new-state]
 ;;                                      ;; Expected shape tree:
@@ -1078,7 +1078,7 @@
 ;;                                            (thl/resolve-instance-and-main
 ;;                                             new-state
 ;;                                             (thp/id :instance2))]
-;; 
+;;
 ;;                                        (t/is (= (:name instance2) "Board"))
 ;;                                        (t/is (= (:touched instance2) nil))
 ;;                                        (t/is (= (:name instance1) "Rect 1"))
@@ -1091,7 +1091,7 @@
 ;;                                        (t/is (= (:touched shape2) nil))
 ;;                                        (t/is (= (:fill-color shape2) clr/white))
 ;;                                        (t/is (= (:fill-opacity shape2) 1))
-;; 
+;;
 ;;                                        (t/is (= (:name c-instance2) "Board"))
 ;;                                        (t/is (= (:touched c-instance2) nil))
 ;;                                        (t/is (= (:name c-instance1) "Rect 1"))
@@ -1104,7 +1104,7 @@
 ;;                                        (t/is (= (:touched c-shape2) nil))
 ;;                                        (t/is (= (:fill-color c-shape2) clr/white))
 ;;                                        (t/is (= (:fill-opacity c-shape2) 1)))))]
-;; 
+;;
 ;;       (ptk/emit!
 ;;        store
 ;;        (dch/update-shapes [(:id shape2')]
@@ -1210,7 +1210,7 @@
        (dwl/reset-component (:id instance1))
        :the/end))))
 
-;;; === Test update component ======================
+;; === Test update component ======================
 
 (t/deftest test-update-component
   (t/async done
@@ -2180,12 +2180,12 @@
 ;;                                                (thp/id :component2))
 ;;                     (thp/instantiate-component :instance3
 ;;                                                (thp/id :component2)))
-;; 
+;;
 ;;           file      (wsh/get-local-file state)
-;; 
+;;
 ;;           [_instance2 instance1 _shape1' shape2']
 ;;           (thl/resolve-instance state (thp/id :instance2))
-;; 
+;;
 ;;           store (the/prepare-store state done
 ;;                                    (fn [new-state]
 ;;                                      ;; Expected shape tree:
@@ -2220,13 +2220,13 @@
 ;;                                            (thl/resolve-instance-and-main
 ;;                                             new-state
 ;;                                             (thp/id :instance2))
-;; 
+;;
 ;;                                            [[instance4 instance3 shape3 shape4]
 ;;                                             [_c-instance4 _c-instance3 _c-shape3 _c-shape4] _component2]
 ;;                                            (thl/resolve-instance-and-main
 ;;                                             new-state
 ;;                                             (thp/id :instance3))]
-;; 
+;;
 ;;                                        (t/is (= (:name instance2) "Board"))
 ;;                                        (t/is (= (:touched instance2) nil))
 ;;                                        (t/is (= (:name instance1) "Rect 1"))
@@ -2239,7 +2239,7 @@
 ;;                                        (t/is (= (:touched shape2) nil))
 ;;                                        (t/is (= (:fill-color shape2) clr/test))
 ;;                                        (t/is (= (:fill-opacity shape2) 0.5))
-;; 
+;;
 ;;                                        (t/is (= (:name c-instance2) "Board"))
 ;;                                        (t/is (= (:touched c-instance2) nil))
 ;;                                        (t/is (= (:name c-instance1) "Rect 1"))
@@ -2252,7 +2252,7 @@
 ;;                                        (t/is (= (:touched c-shape2) nil))
 ;;                                        (t/is (= (:fill-color c-shape2) clr/test))
 ;;                                        (t/is (= (:fill-opacity c-shape2) 0.5))
-;; 
+;;
 ;;                                        (t/is (= (:name instance4) "Board"))
 ;;                                        (t/is (= (:touched instance4) nil))
 ;;                                        (t/is (= (:name instance3) "Rect 1"))
@@ -2265,7 +2265,7 @@
 ;;                                        (t/is (= (:touched shape4) nil))
 ;;                                        (t/is (= (:fill-color shape4) clr/test))
 ;;                                        (t/is (= (:fill-opacity shape4) 0.5)))))]
-;; 
+;;
 ;;       (ptk/emit!
 ;;        store
 ;;        (dch/update-shapes [(:id shape2')]
