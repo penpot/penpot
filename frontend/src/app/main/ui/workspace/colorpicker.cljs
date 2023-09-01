@@ -56,12 +56,17 @@
 
         current-color       (:current-color state)
 
-        active-tab          (mf/use-state :ramp #_:harmony #_:hsva)
-        set-ramp-tab!       (mf/use-fn #(reset! active-tab :ramp))
-        set-harmony-tab!    (mf/use-fn #(reset! active-tab :harmony))
-        set-hsva-tab!       (mf/use-fn #(reset! active-tab :hsva))
-
+        active-tab          (mf/use-state (dc/get-active-color-tab))
         drag?               (mf/use-state false)
+        
+        set-tab!
+        (mf/use-fn
+          (fn [event]
+            (let [tab (-> (dom/get-current-target event)
+                          (dom/get-data "tab")
+                          (keyword))]
+              (reset! active-tab tab)
+              (dc/set-active-color-tab! tab))))
 
         handle-change-color
         (mf/use-fn
@@ -81,9 +86,9 @@
          (fn []
            (if picking-color?
              (do (modal/disallow-click-outside!)
-                 (st/emit! (dc/stop-picker)))
+               (st/emit! (dc/stop-picker)))
              (do (modal/allow-click-outside!)
-                 (st/emit! (dc/start-picker))))))
+               (st/emit! (dc/start-picker))))))
 
         handle-change-stop
         (mf/use-fn
@@ -225,15 +230,18 @@
        [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
         {:class (when (= @active-tab :ramp) "active")
          :alt (tr "workspace.libraries.colors.rgba")
-         :on-click set-ramp-tab!} i/picker-ramp]
+         :on-click set-tab!
+         :data-tab "ramp"} i/picker-ramp]
        [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
         {:class (when (= @active-tab :harmony) "active")
          :alt (tr "workspace.libraries.colors.rgb-complementary")
-         :on-click set-harmony-tab!} i/picker-harmony]
+         :on-click set-tab!
+         :data-tab "harmony"} i/picker-harmony]
        [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
         {:class (when (= @active-tab :hsva) "active")
          :alt (tr "workspace.libraries.colors.hsv")
-         :on-click set-hsva-tab!} i/picker-hsv]]
+         :on-click set-tab!
+         :data-tab "hsva"} i/picker-hsv]]
 
       (if picking-color?
         [:div.picker-detail-wrapper
