@@ -145,6 +145,10 @@
   [v]
   (instance? javax.sql.DataSource v))
 
+(defn connection?
+  [conn]
+  (instance? Connection conn))
+
 (s/def ::conn some?)
 (s/def ::nilable-pool (s/nilable ::pool))
 (s/def ::pool pool?)
@@ -230,46 +234,59 @@
   [pool]
   (jdbc/get-connection pool))
 
+(defn- resolve-connectable
+  [o]
+  (if (connection? o)
+    o
+    (if (pool? o)
+      o
+      (or (::conn o) (::pool o)))))
+
+
 (def ^:private default-opts
   {:builder-fn sql/as-kebab-maps})
 
 (defn exec!
   ([ds sv]
-   (jdbc/execute! ds sv default-opts))
+   (-> (resolve-connectable ds)
+       (jdbc/execute! sv default-opts)))
   ([ds sv opts]
-   (jdbc/execute! ds sv (merge default-opts opts))))
+   (-> (resolve-connectable ds)
+       (jdbc/execute! sv (merge default-opts opts)))))
 
 (defn exec-one!
   ([ds sv]
-   (jdbc/execute-one! ds sv default-opts))
+   (-> (resolve-connectable ds)
+       (jdbc/execute-one! sv default-opts)))
   ([ds sv opts]
-   (jdbc/execute-one! ds sv
-                      (-> (merge default-opts opts)
-                          (assoc :return-keys (::return-keys? opts false))))))
+   (-> (resolve-connectable ds)
+       (jdbc/execute-one! sv
+                          (-> (merge default-opts opts)
+                              (assoc :return-keys (::return-keys? opts false)))))))
 
 (defn insert!
   [ds table params & {:as opts}]
-  (exec-one! ds
-             (sql/insert table params opts)
-             (merge {::return-keys? true} opts)))
+  (-> (resolve-connectable ds)
+      (exec-one! (sql/insert table params opts)
+                 (merge {::return-keys? true} opts))))
 
 (defn insert-multi!
   [ds table cols rows & {:as opts}]
-  (exec! ds
-         (sql/insert-multi table cols rows opts)
-         (merge {::return-keys? true} opts)))
+  (-> (resolve-connectable ds)
+      (exec! (sql/insert-multi table cols rows opts)
+             (merge {::return-keys? true} opts))))
 
 (defn update!
   [ds table params where & {:as opts}]
-  (exec-one! ds
-             (sql/update table params where opts)
-             (merge {::return-keys? true} opts)))
+  (-> (resolve-connectable ds)
+      (exec-one! (sql/update table params where opts)
+                 (merge {::return-keys? true} opts))))
 
 (defn delete!
   [ds table params & {:as opts}]
-  (exec-one! ds
-             (sql/delete table params opts)
-             (merge {::return-keys? true} opts)))
+  (-> (resolve-connectable ds)
+      (exec-one! (sql/delete table params opts)
+                 (merge {::return-keys? true} opts))))
 
 (defn is-row-deleted?
   [{:keys [deleted-at]}]
@@ -301,7 +318,8 @@
 
 (defn plan
   [ds sql]
-  (jdbc/plan ds sql sql/default-opts))
+  (-> (resolve-connectable ds)
+      (jdbc/plan sql sql/default-opts)))
 
 (defn get-by-id
   [ds table id & {:as opts}]
@@ -370,10 +388,6 @@
 (defn pginterval
   [data]
   (org.postgresql.util.PGInterval. ^String data))
-
-(defn connection?
-  [conn]
-  (instance? Connection conn))
 
 (defn savepoint
   ([^Connection conn]
