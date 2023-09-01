@@ -122,7 +122,9 @@
    (ptk/reify ::select-shape
      ptk/UpdateEvent
      (update [_ state]
-       (update-in state [:workspace-local :selected] d/toggle-selection id toggle?))
+       (-> state
+           (update-in [:workspace-local :selected] d/toggle-selection id toggle?)
+           (assoc-in [:workspace-local :last-selected] id)))
 
      ptk/WatchEvent
      (watch [_ state _]
@@ -185,7 +187,9 @@
   (ptk/reify ::deselect-shape
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-local :selected] disj id))))
+      (-> state
+          (update-in [:workspace-local :selected] disj id)
+          (update :workspace-local dissoc :last-selected)))))
 
 (defn shift-select-shapes
   ([id]
@@ -196,12 +200,14 @@
      ptk/UpdateEvent
      (update [_ state]
        (let [objects (or objects (wsh/lookup-page-objects state))
+             append-to-selection (cph/expand-region-selection objects (into #{} [(get-in state [:workspace-local :last-selected]) id]))
              selection (-> state
                            wsh/lookup-selected
                            (conj id))]
          (-> state
              (assoc-in [:workspace-local :selected]
-                       (cph/expand-region-selection objects selection))))))))
+               (set/union selection append-to-selection))
+             (update :workspace-local assoc :last-selected id)))))))
 
 (defn select-shapes
   [ids]
