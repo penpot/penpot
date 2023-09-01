@@ -53,9 +53,8 @@
         ;; We group the objects together per frame-id so if an object of a different
         ;; frame changes won't affect the rendering frame
         frame-objects
-        (mf/use-memo
-         (mf/deps objects)
-         #(cph/objects-by-frame objects))]
+        (mf/with-memo [objects]
+          (cph/objects-by-frame objects))]
 
     [:g {:id (dm/str "shape-" uuid/zero)}
      [:& (mf/provider ctx/active-frames) {:value active-frames}
@@ -68,46 +67,47 @@
 
       [:g.frame-children
        (for [shape shapes]
-         [:g.ws-shape-wrapper {:key (:id shape)}
-          (cond
-            (not (cph/frame-shape? shape))
-            [:& shape-wrapper
-             {:shape shape}]
-
-            (cph/is-direct-child-of-root? shape)
+         [:g.ws-shape-wrapper {:key (dm/str (dm/get-prop shape :id))}
+          (if ^boolean (cph/frame-shape? shape)
             [:& root-frame-wrapper
              {:shape shape
-              :objects (get frame-objects (:id shape))
-              :thumbnail? (not (contains? active-frames (:id shape)))}]
+              :objects (get frame-objects (dm/get-prop shape :id))
+              :thumbnail? (not (contains? active-frames (dm/get-prop shape :id)))}]
+            [:& shape-wrapper {:shape shape}])])]]]))
 
-            :else
-            [:& nested-frame-wrapper
-             {:shape shape
-              :objects (get frame-objects (:id shape))}])])]]]))
+(defn- check-shape-wrapper-props
+  [np op]
+  (frame/check-shape (unchecked-get np "shape")
+                     (unchecked-get op "shape")))
 
 (mf/defc shape-wrapper
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
+  {::mf/wrap [#(mf/memo' % check-shape-wrapper-props)]
    ::mf/wrap-props false}
   [props]
-  (let [shape (obj/get props "shape")
+  (let [shape      (unchecked-get props "shape")
+        shape-type (dm/get-prop shape :type)
+        shape-id   (dm/get-prop shape :id)
 
+        ;; FIXME: WARN: this breaks react rule of hooks (hooks can't be under conditional)
         active-frames
-        (when (cph/is-direct-child-of-root? shape) (mf/use-ctx ctx/active-frames))
+        (when (cph/root-frame? shape)
+          (mf/use-ctx ctx/active-frames))
 
         thumbnail?
         (and (some? active-frames)
-             (not (contains? active-frames (:id shape))))
+             (not (contains? active-frames shape-id)))
 
         opts  #js {:shape shape :thumbnail? thumbnail?}
 
         [wrapper wrapper-props]
-        (if (= :svg-raw (:type shape))
+        (if (= :svg-raw shape-type)
           [mf/Fragment nil]
           ["g" #js {:className "workspace-shape-wrapper"}])]
 
-    (when (and (some? shape) (not (:hidden shape)))
+    (when (and (some? shape)
+               (not ^boolean (:hidden shape)))
       [:> wrapper wrapper-props
-       (case (:type shape)
+       (case shape-type
          :path    [:> path/path-wrapper opts]
          :text    [:> text/text-wrapper opts]
          :group   [:> group-wrapper opts]
@@ -125,4 +125,3 @@
 (def bool-wrapper (bool/bool-wrapper-factory shape-wrapper))
 (def root-frame-wrapper (frame/root-frame-wrapper-factory shape-wrapper))
 (def nested-frame-wrapper (frame/nested-frame-wrapper-factory shape-wrapper))
-

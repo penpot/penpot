@@ -302,11 +302,14 @@
           (fn [entries _]
             (run! (partial rx/push! intersection-subject) (seq entries)))
           #js {:rootMargin "0px"
-               :threshold 1.0})))
+               :threshold #js [0 1.0]})))
 
 (defn use-visible
   [ref & {:keys [once?]}]
-  (let [[state update-state!] (mf/useState false)]
+  (let [state (mf/useState false)
+        update-state! (aget state 1)
+        state         (aget state 0)]
+
     (mf/with-effect [once?]
       (let [node   (mf/ref-val ref)
             stream (->> intersection-subject
@@ -314,15 +317,16 @@
                                      (let [target (unchecked-get entry "target")]
                                        (identical? target node))))
                         (rx/map (fn [entry]
-                                  (let [ratio (unchecked-get entry "intersectionRatio")
-                                        intersecting? (unchecked-get entry "isIntersecting")]
-                                    (or intersecting? (> ratio 0.5)))))
+                                  (let [ratio         (unchecked-get entry "intersectionRatio")
+                                        intersecting? (unchecked-get entry "isIntersecting")
+                                        intersecting? (or ^boolean intersecting?
+                                                          ^boolean (> ratio 0.5))]
+                                    (when (and (true? intersecting?) (true? once?))
+                                      (.unobserve ^js @intersection-observer node))
+
+                                    intersecting?)))
+
                         (rx/dedupe))
-            stream (if once?
-                     (->> stream
-                          (rx/filter identity)
-                          (rx/take 1))
-                     stream)
             subs (rx/subscribe stream update-state!)]
         (.observe ^js @intersection-observer node)
         (fn []

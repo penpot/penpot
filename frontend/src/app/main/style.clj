@@ -15,9 +15,18 @@
 (def ^:dynamic *css-data* nil)
 
 (def ^:private xform-css
-  (map (fn [k]
-         (let [cn (name k)]
-           (or (get *css-data* (keyword cn)) cn)))))
+  (keep (fn [k]
+         (cond
+           (keyword? k)
+           (let [knm (name k)
+                 kns (namespace k)]
+             (case kns
+               "global"  knm
+               "old-css" (if (nil? *css-data*) knm "")
+               (or (get *css-data* (keyword knm)) knm)))
+
+           (string? k)
+           k))))
 
 (defmacro css*
   "Just coerces all params to strings and concats them with
@@ -35,7 +44,8 @@
   (let [fname (-> *ns* meta :file)
         path  (str (subs fname 0 (- (count fname) 4)) "css.json")
         data  (-> (slurp (io/resource path))
-                  (json/read-str :key-fn keyword))]
+                  (json/read-str :key-fn keyword)
+                  (or {}))]
 
     (if (symbol? (first selectors))
       `(if ~(with-meta (first selectors) {:tag 'boolean})
@@ -51,7 +61,8 @@
   (let [fname (-> *ns* meta :file)
         path  (str (subs fname 0 (- (count fname) 4)) "css.json")]
     (-> (slurp (io/resource path))
-        (json/read-str :key-fn keyword))))
+        (json/read-str :key-fn keyword)
+        (or {}))))
 
 (def ^:private xform-css-case
   (comp
@@ -59,8 +70,13 @@
    (keep (fn [[k v]]
            (let [cls (cond
                        (keyword? k)
-                       (let [cn (name k)]
-                         (or (get *css-data* (keyword cn)) cn))
+                       (let [knm (name k)
+                             kns (namespace k)]
+                         (case kns
+                           "global"  knm
+                           "old-css" (if (nil? *css-data*) knm "")
+                           (or (get *css-data* (keyword knm)) knm)))
+
                        (string? k)
                        k)]
              (when cls
@@ -75,7 +91,8 @@
   (let [fname (-> *ns* meta :file)
         path  (str (subs fname 0 (- (count fname) 4)) "css.json")
         data  (-> (slurp (io/resource path))
-                  (json/read-str :key-fn keyword))]
+                  (json/read-str :key-fn keyword)
+                  (or {}))]
 
     (if (symbol? (first params))
       `(if ~(with-meta (first params) {:tag 'boolean})

@@ -29,9 +29,16 @@
 (defn is-direct-child-of-root?
   ([objects id]
    (is-direct-child-of-root? (get objects id)))
-  ([{:keys [frame-id type]}]
-   (and (= type :frame)
-        (= frame-id uuid/zero))))
+  ([shape]
+   (and (some? shape) (= (dm/get-prop shape :frame-id) uuid/zero))))
+
+(defn root-frame?
+  ([objects id]
+   (root-frame? (get objects id)))
+  ([shape]
+   (and (some? shape)
+        (= (dm/get-prop shape :type) :frame)
+        (= (dm/get-prop shape :frame-id) uuid/zero))))
 
 (defn frame-shape?
   ([objects id]
@@ -228,7 +235,7 @@
       (or (root? frame) (nil? frame))
       nil
 
-      (is-direct-child-of-root? frame)
+      (root-frame? frame)
       frame
 
       :else
@@ -613,7 +620,7 @@
   (->> (get-parent-ids objects shape-id)
        (cons shape-id)
        (map (d/getf objects))
-       (d/seek is-direct-child-of-root?)
+       (d/seek root-frame?)
        :id))
 
 (defn comparator-layout-z-index

@@ -25,6 +25,7 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
@@ -64,6 +65,8 @@
         components-v2  (mf/use-ctx ctx/components-v2)
         new-css-system (mf/use-ctx ctx/new-css-system)
         component-id   (:id component)
+
+        visible?       (h/use-visible item-ref :once? true)
 
         ;; NOTE: we don't use reactive deref for it because we don't
         ;; really need rerender on any change on the file change. If
@@ -180,8 +183,9 @@
        (when (and (some? root-shape)
                   (some? container))
          [:*
-          [:& component-svg {:root-shape root-shape
-                             :objects (:objects container)}]
+          (when visible?
+            [:& component-svg {:root-shape root-shape
+                               :objects (:objects container)}])
           (let [renaming? (= renaming (:id component))]
             [:*
              [:& editable-label
@@ -202,11 +206,12 @@
 
 (mf/defc components-group
   {::mf/wrap-props false}
-  [{:keys [file-id prefix groups open-groups renaming listing-thumbs? selected on-asset-click
+  [{:keys [file-id prefix groups open-groups force-open? renaming listing-thumbs? selected on-asset-click
            on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-context-menu
            selected-full]}]
 
-  (let [group-open?    (get open-groups prefix true)
+  (let [group-open?    (or ^boolean force-open?
+                           ^boolean (get open-groups prefix (if (= prefix "") true false)))
         new-css-system (mf/use-ctx ctx/new-css-system)
         dragging*      (mf/use-state false)
         dragging?      (deref dragging*)
@@ -232,6 +237,7 @@
          (mf/deps dragging* prefix selected-paths selected-full)
          (fn [event]
            (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full dwl/rename-component)))]
+
     (if ^boolean new-css-system
       [:div {:class (dom/classnames (css :component-group) true)
              :on-drag-enter on-drag-enter
@@ -294,6 +300,7 @@
                                     :prefix (cph/merge-path-item prefix path-item)
                                     :groups content
                                     :open-groups open-groups
+                                    :force-open? force-open?
                                     :renaming renaming
                                     :listing-thumbs? listing-thumbs?
                                     :selected selected
@@ -367,6 +374,7 @@
                                     :prefix (cph/merge-path-item prefix path-item)
                                     :groups content
                                     :open-groups open-groups
+                                    :force-open? force-open?
                                     :renaming renaming
                                     :listing-thumbs? listing-thumbs?
                                     :selected selected
@@ -381,8 +389,9 @@
 
 (mf/defc components-section
   {::mf/wrap-props false}
-  [{:keys [file-id local? components listing-thumbs? open? reverse-sort? selected
-           on-asset-click on-assets-delete on-clear-selection open-status-ref]}]
+  [{:keys [file-id local? components listing-thumbs? open? force-open?
+           reverse-sort? selected on-asset-click on-assets-delete
+           on-clear-selection open-status-ref]}]
 
   (let [input-ref                (mf/use-ref nil)
 
@@ -599,24 +608,27 @@
                                 :multi true
                                 :ref input-ref
                                 :on-selected on-file-selected}]])]))
+
      [:& cmm/asset-section-block {:role :content}
-      [:& components-group {:file-id file-id
-                            :prefix ""
-                            :groups groups
-                            :open-groups open-groups
-                            :renaming (when ^boolean renaming? current-component-id)
-                            :listing-thumbs? listing-thumbs?
-                            :selected selected
-                            :on-asset-click on-asset-click
-                            :on-drag-start on-drag-start
-                            :do-rename do-rename
-                            :cancel-rename cancel-rename
-                            :on-rename-group on-rename-group
-                            :on-group on-group
-                            :on-ungroup on-ungroup
-                            :on-context-menu on-context-menu
-                            :selected-full selected-full}]
-      (when local?
+      (when ^boolean open?
+        [:& components-group {:file-id file-id
+                              :prefix ""
+                              :groups groups
+                              :open-groups open-groups
+                              :force-open? force-open?
+                              :renaming (when ^boolean renaming? current-component-id)
+                              :listing-thumbs? listing-thumbs?
+                              :selected selected
+                              :on-asset-click on-asset-click
+                              :on-drag-start on-drag-start
+                              :do-rename do-rename
+                              :cancel-rename cancel-rename
+                              :on-rename-group on-rename-group
+                              :on-group on-group
+                              :on-ungroup on-ungroup
+                              :on-context-menu on-context-menu
+                              :selected-full selected-full}])
+      (when ^boolean local?
         [:& cmm/assets-context-menu
          {:on-close on-close-menu
           :state @menu-state

@@ -34,7 +34,7 @@
   [shape hover?]
   (fn [event]
     (when-not (or (cph/group-shape? shape)
-                  (cph/is-direct-child-of-root? shape))
+                  (cph/root-frame? shape))
       (dom/prevent-default event)
       (dom/stop-propagation event)
       (st/emit! (dv/hover-shape (:id shape) hover?)))))
@@ -42,7 +42,7 @@
 (defn select-shape [shape]
   (fn [event]
     (when-not (or (cph/group-shape? shape)
-                  (cph/is-direct-child-of-root? shape))
+                  (cph/root-frame? shape))
       (dom/stop-propagation event)
       (dom/prevent-default event)
       (cond

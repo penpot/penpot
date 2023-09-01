@@ -149,7 +149,7 @@
 
 (mf/defc typographies-group
   {::mf/wrap-props false}
-  [{:keys [file-id prefix groups open-groups file local? selected local-data
+  [{:keys [file-id prefix groups open-groups force-open? file local? selected local-data
            editing-id renaming-id on-asset-click handle-change apply-typography on-rename-group
            on-ungroup on-context-menu selected-full]}]
   (let [group-open?   (get open-groups prefix true)
@@ -236,6 +236,7 @@
                                       :key (dm/str "group-" path-item)
                                       :groups content
                                       :open-groups open-groups
+                                      :force-open? force-open?
                                       :file file
                                       :local? local?
                                       :selected selected
@@ -297,6 +298,7 @@
                                       :key (dm/str "group-" path-item)
                                       :groups content
                                       :open-groups open-groups
+                                      :force-open? force-open?
                                       :file file
                                       :local? local?
                                       :selected selected
@@ -312,7 +314,7 @@
 
 (mf/defc typographies-section
   {::mf/wrap-props false}
-  [{:keys [file file-id local? typographies open? open-status-ref selected reverse-sort?
+  [{:keys [file file-id local? typographies open? force-open? open-status-ref selected reverse-sort?
            on-asset-click on-assets-delete on-clear-selection]}]
   (let [state          (mf/use-state {:detail-open? false :id nil})
         local-data     (mf/deref lens:typography-section-state)
@@ -506,6 +508,7 @@
                               :prefix ""
                               :groups groups
                               :open-groups open-groups
+                              :force-open? force-open?
                               :state state
                               :file file
                               :local? local?

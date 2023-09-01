@@ -9,8 +9,7 @@
   (:refer-clojure :exclude [defrecord assoc! clone])
   #?(:cljs (:require-macros [app.common.record]))
   #?(:clj
-     (:import java.util.Map
-              java.util.Map$Entry)))
+     (:import java.util.Map$Entry)))
 
 #_:clj-kondo/ignore
 (defmacro caching-hash
@@ -37,18 +36,24 @@
               :else `(. ~this-sym ~(property-symbol field))))
           fields)))
 
+
+(defprotocol ICustomRecordEquiv
+  (-equiv-with-exceptions [_ other exceptions]))
+
 #?(:clj
    (defn emit-impl-js
      [tagname base-fields]
      (let [fields   (conj base-fields '$meta '$extmap (with-meta '$hash {:mutable true}))
            key-sym  (gensym "key-")
            val-sym  (gensym "val-")
+           othr-sym (with-meta 'other {:tag tagname})
            this-sym (with-meta 'this {:tag tagname})]
-       ['cljs.core/ICloneable
+       ['cljs.core/IRecord
+        'cljs.core/ICloneable
         `(~'-clone [~this-sym]
           (new ~tagname ~@(generate-field-access this-sym val-sym fields)))
 
-        'IHash
+        'cljs.core/IHash
         `(~'-hash [~this-sym]
           (caching-hash ~this-sym
                         (fn [coll#]
@@ -58,16 +63,41 @@
                         (. ~this-sym ~'-$hash)))
 
         'cljs.core/IEquiv
-        `(~'-equiv [~this-sym ~val-sym]
-          (and (some? ~val-sym)
-               (identical? (.-constructor ~this-sym)
-                           (.-constructor ~val-sym))
-               ~@(map (fn [field]
-                        `(= (.. ~this-sym ~(property-symbol field))
-                            (.. ~(with-meta val-sym {:tag tagname}) ~(property-symbol field))))
-                      base-fields)
-               (= (. ~this-sym ~'-$extmap)
-                  (. ~(with-meta val-sym {:tag tagname}) ~'-$extmap))))
+        `(~'-equiv [~this-sym ~othr-sym]
+          (or (identical? ~this-sym ~othr-sym)
+              (and (some? ~othr-sym)
+                   (identical? (.-constructor ~this-sym)
+                               (.-constructor ~othr-sym))
+                   ~@(map (fn [field]
+                            `(= (.. ~this-sym ~(property-symbol field))
+                                (.. ~(with-meta othr-sym {:tag tagname}) ~(property-symbol field))))
+                          base-fields)
+
+                   (= (. ~this-sym ~'-$extmap)
+                      (. ~(with-meta othr-sym {:tag tagname}) ~'-$extmap)))))
+
+        `ICustomRecordEquiv
+        `(~'-equiv-with-exceptions [~this-sym ~othr-sym ~'exceptions]
+          (or (identical? ~this-sym ~othr-sym)
+              (and (some? ~othr-sym)
+                   (identical? (.-constructor ~this-sym)
+                               (.-constructor ~othr-sym))
+                   (and ~@(->> base-fields
+                               (map (fn [field]
+                                      `(= (.. ~this-sym ~(property-symbol field))
+                                          (.. ~(with-meta othr-sym {:tag tagname}) ~(property-symbol field))))))
+                        (== (count (. ~this-sym ~'-$extmap))
+                            (count (. ~othr-sym ~'-$extmap))))
+
+                   (reduce-kv (fn [~'_ ~'k ~'v]
+                                (if (contains? ~'exceptions ~'k)
+                                  true
+                                  (if (= (get (. ~this-sym ~'-$extmap) ~'k ::not-exists) ~'v)
+                                    true
+                                    (reduced false))))
+                              true
+                              (. ~othr-sym ~'-$extmap)))))
+
 
         'cljs.core/IMeta
         `(~'-meta [~this-sym] (. ~this-sym ~'-$meta))
@@ -175,16 +205,17 @@
            val-sym  'val
            this-sym (with-meta 'this {:tag tagname})]
 
-       ['clojure.lang.MapEquivalence
+       ['clojure.lang.IRecord
         'clojure.lang.IPersistentMap
-
-        `(~'equiv [~this-sym ~'other]
-          (and (instance? java.util.Map ~'other) (= (.count ~this-sym) (.size ^Map ~'other))
-               (every? (fn [^clojure.lang.MapEntry e#]
-                         (let [k# (.key e#)]
-                           (and (.containsKey ^Map ~'other k#)
-                                (= (.val e#) (.get ^Map ~'other k#)))))
-                       (.seq ~this-sym))))
+        `(~'equiv [~this-sym ~val-sym]
+          (and (some? ~val-sym)
+               (instance? ~tagname ~val-sym)
+               ~@(map (fn [field]
+                        `(= (.. ~this-sym ~(property-symbol field))
+                            (.. ~(with-meta val-sym {:tag tagname}) ~(property-symbol field))))
+                      base-fields)
+               (= (. ~this-sym ~'-$extmap)
+                  (. ~(with-meta val-sym {:tag tagname}) ~'-$extmap))))
 
         `(~'entryAt [~this-sym ~key-sym]
           (let [v# (.valAt ~this-sym ~key-sym ::not-found)]
