@@ -561,3 +561,18 @@
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
+
+(defmethod migrate 30
+  [data]
+  (letfn [(update-object [object]
+            (if (and (cph/frame-shape? object)
+                     (not (:shapes object)))
+              (assoc object :shapes [])
+              object))
+
+          (update-container [container]
+            (update container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
