@@ -22,6 +22,7 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.util.color :as uc]
+   [app.util.storage :refer [storage]]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -647,3 +648,12 @@
                   :position :right})
           (ptk/event ::ev/event {::ev/name "add-asset-to-library"
                                  :asset-type "color"}))))))
+
+(defn get-active-color-tab
+  []
+  (let [tab (::tab @storage)]
+    (or tab :ramp)))
+
+(defn set-active-color-tab!
+  [tab]
+  (swap! storage assoc ::tab tab))

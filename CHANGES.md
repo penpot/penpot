@@ -2,6 +2,10 @@
 
 ## 1.19.3
 
+### :sparkles: New features
+
+- Colorpicker: remember last color mode [Taiga #5508](https://tree.taiga.io/project/penpot/issue/5508)
+
 ### :bug: Bugs fixed
 
 - List view is discarded on tab change on Workspace Assets Sidebar tab [Github #3547](https://github.com/penpot/penpot/issues/3547)
