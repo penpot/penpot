@@ -12,7 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.text :as gsht]
-   [app.common.logging :as log]
+   [app.common.logging :as l]
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
@@ -25,7 +25,7 @@
 
 (defmulti migrate :version)
 
-(log/set-level! :info)
+#?(:cljs (l/set-level! :info))
 
 (defn migrate-data
   ([data] (migrate-data data cp/file-version))
@@ -33,7 +33,7 @@
    (if (= (:version data) to-version)
      data
      (let [migrate-fn #(do
-                         (log/trace :hint "migrate file" :id (:id %) :version-from %2 :version-to (inc %2))
+                         (l/trc :hint "migrate file" :id (:id %) :version-from %2 :version-to (inc %2))
                          (migrate (assoc %1 :version (inc %2))))]
        (reduce migrate-fn data (range (:version data 0) to-version))))))
 
@@ -450,11 +450,11 @@
                       ;; If we cannot find any we let the frame-id as it was before
                       frame-id)]
               (when (not= frame-id calculated-frame-id)
-                (log/info :hint "Fix wrong frame-id"
-                          :shape (:name object)
-                          :id (:id object)
-                          :current (dm/get-in objects [frame-id :name])
-                          :calculated (get-in objects [calculated-frame-id :name])))
+                (l/trc :hint "Fix wrong frame-id"
+                       :shape (:name object)
+                       :id (:id object)
+                       :current (dm/get-in objects [frame-id :name])
+                       :calculated (get-in objects [calculated-frame-id :name])))
               (assoc object :frame-id calculated-frame-id)))
 
           (update-container [container]
