@@ -773,7 +773,7 @@
 (defn- lookup-index
   [id]
   (let [val (get-in @*state* [:index id])]
-    (l/debug :fn "lookup-index" :id id :val val ::l/sync? true)
+    (l/trc :fn "lookup-index" :id id :val val ::l/sync? true)
     (when (and (not (::ignore-index-errors? *options*)) (not val))
       (ex/raise :type :validation
                 :code :incomplete-index

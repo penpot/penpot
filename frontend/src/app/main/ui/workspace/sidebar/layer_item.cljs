@@ -368,10 +368,16 @@
 
         [:div.element-actions {:class (when ^boolean has-shapes? "is-parent")}
          [:div.toggle-element {:class (when ^boolean hidden? "selected")
+                               :title (if (:hidden item)
+                                        (tr "workspace.shape.menu.show")
+                                        (tr "workspace.shape.menu.hide"))                               
                                :on-click toggle-visibility}
           (if ^boolean hidden? i/eye-closed i/eye)]
          [:div.block-element {:class (when ^boolean blocked? "selected")
-                              :on-click toggle-blocking}
+                              :on-click toggle-blocking
+                              :title (if (:blocked item)
+                                       (tr "workspace.shape.menu.unlock")
+                                       (tr "workspace.shape.menu.lock"))}
           (if ^boolean blocked? i/lock i/unlock)]]
 
         (when ^boolean has-shapes?

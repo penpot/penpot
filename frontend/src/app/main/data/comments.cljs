@@ -279,8 +279,9 @@
                  (assoc-in (conj path :position) (:position comment-thread))
                  (assoc-in (conj path :frame-id) (:frame-id comment-thread))))))
            (fetched [[users comments] state]
-             (let [pages (get-in state [:workspace-data :pages-index])
-                   comments (filter #(some? (get pages (:page-id %))) comments)
+             (let [pages (-> (get-in state [:workspace-data :pages])
+                             set)
+                   comments (filter #(contains? pages (:page-id %)) comments)
                    state (-> state
                              (assoc :comment-threads (d/index-by :id comments))
                              (update :current-file-comments-users merge (d/index-by :id users)))]

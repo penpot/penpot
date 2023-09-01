@@ -207,10 +207,10 @@
                        (db/create-array conn "uuid" ids)]]
 
               (db/exec-one! conn sql)
-              (l/debug :hist "dispatcher: queue tasks"
-                       :queue queue
-                       :tasks (count ids)
-                       :queued res)))
+              (l/dbg :hist "dispatcher: queue tasks"
+                     :queue queue
+                     :tasks (count ids)
+                     :queued res)))
 
           (run-batch! [rconn]
             (try
@@ -433,12 +433,12 @@
 
                 :else
                 (try
-                  (l/debug :hint "worker: executing task"
-                           :name (:name task)
-                           :id (:id task)
-                           :queue queue
-                           :worker-id worker-id
-                           :retry (:retry-num task))
+                  (l/dbg :hint "worker: executing task"
+                         :name (:name task)
+                         :id (str (:id task))
+                         :queue queue
+                         :worker-id worker-id
+                         :retry (:retry-num task))
                   (handle-task task)
                   (catch InterruptedException cause
                     (throw cause))
@@ -678,13 +678,13 @@
                     (-> (db/exec-one! conn [sql:remove-not-started-tasks task queue label])
                         :next.jdbc/update-count))]
 
-    (l/debug :hint "submit task"
-             :name task
-             :queue queue
-             :label label
-             :dedupe (boolean dedupe)
-             :deleted (or deleted 0)
-             :in (dt/format-duration duration))
+    (l/trc :hint "submit task"
+           :name task
+           :queue queue
+           :label label
+           :dedupe (boolean dedupe)
+           :deleted (or deleted 0)
+           :in (dt/format-duration duration))
 
     (db/exec-one! conn [sql:insert-new-task id task props queue
                         label priority max-retries interval])

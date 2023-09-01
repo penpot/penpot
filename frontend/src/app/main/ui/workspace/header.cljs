@@ -13,7 +13,6 @@
    [app.main.data.exports :as de]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shortcuts :as sc]
@@ -168,9 +167,7 @@
              (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
              (if (and (kbd/alt? event) (kbd/mod? event))
                (st/emit! (modal/show {:type :onboarding}))
-               (st/emit! (modal/show {:type :release-notes :version version}))))))
-
-        ]
+               (st/emit! (modal/show {:type :release-notes :version version}))))))]
 
     [:& dropdown {:show true :on-close on-close}
      [:ul.sub-menu.help-info
@@ -603,16 +600,10 @@
            (dom/prevent-default event)
            (reset! editing* true)))
 
-        close-modals
-        (mf/use-fn
-         #(st/emit! (dc/stop-picker)
-                    (modal/hide)))
-
         go-back
         (mf/use-fn
          (mf/deps project)
          (fn []
-           (close-modals)
            (st/emit! (dw/go-to-dashboard project))))
 
         nav-to-viewer

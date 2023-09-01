@@ -12,6 +12,18 @@
 
 ### :heart: Community contributions by (Thank you!)
 
+## 1.19.3
+
+### :sparkles: New features
+
+- Remember last color mode in colorpicker [Taiga #5508](https://tree.taiga.io/project/penpot/issue/5508)
+- Improve layers multiselection behaviour [Github #5741](https://github.com/penpot/penpot/issues/5741)
+
+### :bug: Bugs fixed
+
+- List view is discarded on tab change on Workspace Assets Sidebar tab [Github #3547](https://github.com/penpot/penpot/issues/3547)
+- Fix message popup remains open when exiting workspace with browser back button [Taiga #5747](https://tree.taiga.io/project/penpot/issue/5747)
+- When editing text if font is changed, the proportions of the rendered shape are wrong [Taiga #5786](https://tree.taiga.io/project/penpot/issue/5786)
 
 ## 1.19.2
 

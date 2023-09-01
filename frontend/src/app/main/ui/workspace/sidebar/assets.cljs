@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
+   [app.main.data.workspace.assets :as dwa]
    [app.main.refs :as refs]
    [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
    [app.main.ui.components.search-bar :refer [search-bar]]
@@ -68,27 +69,39 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   []
-  (let [components-v2   (mf/use-ctx ctx/components-v2)
-        read-only?      (mf/use-ctx ctx/workspace-read-only?)
-        new-css-system  (mf/use-ctx ctx/new-css-system)
-        filters*      (mf/use-state
+  (let [components-v2  (mf/use-ctx ctx/components-v2)
+        read-only?     (mf/use-ctx ctx/workspace-read-only?)
+        new-css-system (mf/use-ctx ctx/new-css-system)
+        filters*       (mf/use-state
                        {:term ""
                         :section "all"
-                        :ordering :asc
-                        :list-style :thumbs
+                        :ordering (dwa/get-current-assets-ordering)
+                        :list-style (dwa/get-current-assets-list-style)
                         :open-menu false})
-        filters       (deref filters*)
-        term          (:term filters)
-        menu-open?    (:open-menu filters)
-        section       (:section filters)
-        ordering      (:ordering filters)
-        reverse-sort? (= :desc ordering)
+        filters        (deref filters*)
+        term           (:term filters)
+        ordering       (:ordering filters)
+        list-style     (:list-style filters)
+        menu-open?     (:open-menu filters)
+        section        (:section filters)
+        ordering       (:ordering filters)
+        reverse-sort?  (= :desc ordering)
 
         toggle-ordering
-        (mf/use-fn #(swap! filters* update :ordering toggle-values [:asc :desc]))
+        (mf/use-fn
+          (mf/deps ordering)
+          (fn []
+            (let [new-value (toggle-values ordering [:asc :desc])]
+              (swap! filters* assoc :ordering new-value)
+              (dwa/set-current-assets-ordering! new-value))))
 
         toggle-list-style
-        (mf/use-fn #(swap! filters* update :list-style toggle-values [:thumbs :list]))
+        (mf/use-fn
+          (mf/deps list-style)
+          (fn []
+            (let [new-value (toggle-values list-style [:thumbs :list])]
+              (swap! filters* assoc :list-style new-value)
+              (dwa/set-current-assets-list-style! new-value))))
 
         on-search-term-change
         (mf/use-fn

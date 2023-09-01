@@ -23,7 +23,7 @@
 
     <Logger name="app.rpc.commands.binfile" level="debug" />
     <Logger name="app.storage.tmp" level="debug" />
-    <Logger name="app.worker" level="info" />
+    <Logger name="app.worker" level="trace" />
     <Logger name="app.msgbus" level="info" />
     <Logger name="app.http.websocket" level="info" />
     <Logger name="app.util.websocket" level="info" />

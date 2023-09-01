@@ -8,8 +8,10 @@
   (:require-macros [app.main.style :refer [css]])
   (:require
    [app.common.data.macros :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -192,6 +194,9 @@
       (st/emit! (dw/initialize-file project-id file-id))
       (fn []
         (st/emit! ::dwp/force-persist
+                  (dc/stop-picker)
+                  (modal/hide)
+                  msg/hide
                   (dw/finalize-file project-id file-id))))
 
     [:& (mf/provider ctx/current-file-id) {:value file-id}
