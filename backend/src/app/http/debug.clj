@@ -133,7 +133,7 @@
   [{:keys [::db/pool]} {:keys [::session/profile-id params] :as request}]
   (let [profile    (profile/get-profile pool profile-id)
         project-id (:default-project-id profile)
-        data       (some-> params :file :path io/read-as-bytes blob/decode)]
+        data       (some-> params :file :path io/read-as-bytes)]
 
     (if (and data project-id)
       (let [fname      (str "Imported file *: " (dt/now))
@@ -145,19 +145,21 @@
                  (is-file-exists? pool file-id))
           (do
             (db/update! pool :file
-                        {:data (blob/encode data)}
+                        {:data data}
                         {:id file-id})
             {::yrs/status 200
              ::yrs/body "OK UPDATED"})
 
-          (do
-            (create-file pool {:id file-id
-                               :name fname
-                               :project-id project-id
-                               :profile-id profile-id
-                               :data data})
-            {::yrs/status 201
-             ::yrs/body "OK CREATED"})))
+          (db/run! pool (fn [{:keys [::db/conn]}]
+                          (create-file conn {:id file-id
+                                             :name fname
+                                             :project-id project-id
+                                             :profile-id profile-id})
+                          (db/update! conn :file
+                                      {:data data}
+                                      {:id file-id})
+                          {::yrs/status 201
+                           ::yrs/body "OK CREATED"}))))
 
       {::yrs/status 500
        ::yrs/body "ERROR"})))
