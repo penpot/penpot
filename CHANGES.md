@@ -4,7 +4,8 @@
 
 ### :sparkles: New features
 
-- Colorpicker: remember last color mode [Taiga #5508](https://tree.taiga.io/project/penpot/issue/5508)
+- Remember last color mode in colorpicker [Taiga #5508](https://tree.taiga.io/project/penpot/issue/5508)
+- Improve layers multiselection behaviour [Github #5741](https://github.com/penpot/penpot/issues/5741)
 
 ### :bug: Bugs fixed
 
