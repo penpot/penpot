@@ -23,7 +23,7 @@
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
-#?(:cljs (log/set-level! :info))
+#?(:cljs (l/set-level! :info))
 
 (defmulti migrate :version)
 
