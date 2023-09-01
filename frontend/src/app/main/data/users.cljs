@@ -17,6 +17,7 @@
    [app.main.data.media :as di]
    [app.main.data.websocket :as ws]
    [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.util.i18n :as i18n]
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
@@ -48,9 +49,15 @@
   (let [team-id (::current-team-id @storage)]
     (or team-id (:default-team-id profile))))
 
+(declare update-profile-props)
+
 (defn set-current-team!
   [team-id]
-  (swap! storage assoc ::current-team-id team-id))
+  (println "set-current-team!1" team-id)
+  (swap! storage assoc ::current-team-id team-id)
+  (println "set-current-team!2" team-id)
+  (st/emit! (update-profile-props {:current-team-id team-id}))
+  (println "set-current-team!3" team-id))
 
 ;; --- EVENT: fetch-teams
 
@@ -71,15 +78,18 @@
       (effect [_ _ _]
         ;; Check if current team-id is part of available teams
         ;; if not, dissoc it from storage.
+        (println "xxxxxxxxxxxxxxxxx")
         (when-let [ctid (::current-team-id @storage)]
           (when-not (contains? ids ctid)
-            (swap! storage dissoc ::current-team-id)))))))
+            (set-current-team! nil)
+            #_(swap! storage dissoc ::current-team-id)))))))
 
 (defn fetch-teams
   []
   (ptk/reify ::fetch-teams
     ptk/WatchEvent
     (watch [_ _ _]
+      (println "fetch teams")
       (->> (rp/cmd! :get-teams)
            (rx/map teams-fetched)))))
 
@@ -107,6 +117,8 @@
     (effect [_ state _]
       (when-let [profile (:profile state)]
         (swap! storage assoc :profile profile)
+        (println "profile fetched")
+        (swap! storage assoc ::current-team-id (get-in state [:profile :props :current-team-id]))
         (i18n/set-locale! (:lang profile))))))
 
 (defn fetch-profile
@@ -125,7 +137,8 @@
   accepting invitation, or third party auth signup or singin."
   [profile]
   (letfn [(get-redirect-event []
-            (let [team-id (:default-team-id profile)
+            (let [team-id (get-current-team-id profile)
+                  ;; TODO: checkear más sitios como token
                   redirect-url (:redirect-url @storage)]
               (if (some? redirect-url)
                 (do

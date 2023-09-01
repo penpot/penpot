@@ -10,6 +10,7 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
+   #_[app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
@@ -28,6 +29,7 @@
   (let [msg "Team created successfully"]
     (st/emit! (dm/success msg)
               (modal/hide)
+              #_(du/update-profile-props {:current-team-id (:id response)})
               (rt/nav :dashboard-projects {:team-id (:id response)}))))
 
 (defn- on-update-success

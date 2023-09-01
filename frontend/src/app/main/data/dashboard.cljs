@@ -43,6 +43,7 @@
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
+      (println "initialize id" id)
       (du/set-current-team! id)
       (let [prev-team-id (:current-team-id state)]
         (cond-> state
@@ -59,23 +60,24 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (rx/merge
-       (ptk/watch (df/load-team-fonts id) state stream)
-       (ptk/watch (fetch-projects) state stream)
-       (ptk/watch (fetch-team-members) state stream)
-       (ptk/watch (du/fetch-teams) state stream)
-       (ptk/watch (du/fetch-users {:team-id id}) state stream)
+        ;;fetch teams must be first in case the team doesn't exist
+        (ptk/watch (du/fetch-teams) state stream)
+        (ptk/watch (df/load-team-fonts id) state stream)
+        (ptk/watch (fetch-projects) state stream)
+        (ptk/watch (fetch-team-members) state stream)
+        (ptk/watch (du/fetch-users {:team-id id}) state stream)
 
-       (let [stoper    (rx/filter (ptk/type? ::finalize) stream)
-            profile-id (:profile-id state)]
-         (->> stream
-              (rx/filter (ptk/type? ::dws/message))
-              (rx/map deref)
-              (rx/filter (fn [{:keys [subs-id type] :as msg}]
-                           (and (or (= subs-id uuid/zero)
-                                    (= subs-id profile-id))
-                                (= :notification type))))
-              (rx/map handle-notification)
-              (rx/take-until stoper)))))))
+        (let [stoper    (rx/filter (ptk/type? ::finalize) stream)
+              profile-id (:profile-id state)]
+          (->> stream
+               (rx/filter (ptk/type? ::dws/message))
+               (rx/map deref)
+               (rx/filter (fn [{:keys [subs-id type] :as msg}]
+                            (and (or (= subs-id uuid/zero)
+                                   (= subs-id profile-id))
+                              (= :notification type))))
+               (rx/map handle-notification)
+               (rx/take-until stoper)))))))
 
 (defn finalize
   [params]
@@ -93,6 +95,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :dashboard-team-members (d/index-by :id members)))))
+
+;;TODO: quedan sitios del curren-team-id
 
 (defn fetch-team-members
   []
@@ -987,7 +991,9 @@
    (ptk/reify ::go-to-projects-1
      ptk/WatchEvent
      (watch [_ _ _]
-       (rx/of (rt/nav :dashboard-projects {:team-id team-id}))))))
+       (rx/merge
+         (rx/of (rt/nav :dashboard-projects {:team-id team-id}))
+         #_(rx/of (du/update-profile-props {:current-team-id team-id})))))))
 
 (defn go-to-team-members
   []
