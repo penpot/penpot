@@ -271,6 +271,3 @@
               (update-in [:workspace-libraries file-id :data] cp/process-changes changes)))
 
         state))))
-
-
-

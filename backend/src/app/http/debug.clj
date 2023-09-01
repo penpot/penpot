@@ -139,16 +139,17 @@
         data       (some-> params :file :path io/read-as-bytes)]
 
     (if (and data project-id)
-      (let [fname      (str "Imported file *: " (dt/now))
-            overwrite? (contains? params :overwrite?)
-            file-id    (or (and overwrite? (ex/ignoring (-> params :file :filename parse-uuid)))
-                           (uuid/next))]
+      (let [fname     (str "Imported file *: " (dt/now))
+            reuse-id? (contains? params :reuseid)
+            file-id   (or (and reuse-id? (ex/ignoring (-> params :file :filename parse-uuid)))
+                          (uuid/next))]
 
-        (if (and overwrite? file-id
+        (if (and reuse-id? file-id
                  (is-file-exists? pool file-id))
           (do
             (db/update! pool :file
-                        {:data data}
+                        {:data data
+                         :deleted-at nil}
                         {:id file-id})
             {::yrs/status 200
              ::yrs/body "OK UPDATED"})

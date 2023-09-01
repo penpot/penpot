@@ -82,6 +82,15 @@
                ::file-data fdata
                ::applied-changes-count 0)))
 
+(defn with-file-data
+  [changes fdata]
+  (let [page-id (::page-id (meta changes))
+        fdata (assoc-in fdata [:pages-index uuid/zero]
+                        (get-in fdata [:pages-index page-id]))]
+    (vary-meta changes assoc
+               ::file-data fdata
+               ::applied-changes-count 0)))
+
 (defn with-library-data
   [changes data]
   (vary-meta changes assoc
@@ -711,14 +720,18 @@
                                       :id id
                                       :name (:name new-component)
                                       :path (:path new-component)
+                                      :main-instance-id (:main-instance-id new-component)
+                                      :main-instance-page (:main-instance-page new-component)
                                       :annotation (:annotation new-component)
                                       :objects (:objects new-component)}) ;; this won't exist in components-v2
           (update :undo-changes conj {:type :mod-component
-                                           :id id
-                                           :name (:name prev-component)
-                                           :path (:path prev-component)
-                                           :annotation (:annotation prev-component)
-                                           :objects (:objects prev-component)}))
+                                      :id id
+                                      :name (:name prev-component)
+                                      :path (:path prev-component)
+                                      :main-instance-id (:main-instance-id prev-component)
+                                      :main-instance-page (:main-instance-page prev-component)
+                                      :annotation (:annotation prev-component)
+                                      :objects (:objects prev-component)}))
       changes)))
 
 (defn delete-component

@@ -124,6 +124,7 @@
 (declare send-notifications!)
 (declare update-file)
 (declare update-file*)
+(declare update-file-data)
 (declare take-snapshot?)
 
 ;; If features are specified from params and the final feature
@@ -208,26 +209,6 @@
                         :project-id (:project-id file)
                         :team-id    (:team-id file)}))))))
 
-(defn- update-file-data
-  [file changes]
-  (-> file
-      (update :revn inc)
-      (update :data (fn [data]
-                      (cond-> data
-                        :always
-                        (-> (blob/decode)
-                            (assoc :id (:id file))
-                            (pmg/migrate-data))
-
-                        (and (contains? ffeat/*current* "components/v2")
-                             (not (contains? ffeat/*previous* "components/v2")))
-                        (ctf/migrate-to-components-v2)
-
-                        :always
-                        (-> (cp/process-changes changes)
-                            (blob/encode)))))))
-
-
 (defn- update-file*
   [{:keys [::db/conn] :as cfg} {:keys [profile-id file changes session-id ::created-at] :as params}]
   (let [;; Process the file data in the CLIMIT context; scheduling it
@@ -266,6 +247,25 @@
 
       ;; Retrieve and return lagged data
       (get-lagged-changes conn params))))
+
+(defn- update-file-data
+  [file changes]
+  (-> file
+      (update :revn inc)
+      (update :data (fn [data]
+                      (cond-> data
+                        :always
+                        (-> (blob/decode)
+                            (assoc :id (:id file))
+                            (pmg/migrate-data))
+
+                        (and (contains? ffeat/*current* "components/v2")
+                             (not (contains? ffeat/*previous* "components/v2")))
+                        (ctf/migrate-to-components-v2)
+
+                        :always
+                        (-> (cp/process-changes changes)
+                            (blob/encode)))))))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."

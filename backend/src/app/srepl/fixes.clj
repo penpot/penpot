@@ -8,6 +8,7 @@
   "A collection of adhoc fixes scripts."
   (:require
    [app.common.data :as d]
+   [app.common.files.validate :as cfv]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as l]
    [app.common.pages.helpers :as cph]
@@ -29,7 +30,7 @@
                   (d/index-by :id))
 
         update-page (fn [page]
-                      (let [errors (ctf/validate-shape uuid/zero file page libs)]
+                      (let [errors (cfv/validate-shape uuid/zero file page libs)]
                         (when (seq errors)
                           (println "******Errors in file " (:id file) " page " (:id page))
                           (pprint errors {:level 3}))))]

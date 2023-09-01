@@ -8,6 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.repair :as cfr]
+   [app.common.files.validate :as cfv]
    [app.common.logging :as l]
    [app.common.math :as mth]
    [app.common.transit :as t]
@@ -21,6 +23,7 @@
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.path.shortcuts]
    [app.main.data.workspace.shortcuts]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.dom :as dom]
@@ -32,6 +35,8 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [promesa.core :as p]))
+
+(l/set-level! :debug)
 
 (defn ^:export set-logging
   ([level]
@@ -431,14 +436,49 @@
   ([shape-id]
    (let [file      (assoc (get @st/state :workspace-file)
                           :data (get @st/state :workspace-data))
-         page      (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])
          libraries (get @st/state :workspace-libraries)
 
-         errors    (ctf/validate-shape (or shape-id uuid/zero)
-                                       file
-                                       page
-                                       libraries)]
-     (clj->js errors))))
+         errors    (if shape-id
+                     (let [page (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])]
+                       (cfv/validate-shape (uuid shape-id) file page libraries))
+                     (cfv/validate-file file libraries))]
+
+     (clj->js (d/group-by :code errors)))))
+
+;; --- Repair file
+
+(defn ^:export repair
+  []
+  (let [file      (assoc (get @st/state :workspace-file)
+                         :data (get @st/state :workspace-data))
+        libraries (get @st/state :workspace-libraries)
+        errors    (cfv/validate-file file libraries)]
+
+    (l/dbg :hint "repair current file" :errors (count errors))
+
+    (st/emit!
+     (ptk/reify ::repair-current-file
+       ptk/WatchEvent
+       (watch [_ state _]
+         (let [features  (cond-> #{}
+                           (features/active-feature? state :components-v2)
+                           (conj "components/v2"))
+               sid       (:session-id state)
+               file      (get state :workspace-file)
+               file-data (get state :workspace-data)
+               libraries (get state :workspace-libraries)
+
+               changes   (-> (cfr/repair-file file-data libraries errors)
+                             (get :redo-changes))
+
+               params    {:id (:id file)
+                          :revn (:revn file)
+                          :session-id sid
+                          :changes changes
+                          :features features}]
+
+           (->> (rp/cmd! :update-file params)
+                (rx/tap #(dom/reload-current-window)))))))))
 
 (defn ^:export fix-orphan-shapes
   []
