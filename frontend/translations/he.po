@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-07-24 19:05+0000\n"
+"PO-Revision-Date: 2023-09-02 09:15+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.0-dev\n"
+"X-Generator: Weblate 5.0.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -4599,3 +4599,19 @@ msgstr "%s קבצים עברו ייבוא כרגיל."
 
 msgid "shortcuts.toggle-visibility"
 msgstr "החלפת מצב הצגה"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "השם חייב להכיל 250 תווים לכל היותר."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "הסיסמה חייבת להכיל תווים שאינם רווחים."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "אסימוני כניסה אישיים"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "השם חייב להכיל תווים שאינם רווחים."
