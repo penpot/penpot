@@ -76,7 +76,6 @@
       [:index {:optional true} [:maybe :int]]
       [:ignore-touched {:optional true} :boolean]]]
 
-
     [:mod-obj
      [:map {:title "ModObjChange"}
       [:type [:= :mod-obj]]

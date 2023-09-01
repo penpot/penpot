@@ -166,6 +166,7 @@
           :component-id
           :component-file
           :component-root
+          :main-instance
           :remote-synced
           :shape-ref
           :touched))

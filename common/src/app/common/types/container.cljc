@@ -164,6 +164,8 @@
     false
     (ctk/main-instance? shape)
     true
+    (ctk/instance-head? shape)
+    false
     :else
     (component-main? objects (get objects (:parent-id shape)))))
 
