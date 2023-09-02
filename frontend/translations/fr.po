@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-09-03 21:50+0000\n"
-"Last-Translator: Louis Chance <contact@louischance.com>\n"
+"Last-Translator: Philippe Accorsi <philippe.accorsi@algoo.fr>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -858,7 +858,7 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/inspect/exports.cljs
 msgid "errors.unexpected-error"
-msgstr "Une erreur inattendue s’est produite"
+msgstr "Une erreur inattendue s’est produite."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
@@ -4461,3 +4461,7 @@ msgstr "Diminuer l'espacement entre les lettres"
 
 msgid "shortcuts.letter-spacing-inc"
 msgstr "Augmenter l'espacement entre les lettres"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-outside"
+msgstr "Fermer en cliquant a l'extérieur"
