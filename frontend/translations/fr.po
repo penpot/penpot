@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-09-03 21:50+0000\n"
-"Last-Translator: Philippe Accorsi <philippe.accorsi@algoo.fr>\n"
+"Last-Translator: Swapnil C <swapnilchitnis360@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -271,7 +271,7 @@ msgstr "Ajouter une Bibliothèque Partagée"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.change-email"
-msgstr "Changer adresse e‑mail"
+msgstr "Changer l'adresse e‑mail"
 
 #: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
 msgid "dashboard.copy-suffix"
@@ -1874,7 +1874,7 @@ msgstr "Actualiser le composant d’une bibliothèque"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
-msgstr "E‑mail d'invitation envoyé"
+msgstr "E‑mail d'invitation envoyé avec succès"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
@@ -2992,7 +2992,7 @@ msgstr "BIBLIOTHÈQUES PARTAGÉES"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography"
-msgstr "Typographies multiples"
+msgstr "Plusieurs typographies"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography-tooltip"
