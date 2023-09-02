@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-09-03 21:50+0000\n"
-"Last-Translator: Locness <locness3@orange.fr>\n"
+"Last-Translator: Louis Chance <contact@louischance.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -279,7 +279,7 @@ msgstr "(copie)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "Créer nouvelle équipe"
+msgstr "Créer une nouvelle équipe"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
@@ -345,7 +345,7 @@ msgstr "Information sur comment configurer l'export dans Penpot."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.no-elements"
-msgstr "Il n'y a pas d'éléments avec des paramètres d'exportation."
+msgstr "Aucun d'élément avec des paramètres d'exportation."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
@@ -448,7 +448,9 @@ msgid "dashboard.import.import-message"
 msgstr "%s fichiers ont été importés avec succès."
 
 msgid "dashboard.import.import-warning"
-msgstr "Certains fichiers contenaient des objets invalides qui ont été supprimés."
+msgstr ""
+"Certains fichiers contenaient des objets invalides qui n'ont pas été "
+"importés."
 
 msgid "dashboard.import.progress.process-colors"
 msgstr "Traitement des couleurs"
@@ -1694,8 +1696,8 @@ msgstr[1] "Supprimer les fichiers"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
-msgstr[0] "Êtes-vous sûr de vouloir supprimer ce fichier ?"
-msgstr[1] "Êtes-vous sûr de vouloir supprimer ces fichiers ?"
+msgstr[0] "Vous confirmez vouloir supprimer ce fichier ?"
+msgstr[1] "Vous confirmez vouloir supprimer ces fichiers ?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -2256,9 +2258,8 @@ msgstr "Insérer une image"
 msgid "shortcuts.join-nodes"
 msgstr "Joindre les nœuds"
 
-#, fuzzy
 msgid "shortcuts.make-corner"
-msgstr "Créer un angle"
+msgstr "Transformer en coin"
 
 msgid "shortcuts.make-curve"
 msgstr "Faire une courbe"
@@ -2435,9 +2436,8 @@ msgstr "Verrouiller les proportions"
 msgid "shortcuts.toggle-rules"
 msgstr "Afficher/masquer les règles"
 
-#, fuzzy
 msgid "shortcuts.toggle-scale-text"
-msgstr "Mettre le texte à l’échelle"
+msgstr "Activer/désactiver le redimensionnement du texte"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Aligner sur la grille"
@@ -4070,3 +4070,394 @@ msgstr "Actualiser"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "Le nom ne doit pas contenir plus de 250 caractères."
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "Le nom doit contenir au moins un caractère autre que l'espace."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "Le mot de passe doit contenir au moins un caractère autre que l'espace."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Jetons d'accès personnels"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Les jetons d'accès personnels fonctionnent comme une alternative à notre "
+"système d'authentification par login/mot de passe et peuvent être utilisés "
+"pour permettre à une application d'accéder à l'API interne de Penpot"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "Vous n'avez pas encore de jeton."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Pressez le bouton \"Générer un nouveau jeton\" pour en générer un."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.title"
+msgstr "Générer un jeton d'accès"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.label"
+msgstr "Nom"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.placeholder"
+msgstr "Le nom aide à savoir comment le jeton sera utilisé"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.expiration-date.label"
+msgstr "Date d'expiration"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.submit-label"
+msgstr "Créer un jeton"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.title"
+msgstr "Supprimer le jeton"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.message"
+msgstr "Confirmez-vous que vous souhaitez supprimer ce jeton ?"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.accept"
+msgstr "Supprimer le jeton"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "Jeton d'accès créé avec succès."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Expire le %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "A expiré le %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Aucune date d'expiration"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.copy-token"
+msgstr "Copier le jeton"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "Jeton copié"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Jamais"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30 jours"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60 jours"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90 jours"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180 jours"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "Le nom est requis"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "Le jeton expirera le %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "Le jeton n'a pas de date d'expiration"
+
+msgid "dashboard.webhooks.active"
+msgstr "Actif"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "Quand ce webhook sera activé, les détails de l'évènement seront envoyés"
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Les webhooks sont une manière simple de permettre à d'autres site web et aux "
+"applications d'être notifiés quand certains évènements se produisent dans "
+"Penpot. Nous enverrons une requête POST à toutes les URLs que vous avez "
+"indiquées."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "team.webhooks.max-length"
+msgstr "Le nom du webhook ne peut pas contenir plus de 2048 caractères."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"Il semble que vous ouvrez un fichier qui a la fonctionnalité '%s' activée, "
+"mais votre interface Penpot ne la prend pas en charge ou l'a désactivée."
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr ""
+"Vous avez atteint le quota maximum de '%s'. Veuillez contacter le support "
+"technique."
+
+msgid "errors.webhooks.last-delivery"
+msgstr "Il y a eu une erreur dans le dernier envoi."
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "Statut inattendu %s"
+
+msgid "errors.cannot-upload"
+msgstr "Impossible de télécharger le fichier média."
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Graisse de la police"
+
+msgid "inspect.empty.help"
+msgstr ""
+"Pour en savoir plus sur l'inspection, visitez le centre d'aide de Penpot"
+
+msgid "inspect.empty.more-info"
+msgstr "Plus d'informations sur l'inspection"
+
+msgid "inspect.empty.select"
+msgstr ""
+"Sélectionnez une forme, un plan de travail ou un groupe pour inspecter leurs "
+"propriétés et le code"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Copier le lien"
+
+msgid "labels.discard"
+msgstr "Rejeter"
+
+msgid "labels.inactive"
+msgstr "Inactif"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.access-tokens"
+msgstr "Jetons d'accès"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Actualiser le fichier"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "Dépublier %s fichiers"
+
+msgid "modals.create-webhook.url.label"
+msgstr "URL de charge utile"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://example.com/postreceive"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Modifier le webhook"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
+msgstr[0] "Activée dans aucun fichier."
+msgstr[1] "Activées dans aucun fichier."
+
+msgid "modals.publish-empty-library.title"
+msgstr "Publier la bibliothèque vide"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "Confirmez-vous vouloir supprimer cette note ?"
+
+msgid "modals.delete-component-annotation.title"
+msgstr "Supprimer la note"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Diminuer la hauteur de ligne"
+
+msgid "shortcuts.open-inspect"
+msgstr "Aller à l'inspecteur"
+
+msgid "shortcuts.select-next"
+msgstr "Sélectionner la couche suivante"
+
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Activer/désactiver le plein écran"
+
+msgid "labels.view-only"
+msgstr "Lecture seule"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Votre fichier a été dupliqué avec succès"
+msgstr[1] "Vos fichiers ont été dupliqués avec succès"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] "Activé dans aucun fichier."
+msgstr[1] "Activés dans aucun fichier."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "Cette bibliothèque est active ici : "
+msgstr[1] "Ces bibliothèques sont actives ici : "
+
+msgid "modals.delete-webhook.accept"
+msgstr "Supprimer le webhook"
+
+msgid "modals.delete-webhook.message"
+msgstr "Vous confirmez vouloir supprimer le webhook ?"
+
+msgid "modals.delete-webhook.title"
+msgstr "Suppression du webhook en cours"
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Certains emails appartiennent à des membres actuels de l'équipe. Les "
+"invitations ne leur seront pas envoyées."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Dépublier"
+msgstr[1] "Dépublier"
+
+msgid "modals.publish-empty-library.message"
+msgstr "Votre bibliothèque est vide. Voulez-vous la publier quand même ?"
+
+msgid "modals.publish-empty-library.accept"
+msgstr "Publier"
+
+msgid "shortcut-subsection.text-editor"
+msgstr "Textes"
+
+msgid "shortcuts.align-center"
+msgstr "Aligner au centre"
+
+msgid "shortcuts.align-justify"
+msgstr "Aligner justifié"
+
+msgid "shortcuts.bold"
+msgstr "Basculer en gras"
+
+msgid "shortcuts.font-size-dec"
+msgstr "Diminuer la taille de la police"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Augmenter la taille de la police"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Augmenter la hauteur de ligne"
+
+msgid "shortcuts.line-through"
+msgstr "Activer/désactiver texte barré"
+
+msgid "shortcuts.select-prev"
+msgstr "Sélectionner la couche précédente"
+
+msgid "shortcuts.select-parent-layer"
+msgstr "Sélectionner la couche parente"
+
+msgid "shortcuts.text-align-center"
+msgstr "Aligner au centre"
+
+msgid "shortcuts.text-align-left"
+msgstr "Aligner à gauche"
+
+msgid "shortcuts.text-align-justify"
+msgstr "Aligner justifié"
+
+msgid "shortcuts.text-align-right"
+msgstr "Aligner à droite"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Ajouter/supprimer flex layout"
+
+msgid "shortcuts.underline"
+msgstr "Activer/désactiver le soulignement"
+
+msgid "labels.webhooks"
+msgstr "Webhooks"
+
+msgid "modals.edit-webhook.title"
+msgstr "Modifier le webhook"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Lien d'invitation copié"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Votre fichier a été supprimé avec succès"
+msgstr[1] "Vos fichiers ont été supprimés avec succès"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Nous avons détecté un problème potentiel dans vos polices de caractères lié "
+"aux métriques verticales pour différents systèmes d'exploitation. Pour le "
+"vérifier, vous pouvez utiliser des services de métriques verticales de "
+"police de caractères comme [celui-ci](https://vertical-metrics.netlify.app/)"
+". De plus, nous vous recommandons d'utiliser "
+"[Transfonter](https://transfonter.org/) pour générer des polices web et "
+"corriger les erreurs. "
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Générer un nouveau jeton"
+
+msgid "labels.active"
+msgstr "Activé"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "Créer un webhook"
+
+msgid "modals.create-webhook.title"
+msgstr "Créer un webhook"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Les éléments déjà utilisés dans ce fichier resteront en place (aucun design "
+"ne sera altéré)."
+msgstr[1] ""
+"Les éléments déjà utilisés dans ces fichiers resteront en place (aucun "
+"design ne sera altéré)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
+msgstr[0] "Est activée ici :"
+msgstr[1] "Sont activées ici :"
+
+msgid "shortcuts.italic"
+msgstr "Basculer en italique"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Diminuer l'espacement entre les lettres"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Augmenter l'espacement entre les lettres"
