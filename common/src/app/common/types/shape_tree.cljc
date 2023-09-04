@@ -99,10 +99,10 @@
 
      (update container :objects delete-from-objects))))
 
-(defn fix-shape-children
+(defn fix-broken-children
   "Checks and fix the children relations of the shape. If a children does not
   exists on the objects tree, it will be removed from shape."
-  [{:keys [objects] :as container} {:keys [id] :as params}]
+  [{:keys [objects] :as container} id]
   (let [contains? (partial contains? objects)]
     (d/update-in-when container [:objects id :shapes]
                       (fn [shapes]

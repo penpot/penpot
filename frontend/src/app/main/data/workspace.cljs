@@ -46,7 +46,7 @@
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.fix-bool-contents :as fbc]
-   [app.main.data.workspace.fix-broken-shape-links :as fbs]
+   [app.main.data.workspace.fix-broken-shapes :as fbs]
    [app.main.data.workspace.fix-deleted-fonts :as fdf]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.guides :as dwgu]

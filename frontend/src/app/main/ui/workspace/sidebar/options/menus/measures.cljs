@@ -169,7 +169,7 @@
 
         on-proportion-lock-change
         (mf/use-callback
-         (mf/deps ids)
+         (mf/deps ids proportion-lock)
          (fn [_]
            (let [new-lock (if (= proportion-lock :multiple) true (not proportion-lock))]
              (run! #(st/emit! (udw/set-shape-proportion-lock % new-lock)) ids))))
@@ -207,7 +207,7 @@
 
         on-switch-to-radius-1
         (mf/use-callback
-         (mf/deps ids)
+         (mf/deps ids change-radius)
          (fn [_value]
            (if all-equal?
              (st/emit! (change-radius ctsr/switch-to-radius-1))
@@ -215,20 +215,20 @@
 
         on-switch-to-radius-4
         (mf/use-callback
-         (mf/deps ids)
+         (mf/deps ids change-radius)
          (fn [_value]
            (st/emit! (change-radius ctsr/switch-to-radius-4))
            (reset! radius-multi? false)))
 
         on-radius-1-change
         (mf/use-callback
-         (mf/deps ids)
+         (mf/deps ids change-radius)
          (fn [value]
            (st/emit! (change-radius #(ctsr/set-radius-1 % value)))))
 
         on-radius-multi-change
         (mf/use-callback
-         (mf/deps ids)
+         (mf/deps ids change-radius)
          (fn [event]
            (let [value (-> event dom/get-target dom/get-value d/parse-integer)]
              (when (some? value)
@@ -238,7 +238,7 @@
 
         on-radius-4-change
         (mf/use-callback
-         (mf/deps ids)
+         (mf/deps ids change-radius)
          (fn [value attr]
            (st/emit! (change-radius #(ctsr/set-radius-4 % attr value)))))
 
