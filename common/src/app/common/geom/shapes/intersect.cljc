@@ -343,12 +343,11 @@
 (defn fast-has-point?
   [shape point]
   (let [x1 (dm/get-prop shape :x)
-        y1 (dm/get-prop shape :x)
+        y1 (dm/get-prop shape :y)
         x2 (+ x1 (dm/get-prop shape :width))
         y2 (+ y1 (dm/get-prop shape :height))
         px (dm/get-prop point :x)
         py (dm/get-prop point :y)]
-
     (and (>= px x1)
          (<= px x2)
          (>= py y1)
