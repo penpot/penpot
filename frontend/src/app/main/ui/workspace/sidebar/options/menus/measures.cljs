@@ -169,7 +169,7 @@
 
         on-proportion-lock-change
         (mf/use-callback
-         (mf/deps ids)
+         (mf/deps ids proportion-lock)
          (fn [_]
            (let [new-lock (if (= proportion-lock :multiple) true (not proportion-lock))]
              (run! #(st/emit! (udw/set-shape-proportion-lock % new-lock)) ids))))
