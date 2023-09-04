@@ -125,7 +125,7 @@
   accepting invitation, or third party auth signup or singin."
   [profile]
   (letfn [(get-redirect-event []
-            (let [team-id (:default-team-id profile)
+            (let [team-id (get-current-team-id profile)
                   redirect-url (:redirect-url @storage)]
               (if (some? redirect-url)
                 (do
@@ -247,7 +247,9 @@
 
      ptk/EffectEvent
      (effect [_ _ _]
-       (reset! storage {})
+       ;; We prefer to keek some stuff in the storage like the current-team-id
+       (swap! storage dissoc :redirect-url)
+       (swap! storage dissoc :profile)
        (i18n/reset-locale)))))
 
 (defn logout
