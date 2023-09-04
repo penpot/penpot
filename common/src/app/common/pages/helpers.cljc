@@ -467,6 +467,12 @@
   [path-vec]
   (str/join " / " path-vec))
 
+(defn clean-path
+  "Remove empty items from the path."
+  [path]
+  (->> (split-path path)
+       (join-path)))
+
 (defn parse-path-name
   "Parse a string in the form 'group / subgroup / name'.
   Retrieve the path and the name in separated values, normalizing spaces."

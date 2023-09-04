@@ -383,7 +383,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (when-let [component (dm/get-in state [:workspace-data :components component-id])]
-        (let [shape-id (:main-instance-id component)
+        (let [name     (cph/clean-path name)
+              shape-id (:main-instance-id component)
               page-id  (:main-instance-page component)]
           (rx/concat
            (rx/of (rename-component component-id name))

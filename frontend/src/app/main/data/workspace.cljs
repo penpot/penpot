@@ -657,7 +657,8 @@
      ptk/WatchEvent
      (watch [_ state _]
        (when-let [shape-id (dm/get-in state [:workspace-local :shape-for-rename])]
-         (let [shape (wsh/lookup-shape state shape-id)]
+         (let [shape (wsh/lookup-shape state shape-id)
+               name  (cph/clean-path name)]
            (rx/concat
             ;; Remove rename state from workspace local state
             (rx/of #(update % :workspace-local dissoc :shape-for-rename))
