@@ -8,14 +8,13 @@
   (:require
    [app.config :as cf]
    [buddy.hashers :as hashers]
-   [cuerdas.core :as str]
-   [promesa.exec :as px]))
+   [cuerdas.core :as str]))
 
 (def default-params
   {:alg :argon2id
-   :memory (* 32768 2) ;; 64 MiB
-   :iterations 7
-   :parallelism (px/get-available-processors)})
+   :memory 32768 ;; 32 MiB
+   :iterations 3
+   :parallelism 2})
 
 (defn derive-password
   [password]

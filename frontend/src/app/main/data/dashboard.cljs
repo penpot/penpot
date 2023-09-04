@@ -59,10 +59,11 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (rx/merge
+       ;;fetch teams must be first in case the team doesn't exist
+       (ptk/watch (du/fetch-teams) state stream)
        (ptk/watch (df/load-team-fonts id) state stream)
        (ptk/watch (fetch-projects) state stream)
        (ptk/watch (fetch-team-members) state stream)
-       (ptk/watch (du/fetch-teams) state stream)
        (ptk/watch (du/fetch-users {:team-id id}) state stream)
 
        (let [stoper    (rx/filter (ptk/type? ::finalize) stream)

@@ -230,8 +230,8 @@
 
         ]
 
-    (mf/with-effect [collapsed]
-      (when-not collapsed
+    (mf/with-effect [profile collapsed]
+      (when (and profile (not collapsed))
         (st/emit! (dd/fetch-builtin-templates))))
 
     [:div.dashboard-templates-section
