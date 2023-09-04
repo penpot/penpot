@@ -297,3 +297,25 @@
   (->> (rx/from font-refs)
        (rx/mapcat fetch-font-css)
        (rx/reduce (fn [acc css] (dm/str acc "\n" css)) "")))
+
+(defonce font-styles (js/Map.))
+
+(defn get-font-style-id
+  [{:keys [font-id font-variant-id]
+    :or   {font-variant-id "regular"}}]
+  (dm/fmt "%:%" font-id font-variant-id))
+
+(defn get-font-styles-by-font-ref
+  [font-ref]
+  (let [id (get-font-style-id font-ref)]
+    (if (.has font-styles id)
+      (rx/of (.get font-styles id))
+      (->> (rx/of font-ref)
+           (rx/mapcat fetch-font-css)
+           (rx/tap (fn [css] (.set font-styles id css)))))))
+
+(defn render-font-styles-cached
+  [font-refs]
+  (->> (rx/from font-refs)
+       (rx/merge-map get-font-styles-by-font-ref)
+       (rx/reduce (fn [acc css] (dm/str acc "\n" css)) "")))

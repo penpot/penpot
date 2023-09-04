@@ -326,6 +326,11 @@
     (.removeChild ^js el child))
   el)
 
+(defn remove!
+  [^js el]
+  (when (some? el)
+    (.remove ^js el)))
+
 (defn get-first-child
   [^js el]
   (when (some? el)

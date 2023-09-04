@@ -262,3 +262,8 @@ input[type="number"] {
   -webkit-user-select: text;
   user-select: text;
 }
+
+[data-hidden="true"] {
+  display: none;
+  pointer-events: none;
+}

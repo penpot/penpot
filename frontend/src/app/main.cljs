@@ -15,6 +15,7 @@
    [app.main.data.websocket :as ws]
    [app.main.errors]
    [app.main.features :as feat]
+   [app.main.imposters :as imp]
    [app.main.rasterizer :as thr]
    [app.main.store :as st]
    [app.main.ui :as ui]
@@ -113,6 +114,7 @@
   (theme/init! cf/themes)
   (cur/init-styles)
   (thr/init!)
+  (imp/init!)
   (init-ui)
   (st/emit! (initialize)))
 

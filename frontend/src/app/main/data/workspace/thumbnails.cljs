@@ -7,65 +7,61 @@
 (ns app.main.data.workspace.thumbnails
   (:require
    [app.common.data.macros :as dm]
+   [app.common.logging :as log]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.rasterizer :as thr]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.worker :as uw]
-   [app.util.dom :as dom]
    [app.util.http :as http]
+   [app.util.imposters :as imps]
+   [app.util.time :as tp]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-(defn force-render-stream
-  "Stream that will inform the frame-wrapper to mount into memory"
-  [id]
-  (->> st/stream
-       (rx/filter (ptk/type? ::force-render))
-       (rx/map deref)
-       (rx/filter #(= % id))
-       (rx/take 1)))
+(log/set-level! :debug)
+
+(declare set-workspace-thumbnail)
 
 (defn get-thumbnail
-  [object-id]
-  ;; Look for the thumbnail canvas to send the data to the backend
-  (let [node    (dom/query (dm/fmt "image.thumbnail-bitmap[data-object-id='%']" object-id))
-        stopper (->> st/stream
-                     (rx/filter (ptk/type? :app.main.data.workspace/finalize-page))
-                     (rx/take 1))]
-    ;; renders #svg image
-    (if (some? node)
-      (->> (rx/from (wapi/create-image-bitmap-with-workaround node))
-           (rx/switch-map  #(uw/ask! {:cmd :thumbnails/render-offscreen-canvas} %))
-           (rx/map :result))
-
-      ;; Not found, we retry after delay
-      (->> (rx/timer 250)
-           (rx/merge-map (partial get-thumbnail object-id))
-           (rx/take-until stopper)))))
+  [id]
+  (let [object-id (dm/str id)
+        tp (tp/tpoint-ms)]
+    (->> (rx/of id)
+         (rx/mapcat @imps/render-fn)
+         (rx/filter #(= object-id (unchecked-get % "id")))
+         (rx/take 1)
+         (rx/map (fn [imposter]
+                   {:data (unchecked-get imposter "data")
+                    :styles (unchecked-get imposter "styles")
+                    :width (unchecked-get imposter "width")}))
+         (rx/mapcat thr/render)
+         (rx/map (fn [blob] (wapi/create-uri blob)))
+         (rx/tap #(log/debug :hint "generated thumbnail" :elapsed (dm/str (tp) "ms"))))))
 
 (defn clear-thumbnail
-  [page-id frame-id]
+  [frame-id]
   (ptk/reify ::clear-thumbnail
     ptk/UpdateEvent
     (update [_ state]
-      (let [object-id  (dm/str page-id frame-id)]
-        (when-let [uri (dm/get-in state [:workspace-thumbnails object-id])]
-          (tm/schedule-on-idle (partial wapi/revoke-uri uri)))
-        (update state :workspace-thumbnails dissoc object-id)))))
+      (let [object-id (dm/str frame-id)]
+            (when-let [uri (dm/get-in state [:workspace-thumbnails object-id])]
+              (tm/schedule-on-idle (partial wapi/revoke-uri uri)))
+            (update state :workspace-thumbnails dissoc object-id)))))
 
 (defn set-workspace-thumbnail
-  [object-id uri]
+  [id uri]
   (let [prev-uri* (volatile! nil)]
     (ptk/reify ::set-workspace-thumbnail
       ptk/UpdateEvent
       (update [_ state]
-        (let [prev-uri (dm/get-in state [:workspace-thumbnails object-id])]
+        (let [object-id (dm/str id)
+              prev-uri (dm/get-in state [:workspace-thumbnails object-id])]
           (some->> prev-uri (vreset! prev-uri*))
           (update state :workspace-thumbnails assoc object-id uri)))
 
@@ -78,29 +74,26 @@
   (ptk/reify ::duplicate-thumbnail
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id   (:current-page-id state)
-            thumbnail (dm/get-in state [:workspace-thumbnails (dm/str page-id old-id)])]
-        (update state :workspace-thumbnails assoc (dm/str page-id new-id) thumbnail)))))
+      (let [old-id (dm/str old-id)
+            new-id (dm/str new-id)
+            thumbnail (dm/get-in state [:workspace-thumbnails old-id])]
+        (update state :workspace-thumbnails assoc new-id thumbnail)))))
 
 (defn update-thumbnail
   "Updates the thumbnail information for the given frame `id`"
-  ([page-id frame-id]
-   (update-thumbnail nil page-id frame-id))
-
-  ([file-id page-id frame-id]
+  ([id]
    (ptk/reify ::update-thumbnail
      ptk/WatchEvent
      (watch [_ state _]
-       (let [object-id (dm/str page-id frame-id)
-             file-id   (or file-id (:current-file-id state))]
-
+       (let [object-id (dm/str id)
+             file-id (:current-file-id state)]
          (rx/concat
           ;; Delete the thumbnail first so if we interrupt we can regenerate after
           (->> (rp/cmd! :delete-file-object-thumbnail {:file-id file-id :object-id object-id})
                (rx/catch rx/empty))
 
           ;; Send the update to the back-end
-          (->> (get-thumbnail object-id)
+          (->> (get-thumbnail id)
                (rx/filter (fn [data] (and (some? data) (some? file-id))))
                (rx/merge-map
                 (fn [uri]
@@ -110,7 +103,7 @@
                    (->> (http/send! {:uri uri :response-type :blob :method :get})
                         (rx/map :body)
                         (rx/mapcat (fn [blob]
-                                     ;; Send the data to backend
+                                       ;; Send the data to backend
                                      (let [params {:file-id file-id
                                                    :object-id object-id
                                                    :media blob}]
@@ -193,9 +186,9 @@
         (->> (rx/merge
               (->> frame-changes-s
                    (rx/filter (fn [[page-id _]] (not= page-id (:current-page-id @st/state))))
-                   (rx/map (fn [[page-id frame-id]] (clear-thumbnail page-id frame-id))))
+                   (rx/map (fn [[_ frame-id]] (clear-thumbnail frame-id))))
 
               (->> frame-changes-s
                    (rx/filter (fn [[page-id _]] (= page-id (:current-page-id @st/state))))
-                   (rx/map (fn [[_ frame-id]] (ptk/data-event ::force-render frame-id)))))
+                   (rx/map (fn [[_ frame-id]] (update-thumbnail frame-id)))))
              (rx/take-until stopper))))))
