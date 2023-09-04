@@ -15,7 +15,8 @@
    [app.main.ui.viewer.inspect.selection-feedback :refer [resolve-shapes]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [app.common.types.component :as ctk]))
 
 (defn- get-libraries
   "Retrieve all libraries, including the local file, on workspace or viewer"
@@ -43,6 +44,7 @@
         shapes        (or shapes
                           (resolve-shapes objects selected))
         first-shape   (first shapes)
+        _ (prn "first" first-shape (ctk/main-instance? first-shape))
         page-id       (or page-id (:id page))
         file-id       (or file-id (:id file))
 
@@ -79,7 +81,7 @@
              [:span.tool-window-bar-title (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
             [:*
              [:span.tool-window-bar-icon
-              [:& si/element-icon {:shape first-shape}]]
+              [:& si/element-icon {:shape first-shape :main-instance? (ctk/main-instance? first-shape)}]]
              ;; Execution time translation strings:
              ;;   inspect.tabs.code.selected.circle
              ;;   inspect.tabs.code.selected.component

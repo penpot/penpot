@@ -652,24 +652,27 @@
 (defn end-rename-shape
   "End the ongoing shape rename process"
   ([] (end-rename-shape nil))
-  ([name]
+  ([full-name]
    (ptk/reify ::end-rename-shape
      ptk/WatchEvent
      (watch [_ state _]
-       (when-let [shape-id (dm/get-in state [:workspace-local :shape-for-rename])]
-         (let [shape (wsh/lookup-shape state shape-id)]
+       (when-let [shape-id  (dm/get-in state [:workspace-local :shape-for-rename])]
+         (let [shape        (wsh/lookup-shape state shape-id)
+               [_path name] (if (ctk/main-instance? shape) ;; If it is a compont, do not set the path on the name
+                              (cph/parse-path-name full-name)
+                              [nil full-name])]
            (rx/concat
             ;; Remove rename state from workspace local state
             (rx/of #(update % :workspace-local dissoc :shape-for-rename))
 
             ;; Rename the shape if string is not empty/blank
-            (when (and (string? name) (not (str/blank? name)))
+            (when (not (str/blank? name))
               (rx/of (update-shape shape-id {:name name})))
 
             ;; Update the component in case if shape is a main instance
-            (when (and (string? name) (not (str/blank? name)) (:main-instance shape))
+            (when (and (not (str/blank? name)) (ctk/main-instance? shape))
               (when-let [component-id (:component-id shape)]
-                (rx/of (dwl/rename-component component-id name)))))))))))
+                (rx/of (dwl/rename-component component-id full-name)))))))))))
 
 
 ;; --- Update Selected Shapes attrs

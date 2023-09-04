@@ -7,9 +7,13 @@
 (ns app.main.ui.viewer.inspect.left-sidebar
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
+   [app.common.types.file :as ctf]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.viewer :as dv]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.shape-icon :as si]
    [app.main.ui.icons :as i]
@@ -40,6 +44,20 @@
 
         expanded? (not (mf/deref collapsed-iref))
         absolute? (ctl/layout-absolute? item)
+
+        viewer-data       (mf/deref refs/viewer-data)
+        libraries         (:libraries viewer-data)
+        _ (prn libraries)
+        file              (mf/deref refs/viewer-file)
+        components-v2     (dm/get-in file [:data :options :components-v2])
+        main-instance?    (if components-v2
+                            (:main-instance item)
+                            true)
+        instance-head?    (ctk/instance-head? item)
+        component         (when (and components-v2 instance-head?)
+                            (ctf/resolve-component item file libraries))
+        path              (when (= (:name component) (:name item))
+                            (:path component))
         toggle-collapse
         (fn [event]
           (dom/stop-propagation event)
@@ -77,14 +95,15 @@
       [:div.icon
        (when absolute?
          [:div.absolute i/position-absolute])
-       [:& si/element-icon {:shape item}]]
+       [:& si/element-icon {:shape item :main-instance? main-instance?}]]
       [:& layer-name {:shape-id id
                       :shape-name name
                       :shape-touched? touched?
                       :hidden? hidden?
                       :selected? selected?
                       :type-frame (cph/frame-shape? item)
-                      :disabled-double-click true}]
+                      :disabled-double-click true
+                      :path path}]
 
       (when (and (not disable-collapse?) (:shapes item))
         [:span.toggle-content

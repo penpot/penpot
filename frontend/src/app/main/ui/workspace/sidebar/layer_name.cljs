@@ -29,7 +29,7 @@
    ::mf/forward-ref true}
   [{:keys [shape-id shape-name shape-touched? disabled-double-click
            on-start-edit on-stop-edit depth parent-size selected?
-           type-comp type-frame hidden?]} external-ref]
+           type-comp type-frame hidden? path]} external-ref]
   (let [edition*         (mf/use-state false)
         edition?         (deref edition*)
 
@@ -39,6 +39,12 @@
         shape-for-rename (mf/deref lens:shape-for-rename)
         new-css-system   (mf/use-ctx ctx/new-css-system)
 
+        has-path?        (and (string? path) (not (str/blank? path)))
+
+        shape-name       (if has-path?
+                           (str path " / " shape-name)
+                           shape-name)
+
         start-edit
         (mf/use-fn
          (mf/deps disabled-double-click on-start-edit shape-id)
@@ -47,6 +53,8 @@
              (on-start-edit)
              (reset! edition* true)
              (st/emit! (dw/start-rename-shape shape-id)))))
+
+
 
         accept-edit
         (mf/use-fn
@@ -99,11 +107,12 @@
        {:class (if ^boolean new-css-system
                  (stl/css-case
                   :element-name true
+                  :left-ellipsis has-path?
                   :selected selected?
                   :hidden hidden?
                   :type-comp type-comp
                   :type-frame type-frame)
-                 (stl/css* :element-name))
+                   (stl/css* :element-name))
         :style {"--depth" depth "--parent-size" parent-size}
         :ref ref
         :on-double-click start-edit}

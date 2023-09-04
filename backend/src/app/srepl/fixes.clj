@@ -279,3 +279,47 @@
 
          (when (contains? (:features file) "storage/pointer-map")
            (files/persist-pointers! h/*conn* (:id file))))))))
+
+(defn fix-main-shape-name
+  ([file]
+   (prn (str "Updating " (:name file) " " (:id file)))
+   (if-not (contains? (:features file) "components/v2")
+     (prn "   This file is not v2")
+     (let [libs (->> (files/get-file-libraries h/*conn* (:id file))
+                     (cons file)
+                     (map #(files/get-file h/*conn* (:id %) (:features file)))
+                     (d/index-by :id))
+
+           update-shape
+           (fn [shape]
+             (if-not (ctk/instance-head? shape)
+               shape
+               (let [component (ctf/get-component libs (:component-file shape) (:component-id shape) {:include-deleted? true})
+                     [path _name] (cph/parse-path-name (:name shape))]
+                 (if (= path (:path component))
+                 (assoc shape :name (:name component))
+                 shape))))
+
+
+           update-page
+           (fn [page]
+             (prn (str "Page " (:name page)))
+             (h/update-shapes page update-shape))]
+
+       (update file :data h/update-pages update-page))))
+
+  ([file save?]
+   (let [file (-> file
+                  (update :data blob/decode)
+                  (fix-main-shape-name))]
+     (when save?
+       (let [features (db/create-array h/*conn* "text" (:features file))
+             data     (blob/encode (:data file))]
+         (db/update! h/*conn* :file
+                     {:data data
+                      ;; :revn (:revn file)
+                      :features features}
+                     {:id (:id file)})
+
+         (when (contains? (:features file) "storage/pointer-map")
+           (files/persist-pointers! h/*conn* (:id file))))))))

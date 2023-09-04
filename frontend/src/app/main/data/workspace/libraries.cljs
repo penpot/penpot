@@ -304,10 +304,12 @@
           (let [[root _ changes]
                 (dwlh/generate-add-component it shapes objects page-id file-id components-v2
                                              dwg/prepare-create-group
-                                             dwsh/prepare-create-artboard-from-selection)]
+                                             dwsh/prepare-create-artboard-from-selection)
+                [_path name] (cph/parse-path-name (:name root))]
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
-                     (dws/select-shapes (d/ordered-set (:id root)))))))))))
+                     (dws/select-shapes (d/ordered-set (:id root)))
+                     (dch/update-shapes [(:id root)] #(assoc % :name name) {:page-id page-id :stack-undo? true})))))))))
 
 (defn add-component
   "Add a new component to current file library, from the currently selected shapes.
@@ -378,15 +380,16 @@
             (rx/of (dch/commit-changes changes))))))))
 
 (defn rename-component-and-main-instance
-  [component-id name]
+  [component-id full-name]
   (ptk/reify ::rename-component-and-main-instance
     ptk/WatchEvent
     (watch [_ state _]
       (when-let [component (dm/get-in state [:workspace-data :components component-id])]
         (let [shape-id (:main-instance-id component)
-              page-id  (:main-instance-page component)]
+              page-id  (:main-instance-page component)
+              [_path name] (cph/parse-path-name full-name)]
           (rx/concat
-           (rx/of (rename-component component-id name))
+           (rx/of (rename-component component-id full-name))
 
            ;; NOTE: only when components-v2 is enabled
            (when (and shape-id page-id)

@@ -10,6 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
+   [app.common.types.file :as ctf]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -58,10 +60,19 @@
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
         new-css-system    (mf/use-ctx ctx/new-css-system)
         main-instance?    (if components-v2
-                            (:main-instance item)
+                            (ctk/main-instance? item)
                             true)
+        instance-head?    (ctk/instance-head? item)
         parent-board?     (and (cph/frame-shape? item)
                                (= uuid/zero (:parent-id item)))
+        file              (mf/deref refs/workspace-file)
+        file-data         (mf/deref refs/workspace-data)
+        file              (assoc file :data file-data)
+        libraries         (mf/deref refs/workspace-libraries)
+        component         (when (and components-v2 instance-head?)
+                            (ctf/resolve-component item file libraries))
+        path              (when (= (:name component) (:name item))
+                            (:path component))
         toggle-collapse
         (mf/use-fn
          (mf/deps expanded?)
@@ -284,7 +295,8 @@
                          :selected? selected?
                          :type-comp component-tree?
                          :type-frame (cph/frame-shape? item)
-                         :hidden? hidden?}]
+                         :hidden? hidden?
+                         :path path}]
          [:div {:class (stl/css-case
                         :element-actions true
                         :is-parent has-shapes?
@@ -364,13 +376,14 @@
                         :selected? selected?
                         :type-comp component-tree?
                         :type-frame (cph/frame-shape? item)
-                        :hidden? hidden?}]
+                        :hidden? hidden?
+                        :path path}]
 
         [:div.element-actions {:class (when ^boolean has-shapes? "is-parent")}
          [:div.toggle-element {:class (when ^boolean hidden? "selected")
                                :title (if (:hidden item)
                                         (tr "workspace.shape.menu.show")
-                                        (tr "workspace.shape.menu.hide"))                               
+                                        (tr "workspace.shape.menu.hide"))
                                :on-click toggle-visibility}
           (if ^boolean hidden? i/eye-closed i/eye)]
          [:div.block-element {:class (when ^boolean blocked? "selected")
