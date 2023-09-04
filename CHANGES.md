@@ -6,6 +6,7 @@
 
 - Remember last color mode in colorpicker [Taiga #5508](https://tree.taiga.io/project/penpot/issue/5508)
 - Improve layers multiselection behaviour [Github #5741](https://github.com/penpot/penpot/issues/5741)
+- Remember last active team across logouts / sessions [Github #3325](https://github.com/penpot/penpot/issues/3325)
 
 ### :bug: Bugs fixed
 

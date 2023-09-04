@@ -153,8 +153,10 @@
 
     (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
-    (mf/with-effect [team-id]
-      (st/emit! (dd/initialize {:id team-id}))
+    (mf/with-effect [profile team-id]
+      (when profile
+        ;; When doing logout we must avoid reinitializing the dashboard
+        (st/emit! (dd/initialize {:id team-id})))
       (fn []
         (dd/finalize {:id team-id})))
 
