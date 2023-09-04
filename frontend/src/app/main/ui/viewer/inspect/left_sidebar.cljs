@@ -7,9 +7,12 @@
 (ns app.main.ui.viewer.inspect.left-sidebar
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.viewer :as dv]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.shape-icon :as si]
    [app.main.ui.icons :as i]
@@ -33,7 +36,11 @@
         selected? (contains? selected id)
         item-ref  (mf/use-ref nil)
 
-
+        file              (mf/deref refs/viewer-file)
+        components-v2     (dm/get-in file [:data :options :components-v2])
+        main-instance?    (if components-v2
+                            (ctk/main-instance? item)
+                            true)
         collapsed-iref (mf/use-memo
                         (mf/deps id)
                         (make-collapsed-iref id))
@@ -77,7 +84,7 @@
       [:div.icon
        (when absolute?
          [:div.absolute i/position-absolute])
-       [:& si/element-icon {:shape item}]]
+       [:& si/element-icon {:shape item :main-instance? main-instance?}]]
       [:& layer-name {:shape-id id
                       :shape-name name
                       :shape-touched? touched?

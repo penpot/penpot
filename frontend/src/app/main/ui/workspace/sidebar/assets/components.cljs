@@ -98,7 +98,7 @@
          (mf/deps component dragging* selected selected-full selected-paths)
          (fn [event]
            (cmm/on-drop-asset event component dragging* selected selected-full
-                              selected-paths dwl/rename-component)))
+                              selected-paths dwl/rename-component-and-main-instance)))
 
         on-drag-enter
         (mf/use-fn
@@ -236,7 +236,7 @@
         (mf/use-fn
          (mf/deps dragging* prefix selected-paths selected-full)
          (fn [event]
-           (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full dwl/rename-component)))]
+           (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full dwl/rename-component-and-main-instance)))]
 
     (if ^boolean new-css-system
       [:div {:class (dom/classnames (css :component-group) true)
@@ -504,7 +504,7 @@
                         (filter #(if multi-components?
                                    (contains? selected (:id %))
                                    (= current-component-id (:id %))))
-                        (map #(dwl/rename-component
+                        (map #(dwl/rename-component-and-main-instance
                                (:id %)
                                (cmm/add-group % group-name)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
@@ -519,7 +519,7 @@
              (run! st/emit!
                    (->> components
                         (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/rename-component
+                        (map #(dwl/rename-component-and-main-instance
                                (:id %)
                                (cmm/rename-group % path last-path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
@@ -550,7 +550,7 @@
              (run! st/emit!
                    (->> components
                         (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/rename-component (:id %) (cmm/ungroup % path)))))
+                        (map #(dwl/rename-component-and-main-instance (:id %) (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         on-drag-start

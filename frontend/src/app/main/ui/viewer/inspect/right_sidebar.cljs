@@ -6,6 +6,8 @@
 
 (ns app.main.ui.viewer.inspect.right-sidebar
   (:require
+   [app.common.data.macros :as dm]
+   [app.common.types.component :as ctk]
    [app.main.refs :as refs]
    [app.main.ui.components.shape-icon :as si]
    [app.main.ui.components.tabs-container :refer [tabs-container tabs-element]]
@@ -48,6 +50,12 @@
 
         libraries      (get-libraries from)
 
+        file              (mf/deref refs/viewer-file)
+        components-v2     (dm/get-in file [:data :options :components-v2])
+        main-instance?    (if components-v2
+                            (ctk/main-instance? first-shape)
+                            true)
+
         handle-change-tab
         (mf/use-callback
          (mf/deps from on-change-section)
@@ -79,7 +87,7 @@
              [:span.tool-window-bar-title (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
             [:*
              [:span.tool-window-bar-icon
-              [:& si/element-icon {:shape first-shape}]]
+              [:& si/element-icon {:shape first-shape :main-instance? main-instance?}]]
              ;; Execution time translation strings:
              ;;   inspect.tabs.code.selected.circle
              ;;   inspect.tabs.code.selected.component
