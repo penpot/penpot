@@ -35,8 +35,8 @@
 (declare group-wrapper)
 (declare svg-raw-wrapper)
 (declare bool-wrapper)
-(declare root-frame-wrapper)
 (declare nested-frame-wrapper)
+(declare root-frame-wrapper)
 
 (def circle-wrapper (common/generic-wrapper-factory circle/circle-shape))
 (def image-wrapper (common/generic-wrapper-factory image/image-shape))
@@ -121,5 +121,5 @@
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper))
 (def bool-wrapper (bool/bool-wrapper-factory shape-wrapper))
-(def root-frame-wrapper (frame/root-frame-wrapper-factory shape-wrapper))
 (def nested-frame-wrapper (frame/nested-frame-wrapper-factory shape-wrapper))
+(def root-frame-wrapper (frame/root-frame-wrapper-factory shape-wrapper))

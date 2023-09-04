@@ -229,6 +229,25 @@
           [:& shape-wrapper {:shape item
                              :key (:id item)}])]]]]))
 
+;; Component that serves for render frame thumbnails, mainly used in
+;; the viewer and inspector
+(mf/defc frame-imposter-svg
+  {::mf/wrap [mf/memo]}
+  [{:keys [objects frame vbox width height show-thumbnails?] :as props}]
+  (let [shape-wrapper
+        (mf/use-memo
+         (mf/deps objects)
+         #(shape-wrapper-factory objects))]
+
+    [:& (mf/provider muc/render-thumbnails) {:value show-thumbnails?}
+     [:svg {:view-box vbox
+            :width (ust/format-precision width viewbox-decimal-precision)
+            :height (ust/format-precision height viewbox-decimal-precision)
+            :version "1.1"
+            :xmlns "http://www.w3.org/2000/svg"
+            :xmlnsXlink "http://www.w3.org/1999/xlink"
+            :fill "none"}
+      [:& shape-wrapper {:shape frame}]]]))
 
 ;; Component that serves for render frame thumbnails, mainly used in
 ;; the viewer and inspector
@@ -443,7 +462,7 @@
         (for [[id component] (source data)]
           (let [component (ctf/load-component-objects data component)]
             [:& component-symbol {:key (dm/str id) :component component}]))]
-       
+
        children]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -6,24 +6,20 @@
 
 (ns app.main.ui.workspace.shapes.frame
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
-   [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
-   [app.main.ui.shapes.text.fontfaces :as ff]
    [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as fdm]
-   [app.main.ui.workspace.shapes.frame.node-store :as fns]
-   [app.main.ui.workspace.shapes.frame.thumbnail-render :as ftr]
-   [beicon.core :as rx]
+   [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
 (defn frame-shape-factory
@@ -44,7 +40,7 @@
 
         [:& (mf/provider embed/context) {:value true}
          [:& shape-container {:shape shape :ref ref :disable-shadows? (cph/is-direct-child-of-root? shape)}
-          [:& frame-shape {:shape shape :childs childs} ]]]))))
+          [:& frame-shape {:shape shape :childs childs}]]]))))
 
 (defn check-props
   [new-props old-props]
@@ -86,74 +82,75 @@
       (let [shape              (unchecked-get props "shape")
             thumbnail?         (unchecked-get props "thumbnail?")
 
-            page-id            (mf/use-ctx ctx/current-page-id)
-            frame-id           (dm/get-prop shape :id)
+            ;; page-id            (mf/use-ctx ctx/current-page-id)
+            frame-id           (:id shape)
 
-            objects            (wsh/lookup-page-objects @st/state page-id)
+            objects            (wsh/lookup-page-objects @st/state)
 
-            node-ref           (mf/use-ref nil)
-            root-ref           (mf/use-ref nil)
+            container-ref      (mf/use-ref nil)
+            content-ref        (mf/use-ref nil)
 
-            force-render*      (mf/use-state false)
-            force-render?      (deref force-render*)
+            all-children-ref   (mf/with-memo [frame-id]
+                                 (refs/all-children-objects frame-id))
+            all-children       (mf/deref all-children-ref)
 
-            ;; when `true` we've called the mount for the frame
-            rendered-ref       (mf/use-ref false)
+            bounds
+            (if (:show-content shape)
+              (gsh/shapes->rect (cons shape all-children))
+              (-> shape :points grc/points->rect))
+
+            x                  (dm/get-prop bounds :x)
+            y                  (dm/get-prop bounds :y)
+            width              (dm/get-prop bounds :width)
+            height             (dm/get-prop bounds :height)
+
+            thumbnail-uri*     (mf/with-memo [frame-id]
+                                 (refs/thumbnail-frame-data frame-id))
+            thumbnail-uri      (mf/deref thumbnail-uri*)
 
             modifiers-ref      (mf/with-memo [frame-id]
                                  (refs/workspace-modifiers-by-frame-id frame-id))
             modifiers          (mf/deref modifiers-ref)
 
-            fonts              (mf/with-memo [shape objects]
-                                 (ff/shape->fonts shape objects))
-            fonts              (hooks/use-equal-memo fonts)
+            debug?             (debug? :thumbnails)]
 
-            disable-thumbnail? (d/not-empty? (dm/get-in modifiers [frame-id :modifiers]))
+        (when-not (some? thumbnail-uri)
+          (st/emit! (dwt/update-thumbnail frame-id)))
 
-            [on-load-frame-dom render-frame? children]
-            (ftr/use-render-thumbnail page-id shape root-ref node-ref rendered-ref disable-thumbnail? force-render?)
-
-            on-frame-load
-            (fns/use-node-store node-ref rendered-ref thumbnail? render-frame?)
-
-            ]
-
-        (fdm/use-dynamic-modifiers objects (mf/ref-val node-ref) modifiers)
-
-        (mf/with-effect []
-          ;; When a change in the data is received a "force-render" event is emitted
-          ;; that will force the component to be mounted in memory
-          (let [sub (->> (dwt/force-render-stream frame-id)
-                         (rx/take-while #(not (mf/ref-val rendered-ref)))
-                         (rx/subs #(reset! force-render* true)))]
-            #(some-> sub rx/dispose!)))
-
-        (mf/with-effect [shape fonts thumbnail? on-load-frame-dom force-render? render-frame?]
-          (when (and (some? (mf/ref-val node-ref))
-                     (or (mf/ref-val rendered-ref)
-                         (false? thumbnail?)
-                         (true? force-render?)
-                         (true? render-frame?)))
-
-            (when (false? (mf/ref-val rendered-ref))
-              (when-let [node (mf/ref-val node-ref)]
-                (mf/set-ref-val! root-ref (mf/create-root node))
-                (mf/set-ref-val! rendered-ref true)))
-
-            (when-let [root (mf/ref-val root-ref)]
-              (mf/render! root (mf/element frame-shape #js {:ref on-load-frame-dom :shape shape :fonts fonts})))
-
-            (constantly nil)))
+        (fdm/use-dynamic-modifiers objects (mf/ref-val content-ref) modifiers)
 
         [:& shape-container {:shape shape}
          [:g.frame-container
           {:id (dm/str "frame-container-" frame-id)
            :key "frame-container"
-           :ref on-frame-load
+           ;; :ref on-container-ref
            :opacity (when (:hidden shape) 0)}
-          [:& ff/fontfaces-style {:fonts fonts}]
-          [:g.frame-thumbnail-wrapper
-           {:id (dm/str "thumbnail-container-" frame-id)
-            ;; Hide the thumbnail when not displaying
-            :opacity (when-not thumbnail? 0)}
-           children]]]))))
+
+          ;; When thumbnail is enabled.
+          [:g.frame-imposter
+           ;; Render thumbnail image.
+           [:image.thumbnail-bitmap
+            {;; :ref on-imposter-ref
+             :x x
+             :y y
+             :width width
+             :height height
+             :href thumbnail-uri
+             :style {:display (when-not thumbnail? "none")}}]
+
+           ;; Render border around image when we are debugging
+           ;; thumbnails.
+           (when ^boolean debug?
+             [:rect {:x (+ x 2)
+                     :y (+ y 2)
+                     :width (- width 4)
+                     :height (- height 4)
+                     :stroke "#f0f"
+                     :stroke-width 2}])]
+
+          ;; When thumbnail is disabled.
+          (when-not thumbnail?
+            [:g.frame-content
+             {:id (dm/str "frame-content-" frame-id)
+              :ref container-ref}
+             [:& frame-shape {:shape shape :ref content-ref}]])]]))))

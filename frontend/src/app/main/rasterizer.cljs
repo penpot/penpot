@@ -7,8 +7,8 @@
 (ns app.main.rasterizer
   "A main entry point for the rasterizer API interface.
 
-  This ns is responsible to provide an API for create thumbnail
-  renderer iframes and interact with them using asyncrhonous
+  This ns is responsible to provide an API for create rasterizer
+  iframes and interact with them using asyncrhonous
   messages."
   (:require
    [app.common.data :as d]
@@ -36,7 +36,7 @@
       (recur (.shift ^js queue)))))
 
 (defn- on-message
-  "Handles a message from the thumbnail renderer."
+  "Handles a message from the rasterizer."
   [event]
   (let [evorigin (unchecked-get event "origin")
         evdata   (unchecked-get event "data")]
@@ -51,7 +51,7 @@
           (rx/push! msgbus evdata))))))
 
 (defn- send-message!
-  "Sends a message to the thumbnail renderer."
+  "Sends a message to the rasterizer."
   [message]
   (let [window (.-contentWindow ^js instance)]
     (.postMessage ^js window message origin)))
@@ -94,7 +94,7 @@
     (render {:data data :styles styles :width width :result result})))
 
 (defn init!
-  "Initializes the thumbnail renderer."
+  "Initializes the rasterizer."
   []
   (let [iframe (dom/create-element "iframe")]
     (dom/set-attribute! iframe "src" origin)

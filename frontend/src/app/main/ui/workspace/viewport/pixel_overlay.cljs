@@ -49,7 +49,7 @@
          (mf/deps viewport-node)
          (fn [event]
            (when-let [image-data (mf/ref-val canvas-image-data)]
-             (when-let [zoom-view-node (.getElementById js/document "picker-detail")]
+             (when-let [zoom-view-node (dom/get-element "picker-detail")]
                (when-not (mf/ref-val zoom-view-context)
                  (mf/set-ref-val! zoom-view-context (.getContext zoom-view-node "2d")))
                (let [{brx :left bry :top} (dom/get-bounding-rect viewport-node)

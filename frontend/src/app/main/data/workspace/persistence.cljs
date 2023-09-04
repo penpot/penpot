@@ -169,7 +169,7 @@
                               (->> (rx/from frame-updates)
                                    (rx/mapcat (fn [[page-id frames]]
                                                 (->> frames (map #(vector page-id %)))))
-                                   (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail file-id page-id frame-id))))
+                                   (rx/map (fn [[_ frame-id]] (dwt/update-thumbnail frame-id))))
 
                               (->> (rx/from (concat lagged commits))
                                    (rx/merge-map

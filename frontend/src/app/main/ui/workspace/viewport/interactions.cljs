@@ -240,7 +240,9 @@
 
             dest-shape-id (:id dest-shape)
 
-            thumbnail-data-ref (mf/use-memo (mf/deps page-id dest-shape-id) #(refs/thumbnail-frame-data page-id dest-shape-id))
+            thumbnail-data-ref (mf/use-memo
+                                (mf/deps page-id dest-shape-id)
+                                            #(refs/thumbnail-frame-data dest-shape-id))
             thumbnail-data     (mf/deref thumbnail-data-ref)
 
             dest-shape (cond-> dest-shape
