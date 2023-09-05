@@ -17,30 +17,30 @@
 (defn bool-shape
   [shape-wrapper]
   (mf/fnc bool-shape
-          {::mf/wrap-props false}
-          [props]
-          (let [shape  (obj/get props "shape")
-                childs (obj/get props "childs")
-                childs (use-equal-memo childs)
-                include-metadata? (mf/use-ctx use/include-metadata-ctx)
+    {::mf/wrap-props false}
+    [props]
+    (let [shape  (obj/get props "shape")
+          childs (obj/get props "childs")
+          childs (use-equal-memo childs)
+          include-metadata? (mf/use-ctx use/include-metadata-ctx)
 
-                bool-content
-                (mf/use-memo
-                 (mf/deps shape childs)
-                 (fn []
-                   (cond
-                     (some? (:bool-content shape))
-                     (:bool-content shape)
+          bool-content
+          (mf/use-memo
+           (mf/deps shape childs)
+           (fn []
+             (cond
+               (some? (:bool-content shape))
+               (:bool-content shape)
 
-                     (some? childs)
-                     (gsh/calc-bool-content shape childs))))]
+               (some? childs)
+               (gsh/calc-bool-content shape childs))))]
 
-            [:*
-             (when (some? bool-content)
-               [:& path-shape {:shape (assoc shape :content bool-content)}])
+      [:*
+       (when (some? bool-content)
+         [:& path-shape {:shape (assoc shape :content bool-content)}])
 
-             (when include-metadata?
-               [:> "penpot:bool" {}
-                (for [item (->> (:shapes shape) (mapv #(get childs %)))]
-                  [:& shape-wrapper {:shape item
-                                     :key (dm/str (:id item))}])])])))
+       (when include-metadata?
+         [:> "penpot:bool" {}
+          (for [item (->> (:shapes shape) (mapv #(get childs %)))]
+            [:& shape-wrapper {:shape item
+                               :key (dm/str (:id item))}])])])))
