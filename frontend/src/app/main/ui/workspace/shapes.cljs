@@ -13,6 +13,7 @@
   common."
   (:require
    [app.common.data.macros :as dm]
+   [app.common.geom.rect :as grc]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as ctx]
@@ -54,7 +55,18 @@
         ;; frame changes won't affect the rendering frame
         frame-objects
         (mf/with-memo [objects]
-          (cph/objects-by-frame objects))]
+          (cph/objects-by-frame objects))
+
+
+        vbox          (mf/use-ctx ctx/current-vbox)
+
+        shapes
+        (mf/with-memo [shapes vbox]
+          (if (some? vbox)
+            (->> shapes
+                 (filterv (fn [shape]
+                           (grc/overlaps-rects? vbox (dm/get-prop shape :selrect)))))
+            shapes))]
 
     [:g {:id (dm/str "shape-" uuid/zero)}
      [:& (mf/provider ctx/active-frames) {:value active-frames}

@@ -10,19 +10,22 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.pprint :as pp]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [beicon.core :as rx]
-   [cljs.pprint :refer [pprint]]
-   [cljs.test :as t :include-macros true]
+   [cljs.test :as t]
    [potok.core :as ptk]))
 
 ;; ---- Helpers to manage global events
 
 (defn on-error
   [cause]
-  (js/console.log "[CAUSE]:" (.-stack cause))
-  (js/console.log "[DATA]:" (pr-str (ex-data cause))))
+
+  (js/console.log "STORE ERROR" (.-stack cause))
+  (when-let [data (some-> cause ex-data ::sm/explain)]
+    (pp/pprint (sm/humanize-data data))))
 
 (defn prepare-store
   "Create a store with the given initial state. Wait until

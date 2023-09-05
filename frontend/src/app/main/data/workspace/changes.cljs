@@ -178,9 +178,11 @@
   [{:keys [redo-changes undo-changes
            origin save-undo? file-id undo-group tags stack-undo?]
     :or {save-undo? true stack-undo? false tags #{} undo-group (uuid/next)}}]
-  (let [error   (volatile! nil)
-        page-id (:current-page-id @st/state)
-        frames  (changed-frames redo-changes (wsh/lookup-page-objects @st/state))]
+  (let [error        (volatile! nil)
+        page-id      (:current-page-id @st/state)
+        frames       (changed-frames redo-changes (wsh/lookup-page-objects @st/state))
+        undo-changes (vec undo-changes)
+        redo-changes (vec redo-changes)]
     (ptk/reify ::commit-changes
       cljs.core/IDeref
       (-deref [_]
