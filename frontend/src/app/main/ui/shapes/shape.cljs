@@ -54,7 +54,7 @@
         children         (unchecked-get props "children")
         pointer-events   (unchecked-get props "pointer-events")
         disable-shadows? (unchecked-get props "disable-shadows?")
-        shape-id         (:id shape)
+        shape-id         (dm/get-prop shape :id)
 
         preview-blend-mode-ref
         (mf/with-memo [shape-id] (refs/workspace-preview-blend-by-id shape-id))
@@ -62,7 +62,7 @@
         blend-mode       (-> (mf/deref preview-blend-mode-ref)
                              (or (:blend-mode shape)))
 
-        type             (:type shape)
+        type             (dm/get-prop shape :type)
         render-id        (mf/use-id)
         filter-id        (dm/str "filter_" render-id)
         styles           (-> (obj/create)
