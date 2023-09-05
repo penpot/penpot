@@ -77,16 +77,18 @@
       {::mf/wrap [#(mf/memo' % check-props)]
        ::mf/wrap-props false}
       [props]
-      (let [shape         (unchecked-get props "shape")
-            frame-id      (:id shape)
-            objects       (wsh/lookup-page-objects @st/state)
-            node-ref      (mf/use-ref nil)
-            modifiers-ref (mf/use-memo (mf/deps frame-id) #(refs/workspace-modifiers-by-frame-id frame-id))
-            modifiers     (mf/deref modifiers-ref)]
+      (let [shape      (unchecked-get props "shape")
+            objects    (wsh/lookup-page-objects @st/state)
+
+            frame-id   (dm/get-prop shape :id)
+
+            node-ref   (mf/use-ref nil)
+            modifiers* (mf/with-memo [frame-id]
+                         (refs/workspace-modifiers-by-frame-id frame-id))
+            modifiers  (mf/deref modifiers*)]
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val node-ref) modifiers)
-        (let [shape (unchecked-get props "shape")]
-          [:& frame-shape {:shape shape :ref node-ref}])))))
+        [:& frame-shape {:shape shape :ref node-ref}]))))
 
 
 (defn root-frame-wrapper-factory
