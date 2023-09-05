@@ -132,10 +132,8 @@
 
       (let [main-instance-page  (ctf/get-component-page library-data component)
             main-instance-shape (ctf/get-component-root library-data component)
-
-            position (gpt/point (:x main-instance-shape) (:y main-instance-shape))
-
-            component-instance-extra-data (if components-v2 {:main-instance true} {})
+            position            (gpt/point (:x main-instance-shape) (:y main-instance-shape))
+            options             (if components-v2 {:main-instance? true} {})
 
             [new-instance-shape new-instance-shapes]
             (when (and (some? main-instance-page) (some? main-instance-shape))
@@ -144,7 +142,7 @@
                                            library-data
                                            position
                                            true
-                                           component-instance-extra-data))]
+                                           options))]
 
         [nil nil new-instance-shape new-instance-shapes])
 
