@@ -20,32 +20,39 @@
    [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
-(defn frame-clip-id
+(defn- frame-clip-id
   [shape render-id]
-  (dm/str "frame-clip-" (:id shape) "-" render-id))
+  (dm/str "frame-clip-" (dm/get-prop shape :id) "-" render-id))
 
-(defn frame-clip-url
+(defn- frame-clip-url
   [shape render-id]
-  (when (= :frame (:type shape))
-    (dm/str "url(#" (frame-clip-id shape render-id) ")")))
+  (dm/str "url(#" (frame-clip-id shape render-id) ")"))
 
 (mf/defc frame-clip-def
-  [{:keys [shape render-id]}]
-  (when (and (= :frame (:type shape)) (not (:show-content shape)))
-    (let [{:keys [x y width height]} shape
-          transform (gsh/transform-str shape)
-          props (-> (attrs/extract-style-attrs shape)
-                    (obj/merge!
-                     #js {:x x
-                          :y y
-                          :width width
-                          :height height
-                          :transform transform}))
-          path? (some? (.-d props))]
-      [:clipPath.frame-clip-def {:id (frame-clip-id shape render-id) :class "frame-clip"}
-       (if ^boolean path?
-         [:> :path props]
-         [:> :rect props])])))
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")]
+    (when (and ^boolean (cph/frame-shape? shape)
+               (not ^boolean (:show-content shape)))
+
+      (let [render-id (unchecked-get props "render-id")
+            x         (dm/get-prop shape :x)
+            y         (dm/get-prop shape :y)
+            w         (dm/get-prop shape :width)
+            h         (dm/get-prop shape :height)
+            t         (gsh/transform-str shape)
+
+            props     (mf/with-memo [shape]
+                        (-> (attrs/extract-style-attrs shape)
+                            (obj/merge! #js {:x x :y y :width w :height h :transform t})))
+
+            path?     (some? (.-d props))]
+
+        [:clipPath {:id (frame-clip-id shape render-id)
+                    :class "frame-clip frame-clip-def"}
+         (if ^boolean path?
+           [:> :path props]
+           [:> :rect props])]))))
 
 ;; Wrapper around the frame that will handle things such as strokes and other properties
 ;; we wrap the proper frames and also the thumbnails
@@ -53,29 +60,38 @@
   {::mf/wrap-props false}
   [props]
 
-  (let [shape     (unchecked-get props "shape")
-        children  (unchecked-get props "children")
+  (let [shape         (unchecked-get props "shape")
+        children      (unchecked-get props "children")
 
-        {:keys [x y width height show-content]} shape
-        transform (gsh/transform-str shape)
+        render-id     (mf/use-ctx muc/render-id)
 
-        render-id (mf/use-ctx muc/render-id)
+        x             (dm/get-prop shape :x)
+        y             (dm/get-prop shape :y)
+        w             (dm/get-prop shape :width)
+        h             (dm/get-prop shape :height)
+        transform     (gsh/transform-str shape)
 
-        props     (-> (attrs/extract-style-attrs shape render-id)
-                      (obj/merge!
-                       #js {:x x
-                            :y y
-                            :transform transform
-                            :width width
-                            :height height
-                            :className "frame-background"}))
-        path? (some? (.-d props))]
+        show-content? (get shape :show-content)
+
+        props         (mf/with-memo [shape render-id]
+                        (-> (attrs/extract-style-attrs shape render-id)
+                            (obj/merge!
+                             #js {:x x
+                                  :y y
+                                  :width w
+                                  :height h
+                                  :transform transform
+                                  :className "frame-background"})))
+        path?         (some? (.-d props))]
+
     [:*
-     [:g {:clip-path (when (not show-content) (frame-clip-url shape render-id))
-          :fill "none"}   ;; A frame sets back normal fill behavior (default transparent). It may have
-                          ;; been changed to default black if a shape coming from an imported SVG file
-                          ;; is rendered. See main.ui.shapes.attrs/add-style-attrs.
-      [:& frame-clip-def {:shape shape :render-id render-id}]
+     [:g {:clip-path (when-not ^boolean show-content?
+                       (frame-clip-url shape render-id))
+          ;; A frame sets back normal fill behavior (default
+          ;; transparent). It may have been changed to default black
+          ;; if a shape coming from an imported SVG file is
+          ;; rendered. See main.ui.shapes.attrs/add-style-attrs.
+          :fill "none"}
 
       [:& shape-fills {:shape shape}
        (if ^boolean path?
