@@ -305,7 +305,7 @@ gulp.task("watch", gulp.series("dev:dirs", "build", "watch:main"));
  ***********************************************/
 
 gulp.task("dist:clean", function(next) {
-  rimraf(paths.dist, next);
+  rimraf(paths.dist).finally(next);
 });
 
 gulp.task("dist:copy", function() {
