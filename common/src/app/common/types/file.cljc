@@ -974,7 +974,7 @@
       (report-error :missing-component-root
                     (str/format "Referenced shape %s not found in near component" (:shape-ref shape))
                     shape file page))))
- 
+
 (defn validate-component-not-ref
   "Validate that this shape does not reference other one."
   [shape file page report-error]
@@ -1065,7 +1065,7 @@
 
 (defn validate-shape
   "Validate referential integrity and semantic coherence of a shape and all its children.
-   
+
    The context is the situation of the parent in respect to components:
      :not-component
      :main-top

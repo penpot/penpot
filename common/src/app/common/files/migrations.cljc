@@ -576,3 +576,18 @@
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
+
+(defmethod migrate 31
+  [data]
+  (letfn [(update-object [object]
+            (cond-> object
+              (contains? object :use-for-thumbnail?)
+              (-> (assoc :use-for-thumbnail (:use-for-thumbnail? object))
+                  (dissoc :use-for-thumbnail?))))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))

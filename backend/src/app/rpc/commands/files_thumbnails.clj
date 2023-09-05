@@ -144,8 +144,8 @@
                  (run! pmap/load!))
 
             ;; Then proceed to find the frame set for thumbnail
-
-            (d/seek :use-for-thumbnail?
+            (d/seek #(or (:use-for-thumbnail %)
+                         (:use-for-thumbnail? %)) ; NOTE: backward comp (remove on v1.21)
                     (for [page  (-> data :pages-index vals)
                           frame (-> page :objects ctt/get-frames)]
                       (assoc frame :page-id (:id page)))))

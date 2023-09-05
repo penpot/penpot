@@ -504,7 +504,7 @@
             pages      (-> state :workspace-data :pages-index vals)]
 
         (rx/concat
-         ;; First: clear the `:use-for-thumbnail?` flag from all not
+         ;; First: clear the `:use-for-thumbnail` flag from all not
          ;; selected frames.
          (rx/from
           (->> pages
@@ -512,13 +512,13 @@
                 (fn [{:keys [objects id] :as page}]
                   (->> (ctst/get-frames objects)
                        (sequence
-                        (comp (filter :use-for-thumbnail?)
+                        (comp (filter :use-for-thumbnail)
                               (map :id)
                               (remove selected)
                               (map (partial vector id)))))))
                (d/group-by first second)
                (map (fn [[page-id frame-ids]]
-                      (dch/update-shapes frame-ids #(dissoc % :use-for-thumbnail?) {:page-id page-id})))))
+                      (dch/update-shapes frame-ids #(dissoc % :use-for-thumbnail) {:page-id page-id})))))
 
          ;; And finally: toggle the flag value on all the selected shapes
-         (rx/of (dch/update-shapes selected #(update % :use-for-thumbnail? not))))))))
+         (rx/of (dch/update-shapes selected #(update % :use-for-thumbnail not))))))))

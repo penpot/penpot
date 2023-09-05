@@ -449,8 +449,8 @@
                                   :frame-id frame-id)
 
                            (dissoc :shapes
-                                   :main-instance?
-                                   :use-for-thumbnail?)
+                                   :main-instance
+                                   :use-for-thumbnail)
 
                            (cond->
                              (or frame? group? bool?)
