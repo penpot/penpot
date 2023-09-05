@@ -50,23 +50,14 @@
   (let [objects       (obj/get props "objects")
         active-frames (obj/get props "active-frames")
         shapes        (cph/get-immediate-children objects)
-
-        ;; We group the objects together per frame-id so if an object of a different
-        ;; frame changes won't affect the rendering frame
-        frame-objects
-        (mf/with-memo [objects]
-          (cph/objects-by-frame objects))
-
-
         vbox          (mf/use-ctx ctx/current-vbox)
 
-        shapes
-        (mf/with-memo [shapes vbox]
-          (if (some? vbox)
-            (->> shapes
-                 (filterv (fn [shape]
-                           (grc/overlaps-rects? vbox (dm/get-prop shape :selrect)))))
-            shapes))]
+        shapes        (mf/with-memo [shapes vbox]
+                        (if (some? vbox)
+                          (filter (fn [shape]
+                                    (grc/overlaps-rects? vbox (dm/get-prop shape :selrect)))
+                                  shapes)
+                          shapes))]
 
     [:g {:id (dm/str "shape-" uuid/zero)}
      [:& (mf/provider ctx/active-frames) {:value active-frames}
@@ -83,7 +74,6 @@
           (if ^boolean (cph/frame-shape? shape)
             [:& root-frame-wrapper
              {:shape shape
-              :objects (get frame-objects (dm/get-prop shape :id))
               :thumbnail? (not (contains? active-frames (dm/get-prop shape :id)))}]
             [:& shape-wrapper {:shape shape}])])]]]))
 
