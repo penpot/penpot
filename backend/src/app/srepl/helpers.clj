@@ -164,7 +164,7 @@
                   ffeat/*wrap-with-pointer-map-fn*
                   (if (contains? (:features file) "storage/pointer-map") pmap/wrap identity)
                   ffeat/*wrap-with-objects-map-fn*
-                  (if (contains? (:features file) "storage/objectd-map") omap/wrap identity)]
+                  (if (contains? (:features file) "storage/objects-map") omap/wrap identity)]
           (try
             (on-file file)
             (catch Throwable cause
