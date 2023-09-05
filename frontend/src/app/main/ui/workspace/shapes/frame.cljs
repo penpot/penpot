@@ -166,12 +166,9 @@
            :key "frame-container"
            :ref on-frame-load
            :opacity (when (:hidden shape) 0)}
-            [:& ff/fontfaces-style {:fonts fonts}]
+          [:& ff/fontfaces-style {:fonts fonts}]
           [:g.frame-thumbnail-wrapper
            {:id (dm/str "thumbnail-container-" frame-id)
             ;; Hide the thumbnail when not displaying
             :opacity (when-not thumbnail? 0)}
-           children]]
-
-           ]))))
-
+           children]]]))))
