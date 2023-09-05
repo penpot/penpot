@@ -16,7 +16,7 @@ const modules = require("postcss-modules");
 
 const clean = require("postcss-clean");
 const {mkdirp} = require("mkdirp");
-const rimraf = require("rimraf");
+const {rimraf} = require("rimraf");
 const sass = require("sass");
 const gettext = require("gettext-parser");
 const marked = require("marked");
@@ -266,7 +266,7 @@ gulp.task("polyfills", function() {
  ***********************************************/
 
 gulp.task("clean", function(next) {
-  rimraf(paths.output, next);
+  rimraf(paths.output).finally(next)
 });
 
 gulp.task("copy:assets:images", function() {
