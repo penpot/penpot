@@ -94,34 +94,43 @@
   {::mf/wrap-props false}
   [props]
   (let [shape    (unchecked-get props "shape")
-        bounds   (or (unchecked-get props "bounds")
-                     (grc/points->rect (:points shape)))
+        bounds   (unchecked-get props "bounds")
 
-        shape-id (:id shape)
+        shape-id (dm/get-prop shape :id)
+        points   (dm/get-prop shape :points)
+
+        bounds   (mf/with-memo [bounds points]
+                   (or bounds (grc/points->rect points)))
+
         thumb    (:thumbnail shape)
 
         debug?   (debug? :thumbnails)
-        safari?  (cf/check-browser? :safari)]
+        safari?  (cf/check-browser? :safari)
+
+        ;; FIXME: ensure bounds is always a rect instance and
+        ;; dm/get-prop for static attr access
+        bx       (:x bounds)
+        by       (:y bounds)
+        bh       (:height bounds)
+        bw       (:width bounds)]
 
     [:*
      [:image.frame-thumbnail
       {:id (dm/str "thumbnail-" shape-id)
        :href thumb
        :decoding "async"
-       ;; FIXME: ensure bounds is always a rect instance and
-       ;; dm/get-prop for static attr access
-       :x (:x bounds)
-       :y (:y bounds)
-       :width (:width bounds)
-       :height (:height bounds)
+       :x bx
+       :y by
+       :width bw
+       :height bh
        :style {:filter (when (and (not ^boolean safari?) ^boolean debug?) "sepia(1)")}}]
 
      ;; Safari don't support filters so instead we add a rectangle around the thumbnail
      (when (and ^boolean safari? ^boolean debug?)
-       [:rect {:x (+ (:x bounds) 4)
-               :y (+ (:y bounds) 4)
-               :width (- (:width bounds) 8)
-               :height (- (:height bounds) 8)
+       [:rect {:x (+ bx 4)
+               :y (+ by 4)
+               :width (- bw 8)
+               :height (- bh 8)
                :stroke "red"
                :stroke-width 2}])]))
 
