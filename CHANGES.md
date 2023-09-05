@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.19.4
+
+### :sparkles: New features
+
+- Improve selected colors [Taiga #5805]( https://tree.taiga.io/project/penpot/us/5805)
+
 ## 1.19.3
 
 ### :sparkles: New features
