@@ -138,17 +138,22 @@
   (mf/fnc frame-shape
     {::mf/wrap-props false}
     [props]
-    (let [shape  (unchecked-get props "shape")
-          childs (unchecked-get props "childs")
-          childs (cond-> childs
-                   (ctl/any-layout? shape)
-                   (cph/sort-layout-children-z-index))
-          is-component? (mf/use-ctx muc/is-component?)]
+    (let [shape         (unchecked-get props "shape")
+          childs        (unchecked-get props "childs")
+          is-component? (mf/use-ctx muc/is-component?)
+          childs        (cond-> childs
+                          (ctl/any-layout? shape)
+                          (cph/sort-layout-children-z-index))
+          ]
+
       [:> frame-container props
        [:g.frame-children {:opacity (:opacity shape)}
-        (for [{:keys [id] :as item} childs]
-          (when (some? id)
-            [:& shape-wrapper {:key (dm/str (:id item)) :shape item}]))]
-       (when (and is-component? (empty? childs))
+        (for [item childs]
+          (let [id (dm/get-prop item :id)]
+            (when (some? id)
+              [:& shape-wrapper {:key (dm/str id) :shape item}])))]
+
+       (when (and ^boolean is-component?
+                  ^boolean (empty? childs))
          [:& grid-layout-viewer {:shape shape :childs childs}])])))
 
