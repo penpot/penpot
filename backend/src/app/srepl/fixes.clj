@@ -101,7 +101,9 @@
 (defn fix-components-shaperefs
   ([file]
    (if-not (contains? (:features file) "components/v2")
-     (prn "   This file is not v2")
+     (do
+       (prn "   This file is not v2")
+       file)
      (let [libs (->> (files/get-file-libraries app.srepl.helpers/*conn* (:id file))
                      (cons file)
                      (map #(files/get-file app.srepl.helpers/*conn* (:id %) (:features file)))
@@ -147,7 +149,7 @@
                    copies       (->> objects
                                      vals
                                      (filter #(and (ctk/instance-head? %) (not (ctk/main-instance? %)))))
-                               updates      (reduce fc [] copies)
+                   updates      (reduce fc [] copies)
                    updated-page (reduce (fn [p [id shape-ref]]
                                           (assoc-in p [:objects id :shape-ref] shape-ref))
                                         page
@@ -156,23 +158,23 @@
                updated-page))]
 
        (prn (str "Updating " (:name file) " " (:id file)))
-       (update file :data h/update-pages update-page))))
+       (-> file
+           (update :data h/update-pages update-page)
+           (assoc ::updated true)))))
 
   ([file save?]
    (let [file (-> file
                   (update :data blob/decode)
                   (fix-components-shaperefs))]
-     (when save?
-       (let [features (db/create-array h/*conn* "text" (:features file))
-             data     (blob/encode (:data file))]
+     (when (and save? (::updated file))
+       (let [data     (blob/encode (:data file))]
          (db/update! h/*conn* :file
                      {:data data
                       ;; :revn (:revn file)
-                      :features features}
+                      }
                      {:id (:id file)})
 
-         (when (contains? (:features file) "storage/pointer-map")
-           (files/persist-pointers! h/*conn* (:id file))))))))
+         (files/persist-pointers! h/*conn* (:id file)))))))
 
 (defn fix-component-root
   ([file]
@@ -198,22 +200,22 @@
                   (update :data blob/decode)
                   (fix-component-root))]
      (when save?
-       (let [features (db/create-array h/*conn* "text" (:features file))
-             data     (blob/encode (:data file))]
+       (let [data     (blob/encode (:data file))]
          (db/update! h/*conn* :file
                      {:data data
                       ;; :revn (:revn file)
-                      :features features}
+                      }
                      {:id (:id file)})
 
-         (when (contains? (:features file) "storage/pointer-map")
-           (files/persist-pointers! h/*conn* (:id file))))))))
+         (files/persist-pointers! h/*conn* (:id file)))))))
 
 (defn update-near-components
   ([file]
    (prn (str "Updating " (:name file) " " (:id file)))
    (if-not (contains? (:features file) "components/v2")
-     (prn "   This file is not v2")
+     (do
+       (prn "   This file is not v2")
+       file)
      (let [libs (->> (files/get-file-libraries h/*conn* (:id file))
                      (cons file)
                      (map #(files/get-file h/*conn* (:id %) (:features file)))
@@ -262,20 +264,20 @@
              (prn (str "Page " (:name page)))
              (h/update-shapes page (partial update-shape page)))]
 
-       (update file :data h/update-pages update-page))))
+       (-> file
+           (update :data h/update-pages update-page)
+           (assoc ::updated true)))))
 
   ([file save?]
    (let [file (-> file
                   (update :data blob/decode)
                   (update-near-components))]
-     (when save?
-       (let [features (db/create-array h/*conn* "text" (:features file))
-             data     (blob/encode (:data file))]
+     (when (and save? (::updated file))
+       (let [data     (blob/encode (:data file))]
          (db/update! h/*conn* :file
                      {:data data
                       ;; :revn (:revn file)
-                      :features features}
+                      }
                      {:id (:id file)})
 
-         (when (contains? (:features file) "storage/pointer-map")
-           (files/persist-pointers! h/*conn* (:id file))))))))
+         (files/persist-pointers! h/*conn* (:id file)))))))
