@@ -94,7 +94,7 @@
   (map #(get-shape container %) (:shapes shape)))
 
 (defn get-component-shape
-  "Get the parent shape linked to a component for this shape, if any"
+  "Get the parent top shape linked to a component for this shape, if any"
   ([objects shape] (get-component-shape objects shape nil))
   ([objects shape {:keys [allow-main?] :or {allow-main? false} :as options}]
    (cond
@@ -112,6 +112,26 @@
 
      :else
      (get-component-shape objects (get objects (:parent-id shape)) options))))
+
+(defn get-head-shape
+  "Get the parent top or nested shape linked to a component for this shape, if any"
+  ([objects shape] (get-head-shape objects shape nil))
+  ([objects shape {:keys [allow-main?] :or {allow-main? false} :as options}]
+   (cond
+     (nil? shape)
+     nil
+
+     (cph/root? shape)
+     nil
+
+     (ctk/instance-head? shape)
+     shape
+
+     (and (not (ctk/in-component-copy? shape)) (not allow-main?))
+     nil
+
+     :else
+     (get-head-shape objects (get objects (:parent-id shape)) options))))
 
 (defn get-instance-root
   "Get the parent shape at the top of the component instance (main or copy)."
@@ -144,6 +164,8 @@
     false
     (ctk/main-instance? shape)
     true
+    (ctk/instance-head? shape)
+    false
     :else
     (component-main? objects (get objects (:parent-id shape)))))
 

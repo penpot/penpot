@@ -6,12 +6,14 @@
 
 (ns app.rpc.commands.files-update
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.files.features :as ffeat]
    [app.common.files.migrations :as pmg]
    [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.pages.changes :as cpc]
+  [app.common.pprint :refer [pprint]]
    [app.common.schema :as sm]
    [app.common.schema.generators :as smg]
    [app.common.types.file :as ctf]
@@ -355,8 +357,8 @@
 
 (defn repair-file
   [{:keys [::db/conn ::mtx/metrics] :as cfg} {:keys [profile-id id errors] :as params}]
-  (let [file     (get-file conn id)
-        features (:features file)]
+  (let [file      (get-file conn id)
+        features  (:features file)]
 
     (files/check-edition-permissions! conn profile-id (:id file)) ; TODO: redundant?
 
@@ -372,9 +374,21 @@
 
             file      (assoc file :features features)
 
+            libraries (->> (files/get-file-libraries conn (:id file))
+                           (map #(get-file conn (:id %))))
+
             params    (-> params
                           (assoc :file file)
+                          (assoc :libraries libraries)
                           (assoc :errors errors))]
+
+        (when (> (:revn params)
+                 (:revn file))
+          (ex/raise :type :validation
+                    :code :revn-conflict
+                    :hint "The incoming revision number is greater that stored version."
+                    :context {:incoming-revn (:revn params)
+                              :stored-revn (:revn file)}))
 
         (mtx/run! metrics {:id :repair-file-errors :inc (count errors)})
 
@@ -387,25 +401,31 @@
                         :team-id    (:team-id file)}))))))
 
 (defn- repair-file*
-  [{:keys [::db/conn] :as cfg} {:keys [file errors] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [file libraries errors] :as params}]
   (let [;; Process the file data in the CLIMIT context; scheduling it
         ;; to be executed on a separated executor for avoid to do the
         ;; CPU intensive operation on vthread.
         file (-> (climit/configure cfg :update-file) ; TODO ?
-                 (climit/submit! (partial repair-file-data file errors)))]
+                 (climit/submit! (partial repair-file-data file libraries errors)))]
 
     (db/update! conn :file
-                {:data (:data file)}
+                {:revn (:revn file)
+                 :data (:data file)}
                 {:id (:id file)})
 
     {}))
 
 (defn- repair-file-data
-  [file errors]
-  (-> file
-      (update :data (fn [data]
-                      (-> data
-                          (blob/decode)
-                          (assoc :id (:id file))
-                          (ctfr/repair-file {} errors)
-                          (blob/encode))))))
+  [file libraries errors]
+  (let [libraries (->> libraries
+                      ;;  (map #(update % :data blob/decode))
+                       (d/group-by :id))]
+    (pprint libraries {:level 5})
+    (-> file
+        (update :revn inc)
+        (update :data (fn [data]
+                        (-> data
+                            (blob/decode)
+                            (assoc :id (:id file))
+                            (ctfr/repair-file libraries errors)
+                            (blob/encode)))))))

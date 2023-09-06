@@ -433,28 +433,20 @@
   ([shape-id]
    (let [file      (assoc (get @st/state :workspace-file)
                           :data (get @st/state :workspace-data))
-         page      (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])
          libraries (get @st/state :workspace-libraries)
-
-         errors    (ctfv/validate-shape (if shape-id
-                                          (uuid shape-id)
-                                          uuid/zero)
-                                        file
-                                        page
-                                        libraries)]
+         errors    (if shape-id
+                     (let [page (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])]
+                       (ctfv/validate-shape (uuid shape-id) file page libraries))
+                     (ctfv/validate-file file libraries))]
      (clj->js (d/group-by :code errors)))))
 
 (defn ^:export repair
   []
   (let [file      (assoc (get @st/state :workspace-file)
                          :data (get @st/state :workspace-data))
-        page      (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])
         libraries (get @st/state :workspace-libraries)
-
-        errors    (ctfv/validate-shape uuid/zero
-                                       file
-                                       page
-                                       libraries)]
+        errors    (ctfv/validate-shape (uuid "02ad9774-4a5f-8089-8002-9e412a236fe5") file (dm/get-in file [:data :pages-index (get @st/state :current-page-id)]) libraries)]
+        ;; errors    (ctfv/validate-file file libraries)]
 
     (st/emit! (dwp/repair-current-file errors))
     ;(dom/reload-current-window)

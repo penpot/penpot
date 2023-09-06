@@ -12,7 +12,9 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
+   [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -31,7 +33,9 @@
     :invalid-main-instance-page
     :invalid-main-instance
     :component-main
-    :missing-component-root
+    :should-be-component-root
+    :should-not-be-component-root
+    :ref-shape-not-found
     :shape-ref-in-main
     :root-main-not-allowed
     :nested-main-not-allowed
@@ -148,7 +152,7 @@
   "Validate that this shape is an instance root."
   [shape file page report-error]
   (when (nil? (:component-root shape))
-    (report-error :missing-component-root
+    (report-error :should-be-component-root
                   (str/format "Shape should be component root")
                   shape file page)))
 
@@ -156,16 +160,16 @@
   "Validate that this shape is not an instance root."
   [shape file page report-error]
   (when (some? (:component-root shape))
-    (report-error :missing-component-root
+    (report-error :should-not-be-component-root
                   (str/format "Shape should not be component root")
                   shape file page)))
 
 (defn validate-component-ref
   "Validate that the referenced shape exists in the near component."
   [shape file page libraries report-error]
-  (let [ref-shape (ctf/find-ref-shape file page libraries shape)]
+  (let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true)]
     (when (nil? ref-shape)
-      (report-error :missing-component-root
+      (report-error :ref-shape-not-found
                     (str/format "Referenced shape %s not found in near component" (:shape-ref shape))
                     shape file page))))
  
@@ -268,26 +272,25 @@
      :copy-nested
      :main-any
      :copy-any"
-  [shape-id file page libraries & {:keys [context throw? report-error]
-                                   :or {context :not-component throw? false}}]
+  [shape-id file page libraries & {:keys [context report-error throw?] :or {context :not-component throw? false}}]
   (let [shape (ctst/get-shape page shape-id)
+
         errors (volatile! [])
 
-        report-error (or report-error
-                         (fn [code msg shape file page]
-                           (if throw?
-                             (throw (ex-info msg {:type :validation
-                                                  :code code
-                                                  :hint msg
-                                                  ::explain (str/format "file %s\npage %s\nshape %s"
-                                                                        (:id file)
-                                                                        (:id page)
-                                                                        (:id shape))}))
-                             (vswap! errors conj {:code code
-                                                  :hint msg
-                                                  :shape shape
-                                                  :file-id (:id file)
-                                                  :page-id (:id page)}))))]
+        report-error (or report-error (fn [code msg shape file page]
+                                        (if throw?
+                                          (throw (ex-info msg {:type :validation
+                                                               :code code
+                                                               :hint msg
+                                                               ::explain (str/format "file %s\npage %s\nshape %s"
+                                                                                     (:id file)
+                                                                                     (:id page)
+                                                                                     (:id shape))}))
+                                          (vswap! errors conj {:code code
+                                                               :hint msg
+                                                               :shape shape
+                                                               :file-id (:id file)
+                                                               :page-id (:id page)}))))]
 
     (dm/verify! (str/format "Shape %s not found" shape-id) (some? shape)) ; If this happens it's a bug in this validate functions
 
@@ -346,7 +349,28 @@
 
     @errors))
 
-;; (def validate-file
-;;   "Validate referencial integrity and semantic coherence of all contents of a file."
-;;   [file libraries & {:keys [throw?]}]
-;;   )
+(defn validate-file
+  "Validate referencial integrity and semantic coherence of all contents of a file."
+  [file libraries & {:keys [throw?]}]
+  (let [errors (volatile! [])
+
+        ; TODO: avoid duplication
+        report-error (fn [code msg shape file page]
+                       (if throw?
+                         (throw (ex-info msg {:type :validation
+                                              :code code
+                                              :hint msg
+                                              ::explain (str/format "file %s\npage %s\nshape %s"
+                                                                    (:id file)
+                                                                    (:id page)
+                                                                    (:id shape))}))
+                         (vswap! errors conj {:code code
+                                              :hint msg
+                                              :shape shape
+                                              :file-id (:id file)
+                                              :page-id (:id page)})))]
+
+    (dorun (map #(validate-shape uuid/zero file % libraries :report-error report-error)
+                (ctpl/pages-seq (:data file))))
+    
+    @errors))

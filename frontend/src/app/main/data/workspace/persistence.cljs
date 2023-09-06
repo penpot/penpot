@@ -291,9 +291,8 @@
     (watch [_ state _]
       (let [file (get state :workspace-file)]
         (->> (rp/cmd! :repair-file {:id (:id file)
+                                    :revn (:revn file)
                                     :errors errors})
-            ;;  (rx/mapcat (fn [lagged]
-            ;;               (log/debug :hint "changes persisted" :lagged (count lagged))))
              (rx/catch (fn [cause]
                          (cond
                            (= :authentication (:type cause))
