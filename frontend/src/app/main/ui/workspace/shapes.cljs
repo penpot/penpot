@@ -94,26 +94,27 @@
         (and (some? active-frames)
              (not (contains? active-frames shape-id)))
 
-        opts  #js {:shape shape :thumbnail? thumbnail?}
+        props         #js {:shape shape :thumbnail? thumbnail?}
 
-        [wrapper wrapper-props]
-        (if (= :svg-raw shape-type)
-          [mf/Fragment nil]
-          ["g" #js {:className "workspace-shape-wrapper"}])]
+        rawsvg?       (= :svg-raw shape-type)
+        wrapper-elem  (if ^boolean rawsvg? mf/Fragment "g")
+        wrapper-props (if ^boolean rawsvg?
+                        #js {:className "workspace-shape-wrapper"}
+                        #js {})]
 
     (when (and (some? shape)
                (not ^boolean (:hidden shape)))
-      [:> wrapper wrapper-props
+      [:> wrapper-elem wrapper-props
        (case shape-type
-         :path    [:> path/path-wrapper opts]
-         :text    [:> text/text-wrapper opts]
-         :group   [:> group-wrapper opts]
-         :rect    [:> rect-wrapper opts]
-         :image   [:> image-wrapper opts]
-         :circle  [:> circle-wrapper opts]
-         :svg-raw [:> svg-raw-wrapper opts]
-         :bool    [:> bool-wrapper opts]
-         :frame   [:> nested-frame-wrapper opts]
+         :path    [:> path/path-wrapper props]
+         :text    [:> text/text-wrapper props]
+         :group   [:> group-wrapper props]
+         :rect    [:> rect-wrapper props]
+         :image   [:> image-wrapper props]
+         :circle  [:> circle-wrapper props]
+         :svg-raw [:> svg-raw-wrapper props]
+         :bool    [:> bool-wrapper props]
+         :frame   [:> nested-frame-wrapper props]
 
          nil)])))
 
