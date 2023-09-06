@@ -303,7 +303,8 @@
                  :rect selrect
                  :include-frames? true
                  :ignore-groups? ignore-groups?
-                 :full-frame? true})
+                 :full-frame? true
+                 :using-selrect? true})
                (rx/map #(cph/clean-loops objects %))
                (rx/map #(into initial-set (comp
                                            (filter (complement blocked?))

@@ -7,11 +7,13 @@
 (ns app.worker.selection
   (:require
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gst]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
    [app.util.quadtree :as qdt]
    [app.worker.impl :as impl]
@@ -117,7 +119,7 @@
     (assoc data :index index)))
 
 (defn- query-index
-  [{index :index} rect frame-id full-frame? include-frames? ignore-groups? clip-children?]
+  [{index :index} rect frame-id full-frame? include-frames? ignore-groups? clip-children? using-selrect?]
   (let [result (-> (qdt/search index (clj->js rect))
                    (es6-iterator-seq))
 
@@ -125,24 +127,78 @@
         match-criteria?
         (fn [shape]
           (and (not (:hidden shape))
-               (or (= :frame (:type shape)) ;; We return frames even if blocked
-                   (not (:blocked shape)))
-               (or (not frame-id) (= frame-id (:frame-id shape)))
-               (case (:type shape)
-                 :frame   include-frames?
-                 (:bool :group) (not ignore-groups?)
-                 true)
+            (or (= :frame (:type shape)) ;; We return frames even if blocked
+              (not (:blocked shape)))
+            (or (not frame-id) (= frame-id (:frame-id shape)))
+            (case (:type shape)
+              :frame   include-frames?
+              (:bool :group) (not ignore-groups?)
+              true)
 
-               (or (not full-frame?)
-                   (not= :frame (:type shape))
-                   (and (d/not-empty? (:shapes shape))
-                        (gsh/rect-contains-shape? rect shape))
-                   (and (empty? (:shapes shape))
-                        (gsh/overlaps? shape rect)))))
+            (or (not full-frame?)
+              (not= :frame (:type shape))
+              (and (d/not-empty? (:shapes shape))
+                (gsh/rect-contains-shape? rect shape))
+              (and (empty? (:shapes shape))
+                (gsh/overlaps? shape rect)))))
+
+        overlaps-outer-shape?
+        (fn [shape]
+          (let [padding (->> (:strokes shape)
+                             (map #(case (get % :stroke-alignment :center)
+                                     :center (:stroke-width % 0)
+                                     :outer  (* 2 (:stroke-width % 0))
+                                     :inner  0))
+                             (reduce d/max 0))
+
+                scalev     (gpt/point (/ (+ (:width shape) padding)
+                                         (:width shape))
+                             (/ (+ (:height shape) padding)
+                                (:height shape)))
+
+                outer-shape (-> shape
+                                (gsh/transform-shape (-> (ctm/empty)
+                                                         (ctm/resize scalev (gsh/shape->center shape)))))]
+
+            (gsh/overlaps? outer-shape rect)))
+
+        overlaps-inner-shape?
+        (fn [shape]
+          (let [padding (->> (:strokes shape)
+                             (map #(case (get % :stroke-alignment :center)
+                                     :center (:stroke-width % 0)
+                                     :outer  0
+                                     :inner  (* 2 (:stroke-width % 0))))
+                             (reduce d/max 0))
+
+                scalev     (gpt/point (/ (- (:width shape) padding)
+                                         (:width shape))
+                             (/ (- (:height shape) padding)
+                                (:height shape)))
+
+                inner-shape (-> shape
+                                (gsh/transform-shape (-> (ctm/empty)
+                                                         (ctm/resize scalev (gsh/shape->center shape)))))]
+            (gsh/overlaps? inner-shape rect)))
+
+        overlaps-path?
+        (fn [shape]
+          (let [padding (->> (:strokes shape)
+                             (map :stroke-width)
+                             (reduce d/max 0))
+                rect (grc/center->rect rect padding padding)]
+            (gsh/overlaps-path? shape rect false)))
 
         overlaps?
         (fn [shape]
-          (gsh/overlaps? shape rect))
+          (if (and (false? using-selrect?) (empty? (:fills shape)))
+            (do
+              (case  (:type shape)
+                ;; If the shape has no fills the overlap depends on the stroke
+                :rect (and (overlaps-outer-shape? shape) (not (overlaps-inner-shape? shape)))
+                :circle (and (overlaps-outer-shape? shape) (not (overlaps-inner-shape? shape)))
+                :path (overlaps-path? shape)))
+            (gsh/overlaps? shape rect)))
 
         overlaps-parent?
         (fn [clip-parents]
@@ -186,8 +242,8 @@
   nil)
 
 (defmethod impl/handler :selection/query
-  [{:keys [page-id rect frame-id full-frame? include-frames? ignore-groups? clip-children?]
-    :or {full-frame? false include-frames? false clip-children? true}
+  [{:keys [page-id rect frame-id full-frame? include-frames? ignore-groups? clip-children? using-selrect?]
+    :or {full-frame? false include-frames? false clip-children? true using-selrect? false}
     :as message}]
   (when-let [index (get @state page-id)]
-    (query-index index rect frame-id full-frame? include-frames? ignore-groups? clip-children?)))
+    (query-index index rect frame-id full-frame? include-frames? ignore-groups? clip-children? using-selrect?)))

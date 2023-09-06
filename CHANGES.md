@@ -6,6 +6,8 @@
 
 ### :sparkles: New features
 
+- Select through stroke only rectangle [Taiga #5484](https://tree.taiga.io/project/penpot/issue/5484)
+
 ### :bug: Bugs fixed
 
 ### :arrow_up: Deps updates

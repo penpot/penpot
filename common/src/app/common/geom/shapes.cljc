@@ -185,6 +185,7 @@
 
 ;; Intersection
 (dm/export gsi/overlaps?)
+(dm/export gsi/overlaps-path?)
 (dm/export gsi/has-point?)
 (dm/export gsi/has-point-rect?)
 (dm/export gsi/rect-contains-shape?)

@@ -147,7 +147,8 @@
                       :page-id page-id
                       :rect rect
                       :include-frames? true
-                      :clip-children? true})
+                      :clip-children? true
+                      :using-selrect? false})
                     ;; When the ask-buffered is canceled returns null. We filter them
                     ;; to improve the behavior
                     (rx/filter some?))))))
