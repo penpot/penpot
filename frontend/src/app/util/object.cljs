@@ -99,3 +99,13 @@
 (defn ^boolean in?
   [obj prop]
   (js* "~{} in ~{}" prop obj))
+
+(defn map->obj
+  [o]
+  (reduce-kv (fn [result k v]
+               (let [k (if (keyword? k) (name k) k)
+                     v (if (keyword? v) (name v) v)]
+                 (unchecked-set result k v)
+                 result))
+               #js {}
+               o))

@@ -144,6 +144,7 @@
     (:opacity shape)
     (obj/set! "opacity" (:opacity shape))))
 
+;; FIXME: DEPRECATED
 (defn extract-svg-attrs
   [render-id svg-defs svg-attrs]
   (if (and (empty? svg-defs) (empty? svg-attrs))
@@ -158,8 +159,25 @@
                         (dissoc :id))
 
           attrs  (-> svg-attrs (dissoc :style) (clj->js))
-          styles (-> svg-attrs (:style {}) (clj->js))]
+          styles (-> svg-attrs (get :style {}) (clj->js))]
+
       [attrs styles])))
+
+(defn get-svg-attrs
+  [shape render-id]
+  (let [svg-attrs (get shape :svg-attrs {})
+        svg-defs  (get shape :svg-defs {})]
+    (if (and (empty? svg-defs)
+             (empty? svg-attrs))
+      {}
+      (let [replace-id (fn [id]
+                         (if (contains? svg-defs id)
+                           (str render-id "-" id)
+                           id))]
+        (-> svg-attrs
+            (usvg/clean-attrs)
+            (usvg/update-attr-ids replace-id)
+            (dissoc :id))))))
 
 (defn add-style-attrs
   ([props shape]
@@ -226,19 +244,15 @@
    (-> (obj/create)
        (add-style-attrs shape render-id))))
 
-(defn extract-fill-attrs
-  [fill-data render-id index type]
-  (let [fill-styles (-> (obj/get fill-data "style" (obj/create))
-                        (add-fill fill-data render-id index type))]
-    (-> (obj/create)
-        (obj/set! "style" fill-styles))))
-
-(defn extract-stroke-attrs
+(defn get-stroke-style
   [stroke-data index render-id]
-  (let [stroke-styles (-> (obj/get stroke-data "style" (obj/create))
-                          (add-stroke stroke-data render-id index))]
-    (-> (obj/create)
-        (obj/set! "style" stroke-styles))))
+  ;; FIXME: optimize
+  (add-stroke #js {} stroke-data render-id index))
+
+(defn get-fill-style
+  [fill-data index render-id type]
+  ;; FIXME: optimize
+  (add-fill #js {} fill-data render-id index type))
 
 (defn extract-border-radius-attrs
   [shape]
