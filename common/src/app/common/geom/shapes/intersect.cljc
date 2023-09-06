@@ -173,7 +173,7 @@
 
 (defn overlaps-path?
   "Checks if the given rect overlaps with the path in any point"
-  [shape rect]
+  [shape rect include-content?]
 
   (when (d/not-empty? (:content shape))
     (let [ ;; If paths are too complex the intersection is too expensive
@@ -189,9 +189,11 @@
                          (gpp/path->lines shape))
           start-point (-> shape :content (first) :params (gpt/point))]
 
-      (or (is-point-inside-nonzero? (first rect-points) path-lines)
-          (is-point-inside-nonzero? start-point rect-lines)
-          (intersects-lines? rect-lines path-lines)))))
+      (or (intersects-lines? rect-lines path-lines)
+        (if include-content?
+          (or (is-point-inside-nonzero? (first rect-points) path-lines)
+            (is-point-inside-nonzero? start-point rect-lines))
+          false)))))
 
 (defn is-point-inside-ellipse?
   "checks if a point is inside an ellipse"
@@ -315,7 +317,7 @@
         (cond
           (cph/path-shape? shape)
           (and (overlaps-rect-points? rect (:points shape))
-               (overlaps-path? shape rect))
+               (overlaps-path? shape rect true))
 
           (cph/circle-shape? shape)
           (and (overlaps-rect-points? rect (:points shape))
