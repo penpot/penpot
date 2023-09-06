@@ -20,7 +20,6 @@
   (-> props
       (obj/set! "penpot:gradient" "true")
       (obj/set! "penpot:start-x" (:start-x gradient))
-      (obj/set! "penpot:start-x" (:start-x gradient))
       (obj/set! "penpot:start-y" (:start-y gradient))
       (obj/set! "penpot:end-x"   (:end-x gradient))
       (obj/set! "penpot:end-y"   (:end-y gradient))
