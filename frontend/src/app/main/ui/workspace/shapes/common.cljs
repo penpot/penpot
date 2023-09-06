@@ -6,13 +6,30 @@
 
 (ns app.main.ui.workspace.shapes.common
   (:require
+   [app.common.record :as cr]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [rumext.v2 :as mf]))
+
+(def ^:private excluded-attrs
+  #{:blocked
+    :hide-fill-on-export
+    :collapsed
+    :remote-synced
+    :exports})
+
+(defn check-shape
+  [new-shape old-shape]
+  (cr/-equiv-with-exceptions old-shape new-shape excluded-attrs))
+
+(defn check-shape-props
+  [np op]
+  (check-shape (unchecked-get np "shape")
+               (unchecked-get op "shape")))
 
 (defn generic-wrapper-factory
   [component]
   (mf/fnc generic-wrapper
-    {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
+    {::mf/wrap [#(mf/memo' % check-shape-props)]
      ::mf/wrap-props false}
     [props]
     (let [shape (unchecked-get props "shape")]

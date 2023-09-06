@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
-   [app.common.record :as cr]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
@@ -20,33 +19,18 @@
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text.fontfaces :as ff]
+   [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as fdm]
    [app.main.ui.workspace.shapes.frame.node-store :as fns]
    [app.main.ui.workspace.shapes.frame.thumbnail-render :as ftr]
    [beicon.core :as rx]
    [rumext.v2 :as mf]))
 
-(def ^:private excluded-attrs
-  #{:blocked
-    :hide-fill-on-export
-    :collapsed
-    :remote-synced
-    :exports})
-
-(defn check-shape
-  [new-shape old-shape]
-  (cr/-equiv-with-exceptions old-shape new-shape excluded-attrs))
-
-(defn check-frame-props
-  [np op]
-  (check-shape (unchecked-get np "shape")
-               (unchecked-get op "shape")))
-
 (defn frame-shape-factory
   [shape-wrapper]
   (let [frame-shape (frame/frame-shape shape-wrapper)]
     (mf/fnc frame-shape-inner
-      {::mf/wrap [#(mf/memo' % check-frame-props)]
+      {::mf/wrap [#(mf/memo' % check-shape-props)]
        ::mf/wrap-props false
        ::mf/forward-ref true}
       [props ref]
@@ -66,8 +50,7 @@
   [new-props old-props]
   (and (= (unchecked-get new-props "thumbnail?")
           (unchecked-get old-props "thumbnail?"))
-       (check-shape (unchecked-get new-props "shape")
-                    (unchecked-get old-props "shape"))))
+       (check-shape-props new-props old-props)))
 
 (defn nested-frame-wrapper-factory
   [shape-wrapper]

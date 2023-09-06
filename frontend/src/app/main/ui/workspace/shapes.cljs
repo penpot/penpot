@@ -77,13 +77,8 @@
               :thumbnail? (not (contains? active-frames (dm/get-prop shape :id)))}]
             [:& shape-wrapper {:shape shape}])])]]]))
 
-(defn- check-shape-wrapper-props
-  [np op]
-  (frame/check-shape (unchecked-get np "shape")
-                     (unchecked-get op "shape")))
-
 (mf/defc shape-wrapper
-  {::mf/wrap [#(mf/memo' % check-shape-wrapper-props)]
+  {::mf/wrap [#(mf/memo' % common/check-shape-props)]
    ::mf/wrap-props false}
   [props]
   (let [shape      (unchecked-get props "shape")
