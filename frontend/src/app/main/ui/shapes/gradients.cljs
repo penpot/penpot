@@ -101,17 +101,22 @@
 (mf/defc gradient
   {::mf/wrap-props false}
   [props]
-  (let [attr   (obj/get props "attr")
-        shape  (obj/get props "shape")
-        id     (obj/get props "id")
-        id'    (mf/use-ctx muc/render-id)
-        id     (or id (dm/str (name attr) "_" id'))
+  (let [attr     (unchecked-get props "attr")
+        shape    (unchecked-get props "shape")
+        id       (unchecked-get props "id")
+        rid      (mf/use-ctx muc/render-id)
+
+        id       (if (some? id)
+                   id
+                   (dm/str (name attr) "_" rid))
+
         gradient (get shape attr)
-        gradient-props #js {:id id
-                            :gradient gradient
-                            :shape shape}]
-    (when gradient
-      (case (d/name (:type gradient))
-        "linear" [:> linear-gradient gradient-props]
-        "radial" [:> radial-gradient gradient-props]
+        props    #js {:id id
+                      :gradient gradient
+                      :shape shape}]
+
+    (when (some? gradient)
+      (case (:type gradient)
+        :linear [:> linear-gradient props]
+        :radial [:> radial-gradient props]
         nil))))
