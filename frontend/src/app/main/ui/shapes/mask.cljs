@@ -14,22 +14,22 @@
    [rumext.v2 :as mf]))
 
 (defn mask-id [render-id mask]
-  (str render-id "-" (:id mask) "-mask"))
+  (dm/str render-id "-" (:id mask) "-mask"))
 
 (defn mask-url [render-id mask]
-  (str "url(#" (mask-id render-id mask) ")"))
+  (dm/str "url(#" (mask-id render-id mask) ")"))
 
 (defn clip-id [render-id mask]
-  (str render-id "-" (:id mask) "-clip"))
+  (dm/str render-id "-" (:id mask) "-clip"))
 
 (defn clip-url [render-id mask]
-  (str "url(#" (clip-id render-id mask) ")"))
+  (dm/str "url(#" (clip-id render-id mask) ")"))
 
 (defn filter-id [render-id mask]
-  (str render-id "-" (:id mask) "-filter"))
+  (dm/str render-id "-" (:id mask) "-filter"))
 
 (defn filter-url [render-id mask]
-  (str "url(#" (filter-id render-id mask) ")"))
+  (dm/str "url(#" (filter-id render-id mask) ")"))
 
 (defn set-white-fill
   [shape]
