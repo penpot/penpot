@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.debug.components-preview
-  (:require-macros [app.main.style :refer [css styles]])
+  (:require-macros [app.main.style :as stl])
   (:require [app.common.data :as d]
             [app.main.data.users :as du]
             [app.main.refs :as refs]
@@ -23,8 +23,8 @@
   [props]
   (let [children (unchecked-get props "children")
         title    (unchecked-get props "title")]
-    [:div {:class (dom/classnames (css :component) true)}
-     [:h4 {:class (dom/classnames (css :component-name) true)} title]
+    [:div {:class (stl/css :component)}
+     [:h4 {:class (stl/css :component-name)} title]
      children]))
 
 (mf/defc components-preview
@@ -77,7 +77,7 @@
         on-btn-click (mf/use-fn #(prn "eyy"))]
 
     [:section.debug-components-preview
-     [:div {:class (dom/classnames (css :themes-row) true)}
+     [:div {:class (stl/css :themes-row)}
       [:h2 "Themes"]
       [:select {:label "Select theme color"
                 :name :theme
@@ -86,17 +86,18 @@
                 :on-change on-change}
        [:option {:label "Penpot Dark (default)" :value "default"}]
        [:option  {:label "Penpot Light" :value "light"}]]
-      [:div {:class (dom/classnames (css :wrapper) true)}
-       (let [css (styles)]
+      [:div {:class (stl/css :wrapper)}
+       (let [css (stl/styles)]
          (for [color colors]
            [:div {:key color
                   :class (dom/classnames (get css color) true
                                          (get css :rect) true)}
             (d/name color)]))]]
-     [:div {:class (dom/classnames (css :components-row) true)}
-      [:h2 {:class (dom/classnames (css :title) true)} "Components"]
-      [:div {:class (dom/classnames (css :components-wrapper) true)}
-       [:div {:class (dom/classnames (css :component-group) true)}
+
+     [:div {:class (stl/css :components-row)}
+      [:h2 {:class(stl/css :title)} "Components"]
+      [:div {:class (stl/css :components-wrapper)}
+       [:div {:class (stl/css :components-group)}
         [:h3 "Titles"]
         [:& component-wrapper
          {:title "Title"}
@@ -129,7 +130,7 @@
            [:& tab-element {:id :second
                             :title "B tab"}]]]]]
 
-       [:div {:class (dom/classnames (css :component-group) true)}
+       [:div {:class (stl/css :components-group)}
         [:h3 "Tabs component"]
         [:& component-wrapper
          {:title "2 tab component"}
@@ -154,7 +155,7 @@
                            :title "Third tab"}
            [:div "This is third tab content"]]]]]
 
-       [:div {:class (dom/classnames (css :component-group) true)}
+       [:div {:class (stl/css :components-group)}
         [:h3 "Search bar"]
         [:& component-wrapper
          {:title "Search bar only"}
@@ -166,21 +167,21 @@
          [:& search-bar {:on-change update-search
                          :value input-value
                          :placeholder "Test value"}
-          [:button {:class (dom/classnames (css :test-button) true)
+          [:button {:class (stl/css :test-button)
                     :on-click on-btn-click}
            "X"]]]]
 
-       [:div {:class (dom/classnames (css :component-group) true)}
+       [:div {:class (stl/css :components-group)}
         [:h3 "Radio buttons"]
         [:& component-wrapper
          {:title "Two radio buttons (toggle)"}
          [:& radio-buttons {:selected radio-selected
                             :on-change set-radio-selected
                             :name "listing-style"}
-          [:& radio-button {:icon (mf/html i/view-as-list-refactor)
+          [:& radio-button {:icon i/view-as-list-refactor
                             :value "first"
                             :id :list}]
-          [:& radio-button {:icon (mf/html i/flex-grid-refactor)
+          [:& radio-button {:icon i/flex-grid-refactor
                             :value "second"
                             :id :grid}]]]
         [:& component-wrapper
@@ -188,14 +189,14 @@
          [:& radio-buttons {:selected radio-selected
                             :on-change set-radio-selected
                             :name "listing-style"}
-          [:& radio-button {:icon (mf/html i/view-as-list-refactor)
+          [:& radio-button {:icon i/view-as-list-refactor
                             :value "first"
                             :id :first}]
-          [:& radio-button {:icon (mf/html i/flex-grid-refactor)
+          [:& radio-button {:icon i/flex-grid-refactor
                             :value "second"
                             :id :second}]
 
-          [:& radio-button {:icon (mf/html i/add-refactor)
+          [:& radio-button {:icon i/add-refactor
                             :value "third"
                             :id :third}]]]
 
@@ -204,17 +205,45 @@
          [:& radio-buttons {:selected radio-selected
                             :on-change set-radio-selected
                             :name "listing-style"}
-          [:& radio-button {:icon (mf/html i/view-as-list-refactor)
+          [:& radio-button {:icon i/view-as-list-refactor
                             :value "first"
                             :id :first}]
-          [:& radio-button {:icon (mf/html i/flex-grid-refactor)
+          [:& radio-button {:icon i/flex-grid-refactor
                             :value "second"
                             :id :second}]
 
-          [:& radio-button {:icon (mf/html i/add-refactor)
+          [:& radio-button {:icon i/add-refactor
                             :value "third"
                             :id :third}]
 
-          [:& radio-button {:icon (mf/html i/board-refactor)
+          [:& radio-button {:icon i/board-refactor
                             :value "forth"
-                            :id :forth}]]]]]]]))
+                            :id :forth}]]]]
+       [:div {:class (stl/css :components-group)}
+        [:h3 "Buttons"]
+        [:& component-wrapper
+         {:title "Button primary"}
+         [:button  {:class (stl/css :button-primary)}
+          "Primary"]]
+        [:& component-wrapper
+         {:title "Button primary with icon"}
+         [:button  {:class (stl/css :button-primary)}
+          i/add-refactor]]
+
+        [:& component-wrapper
+         {:title "Button secondary"}
+         [:button  {:class (stl/css :button-secondary)}
+          "secondary"]]
+        [:& component-wrapper
+         {:title "Button secondary with icon"}
+         [:button  {:class (stl/css :button-secondary)}
+          i/add-refactor]]
+
+        [:& component-wrapper
+         {:title "Button tertiary"}
+         [:button  {:class (stl/css :button-tertiary)}
+          "tertiary"]]
+        [:& component-wrapper
+         {:title "Button tertiary with icon"}
+         [:button  {:class (stl/css :button-tertiary)}
+          i/add-refactor]]]]]]))

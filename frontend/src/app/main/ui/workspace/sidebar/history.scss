@@ -37,6 +37,7 @@
       border-radius: $br-6;
       svg {
         @extend .button-icon;
+        stroke: var(--icon-foreground);
       }
     }
   }

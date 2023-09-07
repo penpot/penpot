@@ -245,7 +245,8 @@
                       :collapsed?   (not @show-pages?)
                       :on-collapsed toggle-pages
                       :title        (tr "workspace.sidebar.sitemap")
-                      :klass        :title-spacing-sitemap}
+                      :class        (css :title-spacing-sitemap)}
+
 
         (if workspace-read-only?
           [:div

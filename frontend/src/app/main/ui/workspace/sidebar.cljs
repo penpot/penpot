@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.workspace :as dw]
@@ -59,28 +59,24 @@
     [:aside {:ref parent-ref
              :id "left-sidebar-aside"
              :data-size size
-             :class (if ^boolean new-css-system
-                      (dom/classnames (css :left-settings-bar) true
-                                      :two-row   (<= size 300)
-                                      :three-row (and (> size 300) (<= size 400))
-                                      :four-row  (> size 400))
-                      (dom/classnames :settings-bar true
-                                      :settings-bar-left true
-                                      :two-row   (<= size 300)
-                                      :three-row (and (> size 300) (<= size 400))
-                                      :four-row  (> size 400)))
+             :class (stl/css-case new-css-system
+                                  :old-css/settings-bar true
+                                  :old-css/settings-bar-left true
+                                  :left-settings-bar true
+                                  :global/two-row   (<= size 300)
+                                  :global/three-row (and (> size 300) (<= size 400))
+                                  :global/four-row  (> size 400))
              :style #js {"--width" (dm/str size "px")}}
      (when new-css-system
        [:& left-header {:file file :layout layout :project project :page-id page-id}])
-
      [:div {:on-pointer-down on-pointer-down
             :on-lost-pointer-capture on-lost-pointer-capture
             :on-pointer-move on-pointer-move
             :class (if ^boolean new-css-system
-                     (dom/classnames (css :resize-area) true)
+                     (stl/css :resize-area)
                      (dom/classnames :resize-area true))}]
      [:div {:class (if ^boolean new-css-system
-                     (dom/classnames (css :settings-bar-inside) true)
+                     (stl/css :settings-bar-inside)
                      (dom/classnames :settings-bar-inside true))}
       (cond
         (true? shortcuts?)
@@ -91,7 +87,7 @@
 
         :else
         (if ^boolean new-css-system
-          [:div  {:class (dom/classnames (css :tabs-wrapper) true)}
+          [:div  {:class (stl/css :tabs-wrapper)}
            [:& tab-container
             {:on-change-tab on-tab-change
              :selected section
@@ -100,7 +96,7 @@
              :handle-collapse handle-collapse
              :klass :tab-spacing}
             [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
-             [:div {:class (dom/classnames (css :layers-tab) true)}
+             [:div {:class (stl/css :layers-tab)}
               [:& sitemap {:layout layout}]
               [:& layers-toolbox {:size-parent size}]]]
 
@@ -122,7 +118,7 @@
              :handle-collapse handle-collapse}
 
             [:& tabs-element {:id :layers :title (tr "workspace.sidebar.layers")}
-             [:div {:class (dom/classnames :layers-tab true)}
+             [:div {:class :layers-tab}
               [:& sitemap {:layout layout}]
               [:& layers-toolbox {:size-parent size}]]]
 
@@ -174,26 +170,25 @@
             (obj/set! "on-change-section" handle-change-section)
             (obj/set! "on-expand" handle-expand))]
 
-    [:aside {:class (if ^boolean new-css-system
-                      (dom/classnames (css :settings-bar) true
-                                      (css :right-settings-bar) true
-                                      (css :not-expand) (not can-be-expanded?)
-                                      (css :expanded) (> size 276))
-                      (dom/classnames :settings-bar true
-                                      :settings-bar-right true
-                                      :not-expand (not can-be-expanded?)))
+    [:aside {:class (stl/css-case new-css-system
+                                  :old-css/settings-bar true
+                                  :old-css/settings-bar-right true
+                                  :right-settings-bar true
+                                  :not-expand (not can-be-expanded?)
+                                  :expanded (> size 276))
+
              :id "right-sidebar-aside"
              :data-size size
              :style #js {"--width" (when can-be-expanded? (dm/str size "px"))}}
      (when can-be-expanded?
-       [:div.resize-area
-        {:on-pointer-down on-pointer-down
-         :on-lost-pointer-capture on-lost-pointer-capture
-         :on-pointer-move on-pointer-move}])
+       [:div {:class (stl/css new-css-system :resize-area)
+              :on-pointer-down on-pointer-down
+              :on-lost-pointer-capture on-lost-pointer-capture
+              :on-pointer-move on-pointer-move}])
      (when new-css-system
        [:& right-header {:file file :layout layout :page-id page-id}])
 
-     [:div.settings-bar-inside
+     [:div {:class (stl/css new-css-system :settings-bar-inside)}
       (cond
         (true? is-comments?)
         [:& comments-sidebar]

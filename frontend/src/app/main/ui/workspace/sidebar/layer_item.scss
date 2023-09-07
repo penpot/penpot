@@ -12,6 +12,7 @@
   align-items: center;
   width: 100%;
   background-color: var(--layer-row-background-color);
+  padding-left: $s-8;
 
   .element-list-body {
     display: flex;
@@ -37,6 +38,7 @@
         padding: 0 4px 0 8px;
         svg {
           @extend .button-icon-small;
+          stroke: var(--icon-foreground);
         }
         &.inverse {
           svg {
@@ -58,6 +60,7 @@
         padding: 0 $s-8 0 $s-4;
         svg {
           @extend .button-icon-small;
+          stroke: var(--icon-foreground);
         }
 
         .absolute {
@@ -83,6 +86,7 @@
         display: none;
         svg {
           @extend .button-icon-small;
+          stroke: var(--icon-foreground);
         }
       }
       &.selected {

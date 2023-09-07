@@ -48,11 +48,22 @@ $width-settings-bar-max: $s-500;
 .right-settings-bar {
   grid-area: right-sidebar;
   width: $width-settings-bar;
-
+  background-color: var(--panel-background-color);
+  height: 100%;
   &.not-expand {
     max-width: $width-settings-bar;
   }
   &.expanded {
     width: var(--width, $width-settings-bar);
+  }
+  .resize-area {
+    position: absolute;
+    height: 100%;
+    width: $s-8;
+    z-index: $z-index-3;
+    cursor: ew-resize;
+  }
+  .settings-bar-inside {
+    height: calc(100vh - $s-52);
   }
 }

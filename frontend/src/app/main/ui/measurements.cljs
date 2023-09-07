@@ -306,7 +306,7 @@
         axis                 (:resize-axis rect-data)
 
         on-pointer-down
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps frame-id rect-data padding-num)
          (fn [event]
            (dom/capture-pointer event)
@@ -315,7 +315,7 @@
            (reset! original-value (:initial-value rect-data))))
 
         on-lost-pointer-capture
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps frame-id padding-num padding)
          (fn [event]
            (dom/release-pointer event)
@@ -325,7 +325,7 @@
            (st/emit! (dwm/apply-modifiers))))
 
         on-pointer-move
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps frame-id padding-num padding hover-all? hover-v? hover-h?)
          (fn [event]
            (let [pos (dom/get-client-position event)]
@@ -466,7 +466,7 @@
         axis                 (:resize-axis rect-data)
 
         on-pointer-down
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps shape-id margin-num margin)
          (fn [event]
            (dom/capture-pointer event)
@@ -475,7 +475,7 @@
            (reset! original-value (:initial-value rect-data))))
 
         on-lost-pointer-capture
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps shape-id margin-num margin)
          (fn [event]
            (dom/release-pointer event)
@@ -485,7 +485,7 @@
            (st/emit! (dwm/apply-modifiers))))
 
         on-pointer-move
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps shape-id margin-num margin hover-all? hover-v? hover-h?)
          (fn [event]
            (let [pos (dom/get-client-position event)]
@@ -618,7 +618,7 @@
         axis                 (:resize-axis rect-data)
 
         on-pointer-down
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps frame-id gap-type gap)
          (fn [event]
            (dom/capture-pointer event)
@@ -627,7 +627,7 @@
            (reset! original-value (:initial-value rect-data))))
 
         on-lost-pointer-capture
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps frame-id gap-type gap)
          (fn [event]
            (dom/release-pointer event)
@@ -637,7 +637,7 @@
            (st/emit! (dwm/apply-modifiers))))
 
         on-pointer-move
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps frame-id gap-type gap)
          (fn [event]
            (let [pos (dom/get-client-position event)]

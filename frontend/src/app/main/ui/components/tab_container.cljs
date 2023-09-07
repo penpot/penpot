@@ -36,6 +36,7 @@
         collapsable?    (unchecked-get props "collapsable?")
         handle-collapse (unchecked-get props "handle-collapse")
         klass           (unchecked-get props "klass")
+        content-class   (unchecked-get props "content-class")
 
         state           (mf/use-state #(or selected (-> children first .-props .-id)))
         selected        (or selected @state)
@@ -69,5 +70,6 @@
              :class  (dom/classnames (css :tab-container-tab-title) true
                                      (css :current) (= selected id))}
             title]))]]
-     [:div {:class (dom/classnames (css :tab-container-content) true)}
+     [:div {:class (dom/classnames (css :tab-container-content) true
+                                   content-class (some? content-class))}
       (d/seek #(= selected (-> % .-props .-id)) children)]]))

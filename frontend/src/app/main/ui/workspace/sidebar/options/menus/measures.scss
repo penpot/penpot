@@ -1,0 +1,317 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  display: flex;
+  flex-direction: column;
+  gap: $s-4;
+  .presets {
+    display: flex;
+    align-items: flex-start;
+    gap: $s-4;
+    .presets-wrapper {
+      @extend .asset-element;
+      position: relative;
+      display: flex;
+      height: $s-32;
+      width: $s-188;
+      padding: $s-8;
+      border-radius: $br-8;
+      .select-name {
+        @include titleTipography;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        flex-grow: 1;
+        cursor: pointer;
+      }
+      .collapsed-icon {
+        @include flexCenter;
+        cursor: pointer;
+        svg {
+          @extend .button-icon;
+          stroke: var(--icon-foreground);
+          transform: rotate(90deg);
+        }
+      }
+      .custom-select-dropdown {
+        @include menuShadow;
+        position: absolute;
+        top: $s-32;
+        left: 0;
+        max-height: 300px;
+        width: $s-252;
+        padding: $s-2;
+        margin: 0;
+        margin-top: $s-4;
+        border-radius: $br-8;
+        z-index: $z-index-3;
+        overflow-y: auto;
+        background-color: var(--menu-background-color);
+        .dropdown-element {
+          @include titleTipography;
+          display: flex;
+          align-items: center;
+          gap: $s-8;
+          height: $s-32;
+          padding: 0 $s-8;
+          border-radius: $br-6;
+          cursor: pointer;
+          &.disabled {
+            pointer-events: none;
+            cursor: default;
+            .preset-name {
+              color: var(--menu-foreground-color);
+            }
+
+            &:hover {
+              background-color: var(--menu-background-color);
+              .preset-name {
+                color: var(--menu-foreground-color);
+              }
+            }
+          }
+          .name-wrapper {
+            display: flex;
+            gap: $s-8;
+            flex-grow: 1;
+            .preset-name {
+              color: var(--menu-foreground-color-hover);
+            }
+            .preset-size {
+              color: var(--menu-foreground-color);
+            }
+          }
+
+          .check-icon {
+            @include flexCenter;
+            svg {
+              @extend .button-icon-small;
+              stroke: var(--icon-foreground);
+            }
+          }
+          &:hover {
+            background-color: var(--menu-background-color-hover);
+            .check-icon svg {
+              stroke: var(--menu-foreground-color-hover);
+            }
+          }
+        }
+      }
+      &:hover {
+        .collapsed-icon svg {
+          stroke: var(--input-foreground-color-active);
+        }
+      }
+    }
+  }
+  .size {
+    display: flex;
+    align-items: center;
+    gap: $s-4;
+    .height,
+    .width {
+      @extend .input-element;
+      width: $s-108;
+      padding-left: $s-8;
+      .icon {
+        @include flexCenter;
+        width: $s-12;
+        height: $s-32;
+        margin-right: $s-4;
+      }
+      .icon-text {
+        @include flexCenter;
+        height: $s-32;
+        margin-right: $s-4;
+        padding-top: $s-1;
+      }
+      .numeric-input {
+        @include removeInputStyle;
+        @include titleTipography;
+        height: $s-32;
+        width: 100%;
+        margin: 0;
+        color: var(--input-foreground-color-active);
+      }
+    }
+    .lock-size-btn {
+      @extend .button-tertiary;
+      border-radius: $br-8;
+      height: $s-32;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+        stroke: var(--icon-foreground);
+      }
+    }
+  }
+  .position {
+    display: flex;
+    align-items: center;
+    gap: $s-4;
+    .x-position,
+    .y-position {
+      @extend .input-element;
+      width: $s-108;
+      padding-left: $s-8;
+      .icon {
+        @include flexCenter;
+        height: $s-32;
+        width: $s-12;
+        margin-right: $s-4;
+      }
+      .icon-text {
+        @include flexCenter;
+        height: $s-32;
+        margin-right: $s-4;
+        padding-top: $s-1;
+      }
+      .numeric-input {
+        @include removeInputStyle;
+        @include titleTipography;
+        height: $s-32;
+        width: 100%;
+        margin: 0;
+        color: var(--input-foreground-color-active);
+      }
+    }
+  }
+  .rotation-radius {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: $s-4;
+    .rotation {
+      @extend .input-element;
+      width: $s-108;
+      padding-left: $s-8;
+      .icon-text {
+        @include flexCenter;
+        height: $s-32;
+        margin-right: $s-4;
+        padding-top: $s-1;
+      }
+      .icon {
+        @include flexCenter;
+        height: $s-32;
+        margin-right: $s-4;
+        svg {
+          @extend .button-icon-small;
+          stroke: var(--icon-foreground);
+        }
+      }
+      .numeric-input {
+        @include removeInputStyle;
+        @include titleTipography;
+        height: $s-32;
+        width: 100%;
+        margin: 0;
+        color: var(--input-foreground-color-active);
+      }
+    }
+    .radius {
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: $s-4;
+      .radius-inputs {
+        display: flex;
+        .radius-1 {
+          @extend .input-element;
+          width: $s-108;
+          padding-left: $s-8;
+          .icon {
+            @include flexCenter;
+            height: $s-32;
+            margin-right: $s-4;
+            svg {
+              @extend .button-icon-small;
+              stroke: var(--icon-foreground);
+            }
+          }
+
+          .numeric-input {
+            @include removeInputStyle;
+            @include titleTipography;
+            height: $s-32;
+            width: 100%;
+            margin: 0;
+            padding: $s-1 $s-2;
+            color: var(--input-foreground-color-active);
+          }
+        }
+        .radius-4 {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: $s-4;
+          .small-input {
+            @extend .input-element;
+            width: $s-52;
+            padding-left: $s-8;
+            .numeric-input {
+              @include removeInputStyle;
+              @include titleTipography;
+              height: $s-32;
+              width: 100%;
+              margin: 0;
+              color: var(--input-foreground-color-active);
+            }
+          }
+        }
+      }
+      .radius-mode {
+        @extend .button-tertiary;
+        height: $s-32;
+        width: $s-28;
+        border-radius: $br-8;
+        svg {
+          @extend .button-icon;
+          stroke: var(--icon-foreground);
+        }
+        &.selected {
+          background-color: var(--button-tertiary-background-color-hover);
+          svg {
+            stroke: var(--button-tertiary-foreground-color-active);
+          }
+        }
+      }
+    }
+  }
+  .clip-show {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: $s-4;
+    .clip-content,
+    .show-in-viewer {
+      .clip-content-input {
+        display: none;
+      }
+      .clip-content-label {
+        @extend .button-tertiary;
+        height: $s-32;
+        width: $s-28;
+        border-radius: $br-8;
+        .icon {
+          @include flexCenter;
+          svg {
+            @extend .button-icon;
+            stroke: var(--icon-foreground);
+          }
+        }
+        &.selected {
+          background-color: var(--button-tertiary-background-color-hover);
+          svg {
+            stroke: var(--button-tertiary-foreground-color-active);
+          }
+        }
+      }
+    }
+  }
+}

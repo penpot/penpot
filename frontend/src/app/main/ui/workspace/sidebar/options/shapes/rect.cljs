@@ -52,6 +52,9 @@
         parents                   (mf/deref parents-by-ids*)]
 
     [:*
+     [:& layer-menu {:ids ids
+                     :type type
+                     :values layer-values}]
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values
@@ -82,9 +85,7 @@
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
 
-     [:& layer-menu {:ids ids
-                     :type type
-                     :values layer-values}]
+
 
      [:& fill-menu {:ids ids
                     :type type

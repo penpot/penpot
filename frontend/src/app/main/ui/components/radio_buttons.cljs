@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.math :as math]
    [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
@@ -21,55 +20,80 @@
   [props]
   (let [context   (mf/use-ctx context)
 
-        icon      (unchecked-get props "icon")
-        id        (unchecked-get props "id")
-        value     (unchecked-get props "value")
+        icon       (unchecked-get props "icon")
+        id         (unchecked-get props "id")
+        value      (unchecked-get props "value")
+        disabled   (unchecked-get props "disabled")
+        title      (unchecked-get props "title")
+        unique-key (unchecked-get props "unique-key")
+        icon-class (unchecked-get props "icon-class")
 
-        on-change (unchecked-get context "on-change")
-        selected  (unchecked-get context "selected")
-        name      (unchecked-get context "name")
+        on-change  (unchecked-get context "on-change")
+        selected   (unchecked-get context "selected")
+        name       (unchecked-get context "name")
+        encode-fn  (unchecked-get context "encode-fn")
 
-        encode-fn (unchecked-get context "encode-fn")
-        checked?  (= selected value)]
+        checked?   (= selected value)]
 
     [:label {:for id
+             :title title
+             :key unique-key
+             :tabIndex "0"
              :class (stl/css-case
                      :radio-icon true
-                     :checked checked?)}
+                     :checked checked?
+                     :disabled disabled)}
 
-     (when (some? icon) icon)
+     (if (some? icon)
+       [:span {:class (when icon-class icon-class)}
+        icon]
+       [:span {:class (stl/css :title-name)}
+        (encode-fn value)])
 
      [:input {:id id
               :on-change on-change
               :type "radio"
               :name name
+              :disabled disabled
               :value (encode-fn value)
               :checked checked?}]]))
 
 (mf/defc nilable-option
   {::mf/wrap-props false}
   [props]
-  (let [context   (mf/use-ctx context)
-        icon      (unchecked-get props "icon")
-        id        (unchecked-get props "id")
-        value     (unchecked-get props "value")
+  (let [context    (mf/use-ctx context)
+        icon       (unchecked-get props "icon")
+        id         (unchecked-get props "id")
+        value      (unchecked-get props "value")
+        disabled   (unchecked-get props "disabled")
+        unique-key (unchecked-get props "unique-key")
+        icon-class (unchecked-get props "icon-class")
 
-        on-change (unchecked-get context "on-change")
-        selected  (unchecked-get context "selected")
-        name      (unchecked-get context "name")
+        on-change  (unchecked-get context "on-change")
+        selected   (unchecked-get context "selected")
+        name       (unchecked-get context "name")
 
-        encode-fn (unchecked-get context "encode-fn")
-        checked?  (= selected value)]
+        encode-fn  (unchecked-get context "encode-fn")
+        checked?   (= selected value)]
 
     [:label {:for id
+             :key unique-key
              :class (stl/css-case
                      :radio-icon true
+                     :disabled disabled
                      :checked checked?)}
-     icon
+
+     (if (some? icon)
+       [:span {:class (when icon-class icon-class)}
+        icon]
+       [:span {:class (stl/css :title-name)}
+        (encode-fn value)])
+
      [:input {:id id
               :on-change on-change
               :type "checkbox"
               :name name
+              :disabled disabled
               :value (encode-fn value)
               :checked checked?}]]))
 
@@ -80,6 +104,8 @@
         on-change (unchecked-get props "on-change")
         selected  (unchecked-get props "selected")
         name      (unchecked-get props "name")
+        class     (unchecked-get props "class")
+        wide      (unchecked-get props "wide")
 
         encode-fn (d/nilv (unchecked-get props "encode-fn") identity)
         decode-fn (d/nilv (unchecked-get props "encode-fn") identity)
@@ -89,9 +115,11 @@
                     1)
 
         width     (mf/with-memo [nitems]
-                    (fmt/format-pixels
-                     (+ (math/pow 2 nitems)
-                        (* 28 nitems))))
+                    (if (= wide true)
+                      "unset"
+                      (fmt/format-pixels
+                       (+ (* 4 (- nitems 1))
+                          (* 28 nitems)))))
 
         on-change'
         (mf/use-fn
@@ -110,6 +138,7 @@
                :decode-fn decode-fn})]
 
     [:& (mf/provider context) {:value context-value}
-     [:div {:class (stl/css :radio-btn-wrapper)
-            :style {:width width}}
+     [:div {:class (stl/css-case :radio-btn-wrapper true
+                                 class true)
+            :style  {:width width}}
       children]]))

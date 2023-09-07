@@ -10,12 +10,12 @@
   @include flexCenter;
   border-radius: $br-8;
   height: $s-32;
-  background-color: var(--radio-btns-background-color);
+  background-color: var(--input-background-color);
 }
 .radio-icon {
-  @extend .button-tertiary;
+  @extend .button-radio;
   height: $s-28;
-  width: 100%;
+  flex-grow: 1;
   border-radius: $s-6;
   border: solid $s-2 transparent;
   box-sizing: content-box;
@@ -26,17 +26,38 @@
     @extend .button-icon;
     stroke: var(--radio-btn-foreground-color);
   }
-  &:hover {
-    border: solid $s-2 var(--radio-btns-background-color);
+  .title-name {
+    @include tabTitleTipography;
+    color: var(--radio-btn-foreground-color);
   }
+
   &.checked {
     background-color: var(--radio-btn-background-color-selected);
-    border: $s-2 solid var(--radio-btn-border-color-selected);
     svg {
       stroke: var(--radio-btn-foreground-color-selected);
     }
+    .title-name {
+      color: var(--radio-btn-foreground-color-selected);
+    }
+  }
+
+  &.disabled {
+    cursor: default;
+    svg {
+      stroke: var(--button-foreground-color-disabled);
+    }
+    .title-name {
+      color: var(--button-foreground-color-disabled);
+    }
     &:hover {
-      border: $s-2 solid var(--radio-btn-border-color-selected);
+      border: none;
+      background-color: transparent;
+      svg {
+        stroke: var(--button-foreground-color-disabled);
+      }
+      .title-name {
+        color: var(--button-foreground-color-disabled);
+      }
     }
   }
 }

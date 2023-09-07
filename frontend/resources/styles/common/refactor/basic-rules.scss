@@ -10,39 +10,54 @@
   background-color: var(--button-primary-background-color-rest);
   border: $s-1 solid var(--button-primary-border-color-rest);
   color: var(--button-primary-foreground-color-rest);
+  border-radius: $br-8;
+  svg,
+  span svg {
+    stroke: var(--button-primary-foreground-color-rest);
+  }
   &:hover {
     background-color: var(--button-primary-background-color-hover);
     border: $s-1 solid var(--button-primary-border-color-hover);
     color: var(--button-primary-foreground-color-hover);
-    svg {
+    svg,
+    span svg {
       stroke: var(--button-primary-foreground-color-hover);
     }
   }
-  &:focus {
+  &:focus,
+  &:focus-visible {
     outline: none;
     background-color: var(--button-primary-background-color-focus);
-    border: $s-1 solid var(--button-primary-boder-color-focus);
+    border: $s-1 solid var(--button-primary-border-color-focus);
     color: var(--button-primary-foreground-color-focus);
-    svg {
+    svg,
+    span svg {
       stroke: var(--button-primary-foreground-color-focus);
     }
   }
   &:active {
-    border: 1px solid var(--button-border-focus);
+    background-color: var(--button-primary-background-color-active);
+    border: $s-1 solid var(--button-primary-border-color-active);
+    color: var(--button-primary-foreground-color-active);
     outline: none;
-  }
-  &:focus-visible {
-    border: none;
-    outline: none;
+    svg,
+    span svg {
+      stroke: var(--button-primary-foreground-color-active);
+    }
   }
 }
 
 .button-secondary {
   @include buttonStyle;
   @include flexCenter;
+  border-radius: $br-8;
   background-color: var(--button-secondary-background-color-rest);
   border: $s-1 solid var(--button-secondary-border-color-rest);
   color: var(--button-secondary-foreground-color-rest);
+  svg,
+  span svg {
+    stroke: var(--button-secondary-foreground-color-rest);
+  }
   &:hover {
     background-color: var(--button-secondary-background-color-hover);
     border: $s-1 solid var(--button-secondary-border-color-hover);
@@ -52,55 +67,112 @@
       stroke: var(--button-secondary-foreground-color-hover);
     }
   }
-  &:focus {
+  &:focus,
+  &:focus-visible {
     outline: none;
     background-color: var(--button-secondary-background-color-focus);
-    border: $s-1 solid var(--button-secondary-boder-color-focus);
+    border: $s-1 solid var(--button-secondary-border-color-focus);
     color: var(--button-secondary-foreground-color-focus);
-    svg {
+    svg,
+    span svg {
       stroke: var(--button-secondary-foreground-color-focus);
     }
   }
   &:active {
-    border: none;
-    background-color: transparent;
-  }
-  &:focus-visible {
-    border: none;
     outline: none;
+    background-color: var(--button-secondary-background-color-active);
+    border: $s-1 solid var(--button-secondary-border-color-active);
+    color: var(--button-secondary-foreground-color-active);
+    svg,
+    span svg {
+      stroke: var(--button-secondary-foreground-color-active);
+    }
   }
 }
 
 .button-tertiary {
   @include buttonStyle;
   @include flexCenter;
+  border-radius: $br-8;
   color: var(--button-tertiary-foreground-color-rest);
-  svg {
+  background-color: transparent;
+  border: $s-1 solid transparent;
+  svg,
+  span svg {
     stroke: var(--button-tertiary-foreground-color-rest);
   }
   &:hover {
     background-color: var(--button-tertiary-background-color-hover);
     color: var(--button-tertiary-foreground-color-hover);
-    svg {
+    border: $s-1 solid var(--button-secondary-border-color-hover);
+    svg,
+    span svg {
       stroke: var(--button-tertiary-foreground-color-hover);
     }
   }
-  &:focus {
+  &:focus,
+  &:focus-visible {
     outline: none;
     border: $s-1 solid var(--button-tertiary-border-color-focus);
     background-color: var(--button-tertiary-background-color-focus);
     color: var(--button-tertiary-foreground-color-focus);
-    svg {
+    svg,
+    span svg {
       stroke: var(--button-tertiary-foreground-color-focus);
     }
   }
   &:active {
-    border: $s-1 solid var(--button-tertiary-border-color-focus);
     outline: none;
+    border: $s-1 solid transparent;
+    background-color: var(--button-tertiary-background-color-active);
+    color: var(--button-tertiary-foreground-color-active);
+    svg,
+    span svg {
+      stroke: var(--button-tertiary-foreground-color-active);
+    }
   }
+}
+
+.button-radio {
+  @include buttonStyle;
+  @include flexCenter;
+  border-radius: $br-8;
+  color: var(--button-radio-foreground-color-rest);
+  background-color: var(--button-radio-background-color-rest);
+  border: $s-1 solid var(--button-radio-background-color-rest);
+  svg,
+  span svg {
+    stroke: var(--button-radio-foreground-color-rest);
+  }
+  &:hover {
+    background-color: transparent;
+    color: var(--button-radio-foreground-color-hover);
+    border: $s-1 solid transparent;
+    svg,
+    span svg {
+      stroke: var(--button-radio-foreground-color-hover);
+    }
+  }
+  &:focus,
   &:focus-visible {
-    border: none;
     outline: none;
+    border: $s-1 solid var(--button-radio-border-color-focus);
+    background-color: var(--button-radio-background-color-focus);
+    color: var(--button-radio-foreground-color-focus);
+    svg,
+    span svg {
+      stroke: var(--button-radio-foreground-color-focus);
+    }
+  }
+  &:active {
+    outline: none;
+    border: $s-1 solid transparent;
+    background-color: var(--button-radio-background-color-active);
+    color: var(--button-radio-foreground-color-active);
+    svg,
+    span svg {
+      stroke: var(--button-radio-foreground-color-active);
+    }
   }
 }
 
@@ -153,7 +225,6 @@
   width: $s-16;
   color: transparent;
   fill: none;
-  stroke: var(--icon-foreground);
   stroke-width: 1px;
 }
 
@@ -178,10 +249,9 @@
   align-items: center;
   height: $s-32;
   border-radius: $br-8;
-  margin-bottom: $s-4;
   padding: $s-8 $s-12;
   background-color: var(--assets-item-background-color);
-  color: var(--assets-item-name-foreground-color);
+  color: var(--assets-item-name-foreground-color-hover);
   &:hover,
   &:focus-within {
     background-color: var(--assets-item-background-color-hover);
@@ -189,6 +259,37 @@
   }
 }
 
+.input-element {
+  @include titleTipography;
+  display: flex;
+  align-items: center;
+  height: $s-32;
+  border-radius: $br-8;
+  background-color: var(--input-background-color);
+  color: var(--input-foreground-color);
+  span {
+    color: var(--input-foreground-color);
+  }
+  input {
+    @include removeInputStyle;
+    @include titleTipography;
+    color: var(--input-foreground-color);
+    height: $s-32;
+  }
+  ::placeholder {
+    color: var(--input-placeholder-color);
+  }
+  &:hover,
+  &:focus-within {
+    span {
+      color: var(--input-foreground-color);
+    }
+    input {
+      color: var(--input-foreground-color-active);
+    }
+    background-color: var(--input-background-color-hover);
+  }
+}
 .new-scrollbar {
   ::-webkit-scrollbar {
     background-color: transparent;

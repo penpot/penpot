@@ -91,6 +91,7 @@
     height: $s-28;
     svg {
       @extend .button-icon-small;
+      stroke: var(--icon-foreground);
     }
   }
   &:focus-within {
@@ -115,6 +116,7 @@
       @include titleTipography;
       @extend .asset-element;
       padding-right: 0;
+      margin-bottom: $s-4;
       cursor: pointer;
       .name {
         flex-grow: 1;
@@ -125,6 +127,7 @@
         width: $s-28;
         svg {
           @extend .button-icon;
+          stroke: var(--icon-foreground);
           transform: rotate(90deg);
         }
       }
@@ -136,6 +139,7 @@
         @extend .asset-element;
         @include titleTipography;
         padding: 0;
+        margin-bottom: $s-4;
         flex-grow: 1;
         .icon {
           @include flexCenter;
@@ -143,6 +147,7 @@
           min-width: $s-28;
           svg {
             @extend .button-icon;
+            stroke: var(--icon-foreground);
             transform: rotate(90deg);
           }
         }
@@ -159,6 +164,7 @@
         @extend .asset-element;
         @include titleTipography;
         padding: 0;
+        margin-bottom: $s-4;
         flex-grow: 2;
         .icon {
           @include flexCenter;
@@ -166,6 +172,7 @@
           min-width: $s-28;
           svg {
             @extend .button-icon;
+            stroke: var(--icon-foreground);
             transform: rotate(90deg);
           }
         }
@@ -199,11 +206,13 @@
         .line-height,
         .letter-spacing {
           @extend .asset-element;
+          margin-bottom: $s-4;
           .icon {
             @include flexCenter;
             width: $s-28;
             svg {
               @extend .button-icon-small;
+              stroke: var(--icon-foreground);
             }
           }
           .line-height-input,
@@ -226,6 +235,11 @@
         @extend .asset-element;
         width: fit-content;
         padding: 0;
+        margin-bottom: $s-4;
+        background-color: var(--radio-btns-background-color);
+        &:hover {
+          background-color: var(--radio-btns-background-color);
+        }
       }
     }
   }
@@ -275,6 +289,7 @@
       cursor: pointer;
       .font-item {
         @extend .asset-element;
+        margin-bottom: $s-4;
         border-radius: $br-8;
         display: flex;
         .icon {
@@ -283,6 +298,7 @@
           width: $s-28;
           svg {
             @extend .button-icon-small;
+            stroke: var(--icon-foreground);
           }
         }
         &.selected {

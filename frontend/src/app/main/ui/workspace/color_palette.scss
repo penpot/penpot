@@ -21,6 +21,7 @@
     z-index: $z-index-4;
     svg {
       @extend .button-icon;
+      stroke: var(--icon-foreground);
     }
     &::after {
       content: "";

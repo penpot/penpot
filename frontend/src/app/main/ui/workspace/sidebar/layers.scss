@@ -36,6 +36,7 @@
       padding: 0;
       svg {
         @extend .button-icon;
+        stroke: var(--icon-foreground);
       }
     }
     &.search {
@@ -82,6 +83,7 @@
         border-radius: $br-8;
         svg {
           @extend .button-icon-small;
+          stroke: var(--icon-foreground);
         }
       }
     }
@@ -98,6 +100,7 @@
         padding: 0 $s-4 0 $s-8;
         svg {
           @extend .button-icon-small;
+          stroke: var(--icon-foreground);
           transform: rotate(180deg);
         }
       }

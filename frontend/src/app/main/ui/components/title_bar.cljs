@@ -13,14 +13,14 @@
 
 (mf/defc title-bar
   {::mf/wrap-props false}
-  [{:keys [collapsable? collapsed? on-collapsed title children on-btn-click btn-children klass]}]
-  (let [klass (dm/str (stl/css :title-bar) " " klass)]
+  [{:keys [collapsable? collapsed? on-collapsed title children on-btn-click btn-children class]}]
+  (let [klass (dm/str (stl/css :title-bar) " " class)]
     [:div {:class klass}
      (if collapsable?
        [:button {:class (stl/css :toggle-btn) :on-click on-collapsed}
         [:span {:class (stl/css-case
                         :collased-icon true
-                         :rotated collapsed?)}
+                        :rotated collapsed?)}
          i/arrow-refactor]
         [:div {:class (stl/css :title)} title]]
        [:div {:class (stl/css :title-only)} title])
