@@ -10,6 +10,7 @@
    [app.common.media :as cm]
    [app.common.text :as ct]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.file :as ctf]
    [app.config :as cfg]
    [app.main.render :as r]
    [app.main.repo :as rp]
@@ -170,63 +171,6 @@
             (let [libraries-ids (->> file-libraries (map :id) (filterv #(not= (:id file) %)))]
               (assoc file :libraries libraries-ids)))))))
 
-(defn get-component-ref-file
-  [objects shape]
-
-  (cond
-    (contains? shape :component-file)
-    (get shape :component-file)
-
-    (contains? shape :shape-ref)
-    (recur objects (get objects (:parent-id shape)))
-
-    :else
-    nil))
-
-(defn detach-external-references
-  [file file-id]
-  (let [detach-text
-        (fn [content]
-          (->> content
-               (ct/transform-nodes
-                #(cond-> %
-                   (not= file-id (:fill-color-ref-file %))
-                   (dissoc :fill-color-ref-id :fill-color-ref-file)
-
-                   (not= file-id (:typography-ref-file %))
-                   (dissoc :typography-ref-id :typography-ref-file)))))
-
-        detach-shape
-        (fn [objects shape]
-          (cond-> shape
-            (not= file-id (:fill-color-ref-file shape))
-            (dissoc :fill-color-ref-id :fill-color-ref-file)
-
-            (not= file-id (:stroke-color-ref-file shape))
-            (dissoc :stroke-color-ref-id :stroke-color-ref-file)
-
-            (not= file-id (get-component-ref-file objects shape))
-            (dissoc :component-id :component-file :shape-ref :component-root)
-
-            (= :text (:type shape))
-            (update :content detach-text)))
-
-        detach-objects
-        (fn [objects]
-          (->> objects
-               (d/mapm #(detach-shape objects %2))))
-
-        detach-pages
-        (fn [pages-index]
-          (->> pages-index
-               (d/mapm
-                (fn [_ data]
-                  (-> data
-                      (update :objects detach-objects))))))]
-
-    (-> file
-        (update-in [:data :pages-index] detach-pages))))
-
 (defn make-local-external-references
   [file file-id]
   (let [detach-text
@@ -359,7 +303,7 @@
                     (update file-id make-local-external-references file-id)
                     (update file-id dissoc :libraries)))
     :detach (-> (select-keys files [file-id])
-                (update file-id detach-external-references file-id)
+                (update file-id ctf/detach-external-references file-id)
                 (update file-id dissoc :libraries))))
 
 (defn collect-files
