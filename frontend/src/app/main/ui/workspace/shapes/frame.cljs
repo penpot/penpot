@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
-   [app.common.record :as cr]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
@@ -20,33 +19,18 @@
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text.fontfaces :as ff]
+   [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as fdm]
    [app.main.ui.workspace.shapes.frame.node-store :as fns]
    [app.main.ui.workspace.shapes.frame.thumbnail-render :as ftr]
    [beicon.core :as rx]
    [rumext.v2 :as mf]))
 
-(def ^:private excluded-attrs
-  #{:blocked
-    :hide-fill-on-export
-    :collapsed
-    :remote-synced
-    :exports})
-
-(defn check-shape
-  [new-shape old-shape]
-  (cr/-equiv-with-exceptions old-shape new-shape excluded-attrs))
-
-(defn check-frame-props
-  [np op]
-  (check-shape (unchecked-get np "shape")
-               (unchecked-get op "shape")))
-
 (defn frame-shape-factory
   [shape-wrapper]
   (let [frame-shape (frame/frame-shape shape-wrapper)]
     (mf/fnc frame-shape-inner
-      {::mf/wrap [#(mf/memo' % check-frame-props)]
+      {::mf/wrap [#(mf/memo' % check-shape-props)]
        ::mf/wrap-props false
        ::mf/forward-ref true}
       [props ref]
@@ -66,8 +50,7 @@
   [new-props old-props]
   (and (= (unchecked-get new-props "thumbnail?")
           (unchecked-get old-props "thumbnail?"))
-       (check-shape (unchecked-get new-props "shape")
-                    (unchecked-get old-props "shape"))))
+       (check-shape-props new-props old-props)))
 
 (defn nested-frame-wrapper-factory
   [shape-wrapper]
@@ -77,16 +60,18 @@
       {::mf/wrap [#(mf/memo' % check-props)]
        ::mf/wrap-props false}
       [props]
-      (let [shape         (unchecked-get props "shape")
-            frame-id      (:id shape)
-            objects       (wsh/lookup-page-objects @st/state)
-            node-ref      (mf/use-ref nil)
-            modifiers-ref (mf/use-memo (mf/deps frame-id) #(refs/workspace-modifiers-by-frame-id frame-id))
-            modifiers     (mf/deref modifiers-ref)]
+      (let [shape      (unchecked-get props "shape")
+            objects    (wsh/lookup-page-objects @st/state)
+
+            frame-id   (dm/get-prop shape :id)
+
+            node-ref   (mf/use-ref nil)
+            modifiers* (mf/with-memo [frame-id]
+                         (refs/workspace-modifiers-by-frame-id frame-id))
+            modifiers  (mf/deref modifiers*)]
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val node-ref) modifiers)
-        (let [shape (unchecked-get props "shape")]
-          [:& frame-shape {:shape shape :ref node-ref}])))))
+        [:& frame-shape {:shape shape :ref node-ref}]))))
 
 
 (defn root-frame-wrapper-factory
@@ -166,12 +151,9 @@
            :key "frame-container"
            :ref on-frame-load
            :opacity (when (:hidden shape) 0)}
-            [:& ff/fontfaces-style {:fonts fonts}]
+          [:& ff/fontfaces-style {:fonts fonts}]
           [:g.frame-thumbnail-wrapper
            {:id (dm/str "thumbnail-container-" frame-id)
             ;; Hide the thumbnail when not displaying
             :opacity (when-not thumbnail? 0)}
-           children]]
-
-           ]))))
-
+           children]]]))))

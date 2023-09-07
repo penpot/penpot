@@ -9,27 +9,28 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.rect :as grc]
+   [app.common.pages.helpers :as cph]
    [app.main.ui.context :as muc]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn mask-id [render-id mask]
-  (str render-id "-" (:id mask) "-mask"))
+  (dm/str render-id "-" (:id mask) "-mask"))
 
 (defn mask-url [render-id mask]
-  (str "url(#" (mask-id render-id mask) ")"))
+  (dm/str "url(#" (mask-id render-id mask) ")"))
 
 (defn clip-id [render-id mask]
-  (str render-id "-" (:id mask) "-clip"))
+  (dm/str render-id "-" (:id mask) "-clip"))
 
 (defn clip-url [render-id mask]
-  (str "url(#" (clip-id render-id mask) ")"))
+  (dm/str "url(#" (clip-id render-id mask) ")"))
 
 (defn filter-id [render-id mask]
-  (str render-id "-" (:id mask) "-filter"))
+  (dm/str render-id "-" (:id mask) "-filter"))
 
 (defn filter-url [render-id mask]
-  (str "url(#" (filter-id render-id mask) ")"))
+  (dm/str "url(#" (filter-id render-id mask) ")"))
 
 (defn set-white-fill
   [shape]
@@ -42,17 +43,39 @@
         (d/update-when :position-data #(mapv update-color %))
         (assoc :stroke-color "#FFFFFF" :stroke-opacity 1))))
 
+(defn- point->str
+  [point]
+  (dm/str (dm/get-prop point :x) "," (dm/get-prop point :y)))
+
 (defn mask-factory
   [shape-wrapper]
   (mf/fnc mask-shape
     {::mf/wrap-props false}
     [props]
-    (let [mask        (unchecked-get props "mask")
-          render-id   (mf/use-ctx muc/render-id)
-          svg-text?   (and (= :text (:type mask)) (some? (:position-data mask)))
+    (let [mask       (unchecked-get props "mask")
+          render-id  (mf/use-ctx muc/render-id)
 
-          mask-bb      (:points mask)
-          mask-bb-rect (grc/points->rect mask-bb)]
+          svg-text?  (and ^boolean (cph/text-shape? mask)
+                          ^boolean (some? (:position-data mask)))
+
+          points     (dm/get-prop mask :points)
+          points-str (mf/with-memo [points]
+                        (->> (map point->str points)
+                             (str/join " ")))
+
+          bounds     (mf/with-memo [points]
+                       (grc/points->rect points))
+
+          bx         (dm/get-prop bounds :x)
+          by         (dm/get-prop bounds :y)
+          bw         (dm/get-prop bounds :width)
+          bh         (dm/get-prop bounds :height)
+
+          shape      (mf/with-memo [mask]
+                       (-> mask
+                           (dissoc :shadow :blur)
+                           (assoc :is-mask? true)))]
+
       [:defs
        [:filter {:id (filter-id render-id mask)}
         [:feFlood {:flood-color "white"
@@ -66,26 +89,26 @@
        ;; we cannot use clips instead of mask because clips can only be simple shapes
        [:clipPath {:class "mask-clip-path"
                    :id (clip-id render-id mask)}
-        [:polyline {:points (->> mask-bb
-                                 (map #(dm/str (:x %) "," (:y %)))
-                                 (str/join " "))}]]
+        [:polyline {:points points-str}]]
 
        ;; When te shape is a text we pass to the shape the info and disable the filter.
        ;; There is a bug in Firefox with filters and texts. We change the text to white at shape level
        [:mask {:class "mask-shape"
                :id (mask-id render-id mask)
-               :x (:x mask-bb-rect)
-               :y (:y mask-bb-rect)
-               :width (:width mask-bb-rect)
-               :height (:height mask-bb-rect)
+               :x bx
+               :y by
+               :width bw
+               :height bh
 
                ;; This is necesary to prevent a race condition in the dynamic-modifiers whether the modifier
                ;; triggers afte the render
-               :data-old-x (:x mask-bb-rect)
-               :data-old-y (:y mask-bb-rect)
-               :data-old-width (:width mask-bb-rect)
-               :data-old-height (:height mask-bb-rect)
+               :data-old-x bx
+               :data-old-y by
+               :data-old-width bw
+               :data-old-height bh
                :mask-units "userSpaceOnUse"}
-        [:g {:filter (when-not svg-text? (filter-url render-id mask))}
-         [:& shape-wrapper {:shape (-> mask (dissoc :shadow :blur) (assoc :is-mask? true))}]]]])))
+
+        [:g {:filter (when-not ^boolean svg-text?
+                       (filter-url render-id mask))}
+         [:& shape-wrapper {:shape shape}]]]])))
 

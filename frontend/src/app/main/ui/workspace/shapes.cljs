@@ -50,23 +50,14 @@
   (let [objects       (obj/get props "objects")
         active-frames (obj/get props "active-frames")
         shapes        (cph/get-immediate-children objects)
-
-        ;; We group the objects together per frame-id so if an object of a different
-        ;; frame changes won't affect the rendering frame
-        frame-objects
-        (mf/with-memo [objects]
-          (cph/objects-by-frame objects))
-
-
         vbox          (mf/use-ctx ctx/current-vbox)
 
-        shapes
-        (mf/with-memo [shapes vbox]
-          (if (some? vbox)
-            (->> shapes
-                 (filterv (fn [shape]
-                           (grc/overlaps-rects? vbox (dm/get-prop shape :selrect)))))
-            shapes))]
+        shapes        (mf/with-memo [shapes vbox]
+                        (if (some? vbox)
+                          (filter (fn [shape]
+                                    (grc/overlaps-rects? vbox (dm/get-prop shape :selrect)))
+                                  shapes)
+                          shapes))]
 
     [:g {:id (dm/str "shape-" uuid/zero)}
      [:& (mf/provider ctx/active-frames) {:value active-frames}
@@ -83,17 +74,11 @@
           (if ^boolean (cph/frame-shape? shape)
             [:& root-frame-wrapper
              {:shape shape
-              :objects (get frame-objects (dm/get-prop shape :id))
               :thumbnail? (not (contains? active-frames (dm/get-prop shape :id)))}]
             [:& shape-wrapper {:shape shape}])])]]]))
 
-(defn- check-shape-wrapper-props
-  [np op]
-  (frame/check-shape (unchecked-get np "shape")
-                     (unchecked-get op "shape")))
-
 (mf/defc shape-wrapper
-  {::mf/wrap [#(mf/memo' % check-shape-wrapper-props)]
+  {::mf/wrap [#(mf/memo' % common/check-shape-props)]
    ::mf/wrap-props false}
   [props]
   (let [shape      (unchecked-get props "shape")
@@ -109,26 +94,27 @@
         (and (some? active-frames)
              (not (contains? active-frames shape-id)))
 
-        opts  #js {:shape shape :thumbnail? thumbnail?}
+        props         #js {:shape shape :thumbnail? thumbnail?}
 
-        [wrapper wrapper-props]
-        (if (= :svg-raw shape-type)
-          [mf/Fragment nil]
-          ["g" #js {:className "workspace-shape-wrapper"}])]
+        rawsvg?       (= :svg-raw shape-type)
+        wrapper-elem  (if ^boolean rawsvg? mf/Fragment "g")
+        wrapper-props (if ^boolean rawsvg?
+                        #js {:className "workspace-shape-wrapper"}
+                        #js {})]
 
     (when (and (some? shape)
                (not ^boolean (:hidden shape)))
-      [:> wrapper wrapper-props
+      [:> wrapper-elem wrapper-props
        (case shape-type
-         :path    [:> path/path-wrapper opts]
-         :text    [:> text/text-wrapper opts]
-         :group   [:> group-wrapper opts]
-         :rect    [:> rect-wrapper opts]
-         :image   [:> image-wrapper opts]
-         :circle  [:> circle-wrapper opts]
-         :svg-raw [:> svg-raw-wrapper opts]
-         :bool    [:> bool-wrapper opts]
-         :frame   [:> nested-frame-wrapper opts]
+         :path    [:> path/path-wrapper props]
+         :text    [:> text/text-wrapper props]
+         :group   [:> group-wrapper props]
+         :rect    [:> rect-wrapper props]
+         :image   [:> image-wrapper props]
+         :circle  [:> circle-wrapper props]
+         :svg-raw [:> svg-raw-wrapper props]
+         :bool    [:> bool-wrapper props]
+         :frame   [:> nested-frame-wrapper props]
 
          nil)])))
 

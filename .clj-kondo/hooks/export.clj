@@ -58,6 +58,19 @@
                      (api/vector-node [params params])]
                     body))})))
 
+(defn rumext-fnc
+  [{:keys [node]}]
+  (let [[cname mdata params & body] (rest (:children node))
+        [params body] (if (api/vector-node? mdata)
+                        [mdata (cons params body)]
+                        [params body])]
+    (let [result (api/list-node
+                  (into [(api/token-node 'fn)
+                         params]
+                        (cons mdata body)))]
+      {:node result})))
+
+
 (defn penpot-defrecord
   [{:keys [:node]}]
   (let [[rnode rtype rparams & other] (:children node)

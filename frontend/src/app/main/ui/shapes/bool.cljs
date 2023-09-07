@@ -8,39 +8,41 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.hooks :refer [use-equal-memo]]
+   [app.main.ui.hooks :as h]
    [app.main.ui.shapes.export :as use]
    [app.main.ui.shapes.path :refer [path-shape]]
-   [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
 (defn bool-shape
   [shape-wrapper]
   (mf/fnc bool-shape
-          {::mf/wrap-props false}
-          [props]
-          (let [shape  (obj/get props "shape")
-                childs (obj/get props "childs")
-                childs (use-equal-memo childs)
-                include-metadata? (mf/use-ctx use/include-metadata-ctx)
+    {::mf/wrap-props false}
+    [props]
+    (let [shape     (unchecked-get props "shape")
+          children  (unchecked-get props "childs")
+          children  (h/use-equal-memo children)
 
-                bool-content
-                (mf/use-memo
-                 (mf/deps shape childs)
-                 (fn []
-                   (cond
-                     (some? (:bool-content shape))
-                     (:bool-content shape)
+          metadata? (mf/use-ctx use/include-metadata-ctx)
+          content   (mf/with-memo [shape children]
+                      (let [content (:bool-content shape)]
+                        (cond
+                          (some? content)
+                          content
 
-                     (some? childs)
-                     (gsh/calc-bool-content shape childs))))]
+                          (some? children)
+                          (gsh/calc-bool-content shape children))))
 
-            [:*
-             (when (some? bool-content)
-               [:& path-shape {:shape (assoc shape :content bool-content)}])
+          shape     (mf/with-memo [shape content]
+                      (assoc shape :content content))]
 
-             (when include-metadata?
-               [:> "penpot:bool" {}
-                (for [item (->> (:shapes shape) (mapv #(get childs %)))]
-                  [:& shape-wrapper {:shape item
-                                     :key (dm/str (:id item))}])])])))
+      [:*
+       (when (some? content)
+         [:& path-shape {:shape shape}])
+
+       (when metadata?
+         ;; FIXME: get children looks wrong
+         [:> "penpot:bool" {}
+          (for [item (map #(get children %) (:shapes shape))]
+            [:& shape-wrapper
+             {:shape item
+              :key (dm/str (dm/get-prop item :id))}])])])))

@@ -311,8 +311,8 @@
   [id]
   (l/derived
    (fn [objects]
-     (let [children-ids (get-in objects [id :shapes])]
-       (into [] (keep (d/getf objects)) children-ids)))
+     (->> (dm/get-in objects [id :shapes])
+          (into [] (keep (d/getf objects)))))
    workspace-page-objects =))
 
 (defn all-children-objects

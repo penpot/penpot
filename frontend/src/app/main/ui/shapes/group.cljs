@@ -9,7 +9,6 @@
    [app.common.data.macros :as dm]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.mask :refer [mask-url clip-url mask-factory]]
-   [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
 (defn group-shape
@@ -18,41 +17,40 @@
     (mf/fnc group-shape
       {::mf/wrap-props false}
       [props]
-      (let [shape          (unchecked-get props "shape")
-            childs         (unchecked-get props "childs")
-            objects        (unchecked-get props "objects")
-            render-id      (mf/use-ctx muc/render-id)
-            masked-group?  (:masked-group shape)
+      (let [shape         (unchecked-get props "shape")
+            childs        (unchecked-get props "childs")
+            render-id     (mf/use-ctx muc/render-id)
+            masked-group? (:masked-group shape)
 
-            [mask childs]  (if masked-group?
-                             [(first childs) (rest childs)]
-                             [nil childs])
+            mask          (if ^boolean masked-group?
+                            (first childs)
+                            nil)
+            childs        (if ^boolean masked-group?
+                            (rest childs)
+                            childs)
 
-            ;; We need to separate mask and clip into two because a bug in Firefox
-            ;; breaks when the group has clip+mask+foreignObject
-            ;; Clip and mask separated will work in every platform
-            ;  Firefox bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1734805
-            [clip-wrapper clip-props]
-            (if masked-group?
-              ["g" (-> (obj/create)
-                       (obj/set! "clipPath" (clip-url render-id mask)))]
-              [mf/Fragment nil])
+            wrapper       (if ^boolean masked-group? "g" mf/Fragment)
+            clip-props    (if ^boolean masked-group?
+                            #js {:clipPath (clip-url render-id mask)}
+                            #js {})
 
-            [mask-wrapper mask-props]
-            (if masked-group?
-              ["g" (-> (obj/create)
-                       (obj/set! "mask" (mask-url render-id mask)))]
-              [mf/Fragment nil])]
+            mask-props    (if ^boolean masked-group?
+                            #js {:mask (mask-url render-id mask)}
+                            #js {})]
 
-        [:> clip-wrapper clip-props
-         [:> mask-wrapper mask-props
-          (when masked-group?
-            [:> render-mask #js {:mask mask
-                                 :objects objects}])
+        ;; We need to separate mask and clip into two because a bug in
+        ;; Firefox breaks when the group has clip+mask+foreignObject
+        ;; Clip and mask separated will work in every platform Firefox
+        ;; bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1734805
+        [:> wrapper clip-props
+         [:> wrapper mask-props
+          (when ^boolean masked-group?
+            [:& render-mask {:mask mask}])
 
           (for [item childs]
-            [:& shape-wrapper {:shape item
-                               :key (dm/str (:id item))}])]]))))
+            [:& shape-wrapper
+             {:shape item
+              :key (dm/str (dm/get-prop item :id))}])]]))))
 
 
 

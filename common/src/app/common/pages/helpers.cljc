@@ -538,8 +538,9 @@
   ;; Implemented with transients for performance. 30~50% better
   (letfn [(process-shape [objects [id shape]]
             (let [frame-id (if (= :frame (:type shape)) id (:frame-id shape))
-                  cur (-> (or (get objects frame-id) (transient {}))
-                          (assoc! id shape))]
+                  cur      (-> (or (get objects frame-id)
+                                   (transient {}))
+                               (assoc! id shape))]
               (assoc! objects frame-id cur)))]
     (update-vals
      (->> objects
