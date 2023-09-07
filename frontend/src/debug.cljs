@@ -445,8 +445,8 @@
   (let [file      (assoc (get @st/state :workspace-file)
                          :data (get @st/state :workspace-data))
         libraries (get @st/state :workspace-libraries)
-        errors    (ctfv/validate-shape (uuid "02ad9774-4a5f-8089-8002-9e412a236fe5") file (dm/get-in file [:data :pages-index (get @st/state :current-page-id)]) libraries)]
-        ;; errors    (ctfv/validate-file file libraries)]
+        ;; errors    (ctfv/validate-shape (uuid "02ad9774-4a5f-8089-8002-9e412a236fe5") file (dm/get-in file [:data :pages-index (get @st/state :current-page-id)]) libraries)]
+        errors    (ctfv/validate-file file libraries)]
 
     (st/emit! (dwp/repair-current-file errors))
     ;(dom/reload-current-window)

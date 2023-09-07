@@ -28,6 +28,7 @@
     :frame-not-found
     :invalid-frame
     :component-not-main
+    :component-main-external
     :component-not-found
     :invalid-main-instance-id
     :invalid-main-instance-page
@@ -100,6 +101,10 @@
   (when (nil? (:main-instance shape))
     (report-error :component-not-main
                   (str/format "Shape expected to be main instance")
+                  shape file page))
+  (when-not (= (:component-file shape) (:id file))
+    (report-error :component-main-external
+                  (str/format "Main instance should refer to a component in the same file")
                   shape file page))
   (let [component (ctf/resolve-component shape file libraries {:include-deleted? true})]
     (if (nil? component)
