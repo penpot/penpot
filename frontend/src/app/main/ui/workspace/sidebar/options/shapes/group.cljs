@@ -77,11 +77,10 @@
      (when-not (empty? stroke-ids)
        [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])
 
-     (when (> (count objects) 2)
-       [:& color-selection-menu {:type type
-                                 :shapes (vals objects)
-                                 :file-id file-id
-                                 :shared-libs shared-libs}])
+     [:& color-selection-menu {:type type
+                               :shapes (vals objects)
+                               :file-id file-id
+                               :shared-libs shared-libs}]
 
      (when-not (empty? shadow-ids)
        [:& shadow-menu {:type type :ids shadow-ids :values shadow-values}])

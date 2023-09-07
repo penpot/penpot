@@ -151,8 +151,8 @@
 (mf/defc color-selection-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
   [{:keys [shapes file-id shared-libs] :as props}]
-  (let [{:keys [all-colors grouped-colors library-colors colors]} (mf/with-memo [shapes file-id shared-libs]
-                                                                    (prepare-colors shapes file-id shared-libs))
+  (let [{:keys [ grouped-colors library-colors colors]} (mf/with-memo [shapes file-id shared-libs]
+                                                          (prepare-colors shapes file-id shared-libs))
         expand-lib-color (mf/use-state false)
         expand-color     (mf/use-state false)
 
@@ -202,13 +202,26 @@
     (mf/with-effect [grouped-colors]
       (reset! grouped-colors* grouped-colors))
 
-    (when (> (count all-colors) 1)
-      [:div.element-set
-       [:div.element-set-title
-        [:span (tr "workspace.options.selection-color")]]
-       [:div.element-set-content
-        [:div.selected-colors
-         (for [[index color] (d/enumerate (take 3 library-colors))]
+    [:div.element-set
+     [:div.element-set-title
+      [:span (tr "workspace.options.selection-color")]]
+     [:div.element-set-content
+      [:div.selected-colors
+       (for [[index color] (d/enumerate (take 3 library-colors))]
+         [:& color-row {:key (dm/str "library-color-" (:color color))
+                        :color color
+                        :index index
+                        :on-detach on-detach
+                        :select-only select-only
+                        :on-change #(on-change %1 color %2)
+                        :on-open on-open
+                        :on-close on-close}])
+       (when (and (false? @expand-lib-color) (< 3 (count library-colors)))
+         [:div.expand-colors  {:on-click #(reset! expand-lib-color true)}
+          [:span i/actions]
+          [:span.text (tr "workspace.options.more-lib-colors")]])
+       (when @expand-lib-color
+         (for [[index color] (d/enumerate (drop 3 library-colors))]
            [:& color-row {:key (dm/str "library-color-" (:color color))
                           :color color
                           :index index
@@ -216,41 +229,27 @@
                           :select-only select-only
                           :on-change #(on-change %1 color %2)
                           :on-open on-open
-                          :on-close on-close}])
-         (when (and (false? @expand-lib-color) (< 3 (count library-colors)))
-           [:div.expand-colors  {:on-click #(reset! expand-lib-color true)}
-            [:span i/actions]
-            [:span.text (tr "workspace.options.more-lib-colors")]])
-         (when @expand-lib-color
-           (for [[index color] (d/enumerate (drop 3 library-colors))]
-             [:& color-row {:key (dm/str "library-color-" (:color color))
-                            :color color
-                            :index index
-                            :on-detach on-detach
-                            :select-only select-only
-                            :on-change #(on-change %1 color %2)
-                            :on-open on-open
-                            :on-close on-close}]))]
+                          :on-close on-close}]))]
 
-        [:div.selected-colors
-         (for [[index color] (d/enumerate (take 3 colors))]
-           [:& color-row {:key (dm/str "color-" index)
+      [:div.selected-colors
+       (for [[index color] (d/enumerate (take 3 colors))]
+         [:& color-row {:key (dm/str "color-" index)
+                        :color color
+                        :index index
+                        :select-only select-only
+                        :on-change #(on-change %1 color %2)
+                        :on-open on-open
+                        :on-close on-close}])
+       (when (and (false? @expand-color) (< 3 (count colors)))
+         [:div.expand-colors  {:on-click #(reset! expand-color true)}
+          [:span i/actions]
+          [:span.text (tr "workspace.options.more-colors")]])
+       (when @expand-color
+         (for [[index color] (d/enumerate (drop 3 colors))]
+           [:& color-row {:key (dm/str "color-" (:color color))
                           :color color
                           :index index
                           :select-only select-only
                           :on-change #(on-change %1 color %2)
                           :on-open on-open
-                          :on-close on-close}])
-         (when (and (false? @expand-color) (< 3 (count colors)))
-           [:div.expand-colors  {:on-click #(reset! expand-color true)}
-            [:span i/actions]
-            [:span.text (tr "workspace.options.more-colors")]])
-         (when @expand-color
-           (for [[index color] (d/enumerate (drop 3 colors))]
-             [:& color-row {:key (dm/str "color-" (:color color))
-                            :color color
-                            :index index
-                            :select-only select-only
-                            :on-change #(on-change %1 color %2)
-                            :on-open on-open
-                            :on-close on-close}]))]]])))
+                          :on-close on-close}]))]]]))
