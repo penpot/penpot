@@ -93,11 +93,10 @@
      [:& stroke-menu {:ids ids
                       :type type
                       :values stroke-values}]
-          (when (> (count objects) 2)
-            [:& color-selection-menu {:type type
-                                      :shapes (vals objects)
-                                      :file-id file-id
-                                      :shared-libs shared-libs}])
+     [:& color-selection-menu {:type type
+                               :shapes (vals objects)
+                               :file-id file-id
+                               :shared-libs shared-libs}]
      [:& shadow-menu {:ids ids
                       :values (select-keys shape [:shadow])}]
      [:& blur-menu {:ids ids
