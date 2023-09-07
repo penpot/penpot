@@ -10,7 +10,6 @@
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes :as cpc]
-   [app.common.types.file-repair :as ctfr]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
