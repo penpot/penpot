@@ -11,6 +11,7 @@
    [app.common.pages.helpers :as cph]
    [app.main.refs :as refs]
    [app.main.ui.context :as muc]
+   [app.main.ui.hooks :as h]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.export :as ed]
    [app.main.ui.shapes.fills :as fills]
@@ -63,7 +64,7 @@
                              (or (:blend-mode shape)))
 
         type             (dm/get-prop shape :type)
-        render-id        (mf/use-id)
+        render-id        (h/use-render-id)
         filter-id        (dm/str "filter_" render-id)
         styles           (-> (obj/create)
                              (obj/set! "pointerEvents" pointer-events)
