@@ -115,7 +115,8 @@
          (fn [color]
            (st/emit! (dch/update-shapes
                       ids
-                      #(assoc-in % [:shadow index :color] color)))))
+                      #(assoc-in % [:shadow index :color]
+                         (dissoc color :id :file-id))))))
 
         detach-color
         (mf/use-fn
@@ -242,6 +243,7 @@
                                     (:color value))
                            :title (tr "workspace.options.shadow-options.color")
                            :disable-gradient true
+                           :disable-image true
                            :on-change update-color
                            :on-detach detach-color
                            :on-open manage-on-open
@@ -335,6 +337,7 @@
                                   (:color value))
                          :title (tr "workspace.options.shadow-options.color")
                          :disable-gradient true
+                         :disable-image true
                          :on-change update-color
                          :on-detach detach-color
                          :on-open manage-on-open

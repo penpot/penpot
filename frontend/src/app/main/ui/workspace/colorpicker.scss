@@ -20,8 +20,9 @@
     .top-actions {
       display: flex;
       align-items: flex-start;
+      flex-direction: row-reverse;
       justify-content: space-between;
-      height: $s-28;
+      height: $s-40;
       .picker-btn {
         @include buttonStyle;
         @include flexCenter;
@@ -32,6 +33,7 @@
         width: $s-20;
         border-radius: $br-4;
         padding: 0;
+        margin-top: $s-4;
         svg {
           @extend .button-icon;
           stroke: var(--button-tertiary-foreground-color-rest);
@@ -96,7 +98,7 @@
       display: flex;
       gap: $s-4;
       .accept-color {
-        @include titleTipography;
+        @include tabTitleTipography;
         @extend .button-secondary;
         width: 100%;
         height: $s-32;
@@ -120,5 +122,38 @@
         transform: translate(calc(-1 * $s-12), calc(-1 * $s-12));
       }
     }
+  }
+}
+
+.select {
+  width: $s-116;
+}
+
+.select-image {
+  margin-top: $s-4;
+  .content {
+    border-radius: $br-8;
+    display: flex;
+    justify-content: center;
+    background-image: url("/images/colorpicker-no-image.png");
+    background-position: center;
+    background-size: auto $s-140;
+    height: $s-140;
+    margin-bottom: $s-6;
+    margin-right: $s-1;
+    img {
+      height: fit-content;
+      width: fit-content;
+      max-height: 100%;
+      max-width: 100%;
+      margin: auto;
+    }
+  }
+  .choose-image {
+    @extend .button-secondary;
+    @include tabTitleTipography;
+    width: 100%;
+    margin-top: $s-12;
+    height: $s-32;
   }
 }

@@ -72,7 +72,6 @@
     @include titleTipography;
     color: var(--menu-foreground-color);
     padding: $s-8 0;
-    height: $s-32;
   }
 
   button {
@@ -128,4 +127,11 @@
       color: var(--menu-foreground-color-rest);
     }
   }
+}
+
+.download-button {
+  @extend .button-secondary;
+  @include tabTitleTipography;
+  height: $s-32;
+  margin-top: $s-4;
 }

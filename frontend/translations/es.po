@@ -5094,3 +5094,21 @@ msgstr "Pulsar para cerrar la ruta"
 #, markdown
 msgid "workspace.top-bar.read-only"
 msgstr "**Modo inspección** (View only)"
+
+msgid "media.image"
+msgstr "Imagen"
+
+msgid "media.solid"
+msgstr "Sólido"
+
+msgid "media.linear"
+msgstr "Linear"
+
+msgid "media.radial"
+msgstr "Radial"
+
+msgid "media.gradient"
+msgstr "Gradiente"
+
+msgid "media.choose-image"
+msgstr "Elegir imagen"

@@ -105,7 +105,8 @@
    [:fill-opacity {:optional true} ::sm/safe-number]
    [:fill-color-gradient {:optional true} [:maybe ::ctc/gradient]]
    [:fill-color-ref-file {:optional true} [:maybe ::sm/uuid]]
-   [:fill-color-ref-id {:optional true} [:maybe ::sm/uuid]]])
+   [:fill-color-ref-id {:optional true} [:maybe ::sm/uuid]]
+   [:fill-image {:optional true} ::ctc/image-color]])
 
 (sm/def! ::stroke
   [:map {:title "Stroke"}
@@ -122,7 +123,8 @@
     [::sm/one-of stroke-caps]]
    [:stroke-cap-end {:optional true}
     [::sm/one-of stroke-caps]]
-   [:stroke-color-gradient {:optional true} ::ctc/gradient]])
+   [:stroke-color-gradient {:optional true} ::ctc/gradient]
+   [:stroke-image {:optional true} ::ctc/image-color]])
 
 (sm/def! ::minimal-shape-attrs
   [:map {:title "ShapeMinimalRecord"}
@@ -345,6 +347,13 @@
 
 (def valid-shape?
   (sm/pred-fn ::shape))
+
+
+(defn has-images?
+  [{:keys [fills strokes]}]
+  (or 
+    (some :fill-image fills)
+    (some :stroke-image strokes)))
 
 ;; --- Initialization
 

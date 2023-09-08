@@ -97,7 +97,8 @@
   (let [id    (uuid/next)
         color (-> color
                   (assoc :id id)
-                  (assoc :name (or (:color color)
+                  (assoc :name (or (get-in color [:image :name])
+                                   (:color color)
                                    (uc/gradient-type->string (get-in color [:gradient :type])))))]
     (dm/assert! ::ctc/color color)
     (ptk/reify ::add-color

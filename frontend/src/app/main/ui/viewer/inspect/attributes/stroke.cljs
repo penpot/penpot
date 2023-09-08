@@ -25,7 +25,8 @@
    :opacity (:stroke-opacity shape)
    :gradient (:stroke-color-gradient shape)
    :id (:stroke-color-ref-id shape)
-   :file-id (:stroke-color-ref-file shape)})
+   :file-id (:stroke-color-ref-file shape)
+   :image (:stroke-image shape)})
 
 (defn has-stroke? [shape]
   (seq (:strokes shape)))

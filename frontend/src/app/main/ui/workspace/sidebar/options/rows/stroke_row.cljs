@@ -188,12 +188,13 @@
                      :dnd-over-top (= (:over dprops) :top)
                      :dnd-over-bot (= (:over dprops) :bot))
              :ref dref}
-                 ;; Stroke Color
+       ;; Stroke Color
        [:& color-row {:color {:color (:stroke-color stroke)
                               :opacity (:stroke-opacity stroke)
                               :id (:stroke-color-ref-id stroke)
                               :file-id (:stroke-color-ref-file stroke)
-                              :gradient (:stroke-color-gradient stroke)}
+                              :gradient (:stroke-color-gradient stroke)
+                              :image (:stroke-image stroke)}
                       :index index
                       :title title
                       :on-change on-color-change-refactor
@@ -263,7 +264,8 @@
                               :opacity (:stroke-opacity stroke)
                               :id (:stroke-color-ref-id stroke)
                               :file-id (:stroke-color-ref-file stroke)
-                              :gradient (:stroke-color-gradient stroke)}
+                              :gradient (:stroke-color-gradient stroke)
+                              :image (:stroke-image stroke)}
                       :index index
                       :title title
                       :on-change (on-color-change index)

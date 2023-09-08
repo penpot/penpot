@@ -364,6 +364,161 @@
       (t/is (nil? (sto/get-object storage (:thumbnail-id fmo1))))
       )))
 
+(t/deftest file-gc-image-fills-and-strokes
+  (letfn [(add-file-media-object [& {:keys [profile-id file-id]}]
+            (let [mfile  {:filename "sample.jpg"
+                          :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                          :mtype "image/jpeg"
+                          :size 312043}
+                  params {::th/type :upload-file-media-object
+                          ::rpc/profile-id profile-id
+                          :file-id file-id
+                          :is-local true
+                          :name "testfile"
+                          :content mfile}
+                  out    (th/command! params)]
+
+              ;; (th/print-result! out)
+              (t/is (nil? (:error out)))
+              (:result out)))
+
+          (update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
+            (let [params {::th/type :update-file
+                          ::rpc/profile-id profile-id
+                          :id file-id
+                          :session-id (uuid/random)
+                          :revn revn
+                          :components-v2 true
+                          :changes changes}
+                  out    (th/command! params)]
+              ;; (th/print-result! out)
+              (t/is (nil? (:error out)))
+              (:result out)))]
+
+    (let [storage (:app.storage/storage th/*system*)
+
+          profile (th/create-profile* 1)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared false})
+
+          fmo1    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
+          fmo2    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
+          fmo3    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
+          fmo4    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
+          fmo5    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
+          s-shid  (uuid/random)
+          t-shid  (uuid/random)
+
+          page-id (first (get-in file [:data :pages]))]
+
+      ;; Update file inserting a new image object
+      (update-file!
+        :file-id (:id file)
+        :profile-id (:id profile)
+        :revn 0
+        :changes
+        [{:type :add-obj
+          :page-id page-id
+          :id s-shid
+          :parent-id uuid/zero
+          :frame-id uuid/zero
+          :components-v2 true
+          :obj (cts/setup-shape
+                 {:id s-shid
+                  :name "image"
+                  :frame-id uuid/zero
+                  :parent-id uuid/zero
+                  :type :image
+                  :metadata {:id (:id fmo1) :width 100 :height 100 :mtype "image/jpeg"}
+                  :fills [{:opacity 1 :fill-image {:id (:id fmo2) :width 100 :height 100 :mtype "image/jpeg"}}]
+                  :strokes [{:opacity 1 :stroke-image {:id (:id fmo3) :width 100 :height 100 :mtype "image/jpeg"}}]})}
+         {:type :add-obj
+          :page-id page-id
+          :id t-shid
+          :parent-id uuid/zero
+          :frame-id uuid/zero
+          :components-v2 true
+          :obj (cts/setup-shape
+                 {:id t-shid
+                  :name "text"
+                  :frame-id uuid/zero
+                  :parent-id uuid/zero
+                  :type :text
+                  :content {:type "root"
+                            :children [{:type "paragraph-set"
+                                        :children [{:type "paragraph"
+                                                    :children [{:fills [{:fill-opacity 1
+                                                                         :fill-image {:id (:id fmo4)
+                                                                                      :width 417
+                                                                                      :height 354
+                                                                                      :mtype "image/png"
+                                                                                      :name "text fill image"}}]
+                                                                :text "hi"}
+                                                               {:fills [{:fill-opacity 1
+                                                                         :fill-color "#000000"}]
+                                                                :text "bye"}]}]}]}
+                  :strokes [{:opacity 1 :stroke-image {:id (:id fmo5) :width 100 :height 100 :mtype "image/jpeg"}}]})}])
+
+      ;; run the file-gc task immediately without forced min-age
+      (let [res (th/run-task! "file-gc")]
+        (t/is (= 0 (:processed res))))
+
+      ;; run the task again
+      (let [res (th/run-task! "file-gc" {:min-age 0})]
+        (t/is (= 1 (:processed res))))
+
+      ;; retrieve file and check trimmed attribute
+      (let [row (th/db-get :file {:id (:id file)})]
+        (t/is (true? (:has-media-trimmed row))))
+
+      ;; check file media objects
+      (let [rows (th/db-exec! ["select * from file_media_object where file_id = ?" (:id file)])]
+        (t/is (= 5 (count rows))))
+
+      ;; The underlying storage objects are still available.
+      (t/is (some? (sto/get-object storage (:media-id fmo5))))
+      (t/is (some? (sto/get-object storage (:media-id fmo4))))
+      (t/is (some? (sto/get-object storage (:media-id fmo3))))
+      (t/is (some? (sto/get-object storage (:media-id fmo2))))
+      (t/is (some? (sto/get-object storage (:media-id fmo1))))
+
+      ;; proceed to remove usage of the file
+      (update-file!
+        :file-id (:id file)
+        :profile-id (:id profile)
+        :revn 0
+        :changes [{:type :del-obj
+                   :page-id (first (get-in file [:data :pages]))
+                   :id s-shid}
+                  {:type :del-obj
+                   :page-id (first (get-in file [:data :pages]))
+                   :id t-shid}])
+
+      ;; Now, we have deleted the usage of pointers to the
+      ;; file-media-objects, if we paste file-gc, they should be marked
+      ;; as deleted.
+      (let [task  (:app.tasks.file-gc/handler th/*system*)
+            res   (task {:min-age (dt/duration 0)})]
+        (t/is (= 1 (:processed res))))
+
+      ;; Now that file-gc have deleted the file-media-object usage,
+      ;; lets execute the touched-gc task, we should see that two of
+      ;; them are marked to be deleted.
+      (let [task (:app.storage/gc-touched-task th/*system*)
+            res  (task {:min-age (dt/duration 0)})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 2 (:delete res))))
+
+      ;; Finally, check that some of the objects that are marked as
+      ;; deleted we are unable to retrieve them using standard storage
+      ;; public api.
+      (t/is (nil? (sto/get-object storage (:media-id fmo5))))
+      (t/is (nil? (sto/get-object storage (:media-id fmo4))))
+      (t/is (nil? (sto/get-object storage (:media-id fmo3))))
+      (t/is (nil? (sto/get-object storage (:media-id fmo2))))
+      (t/is (nil? (sto/get-object storage (:media-id fmo1)))))))
+
 (t/deftest permissions-checks-creating-file
   (let [profile1 (th/create-profile* 1)
         profile2 (th/create-profile* 2)

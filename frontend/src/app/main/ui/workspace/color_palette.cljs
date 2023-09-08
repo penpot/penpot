@@ -38,7 +38,7 @@
 (mf/defc palette
   [{:keys [current-colors size width]}]
   (let [;; We had to do this due to a bug that leave some bugged colors
-        current-colors (h/use-equal-memo (filter #(or (:gradient %) (:color %)) current-colors))
+        current-colors (h/use-equal-memo (filter #(or (:gradient %) (:color %) (:image %)) current-colors))
         state          (mf/use-state {:show-menu false})
         offset-step (cond
                       (<= size 64) 40

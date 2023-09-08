@@ -46,6 +46,14 @@
     ::oapi/type "integer"
     ::oapi/format "int64"}})
 
+(sm/def! ::image-color
+  [:map {:title "ImageColor"}
+   [:name {:optional true} :string]
+   [:width :int]
+   [:height :int]
+   [:mtype {:optional true} [:maybe :string]]
+   [:id ::sm/uuid]])
+
 (sm/def! ::gradient
   [:map {:title "Gradient"}
    [:type [::sm/one-of #{:linear :radial "linear" "radial"}]]
@@ -72,17 +80,19 @@
    [:modified-at {:optional true} ::sm/inst]
    [:ref-id {:optional true} ::sm/uuid]
    [:ref-file {:optional true} ::sm/uuid]
-   [:gradient {:optional true} [:maybe ::gradient]]])
+   [:gradient {:optional true} [:maybe ::gradient]]
+   [:image {:optional true} [:maybe ::image-color]]])
 
 
 ;; FIXME: incomplete schema
 (sm/def! ::recent-color
   [:and
-   [:map {:title "RecentColot"}
+   [:map {:title "RecentColor"}
     [:opacity {:optional true} [:maybe ::sm/safe-number]]
     [:color {:optional true} [:maybe ::rgb-color]]
-    [:gradient {:optional true} [:maybe ::gradient]]]
-   [::sm/contains-any {:strict true} [:color :gradient]]])
+    [:gradient {:optional true} [:maybe ::gradient]]
+    [:image {:optional true} [:maybe ::image-color]]]
+   [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
 (def color?
   (sm/pred-fn ::color))
@@ -102,17 +112,19 @@
    {:color (:fill-color fill)
     :opacity (:fill-opacity fill)
     :gradient (:fill-color-gradient fill)
+    :image (:fill-image fill)
     :ref-id (:fill-color-ref-id fill)
     :ref-file (:fill-color-ref-file fill)}))
 
 (defn set-fill-color
-  [shape position color opacity gradient]
+  [shape position color opacity gradient image]
   (update-in shape [:fills position]
              (fn [fill]
                (d/without-nils (assoc fill
                                       :fill-color color
                                       :fill-opacity opacity
-                                      :fill-color-gradient gradient)))))
+                                      :fill-color-gradient gradient
+                                      :fill-image image)))))
 
 (defn attach-fill-color
   [shape position ref-id ref-file]
@@ -133,17 +145,19 @@
   (d/without-nils {:color (:stroke-color stroke)
                    :opacity (:stroke-opacity stroke)
                    :gradient (:stroke-color-gradient stroke)
+                   :image (:stroke-image stroke)
                    :ref-id (:stroke-color-ref-id stroke)
                    :ref-file (:stroke-color-ref-file stroke)}))
 
 (defn set-stroke-color
-  [shape position color opacity gradient]
+  [shape position color opacity gradient image]
   (update-in shape [:strokes position]
              (fn [stroke]
                (d/without-nils (assoc stroke
                                       :stroke-color color
                                       :stroke-opacity opacity
-                                      :stroke-color-gradient gradient)))))
+                                      :stroke-color-gradient gradient
+                                      :stroke-image image)))))
 
 (defn attach-stroke-color
   [shape position ref-id ref-file]
@@ -336,7 +350,8 @@
                           position
                           (:color library-color)
                           (:opacity library-color)
-                          (:gradient library-color))
+                          (:gradient library-color)
+                          (:image library-color))
                   (detach-fn shape position)))
               shape))]
 

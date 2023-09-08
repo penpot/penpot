@@ -55,6 +55,9 @@
     height: 100%;
     width: 100%;
     clip-path: circle(50%);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
   }
   .color-bullet-wrapper > * {
     width: 100%;
