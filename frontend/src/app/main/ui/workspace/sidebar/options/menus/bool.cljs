@@ -158,7 +158,7 @@
             :class (dom/classnames :disabled disabled-bool-btns
                                    :selected (= head-bool-type :exclude))
             :data-value :exclude
-            :on-click (set-bool :intersection)}
+            :on-click set-bool}
            i/bool-exclude]]
 
          [:div.align-group
