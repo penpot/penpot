@@ -219,7 +219,11 @@
     (when show?
       [:div.element-set
        [:div.element-set-title
-        [:span (tr "workspace.options.component")]]
+        [:span (tr "workspace.options.component")]
+        [:span (if main-instance?
+                 (tr "workspace.options.component.main")
+                 (tr "workspace.options.component.copy"))]
+        ]
        [:div.element-set-content
         [:div.row-flex.component-row
          (if main-instance?
