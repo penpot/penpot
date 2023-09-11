@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
@@ -99,7 +100,13 @@
            (let [props (cond-> {:mode mode}
                          (not= mode :area)
                          (assoc :area-name nil))]
-             (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) props)))))]
+             (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) props)))))
+
+        toggle-edit-mode
+        (mf/use-fn
+         (mf/deps (:id shape))
+         (fn []
+           (st/emit! (dwge/remove-selection (:id shape)))))]
 
     [:div.element-set
      [:div.element-set-title
@@ -191,4 +198,14 @@
        [:div.btn-wrapper
         [:& set-self-alignment {:is-col? true
                                 :alignment justify-self
-                                :set-alignment set-justify-self}]]]]]))
+                                :set-alignment set-justify-self}]]]
+
+      [:div.layout-row.single-button
+       [:div.btn-wrapper
+        [:div.edit-mode
+         [:button.tooltip.tooltip-bottom-left
+          {:alt    "Grid edit mode"
+           :on-click toggle-edit-mode
+           :style {:padding 0}}
+          "Edit grid"
+          i/grid-layout-mode]]]]]]))

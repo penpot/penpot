@@ -695,6 +695,25 @@
         (update :layout-grid-cells update-cells)
         (assign-cells))))
 
+(defn- reorder-grid-track
+  [prop parent from-index to-index]
+  (-> parent
+      (update prop
+              (fn [tracks]
+                (let [tr (nth tracks from-index)]
+                  (-> tracks
+                      (assoc from-index nil)
+                      (d/insert-at-index (inc to-index) [tr])
+                      (d/vec-without-nils)))))))
+
+(defn reorder-grid-column
+  [parent from-index to-index]
+  (reorder-grid-track :layout-grid-columns parent from-index to-index))
+
+(defn reorder-grid-row
+  [parent from-index to-index]
+  (reorder-grid-track :layout-grid-rows parent from-index to-index))
+
 (defn get-cells
   ([parent]
    (get-cells parent nil))

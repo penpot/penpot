@@ -38,6 +38,13 @@
     (update [_ state]
       (update-in state [:workspace-grid-edition grid-id] dissoc :selected))))
 
+(defn clear-selection
+  [grid-id]
+  (ptk/reify ::clear-selection
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-grid-edition grid-id] dissoc :selected))))
+
 (defn stop-grid-layout-editing
   [grid-id]
   (ptk/reify ::stop-grid-layout-editing

@@ -21,6 +21,7 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
@@ -871,8 +872,68 @@
     :fixed (dm/str value "px")
     value))
 
+(mf/defc grid-track-info
+  [{:keys [is-col? type index column set-column-value set-column-type remove-element reorder-track hover-track]}]
+  (let [drop-track
+        (mf/use-callback
+         (mf/deps type reorder-track index)
+         (fn [drop-position data]
+           (reorder-track type (:index data) (if (= :top drop-position) (dec index) index))))
+
+        pointer-enter
+        (mf/use-callback
+         (mf/deps type hover-track index)
+         (fn []
+           (hover-track type index true)))
+
+        pointer-leave
+        (mf/use-callback
+         (mf/deps type hover-track index)
+         (fn []
+           (hover-track type index false)))
+
+        [dprops dref]
+        (h/use-sortable
+         :data-type "penpot/layer"
+         :on-drop drop-track
+         :data {:is-col? is-col?
+                :index index
+                :column column}
+         :draggable? true)]
+    [:div.column-info
+     {:ref dref
+      :class (dom/classnames
+              :dnd-over-top (or (= (:over dprops) :top)
+                                (= (:over dprops) :center))
+              :dnd-over-bot (= (:over dprops) :bot))
+      :on-pointer-enter pointer-enter
+      :on-pointer-leave pointer-leave}
+     [:div.direction-grid-icon
+      (if is-col?
+        i/layout-rows
+        i/layout-columns)]
+
+     [:div.grid-column-value
+      [:> numeric-input* {:no-validate true
+                          :value (:value column)
+                          :on-change #(set-column-value type index %)
+                          :placeholder "--"
+                          :disabled (= :auto (:type column))}]]
+     [:div.grid-column-unit
+      [:& select
+       {:class "grid-column-unit-selector"
+        :default-value (:type column)
+        :options [{:value :flex :label "FR"}
+                  {:value :auto :label "AUTO"}
+                  {:value :fixed :label "PX"}
+                  {:value :percent :label "%"}]
+        :on-change #(set-column-type type index %)}]]
+     [:button.remove-grid-column
+      {:on-click #(remove-element type index)}
+      i/minus]]))
+
 (mf/defc grid-columns-row
-  [{:keys [is-col? expanded? column-values toggle add-new-element set-column-value set-column-type remove-element] :as props}]
+  [{:keys [is-col? expanded? column-values toggle add-new-element set-column-value set-column-type remove-element reorder-track hover-track] :as props}]
   (let [column-num (count column-values)
         direction (if (> column-num 1)
                     (if is-col? "Columns " "Rows ")
@@ -894,32 +955,19 @@
                                         (add-new-element type ctl/default-track-value))} i/plus]]
 
      (when expanded?
-       [:div.columns-info-wrapper
-        (for [[index column] (d/enumerate column-values)]
-          [:div.column-info {:key (dm/str index "-" (name type) "-" column)}
-           [:div.direction-grid-icon
-            (if is-col?
-              i/layout-rows
-              i/layout-columns)]
-
-           [:div.grid-column-value
-            [:> numeric-input* {:no-validate true
-                                :value (:value column)
-                                :on-change #(set-column-value type index %)
-                                :placeholder "--"
-                                :disabled (= :auto (:type column))}]]
-           [:div.grid-column-unit
-            [:& select
-             {:class "grid-column-unit-selector"
-              :default-value (:type column)
-              :options [{:value :flex :label "FR"}
-                        {:value :auto :label "AUTO"}
-                        {:value :fixed :label "PX"}
-                        {:value :percent :label "%"}]
-              :on-change #(set-column-type type index %)}]]
-           [:button.remove-grid-column
-            {:on-click #(remove-element type index)}
-            i/minus]])])]))
+       [:& h/sortable-container {}
+        [:div.columns-info-wrapper
+         (for [[index column] (d/enumerate column-values)]
+           [:& grid-track-info {:key (dm/str index "-" (name type) "-" column)
+                                :type type
+                                :is-col? is-col?
+                                :index index
+                                :column column
+                                :set-column-value set-column-value
+                                :set-column-type set-column-type
+                                :remove-element remove-element
+                                :reorder-track reorder-track
+                                :hover-track hover-track}])]])]))
 
 ;; LAYOUT COMPONENT
 
@@ -1352,7 +1400,7 @@
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values"]))]}
   [{:keys [ids values] :as props}]
   (let [;; Gap
-        gap-selected?       (mf/use-state :none)
+        gap-selected?  (mf/use-state :none)
         saved-grid-dir (:layout-grid-dir values)
 
         set-direction
@@ -1431,6 +1479,18 @@
          (fn [type index]
            (st/emit! (dwsl/remove-layout-track ids type index))))
 
+        reorder-track
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [type from-index to-index]
+           (st/emit! (dwsl/reorder-layout-track ids type from-index to-index))))
+
+        hover-track
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [type index hover?]
+           (st/emit! (dwsl/hover-layout-track ids type index hover?))))
+
         set-column-value
         (mf/use-fn
          (mf/deps ids)
@@ -1496,7 +1556,9 @@
                             :add-new-element add-new-element
                             :set-column-value set-column-value
                             :set-column-type set-column-type
-                            :remove-element remove-element}]
+                            :remove-element remove-element
+                            :reorder-track reorder-track
+                            :hover-track hover-track}]
 
       [:& grid-columns-row {:is-col? false
                             :expanded? @grid-rows-open?
@@ -1505,7 +1567,9 @@
                             :add-new-element add-new-element
                             :set-column-value set-column-value
                             :set-column-type set-column-type
-                            :remove-element remove-element}]
+                            :remove-element remove-element
+                            :reorder-track reorder-track
+                            :hover-track hover-track}]
 
       [:& gap-section {:gap-selected? gap-selected?
                        :on-change set-gap

@@ -1880,6 +1880,16 @@
         }
       }
     }
+
+    &.single-button {
+      display: flex;
+      justify-content: end;
+      height: 1.5rem;
+
+      .btn-wrapper {
+        width: initial;
+      }
+    }
   }
   .no-wrap {
     display: flex;
@@ -2262,6 +2272,13 @@
         grid-template-columns: 35px 1fr 1fr auto;
         background-color: $color-gray-60;
         padding: 3px;
+        border-radius: 3px;
+        border: 1px solid transparent;
+
+        &:hover {
+          border: 1px solid $color-primary;
+        }
+
         &:not(:first-child) {
           margin-top: 3px;
         }

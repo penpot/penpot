@@ -407,6 +407,38 @@
                (ptk/data-event :layout/update ids)
                (dwu/commit-undo-transaction undo-id))))))
 
+(defn reorder-layout-track
+  [ids type from-index to-index]
+  (assert (#{:row :column} type))
+
+  (ptk/reify ::reorder-layout-track
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/update-shapes
+                ids
+                (fn [shape]
+                  (case type
+                    :row    (ctl/reorder-grid-row shape from-index to-index)
+                    :column (ctl/reorder-grid-column shape from-index to-index))))
+               (ptk/data-event :layout/update ids)
+               (dwu/commit-undo-transaction undo-id))))))
+
+(defn hover-layout-track
+  [ids type index hover?]
+  (assert (#{:row :column} type))
+
+  (ptk/reify ::hover-layout-track
+    ptk/UpdateEvent
+    (update [_ state]
+      (cond-> state
+        hover?
+        (update-in [:workspace-grid-edition (first ids) :hover-track] (fnil conj #{}) [type index])
+
+        (not hover?)
+        (update-in [:workspace-grid-edition (first ids) :hover-track] (fnil disj #{}) [type index])))))
+
 (defn change-layout-track
   [ids type index props]
   (assert (#{:row :column} type))

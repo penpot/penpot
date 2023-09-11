@@ -531,16 +531,17 @@
       (dm/str value)]]))
 
 (mf/defc track
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "zoom" "index" "type" "track-data" "layout-data"]))]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "zoom" "index" "type" "track-data" "layout-data" "hovering?"]))]
    ::mf/wrap-props false}
   [props]
-  (let [shape (unchecked-get props "shape")
-        zoom (unchecked-get props "zoom")
-        type (unchecked-get props "type")
-        index (unchecked-get props "index")
+  (let [shape       (unchecked-get props "shape")
+        zoom        (unchecked-get props "zoom")
+        type        (unchecked-get props "type")
+        index       (unchecked-get props "index")
         snap-pixel? (unchecked-get props "snap-pixel?")
-        track-data (unchecked-get props "track-data")
+        track-data  (unchecked-get props "track-data")
         layout-data (unchecked-get props "layout-data")
+        hovering?   (unchecked-get props "hovering?")
 
         track-input-ref (mf/use-ref)
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
@@ -621,6 +622,15 @@
      [:g {:transform (if (= type :column)
                        (dm/str (gmt/transform-in text-p (:transform shape)))
                        (dm/str (gmt/transform-in text-p (gmt/rotate (:transform shape) -90))))}
+
+      (when hovering?
+        [:rect {:x (+ text-x (/ 5 zoom))
+                :y text-y
+                :width (- text-width (/ 10 zoom))
+                :height (- text-height (/ 5 zoom))
+                :rx (/ 3 zoom)
+                :fill "#DB00FF"
+                :opacity 0.2}])
       [:foreignObject {:x text-x :y text-y :width text-width :height text-height}
        [:input
         {:ref track-input-ref
@@ -683,6 +693,18 @@
 
         hover-cells (:hover grid-edition)
         selected-cells (:selected grid-edition)
+
+        hover-columns
+        (->> (:hover-track grid-edition)
+             (filter (fn [[t _]] (= t :column)))
+             (map (fn [[_ idx]] idx))
+             (into #{}))
+
+        hover-rows
+        (->> (:hover-track grid-edition)
+             (filter (fn [[t _]] (= t :row)))
+             (map (fn [[_ idx]] idx))
+             (into #{}))
 
         children
         (mf/use-memo
@@ -759,7 +781,8 @@
                      :index idx
                      :layout-data layout-data
                      :snap-pixel? snap-pixel?
-                     :track-data column-data}])
+                     :track-data column-data
+                     :hovering? (contains? hover-columns idx)}])
 
         ;; Last track resize handler
         (when-not (empty? column-tracks)
@@ -796,8 +819,8 @@
                      :snap-pixel? snap-pixel?
                      :track-data row-data
                      :type :row
-                     :zoom zoom}])
-
+                     :zoom zoom
+                     :hovering? (contains? hover-rows idx)}])
         (when-not (empty? row-tracks)
           (let [last-track (last row-tracks)
                 start-p (:start-p last-track)
