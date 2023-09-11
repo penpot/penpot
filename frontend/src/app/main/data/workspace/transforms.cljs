@@ -511,11 +511,15 @@
                               [(assoc move-vector :x 0) :x]
 
                               :else
-                              [move-vector nil])]
+                              [move-vector nil])
 
-                        (-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
-                            (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data)
-                            (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
+                            nesting-loop? (some #(cph/components-nesting-loop? objects (:id %) target-frame) shapes)]
+
+                        (cond-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
+                          (not nesting-loop?)
+                          (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data)
+                          :always
+                          (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
 
               (->> move-stream
                       (rx/with-latest-from ms/mouse-position-alt)
