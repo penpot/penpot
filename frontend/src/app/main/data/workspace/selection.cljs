@@ -412,9 +412,9 @@
 
 (defn- prepare-duplicate-shape-change
   ([changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id]
-   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id (:frame-id obj) (:parent-id obj) false))
+   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id (:frame-id obj) (:parent-id obj) false false))
 
-  ([changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id frame-id parent-id duplicating-component?]
+  ([changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id frame-id parent-id duplicating-component? child?]
    (cond
      (nil? obj)
      changes
@@ -466,7 +466,8 @@
                      (not duplicating-component?)
                      (dissoc :shape-ref))
 
-           changes (-> (pcb/add-object changes new-obj {:ignore-touched duplicating-component?})
+           ; We want the first added object to touch it's parent, but not subsequent children
+           changes (-> (pcb/add-object changes new-obj {:ignore-touched (and duplicating-component? child?)})
                        (pcb/amend-last-change #(assoc % :old-id (:id obj))))
 
            changes (cond-> changes
@@ -488,7 +489,8 @@
                                                  file-id
                                                  (if frame? new-id frame-id)
                                                  new-id
-                                                 duplicating-component?))
+                                                 duplicating-component?
+                                                 true))
                changes
                (map (d/getf objects) (:shapes obj)))))))
 
