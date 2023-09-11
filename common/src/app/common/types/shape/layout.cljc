@@ -1088,3 +1088,21 @@
         new-shapes (into new-shapes (:shapes parent))]
 
     (assoc parent :shapes (into [] (reverse new-shapes)))))
+
+(defn shapes-by-row
+  [parent index]
+  (->> (:layout-grid-cells parent)
+       (filter (fn [[_ {:keys [row row-span]}]]
+                 (and (>= (inc index) row)
+                      (< (inc index) (+ row row-span)))))
+       (map second)
+       (mapcat :shapes)))
+
+(defn shapes-by-column
+  [parent index]
+  (->> (:layout-grid-cells parent)
+       (filter (fn [[_ {:keys [column column-span]}]]
+                 (and (>= (inc index) column)
+                      (< (inc index) (+ column column-span)))))
+       (map second)
+       (mapcat :shapes)))

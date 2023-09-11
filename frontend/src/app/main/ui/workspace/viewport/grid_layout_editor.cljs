@@ -25,6 +25,7 @@
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.icons :as i]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -443,10 +444,10 @@
         start-p
         (cond-> start-p
           (and (= type :column) (= index 0))
-          (gpt/subtract (hv width))
+          (gpt/subtract (hv (/ width 2)))
 
           (and (= type :row) (= index 0))
-          (gpt/subtract (vv height))
+          (gpt/subtract (vv (/ height 2)))
 
           (and (= type :column) (not= index 0) (not last?))
           (-> (gpt/subtract (hv (/ layout-gap-col 2)))
@@ -605,6 +606,24 @@
              (when esc?
                (dom/blur! (dom/get-target event))))))
 
+        handle-pointer-enter
+        (mf/use-callback
+         (mf/deps (:id shape) type index)
+         (fn []
+           (st/emit! (dwsl/hover-layout-track [(:id shape)] type index true))))
+
+        handle-pointer-leave
+        (mf/use-callback
+         (mf/deps (:id shape) type index)
+         (fn []
+           (st/emit! (dwsl/hover-layout-track [(:id shape)] type index false))))
+
+        handle-remove-track
+        (mf/use-callback
+         (mf/deps (:id shape) type index)
+         (fn []
+           (st/emit! (dwsl/remove-layout-track [(:id shape)] type index))))
+
         track-list-prop (if (= type :column) :column-tracks :row-tracks)
         [text-x text-y text-width text-height]
         (if (= type :column)
@@ -619,7 +638,9 @@
        (dom/set-value! (mf/ref-val track-input-ref) (format-size track-data))))
 
     [:g.track
-     [:g {:transform (if (= type :column)
+     [:g {:on-pointer-enter handle-pointer-enter
+          :on-pointer-leave handle-pointer-leave
+          :transform (if (= type :column)
                        (dm/str (gmt/transform-in text-p (:transform shape)))
                        (dm/str (gmt/transform-in text-p (gmt/rotate (:transform shape) -90))))}
 
@@ -629,17 +650,22 @@
                 :width (- text-width (/ 10 zoom))
                 :height (- text-height (/ 5 zoom))
                 :rx (/ 3 zoom)
-                :fill "#DB00FF"
+                :fill "var(--color-distance)"
                 :opacity 0.2}])
       [:foreignObject {:x text-x :y text-y :width text-width :height text-height}
-       [:input
-        {:ref track-input-ref
-         :class (css :grid-editor-label)
-         :type "text"
-         :default-value (format-size track-data)
-         :data-default-value (format-size track-data)
-         :on-key-down handle-keydown-track-input
-         :on-blur handle-blur-track-input}]]]
+       [:div {:class (css :grid-editor-wrapper)}
+        [:input
+         {:ref track-input-ref
+          :style {}
+          :class (css :grid-editor-label)
+          :type "text"
+          :default-value (format-size track-data)
+          :data-default-value (format-size track-data)
+          :on-key-down handle-keydown-track-input
+          :on-blur handle-blur-track-input}]
+        (when hovering?
+          [:button {:class (css :grid-editor-button)
+                    :on-click handle-remove-track} i/trash])]]]
 
      [:g {:transform (when (= type :row) (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p)))}
       [:& track-marker
@@ -755,6 +781,15 @@
 
     [:g.grid-editor {:pointer-events (when view-only "none")
                      :on-pointer-down handle-pointer-down}
+     [:g.cells
+      (for [cell (ctl/get-cells shape {:sort? true})]
+        [:& grid-cell {:key (dm/str "cell-" (:id cell))
+                       :shape base-shape
+                       :layout-data layout-data
+                       :cell cell
+                       :zoom zoom
+                       :hover? (contains? hover-cells (:id cell))
+                       :selected? (= selected-cells (:id cell))}])]
      (when-not view-only
        [:*
         [:& grid-editor-frame {:zoom zoom
@@ -846,14 +881,4 @@
                :type :row
                :track-before (last row-tracks)
                :snap-pixel? snap-pixel?
-               :zoom zoom}]]))])
-
-     [:g.cells
-      (for [cell (ctl/get-cells shape {:sort? true})]
-        [:& grid-cell {:key (dm/str "cell-" (:id cell))
-                       :shape base-shape
-                       :layout-data layout-data
-                       :cell cell
-                       :zoom zoom
-                       :hover? (contains? hover-cells (:id cell))
-                       :selected? (= selected-cells (:id cell))}])]]))
+               :zoom zoom}]]))])]))

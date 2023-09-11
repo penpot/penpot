@@ -71,7 +71,8 @@
     }
   }
 
-  &:hover {
+  &:hover,
+  &.hover {
     background-color: $color-primary;
 
     svg {

@@ -432,12 +432,22 @@
   (ptk/reify ::hover-layout-track
     ptk/UpdateEvent
     (update [_ state]
-      (cond-> state
-        hover?
-        (update-in [:workspace-grid-edition (first ids) :hover-track] (fnil conj #{}) [type index])
+      (let [objects (wsh/lookup-page-objects state)
+            shape (get objects (first ids))
+            highlighted (when hover?
+                          (->> (if (= type :row)
+                                 (ctl/shapes-by-row shape index)
+                                 (ctl/shapes-by-column shape index))
+                               (set)))]
+        (cond-> state
+          hover?
+          (update-in [:workspace-grid-edition (first ids) :hover-track] (fnil conj #{}) [type index])
 
-        (not hover?)
-        (update-in [:workspace-grid-edition (first ids) :hover-track] (fnil disj #{}) [type index])))))
+          (not hover?)
+          (update-in [:workspace-grid-edition (first ids) :hover-track] (fnil disj #{}) [type index])
+
+          :always
+          (assoc-in [:workspace-local :highlighted] highlighted))))))
 
 (defn change-layout-track
   [ids type index props]

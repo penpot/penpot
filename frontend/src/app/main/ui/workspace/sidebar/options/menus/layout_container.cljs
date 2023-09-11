@@ -1542,7 +1542,7 @@
 
       [:div.layout-row
        [:div.jusfiy-content-grid.row-title "Content"]
-       [:div.btn-wrapper.align-grid
+       [:div.btn-wrapper.align-grid-content
         [:& justify-grid-row {:is-col? true
                               :justify-items grid-justify-content-column
                               :set-justify set-content-grid}]
