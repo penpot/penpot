@@ -22,6 +22,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     height: calc(100vh - $s-96);
+    scrollbar-gutter: stable;
   }
 
   .element-options {

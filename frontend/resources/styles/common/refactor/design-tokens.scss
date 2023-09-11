@@ -77,6 +77,13 @@
   --button-disabled-border-color-rest: var(--color-background-disabled);
   --button-disabled-foreground-color-rest: var(--color-foreground-disabled);
 
+  --button-constraint-background-color-rest: var(--color-foreground-secondary);
+  --button-constraint-border-color-rest: var(--color-background-tertiary);
+  --button-constraint-border-color-hover: var(--color-accent-primary-muted);
+  --button-constraint-background-color-hover: var(--color-accent-primary);
+  --constraint-widget-background-color: var(--color-background-tertiary);
+  --constraint-center-area-background-color: var(--color-background-primary);
+
   --icon-foreground: var(--color-foreground-secondary);
   --icon-foreground-hover: var(--color-foreground-primary);
 

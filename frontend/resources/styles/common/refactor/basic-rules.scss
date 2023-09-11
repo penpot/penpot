@@ -235,6 +235,21 @@
   stroke-width: 1.33px;
 }
 
+.button-constraint {
+  @include buttonStyle;
+  width: $s-32;
+  height: $s-4;
+  border-radius: $br-8;
+  background-color: var(--button-constraint-background-color-rest);
+  padding: 0;
+  margin: 0;
+  &:hover,
+  &:focus {
+    outline: $s-4 solid var(--button-constraint-border-color-hover);
+    background-color: var(--button-constraint-background-color-hover);
+  }
+}
+
 .link {
   background: unset;
   border: none;
@@ -290,6 +305,7 @@
     background-color: var(--input-background-color-hover);
   }
 }
+
 .new-scrollbar {
   ::-webkit-scrollbar {
     background-color: transparent;
