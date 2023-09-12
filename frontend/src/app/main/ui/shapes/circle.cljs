@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [app.util.object :as obj]
@@ -30,8 +31,10 @@
         rx    (/ w 2)
         ry    (/ h 2)
 
+        rid   (mf/use-ctx muc/render-id)
+
         props (mf/with-memo [shape]
-                (-> (attrs/extract-style-attrs shape)
+                (-> (attrs/extract-style-attrs shape rid)
                     (obj/merge! #js {:cx cx :cy cy :rx rx :ry ry :transform t})))]
 
     [:& shape-custom-strokes {:shape shape}
