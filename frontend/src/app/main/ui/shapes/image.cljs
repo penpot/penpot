@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.image
   (:require
    [app.common.geom.shapes :as gsh]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [app.util.object :as obj]
@@ -18,8 +19,10 @@
 
   (let [shape (unchecked-get props "shape")
         {:keys [x y width height]} shape
+
+        render-id (mf/use-ctx muc/render-id)
         transform (gsh/transform-str shape)
-        props (-> (attrs/extract-style-attrs shape)
+        props (-> (attrs/extract-style-attrs shape render-id)
                   (obj/merge! (attrs/extract-border-radius-attrs shape))
                   (obj/merge!
                    #js {:x x
