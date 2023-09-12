@@ -42,7 +42,7 @@
 
 (defn propagate-wrapper-styles
   ([children wrapper-props]
-   (if (.isArray js/Array children)
+   (if ^boolean (obj/array? children)
      (->> children (map #(propagate-wrapper-styles-child % wrapper-props)))
      (-> children (propagate-wrapper-styles-child wrapper-props)))))
 
