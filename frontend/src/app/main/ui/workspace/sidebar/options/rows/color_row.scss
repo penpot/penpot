@@ -1,0 +1,96 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.color-data {
+  display: flex;
+  align-items: center;
+  gap: $s-4;
+  .color-info {
+    display: flex;
+    align-items: center;
+    padding: 0 $s-8;
+    gap: $s-4;
+    border-radius: $s-8;
+    background-color: var(--input-background-color);
+    height: $s-32;
+    flex-grow: 1;
+
+    .color-name {
+      @include titleTipography;
+      flex-grow: 1;
+      color: var(--input-foreground-color-active);
+    }
+    .detach-btn {
+      @extend .button-tertiary;
+      height: $s-32;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+      }
+    }
+    .opacity-input-element {
+      @extend .input-element;
+      width: $s-60;
+      border-left: $s-1 solid var(--input-details-color);
+      border-radius: 0 $br-8 $br-8 0;
+      padding-left: $s-8;
+      .opacity-input {
+        @include removeInputStyle;
+        @include titleTipography;
+        height: $s-32;
+        width: 100%;
+        margin: 0;
+        color: var(--input-foreground-color-active);
+      }
+      .icon-text {
+        @include flexCenter;
+        height: $s-32;
+        margin-right: $s-4;
+        padding-top: $s-2;
+      }
+    }
+    .input-element {
+      @extend .input-element;
+      flex-grow: 1;
+      .color-input {
+        @include removeInputStyle;
+        @include titleTipography;
+        height: $s-32;
+        width: 100%;
+        margin: 0;
+        color: var(--input-foreground-color-active);
+      }
+    }
+
+    &:hover {
+      .detach-btn,
+      .select-btn {
+        background-color: transparent;
+        svg {
+          stroke: var(--input-foreground-color-active);
+        }
+      }
+    }
+  }
+  .remove-btn,
+  .select-btn {
+    @extend .button-tertiary;
+    height: $s-32;
+    width: $s-28;
+    svg {
+      @extend .button-icon;
+    }
+  }
+
+  &.dnd-over-top {
+    border-top: $s-1 solid var(--layer-row-foreground-color-drag);
+  }
+  &.dnd-over-bot {
+    border-bottom: $s-1 solid var(--layer-row-foreground-color-drag);
+  }
+}

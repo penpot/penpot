@@ -2284,6 +2284,10 @@ msgstr "Go to login"
 msgid "settings.multiple"
 msgstr "Mixed"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Detach"
+
 # SECTIONS
 msgid "shortcut-section.basics"
 msgstr "Basics"

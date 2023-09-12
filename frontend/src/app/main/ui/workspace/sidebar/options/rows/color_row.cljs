@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.options.rows.color-row
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -13,7 +14,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.color-bullet :as cb]
+   [app.main.ui.components.color-bullet-new :as cb]
    [app.main.ui.components.color-input :refer [color-input*]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.context :as ctx]
@@ -42,7 +43,8 @@
   [{:keys [index color disable-gradient disable-opacity on-change
            on-reorder on-detach on-open on-close title on-remove
            disable-drag on-focus on-blur select-only select-on-focus]}]
-  (let [current-file-id (mf/use-ctx ctx/current-file-id)
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        current-file-id (mf/use-ctx ctx/current-file-id)
         file-colors     (mf/deref refs/workspace-file-colors)
         shared-libs     (mf/deref refs/workspace-libraries)
         hover-detach    (mf/use-state false)
@@ -149,73 +151,151 @@
       (when (not= prev-color color)
         (modal/update-props! :colorpicker {:data (parse-color color)})))
 
-    [:div.row-flex.color-data {:title title
-                               :class (dom/classnames
-                                       :dnd-over-top (= (:over dprops) :top)
-                                       :dnd-over-bot (= (:over dprops) :bot))
-                               :ref dref}
-     [:& cb/color-bullet {:color (cond-> color
-                                   (nil? color-name) (assoc
-                                                      :id nil
-                                                      :file-id nil))
-                          :on-click handle-click-color}]
+    (if new-css-system
+      [:div {:class (stl/css-case
+                     :color-data true
+                     :dnd-over-top (= (:over dprops) :top)
+                     :dnd-over-bot (= (:over dprops) :bot))
+             :ref dref}
+       [:span {:class (stl/css :color-info)}
+        [:& cb/color-bullet {:color (cond-> color
+                                      (nil? color-name) (assoc
+                                                         :id nil
+                                                         :file-id nil))
+                             :on-click handle-click-color}]
+        (cond
+          ;; Rendering a color with ID
+          (and (:id color) color-name (not (uc/multiple? color)))
+          [:*
+           [:div {:class (stl/css :color-name)
+                  :title (str color-name)} (str color-name)]
+           (when on-detach
+             [:button
+              {:class (stl/css :detach-btn)
+               :title (tr "settings.detach")
+               :on-pointer-enter #(reset! hover-detach true)
+               :on-pointer-leave #(reset! hover-detach false)
+               :on-click detach-value}
+              i/detach-refactor])]
 
-     (cond
-       ;; Rendering a color with ID
-       (and (:id color) color-name (not (uc/multiple? color)))
-       [:*
-        [:div.color-info
-         [:div.color-name (str color-name)]]
-        (when on-detach
-          [:div.element-set-actions-button
-           {:on-pointer-enter #(reset! hover-detach true)
-            :on-pointer-leave #(reset! hover-detach false)
-            :on-click detach-value}
-           (if @hover-detach i/unchain i/chain)])
+          ;; Rendering a gradient
+          (and (not (uc/multiple? color))
+               (:gradient color)
+               (get-in color [:gradient :type]))
+          [:div {:class (stl/css :color-info)}
+           [:div {:class (stl/css :color-name)}
+            (uc/gradient-type->string (get-in color [:gradient :type]))]]
 
-        (when select-only
-          [:div.element-set-actions-button {:on-click handle-select}
-           i/pointer-inner])]
+          ;; Rendering a plain color/opacity
+          :else
+          [:*
+           [:div {:class (stl/css :input-element)}
 
-       ;; Rendering a gradient
-       (and (not (uc/multiple? color))
-            (:gradient color)
-            (get-in color [:gradient :type]))
-       [:*
-        [:div.color-info
-         [:div.color-name (uc/gradient-type->string (get-in color [:gradient :type]))]]
-        (when select-only
-          [:div.element-set-actions-button {:on-click handle-select}
-           i/pointer-inner])]
+            [:> color-input* {:value (if (uc/multiple? color)
+                                       ""
+                                       (-> color :color uc/remove-hash))
+                              :placeholder (tr "settings.multiple")
+                              :className   (stl/css :color-input)
+                              :on-focus on-focus
+                              :on-blur on-blur
+                              :on-change handle-value-change}]]
+
+           (when (and (not disable-opacity)
+                      (not (:gradient color)))
+             [:div {:class (stl/css :opacity-input-element)}
+              [:span {:class (stl/css :icon-text)}
+               "%"]
+              [:> numeric-input* {:value (-> color :opacity opacity->string)
+                                  :className (stl/css :opacity-input)
+                                  :placeholder (tr "settings.multiple")
+                                  :select-on-focus select-on-focus
+                                  :on-focus on-focus
+                                  :on-blur on-blur
+                                  :on-change handle-opacity-change
+                                  :min 0
+                                  :max 100}]])])]
+
+       (when (some? on-remove)
+         [:button {:class (stl/css :remove-btn)
+                   :on-click on-remove} i/remove-refactor])
+       (when select-only
+         [:button {:class (stl/css :select-btn)
+                   :on-click handle-select}
+          i/move-refactor])]
 
 
-       ;; Rendering a plain color/opacity
-       :else
-       [:*
-        [:div.color-info
-         [:> color-input* {:value (if (uc/multiple? color)
-                                    ""
-                                    (-> color :color uc/remove-hash))
-                           :placeholder (tr "settings.multiple")
-                           :on-focus on-focus
-                           :on-blur on-blur
-                           :on-change handle-value-change}]]
 
-        (when (and (not disable-opacity)
-                   (not (:gradient color)))
-          [:div.input-element
-           {:class (dom/classnames :percentail (not= (:opacity color) :multiple))}
-           [:> numeric-input* {:value (-> color :opacity opacity->string)
-                               :placeholder (tr "settings.multiple")
-                               :select-on-focus select-on-focus
-                               :on-focus on-focus
-                               :on-blur on-blur
-                               :on-change handle-opacity-change
-                               :min 0
-                               :max 100}]])
-        (when select-only
-          [:div.element-set-actions-button {:on-click handle-select}
-           i/pointer-inner])])
-     (when (some? on-remove)
-       [:div.element-set-actions-button.remove {:on-click on-remove} i/minus])]))
+
+
+
+
+
+
+      [:div.row-flex.color-data {:title title
+                                 :class (dom/classnames
+                                         :dnd-over-top (= (:over dprops) :top)
+                                         :dnd-over-bot (= (:over dprops) :bot))
+                                 :ref dref}
+       [:& cb/color-bullet {:color (cond-> color
+                                     (nil? color-name) (assoc
+                                                        :id nil
+                                                        :file-id nil))
+                            :on-click handle-click-color}]
+
+       (cond
+           ;; Rendering a color with ID
+         (and (:id color) color-name (not (uc/multiple? color)))
+         [:*
+          [:div.color-info
+           [:div.color-name (str color-name)]]
+          (when on-detach
+            [:div.element-set-actions-button
+             {:on-pointer-enter #(reset! hover-detach true)
+              :on-pointer-leave #(reset! hover-detach false)
+              :on-click detach-value}
+             (if @hover-detach i/unchain i/chain)])]
+
+           ;; Rendering a gradient
+         (and (not (uc/multiple? color))
+              (:gradient color)
+              (get-in color [:gradient :type]))
+         [:*
+          [:div.color-info
+           [:div.color-name (uc/gradient-type->string (get-in color [:gradient :type]))]]
+          (when select-only
+            [:div.element-set-actions-button {:on-click handle-select}
+             i/pointer-inner])]
+
+
+           ;; Rendering a plain color/opacity
+         :else
+         [:*
+          [:div.color-info
+           [:> color-input* {:value (if (uc/multiple? color)
+                                      ""
+                                      (-> color :color uc/remove-hash))
+                             :placeholder (tr "settings.multiple")
+                             :on-focus on-focus
+                             :on-blur on-blur
+                             :on-change handle-value-change}]]
+
+          (when (and (not disable-opacity)
+                     (not (:gradient color)))
+            [:div.input-element
+             {:class (dom/classnames :percentail (not= (:opacity color) :multiple))}
+             [:> numeric-input* {:value (-> color :opacity opacity->string)
+                                 :placeholder (tr "settings.multiple")
+                                 :select-on-focus select-on-focus
+                                 :on-focus on-focus
+                                 :on-blur on-blur
+                                 :on-change handle-opacity-change
+                                 :min 0
+                                 :max 100}]])
+          (when select-only
+            [:div.element-set-actions-button {:on-click handle-select}
+             i/pointer-inner])])
+       (when (some? on-remove)
+         [:div.element-set-actions-button.remove {:on-click on-remove} i/minus])])
+
+    ))
 

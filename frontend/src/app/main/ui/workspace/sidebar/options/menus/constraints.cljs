@@ -177,8 +177,7 @@
           [:& title-bar {:collapsable? true
                          :collapsed?   (not open?)
                          :on-collapsed toggle-content
-                         :title        (tr "workspace.options.constraints")
-                         :class        (stl/css :title-spacing-constraints)}]]
+                         :title        (tr "workspace.options.constraints")}]]
          (when open?
            [:div {:class (stl/css :element-set-content)}
             [:div {:class (stl/css :constraints-widget)}

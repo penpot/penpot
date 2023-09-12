@@ -2357,6 +2357,10 @@ msgstr "Ir al login"
 msgid "settings.multiple"
 msgstr "Varios"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Desacoplar"
+
 # SECTIONS
 msgid "shortcut-section.basics"
 msgstr "Básicos"
