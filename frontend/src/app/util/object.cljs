@@ -8,7 +8,6 @@
   "A collection of helpers for work with javascript objects."
   (:refer-clojure :exclude [set! new get get-in merge clone contains? array?])
   (:require
-   ["lodash/omit" :as omit]
    [cuerdas.core :as str]))
 
 (defn array?
@@ -47,15 +46,6 @@
        (recur (first keys)
               (rest keys)
               (unchecked-get res key))))))
-
-#_:clj-kondo/ignore
-(defn without
-  [obj keys]
-  (let [keys (cond
-               (vector? keys) (into-array keys)
-               (array? keys) keys
-               :else (throw (js/Error. "unexpected input")))]
-    (omit obj keys)))
 
 (defn clone
   [a]

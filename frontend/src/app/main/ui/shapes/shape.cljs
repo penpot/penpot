@@ -87,7 +87,9 @@
 
         wrapper-props
         (-> (obj/clone props)
-            (obj/without ["shape" "children" "disable-shadows?"])
+            (obj/unset! "shape")
+            (obj/unset! "children")
+            (obj/unset! "disable-shadows?")
             (obj/set! "ref" ref)
             (obj/set! "id" (dm/fmt "shape-%" shape-id))
             (obj/set! "style" styles))
