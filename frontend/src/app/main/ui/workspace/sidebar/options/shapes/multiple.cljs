@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.options.shapes.multiple
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.attrs :as attrs]
    [app.common.data :as d]
@@ -14,6 +15,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
@@ -264,7 +266,8 @@
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "shapes-with-children" "page-id" "file-id"]))]
    ::mf/wrap-props false}
   [props]
-  (let [shapes (unchecked-get props "shapes")
+  (let [new-css-system       (mf/use-ctx ctx/new-css-system)
+        shapes               (unchecked-get props "shapes")
         shapes-with-children (unchecked-get props "shapes-with-children")
 
         ;; remove children from bool shapes
@@ -339,10 +342,10 @@
              (get-attrs shapes objects-no-measures :stroke)
              (get-attrs shapes objects-no-measures :exports)
              (get-attrs shapes objects-no-measures :layout-container)
-             (get-attrs shapes objects-no-measures :layout-item)
-             ])))]
+             (get-attrs shapes objects-no-measures :layout-item)])))]
 
-    [:div.options
+    [:div {:class (stl/css-case new-css-system
+                                :options true)}
      (when-not (empty? layer-ids)
        [:& layer-menu {:type type :ids layer-ids :values layer-values}])
 
@@ -363,7 +366,6 @@
 
      (when-not (or (empty? constraint-ids) is-layout-child?)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
-
 
      (when-not (empty? text-ids)
        [:& ot/text-menu {:type type :ids text-ids :values text-values}])

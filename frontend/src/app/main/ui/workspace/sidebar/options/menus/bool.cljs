@@ -94,6 +94,7 @@
         [:div {:class (stl/css :boolean-options)}
          [:div {:class (stl/css :bool-group)}
           [:& radio-buttons {:selected (d/name head-bool-type)
+                             :class (stl/css :boolean-radio-btn)
                              :on-change set-bool-refactor
                              :name "bool-options"}
            [:& radio-button {:icon i/boolean-union-refactor

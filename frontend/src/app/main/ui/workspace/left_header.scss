@@ -127,7 +127,8 @@
     @extend .menu-dropdown;
     position: absolute;
     left: calc(var(--width, $s-256) + $s-180);
-    width: 270px;
+    min-width: 270px;
+    width: 110%;
     .shortcut {
       @extend .shortcut;
     }

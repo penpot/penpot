@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
@@ -138,7 +139,6 @@
                :decode-fn decode-fn})]
 
     [:& (mf/provider context) {:value context-value}
-     [:div {:class (stl/css-case :radio-btn-wrapper true
-                                 class true)
-            :style  {:width width}}
+     [:div {:class (dm/str class " " (stl/css :radio-btn-wrapper))
+            :style {:width width}}
       children]]))

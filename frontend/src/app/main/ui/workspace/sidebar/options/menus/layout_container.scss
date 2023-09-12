@@ -8,8 +8,9 @@
 
 .element-set {
   .element-title {
+    margin-right: $s-12;
     .title-spacing-layout {
-      margin: 0 0 $s-4 0;
+      margin: 0;
     }
 
     .title-actions {
@@ -39,6 +40,7 @@
       display: flex;
       gap: $s-4;
       margin-bottom: $s-12;
+      margin-top: $s-4;
       .wrap-button {
         @extend .button-tertiary;
         border-radius: $br-8;

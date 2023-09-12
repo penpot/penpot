@@ -128,7 +128,7 @@
   --pill-foreground-color: var(--color-foreground-primary);
 
   --menu-background-color: var(--color-background-tertiary);
-  --menu-foreground-color: var(--color-foreground-secondary);
+  --menu-foreground-color: var(--color-foreground-primary);
   --menu-background-color-selected: var(--color-background-tertiary);
   --menu-foreground-color-selected: var(--color-foreground-primary);
   --menu-background-color-hover: var(--color-background-quaternary);
@@ -175,7 +175,7 @@
   --assets-component-background-color: var(--white); // We don't want this color to change with palette
 
   --radio-btns-background-color: var(--color-background-tertiary);
-  --radio-btn-background-color-selected: var(--color-background-primary);
+  --radio-btn-background-color-selected: var(--color-background-quaternary);
   --radio-btn-foreground-color: var(--color-foreground-secondary);
   --radio-btn-foreground-color-selected: var(--color-accent-primary);
   --radio-btn-border-color-selected: var(--color-background-quaternary);
