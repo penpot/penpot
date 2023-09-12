@@ -3479,6 +3479,12 @@ msgstr "Crear una nota"
 msgid "workspace.options.component.edit-annotation"
 msgstr "Editar una nota"
 
+msgid "workspace.options.component.main"
+msgstr "PRINCIPAL"
+
+msgid "workspace.options.component.copy"
+msgstr "COPIA"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
 msgstr "Restricciones"
