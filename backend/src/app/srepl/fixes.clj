@@ -8,6 +8,7 @@
   "A collection of adhoc fixes scripts."
   (:require
    [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.common.logging :as l]
    [app.common.pages.helpers :as cph]
    [app.common.pprint :refer [pprint]]
@@ -325,6 +326,61 @@
                      {:data data
                       ;; :revn (:revn file)
                       }
+                     {:id (:id file)})
+
+         (files/persist-pointers! h/*conn* (:id file)))))))
+
+(defn fix-touched
+  "For all copies, compare all synced attributes with the main, and set the touched attribute if needed."
+  ([file]
+   (let [libraries (->> (files/get-file-libraries app.srepl.helpers/*conn* (:id file))
+                        (map #(files/get-file app.srepl.helpers/*conn* (:id %) (:features file)))
+                        (d/index-by :id))
+
+         update-shape (fn [page shape]
+                        (if (ctk/in-component-copy? shape)
+                          (let [ref-shape (ctf/find-ref-shape file
+                                                              (:objects page)
+                                                              libraries
+                                                              shape
+                                                              :include-deleted? true)
+                                fix-touched-attr
+                                (fn [shape [attr group]]
+                                  (if (nil? ref-shape)
+                                    shape
+                                    (let [equal?
+                                          (if (= group :geometry-group)
+                                            (if (#{:width :height} attr)
+                                              (gsh/close-attrs? attr (get shape attr) (get ref-shape attr) 1)
+                                              true)
+                                            (gsh/close-attrs? attr (get shape attr) (get ref-shape attr)))]
+                                      (when (and (not equal?) (not (cph/touched-group? shape group)))
+                                        (prn (str " -> set touched " (:name shape) " " (:id shape) " " attr " " group " ")))
+                                      (cond-> shape
+                                        (and (not equal?) (not (cph/touched-group? shape group)))
+                                        (update :touched cph/set-touched-group group)))))]
+
+                            (reduce fix-touched-attr
+                                    shape
+                                    (assoc ctk/sync-attrs :shapes :shapes-group)))
+                          shape))
+
+         update-page (fn [page]
+                       (prn (str "Page " (:name page)))
+                       (h/update-shapes page (partial update-shape page)))]
+
+     (prn (str "Updating " (:name file) " " (:id file)))
+     (update file :data h/update-pages update-page)))
+
+  ([file save?]
+   (let [file (-> file
+                  (update :data blob/decode)
+                  (fix-touched))]
+     (when save?
+       (let [data     (blob/encode (:data file))]
+         (db/update! h/*conn* :file
+                     {:data data
+                      :revn (inc (:revn file))}
                      {:id (:id file)})
 
          (files/persist-pointers! h/*conn* (:id file)))))))
