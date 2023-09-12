@@ -18,6 +18,8 @@
 
 (def no-repeat-padding 1.05)
 
+;; FIXME: this component breaks hooks rules
+
 (mf/defc fills
   {::mf/wrap-props false}
   [props]

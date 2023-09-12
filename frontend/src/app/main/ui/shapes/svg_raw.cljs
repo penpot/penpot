@@ -22,8 +22,8 @@
 (def svg-ids-ctx (mf/create-context nil))
 
 (defn set-styles [attrs shape render-id]
-  (let [custom-attrs (-> (usa/extract-style-attrs shape render-id)
-                         (obj/without ["transform"]))
+  (let [custom-attrs (-> (usa/get-style-props shape render-id)
+                         (obj/unset! "transform"))
 
         attrs (or attrs {})
         attrs (cond-> attrs

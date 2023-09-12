@@ -28,7 +28,7 @@
         rid   (mf/use-ctx muc/render-id)
 
         props (mf/with-memo [shape rid]
-                (-> (attrs/extract-style-attrs shape rid)
+                (-> (attrs/get-style-props shape rid)
                     (obj/merge! #js {:x x :y y :transform t :width w :height h})))
 
         path? (some? (.-d props))]

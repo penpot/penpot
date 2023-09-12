@@ -30,7 +30,7 @@
                        "")))
 
         render-id   (mf/use-ctx muc/render-id)
-        props   (-> (attrs/extract-style-attrs shape render-id)
+        props   (-> (attrs/get-style-props shape render-id)
                     (obj/set! "d" pdata))]
 
     [:& shape-custom-strokes {:shape shape}

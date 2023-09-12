@@ -394,8 +394,8 @@
                          (obj/set! props "filter" (dm/fmt "url(#filter_%)" render-id))
                          props))
 
-        svg-attrs    (attrs/get-svg-attrs shape render-id)
-        svg-styles   (get svg-attrs :style {})]
+        svg-attrs    (attrs/get-svg-props shape render-id)
+        svg-styles   (obj/get svg-attrs "style")]
 
     (cond
       ^boolean url-fill?
@@ -404,22 +404,22 @@
         (obj/unset! style "fillOpacity")
         (obj/set! props "fill" (dm/fmt "url(#fill-%-%)" position render-id)))
 
-      (and ^boolean (or (contains? svg-styles :fill)
-                        (contains? svg-styles :fillOpacity))
+      (and ^boolean (or (obj/contains? svg-styles "fill")
+                        (obj/contains? svg-styles "fillOpacity"))
            ^boolean (obj/contains? svg-styles "fill"))
 
-      (let [fill    (get svg-styles :fill)
-            opacity (get svg-styles :fillOpacity)]
+      (let [fill    (obj/get svg-styles "fill")
+            opacity (obj/get svg-styles "fillOpacity")]
         (when (some? fill)
           (obj/set! style "fill" fill))
         (when (some? opacity)
           (obj/set! style "fillOpacity" opacity)))
 
-      (and ^boolean (or (contains? svg-attrs :fill)
-                        (contains? svg-attrs :fillOpacity))
+      (and ^boolean (or (obj/contains? svg-attrs "fill")
+                        (obj/contains? svg-attrs "fillOpacity"))
            ^boolean (empty? shape-fills))
-      (let [fill    (get svg-attrs :fill)
-            opacity (get svg-attrs :fillOpacity)]
+      (let [fill    (obj/get svg-attrs "fill")
+            opacity (obj/get svg-attrs "fillOpacity")]
         (when (some? fill)
           (obj/set! style "fill" fill))
         (when (some? opacity)

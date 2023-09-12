@@ -50,7 +50,8 @@
                              :y y
                              :width width
                              :height height}
-                        (attrs/add-style-attrs shape render-id))
+                        (attrs/add-fill-props! shape render-id)
+                        (attrs/add-border-props! shape))
         get-gradient-id
         (fn [index]
           (str render-id "_" (:id shape) "_" index))]
