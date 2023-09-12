@@ -656,17 +656,13 @@
       (str " #" (when show-ids (str/format " [Component %s]" (:component-id shape))))
       "")
     (let [root-shape        (ctn/get-component-shape objects shape)
-          component-id      (when root-shape (:component-id root-shape))
           component-file-id (when root-shape (:component-file root-shape))
           component-file    (when component-file-id (get libraries component-file-id nil))
-          component         (when component-id
-                              (if component-file
-                                (ctkl/get-component (:data component-file) component-id true)
-                                (ctkl/get-component (:data file) component-id true)))
-          component-shape   (when component
-                              (if component-file
-                                (get-ref-shape (:data component-file) component shape)
-                                (get-ref-shape (:data file) component shape)))]
+          component-shape (find-ref-shape file
+                                          {:objects objects}
+                                          libraries
+                                          shape
+                                          :include-deleted? true)]
 
       (str/format " %s--> %s%s%s%s%s"
                   (cond (:component-root shape) "#"
