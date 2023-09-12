@@ -39,15 +39,8 @@
         current-label  (get label-index current-value)
         is-open?       (:is-open? state)
 
-        open-dropdown  (mf/use-fn
-                        (fn [event]
-                          (dom/stop-propagation event)
-                          (swap! state* assoc :is-open? true)))
-
-        close-dropdown (mf/use-fn
-                        (fn [event]
-                          (dom/stop-propagation event)
-                          (swap! state* assoc :is-open? false)))
+        open-dropdown  (mf/use-fn #(swap! state* assoc :is-open? true))
+        close-dropdown (mf/use-fn #(swap! state* assoc :is-open? false))
 
         select-item
         (mf/use-fn
