@@ -168,7 +168,11 @@
                      (rx/tap #(reset! last-point-ref %))
                      ;; When transforming shapes we stop querying the worker
                      (rx/merge-map query-point)))
-               (rx/throttle 100)))]
+
+               (rx/share)))
+
+        over-shapes-stream-debounced
+        (->> over-shapes-stream (rx/debounce 50))]
 
     ;; Refresh the refs on a value change
     (mf/use-effect
@@ -196,6 +200,12 @@
     (mf/use-effect
      (mf/deps focus)
      #(mf/set-ref-val! focus-ref focus))
+
+    (hooks/use-stream
+     over-shapes-stream-debounced
+     (mf/deps objects)
+     (fn [_]
+       (reset! hover-top-frame-id (ctt/top-nested-frame objects (deref last-point-ref)))))
 
     (hooks/use-stream
      over-shapes-stream
@@ -256,8 +266,7 @@
                   (get objects))]
 
          (reset! hover hover-shape)
-         (reset! hover-ids ids)
-         (reset! hover-top-frame-id (ctt/top-nested-frame objects (deref last-point-ref))))))))
+         (reset! hover-ids ids))))))
 
 (defn setup-viewport-modifiers
   [modifiers objects]
