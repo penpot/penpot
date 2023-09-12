@@ -6,7 +6,9 @@
 
 (ns app.main.ui.shapes.rect
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [app.util.object :as obj]
@@ -16,16 +18,18 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
-        {:keys [x y width height]} shape
-        transform (gsh/transform-str shape)
 
-        props (-> (attrs/extract-style-attrs shape)
-                  (obj/merge!
-                   #js {:x x
-                        :y y
-                        :transform transform
-                        :width width
-                        :height height}))
+        x     (dm/get-prop shape :x)
+        y     (dm/get-prop shape :y)
+        w     (dm/get-prop shape :width)
+        h     (dm/get-prop shape :height)
+
+        t     (gsh/transform-str shape)
+        rid   (mf/use-ctx muc/render-id)
+
+        props (mf/with-memo [shape rid]
+                (-> (attrs/extract-style-attrs shape rid)
+                    (obj/merge! #js {:x x :y y :transform t :width w :height h})))
 
         path? (some? (.-d props))]
 
