@@ -22,45 +22,57 @@
   {::mf/wrap-props false}
   [props]
 
-  (let [shape     (obj/get props "shape")
-        render-id (obj/get props "render-id")]
+  (let [shape       (unchecked-get props "shape")
+        render-id   (unchecked-get props "render-id")
 
-    (when (or (some? (:fill-image shape))
-              (#{:image :text} (:type shape))
-              (> (count (:fills shape)) 1)
-              (some :fill-color-gradient (:fills shape)))
+        shape-type  (dm/get-prop shape :type)
+        fill-image  (:fill-image shape)
+        shape-fills (:fills shape [])]
 
-      (let [{:keys [x y width height]} (:selrect shape)
-            {:keys [metadata]} shape
+    (when (or (some? fill-image)
+              (or (= shape-type :image)
+                  (= shape-type :text))
+              (> (count shape-fills) 1)
+              (some :fill-color-gradient shape-fills))
 
-            has-image? (or metadata (:fill-image shape))
+      (let [selrect    (dm/get-prop shape :selrect)
+            metadata   (get shape :metadata)
+            x          (dm/get-prop selrect :x)
+            y          (dm/get-prop selrect :y)
+            width      (dm/get-prop selrect :width)
+            height     (dm/get-prop selrect :height)
 
-            uri (cond
-                  metadata
-                  (cfg/resolve-file-media metadata)
+            has-image? (or (some? metadata)
+                           (some? fill-image))
 
-                  (:fill-image shape)
-                  (cfg/resolve-file-media (:fill-image shape)))
+            uri        (cond
+                         (some? metadata)
+                         (cfg/resolve-file-media metadata)
 
-            embed (embed/use-data-uris [uri])
-            transform (gsh/transform-str shape)
+                         (some? fill-image)
+                         (cfg/resolve-file-media fill-image))
+
+            embed      (embed/use-data-uris [uri])
+            transform  (gsh/transform-str shape)
 
             ;; When true the image has not loaded yet
-            loading? (and (some? uri) (not (contains? embed uri)))
+            loading?   (and (some? uri)
+                            (not (contains? embed uri)))
 
-            pattern-attrs (cond-> #js {:patternUnits "userSpaceOnUse"
-                                       :x x
-                                       :y y
-                                       :height height
-                                       :width width
-                                       :data-loading loading?}
-                            (= :path (:type shape))
-                            (obj/set! "patternTransform" transform))
-            type (:type shape)]
+            pat-props  #js {:patternUnits "userSpaceOnUse"
+                            :x x
+                            :y y
+                            :width width
+                            :height height
+                            :data-loading loading?}
+
+            pat-props  (if (= :path shape-type)
+                         (obj/set! pat-props "patternTransform" transform)
+                         pat-props)]
 
         (for [[shape-index shape] (d/enumerate (or (:position-data shape) [shape]))]
           [:* {:key (dm/str shape-index)}
-           (for [[fill-index value] (-> (d/enumerate (:fills shape [])) reverse)]
+           (for [[fill-index value] (reverse (d/enumerate shape-fills))]
              (when (some? (:fill-color-gradient value))
                (let [gradient  (:fill-color-gradient value)
                      props #js {:id (dm/str "fill-color-gradient_" render-id "_" fill-index)
@@ -73,21 +85,21 @@
 
 
            (let [fill-id (dm/str "fill-" shape-index "-" render-id)]
-             [:> :pattern (-> (obj/clone pattern-attrs)
+             [:> :pattern (-> (obj/clone pat-props)
                               (obj/set! "id" fill-id)
                               (cond-> has-image?
                                 (-> (obj/set! "width" (* width no-repeat-padding))
                                     (obj/set! "height" (* height no-repeat-padding)))))
               [:g
-               (for [[fill-index value] (-> (d/enumerate (:fills shape [])) reverse)]
-                 (let [style (attrs/get-fill-style value fill-index render-id type)
+               (for [[fill-index value] (reverse (d/enumerate shape-fills))]
+                 (let [style (attrs/get-fill-style value fill-index render-id shape-type)
                        props #js {:key (dm/str fill-index)
                                   :width width
                                   :height height
                                   :style style}]
                    [:> :rect props]))
 
-               (when has-image?
+               (when ^boolean has-image?
                  [:g
                   ;; We add this shape to add a padding so the patter won't repeat
                   ;; Issue: https://tree.taiga.io/project/penpot/issue/5583
