@@ -177,15 +177,26 @@
 (defn find-ref-shape
   "Locate the near component in the local file or libraries, and retrieve the shape
    referenced by the instance shape."
-  [file page libraries shape]
+  [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
   (let [root-shape     (ctn/get-component-shape (:objects page) shape)
         component-file (if (= (:component-file root-shape) (:id file))
                          file
                          (get libraries (:component-file root-shape)))
         component      (when component-file
-                         (ctkl/get-component (:data component-file) (:component-id root-shape)))]
-    (when component
-      (get-ref-shape (:data component-file) component shape))))
+                         (ctkl/get-component (:data component-file) (:component-id root-shape) include-deleted?))
+        ref-shape (when component
+                    (get-ref-shape (:data component-file) component shape))]
+
+    (if (some? ref-shape)  ; There is a case when we have a nested orphan copy. In this case there is no near
+      ref-shape            ; component for this copy, so shape-ref points to the remote main.
+      (let [head-shape     (ctn/get-head-shape (:objects page) shape)
+            head-file (if (= (:component-file head-shape) (:id file))
+                        file
+                        (get libraries (:component-file head-shape)))
+            head-component      (when (some? head-file)
+                                  (ctkl/get-component (:data head-file) (:component-id head-shape) include-deleted?))]
+        (when (some? head-component)
+          (get-ref-shape (:data head-file) head-component shape))))))
 
 (defn find-remote-shape
   "Recursively go back by the :shape-ref of the shape until find the correct shape of the original component"
