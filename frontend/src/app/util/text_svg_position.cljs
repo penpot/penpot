@@ -12,22 +12,21 @@
    [app.main.fonts :as fonts]
    [app.util.dom :as dom]
    [app.util.text-position-data :as tpd]
+   [cuerdas.core :as str]
    [promesa.core :as p]))
 
 (defn parse-text-nodes
   "Given a text node retrieves the rectangles for everyone of its paragraphs and its text."
   [parent-node direction text-node text-align]
-
   (letfn [(parse-entry [^js entry]
             (when (some? (.-position entry))
               {:node      (.-node entry)
                :position  (dom/bounding-rect->rect (.-position entry))
                :text      (.-text entry)
                :direction direction}))]
-    (into
-     []
-     (keep parse-entry)
-     (tpd/parse-text-nodes parent-node text-node text-align))))
+    (into []
+          (keep parse-entry)
+          (tpd/parse-text-nodes parent-node text-node text-align))))
 
 (def load-promises (atom {}))
 
@@ -40,51 +39,51 @@
       load-promise)))
 
 (defn resolve-font
-  [^js node]
+  [node]
+  (let [styles  (dom/get-computed-styles node)
+        font    (dom/get-property-value styles "font")
+        font    (if (or (not font) (empty? font))
+                  ;; Firefox 95 won't return the font correctly.
+                  ;; We can get the font shorthand with the font-size + font-family
+                  (str/ffmt "% %"
+                            (dom/get-property-value styles "font-size")
+                            (dom/get-property-value styles "font-family"))
+                  font)
 
-  (let [styles (js/getComputedStyle node)
-        font (.getPropertyValue styles "font")
-        font (if (or (not font) (empty? font))
-               ;; Firefox 95 won't return the font correctly.
-               ;; We can get the font shorthand with the font-size + font-family
-               (dm/str (.getPropertyValue styles "font-size")
-                       " "
-                       (.getPropertyValue styles "font-family"))
-               font)
+        font-id (dom/get-property-value styles "--font-id")]
 
-        font-id (.getPropertyValue styles "--font-id")]
+    (->> (fonts/ensure-loaded! font-id)
+         (p/fmap (fn []
+                   (when-not ^boolean (dom/check-font? font)
+                     (load-font font))))
+         (p/merr (fn [_cause]
+                   (js/console.error (str/ffmt "Cannot load font %" font-id))
+                   (p/resolved nil))))))
 
-    (-> (fonts/ensure-loaded! font-id)
-        (p/then #(when (not (dom/check-font? font))
-                   (load-font font)))
-        (p/catch #(.error js/console (dm/str "Cannot load font " font-id) %)))))
+
+(defn- process-text-node
+  [parent-node]
+  (let [root       (dom/get-parent-with-selector parent-node ".text-node-html")
+        paragraph  (dom/get-parent-with-selector parent-node ".paragraph")
+        shape-x    (d/parse-double (dom/get-attribute root "data-x"))
+        shape-y    (d/parse-double (dom/get-attribute root "data-y"))
+        direction  (.-direction ^js (dom/get-computed-styles parent-node))
+        text-align (.-textAlign ^js (dom/get-computed-styles paragraph))]
+
+    (sequence
+     (comp
+      (mapcat #(parse-text-nodes parent-node direction % text-align))
+      (map #(-> %
+                (update-in [:position :x] + shape-x)
+                (update-in [:position :y] + shape-y))))
+     (seq (.-childNodes parent-node)))))
 
 (defn- calc-text-node-positions
   [shape-id]
-
-  (when (some? shape-id)
-    (let [text-nodes (-> (dom/query (dm/fmt "#html-text-node-%" shape-id))
-                         (dom/query-all ".text-node"))
-          load-fonts (->> text-nodes (map resolve-font))
-
-          process-text-node
-          (fn [parent-node]
-            (let [root (dom/get-parent-with-selector parent-node ".text-node-html")
-                  paragraph (dom/get-parent-with-selector parent-node ".paragraph")
-                  shape-x (-> (dom/get-attribute root "data-x") d/parse-double)
-                  shape-y (-> (dom/get-attribute root "data-y") d/parse-double)
-                  direction (.-direction (js/getComputedStyle parent-node))
-                  text-align (.-textAlign (js/getComputedStyle paragraph))]
-
-              (->> (.-childNodes parent-node)
-                   (mapcat #(parse-text-nodes parent-node direction % text-align))
-                   (mapv #(-> %
-                              (update-in [:position :x] + shape-x)
-                              (update-in [:position :y] + shape-y))))))]
-      (-> (p/all load-fonts)
-          (p/then
-           (fn []
-             (->> text-nodes (mapcat process-text-node))))))))
+  (let [text-nodes (-> (dom/query (dm/fmt "#html-text-node-%" shape-id))
+                       (dom/query-all ".text-node"))]
+    (->> (p/all (map resolve-font text-nodes))
+         (p/fmap #(mapcat process-text-node text-nodes)))))
 
 (defn calc-position-data
   [shape-id]
@@ -94,7 +93,7 @@
                 value)))
 
           (transform-data [{:keys [node position text direction]}]
-            (let [styles   (js/getComputedStyle ^js node)
+            (let [styles   (dom/get-computed-styles node)
                   position (assoc position :y (+ (dm/get-prop position :y)
                                                  (dm/get-prop position :height)))]
               (into position (filter val)

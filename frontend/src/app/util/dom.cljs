@@ -420,6 +420,14 @@
   {:width (.-innerWidth ^js js/window)
    :height (.-innerHeight ^js js/window)})
 
+(defn get-computed-styles
+  [node]
+  (js/getComputedStyle node))
+
+(defn get-property-value
+  [o prop]
+  (.getPropertyValue ^js o prop))
+
 (defn focus!
   [^js node]
   (when (some? node)
