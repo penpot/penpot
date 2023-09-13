@@ -4145,12 +4145,24 @@ msgid "workspace.options.stroke-cap.circle-marker"
 msgstr "Circle marker"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Circle"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.diamond-marker"
 msgstr "Diamond marker"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Diamond"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.line-arrow"
 msgstr "Line arrow"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "Arrow"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.none"
@@ -4169,8 +4181,16 @@ msgid "workspace.options.stroke-cap.square-marker"
 msgstr "Square marker"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Rectangle"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Triangle arrow"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Triangle"
 
 msgid "workspace.options.stroke-color"
 msgstr "Stroke color"

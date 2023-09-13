@@ -151,7 +151,6 @@
                        :class (stl/css :remove-btn)}
                i/remove-refactor]]
 
-
             (seq (:fills values))
             [:& h/sortable-container {}
              (for [[index value] (d/enumerate (:fills values []))]

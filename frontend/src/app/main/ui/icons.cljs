@@ -276,7 +276,6 @@
 (def align-content-row-between-refactor (icon-xref :align-content-row-between-refactor))
 (def align-content-row-evenly-refactor (icon-xref :align-content-row-evenly-refactor))
 (def align-content-row-start-refactor (icon-xref :align-content-row-start-refactor))
-
 (def align-horizontal-center-refactor (icon-xref :align-horizontal-center-refactor))
 (def align-vertical-center-refactor (icon-xref :align-vertical-center-refactor))
 (def align-items-row-center-refactor (icon-xref :align-items-row-center-refactor))
@@ -400,6 +399,7 @@
 (def stroke-size-refactor (icon-xref :stroke-size-refactor))
 (def svg-refactor (icon-xref :svg-refactor))
 (def swatches-refactor (icon-xref :swatches-refactor))
+(def switch-refactor (icon-xref :switch-refactor))
 (def text-align-center-refactor (icon-xref :text-align-center-refactor))
 (def text-align-left-refactor (icon-xref :text-align-left-refactor))
 (def text-align-right-refactor (icon-xref :text-align-right-refactor))

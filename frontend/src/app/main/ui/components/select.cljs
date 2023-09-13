@@ -86,7 +86,8 @@
         [:ul {:class (css :custom-select-dropdown)}
          (for [[index item] (d/enumerate options)]
            (if (= :separator item)
-             [:hr {:key (dm/str current-id "-" index)}]
+             [:li {:class (dom/classnames (css :separator) true)
+                   :key (dm/str current-id "-" index)}]
              (let [[value label] (as-key-value item)]
                [:li
                 {:key (dm/str current-id "-" index)
@@ -99,6 +100,7 @@
                  :on-click select-item}
                 [:span {:class (css :label)} label]
                 [:span {:class (css :check-icon)} i/tick-refactor]])))]]]
+
 
       [:div.custom-select {:on-click open-dropdown :class class}
        [:span current-label]

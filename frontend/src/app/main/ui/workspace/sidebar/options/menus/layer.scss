@@ -16,13 +16,13 @@
       width: $s-124;
       margin: 0;
       padding: 0;
-      border: 1px solid var(--input-background-color);
+      border: $s-1 solid var(--input-background-color);
     }
     .input {
       @extend .input-element;
       width: $s-60;
       padding-left: $s-8;
-      border: 1px solid var(--input-background-color);
+      border: $s-1 solid var(--input-background-color);
       .icon {
         @include flexCenter;
         margin-right: $s-4;
@@ -54,12 +54,12 @@
     &.hidden {
       .select {
         background-color: transparent;
-        border: 1px solid var(--input-border-color-disabled);
+        border: $s-1 solid var(--input-border-color-disabled);
         color: var(--input-foreground-color-disabled);
       }
       .input {
         background-color: transparent;
-        border: 1px solid var(--input-border-color-disabled);
+        border: $s-1 solid var(--input-border-color-disabled);
         color: var(--input-foreground-color-disable);
 
         .icon {

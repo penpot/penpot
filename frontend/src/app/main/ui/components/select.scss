@@ -38,6 +38,10 @@
     z-index: $z-index-3;
     overflow-y: auto;
     background-color: var(--menu-background-color);
+    .separator {
+      margin: 0;
+      height: $s-12;
+    }
   }
   .checked-element {
     display: flex;
