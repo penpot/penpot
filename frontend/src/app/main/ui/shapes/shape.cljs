@@ -21,8 +21,7 @@
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
-;; FIXME: revisit this: breaks all memoization because of this new
-;; property added to shapes
+;; FIXME: revisit this:
 (defn propagate-wrapper-styles-child
   [child wrapper-props]
   (let [child-props-childs

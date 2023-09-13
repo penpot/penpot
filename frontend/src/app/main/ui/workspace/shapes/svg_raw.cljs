@@ -6,10 +6,10 @@
 
 (ns app.main.ui.workspace.shapes.svg-raw
   (:require
+   [app.common.svg :as csvg]
    [app.main.refs :as refs]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
-   [app.util.svg :as usvg]
    [rumext.v2 :as mf]))
 
 (defn svg-raw-wrapper-factory
@@ -23,7 +23,7 @@
             childs-ref (mf/use-memo (mf/deps (:id shape)) #(refs/children-objects (:id shape)))
             childs     (mf/deref childs-ref)
             svg-tag    (get-in shape [:content :tag])]
-        (if (contains? usvg/svg-group-safe-tags svg-tag)
+        (if (contains? csvg/svg-group-safe-tags svg-tag)
           [:> shape-container {:shape shape}
            [:& svg-raw-shape {:shape shape
                               :childs childs}]]
