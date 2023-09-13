@@ -16,7 +16,6 @@
 (def current-project-id   (mf/create-context nil))
 (def current-page-id      (mf/create-context nil))
 (def current-file-id      (mf/create-context nil))
-(def current-vbox         (mf/create-context nil))
 
 (def active-frames        (mf/create-context nil))
 (def render-thumbnails    (mf/create-context nil))
