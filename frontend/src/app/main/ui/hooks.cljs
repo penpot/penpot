@@ -20,6 +20,13 @@
    [goog.functions :as f]
    [rumext.v2 :as mf]))
 
+(def ^:private render-id 0)
+
+(defn use-render-id
+  "Get a stable, DOM usable identifier across all react rerenders"
+  []
+  (mf/useMemo #(js* "\"render-\" + (++~{})" render-id) #js []))
+
 (defn use-rxsub
   [ob]
   (let [[state reset-state!] (mf/useState #(if (satisfies? IDeref ob) @ob nil))]

@@ -62,13 +62,14 @@
           [:* {:key (dm/str shape-index)}
            (for [[fill-index value] (-> (d/enumerate (:fills shape [])) reverse)]
              (when (some? (:fill-color-gradient value))
-               (let [props #js {:id (dm/str "fill-color-gradient_" render-id "_" fill-index)
+               (let [gradient  (:fill-color-gradient value)
+                     props #js {:id (dm/str "fill-color-gradient_" render-id "_" fill-index)
                                 :key (dm/str fill-index)
-                                :gradient (:fill-color-gradient value)
+                                :gradient gradient
                                 :shape shape}]
-                 (case (d/name (:type (:fill-color-gradient value)))
-                   "linear" [:> grad/linear-gradient props]
-                   "radial" [:> grad/radial-gradient props]))))
+                 (case (:type gradient)
+                   :linear [:> grad/linear-gradient props]
+                   :radial [:> grad/radial-gradient props]))))
 
 
            (let [fill-id (dm/str "fill-" shape-index "-" render-id)]
@@ -79,10 +80,12 @@
                                     (obj/set! "height" (* height no-repeat-padding)))))
               [:g
                (for [[fill-index value] (-> (d/enumerate (:fills shape [])) reverse)]
-                 [:> :rect (-> (attrs/extract-fill-attrs value render-id fill-index type)
-                               (obj/set! "key" (dm/str fill-index))
-                               (obj/set! "width" width)
-                               (obj/set! "height" height))])
+                 (let [style (attrs/get-fill-style value fill-index render-id type)
+                       props #js {:key (dm/str fill-index)
+                                  :width width
+                                  :height height
+                                  :style style}]
+                   [:> :rect props]))
 
                (when has-image?
                  [:g
