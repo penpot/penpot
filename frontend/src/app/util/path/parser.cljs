@@ -10,10 +10,9 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as upg]
    [app.common.path.commands :as upc]
+   [app.common.svg :as csvg]
    [app.util.path.arc-to-curve :refer [a2c]]
-   [app.util.svg :as usvg]
    [cuerdas.core :as str]))
-
 ;;
 (def commands-regex #"(?i)[mzlhvcsqta][^mzlhvcsqta]*")
 
@@ -36,7 +35,7 @@
           match (re-find regex remain)]
 
       (if match
-        (let [value (-> match first usvg/fix-dot-number d/read-string)
+        (let [value (-> match first csvg/fix-dot-number d/read-string)
               remain (str/replace-first remain regex "")
               current (assoc current param value)
               extract-idx (inc extract-idx)

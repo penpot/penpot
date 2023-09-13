@@ -18,6 +18,7 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm :refer [max-safe-int min-safe-int]]
+   [app.common.svg :as csvg]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.main.data.workspace.changes :as dch]
@@ -27,7 +28,6 @@
    [app.main.repo :as rp]
    [app.util.color :as uc]
    [app.util.path.parser :as upp]
-   [app.util.svg :as usvg]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -207,7 +207,7 @@
     :x x
     :y y
     :content (cond-> data
-               (map? data) (update :attrs usvg/clean-attrs))
+               (map? data) (update :attrs csvg/clean-attrs))
     :svg-attrs attrs
     :svg-viewbox {:width width
                   :height height
@@ -228,11 +228,11 @@
     :svg-attrs (-> attrs
                    (dissoc :viewBox)
                    (dissoc :xmlns)
-                   (d/without-keys usvg/inheritable-props))}))
+                   (d/without-keys csvg/inheritable-props))}))
 
 (defn create-group
   [name frame-id {:keys [x y width height offset-x offset-y] :as svg-data} {:keys [attrs]}]
-  (let [svg-transform (usvg/parse-transform (:transform attrs))]
+  (let [svg-transform (csvg/parse-transform (:transform attrs))]
     (cts/setup-shape
      {:type :group
       :name name
@@ -242,7 +242,7 @@
       :width width
       :height height
       :svg-transform svg-transform
-      :svg-attrs (d/without-keys attrs usvg/inheritable-props)
+      :svg-attrs (d/without-keys attrs csvg/inheritable-props)
 
       :svg-viewbox {:width width
                     :height height
@@ -252,7 +252,7 @@
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (when (and (contains? attrs :d) (seq (:d attrs)))
 
-    (let [svg-transform (usvg/parse-transform (:transform attrs))
+    (let [svg-transform (csvg/parse-transform (:transform attrs))
           path-content  (upp/parse-path (:d attrs))
           content       (cond-> path-content
                           svg-transform
@@ -299,7 +299,7 @@
    :height (d/parse-double height 1)})
 
 (defn create-rect-shape [name frame-id svg-data {:keys [attrs] :as data}]
-  (let [transform (->> (usvg/parse-transform (:transform attrs))
+  (let [transform (->> (csvg/parse-transform (:transform attrs))
                        (gmt/transform-in (gpt/point svg-data)))
 
         origin    (gpt/negate (gpt/point svg-data))
@@ -331,7 +331,7 @@
   (let [[cx cy r rx ry]
         (parse-circle-attrs attrs)
 
-        transform (->> (usvg/parse-transform (:transform attrs))
+        transform (->> (csvg/parse-transform (:transform attrs))
                        (gmt/transform-in (gpt/point svg-data)))
 
         rx        (or r rx)
@@ -352,7 +352,7 @@
          (assoc :svg-attrs (dissoc attrs :cx :cy :r :rx :ry :transform))))))
 
 (defn create-image-shape [name frame-id svg-data {:keys [attrs] :as data}]
-  (let [transform  (->> (usvg/parse-transform (:transform attrs))
+  (let [transform  (->> (csvg/parse-transform (:transform attrs))
                         (gmt/transform-in (gpt/point svg-data)))
 
         image-url  (or (:href attrs) (:xlink:href attrs))
@@ -381,11 +381,11 @@
 
 
 (defn parse-svg-element [frame-id svg-data {:keys [tag attrs hidden] :as element-data} unames]
-  (let [attrs        (usvg/format-styles attrs)
+  (let [attrs        (csvg/format-styles attrs)
         element-data (cond-> element-data (map? element-data) (assoc :attrs attrs))
         name         (or (:id attrs) (tag->name tag))
-        att-refs     (usvg/find-attr-references attrs)
-        references   (usvg/find-def-references (:defs svg-data) att-refs)
+        att-refs     (csvg/find-attr-references attrs)
+        references   (csvg/find-def-references (:defs svg-data) att-refs)
 
         href-id      (-> (or (:href attrs) (:xlink:href attrs) "") (subs 1))
         defs         (:defs svg-data)
@@ -401,7 +401,7 @@
             element-data (-> element-data
                              (assoc :tag :g)
                              (update :attrs dissoc :x :y :width :height :href :xlink:href :transform)
-                             (update :attrs usvg/add-transform disp-matrix)
+                             (update :attrs csvg/add-transform disp-matrix)
                              (assoc :content [use-data]))]
         (parse-svg-element frame-id svg-data element-data unames))
 
@@ -413,9 +413,9 @@
                         (:circle
                          :ellipse)   (create-circle-shape name frame-id svg-data element-data)
                         :path        (create-path-shape name frame-id svg-data element-data)
-                        :polyline    (create-path-shape name frame-id svg-data (-> element-data usvg/polyline->path))
-                        :polygon     (create-path-shape name frame-id svg-data (-> element-data usvg/polygon->path))
-                        :line        (create-path-shape name frame-id svg-data (-> element-data usvg/line->path))
+                        :polyline    (create-path-shape name frame-id svg-data (-> element-data csvg/polyline->path))
+                        :polygon     (create-path-shape name frame-id svg-data (-> element-data csvg/polygon->path))
+                        :line        (create-path-shape name frame-id svg-data (-> element-data csvg/line->path))
                         :image       (create-image-shape name frame-id svg-data element-data)
                         #_other      (create-raw-svg name frame-id svg-data element-data)))]
         (when (some? shape)
@@ -429,8 +429,8 @@
                hidden (assoc :hidden true))
 
              (cond->> (:content element-data)
-               (contains? usvg/parent-tags tag)
-               (mapv #(usvg/inherit-attributes attrs %)))]))))))
+               (contains? csvg/parent-tags tag)
+               (mapv #(csvg/inherit-attributes attrs %)))]))))))
 
 (defn create-svg-children
   [objects selected frame-id parent-id svg-data [unames children] [_index svg-element]]
@@ -473,7 +473,7 @@
   "Extract all bitmap images inside the svg data, and upload them, associated to the file.
   Return a map {<url> <image-data>}."
   [svg-data file-id]
-  (->> (rx/from (usvg/collect-images svg-data))
+  (->> (rx/from (csvg/collect-images svg-data))
        (rx/map (fn [uri]
                  (merge
                    {:file-id file-id
@@ -520,9 +520,9 @@
 
         [def-nodes svg-data]
         (-> svg-data
-            (usvg/fix-default-values)
-            (usvg/fix-percents)
-            (usvg/extract-defs))
+            (csvg/fix-default-values)
+            (csvg/fix-percents)
+            (csvg/extract-defs))
 
         svg-data   (assoc svg-data :defs def-nodes)
         root-shape (create-svg-root frame-id parent-id svg-data)
@@ -549,13 +549,13 @@
 
         ;; Create the root shape
         root-attrs (-> (:attrs svg-data)
-                       (usvg/format-styles))
+                       (csvg/format-styles))
 
         [_ children]
         (reduce (partial create-svg-children objects selected frame-id root-id svg-data)
                 [unames []]
                 (d/enumerate (->> (:content svg-data)
-                                  (mapv #(usvg/inherit-attributes root-attrs %)))))]
+                                  (mapv #(csvg/inherit-attributes root-attrs %)))))]
 
     [root-shape children]))
 

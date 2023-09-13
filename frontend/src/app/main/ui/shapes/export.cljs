@@ -11,10 +11,10 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
+   [app.common.svg :as csvg]
    [app.main.ui.context :as muc]
    [app.util.json :as json]
    [app.util.object :as obj]
-   [app.util.svg :as usvg]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -25,7 +25,7 @@
 
   (cond
     (map? node)
-    [:> (d/name tag) (clj->js (usvg/clean-attrs attrs))
+    [:> (d/name tag) (clj->js (csvg/clean-attrs attrs))
      (for [child content]
        [:& render-xml {:xml child}])]
 

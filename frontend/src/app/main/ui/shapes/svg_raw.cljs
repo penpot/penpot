@@ -8,10 +8,10 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.common.svg :as csvg]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as usa]
    [app.util.object :as obj]
-   [app.util.svg :as usvg]
    [rumext.v2 :as mf]))
 
 ;; Graphic tags
@@ -27,7 +27,7 @@
 
         attrs (or attrs {})
         attrs (cond-> attrs
-                (string? (:style attrs)) usvg/clean-attrs)
+                (string? (:style attrs)) csvg/clean-attrs)
         style (obj/merge! (clj->js (:style attrs {}))
                           (obj/get custom-attrs "style"))]
     (-> (clj->js attrs)
@@ -35,7 +35,7 @@
         (obj/set! "style" style))))
 
 (defn translate-shape [attrs shape]
-  (let [transform (dm/str (usvg/svg-transform-matrix shape)
+  (let [transform (dm/str (csvg/svg-transform-matrix shape)
                           " "
                           (:transform attrs ""))]
     (cond-> attrs
@@ -51,7 +51,7 @@
         {:keys [x y width height]} shape
         {:keys [attrs] :as content} (:content shape)
 
-        ids-mapping (mf/use-memo #(usvg/generate-id-mapping content))
+        ids-mapping (mf/use-memo #(csvg/generate-id-mapping content))
         render-id   (mf/use-ctx muc/render-id)
 
         attrs (-> (set-styles attrs shape render-id)
@@ -77,7 +77,7 @@
         ids-mapping (mf/use-ctx svg-ids-ctx)
         render-id   (mf/use-ctx muc/render-id)
 
-        attrs (mf/use-memo #(usvg/replace-attrs-ids attrs ids-mapping))
+        attrs (mf/use-memo #(csvg/replace-attrs-ids attrs ids-mapping))
 
         attrs (translate-shape attrs shape)
         element-id (get-in content [:attrs :id])
@@ -100,7 +100,7 @@
           svg-root?  (and (map? content) (= tag :svg))
           svg-tag?   (map? content)
           svg-leaf?  (string? content)
-          valid-tag? (contains? usvg/svg-tags-list tag)]
+          valid-tag? (contains? csvg/svg-tags-list tag)]
 
       (cond
         svg-root?
