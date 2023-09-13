@@ -28,6 +28,7 @@
    [app.main.store :as st]
    [app.util.http :as http]
    [app.util.i18n :refer [tr]]
+   [app.util.svgo :as svgo]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]
@@ -37,8 +38,9 @@
 (defn svg->clj
   [[name text]]
   (try
-    (->> (rx/of (-> (tubax/xml->clj text)
-                    (assoc :name name))))
+    (let [text (svgo/optimize text)]
+      (->> (rx/of (-> (tubax/xml->clj text)
+                      (assoc :name name)))))
 
     (catch :default _err
       (rx/throw {:type :svg-parser}))))
