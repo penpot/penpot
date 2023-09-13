@@ -99,8 +99,8 @@
         rawsvg?       (= :svg-raw shape-type)
         wrapper-elem  (if ^boolean rawsvg? mf/Fragment "g")
         wrapper-props (if ^boolean rawsvg?
-                        #js {:className "workspace-shape-wrapper"}
-                        #js {})]
+                        #js {}
+                        #js {:className "workspace-shape-wrapper"})]
 
     (when (and (some? shape)
                (not ^boolean (:hidden shape)))
