@@ -15,6 +15,7 @@
    [app.common.fressian :as fres]
    [app.common.logging :as l]
    [app.common.spec :as us]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -386,7 +387,6 @@
 (def ^:dynamic *options* nil)
 
 ;; --- EXPORT WRITER
-
 (defn- embed-file-assets
   [data cfg file-id]
   (letfn [(walk-map-form [form state]
@@ -498,13 +498,17 @@
               :hint "unable to retrieve files for export")))
 
 (defmethod write-section :v1/files
-  [{:keys [::output ::embed-assets?] :as cfg}]
+  [{:keys [::output ::embed-assets? ::include-libraries?] :as cfg}]
 
   ;; Initialize SIDS with empty vector
   (vswap! *state* assoc :sids [])
 
   (doseq [file-id (-> *state* deref :files)]
-    (let [file  (cond-> (get-file cfg file-id)
+    (let [detach? (and (not embed-assets?) (not include-libraries?))
+          file  (cond-> (get-file cfg file-id)
+                  detach?
+                  (-> (ctf/detach-external-references file-id)
+                   (dissoc :libraries))
                   embed-assets?
                   (update :data embed-file-assets cfg file-id))
 
