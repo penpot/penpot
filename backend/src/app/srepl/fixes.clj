@@ -8,6 +8,7 @@
   "A collection of adhoc fixes scripts."
   (:require
    [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.common.logging :as l]
    [app.common.pages.helpers :as cph]
    [app.common.pprint :refer [pprint]]
@@ -30,7 +31,7 @@
         update-page (fn [page]
                       (let [errors (ctf/validate-shape uuid/zero file page libs)]
                         (when (seq errors)
-                          (prn "******Errors in file " (:id file) " page " (:id page))
+                          (println "******Errors in file " (:id file) " page " (:id page))
                           (pprint errors {:level 3}))))]
 
     (update file :data h/update-pages update-page)))
@@ -102,7 +103,7 @@
   ([file]
    (if-not (contains? (:features file) "components/v2")
      (do
-       (prn "   This file is not v2")
+       (println "   This file is not v2")
        file)
      (let [libs (->> (files/get-file-libraries app.srepl.helpers/*conn* (:id file))
                      (cons file)
@@ -154,10 +155,10 @@
                                           (assoc-in p [:objects id :shape-ref] shape-ref))
                                         page
                                         updates)]
-               (prn (str "Page " (:name page) " - Fixing " (count updates)))
+               (println "Page " (:name page) " - Fixing " (count updates))
                updated-page))]
 
-       (prn (str "Updating " (:name file) " " (:id file)))
+       (println "Updating " (:name file) (:id file))
        (-> file
            (update :data h/update-pages update-page)
            (assoc ::updated true)))))
@@ -184,15 +185,15 @@
                                    (:component-root shape)
                                    (:shape-ref parent))
                             (do
-                              (prn (str "   Shape " (:name shape) " " (:id shape)))
+                              (println "   Shape " (:name shape) (:id shape))
                               (dissoc shape :component-root))
                             shape)))
 
          update-page (fn [page]
-                       (prn (str "Page " (:name page)))
+                       (println "Page " (:name page))
                        (h/update-shapes page (partial update-shape page)))]
 
-     (prn (str "Updating " (:name file) " " (:id file)))
+     (println "Updating " (:name file) (:id file))
      (update file :data h/update-pages update-page)))
 
   ([file save?]
@@ -211,10 +212,10 @@
 
 (defn update-near-components
   ([file]
-   (prn (str "Updating " (:name file) " " (:id file)))
+   (println "Updating " (:name file) (:id file))
    (if-not (contains? (:features file) "components/v2")
      (do
-       (prn "   This file is not v2")
+       (println "   This file is not v2")
        file)
      (let [libs (->> (files/get-file-libraries h/*conn* (:id file))
                      (cons file)
@@ -226,8 +227,8 @@
              (if-not (:shape-ref shape)
                shape
                (do
-                 ;; Uncomment prn's to debug
-                 ;; (prn (str "  -> Shape " (:name shape) " " (:id shape) " shape-ref " (:shape-ref shape)))
+                 ;; Uncomment println's to debug
+                 ;; (println "  -> Shape " (:name shape) (:id shape) " shape-ref " (:shape-ref shape))
                  (let [root-shape (ctn/get-copy-root (:objects page) shape)]
                    (if root-shape
                      (let [component (ctf/get-component libs (:component-file root-shape) (:component-id root-shape) {:include-deleted? true})
@@ -236,32 +237,32 @@
                            ref-shape (d/seek #(= (:id %) (:shape-ref shape)) component-shapes)]
                        (if-not (and component component-file component-shapes)
                          (do
-                           ;; (prn (str "  -> Shape " (:name shape) " " (:id shape) " shape-ref " (:shape-ref shape)))
-                           ;; (when-not component (prn "     (component not found)"))
-                           ;; (when-not component-file (prn "     (component-file not found)"))
-                           ;; (when-not component-shapes (prn "     (component-shapes not found)"))
+                           ;; (println "  -> Shape " (:name shape) (:id shape) " shape-ref " (:shape-ref shape))
+                           ;; (when-not component (println "     (component not found)"))
+                           ;; (when-not component-file (println "     (component-file not found)"))
+                           ;; (when-not component-shapes (println "     (component-shapes not found)"))
                            shape)
                          (if ref-shape
                            shape  ; This means that the copy is not nested, or this script already was run
                            (let [near-shape (d/seek #(= (:shape-ref %) (:shape-ref shape)) component-shapes)]
                              (if near-shape
                                (do
-                                 (prn (str "  -> Shape " (:name shape) " " (:id shape) " shape-ref " (:shape-ref shape)))
-                                 (prn (str "     new ref-shape " (:id near-shape)))
+                                 (println "  -> Shape " (:name shape) (:id shape) " shape-ref " (:shape-ref shape))
+                                 (println "     new ref-shape " (:id near-shape))
                                  (assoc shape :shape-ref (:id near-shape)))
                                (do
                                  ;; We assume in this case that this is a fostered sub instance, so we do nothing
-                                 ;; (prn (str "  -> Shape " (:name shape) " " (:id shape) " shape-ref " (:shape-ref shape)))
-                                 ;; (prn "     (near-shape not found)")
+                                 ;; (println "  -> Shape " (:name shape) (:id shape) " shape-ref " (:shape-ref shape))
+                                 ;; (println  (near-shape not found)")
                                  shape))))))
                      (do
-                       ;; (prn (str "  -> Shape " (:name shape) " " (:id shape) " shape-ref " (:shape-ref shape)))
-                       ;; (prn "     (root shape not found)")
+                       ;; (println "  -> Shape " (:name shape) (:id shape) " shape-ref " (:shape-ref shape))
+                       ;; (println "     (root shape not found)")
                        shape))))))
 
            update-page
            (fn [page]
-             (prn (str "Page " (:name page)))
+             (println "Page " (:name page))
              (h/update-shapes page (partial update-shape page)))]
 
        (-> file
@@ -284,10 +285,10 @@
 
 (defn fix-main-shape-name
   ([file]
-   (prn (str "Updating " (:name file) " " (:id file)))
+   (println "Updating " (:name file) (:id file))
    (if-not (contains? (:features file) "components/v2")
      (do
-       (prn "   This file is not v2")
+       (println "   This file is not v2")
        file)
      (let [libs (->> (files/get-file-libraries h/*conn* (:id file))
                      (cons file)
@@ -308,7 +309,7 @@
 
            update-page
            (fn [page]
-             (prn (str "Page " (:name page)))
+             (println "Page " (:name page))
              (h/update-shapes page update-shape))]
 
        (-> file
@@ -325,6 +326,61 @@
                      {:data data
                       ;; :revn (:revn file)
                       }
+                     {:id (:id file)})
+
+         (files/persist-pointers! h/*conn* (:id file)))))))
+
+(defn fix-touched
+  "For all copies, compare all synced attributes with the main, and set the touched attribute if needed."
+  ([file]
+   (let [libraries (->> (files/get-file-libraries app.srepl.helpers/*conn* (:id file))
+                        (map #(files/get-file app.srepl.helpers/*conn* (:id %) (:features file)))
+                        (d/index-by :id))
+
+         update-shape (fn [page shape]
+                        (if (ctk/in-component-copy? shape)
+                          (let [ref-shape (ctf/find-ref-shape file
+                                                              (:objects page)
+                                                              libraries
+                                                              shape
+                                                              :include-deleted? true)
+                                fix-touched-attr
+                                (fn [shape [attr group]]
+                                  (if (nil? ref-shape)
+                                    shape
+                                    (let [equal?
+                                          (if (= group :geometry-group)
+                                            (if (#{:width :height} attr)
+                                              (gsh/close-attrs? attr (get shape attr) (get ref-shape attr) 1)
+                                              true)
+                                            (gsh/close-attrs? attr (get shape attr) (get ref-shape attr)))]
+                                      (when (and (not equal?) (not (cph/touched-group? shape group)))
+                                        (println " -> set touched " (:name shape) (:id shape) attr group))
+                                      (cond-> shape
+                                        (and (not equal?) (not (cph/touched-group? shape group)))
+                                        (update :touched cph/set-touched-group group)))))]
+
+                            (reduce fix-touched-attr
+                                    shape
+                                    (assoc ctk/sync-attrs :shapes :shapes-group)))
+                          shape))
+
+         update-page (fn [page]
+                       (println "Page " (:name page))
+                       (h/update-shapes page (partial update-shape page)))]
+
+     (println "Updating " (:name file) (:id file))
+     (update file :data h/update-pages update-page)))
+
+  ([file save?]
+   (let [file (-> file
+                  (update :data blob/decode)
+                  (fix-touched))]
+     (when save?
+       (let [data     (blob/encode (:data file))]
+         (db/update! h/*conn* :file
+                     {:data data
+                      :revn (inc (:revn file))}
                      {:id (:id file)})
 
          (files/persist-pointers! h/*conn* (:id file)))))))
