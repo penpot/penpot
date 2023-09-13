@@ -73,6 +73,7 @@
         (fdm/use-dynamic-modifiers objects (mf/ref-val node-ref) modifiers)
         [:& frame-shape {:shape shape :ref node-ref}]))))
 
+
 (defn root-frame-wrapper-factory
   [shape-wrapper]
 
@@ -86,9 +87,9 @@
             thumbnail?         (unchecked-get props "thumbnail?")
 
             page-id            (mf/use-ctx ctx/current-page-id)
-            frame-id           (:id shape)
+            frame-id           (dm/get-prop shape :id)
 
-            objects            (wsh/lookup-page-objects @st/state)
+            objects            (wsh/lookup-page-objects @st/state page-id)
 
             node-ref           (mf/use-ref nil)
             root-ref           (mf/use-ref nil)
@@ -114,6 +115,7 @@
 
             on-frame-load
             (fns/use-node-store node-ref rendered-ref thumbnail? render-frame?)
+
             ]
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val node-ref) modifiers)

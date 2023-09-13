@@ -88,28 +88,28 @@
 
 (defn calc-position-data
   [shape-id]
-  (when (some? shape-id)
-    (p/let [text-data (calc-text-node-positions shape-id)]
-      (->> text-data
-           (mapv (fn [{:keys [node position text direction]}]
-                   (let [{:keys [x y width height]} position
-                         styles (js/getComputedStyle ^js node)
-                         get    (fn [prop]
-                                  (let [value (.getPropertyValue styles prop)]
-                                    (when (and value (not= value ""))
-                                      value)))]
-                     (d/without-nils
-                       {:x                   x
-                        :y                   (+ y height)
-                        :width               width
-                        :height              height
-                        :direction           direction
-                        :font-family         (str (get "font-family"))
-                        :font-size           (str (get "font-size"))
-                        :font-weight         (str (get "font-weight"))
-                        :text-transform      (str (get "text-transform"))
-                        :text-decoration     (str (get "text-decoration"))
-                        :letter-spacing      (str (get "letter-spacing"))
-                        :font-style          (str (get "font-style"))
-                        :fills               (transit/decode-str (get "--fills"))
-                        :text                text}))))))))
+  (letfn [(get-prop [styles prop]
+            (let [value (.getPropertyValue styles prop)]
+              (when (and (some? value) (not= value ""))
+                value)))
+
+          (transform-data [{:keys [node position text direction]}]
+            (let [styles   (js/getComputedStyle ^js node)
+                  position (assoc position :y (+ (dm/get-prop position :y)
+                                                 (dm/get-prop position :height)))]
+              (into position (filter val)
+                    {:direction       direction
+                     :font-family     (dm/str (get-prop styles "font-family"))
+                     :font-size       (dm/str (get-prop styles "font-size"))
+                     :font-weight     (dm/str (get-prop styles "font-weight"))
+                     :text-transform  (dm/str (get-prop styles "text-transform"))
+                     :text-decoration (dm/str (get-prop styles "text-decoration"))
+                     :letter-spacing  (dm/str (get-prop styles "letter-spacing"))
+                     :font-style      (dm/str (get-prop styles "font-style"))
+                     :fills           (transit/decode-str (get-prop styles "--fills"))
+                     :text            text})))]
+
+    (when (some? shape-id)
+      (->> (calc-text-node-positions shape-id)
+           (p/fmap (fn [text-data]
+                     (mapv transform-data text-data)))))))

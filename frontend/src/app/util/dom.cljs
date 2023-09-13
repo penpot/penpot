@@ -409,10 +409,11 @@
 (defn bounding-rect->rect
   [rect]
   (when (some? rect)
-    {:x      (or (.-left rect)   (:left rect)   0)
-     :y      (or (.-top rect)    (:top rect)    0)
-     :width  (or (.-width rect)  (:width rect)  1)
-     :height (or (.-height rect) (:height rect) 1)}))
+    (grc/make-rect
+     (or (.-left rect)   (:left rect)   0)
+     (or (.-top rect)    (:top rect)    0)
+     (or (.-width rect)  (:width rect)  1)
+     (or (.-height rect) (:height rect) 1))))
 
 (defn get-window-size
   []

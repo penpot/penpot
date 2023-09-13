@@ -88,6 +88,8 @@
                 show-distances?
                 picking-color?]} wglobal
 
+        vbox'             (mf/use-debounce 100 vbox)
+
         ;; CONTEXT
         page-id           (mf/use-ctx ctx/current-page-id)
 
@@ -323,12 +325,13 @@
               :y (:y vbox 0)
               :fill background}]
 
-      [:& (mf/provider use/include-metadata-ctx) {:value (debug? :show-export-metadata)}
-       [:& (mf/provider embed/context) {:value true}
-        ;; Render root shape
-        [:& shapes/root-shape {:key page-id
-                               :objects base-objects
-                               :active-frames @active-frames}]]]]
+      [:& (mf/provider ctx/current-vbox) {:value vbox'}
+       [:& (mf/provider use/include-metadata-ctx) {:value (debug? :show-export-metadata)}
+        [:& (mf/provider embed/context) {:value true}
+         ;; Render root shape
+         [:& shapes/root-shape {:key page-id
+                                :objects base-objects
+                                :active-frames @active-frames}]]]]]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"

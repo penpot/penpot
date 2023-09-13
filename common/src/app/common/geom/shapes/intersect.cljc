@@ -307,12 +307,12 @@
 (defn overlaps?
   "General case to check for overlapping between shapes and a rectangle"
   [shape rect]
-  (let [stroke-width (/ (or (:stroke-width shape) 0) 2)
-        rect (-> rect
-                 (update :x - stroke-width)
-                 (update :y - stroke-width)
-                 (update :width + (* 2 stroke-width))
-                 (update :height + (* 2 stroke-width)))]
+  (let [swidth (/ (or (:stroke-width shape) 0) 2)
+        rect   (-> rect
+                   (update :x - swidth)
+                   (update :y - swidth)
+                   (update :width + (* 2 swidth))
+                   (update :height + (* 2 swidth)))]
     (or (not shape)
         (cond
           (cph/path-shape? shape)
