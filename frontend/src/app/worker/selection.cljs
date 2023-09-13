@@ -192,12 +192,12 @@
         overlaps?
         (fn [shape]
           (if (and (false? using-selrect?) (empty? (:fills shape)))
-            (do
-              (case  (:type shape)
-                ;; If the shape has no fills the overlap depends on the stroke
-                :rect (and (overlaps-outer-shape? shape) (not (overlaps-inner-shape? shape)))
-                :circle (and (overlaps-outer-shape? shape) (not (overlaps-inner-shape? shape)))
-                :path (overlaps-path? shape)))
+            (case  (:type shape)
+              ;; If the shape has no fills the overlap depends on the stroke
+              :rect (and (overlaps-outer-shape? shape) (not (overlaps-inner-shape? shape)))
+              :circle (and (overlaps-outer-shape? shape) (not (overlaps-inner-shape? shape)))
+              :path (overlaps-path? shape)
+              (gsh/overlaps? shape rect))
             (gsh/overlaps? shape rect)))
 
         overlaps-parent?
