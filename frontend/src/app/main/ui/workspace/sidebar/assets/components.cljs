@@ -17,6 +17,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg]]
@@ -45,11 +46,40 @@
        (if components-v2
          (ctf/get-component-page data component)
          component)])
-    (let [data (dm/get-in @refs/workspace-libraries [file-id :data])]
-      [(ctf/get-component-root data component)
-       (if components-v2
-         (ctf/get-component-page data component)
-         component)])))
+    (let [data (dm/get-in @refs/workspace-libraries [file-id :data])
+          root-shape (ctf/get-component-root data component)
+          container (if components-v2
+                      (ctf/get-component-page data component)
+                      component)]
+      [root-shape container])))
+
+(defn- get-component-thumbnail-uri
+  "Returns the component thumbnail uri"
+  [file-id component]
+  (let [page-id   (:main-instance-page component)
+        root-id   (:main-instance-id component)
+        object-id (dwt/fmt-object-id file-id page-id root-id)]
+    (if (= file-id (:id @refs/workspace-file))
+      (mf/deref (refs/workspace-thumbnail-by-id object-id))
+      (let [thumbnails (dm/get-in @refs/workspace-libraries [file-id :thumbnails (dm/str object-id)])]
+        thumbnails))))
+
+(mf/defc component-item-thumbnail
+  "Component that renders the thumbnail image or the original SVG."
+  {::mf/wrap-props false}
+  [{:keys [file-id root-shape component container]}]
+  (let [retry (mf/use-state 0)
+        thumbnail-uri (get-component-thumbnail-uri file-id component)]
+    (if (some? thumbnail-uri)
+      [:img {:src thumbnail-uri
+             :on-error (fn []
+                         (when (@retry < 3)
+                           (inc retry)))
+             :loading "lazy"
+             :decoding "async"
+             :class (dom/classnames (css :thumbnail) true)}]
+      [:& component-svg {:root-shape root-shape
+                         :objects (:objects container)}])))
 
 (mf/defc components-item
   {::mf/wrap-props false}
@@ -144,8 +174,10 @@
        (when (and (some? root-shape)
                   (some? container))
          [:*
-          [:& component-svg {:root-shape root-shape
-                             :objects (:objects container)}]
+          [:& component-item-thumbnail {:file-id file-id
+                                        :root-shape root-shape
+                                        :component component
+                                        :container container}]
           (let [renaming? (= renaming (:id component))]
             [:*
              [:& editable-label
@@ -184,8 +216,10 @@
                   (some? container))
          [:*
           (when visible?
-            [:& component-svg {:root-shape root-shape
-                               :objects (:objects container)}])
+            [:& component-item-thumbnail {:file-id file-id
+                                          :root-shape root-shape
+                                          :component component
+                                          :container container}])
           (let [renaming? (= renaming (:id component))]
             [:*
              [:& editable-label

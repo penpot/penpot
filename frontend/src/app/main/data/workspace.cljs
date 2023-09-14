@@ -225,6 +225,10 @@
                      (fn [{:keys [id data] :as file}]
                        (->> (resolve-file-data id data)
                             (rx/map (fn [data] (assoc file :data data))))))
+                    (rx/merge-map
+                     (fn [{:keys [id] :as file}]
+                       (->> (rp/cmd! :get-file-object-thumbnails {:file-id id})
+                            (rx/map #(assoc file :thumbnails %)))))
                     (rx/reduce conj [])
                     (rx/map libraries-fetched)))
               (rx/of (with-meta (workspace-initialized) {:file-id id})))
