@@ -794,7 +794,7 @@
          index index]
     (if-let [id (first items)]
       (let [new-id (if (::overwrite? *options*) id (uuid/next))]
-        (l/debug :fn "update-index" :id id :new-id new-id ::l/sync? true)
+        (l/trc :fn "update-index" :id id :new-id new-id ::l/sync? true)
         (recur (rest items)
                (assoc index id new-id)))
       index)))
