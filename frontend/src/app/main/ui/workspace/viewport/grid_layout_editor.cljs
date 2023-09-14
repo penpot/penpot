@@ -302,10 +302,10 @@
         handle-pointer-down
         (mf/use-callback
          (mf/deps (:id shape) (:id cell) selected?)
-         (fn []
-           (if selected?
-             (st/emit! (dwge/remove-selection (:id shape)))
-             (st/emit! (dwge/select-grid-cell (:id shape) (:id cell))))))]
+         (fn [event]
+           (if (and (kbd/shift? event) selected?)
+             (st/emit! (dwge/remove-selection (:id shape) (:id cell)))
+             (st/emit! (dwge/select-grid-cell (:id shape) (:id cell) (kbd/shift? event)) ))))]
 
     [:g.cell-editor
      [:rect
@@ -435,11 +435,11 @@
 
         [width height]
         (if (= type :column)
-          [(max layout-gap-col (/ 16 zoom))
+          [(max 0 (- layout-gap-col (/ 10 zoom)) (/ 16 zoom))
            (+ row-total-size row-total-gap)]
 
           [(+ column-total-size column-total-gap)
-           (max layout-gap-row (/ 16 zoom))])
+           (max 0 (- layout-gap-row (/ 10 zoom)) (/ 16 zoom))])
 
         start-p
         (cond-> start-p
@@ -789,7 +789,7 @@
                        :cell cell
                        :zoom zoom
                        :hover? (contains? hover-cells (:id cell))
-                       :selected? (= selected-cells (:id cell))}])]
+                       :selected? (contains? selected-cells (:id cell))}])]
      (when-not view-only
        [:*
         [:& grid-editor-frame {:zoom zoom

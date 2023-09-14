@@ -894,7 +894,7 @@
 
         [dprops dref]
         (h/use-sortable
-         :data-type "penpot/layer"
+         :data-type "penpot/grid-track"
          :on-drop drop-track
          :data {:is-col? is-col?
                 :index index
@@ -1449,8 +1449,8 @@
          (mf/deps ids)
          (fn [value type]
            (if (= type :row)
-             (st/emit! (dwsl/update-layout ids {:layout-align-content value}))
-             (st/emit! (dwsl/update-layout ids {:layout-justify-content value})))))
+             (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))
+             (st/emit! (dwsl/update-layout ids {:layout-align-content value})))))
 
         ;;Grid columns
         column-grid-values  (:layout-grid-columns values)
@@ -1544,10 +1544,10 @@
        [:div.jusfiy-content-grid.row-title "Content"]
        [:div.btn-wrapper.align-grid-content
         [:& justify-grid-row {:is-col? true
-                              :justify-items grid-justify-content-column
+                              :justify-items grid-justify-content-row
                               :set-justify set-content-grid}]
         [:& justify-grid-row {:is-col? false
-                              :justify-items grid-justify-content-row
+                              :justify-items grid-justify-content-column
                               :set-justify set-content-grid}]]]
       [:& grid-columns-row {:is-col? true
                             :expanded? @grid-columns-open?

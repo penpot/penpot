@@ -6,16 +6,30 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.grid-cell
   (:require
+   [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.shape.layout :as ctl]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :as lyc]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
+
+(def cell-props [:id
+                 :position
+                 :row
+                 :row-span
+                 :column
+                 :column-span
+                 :align-self
+                 :justify-self
+                 :area-name])
 
 (mf/defc set-self-alignment
   [{:keys [is-col? alignment set-alignment] :as props}]
@@ -35,78 +49,91 @@
 
 (mf/defc options
   {::mf/wrap [mf/memo]}
-  [{:keys [shape cell] :as props}]
+  [{:keys [shape cell cells] :as props}]
 
-  (let [{:keys [mode area-name align-self justify-self column column-span row row-span]} cell
-        column-end (+ column column-span)
-        row-end (+ row row-span)
+  (let [cells (hooks/use-equal-memo cells)
+        cell (or cell (attrs/get-attrs-multi cells cell-props))
 
-        cell-mode (or mode :auto)
+        multiple? (= :multiple (:id cell))
+        cell-ids (if (some? cell) [(:id cell)] (->> cells (map :id)))
+        cell-ids (hooks/use-equal-memo cell-ids)
+
+        {:keys [position area-name align-self justify-self column column-span row row-span]} cell
+
+        column-end (when (and (d/num? column) (d/num? column-span))
+                     (+ column column-span))
+        row-end    (when (and (d/num? row) (d/num? row-span))
+                     (+ row row-span))
+
+        cell-mode (or position :auto)
         cell-mode (if (and (= :auto cell-mode)
                            (or (> (:column-span cell) 1)
                                (> (:row-span cell) 1)))
                     :manual
                     cell-mode)
 
+        valid-area-cells? (mf/use-memo
+                           (mf/deps cells)
+                           #(ctl/valid-area-cells? cells))
+
         set-alignment
         (mf/use-callback
-         (mf/deps align-self (:id shape) (:id cell))
+         (mf/deps align-self (:id shape) cell-ids)
          (fn [value]
            (if (= align-self value)
-             (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:align-self nil}))
-             (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:align-self value})))))
+             (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:align-self nil}))
+             (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:align-self value})))))
 
         set-justify-self
         (mf/use-callback
-         (mf/deps justify-self (:id shape) (:id cell))
+         (mf/deps justify-self (:id shape) cell-ids)
          (fn [value]
            (if (= justify-self value)
-             (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:justify-self nil}))
-             (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:justify-self value})))))
+             (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:justify-self nil}))
+             (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:justify-self value})))))
 
-        on-change
+        on-grid-coordinates
         (mf/use-callback
          (mf/deps column row (:id shape) (:id cell))
          (fn [field type value]
-           (let [[property value]
-                 (cond
-                   (and (= type :column) (or (= field :all) (= field :start)))
-                   [:column value]
+           (when-not multiple?
+             (let [[property value]
+                   (cond
+                     (and (= type :column) (or (= field :all) (= field :start)))
+                     [:column value]
 
-                   (and (= type :column) (= field :end))
-                   [:column-span (max 1 (- value column))]
+                     (and (= type :column) (= field :end))
+                     [:column-span (max 1 (- value column))]
 
-                   (and (= type :row) (or (= field :all) (= field :start)))
-                   [:row value]
+                     (and (= type :row) (or (= field :all) (= field :start)))
+                     [:row value]
 
-                   (and (= type :row) (= field :end))
-                   [:row-span (max 1 (- value row))])]
+                     (and (= type :row) (= field :end))
+                     [:row-span (max 1 (- value row))])]
 
-             (st/emit! (dwsl/update-grid-cell-position (:id shape) (:id cell) {property value})))))
+               (st/emit! (dwsl/update-grid-cell-position (:id shape) (:id cell) {property value}))))))
 
         on-area-name-change
         (mf/use-callback
-         (mf/deps (:id shape) (:id cell))
+         (mf/deps (:id shape) cell-ids)
          (fn [event]
            (let [value (dom/get-value (dom/get-target event))]
              (if (= value "")
-               (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:area-name nil}))
-               (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) {:area-name value}))))))
+               (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:area-name nil}))
+               (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:area-name value}))))))
 
         set-cell-mode
         (mf/use-callback
-         (mf/deps (:id shape) (:id cell))
+         (mf/deps (:id shape) cell-ids)
          (fn [mode]
-           (let [props (cond-> {:mode mode}
-                         (not= mode :area)
-                         (assoc :area-name nil))]
-             (st/emit! (dwsl/update-grid-cell (:id shape) (:id cell) props)))))
+           (st/emit! (dwsl/change-cells-mode (:id shape) cell-ids mode))))
 
         toggle-edit-mode
         (mf/use-fn
          (mf/deps (:id shape))
          (fn []
-           (st/emit! (dwge/remove-selection (:id shape)))))]
+           (st/emit! (dw/start-edition-mode (:id shape))
+                     (dwge/clear-selection (:id shape)))))]
 
     [:div.element-set
      [:div.element-set-title
@@ -119,15 +146,17 @@
         [:button.position-btn
          {:on-click #(set-cell-mode :auto)
           :class (dom/classnames :active (= :auto cell-mode))} "Auto"]
-        [:button.position-btn
-         {:on-click #(set-cell-mode :manual)
-          :class (dom/classnames :active (= :manual cell-mode))} "Manual"]
+        (when-not multiple?
+          [:button.position-btn
+           {:on-click #(set-cell-mode :manual)
+            :class (dom/classnames :active (= :manual cell-mode))} "Manual"])
         [:button.position-btn
          {:on-click #(set-cell-mode :area)
+          :disabled (not valid-area-cells?)
           :class (dom/classnames :active (= :area cell-mode))} "Area"]]]
 
       [:div.manage-grid-columns
-       (when (= :auto cell-mode)
+       (when (and (not multiple?) (= :auto cell-mode))
          [:div.grid-auto
           [:div.grid-columns-auto
            [:span.icon i/layout-rows]
@@ -135,7 +164,7 @@
             [:> numeric-input*
              {:placeholder "--"
               :on-click #(dom/select-target %)
-              :on-change (partial on-change :all :column)
+              :on-change (partial on-grid-coordinates :all :column)
               :value column}]]]
           [:div.grid-rows-auto
            [:span.icon i/layout-columns]
@@ -143,7 +172,7 @@
             [:> numeric-input*
              {:placeholder "--"
               :on-click #(dom/select-target %)
-              :on-change (partial on-change :all :row)
+              :on-change (partial on-grid-coordinates :all :row)
               :value row}]]]])
 
        (when (= :area cell-mode)
@@ -158,7 +187,7 @@
             :auto-complete "off"
             :on-change on-area-name-change}]])
 
-       (when (or (= :manual cell-mode) (= :area cell-mode))
+       (when (and (not multiple?) (or (= :manual cell-mode) (= :area cell-mode)))
          [:div.grid-manual
           [:div.grid-columns-auto
            [:span.icon i/layout-rows]
@@ -166,12 +195,12 @@
             [:> numeric-input*
              {:placeholder "--"
               :on-pointer-down #(dom/select-target %)
-              :on-change (partial on-change :start :column)
+              :on-change (partial on-grid-coordinates :start :column)
               :value column}]
             [:> numeric-input*
              {:placeholder "--"
               :on-pointer-down #(dom/select-target %)
-              :on-change (partial on-change :end :column)
+              :on-change (partial on-grid-coordinates :end :column)
               :value column-end}]]]
           [:div.grid-rows-auto
            [:span.icon i/layout-columns]
@@ -179,12 +208,12 @@
             [:> numeric-input*
              {:placeholder "--"
               :on-pointer-down #(dom/select-target %)
-              :on-change (partial on-change :start :row)
+              :on-change (partial on-grid-coordinates :start :row)
               :value row}]
             [:> numeric-input*
              {:placeholder "--"
               :on-pointer-down #(dom/select-target %)
-              :on-change (partial on-change :end :row)
+              :on-change (partial on-grid-coordinates :end :row)
               :value row-end}]]]])]
 
       [:div.layout-row

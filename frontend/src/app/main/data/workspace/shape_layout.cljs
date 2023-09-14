@@ -20,6 +20,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.colors :as cl]
+   [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dwse]
    [app.main.data.workspace.shapes :as dws]
@@ -563,20 +564,72 @@
                (ptk/data-event :layout/update ids)
                (dwu/commit-undo-transaction undo-id))))))
 
-(defn update-grid-cell
-  [layout-id cell-id props]
-  (ptk/reify ::update-grid-cell
+(defn update-grid-cells
+  [layout-id ids props]
+  (ptk/reify ::update-grid-cells
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
+
          (dwc/update-shapes
           [layout-id]
           (fn [shape]
-            (-> shape
-                (d/update-in-when [:layout-grid-cells cell-id]
-                                  #(d/without-nils (merge % props))))))
+            (->> ids
+                 (reduce (fn [shape cell-id]
+                           (-> shape
+                               (d/update-in-when [:layout-grid-cells cell-id]
+                                                 #(d/without-nils (merge % props)))))
+                         shape))))
+         (ptk/data-event :layout/update [layout-id])
+         (dwu/commit-undo-transaction undo-id))))))
+
+(defn change-cells-mode
+  [layout-id ids mode]
+
+  (ptk/reify ::change-cells-mode
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+
+         (dwc/update-shapes
+          [layout-id]
+          (fn [shape]
+            (cond
+              (= mode :area)
+              ;; Create area with the selected cells
+              (let [{:keys [first-row first-column last-row last-column]}
+                    (ctl/cells-coordinates (->> ids (map #(get-in shape [:layout-grid-cells %]))))
+
+                    target-cell
+                    (ctl/get-cell-by-position shape first-row first-column)
+
+                    shape
+                    (-> shape
+                        (ctl/resize-cell-area
+                         (:row target-cell) (:column target-cell)
+                         first-row
+                         first-column
+                         (inc (- last-row first-row))
+                         (inc (- last-column first-column)))
+                        (ctl/assign-cells))]
+
+                (-> shape
+                    (d/update-in-when [:layout-grid-cells (:id target-cell)] assoc :position :area)))
+
+              (= mode :auto)
+              ;; change the manual cells and move to auto
+              (->> ids
+                   (reduce (fn [shape cell-id]
+                             (cond-> shape
+                               (= :manual (get-in shape [:layout-grid-cells cell-id :position]))
+                               (-> (d/update-in-when [:layout-grid-cells cell-id] assoc :shapes [] :position :auto)
+                                   (ctl/assign-cells))))
+                           shape)))))
+         (dwge/clean-selection layout-id)
          (ptk/data-event :layout/update [layout-id])
          (dwu/commit-undo-transaction undo-id))))))
 
