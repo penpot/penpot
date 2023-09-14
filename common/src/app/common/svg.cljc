@@ -6,10 +6,9 @@
 
 (ns app.common.svg
   (:require
-  #?(:cljs ["./svg_optimizer.js" :as svgo])
-
-
+   #?(:cljs ["./svg_optimizer.js" :as svgo])
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -548,34 +547,74 @@
   [num-str]
   (cond
     (str/starts-with? num-str ".")
-    (str "0" num-str)
+    (dm/str "0" num-str)
 
     (str/starts-with? num-str "-.")
-    (str "-0" (subs num-str 1))
+    (dm/str "-0" (subs num-str 1))
 
     :else
     num-str))
 
-(defn format-styles
-  "Transforms attributes to their react equivalent"
-  [attrs]
-  (letfn [(format-styles [style-str]
-            (if (string? style-str)
-              (->> (str/split style-str ";")
-                   (map str/trim)
-                   (map #(str/split % ":"))
-                   (group-by first)
-                   (map (fn [[key val]]
-                          (vector (keyword key) (second (first val)))))
-                   (into {}))
-              style-str))]
+(defn- camelize
+  [s]
+  (when (string? s)
+    #?(:cljs (js* "~{}.replace(\":\", \"-\").replace(/-./g, x=>x[1].toUpperCase())", s)
+       :clj  (str/camel s))))
 
-    (cond-> attrs
-      (contains? attrs :style)
-      (update :style format-styles))))
+(defn parse-style
+  [style]
+  (reduce (fn [res item]
+            (let [[k v] (-> (str/trim item) (str/split ":" 2))
+                  k     (keyword k)]
+              (if (contains? res k)
+                res
+                (assoc res (keyword k) v))))
+          {}
+          (str/split style ";")))
+
+;; FIXME: rename to `format-style` or directly use parse-style on code...
+(defn format-styles
+  "Transform string based styles found on attrs map to key-value map."
+  [attrs]
+  (if (contains? attrs :style)
+    (update attrs :style
+            (fn [style]
+              (if (string? style)
+                (parse-style style)
+                style)))
+    attrs))
+
+(defn attrs->props
+  "Transforms and cleans svg attributes to react compatible props"
+  ([attrs]
+   (attrs->props attrs true))
+
+  ([attrs whitelist?]
+   (reduce-kv (fn [res k v]
+                (if (or (not whitelist?)
+                        (contains? svg-attr-list k)
+                        (contains? svg-present-list k))
+                  (cond
+                    (= k :class)
+                    (assoc res :className val)
+
+                    (= k :style)
+                    (let [v (if (string? v) (parse-style v) v)]
+                      (assoc res k (attrs->props v false)))
+
+                    :else
+                    (let [k (if (contains? non-react-props k)
+                              k
+                              (-> k d/name camelize keyword))]
+                      (assoc res k v)))
+                  res))
+              {}
+              attrs)))
 
 (defn clean-attrs
-  "Transforms attributes to their react equivalent"
+  "Transforms attributes to their react equivalent
+
+  DEPRECATED: replaced by attrs->props"
   ([attrs]
    (clean-attrs attrs true))
 
@@ -590,8 +629,7 @@
                #?(:cljs (js* "~{}.replace(\":\", \"-\").replace(/-./g, x=>x[1].toUpperCase())", s)
                   :clj  (str/camel s))))
 
-
-           (transform-att [key]
+           (transform-key [key]
              (if (contains? non-react-props key)
                key
                (-> (d/name key)
@@ -604,17 +642,26 @@
                   (map #(str/split % ":"))
                   (group-by first)
                   (map (fn [[key val]]
-                         [(transform-att key)
+                         [(transform-key key)
                           (second (first val))]))
                   (into {})))
 
-           (clean-att [[att val]]
-             (let [att (keyword att)]
+           (clean-key [[key val]]
+             (let [key (keyword key)]
                (cond
-                 (= att :class) [:className val]
-                 (and (= att :style) (string? val)) [att (format-styles val)]
-                 (and (= att :style) (map? val)) [att (clean-attrs val false)]
-                 :else [(transform-att att) val])))]
+                 (= key :class)
+                 [:className val]
+
+                 (and (= key :style)
+                      (string? val))
+                 [key (format-styles val)]
+
+                 (and (= key :style)
+                      (map? val))
+                 [key (clean-attrs val false)]
+
+                 :else
+                 [(transform-key key) val])))]
 
      ;; Removed this warning because slows a lot rendering with big svgs
      #_(let [filtered-props (->> attrs (remove known-property?) (map first))]
@@ -623,7 +670,7 @@
 
      (into {}
            (comp (filter known-property?)
-                 (map clean-att))
+                 (map clean-key))
            attrs))))
 
 (defn update-attr-ids
@@ -649,16 +696,17 @@
 (defn replace-attrs-ids
   "Replaces the ids inside a property"
   [attrs ids-mapping]
-  (if (and ids-mapping (seq ids-mapping))
-    (update-attr-ids attrs (fn [id] (get ids-mapping id id)))
-    ;; Ids-mapping is null
-    attrs))
+  (if (empty? ids-mapping)
+    attrs
+    (update-attr-ids attrs (fn [id] (get ids-mapping id id)))))
 
-(defn generate-id-mapping [content]
+(defn generate-id-mapping
+  [content]
   (letfn [(visit-node [result node]
-            (let [element-id (get-in node [:attrs :id])
-                  result (cond-> result
-                           element-id (assoc element-id (str (uuid/next))))]
+            (let [element-id (dm/get-in node [:attrs :id])
+                  result     (if (some? element-id)
+                               (assoc result element-id (dm/str (uuid/next)))
+                               result)]
               (reduce visit-node result (:content node))))]
     (visit-node {} content)))
 

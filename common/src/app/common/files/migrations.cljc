@@ -18,6 +18,7 @@
    [app.common.math :as mth]
    [app.common.pages.changes :as cpc]
    [app.common.pages.helpers :as cph]
+   [app.common.svg :as csvg]
    [app.common.text :as txt]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -587,7 +588,23 @@
 
           (update-container [container]
             (d/update-when container :objects update-vals update-object))]
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
 
+(defmethod migrate 32
+  [data]
+  (letfn [(update-object [object]
+            (as-> object object
+              (if (contains? object :svg-attrs)
+                (update object :svg-attrs csvg/attrs->props)
+                object)
+              (if (contains? object :svg-viewbox)
+                (update object :svg-viewbox grc/make-rect)
+                object)))
+
+          (update-container [container]
+            (update container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))

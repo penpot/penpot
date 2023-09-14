@@ -1,4 +1,5 @@
 *-init.clj
+*.css.json
 *.jar
 *.orig
 *.penpot
