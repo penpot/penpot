@@ -798,11 +798,11 @@
 
 ;; --- MUTATION COMMAND: set-file-shared
 
-(defn unlink-files
-  [conn {:keys [id] :as params}]
+(defn- unlink-files!
+  [conn {:keys [id]}]
   (db/delete! conn :file-library-rel {:library-file-id id}))
 
-(defn set-file-shared
+(defn- set-file-shared!
   [conn {:keys [id is-shared] :as params}]
   (db/update! conn :file
               {:is-shared is-shared}
@@ -813,49 +813,50 @@
      FROM file_library_rel AS flr
     INNER JOIN file AS f ON (f.id = flr.file_id)
     WHERE flr.library_file_id = ?
+      AND (f.deleted_at IS NULL OR f.deleted_at > now())
     ORDER BY f.created_at ASC;")
 
-(defn absorb-library
+(defn- absorb-library!
   "Find all files using a shared library, and absorb all library assets
   into the file local libraries"
-  [conn {:keys [id] :as params}]
-  (let [library (db/get-by-id conn :file id)]
-    (when (:is-shared library)
-      (let [ldata (binding [pmap/*load-fn* (partial load-pointer conn id)]
-                    (-> library decode-row load-all-pointers! pmg/migrate-file :data))
-            rows  (db/exec! conn [sql:get-referenced-files id])]
-        (doseq [file-id (map :id rows)]
-          (binding [pmap/*load-fn* (partial load-pointer conn file-id)
-                    pmap/*tracked* (atom {})]
-            (let [file (-> (db/get-by-id conn :file file-id
-                                         ::db/check-deleted? false
-                                         ::db/remove-deleted? false)
-                           (decode-row)
-                           (load-all-pointers!)
-                           (pmg/migrate-file))
-                  data (ctf/absorb-assets (:data file) ldata)]
-              (db/update! conn :file
-                          {:revn (inc (:revn file))
-                           :data (blob/encode data)
-                           :modified-at (dt/now)}
-                          {:id file-id})
-              (persist-pointers! conn file-id))))))))
+  [conn {:keys [id] :as library}]
+  (let [ldata (binding [pmap/*load-fn* (partial load-pointer conn id)]
+                (-> library decode-row (process-pointers deref) pmg/migrate-file :data))
+        rows  (db/exec! conn [sql:get-referenced-files id])]
+    (doseq [file-id (map :id rows)]
+      (binding [pmap/*load-fn* (partial load-pointer conn file-id)
+                pmap/*tracked* (atom {})]
+        (let [file (-> (db/get-by-id conn :file file-id
+                                     ::db/check-deleted? false
+                                     ::db/remove-deleted? false)
+                       (decode-row)
+                       (load-all-pointers!)
+                       (pmg/migrate-file))
+              data (ctf/absorb-assets (:data file) ldata)]
+          (db/update! conn :file
+                      {:revn (inc (:revn file))
+                       :data (blob/encode data)
+                       :modified-at (dt/now)}
+                      {:id file-id})
+          (persist-pointers! conn file-id))))))
 
-(s/def ::set-file-shared
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::id ::is-shared]))
+(def ^:private schema:set-file-shared
+  [:map {:title "set-file-shared"}
+   [:id ::sm/uuid]
+   [:is-shared :boolean]])
 
 (sv/defmethod ::set-file-shared
   {::doc/added "1.17"
-   ::webhooks/event? true}
+   ::webhooks/event? true
+   ::sm/params schema:set-file-shared}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id is-shared] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
-    (when-not is-shared
-      (absorb-library conn params)
-      (unlink-files conn params))
+    (let [file (set-file-shared! conn params)]
+      (when-not is-shared
+        (absorb-library! conn file)
+        (unlink-files! conn file))
 
-    (let [file (set-file-shared conn params)]
       (rph/with-meta
         (select-keys file [:id :name :is-shared])
         {::audit/props {:name (:name file)
@@ -864,24 +865,26 @@
 
 ;; --- MUTATION COMMAND: delete-file
 
-(defn mark-file-deleted
-  [conn {:keys [id] :as params}]
+(defn- mark-file-deleted!
+  [conn {:keys [id]}]
   (db/update! conn :file
               {:deleted-at (dt/now)}
               {:id id}))
 
-(s/def ::delete-file
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::id]))
+(def ^:private schema:delete-file
+  [:map {:title "delete-file"}
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::delete-file
   {::doc/added "1.17"
-   ::webhooks/event? true}
+   ::webhooks/event? true
+   ::sm/params schema:delete-file}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
-    (absorb-library conn params)
-    (let [file (mark-file-deleted conn params)]
+    (let [file (mark-file-deleted! conn params)]
+      (when (:is-shared file)
+        (absorb-library! conn file))
 
       (rph/with-meta (rph/wrap)
         {::audit/props {:project-id (:project-id file)

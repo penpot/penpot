@@ -246,7 +246,7 @@
 (defn mark-file-deleted*
   ([params] (mark-file-deleted* *pool* params))
   ([conn {:keys [id] :as params}]
-   (#'files/mark-file-deleted conn {:id id})))
+   (#'files/mark-file-deleted! conn {:id id})))
 
 (defn create-team*
   ([i params] (create-team* *pool* i params))
