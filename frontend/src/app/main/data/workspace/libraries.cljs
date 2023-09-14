@@ -33,6 +33,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -309,7 +310,10 @@
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
                      (dws/select-shapes (d/ordered-set (:id root)))
-                     (ptk/data-event :layout/update parents)))))))))
+                     (ptk/data-event :layout/update parents)
+                     (dwt/update-thumbnail file-id page-id (:id root))))))))))
+
+
 
 (defn add-component
   "Add a new component to current file library, from the currently selected shapes.
@@ -444,13 +448,16 @@
       (let [data (get state :workspace-data)]
         (if (features/active-feature? state :components-v2)
           (let [component (ctkl/get-component data id)
-                page      (ctf/get-component-page data component)
-                shape     (ctf/get-component-root data component)]
-            (rx/of (dwsh/delete-shapes (:id page) #{(:id shape)}))) ;; Deleting main root triggers component delete
+                page-id   (:main-instance-page component)
+                root-id   (:main-instance-id component)]
+            (rx/of
+             (dwt/clear-thumbnail (:current-file-id state) page-id root-id)
+             (dwsh/delete-shapes page-id #{root-id}))) ;; Deleting main root triggers component delete
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
                             (pcb/delete-component id))]
             (rx/of (dch/commit-changes changes))))))))
+
 
 (defn restore-component
   "Restore a deleted component, with the given id, in the given file library."
@@ -492,7 +499,7 @@
       (let [page      (wsh/lookup-page state)
             libraries (wsh/get-libraries state)
 
-            objects (:objects page)
+            objects   (:objects page)
             changes   (-> (pcb/empty-changes it (:id page))
                           (pcb/with-objects objects))
 
@@ -568,17 +575,24 @@
                                     :query-params query-params}))))))
 
 (defn ext-library-changed
-  [file-id modified-at revn changes]
-  (dm/assert! (uuid? file-id))
+  [library-id modified-at revn changes]
+  (dm/assert! (uuid? library-id))
   (dm/assert! (ch/valid-changes? changes))
   (ptk/reify ::ext-library-changed
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:workspace-libraries file-id]
+          (update-in [:workspace-libraries library-id]
                      assoc :modified-at modified-at :revn revn)
-          (d/update-in-when [:workspace-libraries file-id :data]
-                            cp/process-changes changes)))))
+          (d/update-in-when [:workspace-libraries library-id :data]
+                            cp/process-changes changes)))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id})
+           (rx/map (fn [thumbnails]
+                     (fn [state]
+                       (assoc-in state [:workspace-libraries library-id :thumbnails] thumbnails))))))))
 
 (defn reset-component
   "Cancels all modifications in the shape with the given id, and all its children, in
@@ -703,12 +717,29 @@
      (watch [_ state _]
        (let [current-file-id (:current-file-id state)
              undo-id         (js/Symbol)]
-         (rx/of
-          (dwu/start-undo-transaction undo-id)
-          (sync-file current-file-id file-id :components component-id undo-group)
-          (when (not= current-file-id file-id)
-            (sync-file file-id file-id :components component-id undo-group))
-          (dwu/commit-undo-transaction undo-id)))))))
+          (rx/of
+           (dwu/start-undo-transaction undo-id)
+           (sync-file current-file-id file-id :components component-id undo-group)
+           (when (not= current-file-id file-id)
+             (sync-file file-id file-id :components component-id undo-group))
+           (dwu/commit-undo-transaction undo-id)))))))
+
+(defn update-component-thumbnail
+  "Update the thumbnail of the component with the given id, in the
+   current file and in the imported libraries."
+  [component-id file-id]
+  (ptk/reify ::update-component-thumbnail
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [data            (get state :workspace-data)
+            component       (ctkl/get-component data component-id)
+            page-id         (:main-instance-page component)
+            root-id         (:main-instance-id component)
+            current-file-id (:current-file-id state)]
+           (rx/of
+            (dwt/update-thumbnail current-file-id page-id root-id)
+            (when (not= current-file-id file-id)
+              (dwt/update-thumbnail file-id page-id root-id)))))))
 
 (defn update-component-in-bulk
   [shapes file-id]
@@ -717,9 +748,9 @@
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
        (rx/concat
-       (rx/of (dwu/start-undo-transaction undo-id))
-       (rx/map #(update-component-sync (:id %) file-id (uuid/next)) (rx/from shapes))
-       (rx/of (dwu/commit-undo-transaction undo-id)))))))
+        (rx/of (dwu/start-undo-transaction undo-id))
+        (rx/map #(update-component-sync (:id %) file-id (uuid/next)) (rx/from shapes))
+        (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (def valid-asset-types
   #{:colors :components :typographies})
@@ -866,6 +897,17 @@
                              :callback do-dismiss}]
                   :tag :sync-dialog)))))))
 
+(defn component-changed
+  "Notify that the component with the given id has changed, so it needs to be updated
+   in the current file and in the copies. And also update its thumbnails."
+  [component-id file-id undo-group]
+  (ptk/reify ::component-changed
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (launch-component-sync component-id file-id undo-group)
+       (update-component-thumbnail component-id file-id)))))
+
 (defn watch-component-changes
   "Watch the state for changes that affect to any main instance. If a change is detected will throw
   an update-component-sync, so changes are immediately propagated to the component and copies."
@@ -912,7 +954,7 @@
                               :undo-group undo-group)
 
                     (->> changed-components
-                         (map #(launch-component-sync % (:id old-data) undo-group))
+                         (map #(component-changed % (:id old-data) undo-group))
                          (run! st/emit!))))))]
 
         (when components-v2?
@@ -986,7 +1028,11 @@
          (->> (rp/cmd! :get-file {:id library-id :features features})
               (rx/map (fn [file]
                         (fn [state]
-                          (assoc-in state [:workspace-libraries library-id] file))))))))))
+                          (assoc-in state [:workspace-libraries library-id] file)))))
+         (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id})
+              (rx/map (fn [thumbnails]
+                        (fn [state]
+                          (assoc-in state [:workspace-libraries library-id :thumbnails] thumbnails))))))))))
 
 (defn unlink-file-from-library
   [file-id library-id]

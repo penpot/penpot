@@ -47,7 +47,7 @@
          (rx/tap #(l/dbg :hint "thumbnail rendered"
                          :elapsed (dm/str (tp) "ms"))))))
 
-(defn- clear-thumbnail
+(defn clear-thumbnail
   ([file-id page-id frame-id]
    (clear-thumbnail file-id (fmt-object-id file-id page-id frame-id)))
   ([file-id object-id]
