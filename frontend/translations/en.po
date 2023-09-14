@@ -3397,10 +3397,10 @@ msgid "workspace.options.component.edit-annotation"
 msgstr "Edit an annotation"
 
 msgid "workspace.options.component.main"
-msgstr "MAIN"
+msgstr "Main"
 
 msgid "workspace.options.component.copy"
-msgstr "COPY"
+msgstr "Copy"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
