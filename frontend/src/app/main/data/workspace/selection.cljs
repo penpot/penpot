@@ -469,7 +469,10 @@
 
            ; We want the first added object to touch it's parent, but not subsequent children
            changes (-> (pcb/add-object changes new-obj {:ignore-touched (and duplicating-component? child?)})
-                       (pcb/amend-last-change #(assoc % :old-id (:id obj))))
+                       (pcb/amend-last-change #(assoc % :old-id (:id obj)))
+                       (cond-> (ctl/grid-layout? objects (:parent-id obj))
+                         (-> (pcb/update-shapes [(:parent-id obj)] ctl/assign-cells)
+                             (pcb/reorder-grid-children [(:parent-id obj)]))))
 
            changes (cond-> changes
                      (and is-component-root? is-component-main?)
