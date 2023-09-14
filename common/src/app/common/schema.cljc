@@ -316,6 +316,22 @@
                     (let [v (if (string? v) (str/split v #"[\s,]+") v)]
                       (into #{} non-empty-strings-xf v)))}})
 
+(def! ::set-of-keywords
+  {:type ::set-of-keywords
+   :pred #(and (set? %) (every? keyword? %))
+   :type-properties
+   {:title "set[string]"
+    :description "Set of Strings"
+    :error/message "should be a set of strings"
+    :gen/gen (-> :keyword sg/generator sg/set)
+    ::oapi/type "array"
+    ::oapi/format "set"
+    ::oapi/items {:type "string" :format "keyword"}
+    ::oapi/unique-items true
+    ::oapi/decode (fn [v]
+                    (let [v (if (string? v) (str/split v #"[\s,]+") v)]
+                      (into #{} (comp non-empty-strings-xf (map keyword)) v)))}})
+
 (def! ::set-of-emails
   {:type ::set-of-emails
    :pred #(and (set? %) (every? string? %))
