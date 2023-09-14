@@ -33,7 +33,7 @@
    (if (= (:version data) to-version)
      data
      (let [migrate-fn #(do
-                         (l/trc :hint "migrate file" :id (:id %) :version-from %2 :version-to (inc %2))
+                         (l/dbg :hint "migrate file" :id (:id %) :version-from %2 :version-to (inc %2))
                          (migrate (assoc %1 :version (inc %2))))]
        (reduce migrate-fn data (range (:version data 0) to-version))))))
 
