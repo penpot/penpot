@@ -15,23 +15,25 @@
    [rumext.v2 :as mf]))
 
 ;; Graphic tags
-(defonce graphic-element?
+(def graphic-element
   #{:svg :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath :use})
 
 ;; Context to store a re-mapping of the ids
 (def svg-ids-ctx (mf/create-context nil))
 
 (defn set-styles [attrs shape render-id]
-  (let [custom-attrs (-> (usa/get-style-props shape render-id)
-                         (obj/unset! "transform"))
+  (let [props (-> (usa/get-style-props shape render-id)
+                  (obj/unset! "transform"))
 
-        attrs (or attrs {})
-        attrs (cond-> attrs
-                (string? (:style attrs)) csvg/clean-attrs)
-        style (obj/merge! (clj->js (:style attrs {}))
-                          (obj/get custom-attrs "style"))]
-    (-> (clj->js attrs)
-        (obj/merge! custom-attrs)
+        attrs (if (map? attrs)
+                (-> attrs csvg/attrs->props obj/map->obj)
+                #js {})
+
+        style (obj/merge (obj/get attrs "style")
+                         (obj/get props "style"))]
+
+    (-> attrs
+        (obj/merge! props)
         (obj/set! "style" style))))
 
 (defn translate-shape [attrs shape]
@@ -39,7 +41,7 @@
                           " "
                           (:transform attrs ""))]
     (cond-> attrs
-      (and (:svg-viewbox shape) (graphic-element? (-> shape :content :tag)))
+      (and (:svg-viewbox shape) (contains? graphic-element (-> shape :content :tag)))
       (assoc :transform transform))))
 
 (mf/defc svg-root

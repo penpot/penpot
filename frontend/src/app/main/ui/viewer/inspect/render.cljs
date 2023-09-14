@@ -61,7 +61,7 @@
           childs (unchecked-get props "childs")
           frame  (unchecked-get props "frame")
           render-wrapper? (or (not= :svg-raw (:type shape))
-                              (svg-raw/graphic-element? (get-in shape [:content :tag])))]
+                              (contains? svg-raw/graphic-element (get-in shape [:content :tag])))]
 
       (if render-wrapper?
         [:> shape-container {:shape shape

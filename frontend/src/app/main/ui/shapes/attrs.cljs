@@ -160,14 +160,10 @@
              (empty? attrs))
       #js {}
       (-> attrs
-          ;; TODO: revisit, why we need to execute it each render? Can
-          ;; we do this operation on importation and avoid unnecesary
-          ;; work on render?
-          (csvg/clean-attrs)
           (csvg/update-attr-ids
            (fn [id]
              (if (contains? defs id)
-               (str render-id "-" id)
+               (dm/str render-id "-" id)
                id)))
           (dissoc :id)
           (obj/map->obj)))))

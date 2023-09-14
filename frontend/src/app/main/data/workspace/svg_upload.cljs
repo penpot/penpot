@@ -14,6 +14,8 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.common :as gsc]
+   [app.common.geom.shapes.transforms :as gst]
    [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
@@ -65,7 +67,8 @@
      (contains? cts/blend-modes clean-value))
     clean-value))
 
-(defn- svg-dimensions [data]
+(defn- svg-dimensions
+  [data]
   (let [width (dm/get-in data [:attrs :width] 100)
         height (dm/get-in data [:attrs :height] 100)
         viewbox (dm/get-in data [:attrs :viewBox] (str "0 0 " width " " height))
@@ -81,12 +84,15 @@
 (defn tag->name
   "Given a tag returns its layer name"
   [tag]
-  (str "svg-" (cond (string? tag) tag
-                    (keyword? tag) (d/name tag)
-                    (nil? tag) "node"
-                    :else (str tag))))
+  (let [suffix (cond
+                 (string? tag) tag
+                 (keyword? tag) (d/name tag)
+                 (nil? tag) "node"
+                 :else (dm/str tag))]
+    (dm/str "svg-" suffix)))
 
-(defn setup-fill [shape]
+(defn setup-fill
+ [shape]
   (let [color-attr (str/trim (dm/get-in shape [:svg-attrs :fill]))
         color-attr (if (= color-attr "currentColor") clr/black color-attr)
         color-style (str/trim (dm/get-in shape [:svg-attrs :style :fill]))
@@ -104,16 +110,16 @@
           (update :svg-attrs dissoc :fill)
           (assoc-in [:fills 0 :fill-color] (uc/parse-color color-style)))
 
-      (dm/get-in shape [:svg-attrs :fill-opacity])
-      (-> (update :svg-attrs dissoc :fill-opacity)
-          (update-in [:svg-attrs :style] dissoc :fill-opacity)
-          (assoc-in [:fills 0 :fill-opacity] (-> (dm/get-in shape [:svg-attrs :fill-opacity])
+      (dm/get-in shape [:svg-attrs :fillOpacity])
+      (-> (update :svg-attrs dissoc :fillOpacity)
+          (update-in [:svg-attrs :style] dissoc :fillOpacity)
+          (assoc-in [:fills 0 :fill-opacity] (-> (dm/get-in shape [:svg-attrs :fillOpacity])
                                                  (d/parse-double 1))))
 
-      (dm/get-in shape [:svg-attrs :style :fill-opacity])
-      (-> (update-in [:svg-attrs :style] dissoc :fill-opacity)
-          (update :svg-attrs dissoc :fill-opacity)
-          (assoc-in [:fills 0 :fill-opacity] (-> (dm/get-in shape [:svg-attrs :style :fill-opacity])
+      (dm/get-in shape [:svg-attrs :style :fillOpacity])
+      (-> (update-in [:svg-attrs :style] dissoc :fillOpacity)
+          (update :svg-attrs dissoc :fillOpacity)
+          (assoc-in [:fills 0 :fill-opacity] (-> (dm/get-in shape [:svg-attrs :style :fillOpacity])
                                                  (d/parse-double 1)))))))
 
 (defn- setup-stroke
@@ -131,30 +137,30 @@
 
         opacity (when (some? color)
                   (d/parse-double
-                   (or (:stroke-opacity attrs)
-                       (:stroke-opacity style))
+                   (or (:strokeOpacity attrs)
+                       (:strokeOpacity style))
                    1))
 
         width   (when (some? color)
                   (d/parse-double
-                   (or (:stroke-width attrs)
-                       (:stroke-width style))
+                   (or (:strokeWidth attrs)
+                       (:strokeWidth style))
                    1))
 
-        linecap (or (get attrs :stroke-linecap)
-                    (get style :stroke-linecap))
+        linecap (or (get attrs :strokeLinecap)
+                    (get style :strokeLinecap))
         linecap (some-> linecap str/trim keyword)
 
         attrs   (-> attrs
                     (dissoc :stroke)
-                    (dissoc :stroke-width)
-                    (dissoc :stroke-opacity)
+                    (dissoc :strokeWidth)
+                    (dissoc :strokeOpacity)
                     (update :style (fn [style]
                                      (-> style
                                          (dissoc :stroke)
-                                         (dissoc :stroke-linecap)
-                                         (dissoc :stroke-width)
-                                         (dissoc :stroke-opacity)))))]
+                                         (dissoc :strokeLinecap)
+                                         (dissoc :strokeWidth)
+                                         (dissoc :strokeOpacity)))))]
 
     (cond-> (assoc shape :svg-attrs attrs)
       (some? color)
@@ -172,8 +178,8 @@
              :stroke-cap-end linecap)
 
       (d/any-key? (dm/get-in shape [:strokes 0])
-                  :stroke-color :stroke-opacity :stroke-width
-                  :stroke-cap-start :stroke-cap-end)
+                  :strokeColor :strokeOpacity :strokeWidth
+                  :strokeCapStart :strokeCapEnd)
       (assoc-in [:strokes 0 :stroke-style] :svg))))
 
 (defn setup-opacity [shape]
@@ -188,51 +194,52 @@
         (assoc :opacity (-> (dm/get-in shape [:svg-attrs :style :opacity])
                             (d/parse-double 1))))
 
-    (dm/get-in shape [:svg-attrs :mix-blend-mode])
-    (-> (update :svg-attrs dissoc :mix-blend-mode)
-        (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :mix-blend-mode]) assert-valid-blend-mode)))
+    (dm/get-in shape [:svg-attrs :mixBlendMode])
+    (-> (update :svg-attrs dissoc :mixBlendMode)
+        (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :mixBlendMode]) assert-valid-blend-mode)))
 
-    (dm/get-in shape [:svg-attrs :style :mix-blend-mode])
-    (-> (update-in [:svg-attrs :style] dissoc :mix-blend-mode)
-        (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :style :mix-blend-mode]) assert-valid-blend-mode)))))
+    (dm/get-in shape [:svg-attrs :style :mixBlendMode])
+    (-> (update-in [:svg-attrs :style] dissoc :mixBlendMode)
+        (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :style :mixBlendMode]) assert-valid-blend-mode)))))
 
 (defn create-raw-svg
   [name frame-id {:keys [x y width height offset-x offset-y]} {:keys [attrs] :as data}]
-  (cts/setup-shape
-   {:type :svg-raw
-    :name name
-    :frame-id frame-id
-    :width width
-    :height height
-    :x x
-    :y y
-    :content (cond-> data
-               (map? data) (update :attrs csvg/clean-attrs))
-    :svg-attrs attrs
-    :svg-viewbox {:width width
-                  :height height
-                  :x offset-x
-                  :y offset-y}}))
+  (let [props (csvg/attrs->props attrs)
+        vbox  (grc/make-rect offset-x offset-y width height)]
+    (cts/setup-shape
+     {:type :svg-raw
+      :name name
+      :frame-id frame-id
+      :width width
+      :height height
+      :x x
+      :y y
+      :content data
+      :svg-attrs props
+      :svg-viewbox vbox})))
 
 (defn create-svg-root
   [frame-id parent-id {:keys [name x y width height offset-x offset-y attrs]}]
-  (cts/setup-shape
-   {:type :group
-    :name name
-    :frame-id frame-id
-    :parent-id parent-id
-    :width width
-    :height height
-    :x (+ x offset-x)
-    :y (+ y offset-y)
-    :svg-attrs (-> attrs
-                   (dissoc :viewBox)
-                   (dissoc :xmlns)
-                   (d/without-keys csvg/inheritable-props))}))
+  (let [props (-> (dissoc attrs :viewBox :view-box :xmlns)
+                  (d/without-keys csvg/inheritable-props)
+                  (csvg/attrs->props))]
+    (cts/setup-shape
+     {:type :group
+      :name name
+      :frame-id frame-id
+      :parent-id parent-id
+      :width width
+      :height height
+      :x (+ x offset-x)
+      :y (+ y offset-y)
+      :svg-attrs props})))
 
 (defn create-group
   [name frame-id {:keys [x y width height offset-x offset-y] :as svg-data} {:keys [attrs]}]
-  (let [svg-transform (csvg/parse-transform (:transform attrs))]
+  (let [transform (csvg/parse-transform (:transform attrs))
+        attrs     (-> (d/without-keys attrs csvg/inheritable-props)
+                      (csvg/attrs->props))
+        vbox      (grc/make-rect offset-x offset-y width height)]
     (cts/setup-shape
      {:type :group
       :name name
@@ -241,28 +248,22 @@
       :y (+ y offset-y)
       :width width
       :height height
-      :svg-transform svg-transform
-      :svg-attrs (d/without-keys attrs csvg/inheritable-props)
-
-      :svg-viewbox {:width width
-                    :height height
-                    :x offset-x
-                    :y offset-y}})))
+      :svg-transform transform
+      :svg-attrs attrs
+      :svg-viewbox vbox})))
 
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (when (and (contains? attrs :d) (seq (:d attrs)))
+    (let [transform (csvg/parse-transform (:transform attrs))
+          content   (cond-> (upp/parse-path (:d attrs))
+                      (some? transform)
+                      (gsh/transform-content transform))
 
-    (let [svg-transform (csvg/parse-transform (:transform attrs))
-          path-content  (upp/parse-path (:d attrs))
-          content       (cond-> path-content
-                          svg-transform
-                          (gsh/transform-content svg-transform))
-
-          selrect       (gsh/content->selrect content)
-          points        (grc/rect->points selrect)
-
-          origin        (gpt/negate (gpt/point svg-data))]
-
+          selrect    (gsh/content->selrect content)
+          points     (grc/rect->points selrect)
+          origin     (gpt/negate (gpt/point svg-data))
+          attrs      (-> (dissoc attrs :d :transform)
+                         (csvg/attrs->props))]
       (-> (cts/setup-shape
            {:type :path
             :name name
@@ -270,17 +271,20 @@
             :content content
             :selrect selrect
             :points points
-            :svg-viewbox (select-keys selrect [:x :y :width :height])
-            :svg-attrs (dissoc attrs :d :transform)
-            :svg-transform svg-transform})
+            :svg-viewbox selrect
+            :svg-attrs attrs
+            :svg-transform transform
+            :fills []})
           (gsh/translate-to-frame origin)))))
 
-(defn calculate-rect-metadata [rect-data transform]
-  (let [points (-> (grc/make-rect rect-data)
-                   (grc/rect->points)
-                   (gsh/transform-points transform))
-
-        [selrect transform transform-inverse] (gsh/calculate-geometry points)]
+(defn calculate-rect-metadata
+  [rect transform]
+  (let [points    (-> rect
+                      (grc/rect->points)
+                      (gsh/transform-points transform))
+        center    (gsc/points->center points)
+        selrect   (gst/calculate-selrect points center)
+        transform (gst/calculate-transform points center selrect)]
 
     {:x (:x selrect)
      :y (:y selrect)
@@ -289,37 +293,43 @@
      :selrect selrect
      :points points
      :transform transform
-     :transform-inverse transform-inverse}))
+     :transform-inverse (when (some? transform)
+                          (gmt/inverse transform))}))
 
 (defn- parse-rect-attrs
   [{:keys [x y width height]}]
-  {:x (d/parse-double x 0)
-   :y (d/parse-double y 0)
-   :width (d/parse-double width 1)
-   :height (d/parse-double height 1)})
+  (grc/make-rect
+   (d/parse-double x 0)
+   (d/parse-double y 0)
+   (d/parse-double width 1)
+   (d/parse-double height 1)))
 
 (defn create-rect-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [transform (->> (csvg/parse-transform (:transform attrs))
                        (gmt/transform-in (gpt/point svg-data)))
 
         origin    (gpt/negate (gpt/point svg-data))
-
-        rect-data (-> (parse-rect-attrs attrs)
+        rect      (-> (parse-rect-attrs attrs)
                       (update :x - (:x origin))
-                      (update :y - (:y origin)))]
+                      (update :y - (:y origin)))
+
+        props     (-> (dissoc attrs :x :y :width :height :rx :ry :transform)
+                      (csvg/attrs->props))]
 
     (cts/setup-shape
-     (-> (calculate-rect-metadata rect-data transform)
+     (-> (calculate-rect-metadata rect transform)
          (assoc :type :rect)
          (assoc :name name)
          (assoc :frame-id frame-id)
-         (assoc :svg-viewbox (select-keys rect-data [:x :y :width :height]))
-         (assoc :svg-attrs (dissoc attrs :x :y :width :height :rx :ry :transform))
+         (assoc :svg-viewbox rect)
+         (assoc :svg-attrs props)
+         ;; We need to ensure fills are empty on import process
+         ;; because setup-shape assings one by default.
+         (assoc :fills [])
          (cond-> (contains? attrs :rx)
            (assoc :rx (d/parse-double (:rx attrs) 0)))
          (cond-> (contains? attrs :ry)
            (assoc :ry (d/parse-double (:ry attrs) 0)))))))
-
 
 (defn- parse-circle-attrs
   [attrs]
@@ -327,37 +337,42 @@
                  (map d/parse-double))
         [:cx :cy :r :rx :ry]))
 
-(defn create-circle-shape [name frame-id svg-data {:keys [attrs] :as data}]
+(defn create-circle-shape
+  [name frame-id svg-data {:keys [attrs] :as data}]
   (let [[cx cy r rx ry]
         (parse-circle-attrs attrs)
 
         transform (->> (csvg/parse-transform (:transform attrs))
                        (gmt/transform-in (gpt/point svg-data)))
 
-        rx        (or r rx)
-        ry        (or r ry)
+        rx        (d/nilv r rx)
+        ry        (d/nilv r ry)
         origin    (gpt/negate (gpt/point svg-data))
 
-        rect-data {:x (- cx rx (:x origin))
-                   :y (- cy ry (:y origin))
-                   :width (* 2 rx)
-                   :height (* 2 ry)}]
+        rect      (grc/make-rect
+                   (- cx rx (:x origin))
+                   (- cy ry (:y origin))
+                   (* 2 rx)
+                   (* 2 ry))
+        props     (-> (dissoc attrs :cx :cy :r :rx :ry :transform)
+                      (csvg/attrs->props))]
 
     (cts/setup-shape
-     (-> (calculate-rect-metadata rect-data transform)
+     (-> (calculate-rect-metadata rect transform)
          (assoc :type :circle)
          (assoc :name name)
          (assoc :frame-id frame-id)
-         (assoc :svg-viewbox rect-data)
-         (assoc :svg-attrs (dissoc attrs :cx :cy :r :rx :ry :transform))))))
+         (assoc :svg-viewbox rect)
+         (assoc :svg-attrs props)
+         (assoc :fills [])))))
 
-(defn create-image-shape [name frame-id svg-data {:keys [attrs] :as data}]
+(defn create-image-shape
+  [name frame-id svg-data {:keys [attrs] :as data}]
   (let [transform  (->> (csvg/parse-transform (:transform attrs))
                         (gmt/transform-in (gpt/point svg-data)))
 
         image-url  (or (:href attrs) (:xlink:href attrs))
         image-data (dm/get-in svg-data [:image-data image-url])
-
 
         metadata   {:width (:width image-data)
                     :height (:height image-data)
@@ -365,31 +380,29 @@
                     :id (:id image-data)}
 
         origin     (gpt/negate (gpt/point svg-data))
-        rect-data  (-> (parse-rect-attrs attrs)
+        rect       (-> (parse-rect-attrs attrs)
                        (update :x - (:x origin))
-                       (update :y - (:y origin)))]
+                       (update :y - (:y origin)))
+        props      (-> (dissoc attrs :x :y :width :height :href :xlink:href)
+                       (csvg/attrs->props))]
 
     (when (some? image-data)
       (cts/setup-shape
-       (-> (calculate-rect-metadata rect-data transform)
+       (-> (calculate-rect-metadata rect transform)
            (assoc :type :image)
            (assoc :name name)
            (assoc :frame-id frame-id)
            (assoc :metadata metadata)
-           (assoc :svg-viewbox (select-keys rect-data [:x :y :width :height]))
-           (assoc :svg-attrs (dissoc attrs :x :y :width :height :href :xlink:href)))))))
+           (assoc :svg-viewbox rect)
+           (assoc :svg-attrs props))))))
 
-
-(defn parse-svg-element [frame-id svg-data {:keys [tag attrs hidden] :as element-data} unames]
-  (let [attrs        (csvg/format-styles attrs)
-        element-data (cond-> element-data (map? element-data) (assoc :attrs attrs))
-        name         (or (:id attrs) (tag->name tag))
+(defn parse-svg-element
+  [frame-id svg-data {:keys [tag attrs hidden] :as element} unames]
+  (let [name         (or (:id attrs) (tag->name tag))
         att-refs     (csvg/find-attr-references attrs)
-        references   (csvg/find-def-references (:defs svg-data) att-refs)
-
+        defs         (get svg-data :defs)
+        references   (csvg/find-def-references defs att-refs)
         href-id      (-> (or (:href attrs) (:xlink:href attrs) "") (subs 1))
-        defs         (:defs svg-data)
-
         use-tag?     (and (= :use tag) (contains? defs href-id))]
 
     (if use-tag?
@@ -397,38 +410,43 @@
             use-data     (-> (get defs href-id)
                              (update :attrs #(d/deep-merge % (dissoc attrs :xlink:href :href))))
             displacement (gpt/point (d/parse-double (:x attrs "0")) (d/parse-double (:y attrs "0")))
-            disp-matrix  (str (gmt/translate-matrix displacement))
-            element-data (-> element-data
+            disp-matrix  (dm/str (gmt/translate-matrix displacement))
+            element      (-> element
                              (assoc :tag :g)
                              (update :attrs dissoc :x :y :width :height :href :xlink:href :transform)
                              (update :attrs csvg/add-transform disp-matrix)
                              (assoc :content [use-data]))]
-        (parse-svg-element frame-id svg-data element-data unames))
+        (parse-svg-element frame-id svg-data element unames))
 
-      ;; SVG graphic elements
-      ;; :circle :ellipse :image :line :path :polygon :polyline :rect :text :use
-      (let [shape (-> (case tag
-                        (:g :a :svg) (create-group name frame-id svg-data element-data)
-                        :rect        (create-rect-shape name frame-id svg-data element-data)
-                        (:circle
-                         :ellipse)   (create-circle-shape name frame-id svg-data element-data)
-                        :path        (create-path-shape name frame-id svg-data element-data)
-                        :polyline    (create-path-shape name frame-id svg-data (-> element-data csvg/polyline->path))
-                        :polygon     (create-path-shape name frame-id svg-data (-> element-data csvg/polygon->path))
-                        :line        (create-path-shape name frame-id svg-data (-> element-data csvg/line->path))
-                        :image       (create-image-shape name frame-id svg-data element-data)
-                        #_other      (create-raw-svg name frame-id svg-data element-data)))]
+      (let [;; SVG graphic elements
+            ;; :circle :ellipse :image :line :path :polygon :polyline :rect :text :use
+            shape   (case tag
+                      (:g :a :svg) (create-group name frame-id svg-data element)
+                      :rect        (create-rect-shape name frame-id svg-data element)
+                      (:circle
+                       :ellipse)   (create-circle-shape name frame-id svg-data element)
+                      :path        (create-path-shape name frame-id svg-data element)
+                      :polyline    (create-path-shape name frame-id svg-data (-> element csvg/polyline->path))
+                      :polygon     (create-path-shape name frame-id svg-data (-> element csvg/polygon->path))
+                      :line        (create-path-shape name frame-id svg-data (-> element csvg/line->path))
+                      :image       (create-image-shape name frame-id svg-data element)
+                      #_other      (create-raw-svg name frame-id svg-data element))]
+
+
         (when (some? shape)
           (let [shape (-> shape
-                          (assoc :svg-defs (select-keys (:defs svg-data) references))
+                          (assoc :svg-defs (select-keys defs references))
                           (setup-fill)
                           (setup-stroke)
-                          (setup-opacity))]
-
+                          (setup-opacity)
+                          (update :svg-attrs (fn [attrs]
+                                               (if (empty? (:style attrs))
+                                                 (dissoc attrs :style)
+                                                 attrs))))]
             [(cond-> shape
                hidden (assoc :hidden true))
 
-             (cond->> (:content element-data)
+             (cond->> (:content element)
                (contains? csvg/parent-tags tag)
                (mapv #(csvg/inherit-attributes attrs %)))]))))))
 
@@ -449,19 +467,6 @@
 
       [unames children])))
 
-(defn data-uri->blob
-  [data-uri]
-  (let [[mtype b64-data] (str/split data-uri ";base64,")
-        mtype   (subs mtype (inc (str/index-of mtype ":")))
-        decoded (.atob js/window b64-data)
-        size    (.-length ^js decoded)
-        content (js/Uint8Array. size)]
-
-    (doseq [i (range 0 size)]
-      (aset content i (.charCodeAt decoded i)))
-
-    (wapi/create-blob content mtype)))
-
 (defn extract-name [url]
   (let [query-idx (str/last-index-of url "?")
         url (if (> query-idx 0) (subs url 0 query-idx) url)
@@ -481,7 +486,7 @@
                     :url uri}
                    (if (str/starts-with? uri "data:")
                      {:name "image"
-                      :content (data-uri->blob uri)}
+                      :content (wapi/data-uri->blob uri)}
                      {:name (extract-name uri)}))))
        (rx/mapcat (fn [uri-data]
                     (->> (rp/cmd! (if (contains? uri-data :content)
@@ -524,10 +529,6 @@
             (csvg/fix-percents)
             (csvg/extract-defs))
 
-        svg-data   (assoc svg-data :defs def-nodes)
-        root-shape (create-svg-root frame-id parent-id svg-data)
-        root-id    (:id root-shape)
-
         ;; In penpot groups have the size of their children. To
         ;; respect the imported svg size and empty space let's create
         ;; a transparent shape as background to respect the imported
@@ -547,6 +548,9 @@
                        (assoc :defs def-nodes)
                        (assoc :content (into [background] (:content svg-data))))
 
+        root-shape (create-svg-root frame-id parent-id svg-data)
+        root-id    (:id root-shape)
+
         ;; Create the root shape
         root-attrs (-> (:attrs svg-data)
                        (csvg/format-styles))
@@ -561,7 +565,6 @@
 
 (defn add-svg-shapes
   [svg-data position]
-  ;; (app.common.pprint/pprint svg-data {:length 100 :level 100})
   (ptk/reify ::add-svg-shapes
     ptk/WatchEvent
     (watch [it state _]
