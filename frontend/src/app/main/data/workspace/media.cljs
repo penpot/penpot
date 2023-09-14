@@ -12,11 +12,12 @@
    [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.schema :as sm]
+   [app.common.svg :refer [optimize]]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.data.media :as dmm]
    [app.main.data.messages :as msg]
    [app.main.data.workspace.changes :as dch]
@@ -34,14 +35,34 @@
    [promesa.core :as p]
    [tubax.core :as tubax]))
 
+(def ^:private svgo-config
+  {:multipass false
+   :plugins
+   [{:name "safePreset"
+     :params {:overrides
+              {:convertColors
+               {:names2hex true
+                :shorthex false
+                :shortname false}
+               :convertTransform
+               {:matrixToTransform false
+                :convertToShorts false
+                :transformPrecision 4
+                :leadingZero false}}}}]})
+
 (defn svg->clj
   [[name text]]
   (try
-    (->> (rx/of (-> (tubax/xml->clj text)
-                    (assoc :name name))))
-
-    (catch :default _err
-      (rx/throw {:type :svg-parser}))))
+    (let [text (if (contains? cf/flags :frontend-svgo)
+                 (optimize text svgo-config)
+                 text)
+          data (-> (tubax/xml->clj text)
+                   (assoc :name name))]
+      (rx/of data))
+    (catch :default cause
+      (js/console.error cause)
+      (rx/throw (ex/error :type :svg-parser
+                          :hint (ex-message cause))))))
 
 ;; TODO: rename to bitmap-image-uploaded
 (defn image-uploaded
@@ -231,7 +252,7 @@
   "Load the contents of a media-obj of type svg, and parse it
   into a clojure structure."
   [media-obj]
-  (let [path (cfg/resolve-file-media media-obj)]
+  (let [path (cf/resolve-file-media media-obj)]
     (->> (http/send! {:method :get :uri path :mode :no-cors})
          (rx/map :body)
          (rx/map #(vector (:name media-obj) %))
