@@ -384,7 +384,7 @@
          (prepare-duplicate-guides shapes page ids-map delta)))))
 
 (defn- prepare-duplicate-component-change
-  [changes page component-root parent-id delta libraries library-data it]
+  [changes objects page component-root parent-id delta libraries library-data it]
   (let [component-id (:component-id component-root)
         file-id (:component-file component-root)
         main-component    (ctf/get-component libraries file-id component-id)
@@ -393,6 +393,7 @@
 
         instantiate-component
         #(dwlh/generate-instantiate-component changes
+                                              objects
                                               file-id
                                               (:component-id component-root)
                                               pos
@@ -421,7 +422,7 @@
      changes
 
      (ctf/is-known-component? obj libraries)
-     (prepare-duplicate-component-change changes page obj parent-id delta libraries library-data it)
+     (prepare-duplicate-component-change changes objects page obj parent-id delta libraries library-data it)
 
      :else
      (let [frame?      (cph/frame-shape? obj)

@@ -173,7 +173,7 @@
         on-context-menu   (actions/on-context-menu hover hover-ids workspace-read-only?)
         on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id drawing-path? base-objects edition drawing-tool z? workspace-read-only?)
         on-drag-enter     (actions/on-drag-enter)
-        on-drag-over      (actions/on-drag-over)
+        on-drag-over      (actions/on-drag-over move-stream)
         on-drop           (actions/on-drop file)
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? node-editing? grid-editing?
                                                    drawing-path? create-comment? space? panning z? workspace-read-only?)

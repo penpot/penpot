@@ -404,15 +404,17 @@
                (dnd/has-type? e "text/asset-id"))
        (dom/prevent-default e)))))
 
-(defn on-drag-over []
-  (mf/use-callback
-   (fn [e]
-     (when (or (dnd/has-type? e "penpot/shape")
-               (dnd/has-type? e "penpot/component")
-               (dnd/has-type? e "Files")
-               (dnd/has-type? e "text/uri-list")
-               (dnd/has-type? e "text/asset-id"))
-       (dom/prevent-default e)))))
+(defn on-drag-over [move-stream]
+  (let [on-pointer-move (on-pointer-move move-stream)]
+    (mf/use-callback
+     (fn [e]
+       (when (or (dnd/has-type? e "penpot/shape")
+                 (dnd/has-type? e "penpot/component")
+                 (dnd/has-type? e "Files")
+                 (dnd/has-type? e "text/uri-list")
+                 (dnd/has-type? e "text/asset-id"))
+         (on-pointer-move e)
+         (dom/prevent-default e))))))
 
 (defn on-drop
   [file]

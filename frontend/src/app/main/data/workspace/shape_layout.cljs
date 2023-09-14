@@ -623,11 +623,12 @@
               (= mode :auto)
               ;; change the manual cells and move to auto
               (->> ids
-                   (reduce (fn [shape cell-id]
-                             (cond-> shape
-                               (= :manual (get-in shape [:layout-grid-cells cell-id :position]))
-                               (-> (d/update-in-when [:layout-grid-cells cell-id] assoc :shapes [] :position :auto)
-                                   (ctl/assign-cells))))
+                   (reduce
+                    (fn [shape cell-id]
+                      (cond-> shape
+                        (contains? #{:area :manual} (get-in shape [:layout-grid-cells cell-id :position]))
+                        (-> (d/update-in-when [:layout-grid-cells cell-id] assoc :shapes [] :position :auto)
+                            (ctl/assign-cells))))
                            shape)))))
          (dwge/clean-selection layout-id)
          (ptk/data-event :layout/update [layout-id])
