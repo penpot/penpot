@@ -316,6 +316,7 @@
 
 .menu-dropdown {
   @include menuShadow;
+  color: var(--title-foreground-color-hover);
   display: flex;
   flex-direction: column;
   gap: $s-4;
