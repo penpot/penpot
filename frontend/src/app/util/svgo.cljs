@@ -8,12 +8,23 @@
   (:require
    ["./impl_svgo" :as svgo]))
 
-(js/console.log svgo)
-
+(def default-config
+  #js {:multipass false
+       :plugins
+       #js [#js {:name "safePreset"
+                 :params #js {:overrides
+                              #js {:convertColors
+                                   #js {:names2hex true
+                                        :shorthex false
+                                        :shortname false}
+                                   :convertTransform
+                                   #js {:matrixToTransform false
+                                        :convertToShorts false
+                                        :transformPrecision 4
+                                        :leadingZero false}}}}]})
 
 (defn optimize
   [input]
-  (let [result (svgo/optimize input)]
-    (js/console.log "optimize" result)
-
-    (unchecked-get result "data")))
+  (let [result (svgo/optimize input default-config)]
+    ;; (js/console.log "optimize" result)
+    result))

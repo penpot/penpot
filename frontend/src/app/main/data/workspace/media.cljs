@@ -41,9 +41,10 @@
     (let [text (svgo/optimize text)]
       (->> (rx/of (-> (tubax/xml->clj text)
                       (assoc :name name)))))
-
-    (catch :default _err
-      (rx/throw {:type :svg-parser}))))
+    (catch :default cause
+      (js/console.error cause)
+      (rx/throw (ex/error :type :svg-parser
+                          :hint (ex-message cause))))))
 
 ;; TODO: rename to bitmap-image-uploaded
 (defn image-uploaded
