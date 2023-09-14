@@ -462,7 +462,7 @@
             fdata              (:workspace-data state)
             components-v2      (dm/get-in fdata [:options :components-v2])
             objects            (->> (:objects page)
-                                    (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))
+                                    (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail))))
             main-instances-ids (set (keep #(when (ctk/main-instance? (val %)) (key %)) objects))
             ids-to-remove      (set (apply concat (map #(cph/get-children-ids objects %) main-instances-ids)))
 

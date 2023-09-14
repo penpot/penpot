@@ -170,7 +170,7 @@
            (on-frame-leave (:id frame))))
 
         main-instance? (ctk/main-instance? frame)
-        text-pos-x (if (or (:use-for-thumbnail? frame) grid-edition? main-instance?) 15 0)]
+        text-pos-x (if (or (:use-for-thumbnail frame) grid-edition? main-instance?) 15 0)]
 
     (when (not (:hidden frame))
       [:g.frame-title {:id (dm/str "frame-title-" (:id frame))
@@ -178,7 +178,7 @@
                        :transform (vwu/title-transform frame zoom grid-edition?)
                        :pointer-events (when (:blocked frame) "none")}
        (cond
-         (or (:use-for-thumbnail? frame) grid-edition? main-instance?)
+         (or (:use-for-thumbnail frame) grid-edition? main-instance?)
          [:svg {:x 0
                 :y -9
                 :width 12
@@ -187,7 +187,7 @@
                 :style {:fill color}
                 :visibility (if show-artboard-names? "visible" "hidden")}
           (cond
-            (:use-for-thumbnail? frame)
+            (:use-for-thumbnail frame)
             [:use {:href "#icon-set-thumbnail"}]
 
             grid-edition?

@@ -237,7 +237,7 @@
         do-toggle-thumbnail #(st/emit! (dw/toggle-file-thumbnail-selected))]
     (when (and single? has-frame?)
       [:*
-       (if (every? :use-for-thumbnail? shapes)
+       (if (every? :use-for-thumbnail shapes)
          [:& menu-entry {:title (tr "workspace.shape.menu.thumbnail-remove")
                          :on-click do-toggle-thumbnail}]
          [:& menu-entry {:title (tr "workspace.shape.menu.thumbnail-set")
