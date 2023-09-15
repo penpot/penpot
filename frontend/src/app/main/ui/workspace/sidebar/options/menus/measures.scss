@@ -44,8 +44,8 @@
         position: absolute;
         top: $s-32;
         left: 0;
-        max-height: 300px;
         width: $s-252;
+        max-height: $s-300;
         padding: $s-2;
         margin: 0;
         margin-top: $s-4;
@@ -132,12 +132,7 @@
         padding-top: $s-1;
       }
       .numeric-input {
-        @include removeInputStyle;
-        @include titleTipography;
-        height: $s-32;
-        width: 100%;
-        margin: 0;
-        color: var(--input-foreground-color-active);
+        @extend .numeric-input-base;
       }
     }
     .lock-size-btn {
@@ -173,12 +168,7 @@
         padding-top: $s-1;
       }
       .numeric-input {
-        @include removeInputStyle;
-        @include titleTipography;
-        height: $s-32;
-        width: 100%;
-        margin: 0;
-        color: var(--input-foreground-color-active);
+        @extend .numeric-input-base;
       }
     }
   }
@@ -207,12 +197,7 @@
         }
       }
       .numeric-input {
-        @include removeInputStyle;
-        @include titleTipography;
-        height: $s-32;
-        width: 100%;
-        margin: 0;
-        color: var(--input-foreground-color-active);
+        @extend .numeric-input-base;
       }
     }
     .radius {
@@ -237,13 +222,7 @@
           }
 
           .numeric-input {
-            @include removeInputStyle;
-            @include titleTipography;
-            height: $s-32;
-            width: 100%;
-            margin: 0;
-            padding: $s-1 $s-2;
-            color: var(--input-foreground-color-active);
+            @extend .numeric-input-base;
           }
         }
         .radius-4 {
@@ -255,12 +234,7 @@
             width: $s-52;
             padding-left: $s-8;
             .numeric-input {
-              @include removeInputStyle;
-              @include titleTipography;
-              height: $s-32;
-              width: 100%;
-              margin: 0;
-              color: var(--input-foreground-color-active);
+              @extend .numeric-input-base;
             }
           }
         }

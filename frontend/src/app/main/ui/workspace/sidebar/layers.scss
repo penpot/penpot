@@ -160,11 +160,12 @@
       }
     }
   }
+
   .filters-container {
     @extend .menu-dropdown;
-    position: absolute;
     top: $s-44;
     left: $s-12;
+    width: $s-192;
     .filter-menu-item {
       @include titleTipography;
       display: flex;

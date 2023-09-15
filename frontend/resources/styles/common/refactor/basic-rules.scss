@@ -284,7 +284,11 @@
   color: var(--input-foreground-color);
   span {
     color: var(--input-foreground-color);
+    svg {
+      stroke: var(--input-foreground-color);
+    }
   }
+
   input {
     @include removeInputStyle;
     @include titleTipography;
@@ -304,6 +308,22 @@
     }
     background-color: var(--input-background-color-hover);
   }
+}
+
+.numeric-input-base {
+  @include removeInputStyle;
+  @include titleTipography;
+  height: $s-32;
+  width: 100%;
+  margin: 0;
+  color: var(--input-foreground-color-active);
+}
+
+.input-icon {
+  @include flexCenter;
+  width: $s-12;
+  height: $s-32;
+  margin-right: $s-4;
 }
 
 .new-scrollbar {
@@ -332,15 +352,15 @@
 
 .menu-dropdown {
   @include menuShadow;
-  color: var(--title-foreground-color-hover);
+  position: absolute;
   display: flex;
   flex-direction: column;
   gap: $s-4;
-  width: $s-192;
   padding: $s-4;
   border-radius: $br-8;
-  background-color: var(--menu-background-color);
   z-index: $z-index-10;
+  color: var(--title-foreground-color-hover);
+  background-color: var(--menu-background-color);
 }
 
 .menu-item {

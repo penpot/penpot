@@ -8,7 +8,6 @@
 
 .element-set {
   .element-title {
-    margin-right: $s-12;
     .title-spacing-layout {
       margin: 0;
     }
@@ -75,12 +74,7 @@
           width: $s-108;
           padding-left: $s-8;
           .numeric-input {
-            @include removeInputStyle;
-            @include titleTipography;
-            height: $s-32;
-            width: 100%;
-            margin: 0;
-            color: var(--input-foreground-color-active);
+            @extend .numeric-input-base;
           }
           .icon {
             @include flexCenter;
@@ -112,12 +106,7 @@
           width: $s-108;
           padding-left: $s-8;
           .numeric-input {
-            @include removeInputStyle;
-            @include titleTipography;
-            height: $s-32;
-            width: 100%;
-            margin: 0;
-            color: var(--input-foreground-color-active);
+            @extend .numeric-input-base;
           }
           .icon {
             @include flexCenter;
@@ -159,12 +148,7 @@
               width: $s-108;
               padding-left: $s-8;
               .numeric-input {
-                @include removeInputStyle;
-                @include titleTipography;
-                height: $s-32;
-                width: 100%;
-                margin: 0;
-                color: var(--input-foreground-color-active);
+                @extend .numeric-input-base;
               }
               .icon {
                 @include flexCenter;
@@ -186,12 +170,7 @@
               width: $s-108;
               padding-left: $s-8;
               .numeric-input {
-                @include removeInputStyle;
-                @include titleTipography;
-                height: $s-32;
-                width: 100%;
-                margin: 0;
-                color: var(--input-foreground-color-active);
+                @extend .numeric-input-base;
               }
               .icon {
                 @include flexCenter;

@@ -109,137 +109,131 @@
   height: 100%;
   width: 100%;
   background-color: var(--assets-title-background-color);
+}
 
-  .typography-options {
-    position: relative;
-    .font-option {
-      @include titleTipography;
-      @extend .asset-element;
-      padding-right: 0;
-      margin-bottom: $s-4;
-      cursor: pointer;
-      .name {
-        flex-grow: 1;
+.typography-options {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $s-4;
+  .font-option {
+    @include titleTipography;
+    @extend .asset-element;
+    padding-right: 0;
+    cursor: pointer;
+    .name {
+      flex-grow: 1;
+    }
+    .icon {
+      @include flexCenter;
+      height: $s-28;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+        stroke: var(--icon-foreground);
+        transform: rotate(90deg);
       }
+    }
+  }
+  .font-modifiers {
+    display: flex;
+    gap: $s-4;
+    .font-size-options {
+      @extend .asset-element;
+      @include titleTipography;
+      padding: 0;
+      flex-grow: 1;
       .icon {
         @include flexCenter;
         height: $s-28;
-        width: $s-28;
+        min-width: $s-28;
         svg {
           @extend .button-icon;
           stroke: var(--icon-foreground);
           transform: rotate(90deg);
         }
       }
-    }
-    .font-modifiers {
-      display: flex;
-      gap: $s-4;
-      .font-size-options {
-        @extend .asset-element;
+      .font-size-select {
+        @include removeInputStyle;
         @include titleTipography;
+        height: 100%;
+        width: 100%;
+        margin: 0;
         padding: 0;
-        margin-bottom: $s-4;
-        flex-grow: 1;
-        .icon {
-          @include flexCenter;
-          height: $s-28;
-          min-width: $s-28;
-          svg {
-            @extend .button-icon;
-            stroke: var(--icon-foreground);
-            transform: rotate(90deg);
-          }
-        }
-        .font-size-select {
-          @include removeInputStyle;
-          @include titleTipography;
-          height: 100%;
-          width: 100%;
-          margin: 0;
-          padding: 0;
+      }
+    }
+    .font-variant-options {
+      @extend .asset-element;
+      @include titleTipography;
+      padding: 0;
+      flex-grow: 2;
+      .icon {
+        @include flexCenter;
+        height: $s-28;
+        min-width: $s-28;
+        svg {
+          @extend .button-icon;
+          stroke: var(--icon-foreground);
+          transform: rotate(90deg);
         }
       }
-      .font-variant-options {
-        @extend .asset-element;
+      .font-variant-select {
+        @include removeInputStyle;
         @include titleTipography;
-        padding: 0;
-        margin-bottom: $s-4;
-        flex-grow: 2;
-        .icon {
-          @include flexCenter;
-          height: $s-28;
-          min-width: $s-28;
-          svg {
-            @extend .button-icon;
-            stroke: var(--icon-foreground);
-            transform: rotate(90deg);
-          }
-        }
-        .font-variant-select {
-          @include removeInputStyle;
-          @include titleTipography;
-          height: 100%;
-          width: 100%;
-          margin: 0;
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        color: var(--assets-item-name-foreground-color);
+        option {
           color: var(--assets-item-name-foreground-color);
+        }
+        &:hover {
+          color: var(--assets-item-name-foreground-color-hover);
           option {
-            color: var(--assets-item-name-foreground-color);
-          }
-          &:hover {
             color: var(--assets-item-name-foreground-color-hover);
-            option {
-              color: var(--assets-item-name-foreground-color-hover);
-            }
           }
         }
       }
     }
-    .typography-variations {
+  }
+  .typography-variations {
+    display: flex;
+    gap: $s-4;
+    align-items: center;
+    .spacing-options {
       display: flex;
-      gap: $s-4;
       align-items: center;
-      .spacing-options {
-        display: flex;
-        align-items: center;
-        gap: $s-4;
-        .line-height,
-        .letter-spacing {
-          @extend .asset-element;
-          margin-bottom: $s-4;
-          .icon {
-            @include flexCenter;
-            width: $s-28;
-            svg {
-              @extend .button-icon-small;
-              stroke: var(--icon-foreground);
-            }
+      gap: $s-4;
+      .line-height,
+      .letter-spacing {
+        @extend .input-element;
+        // @extend .asset-element;
+        // margin-bottom: $s-4;
+        .icon {
+          @include flexCenter;
+          width: $s-28;
+          svg {
+            @extend .button-icon-small;
           }
-          .line-height-input,
-          .letter-spacing-input {
-            @include removeInputStyle;
-            @include titleTipography;
-            height: 100%;
-            width: 100%;
-            margin: 0;
-            color: var(--assets-item-name-foreground-color);
-            &:hover,
-            &:active,
-            &:focus {
-              color: var(--assets-item-name-foreground-color-hover);
-            }
+        }
+        .line-height-input,
+        .letter-spacing-input {
+          @extend .numeric-input-base;
+          &:hover,
+          &:active,
+          &:focus {
+            color: var(--assets-item-name-foreground-color-hover);
           }
         }
       }
-      .text-transform {
-        @extend .asset-element;
-        width: fit-content;
-        padding: 0;
-        margin-bottom: $s-4;
+    }
+    .text-transform {
+      @extend .asset-element;
+      width: fit-content;
+      padding: 0;
+      background-color: var(--radio-btns-background-color);
+      &:hover {
         background-color: var(--radio-btns-background-color);
-        &:hover {
-          background-color: var(--radio-btns-background-color);
-        }
       }
     }
   }

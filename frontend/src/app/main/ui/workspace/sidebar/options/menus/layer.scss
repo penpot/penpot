@@ -28,11 +28,7 @@
         margin-right: $s-4;
       }
       .numeric-input {
-        @include removeInputStyle;
-        @include titleTipography;
-        height: $s-32;
-        width: 100%;
-        margin: 0;
+        @extend .numeric-input-base;
       }
     }
     .actions {

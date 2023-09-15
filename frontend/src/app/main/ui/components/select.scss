@@ -9,6 +9,7 @@
 .custom-select {
   position: relative;
   display: flex;
+  height: $s-32;
   width: 100%;
   padding: $s-8;
   border-radius: $br-8;
@@ -31,6 +32,7 @@
     top: $s-32;
     left: 0;
     width: 100%;
+    max-height: $s-300;
     padding: $s-2;
     margin: 0;
     margin-top: $s-4;

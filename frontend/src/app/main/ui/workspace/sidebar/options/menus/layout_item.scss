@@ -50,8 +50,6 @@
             width: $s-92;
           }
         }
-        &.wrap {
-        }
       }
       .z-index-wrapper {
         @extend .input-element;
@@ -64,12 +62,7 @@
           padding-top: $s-2;
         }
         .numeric-input {
-          @include removeInputStyle;
-          @include titleTipography;
-          height: $s-32;
-          width: 100%;
-          margin: 0;
-          color: var(--input-foreground-color-active);
+          @extend .numeric-input-base;
         }
       }
     }
@@ -117,12 +110,7 @@
                 }
               }
               .numeric-input {
-                @include removeInputStyle;
-                @include titleTipography;
-                height: $s-32;
-                width: 100%;
-                margin: 0;
-                color: var(--input-foreground-color-active);
+                @extend .numeric-input-base;
               }
             }
           }
@@ -147,12 +135,7 @@
                 }
               }
               .numeric-input {
-                @include removeInputStyle;
-                @include titleTipography;
-                height: $s-32;
-                width: 100%;
-                margin: 0;
-                color: var(--input-foreground-color-active);
+                @extend .numeric-input-base;
               }
             }
           }
@@ -184,12 +167,7 @@
             padding-top: $s-2;
           }
           .numeric-input {
-            @include removeInputStyle;
-            @include titleTipography;
-            height: $s-32;
-            width: 100%;
-            margin: 0;
-            color: var(--input-foreground-color-active);
+            @extend .numeric-input-base;
           }
         }
       }

@@ -40,12 +40,7 @@
       border-radius: 0 $br-8 $br-8 0;
       padding-left: $s-8;
       .opacity-input {
-        @include removeInputStyle;
-        @include titleTipography;
-        height: $s-32;
-        width: 100%;
-        margin: 0;
-        color: var(--input-foreground-color-active);
+        @extend .numeric-input-base;
       }
       .icon-text {
         @include flexCenter;
@@ -58,12 +53,7 @@
       @extend .input-element;
       flex-grow: 1;
       .color-input {
-        @include removeInputStyle;
-        @include titleTipography;
-        height: $s-32;
-        width: 100%;
-        margin: 0;
-        color: var(--input-foreground-color-active);
+        @extend .numeric-input-base;
       }
     }
 
