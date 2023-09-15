@@ -18,6 +18,7 @@
    [app.common.types.shape.layout :as ctl]))
 
 (defn cell-bounds
+  "Retrieves the points that define the bounds for given cell"
   [{:keys [origin row-tracks column-tracks layout-bounds column-gap row-gap] :as layout-data} {:keys [row column row-span column-span] :as cell}]
 
   (let [hv     #(gpo/start-hv layout-bounds %)
@@ -55,11 +56,13 @@
   [_parent
    transform
    transform-inverse
-   _child
+   child
    child-origin child-width
    cell-bounds]
 
-  (let [target-width (max (gpo/width-points cell-bounds) 0.01)
+  (let [target-width (max (- (gpo/width-points cell-bounds) (ctl/child-width-margin child)) 0.01)
+        max-width (max (ctl/child-max-width child) 0.01)
+        target-width (mth/clamp target-width (ctl/child-min-width child) max-width)
         fill-scale (/ target-width child-width)]
     {:width target-width
      :modifiers (ctm/resize-modifiers (gpt/point fill-scale 1) child-origin transform transform-inverse)}))
@@ -68,10 +71,12 @@
   "Calculates the size and modifiers for the height of an auto-fill child"
   [_parent
    transform transform-inverse
-   _child
+   child
    child-origin child-height
    cell-bounds]
-  (let [target-height (max (gpo/height-points cell-bounds) 0.01)
+  (let [target-height (max (- (gpo/height-points cell-bounds) (ctl/child-height-margin child)) 0.01)
+        max-height (max (ctl/child-max-height child) 0.01)
+        target-height (mth/clamp target-height (ctl/child-min-height child) max-height)
         fill-scale (/ target-height child-height)]
     {:height target-height
      :modifiers (ctm/resize-modifiers (gpt/point 1 fill-scale) child-origin transform transform-inverse)}))
@@ -106,7 +111,7 @@
          (cond-> fill-height (ctm/add-modifiers (:modifiers fill-height))))]))
 
 (defn child-position-delta
-  [parent child-bounds child-width child-height layout-data cell-data]
+  [parent child child-bounds child-width child-height layout-data cell-data]
   (let [cell-bounds (cell-bounds layout-data cell-data)
         child-origin (gpo/origin child-bounds)
 
@@ -126,30 +131,35 @@
         hv     (partial gpo/start-hv cell-bounds)
         vv     (partial gpo/start-vv cell-bounds)
 
+        [top-m right-m bottom-m left-m] (ctl/child-margins child)
+
         ;; Adjust alignment/justify
         [from-h to-h]
         (case justify
           :end
           [(gpt/add origin-h (hv child-width))
-           (nth cell-bounds 1)]
+           (gpt/subtract (nth cell-bounds 1) (hv right-m))]
 
           :center
           [(gpt/add origin-h (hv (/ child-width 2)))
            (gpo/project-point cell-bounds :h (gpo/center cell-bounds))]
 
-          [origin-h (first cell-bounds)])
+          [origin-h
+           (gpt/add (first cell-bounds) (hv left-m))])
 
         [from-v to-v]
         (case align
           :end
           [(gpt/add origin-v (vv child-height))
-           (nth cell-bounds 3)]
+           (gpt/subtract (nth cell-bounds 3) (vv bottom-m))]
 
           :center
           [(gpt/add origin-v (vv (/ child-height 2)))
            (gpo/project-point cell-bounds :v (gpo/center cell-bounds))]
 
-          [origin-v (first cell-bounds)])]
+          [origin-v
+           (gpt/add (first cell-bounds) (vv top-m))])]
+
     (-> (gpt/point)
         (gpt/add (gpt/to-vec from-h to-h))
         (gpt/add (gpt/to-vec from-v to-v)))))
@@ -160,7 +170,7 @@
   (let [[child-width child-height fill-modifiers]
         (fill-modifiers parent parent-bounds child child-bounds layout-data cell-data)
 
-        position-delta (child-position-delta parent child-bounds child-width child-height layout-data cell-data)]
+        position-delta (child-position-delta parent child child-bounds child-width child-height layout-data cell-data)]
 
     (cond-> (ctm/empty)
       (not (ctl/layout-absolute? child))
