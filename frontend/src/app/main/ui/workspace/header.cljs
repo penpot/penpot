@@ -9,6 +9,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.common :refer [show-shared-dialog]]
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
    [app.main.data.modal :as modal]
@@ -347,7 +348,6 @@
   {::mf/wrap-props false}
   [{:keys [on-close file team-id]}]
   (let [file-id   (:id file)
-        file-name (:name file)
         shared?   (:is-shared file)
 
         objects   (mf/deref refs/workspace-page-objects)
@@ -361,15 +361,8 @@
 
         on-add-shared
         (mf/use-fn
-         (mf/deps file-name add-shared-fn)
-         #(modal/show! {:type :confirm
-                        :message ""
-                        :title (tr "modals.add-shared-confirm.message" file-name)
-                        :hint (tr "modals.add-shared-confirm.hint")
-                        :cancel-label :omit
-                        :accept-label (tr "modals.add-shared-confirm.accept")
-                        :accept-style :primary
-                        :on-accept add-shared-fn}))
+         (mf/deps file-id add-shared-fn)
+         #(st/emit! (show-shared-dialog file-id add-shared-fn)))
 
         on-remove-shared
         (mf/use-fn

@@ -1775,6 +1775,12 @@ msgstr ""
 "Una vez añadido como Biblioteca Compartida, los recursos de este archivo "
 "estarán disponibles para ser usado por el resto de tus archivos."
 
+msgid "modals.add-shared-confirm.hint-empty"
+msgstr ""
+"Esta biblioteca está vacía. Una vez añadido como Biblioteca Compartida, los recursos "
+"que crees en este archivo estarán disponibles para ser usado por el resto de tus archivos. "
+"¿Seguro que quieres publicarla?"
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"

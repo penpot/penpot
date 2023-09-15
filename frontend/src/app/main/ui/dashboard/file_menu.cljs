@@ -6,6 +6,7 @@
 
 (ns app.main.ui.dashboard.file-menu
   (:require
+   [app.main.data.common :refer [show-shared-dialog]]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
@@ -151,15 +152,7 @@
         on-add-shared
         (fn [event]
           (dom/stop-propagation event)
-          (st/emit! (modal/show
-                     {:type :confirm
-                      :message ""
-                      :title (tr "modals.add-shared-confirm.message" (:name file))
-                      :hint (tr "modals.add-shared-confirm.hint")
-                      :cancel-label :omit
-                      :accept-label (tr "modals.add-shared-confirm.accept")
-                      :accept-style :primary
-                      :on-accept add-shared})))
+          (st/emit! (show-shared-dialog (:id file) add-shared)))
 
         on-del-shared
         (fn [event]
