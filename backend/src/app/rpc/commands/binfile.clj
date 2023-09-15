@@ -659,19 +659,23 @@
                   :hint "the penpot file seems corrupt, found unexpected uuid (file-id)"))
 
       ;; Update index using with media
-      (l/debug :hint "update index with media" ::l/sync? true)
+      (l/dbg :hint "update index with media" ::l/sync? true)
       (vswap! *state* update :index update-index (map :id media'))
 
       ;; Store file media for later insertion
-      (l/debug :hint "update media references" ::l/sync? true)
+      (l/dbg :hint "update media references" ::l/sync? true)
       (vswap! *state* update :media into (map #(update % :id lookup-index)) media')
-
-      (l/debug :hint "processing file" :file-id file-id ::features features ::l/sync? true)
 
       (binding [ffeat/*current* features
                 ffeat/*wrap-with-objects-map-fn* (if (features "storage/objects-map") omap/wrap identity)
                 ffeat/*wrap-with-pointer-map-fn* (if (features "storage/pointer-map") pmap/wrap identity)
                 pmap/*tracked* (atom {})]
+
+        (l/dbg :hint "processing file"
+               :id file-id
+               :features features
+               :version (-> file :data :version)
+               ::l/sync? true)
 
         (let [file-id' (lookup-index file-id)
               data     (-> (:data file)
@@ -790,7 +794,7 @@
          index index]
     (if-let [id (first items)]
       (let [new-id (if (::overwrite? *options*) id (uuid/next))]
-        (l/debug :fn "update-index" :id id :new-id new-id ::l/sync? true)
+        (l/trc :fn "update-index" :id id :new-id new-id ::l/sync? true)
         (recur (rest items)
                (assoc index id new-id)))
       index)))

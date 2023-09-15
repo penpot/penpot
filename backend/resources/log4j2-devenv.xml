@@ -22,7 +22,7 @@
     <Logger name="org.postgresql" level="error" />
 
     <Logger name="app.rpc.commands.binfile" level="debug" />
-    <Logger name="app.storage.tmp" level="debug" />
+    <Logger name="app.storage.tmp" level="info" />
     <Logger name="app.worker" level="trace" />
     <Logger name="app.msgbus" level="info" />
     <Logger name="app.http.websocket" level="info" />
@@ -31,6 +31,7 @@
     <Logger name="app.rpc.rlimit" level="info" />
     <Logger name="app.rpc.climit" level="info" />
     <Logger name="app.rpc.mutations.files" level="info" />
+    <Logger name="app.common.files.migrations" level="debug" />
 
     <Logger name="app.loggers" level="debug" additivity="false">
       <AppenderRef ref="main" level="debug" />
