@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as usa]
    [app.util.object :as obj]
    [app.util.svg :as usvg]
@@ -20,9 +21,9 @@
 ;; Context to store a re-mapping of the ids
 (def svg-ids-ctx (mf/create-context nil))
 
-(defn set-styles [attrs shape]
-  (let [custom-attrs (-> (usa/extract-style-attrs shape)
-                         (obj/without ["transform"]))
+(defn set-styles [attrs shape render-id]
+  (let [custom-attrs (-> (usa/get-style-props shape render-id)
+                         (obj/unset! "transform"))
 
         attrs (or attrs {})
         attrs (cond-> attrs
@@ -51,8 +52,9 @@
         {:keys [attrs] :as content} (:content shape)
 
         ids-mapping (mf/use-memo #(usvg/generate-id-mapping content))
+        render-id   (mf/use-ctx muc/render-id)
 
-        attrs (-> (set-styles attrs shape)
+        attrs (-> (set-styles attrs shape render-id)
                   (obj/set! "x" x)
                   (obj/set! "y" y)
                   (obj/set! "width" width)
@@ -73,12 +75,13 @@
         {:keys [attrs tag]} content
 
         ids-mapping (mf/use-ctx svg-ids-ctx)
+        render-id   (mf/use-ctx muc/render-id)
 
         attrs (mf/use-memo #(usvg/replace-attrs-ids attrs ids-mapping))
 
         attrs (translate-shape attrs shape)
         element-id (get-in content [:attrs :id])
-        attrs (cond-> (set-styles attrs shape)
+        attrs (cond-> (set-styles attrs shape render-id)
                 (and element-id (contains? ids-mapping element-id))
                 (obj/set! "id" (get ids-mapping element-id)))]
     [:> (name tag) attrs children]))

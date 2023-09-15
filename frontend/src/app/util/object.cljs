@@ -6,16 +6,19 @@
 
 (ns app.util.object
   "A collection of helpers for work with javascript objects."
-  (:refer-clojure :exclude [set! new get get-in merge clone contains?])
+  (:refer-clojure :exclude [set! new get get-in merge clone contains? array?])
   (:require
-   ["lodash/omit" :as omit]
    [cuerdas.core :as str]))
+
+(defn array?
+  [o]
+  (.isArray js/Array o))
 
 (defn create [] #js {})
 
 (defn get
   ([obj k]
-   (when-not (nil? obj)
+   (when (some? obj)
      (unchecked-get obj k)))
   ([obj k default]
    (let [result (get obj k)]
@@ -23,7 +26,8 @@
 
 (defn contains?
   [obj k]
-  (some? (unchecked-get obj k)))
+  (when (some? obj)
+    (js/Object.hasOwn obj k)))
 
 (defn get-keys
   [obj]
@@ -42,15 +46,6 @@
        (recur (first keys)
               (rest keys)
               (unchecked-get res key))))))
-
-#_:clj-kondo/ignore
-(defn without
-  [obj keys]
-  (let [keys (cond
-               (vector? keys) (into-array keys)
-               (array? keys) keys
-               :else (throw (js/Error. "unexpected input")))]
-    (omit obj keys)))
 
 (defn clone
   [a]
@@ -101,11 +96,27 @@
   (js* "~{} in ~{}" prop obj))
 
 (defn map->obj
-  [o]
-  (reduce-kv (fn [result k v]
-               (let [k (if (keyword? k) (name k) k)
-                     v (if (keyword? v) (name v) v)]
-                 (unchecked-set result k v)
-                 result))
+  [x]
+  (cond
+    (nil? x)
+    nil
+
+    (keyword? x)
+    (name x)
+
+    (map? x)
+    (reduce-kv (fn [m k v]
+                 (let [k (if (keyword? k) (name k) k)]
+                   (unchecked-set m k (^function map->obj v))
+                   m))
                #js {}
-               o))
+               x)
+
+    (coll? x)
+    (reduce (fn [arr v]
+              (.push arr v)
+              arr)
+            (array)
+            x)
+
+    :else x))

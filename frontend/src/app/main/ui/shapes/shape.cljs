@@ -21,6 +21,8 @@
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
+;; FIXME: revisit this: breaks all memoization because of this new
+;; property added to shapes
 (defn propagate-wrapper-styles-child
   [child wrapper-props]
   (let [child-props-childs
@@ -42,7 +44,7 @@
 
 (defn propagate-wrapper-styles
   ([children wrapper-props]
-   (if (.isArray js/Array children)
+   (if ^boolean (obj/array? children)
      (->> children (map #(propagate-wrapper-styles-child % wrapper-props)))
      (-> children (propagate-wrapper-styles-child wrapper-props)))))
 
@@ -85,7 +87,9 @@
 
         wrapper-props
         (-> (obj/clone props)
-            (obj/without ["shape" "children" "disable-shadows?"])
+            (obj/unset! "shape")
+            (obj/unset! "children")
+            (obj/unset! "disable-shadows?")
             (obj/set! "ref" ref)
             (obj/set! "id" (dm/fmt "shape-%" shape-id))
             (obj/set! "style" styles))
@@ -93,7 +97,8 @@
         wrapper-props
         (cond-> wrapper-props
           (= :group type)
-          (attrs/add-style-attrs shape render-id)
+          (-> (attrs/add-fill-props! shape render-id)
+              (attrs/add-border-props! shape))
 
           (some? filter-str)
           (obj/set! "filter" filter-str))

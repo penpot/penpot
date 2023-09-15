@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.path
   (:require
    [app.common.logging :as log]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [app.util.object :as obj]
@@ -28,7 +29,8 @@
                                  :cause e)
                        "")))
 
-        props   (-> (attrs/extract-style-attrs shape)
+        render-id   (mf/use-ctx muc/render-id)
+        props   (-> (attrs/get-style-props shape render-id)
                     (obj/set! "d" pdata))]
 
     [:& shape-custom-strokes {:shape shape}

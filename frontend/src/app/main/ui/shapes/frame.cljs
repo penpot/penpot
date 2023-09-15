@@ -43,7 +43,7 @@
             t         (gsh/transform-str shape)
 
             props     (mf/with-memo [shape render-id]
-                        (-> (attrs/extract-style-attrs shape render-id)
+                        (-> (attrs/get-style-props shape render-id)
                             (obj/merge! #js {:x x :y y :width w :height h :transform t})))
 
             path?     (some? (.-d props))]
@@ -74,7 +74,7 @@
         show-content? (get shape :show-content)
 
         props         (mf/with-memo [shape render-id]
-                        (-> (attrs/extract-style-attrs shape render-id)
+                        (-> (attrs/get-style-props shape render-id)
                             (obj/merge!
                              #js {:x x
                                   :y y

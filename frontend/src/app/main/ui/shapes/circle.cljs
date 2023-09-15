@@ -34,7 +34,7 @@
         rid   (mf/use-ctx muc/render-id)
 
         props (mf/with-memo [shape]
-                (-> (attrs/extract-style-attrs shape rid)
+                (-> (attrs/get-style-props shape rid)
                     (obj/merge! #js {:cx cx :cy cy :rx rx :ry ry :transform t})))]
 
     [:& shape-custom-strokes {:shape shape}
