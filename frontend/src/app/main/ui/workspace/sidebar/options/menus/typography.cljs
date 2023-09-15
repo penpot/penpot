@@ -225,8 +225,8 @@
                   :spell-check false
                   :on-change on-filter-change}]
          (when (and recent-fonts show-recent)
-           [:hr]
-           [*
+           [:*
+            [:hr]
             [:p.title (tr "workspace.options.recent-fonts")]
             (for [[idx font] (d/enumerate recent-fonts)]
               [:& font-item {:key (dm/str "font-" idx)
