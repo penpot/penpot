@@ -10,7 +10,6 @@
    [app.browser :as bw]
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.svg :as svg]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.util.mime :as mime]
@@ -317,11 +316,7 @@
                       ;; SVG standard don't allow the entity
                       ;; nbsp. &#160; is equivalent but compatible
                       ;; with SVG.
-                      result  (str/replace result "&nbsp;" "&#160;")
-
-                      result  (if (contains? cf/flags :exporter-svgo)
-                                (svg/optimize result)
-                                result)]
+                      result  (str/replace result "&nbsp;" "&#160;")]
 
                 ;; (println "------- ORIGIN:")
                 ;; (cljs.pprint/pprint (xml->clj xmldata))
