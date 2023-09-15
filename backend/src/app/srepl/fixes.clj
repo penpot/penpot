@@ -358,11 +358,24 @@
                                         (println " -> set touched " (:name shape) (:id shape) attr group))
                                       (cond-> shape
                                         (and (not equal?) (not (cph/touched-group? shape group)))
-                                        (update :touched cph/set-touched-group group)))))]
+                                        (update :touched cph/set-touched-group group)))))
+                                
+                                fix-touched-children
+                                (fn [shape]
+                                  (let [matches? (fn [[child-id ref-child-id]]
+                                                   (let [child (ctn/get-shape page child-id)]
+                                                     (= (:shape-ref child) ref-child-id)))
+                                        equal? (every? matches? (d/zip (:shapes shape) (:shapes ref-shape)))]
+                                      (when (and (not equal?) (not (cph/touched-group? shape :shapes)))
+                                        (println " -> set touched " (:name shape) (:id shape) :shapes :shapes-group))
+                                      (cond-> shape
+                                        (and (not equal?) (not (cph/touched-group? shape :shapes-group)))
+                                        (update :touched cph/set-touched-group :shapes-group))))]
 
-                            (reduce fix-touched-attr
-                                    shape
-                                    (assoc ctk/sync-attrs :shapes :shapes-group)))
+                            (as-> shape $
+                              (reduce fix-touched-attr $ ctk/sync-attrs)
+                              (fix-touched-children $)))
+
                           shape))
 
          update-page (fn [page]
