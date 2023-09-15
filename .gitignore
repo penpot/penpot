@@ -2,6 +2,7 @@
 *.jar
 *.orig
 *.penpot
+*.css.json
 .calva
 .clj-kondo
 .cpcache
