@@ -531,7 +531,6 @@
               :on-focus #(dom/select-target %)
               :on-change #(on-change-z-index %)
               :nillable true
-              :disabled (not is-absolute?)
               :value (:layout-item-z-index values)}]])]
 
         (when is-layout-child?
