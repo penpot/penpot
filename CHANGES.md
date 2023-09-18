@@ -6,6 +6,10 @@
 
 - Improve selected colors [Taiga #5805]( https://tree.taiga.io/project/penpot/us/5805)
 
+### :bug: Bugs fixed
+
+- Fix problem with z-index field in non-absolute items
+
 ## 1.19.3
 
 ### :sparkles: New features
