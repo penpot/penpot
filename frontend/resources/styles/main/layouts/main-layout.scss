@@ -21,7 +21,6 @@
     grid-row: 1 / span 2;
     grid-column: 1 / span 2;
     padding: 1rem;
-    // overflow: hidden;
   }
 
   .dashboard-content {
@@ -50,4 +49,904 @@
 #screenshot {
   display: flex;
   flex-direction: column;
+}
+
+// NEW DASHBOARD CSS
+
+.dashboard-layout-refactor {
+  background-color: $db-primary;
+  display: grid;
+  grid-template-rows: 50px 1fr;
+  grid-template-columns: 40px 256px 1fr;
+  height: 100vh;
+
+  .context-menu-items {
+    background-color: $db-tertiary;
+    border: 1px solid $db-cuaternary;
+    border-radius: 8px;
+    min-width: 252px;
+
+    svg {
+      fill: $df-secondary;
+    }
+
+    .separator {
+      border-color: transparent;
+      margin-top: 10px;
+    }
+
+    a,
+    .context-menu-action {
+      border-radius: 8px;
+      height: 40px;
+      margin: 5px;
+      color: $df-primary;
+      cursor: pointer;
+      width: auto;
+
+      &:hover {
+        background-color: $db-cuaternary;
+      }
+    }
+  }
+
+  .dashboard-sidebar {
+    background-color: $db-primary;
+    border-right: 1px solid $db-cuaternary;
+    grid-row: 1 / span 2;
+    grid-column: 1 / span 2;
+    margin: 0 1rem 0 0;
+    padding: 1rem 0 0 0;
+
+    .dropdown {
+      background-color: $db-tertiary;
+      border: 1px solid $db-cuaternary;
+      border-radius: 8px;
+      min-width: 252px;
+
+      .separator {
+        border-color: transparent;
+        margin-top: 10px;
+      }
+
+      li {
+        border-radius: 8px;
+        height: 40px;
+        margin: 5px;
+
+        &:hover {
+          background-color: $db-cuaternary;
+        }
+      }
+
+      &.options-dropdown {
+        li {
+          color: $df-primary;
+          &.warning {
+            color: $color-danger;
+          }
+        }
+      }
+    }
+
+    .sidebar-content {
+      .back-to-dashboard {
+        .icon {
+          svg {
+            fill: $df-secondary;
+          }
+        }
+        .text {
+          color: $df-primary;
+        }
+      }
+      .sidebar-team-switch {
+        .switch-content {
+          background-color: $db-tertiary;
+          border-radius: 8px;
+          border-color: transparent;
+          height: 48px;
+
+          .current-team {
+            border-right: 1px solid $db-primary;
+            height: 100%;
+          }
+
+          svg {
+            fill: $df-secondary;
+          }
+
+          .team-name {
+            .team-text {
+              color: $df-primary;
+              width: 145px;
+            }
+          }
+        }
+      }
+
+      .teams-dropdown {
+        background-color: $db-tertiary;
+        border-radius: 8px;
+        border: 1px solid $db-cuaternary;
+        min-width: 248px;
+
+        li {
+          border-radius: 8px;
+          height: 42px;
+          padding: 0 5px;
+          margin: 5px;
+
+          .team-text {
+            color: $df-primary;
+            width: 165px;
+          }
+          svg {
+            fill: $df-secondary;
+          }
+
+          &:hover {
+            background-color: $db-cuaternary;
+            .team-icon {
+              &.new-team {
+                background-color: $da-primary;
+                svg {
+                  fill: $db-secondary;
+                }
+              }
+            }
+          }
+
+          .team-icon {
+            &.new-team {
+              background-color: $db-cuaternary;
+            }
+          }
+        }
+      }
+
+      .sidebar-search {
+        background-color: $db-tertiary;
+        border-color: transparent;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        margin-top: 0;
+        position: relative;
+
+        .input-text {
+          border-radius: 8px;
+          color: $df-primary;
+          max-width: 100%;
+          padding: 6px 10px;
+
+          &:focus {
+            border: 1px solid $da-primary;
+          }
+        }
+        ::placeholder {
+          color: $df-secondary;
+        }
+
+        .search {
+          position: absolute;
+          top: 10px;
+          right: 2px;
+        }
+      }
+
+      .sidebar-nav {
+        li {
+          padding: 0.6rem 0.6rem 0.6rem 1.4rem;
+          &.current {
+            background-color: $db-cuaternary;
+            a {
+              font-weight: 400;
+              span {
+                color: $da-primary;
+              }
+            }
+            span {
+              color: $da-primary;
+            }
+          }
+          &:hover {
+            background-color: $db-cuaternary;
+          }
+          span {
+            color: $df-secondary;
+          }
+          &::before {
+            display: none;
+          }
+
+          svg {
+            display: none;
+          }
+        }
+      }
+    }
+
+    .sidebar-empty-placeholder {
+      color: $df-secondary;
+    }
+
+    // Profile sidebar
+    .profile-section {
+      background-color: $db-tertiary;
+      border-top: 1px solid $db-cuaternary;
+
+      span {
+        color: $df-primary;
+      }
+
+      .dashboard-comments-section {
+        border-color: transparent;
+        border-radius: 8px;
+        background-color: $db-primary;
+        height: 32px;
+        width: 32px;
+
+        .button {
+          border-radius: 8px;
+          background-color: $db-primary;
+          height: 32px;
+          width: 32px;
+
+          svg {
+            fill: $df-secondary;
+          }
+
+          &:hover {
+            background-color: $db-cuaternary;
+
+            svg {
+              fill: $da-primary;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Dashboard layout
+  .dashboard-content {
+    grid-row: 1 / span 2;
+    padding: 1rem 1rem 0 0;
+
+    .grid-empty-placeholder {
+      background-color: transparent;
+
+      .create-new {
+        background-color: $db-tertiary;
+        border-radius: 8px;
+        border: none;
+        color: $df-primary;
+        text-transform: uppercase;
+
+        &:hover {
+          background-color: $db-cuaternary;
+          color: $da-primary;
+        }
+      }
+
+      &.search {
+        border: 1px solid $db-cuaternary;
+        border-radius: 8px;
+        .text {
+          color: $df-primary;
+        }
+        .icon {
+          svg {
+            fill: $df-secondary;
+          }
+        }
+      }
+    }
+
+    // Settings
+    .dashboard-container {
+      background-color: transparent;
+      border-top: 1px solid $db-cuaternary;
+
+      .dashboard-settings {
+        a {
+          color: $df-secondary;
+        }
+        .form-container {
+          form {
+            .fields-row {
+              .custom-input,
+              .custom-select {
+                flex-direction: column-reverse;
+                label {
+                  position: relative;
+                  text-transform: uppercase;
+                  color: $df-primary;
+                  font-size: 11px;
+                  margin-bottom: 12px;
+                }
+                input,
+                select {
+                  background-color: $db-tertiary;
+                  border-radius: 8px;
+                  border-color: transparent;
+                  color: $df-primary;
+                  padding: 0 15px;
+                  &:focus {
+                    outline: 1px solid $da-primary;
+                  }
+                  ::placeholder {
+                    color: $df-secondary;
+                  }
+                }
+                .help-icon {
+                  bottom: 12px;
+                  top: auto;
+                  svg {
+                    fill: $df-secondary;
+                  }
+                }
+                &.disabled {
+                  input {
+                    background-color: $db-primary;
+                    border-color: $db-cuaternary;
+                    color: $df-secondary;
+                  }
+                }
+                .input-container {
+                  background-color: $db-tertiary;
+                  border-radius: 8px;
+                  border-color: transparent;
+                  margin-top: 22px;
+                  .main-content {
+                    label {
+                      position: absolute;
+                      top: -24px;
+                    }
+                    span {
+                      color: $df-primary;
+                    }
+                  }
+                  &:focus {
+                    border: 1px solid $da-primary;
+                  }
+                }
+              }
+            }
+          }
+          .links {
+            margin-top: 12px;
+          }
+        }
+      }
+
+      // Members section
+      .dashboard-table {
+        .table-header {
+          background-color: transparent;
+          color: $df-secondary;
+          font-size: 12px;
+          text-transform: uppercase;
+        }
+        .table-rows {
+          .table-row {
+            background-color: $db-tertiary;
+            border-radius: 8px;
+            color: $df-primary;
+            .rol-selector {
+              background-color: $db-cuaternary;
+              border-color: transparent;
+              border-radius: 8px;
+            }
+          }
+        }
+        .member-info {
+          .member-name .you,
+          .member-email {
+            color: $df-secondary;
+          }
+        }
+        .status-badge {
+          border-radius: 8px;
+          color: $db-primary;
+          text-transform: uppercase;
+        }
+        .empty-invitations {
+          border: 1px solid $db-cuaternary;
+          border-radius: 8px;
+          color: $df-secondary;
+        }
+      }
+      .actions-dropdown,
+      .options-dropdown {
+        background-color: $db-tertiary;
+        border: 1px solid $db-cuaternary;
+        border-radius: 8px;
+        min-width: 252px;
+
+        .separator {
+          border-color: transparent;
+          margin-top: 10px;
+        }
+
+        li {
+          border-radius: 8px;
+          height: 40px;
+          margin: 5px;
+          color: $df-primary;
+
+          &:hover {
+            background-color: $db-cuaternary;
+          }
+        }
+
+        &.options-dropdown {
+          li {
+            color: $df-primary;
+            &.warning {
+              color: $color-danger;
+            }
+          }
+        }
+      }
+    }
+
+    // Team settings
+    .horizontal-blocks {
+      flex-direction: column;
+      gap: 24px;
+      .block {
+        background-color: transparent;
+        .label {
+          color: $df-secondary;
+          font-size: 11px;
+          text-transform: uppercase;
+        }
+        .icon {
+          svg {
+            fill: $df-secondary;
+          }
+        }
+        .name,
+        .text {
+          color: $df-primary;
+        }
+        &.info-block {
+          padding-top: 180px;
+          .icon {
+            left: 0;
+            height: 120px;
+            width: 120px;
+            img {
+              width: 120px;
+              height: 120px;
+            }
+            .update-overlay {
+              background-color: $da-primary;
+              height: 120px;
+              width: 120px;
+              svg {
+                fill: $db-primary;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .dashboard-header {
+    background-color: transparent;
+    .dashboard-title {
+      h1 {
+        color: $df-primary;
+        font-size: 24px;
+        font-weight: 400;
+        width: 100%;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        display: block;
+        max-width: 700px;
+      }
+    }
+    .icon {
+      svg {
+        fill: $df-secondary;
+      }
+    }
+
+    // Settings sub-menu
+    .dashboard-header-options {
+      li {
+        a {
+          font-size: 16px;
+          color: $df-secondary;
+          border-color: transparent;
+          &:hover {
+            color: $df-primary;
+          }
+        }
+        &.active {
+          a {
+            color: $df-primary;
+          }
+        }
+      }
+    }
+  }
+
+  // Hero banners
+  .team-hero {
+    background-color: $db-tertiary;
+    border: none;
+    img {
+      border-radius: 4px;
+      margin-bottom: 0;
+      width: 230px;
+    }
+    .text {
+      .title {
+        color: $df-primary;
+        font-weight: 400;
+      }
+      .info {
+        color: $df-secondary;
+        a {
+          color: $da-primary;
+        }
+      }
+    }
+    svg {
+      fill: $df-secondary;
+    }
+    .invite {
+      height: 32px;
+    }
+  }
+
+  .hero-projects {
+    .tutorial,
+    .walkthrough {
+      background-color: $db-tertiary;
+      border: none;
+      img {
+        border-radius: 4px;
+        margin-bottom: 0;
+        width: 230px;
+      }
+      .text {
+        .title {
+          color: $df-primary;
+          font-weight: 400;
+        }
+        .info {
+          color: $df-secondary;
+          a {
+            color: $da-primary;
+          }
+        }
+      }
+      svg {
+        fill: $df-secondary;
+      }
+      .invite {
+        height: 32px;
+      }
+    }
+  }
+
+  // Dashboard content
+  .dashboard-project-row .project {
+    background-color: transparent;
+
+    h2 {
+      color: $df-primary;
+      font-weight: 400;
+    }
+    span {
+      color: $df-secondary;
+    }
+    .project-actions {
+      svg {
+        fill: $df-primary;
+      }
+      .pin-icon {
+        svg.icon-pin-fill {
+          fill: $df-secondary;
+        }
+      }
+    }
+  }
+
+  .dashboard-sidebar .sidebar-content hr {
+    border-color: transparent;
+    margin: 0.8rem 15px;
+  }
+
+  .icon {
+    svg {
+      fill: $df-secondary;
+    }
+  }
+
+  .btn-primary {
+    background-color: $da-tertiary;
+    border-radius: 8px;
+    color: $db-primary;
+    height: 32px;
+    text-transform: uppercase;
+    &:hover {
+      background-color: darken($da-tertiary, 10%);
+      color: $db-primary;
+    }
+  }
+
+  .btn-secondary {
+    background-color: $db-tertiary;
+    text-transform: uppercase;
+    border: none;
+    color: $df-primary;
+    border-radius: 8px;
+
+    &:hover {
+      background-color: $db-cuaternary;
+      color: $da-primary;
+      svg {
+        fill: $da-primary;
+      }
+    }
+  }
+
+  // File cards
+  .dashboard-grid {
+    .grid-item {
+      &.project-th {
+        background-color: transparent;
+        border-radius: 8px;
+        padding-top: 0.3rem;
+        .info-wrapper {
+          cursor: pointer;
+          .item-info {
+            h3 {
+              color: $df-primary;
+              font-size: 16px;
+              font-weight: 400;
+            }
+          }
+          .date {
+            color: $df-secondary;
+          }
+          .project-th-actions {
+            .project-th-icon {
+              margin-top: 0;
+              .icon-actions {
+                fill: $df-secondary;
+              }
+            }
+          }
+        }
+
+        &:hover {
+          background-color: $db-tertiary;
+          .grid-item-th {
+            border: none;
+          }
+        }
+      }
+
+      .grid-item-th {
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+      }
+
+      .item-badge {
+        background-color: $da-primary;
+        border: none;
+        border-radius: 4px;
+        svg {
+          fill: $db-secondary;
+        }
+      }
+    }
+  }
+
+  // Libraries slider
+  .dashboard-templates-section {
+    .title {
+      right: -24px;
+      button {
+        background-color: $db-cuaternary;
+        border: none;
+        span {
+          color: $df-primary;
+          font-weight: 400;
+        }
+      }
+    }
+    .content {
+      border-top-left-radius: 8px;
+      border: none;
+      background-color: $db-cuaternary;
+
+      .template-card {
+        color: $df-primary;
+        padding: 0.2rem 0.3rem 1rem 0.3rem;
+        border-radius: 8px;
+        .img-container {
+          border: none;
+          img {
+            border-radius: 4px;
+          }
+        }
+        .card-name {
+          span {
+            font-size: 16px;
+          }
+        }
+        .template-link {
+          .template-link-title {
+            color: $df-primary;
+            font-weight: 400;
+          }
+          .template-link-text {
+            color: $df-secondary;
+          }
+        }
+
+        &:hover {
+          background-color: $db-tertiary;
+          .img-container {
+            border: none;
+          }
+        }
+      }
+    }
+  }
+
+  // Input edit
+  .edit-wrapper {
+    border: none;
+    input {
+      background-color: $db-primary !important;
+      outline: 1px solid $da-primary !important;
+      border-radius: 8px;
+      color: $df-primary !important;
+      font-size: 16px !important;
+    }
+    .close {
+      right: -8px;
+      svg {
+        fill: $df-secondary;
+      }
+      &:hover {
+        svg {
+          fill: $color-danger;
+        }
+      }
+    }
+  }
+
+  // Inner sections
+  .dashboard-fonts {
+    background-color: $db-primary;
+    border-top: 1px solid $db-cuaternary;
+
+    .dashboard-fonts-hero {
+      background-color: transparent;
+      .desc {
+        width: 70%;
+        h2 {
+          color: $df-primary;
+          font-weight: 400;
+        }
+        p {
+          color: $df-secondary;
+          font-size: 14px;
+        }
+        .banner {
+          background-color: $db-primary;
+          border-radius: 8px;
+          border: 1px solid $db-cuaternary;
+          color: $df-primary;
+          font-size: 12px;
+          .content {
+            span {
+              a {
+                color: $da-primary;
+              }
+            }
+          }
+          .icon {
+            background-color: transparent;
+            svg {
+              fill: $df-secondary;
+            }
+          }
+          &.warning {
+            background-color: $db-cuaternary;
+          }
+        }
+      }
+    }
+
+    .installed-fonts-header {
+      background-color: transparent;
+      text-transform: uppercase;
+      color: $df-secondary;
+    }
+
+    .fonts-placeholder {
+      border: 1px solid $db-cuaternary;
+      border-radius: 8px;
+      .icon {
+        svg {
+          fill: $df-secondary;
+        }
+      }
+      .label {
+        color: $df-secondary;
+      }
+    }
+
+    .font-item {
+      background-color: $db-tertiary;
+      border-radius: 8px;
+      color: $df-secondary;
+      padding: 0.8rem 1.5rem;
+      min-height: auto;
+      margin-top: 4px;
+      &:not(:first-child) {
+        border: none;
+      }
+      .table-field {
+        color: $df-primary;
+        .variant {
+          background-color: $db-cuaternary;
+          border-radius: 8px;
+          margin-right: 4px;
+          padding-right: 4px;
+        }
+      }
+    }
+
+    .font-item {
+      input {
+        background-color: $db-tertiary;
+        border-color: transparent;
+        border-radius: 8px;
+        color: $df-primary;
+        font-size: 14px;
+        &:focus {
+          outline: 1px solid $da-primary;
+        }
+      }
+      > .variants {
+        padding-left: 1rem;
+      }
+    }
+
+    .installed-fonts-header {
+      padding-right: 0;
+      .search-input {
+        input {
+          background-color: $db-tertiary;
+          border-color: transparent;
+          border-radius: 8px;
+          color: $df-primary;
+          font-size: 14px;
+          height: 32px;
+          padding: 0 0.6rem;
+          width: 150px;
+          &:focus {
+            outline: 1px solid $da-primary;
+          }
+          &::placeholder {
+            color: $df-secondary;
+          }
+        }
+      }
+    }
+  }
 }
