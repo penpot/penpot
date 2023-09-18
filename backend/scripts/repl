@@ -41,7 +41,7 @@ export PENPOT_FLAGS="\
 # Initialize MINIO config
 mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin
 mc admin user add penpot-s3 penpot-devenv penpot-devenv
-mc admin policy set penpot-s3 readwrite user=penpot-devenv
+mc admin policy attach penpot-s3 readwrite --user=penpot-devenv
 mc mb penpot-s3/penpot -p
 
 export AWS_ACCESS_KEY_ID=penpot-devenv
