@@ -25,6 +25,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.shortcuts :as sc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -441,7 +442,7 @@
   (let [single?             (= (count shapes) 1)
         components-v2       (features/use-feature :components-v2)
 
-        has-component?      (some true? (map #(contains? % :component-id) shapes))
+        has-component?      (some true? (map #(ctk/instance-head? %) shapes))
         is-component?       (and single? (-> shapes first :component-id some?))
         in-copy-not-root?   (some true? (map #(ctk/in-component-copy-not-root? %) shapes))
 
@@ -449,10 +450,15 @@
         touched?            (and single? (cph/component-touched? objects (:id (first shapes))))
         can-update-main?    (or (not components-v2) touched?)
 
+
+
         first-shape         (first shapes)
         {:keys [id component-id component-file]} first-shape
         main-instance?      (ctk/main-instance? first-shape)
-        component-shapes    (filter #(contains? % :component-id) shapes)
+        component-shapes    (filter #(ctk/instance-head? %) shapes)
+
+        touched-components   (filter #(cph/component-touched? objects (:id %)) component-shapes)
+        can-update-main-of-any? (or (not components-v2) (not-empty touched-components))
 
 
         current-file-id     (mf/use-ctx ctx/current-file-id)
@@ -475,6 +481,12 @@
         do-detach-component #(st/emit! (dwl/detach-component id))
         do-detach-component-in-bulk #(st/emit! dwl/detach-selected-components)
         do-reset-component #(st/emit! (dwl/reset-component id))
+        do-reset-component-in-bulk (fn []
+                                     (let [undo-id (js/Symbol)]
+                                       (st/emit! (dwu/start-undo-transaction undo-id))
+                                       (apply st/emit!
+                                              (map #(dwl/reset-component (:id %)) touched-components))
+                                       (st/emit! (dwu/commit-undo-transaction undo-id))))
         do-show-component #(st/emit! (dw/go-to-component component-id))
         do-show-in-assets #(st/emit! (if components-v2
                                        (dw/show-component-in-assets component-id)
@@ -484,7 +496,7 @@
 
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file component-file))
         do-update-component #(st/emit! (dwl/update-component-sync id component-file))
-        do-update-component-in-bulk #(st/emit! (dwl/update-component-in-bulk component-shapes component-file))
+        do-update-component-in-bulk #(st/emit! (dwl/update-component-in-bulk touched-components component-file))
         do-restore-component #(st/emit! (dwl/restore-component component-file component-id)
                                         (dw/go-to-main-instance nil component-id))
 
@@ -524,12 +536,15 @@
         [:& menu-entry {:title (tr "workspace.shape.menu.create-multiple-components")
                         :on-click do-add-multiple-components}])
       (when (and has-component? (not single?))
-        [:*
-         [:& menu-entry {:title (tr "workspace.shape.menu.detach-instances-in-bulk")
-                         :shortcut (sc/get-tooltip :detach-component)
-                         :on-click do-detach-component-in-bulk}]
-         [:& menu-entry {:title (tr "workspace.shape.menu.update-components-in-bulk")
-                         :on-click do-update-in-bulk}]])]
+        [:& menu-entry {:title (tr "workspace.shape.menu.detach-instances-in-bulk")
+                        :shortcut (sc/get-tooltip :detach-component)
+                        :on-click do-detach-component-in-bulk}])
+      (when (and has-component? can-update-main-of-any? (not single?))
+        [:* [:& menu-entry {:title (tr "workspace.shape.menu.update-components-in-bulk")
+                            :on-click do-update-in-bulk}]
+         [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
+                         :on-click do-reset-component-in-bulk}]]
+        )]
 
      (when is-component?
        ;; WARNING: this menu is the same as the context menu at the sidebar.
