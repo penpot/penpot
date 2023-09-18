@@ -32,7 +32,7 @@
 
 (mf/defc layer-item
   {::mf/wrap-props false}
-  [{:keys [index item selected objects sortable? filtered? depth parent-size component-child?]}]
+  [{:keys [index item selected objects sortable? filtered? depth parent-size component-child? highlighted]}]
   (let [id                (:id item)
         name              (:name item)
         blocked?          (:blocked item)
@@ -50,6 +50,7 @@
         expanded?         (mf/deref expanded-iref)
 
         selected?         (contains? selected id)
+        highlighted?      (contains? highlighted id)
         container?        (or (cph/frame-shape? item)
                               (cph/group-shape? item))
         absolute?         (ctl/layout-absolute? item)
@@ -341,6 +342,7 @@
 
        [:div.element-list-body {:class (stl/css-case*
                                         :selected selected?
+                                        :hover highlighted?
                                         :icon-layer (= (:type item) :icon))
                                 :on-click select-shape
                                 :on-pointer-enter on-pointer-enter
@@ -395,6 +397,7 @@
               [:& layer-item
                {:item item
                 :selected selected
+                :highlighted highlighted
                 :index index
                 :objects objects
                 :key (dm/str id)

@@ -1855,13 +1855,13 @@
       }
     }
     .position-wrapper {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      display: flex;
       width: 100%;
       max-width: 185px;
       height: 26px;
       border-radius: 4px;
       border: 1px solid $color-gray-60;
+
       .position-btn {
         display: flex;
         justify-content: center;
@@ -1871,6 +1871,8 @@
         cursor: pointer;
         color: $color-gray-20;
         border-right: 1px solid $color-gray-60;
+        flex: 1;
+
         &:last-child {
           border-right: none;
         }
@@ -1878,6 +1880,23 @@
         &:hover {
           color: $color-primary;
         }
+
+        &[disabled] {
+          opacity: 0.5;
+          &:hover {
+            color: $color-gray-20;
+          }
+        }
+      }
+    }
+
+    &.single-button {
+      display: flex;
+      justify-content: end;
+      height: 1.5rem;
+
+      .btn-wrapper {
+        width: initial;
       }
     }
   }
@@ -2262,6 +2281,13 @@
         grid-template-columns: 35px 1fr 1fr auto;
         background-color: $color-gray-60;
         padding: 3px;
+        border-radius: 3px;
+        border: 1px solid transparent;
+
+        &:hover {
+          border: 1px solid $color-primary;
+        }
+
         &:not(:first-child) {
           margin-top: 3px;
         }

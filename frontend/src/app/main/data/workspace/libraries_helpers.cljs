@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logging :as log]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
@@ -21,6 +22,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -158,10 +160,10 @@
 
 (defn generate-instantiate-component
   "Generate changes to create a new instance from a component."
-  ([changes file-id component-id position page libraries]
-   (generate-instantiate-component changes file-id component-id position page libraries nil nil))
+  ([changes objects file-id component-id position page libraries]
+   (generate-instantiate-component changes objects file-id component-id position page libraries nil nil))
 
-  ([changes file-id component-id position page libraries old-id parent-id]
+  ([changes objects file-id component-id position page libraries old-id parent-id]
    (let [component     (ctf/get-component libraries file-id component-id)
          library       (get libraries file-id)
 
@@ -181,6 +183,19 @@
          ;; on copy/paste old id is used later to reorder the paster layers
          changes (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
                    (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id)))
+
+         changes
+         (if (ctl/grid-layout? objects (:parent-id first-shape))
+           (let [[row column] (gslg/get-drop-cell (:parent-id first-shape) objects position)]
+             (-> changes
+                 (pcb/update-shapes
+                  [(:parent-id first-shape)]
+                  (fn [shape]
+                    (-> shape
+                        (ctl/push-into-cell [(:id first-shape)] row column)
+                        (ctl/assign-cells))))
+                 (pcb/reorder-grid-children [(:parent-id first-shape)])))
+           changes)
 
          changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                          changes

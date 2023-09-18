@@ -82,7 +82,8 @@
         shape-parent-frame   (cph/get-frame objects (:frame-id first-selected-shape))
 
         edit-grid?           (ctl/grid-layout? objects edition)
-        selected-cell        (dm/get-in grid-edition [edition :selected])
+        selected-cells       (->> (dm/get-in grid-edition [edition :selected])
+                                  (map #(dm/get-in objects [edition :layout-grid-cells %])))
 
         on-change-tab
         (fn [options-mode]
@@ -105,10 +106,10 @@
           [:& bool-options]
 
           (cond
-            (some? selected-cell)
+            (d/not-empty? selected-cells)
             [:& grid-cell/options
              {:shape (get objects edition)
-              :cell (dm/get-in objects [edition :layout-grid-cells selected-cell])}]
+              :cells selected-cells}]
 
             edit-grid?
             [:& layout-container/grid-layout-edition
@@ -166,10 +167,10 @@
            [:& align-options]
            [:& bool-options]
            (cond
-             (some? selected-cell)
+             (d/not-empty? selected-cells)
              [:& grid-cell/options
               {:shape (get objects edition)
-               :cell (dm/get-in objects [edition :layout-grid-cells selected-cell])}]
+               :cells selected-cells}]
 
              edit-grid?
              [:& layout-container/grid-layout-edition

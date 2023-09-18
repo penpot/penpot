@@ -13,8 +13,6 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]))
 
-;; FIXME: need proper schemas
-
 ;; :layout                 ;; :flex, :grid in the future
 ;; :layout-flex-dir        ;; :row, :row-reverse, :column, :column-reverse
 ;; :layout-gap-type        ;; :simple, :multiple
@@ -695,6 +693,29 @@
         (update :layout-grid-cells update-cells)
         (assign-cells))))
 
+(defn- reorder-grid-track
+  [prop parent from-index to-index]
+  (-> parent
+      (update
+       prop
+       (fn [tracks]
+         (let [tr (nth tracks from-index)]
+           (mapv
+            second
+            (-> tracks
+                (d/enumerate) ;; make unique so the insert-at-index won't remove the value
+                (assoc from-index nil)
+                (d/insert-at-index (inc to-index) [[nil tr]])
+                (d/vec-without-nils))))))))
+
+(defn reorder-grid-column
+  [parent from-index to-index]
+  (reorder-grid-track :layout-grid-columns parent from-index to-index))
+
+(defn reorder-grid-row
+  [parent from-index to-index]
+  (reorder-grid-track :layout-grid-rows parent from-index to-index))
+
 (defn get-cells
   ([parent]
    (get-cells parent nil))
@@ -827,7 +848,9 @@
                 cells
                 (let [next-free (first free-cells)
                       current (first pending)
-                      cells (update-in cells [next-free :shapes] conj current)]
+                      cells (-> cells
+                                (update-in [next-free :shapes] conj current)
+                                (assoc-in [next-free :position] :auto))]
                   (recur cells (rest free-cells) (rest pending)))))]
 
         ;; TODO: Remove after testing
@@ -851,7 +874,7 @@
 
                 (let [cell-from (get cells idx)
                       cell-to   (get cells (inc idx))
-                      cell (assoc cell-to :shapes (:shapes cell-from))
+                      cell (assoc cell-to :shapes (:shapes cell-from) :position (:position cell-from))
                       parent (assoc-in parent [:layout-grid-cells (:id cell)] cell)
                       result-cells (assoc result-cells (inc idx) cell)]
 
@@ -863,7 +886,7 @@
                     (recur parent result-cells (inc idx))))))]
 
         [(assoc-in parent [:layout-grid-cells (get-in cells [index :id]) :shapes] [])
-         (assoc-in result-cells [index :shapes] [])]))))
+         (update result-cells index assoc :shapes [] :position :auto)]))))
 
 
 (defn in-cell?
@@ -893,7 +916,7 @@
         [start-index start-cell] (seek-indexed-cell cells row column)]
 
     (if (some? start-cell)
-      (let [ ;; start-index => to-index is the range where the shapes inserted will be added
+      (let [;; start-index => to-index is the range where the shapes inserted will be added
             to-index (min (+ start-index (count shape-ids)) (dec (count cells)))]
 
         ;; Move shift the `shapes` attribute between cells
@@ -901,7 +924,8 @@
              (map vector shape-ids)
              (reduce (fn [[parent cells] [shape-id idx]]
                        (let [[parent cells] (free-cell-push parent cells idx)]
-                         [(assoc-in parent [:layout-grid-cells (get-in cells [idx :id]) :shapes] [shape-id])
+                         [(update-in parent [:layout-grid-cells (get-in cells [idx :id])]
+                                     assoc :position :manual :shapes [shape-id])
                           cells]))
                      [parent cells])
              (first)))
@@ -1025,9 +1049,17 @@
 (defn swap-shapes
   [parent id-from id-to]
 
-  (-> parent
-      (assoc-in [:layout-grid-cells id-from :shapes] (dm/get-in parent [:layout-grid-cells id-to :shapes]))
-      (assoc-in [:layout-grid-cells id-to :shapes] (dm/get-in parent [:layout-grid-cells id-from :shapes]))))
+  (let [cell-to (dm/get-in parent [:layout-grid-cells id-to])
+        cell-from (dm/get-in parent [:layout-grid-cells id-from])]
+    (-> parent
+        (update-in [:layout-grid-cells id-from]
+                   assoc
+                   :shapes (:shapes cell-to)
+                   :podition (:position cell-to))
+        (update-in [:layout-grid-cells id-to]
+                   assoc
+                   :shapes (:shapes cell-from)
+                   :position (:position cell-from)))))
 
 (defn add-children-to-cell
   [frame children objects [row column :as cell]]
@@ -1069,3 +1101,80 @@
         new-shapes (into new-shapes (:shapes parent))]
 
     (assoc parent :shapes (into [] (reverse new-shapes)))))
+
+(defn shapes-by-row
+  [parent index]
+  (->> (:layout-grid-cells parent)
+       (filter (fn [[_ {:keys [row row-span]}]]
+                 (and (>= (inc index) row)
+                      (< (inc index) (+ row row-span)))))
+       (map second)
+       (mapcat :shapes)))
+
+(defn shapes-by-column
+  [parent index]
+  (->> (:layout-grid-cells parent)
+       (filter (fn [[_ {:keys [column column-span]}]]
+                 (and (>= (inc index) column)
+                      (< (inc index) (+ column column-span)))))
+       (map second)
+       (mapcat :shapes)))
+
+(defn cells-coordinates
+  "Given a group of cells returns the coordinates that define"
+  [cells]
+  (loop [cells (seq cells)
+         result
+         {:first-row ##Inf
+          :first-column ##Inf
+          :last-row ##-Inf
+          :last-column ##-Inf
+          :cell-coords #{}}]
+
+    (if (empty? cells)
+      result
+      (let [{:keys [first-row last-row first-column last-column cell-coords]} result
+            current (first cells)
+
+            first-row
+            (if (< (:row current) first-row)
+              (:row current)
+              first-row)
+
+            last-row
+            (if (> (+ (:row current) (:row-span current) -1) last-row)
+              (+ (:row current) (:row-span current) -1)
+              last-row)
+
+            first-column
+            (if (< (:column current) first-column)
+              (:column current)
+              first-column)
+
+            last-column
+            (if (> (+ (:column current) (:column-span current) -1) last-column)
+              (+ (:column current) (:column-span current) -1)
+              last-column)
+
+            cell-coords
+            (into cell-coords
+                  (for [r (range (:row current) (+ (:row current) (:row-span current)))
+                        c (range (:column current) (+ (:column current) (:column-span current)))]
+                    [r c]))]
+        (recur (rest cells)
+               (assoc result
+                      :first-row first-row
+                      :last-row last-row
+                      :first-column first-column
+                      :last-column last-column
+                      :cell-coords cell-coords))))))
+
+(defn valid-area-cells?
+  [cells]
+
+  (let [{:keys [first-row last-row first-column last-column cell-coords]} (cells-coordinates cells)]
+    (every?
+     #(contains? cell-coords %)
+     (for [r (range first-row (inc last-row))
+           c (range first-column (inc last-column))]
+       [r c]))))

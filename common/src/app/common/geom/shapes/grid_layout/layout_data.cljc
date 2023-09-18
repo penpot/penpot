@@ -62,15 +62,17 @@
 
 (defn child-min-width
   [child bounds]
-  (if (ctl/fill-width? child)
-    (ctl/child-min-width child)
-    (gpo/width-points bounds)))
+  (+ (if (ctl/fill-width? child)
+       (ctl/child-min-width child)
+       (gpo/width-points bounds))
+     (ctl/child-width-margin child)))
 
 (defn child-min-height
   [child bounds]
-  (if (ctl/fill-height? child)
-    (ctl/child-min-height child)
-    (gpo/height-points bounds)))
+  (+ (if (ctl/fill-height? child)
+       (ctl/child-min-height child)
+       (gpo/height-points bounds))
+     (ctl/child-height-margin child)))
 
 (defn calculate-initial-track-size
   [total-value {:keys [type value] :as track}]

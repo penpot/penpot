@@ -25,18 +25,40 @@
              (disj hover-set cell-id))))))))
 
 (defn select-grid-cell
-  [grid-id cell-id]
+  [grid-id cell-id add?]
   (ptk/reify ::select-grid-cell
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-grid-edition grid-id :selected] cell-id))))
+      (if add?
+        (update-in state [:workspace-grid-edition grid-id :selected] (fnil conj #{}) cell-id)
+        (assoc-in state [:workspace-grid-edition grid-id :selected] #{cell-id})))))
 
 (defn remove-selection
-  [grid-id]
+  [grid-id cell-id]
   (ptk/reify ::remove-selection
     ptk/UpdateEvent
     (update [_ state]
+      (update-in state [:workspace-grid-edition grid-id :selected] disj cell-id))))
+
+(defn clear-selection
+  [grid-id]
+  (ptk/reify ::clear-selection
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:workspace-grid-edition grid-id] dissoc :selected))))
+
+(defn clean-selection
+  [grid-id]
+  (ptk/reify ::clean-selection
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects (wsh/lookup-page-objects state)
+            shape (get objects grid-id)]
+        (update-in state [:workspace-grid-edition grid-id :selected]
+                   (fn [selected]
+                     (into #{}
+                           (filter #(contains? (:layout-grid-cells shape) %))
+                           selected)))))))
 
 (defn stop-grid-layout-editing
   [grid-id]

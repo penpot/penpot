@@ -176,7 +176,8 @@
             }
           }
         }
-        &:hover {
+        &:hover,
+        &.hover {
           .element-list-body {
             color: var(--layer-row-foreground-color-hover);
             background-color: var(--layer-row-background-color-hover);

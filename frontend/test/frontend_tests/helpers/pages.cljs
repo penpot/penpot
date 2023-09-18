@@ -153,12 +153,14 @@
   ([state label component-id file-id]
    (let [page      (current-page state)
          libraries (wsh/get-libraries state)
+         objects (:objects page)
 
          changes   (-> (pcb/empty-changes nil (:id page))
-                       (pcb/with-objects (:objects page)))
+                       (pcb/with-objects objects))
 
          [new-shape changes]
          (dwlh/generate-instantiate-component changes
+                                              objects
                                               file-id
                                               component-id
                                               (gpt/point 100 100)

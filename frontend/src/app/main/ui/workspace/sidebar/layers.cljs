@@ -43,6 +43,8 @@
   [{:keys [objects filtered? parent-size] :as props}]
   (let [selected       (mf/deref refs/selected-shapes)
         selected       (hooks/use-equal-memo selected)
+        highlighted    (mf/deref refs/highlighted-shapes)
+        highlighted    (hooks/use-equal-memo highlighted)
         root           (get objects uuid/zero)
         new-css-system (mf/use-ctx ctx/new-css-system)]
     [:ul
@@ -54,6 +56,7 @@
             [:& frame-wrapper
              {:item obj
               :selected selected
+              :highlighted highlighted
               :index index
               :objects objects
               :key id
@@ -64,6 +67,7 @@
             [:& layer-item
              {:item obj
               :selected selected
+              :highlighted highlighted
               :index index
               :objects objects
               :key id

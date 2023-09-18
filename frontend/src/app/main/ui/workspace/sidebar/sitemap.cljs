@@ -27,7 +27,8 @@
 
 ;; --- Page Item
 
-(mf/defc page-item [{:keys [page index deletable? selected? editing?] :as props}]
+(mf/defc page-item
+  [{:keys [page index deletable? selected? editing? hovering?] :as props}]
   (let [input-ref            (mf/use-ref)
         id                   (:id page)
         new-css-system       (mf/use-ctx ctx/new-css-system)
@@ -135,6 +136,7 @@
                   (css :selected) selected?)
                  (dom/classnames
                   :element-list-body true
+                  :hover hovering?
                   :selected selected?))
         :data-test (dm/str "page-" id)
         :tab-index "0"

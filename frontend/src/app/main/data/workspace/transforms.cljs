@@ -490,7 +490,7 @@
                                flex-layout?   (ctl/flex-layout? objects target-frame)
                                grid-layout?   (ctl/grid-layout? objects target-frame)
                                drop-index     (when flex-layout? (gslf/get-drop-index target-frame objects position))
-                               cell-data      (when grid-layout? (gslg/get-drop-cell target-frame objects position))]
+                               cell-data      (when (and grid-layout? (not mod?)) (gslg/get-drop-cell target-frame objects position))]
                            [move-vector target-frame drop-index cell-data])))
 
                       (rx/take-until stopper))]

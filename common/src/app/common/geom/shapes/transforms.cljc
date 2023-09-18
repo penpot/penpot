@@ -104,14 +104,15 @@
 (defn absolute-move
   "Move the shape to the exactly specified position."
   [shape pos]
-  (let [x  (dm/get-prop pos :x)
-        y  (dm/get-prop pos :y)
-        sr (dm/get-prop shape :selrect)
-        px (dm/get-prop sr :x)
-        py (dm/get-prop sr :y)
-        dx (- (d/check-num x) px)
-        dy (- (d/check-num y) py)]
-    (move shape (gpt/point dx dy))))
+  (when shape
+    (let [x  (dm/get-prop pos :x)
+          y  (dm/get-prop pos :y)
+          sr (dm/get-prop shape :selrect)
+          px (dm/get-prop sr :x)
+          py (dm/get-prop sr :y)
+          dx (- (d/check-num x) px)
+          dy (- (d/check-num y) py)]
+      (move shape (gpt/point dx dy)))))
 
 ;; --- Transformation matrix operations
 

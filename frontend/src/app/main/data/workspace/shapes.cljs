@@ -36,10 +36,10 @@
 (defn prepare-add-shape
   [changes shape objects _selected]
   (let [index   (:index (meta shape))
-        ;; FIXME: revisit
         id      (:id shape)
 
-        [row column :as cell]  (:cell (meta shape))
+        mod? (:mod? (meta shape))
+        [row column :as cell]  (when-not mod? (:cell (meta shape)))
 
         changes (-> changes
                     (pcb/with-objects objects)
