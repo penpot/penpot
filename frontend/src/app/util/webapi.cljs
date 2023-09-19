@@ -74,14 +74,16 @@
 
 (defn data-uri->blob
   [data-uri]
-  (let [[mtype b64-data] (str/split data-uri ";base64,")
+  (let [[mtype b64-data] (str/split data-uri ";base64," 2)
         mtype   (subs mtype (inc (str/index-of mtype ":")))
         decoded (.atob js/window b64-data)
         size    (.-length ^js decoded)
         content (js/Uint8Array. size)]
 
-    (doseq [i (range 0 size)]
-      (aset content i (.charCodeAt ^js decoded i)))
+    (loop [i 0]
+      (when (< i size)
+        (aset content i (.charCodeAt ^js decoded i))
+        (recur (inc i))))
 
     (create-blob content mtype)))
 
