@@ -42,60 +42,72 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
-  (let [page    (unchecked-get props "page")
-        frame   (unchecked-get props "frame")
-        base    (unchecked-get props "base")
-        offset  (unchecked-get props "offset")
-        size    (unchecked-get props "size")
-        delta   (or (unchecked-get props "delta") (gpt/point 0 0))
-
-        vbox    (:vbox size)
+  (let [page      (unchecked-get props "page")
+        frame     (unchecked-get props "frame")
+        base      (unchecked-get props "base")
+        offset    (unchecked-get props "offset")
+        size      (unchecked-get props "size")
+        delta     (or (unchecked-get props "delta") (gpt/point 0 0))
+        vbox      (:vbox size)
 
         fixed-ids (filter :fixed-scroll (vals (:objects page)))
 
         ;; we have con consider the children if the fixed element is a group
-        fixed-children-ids (into #{} (mapcat #(cph/get-children-ids (:objects page) (:id %)) fixed-ids))
+        fixed-children-ids
+        (into #{} (mapcat #(cph/get-children-ids (:objects page) (:id %)) fixed-ids))
 
-        parent-children-ids (->> fixed-ids
-                                 (mapcat #(cons (:id %) (cph/get-parent-ids (:objects page) (:id %))))
-                                 (remove #(= % uuid/zero)))
+        parent-children-ids
+        (->> fixed-ids
+             (mapcat #(cons (:id %) (cph/get-parent-ids (:objects page) (:id %))))
+             (remove #(= % uuid/zero)))
 
-        fixed-ids (concat fixed-children-ids parent-children-ids)
+        fixed-ids
+        (concat fixed-children-ids parent-children-ids)
 
-        not-fixed-ids (->> (remove (set fixed-ids) (keys (:objects page)))
-                           (remove #(= % uuid/zero)))
+        not-fixed-ids
+        (->> (remove (set fixed-ids) (keys (:objects page)))
+             (remove #(= % uuid/zero)))
 
-        calculate-objects (fn [ids] (->> ids
-                                         (map (d/getf (:objects page)))
-                                         (concat [frame])
-                                         (d/index-by :id)
-                                         (prepare-objects frame size delta)))
+        calculate-objects
+        (fn [ids]
+          (->> ids
+               (map (d/getf (:objects page)))
+               (concat [frame])
+               (d/index-by :id)
+               (prepare-objects frame size delta)))
 
-        objects-fixed (mf/with-memo [fixed-ids page frame size delta]
-                        (calculate-objects fixed-ids))
+        objects-fixed
+        (mf/with-memo [fixed-ids page frame size delta]
+          (calculate-objects fixed-ids))
 
-        objects-not-fixed (mf/with-memo [not-fixed-ids page frame size delta]
-                            (calculate-objects not-fixed-ids))
+        objects-not-fixed
+        (mf/with-memo [not-fixed-ids page frame size delta]
+          (calculate-objects not-fixed-ids))
 
-        all-objects (mf/with-memo [objects-fixed objects-not-fixed]
-                      (merge objects-fixed objects-not-fixed))
+        all-objects
+        (mf/with-memo [objects-fixed objects-not-fixed]
+          (merge objects-fixed objects-not-fixed))
 
-        wrapper-fixed (mf/with-memo [page frame size]
-                        (shapes/frame-container-factory objects-fixed all-objects))
+        wrapper-fixed
+        (mf/with-memo [page frame size]
+          (shapes/frame-container-factory (assoc objects-fixed ::fixed true) all-objects))
 
-        wrapper-not-fixed (mf/with-memo [objects-not-fixed]
-                            (shapes/frame-container-factory objects-not-fixed all-objects))
+        wrapper-not-fixed
+        (mf/with-memo [objects-not-fixed]
+          (shapes/frame-container-factory objects-not-fixed all-objects))
 
         ;; Retrieve frames again with correct modifier
         frame   (get all-objects (:id frame))
         base    (get all-objects (:id base))
 
-        non-delay-interactions (->> (:interactions frame)
-                                    (filterv #(not= (:event-type %) :after-delay)))
+        non-delay-interactions
+        (->> (:interactions frame)
+             (filterv #(not= (:event-type %) :after-delay)))
 
-        fixed-frame (-> frame
-                        (dissoc :fills)
-                        (assoc :interactions non-delay-interactions))]
+        fixed-frame
+        (-> frame
+            (dissoc :fills)
+            (assoc :interactions non-delay-interactions))]
 
     [:& (mf/provider shapes/base-frame-ctx) {:value base}
      [:& (mf/provider shapes/frame-offset-ctx) {:value offset}
@@ -124,8 +136,9 @@
    ::mf/wrap-props false}
   [props]
   (let [;; NOTE: with `use-equal-memo` hook we ensure that all values
-        ;; conserves the reference identity for avoid unnecessary dummy
-        ;; rerenders.
+        ;; conserves the reference identity for avoid unnecessary
+        ;; dummy rerenders.
+
         mode   (h/use-equal-memo (unchecked-get props "interactions-mode"))
         offset (h/use-equal-memo (unchecked-get props "frame-offset"))
         size   (h/use-equal-memo (unchecked-get props "size"))
