@@ -18,12 +18,16 @@
     "test:run": "node target/tests.js",
     "test:watch": "clojure -M:dev:shadow-cljs watch test",
     "test": "yarn run test:compile && yarn run test:run",
+    "test:e2e": "cypress run",
+    "test:e2e-gui": "cypress open",
     "gulp:watch": "gulp watch",
     "watch": "shadow-cljs watch main",
     "validate-translations": "node ./scripts/validate-translations.js",
     "find-unused-translations": "node ./scripts/find-unused-translations.js",
-    "test:e2e": "cypress run",
-    "test:e2e-gui": "cypress open"
+    "build:clean": "gulp clean:output && gulp clean:dist",
+    "build:styles": "gulp build:styles",
+    "build:assets": "gulp build:assets",
+    "build:copy": "gulp build:copy"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.15",
