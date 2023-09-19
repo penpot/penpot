@@ -528,8 +528,7 @@
           :layout-justify-items
           :layout-grid-dir
           :layout-grid-columns
-          :layout-grid-rows
-          ))
+          :layout-grid-rows))
 
 (defn remove-layout-item-data
   [shape]

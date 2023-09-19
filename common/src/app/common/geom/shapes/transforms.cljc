@@ -455,6 +455,29 @@
           (assoc :points points))
       (update-group-selrect shape children))))
 
+(defn update-shapes-geometry
+  [objects ids]
+  (->> ids
+       (reduce
+        (fn [objects id]
+          (let [shape (get objects id)
+                children (cph/get-immediate-children objects id)
+                shape
+                (cond
+                  (cph/mask-shape? shape)
+                  (update-mask-selrect shape children)
+
+                  (cph/bool-shape? shape)
+                  (update-bool-selrect shape children objects)
+
+                  (cph/group-shape? shape)
+                  (update-group-selrect shape children)
+
+                  :else
+                  shape)]
+            (assoc objects id shape)))
+        objects)))
+
 (defn transform-shape
   ([shape]
    (let [modifiers (:modifiers shape)]

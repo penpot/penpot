@@ -177,19 +177,20 @@
         modif-tree)))
 
 (defn add-grid-children-modifiers
-  [modifiers frame-id selected objects [row column :as cell]]
+  [modifiers frame-id shapes objects [row column :as cell]]
   (let [frame (get objects frame-id)
+        ids (set shapes)
 
         ;; Temporary remove the children when moving them
         frame (-> frame
-                  (update :shapes #(d/removev selected %))
+                  (update :shapes #(d/removev ids %))
                   (ctl/assign-cells))
 
-        selected (->> selected (remove #(ctl/layout-absolute? objects %)))
+        ids (->> ids (remove #(ctl/layout-absolute? objects %)))
         frame (-> frame
-                  (update :shapes d/concat-vec selected)
+                  (update :shapes d/concat-vec ids)
                   (cond-> (some? cell)
-                    (ctl/push-into-cell selected row column))
+                    (ctl/push-into-cell ids row column))
                   (ctl/assign-cells))]
 
     (-> modifiers
@@ -205,6 +206,7 @@
 
         target-frame        (get objects target-frame-id)
         target-flex-layout? (ctl/flex-layout? target-frame)
+        target-grid-layout? (ctl/grid-layout? target-frame)
 
         children-ids (concat (:shapes target-frame) selected)
 
@@ -225,12 +227,12 @@
         (fn [modif-tree [original-frame shapes]]
           (let [shapes (->> shapes (d/removev #(= target-frame-id %)))
                 shapes (cond->> shapes
-                         (and target-flex-layout? (= original-frame target-frame-id))
+                         (and (or target-grid-layout? target-flex-layout?)
+                              (= original-frame target-frame-id))
                          ;; When movining inside a layout frame remove the shapes that are not immediate children
                          (filterv #(contains? child-set %)))
                 children-ids (->> (dm/get-in objects [original-frame :shapes])
                                   (remove (set selected)))
-
                 h-sizing? (and (ctl/flex-layout? objects original-frame)
                                (ctl/change-h-sizing? original-frame objects children-ids))
                 v-sizing? (and (ctl/flex-layout? objects original-frame)
@@ -246,7 +248,11 @@
                     (update-in [original-frame :modifiers] ctm/change-property :layout-item-v-sizing :fix)))
 
               (and target-flex-layout? (= original-frame target-frame-id))
-              (update-in [target-frame-id :modifiers] ctm/add-children shapes drop-index))))]
+              (update-in [target-frame-id :modifiers] ctm/add-children shapes drop-index)
+
+              ;; Add the object to the cell
+              target-grid-layout?
+              (update-in [target-frame-id :modifiers] add-grid-children-modifiers target-frame-id shapes objects cell-data))))]
 
     (as-> modif-tree $
       (reduce update-frame-modifiers $ origin-frame-ids)
@@ -259,11 +265,7 @@
         ;; Set fix position to target frame (vertical)
         (and (ctl/flex-layout? objects target-frame-id)
              (ctl/change-v-sizing? target-frame-id objects children-ids))
-        (update-in [target-frame-id :modifiers] ctm/change-property :layout-item-v-sizing :fix)
-
-        ;; Add the object to the cell
-        (ctl/grid-layout? objects target-frame-id)
-        (update-in [target-frame-id :modifiers] add-grid-children-modifiers target-frame-id selected objects cell-data)))))
+        (update-in [target-frame-id :modifiers] ctm/change-property :layout-item-v-sizing :fix)))))
 
 (defn modif->js
      [modif-tree objects]

@@ -299,7 +299,8 @@
       (let [file-id  (:current-file-id state)
             page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            shapes   (dwg/shapes-for-grouping objects selected)]
+            shapes   (dwg/shapes-for-grouping objects selected)
+            parents  (into #{} (map :parent-id) shapes)]
         (when-not (empty? shapes)
           (let [[root _ changes]
                 (dwlh/generate-add-component it shapes objects page-id file-id components-v2
@@ -307,7 +308,8 @@
                                              dwsh/prepare-create-artboard-from-selection)]
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
-                     (dws/select-shapes (d/ordered-set (:id root)))))))))))
+                     (dws/select-shapes (d/ordered-set (:id root)))
+                     (ptk/data-event :layout/update parents)))))))))
 
 (defn add-component
   "Add a new component to current file library, from the currently selected shapes.
