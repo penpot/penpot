@@ -15,6 +15,7 @@
    [app.common.geom.shapes.grid-layout :as gsg]
    [app.common.geom.shapes.points :as gpo]
    [app.common.math :as mth]
+   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.grid-layout.editor :as dwge]
@@ -734,13 +735,16 @@
 
         children
         (mf/use-memo
-         (mf/deps shape modifiers)
+         (mf/deps objects shape modifiers)
          (fn []
-           (->> (:shapes shape)
-                (map (d/getf objects))
-                (map #(gsh/transform-shape % (dm/get-in modifiers [(:id %) :modifiers])))
-                (remove :hidden)
-                (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))))
+           (let [ids (cph/get-children-ids objects (:id shape))
+                 objects (-> objects
+                             (gsh/apply-objects-modifiers (select-keys modifiers ids))
+                             (gsh/update-shapes-geometry (reverse ids)))]
+             (->> (:shapes shape)
+                  (map (d/getf objects))
+                  (remove :hidden)
+                  (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %))))))
 
         children (hooks/use-equal-memo children)
 

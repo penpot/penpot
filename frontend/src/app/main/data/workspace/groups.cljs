@@ -107,12 +107,28 @@
         ;; docstring to understand the real purpose of this code
         ids-to-delete (get-empty-groups-after-group-creation objects parent-id shapes)
 
+        target-cell
+        (when (ctl/grid-layout? objects parent-id)
+          (ctl/get-cell-by-shape-id (get objects parent-id) (-> shapes last :id)))
+
+        grid-parents
+        (into []
+              (comp (map :parent-id)
+                    (filter (partial ctl/grid-layout? objects)))
+              shapes)
+
         changes   (-> (pcb/empty-changes it page-id)
                       (pcb/with-objects objects)
                       (pcb/add-object group {:index group-idx})
                       (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
                       (pcb/change-parent (:id group) (reverse shapes))
                       (pcb/update-shapes (map :id shapes-to-detach) ctk/detach-shape)
+                      (cond-> target-cell
+                        (pcb/update-shapes
+                         [parent-id]
+                         (fn [parent]
+                           (assoc-in parent [:layout-grid-cells (:id target-cell) :shapes] [(:id group)]))))
+                      (pcb/update-shapes grid-parents ctl/assign-cells)
                       (pcb/remove-objects ids-to-delete))]
 
     [group changes]))
@@ -212,12 +228,14 @@
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
             selected (cph/clean-loops objects selected)
-            shapes   (shapes-for-grouping objects selected)]
+            shapes   (shapes-for-grouping objects selected)
+            parents  (into #{} (map :parent-id) shapes)]
         (when-not (empty? shapes)
           (let [[group changes]
                 (prepare-create-group it objects page-id shapes "Group" false)]
             (rx/of (dch/commit-changes changes)
-                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+                   (dws/select-shapes (d/ordered-set (:id group)))
+                   (ptk/data-event :layout/update parents))))))))
 
 (def ungroup-selected
   (ptk/reify ::ungroup-selected

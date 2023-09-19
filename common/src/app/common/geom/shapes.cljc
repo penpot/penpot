@@ -173,6 +173,8 @@
 (dm/export gtr/transform-bounds)
 (dm/export gtr/move-position-data)
 (dm/export gtr/apply-objects-modifiers)
+(dm/export gtr/apply-children-modifiers)
+(dm/export gtr/update-shapes-geometry)
 
 ;; Constratins
 (dm/export gct/calc-child-modifiers)
