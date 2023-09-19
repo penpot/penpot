@@ -469,7 +469,7 @@
           (let [shape (if frame
                         (gsh/translate-to-frame shape frame)
                         shape)
-                
+
                 opts #js {:shape shape
                           :objects objects
                           :all-objects all-objects}]

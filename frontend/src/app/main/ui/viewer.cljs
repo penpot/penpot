@@ -174,8 +174,10 @@
 
 
 (mf/defc viewer-wrapper
+  {::mf/wrap-props false}
   [{:keys [wrapper-size orig-frame orig-viewport-ref orig-size page file users current-viewport-ref
-           size frame interactions-mode overlays zoom section index] :as props}]
+           size frame interactions-mode overlays zoom section index]}]
+
   [:*
    [:& viewer-pagination-and-sidebar
     {:section section
@@ -220,12 +222,13 @@
         :interactions-mode interactions-mode}]
 
       (for [overlay overlays]
-        [:& viewer-overlay {:overlay overlay
-                            :key (dm/str (:id overlay))
-                            :page page
-                            :frame frame
-                            :zoom zoom
-                            :wrapper-size wrapper-size
+        [:& viewer-overlay
+         {:overlay overlay
+          :key (dm/str (:id overlay))
+          :page page
+          :frame frame
+          :zoom zoom
+          :wrapper-size wrapper-size
                             :interactions-mode interactions-mode}])]]
 
 
