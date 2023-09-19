@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.shapes
   "The main container for a frame in viewer mode"
   (:require
+   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.interactions :as ctsi]
@@ -381,19 +382,18 @@
 (defn frame-container-factory
   [objects all-objects]
   (let [shape-container (shape-container-factory objects all-objects)
-        frame-wrapper   (frame-wrapper shape-container)]
+        frame-wrapper   (frame-wrapper shape-container)
+        lookup-xf       (keep (d/getf objects))]
     (mf/fnc frame-container
-            {::mf/wrap-props false}
-            [props]
-            (let [shape     (obj/get props "shape")
-                  childs    (mapv #(get objects %) (:shapes shape))
-                  props     (obj/merge! #js {} props
-                                        #js {:shape shape
-                                             :childs childs
-                                             :objects objects
-                                             :all-objects all-objects})]
-
-              [:> frame-wrapper props]))))
+      {::mf/wrap-props false}
+      [props]
+      (let [shape  (unchecked-get props "shape")
+            childs (into [] lookup-xf (:shapes shape))
+            props  (obj/merge props
+                              #js {:childs childs
+                                   :objects objects
+                                   :all-objects all-objects})]
+        [:> frame-wrapper props]))))
 
 (defn group-container-factory
   [objects all-objects]
