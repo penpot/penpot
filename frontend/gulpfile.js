@@ -261,14 +261,6 @@ gulp.task("polyfills", function() {
     .pipe(gulp.dest(paths.output + "js/"));
 });
 
-/***********************************************
- * Development
- ***********************************************/
-
-gulp.task("clean", function(next) {
-  rimraf(paths.output).finally(next)
-});
-
 gulp.task("copy:assets:images", function() {
   return gulp.src(paths.resources + "images/**/*")
     .pipe(gulp.dest(paths.output + "images/"));
@@ -297,18 +289,20 @@ gulp.task("watch:main", function() {
              gulp.series("templates"));
 });
 
-gulp.task("build", gulp.parallel("polyfills", "scss", "templates", "copy:assets"));
-gulp.task("watch", gulp.series("dev:dirs", "build", "watch:main"));
+gulp.task("clean:output", function(next) {
+  rimraf(paths.output).finally(next)
+});
 
-/***********************************************
- * Production
- ***********************************************/
-
-gulp.task("dist:clean", function(next) {
+gulp.task("clean:dist", function(next) {
   rimraf(paths.dist).finally(next);
 });
 
-gulp.task("dist:copy", function() {
+gulp.task("build:styles", gulp.parallel("scss"));
+gulp.task("build:assets", gulp.parallel("polyfills", "templates", "copy:assets"));
+
+gulp.task("watch", gulp.series("dev:dirs", "build:styles", "build:assets", "watch:main"));
+
+gulp.task("build:copy", function() {
   return gulp.src(paths.output + "**/*")
     .pipe(gulp.dest(paths.dist));
 });
