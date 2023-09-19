@@ -1720,6 +1720,12 @@ msgstr ""
 "Once added as Shared Library, the assets of this file library will be "
 "available to be used among the rest of your files."
 
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Your library is empty. Once added as Shared Library, the assets you create will be "
+"available to be used among the rest of your files. "
+"Are you sure you want to publish it?"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"
 msgstr "Add “%s” as Shared Library"

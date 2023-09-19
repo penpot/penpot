@@ -749,6 +749,23 @@
     (teams/check-read-permissions! conn profile-id team-id)
     (get-team-recent-files conn team-id)))
 
+
+;; --- COMMAND QUERY: get-file-summary
+
+(sv/defmethod ::get-file-summary
+  "Retrieve a file summary by its ID. Only authenticated users."
+  {::doc/added "1.20"
+   ::sm/params schema:get-file}
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id features project-id] :as params}]
+  (db/with-atomic [conn pool]
+    (check-read-permissions! conn profile-id id)
+    (let [file (get-file conn id features project-id)]
+      {:name             (:name file)
+       :components-count (count (ctkl/components-seq (:data file)))
+       :graphics-count   (count (get-in file [:data :media] []))
+       :colors-count     (count (get-in file [:data :colors] []))
+       :typography-count (count (get-in file [:data :typographies] []))})))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
