@@ -376,14 +376,23 @@
                   attrs (seq attrs)]
              (if-let [attr (first attrs)]
                (let [old-val (get old attr)
-                     new-val (get new attr)]
+                     new-val (get new attr)
+                     changed? (not= old-val new-val)
 
-                 (recur (conj rops {:type :set :attr attr :val new-val
-                                    :ignore-geometry ignore-geometry?
-                                    :ignore-touched ignore-touched})
-                        (conj uops {:type :set :attr attr :val old-val
-                                    :ignore-touched true})
-                        (rest attrs)))
+                     rops
+                     (cond-> rops
+                       changed?
+                       (conj  {:type :set :attr attr :val new-val
+                               :ignore-geometry ignore-geometry?
+                               :ignore-touched ignore-touched}))
+
+                     uops
+                     (cond-> uops
+                       changed?
+                       (conj  {:type :set :attr attr :val old-val
+                               :ignore-touched true}))]
+
+                 (recur rops uops (rest attrs)))
                [rops uops])))
 
          update-shape
