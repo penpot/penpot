@@ -55,6 +55,11 @@
 
         color-name       (dm/get-in src-colors [(:id color) :name])
 
+        multiple-colors? (uc/multiple? color)
+        library-color?    (and (:id color) color-name (not multiple-colors?))
+        gradient-color? (and (not multiple-colors?)
+                             (:gradient color)
+                             (get-in color [:gradient :type]))
         parse-color
         (mf/use-fn
          (fn [color]
@@ -81,7 +86,7 @@
                            (assoc :color new-value)
                            (dissoc :gradient))]
              (st/emit! (dwl/add-recent-color color)
-             (on-change color)))))
+                       (on-change color)))))
 
         handle-opacity-change
         (mf/use-fn
@@ -92,14 +97,14 @@
                               :id nil
                               :file-id nil)]
              (st/emit! (dwl/add-recent-color color)
-             (on-change color)))))
+                       (on-change color)))))
 
         handle-click-color
         (mf/use-fn
          (mf/deps disable-gradient disable-opacity on-change on-close on-open)
          (fn [color event]
            (let [color (cond
-                         (uc/multiple? color)
+                         multiple-colors?
                          {:color default-color
                           :opacity 1}
 
@@ -151,6 +156,7 @@
       (when (not= prev-color color)
         (modal/update-props! :colorpicker {:data (parse-color color)})))
 
+
     (if new-css-system
       [:div {:class (stl/css-case
                      :color-data true
@@ -158,17 +164,22 @@
                      :dnd-over-bot (= (:over dprops) :bot))
              :ref dref}
        [:span {:class (stl/css :color-info)}
-        [:& cb/color-bullet {:color (cond-> color
-                                      (nil? color-name) (assoc
-                                                         :id nil
-                                                         :file-id nil))
-                             :on-click handle-click-color}]
+        [:span {:class (stl/css-case :color-name-wrapper true
+                                     :gradient-name-wrapper gradient-color?)}
+         [:span {:class (stl/css :color-bullet-wrapper)}
+          [:& cb/color-bullet {:color (cond-> color
+                                        (nil? color-name) (assoc
+                                                           :id nil
+                                                           :file-id nil))
+                               :on-click handle-click-color}]]
         (cond
           ;; Rendering a color with ID
-          (and (:id color) color-name (not (uc/multiple? color)))
+          library-color?
           [:*
            [:div {:class (stl/css :color-name)
-                  :title (str color-name)} (str color-name)]
+                  :title (str color-name)}
+
+            (str color-name)]
            (when on-detach
              [:button
               {:class (stl/css :detach-btn)
@@ -179,41 +190,40 @@
               i/detach-refactor])]
 
           ;; Rendering a gradient
-          (and (not (uc/multiple? color))
-               (:gradient color)
-               (get-in color [:gradient :type]))
-          [:div {:class (stl/css :color-info)}
+          gradient-color?
+          [:*
            [:div {:class (stl/css :color-name)}
             (uc/gradient-type->string (get-in color [:gradient :type]))]]
 
-          ;; Rendering a plain color/opacity
+          ;; Rendering a plain color
           :else
-          [:*
-           [:div {:class (stl/css :input-element)}
+          [:span {:class (stl/css :color-input-wrapper)}
+           [:> color-input* {:value (if multiple-colors?
+                                      ""
+                                      (-> color :color uc/remove-hash))
+                             :placeholder (tr "settings.multiple")
+                             :className   (stl/css :color-input)
+                             :on-focus on-focus
+                             :on-blur on-blur
+                             :on-change handle-value-change}]])]
 
-            [:> color-input* {:value (if (uc/multiple? color)
-                                       ""
-                                       (-> color :color uc/remove-hash))
-                              :placeholder (tr "settings.multiple")
-                              :className   (stl/css :color-input)
-                              :on-focus on-focus
-                              :on-blur on-blur
-                              :on-change handle-value-change}]]
+        (when (and (not gradient-color?)
+                   (not multiple-colors?)
+                   (not library-color?))
 
-           (when (and (not disable-opacity)
-                      (not (:gradient color)))
-             [:div {:class (stl/css :opacity-input-element)}
-              [:span {:class (stl/css :icon-text)}
-               "%"]
-              [:> numeric-input* {:value (-> color :opacity opacity->string)
-                                  :className (stl/css :opacity-input)
-                                  :placeholder (tr "settings.multiple")
-                                  :select-on-focus select-on-focus
-                                  :on-focus on-focus
-                                  :on-blur on-blur
-                                  :on-change handle-opacity-change
-                                  :min 0
-                                  :max 100}]])])]
+
+          [:div {:class (stl/css :opacity-element-wrapper)}
+           [:span {:class (stl/css :icon-text)}
+            "%"]
+           [:> numeric-input* {:value (-> color :opacity opacity->string)
+                               :className (stl/css :opacity-input)
+                               :placeholder (tr "settings.multiple")
+                               :select-on-focus select-on-focus
+                               :on-focus on-focus
+                               :on-blur on-blur
+                               :on-change handle-opacity-change
+                               :min 0
+                               :max 100}]])]
 
        (when (some? on-remove)
          [:button {:class (stl/css :remove-btn)
@@ -244,7 +254,7 @@
 
        (cond
            ;; Rendering a color with ID
-         (and (:id color) color-name (not (uc/multiple? color)))
+         library-color?
          [:*
           [:div.color-info
            [:div.color-name (str color-name)]]
@@ -255,10 +265,8 @@
               :on-click detach-value}
              (if @hover-detach i/unchain i/chain)])]
 
-           ;; Rendering a gradient
-         (and (not (uc/multiple? color))
-              (:gradient color)
-              (get-in color [:gradient :type]))
+         ;; Rendering a gradient
+         gradient-color?
          [:*
           [:div.color-info
            [:div.color-name (uc/gradient-type->string (get-in color [:gradient :type]))]]
@@ -266,12 +274,11 @@
             [:div.element-set-actions-button {:on-click handle-select}
              i/pointer-inner])]
 
-
            ;; Rendering a plain color/opacity
          :else
          [:*
           [:div.color-info
-           [:> color-input* {:value (if (uc/multiple? color)
+           [:> color-input* {:value (if multiple-colors?
                                       ""
                                       (-> color :color uc/remove-hash))
                              :placeholder (tr "settings.multiple")

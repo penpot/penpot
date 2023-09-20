@@ -25,6 +25,9 @@
         width: $s-12;
         margin-right: $s-4;
         stroke: var(--input-foreground-color);
+        svg {
+          @extend .button-icon;
+        }
       }
       .stroke-width-input {
         @extend .numeric-input-base;

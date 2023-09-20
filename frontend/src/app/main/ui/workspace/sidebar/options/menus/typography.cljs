@@ -355,20 +355,19 @@
 
           :else
           (tr "dashboard.fonts.deleted-placeholder"))]
-
        [:div {:class (stl/css :font-modifiers)}
         [:div {:class (stl/css :font-size-options)}
-         (let [sizes [8 9 10 11 12 14 16 18 24 36 48 72]
-               basic-size-options (map (fn [number]
-                                         {:value (dm/str number) :key (dm/str "size-" number) :label (dm/str number)}) sizes)
-               size-options (if (= font-size :multiple)
-                              (conj {:value :key :mulitple-sizes :multiple :label "--"} basic-size-options)
-                              basic-size-options)]
-
-           [:& select
-            {:class (stl/css :font-size-select)
-             :default-value (attr->string font-size)
+         (let [size-options [8 9 10 11 12 14 16 18 24 36 48 72]
+               size-options (if (= font-size :multiple) (into [""] size-options) size-options)]
+           [:& editable-select
+            {:value (attr->string font-size)
+             :class (stl/css :font-size-select)
+             :input-class (stl/css :numeric-input)
              :options size-options
+             :type "number"
+             :placeholder "--"
+             :min 3
+             :max 1000
              :on-change on-font-size-change
              :on-blur on-blur}])]
 

@@ -1,0 +1,247 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  .add-grid {
+    @extend .button-tertiary;
+    height: $s-32;
+    width: $s-28;
+    svg {
+      @extend .button-icon;
+    }
+  }
+  .element-set-content {
+    display: flex;
+    flex-direction: column;
+    gap: $s-4;
+    .grid-option {
+      .grid-title {
+        display: flex;
+        align-items: center;
+        gap: $s-4;
+        .option-row {
+          display: flex;
+          align-items: center;
+          gap: $s-1;
+          border-radius: $br-8;
+          background-color: var(--input-details-color);
+          .show-options {
+            @extend .button-secondary;
+            height: $s-32;
+            width: $s-28;
+            border-radius: $br-8 0 0 $br-8;
+            svg {
+              @extend .button-icon;
+            }
+            &.selected {
+              background-color: var(--button-secondary-background-color-active);
+              color: var(--button-secondary-foreground-color-active);
+              svg {
+                stroke: var(--button-secondary-foreground-color-active);
+              }
+            }
+          }
+          .type-select-wrapper {
+            @extend .asset-element;
+            width: $s-96;
+            margin: 0;
+            padding: 0;
+            border: $s-1 solid var(--input-background-color);
+            border-radius: 0;
+          }
+          .grid-size {
+            @extend .asset-element;
+            width: $s-60;
+            margin: 0;
+            padding: 0;
+            padding-left: $s-8;
+            border-radius: 0 $br-8 $br-8 0;
+            .numeric-input {
+              @extend .numeric-input-base;
+            }
+          }
+          .editable-select-wrapper {
+            @extend .asset-element;
+            width: $s-60;
+            margin: 0;
+            padding: 0;
+            border: $s-1 solid var(--input-background-color);
+            position: relative;
+            border-radius: 0 $br-8 $br-8 0;
+            .column-select {
+              height: $s-32;
+              .numeric-input {
+                @extend .numeric-input-base;
+                margin: 0;
+                padding: 0;
+              }
+              span {
+                @include flexCenter;
+                svg {
+                  @extend .button-icon;
+                }
+              }
+            }
+          }
+
+          &.hidden {
+            .show-options,
+            .type-select-wrapper,
+            .editable-select-wrapper {
+              background-color: transparent;
+              border: $s-1 solid var(--input-border-color-disabled);
+              color: var(--input-foreground-color-disabled);
+              .column-select {
+                background-color: transparent;
+              }
+            }
+            .grid-size {
+              background-color: transparent;
+              border: $s-1 solid var(--input-border-color-disabled);
+              color: var(--input-foreground-color-disabled);
+
+              .icon {
+                stroke: var(--input-foreground-color-disabled);
+              }
+              .numeric-input {
+                color: var(--input-foreground-color-disabled);
+              }
+            }
+            .actions {
+              .hidden-btn,
+              .lock-btn {
+                background-color: transparent;
+                svg {
+                  stroke: var(--input-foreground-color-disabled);
+                }
+              }
+            }
+          }
+        }
+
+        .actions {
+          display: flex;
+          align-items: center;
+          gap: $s-4;
+          .action-btn {
+            @extend .button-tertiary;
+            height: $s-32;
+            width: $s-28;
+            svg {
+              @extend .button-icon;
+            }
+          }
+        }
+      }
+    }
+    .grid-advanced-options {
+      display: flex;
+      flex-direction: column;
+      gap: $s-4;
+      margin-top: $s-4;
+      .column-row,
+      .square-row {
+        display: flex;
+        flex-direction: column;
+        gap: $s-4;
+        .advanced-row {
+          position: relative;
+          display: flex;
+          gap: $s-4;
+
+          .select-wrapper {
+            @extend .asset-element;
+            width: $s-92;
+            margin: 0;
+            padding: 0;
+            border: $s-1 solid var(--input-background-color);
+          }
+          .color-wrapper {
+            width: $s-156;
+          }
+          .show-more-options {
+            @extend .button-tertiary;
+            height: $s-32;
+            width: $s-32;
+            svg {
+              @extend .button-icon;
+            }
+          }
+          .height {
+            @extend .input-element;
+            width: $s-108;
+            padding-left: $s-8;
+            .icon-text {
+              @include flexCenter;
+              height: $s-32;
+              margin-right: $s-4;
+              padding-top: $s-1;
+            }
+            .numeric-input {
+              @extend .numeric-input-base;
+            }
+          }
+          .gutter,
+          .margin {
+            @extend .input-element;
+            width: $s-108;
+            padding-left: $s-8;
+            .icon {
+              @include flexCenter;
+              width: $s-12;
+              height: $s-32;
+              margin-right: $s-4;
+              svg {
+                @extend .button-icon;
+              }
+              &.rotated svg {
+                transform: rotate(90deg);
+              }
+            }
+
+            .numeric-input {
+              @extend .numeric-input-base;
+            }
+          }
+          .more-options {
+            @include menuShadow;
+            position: absolute;
+            top: $s-36;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: $s-4;
+            width: $s-156;
+            max-height: $s-300;
+            padding: $s-2;
+            margin: 0 0 $s-40 0;
+            margin-top: $s-4;
+            border-radius: $br-8;
+            z-index: $z-index-3;
+            overflow-y: auto;
+            background-color: var(--menu-background-color);
+            .option-btn {
+              @include buttonStyle;
+              display: flex;
+              align-items: center;
+              height: $s-32;
+              padding: 0 $s-8;
+              border-radius: $br-6;
+              color: var(--menu-foreground-color);
+
+              &:hover {
+                background-color: var(--menu-background-color-hover);
+                color: var(--menu-foreground-color-hover);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

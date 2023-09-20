@@ -141,8 +141,26 @@
     .font-size-options {
       @extend .asset-element;
       @include titleTipography;
-      padding: 0;
       flex-grow: 1;
+      width: $s-60;
+      margin: 0;
+      padding: 0;
+      border: $s-1 solid var(--input-background-color);
+      position: relative;
+      .font-size-select {
+        height: $s-32;
+        .numeric-input {
+          @extend .numeric-input-base;
+          margin: 0;
+          padding: 0;
+        }
+        span {
+          @include flexCenter;
+          svg {
+            @extend .button-icon;
+          }
+        }
+      }
       .icon {
         @include flexCenter;
         height: $s-28;

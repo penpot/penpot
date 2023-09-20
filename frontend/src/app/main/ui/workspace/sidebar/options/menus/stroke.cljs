@@ -286,6 +286,4 @@
                              :on-focus on-focus
                              :select-on-focus (not @disable-drag)
                              :on-blur on-blur
-                             :disable-stroke-style disable-stroke-style}])])]])
-
-    ))
+                             :disable-stroke-style disable-stroke-style}])])]])))

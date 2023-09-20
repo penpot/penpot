@@ -56,7 +56,7 @@
       .input {
         background-color: transparent;
         border: $s-1 solid var(--input-border-color-disabled);
-        color: var(--input-foreground-color-disable);
+        color: var(--input-foreground-color-disabled);
 
         .icon {
           stroke: var(--input-foreground-color-disabled);
