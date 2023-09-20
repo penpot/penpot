@@ -150,7 +150,7 @@
       .font-size-select {
         height: $s-32;
         .numeric-input {
-          @extend .numeric-input-base;
+          @extend .input-base;
           margin: 0;
           padding: 0;
         }
@@ -236,7 +236,7 @@
         }
         .line-height-input,
         .letter-spacing-input {
-          @extend .numeric-input-base;
+          @extend .input-base;
           &:hover,
           &:active,
           &:focus {

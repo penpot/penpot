@@ -310,7 +310,7 @@
   }
 }
 
-.numeric-input-base {
+.input-base {
   @include removeInputStyle;
   @include titleTipography;
   height: $s-32;
@@ -403,4 +403,16 @@
     border-radius: $br-circle;
     border: $s-2 solid var(--user-count-foreground-color);
   }
+}
+
+.mixed-bar {
+  @include titleTipography;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  border-radius: $br-8;
+  height: $s-32;
+  padding: $s-8;
+  background-color: var(--input-background-color);
+  color: var(--input-foreground-color-active);
 }

@@ -62,7 +62,7 @@
             padding-left: $s-8;
             border-radius: 0 $br-8 $br-8 0;
             .numeric-input {
-              @extend .numeric-input-base;
+              @extend .input-base;
             }
           }
           .editable-select-wrapper {
@@ -76,7 +76,7 @@
             .column-select {
               height: $s-32;
               .numeric-input {
-                @extend .numeric-input-base;
+                @extend .input-base;
                 margin: 0;
                 padding: 0;
               }
@@ -183,7 +183,7 @@
               padding-top: $s-1;
             }
             .numeric-input {
-              @extend .numeric-input-base;
+              @extend .input-base;
             }
           }
           .gutter,
@@ -205,7 +205,7 @@
             }
 
             .numeric-input {
-              @extend .numeric-input-base;
+              @extend .input-base;
             }
           }
           .more-options {

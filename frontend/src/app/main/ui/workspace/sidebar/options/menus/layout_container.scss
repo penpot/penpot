@@ -74,7 +74,7 @@
           width: $s-108;
           padding-left: $s-8;
           .numeric-input {
-            @extend .numeric-input-base;
+            @extend .input-base;
           }
           .icon {
             @include flexCenter;
@@ -106,7 +106,7 @@
           width: $s-108;
           padding-left: $s-8;
           .numeric-input {
-            @extend .numeric-input-base;
+            @extend .input-base;
           }
           .icon {
             @include flexCenter;
@@ -148,7 +148,7 @@
               width: $s-108;
               padding-left: $s-8;
               .numeric-input {
-                @extend .numeric-input-base;
+                @extend .input-base;
               }
               .icon {
                 @include flexCenter;
@@ -170,7 +170,7 @@
               width: $s-108;
               padding-left: $s-8;
               .numeric-input {
-                @extend .numeric-input-base;
+                @extend .input-base;
               }
               .icon {
                 @include flexCenter;

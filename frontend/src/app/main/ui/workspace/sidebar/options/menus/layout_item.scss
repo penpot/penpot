@@ -62,7 +62,7 @@
           padding-top: $s-2;
         }
         .numeric-input {
-          @extend .numeric-input-base;
+          @extend .input-base;
         }
       }
     }
@@ -110,7 +110,7 @@
                 }
               }
               .numeric-input {
-                @extend .numeric-input-base;
+                @extend .input-base;
               }
             }
           }
@@ -135,7 +135,7 @@
                 }
               }
               .numeric-input {
-                @extend .numeric-input-base;
+                @extend .input-base;
               }
             }
           }
@@ -167,7 +167,7 @@
             padding-top: $s-2;
           }
           .numeric-input {
-            @extend .numeric-input-base;
+            @extend .input-base;
           }
         }
       }

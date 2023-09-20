@@ -132,7 +132,7 @@
         padding-top: $s-1;
       }
       .numeric-input {
-        @extend .numeric-input-base;
+        @extend .input-base;
       }
     }
     .lock-size-btn {
@@ -168,7 +168,7 @@
         padding-top: $s-1;
       }
       .numeric-input {
-        @extend .numeric-input-base;
+        @extend .input-base;
       }
     }
   }
@@ -197,7 +197,7 @@
         }
       }
       .numeric-input {
-        @extend .numeric-input-base;
+        @extend .input-base;
       }
     }
     .radius {
@@ -222,7 +222,7 @@
           }
 
           .numeric-input {
-            @extend .numeric-input-base;
+            @extend .input-base;
           }
         }
         .radius-4 {
@@ -234,7 +234,7 @@
             width: $s-52;
             padding-left: $s-8;
             .numeric-input {
-              @extend .numeric-input-base;
+              @extend .input-base;
             }
           }
         }

@@ -27,15 +27,7 @@
       align-items: center;
       gap: $s-4;
       .group-label {
-        @include titleTipography;
-        display: flex;
-        align-items: center;
-        flex-grow: 1;
-        border-radius: $br-8;
-        height: $s-32;
-        padding: $s-8;
-        background-color: var(--input-background-color);
-        color: var(--input-foreground-color-active);
+        @extend .mixed-bar;
       }
       .remove-btn {
         @extend .button-tertiary;

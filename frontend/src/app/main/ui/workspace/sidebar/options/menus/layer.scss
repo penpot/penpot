@@ -28,7 +28,7 @@
         margin-right: $s-4;
       }
       .numeric-input {
-        @extend .numeric-input-base;
+        @extend .input-base;
       }
     }
     .actions {

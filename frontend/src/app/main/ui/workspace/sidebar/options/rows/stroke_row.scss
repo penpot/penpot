@@ -30,7 +30,7 @@
         }
       }
       .stroke-width-input {
-        @extend .numeric-input-base;
+        @extend .input-base;
       }
     }
     .select-wrapper {
