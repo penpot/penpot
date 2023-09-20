@@ -90,22 +90,23 @@
                         :transform transform
                         :bounds bounds}])]])))
 
-(defn svg-def-bounds [svg-def shape transform]
-  (let [{:keys [tag]} svg-def]
-    (if (or (= tag :mask) (contains? csvg/filter-tags tag))
-      (-> (grc/make-rect (d/parse-double (get-in svg-def [:attrs :x]))
-                         (d/parse-double (get-in svg-def [:attrs :y]))
-                         (d/parse-double (get-in svg-def [:attrs :width]))
-                         (d/parse-double (get-in svg-def [:attrs :height])))
-          (gsh/transform-rect transform))
-      (gsb/get-shape-filter-bounds shape))))
+(defn- get-svg-def-bounds
+  [{:keys [tag attrs] :as node} shape transform]
+  (if (or (= tag :mask) (contains? csvg/filter-tags tag))
+    (some-> (grc/make-rect (d/parse-double (get attrs :x))
+                           (d/parse-double (get attrs :y))
+                           (d/parse-double (get attrs :width))
+                           (d/parse-double (get attrs :height)))
+            (gsh/transform-rect transform))
+    (gsb/get-shape-filter-bounds shape)))
 
-(mf/defc svg-defs [{:keys [shape render-id]}]
-  (let [svg-defs (:svg-defs shape)
+(mf/defc svg-defs
+  {::mf/wrap-props false}
+  [{:keys [shape render-id]}]
+  (let [defs      (:svg-defs shape)
 
-        transform (mf/use-memo
-                   (mf/deps shape)
-                   #(if (= :svg-raw (:type shape))
+        transform (mf/with-memo [shape]
+                    (if (= :svg-raw (:type shape))
                       (gmt/matrix)
                       (csvg/svg-transform-matrix shape)))
 
@@ -114,16 +115,17 @@
                     (gmt/multiply transform (:svg-transform shape))
                     transform)
 
-        prefix-id
-        (fn [id]
-          (cond->> id
-            (contains? svg-defs id) (str render-id "-")))]
+        ;; FIXME: naming
+        prefix-id (mf/use-fn
+                   (mf/deps render-id defs)
+                   (fn [id]
+                     (cond->> id
+                       (contains? defs id) (str render-id "-"))))]
 
-    (when (seq svg-defs)
-      (for [[key svg-def] svg-defs]
-        [:& svg-node {:key (dm/str key)
-                      :type (:type shape)
-                      :node svg-def
-                      :prefix-id prefix-id
-                      :transform transform
-                      :bounds (svg-def-bounds svg-def shape transform)}]))))
+    (for [[key node] defs]
+      [:& svg-node {:key (dm/str key)
+                    :type (:type shape)
+                    :node node
+                    :prefix-id prefix-id
+                    :transform transform
+                    :bounds (get-svg-def-bounds node shape transform)}])))
