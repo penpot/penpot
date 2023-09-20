@@ -444,25 +444,27 @@
                    [_ changes] (dwlh/generate-add-component-changes changes shape objects file-id (:id page) components-v2)]
                changes))
 
-           new-obj     (-> obj
-                           (assoc :id new-id
-                                  :name name
-                                  :parent-id parent-id
-                                  :frame-id frame-id)
+           new-obj
+           (-> obj
+               (assoc :id new-id
+                      :name name
+                      :parent-id parent-id
+                      :frame-id frame-id)
 
-                           (dissoc :shapes
-                                   :main-instance
-                                   :use-for-thumbnail)
+               (dissoc :shapes
+                       :main-instance
+                       :use-for-thumbnail)
 
-                           (cond->
-                             (or frame? group? bool?)
-                             (assoc :shapes []))
+               (cond->
+                   (or frame? group? bool?)
+                 (assoc :shapes []))
 
-                           (gsh/move delta)
-                           (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))
+               (gsh/move delta)
+               (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))
 
-                           (cond-> (ctl/grid-layout? obj)
-                             (remap-grid-cells ids-map)))
+               (cond-> (ctl/grid-layout? obj)
+                 (-> (ctl/check-deassigned-cells)
+                     (remap-grid-cells ids-map))))
 
            new-obj (cond-> new-obj
                      (not duplicating-component?)

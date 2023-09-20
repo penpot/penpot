@@ -367,7 +367,7 @@
                  (comp first first))
 
                 new-shapes
-                (into [] (sort-by #(or (id->idx %) -1) < old-shapes))]
+                (into [] (sort-by #(d/nilv (id->idx %) -1) < old-shapes))]
 
             (reset! changed? (not= old-shapes new-shapes))
 

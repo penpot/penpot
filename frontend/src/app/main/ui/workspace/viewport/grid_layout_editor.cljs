@@ -436,11 +436,11 @@
 
         [width height]
         (if (= type :column)
-          [(max 0 (- layout-gap-col (/ 10 zoom)) (/ 16 zoom))
+          [(max 0 (- layout-gap-col (/ 10 zoom)) (/ 8 zoom))
            (+ row-total-size row-total-gap)]
 
           [(+ column-total-size column-total-gap)
-           (max 0 (- layout-gap-row (/ 10 zoom)) (/ 16 zoom))])
+           (max 0 (- layout-gap-row (/ 10 zoom)) (/ 8 zoom))])
 
         start-p
         (cond-> start-p
@@ -471,7 +471,6 @@
                (cur/get-dynamic "resize-ew" (:rotation shape))
                (cur/get-dynamic "resize-ns" (:rotation shape)))
       :style {:fill "transparent"
-              :opacity 0.5
               :stroke-width 0}}]))
 
 (mf/defc track-marker

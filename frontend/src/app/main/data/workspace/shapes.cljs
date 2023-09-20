@@ -52,8 +52,7 @@
                     (cond-> (some? cell)
                       (pcb/update-shapes [(:parent-id shape)] #(ctl/push-into-cell % [id] row column)))
                     (cond-> (ctl/grid-layout? objects (:parent-id shape))
-                      (-> (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells)
-                          (pcb/reorder-grid-children [(:parent-id shape)]))))]
+                      (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells)))]
     [shape changes]))
 
 (defn add-shape
@@ -403,7 +402,13 @@
             (prepare-add-shape changes shape objects selected)
 
             changes
-            (prepare-move-shapes-into-frame changes (:id shape) selected objects)]
+            (prepare-move-shapes-into-frame changes (:id shape) selected objects)
+
+            changes
+            (cond-> changes
+              (ctl/grid-layout? objects (:parent-id shape))
+              (-> (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells)
+                  (pcb/reorder-grid-children [(:parent-id shape)])))]
 
         [shape changes]))))
 
