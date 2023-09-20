@@ -248,16 +248,21 @@
 
             prepare
             (fn [shape-id]
-              (let [shape (get objects shape-id)]
-                (cond
-                  (ctk/main-instance? shape)
-                  (remove-component-changes it page-id shape objects file-data file)
+              (let [shape (get objects shape-id)
+                    changes
+                    (cond
+                      (ctk/main-instance? shape)
+                      (remove-component-changes it page-id shape objects file-data file)
 
-                  (or (cph/group-shape? shape) (cph/bool-shape? shape))
-                  (remove-group-changes it page-id shape objects)
+                      (or (cph/group-shape? shape) (cph/bool-shape? shape))
+                      (remove-group-changes it page-id shape objects)
 
-                  (cph/frame-shape? shape)
-                  (remove-frame-changes it page-id shape objects))))
+                      (cph/frame-shape? shape)
+                      (remove-frame-changes it page-id shape objects))]
+
+                (cond-> changes
+                  (ctl/grid-layout? objects (:parent-id shape))
+                  (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells))))
 
             selected (wsh/lookup-selected state)
             changes-list (sequence
