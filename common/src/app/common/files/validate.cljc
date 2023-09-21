@@ -133,7 +133,7 @@
     (report-error :component-main-external
                   (str/format "Main instance should refer to a component in the same file")
                   shape file page))
-  (let [component (ctf/resolve-component shape file libraries {:include-deleted? true})]
+  (let [component (ctf/resolve-component shape file libraries :include-deleted? true)]
     (if (nil? component)
       (report-error :component-not-found
                     (str/format "Component %s not found in file" (:component-id shape) (:component-file shape))

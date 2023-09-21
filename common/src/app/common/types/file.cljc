@@ -126,10 +126,10 @@
 
 (defn resolve-component
   "Retrieve the referenced component, from the local file or from a library"
-  [shape file libraries & params]
+  [shape file libraries & {:keys [include-deleted?] :or {include-deleted? false}}]
   (if (= (:component-file shape) (:id file))
-    (ctkl/get-component (:data file) (:component-id shape) params)
-    (get-component libraries (:component-file shape) (:component-id shape) params)))
+    (ctkl/get-component (:data file) (:component-id shape) include-deleted?)
+    (get-component libraries (:component-file shape) (:component-id shape) :include-deleted? include-deleted?)))
 
 (defn get-component-library
   "Retrieve the library the component belongs to."
