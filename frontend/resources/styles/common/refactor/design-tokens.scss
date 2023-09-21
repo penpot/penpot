@@ -118,18 +118,18 @@
   --search-bar-input-border-color: var(--color-background-tertiary);
 
   --input-background-color: var(--color-background-tertiary);
-  --input-background-color-active: var(--color-background-primary);
+  --input-foreground-color: var(--color-foreground-secondary);
+  --input-placeholder-color: var(--color-foreground-secondary);
   --input-background-color-hover: var(--color-background-quaternary);
   --input-background-color-focus: var(--color-background-tertiary);
-  --input-background-color-disabled: var(--color-background-primary);
-  --input-placeholder-color: var(--color-foreground-secondary);
-  --input-foreground-color: var(--color-foreground-secondary);
-  --input-foreground-color-active: var(--color-foreground-primary);
-  --input-foreground-color-disabled: var(--color-foreground-secondary);
-  --input-border-color-active: var(--color-accent-primary);
-  --input-border-color-disabled: var(--color-background-quaternary);
-  --input-border-outline-color-active: var(--color-accent-primary-muted);
   --input-border-color-focus: var(--color-accent-primary);
+  --input-background-color-active: var(--color-background-primary);
+  --input-foreground-color-active: var(--color-foreground-primary);
+  --input-border-outline-color-active: var(--color-accent-primary-muted);
+  --input-border-color-active: var(--color-accent-primary);
+  --input-background-color-disabled: var(--color-background-primary);
+  --input-foreground-color-disabled: var(--color-foreground-secondary);
+  --input-border-color-disabled: var(--color-background-quaternary);
   --input-details-color: var(--color-background-primary);
 
   --pill-background-color: var(--color-background-tertiary);
@@ -138,17 +138,20 @@
   --menu-background-color: var(--color-background-tertiary);
   --menu-foreground-color: var(--color-foreground-primary);
   --menu-background-color-selected: var(--color-background-tertiary);
-  --menu-foreground-color-selected: var(--color-foreground-primary);
   --menu-background-color-hover: var(--color-background-quaternary);
   --menu-foreground-color-hover: var(--color-foreground-primary);
   --menu-background-color-focus: var(--color-background-tertiary);
   --menu-foreground-color-focus: var(--color-foreground-primary);
+  --menu-foreground-color-rest: var(--color-foreground-secondary);
   --menu-border-color-focus: var(--color-accent-primary);
   --menu-shortcut-background-color: var(--color-background-primary);
   --menu-shortcut-foreground-color: var(--color-foreground-secondary);
   --menu-shortcut-foreground-color-selected: var(--color-foreground-primary);
   --menu-shortcut-foreground-color-hover: var(--color-foreground-primary);
   --menu-shadow-color: var(--color-background-subtle);
+  --menu-background-color-disabled: var(--color-background-primary);
+  --menu-foreground-color-disabled: var(--color-foreground-secondary);
+  --menu-border-color-disabled: var(--color-background-quaternary);
 
   --tag-background-color: var(--color-accent-primary);
 

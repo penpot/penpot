@@ -392,7 +392,8 @@
                              :id :horiz}]]])
        (when (options :size)
          [:div {:class (stl/css :size)}
-          [:div {:class (stl/css :height)
+          [:div {:class (stl/css-case :width true
+                                      :disabled disabled-width-sizing?)
                  :title (tr "workspace.options.width")}
            [:span {:class (stl/css :icon-text)} "W"]
            [:> numeric-input* {:min 0.01
@@ -402,7 +403,8 @@
                                :disabled disabled-width-sizing?
                                :className (stl/css :numeric-input)
                                :value (:width values)}]]
-          [:div {:class (stl/css :height)
+          [:div {:class (stl/css-case :height true
+                                      :disabled disabled-height-sizing?)
                  :title (tr "workspace.options.height")}
            [:span {:class (stl/css :icon-text)} "H"]
            [:> numeric-input* {:min 0.01
@@ -422,7 +424,8 @@
              i/unlock-refactor)]])
        (when (options :position)
          [:div {:class (stl/css :position)}
-          [:div {:class (stl/css :x-position)
+          [:div {:class (stl/css-case :x-position true
+                                      :disabled disabled-position-x?)
                  :title (tr "workspace.options.x")}
            [:span {:class (stl/css :icon-text)} "X"]
            [:> numeric-input* {:no-validate true
@@ -432,7 +435,8 @@
                                :className (stl/css :numeric-input)
                                :value (:x values)}]]
 
-          [:div {:class (stl/css :y-position)
+          [:div {:class (stl/css-case :y-position true
+                                      :disabled disabled-position-y?)
                  :title (tr "workspace.options.y")}
            [:span {:class (stl/css :icon-text)} "Y"]
            [:> numeric-input* {:no-validate true

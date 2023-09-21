@@ -55,15 +55,6 @@
         @extend .input-element;
         width: $s-124;
         padding-left: $s-8;
-        .icon-text {
-          @include flexCenter;
-          height: $s-32;
-          margin-right: $s-4;
-          padding-top: $s-2;
-        }
-        .numeric-input {
-          @extend .input-base;
-        }
       }
     }
     .second-row {
@@ -100,18 +91,6 @@
               @extend .input-element;
               width: $s-108;
               padding-left: $s-8;
-              .icon {
-                @include flexCenter;
-                height: $s-32;
-                margin-right: $s-4;
-                svg {
-                  @extend .button-icon-small;
-                  stroke: var(--icon-foreground);
-                }
-              }
-              .numeric-input {
-                @extend .input-base;
-              }
             }
           }
           .margin-multiple {
@@ -125,18 +104,6 @@
               @extend .input-element;
               width: $s-108;
               padding-left: $s-8;
-              .icon {
-                @include flexCenter;
-                height: $s-32;
-                margin-right: $s-4;
-                svg {
-                  @extend .button-icon-small;
-                  stroke: var(--icon-foreground);
-                }
-              }
-              .numeric-input {
-                @extend .input-base;
-              }
             }
           }
         }
@@ -159,15 +126,9 @@
           width: $s-108;
           padding-left: $s-8;
           .icon-text {
-            display: flex;
-            align-items: center;
-            height: $s-32;
+            justify-content: flex-start;
             width: $s-80;
-            margin-right: $s-4;
             padding-top: $s-2;
-          }
-          .numeric-input {
-            @extend .input-base;
           }
         }
       }

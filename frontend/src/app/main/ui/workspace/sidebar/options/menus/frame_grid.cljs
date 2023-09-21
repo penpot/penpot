@@ -44,7 +44,8 @@
         state           (mf/use-state {:show-advanced-options false
                                        :show-more-options false
                                        :hidden-grid false})
-        open? (:show-advanced-options @state)
+        open?           (:show-advanced-options @state)
+
         is-hidden? (not (:display grid))
 
 
@@ -142,7 +143,6 @@
                                         :selected open?)
                    :on-click toggle-advanced-options}
           i/menu-refactor]
-
          [:div {:class (stl/css :type-select-wrapper)}
           [:& select
            {:class (stl/css :grid-type-select)
@@ -196,17 +196,17 @@
            (when (:show-more-options @state)
              [:div {:class (stl/css :second-row)}
               [:button.btn-options {:disabled is-default
-                                     :on-click handle-use-default} (tr "workspace.options.grid.params.use-default")]
-               [:button.btn-options {:disabled is-default
-                                     :on-click handle-set-as-default} (tr "workspace.options.grid.params.set-default")]])])
+                                    :on-click handle-use-default} (tr "workspace.options.grid.params.use-default")]
+              [:button.btn-options {:disabled is-default
+                                    :on-click handle-set-as-default} (tr "workspace.options.grid.params.set-default")]])])
 
-        (when (or (= :column type)(= :row type))
+        (when (or (= :column type) (= :row type))
           [:div {:class (stl/css :column-row)}
            [:div {:class (stl/css :advanced-row)}
             [:div {:class (stl/css :select-wrapper)}
              [:& select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
                          :default-value (:type params)
-                         :class "input-option"
+                         :class (stl/css :orientation)
                          :options [{:value :stretch :label (tr "workspace.options.grid.params.type.stretch")}
                                    {:value :left :label (if (= type :row)
                                                           (tr "workspace.options.grid.params.type.top")
@@ -383,9 +383,7 @@
          [:button.btn-options {:disabled is-default
                                :on-click handle-use-default} (tr "workspace.options.grid.params.use-default")]
          [:button.btn-options {:disabled is-default
-                               :on-click handle-set-as-default} (tr "workspace.options.grid.params.set-default")]]]])
-
-    ))
+                               :on-click handle-set-as-default} (tr "workspace.options.grid.params.set-default")]]]])))
 
 (mf/defc frame-grid
   [{:keys [shape]}]

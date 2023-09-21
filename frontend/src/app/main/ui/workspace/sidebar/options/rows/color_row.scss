@@ -55,16 +55,6 @@
       .color-input-wrapper {
         @extend .input-element;
         border-radius: $br-0;
-
-        .color-input {
-          @extend .input-base;
-          padding-left: $s-4;
-          &:active,
-          &:focus {
-            background-color: var(--input-background-color-active);
-            border: $s-1 solid var(--input-border-color-active);
-          }
-        }
       }
       &:hover,
       &:focus,
@@ -91,7 +81,6 @@
       border-radius: 0 $br-8 $br-8 0;
       padding-left: $s-8;
       .opacity-input {
-        @extend .input-base;
         border-radius: 0 $br-8 $br-8 0;
         min-width: $s-28;
       }

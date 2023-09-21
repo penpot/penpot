@@ -82,12 +82,12 @@
       &:hover .context-menu-action {
         background-color: var(--menu-background-color-hover);
         text-decoration: none;
-        color: var(--menu-foreground-color-hover);
+        color: var(--menu-foreground-color);
         &.submenu .submenu-icon svg {
-          stroke: var(--menu-foreground-color-hover);
+          stroke: var(--menu-foreground-color);
         }
         &.submenu-back .submenu-icon-back svg {
-          stroke: var(--menu-foreground-color-hover);
+          stroke: var(--menu-foreground-color);
         }
       }
       &:focus {

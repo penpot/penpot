@@ -119,20 +119,11 @@
       @extend .input-element;
       width: $s-108;
       padding-left: $s-8;
-      .icon {
-        @include flexCenter;
-        width: $s-12;
-        height: $s-32;
-        margin-right: $s-4;
-      }
-      .icon-text {
-        @include flexCenter;
-        height: $s-32;
-        margin-right: $s-4;
+      y .icon-text {
         padding-top: $s-1;
       }
-      .numeric-input {
-        @extend .input-base;
+      &.disabled {
+        @extend .disabled-input;
       }
     }
     .lock-size-btn {
@@ -155,20 +146,11 @@
       @extend .input-element;
       width: $s-108;
       padding-left: $s-8;
-      .icon {
-        @include flexCenter;
-        height: $s-32;
-        width: $s-12;
-        margin-right: $s-4;
-      }
       .icon-text {
-        @include flexCenter;
-        height: $s-32;
-        margin-right: $s-4;
         padding-top: $s-1;
       }
-      .numeric-input {
-        @extend .input-base;
+      &.disabled {
+        @extend .disabled-input;
       }
     }
   }
@@ -182,22 +164,7 @@
       width: $s-108;
       padding-left: $s-8;
       .icon-text {
-        @include flexCenter;
-        height: $s-32;
-        margin-right: $s-4;
         padding-top: $s-1;
-      }
-      .icon {
-        @include flexCenter;
-        height: $s-32;
-        margin-right: $s-4;
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--icon-foreground);
-        }
-      }
-      .numeric-input {
-        @extend .input-base;
       }
     }
     .radius {
@@ -211,19 +178,6 @@
           @extend .input-element;
           width: $s-108;
           padding-left: $s-8;
-          .icon {
-            @include flexCenter;
-            height: $s-32;
-            margin-right: $s-4;
-            svg {
-              @extend .button-icon-small;
-              stroke: var(--icon-foreground);
-            }
-          }
-
-          .numeric-input {
-            @extend .input-base;
-          }
         }
         .radius-4 {
           display: grid;
@@ -233,9 +187,6 @@
             @extend .input-element;
             width: $s-52;
             padding-left: $s-8;
-            .numeric-input {
-              @extend .input-base;
-            }
           }
         }
       }

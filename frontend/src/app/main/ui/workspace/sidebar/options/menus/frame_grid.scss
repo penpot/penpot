@@ -47,12 +47,13 @@
             }
           }
           .type-select-wrapper {
-            @extend .asset-element;
             width: $s-96;
-            margin: 0;
             padding: 0;
-            border: $s-1 solid var(--input-background-color);
             border-radius: 0;
+            height: $s-32;
+            .grid-type-select {
+              border-radius: 0;
+            }
           }
           .grid-size {
             @extend .asset-element;
@@ -96,7 +97,8 @@
               background-color: transparent;
               border: $s-1 solid var(--input-border-color-disabled);
               color: var(--input-foreground-color-disabled);
-              .column-select {
+              .column-select,
+              .grid-type-select {
                 background-color: transparent;
               }
             }
@@ -153,13 +155,9 @@
           position: relative;
           display: flex;
           gap: $s-4;
-
           .select-wrapper {
-            @extend .asset-element;
             width: $s-92;
-            margin: 0;
             padding: 0;
-            border: $s-1 solid var(--input-background-color);
           }
           .color-wrapper {
             width: $s-156;
@@ -177,13 +175,7 @@
             width: $s-108;
             padding-left: $s-8;
             .icon-text {
-              @include flexCenter;
-              height: $s-32;
-              margin-right: $s-4;
               padding-top: $s-1;
-            }
-            .numeric-input {
-              @extend .input-base;
             }
           }
           .gutter,
@@ -192,20 +184,9 @@
             width: $s-108;
             padding-left: $s-8;
             .icon {
-              @include flexCenter;
-              width: $s-12;
-              height: $s-32;
-              margin-right: $s-4;
-              svg {
-                @extend .button-icon;
-              }
               &.rotated svg {
                 transform: rotate(90deg);
               }
-            }
-
-            .numeric-input {
-              @extend .input-base;
             }
           }
           .more-options {

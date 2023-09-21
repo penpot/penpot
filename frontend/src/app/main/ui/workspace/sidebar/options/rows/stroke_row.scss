@@ -24,21 +24,10 @@
         height: $s-32;
         width: $s-12;
         margin-right: $s-4;
-        stroke: var(--input-foreground-color);
-        svg {
-          @extend .button-icon;
-        }
-      }
-      .stroke-width-input {
-        @extend .input-base;
       }
     }
     .select-wrapper {
-      @extend .asset-element;
       width: $s-124;
-      margin: 0;
-      padding: 0;
-      border: $s-1 solid var(--input-background-color);
     }
   }
   .stroke-caps-options {
@@ -46,10 +35,7 @@
     align-items: center;
     gap: $s-4;
     .cap-select {
-      @extend .asset-element;
       width: $s-124;
-      margin: 0;
-      padding: 0;
     }
     .swap-caps-btn {
       @extend .button-secondary;

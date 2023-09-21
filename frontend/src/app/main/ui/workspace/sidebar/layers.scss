@@ -202,16 +202,16 @@
         .filter-menu-item-name-wrapper {
           .filter-menu-item-icon {
             svg {
-              stroke: var(--menu-foreground-color-selected);
+              stroke: var(--menu-foreground-color);
             }
           }
           .filter-menu-item-name {
-            color: var(--menu-foreground-color-selected);
+            color: var(--menu-foreground-color);
           }
         }
         .filter-menu-item-tick {
           svg {
-            stroke: var(--menu-foreground-color-selected);
+            stroke: var(--menu-foreground-color);
           }
         }
       }

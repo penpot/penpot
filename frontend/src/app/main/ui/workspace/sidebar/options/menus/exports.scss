@@ -52,27 +52,18 @@
         align-items: center;
         gap: $s-4;
         .format-select {
-          @extend .asset-element;
           width: $s-60;
-          margin: 0;
           padding: 0;
-          border: $s-1 solid var(--input-background-color);
         }
         .size-select {
-          @extend .asset-element;
           width: $s-60;
-          margin: 0;
           padding: 0;
-          border: $s-1 solid var(--input-background-color);
         }
         .suffix-input {
           @extend .input-element;
           min-width: $s-92;
           padding: 0 $s-8;
           flex-grow: 1;
-          .type-input {
-            @extend .input-base;
-          }
         }
       }
       .action-btn {

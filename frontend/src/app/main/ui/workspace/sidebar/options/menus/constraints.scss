@@ -111,11 +111,8 @@
 
       .horizontal-select,
       .vertical-select {
-        @extend .asset-element;
         width: $s-124;
-        margin: 0;
         padding: 0;
-        border: $s-1 solid var(--input-background-color);
       }
 
       .checkbox {

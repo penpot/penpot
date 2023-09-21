@@ -1,0 +1,85 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  .element-title {
+    .add-blur {
+      @extend .button-tertiary;
+      height: $s-32;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+      }
+    }
+  }
+  .element-set-content {
+    display: flex;
+    flex-direction: column;
+    gap: $s-4;
+    margin-bottom: $s-4;
+    .first-row {
+      display: flex;
+      align-items: center;
+      gap: $s-4;
+      width: 100%;
+      .blur-info {
+        display: flex;
+        align-items: center;
+        gap: $s-1;
+        flex-grow: 1;
+        border-radius: $br-8;
+        background-color: var(--input-details-color);
+        .show-more {
+          @extend .button-secondary;
+          height: $s-32;
+          width: $s-28;
+          border-radius: $br-8 0 0 $br-8;
+          svg {
+            @extend .button-icon;
+          }
+          &.selected {
+            background-color: var(--button-secondary-background-color-active);
+            color: var(--button-secondary-foreground-color-active);
+            svg {
+              stroke: var(--button-secondary-foreground-color-active);
+            }
+          }
+        }
+        .label {
+          @include tabTitleTipography;
+          flex-grow: 1;
+          display: flex;
+          align-items: center;
+          height: $s-32;
+          padding: 0 $s-8;
+          border-radius: 0 $br-8 $br-8 0;
+          background-color: var(--input-background-color);
+        }
+      }
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: $s-4;
+        .action-btn {
+          @extend .button-tertiary;
+          height: $s-32;
+          width: $s-28;
+          svg {
+            @extend .button-icon;
+          }
+        }
+      }
+    }
+    .second-row {
+      @extend .input-element;
+      gap: $s-4;
+      width: $s-92;
+      padding-left: $s-8;
+    }
+  }
+}
