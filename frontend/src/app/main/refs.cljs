@@ -475,15 +475,12 @@
                (dm/get-in state [:viewer-local :zoom-type]))
              st/state))
 
-(def thumbnail-data
-  (l/derived #(get % :workspace-thumbnails {}) st/state))
-
-(defn thumbnail-frame-data
-  [frame-id]
+(defn workspace-thumbnail-by-id
+  [object-id]
   (l/derived
-   (fn [thumbnails]
-     (get thumbnails (dm/str frame-id)))
-   thumbnail-data))
+   (fn [state]
+     (dm/get-in state [:workspace-thumbnails object-id]))
+   st/state))
 
 (def workspace-text-modifier
   (l/derived :workspace-text-modifier st/state))
