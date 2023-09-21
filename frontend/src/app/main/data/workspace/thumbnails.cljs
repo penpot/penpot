@@ -8,14 +8,14 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
-   [app.common.pages.helpers :as cph]
-   [app.common.uuid :as uuid]
-   [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.state-helpers :as wsh]
+   ;; [app.common.pages.helpers :as cph]
+   ;; [app.common.uuid :as uuid]
+   ;; [app.main.data.workspace.changes :as dch]
+   ;; [app.main.data.workspace.state-helpers :as wsh]
    [app.main.rasterizer :as thr]
-   [app.main.refs :as refs]
+   ;; [app.main.refs :as refs]
    [app.main.repo :as rp]
-   [app.main.store :as st]
+   ;; [app.main.store :as st]
    [app.util.http :as http]
    [app.util.imposters :as imps]
    [app.util.time :as tp]
@@ -114,7 +114,7 @@
                (rx/catch #(do (.error js/console %)
                               (rx/empty))))))))))
 
-(defn- extract-frame-changes
+#_(defn- extract-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"
   [[event [old-data new-data]]]
   (let [changes (-> event deref :changes)
@@ -157,8 +157,9 @@
   []
   (ptk/reify ::watch-state-changes
     ptk/WatchEvent
-    (watch [_ _ stream]
-      (let [stopper
+    (watch [_ _ _stream]
+      #_(let [
+            stopper
             (->> stream
                  (rx/filter #(or (= :app.main.data.workspace/finalize-page (ptk/type %))
                                  (= ::watch-state-changes (ptk/type %)))))
@@ -181,7 +182,8 @@
             (->> change-s
                  (rx/with-latest-from workspace-data-s)
                  (rx/flat-map extract-frame-changes)
-                 (rx/share))]
+                 (rx/share))
+            ]
 
         (->> (rx/merge
               (->> frame-changes-s
