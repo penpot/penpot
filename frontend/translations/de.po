@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-09-20 12:01+0000\n"
+"PO-Revision-Date: 2023-09-24 15:02+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -4833,3 +4833,14 @@ msgstr "Profil - Zugangstokens"
 
 msgid "errors.cannot-upload"
 msgstr "Die Mediendatei kann nicht hochgeladen werden."
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "Eine neue Version ist verfügbar, bitte aktualisieren Sie die Seite"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Persönliche Zugangstoken stellen eine Alternative zu unserem Login/Passwort-"
+"Authentifizierungssystem dar und können verwendet werden, um einer Anwendung "
+"den Zugriff auf die interne Penpot-API zu ermöglichen"
