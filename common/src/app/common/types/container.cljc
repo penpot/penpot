@@ -269,7 +269,8 @@
 
          update-new-shape
          (fn [new-shape original-shape]
-           (let [new-name (:name new-shape)]
+           (let [new-name (:name new-shape)
+                 main-instance? (and main-instance? (ctk/instance-root? new-shape))] ; Only the instance root can be a main instance
 
              (when (nil? (:parent-id original-shape))
                (vswap! unames conj new-name))
