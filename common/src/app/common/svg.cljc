@@ -558,8 +558,12 @@
 (defn- camelize
   [s]
   (when (string? s)
-    #?(:cljs (js* "~{}.replace(\":\", \"-\").replace(/-./g, x=>x[1].toUpperCase())", s)
-       :clj  (str/camel s))))
+    (let [vendor? (str/starts-with? s "-")
+          result  #?(:cljs (js* "~{}.replace(\":\", \"-\").replace(/-./g, x=>x[1].toUpperCase())", s)
+                     :clj  (str/camel s))]
+      (if ^boolean vendor?
+        (str/capital result)
+        result))))
 
 (defn parse-style
   [style]
