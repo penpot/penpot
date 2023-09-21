@@ -156,7 +156,7 @@
     (let [parent (cph/get-parent objects (:id shape))]
       (or (get-copy-root objects parent) shape))))
 
-(defn component-main?
+(defn inside-component-main?
   "Check if the shape is a component main instance or is inside one."
   [objects shape]
   (cond
@@ -167,7 +167,7 @@
     (ctk/instance-head? shape)
     false
     :else
-    (component-main? objects (get objects (:parent-id shape)))))
+    (inside-component-main? objects (get objects (:parent-id shape)))))
 
 (defn in-any-component?
   "Check if the shape is part of any component (main or copy), wether it's
@@ -175,7 +175,7 @@
   [objects shape]
   (or (ctk/in-component-copy? shape)
       (ctk/instance-head? shape)
-      (component-main? objects shape)))
+      (inside-component-main? objects shape)))
 
 (defn make-component-shape
   "Clone the shape and all children. Generate new ids and detach
