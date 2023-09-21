@@ -19,7 +19,7 @@
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as fdm]
-   [debug :refer [debug?]]
+   [app.util.debug :as dbg]
    [rumext.v2 :as mf]))
 
 (defn frame-shape-factory
@@ -112,7 +112,7 @@
                                  (refs/workspace-modifiers-by-frame-id frame-id))
             modifiers          (mf/deref modifiers-ref)
 
-            debug?             (debug? :thumbnails)]
+            debug?             (dbg/enabled? :thumbnails)]
 
         (when-not (some? thumbnail-uri)
           (st/emit! (dwt/update-thumbnail frame-id)))

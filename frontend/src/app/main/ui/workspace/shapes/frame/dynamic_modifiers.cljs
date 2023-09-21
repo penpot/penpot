@@ -17,9 +17,9 @@
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.viewport.utils :as vwu]
+   [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.timers :as ts]
-   [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
 (defn get-shape-node
@@ -55,25 +55,25 @@
         [shape-node
          (dom/query parent-node ".mask-clip-path")
          (dom/query parent-node ".mask-shape")
-         (when (debug? :shape-titles)
+         (when (dbg/enabled? :shape-titles)
            (dom/query (dm/str "#frame-title-" id)))]
 
         group?
         (let [shape-defs (dom/query shape-node "defs")]
           (d/concat-vec
-           [(when (debug? :shape-titles)
+           [(when (dbg/enabled? :shape-titles)
               (dom/query (dm/str "#frame-title-" id)))]
            (dom/query-all shape-defs ".svg-def")
            (dom/query-all shape-defs ".svg-mask-wrapper")))
 
         text?
         [shape-node
-         (when (debug? :shape-titles)
+         (when (dbg/enabled? :shape-titles)
            (dom/query (dm/str "#frame-title-" id)))]
 
         :else
         [shape-node
-         (when (debug? :shape-titles)
+         (when (dbg/enabled? :shape-titles)
            (dom/query (dm/str "#frame-title-" id)))]))))
 
 (defn transform-region!

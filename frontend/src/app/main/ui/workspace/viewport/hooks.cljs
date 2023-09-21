@@ -27,10 +27,10 @@
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.worker :as uw]
+   [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [beicon.core :as rx]
-   [debug :refer [debug?]]
    [goog.events :as events]
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
@@ -343,10 +343,10 @@
              ;; Debug only: Disable the thumbnails
              new-active-frames
              (cond
-               (debug? :disable-frame-thumbnails)
+               (dbg/enabled? :disable-frame-thumbnails)
                (into #{} all-frames)
 
-               (debug? :force-frame-thumbnails)
+               (dbg/enabled? :force-frame-thumbnails)
                #{}
 
                :else

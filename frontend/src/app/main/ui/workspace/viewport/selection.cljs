@@ -19,9 +19,9 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
+   [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.object :as obj]
-   [debug :refer [debug?]]
    [rumext.v2 :as mf]
    [rumext.v2.util :refer [map->obj]]))
 
@@ -170,7 +170,7 @@
             :class (cur/get-dynamic "rotate" (+ rotation angle))
             :width size
             :height size
-            :fill (if (debug? :handlers) "blue" "none")
+            :fill (if (dbg/enabled? :handlers) "blue" "none")
             :stroke-width 0
             :transform (dm/str transform)
             :on-pointer-down on-rotate}]))
@@ -207,7 +207,7 @@
                  :width resize-point-circle-radius
                  :height resize-point-circle-radius
                  :transform (when rotation (dm/fmt "rotate(%, %, %)" rotation cx' cy'))
-                 :style {:fill (if (debug? :handlers) "red" "none")
+                 :style {:fill (if (dbg/enabled? :handlers) "red" "none")
                          :stroke-width 0}
                  :on-pointer-down #(on-resize {:x cx' :y cy'} %)}])
 
@@ -216,7 +216,7 @@
                  :cx cx'
                  :cy cy'
                  :class cursor
-                 :style {:fill (if (debug? :handlers) "red" "none")
+                 :style {:fill (if (dbg/enabled? :handlers) "red" "none")
                          :stroke-width 0}}])]))
 
 (mf/defc resize-side-handler
@@ -251,7 +251,7 @@
                       (if scale-text (cur/get-dynamic "scale-ns" rotation) (cur/get-dynamic "resize-ns" rotation)))
              :transform transform-str
              :on-pointer-down #(on-resize res-point %)
-             :style {:fill (if (debug? :handlers) "yellow" "none")
+             :style {:fill (if (dbg/enabled? :handlers) "yellow" "none")
                      :stroke-width 0}}]]))
 
 (defn minimum-selrect [{:keys [x y width height] :as selrect}]

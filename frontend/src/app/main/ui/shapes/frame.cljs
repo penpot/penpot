@@ -16,8 +16,8 @@
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-fills shape-strokes]]
    [app.main.ui.shapes.grid-layout-viewer :refer [grid-layout-viewer]]
+   [app.util.debug :as dbg]
    [app.util.object :as obj]
-   [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
 (defn- frame-clip-id
@@ -120,7 +120,7 @@
 
         thumb    (:thumbnail shape)
 
-        debug?   (debug? :thumbnails)
+        debug?   (dbg/enabled? :thumbnails)
         safari?  (cf/check-browser? :safari)
 
         ;; FIXME: ensure bounds is always a rect instance and

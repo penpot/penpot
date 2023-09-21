@@ -34,11 +34,11 @@
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [app.main.ui.workspace.textpalette :refer [textpalette]]
    [app.main.ui.workspace.viewport :refer [viewport]]
+   [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [debug :refer [debug?]]
    [goog.events :as events]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -95,10 +95,10 @@
        :ref node-ref}
 
       [:section.workspace-viewport
-       (when (debug? :coordinates)
+       (when (dbg/enabled? :coordinates)
          [:& coordinates/coordinates {:colorpalette? colorpalette?}])
 
-       (when (debug? :history-overlay)
+       (when (dbg/enabled? :history-overlay)
          [:div.history-debug-overlay
           [:button {:on-click #(st/emit! dw/reinitialize-undo)} "CLEAR"]
           [:& history-toolbox]])

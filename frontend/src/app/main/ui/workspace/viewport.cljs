@@ -45,8 +45,8 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
+   [app.util.debug :as dbg]
    [beicon.core :as rx]
-   [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
 ;; --- Viewport
@@ -272,9 +272,9 @@
      [:div.viewport-overlays
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
       ;; inside a foreign object "dummy" so this awkward behaviour is take into account
-      [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity (when-not (debug? :html-text) 0)}}
+      [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity (when-not (dbg/enabled? :html-text) 0)}}
        [:foreignObject {:x 0 :y 0 :width "100%" :height "100%"}
-        [:div {:style {:pointer-events (when-not (debug? :html-text) "none")
+        [:div {:style {:pointer-events (when-not (dbg/enabled? :html-text) "none")
                        ;; some opacity because to debug auto-width events will fill the screen
                        :opacity 0.6}}
          [:& stvh/viewport-texts
@@ -315,7 +315,7 @@
                :pointer-events "none"}
        :fill "none"}
 
-      (when (debug? :show-export-metadata)
+      (when (dbg/enabled? :show-export-metadata)
         [:& use/export-page {:options options}])
 
       ;; We need a "real" background shape so layer transforms work properly in firefox
@@ -326,7 +326,7 @@
               :fill background}]
 
       [:& (mf/provider ctx/current-vbox) {:value vbox'}
-       [:& (mf/provider use/include-metadata-ctx) {:value (debug? :show-export-metadata)}
+       [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
         [:& (mf/provider embed/context) {:value true}
          ;; Render root shape
          [:& shapes/root-shape {:key page-id
@@ -542,31 +542,31 @@
            :modifiers modifiers}])
 
        ;; DEBUG LAYOUT DROP-ZONES
-       (when (debug? :layout-drop-zones)
+       (when (dbg/enabled? :layout-drop-zones)
          [:& wvd/debug-drop-zones {:selected-shapes selected-shapes
                                    :objects base-objects
                                    :hover-top-frame-id @hover-top-frame-id
                                    :zoom zoom}])
 
-       (when (debug? :layout-content-bounds)
+       (when (dbg/enabled? :layout-content-bounds)
          [:& wvd/debug-content-bounds {:selected-shapes selected-shapes
                                        :objects base-objects
                                        :hover-top-frame-id @hover-top-frame-id
                                        :zoom zoom}])
 
-       (when (debug? :layout-lines)
+       (when (dbg/enabled? :layout-lines)
          [:& wvd/debug-layout-lines {:selected-shapes selected-shapes
                                      :objects base-objects
                                      :hover-top-frame-id @hover-top-frame-id
                                      :zoom zoom}])
 
-       (when (debug? :parent-bounds)
+       (when (dbg/enabled? :parent-bounds)
          [:& wvd/debug-parent-bounds {:selected-shapes selected-shapes
                                       :objects base-objects
                                       :hover-top-frame-id @hover-top-frame-id
                                       :zoom zoom}])
 
-       (when (debug? :grid-layout)
+       (when (dbg/enabled? :grid-layout)
          [:& wvd/debug-grid-layout {:selected-shapes selected-shapes
                                     :objects base-objects
                                     :hover-top-frame-id @hover-top-frame-id
