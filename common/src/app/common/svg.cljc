@@ -596,7 +596,7 @@
                         (contains? svg-present-list k))
                   (cond
                     (= k :class)
-                    (assoc res :className val)
+                    (assoc res :className v)
 
                     (= k :style)
                     (let [v (if (string? v) (parse-style v) v)]
