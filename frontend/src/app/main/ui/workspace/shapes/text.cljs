@@ -15,8 +15,8 @@
    [app.main.refs :as refs]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text :as text]
+   [app.util.debug :as dbg]
    [app.util.dom :as dom]
-   [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
 (mf/defc debug-text-bounds
@@ -84,6 +84,6 @@
      [:g.text-shape {:key (dm/str shape-id)}
       [:& text/text-shape {:shape shape}]]
 
-     (when (and ^boolean (debug? :text-outline)
+     (when (and ^boolean (dbg/enabled? :text-outline)
                 ^boolean (seq (:position-data shape)))
        [:& debug-text-bounds {:shape shape}])]))

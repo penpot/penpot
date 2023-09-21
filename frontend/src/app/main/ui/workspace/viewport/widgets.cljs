@@ -26,10 +26,10 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
    [app.main.ui.workspace.viewport.utils :as vwu]
+   [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
-   [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
 (mf/defc pixel-grid
@@ -43,8 +43,8 @@
                :pattern-units "userSpaceOnUse"}
      [:path {:d "M 1 0 L 0 0 0 1"
              :style {:fill "none"
-                     :stroke (if (debug? :pixel-grid) "red" "var(--color-info)")
-                     :stroke-opacity (if (debug? :pixel-grid) 1 "0.2")
+                     :stroke (if (dbg/enabled? :pixel-grid) "red" "var(--color-info)")
+                     :stroke-opacity (if (dbg/enabled? :pixel-grid) 1 "0.2")
                      :stroke-width (str (/ 1 zoom))}}]]]
    [:rect {:x (:x vbox)
            :y (:y vbox)
@@ -225,7 +225,7 @@
         on-frame-select      (unchecked-get props "on-frame-select")
         components-v2        (mf/use-ctx ctx/components-v2)
         shapes               (ctt/get-frames objects {:skip-copies? components-v2})
-        shapes               (if (debug? :shape-titles)
+        shapes               (if (dbg/enabled? :shape-titles)
                                (into (set shapes)
                                      (map (d/getf objects))
                                      selected)
@@ -239,14 +239,14 @@
      (for [{:keys [id parent-id] :as shape} shapes]
        (when (and
               (not= id uuid/zero)
-              (or (debug? :shape-titles) (= parent-id uuid/zero))
+              (or (dbg/enabled? :shape-titles) (= parent-id uuid/zero))
               (or (empty? focus) (contains? focus id)))
          [:& frame-title {:key (dm/str "frame-title-" id)
                           :frame shape
                           :selected? (contains? selected id)
                           :zoom zoom
                           :show-artboard-names? show-artboard-names?
-                          :show-id? (debug? :shape-titles)
+                          :show-id? (dbg/enabled? :shape-titles)
                           :on-frame-enter on-frame-enter
                           :on-frame-leave on-frame-leave
                           :on-frame-select on-frame-select

@@ -26,6 +26,7 @@
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -44,72 +45,6 @@
   ([ns level]
    (l/set-level! (keyword ns) (keyword level))))
 
-(def debug-options
-  #{;; Displays the bounding box for the shapes
-    :bounding-boxes
-
-    ;; Displays an overlay over the groups
-    :group
-
-    ;; Displays in the console log the events through the application
-    :events
-
-    ;; Display the boxes that represent the rotation and resize handlers
-    :handlers
-
-    ;; Displays the center of a selection
-    :selection-center
-
-    ;; When active the single selection will not take into account previous transformations
-    ;; this is useful to debug transforms
-    :simple-selection
-
-    ;; When active the thumbnails will be displayed with a sepia filter
-    :thumbnails
-
-    ;; When active we can check in the browser the export values
-    :show-export-metadata
-
-    ;; Show text fragments outlines
-    :text-outline
-
-    ;; Disable thumbnail cache
-    :disable-thumbnail-cache
-
-    ;; Disable frame thumbnails
-    :disable-frame-thumbnails
-
-    ;; Force thumbnails always (independent of selection or zoom level)
-    :force-frame-thumbnails
-
-    ;; Enable a widget to show the auto-layout drop-zones
-    :layout-drop-zones
-
-    ;; Display the layout lines
-    :layout-lines
-
-    ;; Display the bounds for the hug content adjust
-    :layout-content-bounds
-
-    ;; Makes the pixel grid red so its more visibile
-    :pixel-grid
-
-    ;; Show the bounds relative to the parent
-    :parent-bounds
-
-    ;; Show html text
-    :html-text
-
-    ;; Show history overlay
-    :history-overlay
-
-    ;; Show shape name and id
-    :shape-titles
-
-    ;;
-    :grid-layout
-    })
-
 ;; These events are excluded when we activate the :events flag
 (def debug-exclude-events
   #{:app.main.data.workspace.notifications/handle-pointer-update
@@ -119,39 +54,36 @@
     :app.main.data.websocket/send-message
     :app.main.data.workspace.selection/change-hover-state})
 
-(defonce ^:dynamic *debug* (atom #{#_:events}))
-
-(defn debug-all! []
-  (reset! *debug* debug-options)
-  (js* "app.main.reinit()"))
-
-(defn debug-none! []
-  (reset! *debug* #{})
-  (js* "app.main.reinit()"))
-
-(defn debug! [option]
-  (swap! *debug* conj option)
+(defn- enable!
+  [option]
+  (dbg/enable! option)
   (when (= :events option)
     (set! st/*debug-events* true))
-
   (js* "app.main.reinit()"))
 
-(defn -debug! [option]
-  (swap! *debug* disj option)
+(defn- disable!
+  [option]
+  (dbg/disable! option)
   (when (= :events option)
     (set! st/*debug-events* false))
   (js* "app.main.reinit()"))
 
-(defn ^:export ^boolean debug?
-  [option]
-  (boolean (@*debug* option)))
+(defn ^:export toggle-debug
+  [name]
+  (let [option (keyword name)]
+    (if (dbg/enabled? option)
+      (disable! option)
+      (enable! option))))
 
-(defn ^:export toggle-debug [name] (let [option (keyword name)]
-                                     (if (debug? option)
-                                       (-debug! option)
-                                       (debug! option))))
-(defn ^:export debug-all [] (debug-all!))
-(defn ^:export debug-none [] (debug-none!))
+(defn ^:export debug-all
+  []
+  (reset! dbg/state dbg/options)
+  (js* "app.main.reinit()"))
+
+(defn ^:export debug-none
+  []
+  (reset! dbg/state #{})
+  (js* "app.main.reinit()"))
 
 (defn ^:export tap
   "Transducer function that can execute a side-effect `effect-fn` per input"
@@ -344,7 +276,7 @@
   (defonce debug-subscription
     (->> st/stream
          (rx/filter ptk/event?)
-         (rx/filter (fn [s] (and (debug? :events)
+         (rx/filter (fn [s] (and (dbg/enabled? :events)
                                  (not (debug-exclude-events (ptk/type s))))))
          (rx/subs #(println "[stream]: " (ptk/repr-event %))))))
 
