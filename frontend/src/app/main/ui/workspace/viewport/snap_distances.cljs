@@ -159,10 +159,13 @@
         ;; Left/Top shapes and right/bottom shapes (depends on `coord` parameter)
 
         ;; Gets the distance to the current selection
-        distances-xf (comp (map distance-to-selrect) (filter pos?))
+        distances-xf (comp (filter some?)
+                           (map distance-to-selrect)
+                           (filter pos?))
+
         lt-distances (into #{} distances-xf lt-shapes)
         gt-distances (into #{} distances-xf gt-shapes)
-        distances (set/union lt-distances gt-distances)
+        distances    (set/union lt-distances gt-distances)
 
         ;; We'll show the distances that match a distance from the selrect
         show-candidate? #(check-in-set % distances)
