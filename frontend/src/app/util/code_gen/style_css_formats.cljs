@@ -17,6 +17,8 @@
    :top                   :position
    :width                 :size
    :height                :size
+   :min-width             :size
+   :min-height            :size
    :background            :color
    :background-color      :color
    :background-image      :color-array
@@ -28,6 +30,7 @@
    :row-gap               :size-array
    :column-gap            :size-array
    :padding               :size-array
+   :margin                :size-array
    :grid-template-rows    :tracks
    :grid-template-columns :tracks
    :transform             :matrix

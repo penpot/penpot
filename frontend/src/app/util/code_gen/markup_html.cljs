@@ -42,7 +42,7 @@
    ;; When a shape has several strokes or the stroke is not a "border"
    (or (> (count (:strokes shape)) 1)
        (and (= (count (:strokes shape)) 1)
-            (not= (-> shape :strokes first :stroke-alignment) :center)))))
+            (not= (-> shape :strokes first :stroke-alignment) :inner)))))
 
 (defn generate-html
   ([objects shape]
@@ -58,7 +58,8 @@
            (let [svg-markup (generate-svg objects shape)]
              (dm/fmt "%<div class=\"%\">\n%\n%</div>"
                      indent
-                     (cgc/shape->selector shape)
+                     (dm/str "shape " (d/name (:type shape)) " "
+                             (cgc/shape->selector shape))
                      svg-markup
                      indent))
 
@@ -66,7 +67,8 @@
            (let [text-shape-html (rds/renderToStaticMarkup (mf/element text/text-shape #js {:shape shape :code? true}))]
              (dm/fmt "%<div class=\"%\">\n%\n%</div>"
                      indent
-                     (cgc/shape->selector shape)
+                     (dm/str "shape " (d/name (:type shape)) " "
+                             (cgc/shape->selector shape))
                      text-shape-html
                      indent))
 
@@ -76,19 +78,22 @@
              (dm/fmt "%<img src=\"%\" class=\"%\">\n%</img>"
                      indent
                      image-url
-                     (cgc/shape->selector shape)
+                     (dm/str "shape " (d/name (:type shape)) " "
+                             (cgc/shape->selector shape))
                      indent))
 
            (empty? (:shapes shape))
            (dm/fmt "%<div class=\"%\">\n%</div>"
                    indent
-                   (cgc/shape->selector shape)
+                   (dm/str "shape " (d/name (:type shape)) " "
+                           (cgc/shape->selector shape))
                    indent)
 
            :else
            (dm/fmt "%<div class=\"%\">\n%\n%</div>"
                    indent
-                   (cgc/shape->selector shape)
+                   (dm/str (d/name (:type shape)) " "
+                           (cgc/shape->selector shape))
                    (->> (:shapes shape)
                         (maybe-reverse)
                         (map #(generate-html objects (get objects %) (inc level)))

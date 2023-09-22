@@ -519,8 +519,7 @@
                                :on-change-behaviour-v-refactor on-change-behaviour-v
                                :on-change on-change-behaviour}]
          (when is-absolute?
-           [:div {:class (stl/css-case :z-index-wrapper true
-                                       :disabled (not is-absolute?))
+           [:div {:class (stl/css-case :z-index-wrapper true)
                   :title "z-index"}
 
             [:span {:class (stl/css :icon-text)}
@@ -653,7 +652,6 @@
                :on-focus #(dom/select-target %)
                :on-change #(on-change-z-index %)
                :nillable true
-               :disabled (not is-absolute?)
                :value (:layout-item-z-index values)}]]]])
 
         [:*

@@ -28,8 +28,9 @@
   (cond
     (or (and (ctl/any-layout-immediate-child? objects shape)
              (not (ctl/layout-absolute? shape))
-             (or (cph/group-shape? shape)
-                 (cph/frame-shape? shape)))
+             (or (cph/group-like-shape? shape)
+                 (cph/frame-shape? shape)
+                 (svg-markup? shape)))
         (cph/root-frame? shape))
     :relative
 
@@ -42,32 +43,20 @@
 
 (defn get-shape-position
   [shape objects coord]
-  (let [
-        parent (get objects (:parent-id shape))
-        parent-value (dm/get-in parent [:selrect coord])
 
-        [selrect _ _]
-        (-> (:points shape)
-            (gsh/transform-points (gsh/shape->center parent) (:transform-inverse parent))
-            (gsh/calculate-geometry))
-
-        ;;shape (gsh/transform-shape)
-        shape-value (get selrect coord)
-        ]
-    (when (and (not (cph/root-frame? shape))
-               (or (not (ctl/any-layout-immediate-child? objects shape))
-                   (ctl/layout-absolute? shape)))
-      (- shape-value parent-value))))
-
-#_(defn get-shape-position
-  [shape objects coord]
-  (when-not (or (cph/root-frame? shape)
-                (and (ctl/any-layout-immediate-child? objects shape)
-                     (not (ctl/layout-absolute? shape))))
+  (when (and (not (cph/root-frame? shape))
+             (or (not (ctl/any-layout-immediate-child? objects shape))
+                 (ctl/layout-absolute? shape)))
     (let [parent (get objects (:parent-id shape))
-          bounds (gpo/parent-coords-bounds (:points shape) (:points parent))
-          vv (gpt/to-vec (first (:points parent)) (first bounds))]
-      (get vv coord))))
+          parent-value (dm/get-in parent [:selrect coord])
+
+          [selrect _ _]
+          (-> (:points shape)
+              (gsh/transform-points (gsh/shape->center parent) (:transform-inverse parent))
+              (gsh/calculate-geometry))
+
+          shape-value (get selrect coord)]
+      (- shape-value parent-value))))
 
 (defmethod get-value :left
   [_ shape objects]
@@ -250,7 +239,8 @@
 
 (defn get-grid-coord
   [shape objects prop span-prop]
-  (when (ctl/grid-layout-immediate-child? objects shape)
+  (when (and (ctl/grid-layout-immediate-child? objects shape)
+             (not (ctl/layout-absolute? shape)))
     (let [parent (get objects (:parent-id shape))
           cell (ctl/get-cell-by-shape-id parent (:id shape))]
       (if (> (get cell span-prop) 1)
@@ -275,10 +265,22 @@
     0))
 
 (defmethod get-value :margin
-  [_ shape objects]
+  [_ {:keys [layout-item-margin] :as shape} objects]
+
+  (when (ctl/any-layout-immediate-child? objects shape)
+    (let [default-margin {:m1 0 :m2 0 :m3 0 :m4 0}
+          {:keys [m1 m2 m3 m4]} (merge default-margin layout-item-margin)]
+      (when (or (not= m1 0) (not= m2 0) (not= m3 0) (not= m4 0))
+        [m1 m2 m3 m4]))))
+
+(defmethod get-value :z-index
+  [_ {:keys [layout-item-z-index] :as shape} objects]
   (cond
-    (ctl/flex-layout-immediate-child? objects shape)
-    (:layout-item-margin shape)))
+    (cph/root-frame? shape)
+    0
+
+    (ctl/any-layout-immediate-child? objects shape)
+    layout-item-z-index))
 
 (defmethod get-value :max-height
   [_ shape objects]
@@ -289,8 +291,11 @@
 (defmethod get-value :min-height
   [_ shape objects]
   (cond
-    (ctl/flex-layout-immediate-child? objects shape)
-    (:layout-item-min-h shape)))
+    (and (ctl/flex-layout-immediate-child? objects shape) (some? (:layout-item-min-h shape)))
+    (:layout-item-min-h shape)
+
+    (and (ctl/auto-height? shape) (cph/frame-shape? shape) (not (:show-content shape)))
+    (-> shape :selrect :height)))
 
 (defmethod get-value :max-width
   [_ shape objects]
@@ -301,8 +306,11 @@
 (defmethod get-value :min-width
   [_ shape objects]
   (cond
-    (ctl/flex-layout-immediate-child? objects shape)
-    (:layout-item-min-w shape)))
+    (and (ctl/flex-layout-immediate-child? objects shape) (some? (:layout-item-min-w shape)))
+    (:layout-item-min-w shape)
+
+    (and (ctl/auto-width? shape) (cph/frame-shape? shape) (not (:show-content shape)))
+    (-> shape :selrect :width)))
 
 (defmethod get-value :align-self
   [_ shape objects]

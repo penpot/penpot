@@ -78,6 +78,7 @@ svg {
    :column-gap
    :row-gap
    :padding
+   :z-index
 
    ;; Flex related properties
    :flex-direction

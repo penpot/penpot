@@ -142,7 +142,9 @@
 
           :center
           [(gpt/add origin-h (hv (/ child-width 2)))
-           (gpo/project-point cell-bounds :h (gpo/center cell-bounds))]
+           (-> (gpo/project-point cell-bounds :h (gpo/center cell-bounds))
+               (gpt/add (hv (/ left-m 2)))
+               (gpt/subtract (hv (/ right-m 2))))]
 
           [origin-h
            (gpt/add (first cell-bounds) (hv left-m))])
@@ -155,7 +157,9 @@
 
           :center
           [(gpt/add origin-v (vv (/ child-height 2)))
-           (gpo/project-point cell-bounds :v (gpo/center cell-bounds))]
+           (-> (gpo/project-point cell-bounds :v (gpo/center cell-bounds))
+               (gpt/add (vv top-m))
+               (gpt/subtract (vv bottom-m)))]
 
           [origin-v
            (gpt/add (first cell-bounds) (vv top-m))])]
