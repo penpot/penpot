@@ -256,6 +256,15 @@
 (defn zip [col1 col2]
   (map vector col1 col2))
 
+(defn zip-all
+  "Return a zip of both collections, extended to the lenght of the longest one,
+   and padding the shorter one with nils as needed."
+  [col1 col2]
+  (let [diff (- (count col1) (count col2))]
+    (cond (pos? diff)  (zip col1 (c/concat col2 (repeat nil)))
+          (neg? diff)  (zip (c/concat col1 (repeat nil)) col2)
+          :else        (zip col1 col2))))
+
 (defn mapm
   "Map over the values of a map"
   ([mfn]
