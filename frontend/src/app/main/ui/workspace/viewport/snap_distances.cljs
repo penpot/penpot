@@ -132,7 +132,8 @@
         (and (>= s1c1 s2c1) (<= s1c1 s2c2))
         (and (>= s1c2 s2c1) (<= s1c2 s2c2)))))
 
-(defn calculate-segments [coord selrect lt-shapes gt-shapes]
+(defn calculate-segments
+  [coord selrect lt-shapes gt-shapes]
   (let [distance-to-selrect
         (fn [shape]
           (let [sr (:selrect shape)]
@@ -202,6 +203,26 @@
 
     segments-to-display))
 
+(defn- query-worker
+  [page-id coord [selrect selected frame]]
+  (let [lt-side (if (= coord :x) :left :top)
+        gt-side (if (= coord :x) :right :bottom)
+
+        vbox  (deref refs/vbox)
+        areas (gsh/get-areas
+               (or (grc/clip-rect (dm/get-prop frame :selrect) vbox) vbox)
+               selrect)
+
+        query-side
+        (fn [side]
+          (let [rect (get areas side)]
+            (if (and (> (:width rect) 0) (> (:height rect) 0))
+              (ams/select-shapes-area page-id (:id frame) selected @refs/workspace-page-objects rect)
+              (rx/of nil))))]
+
+    (rx/combine-latest (query-side lt-side)
+                       (query-side gt-side))))
+
 (mf/defc shape-distance
   {::mf/wrap-props false}
   [props]
@@ -213,51 +234,46 @@
         selected   (unchecked-get props "selected")
 
         subject    (mf/use-memo #(rx/subject))
-        to-measure (mf/use-state [])
 
-        query-worker
-        (fn [[selrect selected frame]]
-          (let [lt-side (if (= coord :x) :left :top)
-                gt-side (if (= coord :x) :right :bottom)
 
-                vbox  (deref refs/vbox)
-                areas (gsh/get-areas
-                       (or (grc/clip-rect (dm/get-prop frame :selrect) vbox) vbox)
-                       selrect)
+        lt-shapes* (mf/use-state nil)
+        lt-shapes  (deref lt-shapes*)
 
-                query-side (fn [side]
-                             (let [rect (get areas side)]
-                               (if (and (> (:width rect) 0) (> (:height rect) 0))
-                                 (ams/select-shapes-area page-id (:id frame) selected @refs/workspace-page-objects rect)
-                                 (rx/of nil))))]
-            (rx/combine-latest (query-side lt-side)
-                               (query-side gt-side))))
+        gt-shapes* (mf/use-state nil)
+        gt-shapes  (deref gt-shapes*)
 
-        [lt-shapes gt-shapes] @to-measure
+        segments-to-display
+        (mf/with-memo [lt-shapes gt-shapes selrect]
+          (calculate-segments coord selrect lt-shapes gt-shapes))]
 
-        segments-to-display (mf/use-memo
-                             (mf/deps @to-measure)
-                             #(calculate-segments coord selrect lt-shapes gt-shapes))]
-
-    (mf/use-effect
-     (fn []
-       (let [sub (->> subject
-                      (rx/throttle 100)
-                      (rx/switch-map query-worker)
-                      (rx/subs #(reset! to-measure %)))]
-         ;; On unmount dispose
-         #(rx/dispose! sub))))
+    (mf/with-effect [page-id]
+      (let [sub (->> subject
+                     (rx/throttle 100)
+                     ;; NOTE: we don't put coord on deps because we
+                     ;; know it is a static value and will not go to
+                     ;; change
+                     (rx/switch-map (partial query-worker page-id coord))
+                     (rx/subs (fn [[lt-shapes gt-shapes]]
+                                (reset! lt-shapes* lt-shapes)
+                                (reset! gt-shapes* gt-shapes))))]
+        ;; On unmount dispose
+        #(rx/dispose! sub)))
 
     (mf/use-effect
      (mf/deps selrect)
      #(rx/push! subject [selrect selected frame]))
 
     (for [[sr1 sr2] segments-to-display]
-      [:& shape-distance-segment {:key (str/join "-" [(:x sr1) (:y sr1) (:x sr2) (:y sr2)])
-                                  :sr1 sr1
-                                  :sr2 sr2
-                                  :coord coord
-                                  :zoom zoom}])))
+      [:& shape-distance-segment
+       {:key (str/ffmt "%-%-%-%"
+                       (dm/get-prop sr1 :x)
+                       (dm/get-prop sr1 :y)
+                       (dm/get-prop sr2 :x)
+                       (dm/get-prop sr2 :y))
+        :sr1 sr1
+        :sr2 sr2
+        :coord coord
+        :zoom zoom}])))
 
 (mf/defc snap-distances
   {::mf/wrap-props false}
