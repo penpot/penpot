@@ -15,7 +15,7 @@
    [rumext.v2 :as mf]))
 
 (defn get-filter-id []
-  (str "filter_" (uuid/next)))
+  (dm/str "filter-" (uuid/next)))
 
 (defn filter-str
   [filter-id shape]

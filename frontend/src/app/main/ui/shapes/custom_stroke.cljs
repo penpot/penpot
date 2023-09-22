@@ -87,7 +87,7 @@
         cap-end   (:stroke-cap-end stroke)
 
         color     (if (some? gradient)
-                    (str/ffmt "url(#stroke-color-gradient_%s_%s)" render-id index)
+                    (str/ffmt "url(#stroke-color-gradient-%s-%s)" render-id index)
                     (:stroke-color stroke))
 
         opacity   (when-not (some? gradient)
@@ -198,7 +198,7 @@
         alignment  (:stroke-alignment stroke :center)
         width      (:stroke-width stroke 0)
 
-        props      #js {:id (dm/str "stroke-color-gradient_" render-id "_" index)
+        props      #js {:id (dm/str "stroke-color-gradient-" render-id "-" index)
                         :gradient gradient
                         :shape shape}]
     [:*
@@ -391,7 +391,7 @@
                        props
                        (if (or (some? (->> shape-shadow (remove :hidden) seq))
                                (not ^boolean (:hidden shape-blur)))
-                         (obj/set! props "filter" (dm/fmt "url(#filter_%)" render-id))
+                         (obj/set! props "filter" (dm/fmt "url(#filter-%)" render-id))
                          props))
 
         svg-attrs    (attrs/get-svg-props shape render-id)
@@ -494,11 +494,11 @@
                         (cond
                           (and (some? shape-blur)
                                (not ^boolean (:hidden shape-blur)))
-                          (obj/set! props "filter" (dm/fmt "url(#filter_blur_%)" render-id))
+                          (obj/set! props "filter" (dm/fmt "url(#filter-blur-%)" render-id))
 
                           (and (empty? shape-fills)
                                (some? (->> shape-shadow (remove :hidden) seq)))
-                          (obj/set! props "filter" (dm/fmt "url(#filter_%)" render-id))))]
+                          (obj/set! props "filter" (dm/fmt "url(#filter-%)" render-id))))]
 
 
     (when (d/not-empty? shape-strokes)

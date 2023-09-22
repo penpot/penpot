@@ -66,7 +66,7 @@
 
         type             (dm/get-prop shape :type)
         render-id        (h/use-render-id)
-        filter-id        (dm/str "filter_" render-id)
+        filter-id        (dm/str "filter-" render-id)
         styles           (-> (obj/create)
                              (obj/set! "pointerEvents" pointer-events)
                              (cond-> (and blend-mode (not= blend-mode :normal))
@@ -116,8 +116,8 @@
       [:defs
        [:& defs/svg-defs          {:shape shape :render-id render-id}]
        [:& filters/filters        {:shape shape :filter-id filter-id}]
-       [:& filters/filters        {:shape shape-without-blur :filter-id (dm/fmt "filter_shadow_%" render-id)}]
-       [:& filters/filters        {:shape shape-without-shadows :filter-id (dm/fmt "filter_blur_%" render-id)}]
+       [:& filters/filters        {:shape shape-without-blur :filter-id (dm/fmt "filter-shadow-%" render-id)}]
+       [:& filters/filters        {:shape shape-without-shadows :filter-id (dm/fmt "filter-blur-%" render-id)}]
        [:& fills/fills            {:shape shape :render-id render-id}]
        [:& frame/frame-clip-def   {:shape shape :render-id render-id}]]
 
