@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-12-28 23:47+0000\n"
-"Last-Translator: Fernando Krik <fernandokrik@hotmail.com>\n"
+"PO-Revision-Date: 2023-09-24 15:02+0000\n"
+"Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.15.1-dev\n"
+"X-Generator: Weblate 5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -153,7 +153,7 @@ msgstr "Cria uma conta"
 
 #: src/app/main/ui/auth.cljs
 msgid "auth.sidebar-tagline"
-msgstr "A solução código aberto para design e prototipar."
+msgstr "A solução de código aberto para design e prototipagem."
 
 msgid "auth.terms-of-service"
 msgstr "Termos de serviço"
@@ -310,13 +310,13 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Oh não! Ainda não tens ficheiros! Se quiseres experimentar podes começar com "
 "os nossos templates em [Libraries & templates](https://penpot.app/libraries-"
-"templates.html)"
+"templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Descarrega %s ficheiros Penpot (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Exportar pranchetas para PDF…"
+msgstr "Exportar pranchetas para PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
@@ -433,9 +433,6 @@ msgstr "Oops! Não conseguimos importar este ficheiro"
 msgid "dashboard.import.import-error"
 msgstr ""
 "Ocorreu um problema na importação do ficheiro. O ficheiro não foi importado."
-
-msgid "dashboard.import.import-message"
-msgstr "%s ficheiros importados com sucesso."
 
 msgid "dashboard.import.import-warning"
 msgstr "Alguns ficheiros continham objetos inválidos que foram removidos."
@@ -598,17 +595,9 @@ msgstr "Selecionar tema"
 msgid "dashboard.show-all-files"
 msgstr "Mostrar todos os ficheiros"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-delete-file"
-msgstr "O teu ficheiro foi removido com sucesso"
-
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
 msgstr "O teu projeto foi eliminado com sucesso"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-duplicate-file"
-msgstr "O teu ficheiro foi duplicado com sucesso"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
@@ -712,12 +701,11 @@ msgstr "Provedor de autenticação não configurado."
 msgid "errors.auth.unable-to-login"
 msgstr "Parece que não estás autenticado ou a sessão expirou."
 
-#, fuzzy
 msgid "errors.bad-font"
 msgstr "A fonte %s não pôde ser carregada"
 
 msgid "errors.bad-font-plural"
-msgstr "A fonte %s não pôde ser carregada"
+msgstr "As fontes %s não puderam ser carregadas"
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
@@ -1303,7 +1291,7 @@ msgstr "Palavra-passe nova"
 #: src/app/main/ui/workspace/comments.cljs,
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "Não tens notificações de comentários pendentes"
+msgstr "Não tens notificações de comentários pendentes."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
@@ -1781,11 +1769,6 @@ msgstr "Pequeno deslocamento"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgstr "Cancelar publicação"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] ""
@@ -2085,7 +2068,7 @@ msgid "shortcuts.align-left"
 msgstr "Alinhar à esquerda"
 
 msgid "shortcuts.align-right"
-msgstr "Alinhas à direita"
+msgstr "Alinhar à direita"
 
 msgid "shortcuts.align-top"
 msgstr "Alinhar topo"
@@ -3883,7 +3866,7 @@ msgid "workspace.options.width"
 msgstr "Largura"
 
 msgid "workspace.options.x"
-msgstr "X"
+msgstr "Eixo X"
 
 msgid "workspace.options.y"
 msgstr "Y"
@@ -4381,3 +4364,683 @@ msgstr "Clica para fechar o caminho"
 
 #~ msgid "workspace.options.layout.direction.left"
 #~ msgstr "Linha"
+
+msgid "shortcuts.bold"
+msgstr "Alternar negrito"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.try-out-before-using-penpot-on-premise"
+msgstr "Experimentar o Penpot antes de usar num servidor privado"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-in-concept-ideas"
+msgstr "Concetualizar ideias"
+
+#: src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "Ainda não existem estilos de cor na tua biblioteca"
+
+msgid "errors.webhooks.unexpected"
+msgstr "Erro inesperado ao validar"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30 dias"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.message"
+msgstr "Tens a certeza que queres apagar esta token?"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.access-tokens"
+msgstr "Tokens de acesso"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "A token não tem data de expiração"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.your-feedback-will-help-us"
+msgstr ""
+"Os teus comentários ajudar-nos-ão a compreender os teus hábitos e "
+"preferências para que possamos continuar a tornar o Penpot numa ferramenta "
+"fácil e divertida de usar."
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Alguns endereços de email pertencem a membros atuais da equipa. Não serão "
+"enviados convites para estes endereços."
+
+msgid "workspace.options.inspect"
+msgstr "Inspecionar"
+
+msgid "dashboard.webhooks.active"
+msgstr "Ativo"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Por favor introduz um email válido"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.developer"
+msgstr "Desenvolvedor(a)"
+
+msgid "shortcuts.align-justify"
+msgstr "Alinhar justificado"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.manager"
+msgstr "Gestor(a) de projeto ou de produto"
+
+msgid "workspace.options.component.create-annotation"
+msgstr "Criar uma nota"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Detetámos um possível problema nas tuas fontes relacionado com métricas "
+"verticais em sistemas operativos diferentes. Para verificá-lo, podes "
+"utilizar serviços como [este](https://vertical-metrics.netlify.app/). Para "
+"além disso, recomendamos o uso do [Transfonter](https://transfonter.org/) "
+"para gerar fontes web e corrigir erros. "
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Gerar nova token"
+
+msgid "viewer.header.inspect-section"
+msgstr "Inspecionar (%s)"
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "Está disponível uma nova versão, por favor atualiza a página"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "Tens a certeza que queres apagar esta nota?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.marketing"
+msgstr "Marketing"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180 dias"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "Editar uma nota"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "Obter código de um projeto "
+
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Criar múltiplos componentes"
+
+msgid "webhooks.last-delivery.success"
+msgstr "Último envio com sucesso."
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "O URL não passou na validação."
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://example.com/postreceive"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.personal-project"
+msgstr "Estou a trabalhar num projeto pessoal"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Tamanho e posição"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "O nome é obrigatório"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "Quando este webhook for ativado serão enviados detalhes do evento"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.freelancer"
+msgstr "Sou trabalhador(a) independente (freelancer)"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "Token copiada"
+
+msgid "modals.publish-empty-library.title"
+msgstr "Publicar biblioteca vazia"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.figma"
+msgstr "Figma"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text2"
+msgstr "Esta atualização só ocorrerá uma única vez."
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "ver todas as alterações"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...branding, ilustrações, artigos de marketing, etc."
+
+msgid "errors.webhooks.connection"
+msgstr "Erro de conexão, não foi possível alcançar o URL"
+
+#: src/app/main/ui/workspace/textpalette.cljs
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "Ainda não existem tipografias na tua biblioteca"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90 dias"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Aumentar zoom na lupa"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom"
+msgstr "Zoom"
+
+msgid "workspace.options.component.annotation"
+msgstr "Nota"
+
+msgid "modals.delete-webhook.accept"
+msgstr "Apagar webhook"
+
+msgid "dashboard.webhooks.create"
+msgstr "Criar webhook"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.some"
+msgstr "Alguma"
+
+msgid "shortcuts.text-align-justify"
+msgstr "Alinhar justificado"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Copiar link"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "team.webhooks.max-length"
+msgstr "O nome do webhook deve conter um máximo de 2048 caracteres."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Expirou a %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.expiration-date.label"
+msgstr "Data de expiração"
+
+msgid "workspace.header.menu.undo"
+msgstr "Desfazer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.more-than-50"
+msgstr "Mais de 50"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Espessura da fonte"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr ""
+"A palavra-passe deve conter pelo menos um caractere que não seja um espaço."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.next"
+msgstr "Seguinte"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.team-size"
+msgstr "De que tamanho é a tua equipa?"
+
+msgid "labels.webhooks"
+msgstr "Webhooks"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Mostrar / Ocultar"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.wireframes-user-journeys-flows-navigation-trees"
+msgstr ""
+"...wireframes, jornadas e fluxos de utilizador, árvores de navegação, etc."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60 dias"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "Despublicar %s ficheiros"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Desativar escala proporcional"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.a-lot"
+msgstr "Muita"
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "Estado inesperado %s"
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Ainda não há nenhum webhook criado."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start"
+msgstr "Começar"
+
+msgid "shortcuts.align-center"
+msgstr "Alinhar ao centro"
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Os webhooks são uma forma simples de permitir a outros sites e aplicações "
+"serem notificados quando acontecem certas ações no Penpot. Enviaremos um "
+"pedido POST para cada um dos URLs que forneceres."
+
+msgid "modals.create-webhook.title"
+msgstr "Criar webhook"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row"
+msgstr "Linha"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.questions-how-are-you-planning-to-use-penpot"
+msgstr "Com que objetivo pensas usar o Penpot?"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "A token irá expirar a %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.accept"
+msgstr "Apagar token"
+
+msgid "workspace.header.menu.redo"
+msgstr "Refazer"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "Coluna invertida"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.describe-your-experience-working-on"
+msgstr "Quanta experiência dirias que tens a trabalhar com..."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.select-option"
+msgstr "Escolhe uma opção"
+
+msgid "shortcuts.text-align-left"
+msgstr "Alinhar à esquerda"
+
+msgid "labels.view-only"
+msgstr "Somente leitura"
+
+msgid "shortcuts.font-size-dec"
+msgstr "Decrementar tamanho de fonte"
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Clica no botão \"Criar webhook\" para adicionar um."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.submit-label"
+msgstr "Criar token"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.designer"
+msgstr "Designer"
+
+msgid "modals.delete-webhook.title"
+msgstr "A apagar webhook"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.none"
+msgstr "Nenhuma"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.lets-get-started"
+msgstr "Vamos começar!"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Remover layout flex"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.progress"
+msgstr "A converter %s/%s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.placeholder"
+msgstr "O nome pode ajudar a sugerir para que a token serve"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.title"
+msgstr "A atualizar %s..."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.adobe-xd"
+msgstr "Adobe XD"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.sketch"
+msgstr "Sketch"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"Parece que estás a abrir um ficheiro que tem a funcionalidade '%s' ativada, "
+"mas o frontend do teu Penpot não a suporta, ou está desativada."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Relativa a"
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Erro na validação SSL."
+
+msgid "title.team-webhooks"
+msgstr "Webhooks - %s - Penpot"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library-updates"
+msgstr "ATUALIZAÇÕES DE BIBLIOTECAS"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Editar webhook"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhook criado com sucesso."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "Linha invertida"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.label"
+msgstr "Nome"
+
+msgid "modals.publish-empty-library.message"
+msgstr "A tua biblioteca está vazia. Tens a certeza que queres publicá-la?"
+
+msgid "workspace.assets.open-library"
+msgstr "Abrir ficheiro de biblioteca"
+
+msgid "modals.delete-component-annotation.title"
+msgstr "Apagar nota"
+
+msgid "shortcuts.select-parent-layer"
+msgstr "Selecionar camada pai"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared-library"
+msgstr "Biblioteca partilhada"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Link de convite copiado"
+
+msgid "shortcuts.select-next"
+msgstr "Selecionar camada seguinte"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Ativar escala proporcional"
+
+msgid "inspect.empty.help"
+msgstr ""
+"Se quiseres saber mais sobre a inspeção, visita o centro de ajuda do Penpot"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.more-info"
+msgstr "Mais informações"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "O nome deve conter pelo menos um caractere que não seja um espaço."
+
+msgid "shortcuts.line-height-inc"
+msgstr "Incrementar espaçamento entre linhas"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other"
+msgstr "Outra (especificar)"
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "Estilos de texto"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-a-tool"
+msgstr "Nunca usei uma ferramenta de design no passado"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Incrementar tamanho da fonte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column"
+msgstr "Coluna"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
+msgstr "Testar o Penpot para ver se é adequado para a minha equipa "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.student-teacher"
+msgstr "Estudante ou professor(a)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.2-10"
+msgstr "2-10"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.leave-feedback-for-my-team-project"
+msgstr "Deixar comentários num projeto"
+
+msgid "modals.delete-webhook.message"
+msgstr "Tens a certeza que queres apagar este webhook?"
+
+msgid "shortcuts.open-inspect"
+msgstr "Ir para secção de inspeção"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.31-50"
+msgstr "31-50"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "Ainda não tens nenhuma token."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.invision"
+msgstr "InVision"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Recarregar ficheiro"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"As tokens de acesso pessoais funcionam como uma alternativa ao nosso sistema "
+"de autenticação de login/palavra-passe e podem ser usadas para permitir que "
+"uma aplicação tenha acesso à API interna do Penpot"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Tokens de acesso pessoais"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.canva"
+msgstr "Canva"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.discover-more-about-penpot"
+msgstr "Descobrir mais sobre o Penpot"
+
+msgid "inspect.empty.select"
+msgstr ""
+"Seleciona uma forma, prancheta, ou grupo para inspecionar os seus atributos "
+"e código"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Expira a %s"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Adicionar / Remover layout flex"
+
+msgid "shortcuts.italic"
+msgstr "Alternar itálico"
+
+msgid "errors.webhooks.timeout"
+msgstr "Timeout"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Decrementar espaçamento de letras"
+
+msgid "errors.webhooks.last-delivery"
+msgstr "Último envio sem sucesso."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.previous"
+msgstr "Anterior"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "Criar webhook"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Clica no botão \"Gerar nova token\" para gerar uma."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.title"
+msgstr "Apagar token"
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook atualizado com sucesso."
+
+msgid "workspace.shape.menu.create-annotation"
+msgstr "Criar nota"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Incrementar espaçamento de letras"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start-to-work-on-my-project"
+msgstr "Começar a trabalhar no meu projeto"
+
+msgid "shortcuts.text-align-center"
+msgstr "Alinhar ao centro"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "question.design-tool-more-experienced-with"
+msgstr "Com que ferramenta de design tens mais experiência?"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "Token de acesso criada com sucesso."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role"
+msgstr "Qual é o teu cargo?"
+
+msgid "workspace.options.interaction-auto"
+msgstr "Automático"
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "Alcançou o máximo da quota '%s'. Contacte o suporte técnico."
+
+msgid "labels.active"
+msgstr "Ativo"
+
+msgid "shortcuts.text-align-right"
+msgstr "Alinhar à direita"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "A funcionalidade '%s' não é suportada."
+
+msgid "shortcuts.underline"
+msgstr "Alternar sublinhado"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Nunca"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.founder"
+msgstr "Direção"
+
+msgid "labels.inactive"
+msgstr "Inativo"
+
+msgid "modals.publish-empty-library.accept"
+msgstr "Publicar"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.title"
+msgstr "Gerar token de acesso"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Sem data de expiração"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "O nome deve conter um máximo de 250 caracteres."
+
+msgid "modals.create-webhook.url.label"
+msgstr "URL do payload"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.11-30"
+msgstr "11-30"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.copy-token"
+msgstr "Copiar token"
+
+msgid "shortcut-subsection.text-editor"
+msgstr "Textos"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.interface-design-visual-assets-design-systems"
+msgstr "... design de interfaces, recursos visuais, sistemas de design, etc."
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Reduzir zoom na lupa"
+
+msgid "modals.edit-webhook.title"
+msgstr "Editar webhook"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Decrementar espaçamento entre linhas"
+
+msgid "inspect.empty.more-info"
+msgstr "Mais informações sobre a inspeção"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "title.settings.access-tokens"
+msgstr "Perfil - Tokens de acesso"
+
+msgid "shortcuts.select-prev"
+msgstr "Selecionar camada anterior"
+
+msgid "shortcuts.line-through"
+msgstr "Alternar texto rasurado"
+
+msgid "errors.cannot-upload"
+msgstr "Não foi possível carregar o ficheiro."
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "Adicionar layout flex"
