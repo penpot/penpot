@@ -366,8 +366,8 @@
                                   (let [matches? (fn [[child-id ref-child-id]]
                                                    (let [child (ctn/get-shape page child-id)]
                                                      (= (:shape-ref child) ref-child-id)))
-                                        equal? (every? matches? (d/zip (:shapes shape) (:shapes ref-shape)))]
-                                      (when (and (not equal?) (not (cph/touched-group? shape :shapes)))
+                                        equal? (every? matches? (d/zip-all (:shapes shape) (:shapes ref-shape)))]
+                                      (when (and (not equal?) (not (cph/touched-group? shape :shapes-group)))
                                         (println " -> set touched " (:name shape) (:id shape) :shapes :shapes-group))
                                       (cond-> shape
                                         (and (not equal?) (not (cph/touched-group? shape :shapes-group)))
