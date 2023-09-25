@@ -72,7 +72,7 @@
                  (:layout-item-h-sizing shape)
                  (:layout-item-v-sizing shape))]
     (cond
-      (or (and (ctl/any-layout? shape) (= sizing :auto))
+      (or (and (ctl/any-layout? shape) (= sizing :auto) (not (svg-markup? shape)))
           (and (ctl/any-layout-immediate-child? objects shape) (= sizing :fill)))
       sizing
 

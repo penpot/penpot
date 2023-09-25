@@ -21,7 +21,6 @@
 ;;
 (def prelude "
 html, body {
-  background-color: #E8E9EA;
   margin: 0;
   min-height: 100%;
   min-width: 100%;

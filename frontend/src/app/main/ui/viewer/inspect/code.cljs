@@ -14,6 +14,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.config :as cfg]
    [app.main.data.events :as ev]
+   ;; [app.main.data.preview :as dp]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -95,6 +96,16 @@
      (str/replace value old new))
    value map))
 
+(defn gen-all-code
+  [style-code markup-code images-data]
+  (let [markup-code (cond-> markup-code
+                      embed-images? (replace-map images-data))
+
+        style-code (cond-> style-code
+                     remove-localhost?
+                     (str/replace "http://localhost:3449" ""))]
+    (str/format page-template style-code markup-code)))
+
 (mf/defc code
   [{:keys [shapes frame on-expand from]}]
   (let [style-type*    (mf/use-state "css")
@@ -110,15 +121,7 @@
         shapes      (->> shapes
                          (map #(gsh/translate-to-frame % frame)))
 
-        route      (mf/deref refs/route)
-        page-id    (:page-id (:query-params route))
-        flex-items (get-flex-elements page-id shapes from)
         objects    (get-objects from)
-
-        ;; TODO REMOVE THIS
-        shapes     (->> shapes
-                        (map #(assoc % :parent (get objects (:parent-id %))))
-                        (map #(assoc % :flex-items flex-items)))
 
         all-children (->> shapes
                           (map :id)
@@ -194,15 +197,13 @@
         (mf/use-callback
          (mf/deps style-code markup-code images-data)
          (fn []
-           (let [markup-code (cond-> markup-code
-                               embed-images? (replace-map images-data))
+           (wapi/write-to-clipboard (gen-all-code style-code markup-code images-data))))
 
-                 style-code (cond-> style-code
-                              remove-localhost?
-                              (str/replace "http://localhost:3449" ""))
-
-                 data (str/format page-template style-code markup-code)]
-             (wapi/write-to-clipboard data))))]
+        ;;handle-open-review
+        ;;(mf/use-callback
+        ;; (fn []
+        ;;   (st/emit! (dp/open-preview-selected))))
+        ]
 
     (mf/use-effect
      (mf/deps fonts)
@@ -230,6 +231,10 @@
      [:div.attributes-block
       [:button.download-button {:on-click handle-copy-all-code}
        "Copy all code"]]
+
+     #_[:div.attributes-block
+      [:button.download-button {:on-click handle-open-review}
+       "Preview"]]
 
      [:div.code-block
       [:div.code-row-lang
