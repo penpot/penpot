@@ -68,6 +68,8 @@
                 :style {:width (str (* 100 (if (> zoom 1)
                                              (* 1 zoom)
                                              (/ 1 zoom))) "%")
-                        :height "100%"
+                        :height (str (* 100 (if (> zoom 1)
+                                             (* 1 zoom)
+                                             (/ 1 zoom))) "%")
                         :transform-origin "left top"
                         :transform (str "scale(" zoom ")")}}]]]))

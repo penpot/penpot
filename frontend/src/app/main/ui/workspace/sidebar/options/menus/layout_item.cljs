@@ -42,22 +42,23 @@
 
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
         margin-type    (or (:layout-item-margin-type values) :simple)
-        m1             (if (and (not (= :multiple (:layout-item-margin values)))
+        m1             (when (and (not (= :multiple (:layout-item-margin values)))
                                 (= (dm/get-in values [:layout-item-margin :m1])
                                    (dm/get-in values [:layout-item-margin :m3])))
                          (dm/get-in values [:layout-item-margin :m1])
-                         "--")
+                         )
 
-        m2             (if (and (not (= :multiple (:layout-item-margin values)))
+        m2             (when (and (not (= :multiple (:layout-item-margin values)))
                                 (= (dm/get-in values [:layout-item-margin :m2])
                                    (dm/get-in values [:layout-item-margin :m4])))
                          (dm/get-in values [:layout-item-margin :m2])
-                         "--")
+                         )
         select-margins
         (fn [m1? m2? m3? m4?]
           (st/emit! (udw/set-margins-selected {:m1 m1? :m2 m2? :m3 m3? :m4 m4?})))
 
         select-margin #(select-margins (= % :m1) (= % :m2) (= % :m3) (= % :m4))]
+
 
     (mf/use-effect
      (fn []
@@ -77,12 +78,12 @@
              i/margin-top-bottom-refactor]
             [:> numeric-input* {:className (stl/css :numeric-input)
                                 :placeholder "--"
+                                :nillable true
                                 :value m1
                                 :on-focus (fn [event]
                                             (select-margins true false true false)
                                             (dom/select-target event))
                                 :on-change  (partial on-margin-change :simple :m1)
-
                                 :on-blur #(select-margins false false false false)}]]
 
            [:div {:class (stl/css :horizontal-margin)
@@ -96,6 +97,7 @@
                                             (dom/select-target event))
                                 :on-change (partial on-margin-change :simple :m2)
                                 :on-blur #(select-margins false false false false)
+                                :nillable true
                                 :value m2}]]]
 
           (= margin-type :multiple)
@@ -111,6 +113,7 @@
                                             (dom/select-target event))
                                 :on-change (partial on-margin-change :multiple :m1)
                                 :on-blur #(select-margins false false false false)
+                                :nillable true
                                 :value (:m1 (:layout-item-margin values))}]]
            [:div {:class (stl/css :right-margin)
                   :title "Right margin"}
@@ -123,6 +126,7 @@
                                             (dom/select-target event))
                                 :on-change (partial on-margin-change :multiple :m2)
                                 :on-blur #(select-margins false false false false)
+                                :nillable true
                                 :value (:m2 (:layout-item-margin values))}]]
 
            [:div {:class (stl/css :bottom-margin)
@@ -136,6 +140,7 @@
                                             (dom/select-target event))
                                 :on-change (partial on-margin-change :multiple :m3)
                                 :on-blur #(select-margins false false false false)
+                                :nillable true
                                 :value (:m3 (:layout-item-margin values))}]]
            [:div {:class (stl/css :left-margin)
                   :title "Left margin"}
@@ -148,6 +153,7 @@
                                             (dom/select-target event))
                                 :on-change (partial on-margin-change :multiple :m4)
                                 :on-blur #(select-margins false false false false)
+                                :nillable true
                                 :value (:m4 (:layout-item-margin values))}]]])]
        [:button {:class (stl/css-case :margin-mode true
                                       :selected (= margin-type :multiple))
@@ -169,6 +175,7 @@
                          (dom/select-target event))
              :on-change (partial on-margin-change :simple :m1)
              :on-blur #(select-margins false false false false)
+             :nillable true
              :value m1}]]
 
           [:div.margin-item.tooltip.tooltip-bottom-left
@@ -181,6 +188,7 @@
                          (dom/select-target event))
              :on-change (partial on-margin-change :simple :m2)
              :on-blur #(select-margins false false false false)
+             :nillable true
              :value m2}]]]
 
          (= margin-type :multiple)
@@ -201,6 +209,7 @@
                             (dom/select-target event))
                 :on-change (partial on-margin-change :multiple num)
                 :on-blur #(select-margins false false false false)
+                :nillable true
                 :value (num (:layout-item-margin values))}]]])])
 
        [:div.margin-item-icons

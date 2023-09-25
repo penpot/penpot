@@ -73,7 +73,9 @@
             :layout-item-min-h
             :layout-item-max-w
             :layout-item-min-w
-            :layout-item-align-self}
+            :layout-item-align-self
+            :layout-item-absolute
+            :layout-item-z-index}
 
    :group #{:proportion-lock
             :width :height
@@ -164,7 +166,9 @@
            :layout-item-min-h
            :layout-item-max-w
            :layout-item-min-w
-           :layout-item-align-self}
+           :layout-item-align-self
+           :layout-item-absolute
+           :layout-item-z-index}
 
    :circle #{:proportion-lock
              :width :height
@@ -217,7 +221,9 @@
              :layout-item-min-h
              :layout-item-max-w
              :layout-item-min-w
-             :layout-item-align-self}
+             :layout-item-align-self
+             :layout-item-absolute
+             :layout-item-z-index}
 
    :path #{:proportion-lock
            :width :height
@@ -270,7 +276,9 @@
            :layout-item-min-h
            :layout-item-max-w
            :layout-item-min-w
-           :layout-item-align-self}
+           :layout-item-align-self
+           :layout-item-absolute
+           :layout-item-z-index}
 
    :text #{:proportion-lock
            :width :height
@@ -347,7 +355,9 @@
            :layout-item-min-h
            :layout-item-max-w
            :layout-item-min-w
-           :layout-item-align-self}
+           :layout-item-align-self
+           :layout-item-absolute
+           :layout-item-z-index}
 
    :image #{:proportion-lock
             :width :height
@@ -383,7 +393,9 @@
             :layout-item-min-h
             :layout-item-max-w
             :layout-item-min-w
-            :layout-item-align-self}
+            :layout-item-align-self
+            :layout-item-absolute
+            :layout-item-z-index}
 
    :svg-raw #{:proportion-lock
               :width :height
@@ -438,7 +450,9 @@
               :layout-item-min-h
               :layout-item-max-w
               :layout-item-min-w
-              :layout-item-align-self}
+              :layout-item-align-self
+              :layout-item-absolute
+              :layout-item-z-index}
 
    :bool #{:proportion-lock
            :width :height
@@ -492,6 +506,8 @@
            :layout-item-min-h
            :layout-item-max-w
            :layout-item-min-w
-           :layout-item-align-self}})
+           :layout-item-align-self
+           :layout-item-absolute
+           :layout-item-z-index}})
 
 
