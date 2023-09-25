@@ -525,6 +525,7 @@
               :on-focus #(do
                            (dom/select-target %)
                            (select-paddings true false true false))
+              :min 0
               :value p1}]]
            [:div {:class (stl/css :padding-simple)
                   :title "Horizontal padding"}
@@ -538,6 +539,7 @@
               :on-focus #(do (dom/select-target %)
                              (select-paddings false true false true))
               :on-blur #(select-paddings false false false false)
+              :min 0
               :value p2}]]]
           (= padding-type :multiple)
           [:div {:class (stl/css :paddings-multiple)}
@@ -553,6 +555,7 @@
               :on-focus #(do (dom/select-target %)
                              (select-padding :p1))
               :on-blur #(select-paddings false false false false)
+              :min 0
               :value  (:p1 (:layout-padding values))}]]
 
            [:div {:class (stl/css :padding-multiple)
@@ -566,6 +569,7 @@
               :on-focus #(do (dom/select-target %)
                              (select-padding :p2))
               :on-blur #(select-paddings false false false false)
+              :min 0
               :value  (:p2 (:layout-padding values))}]]
 
            [:div {:class (stl/css :padding-multiple)
@@ -579,6 +583,7 @@
               :on-focus #(do (dom/select-target %)
                              (select-padding :p3))
               :on-blur #(select-paddings false false false false)
+              :min 0
               :value  (:p3 (:layout-padding values))}]]
 
            [:div {:class (stl/css :padding-multiple)
@@ -592,6 +597,7 @@
               :on-focus #(do (dom/select-target %)
                              (select-padding :p4))
               :on-blur #(select-paddings false false false false)
+              :min 0
               :value  (:p4 (:layout-padding values))}]]])]
        [:button {:class (stl/css-case :padding-toggle true
                                       :selected (= padding-type :multiple))
@@ -612,6 +618,7 @@
              :on-focus #(do
                           (dom/select-target %)
                           (select-paddings true false true false))
+             :min 0
              :value p1}]]
 
           [:div.padding-item.tooltip.tooltip-bottom-left
@@ -623,6 +630,7 @@
              :on-focus #(do (dom/select-target %)
                             (select-paddings false true false true))
              :on-blur #(select-paddings false false false false)
+             :min 0
              :value p2}]]]
 
          (= padding-type :multiple)
@@ -642,6 +650,7 @@
                 :on-focus #(do (dom/select-target %)
                                (select-padding num))
                 :on-blur #(select-paddings false false false false)
+                :min 0
                 :value (num (:layout-padding values))}]]])])
 
        [:div.padding-icons
@@ -682,6 +691,7 @@
                             :on-blur (fn [_]
                                        (select-gap nil)
                                        (reset! gap-selected? :none))
+                            :min 0
                             :value (:row-gap gap-value)
                             :disabled (and (= :nowrap wrap-type) (not is-col?))}]]
        [:div {:class (stl/css-case :column-gap true
@@ -700,6 +710,7 @@
                             :on-blur (fn [_]
                                        (select-gap nil)
                                        (reset! gap-selected? :none))
+                            :min 0
                             :value (:column-gap gap-value)
                             :disabled (and (= :nowrap wrap-type) is-col?)}]]]
 
@@ -720,6 +731,7 @@
                              :on-blur (fn [_]
                                         (select-gap nil)
                                         (reset! gap-selected? :none))
+                             :min 0
                              :value (:column-gap gap-value)
                              :disabled (and (= :nowrap wrap-type) is-col?)}]]
 
@@ -737,6 +749,7 @@
                              :on-blur (fn [_]
                                         (select-gap nil)
                                         (reset! gap-selected? :none))
+                             :min 0
                              :value (:row-gap gap-value)
                              :disabled (and (= :nowrap wrap-type) (not is-col?))}]]]])))
 

@@ -154,7 +154,7 @@
           (empty? (:shapes shape))
           [(calculate-base-bounds shape)]
 
-          (:masked-group shape)
+          (or (:masked-group shape) (= :bool (:type shape)))
           [(calculate-base-bounds shape)]
 
           (and (cph/frame-shape? shape) (not (:show-content shape)))

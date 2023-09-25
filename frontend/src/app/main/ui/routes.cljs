@@ -50,6 +50,7 @@
     ["/options"       :settings-options]
     ["/access-tokens" :settings-access-tokens]]
 
+   ["/frame-preview" :frame-preview]
    ["/view/:file-id"
     {:name :viewer
      :conform

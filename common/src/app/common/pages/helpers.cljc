@@ -635,8 +635,8 @@
   (cond
     (> (ctl/layout-z-index child-a) (ctl/layout-z-index child-b)) 1
     (< (ctl/layout-z-index child-a) (ctl/layout-z-index child-b)) -1
-    (> idx-a idx-b) 1
-    (< idx-a idx-b) -1
+    (< idx-a idx-b) 1
+    (> idx-a idx-b) -1
     :else 0))
 
 (defn sort-layout-children-z-index

@@ -168,8 +168,7 @@
           is-component? (mf/use-ctx muc/is-component?)
           childs        (cond-> childs
                           (ctl/any-layout? shape)
-                          (cph/sort-layout-children-z-index))
-          ]
+                          (cph/sort-layout-children-z-index))]
 
       [:> frame-container props
        [:g.frame-children {:opacity (:opacity shape)}

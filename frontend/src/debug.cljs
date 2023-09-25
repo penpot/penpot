@@ -18,6 +18,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.dashboard.shortcuts]
+   [app.main.data.preview :as dp]
    [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dwc]
@@ -211,6 +212,10 @@
 (defn ^:export dump-selected
   []
   (dump-selected' @st/state))
+
+(defn ^:export preview-selected
+  []
+  (st/emit! (dp/open-preview-selected)))
 
 (defn ^:export parent
   []

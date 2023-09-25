@@ -16,6 +16,7 @@
    [app.main.ui.cursors :as c]
    [app.main.ui.dashboard :refer [dashboard]]
    [app.main.ui.debug.components-preview :as cm]
+   [app.main.ui.frame-preview :as frame-preview]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.main.ui.onboarding]
@@ -135,6 +136,9 @@
                                   :page-id page-id
                                   :layout-name layout
                                   :key file-id}])
+
+       :frame-preview
+       [:& frame-preview/frame-preview]
        nil)]]))
 
 (mf/defc app

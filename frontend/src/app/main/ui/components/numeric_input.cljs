@@ -41,7 +41,7 @@
         min-value   (d/parse-double min-value)
         max-value   (d/parse-double max-value)
         step-value  (d/parse-double step-value 1)
-        default     (d/parse-double default 0)
+        default     (d/parse-double default (when-not nillable? 0))
 
         select-on-focus? (d/nilv (unchecked-get props "selectOnFocus") true)
 
