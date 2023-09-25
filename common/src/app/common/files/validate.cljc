@@ -23,7 +23,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def error-codes
-  #{:parent-not-found
+  #{:invalid-geometry
+    :parent-not-found
     :child-not-in-parent
     :child-not-found
     :frame-not-found
@@ -86,6 +87,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare validate-shape)
+
+(defn validate-geometry
+  "Validate that the shape has valid coordinates, selrect and points."
+  [shape file page]
+  (when (and (not= (:type shape) :path)
+             (or (nil? (:x shape))       ; This may occur in root shape (uuid/zero) in old files
+                 (nil? (:y shape))
+                 (nil? (:width shape))
+                 (nil? (:height shape))
+                 (nil? (:selrect shape))
+                 (nil? (:points shape))))
+    (report-error :invalid-geometry
+                  (str/format "Shape greometry is invalid")
+                  shape file page)))
 
 (defn validate-parent-children
   "Validate parent and children exists, and the link is bidirectional."
@@ -314,6 +329,7 @@
                                         ; If this happens it's a bug in this validate functions
       (dm/verify! (str/format "Shape %s not found" shape-id) (some? shape))
 
+      (validate-geometry shape file page)
       (validate-parent-children shape file page)
       (validate-frame shape file page)
 

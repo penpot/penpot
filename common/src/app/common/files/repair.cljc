@@ -15,12 +15,30 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]))
 
 (log/set-level! :debug)
 
 (defmulti repair-error
   (fn [code _error _file-data _libraries] code))
+
+(defmethod repair-error :invalid-geometry
+  [_ {:keys [shape page-id] :as error} file-data _]
+  (let [repair-shape
+        (fn [shape]
+          ; Reset geometry to minimal
+          (log/debug :hint "  -> Reset geometry")
+          (-> shape
+              (assoc :x 0)
+              (assoc :y 0)
+              (assoc :width 0.01)
+              (assoc :height 0.01)
+              (cts/setup-rect)))]
+    (log/info :hint "Repairing shape :invalid-geometry" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :parent-not-found
   [_ {:keys [shape page-id] :as error} file-data _]
@@ -140,15 +158,28 @@
 
 (defmethod repair-error :invalid-main-instance-id
   [_ {:keys [shape page-id] :as error} file-data _]
-  (let [repair-component
+  (let [component (ctkl/get-component file-data (:component-id shape))
+
+        repair-component
         (fn [component]
           ; Assign main instance in the component to current shape
           (log/debug :hint "  -> Assign main-instance-id" :component-id (:id component))
-          (assoc component :main-instance-id (:id shape)))]
+          (assoc component :main-instance-id (:id shape)))
+
+        detach-shape
+        (fn [shape]
+          (log/debug :hint "  -> Detach shape" :shape-id (:id shape))
+          (ctk/detach-shape shape))]
+
     (log/info :hint "Repairing shape :invalid-main-instance-id" :id (:id shape) :name (:name shape) :page-id page-id)
-    (-> (pcb/empty-changes nil page-id)
-        (pcb/with-library-data file-data)
-        (pcb/update-component [(:component-id shape)] repair-component))))
+    (if (and (some? component) (not (:deleted component)))
+      (-> (pcb/empty-changes nil page-id)
+          (pcb/with-library-data file-data)
+          (pcb/update-component (:component-id shape) repair-component))
+
+      (-> (pcb/empty-changes nil page-id)
+          (pcb/with-file-data file-data)
+          (pcb/update-shapes [(:id shape)] detach-shape)))))
 
 (defmethod repair-error :invalid-main-instance-page
   [_ {:keys [shape page-id] :as error} file-data _]
