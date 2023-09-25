@@ -74,6 +74,7 @@
           (if ^boolean (cph/frame-shape? shape)
             [:& root-frame-wrapper
              {:shape shape
+              :objects objects
               :thumbnail? (not (contains? active-frames (dm/get-prop shape :id)))}]
             [:& shape-wrapper {:shape shape}])])]]]))
 

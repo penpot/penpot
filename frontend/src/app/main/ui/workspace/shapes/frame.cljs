@@ -6,20 +6,23 @@
 
 (ns app.main.ui.workspace.shapes.frame
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
-   ;; [app.common.geom.rect :as grc]
-   ;; [app.common.geom.shapes :as gsh]
+   [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.main.data.workspace.state-helpers :as wsh]
-   ;; [app.main.data.workspace.thumbnails :as dwt]
+   [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as fdm]
-   ;; [app.util.debug :as dbg]
+   [app.util.debug :as dbg]
+   [app.util.timers :as tm]
    [rumext.v2 :as mf]))
 
 (defn frame-shape-factory
@@ -46,6 +49,12 @@
   [new-props old-props]
   (and (= (unchecked-get new-props "thumbnail?")
           (unchecked-get old-props "thumbnail?"))
+
+       (identical?
+        (unchecked-get new-props "objects")
+        (unchecked-get old-props "objects"))
+
+       ^boolean
        (check-shape-props new-props old-props)))
 
 (defn nested-frame-wrapper-factory
@@ -69,54 +78,54 @@
         (fdm/use-dynamic-modifiers objects (mf/ref-val node-ref) modifiers)
         [:& frame-shape {:shape shape :ref node-ref}]))))
 
-
 (defn root-frame-wrapper-factory
   [shape-wrapper]
-
   (let [frame-shape (frame-shape-factory shape-wrapper)]
     (mf/fnc frame-wrapper
       {::mf/wrap [#(mf/memo' % check-props)]
        ::mf/wrap-props false}
       [props]
 
-      (let [shape              (unchecked-get props "shape")
-            ;; thumbnail?         (unchecked-get props "thumbnail?")
+      (let [shape          (unchecked-get props "shape")
+            thumbnail?     (unchecked-get props "thumbnail?")
+            objects        (unchecked-get props "objects")
 
-            ;; page-id            (mf/use-ctx ctx/current-page-id)
-            frame-id           (:id shape)
+            file-id        (mf/use-ctx ctx/current-file-id)
+            page-id        (mf/use-ctx ctx/current-page-id)
+            frame-id       (dm/get-prop shape :id)
 
-            objects            (wsh/lookup-page-objects @st/state)
+            container-ref  (mf/use-ref nil)
+            content-ref    (mf/use-ref nil)
 
-            container-ref      (mf/use-ref nil)
-            content-ref        (mf/use-ref nil)
+            ;; FIXME: apply specific rendering optimizations separating to a component
+            bounds         (if (:show-content shape)
+                             (let [ids      (cph/get-children-ids objects frame-id)
+                                   children (sequence (keep (d/getf objects)) ids)]
+                               (gsh/shapes->rect (cons shape children)))
+                             (-> shape :points grc/points->rect))
 
-            ;; all-children-ref   (mf/with-memo [frame-id]
-            ;;                      (refs/all-children-objects frame-id))
-            ;; all-children       (mf/deref all-children-ref)
+            x              (dm/get-prop bounds :x)
+            y              (dm/get-prop bounds :y)
+            width          (dm/get-prop bounds :width)
+            height         (dm/get-prop bounds :height)
 
-            ;; bounds
-            ;; (if (:show-content shape)
-            ;;   (gsh/shapes->rect (cons shape all-children))
-            ;;   (-> shape :points grc/points->rect))
+            thumbnail-uri* (mf/with-memo [file-id page-id frame-id]
+                             (let [object-id (dwt/fmt-object-id file-id page-id frame-id)]
+                               (refs/workspace-thumbnail-by-id object-id)))
+            thumbnail-uri (mf/deref thumbnail-uri*)
 
-            ;; x                  (dm/get-prop bounds :x)
-            ;; y                  (dm/get-prop bounds :y)
-            ;; width              (dm/get-prop bounds :width)
-            ;; height             (dm/get-prop bounds :height)
+            modifiers-ref  (mf/with-memo [frame-id]
+                             (refs/workspace-modifiers-by-frame-id frame-id))
+            modifiers      (mf/deref modifiers-ref)
 
-            ;; thumbnail-uri*     (mf/with-memo [frame-id]
-            ;;                      (refs/thumbnail-frame-data frame-id))
-            ;; thumbnail-uri      (mf/deref thumbnail-uri*)
+            hidden?        (true? (:hidden shape))]
 
-            modifiers-ref      (mf/with-memo [frame-id]
-                                 (refs/workspace-modifiers-by-frame-id frame-id))
-            modifiers          (mf/deref modifiers-ref)
-
-            ;; debug?             (dbg/enabled? :thumbnails)
-            ]
-
-        #_(when-not (some? thumbnail-uri)
-          (st/emit! (dwt/update-thumbnail frame-id)))
+        ;; NOTE: we don't add deps because we want this to be executed
+        ;; once on mount with only referenced the initial data
+        (mf/with-effect []
+          (when-not (some? thumbnail-uri)
+            (tm/schedule-on-idle
+             #(st/emit! (dwt/update-thumbnail file-id page-id frame-id)))))
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val content-ref) modifiers)
 
@@ -124,24 +133,20 @@
          [:g.frame-container
           {:id (dm/str "frame-container-" frame-id)
            :key "frame-container"
-           ;; :ref on-container-ref
-           :opacity (when (:hidden shape) 0)}
+           :opacity (when ^boolean hidden? 0)}
 
-          ;; When thumbnail is enabled.
-          #_[:g.frame-imposter
-           ;; Render thumbnail image.
+          [:g.frame-imposter
            [:image.thumbnail-bitmap
-            {;; :ref on-imposter-ref
-             :x x
+            {:x x
              :y y
              :width width
              :height height
              :href thumbnail-uri
-             :style {:display (when-not thumbnail? "none")}}]
+             :style {:display (when-not ^boolean thumbnail? "none")}}]
 
            ;; Render border around image when we are debugging
            ;; thumbnails.
-           (when ^boolean debug?
+           (when (dbg/enabled? :thumbnails)
              [:rect {:x (+ x 2)
                      :y (+ y 2)
                      :width (- width 4)
@@ -150,8 +155,10 @@
                      :stroke-width 2}])]
 
           ;; When thumbnail is disabled.
-          (when-not false #_thumbnail?
+          (when (or (not ^boolean thumbnail?)
+                    (not ^boolean thumbnail-uri))
             [:g.frame-content
              {:id (dm/str "frame-content-" frame-id)
               :ref container-ref}
              [:& frame-shape {:shape shape :ref content-ref}]])]]))))
+

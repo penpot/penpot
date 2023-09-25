@@ -385,9 +385,10 @@
       ;; we only need to proceed when page-index is properly loaded
       (when-let [pindex (-> state :workspace-data :pages-index)]
         (if (contains? pindex page-id)
-          (rx/of (preload-data-uris page-id)
-                 (dwth/watch-state-changes)
-                 (dwl/watch-component-changes))
+          (let [file-id (:current-file-id state)]
+            (rx/of (preload-data-uris page-id)
+                   (dwth/watch-state-changes file-id page-id)
+                   (dwl/watch-component-changes)))
           (let [page-id (dm/get-in state [:workspace-data :pages 0])]
             (rx/of (go-to-page page-id))))))))
 

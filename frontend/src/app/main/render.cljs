@@ -14,11 +14,13 @@
   (:require
    ["react-dom/server" :as rds]
    [app.common.colors :as clr]
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bounds :as gsb]
+   [app.common.logging :as l]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.types.file :as ctf]
@@ -43,6 +45,7 @@
    [app.util.http :as http]
    [app.util.object :as obj]
    [app.util.strings :as ust]
+   [app.util.thumbnails :as th]
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [clojure.set :as set]
@@ -229,17 +232,11 @@
           [:& shape-wrapper {:shape item
                              :key (:id item)}])]]]]))
 
-;; Component that serves for render frame thumbnails, mainly used in
-;; the viewer and inspector
-(mf/defc frame-imposter-svg
-  {::mf/wrap [mf/memo]}
-  [{:keys [objects frame vbox width height show-thumbnails?] :as props}]
-  (let [shape-wrapper
-        (mf/use-memo
-         (mf/deps objects)
-         #(shape-wrapper-factory objects))]
-
-    [:& (mf/provider muc/render-thumbnails) {:value show-thumbnails?}
+(mf/defc frame-imposter
+  {::mf/wrap-props false}
+  [{:keys [objects frame vbox width height]}]
+  (let [shape-wrapper (shape-wrapper-factory objects)]
+    [:& (mf/provider muc/render-thumbnails) {:value false}
      [:svg {:view-box vbox
             :width (ust/format-precision width viewbox-decimal-precision)
             :height (ust/format-precision height viewbox-decimal-precision)
@@ -538,3 +535,45 @@
                                     #js {:data data :render-embed? true :include-metadata? true
                                          :source (name source)})]
                (rds/renderToStaticMarkup elem))))))))
+
+(defn render-frame
+  [objects shape object-id]
+  (let [shape-id      (dm/get-prop shape :id)
+        fonts         (ff/shape->fonts shape objects)
+
+        bounds         (if (:show-content shape)
+                         (let [ids      (cph/get-children-ids objects shape-id)
+                               children (sequence (keep (d/getf objects)) ids)]
+                           (gsh/shapes->rect (cons shape children)))
+                         (-> shape :points grc/points->rect))
+
+        x              (dm/get-prop bounds :x)
+        y              (dm/get-prop bounds :y)
+        width          (dm/get-prop bounds :width)
+        height         (dm/get-prop bounds :height)
+
+        viewbox        (str/ffmt "% % % %" x y width height)
+
+        [fixed-width
+         fixed-height] (th/get-proportional-size width height)
+
+        data           (rds/renderToStaticMarkup
+                        (mf/element frame-imposter
+                                    #js {:objects objects
+                                         :frame shape
+                                         :vbox viewbox
+                                         :width width
+                                         :height height}))]
+
+    (->> (fonts/render-font-styles-cached fonts)
+         (rx/catch (fn [cause]
+                     (l/err :hint "unexpected error on rendering imposter"
+                            :cause cause)
+                     (rx/empty)))
+         (rx/map (fn [styles]
+                   {:id object-id
+                    :data data
+                    :viewbox viewbox
+                    :width fixed-width
+                    :height fixed-height
+                    :styles styles})))))

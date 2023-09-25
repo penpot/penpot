@@ -13,7 +13,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
-   ;; [app.main.data.workspace.thumbnails :as dwt]
+   [app.main.data.workspace.thumbnails :as dwt]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -156,10 +156,9 @@
         (->> (rp/cmd! :update-file params)
              (rx/mapcat (fn [lagged]
                           (log/debug :hint "changes persisted" :lagged (count lagged))
-                          (let [
-                                ;; frame-updates
-                                ;; (-> (group-by :page-id changes)
-                                ;;     (update-vals #(into #{} (mapcat :frames) %)))
+                          (let [frame-updates
+                                (-> (group-by :page-id changes)
+                                    (update-vals #(into #{} (mapcat :frames) %)))
 
                                 commits
                                 (->> @pending-commits
@@ -167,10 +166,11 @@
 
                             (rx/concat
                              (rx/merge
-                              #_(->> (rx/from frame-updates)
-                                     (rx/mapcat (fn [[page-id frames]]
-                                                  (->> frames (map #(vector page-id %)))))
-                                     (rx/map (fn [[_ frame-id]] (dwt/update-thumbnail frame-id))))
+                              (->> (rx/from frame-updates)
+                                   (rx/mapcat (fn [[page-id frames]]
+                                                (->> frames (map (fn [frame-id] [file-id page-id frame-id])))))
+                                   (rx/map (fn [data]
+                                             (ptk/data-event ::dwt/update data))))
 
                               (->> (rx/from (concat lagged commits))
                                    (rx/merge-map

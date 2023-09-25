@@ -15,14 +15,13 @@
    [rumext.v2 :as mf]))
 
 (defn get-filter-id []
-  (str "filter_" (uuid/next)))
+  (dm/str "filter-" (uuid/next)))
 
 (defn filter-str
   [filter-id shape]
-
   (when (or (seq (->> (:shadow shape) (remove :hidden)))
             (and (:blur shape) (-> shape :blur :hidden not)))
-    (str/fmt "url(#$0)" [filter-id])))
+    (str/ffmt "url(#%)" filter-id)))
 
 (mf/defc color-matrix
   [{:keys [color]}]
@@ -31,7 +30,7 @@
         [r g b] [(/ r 255) (/ g 255) (/ b 255)]]
     [:feColorMatrix
      {:type "matrix"
-      :values (str/fmt "0 0 0 0 $0 0 0 0 0 $1 0 0 0 0 $2 0 0 0 $3 0" [r g b a])}]))
+      :values (str/ffmt "0 0 0 0 % 0 0 0 0 % 0 0 0 0 % 0 0 0 % 0" r g b a)}]))
 
 (mf/defc drop-shadow-filter
   [{:keys [filter-in filter-id params]}]
