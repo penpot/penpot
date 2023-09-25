@@ -332,8 +332,8 @@
             (validate-shape-main-root-top shape file page libraries))
 
           (if (not= context :not-component)
-            (report-error :root-main-not-allowed
-                          (str/format "Root main component not allowed inside other component")
+            (report-error :root-copy-not-allowed
+                          (str/format "Root copy component not allowed inside other component")
                           shape file page)
             (validate-shape-copy-root-top shape file page libraries)))
 
@@ -345,8 +345,8 @@
             (validate-shape-main-root-nested shape file page libraries))
 
           (if (= context :not-component)
-            (report-error :nested-main-not-allowed
-                          (str/format "Nested main component only allowed inside other component")
+            (report-error :nested-copy-not-allowed
+                          (str/format "Nested copy component only allowed inside other component")
                           shape file page)
             (validate-shape-copy-root-nested shape file page libraries))))
 
