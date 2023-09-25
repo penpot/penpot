@@ -714,7 +714,7 @@
   (let [library-data   (::library-data (meta changes))
         prev-component (get-in library-data [:components id])
         new-component  (update-fn prev-component)]
-    (if new-component
+    (if prev-component
       (-> changes
           (update :redo-changes conj {:type :mod-component
                                       :id id
