@@ -67,7 +67,8 @@
    :enable-smtp
    :enable-quotes
    :enable-fdata-storage-pointer-map
-   :enable-fdata-storage-objets-map])
+   :enable-fdata-storage-objets-map
+   :disable-file-validation])
 
 (def test-init-sql
   ["alter table project_profile_rel set unlogged;\n"
