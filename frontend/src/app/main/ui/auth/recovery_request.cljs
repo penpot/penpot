@@ -21,7 +21,9 @@
    [rumext.v2 :as mf]))
 
 (s/def ::email ::us/email)
-(s/def ::recovery-request-form (s/keys :req-un [::email]))
+(s/def ::recovery-request-form
+  (s/keys :req-un [::email]))
+
 (defn handle-error-messages
   [errors _data]
   (d/update-when errors :email
@@ -31,24 +33,27 @@
                      (assoc :message (tr "errors.email-invalid"))))))
 
 (mf/defc recovery-form
-  [{:keys [on-success-callback] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [on-success]}]
   (let [form      (fm/use-form :spec ::recovery-request-form
                                :validators [handle-error-messages]
                                :initial {})
         submitted (mf/use-state false)
 
-        default-success-finish #(st/emit! (dm/info (tr "auth.notifications.recovery-token-sent")))
+        default-on-success
+        (mf/use-fn #(st/emit! (dm/info (tr "auth.notifications.recovery-token-sent"))))
 
         on-success
-        (mf/use-callback
+        (mf/use-fn
+         (mf/deps default-on-success on-success)
          (fn [cdata _]
            (reset! submitted false)
-           (if (nil? on-success-callback)
-             (default-success-finish)
-             (on-success-callback (:email cdata)))))
+           (if (fn? on-success)
+             (on-success (:email cdata))
+             (default-on-success))))
 
         on-error
-        (mf/use-callback
+        (mf/use-fn
          (fn [data {:keys [code] :as error}]
            (reset! submitted false)
            (case code
@@ -64,7 +69,7 @@
              (rx/throw error))))
 
         on-submit
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (reset! submitted true)
            (let [cdata  (:clean-data @form)
@@ -74,32 +79,34 @@
              (reset! form nil)
              (st/emit! (du/request-profile-recovery params)))))]
 
-    [:& fm/form {:on-submit on-submit
-                 :form form}
+    [:& fm/form {:on-submit on-submit :form form}
      [:div.fields-row
-      [:& fm/input {:name :email
-                    :label (tr "auth.email")
-                    :help-icon i/at
-                    :type "text"}]]
+      [:& fm/input
+       {:name :email
+        :label (tr "auth.email")
+        :help-icon i/at
+        :type "text"}]]
 
      [:> fm/submit-button*
       {:label (tr "auth.recovery-request-submit")
        :data-test "recovery-resquest-submit"}]]))
 
-
 ;; --- Recovery Request Page
 
 (mf/defc recovery-request-page
-  [{:keys [params on-success-callback go-back-callback] :as props}]
-  (let [default-go-back #(st/emit! (rt/nav :auth-login))
-        go-back (or go-back-callback default-go-back)]
+  {::mf/wrap-props false}
+  [{:keys [params on-success on-go-back]}]
+  (let [default-go-back (mf/use-fn #(st/emit! (rt/nav :auth-login)))
+        on-go-back      (or on-go-back default-go-back)]
     [:section.generic-form
      [:div.form-container
       [:h1 (tr "auth.recovery-request-title")]
       [:div.subtitle (tr "auth.recovery-request-subtitle")]
-      [:& recovery-form {:params params :on-success-callback on-success-callback}]
+      [:& recovery-form
+       {:params params
+        :on-success on-success}]
       [:div.links
        [:div.link-entry
-        [:& lk/link {:action go-back
+        [:& lk/link {:on-click on-go-back
                      :data-test "go-back-link"}
          (tr "labels.go-back")]]]]]))

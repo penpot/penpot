@@ -26,39 +26,33 @@
         options?       (= section :settings-options)
         feedback?      (= section :settings-feedback)
         access-tokens? (= section :settings-access-tokens)
+        passkeys?      (= section :settings-passkeys)
 
         go-dashboard
-        (mf/use-callback
+        (mf/use-fn
           (mf/deps profile)
           #(st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)})))
 
         go-settings-profile
-        (mf/use-callback
-          (mf/deps profile)
-          #(st/emit! (rt/nav :settings-profile)))
+        (mf/use-fn #(st/emit! (rt/nav :settings-profile)))
 
         go-settings-feedback
-        (mf/use-callback
-          (mf/deps profile)
-          #(st/emit! (rt/nav :settings-feedback)))
+        (mf/use-fn #(st/emit! (rt/nav :settings-feedback)))
 
         go-settings-password
-        (mf/use-callback
-          (mf/deps profile)
-          #(st/emit! (rt/nav :settings-password)))
+        (mf/use-fn #(st/emit! (rt/nav :settings-password)))
 
         go-settings-options
-        (mf/use-callback
-          (mf/deps profile)
-          #(st/emit! (rt/nav :settings-options)))
+        (mf/use-fn #(st/emit! (rt/nav :settings-options)))
 
         go-settings-access-tokens
-        (mf/use-callback
-          (mf/deps profile)
-          #(st/emit! (rt/nav :settings-access-tokens)))
+        (mf/use-fn #(st/emit! (rt/nav :settings-access-tokens)))
+
+        go-settings-passkeys
+        (mf/use-fn #(st/emit! (rt/nav :settings-passkeys)))
 
         show-release-notes
-        (mf/use-callback
+        (mf/use-fn
           (fn [event]
             (let [version (:main cf/version)]
               (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
@@ -95,8 +89,16 @@
          [:li {:class (when access-tokens? "current")
                :on-click go-settings-access-tokens
                :data-test "settings-access-tokens"}
-          i/icon-key
+          i/key
           [:span.element-title (tr "labels.access-tokens")]])
+
+       (when (contains? cf/flags :passkeys)
+         [:li {:class (when passkeys? "current")
+               :on-click go-settings-passkeys
+               :data-test "settings-passkeys"}
+          i/key
+          [:span.element-title (tr "dashboard.passkeys.sidebar-label")]])
+
 
        [:hr]
 

@@ -103,6 +103,12 @@
       :else
       {::yrs/status 400 ::yrs/body data})))
 
+(defmethod handle-exception :negotiation
+  [err _]
+  (let [data (ex-data err)]
+    {::yrs/status 412
+     ::yrs/body data}))
+
 (defmethod handle-exception :assertion
   [error request]
   (binding [l/*context* (request->context request)]

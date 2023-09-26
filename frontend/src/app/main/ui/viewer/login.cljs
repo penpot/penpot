@@ -38,17 +38,21 @@
         (fn [event]
           (dom/prevent-default event)
           (st/emit! (modal/hide)))
+
         success-email-sent
-        (fn [email]
+        (fn [{:keys [email]}]
           (reset! user-email email)
           (set-current-section :email-sent))
+
         success-login
-        (fn []
+        (fn [_]
           (.reload js/window.location true))
+
         success-register
         (fn [data]
           (reset! register-token (:token data))
           (set-current-section :register-validate))]
+
     (mf/with-effect []
       (swap! storage assoc :redirect-url uri))
 
@@ -66,7 +70,7 @@
          :login
          [:div.generic-form.login-form
           [:div.form-container
-           [:& login-methods {:on-success-callback success-login}]
+           [:& login-methods {:on-success success-login}]
            [:div.links
             [:div.link-entry
              [:a {:on-click #(set-current-section :recovery-request)}
@@ -78,7 +82,7 @@
 
          :register
          [:div.form-container
-          [:& register-methods {:on-success-callback success-register}]
+          [:& register-methods {:on-success success-register}]
           [:div.links
            [:div.link-entry
             [:span (tr "auth.already-have-account") " "]
@@ -88,15 +92,15 @@
          :register-validate
          [:div.form-container
           [:& register-validate-form {:params {:token @register-token}
-                                      :on-success-callback success-email-sent}]
+                                      :on-success success-email-sent}]
           [:div.links
            [:div.link-entry
             [:a {:on-click #(set-current-section :register)}
              (tr "labels.go-back")]]]]
 
          :recovery-request
-         [:& recovery-request-page {:go-back-callback #(set-current-section :login)
-                                    :on-success-callback success-email-sent}]
+         [:& recovery-request-page {:on-go-back #(set-current-section :login)
+                                    :on-success success-email-sent}]
          :email-sent
          [:div.form-container
           [:& register-success-page {:params {:email @user-email}}]])]

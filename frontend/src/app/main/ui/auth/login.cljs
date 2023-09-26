@@ -12,6 +12,7 @@
    [app.config :as cf]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
+   [app.main.errors :as err]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.button-link :as bl]
@@ -79,8 +80,8 @@
 (s/def ::invitation-token ::us/not-empty-string)
 
 (s/def ::login-form
-  (s/keys :req-un [::email ::password]
-          :opt-un [::invitation-token]))
+  (s/keys :req-un [::email]
+          :opt-un [::password ::invitation-token]))
 
 (defn handle-error-messages
   [errors _data]
@@ -91,8 +92,11 @@
                      (assoc :message (tr "errors.email-invalid"))))))
 
 (mf/defc login-form
-  [{:keys [params on-success-callback] :as props}]
+  [{:keys [params on-success] :as props}]
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
+
+        totp*   (mf/use-state false)
+        totp?   (deref totp*)
 
         error   (mf/use-state false)
         form    (fm/use-form :spec ::login-form
@@ -100,46 +104,89 @@
                              :initial initial)
 
         on-error
-        (fn [cause]
-          (cond
-            (and (= :restriction (:type cause))
-                 (= :profile-blocked (:code cause)))
-            (reset! error (tr "errors.profile-blocked"))
+        (mf/use-fn
+         (fn [form cause]
+           (when (map? cause)
+             (err/print-trace! cause)
+             (err/print-data! cause)
+             (err/print-explain! cause))
 
-            (and (= :restriction (:type cause))
-                 (= :admin-only-profile (:code cause)))
-            (reset! error (tr "errors.profile-blocked"))
+           (cond
 
-            (and (= :validation (:type cause))
-                 (= :wrong-credentials (:code cause)))
-            (reset! error (tr "errors.wrong-credentials"))
+             (and (= :totp (:code cause))
+                  (= :negotiation (:type cause)))
+             (reset! totp* true)
 
-            (and (= :validation (:type cause))
-                 (= :account-without-password (:code cause)))
-            (reset! error (tr "errors.wrong-credentials"))
+             (and (= :invalid-totp (:code cause))
+                  (= :negotiation (:type cause)))
+             (do
+               ;; (reset! error (tr "errors.invalid-totp"))
+               (swap! form (fn [form]
+                             (-> form
+                                 (update :errors assoc :totp {:message (tr "errors.invalid-totp")})
+                                 (update :touched assoc :totp true)))))
 
-            :else
-            (reset! error (tr "errors.generic"))))
+
+             (and (= :restriction (:type cause))
+                  (= :passkey-disabled (:code cause)))
+             (reset! error (tr "errors.wrong-credentials"))
+
+             (and (= :restriction (:type cause))
+                  (= :profile-blocked (:code cause)))
+             (reset! error (tr "errors.profile-blocked"))
+
+             (and (= :restriction (:type cause))
+                  (= :admin-only-profile (:code cause)))
+             (reset! error (tr "errors.profile-blocked"))
+
+             (and (= :validation (:type cause))
+                  (= :wrong-credentials (:code cause)))
+             (reset! error (tr "errors.wrong-credentials"))
+
+             (and (= :validation (:type cause))
+                  (= :account-without-password (:code cause)))
+             (reset! error (tr "errors.wrong-credentials"))
+
+             :else
+             (reset! error (tr "errors.generic")))))
 
         on-success-default
-        (fn [data]
-          (when-let [token (:invitation-token data)]
-            (st/emit! (rt/nav :auth-verify-token {} {:token token}))))
+        (mf/use-fn
+         (fn [data]
+           (when-let [token (:invitation-token data)]
+             (st/emit! (rt/nav :auth-verify-token {} {:token token})))))
 
         on-success
-        (fn [data]
-          (if (nil? on-success-callback)
-            (on-success-default data)
-            (on-success-callback)))
+        (mf/use-fn
+         (mf/deps on-success)
+         (fn [data]
+           (if (fn? on-success)
+             (on-success data)
+             (on-success-default data))))
 
         on-submit
-        (mf/use-callback
-         (fn [form _event]
-           (reset! error nil)
-           (let [params (with-meta (:clean-data @form)
-                          {:on-error on-error
-                           :on-success on-success})]
-             (st/emit! (du/login params)))))
+        (mf/use-fn
+         (fn [form event]
+           (let [event      (dom/event->native-event event)
+                 submitter  (unchecked-get event "submitter")
+                 submitter  (dom/get-data submitter "role")
+                 on-error   (partial on-error form)
+                 on-success (partial on-success form)]
+
+             (case submitter
+               "login-with-passkey"
+               (let [params (with-meta (:clean-data @form)
+                              {:on-error on-error
+                               :on-success on-success})]
+                 (st/emit! (du/login-with-passkey params)))
+
+               "login-with-password"
+               (let [params (with-meta (:clean-data @form)
+                              {:on-error on-error
+                               :on-success on-success})]
+                 (st/emit! (du/login-with-password params)))
+
+               nil))))
 
         on-submit-ldap
         (mf/use-callback
@@ -174,17 +221,35 @@
          :help-icon i/eye
          :label (tr "auth.password")}]]
 
+      (when totp?
+        [:div.fields-row
+         [:& fm/input
+          {:type "text"
+           :name :totp
+           :label (tr "auth.totp")}]])
+
       [:div.buttons-stack
        (when (or (contains? cf/flags :login)
                  (contains? cf/flags :login-with-password))
          [:> fm/submit-button*
           {:label (tr "auth.login-submit")
+           :data-role "login-with-password"
            :data-test "login-submit"}])
 
        (when (contains? cf/flags :login-with-ldap)
          [:> fm/submit-button*
           {:label (tr "auth.login-with-ldap-submit")
-           :on-click on-submit-ldap}])]]]))
+           :data-role "login-with-ldap"
+           :on-click on-submit-ldap}])]
+
+      [:section.passkey
+       [:> fm/submit-button*
+        {:data-role "login-with-passkey"
+         :class "btn-passkey-auth"}
+        [:img {:src "/images/passkey.png"}]]]
+
+
+      ]]))
 
 (mf/defc login-buttons
   [{:keys [params] :as props}]
@@ -230,7 +295,7 @@
       (tr "auth.login-with-oidc-submit")]]))
 
 (mf/defc login-methods
-  [{:keys [params on-success-callback] :as props}]
+  [{:keys [params on-success] :as props}]
   [:*
    (when show-alt-login-buttons?
      [:*
@@ -252,35 +317,40 @@
    (when (or (contains? cf/flags :login)
              (contains? cf/flags :login-with-password)
              (contains? cf/flags :login-with-ldap))
-     [:& login-form {:params params :on-success-callback on-success-callback}])])
+     [:& login-form {:params params :on-success on-success}])])
 
 (mf/defc login-page
-  [{:keys [params] :as props}]
-  [:div.generic-form.login-form
-   [:div.form-container
-    [:h1 {:data-test "login-title"} (tr "auth.login-title")]
+  {::mf/wrap-props false}
+  [{:keys [params]}]
+  (let [nav-to-recovery (mf/use-fn #(st/emit! (rt/nav :auth-recovery-request)))
+        nav-to-register (mf/use-fn (mf/deps params) #(st/emit! (rt/nav :auth-register {} params)))
+        create-demo     (mf/use-fn #(st/emit! (du/create-demo-profile)))]
 
-    [:& login-methods {:params params}]
+    [:div.generic-form.login-form
+     [:div.form-container
+      [:h1 {:data-test "login-title"} (tr "auth.login-title")]
 
-    [:div.links
-     (when (or (contains? cf/flags :login)
-               (contains? cf/flags :login-with-password))
-       [:div.link-entry
-        [:& lk/link {:action #(st/emit! (rt/nav :auth-recovery-request))
-                     :data-test "forgot-password"}
-         (tr "auth.forgot-password")]])
+      [:& login-methods {:params params}]
 
-     (when (contains? cf/flags :registration)
-       [:div.link-entry
-        [:span (tr "auth.register") " "]
-        [:& lk/link {:action #(st/emit! (rt/nav :auth-register {} params))
-                     :data-test "register-submit"}
-         (tr "auth.register-submit")]])]
+      [:div.links
+       (when (or (contains? cf/flags :login)
+                 (contains? cf/flags :login-with-password))
+         [:div.link-entry
+          [:& lk/link {:on-click nav-to-recovery
+                       :data-test "forgot-password"}
+           (tr "auth.forgot-password")]])
 
-    (when (contains? cf/flags :demo-users)
-      [:div.links.demo
-       [:div.link-entry
-        [:span (tr "auth.create-demo-profile") " "]
-        [:& lk/link {:action #(st/emit! (du/create-demo-profile))
-                     :data-test "demo-account-link"}
-         (tr "auth.create-demo-account")]]])]])
+       (when (contains? cf/flags :registration)
+         [:div.link-entry
+          [:span (tr "auth.register") " "]
+          [:& lk/link {:on-click nav-to-register
+                       :data-test "register-submit"}
+           (tr "auth.register-submit")]])]
+
+      (when (contains? cf/flags :demo-users)
+        [:div.links.demo
+         [:div.link-entry
+          [:span (tr "auth.create-demo-profile") " "]
+          [:& lk/link {:on-click create-demo
+                       :data-test "demo-account-link"}
+           (tr "auth.create-demo-account")]]])]]))

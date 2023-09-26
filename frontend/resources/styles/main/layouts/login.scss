@@ -121,6 +121,29 @@
     *:not(:last-child) {
       margin-bottom: $size-4;
     }
+
+    &.center {
+      align-items: center;
+    }
+  }
+
+  section.passkey {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+    margin-top: 20px;
+
+    .btn-disabled {
+      filter: grayscale(100%);
+      background-color: unset;
+    }
+
+    .btn-passkey-auth {
+      width: 60px;
+      cursor: pointer;
+      border: 0px;
+    }
   }
 
   .btn-large {

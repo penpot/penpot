@@ -629,19 +629,19 @@
       [:ul.sidebar-nav.no-overflow
        [:li.recent-projects
         {:class-name (when projects? "current")}
-        [:& link {:action go-projects
-                  :keyboard-action go-projects-with-key}
+        [:& link {:on-click go-projects
+                  :on-key-enter go-projects-with-key}
          [:span.element-title (tr "labels.projects")]]]
 
        [:li {:class-name (when drafts? "current")}
-        [:& link {:action go-drafts
-                  :keyboard-action go-drafts-with-key}
+        [:& link {:on-click go-drafts
+                  :on-key-enter go-drafts-with-key}
          [:span.element-title (tr "labels.drafts")]]]
 
 
        [:li {:class-name (when libs? "current")}
-        [:& link {:action go-libs
-                  :keyboard-action go-libs-with-key}
+        [:& link {:on-click go-libs
+                  :on-key-enter go-libs-with-key}
          [:span.element-title (tr "labels.shared-libraries")]]]]]
 
      [:hr]
@@ -650,8 +650,8 @@
       [:ul.sidebar-nav.no-overflow
        [:li {:class-name (when fonts? "current")}
 
-        [:& link {:action go-fonts
-                  :keyboard-action go-fonts-with-key
+        [:& link {:on-click go-fonts
+                  :on-key-enter go-fonts-with-key
                   :data-test "fonts"}
          [:span.element-title (tr "labels.fonts")]]]]]
 

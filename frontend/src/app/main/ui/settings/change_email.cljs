@@ -85,7 +85,7 @@
         (mf/use-callback
          (mf/deps profile)
          (partial on-submit profile))
-                                     
+
         on-email-change
         (mf/use-callback
           (fn [_ _]

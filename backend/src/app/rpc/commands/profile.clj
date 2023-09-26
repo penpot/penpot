@@ -7,7 +7,6 @@
 (ns app.rpc.commands.profile
   (:require
    [app.auth :as auth]
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
@@ -27,6 +26,7 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.util.totp :as totp]
    [cuerdas.core :as str]))
 
 (declare check-profile-existence!)
@@ -36,6 +36,7 @@
 (declare get-profile)
 (declare strip-private-attrs)
 (declare verify-password)
+(declare ^:private process-props)
 
 (def schema:profile
   [:map {:title "Profile"}
@@ -83,7 +84,7 @@
 
 (def schema:update-profile
   [:map {:title "update-profile"}
-   [:fullname [::sm/word-string {:max 250}]]
+   [:fullname {:optional true} [::sm/word-string {:max 250}]]
    [:lang {:optional true} [:string {:max 5}]]
    [:theme {:optional true} [:string {:max 250}]]])
 
@@ -91,11 +92,7 @@
   {::doc/added "1.0"
    ::sm/params schema:update-profile
    ::sm/result schema:profile}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id fullname lang theme] :as params}]
-
-  (dm/assert!
-   "expected valid profile data"
-   (profile? params))
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id fullname lang theme props] :as params}]
 
   (db/with-atomic [conn pool]
     ;; NOTE: we need to retrieve the profile independently if we use
@@ -104,25 +101,24 @@
     (let [profile (-> (db/get-by-id conn :profile profile-id ::db/for-update? true)
                       (decode-row))
 
-          ;; Update the profile map with direct params
-          profile (-> profile
-                      (assoc :fullname fullname)
-                      (assoc :lang lang)
-                      (assoc :theme theme))
-          ]
+          props   (cond-> (process-props props profile)
+                    (and (contains? props :2fa)
+                         (= :totp (:2fa props))
+                         (not= :totp (dm/get-in profile [:props :2fa])))
+                    (assoc :2fa/secret (totp/gen-secret)))
 
-      (db/update! conn :profile
-                  {:fullname fullname
-                   :lang lang
-                   :theme theme
-                   :props (db/tjson (:props profile))}
-                  {:id profile-id})
+          params  (cond-> {:props (db/tjson props)}
+                    (some? fullname) (assoc :fullname fullname)
+                    (some? lang)     (assoc :lang lang)
+                    (some? theme)    (assoc :theme theme))
+
+          profile  (db/update! conn :profile params {:id profile-id})
+          profile  (decode-row profile)]
 
       (-> profile
+          (update :props filter-props)
           (strip-private-attrs)
-          (d/without-nils)
           (rph/with-meta {::audit/props (audit/profile->props profile)})))))
-
 
 ;; --- MUTATION: Update Password
 
@@ -153,7 +149,7 @@
                   :code :email-as-password
                   :hint "you can't use your email as password"))
 
-      (update-profile-password! conn (assoc profile :password password))
+      (update-profile-password! cfg (assoc profile :password password))
       (invalidate-profile-session! cfg profile-id session-id)
       nil)))
 
@@ -173,7 +169,7 @@
     profile))
 
 (defn update-profile-password!
-  [conn {:keys [id password] :as profile}]
+  [{:keys [::db/conn]} {:keys [id password] :as profile}]
   (when-not (db/read-only? conn)
     (db/update! conn :profile
                 {:password (auth/derive-password password)}
@@ -315,6 +311,18 @@
 
 ;; --- MUTATION: Update Profile Props
 
+(defn- process-props
+  [props profile]
+  (reduce-kv (fn [props k v]
+               ;; We don't accept namespaced keys
+               (if (simple-ident? k)
+                 (if (nil? v)
+                   (dissoc props k)
+                   (assoc props k v))
+                 props))
+             (:props profile)
+             props))
+
 (def schema:update-profile-props
   [:map {:title "update-profile-props"}
    [:props [:map-of :keyword :any]]])
@@ -325,15 +333,7 @@
   [{:keys [::db/pool]} {:keys [::rpc/profile-id props]}]
   (db/with-atomic [conn pool]
     (let [profile (get-profile conn profile-id ::db/for-update? true)
-          props   (reduce-kv (fn [props k v]
-                               ;; We don't accept namespaced keys
-                               (if (simple-ident? k)
-                                 (if (nil? v)
-                                   (dissoc props k)
-                                   (assoc props k v))
-                                 props))
-                             (:props profile)
-                             props)]
+          props   (process-props props profile)]
 
       (db/update! conn :profile
                   {:props (db/tjson props)}
@@ -371,6 +371,19 @@
                   {:id profile-id})
 
       (rph/with-transform {} (session/delete-fn cfg)))))
+
+
+;; --- TOTP/2FA
+
+(sv/defmethod ::get-profile-2fa-secret
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id]}]
+  (dm/with-open [conn (db/open pool)]
+    (let [{:keys [props] :as profile} (get-profile conn profile-id)]
+      (when (= :totp (:2fa props))
+        (let [secret (:2fa/secret props)
+              image  (totp/get-qrcode-image secret (:email profile))]
+          {:secret secret
+           :image image})))))
 
 
 ;; --- HELPERS

@@ -48,7 +48,8 @@
     ["/password"      :settings-password]
     ["/feedback"      :settings-feedback]
     ["/options"       :settings-options]
-    ["/access-tokens" :settings-access-tokens]]
+    ["/access-tokens" :settings-access-tokens]
+    ["/passkeys"      :settings-passkeys]]
 
    ["/frame-preview" :frame-preview]
    ["/view/:file-id"

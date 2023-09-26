@@ -59,7 +59,8 @@
         :settings-password
         :settings-options
         :settings-feedback
-        :settings-access-tokens)
+        :settings-access-tokens
+        :settings-passkeys)
        [:& settings/settings {:route route}]
 
        :debug-icons-preview
