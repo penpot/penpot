@@ -92,6 +92,17 @@
         }
       }
     }
+    .actions {
+      display: flex;
+      gap: $s-4;
+      .accept-color {
+        @include titleTipography;
+        @extend .button-secondary;
+        width: 100%;
+        height: $s-32;
+        margin-top: $s-8;
+      }
+    }
   }
   .colorpicker-tabs {
     .picker-detail-wrapper {

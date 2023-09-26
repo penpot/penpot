@@ -149,6 +149,7 @@
                                :on-change on-change-opacity
                                :on-start-drag on-start-drag
                                :on-finish-drag on-finish-drag}]])]
+
        [:div {:class (stl/css :hue-wheel-wrapper)}
         [:canvas {:class (stl/css :hue-wheel)
                   :ref canvas-ref
@@ -169,6 +170,7 @@
                        :top (:y pos-complement)
                        :cursor "pointer"}
                :on-click on-complement-click}]]]
+
       [:div.harmony-selector
        [:div.hue-wheel-wrapper
         [:canvas.hue-wheel

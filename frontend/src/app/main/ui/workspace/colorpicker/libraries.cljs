@@ -74,7 +74,8 @@
         on-color-click
         (mf/use-fn
          (mf/deps state)
-         #(on-select-color state))]
+         (fn[event]
+           (on-select-color state event)))]
 
     ;; Load library colors when the select is changed
     (mf/with-effect [@selected recent-colors file-colors]
@@ -106,7 +107,7 @@
        [:div {:class (stl/css :select-wrapper)}
         [:& select
          {:class (stl/css :shadow-type-select)
-          :default-value (name @selected)
+          :default-value (or (name @selected) "recent")
           :options options
           :on-change on-library-change}]]
 

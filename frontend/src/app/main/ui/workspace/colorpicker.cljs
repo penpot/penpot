@@ -157,15 +157,24 @@
 
         on-start-drag
         (mf/use-fn
+         (mf/deps drag? node-ref)
          (fn []
            (reset! drag? true)
            (st/emit! (dwu/start-undo-transaction (mf/ref-val node-ref)))))
 
         on-finish-drag
         (mf/use-fn
+         (mf/deps drag? node-ref)
          (fn []
            (reset! drag? false)
-           (st/emit! (dwu/commit-undo-transaction (mf/ref-val node-ref)))))]
+           (st/emit! (dwu/commit-undo-transaction (mf/ref-val node-ref)))))
+
+        on-color-accept
+        (mf/use-fn
+         (mf/deps state)
+         (fn []
+           (on-accept (dc/get-color-from-colorpicker-state state))
+           (modal/hide!)))]
 
     ;; Initialize colorpicker state
     (mf/with-effect []
@@ -287,22 +296,14 @@
        [:& libraries
         {:state state
          :current-color current-color
-        ;;  :disable-gradient disable-gradient
-        ;;  :disable-opacity disable-opacity
          :on-select-color on-select-library-color
          :on-add-library-color on-add-library-color}]
 
        (when on-accept
-         [:div.actions
-          [:button.btn-primary.btn-large
-           {:on-click (fn []
-                        (on-accept (dc/get-color-from-colorpicker-state state))
-                        (modal/hide!))}
+         [:div {:class (stl/css :actions)}
+          [:button {:class (stl/css :accept-color)
+                    :on-click on-color-accept}
            (tr "workspace.libraries.colors.save-color")]])]
-
-
-
-
 
       [:div.colorpicker {:ref node-ref
                          :style {:touch-action "none"}}
@@ -323,9 +324,9 @@
              {:on-click on-activate-radial-gradient
               :class (when (= :radial-gradient (:type state)) "active")}]])]
 
-
         (when (or (= (:type state) :linear-gradient)
                   (= (:type state) :radial-gradient))
+
           [:& gradients
            {:stops (:stops state)
             :editing-stop (:editing-stop state)
@@ -393,9 +394,7 @@
         (when on-accept
           [:div.actions
            [:button.btn-primary.btn-large
-            {:on-click (fn []
-                         (on-accept (dc/get-color-from-colorpicker-state state))
-                         (modal/hide!))}
+            {:on-click on-color-accept}
             (tr "workspace.libraries.colors.save-color")]])]])))
 
 (defn calculate-position
