@@ -33,34 +33,15 @@
     }
   }
   .custom-select-dropdown {
-    @include menuShadow;
-    position: absolute;
-    top: $s-32;
-    left: 0;
-    width: 100%;
-    max-height: $s-300;
-    padding: $s-2;
-    margin: 0;
-    margin-top: $s-4;
-    border-radius: $br-8;
-    z-index: $z-index-3;
-    overflow-y: auto;
-    overflow-x: hidden;
-    background-color: var(--menu-background-color);
-    color: var(--menu-foreground-color);
+    @extend .dropdown-wrapper;
     .separator {
       margin: 0;
       height: $s-12;
     }
   }
   .checked-element {
-    @include titleTipography;
-    display: flex;
-    align-items: center;
-    height: $s-32;
-    padding: 0 $s-8;
-    border-radius: $br-6;
-    color: var(--menu-foreground-color-rest);
+    @extend .dropdown-element-base;
+
     .label {
       flex-grow: 1;
       width: 100%;
@@ -80,13 +61,6 @@
       .check-icon svg {
         stroke: var(--menu-foreground-color);
         visibility: visible;
-      }
-    }
-    &:hover {
-      background-color: var(--menu-background-color-hover);
-      color: var(--menu-foreground-color);
-      .check-icon svg {
-        stroke: var(--menu-foreground-color);
       }
     }
   }

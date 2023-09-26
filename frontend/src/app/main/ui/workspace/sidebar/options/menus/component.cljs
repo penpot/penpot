@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.options.menus.component
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
@@ -16,6 +17,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
+   [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -143,7 +146,8 @@
 
 (mf/defc component-menu
   [{:keys [ids values shape] :as props}]
-  (let [current-file-id     (mf/use-ctx ctx/current-file-id)
+  (let [new-css-system      (mf/use-ctx ctx/new-css-system)
+        current-file-id     (mf/use-ctx ctx/current-file-id)
         components-v2       (mf/use-ctx ctx/components-v2)
 
         objects             (deref refs/workspace-page-objects)
@@ -151,10 +155,16 @@
         can-update-main?    (or (not components-v2) touched?)
 
         id                  (first ids)
-        local               (mf/use-state {:menu-open false})
+        state*              (mf/use-state {:show-content true
+                                           :menu-open false})
+        state               (deref state*)
+        open?               (:show-content state)
+        menu-open?          (:menu-open state)
+
+        toggle-content
+        (mf/use-fn #(swap! state* update :show-content not))
 
         shape-name          (:name shape)
-
         component-id        (:component-id values)
         library-id          (:component-file values)
         show?               (some? component-id)
@@ -165,6 +175,7 @@
         lacks-annotation?   (nil? (:annotation values))
 
         local-component?    (= library-id current-file-id)
+
         workspace-data      (deref refs/workspace-data)
         workspace-libraries (deref refs/workspace-libraries)
         component           (if local-component?
@@ -174,17 +185,16 @@
         lib-exists?         (and (not local-component?)
                                  (some? (get workspace-libraries library-id)))
 
-
         on-menu-click
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (swap! local assoc :menu-open true)))
+           (swap! state* update :menu-open not)))
 
         on-menu-close
         (mf/use-callback
-         #(swap! local assoc :menu-open false))
+         #(swap! state* assoc :menu-open false))
 
         do-detach-component
         #(st/emit! (dwl/detach-component id))
@@ -217,59 +227,171 @@
         do-create-annotation #(st/emit! (dw/set-annotations-id-for-create id))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file library-id))]
     (when show?
-      [:div.element-set
-       [:div.element-set-title
-        [:span (tr "workspace.options.component")]
-        [:span (if main-instance?
-                 (tr "workspace.options.component.main")
-                 (tr "workspace.options.component.copy"))]
-        ]
-       [:div.element-set-content
-        [:div.row-flex.component-row
-         (if main-instance?
-           i/component
-           i/component-copy)
-         [:div.component-name shape-name]
-         [:div.row-actions
-          {:on-click on-menu-click}
-          i/actions
-          ;; WARNING: this menu is the same as the shape context menu.
-          ;;          If you change it, you must change equally the file
-          ;;          app/main/ui/workspace/context_menu.cljs
-          [:& context-menu {:on-close on-menu-close
-                            :show (:menu-open @local)
-                            :options
-                            (if main-component?
-                              [[(tr "workspace.shape.menu.show-in-assets") do-show-in-assets]
-                               (when (and components-v2 local-component? lacks-annotation?)
-                                 [(tr "workspace.shape.menu.create-annotation") do-create-annotation])]
-                              (if local-component?
-                                (if is-dangling?
-                                  [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   (when can-update-main?
-                                     [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
-                                   (when components-v2
-                                     [(tr "workspace.shape.menu.restore-main") do-restore-component])]
+      (if new-css-system
+        [:div {:class (stl/css :element-set)}
+         [:div {:class (stl/css :element-title)}
+          [:& title-bar {:collapsable? true
+                         :collapsed?   (not open?)
+                         :on-collapsed toggle-content
+                         :title        (tr "workspace.options.component")
+                         :class        (stl/css :title-spacing-component)}]]
 
-                                  [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   (when can-update-main?
-                                     [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
-                                   (when can-update-main?
-                                     [(tr "workspace.shape.menu.update-main") do-update-component])
-                                   [(tr "workspace.shape.menu.show-main") do-show-component]])
+         (when open?
+           [:div {:class (stl/css :element-content)}
+            [:div {:class (stl/css :component-wrapper)}
+             [:div {:class (stl/css :component-name-wrapper)}
+              [:span {:class (stl/css :component-icon)}
+               (if main-instance?
+                 i/component-refactor
+                 i/copy-refactor)]
 
-                                (if is-dangling?
-                                  [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   (when can-update-main?
-                                     [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
-                                   (when (and components-v2 lib-exists?)
-                                     [(tr "workspace.shape.menu.restore-main") do-restore-component])]
-                                  [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   (when can-update-main?
-                                     [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
-                                   (when can-update-main?
-                                     [(tr "workspace.shape.menu.update-main") do-update-remote-component])
-                                   [(tr "workspace.shape.menu.go-main") do-navigate-component-file]])))}]]]
+              [:div {:class (stl/css :component-name)} shape-name]]
 
-        (when components-v2
-          [:& component-annotation {:id id :values values :shape shape :component component}])]])))
+             [:div {:class (stl/css :component-actions)}
+              [:button {:class (stl/css :menu-btn)
+                        :on-click on-menu-click}
+               i/menu-refactor]
+
+              [:& dropdown {:show menu-open?
+                            :on-close on-menu-close}
+               [:ul {:class (stl/css :custom-select-dropdown)}
+                (if main-component?
+                  [:*
+                   [:li {:class (stl/css :dropdown-element)
+                         :on-click do-show-in-assets}
+                    [:span {:class (stl/css :dropdown-label)}
+                     (tr "workspace.shape.menu.show-in-assets")]]
+                   (when (and components-v2 local-component? lacks-annotation?)
+                     [:li {:class (stl/css :dropdown-element)
+                           :on-click do-create-annotation}
+                      [:span {:class (stl/css :dropdown-label)}
+                       (tr "workspace.shape.menu.create-annotation")]])]
+
+                  (if local-component?
+                    (if is-dangling?
+                      [:*
+                       [:li {:class (stl/css :dropdown-element)
+                             :on-click do-detach-component}
+                        [:span {:class (stl/css :dropdown-label)}
+                         (tr "workspace.shape.menu.detach-instance")]]
+                       (when can-update-main?
+                         [:li {:class (stl/css :dropdown-element)
+                               :on-click do-reset-component}
+                          [:span {:class (stl/css :dropdown-label)}
+                           (tr "workspace.shape.menu.reset-overrides")]])
+                       (when components-v2
+                         [:li {:class (stl/css :dropdown-element)
+                               :on-click do-restore-component}
+                          [:span {:class (stl/css :dropdown-label)}
+                           (tr "workspace.shape.menu.restore-main")]])]
+
+                      [:*
+                       [:li {:class (stl/css :dropdown-element)
+                             :on-click do-detach-component}
+                        [:span {:class (stl/css :dropdown-label)}
+                         (tr "workspace.shape.menu.detach-instance")]]
+                       (when can-update-main?
+                         [:li {:class (stl/css :dropdown-element)
+                               :on-click do-reset-component}
+                          [:span {:class (stl/css :dropdown-label)}
+                           (tr "workspace.shape.menu.reset-overrides")]]
+                         [:li {:class (stl/css :dropdown-element)
+                               :on-click do-update-component}
+                          [:span {:class (stl/css :dropdown-label)}
+                           (tr "workspace.shape.menu.update-main")]])
+                       [:li {:class (stl/css :dropdown-element)
+                             :on-click do-show-component}
+                        [:span {:class (stl/css :dropdown-label)}
+                         (tr "workspace.shape.menu.show-main")]]])
+                    (if is-dangling?
+                      [:*
+                       [:li {:class (stl/css :dropdown-element)
+                             :on-click do-detach-component}
+                        [:span {:class (stl/css :dropdown-label)}
+                         (tr "workspace.shape.menu.detach-instance")]]
+                       (when can-update-main?
+                         [:li {:class (stl/css :dropdown-element)
+                               :on-click do-reset-component}
+                          [:span {:class (stl/css :dropdown-label)}
+                           (tr "workspace.shape.menu.reset-overrides")]])
+
+                       (when (and components-v2 lib-exists?)
+                         [:li {:class (stl/css :dropdown-element)
+                               :on-click do-restore-component}
+                          [:span {:class (stl/css :dropdown-label)}
+                           (tr "workspace.shape.menu.restore-main")]])]
+                      [:*
+                       [:li {:class (stl/css :dropdown-element)
+                             :on-click do-detach-component}
+                        [:span {:class (stl/css :dropdown-label)}
+                         (tr "workspace.shape.menu.detach-instance")]]
+                       (when can-update-main?
+                         [:li {:class (stl/css :dropdown-element)
+                               :on-click do-reset-component}
+                          [:span {:class (stl/css :dropdown-label)}
+                           (tr "workspace.shape.menu.reset-overrides")]]
+                         [:li {:class (stl/css :dropdown-element)
+                               :on-click do-update-remote-component}
+                          [:span {:class (stl/css :dropdown-label)}
+                           (tr "workspace.shape.menu.update-main")]])
+                       [:li {:class (stl/css :dropdown-element)
+                             :on-click do-navigate-component-file}
+                        [:span {:class (stl/css :dropdown-label)}
+                         (tr "workspace.shape.menu.go-main")]]])))]]]]
+            (when components-v2
+              [:& component-annotation {:id id :values values :shape shape :component component}])])]
+
+        [:div.element-set
+         [:div.element-set-title
+          [:span (tr "workspace.options.component")]
+          [:span (if main-instance?
+                   (tr "workspace.options.component.main")
+                   (tr "workspace.options.component.copy"))]]
+         [:div.element-set-content
+          [:div.row-flex.component-row
+           (if main-instance?
+             i/component
+             i/component-copy)
+           [:div.component-name shape-name]
+           [:div.row-actions
+            {:on-click on-menu-click}
+            i/actions
+                  ;; WARNING: this menu is the same as the shape context menu.
+                  ;;          If you change it, you must change equally the file
+                  ;;          app/main/ui/workspace/context_menu.cljs
+            [:& context-menu {:on-close on-menu-close
+                              :show menu-open?
+                              :options (if main-component?
+                                         [[(tr "workspace.shape.menu.show-in-assets") do-show-in-assets]
+                                          (when (and components-v2 local-component? lacks-annotation?)
+                                            [(tr "workspace.shape.menu.create-annotation") do-create-annotation])]
+                                         (if local-component?
+                                           (if is-dangling?
+                                             [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
+                                              (when can-update-main?
+                                                [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
+                                              (when components-v2
+                                                [(tr "workspace.shape.menu.restore-main") do-restore-component])]
+
+                                             [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
+                                              (when can-update-main?
+                                                [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
+                                              (when can-update-main?
+                                                [(tr "workspace.shape.menu.update-main") do-update-component])
+                                              [(tr "workspace.shape.menu.show-main") do-show-component]])
+
+                                           (if is-dangling?
+                                             [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
+                                              (when can-update-main?
+                                                [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
+                                              (when (and components-v2 lib-exists?)
+                                                [(tr "workspace.shape.menu.restore-main") do-restore-component])]
+                                             [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
+                                              (when can-update-main?
+                                                [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
+                                              (when can-update-main?
+                                                [(tr "workspace.shape.menu.update-main") do-update-remote-component])
+                                              [(tr "workspace.shape.menu.go-main") do-navigate-component-file]])))}]]]
+
+          (when components-v2
+            [:& component-annotation {:id id :values values :shape shape :component component}])]]))))

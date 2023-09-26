@@ -496,3 +496,49 @@
     background-color: var(--menu-background-color-hover);
   }
 }
+
+.dropdown-element-base {
+  @include titleTipography;
+  display: flex;
+  align-items: center;
+  gap: $s-8;
+  height: $s-32;
+  padding: 0 $s-8;
+  border-radius: $br-6;
+  cursor: pointer;
+  color: var(--menu-foreground-color-rest);
+
+  span {
+    @include flexCenter;
+    @include textEllipsis;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+    color: var(--menu-foreground-color);
+    span svg {
+      stroke: var(--menu-foreground-color-hover);
+    }
+  }
+}
+
+.dropdown-wrapper {
+  @include menuShadow;
+  position: absolute;
+  top: $s-32;
+  left: 0;
+  width: 100%;
+  max-height: $s-300;
+  padding: $s-2;
+  margin: 0;
+  margin-top: $s-4;
+  border-radius: $br-8;
+  z-index: $z-index-3;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--menu-background-color);
+  color: var(--menu-foreground-color);
+}

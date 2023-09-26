@@ -151,6 +151,7 @@
         display: flex;
         flex-direction: column;
         gap: $s-4;
+        position: relative;
         .advanced-row {
           position: relative;
           display: flex;
@@ -220,6 +221,17 @@
                 color: var(--menu-foreground-color-hover);
               }
             }
+          }
+        }
+        .second-row {
+          @extend .dropdown-wrapper;
+          left: unset;
+          right: 0;
+          width: $s-108;
+          .btn-options {
+            @include buttonStyle;
+            @extend .dropdown-element-base;
+            width: 100%;
           }
         }
       }

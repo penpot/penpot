@@ -44,7 +44,7 @@
   }
   .resize-area {
     position: absolute;
-    bottom: -8px;
+    bottom: calc(-1 * $s-8);
     left: 0;
     width: 100%;
     height: $s-12;

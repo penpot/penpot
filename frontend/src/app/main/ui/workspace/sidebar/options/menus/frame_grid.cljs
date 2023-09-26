@@ -35,27 +35,28 @@
 (mf/defc grid-options
   {::mf/wrap [mf/memo]}
   [{:keys [shape-id index grid frame-width frame-height default-grid-params]}]
-  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
-        on-change       (mf/use-fn (mf/deps shape-id index) #(st/emit! (dw/set-frame-grid shape-id index %)))
-        on-remove       (mf/use-fn (mf/deps shape-id index) #(st/emit! (dw/remove-frame-grid shape-id index)))
-        on-save-default (mf/use-fn #(st/emit! (dw/set-default-grid (:type %) (:params %))))
+  (let [new-css-system      (mf/use-ctx ctx/new-css-system)
+        on-change           (mf/use-fn (mf/deps shape-id index) #(st/emit! (dw/set-frame-grid shape-id index %)))
+        on-remove           (mf/use-fn (mf/deps shape-id index) #(st/emit! (dw/remove-frame-grid shape-id index)))
+        on-save-default     (mf/use-fn #(st/emit! (dw/set-default-grid (:type %) (:params %))))
 
-        size-options    (mf/use-memo get-size-options)
-        state           (mf/use-state {:show-advanced-options false
-                                       :show-more-options false
-                                       :hidden-grid false})
-        open?           (:show-advanced-options @state)
+        size-options        (mf/use-memo get-size-options)
+        state*              (mf/use-state {:show-advanced-options false
+                                           :show-more-options false})
+        state               (deref state*)
+
+        open?              (:show-advanced-options state)
+        show-more-options? (:show-more-options state)
 
         is-hidden? (not (:display grid))
-
 
         {:keys [type display params]} grid
 
         toggle-advanced-options
-        (mf/use-fn #(swap! state update :show-advanced-options not))
+        (mf/use-fn #(swap! state* update :show-advanced-options not))
 
         toggle-more-options
-        (mf/use-fn #(swap! state update :show-more-options not))
+        (mf/use-fn #(swap! state* update :show-more-options not))
 
         handle-toggle-visibility
         (mf/use-fn
@@ -193,12 +194,18 @@
             [:button {:class (stl/css :show-more-options)
                       :on-click toggle-more-options}
              i/menu-refactor]]
-           (when (:show-more-options @state)
+           (when show-more-options?
              [:div {:class (stl/css :second-row)}
-              [:button.btn-options {:disabled is-default
-                                    :on-click handle-use-default} (tr "workspace.options.grid.params.use-default")]
-              [:button.btn-options {:disabled is-default
-                                    :on-click handle-set-as-default} (tr "workspace.options.grid.params.set-default")]])])
+              [:button {:class (stl/css-case :btn-options true
+                                             :disabled is-default)
+                        :disabled is-default
+                        :on-click handle-use-default}
+               [:span (tr "workspace.options.grid.params.use-default")]]
+              [:button {:class (stl/css-case :btn-options true
+                                             :disabled is-default)
+                        :disabled is-default
+                        :on-click handle-set-as-default}
+               [:span (tr "workspace.options.grid.params.set-default")]]])])
 
         (when (or (= :column type) (= :row type))
           [:div {:class (stl/css :column-row)}
@@ -262,7 +269,7 @@
             [:button {:class (stl/css :show-more-options)
                       :on-click toggle-more-options}
              i/menu-refactor]
-            (when (:show-more-options @state)
+            (when show-more-options?
               [:div {:class (stl/css :more-options)}
                [:button {:disabled is-default
                          :class (stl/css :option-btn)

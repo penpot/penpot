@@ -1,0 +1,59 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+.element-set {
+  .element-content {
+    display: flex;
+    flex-direction: column;
+    gap: $s-4;
+    .component-wrapper {
+      display: flex;
+      gap: $s-4;
+      .component-name-wrapper {
+        @extend .asset-element;
+        display: flex;
+        align-items: center;
+        gap: $s-4;
+        flex-grow: 1;
+        .component-icon {
+          @include flexCenter;
+          height: $s-24;
+          width: $s-24;
+          svg {
+            @extend .button-icon;
+            stroke: var(--icon-foreground);
+          }
+        }
+        .component-name {
+          @include titleTipography;
+          flex-grow: 1;
+        }
+      }
+      .component-actions {
+        position: relative;
+
+        .menu-btn {
+          @extend .button-tertiary;
+          height: $s-32;
+          width: $s-28;
+          svg {
+            @extend .button-icon;
+          }
+        }
+        .custom-select-dropdown {
+          @extend .dropdown-wrapper;
+          right: 0;
+          left: unset;
+          width: $s-252;
+          .dropdown-element {
+            @extend .dropdown-element-base;
+          }
+        }
+      }
+    }
+  }
+}
