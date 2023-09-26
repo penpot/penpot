@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.options.rows.stroke-row
-    (:require-macros [app.main.style :as stl])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -73,7 +73,7 @@
            on-blur
            disable-stroke-style
            select-on-focus]}]
-  (let [new-css-system   (mf/use-ctx ctx/new-css-system)
+  (let [new-css-system    (mf/use-ctx ctx/new-css-system)
         start-caps-state* (mf/use-state {:open? false
                                          :top 0
                                          :left 0})
@@ -347,6 +347,4 @@
                       :class (dom/classnames :separator separator)
                       :on-click #(on-stroke-cap-end-change index value)}
                  (when img [:img {:src (value->img value)}])
-                 label]))]]])]
-      )
-    ))
+                 label]))]]])])))

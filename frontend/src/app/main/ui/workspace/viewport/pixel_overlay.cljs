@@ -11,6 +11,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.rasterizer :as thr]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.css-cursors :as cur]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -23,7 +24,8 @@
 (mf/defc pixel-overlay
   {::mf/wrap-props false}
   [props]
-  (let [vport          (unchecked-get props "vport")
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        vport          (unchecked-get props "vport")
 
         viewport-ref   (unchecked-get props "viewport-ref")
         viewport-node  (mf/ref-val viewport-ref)
@@ -52,7 +54,9 @@
              (when-let [zoom-view-node (dom/get-element "picker-detail")]
                (when-not (mf/ref-val zoom-view-context)
                  (mf/set-ref-val! zoom-view-context (.getContext zoom-view-node "2d")))
-               (let [{brx :left bry :top} (dom/get-bounding-rect viewport-node)
+               (let [canvas-width (if new-css-system 260 200)
+                     canvas-height (if new-css-system 140 160)
+                     {brx :left bry :top} (dom/get-bounding-rect viewport-node)
 
                      x (- (.-clientX event) brx)
                      y (- (.-clientY event) bry)
@@ -75,8 +79,8 @@
                      sh 40
                      dx 0
                      dy 0
-                     dw 200
-                     dh 160]
+                     dw canvas-width
+                     dh canvas-height]
                  (when (obj/get zoom-context "imageSmoothingEnabled")
                    (obj/set! zoom-context "imageSmoothingEnabled" false))
                  (.drawImage zoom-context canvas sx sy sw sh dx dy dw dh)

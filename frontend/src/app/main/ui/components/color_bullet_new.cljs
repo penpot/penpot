@@ -13,7 +13,7 @@
 (mf/defc color-bullet
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
-  [{:keys [color on-click mini?]}]
+  [{:keys [color on-click mini? area]}]
   (let [on-click (mf/use-fn
                   (mf/deps color on-click)
                   (fn [event]
@@ -34,7 +34,9 @@
                   :is-library-color (some? id)
                   :is-not-library-color (nil? id)
                   :is-gradient (some? gradient)
-                  :is-transparent (and opacity (> 1 opacity)))
+                  :is-transparent (and opacity (> 1 opacity))
+                  :grid-area area)
+
           :on-click on-click}
 
          (if (some? gradient)

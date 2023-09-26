@@ -285,9 +285,11 @@
 .input-base {
   @include removeInputStyle;
   @include titleTipography;
+  @include textEllipsis;
   height: $s-28;
   width: 100%;
   margin: $s-2 0;
+  padding: 0 0 0 $s-4;
   color: var(--input-foreground-color-active);
   &:focus-within,
   &:active {
@@ -373,6 +375,19 @@
   }
 }
 
+//MODALS
+.modal-background {
+  @include menuShadow;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: $s-12;
+  border-radius: $br-8;
+  z-index: $z-index-10;
+  color: var(--color-foreground-primary);
+  background-color: var(--modal-background-color);
+}
+
 // UI ELEMENTS
 .asset-element {
   @include titleTipography;
@@ -437,6 +452,21 @@
   text-decoration: none;
 }
 
+.colorpicker-handler {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: $s-24;
+  height: $s-24;
+  border: $s-2 solid var(--colorpicker-details-color);
+  border-radius: $br-circle;
+  transform: translate(calc(-1 * $s-12), calc(-1 * $s-12));
+  z-index: $z-index-1;
+  &:hover,
+  &:active {
+    border-color: var(--colorpicker-details-color-selected);
+  }
+}
 // SELECTS AND DROPDOWNS
 
 .menu-dropdown {

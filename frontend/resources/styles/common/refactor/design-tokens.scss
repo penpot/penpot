@@ -221,4 +221,8 @@
   --modal-background-color: var(--color-background-primary);
   --modal-foreground-color: var(--color-foreground-primary);
   --modal-foreground-color-secondary: var(--color-foreground-secondary);
+
+  --colorpicker-details-color: var(--color-background-quaternary);
+  --colorpicker-details-color-selected: var(--color-accent-primary);
+  --colorpicker-handlers-color: var(--color-foreground-primary);
 }

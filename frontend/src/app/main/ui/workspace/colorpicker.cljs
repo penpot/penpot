@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.colorpicker
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dc]
@@ -12,6 +13,8 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients]]
@@ -44,7 +47,8 @@
 
 (mf/defc colorpicker
   [{:keys [data disable-gradient disable-opacity on-change on-accept]}]
-  (let [state               (mf/deref refs/colorpicker)
+  (let [new-css-system      (mf/use-ctx ctx/new-css-system)
+        state               (mf/deref refs/colorpicker)
         node-ref            (mf/use-ref)
 
         ;; TODO: I think we need to put all this picking state under
@@ -58,15 +62,15 @@
 
         active-tab          (mf/use-state (dc/get-active-color-tab))
         drag?               (mf/use-state false)
-        
+
         set-tab!
         (mf/use-fn
-          (fn [event]
-            (let [tab (-> (dom/get-current-target event)
-                          (dom/get-data "tab")
-                          (keyword))]
-              (reset! active-tab tab)
-              (dc/set-active-color-tab! tab))))
+         (fn [event]
+           (let [tab (-> (dom/get-current-target event)
+                         (dom/get-data "tab")
+                         (keyword))]
+             (reset! active-tab tab)
+             (dc/set-active-color-tab! tab))))
 
         handle-change-color
         (mf/use-fn
@@ -86,14 +90,17 @@
          (fn []
            (if picking-color?
              (do (modal/disallow-click-outside!)
-               (st/emit! (dc/stop-picker)))
+                 (st/emit! (dc/stop-picker)))
              (do (modal/allow-click-outside!)
-               (st/emit! (dc/start-picker))))))
+                 (st/emit! (dc/start-picker))))))
 
         handle-change-stop
         (mf/use-fn
-         (fn [offset]
-           (st/emit! (dc/select-colorpicker-gradient-stop offset))))
+         (fn [event]
+           (let [offset  (-> (dom/get-current-target event)
+                             (dom/get-data "value")
+                             (int))]
+             (st/emit! (dc/select-colorpicker-gradient-stop offset)))))
 
         on-select-library-color
         (mf/use-fn
@@ -128,7 +135,7 @@
              ;; Click on a solid color -> This color is applied to the selected offset
              ;; Click on a color with transparency -> The same to solid color will happend
              ;; Click on any kind of gradient -> The color changes completly to new gradient
-             
+
              ;; If we have a non gradient color the new color is applied without any change
              (if (or (= :radial-gradient type-origin) (= :linear-gradient type-origin))
                (if is-gradient?
@@ -199,110 +206,210 @@
                                 :h h :s s :v v
                                 :alpha (/ alpha 255)}))))
 
-    [:div.colorpicker {:ref node-ref
-                       :style {:touch-action "none"}}
-     [:div.colorpicker-content
-      [:div.top-actions
-       [:button.picker-btn
-        {:class (when picking-color? "active")
-         :on-click handle-click-picker}
-        i/picker]
+    (if new-css-system
+      [:div {:class (stl/css :colorpicker)
+             :ref node-ref
+             :style {:touch-action "none"}}
+       [:div {:class (stl/css :top-actions)}
+        [:button {:class (stl/css-case :picker-btn true
+                                       :selected picking-color?)
+                  :on-click handle-click-picker}
+         i/picker-refactor]
+        (when (not disable-gradient)
+          [:div {:class (stl/css :gradient-buttons)}
+           [:button
+            {:on-click on-activate-linear-gradient
+             :class (stl/css-case :gradient-btn true
+                                  :linear-gradient-btn true
+                                  :selected (= :linear-gradient (:type state)))}]
 
-       (when (not disable-gradient)
-         [:div.gradients-buttons
-          [:button.gradient.linear-gradient
-           {:on-click on-activate-linear-gradient
-            :class (when (= :linear-gradient (:type state)) "active")}]
+           [:button
+            {:on-click on-activate-radial-gradient
+             :class (stl/css-case :gradient-btn true
+                                  :radial-gradient-btn true
+                                  :selected (= :radial-gradient (:type state)))}]])]
 
-          [:button.gradient.radial-gradient
-           {:on-click on-activate-radial-gradient
-            :class (when (= :radial-gradient (:type state)) "active")}]])]
+       (when (or (= (:type state) :linear-gradient)
+                 (= (:type state) :radial-gradient))
+         [:& gradients
+          {:stops (:stops state)
+           :editing-stop (:editing-stop state)
+           :on-select-stop handle-change-stop}])
+
+       [:div {:class (stl/css :colorpicker-tabs)}
+        [:& tab-container
+         {:on-change-tab set-tab!
+          :selected @active-tab
+          :collapsable? false}
+
+         [:& tab-element {:id :ramp :title i/rgba-refactor}
+          (if picking-color?
+            [:div {:class (stl/css :picker-detail-wrapper)}
+             [:div {:class (stl/css :center-circle)}]
+             [:canvas#picker-detail {:width 256 :height 140}]]
+            [:& ramp-selector
+             {:color current-color
+              :disable-opacity disable-opacity
+              :on-change handle-change-color
+              :on-start-drag on-start-drag
+              :on-finish-drag on-finish-drag}])]
+
+         [:& tab-element {:id :harmony :title i/rgba-complementary-refactor}
+          (if picking-color?
+            [:div {:class (stl/css :picker-detail-wrapper)}
+             [:div {:class (stl/css :center-circle)}]
+             [:canvas#picker-detail {:width 256 :height 140}]]
+            [:& harmony-selector
+             {:color current-color
+              :disable-opacity disable-opacity
+              :on-change handle-change-color
+              :on-start-drag on-start-drag
+              :on-finish-drag on-finish-drag}])]
+
+         [:& tab-element {:id :hsva :title i/hsva-refactor}
+          (if picking-color?
+            [:div {:class (stl/css :picker-detail-wrapper)}
+             [:div {:class (stl/css :center-circle)}]
+             [:canvas#picker-detail {:width 256 :height 140}]]
+            [:& hsva-selector
+             {:color current-color
+              :disable-opacity disable-opacity
+              :on-change handle-change-color
+              :on-start-drag on-start-drag
+              :on-finish-drag on-finish-drag}])]]]
+
+       [:& color-inputs
+        {:type (if (= @active-tab :hsva) :hsv :rgb)
+         :disable-opacity disable-opacity
+         :color current-color
+         :on-change handle-change-color}]
+
+       [:& libraries
+        {:state state
+         :current-color current-color
+        ;;  :disable-gradient disable-gradient
+        ;;  :disable-opacity disable-opacity
+         :on-select-color on-select-library-color
+         :on-add-library-color on-add-library-color}]
+
+       (when on-accept
+         [:div.actions
+          [:button.btn-primary.btn-large
+           {:on-click (fn []
+                        (on-accept (dc/get-color-from-colorpicker-state state))
+                        (modal/hide!))}
+           (tr "workspace.libraries.colors.save-color")]])]
 
 
-      (when (or (= (:type state) :linear-gradient)
-                (= (:type state) :radial-gradient))
-        [:& gradients
-         {:stops (:stops state)
-          :editing-stop (:editing-stop state)
-          :on-select-stop handle-change-stop}])
 
-      [:div.colorpicker-tabs
-       [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
-        {:class (when (= @active-tab :ramp) "active")
-         :alt (tr "workspace.libraries.colors.rgba")
-         :on-click set-tab!
-         :data-tab "ramp"} i/picker-ramp]
-       [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
-        {:class (when (= @active-tab :harmony) "active")
-         :alt (tr "workspace.libraries.colors.rgb-complementary")
-         :on-click set-tab!
-         :data-tab "harmony"} i/picker-harmony]
-       [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
-        {:class (when (= @active-tab :hsva) "active")
-         :alt (tr "workspace.libraries.colors.hsv")
-         :on-click set-tab!
-         :data-tab "hsva"} i/picker-hsv]]
 
-      (if picking-color?
-        [:div.picker-detail-wrapper
-         [:div.center-circle]
-         [:canvas#picker-detail {:width 200 :height 160}]]
-        (case @active-tab
-          :ramp
-          [:& ramp-selector
-           {:color current-color
-            :disable-opacity disable-opacity
-            :on-change handle-change-color
-            :on-start-drag on-start-drag
-            :on-finish-drag on-finish-drag}]
-          :harmony
-          [:& harmony-selector
-           {:color current-color
-            :disable-opacity disable-opacity
-            :on-change handle-change-color
-            :on-start-drag on-start-drag
-            :on-finish-drag on-finish-drag}]
-          :hsva
-          [:& hsva-selector
-           {:color current-color
-            :disable-opacity disable-opacity
-            :on-change handle-change-color
-            :on-start-drag on-start-drag
-            :on-finish-drag on-finish-drag}]
-          nil))
 
-      [:& color-inputs
-       {:type (if (= @active-tab :hsva) :hsv :rgb)
-        :disable-opacity disable-opacity
-        :color current-color
-        :on-change handle-change-color}]
+      [:div.colorpicker {:ref node-ref
+                         :style {:touch-action "none"}}
+       [:div.colorpicker-content
+        [:div.top-actions
+         [:button.picker-btn
+          {:class (when picking-color? "active")
+           :on-click handle-click-picker}
+          i/picker]
 
-      [:& libraries
-       {:state state
-        :current-color current-color
-        :disable-gradient disable-gradient
-        :disable-opacity disable-opacity
-        :on-select-color on-select-library-color
-        :on-add-library-color on-add-library-color}]
+         (when (not disable-gradient)
+           [:div.gradients-buttons
+            [:button.gradient.linear-gradient
+             {:on-click on-activate-linear-gradient
+              :class (when (= :linear-gradient (:type state)) "active")}]
 
-      (when on-accept
-        [:div.actions
-         [:button.btn-primary.btn-large
-          {:on-click (fn []
-                       (on-accept (dc/get-color-from-colorpicker-state state))
-                       (modal/hide!))}
-          (tr "workspace.libraries.colors.save-color")]])]]))
+            [:button.gradient.radial-gradient
+             {:on-click on-activate-radial-gradient
+              :class (when (= :radial-gradient (:type state)) "active")}]])]
+
+
+        (when (or (= (:type state) :linear-gradient)
+                  (= (:type state) :radial-gradient))
+          [:& gradients
+           {:stops (:stops state)
+            :editing-stop (:editing-stop state)
+            :on-select-stop handle-change-stop}])
+
+        [:div.colorpicker-tabs
+         [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
+          {:class (when (= @active-tab :ramp) "active")
+           :alt (tr "workspace.libraries.colors.rgba")
+           :on-click set-tab!
+           :data-tab "ramp"} i/picker-ramp]
+         [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
+          {:class (when (= @active-tab :harmony) "active")
+           :alt (tr "workspace.libraries.colors.rgb-complementary")
+           :on-click set-tab!
+           :data-tab "harmony"} i/picker-harmony]
+         [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
+          {:class (when (= @active-tab :hsva) "active")
+           :alt (tr "workspace.libraries.colors.hsv")
+           :on-click set-tab!
+           :data-tab "hsva"} i/picker-hsv]]
+
+        (if picking-color?
+          [:div.picker-detail-wrapper
+           [:div.center-circle]
+           [:canvas#picker-detail {:width 200 :height 160}]]
+          (case @active-tab
+            :ramp
+            [:& ramp-selector
+             {:color current-color
+              :disable-opacity disable-opacity
+              :on-change handle-change-color
+              :on-start-drag on-start-drag
+              :on-finish-drag on-finish-drag}]
+            :harmony
+            [:& harmony-selector
+             {:color current-color
+              :disable-opacity disable-opacity
+              :on-change handle-change-color
+              :on-start-drag on-start-drag
+              :on-finish-drag on-finish-drag}]
+            :hsva
+            [:& hsva-selector
+             {:color current-color
+              :disable-opacity disable-opacity
+              :on-change handle-change-color
+              :on-start-drag on-start-drag
+              :on-finish-drag on-finish-drag}]
+            nil))
+
+        [:& color-inputs
+         {:type (if (= @active-tab :hsva) :hsv :rgb)
+          :disable-opacity disable-opacity
+          :color current-color
+          :on-change handle-change-color}]
+
+        [:& libraries
+         {:state state
+          :current-color current-color
+          :disable-gradient disable-gradient
+          :disable-opacity disable-opacity
+          :on-select-color on-select-library-color
+          :on-add-library-color on-add-library-color}]
+
+        (when on-accept
+          [:div.actions
+           [:button.btn-primary.btn-large
+            {:on-click (fn []
+                         (on-accept (dc/get-color-from-colorpicker-state state))
+                         (modal/hide!))}
+            (tr "workspace.libraries.colors.save-color")]])]])))
 
 (defn calculate-position
   "Calculates the style properties for the given coordinates and position"
-  [{vh :height} position x y]
+  [{vh :height} position x y new-css-system]
   (let [;; picker height in pixels
-        h 430
+        h(if new-css-system 510 430)
         ;; Checks for overflow outside the viewport height
-        overflow-fix (max 0 (+ y (- 50) h (- vh)))]
+        overflow-fix (max 0 (+ y (- 50) h (- vh)))
+
+        x-pos (if new-css-system 325 250)]
     (cond
       (or (nil? x) (nil? y)) {:left "auto" :right "16rem" :top "4rem"}
-      (= position :left) {:left (str (- x 250) "px")
+      (= position :left) {:left (str (- x x-pos) "px")
                           :top (str (- y 50 overflow-fix) "px")}
       :else {:left (str (+ x 80) "px")
              :top (str (- y 70 overflow-fix) "px")})))
@@ -315,11 +422,12 @@
            disable-gradient
            disable-opacity
            on-change on-close on-accept] :as props}]
-  (let [vport (mf/deref viewport)
+  (let [new-css-system      (mf/use-ctx ctx/new-css-system)
+        vport (mf/deref viewport)
         dirty? (mf/use-var false)
         last-change (mf/use-var nil)
         position (or position :left)
-        style (calculate-position vport position x y)
+        style (calculate-position vport position x y new-css-system)
 
         handle-change
         (fn [new-data]
@@ -333,8 +441,8 @@
        #(when (and @dirty? @last-change on-close)
           (on-close @last-change))))
 
-    [:div.colorpicker-tooltip
-     {:style (clj->js style)}
+    [:div {:class (stl/css new-css-system :colorpicker-tooltip)
+           :style (clj->js style)}
      [:& colorpicker {:data data
                       :disable-gradient disable-gradient
                       :disable-opacity disable-opacity

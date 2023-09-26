@@ -94,7 +94,7 @@
              :shortcuts? shortcuts?
              :collapsable? true
              :handle-collapse handle-collapse
-             :klass :tab-spacing}
+             :class :tab-spacing}
             [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
              [:div {:class (stl/css :layers-tab)}
               [:& sitemap {:layout layout}]

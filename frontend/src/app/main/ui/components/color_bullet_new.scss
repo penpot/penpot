@@ -16,6 +16,9 @@
   min-height: var(--bullet-size, $s-24);
   border: $s-2 solid var(--color-bullet-border-color);
   border-radius: $br-circle;
+  &.grid-area {
+    grid-area: color;
+  }
   &.mini {
     width: var(--bullet-size, $s-16);
     height: var(--bullet-size, $s-16);
