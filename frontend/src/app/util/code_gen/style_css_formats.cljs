@@ -33,7 +33,6 @@
    :margin                :size-array
    :grid-template-rows    :tracks
    :grid-template-columns :tracks
-   :transform             :matrix
    })
 
 (defmulti format-value

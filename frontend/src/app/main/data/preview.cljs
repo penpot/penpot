@@ -48,11 +48,11 @@
     (beautify/html #js {"indent_size" 2})))
 
 (defn update-preview-window
-  [preview code]
+  [preview code width height]
   (when preview
     (if (aget preview "load")
-      (.load preview code)
-      (ts/schedule #(update-preview-window preview code)))))
+      (.load preview code width height)
+      (ts/schedule #(update-preview-window preview code width height)))))
 
 (defn shapes->fonts
   [shapes]
@@ -92,7 +92,11 @@
                       (-> (cg/generate-markup-code objects markup-type [shape])
                           (format-code markup-type))]
 
-                  (update-preview-window preview (str/format page-template style-code markup-code))))))))))
+                  (update-preview-window
+                   preview
+                   (str/format page-template style-code markup-code)
+                   (-> shape :selrect :width)
+                   (-> shape :selrect :height))))))))))
 
 (defn open-preview-selected
   []

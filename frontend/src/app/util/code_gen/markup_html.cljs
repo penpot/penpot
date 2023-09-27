@@ -18,32 +18,6 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(defn svg-markup?
-  "Function to determine whether a shape is rendered in HTML+CSS or is rendered
-  through a SVG"
-  [shape]
-  (or
-   ;; path and path-like shapes
-   (cph/path-shape? shape)
-   (cph/bool-shape? shape)
-
-   ;; imported SVG images
-   (cph/svg-raw-shape? shape)
-   (some? (:svg-attrs shape))
-
-   ;; CSS masks are not enough we need to delegate to SVG
-   (cph/mask-shape? shape)
-
-   ;; Texts with shadows or strokes we render in SVG
-   (and (cph/text-shape? shape)
-        (or (d/not-empty? (:shadow shape))
-            (d/not-empty? (:strokes shape))))
-
-   ;; When a shape has several strokes or the stroke is not a "border"
-   (or (> (count (:strokes shape)) 1)
-       (and (= (count (:strokes shape)) 1)
-            (not= (-> shape :strokes first :stroke-alignment) :inner)))))
-
 (defn generate-html
   ([objects shape]
    (generate-html objects shape 0))
@@ -54,7 +28,7 @@
 
          shape-html
          (cond
-           (svg-markup? shape)
+           (cgc/svg-markup? shape)
            (let [svg-markup (generate-svg objects shape)]
              (dm/fmt "%<div class=\"%\">\n%\n%</div>"
                      indent
@@ -98,7 +72,15 @@
                         (maybe-reverse)
                         (map #(generate-html objects (get objects %) (inc level)))
                         (str/join "\n"))
-                   indent))]
+                   indent))
+
+         shape-html
+         (if (cgc/has-wrapper? objects shape)
+           (dm/fmt  "<div class=\"%\">%</div>"
+                    (dm/str (cgc/shape->selector shape) "-wrapper")
+                    shape-html)
+
+           shape-html)]
      (dm/fmt "%<!-- % -->\n%" indent (dm/str (d/name (:type shape)) ": " (:name shape)) shape-html))))
 
 (defn generate-markup

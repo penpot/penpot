@@ -6,7 +6,11 @@
 
 (ns app.util.code-gen.common
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.matrix :as gmt]
+   [app.common.pages.helpers :as cph]
+   [app.common.types.shape.layout :as ctl]
    [cuerdas.core :as str]))
 
 (defn shape->selector
@@ -23,3 +27,36 @@
           selector (if (str/starts-with? selector "-") (subs selector 1) selector)]
       selector)
     ""))
+
+(defn svg-markup?
+  "Function to determine whether a shape is rendered in HTML+CSS or is rendered
+  through a SVG"
+  [shape]
+  (or
+   ;; path and path-like shapes
+   (cph/path-shape? shape)
+   (cph/bool-shape? shape)
+
+   ;; imported SVG images
+   (cph/svg-raw-shape? shape)
+   (some? (:svg-attrs shape))
+
+   ;; CSS masks are not enough we need to delegate to SVG
+   (cph/mask-shape? shape)
+
+   ;; Texts with shadows or strokes we render in SVG
+   (and (cph/text-shape? shape)
+        (or (d/not-empty? (:shadow shape))
+            (d/not-empty? (:strokes shape))))
+
+   ;; When a shape has several strokes or the stroke is not a "border"
+   (or (> (count (:strokes shape)) 1)
+       (and (= (count (:strokes shape)) 1)
+            (not= (-> shape :strokes first :stroke-alignment) :inner)))))
+
+(defn has-wrapper?
+  [objects shape]
+  ;; Layout children with a transform should be wrapped
+  (and (ctl/any-layout-immediate-child? objects shape)
+       (not (gmt/unit? (:transform shape)))))
+
