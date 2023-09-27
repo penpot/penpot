@@ -73,12 +73,9 @@
 
         on-remove-shadow
         (mf/use-fn
-         (mf/deps ids)
-         (fn [event]
-           (let [index (-> (dom/get-current-target event)
-                           (dom/get-data "index")
-                           (parse-long))]
-             (st/emit! (dch/update-shapes ids #(update % :shadow remove-shadow-by-index index))))))
+         (mf/deps ids index)
+         (fn []
+           (st/emit! (dch/update-shapes ids #(update % :shadow remove-shadow-by-index index)))))
 
         on-drop
         (mf/use-fn
@@ -113,37 +110,35 @@
 
         update-color
         (mf/use-fn
-         (mf/deps ids)
-         (fn [index]
-           (fn [color]
-             (st/emit! (dch/update-shapes
-                        ids
-                        #(assoc-in % [:shadow index :color] color))))))
+         (mf/deps ids index)
+         (fn [color]
+           (st/emit! (dch/update-shapes
+                      ids
+                      #(assoc-in % [:shadow index :color] color)))))
 
         detach-color
         (mf/use-fn
-         (mf/deps ids)
-         (fn [index]
-           (fn [_color _opacity]
-             (when-not (string? (:color value))
-               (st/emit! (dch/update-shapes
-                          ids
-                          #(assoc-in % [:shadow index :color]
-                                     (dissoc (:color value) :id :file-id))))))))
+         (mf/deps ids index)
+         (fn [_color _opacity]
+           (when-not (string? (:color value))
+             (st/emit! (dch/update-shapes
+                        ids
+                        #(assoc-in % [:shadow index :color]
+                                   (dissoc (:color value) :id :file-id)))))))
 
         toggle-visibility
         (mf/use-fn
-         (mf/deps ids)
-         (fn [index]
-           (fn []
-             (st/emit! (dch/update-shapes ids #(update-in % [:shadow index :hidden] not))))))
+         (mf/deps ids index)
+         (fn []
+           (st/emit! (dch/update-shapes ids #(update-in % [:shadow index :hidden] not)))))
+
         on-toggle-open-shadow
         (fn []
           (swap! open-state-ref update shadow-id not))
 
         on-type-change
         (mf/use-fn
-         (mf/deps  ids)
+         (mf/deps ids index)
          (fn [event]
            (let [value (if new-css-system
                          (keyword event)
@@ -241,8 +236,8 @@
                                    (:color value))
                           :title (tr "workspace.options.shadow-options.color")
                           :disable-gradient true
-                          :on-change (update-color index)
-                          :on-detach (detach-color index)
+                          :on-change update-color
+                          :on-detach detach-color
                           :on-open #(st/emit! (dwu/start-undo-transaction :color-row))
                           :on-close #(st/emit! (dwu/commit-undo-transaction :color-row))}]]])]
 
@@ -341,8 +336,8 @@
                                  (:color value))
                         :title (tr "workspace.options.shadow-options.color")
                         :disable-gradient true
-                        :on-change (update-color index)
-                        :on-detach (detach-color index)
+                        :on-change update-color
+                        :on-detach detach-color
                         :on-open #(st/emit! (dwu/start-undo-transaction :color-row))
                         :on-close #(st/emit! (dwu/commit-undo-transaction :color-row))}]]]])))
 (mf/defc shadow-menu
@@ -428,9 +423,6 @@
                  :on-blur on-blur
                  :index index
                  :open-state-ref open-state-ref}])]]))]
-
-
-
 
       [:div.element-set.shadow-options
        [:div.element-set-title
