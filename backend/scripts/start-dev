@@ -15,7 +15,8 @@ export PENPOT_FLAGS="\
        enable-fdata-storage-objets-map \
        disable-secure-session-cookies \
        enable-smtp \
-       enable-access-tokens";
+       enable-access-tokens \
+       disable-file-validation";
 
 set -ex
 

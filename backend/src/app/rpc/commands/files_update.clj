@@ -6,9 +6,11 @@
 
 (ns app.rpc.commands.files-update
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.files.features :as ffeat]
    [app.common.files.migrations :as pmg]
+   [app.common.files.validate :as val]
    [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.pages.changes :as cpc]
@@ -55,7 +57,8 @@
     ::sm/set-of-strings]
    [:changes {:optional true} ::changes]
    [:changes-with-metadata {:optional true}
-    [:vector ::change-with-metadata]]])
+    [:vector ::change-with-metadata]]
+   [:skip-validate {:optional true} :boolean]])
 
 (sm/def! ::update-file-result
   [:vector {:title "UpdateFileResults"}
@@ -156,7 +159,7 @@
                              (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))
 
 (defn update-file
-  [{:keys [::db/conn ::mtx/metrics] :as cfg} {:keys [profile-id id changes changes-with-metadata] :as params}]
+  [{:keys [::db/conn ::mtx/metrics] :as cfg} {:keys [profile-id id changes changes-with-metadata skip-validate] :as params}]
   (let [file     (get-file conn id)
         features (->> (concat (:features file)
                               (:features params))
@@ -176,12 +179,24 @@
                         (wrap-with-objects-map-context))
 
             file      (assoc file :features features)
+
+            ;; TODO: this ruins performance.
+            ;;       We must find some other way to do general validation.
+            libraries (when (and (cf/flags :file-validation)
+                                 (not skip-validate))
+                        (-> (->> (files/get-file-libraries conn (:id file))
+                                 (map #(get-file conn (:id %)))
+                                 (map #(update % :data blob/decode))
+                                 (d/index-by :id))
+                            (assoc (:id file) file)))
+
             changes   (if changes-with-metadata
                         (->> changes-with-metadata (mapcat :changes) vec)
                         (vec changes))
 
             params    (-> params
                           (assoc :file file)
+                          (assoc :libraries libraries)
                           (assoc :changes changes)
                           (assoc ::created-at (dt/now)))]
 
@@ -210,12 +225,12 @@
                         :team-id    (:team-id file)}))))))
 
 (defn- update-file*
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id file changes session-id ::created-at] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id file libraries changes session-id ::created-at skip-validate] :as params}]
   (let [;; Process the file data in the CLIMIT context; scheduling it
         ;; to be executed on a separated executor for avoid to do the
         ;; CPU intensive operation on vthread.
         file (-> (climit/configure cfg :update-file)
-                 (climit/submit! (partial update-file-data file changes)))]
+                 (climit/submit! (partial update-file-data file libraries changes skip-validate)))]
 
     (db/insert! conn :file-change
                 {:id (uuid/next)
@@ -249,23 +264,28 @@
       (get-lagged-changes conn params))))
 
 (defn- update-file-data
-  [file changes]
-  (-> file
-      (update :revn inc)
-      (update :data (fn [data]
-                      (cond-> data
-                        :always
-                        (-> (blob/decode)
-                            (assoc :id (:id file))
-                            (pmg/migrate-data))
+  [file libraries changes skip-validate]
+  (let [validate (fn [file]
+                   (when (and (cf/flags :file-validation)
+                              (not skip-validate))
+                     (val/validate-file file libraries :throw? true)))]
+    (-> file
+        (update :revn inc)
+        (update :data (fn [data]
+                        (cond-> data
+                          :always
+                          (-> (blob/decode)
+                              (assoc :id (:id file))
+                              (pmg/migrate-data))
 
-                        (and (contains? ffeat/*current* "components/v2")
-                             (not (contains? ffeat/*previous* "components/v2")))
-                        (ctf/migrate-to-components-v2)
+                          (and (contains? ffeat/*current* "components/v2")
+                               (not (contains? ffeat/*previous* "components/v2")))
+                          (ctf/migrate-to-components-v2)
 
-                        :always
-                        (-> (cp/process-changes changes)
-                            (blob/encode)))))))
+                          :always
+                          (cp/process-changes changes))))
+        (d/tap-r validate)
+        (update :data blob/encode))))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."

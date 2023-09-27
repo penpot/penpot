@@ -412,7 +412,8 @@
                           :revn (:revn file)
                           :session-id sid
                           :changes changes
-                          :features features}]
+                          :features features
+                          :skip-validate true}]
 
            (->> (rp/cmd! :update-file params)
                 (rx/tap #(dom/reload-current-window)))))))))
