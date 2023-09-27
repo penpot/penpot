@@ -8,8 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
+   [app.common.types.shape.layout :as ctl]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.code-gen.common :as cgc]
    [app.util.code-gen.style-css-formats :refer [format-value]]
@@ -50,6 +53,19 @@ svg {
 
 ")
 
+(def shape-wrapper-css-properties
+  #{:flex-shrink
+    :margin
+    :max-height
+    :min-height
+    :max-width
+    :min-width
+    :align-self
+    :justify-self
+    :grid-column
+    :grid-row
+    :z-index})
+
 (def shape-css-properties
   [:position
    :left
@@ -82,6 +98,7 @@ svg {
    ;; Flex related properties
    :flex-direction
    :flex-wrap
+   :flex
 
    ;; Grid related properties
    :grid-template-rows
@@ -118,6 +135,24 @@ svg {
   (when-let [value (get-value property shape objects)]
     [property value]))
 
+(defn shape->wrapper-css-properties
+  [shape objects]
+  (when (and (ctl/any-layout-immediate-child? objects shape)
+             (not (gmt/unit? (:transform shape))))
+    (let [{:keys [width height]} (gsh/shapes->rect [shape])]
+      (cond-> [[:position "relative"]
+               [:width width]
+               [:height height]]
+        (ctl/flex-layout-immediate-child? objects shape)
+        (conj [:flex-shrink 0])))))
+
+(defn shape->wrapper-child-css-properties
+  [shape objects]
+  (when (and (ctl/any-layout-immediate-child? objects shape) (not (gmt/unit? (:transform shape))))
+    [[:position "absolute"]
+     [:left "50%"]
+     [:top "50%"]]))
+
 (defn shape->css-properties
   "Given a shape extract the CSS properties in the format of list [property value]"
   [shape objects properties]
@@ -143,9 +178,10 @@ svg {
 (defn format-css-properties
   "Format a list of [property value] into a list of css properties in the format 'property: value;'"
   [properties options]
-  (->> properties
-       (map #(dm/str "  " (format-css-property % options)))
-       (str/join "\n")))
+  (when properties
+    (->> properties
+         (map #(dm/str "  " (format-css-property % options)))
+         (str/join "\n"))))
 
 (defn get-shape-properties-css
   ([objects shape properties]
@@ -199,13 +235,40 @@ svg {
    (get-shape-css-selector shape objects nil))
 
   ([shape objects options]
-   (let [properties (-> shape
-                        (shape->css-properties objects shape-css-properties)
-                        (format-css-properties options))
-         selector (cgc/shape->selector shape)]
-     (str/join "\n" [(str/fmt "/* %s */" (:name shape))
+   (let [selector (cgc/shape->selector shape)
+
+         wrapper? (cgc/has-wrapper? objects shape)
+
+         css-properties
+         (if wrapper?
+           (filter (complement shape-wrapper-css-properties) shape-css-properties)
+           shape-css-properties)
+
+         properties
+         (-> shape
+             (shape->css-properties objects css-properties)
+             (format-css-properties options))
+
+         wrapper-properties
+         (when wrapper?
+           (-> (d/concat-vec
+                (shape->css-properties shape objects shape-wrapper-css-properties)
+                (shape->wrapper-css-properties shape objects))
+               (format-css-properties options)))
+
+         wrapper-child-properties
+         (when wrapper?
+           (-> shape
+               (shape->wrapper-child-css-properties objects)
+               (format-css-properties options)))]
+
+     (str/join
+      "\n"
+      (filter some? [(str/fmt "/* %s */" (:name shape))
+                     (when wrapper? (str/fmt ".%s-wrapper {\n%s\n}" selector wrapper-properties))
+                     (when wrapper? (str/fmt ".%s-wrapper > * {\n%s\n}"  selector wrapper-child-properties))
                      (str/fmt ".%s {\n%s\n}" selector properties)
-                     (when (cph/text-shape? shape) (generate-text-css shape))]))))
+                     (when (cph/text-shape? shape) (generate-text-css shape))])))))
 
 (defn get-css-property
   ([objects shape property]

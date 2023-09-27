@@ -7,12 +7,14 @@
 
 (ns app.util.code-gen.style-css-values
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
-   [app.util.code-gen.markup-html :refer [svg-markup?]]))
+   [app.main.ui.formats :as fmt]
+   [app.util.code-gen.common :as cgc]))
 
 (defn fill->color
   [{:keys [fill-color fill-opacity fill-color-gradient]}]
@@ -30,7 +32,7 @@
              (not (ctl/layout-absolute? shape))
              (or (cph/group-like-shape? shape)
                  (cph/frame-shape? shape)
-                 (svg-markup? shape)))
+                 (cgc/svg-markup? shape)))
         (cph/root-frame? shape))
     :relative
 
@@ -66,14 +68,37 @@
   [_ shape objects]
   (get-shape-position shape objects :y))
 
+(defmethod get-value :flex
+  [_ shape objects]
+  (let [parent (cph/get-parent objects (:id shape))]
+    (when (and (ctl/flex-layout-immediate-child? objects shape)
+               (or (and (contains? #{:row :reverse-row} (:layout-flex-dir parent))
+                        (= :fill (:layout-item-h-sizing shape)))
+                   (and (contains? #{:column :column-row} (:layout-flex-dir parent))
+                        (= :fill (:layout-item-v-sizing shape)))))
+      1)))
+
 (defn get-shape-size
   [shape objects type]
-  (let [sizing (if (= type :width)
+  (let [parent (cph/get-parent objects (:id shape))
+        sizing (if (= type :width)
                  (:layout-item-h-sizing shape)
                  (:layout-item-v-sizing shape))]
     (cond
-      (or (and (ctl/any-layout? shape) (= sizing :auto) (not (svg-markup? shape)))
-          (and (ctl/any-layout-immediate-child? objects shape) (= sizing :fill)))
+      (and (ctl/flex-layout-immediate-child? objects shape)
+           (or (and (= type :height)
+                    (contains? #{:row :reverse-row} (:layout-flex-dir parent))
+                    (= :fill (:layout-item-v-sizing shape)))
+               (and (= type :width)
+                    (contains? #{:column :column-row} (:layout-flex-dir parent))
+                    (= :fill (:layout-item-h-sizing shape)))))
+      :fill
+
+      (and (ctl/flex-layout-immediate-child? objects shape) (= sizing :fill))
+      nil
+
+      (or (and (ctl/any-layout? shape) (= sizing :auto) (not (cgc/svg-markup? shape)))
+          (and (ctl/grid-layout-immediate-child? objects shape) (= sizing :fill)))
       sizing
 
       (some? (:selrect shape))
@@ -92,21 +117,25 @@
 
 (defmethod get-value :transform
   [_ shape objects]
-  (when-not (svg-markup? shape)
+  (when-not (cgc/svg-markup? shape)
     (let [parent (get objects (:parent-id shape))
 
           transform
           (gmt/multiply (:transform shape (gmt/matrix))
-                        (:transform-inverse parent (gmt/matrix)))]
-      (when-not (gmt/unit? transform)
-        transform))))
+                        (:transform-inverse parent (gmt/matrix)))
+
+          transform-str (when-not (gmt/unit? transform) (fmt/format-matrix transform))]
+
+      (if (cgc/has-wrapper? objects shape)
+        (dm/str "translate(-50%, -50%) " (d/nilv transform-str ""))
+        transform-str))))
 
 (defmethod get-value :background
   [_ {:keys [fills] :as shape} _]
   (let [single-fill? (= (count fills) 1)
         ffill (first fills)
         gradient? (some? (:fill-color-gradient ffill))]
-    (when (and (not (svg-markup? shape)) (not (cph/group-shape? shape)) single-fill? gradient?)
+    (when (and (not (cgc/svg-markup? shape)) (not (cph/group-shape? shape)) single-fill? gradient?)
       (fill->color ffill))))
 
 (defmethod get-value :background-color
@@ -114,12 +143,12 @@
   (let [single-fill? (= (count fills) 1)
         ffill (first fills)
         gradient? (some? (:fill-color-gradient ffill))]
-    (when (and (not (svg-markup? shape)) (not (cph/group-shape? shape)) single-fill? (not gradient?))
+    (when (and (not (cgc/svg-markup? shape)) (not (cph/group-shape? shape)) single-fill? (not gradient?))
       (fill->color ffill))))
 
 (defmethod get-value :background-image
   [_ {:keys [fills] :as shape} _]
-  (when (and (not (svg-markup? shape)) (not (cph/group-shape? shape)) (> (count fills) 1))
+  (when (and (not (cgc/svg-markup? shape)) (not (cph/group-shape? shape)) (> (count fills) 1))
     (->> fills
          (map fill->color))))
 
@@ -138,7 +167,7 @@
 
 (defmethod get-value :border
   [_ shape _]
-  (when-not (svg-markup? shape)
+  (when-not (cgc/svg-markup? shape)
     (get-stroke-data (first (:strokes shape)))))
 
 (defmethod get-value :border-radius
@@ -155,12 +184,12 @@
 
 (defmethod get-value :box-shadow
   [_ shape _]
-  (when-not (svg-markup? shape)
+  (when-not (cgc/svg-markup? shape)
     (:shadow shape)))
 
 (defmethod get-value :filter
   [_ shape _]
-  (when-not (svg-markup? shape)
+  (when-not (cgc/svg-markup? shape)
     (get-in shape [:blur :value])))
 
 (defmethod get-value :display
@@ -258,8 +287,15 @@
 (defmethod get-value :flex-shrink
   [_ shape objects]
   (when (and (ctl/flex-layout-immediate-child? objects shape)
-             (not= :fill (:layout-item-h-sizing shape))
-             (not= :fill (:layout-item-v-sizing shape))
+
+             (not (and (contains? #{:row :reverse-row} (:layout-flex-dir shape))
+                       (= :fill (:layout-item-h-sizing shape))))
+
+             (not (and (contains? #{:column :column-row} (:layout-flex-dir shape))
+                       (= :fill (:layout-item-v-sizing shape))))
+
+             ;;(not= :fill (:layout-item-h-sizing shape))
+             ;;(not= :fill (:layout-item-v-sizing shape))
              (not= :auto (:layout-item-h-sizing shape))
              (not= :auto (:layout-item-v-sizing shape)))
     0))
@@ -336,5 +372,3 @@
 (defmethod get-value :default
   [property shape _]
   (get shape property))
-
-

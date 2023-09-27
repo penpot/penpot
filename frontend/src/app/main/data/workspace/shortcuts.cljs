@@ -8,6 +8,7 @@
   (:require
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
+   [app.main.data.preview :as dp]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
@@ -539,8 +540,12 @@
    :bool-exclude         {:tooltip (ds/meta (ds/alt "E"))
                           :command (ds/c-mod "alt+e")
                           :subsections [:shape]
-                          :fn #(emit-when-no-readonly (dw/create-bool :exclude))}}
-                       )
+                          :fn #(emit-when-no-readonly (dw/create-bool :exclude))}
+
+   ;; PREVIEW
+   :preview-frame        {:tooltip (ds/meta (ds/alt ds/enter))
+                          :command (ds/c-mod "alt+enter")
+                          :fn #(emit-when-no-readonly (dp/open-preview-selected))}})
 
 (def opacity-shortcuts
   (into {} (->>

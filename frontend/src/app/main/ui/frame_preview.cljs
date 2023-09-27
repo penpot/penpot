@@ -24,11 +24,13 @@
 
         handle-load
         (mf/use-callback
-         (fn [data]
+         (fn [data width height]
            (prn "handle-load" data)
            (reset! last-data* data)
            (let [iframe-dom (mf/ref-val iframe-ref)]
              (when iframe-dom
+               (-> iframe-dom (aset "width" width))
+               (-> iframe-dom (aset "height" height))
                (-> iframe-dom .-contentWindow .-document .open)
                (-> iframe-dom .-contentWindow .-document (.write data))
                (-> iframe-dom .-contentWindow .-document .close)))))
@@ -65,11 +67,5 @@
       [:iframe {:ref load-ref
                 :frameborder "0"
                 :scrolling "no" 
-                :style {:width (str (* 100 (if (> zoom 1)
-                                             (* 1 zoom)
-                                             (/ 1 zoom))) "%")
-                        :height (str (* 100 (if (> zoom 1)
-                                             (* 1 zoom)
-                                             (/ 1 zoom))) "%")
-                        :transform-origin "left top"
+                :style {:transform-origin "top center"
                         :transform (str "scale(" zoom ")")}}]]]))
