@@ -342,6 +342,9 @@
       margin-right: -8px;
       max-height: 5.5rem;
       overflow: auto;
+      div {
+        grid-area: unset;
+      }
     }
 
     .selected-colors::after {

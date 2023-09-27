@@ -1,0 +1,55 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.stroke-data {
+  display: flex;
+  flex-direction: column;
+  gap: $s-4;
+  .stroke-options {
+    display: flex;
+    align-items: center;
+    gap: $s-4;
+    .stroke-width-input-element {
+      @extend .input-element;
+      width: $s-60;
+      border-radius: $br-8;
+      padding: $s-8;
+      .icon {
+        @include flexCenter;
+        height: $s-32;
+        width: $s-12;
+        margin-right: $s-4;
+      }
+    }
+    .select-wrapper {
+      width: $s-124;
+    }
+  }
+  .stroke-caps-options {
+    display: flex;
+    align-items: center;
+    gap: $s-4;
+    .cap-select {
+      width: $s-124;
+    }
+    .swap-caps-btn {
+      @extend .button-secondary;
+      height: $s-32;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+      }
+    }
+  }
+  &.dnd-over-top {
+    border-top: $s-1 solid var(--layer-row-foreground-color-drag);
+  }
+  &.dnd-over-bot {
+    border-bottom: $s-1 solid var(--layer-row-foreground-color-drag);
+  }
+}

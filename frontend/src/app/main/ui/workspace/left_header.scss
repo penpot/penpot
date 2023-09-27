@@ -83,9 +83,9 @@
   }
   .menu {
     @extend .menu-dropdown;
-    position: absolute;
     top: $s-48;
     left: calc(var(--width, $s-256) - $s-16);
+    width: $s-192;
     margin: 0;
 
     .menu-item {
@@ -125,9 +125,9 @@
   }
   .sub-menu {
     @extend .menu-dropdown;
-    position: absolute;
     left: calc(var(--width, $s-256) + $s-180);
-    min-width: 270px;
+    width: $s-192;
+    min-width: calc($s-272 - $s-2);
     width: 110%;
     .shortcut {
       @extend .shortcut;

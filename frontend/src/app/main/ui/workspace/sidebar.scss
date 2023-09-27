@@ -20,10 +20,10 @@ $width-settings-bar-max: $s-500;
 
   .resize-area {
     position: absolute;
-    right: -8px;
+    right: calc(-1 * $s-8);
     z-index: $z-index-3;
     width: $s-8;
-    height: 100%;
+    height: calc(100vh - $s-52);
     cursor: ew-resize;
   }
   .settings-bar-inside {

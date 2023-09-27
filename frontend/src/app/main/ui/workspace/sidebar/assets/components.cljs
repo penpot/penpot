@@ -652,7 +652,6 @@
                          :id             "assets-group-component"
                          :option-handler on-group})
 
-
                       (when (and components-v2 (not multi-assets?))
                         {:option-name   (tr "workspace.shape.menu.show-main")
                          :id             "assets-show-main-component"

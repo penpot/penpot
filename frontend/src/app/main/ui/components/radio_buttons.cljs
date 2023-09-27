@@ -66,6 +66,7 @@
         icon       (unchecked-get props "icon")
         id         (unchecked-get props "id")
         value      (unchecked-get props "value")
+        title      (unchecked-get props "title")
         disabled   (unchecked-get props "disabled")
         unique-key (unchecked-get props "unique-key")
         icon-class (unchecked-get props "icon-class")
@@ -79,6 +80,7 @@
 
     [:label {:for id
              :key unique-key
+             :title title
              :class (stl/css-case
                      :radio-icon true
                      :disabled disabled
@@ -142,3 +144,6 @@
      [:div {:class (dm/str class " " (stl/css :radio-btn-wrapper))
             :style {:width width}}
       children]]))
+
+
+

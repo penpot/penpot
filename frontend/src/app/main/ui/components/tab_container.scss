@@ -48,14 +48,24 @@
       background-color: transparent;
       color: var(--tab-foreground-color);
       white-space: nowrap;
+      svg {
+        @extend .button-icon;
+        stroke: var(--tab-foreground-color);
+      }
 
       &.current,
       &.current:hover {
         background: var(--tab-background-color-selected);
         color: var(--tab-foreground-color-selected);
+        svg {
+          stroke: var(--tab-foreground-color-selected);
+        }
       }
       &:hover {
         color: var(--tab-foreground-color-hover);
+        svg {
+          stroke: var(--tab-foreground-color-hover);
+        }
       }
     }
   }

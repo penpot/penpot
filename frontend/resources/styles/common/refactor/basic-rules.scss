@@ -4,6 +4,36 @@
 //
 // Copyright (c) KALEIDOS INC
 
+// SCROLLBAR
+.new-scrollbar {
+  ::-webkit-scrollbar {
+    background-color: transparent;
+    cursor: pointer;
+    height: $s-12;
+    width: $s-12;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background-color: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(170, 181, 186, 0.3);
+    background-clip: content-box;
+    border: $s-2 solid transparent;
+    border-radius: $br-8;
+    &:hover {
+      background-color: rgba(170, 181, 186, 0.7);
+      outline: none;
+    }
+  }
+
+  ::selection {
+    background-color: var(--color-accent-primary-muted);
+  }
+}
+
+// BUTTONS
 .button-primary {
   @include buttonStyle;
   @include flexCenter;
@@ -235,14 +265,130 @@
   stroke-width: 1.33px;
 }
 
-.link {
-  background: unset;
-  border: none;
-  color: var(--link-foreground-color);
-  cursor: pointer;
-  text-decoration: none;
+.button-constraint {
+  @include buttonStyle;
+  width: $s-32;
+  height: $s-4;
+  border-radius: $br-8;
+  background-color: var(--button-constraint-background-color-rest);
+  padding: 0;
+  margin: 0;
+  &:hover,
+  &:focus {
+    outline: $s-4 solid var(--button-constraint-border-color-hover);
+    background-color: var(--button-constraint-background-color-hover);
+  }
 }
 
+// INPUTS
+
+.input-base {
+  @include removeInputStyle;
+  @include titleTipography;
+  @include textEllipsis;
+  height: $s-28;
+  width: 100%;
+  margin: $s-2 0;
+  padding: 0 0 0 $s-4;
+  color: var(--input-foreground-color-active);
+  &:focus-within,
+  &:active {
+    color: var(--input-foreground-color-active);
+    background-color: var(--input-background-color-active);
+  }
+}
+
+.input-icon {
+  @include flexCenter;
+  min-width: $s-12;
+  height: $s-32;
+  margin-right: $s-4;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.input-label {
+  @include tabTitleTipography;
+  @include flexCenter;
+  min-width: $s-12;
+  height: $s-32;
+  margin-right: $s-4;
+  color: var(--input-foreground-color);
+}
+
+.input-element {
+  @include titleTipography;
+  display: flex;
+  align-items: center;
+  height: $s-32;
+  padding: 0 $s-4;
+  border-radius: $br-8;
+  background-color: var(--input-background-color);
+  border: $s-1 solid var(--input-background-color);
+  color: var(--input-foreground-color);
+  span {
+    @extend .input-label;
+    svg {
+      @extend .button-icon;
+      stroke: var(--input-foreground-color);
+    }
+  }
+
+  input {
+    @extend .input-base;
+  }
+  ::placeholder {
+    color: var(--input-placeholder-color);
+  }
+  &:hover {
+    span {
+      color: var(--input-foreground-color);
+    }
+    input {
+      color: var(--input-foreground-color-active);
+    }
+    background-color: var(--input-background-color-hover);
+  }
+
+  &:focus-within,
+  &:active {
+    input {
+      color: var(--input-foreground-color-active);
+    }
+    background-color: var(--input-background-color-active);
+    border: $s-1 solid var(--input-border-color-active);
+  }
+}
+
+.disabled-input {
+  background-color: var(--input-background-color-disabled);
+  border: 1px solid var(--input-border-color-disabled);
+  color: var(--input-foreground-color-disabled);
+  input {
+    pointer-events: none;
+    cursor: default;
+    color: var(--input-foreground-color-disabled);
+  }
+  span svg {
+    stroke: var(--input-foreground-color-disabled);
+  }
+}
+
+//MODALS
+.modal-background {
+  @include menuShadow;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: $s-12;
+  border-radius: $br-8;
+  z-index: $z-index-10;
+  color: var(--color-foreground-primary);
+  background-color: var(--modal-background-color);
+}
+
+// UI ELEMENTS
 .asset-element {
   @include titleTipography;
   display: flex;
@@ -256,89 +402,6 @@
   &:focus-within {
     background-color: var(--assets-item-background-color-hover);
     color: var(--assets-item-name-foreground-color-hover);
-  }
-}
-
-.input-element {
-  @include titleTipography;
-  display: flex;
-  align-items: center;
-  height: $s-32;
-  border-radius: $br-8;
-  background-color: var(--input-background-color);
-  color: var(--input-foreground-color);
-  span {
-    color: var(--input-foreground-color);
-  }
-  input {
-    @include removeInputStyle;
-    @include titleTipography;
-    color: var(--input-foreground-color);
-    height: $s-32;
-  }
-  ::placeholder {
-    color: var(--input-placeholder-color);
-  }
-  &:hover,
-  &:focus-within {
-    span {
-      color: var(--input-foreground-color);
-    }
-    input {
-      color: var(--input-foreground-color-active);
-    }
-    background-color: var(--input-background-color-hover);
-  }
-}
-.new-scrollbar {
-  ::-webkit-scrollbar {
-    background-color: transparent;
-    cursor: pointer;
-    height: $s-12;
-    width: $s-12;
-  }
-  ::-webkit-scrollbar-track,
-  ::-webkit-scrollbar-corner {
-    background-color: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background-color: rgba(170, 181, 186, 0.3);
-    background-clip: content-box;
-    border: $s-2 solid transparent;
-    border-radius: $br-8;
-    &:hover {
-      background-color: rgba(170, 181, 186, 0.7);
-      outline: none;
-    }
-  }
-}
-
-.menu-dropdown {
-  @include menuShadow;
-  color: var(--title-foreground-color-hover);
-  display: flex;
-  flex-direction: column;
-  gap: $s-4;
-  width: $s-192;
-  padding: $s-4;
-  border-radius: $br-8;
-  background-color: var(--menu-background-color);
-  z-index: $z-index-10;
-}
-
-.menu-item {
-  @include titleTipography;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: $s-28;
-  width: 100%;
-  padding: $s-6;
-  border-radius: $br-8;
-  cursor: pointer;
-  &:hover {
-    background-color: var(--menu-background-color-hover);
   }
 }
 
@@ -367,4 +430,115 @@
     border-radius: $br-circle;
     border: $s-2 solid var(--user-count-foreground-color);
   }
+}
+
+.mixed-bar {
+  @include titleTipography;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  border-radius: $br-8;
+  height: $s-32;
+  padding: $s-8;
+  background-color: var(--input-background-color);
+  color: var(--input-foreground-color-active);
+}
+
+.link {
+  background: unset;
+  border: none;
+  color: var(--link-foreground-color);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.colorpicker-handler {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: $s-24;
+  height: $s-24;
+  border: $s-2 solid var(--colorpicker-details-color);
+  border-radius: $br-circle;
+  transform: translate(calc(-1 * $s-12), calc(-1 * $s-12));
+  z-index: $z-index-1;
+  &:hover,
+  &:active {
+    border-color: var(--colorpicker-details-color-selected);
+  }
+}
+// SELECTS AND DROPDOWNS
+
+.menu-dropdown {
+  @include menuShadow;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: $s-4;
+  padding: $s-4;
+  border-radius: $br-8;
+  z-index: $z-index-10;
+  color: var(--title-foreground-color-hover);
+  background-color: var(--menu-background-color);
+}
+
+.menu-item {
+  @include titleTipography;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $s-28;
+  width: 100%;
+  padding: $s-6;
+  border-radius: $br-8;
+  cursor: pointer;
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+}
+
+.dropdown-element-base {
+  @include titleTipography;
+  display: flex;
+  align-items: center;
+  gap: $s-8;
+  height: $s-32;
+  padding: 0 $s-8;
+  border-radius: $br-6;
+  cursor: pointer;
+  color: var(--menu-foreground-color-rest);
+
+  span {
+    @include flexCenter;
+    @include textEllipsis;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+    color: var(--menu-foreground-color);
+    span svg {
+      stroke: var(--menu-foreground-color-hover);
+    }
+  }
+}
+
+.dropdown-wrapper {
+  @include menuShadow;
+  position: absolute;
+  top: $s-32;
+  left: 0;
+  width: 100%;
+  max-height: $s-300;
+  padding: $s-2;
+  margin: 0;
+  margin-top: $s-4;
+  border-radius: $br-8;
+  z-index: $z-index-3;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--menu-background-color);
+  color: var(--menu-foreground-color);
 }

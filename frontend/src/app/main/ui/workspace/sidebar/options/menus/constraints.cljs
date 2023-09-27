@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.options.menus.constraints
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.geom.rect :as grc]
@@ -13,6 +14,9 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.select :refer [select]]
+   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -27,8 +31,15 @@
 
 (mf/defc constraints-menu
   [{:keys [ids values] :as props}]
-  (let [old-shapes (deref (refs/objects-by-id ids))
-        frames (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+
+        state*          (mf/use-state true)
+        open?           (deref state*)
+
+        toggle-content  (mf/use-fn #(swap! state* not))
+
+        old-shapes      (deref (refs/objects-by-id ids))
+        frames          (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
 
         shapes (as-> old-shapes $
                  (map gsh/translate-to-frame $ frames))
@@ -53,127 +64,261 @@
         constraints-h (or (get values :constraints-h) (gsh/default-constraints-h values))
         constraints-v (or (get values :constraints-v) (gsh/default-constraints-v values))
 
-        on-constraint-button-clicked
-        (mf/use-callback
-         (mf/deps [ids values])
-         (fn [button]
-           (fn [_]
-             (let [constraints-h (get values :constraints-h :scale)
-                   constraints-v (get values :constraints-v :scale)
 
-                   [constraint new-value]
-                   (case button
-                     :top     (case constraints-v
-                                :top [:constraints-v :scale]
-                                :topbottom [:constraints-v :bottom]
-                                :bottom [:constraints-v :topbottom]
-                                [:constraints-v :top])
-                     :bottom  (case constraints-v
-                                :bottom [:constraints-v :scale]
-                                :topbottom [:constraints-v :top]
-                                :top [:constraints-v :topbottom]
-                                [:constraints-v :bottom])
-                     :left    (case constraints-h
-                                :left [:constraints-h :scale]
-                                :leftright [:constraints-h :right]
-                                :right [:constraints-h :leftright]
-                                [:constraints-h :left])
-                     :right   (case constraints-h
-                                :right [:constraints-h :scale]
-                                :leftright [:constraints-h :left]
-                                :left [:constraints-h :leftright]
-                                [:constraints-h :right])
-                     :centerv  (case constraints-v
-                                 :center [:constraints-v :scale]
-                                 [:constraints-v :center])
-                     :centerh  (case constraints-h
-                                 :center [:constraints-h :scale]
-                                 [:constraints-h :center]))]
-               (st/emit! (dch/update-shapes
-                          ids
-                          #(assoc % constraint new-value)))))))
+        on-constraint-button-clicked
+        (mf/use-fn
+         (mf/deps ids values)
+         (fn [event]
+           (let [button  (-> (dom/get-current-target event)
+                             (dom/get-data "value")
+                             (keyword))
+                 constraints-h (get values :constraints-h :scale)
+                 constraints-v (get values :constraints-v :scale)
+
+                 [constraint new-value]
+                 (case button
+                   :top     (case constraints-v
+                              :top [:constraints-v :scale]
+                              :topbottom [:constraints-v :bottom]
+                              :bottom [:constraints-v :topbottom]
+                              [:constraints-v :top])
+                   :bottom  (case constraints-v
+                              :bottom [:constraints-v :scale]
+                              :topbottom [:constraints-v :top]
+                              :top [:constraints-v :topbottom]
+                              [:constraints-v :bottom])
+                   :left    (case constraints-h
+                              :left [:constraints-h :scale]
+                              :leftright [:constraints-h :right]
+                              :right [:constraints-h :leftright]
+                              [:constraints-h :left])
+                   :right   (case constraints-h
+                              :right [:constraints-h :scale]
+                              :leftright [:constraints-h :left]
+                              :left [:constraints-h :leftright]
+                              [:constraints-h :right])
+                   :centerv  (case constraints-v
+                               :center [:constraints-v :scale]
+                               [:constraints-v :center])
+                   :centerh  (case constraints-h
+                               :center [:constraints-h :scale]
+                               [:constraints-h :center])
+                   nil ())]
+
+             (st/emit! (dch/update-shapes
+                        ids
+                        #(assoc % constraint new-value))))))
 
         on-constraint-select-changed
-        (mf/use-callback
-         (mf/deps [ids values])
-         (fn [constraint]
-           (fn [event]
-             (let [value (-> (dom/get-target-val event) (keyword))]
-               (when-not (str/empty? value)
-                 (st/emit! (dch/update-shapes
-                            ids
-                            #(assoc % constraint value))))))))
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [event]
+           (let [constraint  (-> (dom/get-current-target event)
+                                 (dom/get-data "value")
+                                 (keyword))
+                 value (-> (dom/get-target-val event) (keyword))]
+             (when-not (str/empty? value)
+               (st/emit! (dch/update-shapes
+                          ids
+                          #(assoc % constraint value)))))))
+
+        on-constraint-h-select-changed
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [value]
+           (when-not (str/empty? value)
+             (st/emit! (dch/update-shapes
+                        ids
+                        #(assoc % :constraints-h (keyword value)))))))
+
+        on-constraint-v-select-changed
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [value]
+           (when-not (str/empty? value)
+             (st/emit! (dch/update-shapes
+                        ids
+                        #(assoc % :constraints-v (keyword value)))))))
 
         on-fixed-scroll-clicked
-        (mf/use-callback
-         (mf/deps [ids values])
+        (mf/use-fn
+         (mf/deps ids)
          (fn [_]
-           (st/emit! (dch/update-shapes ids #(update % :fixed-scroll not)))))]
+           (st/emit! (dch/update-shapes ids #(update % :fixed-scroll not)))))
 
-     ;; CONSTRAINTS
-     (when in-frame?
-       [:div.element-set
-        [:div.element-set-title
-         [:span (tr "workspace.options.constraints")]]
+        options-h
+        (mf/with-memo [constraints-h]
+          (d/concat-vec
+           (when (= constraints-h :multiple)
+             [{:value "" :label (tr "settings.multiple")}])
+           [{:value "left" :label (tr "workspace.options.constraints.left")}
+            {:value "right" :label (tr "workspace.options.constraints.right")}
+            {:value "leftright" :label (tr "workspace.options.constraints.leftright")}
+            {:value "center" :label (tr "workspace.options.constraints.center")}
+            {:value "scale" :label (tr "workspace.options.constraints.scale")}]))
 
-        [:div.element-set-content
-         [:div.row-flex.align-top
+        options-v
+        (mf/with-memo [constraints-v]
+          (d/concat-vec
+           (when (= constraints-v :multiple)
+             [{:value "" :label (tr "settings.multiple")}])
+           [{:value "top" :label (tr "workspace.options.constraints.top")}
+            {:value "bottom" :label (tr "workspace.options.constraints.bottom")}
+            {:value "topbottom" :label (tr "workspace.options.constraints.topbottom")}
+            {:value "center" :label (tr "workspace.options.constraints.center")}
+            {:value "scale" :label (tr "workspace.options.constraints.scale")}]))]
 
-          [:div.constraints-widget
-           [:div.constraints-box]
-           [:div.constraint-button.top
-            {:class (dom/classnames :active (or (= constraints-v :top)
-                                                (= constraints-v :topbottom)))
-             :on-click (on-constraint-button-clicked :top)}]
-           [:div.constraint-button.bottom
-            {:class (dom/classnames :active (or (= constraints-v :bottom)
-                                                (= constraints-v :topbottom)))
-             :on-click (on-constraint-button-clicked :bottom)}]
-           [:div.constraint-button.left
-            {:class (dom/classnames :active (or (= constraints-h :left)
-                                                (= constraints-h :leftright)))
-             :on-click (on-constraint-button-clicked :left)}]
-           [:div.constraint-button.right
-            {:class (dom/classnames :active (or (= constraints-h :right)
-                                                (= constraints-h :leftright)))
-             :on-click (on-constraint-button-clicked :right)}]
-           [:div.constraint-button.centerv
-            {:class (dom/classnames :active (= constraints-v :center))
-             :on-click (on-constraint-button-clicked :centerv)}]
-           [:div.constraint-button.centerh
-            {:class (dom/classnames :active (= constraints-h :center))
-             :on-click (on-constraint-button-clicked :centerh)}]]
 
-          [:div.constraints-form
-           [:div.row-flex
-            [:span.left-right i/full-screen]
-            [:select.input-select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
-                                   :on-change (on-constraint-select-changed :constraints-h)
-                                   :value (d/name constraints-h "scale")}
-             (when (= constraints-h :multiple)
-               [:option {:value ""} (tr "settings.multiple")])
-             [:option {:value "left"} (tr "workspace.options.constraints.left")]
-             [:option {:value "right"} (tr "workspace.options.constraints.right")]
-             [:option {:value "leftright"} (tr "workspace.options.constraints.leftright")]
-             [:option {:value "center"} (tr "workspace.options.constraints.center")]
-             [:option {:value "scale"} (tr "workspace.options.constraints.scale")]]]
-           [:div.row-flex
-            [:span.top-bottom i/full-screen]
-            [:select.input-select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
-                                   :on-change (on-constraint-select-changed :constraints-v)
-                                   :value (d/name constraints-v "scale")}
-             (when (= constraints-v :multiple)
-               [:option {:value ""} (tr "settings.multiple")])
-             [:option {:value "top"} (tr "workspace.options.constraints.top")]
-             [:option {:value "bottom"} (tr "workspace.options.constraints.bottom")]
-             [:option {:value "topbottom"} (tr "workspace.options.constraints.topbottom")]
-             [:option {:value "center"} (tr "workspace.options.constraints.center")]
-             [:option {:value "scale"} (tr "workspace.options.constraints.scale")]]]
-           (when first-level?
-             [:div.row-flex
-              [:div.fix-when {:class (dom/classnames :active (:fixed-scroll values))
-                              :on-click on-fixed-scroll-clicked}
-               (if (:fixed-scroll values)
-                 i/pin-fill
-                 i/pin)
-               [:span (tr "workspace.options.constraints.fix-when-scrolling")]]])]]]])))
+    ;; CONSTRAINTS
+    (when in-frame?
+      (if new-css-system
+        [:div {:class (stl/css :element-set)}
+         [:div {:class (stl/css :element-title)}
+          [:& title-bar {:collapsable? true
+                         :collapsed?   (not open?)
+                         :on-collapsed toggle-content
+                         :title        (tr "workspace.options.constraints")}]]
+         (when open?
+           [:div {:class (stl/css :element-set-content)}
+            [:div {:class (stl/css :constraints-widget)}
+             [:div {:class (stl/css :constraints-top)}
+              [:button {:class (stl/css-case :constraint-btn true
+                                             :active (or (= constraints-v :top)
+                                                         (= constraints-v :topbottom)))
+                        :data-value :top
+                        :on-click on-constraint-button-clicked}
+               [:span {:class (stl/css :resalted-area)}]]]
+             [:div {:class (stl/css :constraints-left)}
+              [:button {:class (stl/css-case :constraint-btn true
+                                             :constraint-btn-rotated true
+                                             :active (or (= constraints-h :left)
+                                                         (= constraints-h :leftright)))
+                        :data-value :left
+                        :on-click on-constraint-button-clicked}
+               [:span {:class (stl/css :resalted-area)}]]]
+             [:div {:class (stl/css :constraints-center)}
+              [:button {:class (stl/css-case :constraint-btn true
+                                             :active (= constraints-h :center))
+                        :data-value :centerh
+                        :on-click on-constraint-button-clicked}
+               [:span {:class (stl/css :resalted-area)}]]
+              [:button {:class (stl/css-case :constraint-btn-special true
+                                             :constraint-btn-rotated true
+                                             :active (= constraints-v :center))
+                        :data-value :centerv
+                        :on-click on-constraint-button-clicked}
+               [:span {:class (stl/css :resalted-area)}]]]
+             [:div {:class (stl/css :constraints-right)}
+              [:button {:class (stl/css-case :constraint-btn true
+                                             :constraint-btn-rotated true
+                                             :active (or (= constraints-h :right)
+                                                         (= constraints-h :leftright)))
+                        :data-value :right
+                        :on-click on-constraint-button-clicked}
+               [:span {:class (stl/css :resalted-area)}]]]
+             [:div {:class (stl/css :constraints-bottom)}
+              [:button {:class (stl/css-case :constraint-btn true
+                                             :active (or (= constraints-v :bottom)
+                                                         (= constraints-v :topbottom)))
+                        :data-value :bottom
+                        :on-click on-constraint-button-clicked}
+               [:span {:class (stl/css :resalted-area)}]]]]
+            [:div {:class (stl/css :contraints-selects)}
+             [:div {:class (stl/css :horizontal-select)}
+              [:& select
+               {:default-value (d/name constraints-h "scale")
+                :options options-h
+                :on-change on-constraint-h-select-changed}]]
+             [:div {:class (stl/css :vertical-select)}
+              [:& select
+               {:default-value (d/name constraints-v "scale")
+                :options options-v
+                :on-change on-constraint-v-select-changed}]]
+             (when first-level?
+               [:div {:class (stl/css :checkbox)}
+
+                [:label {:for "fixed-on-scroll"
+                         :class (stl/css-case :checked (:fixed-scroll values))}
+                 [:span {:class (stl/css-case :check-mark true
+                                              :checked (:fixed-scroll values))}
+                  (when (:fixed-scroll values)
+                    i/status-tick-refactor)]
+                 (tr "workspace.options.constraints.fix-when-scrolling")
+                 [:input {:type "checkbox"
+                          :id "fixed-on-scroll"
+                          :checked (:fixed-scroll values)
+                          :on-change on-fixed-scroll-clicked}]]])]])]
+
+
+        [:div.element-set
+         [:div.element-set-title
+          [:span (tr "workspace.options.constraints")]]
+
+         [:div.element-set-content
+          [:div.row-flex.align-top
+           [:div.constraints-widget
+            [:div.constraints-box]
+            [:div.constraint-button.top
+             {:class (dom/classnames :active (or (= constraints-v :top)
+                                                 (= constraints-v :topbottom)))
+              :data-value :top
+              :on-click on-constraint-button-clicked}]
+            [:div.constraint-button.bottom
+             {:class (dom/classnames :active (or (= constraints-v :bottom)
+                                                 (= constraints-v :topbottom)))
+              :data-value :bottom
+              :on-click on-constraint-button-clicked}]
+            [:div.constraint-button.left
+             {:class (dom/classnames :active (or (= constraints-h :left)
+                                                 (= constraints-h :leftright)))
+              :data-value :left
+              :on-click on-constraint-button-clicked}]
+            [:div.constraint-button.right
+             {:class (dom/classnames :active (or (= constraints-h :right)
+                                                 (= constraints-h :leftright)))
+              :data-value :right
+              :on-click on-constraint-button-clicked}]
+            [:div.constraint-button.centerv
+             {:class (dom/classnames :active (= constraints-v :center))
+              :data-value :centerv
+              :on-click on-constraint-button-clicked}]
+            [:div.constraint-button.centerh
+             {:class (dom/classnames :active (= constraints-h :center))
+              :data-value :centerh
+              :on-click on-constraint-button-clicked}]]
+
+           [:div.constraints-form
+            [:div.row-flex
+             [:span.left-right i/full-screen]
+             [:select.input-select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                                    :data-value :constraints-h
+                                    :on-change on-constraint-select-changed
+                                    :value (d/name constraints-h "scale")}
+              (when (= constraints-h :multiple)
+                [:option {:value ""} (tr "settings.multiple")])
+              [:option {:value "left"} (tr "workspace.options.constraints.left")]
+              [:option {:value "right"} (tr "workspace.options.constraints.right")]
+              [:option {:value "leftright"} (tr "workspace.options.constraints.leftright")]
+              [:option {:value "center"} (tr "workspace.options.constraints.center")]
+              [:option {:value "scale"} (tr "workspace.options.constraints.scale")]]]
+            [:div.row-flex
+             [:span.top-bottom i/full-screen]
+             [:select.input-select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                                    :data-value :constraints-v
+                                    :on-change on-constraint-select-changed
+                                    :value (d/name constraints-v "scale")}
+              (when (= constraints-v :multiple)
+                [:option {:value ""} (tr "settings.multiple")])
+              [:option {:value "top"} (tr "workspace.options.constraints.top")]
+              [:option {:value "bottom"} (tr "workspace.options.constraints.bottom")]
+              [:option {:value "topbottom"} (tr "workspace.options.constraints.topbottom")]
+              [:option {:value "center"} (tr "workspace.options.constraints.center")]
+              [:option {:value "scale"} (tr "workspace.options.constraints.scale")]]]
+            (when first-level?
+              [:div.row-flex
+               [:div.fix-when {:class (dom/classnames :active (:fixed-scroll values))
+                               :on-click on-fixed-scroll-clicked}
+                (if (:fixed-scroll values)
+                  i/pin-fill
+                  i/pin)
+                [:span (tr "workspace.options.constraints.fix-when-scrolling")]]])]]]]))))

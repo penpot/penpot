@@ -40,28 +40,11 @@
         }
       }
       .custom-select-dropdown {
-        @include menuShadow;
-        position: absolute;
-        top: $s-32;
-        left: 0;
-        max-height: 300px;
+        @extend .dropdown-wrapper;
         width: $s-252;
-        padding: $s-2;
-        margin: 0;
-        margin-top: $s-4;
-        border-radius: $br-8;
-        z-index: $z-index-3;
-        overflow-y: auto;
-        background-color: var(--menu-background-color);
         .dropdown-element {
-          @include titleTipography;
-          display: flex;
-          align-items: center;
-          gap: $s-8;
-          height: $s-32;
-          padding: 0 $s-8;
-          border-radius: $br-6;
-          cursor: pointer;
+          @extend .dropdown-element-base;
+
           &.disabled {
             pointer-events: none;
             cursor: default;
@@ -119,25 +102,11 @@
       @extend .input-element;
       width: $s-108;
       padding-left: $s-8;
-      .icon {
-        @include flexCenter;
-        width: $s-12;
-        height: $s-32;
-        margin-right: $s-4;
-      }
-      .icon-text {
-        @include flexCenter;
-        height: $s-32;
-        margin-right: $s-4;
+      y .icon-text {
         padding-top: $s-1;
       }
-      .numeric-input {
-        @include removeInputStyle;
-        @include titleTipography;
-        height: $s-32;
-        width: 100%;
-        margin: 0;
-        color: var(--input-foreground-color-active);
+      &.disabled {
+        @extend .disabled-input;
       }
     }
     .lock-size-btn {
@@ -160,25 +129,11 @@
       @extend .input-element;
       width: $s-108;
       padding-left: $s-8;
-      .icon {
-        @include flexCenter;
-        height: $s-32;
-        width: $s-12;
-        margin-right: $s-4;
-      }
       .icon-text {
-        @include flexCenter;
-        height: $s-32;
-        margin-right: $s-4;
         padding-top: $s-1;
       }
-      .numeric-input {
-        @include removeInputStyle;
-        @include titleTipography;
-        height: $s-32;
-        width: 100%;
-        margin: 0;
-        color: var(--input-foreground-color-active);
+      &.disabled {
+        @extend .disabled-input;
       }
     }
   }
@@ -192,27 +147,7 @@
       width: $s-108;
       padding-left: $s-8;
       .icon-text {
-        @include flexCenter;
-        height: $s-32;
-        margin-right: $s-4;
         padding-top: $s-1;
-      }
-      .icon {
-        @include flexCenter;
-        height: $s-32;
-        margin-right: $s-4;
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--icon-foreground);
-        }
-      }
-      .numeric-input {
-        @include removeInputStyle;
-        @include titleTipography;
-        height: $s-32;
-        width: 100%;
-        margin: 0;
-        color: var(--input-foreground-color-active);
       }
     }
     .radius {
@@ -226,25 +161,6 @@
           @extend .input-element;
           width: $s-108;
           padding-left: $s-8;
-          .icon {
-            @include flexCenter;
-            height: $s-32;
-            margin-right: $s-4;
-            svg {
-              @extend .button-icon-small;
-              stroke: var(--icon-foreground);
-            }
-          }
-
-          .numeric-input {
-            @include removeInputStyle;
-            @include titleTipography;
-            height: $s-32;
-            width: 100%;
-            margin: 0;
-            padding: $s-1 $s-2;
-            color: var(--input-foreground-color-active);
-          }
         }
         .radius-4 {
           display: grid;
@@ -254,14 +170,6 @@
             @extend .input-element;
             width: $s-52;
             padding-left: $s-8;
-            .numeric-input {
-              @include removeInputStyle;
-              @include titleTipography;
-              height: $s-32;
-              width: 100%;
-              margin: 0;
-              color: var(--input-foreground-color-active);
-            }
           }
         }
       }

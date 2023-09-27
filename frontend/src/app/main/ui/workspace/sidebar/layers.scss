@@ -160,11 +160,12 @@
       }
     }
   }
+
   .filters-container {
     @extend .menu-dropdown;
-    position: absolute;
     top: $s-44;
     left: $s-12;
+    width: $s-192;
     .filter-menu-item {
       @include titleTipography;
       display: flex;
@@ -201,16 +202,16 @@
         .filter-menu-item-name-wrapper {
           .filter-menu-item-icon {
             svg {
-              stroke: var(--menu-foreground-color-selected);
+              stroke: var(--menu-foreground-color);
             }
           }
           .filter-menu-item-name {
-            color: var(--menu-foreground-color-selected);
+            color: var(--menu-foreground-color);
           }
         }
         .filter-menu-item-tick {
           svg {
-            stroke: var(--menu-foreground-color-selected);
+            stroke: var(--menu-foreground-color);
           }
         }
       }

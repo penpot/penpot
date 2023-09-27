@@ -32,6 +32,7 @@
         on-blur          (obj/get props "onBlur")
         on-focus         (obj/get props "onFocus")
         select-on-focus? (d/nilv (unchecked-get props "selectOnFocus") true)
+        class            (d/nilv (unchecked-get props "className") "color-input")
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
@@ -132,6 +133,7 @@
                   (obj/unset! "selectOnFocus")
                   (obj/set! "value" mf/undefined)
                   (obj/set! "onChange" mf/undefined)
+                  (obj/set! "className" class)
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
                   ;; (obj/set! "list" list-id)

@@ -95,7 +95,7 @@
             (d/name color)]))]]
 
      [:div {:class (stl/css :components-row)}
-      [:h2 {:class(stl/css :title)} "Components"]
+      [:h2 {:class (stl/css :title)} "Components"]
       [:div {:class (stl/css :components-wrapper)}
        [:div {:class (stl/css :components-group)}
         [:h3 "Titles"]
@@ -167,7 +167,7 @@
          [:& search-bar {:on-change update-search
                          :value input-value
                          :placeholder "Test value"}
-          [:button {:class (stl/css :test-button)
+          [:button {:class (stl/css :button-secondary)
                     :on-click on-btn-click}
            "X"]]]]
 
@@ -246,4 +246,25 @@
         [:& component-wrapper
          {:title "Button tertiary with icon"}
          [:button  {:class (stl/css :button-tertiary)}
-          i/add-refactor]]]]]]))
+          i/add-refactor]]]
+
+       [:div {:class (stl/css :components-group)}
+        [:h3 "Inputs"]
+        [:& component-wrapper
+         {:title "Only input"}
+         [:div {:class (stl/css :input-wrapper)}
+          [:input  {:class (stl/css :basic-input)
+                    :placeholder "----"}]]]
+        [:& component-wrapper
+         {:title "Input with label"}
+         [:div {:class (stl/css :input-wrapper)}
+          [:span {:class (stl/css :input-label)} "label"]
+          [:input  {:class (stl/css :basic-input)
+                    :placeholder "----"}]]]
+        [:& component-wrapper
+         {:title "Input with icon"}
+         [:div {:class (stl/css :input-wrapper)}
+          [:span {:class (stl/css :input-label)}
+           i/add-refactor]
+          [:input  {:class (stl/css :basic-input)
+                    :placeholder "----"}]]]]]]]))

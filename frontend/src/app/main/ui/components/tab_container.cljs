@@ -5,9 +5,10 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.components.tab-container
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -20,9 +21,7 @@
   [props]
   (let [children (unchecked-get props "children")
         new-css-system (mf/use-ctx ctx/new-css-system)]
-    [:div {:class (if new-css-system
-                    (dom/classnames (css :tab-element) true)
-                    (dom/classnames :tab-element true))}
+    [:div {:class (stl/css new-css-system :tab-element)}
      children]))
 
 (mf/defc tab-container
@@ -35,7 +34,7 @@
         on-change       (unchecked-get props "on-change-tab")
         collapsable?    (unchecked-get props "collapsable?")
         handle-collapse (unchecked-get props "handle-collapse")
-        klass           (unchecked-get props "klass")
+        class           (unchecked-get props "class")
         content-class   (unchecked-get props "content-class")
 
         state           (mf/use-state #(or selected (-> children first .-props .-id)))
@@ -45,31 +44,32 @@
         (mf/use-fn
          (mf/deps on-change)
          (fn [event]
-           (let [id (d/read-string (.. event -target -dataset -id))]
+           (let [id (-> event
+                        (dom/get-current-target)
+                        (dom/get-data "id")
+                        (keyword))]
              (reset! state id)
              (when (fn? on-change) (on-change id)))))]
 
-    [:div {:class (dom/classnames (css :tab-container) true)}
-     [:div {:class (dom/classnames (css :tab-container-tabs) true
-                                   klass true)}
+    [:div {:class (stl/css :tab-container)}
+     [:div {:class (dm/str class " "(stl/css :tab-container-tabs))}
       (when collapsable?
         [:button
          {:on-click handle-collapse
-          :class (dom/classnames (css :collapse-sidebar) true)
+          :class (stl/css :collapse-sidebar)
           :aria-label (tr "workspace.sidebar.collapse")}
          i/arrow-refactor])
-      [:div  {:class (dom/classnames (css :tab-container-tab-wrapper) true)}
+      [:div  {:class (stl/css :tab-container-tab-wrapper)}
        (for [tab children]
          (let [props (.-props tab)
                id    (.-id props)
                title (.-title props)]
            [:div
             {:key (str/concat "tab-" (d/name id))
-             :data-id (pr-str id)
+             :data-id (d/name id)
              :on-click select-fn
-             :class  (dom/classnames (css :tab-container-tab-title) true
-                                     (css :current) (= selected id))}
+             :class  (stl/css-case :tab-container-tab-title true
+                                     :current (= selected id))}
             title]))]]
-     [:div {:class (dom/classnames (css :tab-container-content) true
-                                   content-class (some? content-class))}
+     [:div {:class (dm/str content-class " " (stl/css  :tab-container-content ))}
       (d/seek #(= selected (-> % .-props .-id)) children)]]))

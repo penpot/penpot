@@ -7,11 +7,18 @@
 @import "refactor/common-refactor.scss";
 
 .custom-select {
+  @include titleTipography;
   position: relative;
   display: flex;
+  align-items: center;
+  height: $s-32;
   width: 100%;
+  margin: 0;
   padding: $s-8;
   border-radius: $br-8;
+  background-color: var(--menu-background-color);
+  border: $s-1 solid var(--menu-background-color);
+  color: var(--menu-foreground-color);
   cursor: pointer;
   .current-label {
     width: 100%;
@@ -26,26 +33,15 @@
     }
   }
   .custom-select-dropdown {
-    @include menuShadow;
-    position: absolute;
-    top: $s-32;
-    left: 0;
-    width: 100%;
-    padding: $s-2;
-    margin: 0;
-    margin-top: $s-4;
-    border-radius: $br-8;
-    z-index: $z-index-3;
-    overflow-y: auto;
-    background-color: var(--menu-background-color);
+    @extend .dropdown-wrapper;
+    .separator {
+      margin: 0;
+      height: $s-12;
+    }
   }
   .checked-element {
-    display: flex;
-    align-items: center;
-    height: $s-32;
-    padding: 0 $s-8;
-    border-radius: $br-6;
-    color: var(--menu-foreground-color);
+    @extend .dropdown-element-base;
+
     .label {
       flex-grow: 1;
       width: 100%;
@@ -61,26 +57,35 @@
     }
 
     &.is-selected {
+      color: var(--menu-foreground-color);
       .check-icon svg {
         stroke: var(--menu-foreground-color);
         visibility: visible;
       }
     }
-    &:hover {
-      background-color: var(--menu-background-color-hover);
-      color: var(--menu-foreground-color-hover);
-      .check-icon svg {
+  }
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+    border: $s-1 solid var(--menu-background-color-hover);
+    .dropdown-button {
+      svg {
         stroke: var(--menu-foreground-color-hover);
       }
     }
   }
-
-  &:hover {
-    .dropdown-button {
-      color: var(--menu-foreground-color-hover);
-      svg {
-        stroke: var(--menu-foreground-color-hover);
-      }
+  &:focus {
+    background-color: var(--menu-background-color-focus);
+    border: $s-1 solid var(--menu-border-color-focus);
+  }
+  &.disabled {
+    background-color: var(--menu-background-color-disabled);
+    color: var(--menu-foreground-color-disabled);
+    border: $s-1 solid var(--menu-border-color-disabled);
+    pointer-events: none;
+    cursor: default;
+    .dropdown-button svg {
+      stroke: var(--menu-foreground-color-disabled);
     }
   }
 }

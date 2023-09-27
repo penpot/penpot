@@ -1,0 +1,121 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.color-data {
+  display: flex;
+  align-items: center;
+  gap: $s-4;
+  .color-info {
+    display: flex;
+    align-items: center;
+    gap: $s-1;
+    border-radius: $s-8;
+    background-color: var(--input-details-color);
+    height: $s-32;
+    width: 100%;
+    flex-grow: 1;
+    .color-name-wrapper {
+      display: flex;
+      align-items: center;
+      border-radius: $br-8;
+      background-color: var(--input-background-color);
+      flex-grow: 1;
+
+      .color-bullet-wrapper {
+        @extend .input-element;
+        background-color: transparent;
+        border-radius: $br-8 0 0 $br-8;
+        padding: 0 $s-4 0 $s-8;
+        &:hover {
+          background-color: transparent;
+        }
+      }
+      .color-name {
+        @include titleTipography;
+        display: flex;
+        align-items: center;
+        height: $s-32;
+        flex-grow: 1;
+        color: var(--input-foreground-color-active);
+      }
+      .detach-btn {
+        @extend .button-tertiary;
+        height: $s-32;
+        width: $s-28;
+        border-radius: 0 $br-8 $br-8 0;
+        svg {
+          @extend .button-icon;
+        }
+      }
+      .color-input-wrapper {
+        @extend .input-element;
+        border-radius: $br-0;
+      }
+      &:hover,
+      &:focus,
+      &:focus-within {
+        .color-bullet-wrapper,
+        .color-name,
+        .detach-btn,
+        .color-input-wrapper {
+          background-color: var(--input-background-color-hover);
+        }
+        .detach-btn svg {
+          stroke: var(--input-foreground-color-active);
+        }
+      }
+    }
+    .gradient-name-wrapper {
+      .color-name {
+        border-radius: 0 $br-8 $br-8 0;
+      }
+    }
+    .opacity-element-wrapper {
+      @extend .input-element;
+      width: $s-60;
+      border-radius: 0 $br-8 $br-8 0;
+      padding-left: $s-8;
+      .opacity-input {
+        border-radius: 0 $br-8 $br-8 0;
+        min-width: $s-28;
+      }
+      .icon-text {
+        @include flexCenter;
+        height: $s-32;
+        margin-right: $s-4;
+        padding-top: $s-2;
+      }
+    }
+
+    &:hover {
+      .detach-btn,
+      .select-btn {
+        background-color: transparent;
+        svg {
+          stroke: var(--input-foreground-color-active);
+        }
+      }
+    }
+  }
+  .remove-btn,
+  .select-btn {
+    @extend .button-tertiary;
+    height: $s-32;
+    width: $s-28;
+    svg {
+      @extend .button-icon;
+    }
+  }
+
+  &.dnd-over-top {
+    border-top: $s-1 solid var(--layer-row-foreground-color-drag);
+  }
+  &.dnd-over-bot {
+    border-bottom: $s-1 solid var(--layer-row-foreground-color-drag);
+  }
+}

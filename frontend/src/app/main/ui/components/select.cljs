@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.components.select
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -23,7 +23,7 @@
     [item item]))
 
 (mf/defc select
-  [{:keys [default-value options class is-open? on-change on-pointer-enter-option on-pointer-leave-option]}]
+  [{:keys [default-value options class is-open? on-change on-pointer-enter-option on-pointer-leave-option disabled]}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
         label-index    (mf/with-memo [options]
                          (into {} (map as-key-value) options))
@@ -39,7 +39,13 @@
         current-label  (get label-index current-value)
         is-open?       (:is-open? state)
 
-        open-dropdown  (mf/use-fn #(swap! state* assoc :is-open? true))
+        open-dropdown
+        (mf/use-fn
+         (mf/deps disabled)
+         (fn[]
+           (when-not disabled
+             (swap! state* assoc :is-open? true))))
+
         close-dropdown (mf/use-fn #(swap! state* assoc :is-open? false))
 
         select-item
@@ -78,27 +84,29 @@
       (swap! state* assoc :current-value default-value))
     (if new-css-system
       [:div {:on-click open-dropdown
-             :class (dom/classnames (css class) true
-                                    (css :custom-select) true)}
-       [:span {:class (css :current-label)} current-label]
-       [:span {:class (css :dropdown-button)} i/arrow-refactor]
+             :class (dm/str class " " (stl/css-case :custom-select true
+                                                    :disabled disabled))}
+       [:span {:class (stl/css :current-label)} current-label]
+       [:span {:class (stl/css :dropdown-button)} i/arrow-refactor]
        [:& dropdown {:show is-open? :on-close close-dropdown}
-        [:ul {:class (css :custom-select-dropdown)}
+        [:ul {:class (stl/css :custom-select-dropdown)}
          (for [[index item] (d/enumerate options)]
            (if (= :separator item)
-             [:hr {:key (dm/str current-id "-" index)}]
+             [:li {:class (dom/classnames (stl/css :separator) true)
+                   :key (dm/str current-id "-" index)}]
              (let [[value label] (as-key-value item)]
                [:li
                 {:key (dm/str current-id "-" index)
                  :class (dom/classnames
-                         (css :checked-element) true
-                         (css :is-selected) (= value current-value))
+                         (stl/css :checked-element) true
+                         (stl/css :is-selected) (= value current-value))
                  :data-value (pr-str value)
                  :on-pointer-enter highlight-item
                  :on-pointer-leave unhighlight-item
                  :on-click select-item}
-                [:span {:class (css :label)} label]
-                [:span {:class (css :check-icon)} i/tick-refactor]])))]]]
+                [:span {:class (stl/css :label)} label]
+                [:span {:class (stl/css :check-icon)} i/tick-refactor]])))]]]
+
 
       [:div.custom-select {:on-click open-dropdown :class class}
        [:span current-label]

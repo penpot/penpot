@@ -12,28 +12,13 @@
     height: $s-32;
     gap: $s-4;
     .select {
-      @extend .asset-element;
       width: $s-124;
-      margin: 0;
       padding: 0;
-      border: 1px solid var(--input-background-color);
     }
     .input {
       @extend .input-element;
       width: $s-60;
       padding-left: $s-8;
-      border: 1px solid var(--input-background-color);
-      .icon {
-        @include flexCenter;
-        margin-right: $s-4;
-      }
-      .numeric-input {
-        @include removeInputStyle;
-        @include titleTipography;
-        height: $s-32;
-        width: 100%;
-        margin: 0;
-      }
     }
     .actions {
       display: flex;
@@ -54,13 +39,13 @@
     &.hidden {
       .select {
         background-color: transparent;
-        border: 1px solid var(--input-border-color-disabled);
+        border: $s-1 solid var(--input-border-color-disabled);
         color: var(--input-foreground-color-disabled);
       }
       .input {
         background-color: transparent;
-        border: 1px solid var(--input-border-color-disabled);
-        color: var(--input-foreground-color-disable);
+        border: $s-1 solid var(--input-border-color-disabled);
+        color: var(--input-foreground-color-disabled);
 
         .icon {
           stroke: var(--input-foreground-color-disabled);

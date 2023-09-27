@@ -1,0 +1,72 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  .element-title {
+    .add-fill {
+      @extend .button-tertiary;
+      height: $s-32;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+      }
+    }
+  }
+  .element-content {
+    display: flex;
+    flex-direction: column;
+    gap: $s-12;
+    .element-set-options-group {
+      display: flex;
+      align-items: center;
+      gap: $s-4;
+      .group-label {
+        @extend .mixed-bar;
+      }
+      .remove-btn {
+        @extend .button-tertiary;
+        height: $s-32;
+        width: $s-28;
+        svg {
+          @extend .button-icon;
+        }
+      }
+    }
+    .checkbox {
+      display: flex;
+      align-items: center;
+      margin-bottom: $s-8;
+      margin-top: calc(-1 * $s-4);
+      padding-left: $s-8;
+      input {
+        margin: 0;
+      }
+      label {
+        @include titleTipography;
+        display: flex;
+        align-items: center;
+        gap: $s-6;
+        cursor: pointer;
+        .check-mark {
+          @include flexCenter;
+          width: $s-16;
+          height: $s-16;
+          border-radius: $br-6;
+          background-color: var(--input-background-color);
+          &.checked {
+            background-color: var(--input-border-color-active);
+            svg {
+              @extend .button-icon-small;
+              stroke: var(--input-details-color);
+            }
+          }
+        }
+      }
+    }
+  }
+}

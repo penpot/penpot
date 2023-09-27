@@ -825,21 +825,20 @@
                                 (map create-cgdd)))]
 
     [:g.gaps {:pointer-events "visible"}
-     [:*
-      (for [[index display-item] (d/enumerate (concat display-blocks display-children))]
-        (let [gap-type (:gap-type display-item)]
-          [:& gap-display {:key (str frame-id index)
-                           :frame-id frame-id
-                           :zoom zoom
-                           :gap-type gap-type
-                           :gap gap
-                           :on-pointer-enter (partial on-pointer-enter gap-type (get gap gap-type))
-                           :on-pointer-leave on-pointer-leave
-                           :rect-data display-item
-                           :hover?    (= @hover gap-type)
-                           :selected? (= gap-selected gap-type)
-                           :mouse-pos mouse-pos
-                           :hover-value hover-value}]))]
+     (for [[index display-item] (d/enumerate (concat display-blocks display-children))]
+       (let [gap-type (:gap-type display-item)]
+         [:& gap-display {:key (str frame-id index)
+                          :frame-id frame-id
+                          :zoom zoom
+                          :gap-type gap-type
+                          :gap gap
+                          :on-pointer-enter (partial on-pointer-enter gap-type (get gap gap-type))
+                          :on-pointer-leave on-pointer-leave
+                          :rect-data display-item
+                          :hover?    (= @hover gap-type)
+                          :selected? (= gap-selected gap-type)
+                          :mouse-pos mouse-pos
+                          :hover-value hover-value}]))
 
      (when @hover
        [:& flex-display-pill {:height pill-height

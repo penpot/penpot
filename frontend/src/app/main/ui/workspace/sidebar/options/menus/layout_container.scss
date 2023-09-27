@@ -8,7 +8,6 @@
 
 .element-set {
   .element-title {
-    margin-right: $s-12;
     .title-spacing-layout {
       margin: 0;
     }
@@ -74,74 +73,16 @@
           @extend .input-element;
           width: $s-108;
           padding-left: $s-8;
-          .numeric-input {
-            @include removeInputStyle;
-            @include titleTipography;
-            height: $s-32;
-            width: 100%;
-            margin: 0;
-            color: var(--input-foreground-color-active);
-          }
-          .icon {
-            @include flexCenter;
-            height: $s-32;
-            margin-right: $s-4;
-            svg {
-              @extend .button-icon-small;
-              stroke: var(--icon-foreground);
-            }
-          }
           &.disabled {
-            background-color: var(--input-background-color-disabled);
-            border: 1px solid var(--input-border-color-disabled);
-            color: var(--input-foreground-color-disabled);
-            .numeric-input {
-              pointer-events: none;
-              cursor: default;
-              color: var(--input-foreground-color-disabled);
-            }
-            .icon {
-              svg {
-                stroke: var(--input-foreground-color-disabled);
-              }
-            }
+            @extend .disabled-input;
           }
         }
         .row-gap {
           @extend .input-element;
           width: $s-108;
           padding-left: $s-8;
-          .numeric-input {
-            @include removeInputStyle;
-            @include titleTipography;
-            height: $s-32;
-            width: 100%;
-            margin: 0;
-            color: var(--input-foreground-color-active);
-          }
-          .icon {
-            @include flexCenter;
-            height: $s-32;
-            margin-right: $s-4;
-            svg {
-              @extend .button-icon-small;
-              stroke: var(--icon-foreground);
-            }
-          }
           &.disabled {
-            background-color: var(--input-background-color-disabled);
-            border: 1px solid var(--input-border-color-disabled);
-            color: var(--input-foreground-color-disabled);
-            .numeric-input {
-              pointer-events: none;
-              cursor: default;
-              color: var(--input-foreground-color-disabled);
-            }
-            .icon {
-              svg {
-                stroke: var(--input-foreground-color-disabled);
-              }
-            }
+            @extend .disabled-input;
           }
         }
       }
@@ -158,23 +99,6 @@
               @extend .input-element;
               width: $s-108;
               padding-left: $s-8;
-              .numeric-input {
-                @include removeInputStyle;
-                @include titleTipography;
-                height: $s-32;
-                width: 100%;
-                margin: 0;
-                color: var(--input-foreground-color-active);
-              }
-              .icon {
-                @include flexCenter;
-                height: $s-32;
-                margin-right: $s-4;
-                svg {
-                  @extend .button-icon-small;
-                  stroke: var(--icon-foreground);
-                }
-              }
             }
           }
           .paddings-multiple {
@@ -185,23 +109,6 @@
               @extend .input-element;
               width: $s-108;
               padding-left: $s-8;
-              .numeric-input {
-                @include removeInputStyle;
-                @include titleTipography;
-                height: $s-32;
-                width: 100%;
-                margin: 0;
-                color: var(--input-foreground-color-active);
-              }
-              .icon {
-                @include flexCenter;
-                height: $s-32;
-                margin-right: $s-4;
-                svg {
-                  @extend .button-icon-small;
-                  stroke: var(--icon-foreground);
-                }
-              }
             }
           }
         }
@@ -220,17 +127,6 @@
               stroke: var(--button-tertiary-foreground-color-active);
             }
           }
-        }
-      }
-    }
-  }
-  .grid-layout-menu {
-    background-color: antiquewhite;
-    .first-row {
-      .direction-edit {
-        .direction {
-        }
-        .edit {
         }
       }
     }

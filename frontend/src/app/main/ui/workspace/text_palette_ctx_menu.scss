@@ -10,7 +10,7 @@
   position: absolute;
   left: auto;
   bottom: $s-0;
-  max-width: $s-248;
+  max-width: $s-480;
   padding: $s-4;
   margin: 0 0 $s-4 0;
   z-index: $z-index-3;
@@ -22,6 +22,7 @@
     position: relative;
     display: flex;
     justify-content: space-between;
+    width: 100%;
     gap: $s-8;
     padding: $s-8;
     margin-bottom: $s-4;
@@ -41,7 +42,6 @@
         max-width: $s-380;
       }
       .lib-num {
-        background-color: green;
         margin-left: $s-4;
       }
     }

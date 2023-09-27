@@ -98,7 +98,7 @@
          :selected section
          :collapsable? false
          :content-class (stl/css :content-class)
-         :klass (stl/css :tab-spacing)}
+         :class (stl/css :tab-spacing)}
         [:& tab-element {:id :design
                          :title (tr "workspace.options.design")}
          [:div {:class (stl/css :element-options)}

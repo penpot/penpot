@@ -2357,6 +2357,10 @@ msgstr "Ir al login"
 msgid "settings.multiple"
 msgstr "Varios"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Desacoplar"
+
 # SECTIONS
 msgid "shortcut-section.basics"
 msgstr "Básicos"
@@ -4236,12 +4240,24 @@ msgid "workspace.options.stroke-cap.circle-marker"
 msgstr "Marcador círculo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Círculo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.diamond-marker"
 msgstr "Marcador diamante"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Diamante"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.line-arrow"
 msgstr "Flecha de línea"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "Flecha"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.none"
@@ -4260,8 +4276,16 @@ msgid "workspace.options.stroke-cap.square-marker"
 msgstr "Marcador cuadrado"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Rectángulo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Flecha triángulo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Triángulo"
 
 msgid "workspace.options.stroke-color"
 msgstr "Color del trazo"

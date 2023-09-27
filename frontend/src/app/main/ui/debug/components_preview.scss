@@ -84,11 +84,10 @@
     display: flex;
     flex-wrap: wrap;
     gap: $s-20;
-    .component-group {
+    .components-group {
       @include flexCenter;
       justify-content: flex-start;
       flex-direction: column;
-      // width: $s-256;
       border-radius: $s-8;
       h3 {
         @include titleTipography;
@@ -128,6 +127,9 @@
       svg {
         @extend .button-icon;
       }
+    }
+    .input-wrapper {
+      @extend .input-element;
     }
   }
 }
