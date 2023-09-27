@@ -71,7 +71,7 @@
                  :code code
                  :hint msg
                  :args args
-                 ::explain (str/format "file %s\npage %s\nshape %s"
+                 ::explain (str/format "file %s, page %s, shape %s"
                                        (:id file)
                                        (:id page)
                                        (:id shape))})
@@ -239,7 +239,7 @@
   (validate-component-root shape file page)
   (validate-component-not-ref shape file page)
   (doseq [child-id (:shapes shape)]
-    (validate-shape child-id file page libraries :context :main-top :clear-errors? false)))
+    (validate-shape child-id file page libraries :context :main-top)))
 
 (defn validate-shape-main-root-nested
   "Root shape of a nested main instance
@@ -251,7 +251,7 @@
   (validate-component-not-root shape file page)
   (validate-component-not-ref shape file page)
   (doseq [child-id (:shapes shape)]
-    (validate-shape child-id file page libraries :context :main-nested :clear-errors? false)))
+    (validate-shape child-id file page libraries :context :main-nested)))
 
 (defn validate-shape-copy-root-top
   "Root shape of a top copy instance
@@ -264,7 +264,7 @@
   (validate-component-root shape file page)
   (validate-component-ref shape file page libraries)
   (doseq [child-id (:shapes shape)]
-    (validate-shape child-id file page libraries :context :copy-top :clear-errors? false)))
+    (validate-shape child-id file page libraries :context :copy-top)))
 
 (defn validate-shape-copy-root-nested
   "Root shape of a nested copy instance
@@ -276,7 +276,7 @@
   (validate-component-not-root shape file page)
   (validate-component-ref shape file page libraries)
   (doseq [child-id (:shapes shape)]
-    (validate-shape child-id file page libraries :context :copy-nested :clear-errors? false)))
+    (validate-shape child-id file page libraries :context :copy-nested)))
 
 (defn validate-shape-main-not-root
   "Not-root shape of a main instance
@@ -286,7 +286,7 @@
   (validate-component-not-root shape file page)
   (validate-component-not-ref shape file page)
   (doseq [child-id (:shapes shape)]
-    (validate-shape child-id file page libraries :context :main-any :clear-errors? false)))
+    (validate-shape child-id file page libraries :context :main-any)))
 
 (defn validate-shape-copy-not-root
   "Not-root shape of a copy instance
@@ -296,7 +296,7 @@
   (validate-component-not-root shape file page)
   (validate-component-ref shape file page libraries)
   (doseq [child-id (:shapes shape)]
-    (validate-shape child-id file page libraries :context :copy-any :clear-errors? false)))
+    (validate-shape child-id file page libraries :context :copy-any)))
 
 (defn validate-shape-not-component
   "Shape is not in a component or is a fostered children
@@ -306,7 +306,7 @@
   (validate-component-not-root shape file page)
   (validate-component-not-ref shape file page)
   (doseq [child-id (:shapes shape)]
-    (validate-shape child-id file page libraries :context :not-component :clear-errors? false)))
+    (validate-shape child-id file page libraries :context :not-component)))
 
 (defn validate-shape
   "Validate referential integrity and semantic coherence of a shape and all its children.
@@ -321,8 +321,8 @@
      :copy-any"
   [shape-id file page libraries & {:keys [context throw?]
                                    :or {context :not-component
-                                        throw? false}}]
-  (binding [*throw-on-error* throw?
+                                        throw? nil}}]
+  (binding [*throw-on-error* (if (some? throw?) throw? *throw-on-error*)
             *errors* (or *errors* (volatile! []))]
     (let [shape (ctst/get-shape page shape-id)]
 
