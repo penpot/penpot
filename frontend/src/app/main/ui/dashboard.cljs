@@ -138,18 +138,19 @@
 
 (mf/defc dashboard
   [{:keys [route profile] :as props}]
-  (let [section      (get-in route [:data :name])
-        params       (parse-params route)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        section        (get-in route [:data :name])
+        params         (parse-params route)
 
-        project-id   (:project-id params)
-        team-id      (:team-id params)
-        search-term  (:search-term params)
+        project-id     (:project-id params)
+        team-id        (:team-id params)
+        search-term    (:search-term params)
 
-        teams        (mf/deref refs/teams)
-        team         (get teams team-id)
+        teams          (mf/deref refs/teams)
+        team           (get teams team-id)
 
-        projects     (mf/deref refs/dashboard-projects)
-        project      (get projects project-id)]
+        projects       (mf/deref refs/dashboard-projects)
+        project        (get projects project-id)]
 
     (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
@@ -177,7 +178,9 @@
       ;; components on team change. Many components assumes that the
       ;; team is already set so don't put the team into mf/deps.
       (when team
-        [:main.dashboard-layout {:key (:id team)}
+        [:main {:class (dom/classnames :dashboard-layout (not new-css-system)
+                                       :dashboard-layout-refactor new-css-system)
+                :key (:id team)}
          [:& sidebar
           {:team team
            :projects projects

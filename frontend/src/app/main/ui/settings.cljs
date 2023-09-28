@@ -8,6 +8,7 @@
   (:require
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.settings.access-tokens :refer [access-tokens-page]]
    [app.main.ui.settings.change-email]
    [app.main.ui.settings.delete-account]
@@ -16,6 +17,7 @@
    [app.main.ui.settings.password :refer [password-page]]
    [app.main.ui.settings.profile :refer [profile-page]]
    [app.main.ui.settings.sidebar :refer [sidebar]]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [rumext.v2 :as mf]))
@@ -29,7 +31,8 @@
 
 (mf/defc settings
   [{:keys [route] :as props}]
-  (let [section (get-in route [:data :name])
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        section (get-in route [:data :name])
         profile (mf/deref refs/profile)
         locale  (mf/deref i18n/locale)]
 
@@ -37,27 +40,28 @@
      #(when (nil? profile)
         (st/emit! (rt/nav :auth-login))))
 
-    [:section.dashboard-layout
-     [:& sidebar {:profile profile
-                  :locale locale
-                  :section section}]
+  [:section {:class (dom/classnames :dashboard-layout (not new-css-system)
+                                    :dashboard-layout-refactor new-css-system)}
+   [:& sidebar {:profile profile
+                :locale locale
+                :section section}]
 
-     [:div.dashboard-content
-      [:& header]
-      [:section.dashboard-container
-       (case section
-         :settings-profile
-         [:& profile-page {:locale locale}]
+   [:div.dashboard-content
+    [:& header]
+    [:section.dashboard-container
+     (case section
+       :settings-profile
+       [:& profile-page {:locale locale}]
 
-         :settings-feedback
-         [:& feedback-page]
+       :settings-feedback
+       [:& feedback-page]
 
-         :settings-password
-         [:& password-page {:locale locale}]
+       :settings-password
+       [:& password-page {:locale locale}]
 
-         :settings-options
-         [:& options-page {:locale locale}]
+       :settings-options
+       [:& options-page {:locale locale}]
 
-         :settings-access-tokens
-         [:& access-tokens-page])]]]))
+       :settings-access-tokens
+       [:& access-tokens-page])]]]))
 
