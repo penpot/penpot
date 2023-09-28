@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-09-24 15:02+0000\n"
+"PO-Revision-Date: 2023-09-29 09:02+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -4844,3 +4844,77 @@ msgstr ""
 "Persönliche Zugangstoken stellen eine Alternative zu unserem Login/Passwort-"
 "Authentifizierungssystem dar und können verwendet werden, um einer Anwendung "
 "den Zugriff auf die interne Penpot-API zu ermöglichen"
+
+#: src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "In Ihrer Bibliothek sind noch keine Farbstile vorhanden"
+
+msgid "workspace.options.component.create-annotation"
+msgstr "Eine Anmerkung erstellen"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "Sind Sie sicher, dass Sie diese Anmerkung löschen möchten?"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "Eine Anmerkung bearbeiten"
+
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Mehrere Komponenten erstellen"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "Diese Bibliothek ist hier aktiviert: "
+msgstr[1] "Diese Bibliotheken sind hier aktiviert: "
+
+msgid "modals.publish-empty-library.title"
+msgstr "Leere Bibliothek veröffentlichen"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "alle Änderungen anzeigen"
+
+#: src/app/main/ui/workspace/textpalette.cljs
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "In Ihrer Bibliothek sind noch keine Textstile vorhanden"
+
+msgid "workspace.shape.menu.add-grid"
+msgstr "Grid-Layout hinzufügen"
+
+msgid "workspace.options.component.annotation"
+msgstr "Anmerkung"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
+msgstr[0] "Diese Bibliothek ist hier aktiviert:"
+msgstr[1] "Diese Bibliotheken sind hier aktiviert:"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.lets-get-started"
+msgstr "Los geht's!"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library-updates"
+msgstr "AKTUALISIERUNGEN DER BIBLIOTHEK"
+
+msgid "modals.publish-empty-library.message"
+msgstr ""
+"Ihre Bibliothek ist leer. Sind Sie sicher, dass Sie es veröffentlichen "
+"wollen?"
+
+msgid "workspace.assets.open-library"
+msgstr "Bibliotheksdatei öffnen"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.more-info"
+msgstr "Mehr Info"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
+msgstr[0] "Es ist in keiner Datei aktiviert."
+msgstr[1] "Sie sind in keiner Datei aktiviert."
+
+msgid "workspace.shape.menu.create-annotation"
+msgstr "Anmerkung erstellen"
