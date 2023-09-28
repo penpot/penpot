@@ -316,6 +316,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of msg/hide
+             (features/initialize)
              (dcm/retrieve-comment-threads file-id)
              (dwp/initialize-file-persistence file-id)
              (fetch-bundle project-id file-id)))
