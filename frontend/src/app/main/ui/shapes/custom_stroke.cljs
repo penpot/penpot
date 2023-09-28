@@ -390,7 +390,7 @@
         props        (if (cph/frame-shape? shape)
                        props
                        (if (or (some? (->> shape-shadow (remove :hidden) seq))
-                               (not ^boolean (:hidden shape-blur)))
+                               (and (some? shape-blur) (not ^boolean (:hidden shape-blur))))
                          (obj/set! props "filter" (dm/fmt "url(#filter-%)" render-id))
                          props))
 
