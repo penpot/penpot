@@ -538,42 +538,45 @@
 
 (defn render-frame
   [objects shape object-id]
-  (let [shape-id      (dm/get-prop shape :id)
-        fonts         (ff/shape->fonts shape objects)
+  (if (some? shape)
+    (let [shape-id      (dm/get-prop shape :id)
+          fonts         (ff/shape->fonts shape objects)
 
-        bounds         (if (:show-content shape)
-                         (let [ids      (cph/get-children-ids objects shape-id)
-                               children (sequence (keep (d/getf objects)) ids)]
-                           (gsh/shapes->rect (cons shape children)))
-                         (-> shape :points grc/points->rect))
+          bounds         (if (:show-content shape)
+                           (let [ids      (cph/get-children-ids objects shape-id)
+                                 children (sequence (keep (d/getf objects)) ids)]
+                             (gsh/shapes->rect (cons shape children)))
+                           (-> shape :points grc/points->rect))
 
-        x              (dm/get-prop bounds :x)
-        y              (dm/get-prop bounds :y)
-        width          (dm/get-prop bounds :width)
-        height         (dm/get-prop bounds :height)
+          x              (dm/get-prop bounds :x)
+          y              (dm/get-prop bounds :y)
+          width          (dm/get-prop bounds :width)
+          height         (dm/get-prop bounds :height)
 
-        viewbox        (str/ffmt "% % % %" x y width height)
+          viewbox        (str/ffmt "% % % %" x y width height)
 
-        [fixed-width
-         fixed-height] (th/get-proportional-size width height)
+          [fixed-width
+           fixed-height] (th/get-proportional-size width height)
 
-        data           (rds/renderToStaticMarkup
-                        (mf/element frame-imposter
-                                    #js {:objects objects
-                                         :frame shape
-                                         :vbox viewbox
-                                         :width width
-                                         :height height}))]
+          data           (rds/renderToStaticMarkup
+                          (mf/element frame-imposter
+                                      #js {:objects objects
+                                           :frame shape
+                                           :vbox viewbox
+                                           :width width
+                                           :height height}))]
 
-    (->> (fonts/render-font-styles-cached fonts)
-         (rx/catch (fn [cause]
-                     (l/err :hint "unexpected error on rendering imposter"
-                            :cause cause)
-                     (rx/empty)))
-         (rx/map (fn [styles]
-                   {:id object-id
-                    :data data
-                    :viewbox viewbox
-                    :width fixed-width
-                    :height fixed-height
-                    :styles styles})))))
+      (->> (fonts/render-font-styles-cached fonts)
+           (rx/catch (fn [cause]
+                       (l/err :hint "unexpected error on rendering imposter"
+                              :cause cause)
+                       (rx/empty)))
+           (rx/map (fn [styles]
+                     {:id object-id
+                      :data data
+                      :viewbox viewbox
+                      :width fixed-width
+                      :height fixed-height
+                      :styles styles}))))
+    (do (l/warn :msg "imposter shape is nil")
+        (rx/empty))))
