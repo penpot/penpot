@@ -82,7 +82,7 @@
       date)))
 
 
-;; --- Globar Config Vars
+;; --- Global Config Vars
 
 (def default-theme  "default")
 (def default-language "en")

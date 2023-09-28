@@ -100,7 +100,7 @@
       ;; environemnt (aka devenv).
       (when *assert*
         ;; By default, all features disabled, except in development
-        ;; environment, that are enabled except components-v2
+        ;; environment, that are enabled except components-v2 and new css
         (->> (rx/from available-features)
              (rx/filter #(not= % :components-v2))
              (rx/filter #(not= % :new-css-system))

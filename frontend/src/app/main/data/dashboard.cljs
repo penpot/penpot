@@ -58,25 +58,27 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/merge
-       ;;fetch teams must be first in case the team doesn't exist
-       (ptk/watch (du/fetch-teams) state stream)
-       (ptk/watch (df/load-team-fonts id) state stream)
-       (ptk/watch (fetch-projects) state stream)
-       (ptk/watch (fetch-team-members) state stream)
-       (ptk/watch (du/fetch-users {:team-id id}) state stream)
+      (rx/concat
+       (rx/of (features/initialize))
+       (rx/merge
+        ;; fetch teams must be first in case the team doesn't exist
+        (ptk/watch (du/fetch-teams) state stream)
+        (ptk/watch (df/load-team-fonts id) state stream)
+        (ptk/watch (fetch-projects) state stream)
+        (ptk/watch (fetch-team-members) state stream)
+        (ptk/watch (du/fetch-users {:team-id id}) state stream)
 
-       (let [stoper    (rx/filter (ptk/type? ::finalize) stream)
-            profile-id (:profile-id state)]
-         (->> stream
-              (rx/filter (ptk/type? ::dws/message))
-              (rx/map deref)
-              (rx/filter (fn [{:keys [subs-id type] :as msg}]
-                           (and (or (= subs-id uuid/zero)
-                                    (= subs-id profile-id))
-                                (= :notification type))))
-              (rx/map handle-notification)
-              (rx/take-until stoper)))))))
+        (let [stoper    (rx/filter (ptk/type? ::finalize) stream)
+              profile-id (:profile-id state)]
+          (->> stream
+               (rx/filter (ptk/type? ::dws/message))
+               (rx/map deref)
+               (rx/filter (fn [{:keys [subs-id type] :as msg}]
+                            (and (or (= subs-id uuid/zero)
+                                     (= subs-id profile-id))
+                                 (= :notification type))))
+               (rx/map handle-notification)
+               (rx/take-until stoper))))))))
 
 (defn finalize
   [params]
