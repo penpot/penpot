@@ -134,12 +134,19 @@
   [shape]
   (some? (:shape-ref shape)))
 
+(defn in-component-copy-not-head?
+  "Check if the shape is inside a component non-main instance and
+  is not the head of a subinstance."
+  [shape]
+  (and (some? (:shape-ref shape))
+       (nil? (:component-id shape))))
+
 (defn in-component-copy-not-root?
   "Check if the shape is inside a component non-main instance and
   is not the root shape."
   [shape]
   (and (some? (:shape-ref shape))
-       (nil? (:component-id shape))))
+       (nil? (:component-root shape))))
 
 (defn main-instance-of?
   "Check if this shape is the root of the main instance of the given component."

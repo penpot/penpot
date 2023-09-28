@@ -1725,6 +1725,9 @@ msgstr "(tú)"
 msgid "labels.your-account"
 msgstr "Tu cuenta"
 
+msgid "labels.search"
+msgstr "Buscar"
+
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Cargando imagen…"
@@ -3666,6 +3669,9 @@ msgstr "Editar una nota"
 msgid "workspace.options.component.main"
 msgstr "Principal"
 
+
+msgid "workspace.options.component.swap"
+msgstr "Intercambiar componente"
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
 msgstr "Restricciones"

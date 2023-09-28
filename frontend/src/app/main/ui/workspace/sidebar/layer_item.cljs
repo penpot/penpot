@@ -10,6 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -145,10 +147,15 @@
         (mf/use-fn
          (mf/deps id index objects)
          (fn [side _data]
-           (if (= side :center)
-             (st/emit! (dw/relocate-selected-shapes id 0))
-             (let [to-index  (if (= side :top) (inc index) index)
-                   parent-id (cph/get-parent-id objects id)]
+           (let [to-index  (cond
+                             (= side :center) 0
+                             (= side :top) (inc index)
+                             :else index)
+                 parent-id (if (= side :center)
+                             id
+                             (cph/get-parent-id objects id))
+                 parent    (get objects parent-id)]
+             (when-not (ctk/in-component-copy? parent) ;; We don't want to change the structure of component copies
                (st/emit! (dw/relocate-selected-shapes parent-id to-index))))))
 
         on-hold
@@ -176,7 +183,10 @@
          :data {:id (:id item)
                 :index index
                 :name (:name item)}
-         :draggable? (and sortable? (not read-only?)))
+         :draggable? (and
+                      sortable?
+                      (not read-only?)
+                      (not (ctn/has-any-copy-parent? objects item)))) ;; We don't want to change the structure of component copies
 
         ref             (mf/use-ref)
         depth           (+ depth 1)
@@ -372,7 +382,7 @@
          [:div.toggle-element {:class (when ^boolean hidden? "selected")
                                :title (if (:hidden item)
                                         (tr "workspace.shape.menu.show")
-                                        (tr "workspace.shape.menu.hide"))                               
+                                        (tr "workspace.shape.menu.hide"))
                                :on-click toggle-visibility}
           (if ^boolean hidden? i/eye-closed i/eye)]
          [:div.block-element {:class (when ^boolean blocked? "selected")

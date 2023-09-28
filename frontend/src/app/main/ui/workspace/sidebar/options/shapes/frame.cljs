@@ -12,7 +12,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-attrs component-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
@@ -36,7 +36,6 @@
         constraint-values (select-keys shape constraint-attrs)
         layout-container-values (select-keys shape layout-container-flex-attrs)
         layout-item-values (select-keys shape layout-item-attrs)
-        [comp-ids comp-values] [[(:id shape)] (select-keys shape component-attrs)]
 
         ids (hooks/use-equal-memo ids)
 
@@ -63,9 +62,7 @@
                         :values measure-values
                         :type type
                         :shape shape}]
-     [:& component-menu {:ids comp-ids
-                         :values comp-values
-                         :shape shape}]
+     [:& component-menu {:shape shape}]
      (when (or (not is-layout-child?) is-layout-child-absolute?)
        [:& constraints-menu {:ids ids
                              :values constraint-values}])

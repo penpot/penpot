@@ -123,7 +123,8 @@
      (update [_ state]
        (-> state
            (update-in [:workspace-local :selected] d/toggle-selection id toggle?)
-           (assoc-in [:workspace-local :last-selected] id)))
+           (assoc-in [:workspace-local :last-selected] id)
+           (dissoc :specialized-panel)))
 
      ptk/WatchEvent
      (watch [_ state _]
@@ -188,7 +189,8 @@
     (update [_ state]
       (-> state
           (update-in [:workspace-local :selected] disj id)
-          (update :workspace-local dissoc :last-selected)))))
+          (update :workspace-local dissoc :last-selected)
+          (dissoc :specialized-panel)))))
 
 (defn shift-select-shapes
   ([id]
@@ -206,7 +208,8 @@
          (-> state
              (assoc-in [:workspace-local :selected]
                (set/union selection append-to-selection))
-             (update :workspace-local assoc :last-selected id)))))))
+             (update :workspace-local assoc :last-selected id)
+             (dissoc :specialized-panel)))))))
 
 (defn select-shapes
   [ids]
@@ -223,7 +226,9 @@
             ids (if (d/not-empty? focus)
                   (cpf/filter-not-focus objects focus ids)
                   ids)]
-        (assoc-in state [:workspace-local :selected] ids)))
+        (-> state
+            (assoc-in  [:workspace-local :selected] ids)
+            (dissoc :specialized-panel))))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -277,7 +282,9 @@
          (update :workspace-local
                  #(-> %
                       (assoc :selected (d/ordered-set))
-                      (dissoc :selected-frame))))))))
+                      (dissoc :selected-frame)))
+         :allways
+         (dissoc :specialized-panel))))))
 
 ;; --- Select Shapes (By selrect)
 
@@ -631,7 +638,11 @@
       (when (or (not move-delta?) (nil? (get-in state [:workspace-local :transform])))
         (let [page     (wsh/lookup-page state)
               objects  (:objects page)
-              selected (wsh/lookup-selected state)]
+              selected (->> (wsh/lookup-selected state)
+                            (map #(get objects %))
+                            (remove #(ctk/in-component-copy-not-root? %)) ;; We don't want to change the structure of component copies
+                            (map :id)
+                            set)]
           (when (seq selected)
             (let [obj             (get objects (first selected))
                   delta           (if move-delta?

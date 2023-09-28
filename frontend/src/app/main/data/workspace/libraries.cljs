@@ -32,6 +32,7 @@
    [app.main.data.workspace.notifications :as-alias dwn]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.specialized-panel :as dwsp]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -743,6 +744,57 @@
         (rx/of (dwu/start-undo-transaction undo-id))
         (rx/map #(update-component-sync (:id %) file-id (uuid/next)) (rx/from shapes))
         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+
+(defn- find-shape-index
+  [objects id shape-id]
+  (let [object (get objects id)]
+    (when object
+      (let [shapes (:shapes object)]
+        (or (->> shapes
+                 (map-indexed (fn [index shape] [shape index]))
+                 (filter #(= shape-id (first %)))
+                 first
+                 second)
+            0)))))
+
+(defn component-swap
+  "Swaps a component with another one"
+  [shape file-id id-new-component]
+  (dm/assert! (uuid? id-new-component))
+  (dm/assert! (uuid? file-id))
+  (ptk/reify ::component-swap
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page      (wsh/lookup-page state)
+            libraries (wsh/get-libraries state)
+
+            objects   (:objects page)
+            index     (find-shape-index objects (:parent-id shape) (:id shape))
+            position  (gpt/point (:x shape) (:y shape))
+            changes   (-> (pcb/empty-changes it (:id page))
+                          (pcb/with-objects objects))
+
+            [new-shape changes]
+            (dwlh/generate-instantiate-component changes
+                                                 objects
+                                                 file-id
+                                                 id-new-component
+                                                 position
+                                                 page
+                                                 libraries)
+            changes (pcb/change-parent changes (:parent-id shape) [new-shape] index {:component-swap true})
+            undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (ptk/data-event :layout/update [(:id new-shape)])
+               (dws/select-shapes (d/ordered-set (:id new-shape)))
+               (dwsh/delete-shapes nil (d/ordered-set (:id shape)) {:component-swap true})
+               (dwu/commit-undo-transaction undo-id)
+               (dwsp/open-specialized-panel :component-swap [(assoc new-shape :parent-id (:parent-id shape))]))))))
+
+
+
+
 
 (def valid-asset-types
   #{:colors :components :typographies})

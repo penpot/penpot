@@ -308,9 +308,12 @@
 
 (defn change-parent
   ([changes parent-id shapes]
-   (change-parent changes parent-id shapes nil))
+   (change-parent changes parent-id shapes nil {}))
 
   ([changes parent-id shapes index]
+   (change-parent changes parent-id shapes index {}))
+
+  ([changes parent-id shapes index options]
    (assert-page-id! changes)
    (assert-objects! changes)
    (let [objects (lookup-objects changes)
@@ -323,7 +326,9 @@
                   :shapes (->> shapes reverse (mapv :id))}
 
            (some? index)
-           (assoc :index index))
+           (assoc :index index)
+           (:component-swap options)
+           (assoc :component-swap true))
 
          mk-undo-change
          (fn [undo-changes shape]

@@ -463,20 +463,22 @@
       (d/update-in-when data [:components component-id :objects] reg-objects))))
 
 (defmethod process-change :mov-objects
-  [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape]}]
+  [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape component-swap]}]
   (letfn [(calculate-invalid-targets [objects shape-id]
             (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
               (->> (get-in objects [shape-id :shapes])
                    (reduce reduce-fn #{shape-id}))))
 
           ;; Avoid placing a shape as a direct or indirect child of itself,
-          ;; or inside its main component if it's in a copy.
+          ;; or inside its main component if it's in a copy,
+          ;; or inside a copy
           (is-valid-move? [objects shape-id]
             (let [invalid-targets (calculate-invalid-targets objects shape-id)]
               (and (contains? objects shape-id)
                    (not (invalid-targets parent-id))
                    (not (cph/components-nesting-loop? objects shape-id parent-id))
-                   #_(cph/valid-frame-target? objects parent-id shape-id))))
+                   (or component-swap
+                       (not (ctk/in-component-copy? (get objects parent-id))))))) ;; We don't want to change the structure of component copies
 
           (insert-items [prev-shapes index shapes]
             (let [prev-shapes (or prev-shapes [])]

@@ -531,6 +531,14 @@
                    (merge-path other-path item))))
         [other-path last-item false]))))
 
+(defn prev-path
+  "Remove the last item of the path."
+  [path]
+  (let [split (split-path path)]
+    (if (= 1 (count split))
+      ""
+      (join-path (butlast split)))))
+
 (defn compact-name
   "Append the first item of the path and the name."
   [path name]

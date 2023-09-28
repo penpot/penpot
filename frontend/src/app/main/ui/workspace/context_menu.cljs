@@ -444,7 +444,7 @@
 
         has-component?      (some true? (map #(ctk/instance-head? %) shapes))
         is-component?       (and single? (-> shapes first :component-id some?))
-        in-copy-not-root?   (some true? (map #(ctk/in-component-copy-not-root? %) shapes))
+        in-copy-not-root?   (some true? (map #(ctk/in-component-copy-not-head? %) shapes))
 
         objects             (deref refs/workspace-page-objects)
         touched?            (and single? (cph/component-touched? objects (:id (first shapes))))
