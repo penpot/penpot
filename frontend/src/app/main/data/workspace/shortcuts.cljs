@@ -68,8 +68,9 @@
    :cut                  {:tooltip (ds/meta "X")
                           :command (ds/c-mod "x")
                           :subsections [:edit]
-                          :fn #(emit-when-no-readonly (dw/copy-selected)
-                                 (dw/delete-selected))}
+                          :fn #(emit-when-no-readonly
+                                (dw/copy-selected)
+                                (dw/delete-selected))}
 
    :paste                {:tooltip (ds/meta "V")
                           :disabled true

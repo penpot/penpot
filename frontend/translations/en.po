@@ -1673,6 +1673,9 @@ msgstr "(you)"
 msgid "labels.your-account"
 msgstr "Your account"
 
+msgid "labels.search"
+msgstr "Search"
+
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Loading image…"
@@ -3590,6 +3593,9 @@ msgstr "Edit an annotation"
 msgid "workspace.options.component.main"
 msgstr "Main"
 
+
+msgid "workspace.options.component.swap"
+msgstr "Swap component"
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
 msgstr "Constraints"

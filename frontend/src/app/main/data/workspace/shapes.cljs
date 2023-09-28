@@ -12,7 +12,6 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
-   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
@@ -133,8 +132,9 @@
 (declare update-shape-flags)
 
 (defn delete-shapes
-  ([ids] (delete-shapes nil ids))
-  ([page-id ids]
+  ([ids] (delete-shapes nil ids {}))
+  ([page-id ids] (delete-shapes page-id ids {}))
+  ([page-id ids options]
    (dm/assert! (sm/set-of-uuid? ids))
    (ptk/reify ::delete-shapes
      ptk/WatchEvent
@@ -154,11 +154,11 @@
                ;; Look for shapes that are inside a component copy, but are
                ;; not the root. In this case, they must not be deleted,
                ;; but hidden (to be able to recover them more easily).
-               (let [shape           (get objects shape-id)
-                     component-shape (ctn/get-component-shape objects shape)]
-                 (and (ctk/in-component-copy? shape)
-                      (not= shape component-shape)
-                      (not (ctk/main-instance? component-shape)))))
+               ;; Unless we are doing a component swap, in which case we want
+               ;; to delete the old shape
+               (let [shape           (get objects shape-id)]
+                 (and (ctn/has-any-copy-parent? objects shape)
+                      (not (:component-swap options)))))
 
              [ids-to-delete ids-to-hide]
              (if components-v2
@@ -346,6 +346,11 @@
                               (empty? selected))
                         frame-id
                         (:parent-id base))
+
+            ;; If the parent-id or the frame-id are component-copies, we need to get the first not copy parent
+            parent-id (:id (ctn/get-first-not-copy-parent objects parent-id))   ;; We don't want to change the structure of component copies
+            frame-id  (:id (ctn/get-first-not-copy-parent objects frame-id))
+
 
             shape     (cts/setup-shape
                        (-> attrs

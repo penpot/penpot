@@ -921,7 +921,7 @@
                             component-shape        (ctn/get-component-shape objects shape)
                             component-shape-parent (ctn/get-component-shape objects parent)
 
-                            detach? (and (ctk/in-component-copy-not-root? shape)
+                            detach? (and (ctk/in-component-copy-not-head? shape)
                                          (not= (:id component-shape)
                                                (:id component-shape-parent)))
                             deroot? (and (ctk/instance-root? shape)
@@ -1834,6 +1834,11 @@
                   ;; Calculate position for the pasted elements
                   [frame-id parent-id delta index] (calculate-paste-position state mouse-pos in-viewport?)
 
+                  ;; We don't want to change the structure of component copies
+                  ;; If the parent-id or the frame-id are component-copies, we need to get the first not copy parent
+                  parent-id (:id (ctn/get-first-not-copy-parent page-objects parent-id))
+                  frame-id  (:id (ctn/get-first-not-copy-parent page-objects frame-id))
+
                   process-shape
                   (fn [_ shape]
                     (let [parent                 (get page-objects parent-id)
@@ -1841,7 +1846,7 @@
                           component-shape-parent (ctn/get-component-shape page-objects parent)
                           ;; if foreign instance, or a shape belonging to another component, detach the shape
                           detach? (or (foreign-instance? shape paste-objects state)
-                                      (and (ctk/in-component-copy-not-root? shape)
+                                      (and (ctk/in-component-copy-not-head? shape)
                                            (not= (:id component-shape)
                                                  (:id component-shape-parent))))
                           assign-shapes? (and (or (cph/group-shape? shape)

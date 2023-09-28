@@ -513,10 +513,11 @@
                               :else
                               [move-vector nil])
 
-                            nesting-loop? (some #(cph/components-nesting-loop? objects (:id %) target-frame) shapes)]
+                            nesting-loop? (some #(cph/components-nesting-loop? objects (:id %) target-frame) shapes)
+                            is-component-copy? (ctk/in-component-copy? (get objects target-frame))]
 
                         (cond-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
-                          (not nesting-loop?)
+                          (and (not nesting-loop?) (not is-component-copy?))
                           (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data)
                           :always
                           (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
@@ -820,7 +821,7 @@
 
             shape-ids-to-detach
             (reduce (fn [result shape]
-                      (if (and (some? shape) (ctk/in-component-copy-not-root? shape))
+                      (if (and (some? shape) (ctk/in-component-copy-not-head? shape))
                         (let [shape-component (ctn/get-component-shape objects shape)]
                           (if (= (:id frame-component) (:id shape-component))
                             result

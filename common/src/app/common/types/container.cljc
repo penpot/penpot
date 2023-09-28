@@ -344,3 +344,22 @@
     (if (= parent-id uuid/zero)
       current-top
       (get-top-instance objects parent current-top))))
+
+
+(defn get-first-not-copy-parent
+  "Go trough the parents until we find a shape that is not a copy of a component."
+  [objects id]
+  (let [shape (get objects id)]
+    (if (ctk/in-component-copy? shape)
+      (get-first-not-copy-parent objects (:parent-id shape))
+      shape)))
+
+(defn has-any-copy-parent?
+  "Check if the shape has any parent that is a copy of a component."
+  [objects shape]
+  (let [parent (get objects (:parent-id shape))]
+    (if (nil? parent)
+      false
+      (if (ctk/in-component-copy? parent)
+        true
+        (has-any-copy-parent? objects (:parent-id shape))))))

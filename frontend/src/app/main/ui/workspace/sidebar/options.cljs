@@ -21,6 +21,7 @@
    [app.main.ui.viewer.inspect.right-sidebar :as hrs]
    [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options]]
    [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options]]
+   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.interactions :refer [interactions-menu]]
@@ -67,6 +68,13 @@
        :page-id page-id
        :file-id file-id}]]))
 
+(mf/defc specialized-panel
+  {::mf/wrap [mf/memo]}
+  [{:keys [panel]}]
+  (when (= (:type panel) :component-swap)
+    [:& component-menu {:shape (first (:shapes panel)) :swap-opened? true}]))
+
+
 (mf/defc options-content
   {::mf/wrap [mf/memo]}
   [{:keys [selected section shapes shapes-with-children page-id file-id on-change-section on-expand]}]
@@ -76,6 +84,7 @@
         shared-libs          (mf/deref refs/workspace-libraries)
         edition              (mf/deref refs/selected-edition)
         grid-edition         (mf/deref refs/workspace-grid-edition)
+        sp-panel             (mf/deref refs/specialized-panel)
 
         selected-shapes      (into [] (keep (d/getf objects)) selected)
         first-selected-shape (first selected-shapes)
@@ -115,6 +124,9 @@
             [:& layout-container/grid-layout-edition
              {:ids [edition]
               :values (get objects edition)}]
+
+            (not (nil? sp-panel))
+            [:& specialized-panel {:panel sp-panel}]
 
             (d/not-empty? drawing)
             [:& shape-options
@@ -176,6 +188,10 @@
              [:& layout-container/grid-layout-edition
               {:ids [edition]
                :values (get objects edition)}]
+
+             sp-panel
+             [:& specialized-panel {:panel sp-panel}]
+
 
              (d/not-empty? drawing)
              [:& shape-options

@@ -11,10 +11,13 @@
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.specialized-panel :as dwsp]
    [app.main.refs :as refs]
+   [app.main.render :refer [component-svg]]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -23,6 +26,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -144,9 +148,153 @@
         (when (or @editing? creating?)
           [:div.counter (str @size "/300")])]])))
 
+(mf/defc component-swap
+  [{:keys [shapes] :as props}]
+  (let [shape               (first shapes)
+        new-css-system      (mf/use-ctx ctx/new-css-system)
+        current-file-id     (mf/use-ctx ctx/current-file-id)
+        workspace-file      (deref refs/workspace-file)
+        workspace-data      (deref refs/workspace-data)
+        workspace-libraries (deref refs/workspace-libraries)
+        objects             (deref refs/workspace-page-objects)
+        libraries           (assoc workspace-libraries current-file-id (assoc workspace-file :data workspace-data))
+        filters*            (mf/use-state
+                             {:term ""
+                              :file-id (:component-file shape)
+                              :path (cph/prev-path (:name shape))})
+        filters             (deref filters*)
+
+        components          (-> (get-in libraries [(:file-id filters) :data :components])
+                                vals)
+
+        components          (if (str/empty? (:term filters))
+                              components
+                              (filter #(str/includes? (str/lower (:name %)) (str/lower (:term filters))) components))
+
+        groups              (->> (map :path components)
+                                 (filter #(= (cph/prev-path (:path %)) (:path filters)))
+                                 (remove str/empty?)
+                                 distinct
+                                 (map #(hash-map :name %)))
+
+        components          (filter #(= (:path %) (:path filters)) components)
+
+        items               (->> (concat groups components)
+                                 (sort-by :name))
+
+        ;; Get the ids of the components and its root-shapes that are parents of the current shape, to avoid loops
+        get-comps-ids       (fn get-comps-ids [shape ids]
+                              (if (uuid/zero? (:id shape))
+                                ids
+                                (let [ids (if (ctk/instance-head? shape)
+                                            (conj ids (:id shape) (:component-id shape))
+                                            ids)]
+                                  (get-comps-ids (get objects (:parent-id shape)) ids))))
+
+        parent-components   (set (get-comps-ids (get objects (:parent-id shape)) []))
+
+        on-library-change
+        (mf/use-fn
+         (fn [event]
+           (let [value (or (-> (dom/get-target event)
+                               (dom/get-value))
+                           (as-> (dom/get-current-target event) $
+                             (dom/get-attribute $ "data-test")))
+                 value (uuid/uuid value)]
+             (swap! filters* assoc :file-id value :term "" :path ""))))
+
+        on-search-term-change
+        (mf/use-fn
+         (mf/deps new-css-system)
+         (fn [event]
+                  ;;  NOTE: When old-css-system is removed this function will recibe value and event
+                  ;;  Let won't be necessary any more
+           (let [value (if ^boolean new-css-system
+                         event
+                         (dom/get-target-val event))]
+             (swap! filters* assoc :term value))))
+
+
+        on-search-clear-click
+        (mf/use-fn #(swap! filters* assoc :term ""))
+
+        on-go-back
+        (mf/use-fn
+         (mf/deps (:path filters))
+         #(swap! filters* assoc :path (cph/prev-path (:path filters))))
+
+        on-enter-group
+        (mf/use-fn #(swap! filters* assoc :path %))
+
+        handle-key-down
+        (mf/use-fn
+         (fn [event]
+           (let [enter? (kbd/enter? event)
+                 esc?   (kbd/esc? event)
+                 node   (dom/event->target event)]
+
+             (when ^boolean enter? (dom/blur! node))
+             (when ^boolean esc?   (dom/blur! node)))))]
+
+       [:div.component-swap
+        [:div.element-set-title
+         [:span (tr "workspace.options.component.swap")]]
+        [:div.component-swap-content
+         [:div.search-block
+          [:input.search-input
+           {:placeholder (str (tr "labels.search") " " (get-in libraries [(:file-id filters) :name]))
+            :type "text"
+            :value (:term filters)
+            :on-change on-search-term-change
+            :on-key-down handle-key-down}]
+
+          (if ^boolean (str/empty? (:term filters))
+            [:div.search-icon
+             i/search]
+            [:div.search-icon.close
+             {:on-click on-search-clear-click}
+             i/close])]
+
+         [:select.input-select {:value (:file-id filters)
+                                :data-mousetrap-dont-stop true
+                                :on-change on-library-change}
+          (for [library (vals libraries)]
+            [:option {:key (:id library) :value (:id library)} (:name library)])]
+
+         (when-not (str/empty? (:path filters))
+           [:div.component-path {:on-click on-go-back}
+            [:span i/arrow-slide]
+            [:span (-> (cph/split-path (:path filters))
+                       last)]])
+         [:div.component-list
+          (for [item items]
+            (if (:id item)
+              (let [data       (get-in libraries [(:file-id filters) :data])
+                    container  (ctf/get-component-page data item)
+                    root-shape (ctf/get-component-root data item)
+                    loop?      (or (contains? parent-components (:main-instance-id item))
+                                   (contains? parent-components (:id item)))]
+                [:div.component-item
+                 {:class (stl/css-case :disabled loop?)
+                  :key (:id item)
+                  :on-click #(when-not loop?
+                               (st/emit!
+                                (dwl/component-swap shape (:file-id filters) (:id item))))}
+                 [:& component-svg {:root-shape root-shape
+                                    :objects (:objects container)}]
+                 [:span.component-name
+                  {:class (stl/css-case :selected (= (:id item) (:component-id shape)))}
+                  (:name item)]])
+              [:div.component-group {:key (uuid/next) :on-click #(on-enter-group (:name item))}
+               [:span (:name item)]
+               [:span i/arrow-slide]]))]]]))
+
+
+
 (mf/defc component-menu
-  [{:keys [ids values shape] :as props}]
-  (let [new-css-system      (mf/use-ctx ctx/new-css-system)
+  [{:keys [shape swap-opened?] :as props}]
+  (let [[ids values]        [[(:id shape)] (select-keys shape component-attrs)]
+        new-css-system      (mf/use-ctx ctx/new-css-system)
         current-file-id     (mf/use-ctx ctx/current-file-id)
         components-v2       (mf/use-ctx ctx/components-v2)
 
@@ -171,6 +319,7 @@
         main-instance?      (if components-v2
                               (ctk/main-instance? values)
                               true)
+        can-swap?           (and components-v2 (not main-instance?))
         main-component?     (:main-instance values)
         lacks-annotation?   (nil? (:annotation values))
 
@@ -342,13 +491,20 @@
               [:& component-annotation {:id id :values values :shape shape :component component}])])]
 
         [:div.element-set
-         [:div.element-set-title
-          [:span (tr "workspace.options.component")]
+         [:div.element-set-title {:class (stl/css-case :back swap-opened?)
+                                  :on-click #(when swap-opened? (st/emit! :interrupt))}
+          [:div
+           (when swap-opened?
+             [:span
+              i/arrow-slide])
+           [:span (tr "workspace.options.component")]]
           [:span (if main-instance?
                    (tr "workspace.options.component.main")
                    (tr "workspace.options.component.copy"))]]
          [:div.element-set-content
           [:div.row-flex.component-row
+           {:class (stl/css-case :copy can-swap?)
+            :on-click #(when can-swap? (st/emit! (dwsp/open-specialized-panel :component-swap [shape])))}
            (if main-instance?
              i/component
              i/component-copy)
@@ -391,7 +547,14 @@
                                                 [(tr "workspace.shape.menu.reset-overrides") do-reset-component])
                                               (when can-update-main?
                                                 [(tr "workspace.shape.menu.update-main") do-update-remote-component])
-                                              [(tr "workspace.shape.menu.go-main") do-navigate-component-file]])))}]]]
+                                              [(tr "workspace.shape.menu.go-main") do-navigate-component-file]])))}]]
 
-          (when components-v2
+           (when can-swap?
+             [:div.component-parent-name
+              (cph/merge-path-item (:path component) (:name component))])]
+
+          (when swap-opened?
+            [:& component-swap {:shapes [shape]}])
+
+          (when (and (not swap-opened?) components-v2)
             [:& component-annotation {:id id :values values :shape shape :component component}])]]))))

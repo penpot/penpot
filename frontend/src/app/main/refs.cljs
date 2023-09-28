@@ -573,3 +573,6 @@
 
 (defn workspace-preview-blend-by-id [id]
   (l/derived (l/key id) workspace-preview-blend =))
+
+(def specialized-panel
+  (l/derived :specialized-panel st/state))
