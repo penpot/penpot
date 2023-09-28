@@ -109,6 +109,7 @@ Every sort of contribution will be very helpful to enhance Penpot. How you’ll 
 - Create and [share Libraries & templates](https://penpot.app/libraries-templates.html) that will be helpful for the community
 - Become a [translator](https://help.penpot.app/contributing-guide/translations)
 - Give feedback: [Mail us](mailto:support@penpot.app)
+- *Contribute to Penpot's code:* [Watch this video](https://www.youtube.com/watch?v=TpN0osiY-8k) by Alejandro Alonso, CIO and developer at Penpot, where he gives us a hands-on demo of how to use Penpot’s repository and make changes in both front and back end
 
 To find (almost) everything you need to know on how to contribute to Penpot, refer to the [contributing-guide](https://help.penpot.app/contributing-guide/).
 
