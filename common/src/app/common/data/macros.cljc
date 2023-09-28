@@ -120,10 +120,12 @@
   "A macro based, optimized variant of `get` that access the property
   directly on CLJS, on CLJ works as get."
   [obj prop]
-  (if (:ns &env)
-    (list (symbol ".") (with-meta obj {:tag 'js}) (symbol (str "-" (c/name prop))))
-    (list `c/get obj prop)))
-
+  ;; This throws an exception if obj is nul, that does not occur with CLJ get.
+  ;; This is causing many internal errors in places that obj null does not harm and should not throw.
+  ;; (if (:ns &env)
+  ;;   (list (symbol ".") (with-meta obj {:tag 'js}) (symbol (str "-" (c/name prop))))
+    (list `c/get obj prop))
+  ;;)
 
 (def ^:dynamic *assert-context* nil)
 
