@@ -205,3 +205,6 @@
 
 ;; Modifiers
 (dm/export gsm/set-objects-modifiers)
+
+;; Rect
+(dm/export grc/rect->points)
