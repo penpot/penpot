@@ -16,6 +16,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -265,7 +266,7 @@
                                                             (gpt/add orig-pos delta)
                                                             {:skip-components? true
                                                              :bottom-frames? true}))
-         frame-ids-map   (volatile! {})
+         ids-map   (volatile! {})
 
          update-new-shape
          (fn [new-shape original-shape]
@@ -275,8 +276,7 @@
              (when (nil? (:parent-id original-shape))
                (vswap! unames conj new-name))
 
-             (when (= (:type original-shape) :frame)
-               (vswap! frame-ids-map assoc (:id original-shape) (:id new-shape)))
+             (vswap! ids-map assoc (:id original-shape) (:id new-shape))
 
              (cond-> new-shape
                :always
@@ -307,24 +307,29 @@
                (dissoc :component-root))))
 
          [new-shape new-shapes _]
-         (ctst/clone-object component-shape
-                            nil
-                            (if components-v2 (:objects component-page) (:objects component))
-                            update-new-shape
-                            (fn [object _] object)
-                            force-id
-                            keep-ids?)
+         (ctst/clone-object
+          component-shape
+          nil
+          (if components-v2 (:objects component-page) (:objects component))
+          update-new-shape
+          (fn [object _] object)
+          force-id
+          keep-ids?)
 
-        ;; If frame-id points to a shape inside the component, remap it to the
-        ;; corresponding new frame shape. If not, set it to the destination frame.
-        ;; Also fix empty parent-id.
-         remap-frame-id (fn [shape]
-                          (as-> shape $
-                            (update $ :frame-id #(get @frame-ids-map % frame-id))
-                            (update $ :parent-id #(or % (:frame-id $)))))]
+         ;; If frame-id points to a shape inside the component, remap it to the
+         ;; corresponding new frame shape. If not, set it to the destination frame.
+         ;; Also fix empty parent-id.
+         remap-ids
+         (fn [shape]
+           (as-> shape $
+             (update $ :frame-id #(get @ids-map % frame-id))
+             (update $ :parent-id #(or % (:frame-id $)))
+             (cond-> $
+               (ctl/grid-layout? shape)
+               (ctl/remap-grid-cells @ids-map))))]
 
-     [(remap-frame-id new-shape)
-      (map remap-frame-id new-shapes)])))
+     [(remap-ids new-shape)
+      (map remap-ids new-shapes)])))
 
 (defn get-top-instance
   "The case of having an instance that contains another instances.

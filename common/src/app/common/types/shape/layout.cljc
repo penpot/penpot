@@ -1177,3 +1177,15 @@
      (for [r (range first-row (inc last-row))
            c (range first-column (inc last-column))]
        [r c]))))
+
+(defn remap-grid-cells
+  "Remaps the shapes inside the cells"
+  [shape ids-map]
+  (let [do-remap-cells
+        (fn [cell]
+          (-> cell
+              (update :shapes #(mapv ids-map %))))
+        shape
+        (-> shape
+            (update :layout-grid-cells update-vals do-remap-cells))]
+    shape))

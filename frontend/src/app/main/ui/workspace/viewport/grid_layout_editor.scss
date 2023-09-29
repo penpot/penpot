@@ -46,7 +46,7 @@
   margin: 0;
   padding: 0;
   position: absolute;
-  right: calc(10px / var(--zoom));
+  right: calc(20px / var(--zoom));
   width: calc(20px / var(--zoom));
   height: calc(20px / var(--zoom));
 
@@ -80,12 +80,12 @@
 .grid-cell-outline {
   fill: transparent;
   stroke: var(--color-distance);
-  stroke-linecap: round;
-  stroke-width: calc(2 / var(--zoom));
-  stroke-dasharray: 0 calc(8 / var(--zoom));
+  stroke-opacity: 0.5;
+  stroke-width: calc(1 / var(--zoom));
 
   &.hover,
   &.selected {
-    stroke-dasharray: initial;
+    stroke-opacity: 1;
+    stroke-width: calc(2 / var(--zoom));
   }
 }
