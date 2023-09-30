@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-08-28 14:57+0000\n"
+"PO-Revision-Date: 2023-10-04 11:47+0000\n"
 "Last-Translator: Sebastiaan Pasma <sebastiaan@enkodo.nl>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.0.1-dev\n"
+"X-Generator: Weblate 5.1-dev\n"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
@@ -159,18 +159,18 @@ msgstr "Lettertype verwijderd"
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"U mag alleen lettertypen uploaden waarvan u de eigenaar bent of waarvoor u "
-"een licentie hebt om te gebruiken in Penpot. Lees meer in het gedeelte "
+"Je mag alleen lettertypen uploaden waarvan je de eigenaar bent of waarvoor "
+"je een licentie hebt om te gebruiken in Penpot. Lees meer in het gedeelte "
 "Inhoudsrechten van [Penpot's Servicevoorwaarden](https://penpot.app/terms."
-"html). Misschien wilt u ook meer lezen over [lettertypelicenties](https://www"
-".typography.com/faq)."
+"html). Misschien wilt je ook meer lezen over "
+"[lettertypelicenties](https://www.typography.com/faq)."
 
 #, markdown
 msgid "dashboard.fonts.warning-text"
 msgstr ""
-"We hebben een mogelijk probleem gevonden in uw lettertypen met betrekking "
+"We hebben een mogelijk probleem gevonden in je lettertypen met betrekking "
 "tot verticale metriek voor verschillende besturingssystemen. Om het te "
-"controleren, kunt u verticale metrische lettertype-services zoals [deze] "
+"controleren, kun je verticale metrische lettertype-services zoals [deze] "
 "gebruiken (https://vertical-metrics.netlify.app/). Daarnaast raden we aan "
 "[Transfonter](https://transfonter.org/) te gebruiken om webfonts te "
 "genereren en soortgelijke fouten op te lossen. "
@@ -445,7 +445,7 @@ msgstr "Download standaardbestand (.svg + .json)"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Bestanden die aan bibliotheken zijn toegevoegd, worden hier weergegeven. "
-"Probeer uw bestanden te delen of toe te voegen vanuit onze [Bibliotheken & "
+"Probeer je bestanden te delen of toe te voegen vanuit onze [Bibliotheken & "
 "sjablonen] (https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-frames"
@@ -880,8 +880,8 @@ msgstr "Afbeelding laden…"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
-"Eenmaal toegevoegd als gedeelde bibliotheek, zijn de items van deze "
-"bestandsbibliotheek beschikbaar voor gebruik tussen de rest van uw bestanden."
+"Eenmaal toegevoegd als gedeelde bibliotheek, zijn de assets van deze "
+"bestandsbibliotheek beschikbaar voor gebruik tussen de rest van je bestanden."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"
@@ -915,15 +915,15 @@ msgstr "Bezig met verwijderen van %s bestanden"
 
 msgid "modals.delete-font-variant.message"
 msgstr ""
-"Weet u zeker dat u deze lettertypestijl wilt verwijderen? Het wordt dan niet "
-"meer geladen als het in een bestand wordt gebruikt."
+"Weet je zeker dat je deze lettertypestijl wil verwijderen? Het wordt dan "
+"niet meer geladen als het in een bestand wordt gebruikt."
 
 msgid "modals.delete-font-variant.title"
 msgstr "Lettertypestijl verwijderen"
 
 msgid "modals.delete-font.message"
 msgstr ""
-"Weet u zeker dat u dit lettertype wilt verwijderen? Het wordt dan niet meer "
+"Weet je zeker dat je dit lettertype wil verwijderen? Het wordt dan niet meer "
 "geladen als het in een bestand wordt gebruikt."
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
@@ -1032,20 +1032,20 @@ msgstr "Wijzig webhook"
 #: src/app/main/ui/workspace.cljs
 msgid "workspace.remove-graphics.error-hint"
 msgstr ""
-"Om het opnieuw te proberen, kunt u dit bestand opnieuw laden. Als het "
-"probleem zich blijft voordoen, raden we u aan de lijst te bekijken en te "
+"Om het opnieuw te proberen, kun je dit bestand opnieuw laden. Als het "
+"probleem zich blijft voordoen, raden we aan de lijst te bekijken en te "
 "overwegen om kapotte afbeeldingen te verwijderen."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
 "Eenmaal verwijderd als gedeelde bibliotheek, is de bestandsbibliotheek van "
-"dit bestand niet meer beschikbaar voor gebruik onder de rest van uw "
+"dit bestand niet meer beschikbaar voor gebruik onder de rest van je "
 "bestanden."
 
 msgid "onboarding-v2.newsletter.privacy2"
 msgstr ""
-"We sturen u alleen relevante e-mails. U kunt zich op elk moment afmelden via "
+"We sturen je alleen relevante e-mails. Je kunt je op elk moment afmelden via "
 "de afmeldlink in al onze nieuwsbrieven."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
@@ -1258,7 +1258,7 @@ msgid "dashboard.webhooks.description"
 msgstr ""
 "Webhooks zijn een eenvoudige manier om andere websites en apps op de hoogte "
 "te stellen wanneer bepaalde gebeurtenissen bij Penpot plaatsvinden. We "
-"sturen een POST-verzoek naar elke URL die u opgeeft."
+"sturen een POST-verzoek naar elke URL die je opgeeft."
 
 #: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-cancel"
@@ -1301,8 +1301,8 @@ msgstr "Het profiel is geblokkeerd"
 #: src/app/main/errors.cljs
 msgid "errors.feature-mismatch"
 msgstr ""
-"Het lijkt erop dat u een bestand opent waarin de functie '%s' is "
-"ingeschakeld, maar uw penpot-frontend ondersteunt dit niet of heeft het "
+"Het lijkt erop dat je een bestand opent waarin de functie '%s' is "
+"ingeschakeld, maar je penpot-frontend ondersteunt dit niet of heeft het "
 "uitgeschakeld."
 
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
@@ -1311,15 +1311,15 @@ msgstr "Je profiel heeft e-mails gedempt (spammeldingen of hoge bounces)."
 
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
-"Onvoldoende leden om het team te verlaten, u wilt het team waarschijnlijk "
+"Onvoldoende leden om het team te verlaten, je wil het team waarschijnlijk "
 "verwijderen."
 
 msgid "errors.team-leave.member-does-not-exists"
-msgstr "Het lid dat u probeert toe te wijzen, bestaat niet."
+msgstr "Het lid dat je probeert toe te wijzen, bestaat niet."
 
 msgid "errors.team-leave.owner-cant-leave"
 msgstr ""
-"Eigenaar kan het team niet verlaten, u moet de rol van eigenaar eerst "
+"Eigenaar kan het team niet verlaten, je moet de rol van eigenaar eerst "
 "opnieuw toewijzen."
 
 #: src/app/main/ui/auth/verify_token.cljs
@@ -1374,12 +1374,12 @@ msgstr "Onderwerp"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"Beschrijf de reden van uw e-mail en geef aan of het een probleem, een idee "
+"Beschrijf de reden van je e-mail en geef aan of het een probleem, een idee "
 "of een twijfel is. Een lid van ons team zal zo snel mogelijk reageren."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
-msgstr "Hier om te helpen met uw technische vragen."
+msgstr "Hier om te helpen met je technische vragen."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
@@ -1529,8 +1529,8 @@ msgstr "Hoofdletters"
 
 msgid "inspect.empty.help"
 msgstr ""
-"Als u meer wilt weten over ontwerpinspectie, gaat u naar het helpcentrum van "
-"Penpot"
+"Als je meer wilt weten over ontwerpinspectie, ga dan naar het helpcentrum "
+"van Penpot"
 
 msgid "inspect.empty.more-info"
 msgstr "Meer info over inspecteren"
@@ -1932,7 +1932,7 @@ msgstr "Verwijder bestand"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-confirm.message"
-msgstr "Weet u zeker dat u dit bestand wilt verwijderen?"
+msgstr "Weet je zeker dat je dit bestand wil verwijderen?"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-confirm.title"
@@ -1958,8 +1958,8 @@ msgstr[1] "Verwijder bestanden"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
-msgstr[0] "Weet u zeker dat u dit bestand wilt verwijderen?"
-msgstr[1] "Weet u zeker dat u deze bestanden wilt verwijderen?"
+msgstr[0] "Weet je zeker dat je dit bestand wil verwijderen?"
+msgstr[1] "Weet je zeker dat je deze bestanden wil verwijderen?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -2021,23 +2021,23 @@ msgstr "Nodig leden uit voor het team"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
-"Aangezien u het enige lid van dit team bent, wordt het team samen met de "
+"Aangezien je het enige lid van dit team bent, wordt het team samen met de "
 "projecten en bestanden verwijderd."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.message"
-msgstr "Weet u zeker dat u het %s team wilt verlaten?"
+msgstr "Weet je zeker dat je het %s team wil verlaten?"
 
 msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "Je kunt het team niet verlaten als er geen ander lid is om tot eigenaar te "
-"promoveren. Misschien wilt u het team verwijderen."
+"promoveren. Misschien wil je het team verwijderen."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
 msgstr ""
 "Jij bent de eigenaar van dit team. Selecteer een ander lid om tot eigenaar "
-"te promoveren voordat u vertrekt."
+"te promoveren voordat je vertrekt."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
@@ -2048,17 +2048,17 @@ msgstr ""
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
-"Als u het eigendom overdraagt, verandert u uw rol in beheerder en verliest u "
-"enkele machtigingen voor dit team. "
+"Als je het eigendom overdraagt, verander je je rol in beheerder en verlies "
+"je enkele machtigingen voor dit team. "
 
 msgid "onboarding.newsletter.acceptance-message"
 msgstr ""
-"Uw inschrijvingsverzoek is verzonden, wij sturen u een e-mail ter "
+"Je inschrijvingsverzoek is verzonden, wij sturen je een e-mail ter "
 "bevestiging."
 
 msgid "onboarding.team-modal.create-team-desc"
 msgstr ""
-"Met een team kunt u samenwerken met andere Penpot-gebruikers die aan "
+"Met een team kun je samenwerken met andere Penpot-gebruikers die aan "
 "dezelfde bestanden en projecten werken."
 
 msgid "shortcuts.detach-component"
@@ -2176,7 +2176,7 @@ msgstr "Sitemap"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"
-msgstr "Elementen"
+msgstr "Assets"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.duplicate"
@@ -2471,8 +2471,8 @@ msgstr ""
 
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
-"Waar u kunt vinden hoe u kunt samenwerken aan vertalingen, functieverzoeken, "
-"kernbijdragen, zoeken naar bugs…"
+"Waar je kunt vinden hoe je kunt samenwerken aan vertalingen, "
+"functieverzoeken, kernbijdragen, zoeken naar bugs…"
 
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr ""
@@ -2486,8 +2486,8 @@ msgstr ""
 
 msgid "onboarding-v2.before-start.desc1"
 msgstr ""
-"U moet weten dat er veel bronnen beschikbaar zijn om u op weg te helpen met "
-"Penpot, zoals de gebruikershandleiding en ons YouTube-kanaal."
+"Je moet weten dat er veel bronnen beschikbaar zijn om je op weg te helpen "
+"met Penpot, zoals de gebruikershandleiding en ons YouTube-kanaal."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
@@ -2500,13 +2500,13 @@ msgstr ""
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] ""
-"Weet u zeker dat u de publicatie van deze bibliotheek ongedaan wilt maken?"
+"Weet je zeker dat je de publicatie van deze bibliotheek ongedaan wil maken?"
 msgstr[1] ""
-"Weet u zeker dat u de publicatie van deze bibliotheken ongedaan wilt maken?"
+"Weet je zeker dat je de publicatie van deze bibliotheken ongedaan wil maken?"
 
 msgid "onboarding-v2.newsletter.desc"
 msgstr ""
-"Abonneer u op de Penpot-nieuwsbrief om op de hoogte te blijven van de "
+"Abonneer je op de Penpot-nieuwsbrief om op de hoogte te blijven van de "
 "voortgang van de productontwikkeling en nieuws."
 
 msgid "onboarding-v2.before-start.desc2"
@@ -2600,7 +2600,7 @@ msgstr "Bovenkant uitlijnen (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.box-filter-all"
-msgstr "Alle elementen"
+msgstr "Alle assets"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.create-group"
@@ -2615,7 +2615,7 @@ msgstr "Groepnaam"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.not-found"
-msgstr "Geen elementen gevonden"
+msgstr "Geen assets gevonden"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.rename-group"
@@ -3119,7 +3119,7 @@ msgstr[1] "%s items geselecteerd"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.search"
-msgstr "Zoek elementen"
+msgstr "Zoek assets"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.letter-spacing"
@@ -3376,7 +3376,7 @@ msgstr "Bekijk in Weergavemodus"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-in-assets"
-msgstr "Bekijk in elementenpaneel"
+msgstr "Bekijk in assets-paneel"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.components"
@@ -3840,7 +3840,7 @@ msgid "workspace.undo.entry.single.text"
 msgstr "tekst"
 
 msgid "workspace.undo.entry.single.typography"
-msgstr "typografie"
+msgstr "typografie asset"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.unknown"
@@ -4348,7 +4348,7 @@ msgstr "Sitemap"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.assets"
-msgstr "Middelen"
+msgstr "Assets"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.color-palette"
@@ -4414,7 +4414,7 @@ msgid "workspace.undo.entry.multiple.circle"
 msgstr "cirkels"
 
 msgid "workspace.undo.entry.multiple.color"
-msgstr "kleuren"
+msgstr "kleur assets"
 
 msgid "workspace.undo.entry.multiple.component"
 msgstr "componenten"
@@ -4429,7 +4429,7 @@ msgid "workspace.undo.entry.multiple.group"
 msgstr "groepen"
 
 msgid "workspace.undo.entry.multiple.media"
-msgstr "grafische middelen"
+msgstr "grafische assets"
 
 msgid "workspace.undo.entry.multiple.multiple"
 msgstr "objecten"
@@ -4450,7 +4450,7 @@ msgid "workspace.undo.entry.multiple.text"
 msgstr "teksten"
 
 msgid "workspace.undo.entry.multiple.typography"
-msgstr "typografie middelen"
+msgstr "typografie assets"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.new"
@@ -4460,7 +4460,7 @@ msgid "workspace.undo.entry.single.circle"
 msgstr "cirkel"
 
 msgid "workspace.undo.entry.single.color"
-msgstr "kleur"
+msgstr "kleur asset"
 
 msgid "workspace.undo.entry.single.component"
 msgstr "component"
@@ -4478,7 +4478,7 @@ msgid "workspace.undo.entry.single.image"
 msgstr "afbeelding"
 
 msgid "workspace.undo.entry.single.media"
-msgstr "grafisch middel"
+msgstr "grafisch asset"
 
 msgid "workspace.undo.entry.single.multiple"
 msgstr "object"
@@ -4520,3 +4520,470 @@ msgstr "ruimte rondom"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.space-between"
 msgstr "ruimte tussen"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.try-out-before-using-penpot-on-premise"
+msgstr "Probeer uit voordat je Penpot on-premise gebruikt"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-in-concept-ideas"
+msgstr "Werk in conceptideeën"
+
+#: src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "Er zijn nog geen kleurstijlen in je bibliotheek"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30 dagen"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.message"
+msgstr "Weet je zeker dat je deze token wil verwijderen?"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.access-tokens"
+msgstr "Toegangstokens"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "De token heeft geen verloopdatum"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.your-feedback-will-help-us"
+msgstr ""
+"Je feedback helpt ons te begrijpen wat je gewoonten en voorkeuren zijn, "
+"zodat we van Penpot een nuttig en plezierig hulpmiddel kunnen blijven maken."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.developer"
+msgstr "Ontwikkelaar"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.manager"
+msgstr "Product- of projectmanager"
+
+msgid "workspace.options.component.create-annotation"
+msgstr "Maak een aantekening"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Genereer nieuw token"
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "Er is een nieuwe versie beschikbaar, vernieuw de pagina"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "Weet je zeker dat je deze aantekening wil verwijderen?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.marketing"
+msgstr "Marketing"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180 dagen"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "Bewerk een aantekening"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "Haal de code op van mijn teamproject "
+
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Meerdere componenten aanmaken"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.personal-project"
+msgstr "Ik werk aan een persoonlijk project"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "Naam is verplicht"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "Deze bibliotheek wordt hier geactiveerd: "
+msgstr[1] "Deze bibliotheken worden hier geactiveerd: "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.freelancer"
+msgstr "Ik ben een freelancer"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "Token gekopieërd"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Boven rechts"
+
+msgid "modals.publish-empty-library.title"
+msgstr "Publiceer lege bibliotheek"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.figma"
+msgstr "Figma"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "alle wijzigingen bekijken"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...branding, illustraties, marketingstukken, etc."
+
+#: src/app/main/ui/workspace/textpalette.cljs
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "Er zijn nog geen typografiestijlen in je bibliotheek"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90 dagen"
+
+msgid "workspace.shape.menu.add-grid"
+msgstr "Rasterindeling toevoegen"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Assets die al in dit bestand zijn gebruikt, blijven daar staan (er wordt "
+"geen ontwerp verbroken)."
+msgstr[1] ""
+"Assets die al in die bestanden zijn gebruikt, blijven daar staan (er wordt "
+"geen ontwerp verbroken)."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "Justify (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom"
+msgstr "Zoomen"
+
+msgid "workspace.options.component.annotation"
+msgstr "Aantekening"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.some"
+msgstr "Sommige"
+
+msgid "shortcuts.text-align-justify"
+msgstr "Justified uitlijnen"
+
+msgid "workspace.layout_grid.editor.title"
+msgstr "Raster bewerken"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "team.webhooks.max-length"
+msgstr "De webhooknaam mag maximaal 2048 tekens bevatten."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Verlopen op %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.expiration-date.label"
+msgstr "Vervaldatum"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.more-than-50"
+msgstr "Meer dan 50"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "Het wachtwoord moet een ander teken dan een spatie bevatten."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.next"
+msgstr "Volgende"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.team-size"
+msgstr "Hoe groot is je team?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Onder rechts"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.wireframes-user-journeys-flows-navigation-trees"
+msgstr "... wireframes, gebruikers journeys en -stromen, navigatiebomen, etc."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60 dagen"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.a-lot"
+msgstr "Veel"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start"
+msgstr "Starten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Centraal uitlijnen (%s)"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
+msgstr[0] "Deze bibliotheek wordt hier geactiveerd:"
+msgstr[1] "Deze bibliotheken worden hier geactiveerd:"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.questions-how-are-you-planning-to-use-penpot"
+msgstr "Hoe ben je van plan Penpot te gebruiken?"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "De token zal verlopen op %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.accept"
+msgstr "Verwijder token"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-right"
+msgstr "Rechts uitlijnen (%s)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.describe-your-experience-working-on"
+msgstr "Hoe zou je je ervaring omschrijven voor het werken aan..."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.select-option"
+msgstr "Selecteer optie"
+
+msgid "shortcuts.text-align-left"
+msgstr "Links uitlijnen"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.submit-label"
+msgstr "Token aanmaken"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.designer"
+msgstr "Ontwerper"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.none"
+msgstr "Geen"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.lets-get-started"
+msgstr "Laten we beginnen!"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.placeholder"
+msgstr "De naam helpt je om te onthouden waar de token voor is"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.adobe-xd"
+msgstr "Adobe XD"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.sketch"
+msgstr "Sketch"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library-updates"
+msgstr "BIBLIOTHEEK-UPDATES"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.label"
+msgstr "Naam"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] "Het is in geen enkel bestand geactiveerd."
+msgstr[1] "Ze zijn in geen enkel bestand geactiveerd."
+
+msgid "modals.publish-empty-library.message"
+msgstr "Je bibliotheek is leeg. Weet je zeker dat je het wilt publiceren?"
+
+msgid "workspace.assets.open-library"
+msgstr "Open Bibliotheek-bestand"
+
+msgid "modals.delete-component-annotation.title"
+msgstr "Verwijder aantekening"
+
+msgid "shortcuts.select-parent-layer"
+msgstr "Selecteer bovenliggende laag"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared-library"
+msgstr "Gedeelde bibliotheek"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-left"
+msgstr "Links uitlijnen (%s)"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.more-info"
+msgstr "Meer info"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
+msgstr[0] "Het is in geen enkel bestand geactiveerd."
+msgstr[1] "Ze zijn in geen enkel bestand geactiveerd."
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "De naam moet een ander teken dan een spatie bevatten."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other"
+msgstr "Anders (namelijk..)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-a-tool"
+msgstr "Ik heb nog nooit een ontwerptool gebruikt"
+
+msgid "labels.discard"
+msgstr "Weggooien"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
+msgstr "Test Penpot om te zien of het geschikt is voor het team "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.student-teacher"
+msgstr "Student of docent"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.2-10"
+msgstr "2-10"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.leave-feedback-for-my-team-project"
+msgstr "Laat feedback achter voor mijn teamproject"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.31-50"
+msgstr "31-50"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "Je hebt nog geen tokens."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.invision"
+msgstr "InVision"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Persoonlijke toegangstokens functioneren als alternatief voor ons login/"
+"wachtwoord-authenticatiesysteem en kunnen worden gebruikt om een applicatie "
+"toegang te geven tot de interne Penpot API"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Persoonlijke toegangstokens"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.canva"
+msgstr "Canva"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.discover-more-about-penpot"
+msgstr "Meer over Penpot ontdekken"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Verloopt op %s"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.previous"
+msgstr "Vorige"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Onder links"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Klik op de knop \"Genereer nieuw token\" om er een te genereren."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.title"
+msgstr "Token verwijderen"
+
+msgid "workspace.shape.menu.create-annotation"
+msgstr "Aantekening maken"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start-to-work-on-my-project"
+msgstr "Begin aan mijn project te werken"
+
+msgid "shortcuts.text-align-center"
+msgstr "Gecentreerd uitlijnen"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "question.design-tool-more-experienced-with"
+msgstr "Met welke ontwerptool heb je meer ervaring?"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "Toegangstoken is succesvol aangemaakt."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role"
+msgstr "Wat is je rol?"
+
+msgid "shortcuts.text-align-right"
+msgstr "Rechts uitlijnen"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Nooit"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.founder"
+msgstr "Oprichter/VP"
+
+msgid "modals.publish-empty-library.accept"
+msgstr "Publiceren"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.title"
+msgstr "Genereer toegangstoken"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Geen verloopdatum"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "De naam mag maximaal 250 tekens bevatten."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.11-30"
+msgstr "11-30"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.copy-token"
+msgstr "Kopieër token"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Boven links"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.interface-design-visual-assets-design-systems"
+msgstr "... interfaceontwerp, visuel assets, design systems, enz."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "title.settings.access-tokens"
+msgstr "Profiel - Toegangstokens"
+
+msgid "errors.cannot-upload"
+msgstr "Kan het mediabestand niet uploaden."
