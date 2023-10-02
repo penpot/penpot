@@ -25,12 +25,11 @@
         handle-load
         (mf/use-callback
          (fn [data width height]
-           (prn "handle-load" data)
            (reset! last-data* data)
            (let [iframe-dom (mf/ref-val iframe-ref)]
              (when iframe-dom
-               (-> iframe-dom (aset "width" width))
-               (-> iframe-dom (aset "height" height))
+               (-> iframe-dom (aset "width" (+ width 64)))
+               (-> iframe-dom (aset "height" (+ height 64)))
                (-> iframe-dom .-contentWindow .-document .open)
                (-> iframe-dom .-contentWindow .-document (.write data))
                (-> iframe-dom .-contentWindow .-document .close)))))
@@ -59,13 +58,13 @@
     [:div {:style {:display "flex" :width "100%" :height "100%" :flex-direction "column" :overflow "auto" :align-items "center"}}
      [:input {:id "zoom-input"
               :ref zoom-ref
-              :type "range" :min 1 :max 200 :default-value 100
+              :type "range" :min 1 :max 400 :default-value 100
               :on-change change-zoom
               :style {:max-width "500px"}}]
 
      [:div {:style {:width "100%" :height "100%" :overflow "auto"}}
       [:iframe {:ref load-ref
-                :frameborder "0"
+                :frame-border "0"
                 :scrolling "no" 
-                :style {:transform-origin "top center"
+                :style {:transform-origin "top left"
                         :transform (str "scale(" zoom ")")}}]]]))

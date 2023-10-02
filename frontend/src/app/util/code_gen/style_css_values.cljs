@@ -49,12 +49,14 @@
   (when (and (not (cph/root-frame? shape))
              (or (not (ctl/any-layout-immediate-child? objects shape))
                  (ctl/layout-absolute? shape)))
+
     (let [parent (get objects (:parent-id shape))
+
           parent-value (dm/get-in parent [:selrect coord])
 
           [selrect _ _]
           (-> (:points shape)
-              (gsh/transform-points (gsh/shape->center parent) (:transform-inverse parent))
+              (gsh/transform-points (gsh/shape->center parent) (:transform-inverse parent (gmt/matrix)))
               (gsh/calculate-geometry))
 
           shape-value (get selrect coord)]
@@ -117,7 +119,17 @@
 
 (defmethod get-value :transform
   [_ shape objects]
-  (when-not (cgc/svg-markup? shape)
+  (if (cgc/svg-markup? shape)
+    (let [parent (get objects (:parent-id shape))
+          transform
+          (:transform-inverse parent (gmt/matrix))
+
+          transform-str (when-not (gmt/unit? transform) (fmt/format-matrix transform))]
+
+      (if (cgc/has-wrapper? objects shape)
+        (dm/str "translate(-50%, -50%) " (d/nilv transform-str ""))
+        transform-str))
+
     (let [parent (get objects (:parent-id shape))
 
           transform
@@ -207,6 +219,7 @@
 (defmethod get-value :overflow
   [_ shape _]
   (when (and (cph/frame-shape? shape)
+             (not (cgc/svg-markup? shape))
              (not (:show-content shape)))
     "hidden"))
 

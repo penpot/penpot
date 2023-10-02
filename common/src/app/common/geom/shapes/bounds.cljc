@@ -107,9 +107,7 @@
          margin
          (if ignore-margin?
            0
-           (->> strokes
-                (map #(shape-stroke-margin % stroke-width))
-                (reduce d/max 0)))
+           (shape-stroke-margin shape stroke-width))
 
          shadow-width
          (->> (:shadow shape)
@@ -125,8 +123,8 @@
                       0))
               (reduce d/max 0))]
 
-     {:horizontal (+ stroke-width margin shadow-width)
-      :vertical (+ stroke-width margin shadow-height)})))
+     {:horizontal (mth/ceil (+ stroke-width margin shadow-width))
+      :vertical (mth/ceil (+ stroke-width margin shadow-height))})))
 
 (defn- add-padding
   [bounds padding]

@@ -330,17 +330,6 @@
         (when selected
           (rx/of (select-shape (:id selected))))))))
 
-(defn remap-grid-cells
-  "Remaps the shapes inside the cells"
-  [shape ids-map]
-
-  (let [do-remap-cells
-        (fn [cell]
-          (-> cell
-              (update :shapes #(mapv ids-map %))))]
-
-    (update shape :layout-grid-cells update-vals do-remap-cells)))
-
 ;; --- Duplicate Shapes
 (declare prepare-duplicate-shape-change)
 (declare prepare-duplicate-flows)
@@ -463,8 +452,7 @@
                (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))
 
                (cond-> (ctl/grid-layout? obj)
-                 (-> (ctl/check-deassigned-cells)
-                     (remap-grid-cells ids-map))))
+                 (ctl/remap-grid-cells ids-map)))
 
            new-obj (cond-> new-obj
                      (not duplicating-component?)
@@ -474,7 +462,7 @@
            changes (-> (pcb/add-object changes new-obj {:ignore-touched (and duplicating-component? child?)})
                        (pcb/amend-last-change #(assoc % :old-id (:id obj)))
                        (cond-> (ctl/grid-layout? objects (:parent-id obj))
-                         (-> (pcb/update-shapes [(:parent-id obj)] ctl/assign-cells)
+                         (-> (pcb/update-shapes [(:parent-id obj)] (fn [shape] (-> shape ctl/assign-cells ctl/check-deassigned-cells)))
                              (pcb/reorder-grid-children [(:parent-id obj)]))))
 
            changes (cond-> changes

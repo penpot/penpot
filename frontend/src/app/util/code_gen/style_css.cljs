@@ -9,7 +9,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
-   [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.bounds :as gsb]
+   [app.common.geom.shapes.points :as gpo]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.common.types.shape.layout :as ctl]
@@ -38,13 +39,6 @@ body {
   gap: 2rem;
 }
 
-svg {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
 * {
   box-sizing: border-box;
 }
@@ -64,7 +58,10 @@ svg {
     :justify-self
     :grid-column
     :grid-row
-    :z-index})
+    :z-index
+    :top
+    :left
+    :position})
 
 (def shape-css-properties
   [:position
@@ -139,12 +136,16 @@ svg {
   [shape objects]
   (when (and (ctl/any-layout-immediate-child? objects shape)
              (not (gmt/unit? (:transform shape))))
-    (let [{:keys [width height]} (gsh/shapes->rect [shape])]
-      (cond-> [[:position "relative"]
-               [:width width]
+    (let [parent (get objects (:parent-id shape))
+          bounds (gpo/parent-coords-bounds (:points shape) (:points parent))
+          width  (gpo/width-points bounds)
+          height (gpo/height-points bounds)]
+      (cond-> [[:width width]
                [:height height]]
-        (ctl/flex-layout-immediate-child? objects shape)
-        (conj [:flex-shrink 0])))))
+
+        (or (not (ctl/any-layout-immediate-child? objects shape))
+            (not (ctl/layout-absolute? shape)))
+        (conj [:position "relative"])))))
 
 (defn shape->wrapper-child-css-properties
   [shape objects]
@@ -152,6 +153,16 @@ svg {
     [[:position "absolute"]
      [:left "50%"]
      [:top "50%"]]))
+
+(defn shape->svg-props
+  [shape objects]
+  (let [bounds (gsb/get-object-bounds objects shape)]
+    [[:position "absolute"]
+     [:top 0]
+     [:left 0]
+     [:transform (dm/fmt "translate(%,%)"
+                         (dm/str (- (:x bounds) (-> shape :selrect :x)) "px")
+                         (dm/str (- (:y bounds) (-> shape :selrect :y)) "px"))]]))
 
 (defn shape->css-properties
   "Given a shape extract the CSS properties in the format of list [property value]"
@@ -235,40 +246,49 @@ svg {
    (get-shape-css-selector shape objects nil))
 
   ([shape objects options]
-   (let [selector (cgc/shape->selector shape)
+   (when (and (some? shape) (some? (:selrect shape)))
+     (let [selector (cgc/shape->selector shape)
 
-         wrapper? (cgc/has-wrapper? objects shape)
+           wrapper? (cgc/has-wrapper? objects shape)
+           svg?     (cgc/svg-markup? shape)
 
-         css-properties
-         (if wrapper?
-           (filter (complement shape-wrapper-css-properties) shape-css-properties)
-           shape-css-properties)
+           css-properties
+           (if wrapper?
+             (filter (complement shape-wrapper-css-properties) shape-css-properties)
+             shape-css-properties)
 
-         properties
-         (-> shape
-             (shape->css-properties objects css-properties)
-             (format-css-properties options))
-
-         wrapper-properties
-         (when wrapper?
-           (-> (d/concat-vec
-                (shape->css-properties shape objects shape-wrapper-css-properties)
-                (shape->wrapper-css-properties shape objects))
-               (format-css-properties options)))
-
-         wrapper-child-properties
-         (when wrapper?
+           properties
            (-> shape
-               (shape->wrapper-child-css-properties objects)
-               (format-css-properties options)))]
+               (shape->css-properties objects css-properties)
+               (format-css-properties options))
 
-     (str/join
-      "\n"
-      (filter some? [(str/fmt "/* %s */" (:name shape))
-                     (when wrapper? (str/fmt ".%s-wrapper {\n%s\n}" selector wrapper-properties))
-                     (when wrapper? (str/fmt ".%s-wrapper > * {\n%s\n}"  selector wrapper-child-properties))
-                     (str/fmt ".%s {\n%s\n}" selector properties)
-                     (when (cph/text-shape? shape) (generate-text-css shape))])))))
+           wrapper-properties
+           (when wrapper?
+             (-> (d/concat-vec
+                  (shape->css-properties shape objects shape-wrapper-css-properties)
+                  (shape->wrapper-css-properties shape objects))
+                 (format-css-properties options)))
+
+           wrapper-child-properties
+           (when wrapper?
+             (-> shape
+                 (shape->wrapper-child-css-properties objects)
+                 (format-css-properties options)))
+
+           svg-child-props
+           (when svg?
+             (-> shape
+                 (shape->svg-props objects)
+                 (format-css-properties options)))]
+
+       (str/join
+        "\n"
+        (filter some? [(str/fmt "/* %s */" (:name shape))
+                       (when wrapper? (str/fmt ".%s-wrapper {\n%s\n}" selector wrapper-properties))
+                       (when wrapper? (str/fmt ".%s-wrapper > * {\n%s\n}" selector wrapper-child-properties))
+                       (when svg?     (str/fmt ".%s > svg {\n%s\n}" selector svg-child-props))
+                       (str/fmt ".%s {\n%s\n}" selector properties)
+                       (when (cph/text-shape? shape) (generate-text-css shape))]))))))
 
 (defn get-css-property
   ([objects shape property]
@@ -294,5 +314,5 @@ svg {
    (dm/str
     prelude
     (->> shapes
-         (map #(get-shape-css-selector % objects options))
+         (keep #(get-shape-css-selector % objects options))
          (str/join "\n\n")))))
