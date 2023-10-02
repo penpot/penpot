@@ -598,8 +598,34 @@
          (dwc/update-shapes
           [layout-id]
           (fn [shape]
-            (cond
-              (= mode :area)
+            (case mode
+              :auto
+              ;; change the manual cells and move to auto
+              (->> ids
+                   (reduce
+                    (fn [shape cell-id]
+                      (let [cell (get-in shape [:layout-grid-cells cell-id])]
+                        (cond-> shape
+                          (or (contains? #{:area :manual} (:position cell))
+                              (> (:row-span cell) 1)
+                              (> (:column-span cell) 1))
+                          (-> (d/update-in-when [:layout-grid-cells cell-id] assoc :shapes [] :position :auto)
+                              (ctl/resize-cell-area (:row cell) (:column cell) (:row cell) (:column cell) 1 1)
+                              (ctl/assign-cells)))))
+                    shape))
+
+              :manual
+              (->> ids
+                   (reduce
+                    (fn [shape cell-id]
+                      (let [cell (get-in shape [:layout-grid-cells cell-id])]
+                        (cond-> shape
+                          (contains? #{:area :auto} (:position cell))
+                          (-> (d/assoc-in-when [:layout-grid-cells cell-id :position] :manual)
+                              (ctl/assign-cells)))))
+                    shape))
+
+              :area
               ;; Create area with the selected cells
               (let [{:keys [first-row first-column last-row last-column]}
                     (ctl/cells-coordinates (->> ids (map #(get-in shape [:layout-grid-cells %]))))
@@ -618,18 +644,7 @@
                         (ctl/assign-cells))]
 
                 (-> shape
-                    (d/update-in-when [:layout-grid-cells (:id target-cell)] assoc :position :area)))
-
-              (= mode :auto)
-              ;; change the manual cells and move to auto
-              (->> ids
-                   (reduce
-                    (fn [shape cell-id]
-                      (cond-> shape
-                        (contains? #{:area :manual} (get-in shape [:layout-grid-cells cell-id :position]))
-                        (-> (d/update-in-when [:layout-grid-cells cell-id] assoc :shapes [] :position :auto)
-                            (ctl/assign-cells))))
-                           shape)))))
+                    (d/update-in-when [:layout-grid-cells (:id target-cell)] assoc :position :area))))))
          (dwge/clean-selection layout-id)
          (ptk/data-event :layout/update [layout-id])
          (dwu/commit-undo-transaction undo-id))))))
