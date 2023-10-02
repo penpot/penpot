@@ -3764,6 +3764,10 @@ msgid "workspace.options.flows.flow-start"
 msgstr "Inicio de flujo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Flujo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow-starts"
 msgstr "Inicios de flujo"
 

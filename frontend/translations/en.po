@@ -3677,6 +3677,10 @@ msgid "workspace.options.flows.add-flow-start"
 msgstr "Add flow start"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Flow"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow-start"
 msgstr "Flow start"
 

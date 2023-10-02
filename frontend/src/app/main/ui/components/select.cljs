@@ -19,8 +19,8 @@
 (defn- as-key-value
   [item]
   (if (map? item)
-    [(:value item) (:label item)]
-    [item item]))
+    [(:value item) (:label item) (:icon item)]
+    [item item item]))
 
 (mf/defc select
   [{:keys [default-value options class is-open? on-change on-pointer-enter-option on-pointer-leave-option disabled]}]
@@ -42,7 +42,7 @@
         open-dropdown
         (mf/use-fn
          (mf/deps disabled)
-         (fn[]
+         (fn []
            (when-not disabled
              (swap! state* assoc :is-open? true))))
 
@@ -82,10 +82,16 @@
 
     (mf/with-effect [default-value]
       (swap! state* assoc :current-value default-value))
+
     (if new-css-system
       [:div {:on-click open-dropdown
              :class (dm/str class " " (stl/css-case :custom-select true
                                                     :disabled disabled))}
+       (let [selected-option (first (filter #(= (:value %) default-value) options))
+             current-icon (:icon selected-option)
+             current-icon-ref (i/key->icon current-icon)]
+         (when (and current-icon current-icon-ref)
+           [:span {:class (stl/css :current-icon)} @current-icon-ref]))
        [:span {:class (stl/css :current-label)} current-label]
        [:span {:class (stl/css :dropdown-button)} i/arrow-refactor]
        [:& dropdown {:show is-open? :on-close close-dropdown}
@@ -94,7 +100,8 @@
            (if (= :separator item)
              [:li {:class (dom/classnames (stl/css :separator) true)
                    :key (dm/str current-id "-" index)}]
-             (let [[value label] (as-key-value item)]
+             (let [[value label icon] (as-key-value item)
+                   icon-ref (i/key->icon icon)]
                [:li
                 {:key (dm/str current-id "-" index)
                  :class (dom/classnames
@@ -104,9 +111,9 @@
                  :on-pointer-enter highlight-item
                  :on-pointer-leave unhighlight-item
                  :on-click select-item}
+                (when (and icon icon-ref) [:span {:class (stl/css :icon)} @icon-ref])
                 [:span {:class (stl/css :label)} label]
                 [:span {:class (stl/css :check-icon)} i/tick-refactor]])))]]]
-
 
       [:div.custom-select {:on-click open-dropdown :class class}
        [:span current-label]
