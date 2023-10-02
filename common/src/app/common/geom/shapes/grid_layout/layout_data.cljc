@@ -228,16 +228,17 @@
 (defn allocate-auto-tracks
   [allocations indexed-tracks to-allocate]
   (if (empty? indexed-tracks)
-    allocations
+    [allocations to-allocate]
     (let [[idx track] (first indexed-tracks)
           old-allocated (get allocations idx 0.01)
           auto-track? (= :auto (:type track))
 
-          allocated (if auto-track?
-                      (max old-allocated
-                           (/ to-allocate (count indexed-tracks))
-                           (:size track))
-                      (:size track))]
+          allocated
+          (if auto-track?
+            (max old-allocated
+                 (/ to-allocate (count indexed-tracks))
+                 (:size track))
+            (:size track))]
       (recur (cond-> allocations
                auto-track?
                (assoc idx allocated))
@@ -304,8 +305,22 @@
                                        [to-allocate (conj result idx-track)]
                                        ;; If fixed, we remove from allocate and don't add the track
                                        [(- to-allocate (:size track)) result]))
-                                   [to-allocate []]))]
-                  (allocate-auto-tracks allocated indexed-tracks (max to-allocate 0))))
+                                   [to-allocate []]))
+
+
+                      non-assigned-indexed-tracks
+                      (->> indexed-tracks
+                           (remove (fn [[idx track]] (contains? allocated idx))))
+
+                      ;; First we try to assign into the non-assigned tracks
+                      [allocated to-allocate]
+                      (allocate-auto-tracks allocated non-assigned-indexed-tracks (max to-allocate 0))
+
+                      ;; In the second pass we use every track for the rest of the space
+                      [allocated _]
+                      (allocate-auto-tracks allocated indexed-tracks (max to-allocate 0))]
+
+                  allocated))
               {}))
 
         ;; Apply the allocations to the tracks

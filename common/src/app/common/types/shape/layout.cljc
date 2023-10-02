@@ -715,26 +715,6 @@
   [parent from-index to-index]
   (reorder-grid-track :layout-grid-rows parent from-index to-index))
 
-(defn get-cells
-  ([parent]
-   (get-cells parent nil))
-
-  ([{:keys [layout-grid-cells layout-grid-dir]} {:keys [sort? remove-empty?] :or {sort? false remove-empty? false}}]
-   (let [comp-fn (if (= layout-grid-dir :row)
-                   (juxt :row :column)
-                   (juxt :column :row))
-
-         maybe-sort?
-         (if sort? (partial sort-by (comp comp-fn second)) identity)
-
-         maybe-remove?
-         (if remove-empty? (partial remove #(empty? (:shapes (second %)))) identity)]
-
-     (->> layout-grid-cells
-          (maybe-sort?)
-          (maybe-remove?)
-          (map (fn [[id cell]] (assoc cell :id id)))))))
-
 (defn cells-seq
   [{:keys [layout-grid-cells layout-grid-dir]} & {:keys [sort?] :or {sort? false}}]
 
@@ -752,18 +732,21 @@
   ([parent]
    (get-free-cells parent nil))
 
-  ([{:keys [layout-grid-cells layout-grid-dir]} {:keys [sort?] :or {sort? false}}]
-   (let [comp-fn (if (= layout-grid-dir :row)
-                   (juxt :row :column)
-                   (juxt :column :row))
+  ([parent {:keys [sort?] :or {sort? false}}]
+   (->> (cells-seq parent :sort? sort?)
+        (filter (comp empty? :shapes))
+        (map :id))))
 
-         maybe-sort?
-         (if sort? (partial sort-by (comp comp-fn second)) identity)]
+(defn get-cells
+  ([parent]
+   (get-cells parent nil))
 
-     (->> layout-grid-cells
-          (filter (comp empty? :shapes second))
-          (maybe-sort?)
-          (map first)))))
+  ([parent {:keys [sort? remove-empty?] :or {sort? false remove-empty? false}}]
+   (let [maybe-remove?
+         (if remove-empty? (partial remove (comp empty? :shapes)) identity)]
+
+     (->> (cells-seq parent :sort? sort?)
+          (maybe-remove?)))))
 
 (defn check-deassigned-cells
   "Clean the cells whith shapes that are no longer in the layout"

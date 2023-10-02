@@ -367,13 +367,13 @@
 (defmethod get-value :max-height
   [_ shape objects]
   (cond
-    (ctl/flex-layout-immediate-child? objects shape)
+    (ctl/any-layout-immediate-child? objects shape)
     (:layout-item-max-h shape)))
 
 (defmethod get-value :min-height
   [_ shape objects]
   (cond
-    (and (ctl/flex-layout-immediate-child? objects shape) (some? (:layout-item-min-h shape)))
+    (and (ctl/any-layout-immediate-child? objects shape) (some? (:layout-item-min-h shape)))
     (:layout-item-min-h shape)
 
     (and (ctl/auto-height? shape) (cph/frame-shape? shape) (not (:show-content shape)))
@@ -382,13 +382,13 @@
 (defmethod get-value :max-width
   [_ shape objects]
   (cond
-    (ctl/flex-layout-immediate-child? objects shape)
+    (ctl/any-layout-immediate-child? objects shape)
     (:layout-item-max-w shape)))
 
 (defmethod get-value :min-width
   [_ shape objects]
   (cond
-    (and (ctl/flex-layout-immediate-child? objects shape) (some? (:layout-item-min-w shape)))
+    (and (ctl/any-layout-immediate-child? objects shape) (some? (:layout-item-min-w shape)))
     (:layout-item-min-w shape)
 
     (and (ctl/auto-width? shape) (cph/frame-shape? shape) (not (:show-content shape)))
