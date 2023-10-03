@@ -608,3 +608,15 @@
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
+
+;; Version 33:
+;; Fix problem with not-applied migrations in certain environments. We replay migrations from v25 to v32.
+(defmethod migrate 33
+  [data]
+  (let [data
+        (->> (range 25 33)
+             (reduce (fn [data version]
+                       (l/dbg :hint "Replay migration" :version-to version)
+                       (migrate (assoc data :version version)))
+                     data))]
+    (assoc data :version 33)))
