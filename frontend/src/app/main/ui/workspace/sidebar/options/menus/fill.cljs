@@ -149,7 +149,7 @@
               (tr "settings.multiple")]
              [:button {:on-click on-remove-all
                        :class (stl/css :remove-btn)}
-               i/remove-refactor]]
+              i/remove-refactor]]
 
             (seq (:fills values))
             [:& h/sortable-container {}
@@ -174,14 +174,13 @@
           (when (or (= type :frame)
                     (and (= type :multiple) (some? (:hide-fill-on-export values))))
             [:div {:class (stl/css :checkbox)}
-
              [:label {:for "show-fill-on-export"
                       :class (stl/css-case :checked (not hide-fill-on-export?))}
               [:span {:class (stl/css-case :check-mark true
                                            :checked (not hide-fill-on-export?))}
-               (when(not hide-fill-on-export?)
+               (when (not hide-fill-on-export?)
                  i/status-tick-refactor)]
-               (tr "workspace.options.show-fill-on-export")
+              (tr "workspace.options.show-fill-on-export")
               [:input {:type "checkbox"
                        :id "show-fill-on-export"
                        :ref checkbox-ref

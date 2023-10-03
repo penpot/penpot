@@ -64,6 +64,7 @@
         shadow-style       (if new-css-system
                              (:style value)
                              (dm/str (:style value)))
+
         shadow-id          (:id value)
 
         open-status-ref    (mf/with-memo [open-state-ref shadow-id]
@@ -146,200 +147,199 @@
              (st/emit! (dch/update-shapes ids #(assoc-in % [:shadow index :style] value))))))
 
         type-options [{:value "drop-shadow" :label (tr "workspace.options.shadow-options.drop-shadow")}
-                      {:value "inner-shadow" :label (tr "workspace.options.shadow-options.inner-shadow")}]]
+                      {:value "inner-shadow" :label (tr "workspace.options.shadow-options.inner-shadow")}]
 
-    (if new-css-system
-      [:div {:class (stl/css-case :shadow-element true
-                                  :dnd-over-top (= (:over dprops) :top)
-                                  :dnd-over-bot (= (:over dprops) :bot))
-             :ref dref}
-       [:div {:class (stl/css :basic-options)}
-        [:div {:class (stl/css :shadow-info)}
-         [:button {:class (stl/css :more-options)
-                   :on-click on-toggle-open-shadow}
-          i/menu-refactor]
-         [:div {:class (stl/css :type-select)}
-          [:& select
-           {:class (stl/css :shadow-type-select)
-            :default-value (d/name shadow-style)
-            :options type-options
-            :on-change on-type-change}]]]
-        [:div {:class (stl/css :actions)}
-         [:button {:class (stl/css :action-btn)
-                   :on-click toggle-visibility}
-          (if (:hidden value)
-            i/hide-refactor
-            i/shown-refactor)]
-         [:button {:class (stl/css :action-btn)
-                   :on-click on-remove-shadow}
-          i/remove-refactor]]]
-
-       (when open-shadow
-         [:& advanced-options {:class (stl/css :shadow-advanced-options)
-                               :visible? open-shadow
-                               :on-close on-toggle-open-shadow}
-
-          [:div {:class (stl/css :first-row)}
-           [:div {:class (stl/css :offset-x-input)
-                  :title (tr "workspace.options.shadow-options.offsetx")}
-            [:span {:class (stl/css :input-label)}
-             "X"]
-            [:> numeric-input* {:className (stl/css :numeric-input)
-                                :ref adv-offset-x-ref
-                                :no-validate true
-                                :placeholder "--"
-                                :on-change (update-attr index :offset-x basic-offset-x-ref)
-                                :on-blur on-blur
-                                :value (:offset-x value)}]]
-
-           [:div {:class (stl/css :blur-input)
-                  :title (tr "workspace.options.shadow-options.blur")}
-            [:span {:class (stl/css :input-label)}
-             (tr "workspace.options.shadow-options.blur")]
-            [:> numeric-input* {:ref adv-blur-ref
-                                :className (stl/css :numeric-input)
-                                :no-validate true
-                                :placeholder "--"
-                                :on-change (update-attr index :blur basic-blur-ref)
-                                :on-blur on-blur
-                                :min 0
-                                :value (:blur value)}]]
-
-           [:div {:class (stl/css :spread-input)
-                  :title (tr "workspace.options.shadow-options.spread")}
-            [:span {:class (stl/css :input-label)}
-             (tr "workspace.options.shadow-options.spread")]
-            [:> numeric-input* {:ref adv-spread-ref
-                                :className (stl/css :numeric-input)
-                                :no-validate true
-                                :placeholder "--"
-                                :on-change (update-attr index :spread)
-                                :on-blur on-blur
-                                :value (:spread value)}]]]
+        manage-on-open #(st/emit! (dwu/start-undo-transaction :color-row))
+        manage-on-close #(st/emit! (dwu/commit-undo-transaction :color-row))]
 
 
-          [:div {:class (stl/css :second-row)}
-           [:div {:class (stl/css :offset-y-input)
-                  :title (tr "workspace.options.shadow-options.offsety")}
-            [:span {:class (stl/css :input-label)}
-             "Y"]
-            [:> numeric-input* {:ref adv-offset-y-ref
-                                :className (stl/css :numeric-input)
-                                :no-validate true
-                                :placeholder "--"
-                                :on-change (update-attr index :offset-y basic-offset-y-ref)
-                                :on-blur on-blur
-                                :value (:offset-y value)}]]
-           [:& color-row {:color (if (string? (:color value))
-                                   ;; Support for old format colors
-                                   {:color (:color value) :opacity (:opacity value)}
-                                   (:color value))
-                          :title (tr "workspace.options.shadow-options.color")
-                          :disable-gradient true
-                          :on-change update-color
-                          :on-detach detach-color
-                          :on-open #(st/emit! (dwu/start-undo-transaction :color-row))
-                          :on-close #(st/emit! (dwu/commit-undo-transaction :color-row))}]]])]
+    [:div.shadow-option {:class (stl/css-case new-css-system
+                                              :old-css/shadow-option true
+                                              :shadow-element true
+                                              :dnd-over-top (= (:over dprops) :top)
+                                              :dnd-over-bot (= (:over dprops) :bot))
+                         :ref dref}
+     (if new-css-system
+       [:*
+        [:div {:class (stl/css :basic-options)}
+         [:div {:class (stl/css :shadow-info)}
+          [:button {:class (stl/css :more-options)
+                    :on-click on-toggle-open-shadow}
+           i/menu-refactor]
+          [:div {:class (stl/css :type-select)}
+           [:& select
+            {:class (stl/css :shadow-type-select)
+             :default-value (d/name shadow-style)
+             :options type-options
+             :on-change on-type-change}]]]
+         [:div {:class (stl/css :actions)}
+          [:button {:class (stl/css :action-btn)
+                    :on-click toggle-visibility}
+           (if (:hidden value)
+             i/hide-refactor
+             i/shown-refactor)]
+          [:button {:class (stl/css :action-btn)
+                    :on-click on-remove-shadow}
+           i/remove-refactor]]]
+        (when open-shadow
+          [:& advanced-options {:class (stl/css :shadow-advanced-options)
+                                :visible? open-shadow
+                                :on-close on-toggle-open-shadow}
 
-      [:div.shadow-option {:class (dom/classnames
-                                   :dnd-over-top (= (:over dprops) :top)
-                                   :dnd-over-bot (= (:over dprops) :bot))
-                           :ref dref}
-       [:div.shadow-option-main {:style {:display (when open-shadow "none")}}
-        [:div.element-set-actions-button
-         {:on-click on-toggle-open-shadow}
-         i/actions]
+           [:div {:class (stl/css :first-row)}
+            [:div {:class (stl/css :offset-x-input)
+                   :title (tr "workspace.options.shadow-options.offsetx")}
+             [:span {:class (stl/css :input-label)}
+              "X"]
+             [:> numeric-input* {:className (stl/css :numeric-input)
+                                 :ref adv-offset-x-ref
+                                 :no-validate true
+                                 :placeholder "--"
+                                 :on-change (update-attr index :offset-x basic-offset-x-ref)
+                                 :on-blur on-blur
+                                 :value (:offset-x value)}]]
 
-        [:select.input-select
-         {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
-          :default-value shadow-style
-          :on-change (fn [event]
-                       (let [value (-> event dom/get-target dom/get-value d/read-string)]
-                         (st/emit! (dch/update-shapes ids #(assoc-in % [:shadow index :style] value)))))}
-         [:option {:value ":drop-shadow"
-                   :selected (when (= shadow-style ":drop-shadow") "selected")}
-          (tr "workspace.options.shadow-options.drop-shadow")]
-         [:option {:value ":inner-shadow"
-                   :selected (when (= shadow-style ":inner-shadow") "selected")}
-          (tr "workspace.options.shadow-options.inner-shadow")]]
+            [:div {:class (stl/css :blur-input)
+                   :title (tr "workspace.options.shadow-options.blur")}
+             [:span {:class (stl/css :input-label)}
+              (tr "workspace.options.shadow-options.blur")]
+             [:> numeric-input* {:ref adv-blur-ref
+                                 :className (stl/css :numeric-input)
+                                 :no-validate true
+                                 :placeholder "--"
+                                 :on-change (update-attr index :blur basic-blur-ref)
+                                 :on-blur on-blur
+                                 :min 0
+                                 :value (:blur value)}]]
 
-        [:div.shadow-option-main-actions
-         [:div.element-set-actions-button {:on-click (toggle-visibility index)}
-          (if (:hidden value) i/eye-closed i/eye)]
-         [:div.element-set-actions-button
-          {:data-index index
-           :on-click on-remove-shadow}
-          i/minus]]]
+            [:div {:class (stl/css :spread-input)
+                   :title (tr "workspace.options.shadow-options.spread")}
+             [:span {:class (stl/css :input-label)}
+              (tr "workspace.options.shadow-options.spread")]
+             [:> numeric-input* {:ref adv-spread-ref
+                                 :className (stl/css :numeric-input)
+                                 :no-validate true
+                                 :placeholder "--"
+                                 :on-change (update-attr index :spread)
+                                 :on-blur on-blur
+                                 :value (:spread value)}]]]
 
-       [:& advanced-options {:visible? open-shadow
-                             :on-close on-toggle-open-shadow}
-        [:div.color-data
+           [:div {:class (stl/css :second-row)}
+            [:div {:class (stl/css :offset-y-input)
+                   :title (tr "workspace.options.shadow-options.offsety")}
+             [:span {:class (stl/css :input-label)}
+              "Y"]
+             [:> numeric-input* {:ref adv-offset-y-ref
+                                 :className (stl/css :numeric-input)
+                                 :no-validate true
+                                 :placeholder "--"
+                                 :on-change (update-attr index :offset-y basic-offset-y-ref)
+                                 :on-blur on-blur
+                                 :value (:offset-y value)}]]
+            [:& color-row {:color (if (string? (:color value))
+                                           ;; Support for old format colors
+                                    {:color (:color value) :opacity (:opacity value)}
+                                    (:color value))
+                           :title (tr "workspace.options.shadow-options.color")
+                           :disable-gradient true
+                           :on-change update-color
+                           :on-detach detach-color
+                           :on-open manage-on-open
+                           :on-close manage-on-close}]]])]
+
+       [:*
+        [:div.shadow-option-main {:style {:display (when open-shadow "none")}}
          [:div.element-set-actions-button
           {:on-click on-toggle-open-shadow}
           i/actions]
+
          [:select.input-select
           {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
            :default-value shadow-style
-           :on-change (fn [event]
-                        (let [value (-> event dom/get-target dom/get-value d/read-string)]
-                          (st/emit! (dch/update-shapes ids #(assoc-in % [:shadow index :style] value)))))}
+           :on-change on-type-change}
           [:option {:value ":drop-shadow"
                     :selected (when (= shadow-style ":drop-shadow") "selected")}
            (tr "workspace.options.shadow-options.drop-shadow")]
           [:option {:value ":inner-shadow"
                     :selected (when (= shadow-style ":inner-shadow") "selected")}
-           (tr "workspace.options.shadow-options.inner-shadow")]]]
+           (tr "workspace.options.shadow-options.inner-shadow")]]
 
-        [:div.row-grid-2
-         [:div.input-element {:title (tr "workspace.options.shadow-options.offsetx")}
-          [:> numeric-input* {:ref adv-offset-x-ref
-                              :no-validate true
-                              :placeholder "--"
-                              :on-change (update-attr index :offset-x basic-offset-x-ref)
-                              :on-blur on-blur
-                              :value (:offset-x value)}]
-          [:span.after (tr "workspace.options.shadow-options.offsetx")]]
+         [:div.shadow-option-main-actions
+          [:div.element-set-actions-button {:on-click toggle-visibility}
+           (if (:hidden value) i/eye-closed i/eye)]
+          [:div.element-set-actions-button
+           {:data-index index
+            :on-click on-remove-shadow}
+           i/minus]]]
 
-         [:div.input-element {:title (tr "workspace.options.shadow-options.offsety")}
-          [:> numeric-input* {:ref adv-offset-y-ref
-                              :no-validate true
-                              :placeholder "--"
-                              :on-change (update-attr index :offset-y basic-offset-y-ref)
-                              :on-blur on-blur
-                              :value (:offset-y value)}]
-          [:span.after (tr "workspace.options.shadow-options.offsety")]]]
+        [:& advanced-options {:visible? open-shadow
+                              :on-close on-toggle-open-shadow}
+         [:div.color-data
+          [:div.element-set-actions-button
+           {:on-click on-toggle-open-shadow}
+           i/actions]
+          [:select.input-select
+           {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+            :default-value shadow-style
+            :on-change on-type-change}
+           [:option {:value ":drop-shadow"
+                     :selected (when (= shadow-style ":drop-shadow") "selected")}
+            (tr "workspace.options.shadow-options.drop-shadow")]
+           [:option {:value ":inner-shadow"
+                     :selected (when (= shadow-style ":inner-shadow") "selected")}
+            (tr "workspace.options.shadow-options.inner-shadow")]]]
 
-        [:div.row-grid-2
-         [:div.input-element {:title (tr "workspace.options.shadow-options.blur")}
-          [:> numeric-input* {:ref adv-blur-ref
-                              :no-validate true
-                              :placeholder "--"
-                              :on-change (update-attr index :blur basic-blur-ref)
-                              :on-blur on-blur
-                              :min 0
-                              :value (:blur value)}]
-          [:span.after (tr "workspace.options.shadow-options.blur")]]
+         [:div.row-grid-2
+          [:div.input-element {:title (tr "workspace.options.shadow-options.offsetx")}
+           [:> numeric-input* {:ref adv-offset-x-ref
+                               :no-validate true
+                               :placeholder "--"
+                               :on-change (update-attr index :offset-x basic-offset-x-ref)
+                               :on-blur on-blur
+                               :value (:offset-x value)}]
+           [:span.after (tr "workspace.options.shadow-options.offsetx")]]
 
-         [:div.input-element {:title (tr "workspace.options.shadow-options.spread")}
-          [:> numeric-input* {:ref adv-spread-ref
-                              :no-validate true
-                              :placeholder "--"
-                              :on-change (update-attr index :spread)
-                              :on-blur on-blur
-                              :value (:spread value)}]
-          [:span.after (tr "workspace.options.shadow-options.spread")]]]
+          [:div.input-element {:title (tr "workspace.options.shadow-options.offsety")}
+           [:> numeric-input* {:ref adv-offset-y-ref
+                               :no-validate true
+                               :placeholder "--"
+                               :on-change (update-attr index :offset-y basic-offset-y-ref)
+                               :on-blur on-blur
+                               :value (:offset-y value)}]
+           [:span.after (tr "workspace.options.shadow-options.offsety")]]]
 
-        [:div.color-row-wrap
-         [:& color-row {:color (if (string? (:color value))
-                                      ;; Support for old format colors
-                                 {:color (:color value) :opacity (:opacity value)}
-                                 (:color value))
-                        :title (tr "workspace.options.shadow-options.color")
-                        :disable-gradient true
-                        :on-change update-color
-                        :on-detach detach-color
-                        :on-open #(st/emit! (dwu/start-undo-transaction :color-row))
-                        :on-close #(st/emit! (dwu/commit-undo-transaction :color-row))}]]]])))
+         [:div.row-grid-2
+          [:div.input-element {:title (tr "workspace.options.shadow-options.blur")}
+           [:> numeric-input* {:ref adv-blur-ref
+                               :no-validate true
+                               :placeholder "--"
+                               :on-change (update-attr index :blur basic-blur-ref)
+                               :on-blur on-blur
+                               :min 0
+                               :value (:blur value)}]
+           [:span.after (tr "workspace.options.shadow-options.blur")]]
+
+          [:div.input-element {:title (tr "workspace.options.shadow-options.spread")}
+           [:> numeric-input* {:ref adv-spread-ref
+                               :no-validate true
+                               :placeholder "--"
+                               :on-change (update-attr index :spread)
+                               :on-blur on-blur
+                               :value (:spread value)}]
+           [:span.after (tr "workspace.options.shadow-options.spread")]]]
+
+         [:div.color-row-wrap
+          [:& color-row {:color (if (string? (:color value))
+                                                   ;; Support for old format colors
+                                  {:color (:color value) :opacity (:opacity value)}
+                                  (:color value))
+                         :title (tr "workspace.options.shadow-options.color")
+                         :disable-gradient true
+                         :on-change update-color
+                         :on-detach detach-color
+                         :on-open manage-on-open
+                         :on-close manage-on-close}]]]])]))
+
 (mf/defc shadow-menu
   {::mf/wrap-props false}
   [props]

@@ -237,13 +237,14 @@
     }
   }
   .tool-window-content {
+    --calculated-height: calc(128px + var(--height, 200px));
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: calc(100vh - var(--calculated-height));
     width: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    // scrollbar-gutter: stable;
+    scrollbar-gutter: stable;
     overflow-y: overlay;
     .element-list {
       width: 100%;

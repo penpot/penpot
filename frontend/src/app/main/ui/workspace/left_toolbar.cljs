@@ -11,6 +11,7 @@
    [app.common.media :as cm]
    [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
@@ -27,14 +28,15 @@
 (mf/defc image-upload
   {::mf/wrap [mf/memo]}
   []
-  (let [ref     (mf/use-ref nil)
-        file-id (mf/use-ctx ctx/current-file-id)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        ref            (mf/use-ref nil)
+        file-id        (mf/use-ctx ctx/current-file-id)
 
         on-click
         (mf/use-fn
-          (fn []
-            (st/emit! :interrupt dw/clear-edition-mode)
-            (dom/click (mf/ref-val ref))))
+         (fn []
+           (st/emit! :interrupt dw/clear-edition-mode)
+           (dom/click (mf/ref-val ref))))
 
         on-selected
         (mf/use-fn
@@ -49,13 +51,14 @@
                          :blobs (seq blobs)
                          :position (gpt/point x y)}]
              (st/emit! (dwm/upload-media-workspace params)))))]
-
     [:li
      [:button
       {:title (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
        :aria-label (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
        :on-click on-click}
-      i/img-refactor
+      (if new-css-system
+        i/img-refactor
+        i/image)
       [:& file-uploader
        {:input-id "image-upload"
         :accept cm/str-image-types
@@ -138,7 +141,7 @@
 
         toggle-toolbar
         (mf/use-fn
-         #(st/emit! (dw/toggle-toolbar-visibility)))]
+         #(st/emit! (dwc/toggle-toolbar-visibility)))]
 
     (if new-css-system
       (when-not ^boolean read-only?

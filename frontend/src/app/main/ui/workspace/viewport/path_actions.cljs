@@ -118,14 +118,14 @@
       ;; Draw Mode
         [:button
          {:class  (stl/css-case :is-toggled (= edit-mode :draw))
-          :alt (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
+          :title (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
           :on-click on-select-draw-mode}
          i/pentool-refactor]
 
       ;; Edit mode
         [:button
          {:class (stl/css-case :is-toggled (= edit-mode :move))
-          :alt (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))
+          :title (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))
           :on-click on-select-edit-mode}
          i/move-refactor]]
 
@@ -133,52 +133,52 @@
 
       ;; Add Node
         [:button
-         {:class  (stl/css-case :is-disabled (:add-node enabled-buttons))
-          :alt (tr "workspace.path.actions.add-node" (sc/get-tooltip :add-node))
+         {:class  (stl/css-case :is-disabled (not (:add-node enabled-buttons)))
+          :title (tr "workspace.path.actions.add-node" (sc/get-tooltip :add-node))
           :on-click on-add-node}
          i/add-refactor]
 
       ;; Remove node
         [:button
-         {:class (stl/css-case :is-disabled (:remove-node enabled-buttons))
-          :alt (tr "workspace.path.actions.delete-node" (sc/get-tooltip :delete-node))
+         {:class (stl/css-case :is-disabled (not (:remove-node enabled-buttons)))
+          :title (tr "workspace.path.actions.delete-node" (sc/get-tooltip :delete-node))
           :on-click on-remove-node}
          i/remove-refactor]]
 
        [:div {:class (stl/css :sub-actions-group)}
       ;; Merge Nodes
         [:button
-         {:class (stl/css-case :is-disabled (:merge-nodes enabled-buttons))
-          :alt (tr "workspace.path.actions.merge-nodes" (sc/get-tooltip :merge-nodes))
+         {:class (stl/css-case :is-disabled (not (:merge-nodes enabled-buttons)))
+          :title (tr "workspace.path.actions.merge-nodes" (sc/get-tooltip :merge-nodes))
           :on-click on-merge-nodes}
          i/merge-nodes-refactor]
 
       ;; Join Nodes
         [:button
-         {:class (stl/css-case :is-disabled (:join-nodes enabled-buttons))
-          :alt (tr "workspace.path.actions.join-nodes" (sc/get-tooltip :join-nodes))
+         {:class (stl/css-case :is-disabled (not (:join-nodes enabled-buttons)))
+          :title (tr "workspace.path.actions.join-nodes" (sc/get-tooltip :join-nodes))
           :on-click on-join-nodes}
          i/join-nodes-refactor]
 
       ;; Separate Nodes
         [:button
-         {:class (stl/css-case :is-disabled (:separate-nodes enabled-buttons))
-          :alt (tr "workspace.path.actions.separate-nodes" (sc/get-tooltip :separate-nodes))
+         {:class (stl/css-case :is-disabled (not (:separate-nodes enabled-buttons)))
+          :title (tr "workspace.path.actions.separate-nodes" (sc/get-tooltip :separate-nodes))
           :on-click on-separate-nodes}
          i/separate-nodes-refactor]]
 
      ;; Make Corner
        [:div {:class (stl/css :sub-actions-group)}
         [:button
-         {:class (stl/css-case :is-disabled (:make-corner enabled-buttons))
-          :alt (tr "workspace.path.actions.make-corner" (sc/get-tooltip :make-corner))
+         {:class (stl/css-case :is-disabled (not (:make-corner enabled-buttons)))
+          :title (tr "workspace.path.actions.make-corner" (sc/get-tooltip :make-corner))
           :on-click on-make-corner}
          i/to-corner-refactor]
 
       ;; Make Curve
         [:button
-         {:class (stl/css-case :is-disabled (:make-curve enabled-buttons))
-          :alt (tr "workspace.path.actions.make-curve" (sc/get-tooltip :make-curve))
+         {:class (stl/css-case :is-disabled (not (:make-curve enabled-buttons)))
+          :title (tr "workspace.path.actions.make-curve" (sc/get-tooltip :make-curve))
           :on-click on-make-curve}
          i/to-curve-refactor]]
 
@@ -186,7 +186,7 @@
        [:div {:class (stl/css :sub-actions-group)}
         [:button
          {:class  (stl/css-case :is-toggled snap-toggled)
-          :alt (tr "workspace.path.actions.snap-nodes" (sc/get-tooltip :snap-nodes))
+          :title (tr "workspace.path.actions.snap-nodes" (sc/get-tooltip :snap-nodes))
           :on-click on-toggle-snap}
          i/snap-nodes-refactor]]]
 

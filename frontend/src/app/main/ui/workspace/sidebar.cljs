@@ -39,7 +39,9 @@
   [{:keys [layout file page-id] :as props}]
   (let [options-mode   (mf/deref refs/options-mode-global)
         mode-inspect?  (= options-mode :inspect)
-        project          (mf/deref refs/workspace-project)
+        project        (mf/deref refs/workspace-project)
+        show-pages?    (mf/use-state true)
+        toggle-pages   (mf/use-callback #(reset! show-pages? not))
 
         section        (cond (or mode-inspect? (contains? layout :layers)) :layers
                              (contains? layout :assets) :assets)
@@ -47,8 +49,12 @@
         show-debug?    (contains? layout :debug-panel)
         new-css-system (mf/use-ctx ctx/new-css-system)
 
-        {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move parent-ref size]}
+        {on-pointer-down :on-pointer-down on-lost-pointer-capture :on-lost-pointer-capture  on-pointer-move :on-pointer-move parent-ref :parent-ref size :size}
         (use-resize-hook :left-sidebar 275 275 500 :x false :left)
+
+        {on-pointer-down-pages :on-pointer-down on-lost-pointer-capture-pages  :on-lost-pointer-capture on-pointer-move-pages :on-pointer-move size-pages :size}
+        (use-resize-hook :sitemap 200 38 400 :y false nil)
+
 
         handle-collapse
         (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
@@ -94,11 +100,21 @@
              :shortcuts? shortcuts?
              :collapsable? true
              :handle-collapse handle-collapse
-             :class :tab-spacing}
+             :class (stl/css :tab-spacing)}
             [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
-             [:div {:class (stl/css :layers-tab)}
-              [:& sitemap {:layout layout}]
-              [:& layers-toolbox {:size-parent size}]]]
+             [:div {:class (stl/css :layers-tab)
+                    :style #js {"--height" (str size-pages "px")}}
+              [:& sitemap {:layout layout
+                           :toggle-pages toggle-pages
+                           :show-pages? @show-pages?
+                           :size size-pages}]
+              (when @show-pages?
+                [:div {:class (stl/css :resize-area-horiz)
+                       :on-pointer-down on-pointer-down-pages
+                       :on-lost-pointer-capture on-lost-pointer-capture-pages
+                       :on-pointer-move on-pointer-move-pages}])
+              [:& layers-toolbox {:size-parent size
+                                  :size size-pages}]]]
 
             (when-not ^boolean mode-inspect?
               [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
@@ -118,8 +134,17 @@
              :handle-collapse handle-collapse}
 
             [:& tabs-element {:id :layers :title (tr "workspace.sidebar.layers")}
-             [:div {:class :layers-tab}
-              [:& sitemap {:layout layout}]
+             [:div {:class :layers-tab
+                    :style #js {"--height" (str size-pages "px")}}
+              [:& sitemap {:layout layout
+                           :toggle-pages toggle-pages
+                           :show-pages? @show-pages?
+                           :size size-pages}]
+              (when @show-pages?
+                [:div.resize-area-horiz
+                 {:on-pointer-down on-pointer-down-pages
+                  :on-lost-pointer-capture on-lost-pointer-capture-pages
+                  :on-pointer-move on-pointer-move-pages}])
               [:& layers-toolbox {:size-parent size}]]]
 
             (when-not ^boolean mode-inspect?
