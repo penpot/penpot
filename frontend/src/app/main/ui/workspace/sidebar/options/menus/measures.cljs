@@ -381,7 +381,7 @@
                              (= (:height size-preset) (d/parse-integer (:height values) 0)))
                     [:span {:class (stl/css :check-icon)} i/tick-refactor])]))]]]
 
-          [:& radio-buttons {:selected (name orientation)
+          [:& radio-buttons {:selected (or (d/name orientation) "")
                              :on-change on-orientation-change-refactor
                              :name "frame-otientation"}
            [:& radio-button {:icon i/size-vertical-refactor

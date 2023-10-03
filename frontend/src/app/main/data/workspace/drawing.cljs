@@ -38,7 +38,8 @@
     (watch [_ _ stream]
       (rx/merge
        (when (= tool :path)
-         (rx/of (start-drawing :path)))
+         (rx/of (start-drawing :path)
+                (dwc/hide-toolbar)))
 
        (when (= tool :curve)
          (let [stopper (rx/filter dwc/interrupt? stream)]

@@ -60,9 +60,9 @@
     flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
-    // scrollbar-gutter: stable;
+    scrollbar-gutter: stable;
     overflow-y: overlay;
-    height: 100%;
+    height: calc(-38px + var(--height, 200px));
     width: 100%;
 
     .pages-list {

@@ -338,6 +338,16 @@ button.collapse-sidebar {
   grid-template-columns: 100%;
   height: 100%;
   overflow: hidden;
+  position: relative;
+  .resize-area-horiz {
+    position: absolute;
+    top: var(--height, 200px);
+    left: 0;
+    height: 8px;
+    width: 100%;
+    z-index: 10;
+    cursor: ns-resize;
+  }
 }
 
 .shortcuts,

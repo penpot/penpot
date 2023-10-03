@@ -15,6 +15,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
@@ -350,7 +351,8 @@
       (let [id (st/get-path-id state)]
         (cond
           (and id (= :move mode)) (rx/of (common/finish-path "change-edit-mode"))
-          (and id (= :draw mode)) (rx/of (start-draw-mode))
+          (and id (= :draw mode)) (rx/of (dwc/hide-toolbar)
+                                         (start-draw-mode))
           :else (rx/empty))))))
 
 (defn reset-last-handler

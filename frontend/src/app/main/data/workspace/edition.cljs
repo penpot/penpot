@@ -46,4 +46,5 @@
         (-> state
             (update :workspace-local dissoc :edition)
             (dissoc :workspace-grid-edition)
+            (assoc-in  [:workspace-local :hide-toolbar] false)
             (cond-> (some? id) (update-in [:workspace-local :edit-path] dissoc id)))))))

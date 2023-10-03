@@ -15,6 +15,7 @@
    [app.common.path.shapes-to-path :as upsp]
    [app.common.path.subpaths :as ups]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.drawing :as drawing]
@@ -308,6 +309,7 @@
                                       (= (ptk/type %) ::start-path-edit))))
             interrupt (->> stream (rx/filter #(= % :interrupt)) (rx/take 1))]
         (rx/concat
+         (rx/of (dwc/hide-toolbar))
          (rx/of (undo/start-path-undo))
          (rx/of (drawing/change-edit-mode mode))
          (->> interrupt
