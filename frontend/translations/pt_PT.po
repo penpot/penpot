@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-09-25 20:02+0000\n"
+"PO-Revision-Date: 2023-10-04 11:47+0000\n"
 "Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
@@ -5077,3 +5077,36 @@ msgid "workspace.remove-graphics.text1"
 msgstr ""
 "A partir de agora, os Gráficos da biblioteca passarão a ser Componentes, o "
 "que os tornará mais poderosos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "Esta biblioteca está ativa aqui: "
+msgstr[1] "Estas bibliotecas estão ativas aqui: "
+
+msgid "workspace.shape.menu.add-grid"
+msgstr "Adicionar layout em grelha"
+
+msgid "workspace.layout_grid.editor.title"
+msgstr "A editar grelha"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
+msgstr[0] "Esta biblioteca está ativa aqui:"
+msgstr[1] "Estas bibliotecas estão ativas aqui:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] "Não está ativa em nenhum ficheiro."
+msgstr[1] "Não estão ativas em nenhum ficheiro."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
+msgstr[0] "Não está ativa em nenhum ficheiro."
+msgstr[1] "Não estão ativas em nenhum ficheiro."
+
+msgid "labels.discard"
+msgstr "Descartar"
