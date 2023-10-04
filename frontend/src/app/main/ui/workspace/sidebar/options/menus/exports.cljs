@@ -211,12 +211,14 @@
                   [:& select
                    {:default-value (d/name (:type export))
                     :options format-options
+                    :dropdown-class (stl/css :dropdown-upwards)
                     :on-change (partial on-type-change index)}]]
                  (when (scale-enabled? export)
                    [:div {:class (stl/css :size-select)}
                     [:& select
                      {:default-value (str (:scale export))
                       :options size-options
+                      :dropdown-class (stl/css :dropdown-upwards)
                       :on-change (partial on-scale-change index)}]])
                  [:div {:class (stl/css :suffix-input)}
                   [:input {:class (stl/css :type-input)

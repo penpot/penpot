@@ -23,7 +23,7 @@
     [item item]))
 
 (mf/defc select
-  [{:keys [default-value options class is-open? on-change on-pointer-enter-option on-pointer-leave-option disabled]}]
+  [{:keys [default-value options class dropdown-class is-open? on-change on-pointer-enter-option on-pointer-leave-option disabled]}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
         label-index    (mf/with-memo [options]
                          (into {} (map as-key-value) options))
@@ -89,7 +89,7 @@
        [:span {:class (stl/css :current-label)} current-label]
        [:span {:class (stl/css :dropdown-button)} i/arrow-refactor]
        [:& dropdown {:show is-open? :on-close close-dropdown}
-        [:ul {:class (stl/css :custom-select-dropdown)}
+        [:ul {:class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
          (for [[index item] (d/enumerate options)]
            (if (= :separator item)
              [:li {:class (dom/classnames (stl/css :separator) true)

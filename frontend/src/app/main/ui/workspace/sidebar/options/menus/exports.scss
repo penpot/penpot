@@ -57,10 +57,20 @@
         .format-select {
           width: $s-60;
           padding: 0;
+          .dropdown-upwards {
+            bottom: $s-36;
+            width: $s-80;
+            top: unset;
+          }
         }
         .size-select {
           width: $s-60;
           padding: 0;
+          .dropdown-upwards {
+            bottom: $s-36;
+            top: unset;
+            width: $s-80;
+          }
         }
         .suffix-input {
           @extend .input-element;
