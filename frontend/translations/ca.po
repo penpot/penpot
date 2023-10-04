@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-01-24 14:27+0000\n"
 "Last-Translator: Rubén <ruben@users.noreply.hosted.weblate.org>\n"
-"Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
-"ca/>\n"
+"Language-Team: Catalan "
+"<https://hosted.weblate.org/projects/penpot/frontend/ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -233,8 +233,8 @@ msgstr "Gestió de l'equip"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.text"
 msgstr ""
-"El Penpot està pensat per a equips. Convida a membres i treballeu plegats en "
-"projectes i fitxers"
+"El Penpot està pensat per a equips. Convida a membres i treballeu plegats "
+"en projectes i fitxers"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.title"
@@ -243,7 +243,8 @@ msgstr "Fes equip!"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
 msgstr ""
-"Aprèn les bases del Penpot mentre et diverteixes amb aquest tutorial pràctic."
+"Aprèn les bases del Penpot mentre et diverteixes amb aquest tutorial "
+"pràctic."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
@@ -308,9 +309,9 @@ msgstr "Duplica %s fitxers"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"Encara no hi ha fitxers. Si voleu provar algunes plantilles, podeu anar a la "
-"secció [Biblioteques i plantilles](https://penpot.app/libraries-templates."
-"html)"
+"Encara no hi ha fitxers. Si voleu provar algunes plantilles, podeu anar a "
+"la secció [Biblioteques i "
+"plantilles](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-binary-multi"
 msgstr "Baixa %s fitxers Penpot (.penpot)"
@@ -385,7 +386,8 @@ msgstr ""
 
 msgid "dashboard.export.options.merge.title"
 msgstr ""
-"Inclou els recursos de la biblioteca compartida a les biblioteques del fitxer"
+"Inclou els recursos de la biblioteca compartida a les biblioteques del "
+"fitxer"
 
 msgid "dashboard.export.title"
 msgstr "Exporta els fitxers"
@@ -417,10 +419,10 @@ msgstr ""
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Només podeu pujar tipografies de la vostra propietat o de les que tingueu "
-"una llicència que us permeti utilitzar-los al Penpot. Teniu més informació a "
-"la secció de drets de contingut de les [Condicions del servei del Penpot]"
-"(https://penpot.app/terms.html). També podeu llegir sobre les [llicències de "
-"les tipografies](https://www.typography.com/faq)."
+"una llicència que us permeti utilitzar-los al Penpot. Teniu més informació "
+"a la secció de drets de contingut de les [Condicions del servei del "
+"Penpot](https://penpot.app/terms.html). També podeu llegir sobre les "
+"[llicències de les tipografies](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -771,7 +773,8 @@ msgstr "La imatge és massa gran."
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
 msgstr ""
-"Sembla que el contingut de la imatge no coincideix amb l'extensió del fitxer."
+"Sembla que el contingut de la imatge no coincideix amb l'extensió del "
+"fitxer."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
@@ -847,8 +850,7 @@ msgstr "Ves al fòrum de Penpot"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-subtitle1"
-msgstr ""
-"Ens encanta que sigueu aquí. Si necessiteu ajuda, cerqueu abans de publicar."
+msgstr "Ens encanta que sigueu aquí. Si necessiteu ajuda, cerqueu abans de publicar."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-title"
@@ -1307,7 +1309,8 @@ msgstr "No hi ha invitacions."
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
 msgstr ""
-"Feu clic al botó «Convida a l'equip» per convidar més membres a aquest equip."
+"Feu clic al botó «Convida a l'equip» per convidar més membres a aquest "
+"equip."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1503,9 +1506,9 @@ msgstr "Afegeix com a biblioteca compartida"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
-"Una vegada afegit com a biblioteca compartida, els recursos de la biblioteca "
-"d'aquest fitxer estaran disponibles per a usar-los entre la resta dels "
-"fitxers."
+"Una vegada afegit com a biblioteca compartida, els recursos de la "
+"biblioteca d'aquest fitxer estaran disponibles per a usar-los entre la "
+"resta dels fitxers."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1523,8 +1526,8 @@ msgstr "Repetiu el correu electrònic nou"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
 msgstr ""
-"Us enviarem un correu electrònic a l'adreça actual \"%s\" per a verificar la "
-"vostra identitat."
+"Us enviarem un correu electrònic a l'adreça actual \"%s\" per a verificar "
+"la vostra identitat."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1548,8 +1551,7 @@ msgstr "Sí, elimina el meu compte"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.info"
-msgstr ""
-"Si suprimiu el compte, perdreu tots els vostres projectes i arxius actuals."
+msgstr "Si suprimiu el compte, perdreu tots els vostres projectes i arxius actuals."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.title"
@@ -1818,8 +1820,7 @@ msgstr "El perfil s'ha desat correctament!"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "notifications.validation-email-sent"
-msgstr ""
-"S'ha enviat un correu electrònic de verificació a %s. Reviseu el correu!"
+msgstr "S'ha enviat un correu electrònic de verificació a %s. Reviseu el correu!"
 
 msgid "onboarding-v2.before-start.desc2.title"
 msgstr "Guia d'ús"
@@ -3447,12 +3448,12 @@ msgid "workspace.options.radius"
 msgstr "Radi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius.all-corners"
-msgstr "Tots els cantons"
+msgid "workspace.options.radius-bottom-left"
+msgstr "Inferior esquerra"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius.single-corners"
-msgstr "Cantons individuals"
+msgid "workspace.options.radius-bottom-right"
+msgstr "Inferior dreta"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius-top-left"
@@ -3463,12 +3464,12 @@ msgid "workspace.options.radius-top-right"
 msgstr "Superior dreta"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius-bottom-left"
-msgstr "Inferior esquerra"
+msgid "workspace.options.radius.all-corners"
+msgstr "Tots els cantons"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius-bottom-right"
-msgstr "Inferior dreta"
+msgid "workspace.options.radius.single-corners"
+msgstr "Cantons individuals"
 
 msgid "workspace.options.recent-fonts"
 msgstr "Recent"
@@ -3633,24 +3634,8 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Alinea a baix"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-center"
-msgstr "Alinea el centre (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-justify"
-msgstr "Justifica (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-left"
-msgstr "Alinea a l'esquerra (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
 msgstr "Alinea al centre"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-right"
-msgstr "Alinea a la dreta (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -3696,6 +3681,22 @@ msgstr "Cap"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Ratllat (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Alinea el centre (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "Justifica (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-left"
+msgstr "Alinea a l'esquerra (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-right"
+msgstr "Alinea a la dreta (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -4192,8 +4193,7 @@ msgstr "Feu clic per a tancar el camí"
 #~ "de l'equip."
 
 #~ msgid "onboarding.slide.1.desc1"
-#~ msgstr ""
-#~ "Creeu interaccions enriquides per a imitar el comportament del producte."
+#~ msgstr "Creeu interaccions enriquides per a imitar el comportament del producte."
 
 #~ msgid "onboarding.slide.2.desc1"
 #~ msgstr ""
@@ -4202,8 +4202,8 @@ msgstr "Feu clic per a tancar el camí"
 
 #~ msgid "onboarding.slide.3.desc2"
 #~ msgstr ""
-#~ "Obteniu i proporcioneu especificacions de codi d'etiquetatge (SVG, HTML) "
-#~ "o d'estils (CSS, Less, Stylus...)."
+#~ "Obteniu i proporcioneu especificacions de codi d'etiquetatge (SVG, HTML) o "
+#~ "d'estils (CSS, Less, Stylus...)."
 
 #~ msgid "viewer.header.share.placeholder"
 #~ msgstr "L'enllaç compartit apareixerà aquí"

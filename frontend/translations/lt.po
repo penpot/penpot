@@ -2,15 +2,15 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-08-09 07:04+0000\n"
 "Last-Translator: Vincas Dundzys <dundzys.vincas@gmail.com>\n"
-"Language-Team: Lithuanian <https://hosted.weblate.org/projects/penpot/"
-"frontend/lt/>\n"
+"Language-Team: Lithuanian "
+"<https://hosted.weblate.org/projects/penpot/frontend/lt/>\n"
 "Language: lt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 1 && (n % 100 < 11 || n % 100 > "
-"19)) ? 0 : ((n % 10 >= 2 && n % 10 <= 9 && (n % 100 < 11 || n % 100 > 19)) ? "
-"1 : 2);\n"
+"19)) ? 0 : ((n % 10 >= 2 && n % 10 <= 9 && (n % 100 < 11 || n % 100 > 19)) "
+"? 1 : 2);\n"
 "X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
@@ -170,10 +170,22 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "Išsiuntėme patvirtinimo el. laišką adresu"
 
+msgid "common.publish"
+msgstr "Paskelbti"
+
+msgid "common.share-link.all-users"
+msgstr "Visi Penpot vartotojai"
+
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Ar tikrai norite pašalinti šią nuorodą? Jei tai padarysite, ji niekam "
 "nebebus pasiekiama"
+
+msgid "common.share-link.current-tag"
+msgstr "(dabartinis)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Naikinti nuorodą"
 
 msgid "common.share-link.get-link"
 msgstr "Gauti nuorodą"
@@ -181,14 +193,71 @@ msgstr "Gauti nuorodą"
 msgid "common.share-link.link-copied-success"
 msgstr "Nuoroda sėkmingai nukopijuota"
 
+msgid "common.share-link.manage-ops"
+msgstr "Valdyti leidimus"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "Bendrinamas 1 puslapis"
+msgstr[1] "Bendrinami % puslapiai"
+msgstr[2] "Bendrinama % puslapių"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Gali komentuoti"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Gali apžiūrėti kodą"
+
 msgid "common.share-link.permissions-hint"
 msgstr "Kiekvienas, turintis nuorodą, turės prieigą"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Bendrinti puslapiai"
 
 msgid "common.share-link.placeholder"
 msgstr "Bendrinama nuoroda bus rodoma čia"
 
+msgid "common.share-link.team-members"
+msgstr "Tik komandos nariams"
+
 msgid "common.share-link.title"
 msgstr "Dalinkitės prototipais"
+
+msgid "common.share-link.view-all"
+msgstr "Rinktis viską"
+
+msgid "common.unpublish"
+msgstr "Atšaukti paskelbimą"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Komandos valdymas"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot yra skirtas komandoms. Pakvieskite narius bendram darbui su "
+"projektais ir failais"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Suburkite komandą!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "Išmokite Penpot pagrindus ir mėgaukitės šia pamoka."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Pradėti pamoką"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Panagrinėkite Penpot ir susipažinkite su pagrindinėmis jo savybėmis."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Pradėkite apžvalgą"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -227,8 +296,8 @@ msgstr "Dubliuoti %s failus"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Čia bus rodomi prie bibliotekų pridėti failai. Pabandykite bendrinti failus "
-"arba pridėti iš mūsų [Bibliotekos ir šablonai] (https://penpot.app/libraries-"
-"templates.html)"
+"arba pridėti iš mūsų [Bibliotekos ir šablonai] "
+"(https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
 msgstr "Eksportuokite darbalaukius į PDF"
@@ -375,75 +444,17 @@ msgstr "Įkeliami duomenys į serverį (%s/%s)"
 msgid "dashboard.import.progress.upload-media"
 msgstr "Įkeliamas failas: %s"
 
-msgid "common.share-link.team-members"
-msgstr "Tik komandos nariams"
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Naujas failas"
 
 #: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.management"
-msgstr "Komandos valdymas"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.tutorial-hero.info"
-msgstr "Išmokite Penpot pagrindus ir mėgaukitės šia pamoka."
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "dashboard.notifications.email-verified-successfully"
-msgstr "Jūsų el. pašto adresas buvo sėkmingai patvirtintas"
+msgid "dashboard.new-project"
+msgstr "+ Naujas projektas"
 
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "Naujas projektas"
-
-#: src/app/main/ui/settings/password.cljs
-msgid "dashboard.notifications.password-saved"
-msgstr "Slaptažodis sėkmingai išsaugotas!"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dashboard.projects-title"
-msgstr "Projektai"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.num-of-members"
-msgstr "%s nariai"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.open-in-new-tab"
-msgstr "Atidarykite failą naujame skirtuke"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.pin-unpin"
-msgstr "Prisegti/Atsegti"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.remove-shared"
-msgstr "Pašalinti kaip bendrinamą biblioteką"
-
-msgid "dashboard.options"
-msgstr "Nustatymai"
-
-msgid "common.share-link.all-users"
-msgstr "Visi Penpot vartotojai"
-
-msgid "common.share-link.current-tag"
-msgstr "(dabartinis)"
-
-msgid "common.share-link.destroy-link"
-msgstr "Naikinti nuorodą"
-
-msgid "common.share-link.manage-ops"
-msgstr "Valdyti leidimus"
-
-msgid "common.share-link.permissions-can-comment"
-msgstr "Gali komentuoti"
-
-msgid "common.share-link.permissions-can-inspect"
-msgstr "Gali apžiūrėti kodą"
-
-msgid "common.share-link.permissions-pages"
-msgstr "Bendrinti puslapiai"
-
-msgid "common.share-link.view-all"
-msgstr "Rinktis viską"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
@@ -457,55 +468,44 @@ msgstr "Prisegti projektai bus rodomi čia"
 msgid "dashboard.notifications.email-changed-successfully"
 msgstr "Jūsų el. pašto adresas sėkmingai atnaujintas"
 
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.text"
-msgstr ""
-"Penpot yra skirtas komandoms. Pakvieskite narius bendram darbui su "
-"projektais ir failais"
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "Jūsų el. pašto adresas buvo sėkmingai patvirtintas"
 
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.title"
-msgstr "Suburkite komandą!"
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "Slaptažodis sėkmingai išsaugotas!"
 
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.tutorial-hero.start"
-msgstr "Pradėti pamoką"
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "%s nariai"
 
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.walkthrough-hero.info"
-msgstr "Panagrinėkite Penpot ir susipažinkite su pagrindinėmis jo savybėmis."
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Atidarykite failą naujame skirtuke"
 
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.walkthrough-hero.start"
-msgstr "Pradėkite apžvalgą"
-
-msgid "common.share-link.page-shared"
-msgid_plural "common.share-link.page-shared"
-msgstr[0] "Bendrinamas 1 puslapis"
-msgstr[1] "Bendrinami % puslapiai"
-msgstr[2] "Bendrinama % puslapių"
+msgid "dashboard.options"
+msgstr "Nustatymai"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "dashboard.password-change"
 msgstr "Keisti slaptažodį"
 
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Prisegti/Atsegti"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "Projektai"
+
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Norite pašalinti paskyrą?"
 
-msgid "common.publish"
-msgstr "Paskelbti"
-
-msgid "common.unpublish"
-msgstr "Atšaukti paskelbimą"
-
-#: src/app/main/data/dashboard.cljs
-msgid "dashboard.new-file-prefix"
-msgstr "Naujas failas"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dashboard.new-project"
-msgstr "+ Naujas projektas"
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.remove-shared"
+msgstr "Pašalinti kaip bendrinamą biblioteką"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.theme-change"

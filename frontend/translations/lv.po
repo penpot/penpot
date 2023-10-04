@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-06-03 00:50+0000\n"
+"PO-Revision-Date: 2023-10-04 11:47+0000\n"
 "Last-Translator: \"Ņikita K.\" <nikita.kozlovs@gmail.com>\n"
-"Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
-"lv/>\n"
+"Language-Team: Latvian "
+"<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
-"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 4.18-dev\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
+"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -85,6 +85,14 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "AtvērtoID (OpenID)"
 
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "Nosaukumam jāsatur simboli, kas nav atstarpe."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "Nosaukumus nedrīkst pārsniegt 250 simbolus."
+
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Ierakstiet jaunu paroli"
@@ -100,7 +108,8 @@ msgstr "Parole ir veiksmīgi nomainīta"
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
 msgstr ""
-"Profils nav pārbaudīts, lūdzu, pirms turpiniet, veiciet profila verificēšanu."
+"Profils nav pārbaudīts, lūdzu, pirms turpiniet, veiciet profila "
+"verificēšanu."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
@@ -117,6 +126,10 @@ msgstr "Parole"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Vismaz 8 rakstzīmes"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "Parolei jāsatur rakstzīmes, kas nav atstarpes."
 
 msgid "auth.privacy-policy"
 msgstr "Privātuma politika"
@@ -169,6 +182,10 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "Mēs esam nosūtījuši apstiprinājuma e-pasta ziņojumu uz"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "... zīmolrades, ilustrācijām, mārketinga materiāliem utt."
 
 msgid "common.publish"
 msgstr "Publicēt"
@@ -267,6 +284,81 @@ msgstr "Sākt iepazīšanos"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "Saskarnes caurskate"
 
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "Marķieris kopēts"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Ģenerēt jaunu marķieri"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "Piekļuves marķieris ir veiksmīgi izveidots."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Nospiediet pogu \"Ģenerēt jaunu marķieri\" lai to izveidotu."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "Jums līdz šim nav izveidotu marķieru."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "Nosaukums ir obligāts"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180 dienas"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30 dienas"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60 dienas"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90 dienas"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Nekad"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Izbeidzās %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Derīgs līdz %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Bez derīguma termiņa"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Personiskās piekļuves marķieris"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Personiskās piekļuves marķieri darbojas, kā alternatīva mūsu "
+"pieteikšanās/paroles autentifikācijas sistēmai, un tos var izmantot, lai "
+"lietojumprogrammas varētu piekļūt iekšējam Penpot API"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "Marķieris ir derīgs līdz %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "Marķierim nav noteikts derīguma termiņš"
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -311,8 +403,8 @@ msgstr "Dublēt failus (%s)"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Šeit tiks parādīti Bibliotēkām pievienotie faili. Mēģiniet koplietot failus "
-"vai pievienojiet tos no mūsu [Bibliotēkas un veidnes] (https://penpot.app/"
-"libraries-templates.html)."
+"vai pievienojiet tos no mūsu [Bibliotēkas un veidnes] "
+"(https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Lejupielādēt %s Penpot failus (.penpot)"
@@ -366,8 +458,8 @@ msgstr ""
 
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"eksportēšanā tiks iekļauti faili ar koplietojamām bibliotēkām, saglabājot to "
-"sasaisti."
+"eksportēšanā tiks iekļauti faili ar koplietojamām bibliotēkām, saglabājot "
+"to sasaisti."
 
 msgid "dashboard.export.options.all.title"
 msgstr "Koplietojamo bibliotēku eksportēšana"
@@ -378,8 +470,7 @@ msgstr ""
 "netiks pievienoti līdzekļi. "
 
 msgid "dashboard.export.options.detach.title"
-msgstr ""
-"Attiekties pret koplietojamo bibliotēku līdzekļiem, kā pret pamatobjektiem"
+msgstr "Attiekties pret koplietojamo bibliotēku līdzekļiem, kā pret pamatobjektiem"
 
 msgid "dashboard.export.options.merge.message"
 msgstr ""
@@ -420,13 +511,22 @@ msgstr ""
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Augšupielādējiet tikai tos fontus, kuri jums pieder vai kuriem ir licence "
-"lietošanai Penpot. Uzziniet vairāk [Penpot pakalpojumu sniegšanas noteikumi] "
-"(https://penpot.app/terms.html). Iespējams, vēlēsities izlasīt arī par "
-"[fontu licencēšanu] (https://www.typography.com/faq)."
+"lietošanai Penpot. Uzziniet vairāk [Penpot pakalpojumu sniegšanas "
+"noteikumi] (https://penpot.app/terms.html). Iespējams, vēlēsities izlasīt "
+"arī par [fontu licencēšanu] (https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
 msgstr "Augšupielādēt visu"
+
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Esam konstatējuši iespējamu problēmu Jūsu fontos, kas saistīta ar "
+"vertikālām metrikam dažādām operētājsistēmām. Lai to pārbaudītu, varat "
+"izmantot tādus fontu vertikālās metrikas pakalpojumus kā [šis] "
+"(https://vertical-metrics.netlify.app/). Turklāt ieteicams izmantot "
+"[Transfonter] (https://transfonter.org/), lai ģenerētu tīmekļa fontus un "
+"labotu to kļūdas. "
 
 msgid "dashboard.import"
 msgstr "Penpot failu importēšana"
@@ -752,6 +852,9 @@ msgstr "Fontu %s nevarēja ielādēt"
 msgid "errors.bad-font-plural"
 msgstr "Fontus %s nevarēja ielādēt"
 
+msgid "errors.cannot-upload"
+msgstr "Nevar augšupielādēt multivides failu."
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Jūsu pārlūkprogramma nevar veikt šo darbību"
@@ -785,8 +888,7 @@ msgid "errors.email-invalid-confirmation"
 msgstr "Apstiprinājuma e-pastam jāatbilst"
 
 msgid "errors.email-spam-or-permanent-bounces"
-msgstr ""
-"E-pasta adrese “%s” ir atzīmēta surogātpasts vai pastāvīgi saņem atlēcienu."
+msgstr "E-pasta adrese “%s” ir atzīmēta surogātpasts vai pastāvīgi saņem atlēcienu."
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-mismatch"
@@ -856,15 +958,15 @@ msgstr "Profils ir bloķēts"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
 msgstr ""
-"Jūsu profila e-pasta ziņojumi ir izslēgti (surogātpasts vai daudz atlēcienu)."
+"Jūsu profila e-pasta ziņojumi ir izslēgti (surogātpasts vai daudz "
+"atlēcienu)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "Reģistrācija pašlaik ir atspējota."
 
 msgid "errors.team-leave.insufficient-members"
-msgstr ""
-"Nepietiek dalībnieku, lai pamestu komandu, iespējams, vēlaties to izdzēst."
+msgstr "Nepietiek dalībnieku, lai pamestu komandu, iespējams, vēlaties to izdzēst."
 
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "Dalībnieks, kuru mēģināt piešķirt, nepastāv."
@@ -1079,6 +1181,10 @@ msgid "inspect.attributes.typography.font-style"
 msgstr "Fonta stils"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Fonta Treknums"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.letter-spacing"
 msgstr "Burtu atstarpes"
 
@@ -1116,8 +1222,7 @@ msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Lielie burti"
 
 msgid "inspect.empty.help"
-msgstr ""
-"Ja vēlaties uzzināt vairāk par dizainu, skatiet Penpot palīdzības centru"
+msgstr "Ja vēlaties uzzināt vairāk par dizainu, skatiet Penpot palīdzības centru"
 
 msgid "inspect.empty.more-info"
 msgstr "Papildinformācija par pārbaudi"
@@ -1176,6 +1281,10 @@ msgstr "Saīsnes"
 
 msgid "labels.accept"
 msgstr "Pieņemt"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.access-tokens"
+msgstr "Piekļuves marķieri"
 
 msgid "labels.active"
 msgstr "Aktīvs"
@@ -1279,6 +1388,9 @@ msgstr "Dzēst uzaicinājumu"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete-multi-files"
 msgstr "%s failu dzēšana"
+
+msgid "labels.discard"
+msgstr "Atmest"
 
 #: src/app/main/ui/dashboard/projects.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs,
@@ -1406,8 +1518,8 @@ msgstr "Nav gaidošu uzaicinājumu."
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
 msgstr ""
-"Noklikšķiniet uz pogas **Uzaicināt personas**, lai uzaicinātu personas uz šo "
-"komandu."
+"Noklikšķiniet uz pogas **Uzaicināt personas**, lai uzaicinātu personas uz "
+"šo komandu."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1651,6 +1763,30 @@ msgstr "Mainīt e-pastu"
 msgid "modals.change-email.title"
 msgstr "E-pasta maiņa"
 
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.copy-token"
+msgstr "Kopēt marķieri"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.expiration-date.label"
+msgstr "Derīguma termiņš"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.label"
+msgstr "Nosaukums"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.placeholder"
+msgstr "Nosaukums var palīdzēt noskaidrot, kam domāts šīs marķieris"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.submit-label"
+msgstr "Izveidot marķieri"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.title"
+msgstr "Ģenerēt jaunu piekļuves marķieri"
+
 msgid "modals.create-webhook.submit-label"
 msgstr "Izveidot tīmekļa āķi"
 
@@ -1662,6 +1798,18 @@ msgstr "Vērtuma URL"
 
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.accept"
+msgstr "Dzēst marķieri"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.message"
+msgstr "Vai tiešām vēlaties dzēst šo marķieri?"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.title"
+msgstr "Dzēst marķieri"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1692,6 +1840,12 @@ msgstr ""
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.title"
 msgstr "Dzēst sarunu"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "Vai tiešām vēlaties izdzēst šo anotāciju?"
+
+msgid "modals.delete-component-annotation.title"
+msgstr "Dzēst anotāciju"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-confirm.accept"
@@ -1727,8 +1881,8 @@ msgstr "Fonta stila dzēšana"
 
 msgid "modals.delete-font.message"
 msgstr ""
-"Vai tiešām vēlaties izdzēst šo fontu? Tas netiks ielādēts, ja tika izmantots "
-"failā."
+"Vai tiešām vēlaties izdzēst šo fontu? Tas netiks ielādēts, ja tika "
+"izmantots failā."
 
 msgid "modals.delete-font.title"
 msgstr "Fonta dzēšana"
@@ -1760,6 +1914,20 @@ msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Nav failu dzēšanai"
 msgstr[1] "Dzēst failu"
 msgstr[2] "Dzēst failus"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] "Tie nav aktivizēti nevienā failā."
+msgstr[1] "Tie nav aktivizēti nevienā failā."
+msgstr[2] "Tie nav aktivizēti nevienā failā."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "Šīs bibliotēkas ir aktivizētas šeit: "
+msgstr[1] "Šīs bibliotēkas ir aktivizētas šeit: "
+msgstr[2] "Šīs bibliotēkas ir aktivizētas šeit: "
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1825,6 +1993,11 @@ msgstr "Nosūtīt uzaicinājumu"
 msgid "modals.invite-member.emails"
 msgstr "E-pasta ziņojumi, atdalīti ar komatiem"
 
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Daži e-pasta ziņojumi ir no pašreizējiem grupas dalībniekiem. Ielūgumi "
+"viņiem netiks nosūtīti."
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
 msgstr "Uzaicināt dalībniekus uz komandu"
@@ -1847,8 +2020,8 @@ msgstr ""
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
 msgstr ""
-"Jūs esat šīs komandas īpašnieks. Pirms iziešanas nozīmējiet citu dalībnieku, "
-"ko noteikt kā īpašnieku."
+"Jūs esat šīs komandas īpašnieks. Pirms iziešanas nozīmējiet citu "
+"dalībnieku, ko noteikt kā īpašnieku."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
@@ -1891,12 +2064,21 @@ msgstr ""
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
 msgstr ""
-"Jūs esat šīs komandas pašreizējais īpašnieks. Vai tiešām vēlaties padarīt %s "
-"par jauno komandas īpašnieku?"
+"Jūs esat šīs komandas pašreizējais īpašnieks. Vai tiešām vēlaties padarīt "
+"%s par jauno komandas īpašnieku?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.title"
 msgstr "Jauns komandas īpašnieks"
+
+msgid "modals.publish-empty-library.accept"
+msgstr "Publicēt"
+
+msgid "modals.publish-empty-library.message"
+msgstr "Jūsu bibliotēka ir tukša. Vai tiešām vēlaties to publicēt?"
+
+msgid "modals.publish-empty-library.title"
+msgstr "Publicēt tukšu bibliotēku"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1926,6 +2108,20 @@ msgid_plural "modals.unpublish-shared-confirm.accept"
 msgstr[0] "Nav atlases"
 msgstr[1] "Atcelt publicēšanu"
 msgstr[2] "Atcelt publicēšanu"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
+msgstr[0] "Nav aktivizēti nevienā failā."
+msgstr[1] "Tie nav aktivizēti nevienā failā."
+msgstr[2] "Tie nav aktivizēti nevienā failā."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
+msgstr[0] "Bibliotēkas ir aktivizētas šeit:"
+msgstr[1] "Šīs bibliotēkas ir aktivizētas šeit:"
+msgstr[2] "Šīs bibliotēkas ir aktivizētas šeit:"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1987,8 +2183,7 @@ msgstr "Uzaicinājuma saite nokopēta"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
-msgstr ""
-"Profilu nevar izdzēst. Pirms turpināt, veiciet tiesību piešķiršanu komandās."
+msgstr "Profilu nevar izdzēst. Pirms turpināt, veiciet tiesību piešķiršanu komandās."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -2000,8 +2195,8 @@ msgstr "Uz %s nosūtīts pārbaudes e-pasta ziņojums. Pārbaudiet savu e-pastu!
 
 msgid "onboarding-v2.before-start.desc1"
 msgstr ""
-"Jums jāzina, ka ir pieejami daudzi resursi, lai palīdzētu Jums sākt darbu ar "
-"Penpot, piemēram, Lietotāja rokasgrāmata un mūsu Youtube kanāls."
+"Jums jāzina, ka ir pieejami daudzi resursi, lai palīdzētu Jums sākt darbu "
+"ar Penpot, piemēram, Lietotāja rokasgrāmata un mūsu Youtube kanāls."
 
 msgid "onboarding-v2.before-start.desc2"
 msgstr ""
@@ -2026,16 +2221,16 @@ msgstr ""
 "izstrādes gaitu un jaunumiem."
 
 msgid "onboarding-v2.newsletter.news"
-msgstr ""
-"Sūtiet man ziņas par Penpot (emuāra ziņas, video apmācības, straumēs...)."
+msgstr "Sūtiet man ziņas par Penpot (emuāra ziņas, video apmācības, straumēs...)."
 
 msgid "onboarding-v2.newsletter.privacy1"
 msgstr "Mums rūp privātums, šeit var lasīt mūsu "
 
 msgid "onboarding-v2.newsletter.privacy2"
 msgstr ""
-"Mēs jums nosūtīsim tikai attiecīgus e-pasta ziņojumus. Abonementu var anulēt "
-"jebkurā laikā, izmantojot abonēšanas atcelšanas saiti jebkurā mūsu biļetenī."
+"Mēs jums nosūtīsim tikai attiecīgus e-pasta ziņojumus. Abonementu var "
+"anulēt jebkurā laikā, izmantojot abonēšanas atcelšanas saiti jebkurā mūsu "
+"biļetenī."
 
 msgid "onboarding-v2.newsletter.updates"
 msgstr ""
@@ -2147,6 +2342,148 @@ msgstr "Penpot"
 msgid "profile.recovery.go-to-login"
 msgstr "Pāriet uz pieteikšanos"
 
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "question.design-tool-more-experienced-with"
+msgstr "Ar kuru no šiem rīkiem, jums ir lielāka pieredze?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.11-30"
+msgstr "11-30"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.2-10"
+msgstr "2-10"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.31-50"
+msgstr "31-50"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.a-lot"
+msgstr "Plaša"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.adobe-xd"
+msgstr "Adobe XD"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.canva"
+msgstr "Canva"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.describe-your-experience-working-on"
+msgstr "Kā jūs vislabāk raksturotu savu pieredzi, strādājot pie..."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.discover-more-about-penpot"
+msgstr "Uzziniet vairāk par Penpot"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.figma"
+msgstr "Figma"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.freelancer"
+msgstr "Esmu ārštātnieks(-ce)/Pašnodarbināts(-ā)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "Koda iegūšana no manas grupas projekta "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.interface-design-visual-assets-design-systems"
+msgstr "... saskarnes dizains, vizuālie līdzekļi, dizaina sistēmas utt."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.invision"
+msgstr "InVision"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.leave-feedback-for-my-team-project"
+msgstr "Atstāt atsauksmes par manas grupas projektu"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.lets-get-started"
+msgstr "Ķersimies pie darba!"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.more-than-50"
+msgstr "Vairāk nekā 50"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-a-tool"
+msgstr "Nekad agrāk neesmu izmantojis dizaina rīku"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.next"
+msgstr "Nākamais"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.none"
+msgstr "Nav"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other"
+msgstr "Cits (norādiet)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.personal-project"
+msgstr "Strādāju personīgā projektā"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.previous"
+msgstr "Iepriekšējais"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.questions-how-are-you-planning-to-use-penpot"
+msgstr "Kā plānojat lietot Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.select-option"
+msgstr "Atlasiet izvēli"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.sketch"
+msgstr "Sketch"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.some"
+msgstr "Nelielā"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start"
+msgstr "Sākt"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start-to-work-on-my-project"
+msgstr "Sākt strādāt pie projekta"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.team-size"
+msgstr "Cik lielā ir jūsu komanda?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
+msgstr "Izmēģiniet Penpot, lai saprastu, cik tas ir piemērots Jūsu komandai "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.try-out-before-using-penpot-on-premise"
+msgstr "Izmēģiniet, pirms izmantojat Penpot lokāli"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.wireframes-user-journeys-flows-navigation-trees"
+msgstr "... struktūrskices, lietotāju ceļi un plūsmas, navigācijas koki utt."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-in-concept-ideas"
+msgstr "Darbs koncepcijas idejās"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.your-feedback-will-help-us"
+msgstr ""
+"Jūsu atsauksmes palīdzēs mums saprast, kādi ir jūsu paradumi un vēlmes, lai "
+"mēs varētu turpināt padarīt Penpot par noderīgu un baudāmu rīku."
+
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs,
@@ -2206,6 +2543,9 @@ msgstr "Ceļi"
 msgid "shortcut-subsection.shape"
 msgstr "Formas"
 
+msgid "shortcut-subsection.text-editor"
+msgstr "Teksti"
+
 msgid "shortcut-subsection.tools"
 msgstr "Rīki"
 
@@ -2224,8 +2564,14 @@ msgstr "Pievienot mezglu"
 msgid "shortcuts.align-bottom"
 msgstr "Līdzināt uz leju"
 
+msgid "shortcuts.align-center"
+msgstr "Centrēt"
+
 msgid "shortcuts.align-hcenter"
 msgstr "Centrēt horizontāli"
+
+msgid "shortcuts.align-justify"
+msgstr "Līdzināt taisnoti"
 
 msgid "shortcuts.align-left"
 msgstr "Līdzināt pa kreisi"
@@ -2241,6 +2587,9 @@ msgstr "Centrēt vertikāli"
 
 msgid "shortcuts.artboard-selection"
 msgstr "Izveidot dēli no atlases"
+
+msgid "shortcuts.bold"
+msgstr "Pārslēgt treknrakstu"
 
 msgid "shortcuts.bool-difference"
 msgstr "Būla starpība"
@@ -2332,6 +2681,12 @@ msgstr "Apvērst horizontāli"
 msgid "shortcuts.flip-vertical"
 msgstr "Apvērst vertikāli"
 
+msgid "shortcuts.font-size-dec"
+msgstr "Samazināt fonta izmēru"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Palielināt fonta izmēru"
+
 msgid "shortcuts.go-to-drafts"
 msgstr "Doties uz melnrakstiem"
 
@@ -2356,8 +2711,26 @@ msgstr "Tuvināt"
 msgid "shortcuts.insert-image"
 msgstr "Ievietot attēlu"
 
+msgid "shortcuts.italic"
+msgstr "Pārslēgt slīprakstu"
+
 msgid "shortcuts.join-nodes"
 msgstr "Savienot mezglus"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Samazināt burtstarpu"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Palielināt burtstarpu"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Samazināt līnijas augstumu"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Palielināt līnijas augstumu"
+
+msgid "shortcuts.line-through"
+msgstr "Pārslēgt svītrojumu"
 
 msgid "shortcuts.make-corner"
 msgstr "Izveidot stūri"
@@ -2479,6 +2852,15 @@ msgstr "Meklēt saīsnes"
 msgid "shortcuts.select-all"
 msgstr "Atlasīt visu"
 
+msgid "shortcuts.select-next"
+msgstr "Atlasīt nākamo slāni"
+
+msgid "shortcuts.select-parent-layer"
+msgstr "Atlasīt vecākslāni"
+
+msgid "shortcuts.select-prev"
+msgstr "Atlasīt iepriekšējo slāni"
+
 msgid "shortcuts.separate-nodes"
 msgstr "Atdalīt mezglus"
 
@@ -2502,6 +2884,18 @@ msgstr "Sākt mērīšanu"
 
 msgid "shortcuts.stop-measure"
 msgstr "Beigt mērīšanu"
+
+msgid "shortcuts.text-align-center"
+msgstr "Centrēt"
+
+msgid "shortcuts.text-align-justify"
+msgstr "Izkliedēt"
+
+msgid "shortcuts.text-align-left"
+msgstr "Līdzināt pa kreisi"
+
+msgid "shortcuts.text-align-right"
+msgstr "Līdzināt pa labi"
 
 msgid "shortcuts.thumbnail-set"
 msgstr "Iestatīt sīktēlus"
@@ -2558,8 +2952,14 @@ msgstr "Pieķerties vadotnēm"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Pārslēgt teksta paleti"
 
+msgid "shortcuts.toggle-visibility"
+msgstr "Pārslēgt redzamību"
+
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Pārslēgt tālummaiņas stilu"
+
+msgid "shortcuts.underline"
+msgstr "Pārslēgt pasvītrojumu"
 
 msgid "shortcuts.undo"
 msgstr "Atsaukt"
@@ -2573,8 +2973,18 @@ msgstr "Noņemt masku"
 msgid "shortcuts.v-distribute"
 msgstr "Izkliedēt vertikāli"
 
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Tālummaiņas samazinājums"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Tālummaiņas palielinājums"
+
 msgid "shortcuts.zoom-selected"
 msgstr "Tālummainīt uz atlasi"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "team.webhooks.max-length"
+msgstr "Tīmekļa āķa nosaukumā jābūt ne vairāk kā 2048 rakstzīmēm."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
@@ -2603,6 +3013,10 @@ msgstr "Koplietojamās bibliotēkas - %s - Penpot"
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
 msgid "title.default"
 msgstr "Penpot - Dizaina brīvība komandām"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "title.settings.access-tokens"
+msgstr "Profils - piekļuves marķieri"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "title.settings.feedback"
@@ -2799,6 +3213,9 @@ msgstr "lokālā bibliotēka"
 msgid "workspace.assets.not-found"
 msgstr "Līdzekļi nav atrasti"
 
+msgid "workspace.assets.open-library"
+msgstr "Atvērt bibliotēkas failu"
+
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
@@ -2819,6 +3236,10 @@ msgid_plural "workspace.assets.selected-count"
 msgstr[0] "atlasīts %s vienums"
 msgstr[1] "atlasīts %s vienums"
 msgstr[2] "atlasīti %s vienumi"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared-library"
+msgstr "Koplietojama bibliotēka"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
@@ -2892,6 +3313,9 @@ msgstr "Radiālais gradients"
 msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Atspējot dinamisko līdzinājumu"
 
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Atspējot proporcionālo mērogu"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-scale-text"
 msgstr "Deaktivizēt teksta mērogošanu"
@@ -2910,6 +3334,9 @@ msgstr "Atspējot pieķeršanos pikselim"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Iespējot dinamisko līdzinājumu"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Iespējot proporcionālo mērogu"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-scale-text"
@@ -2969,6 +3396,9 @@ msgstr "Izvēles"
 msgid "workspace.header.menu.option.view"
 msgstr "Skatīt"
 
+msgid "workspace.header.menu.redo"
+msgstr "Atkārtot"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
 msgstr "Izvēlēties visu"
@@ -2996,6 +3426,9 @@ msgstr "Rādīt mērjoslas"
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Rādīt fontu paleti"
 
+msgid "workspace.header.menu.undo"
+msgstr "Atsaukt"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
 msgstr "Atiestatīšana"
@@ -3019,6 +3452,10 @@ msgstr "Nesaglabātās izmaiņas"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.viewer"
 msgstr "Skata režīms (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom"
+msgstr "Tālummaiņa"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-fill"
@@ -3047,6 +3484,14 @@ msgstr "Pievienot"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.colors"
 msgstr "%s krāsas"
+
+#: src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "Jūsu bibliotēkā vēl nav krāsu stilu"
+
+#: src/app/main/ui/workspace/textpalette.cljs
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "Bibliotēkā vēl nav tipogrāfijas stilu"
 
 #: src/app/main/ui/workspace/colorpicker/libraries.cljs,
 #: src/app/main/ui/workspace/colorpalette.cljs
@@ -3096,7 +3541,11 @@ msgstr "BIBLIOTĒKAS"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.library"
-msgstr "BIBLIOTĒKAS"
+msgstr "BIBLIOTĒKA"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library-updates"
+msgstr "BIBLIOTĒKAS JAUNINĀJUMI"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
@@ -3134,6 +3583,10 @@ msgstr "%s tipogrāfijas"
 msgid "workspace.libraries.update"
 msgstr "Atjaunināt"
 
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "apskatīties visas izmaiņas"
+
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "ATJAUNINĀJUMI"
@@ -3164,6 +3617,15 @@ msgstr "Izgriešanas saturs"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"
 msgstr "Komponente"
+
+msgid "workspace.options.component.annotation"
+msgstr "Anotācija"
+
+msgid "workspace.options.component.create-annotation"
+msgstr "Izveidot anotāciju"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "Rediģēt anotāciju"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
@@ -3704,8 +4166,16 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Kolona"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "Apgrieztā kolonna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
 msgstr "Rinda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "Apgrieztā rinda"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
@@ -3783,12 +4253,12 @@ msgid "workspace.options.radius"
 msgstr "Rādiuss"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius.all-corners"
-msgstr "Visi stūri"
+msgid "workspace.options.radius-bottom-left"
+msgstr "Apakšā pa kreisi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius.single-corners"
-msgstr "Atsevišķie stūri"
+msgid "workspace.options.radius-bottom-right"
+msgstr "Apakšā pa labi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius-top-left"
@@ -3799,12 +4269,12 @@ msgid "workspace.options.radius-top-right"
 msgstr "Augšā pa labi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius-bottom-left"
-msgstr "Apakšā pa kreisi"
+msgid "workspace.options.radius.all-corners"
+msgstr "Visi stūri"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius-bottom-right"
-msgstr "Apakšā pa labi"
+msgid "workspace.options.radius.single-corners"
+msgstr "Atsevišķie stūri"
 
 msgid "workspace.options.recent-fonts"
 msgstr "Pēdējie"
@@ -3967,24 +4437,8 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Līdzināt lejā"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-center"
-msgstr "Līdzināt uz centru (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-justify"
-msgstr "Izlīdzināt (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-left"
-msgstr "Līdzināt pa kreisi (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
 msgstr "Līdzināt pa vidu (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-right"
-msgstr "Līdzināt pa labi (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -4032,6 +4486,22 @@ msgid "workspace.options.text-options.strikethrough"
 msgstr "Pārsvītrots (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Līdzināt uz centru (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "Izlīdzināt (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-left"
+msgstr "Līdzināt pa kreisi (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-right"
+msgstr "Līdzināt pa labi (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
 msgstr "Teksts"
 
@@ -4057,8 +4527,7 @@ msgstr "Lielie burti"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
-msgstr ""
-"Lai palaistu prototipa skatu, izmantojiet atskaņošanas pogu pie galvenes."
+msgstr "Lai palaistu prototipa skatu, izmantojiet atskaņošanas pogu pie galvenes."
 
 msgid "workspace.options.width"
 msgstr "Platums"
@@ -4131,6 +4600,9 @@ msgstr "Notiek %s atjaunināšana..."
 msgid "workspace.shape.menu.add-flex"
 msgstr "Pievienot elastīgo izkārtojumu"
 
+msgid "workspace.shape.menu.add-grid"
+msgstr "Pievienot režģa izkārtojumu"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
 msgstr "Sūtīt atpakaļ"
@@ -4143,6 +4615,9 @@ msgstr "Sūtīt uz aizmuguri"
 msgid "workspace.shape.menu.copy"
 msgstr "Kopēt"
 
+msgid "workspace.shape.menu.create-annotation"
+msgstr "Izveidot anotāciju"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-artboard-from-selection"
 msgstr "Atlase uz dēli"
@@ -4150,6 +4625,9 @@ msgstr "Atlase uz dēli"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-component"
 msgstr "Izveidot komponenti"
+
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Vairāku komponentu izveide"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.cut"
@@ -4538,6 +5016,10 @@ msgid "workspace.updates.dismiss"
 msgstr "Izlaist"
 
 #: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.more-info"
+msgstr "Vairāk informācijas"
+
+#: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.there-are-updates"
 msgstr "Koplietojamās bibliotēkās ir atjauninājumi"
 
@@ -4547,56 +5029,3 @@ msgstr "Atjaunināt"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Noklikšķiniet, lai aizvērtu ceļu"
-
-msgid "shortcuts.align-center"
-msgstr "Centrēt"
-
-msgid "shortcuts.align-justify"
-msgstr "Līdzināt taisnoti"
-
-msgid "shortcuts.letter-spacing-dec"
-msgstr "Samazināt burtstarpu"
-
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Palielināt burtstarpu"
-
-msgid "shortcuts.italic"
-msgstr "Pārslēgt slīprakstu"
-
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.font-weight"
-msgstr "Fonta Treknums"
-
-msgid "dashboard.fonts.warning-text"
-msgstr ""
-"Esam konstatējuši iespējamu problēmu Jūsu fontos, kas saistīta ar vertikālām "
-"metrikam dažādām operētājsistēmām. Lai to pārbaudītu, varat izmantot tādus "
-"fontu vertikālās metrikas pakalpojumus kā [šis] (https://vertical-metrics."
-"netlify.app/). Turklāt ieteicams izmantot [Transfonter] (https://transfonter."
-"org/), lai ģenerētu tīmekļa fontus un labotu to kļūdas. "
-
-msgid "modals.invite-member.repeated-invitation"
-msgstr ""
-"Daži e-pasta ziņojumi ir no pašreizējiem grupas dalībniekiem. Ielūgumi "
-"viņiem netiks nosūtīti."
-
-msgid "shortcut-subsection.text-editor"
-msgstr "Teksti"
-
-msgid "shortcuts.bold"
-msgstr "Pārslēgt treknrakstu"
-
-msgid "shortcuts.underline"
-msgstr "Pārslēgt pasvītrojumu"
-
-msgid "shortcuts.font-size-dec"
-msgstr "Samazināt fonta izmēru"
-
-msgid "shortcuts.font-size-inc"
-msgstr "Palielināt fonta izmēru"
-
-msgid "dashboard.import.import-message"
-msgstr "%s faili tika veiksmīgi importēti."
-
-msgid "shortcuts.toggle-visibility"
-msgstr "Pārslēgt redzamību"

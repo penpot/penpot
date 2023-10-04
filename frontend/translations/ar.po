@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-07-02 17:52+0000\n"
 "Last-Translator: Amine Gdoura <amine2gdoura@gmail.com>\n"
-"Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
-"ar/>\n"
+"Language-Team: Arabic "
+"<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -18,8 +18,7 @@ msgstr "هل لديك حساب؟"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
-msgstr ""
-"تحقق من بريدك الإلكتروني وانقر على الرابط للتحقق والبدء في استخدام Penpot."
+msgstr "تحقق من بريدك الإلكتروني وانقر على الرابط للتحقق والبدء في استخدام Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -35,8 +34,7 @@ msgstr "ترغب في التجربة فحسب؟"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
-msgstr ""
-"هذه خدمة تجريبية ، لا تستخدمها للعمل الحقيقي ، سيتم مسح المشاريع بشكل دوري."
+msgstr "هذه خدمة تجريبية ، لا تستخدمها للعمل الحقيقي ، سيتم مسح المشاريع بشكل دوري."
 
 #: src/app/main/ui/auth/register.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
@@ -159,8 +157,7 @@ msgstr "شروط الخدمة"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
-msgstr ""
-"عند إنشاء حساب جديد ، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا."
+msgstr "عند إنشاء حساب جديد ، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -174,7 +171,8 @@ msgstr "جميع مستخدمي Penpot"
 
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
-"هل أنت متأكد أنك تريد إزالة هذا الرابط؟ إذا قمت بذلك ، فلن يكون متاحًا لأي شخص"
+"هل أنت متأكد أنك تريد إزالة هذا الرابط؟ إذا قمت بذلك ، فلن يكون متاحًا لأي "
+"شخص"
 
 msgid "common.share-link.current-tag"
 msgstr "(الحالي)"
@@ -241,8 +239,7 @@ msgstr "إعمل فريق!"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
-msgstr ""
-"تعلم أساسيات برنامج Penpot بينما تستمع بتجربته في هذه الدورة التعليمية."
+msgstr "تعلم أساسيات برنامج Penpot بينما تستمع بتجربته في هذه الدورة التعليمية."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
@@ -361,15 +358,15 @@ msgstr ""
 "أصولهم*؟"
 
 msgid "dashboard.export.options.all.message"
-msgstr ""
-"سيتم ادراج الملفات التي لها مكتبات مشتركة في التصدير، مع الحفاظ على روابطهم."
+msgstr "سيتم ادراج الملفات التي لها مكتبات مشتركة في التصدير، مع الحفاظ على روابطهم."
 
 msgid "dashboard.export.options.all.title"
 msgstr "صدر المكتبات المشتركة"
 
 msgid "dashboard.export.options.detach.message"
 msgstr ""
-"لن يتم تضمين المكتبات المشتركة في التصدير ولن يتم إضافة أي أصول إلى المكتبة. "
+"لن يتم تضمين المكتبات المشتركة في التصدير ولن يتم إضافة أي أصول إلى "
+"المكتبة. "
 
 msgid "dashboard.export.options.detach.title"
 msgstr "عامل أصول المكتبة المشتركة كعناصر بسيطة"
@@ -413,12 +410,21 @@ msgstr ""
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "يجب عليك فقط تحميل الخطوط التي تمتلكها أو لديك ترخيص لاستخدامها في Penpot. "
-"اكتشف المزيد في قسم حقوق المحتوى في [شروط خدمة Penpot] (https://penpot.app/"
-"terms.html). قد ترغب أيضًا في القراءة عن [ترخيص الخطوط] (2)."
+"اكتشف المزيد في قسم حقوق المحتوى في [شروط خدمة Penpot] "
+"(https://penpot.app/terms.html). قد ترغب أيضًا في القراءة عن [ترخيص الخطوط] "
+"(2)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
 msgstr "حمل الكل"
+
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"لقد اكتشفنا مشكلة محتملة في الخطوط الخاصة بك تتعلق بالمقاييس الرأسية لأنظمة "
+"التشغيل المختلفة. للتحقق من ذلك ، يمكنك استخدام خدمات المقاييس العمودية "
+"للخطوط مثل [هذه] (https://vertical-metrics.netlify.app/). بالإضافة إلى ذلك "
+"، نوصي باستخدام [Transfonter] (https://transfonter.org/) لإنشاء خطوط الويب "
+"وإصلاح الأخطاء. "
 
 msgid "dashboard.import"
 msgstr "استيراد ملفات"
@@ -655,6 +661,18 @@ msgstr "الغاء نشر المكتبة"
 msgid "dashboard.update-settings"
 msgstr "تحديث الإعدادات"
 
+msgid "dashboard.webhooks.active"
+msgstr "نشط"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "عندما يتم تشغيل هذا الخطاف ، سيتم تسليم تفاصيل الحدث"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "نوع المحتوى"
+
+msgid "dashboard.webhooks.create"
+msgstr "إنشاء الرد التلقائي على الويب"
+
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
 msgstr "حسابك"
@@ -706,6 +724,12 @@ msgstr "موفر المصادقة غير معد ومسجل."
 msgid "errors.auth.unable-to-login"
 msgstr "يبدوا أنك غير مصرح لك أو أن الجلسة إنتهت."
 
+msgid "errors.bad-font"
+msgstr "تعذر تحميل الخط٪ s"
+
+msgid "errors.bad-font-plural"
+msgstr "تعذر تحميل الخطوط٪ s"
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "لا يمكن للمتصفح إجراء هذه العملية"
@@ -729,12 +753,27 @@ msgstr "لا يمكنك استخدام بريدك الإلكتروني ككلم�
 msgid "errors.email-has-permanent-bounces"
 msgstr "يحتوي البريد الإلكتروني «%s» على العديد من تقارير الارتداد الدائم."
 
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "أدخل بريدًا إلكترونيًا صالحًا من فضلك"
+
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "يجب أن يتطابق البريد الإلكتروني للتأكيد"
 
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "تم الإبلاغ عن البريد الإلكتروني «٪ s» كبريد عشوائي أو مرتد بشكل دائم."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"يبدو أنك تفتح ملفًا تم تمكين الميزة \"٪ s\" فيه ولكن الواجهة الأمامية لـ "
+"penpot لا تدعمه أو تم تعطيله."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "الميزة '٪ s' غير مدعومة."
 
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
@@ -782,6 +821,9 @@ msgstr "يجب أن تتطابق كلمة مرور التأكيد"
 msgid "errors.password-too-short"
 msgstr "يجب ألا تقل كلمة المرور عن 8 أحرف"
 
+msgid "errors.profile-blocked"
+msgstr "هذا الملف الشخصي محظور"
+
 #: src/app/main/ui/auth/recovery_request.cljs,
 #: src/app/main/ui/settings/change_email.cljs,
 #: src/app/main/ui/dashboard/team.cljs
@@ -812,6 +854,21 @@ msgstr "حدث خطأ غير متوقع."
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "رمز غير معروف"
+
+msgid "errors.webhooks.connection"
+msgstr "خطأ في الاتصال ، عنوان إلكتروني لا يمكن الوصول إليه"
+
+msgid "errors.webhooks.last-delivery"
+msgstr "آخر تسليم لم يكن ناجحًا."
+
+msgid "errors.webhooks.timeout"
+msgstr "نفذ الوقت"
+
+msgid "errors.webhooks.unexpected"
+msgstr "خطأ غير متوقع في التحقق"
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "حالة غير متوقعة٪ s"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
@@ -844,8 +901,8 @@ msgstr "موضوع"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"يرجى وصف سبب بريدك الإلكتروني ، وتحديد ما إذا كانت مشكلة أم فكرة أم شك. سيرد "
-"أحد أعضاء فريقنا في أسرع وقت ممكن."
+"يرجى وصف سبب بريدك الإلكتروني ، وتحديد ما إذا كانت مشكلة أم فكرة أم شك. "
+"سيرد أحد أعضاء فريقنا في أسرع وقت ممكن."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -982,6 +1039,10 @@ msgid "inspect.attributes.typography.font-style"
 msgstr "نوع الخط"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "وزن الخط"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.letter-spacing"
 msgstr "تباعد الحروف"
 
@@ -1017,6 +1078,9 @@ msgstr "حالة العنوان"
 
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "الأحرف الكبيرة"
+
+msgid "inspect.empty.help"
+msgstr "إذا كنت تريد معرفة المزيد عن فحص التصميم ، فتفضل بزيارة مركز مساعدة لPenpot"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.code"
@@ -1237,8 +1301,7 @@ msgstr "الخطوط المتوفرة"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
-msgstr ""
-"شيء سيء حدث الرجاء إعادة محاولة العملية وإذا استمرت المشكلة، اتصل بالدعم."
+msgstr "شيء سيء حدث الرجاء إعادة محاولة العملية وإذا استمرت المشكلة، اتصل بالدعم."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"
@@ -1287,8 +1350,7 @@ msgstr "لا توجد دعوات."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
-msgstr ""
-"اضغط على الزر \"دعوة إلى الفريق\" لدعوة المزيد من الأعضاء إلى هذا الفريق."
+msgstr "اضغط على الزر \"دعوة إلى الفريق\" لدعوة المزيد من الأعضاء إلى هذا الفريق."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1582,14 +1644,14 @@ msgstr "حذف %s الملفات"
 
 msgid "modals.delete-font-variant.message"
 msgstr ""
-"هل أنت متأكد أنك تريد حذف نمط هذا الخط؟ لن يتم تحميله إذا تم استخدامه في ملف."
+"هل أنت متأكد أنك تريد حذف نمط هذا الخط؟ لن يتم تحميله إذا تم استخدامه في "
+"ملف."
 
 msgid "modals.delete-font-variant.title"
 msgstr "حذف نمط الخط"
 
 msgid "modals.delete-font.message"
-msgstr ""
-"هل أنت متأكد أنك تريد حذف هذا الخط؟ لن يتم تحميله إذا تم استخدامه في ملف."
+msgstr "هل أنت متأكد أنك تريد حذف هذا الخط؟ لن يتم تحميله إذا تم استخدامه في ملف."
 
 msgid "modals.delete-font.title"
 msgstr "حذف الخط"
@@ -1653,8 +1715,7 @@ msgstr "ادعُ الأعضاء إلى الفريق"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
-msgstr ""
-"نظرًا لأنك العضو الوحيد في هذا الفريق ، فسيتم حذف الفريق مع مشاريعه وملفاته."
+msgstr "نظرًا لأنك العضو الوحيد في هذا الفريق ، فسيتم حذف الفريق مع مشاريعه وملفاته."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.message"
@@ -1724,8 +1785,8 @@ msgstr "إزالة كمكتبة مشتركة"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
-"بمجرد إزالتها كمكتبة مشتركة ، ستتوقف مكتبة الملفات لهذا الملف عن كونها متاحة "
-"للاستخدام بين بقية ملفاتك."
+"بمجرد إزالتها كمكتبة مشتركة ، ستتوقف مكتبة الملفات لهذا الملف عن كونها "
+"متاحة للاستخدام بين بقية ملفاتك."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1828,8 +1889,8 @@ msgstr "المشاركة في المجتمع"
 
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
-"حيث ستجد كيفية التعاون في الترجمات وطلبات الميزات والمساهمات الأساسية والبحث "
-"عن الأخطاء …"
+"حيث ستجد كيفية التعاون في الترجمات وطلبات الميزات والمساهمات الأساسية "
+"والبحث عن الأخطاء …"
 
 msgid "onboarding-v2.welcome.desc3.title"
 msgstr "دليل المساهمة"
@@ -2835,70 +2896,3 @@ msgstr "تحديث"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "انقر لإغلاق المسار"
-
-msgid "dashboard.fonts.warning-text"
-msgstr ""
-"لقد اكتشفنا مشكلة محتملة في الخطوط الخاصة بك تتعلق بالمقاييس الرأسية لأنظمة "
-"التشغيل المختلفة. للتحقق من ذلك ، يمكنك استخدام خدمات المقاييس العمودية "
-"للخطوط مثل [هذه] (https://vertical-metrics.netlify.app/). بالإضافة إلى ذلك ، "
-"نوصي باستخدام [Transfonter] (https://transfonter.org/) لإنشاء خطوط الويب "
-"وإصلاح الأخطاء. "
-
-msgid "dashboard.webhooks.active"
-msgstr "نشط"
-
-msgid "dashboard.webhooks.active.explain"
-msgstr "عندما يتم تشغيل هذا الخطاف ، سيتم تسليم تفاصيل الحدث"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
-msgstr "أدخل بريدًا إلكترونيًا صالحًا من فضلك"
-
-#: src/app/main/errors.cljs
-msgid "errors.feature-mismatch"
-msgstr ""
-"يبدو أنك تفتح ملفًا تم تمكين الميزة \"٪ s\" فيه ولكن الواجهة الأمامية لـ "
-"penpot لا تدعمه أو تم تعطيله."
-
-msgid "errors.webhooks.unexpected-status"
-msgstr "حالة غير متوقعة٪ s"
-
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.font-weight"
-msgstr "وزن الخط"
-
-msgid "inspect.empty.help"
-msgstr ""
-"إذا كنت تريد معرفة المزيد عن فحص التصميم ، فتفضل بزيارة مركز مساعدة لPenpot"
-
-msgid "dashboard.webhooks.create"
-msgstr "إنشاء الرد التلقائي على الويب"
-
-msgid "errors.bad-font"
-msgstr "تعذر تحميل الخط٪ s"
-
-msgid "errors.bad-font-plural"
-msgstr "تعذر تحميل الخطوط٪ s"
-
-msgid "dashboard.webhooks.content-type"
-msgstr "نوع المحتوى"
-
-#: src/app/main/errors.cljs
-msgid "errors.feature-not-supported"
-msgstr "الميزة '٪ s' غير مدعومة."
-
-msgid "errors.profile-blocked"
-msgstr "هذا الملف الشخصي محظور"
-
-msgid "errors.webhooks.connection"
-msgstr "خطأ في الاتصال ، عنوان إلكتروني لا يمكن الوصول إليه"
-
-msgid "errors.webhooks.last-delivery"
-msgstr "آخر تسليم لم يكن ناجحًا."
-
-msgid "errors.webhooks.timeout"
-msgstr "نفذ الوقت"
-
-msgid "errors.webhooks.unexpected"
-msgstr "خطأ غير متوقع في التحقق"

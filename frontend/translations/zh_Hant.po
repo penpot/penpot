@@ -2113,10 +2113,6 @@ msgid "workspace.options.stroke.solid"
 msgstr "實線"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-center"
-msgstr "置中 (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "左至右"
 
@@ -2131,6 +2127,10 @@ msgstr "小寫"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.none"
 msgstr "無"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-center"
+msgstr "置中 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"

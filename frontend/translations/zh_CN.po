@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-06-09 01:52+0000\n"
 "Last-Translator: 王世阳 <wangshiyangchina@gmail.com>\n"
-"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
-"penpot/frontend/zh_Hans/>\n"
+"Language-Team: Chinese (Simplified) "
+"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -297,8 +297,8 @@ msgstr "复制 %s 个文件"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"添加到库的文件将出现在这里。尝试分享你的文件或从我们的[库和模板](https://"
-"penpot.app/libraries-templates.html)添加。"
+"添加到库的文件将出现在这里。尝试分享你的文件或从我们的[库和模板](https://penpot.app/libraries-templates."
+"html)添加。"
 
 msgid "dashboard.export-binary-multi"
 msgstr "下载 %s Penpot文件 (.penpot)"
@@ -385,19 +385,23 @@ msgstr[1] "%s 个字体添加成功"
 
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"你在此上传的任何网络字体文件，将会被添加至本团队下文件的字体属性中的可用字体"
-"族列表中。拥有相同字体族名称的字体文件，将会按照字体族进行分组。你可以上传以"
+"你在此上传的任何网络字体文件，将会被添加至本团队下文件的字体属性中的可用字体族列表中。拥有相同字体族名称的字体文件，将会按照字体族进行分组。你可以上传以"
 "下格式的字体文件：**TTF，OTF和WOFF**（你只需要上传其中一种即可）。"
 
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"你应当只向Penpot上传你所拥有的字体，或是你持有使用许可的字体。点击[Penpot服务"
-"条例](https://penpot.app/terms.html)查看更多有关内容权利的章节。或许你也想了"
-"解一下[字体许可授权] (https://www.typography.com/faq)。"
+"你应当只向Penpot上传你所拥有的字体，或是你持有使用许可的字体。点击[Penpot服务条例](https://penpot.app/terms."
+"html)查看更多有关内容权利的章节。或许你也想了解一下[字体许可授权] (https://www.typography.com/faq)。"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
 msgstr "全部上传"
+
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"我们在你的字体中检测到一个可能的问题，与不同操作系统的垂直度量有关。为了检查它，你可以使用字体垂直度量服务，如[这个](https://"
+"vertical-metrics.netlify.app/)。此外，我们建议使用[Transfonter](https://transfonter."
+"org/)来生成网络字体并修复错误。 "
 
 msgid "dashboard.import"
 msgstr "导入文件"
@@ -407,6 +411,9 @@ msgstr "文件无法导入"
 
 msgid "dashboard.import.import-error"
 msgstr "文件导入过程中出现未知问题，导入失败。"
+
+msgid "dashboard.import.import-message"
+msgstr "%s 个文件导入成功。"
 
 msgid "dashboard.import.import-warning"
 msgstr "一些包含无效对象的文档已被移除。"
@@ -567,9 +574,21 @@ msgstr "选择界面主题"
 msgid "dashboard.show-all-files"
 msgstr "显示全部文档"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "您的文件已被成功删除"
+msgstr[1] "您的文件已被成功删除"
+
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
 msgstr "成功删除了项目"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "您的文件已被成功复制"
+msgstr[1] "您的文件已被成功复制"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
@@ -639,9 +658,7 @@ msgid "dashboard.webhooks.create.success"
 msgstr "Webhook创建成功。"
 
 msgid "dashboard.webhooks.description"
-msgstr ""
-"Webhooks是一种简单的方式，允许其他网站和应用程序在Penpot的某些事件发生时得到"
-"通知。我们将发送一个POST请求到你提供的每个URL。"
+msgstr "Webhooks是一种简单的方式，允许其他网站和应用程序在Penpot的某些事件发生时得到通知。我们将发送一个POST请求到你提供的每个URL。"
 
 msgid "dashboard.webhooks.empty.add-one"
 msgstr "按“添加webhook”按钮添加一个。"
@@ -746,8 +763,7 @@ msgstr "此邮箱[%s]已被标记为垃圾邮件或已被永久拉黑。"
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-mismatch"
-msgstr ""
-"看起来你正在打开一个启用了'%s'功能的文件，但你的penpot前台不支持它或禁用它。"
+msgstr "看起来你正在打开一个启用了'%s'功能的文件，但你的penpot前台不支持它或禁用它。"
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-not-supported"
@@ -884,9 +900,7 @@ msgstr "话题"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
-msgstr ""
-"请说明你发邮件的原因，详细说明这是一个问题反馈、一个点子还是一个疑问。我们会"
-"尽快回复。"
+msgstr "请说明你发邮件的原因，详细说明这是一个问题反馈、一个点子还是一个疑问。我们会尽快回复。"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -1025,6 +1039,10 @@ msgstr "字号"
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.font-style"
 msgstr "文字风格"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "字体重量"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.letter-spacing"
@@ -1299,8 +1317,7 @@ msgstr "已安装字体"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
-msgstr ""
-"发生了一些不妙的事。请尝试重新操作。如果问题仍然存在，请联系我们以取得支持。"
+msgstr "发生了一些不妙的事。请尝试重新操作。如果问题仍然存在，请联系我们以取得支持。"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"
@@ -1750,6 +1767,9 @@ msgstr "发送邀请"
 msgid "modals.invite-member.emails"
 msgstr "电子邮件，以逗号分隔"
 
+msgid "modals.invite-member.repeated-invitation"
+msgstr "有些电子邮件是来自当前的团队成员。他们的邀请将不会被发送。"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
 msgstr "邀请成员加入团队"
@@ -1763,9 +1783,7 @@ msgid "modals.leave-and-close-confirm.message"
 msgstr "您确定要离开 %s 团队吗？"
 
 msgid "modals.leave-and-reassign.forbidden"
-msgstr ""
-"如果不能推选另一个成员作为团队所有者，你就无法离开团队。你或许想要删除该团"
-"队。"
+msgstr "如果不能推选另一个成员作为团队所有者，你就无法离开团队。你或许想要删除该团队。"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
@@ -1833,6 +1851,13 @@ msgstr "不再将“%s”作为共享库"
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.small-nudge"
 msgstr "小幅微调"
+
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "取消发布"
+msgstr[1] "取消发布"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1926,28 +1951,22 @@ msgid "onboarding-v2.newsletter.privacy1"
 msgstr "我们关心隐私，您可在此阅读我们的 "
 
 msgid "onboarding-v2.newsletter.privacy2"
-msgstr ""
-"我们将仅发送与您有关的邮件，您可以随时在其中任意一封邮件中点击取消订阅。"
+msgstr "我们将仅发送与您有关的邮件，您可以随时在其中任意一封邮件中点击取消订阅。"
 
 msgid "onboarding-v2.newsletter.updates"
 msgstr "向我发送一些产品更新（新功能，新版本，新修复等）。"
 
 msgid "onboarding-v2.welcome.desc1"
-msgstr ""
-"Penpot是由Kaleidos及社区共同开发的开源软件，许多人已经在社区中互相帮助。每个"
-"人都可以通过以下方式进行协作："
+msgstr "Penpot是由Kaleidos及社区共同开发的开源软件，许多人已经在社区中互相帮助。每个人都可以通过以下方式进行协作："
 
 msgid "onboarding-v2.welcome.desc2"
-msgstr ""
-"一个与整个社区和Penpot核心团队学习、分享和讨论Penpot及其现在和未来的公共空"
-"间。"
+msgstr "一个与整个社区和Penpot核心团队学习、分享和讨论Penpot及其现在和未来的公共空间。"
 
 msgid "onboarding-v2.welcome.desc2.title"
 msgstr "参与到社区中"
 
 msgid "onboarding-v2.welcome.desc3"
-msgstr ""
-"在这里，您将了解如何协作进行翻译、功能需求提出、核心代码贡献、BUG修复等…"
+msgstr "在这里，您将了解如何协作进行翻译、功能需求提出、核心代码贡献、BUG修复等…"
 
 msgid "onboarding-v2.welcome.desc3.title"
 msgstr "贡献指南"
@@ -2087,6 +2106,9 @@ msgstr "路径"
 msgid "shortcut-subsection.shape"
 msgstr "形状"
 
+msgid "shortcut-subsection.text-editor"
+msgstr "文本"
+
 msgid "shortcut-subsection.tools"
 msgstr "工具"
 
@@ -2105,8 +2127,14 @@ msgstr "添加节点"
 msgid "shortcuts.align-bottom"
 msgstr "底部对齐"
 
+msgid "shortcuts.align-center"
+msgstr "居中对齐"
+
 msgid "shortcuts.align-hcenter"
 msgstr "水平居中对齐"
+
+msgid "shortcuts.align-justify"
+msgstr "两端对齐"
 
 msgid "shortcuts.align-left"
 msgstr "左对齐"
@@ -2122,6 +2150,9 @@ msgstr "垂直居中对齐"
 
 msgid "shortcuts.artboard-selection"
 msgstr "以所选内容创建画板"
+
+msgid "shortcuts.bold"
+msgstr "切换粗体"
 
 msgid "shortcuts.bool-difference"
 msgstr "布尔差"
@@ -2213,6 +2244,12 @@ msgstr "水平翻转"
 msgid "shortcuts.flip-vertical"
 msgstr "垂直翻转"
 
+msgid "shortcuts.font-size-dec"
+msgstr "缩小字体大小"
+
+msgid "shortcuts.font-size-inc"
+msgstr "增加字体大小"
+
 msgid "shortcuts.go-to-drafts"
 msgstr "前往草稿"
 
@@ -2237,8 +2274,26 @@ msgstr "放大"
 msgid "shortcuts.insert-image"
 msgstr "插入图片"
 
+msgid "shortcuts.italic"
+msgstr "切换斜体"
+
 msgid "shortcuts.join-nodes"
 msgstr "链接节点"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "减少字母间距"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "减少字母间距"
+
+msgid "shortcuts.line-height-dec"
+msgstr "减少行高"
+
+msgid "shortcuts.line-height-inc"
+msgstr "增加行高"
+
+msgid "shortcuts.line-through"
+msgstr "切换删除线"
 
 msgid "shortcuts.make-corner"
 msgstr "制作圆角"
@@ -2360,6 +2415,12 @@ msgstr "搜索快捷方式"
 msgid "shortcuts.select-all"
 msgstr "选择所有"
 
+msgid "shortcuts.select-next"
+msgstr "选择下一个图层"
+
+msgid "shortcuts.select-prev"
+msgstr "选择上一个图层"
+
 msgid "shortcuts.separate-nodes"
 msgstr "分离节点"
 
@@ -2439,8 +2500,14 @@ msgstr "辅助线对齐"
 msgid "shortcuts.toggle-textpalette"
 msgstr "切换文本调色板"
 
+msgid "shortcuts.toggle-visibility"
+msgstr "切换可见度"
+
 msgid "shortcuts.toggle-zoom-style"
 msgstr "切换缩放样式"
+
+msgid "shortcuts.underline"
+msgstr "切换下划线"
 
 msgid "shortcuts.undo"
 msgstr "回退"
@@ -2453,6 +2520,12 @@ msgstr "取消遮罩"
 
 msgid "shortcuts.v-distribute"
 msgstr "垂直分布"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "变焦镜头缩小"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "变焦镜头放大"
 
 msgid "shortcuts.zoom-selected"
 msgstr "缩放到选定对象"
@@ -2647,6 +2720,9 @@ msgstr "删除"
 msgid "workspace.assets.duplicate"
 msgstr "创建副本"
 
+msgid "workspace.assets.duplicate-main"
+msgstr "重复主体"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
@@ -2768,6 +2844,9 @@ msgstr "放射渐变"
 msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "禁用动态对齐"
 
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "禁用比例尺"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-scale-text"
 msgstr "禁用缩放文本"
@@ -2786,6 +2865,9 @@ msgstr "禁用像素对齐"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "启用动态对齐"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "启用比例尺"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-scale-text"
@@ -2845,6 +2927,9 @@ msgstr "首选项"
 msgid "workspace.header.menu.option.view"
 msgstr "视图"
 
+msgid "workspace.header.menu.redo"
+msgstr "重做"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
 msgstr "全选"
@@ -2871,6 +2956,9 @@ msgstr "显示标尺"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
 msgstr "显示字体调色板"
+
+msgid "workspace.header.menu.undo"
+msgstr "撤销"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
@@ -3094,6 +3182,13 @@ msgstr "导出"
 #: src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export-multiple"
 msgstr "导出已选择"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "输出1个元素"
+msgstr[1] "输出%s元素"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3572,8 +3667,16 @@ msgid "workspace.options.layout.direction.column"
 msgstr "列"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "反向列"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
 msgstr "行"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "反向行"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
@@ -3651,12 +3754,12 @@ msgid "workspace.options.radius"
 msgstr "圆角"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius.all-corners"
-msgstr "所有角"
+msgid "workspace.options.radius-bottom-left"
+msgstr "左下角"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius.single-corners"
-msgstr "独立的角"
+msgid "workspace.options.radius-bottom-right"
+msgstr "右下角"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius-top-left"
@@ -3667,12 +3770,12 @@ msgid "workspace.options.radius-top-right"
 msgstr "右上角"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius-bottom-left"
-msgstr "左下角"
+msgid "workspace.options.radius.all-corners"
+msgstr "所有角"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius-bottom-right"
-msgstr "右下角"
+msgid "workspace.options.radius.single-corners"
+msgstr "独立的角"
 
 msgid "workspace.options.recent-fonts"
 msgstr "最近的"
@@ -3835,24 +3938,8 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "底部对齐"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-center"
-msgstr "居中对齐 (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-justify"
-msgstr "整理 (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-left"
-msgstr "靠左对齐 (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
 msgstr "居中对齐"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-right"
-msgstr "靠右对齐 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -3898,6 +3985,22 @@ msgstr "无"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
 msgstr "删除线 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-center"
+msgstr "居中对齐 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "整理 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-left"
+msgstr "靠左对齐 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-right"
+msgstr "靠右对齐 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -3968,9 +4071,7 @@ msgstr "对接节点 (%s)"
 
 #: src/app/main/ui/workspace.cljs
 msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"要重试，您可以重新加载此文件。如果问题仍然存在，我们建议您查看列表并考虑删除"
-"损坏的图形。"
+msgstr "要重试，您可以重新加载此文件。如果问题仍然存在，我们建议您查看列表并考虑删除损坏的图形。"
 
 #: src/app/main/ui/workspace.cljs
 msgid "workspace.remove-graphics.error-msg"
@@ -4412,123 +4513,3 @@ msgstr "更新"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-delete-file"
-msgid_plural "dashboard.success-delete-file"
-msgstr[0] "您的文件已被成功删除"
-msgstr[1] "您的文件已被成功删除"
-
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.font-weight"
-msgstr "字体重量"
-
-msgid "shortcuts.bold"
-msgstr "切换粗体"
-
-msgid "shortcuts.letter-spacing-inc"
-msgstr "减少字母间距"
-
-msgid "shortcuts.font-size-inc"
-msgstr "增加字体大小"
-
-msgid "shortcuts.letter-spacing-dec"
-msgstr "减少字母间距"
-
-msgid "shortcuts.underline"
-msgstr "切换下划线"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.column-reverse"
-msgstr "反向列"
-
-msgid "workspace.header.menu.redo"
-msgstr "重做"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-duplicate-file"
-msgid_plural "dashboard.success-delete-file"
-msgstr[0] "您的文件已被成功复制"
-msgstr[1] "您的文件已被成功复制"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs
-msgid "workspace.options.export-object"
-msgid_plural "workspace.options.export-object"
-msgstr[0] "输出1个元素"
-msgstr[1] "输出%s元素"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgid_plural "modals.unpublish-shared-confirm.accept"
-msgstr[0] "取消发布"
-msgstr[1] "取消发布"
-
-msgid "shortcuts.line-height-inc"
-msgstr "增加行高"
-
-msgid "shortcuts.line-through"
-msgstr "切换删除线"
-
-msgid "shortcuts.align-justify"
-msgstr "两端对齐"
-
-msgid "workspace.assets.duplicate-main"
-msgstr "重复主体"
-
-msgid "workspace.header.menu.undo"
-msgstr "撤销"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row-reverse"
-msgstr "反向行"
-
-msgid "dashboard.fonts.warning-text"
-msgstr ""
-"我们在你的字体中检测到一个可能的问题，与不同操作系统的垂直度量有关。为了检查"
-"它，你可以使用字体垂直度量服务，如[这个](https://vertical-metrics.netlify."
-"app/)。此外，我们建议使用[Transfonter](https://transfonter.org/)来生成网络字"
-"体并修复错误。 "
-
-msgid "modals.invite-member.repeated-invitation"
-msgstr "有些电子邮件是来自当前的团队成员。他们的邀请将不会被发送。"
-
-msgid "shortcuts.font-size-dec"
-msgstr "缩小字体大小"
-
-msgid "shortcuts.italic"
-msgstr "切换斜体"
-
-msgid "shortcuts.select-prev"
-msgstr "选择上一个图层"
-
-msgid "shortcut-subsection.text-editor"
-msgstr "文本"
-
-msgid "shortcuts.align-center"
-msgstr "居中对齐"
-
-msgid "shortcuts.line-height-dec"
-msgstr "减少行高"
-
-msgid "shortcuts.select-next"
-msgstr "选择下一个图层"
-
-msgid "workspace.header.menu.disable-scale-content"
-msgstr "禁用比例尺"
-
-msgid "workspace.header.menu.enable-scale-content"
-msgstr "启用比例尺"
-
-msgid "shortcuts.zoom-lense-increase"
-msgstr "变焦镜头放大"
-
-msgid "shortcuts.zoom-lense-decrease"
-msgstr "变焦镜头缩小"
-
-msgid "dashboard.import.import-message"
-msgstr "%s 个文件导入成功。"
-
-msgid "shortcuts.toggle-visibility"
-msgstr "切换可见度"
