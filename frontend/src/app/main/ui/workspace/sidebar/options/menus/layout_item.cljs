@@ -390,6 +390,7 @@
         state*                 (mf/use-state true)
         open?                  (deref state*)
         toggle-content         (mf/use-fn #(swap! state* not))
+        has-content?           (or is-layout-child? is-flex-parent? is-grid-parent? is-layout-container?)
 
         ;; Align self
 
@@ -489,7 +490,7 @@
     (if new-css-system
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
-        [:& title-bar {:collapsable? true
+        [:& title-bar {:collapsable? has-content?
                        :collapsed?   (not open?)
                        :on-collapsed toggle-content
                        :title        (cond
@@ -504,7 +505,8 @@
 
                                        :else
                                        "Layout element")
-                       :class        (stl/css :title-spacing-layout-element)}
+                       :class        (stl/css-case :title-spacing-layout-element true
+                                                   :title-spacing-empty (not has-content?))}
 
          (when is-flex-parent?
            [:div {:class (stl/css :position-options)}

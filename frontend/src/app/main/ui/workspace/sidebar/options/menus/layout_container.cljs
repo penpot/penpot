@@ -888,19 +888,19 @@
 (mf/defc grid-track-info
   [{:keys [is-col? type index column set-column-value set-column-type remove-element reorder-track hover-track]}]
   (let [drop-track
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps type reorder-track index)
          (fn [drop-position data]
            (reorder-track type (:index data) (if (= :top drop-position) (dec index) index))))
 
         pointer-enter
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps type hover-track index)
          (fn []
            (hover-track type index true)))
 
         pointer-leave
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps type hover-track index)
          (fn []
            (hover-track type index false)))
@@ -991,6 +991,7 @@
 
         ;; Display
         layout-type         (:layout values)
+        has-layout?         (some? layout-type)
 
         state*              (mf/use-state (if layout-type
                                             true
@@ -1204,11 +1205,11 @@
     (if new-css-system
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
-        [:& title-bar {:collapsable? true
+        [:& title-bar {:collapsable? has-layout?
                        :collapsed?   (not open?)
                        :on-collapsed toggle-content
                        :title        "Layout"
-                       :class        (stl/css :title-spacing-layout)}
+                       :class        (stl/css-case :title-spacing-layout (not has-layout?))}
          (if (and (not multiple) (:layout values))
            [:div {:class (stl/css :title-actions)}
             (when (features/active-feature? :grid-layout)
@@ -1230,7 +1231,7 @@
                       :on-click on-set-layout}
              i/add-refactor]])]]
 
-       (when (and open? (:layout values))
+       (when (and open? has-layout?)
          (when (not= :multiple layout-type)
            (case layout-type
              :flex

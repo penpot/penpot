@@ -21,13 +21,13 @@
 (mf/defc attribute-value [{:keys [attr value on-change on-delete] :as props}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
         handle-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps attr on-change)
          (fn [event]
            (on-change attr (dom/get-target-val event))))
 
         handle-delete
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps attr on-delete)
          (fn []
            (on-delete attr)))
@@ -86,10 +86,12 @@
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
         state*          (mf/use-state true)
         open?           (deref state*)
+        attrs           (:svg-attrs values)
+        has-attributes? (or (= :multiple attrs) (some? (seq attrs)))
 
         toggle-content  (mf/use-fn #(swap! state* not))
         handle-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [attr value]
            (let [update-fn
@@ -97,7 +99,7 @@
              (st/emit! (dch/update-shapes ids update-fn)))))
 
         handle-delete
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [attr]
            (let [update-fn
@@ -111,17 +113,17 @@
                      shape))]
              (st/emit! (dch/update-shapes ids update-fn)))))]
 
-    (when-not (empty? (:svg-attrs values))
+    (when-not (empty? attrs)
       (if new-css-system
         [:div {:class (stl/css :element-set)}
          [:div {:class (stl/css :element-set-title)}
-          [:& title-bar {:collapsable? true
+          [:& title-bar {:collapsable? has-attributes?
                          :collapsed?   (not open?)
                          :on-collapsed toggle-content
                          :title        (tr "workspace.sidebar.options.svg-attrs.title")
-                         :class        (stl/css :title-spacing-svg-attrs)}]]
+                         :class        (stl/css-case :title-spacing-svg-attrs (not has-attributes?))}]]
          [:div {:class (stl/css :element-set-content)}
-          (for [[attr-key attr-value] (:svg-attrs values)]
+          (for [[attr-key attr-value] attrs]
             [:& attribute-value {:key attr-key
                                  :attr [attr-key]
                                  :value attr-value
@@ -132,7 +134,7 @@
          [:div.element-set-title
           [:span (tr "workspace.sidebar.options.svg-attrs.title")]]
 
-         (for [[attr-key attr-value] (:svg-attrs values)]
+         (for [[attr-key attr-value] attrs]
            [:& attribute-value {:key attr-key
                                 :attr [attr-key]
                                 :value attr-value

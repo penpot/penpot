@@ -8,6 +8,9 @@
 
 .element-set {
   .element-title {
+    .title-spacing-export {
+      padding-left: $s-12;
+    }
     .add-export {
       @extend .button-tertiary;
       height: $s-32;

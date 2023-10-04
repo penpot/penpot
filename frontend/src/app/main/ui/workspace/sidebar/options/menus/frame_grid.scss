@@ -7,6 +7,9 @@
 @import "refactor/common-refactor.scss";
 
 .element-set {
+  .title-spacing-board-grid {
+    padding-left: $s-12;
+  }
   .add-grid {
     @extend .button-tertiary;
     height: $s-32;

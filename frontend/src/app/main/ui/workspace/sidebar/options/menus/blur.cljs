@@ -35,40 +35,34 @@
 
         state*         (mf/use-state {:show-content true
                                       :show-more-options false})
-
         state          (deref state*)
-
         open?          (:show-content state)
         more-options?  (:show-more-options state)
 
+        toggle-content (mf/use-fn #(swap! state* update :show-content not))
 
-        toggle-content
-        (mf/use-fn #(swap! state* update :show-content not))
-
-        toggle-more-options
-        (mf/use-fn #(swap! state* update :show-more-options not))
-
+        toggle-more-options (mf/use-fn #(swap! state* update :show-more-options not))
 
         change!
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [update-fn]
            (st/emit! (dch/update-shapes ids update-fn))))
 
         handle-add
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps change!)
          (fn []
            (change! #(assoc % :blur (create-blur)))))
 
         handle-delete
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps change!)
          (fn []
            (change! #(dissoc % :blur))))
 
         handle-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps change!)
          (fn [value]
            (change! #(cond-> %
@@ -79,7 +73,7 @@
                        (assoc-in [:blur :value] value)))))
 
         handle-toggle-visibility
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps change!)
          (fn []
            (change! #(update-in % [:blur :hidden] not))))]
@@ -87,14 +81,14 @@
     (if new-css-system
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
-        [:& title-bar {:collapsable? true
+        [:& title-bar {:collapsable? has-value?
                        :collapsed?   (not open?)
                        :on-collapsed toggle-content
                        :title        (case type
                                        :multiple (tr "workspace.options.blur-options.title.multiple")
                                        :group (tr "workspace.options.blur-options.title.group")
                                        (tr "workspace.options.blur-options.title"))
-                       :class        (stl/css :title-spacing-blur)}
+                       :class        (stl/css-case :title-spacing-blur (not has-value?))}
 
          (when-not has-value?
            [:button {:class (stl/css :add-blur)
