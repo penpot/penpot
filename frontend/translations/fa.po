@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-01-24 14:27+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
-"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
-"fa/>\n"
+"Language-Team: Persian "
+"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -236,8 +236,8 @@ msgstr "مدیریت تیم"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.text"
 msgstr ""
-"Penpot برای تیم‌ها در نظر گرفته شده است. از اعضا دعوت کنید تا روی پروژه‌ها و "
-"فایل‌ها با هم کار کنند"
+"Penpot برای تیم‌ها در نظر گرفته شده است. از اعضا دعوت کنید تا روی پروژه‌ها "
+"و فایل‌ها با هم کار کنند"
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, fuzzy
@@ -246,8 +246,7 @@ msgstr "تیم!"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
-msgstr ""
-"در حالی که با این آموزش سرگرم می‌شوید، اصول اولیه را در Penpot بیاموزید."
+msgstr "در حالی که با این آموزش سرگرم می‌شوید، اصول اولیه را در Penpot بیاموزید."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
@@ -307,8 +306,9 @@ msgstr "فایل‌های %s را کپی کنید"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"وای نه! شما هنوز هیچ فایلی ندارید! اگر می‌خواهید چند الگو را امتحان کنید، به "
-"[کتابخانه‌ها و الگوها] بروید (https://penpot.app/libraries-templates.html)"
+"وای نه! شما هنوز هیچ فایلی ندارید! اگر می‌خواهید چند الگو را امتحان کنید، "
+"به [کتابخانه‌ها و الگوها] بروید "
+"(https://penpot.app/libraries-templates.html)"
 
 #, fuzzy
 msgid "dashboard.export-binary-multi"
@@ -335,8 +335,8 @@ msgstr "اکسپورت"
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
-"می‌توانید تنظیمات اکسپورت را از ویژگی‌های طراحی (در پایین نوار کناری سمت راست) "
-"به عناصر اضافه کنید."
+"می‌توانید تنظیمات اکسپورت را از ویژگی‌های طراحی (در پایین نوار کناری سمت "
+"راست) به عناصر اضافه کنید."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to-link"
@@ -364,8 +364,8 @@ msgstr ""
 
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"فایل‌های دارای کتابخانه‌های مشترک در اکسپورت گنجانده می‌شوند و پیوند خود را حفظ "
-"می‌کنند."
+"فایل‌های دارای کتابخانه‌های مشترک در اکسپورت گنجانده می‌شوند و پیوند خود را "
+"حفظ می‌کنند."
 
 msgid "dashboard.export.options.all.title"
 msgstr "اکسپورت کتابخانه‌های مشترک"
@@ -407,17 +407,18 @@ msgstr[1] "%s فونت اضافه شد"
 
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"هر وب فونتی که در اینجا آپلود کنید به لیست خانواده فونت‌های موجود در ویژگی‌های "
-"متن فایل‌های این تیم اضافه می‌شود. فونت‌هایی با نام یکسان به عنوان یک **خانواده "
-"فونت تک** گروه‌بندی می‌شوند. می‌توانید فونت‌هایی را با فرمت‌های زیر بارگذاری "
-"کنید: **TTF، OTF و WOFF** (فقط یکی مورد نیاز خواهد بود)."
+"هر وب فونتی که در اینجا آپلود کنید به لیست خانواده فونت‌های موجود در "
+"ویژگی‌های متن فایل‌های این تیم اضافه می‌شود. فونت‌هایی با نام یکسان به "
+"عنوان یک **خانواده فونت تک** گروه‌بندی می‌شوند. می‌توانید فونت‌هایی را با "
+"فرمت‌های زیر بارگذاری کنید: **TTF، OTF و WOFF** (فقط یکی مورد نیاز خواهد "
+"بود)."
 
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "شما فقط باید فونت‌هایی را که مالک آنها هستید یا مجوز استفاده از آنها را در "
-"Penpot دارید آپلود کنید. در بخش حقوق محتوا [شرایط خدمات Penpot] (https://"
-"penpot.app/terms.html) اطلاعات بیشتری کسب کنید. همچنین ممکن است بخواهید "
-"درباره [مجوز فونت] (https://www.typography.com/faq) مطالعه کنید."
+"Penpot دارید آپلود کنید. در بخش حقوق محتوا [شرایط خدمات Penpot] "
+"(https://penpot.app/terms.html) اطلاعات بیشتری کسب کنید. همچنین ممکن است "
+"بخواهید درباره [مجوز فونت] (https://www.typography.com/faq) مطالعه کنید."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -837,8 +838,8 @@ msgstr "به انجمن Penpot بروید"
 #, fuzzy
 msgid "feedback.discourse-subtitle1"
 msgstr ""
-"ما خوشحالیم که شما اینجا هستید. اگر به کمک نیاز دارید، لطفا قبل از ارسال پست "
-"جستجو کنید."
+"ما خوشحالیم که شما اینجا هستید. اگر به کمک نیاز دارید، لطفا قبل از ارسال "
+"پست جستجو کنید."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-title"
@@ -1292,13 +1293,11 @@ msgstr "هیچ دعوتنامه‌ای وجود ندارد."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
-msgstr ""
-"دکمه \"دعوت به تیم\" را فشار دهید تا اعضای بیشتری را به این تیم دعوت کنید."
+msgstr "دکمه \"دعوت به تیم\" را فشار دهید تا اعضای بیشتری را به این تیم دعوت کنید."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
-msgstr ""
-"ممکن است این صفحه وجود نداشته باشد یا شما مجوز دسترسی به آن را نداشته باشید."
+msgstr "ممکن است این صفحه وجود نداشته باشد یا شما مجوز دسترسی به آن را نداشته باشید."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
@@ -1530,7 +1529,8 @@ msgstr "بله، حسابم رو حذف کن"
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.info"
 msgstr ""
-"با حذف کردن حساب خود، تمام پروژه‌ها و آرشیوهای فعلی خود را از دست خواهید داد."
+"با حذف کردن حساب خود، تمام پروژه‌ها و آرشیوهای فعلی خود را از دست خواهید "
+"داد."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.title"
@@ -1576,8 +1576,8 @@ msgstr "در حال حذف %s فایل‌ها"
 
 msgid "modals.delete-font-variant.message"
 msgstr ""
-"آیا مطمئن هستید که می‌خواهید این سبک فونت را حذف کنید؟ اگر در یک فایل استفاده "
-"شود، بارگیری نمی‌شود."
+"آیا مطمئن هستید که می‌خواهید این سبک فونت را حذف کنید؟ اگر در یک فایل "
+"استفاده شود، بارگیری نمی‌شود."
 
 msgid "modals.delete-font-variant.title"
 msgstr "درحال حذف استایل فونت"
@@ -1638,8 +1638,8 @@ msgstr "حذف تیم"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.message"
 msgstr ""
-"آیا مطمئنید که می‌خواهید این تیم را حذف کنید؟ تمام پروژه‌ها و فایل‌های مرتبط با "
-"تیم به طور دائم حذف خواهند شد."
+"آیا مطمئنید که می‌خواهید این تیم را حذف کنید؟ تمام پروژه‌ها و فایل‌های "
+"مرتبط با تیم به طور دائم حذف خواهند شد."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.title"
@@ -1672,8 +1672,8 @@ msgstr "دعوت اعضا به تیم"
 #, fuzzy
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
-"از آنجایی که شما تنها عضو این تیم هستید، تیم به همراه پروژه‌ها و فایل‌هایش حذف "
-"خواهد شد."
+"از آنجایی که شما تنها عضو این تیم هستید، تیم به همراه پروژه‌ها و فایل‌هایش "
+"حذف خواهد شد."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.message"
@@ -1721,8 +1721,8 @@ msgstr "انتقال مالکیت"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
-"اگر مالکیت را منتقل کنید، نقش خود را به مدیر تغییر می‌دهید و برخی از مجوزهای "
-"این تیم را از دست می‌دهید. "
+"اگر مالکیت را منتقل کنید، نقش خود را به مدیر تغییر می‌دهید و برخی از "
+"مجوزهای این تیم را از دست می‌دهید. "
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
@@ -1744,8 +1744,8 @@ msgstr "حذف به عنوان کتابخانه مشترک"
 #, fuzzy
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
-"پس از حذف به‌عنوان کتابخانه مشترک، کتابخانه فایل این فایل برای استفاده در بین "
-"بقیه فایل‌های شما در دسترس نخواهد بود."
+"پس از حذف به‌عنوان کتابخانه مشترک، کتابخانه فایل این فایل برای استفاده در "
+"بین بقیه فایل‌های شما در دسترس نخواهد بود."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
@@ -1764,13 +1764,14 @@ msgstr "پروفایل با موفقیت ذخیره شد!"
 #, fuzzy
 msgid "onboarding-v2.before-start.desc2"
 msgstr ""
-"اطلاعات دقیق در مورد نحوه استفاده از Penpot. از نمونه‌سازی تا سازماندهی یا به "
-"اشتراک‌گذاری طرح‌ها."
+"اطلاعات دقیق در مورد نحوه استفاده از Penpot. از نمونه‌سازی تا سازماندهی یا "
+"به اشتراک‌گذاری طرح‌ها."
 
 #, fuzzy
 msgid "onboarding-v2.before-start.desc3"
 msgstr ""
-"شما می‌توانید آموزش‌های ما و آموزش‌های ساخته شده توسط انجمن ما را تماشا کنید."
+"شما می‌توانید آموزش‌های ما و آموزش‌های ساخته شده توسط انجمن ما را تماشا "
+"کنید."
 
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "پس از نامگذاری تیم خود، می‌توانید افراد را برای پیوستن دعوت کنید."
@@ -2063,8 +2064,7 @@ msgstr "ایجاد یک گروه"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.create-group-hint"
-msgstr ""
-"آیتم‌های شما به طور خودکار به عنوان \"نام گروه / نام آیتم\" نامگذاری می‌شوند"
+msgstr "آیتم‌های شما به طور خودکار به عنوان \"نام گروه / نام آیتم\" نامگذاری می‌شوند"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
@@ -2593,21 +2593,8 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "تراز پایین"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-#, fuzzy
-msgid "workspace.options.text-options.text-align-center"
-msgstr "تراز در مرکز (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-left"
-msgstr "تراز چپ (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
 msgstr "تراز وسط"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-right"
-msgstr "تراز راست (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -2649,6 +2636,19 @@ msgstr "حروف کوچک"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.none"
 msgstr "هیچ‌یک"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-align-center"
+msgstr "تراز در مرکز (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-left"
+msgstr "تراز چپ (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-right"
+msgstr "تراز راست (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"

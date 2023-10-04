@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-08-18 16:16+0000\n"
 "Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
-"Language-Team: Greek <https://hosted.weblate.org/projects/penpot/frontend/el/"
-">\n"
+"Language-Team: Greek "
+"<https://hosted.weblate.org/projects/penpot/frontend/el/>\n"
 "Language: el\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -94,13 +94,13 @@ msgstr "Ο κωδικός έχει αλλάξει."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
-msgstr ""
-"Το προφίλ δεν έχει επαληθευτεί ακόμη, επικυρώστε το προφίλ πριν συνεχίσετε."
+msgstr "Το προφίλ δεν έχει επαληθευτεί ακόμη, επικυρώστε το προφίλ πριν συνεχίσετε."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
 msgstr ""
-"Στείλαμε στο email σας έναν link για να ανακτήσουμε τον κωδικό πρόσβασής σας."
+"Στείλαμε στο email σας έναν link για να ανακτήσουμε τον κωδικό πρόσβασής "
+"σας."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
@@ -383,8 +383,7 @@ msgstr "Είσαι σίγουρος;"
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
-msgstr ""
-"Το πρόγραμμα περιήγησής σας δεν μπορεί να εκτελέσει αυτήν τη λειτουργία"
+msgstr "Το πρόγραμμα περιήγησής σας δεν μπορεί να εκτελέσει αυτήν τη λειτουργία"
 
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/change_email.cljs
@@ -476,9 +475,9 @@ msgstr "Επιχείρηση"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"Περιγράψτε τον λόγο του email σας, προσδιορίζοντας εάν πρόκειται για ζήτημα, "
-"ιδέα ή αμφιβολία. Ένα μέλος της ομάδας μας θα απαντήσει το συντομότερο "
-"δυνατό."
+"Περιγράψτε τον λόγο του email σας, προσδιορίζοντας εάν πρόκειται για "
+"ζήτημα, ιδέα ή αμφιβολία. Ένα μέλος της ομάδας μας θα απαντήσει το "
+"συντομότερο δυνατό."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -940,8 +939,9 @@ msgstr "Προσθήκη ως Κοινόχρηστη βιβλιοθήκη"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
-"Μόλις προστεθεί ως Κοινόχρηστη βιβλιοθήκη, τα στοιχεία αυτής της βιβλιοθήκης "
-"αρχείων θα είναι διαθέσιμα για χρήση μεταξύ των υπόλοιπων αρχείων σας."
+"Μόλις προστεθεί ως Κοινόχρηστη βιβλιοθήκη, τα στοιχεία αυτής της "
+"βιβλιοθήκης αρχείων θα είναι διαθέσιμα για χρήση μεταξύ των υπόλοιπων "
+"αρχείων σας."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -981,8 +981,8 @@ msgstr "Ναι, διαγράψτε τον λογαριασμό μου"
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.info"
 msgstr ""
-"Καταργώντας τον λογαριασμό σας, θα χάσετε όλα τα τρέχοντα έργα και τα αρχεία "
-"σας."
+"Καταργώντας τον λογαριασμό σας, θα χάσετε όλα τα τρέχοντα έργα και τα "
+"αρχεία σας."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.title"
@@ -995,8 +995,8 @@ msgstr "Διαγραφή συζήτησης"
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.message"
 msgstr ""
-"Είστε σίγουροι ότι θέλετε να διαγράψετε αυτήν τη συνομιλία; Όλα τα σχόλια σε "
-"αυτό το νήμα θα διαγραφούν."
+"Είστε σίγουροι ότι θέλετε να διαγράψετε αυτήν τη συνομιλία; Όλα τα σχόλια "
+"σε αυτό το νήμα θα διαγραφούν."
 
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.title"
@@ -1825,24 +1825,8 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Στοίχιση κάτω"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-center"
-msgstr "Ευθυγράμμιση κέντρο (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-justify"
-msgstr "Δικαιολόγηση (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-left"
-msgstr "Στοίχιση αριστερά (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
 msgstr "Στοίχιση στο κέντρο"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-right"
-msgstr "Για ευθυγράμμιση προς τα δεξιά (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -1880,6 +1864,22 @@ msgstr "Κανένας"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Διαγράμμιση (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Ευθυγράμμιση κέντρο (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "Δικαιολόγηση (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-left"
+msgstr "Στοίχιση αριστερά (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-right"
+msgstr "Για ευθυγράμμιση προς τα δεξιά (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"

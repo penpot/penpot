@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-06-19 11:49+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
-"ru/>\n"
+"Language-Team: Russian "
+"<https://hosted.weblate.org/projects/penpot/frontend/ru/>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -17,8 +17,7 @@ msgstr "Уже есть аккаунт?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
-msgstr ""
-"Перейдите по ссылке в электронном письме, чтобы начать работу с Penpot."
+msgstr "Перейдите по ссылке в электронном письме, чтобы начать работу с Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -175,7 +174,8 @@ msgstr "Все пользователи Penpot"
 
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
-"Вы точно хотите удалить эту ссылку? После этого она перестанет быть доступной"
+"Вы точно хотите удалить эту ссылку? После этого она перестанет быть "
+"доступной"
 
 msgid "common.share-link.current-tag"
 msgstr "(текущее)"
@@ -252,8 +252,7 @@ msgstr "Практическое руководство"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.info"
-msgstr ""
-"Прогуляйтесь по возможностям Penpot и познакомьтесь с основными функциями."
+msgstr "Прогуляйтесь по возможностям Penpot и познакомьтесь с основными функциями."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.start"
@@ -307,8 +306,8 @@ msgstr "Дублировать файлы (%s)"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Файлы, добавленные в Библиотеки, появятся здесь. Попробуйте поделиться "
-"своими файлами или добавить их из наших [Библиотек и шаблонов](https://"
-"penpot.app/libraries-templates.html)."
+"своими файлами или добавить их из наших [Библиотек и "
+"шаблонов](https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Скачать файлы Penpot (.penpot) (%s)"
@@ -334,8 +333,8 @@ msgstr "Экспорт"
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
-"Вы можете добавить настройки экспорта элементам из свойств дизайна (в нижней "
-"части правой боковой панели)."
+"Вы можете добавить настройки экспорта элементам из свойств дизайна (в "
+"нижней части правой боковой панели)."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to-link"
@@ -361,24 +360,23 @@ msgstr ""
 "сделать с их ресурсами*?"
 
 msgid "dashboard.export.options.all.message"
-msgstr ""
-"Файлы с общих библиотек будут включены в экспорт, сохраняя свою привязку."
+msgstr "Файлы с общих библиотек будут включены в экспорт, сохраняя свою привязку."
 
 msgid "dashboard.export.options.all.title"
 msgstr "Экспорт общих библиотек"
 
 msgid "dashboard.export.options.detach.message"
 msgstr ""
-"Общие библиотеки не будут включены в экспорт, и вложенные ресурсы не попадут "
-"в библиотеку экспорта. "
+"Общие библиотеки не будут включены в экспорт, и вложенные ресурсы не "
+"попадут в библиотеку экспорта. "
 
 msgid "dashboard.export.options.detach.title"
 msgstr "Воспринимать ресурсы общей библиотеки как обычные объекты"
 
 msgid "dashboard.export.options.merge.message"
 msgstr ""
-"Ваш файл будет экспортирован с включением всех внешних ресурсов в библиотеку "
-"экспорта."
+"Ваш файл будет экспортирован с включением всех внешних ресурсов в "
+"библиотеку экспорта."
 
 msgid "dashboard.export.options.merge.title"
 msgstr "Включить ресурсы общей библиотеки в файловые библиотеки"
@@ -394,8 +392,7 @@ msgid "dashboard.fonts.dismiss-all"
 msgstr "Отменить все"
 
 msgid "dashboard.fonts.empty-placeholder"
-msgstr ""
-"Пользовательские шрифты, которые вы загружаете, будут отображаться здесь."
+msgstr "Пользовательские шрифты, которые вы загружаете, будут отображаться здесь."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.fonts-added"
@@ -405,18 +402,19 @@ msgstr[1] "Шрифты добавлены (%s)"
 
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"Любой загружаемый сюда шрифт будет добавлен в семейство шрифтов и доступен в "
-"свойствах файлов, редактируемых командой. Шрифты из одного и того же "
-"семейства будут сгруппированы по **названию семейства шрифта**. Для загрузки "
-"допустимы следующие форматы: **TTF, OTF и WOFF** (используйте один из них)."
+"Любой загружаемый сюда шрифт будет добавлен в семейство шрифтов и доступен "
+"в свойствах файлов, редактируемых командой. Шрифты из одного и того же "
+"семейства будут сгруппированы по **названию семейства шрифта**. Для "
+"загрузки допустимы следующие форматы: **TTF, OTF и WOFF** (используйте один "
+"из них)."
 
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"Вам следует загружать только собственные шрифты, или у которых есть лицензия "
-"на использование в Penpot. Больше информации в разделе \"Content rights\" в "
-"[Условиях использования Penpot](https://penpot.app/terms.html). Также можете "
-"прочитать о [лицензированием шрифтов](https://www.typography.com/faq) в "
-"целом."
+"Вам следует загружать только собственные шрифты, или у которых есть "
+"лицензия на использование в Penpot. Больше информации в разделе \"Content "
+"rights\" в [Условиях использования Penpot](https://penpot.app/terms.html). "
+"Также можете прочитать о [лицензированием "
+"шрифтов](https://www.typography.com/faq) в целом."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -593,6 +591,12 @@ msgstr "Выберите тему"
 msgid "dashboard.show-all-files"
 msgstr "Показать все файлы"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Ваш файл успешно удален"
+msgstr[1] "Ваши файлы успешно удалены"
+
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
 msgstr "Ваш проект удалён"
@@ -648,6 +652,15 @@ msgstr "Снять библиотеку с публикации"
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Обновить настройки"
+
+msgid "dashboard.webhooks.active"
+msgstr "Активен"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "Тип контента"
+
+msgid "dashboard.webhooks.create"
+msgstr "Создать вебхук"
 
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
@@ -766,8 +779,7 @@ msgstr "Неверное медиа."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.member-is-muted"
-msgstr ""
-"Невозможно пригласить адресата с недоступным адресом электронной почты."
+msgstr "Невозможно пригласить адресата с недоступным адресом электронной почты."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-invalid-confirmation"
@@ -844,8 +856,8 @@ msgstr "Краткое описание"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"Пожалуйста, опишите причину обращения: проблема в работе, идея или сомнение. "
-"Участник нашей команды даст ответ в ближайшее время."
+"Пожалуйста, опишите причину обращения: проблема в работе, идея или "
+"сомнение. Участник нашей команды даст ответ в ближайшее время."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -1498,8 +1510,8 @@ msgstr "Подтвердить новую эл. почту"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
 msgstr ""
-"Мы отправим эл. письмо для подтверждения личности на текущую эл. почту \"%s"
-"\"."
+"Мы отправим эл. письмо для подтверждения личности на текущую эл. почту "
+"\"%s\"."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1631,8 +1643,8 @@ msgstr "Удалить команду"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.message"
 msgstr ""
-"Вы уверены, что хотите удалить эту команду? Все проекты и файлы этой команды "
-"также будут безвозвратно удалены."
+"Вы уверены, что хотите удалить эту команду? Все проекты и файлы этой "
+"команды также будут безвозвратно удалены."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.title"
@@ -1745,8 +1757,8 @@ msgstr[1] "Снять библиотеки с публикации"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
 msgstr ""
-"Вы собираетесь обновить компоненты в общей библиотеке. Это может повлиять на "
-"другие файлы, которые её используют."
+"Вы собираетесь обновить компоненты в общей библиотеке. Это может повлиять "
+"на другие файлы, которые её используют."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
@@ -1789,13 +1801,13 @@ msgstr ""
 "сообществом."
 
 msgid "onboarding-v2.newsletter.updates"
-msgstr ""
-"Присылать мне обновления продукта (новые функции, выпуски, исправления...)."
+msgstr "Присылать мне обновления продукта (новые функции, выпуски, исправления...)."
 
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
-"Penpot — проект с открытым исходным кодом, созданный Kaleidos и сообществом, "
-"где многие люди уже помогают друг другу. Каждый может начать сотрудничество:"
+"Penpot — проект с открытым исходным кодом, созданный Kaleidos и "
+"сообществом, где многие люди уже помогают друг другу. Каждый может начать "
+"сотрудничество:"
 
 msgid "onboarding-v2.welcome.desc3.title"
 msgstr "Руководство по участию в проекте"
@@ -2678,24 +2690,8 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Выровнять низ"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-center"
-msgstr "Выравнивание по центру (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-justify"
-msgstr "Выравнивание по ширине (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-left"
-msgstr "Выравнивание по левому краю (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
 msgstr "Выравнивание по центру"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-right"
-msgstr "Выравнивание по правому краю (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -2741,6 +2737,22 @@ msgstr "Не задано"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Перечеркнутый (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Выравнивание по центру (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "Выравнивание по ширине (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-left"
+msgstr "Выравнивание по левому краю (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-right"
+msgstr "Выравнивание по правому краю (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -3028,18 +3040,3 @@ msgstr "Обновить"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Нажмите для замыкания контура"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-delete-file"
-msgid_plural "dashboard.success-delete-file"
-msgstr[0] "Ваш файл успешно удален"
-msgstr[1] "Ваши файлы успешно удалены"
-
-msgid "dashboard.webhooks.active"
-msgstr "Активен"
-
-msgid "dashboard.webhooks.content-type"
-msgstr "Тип контента"
-
-msgid "dashboard.webhooks.create"
-msgstr "Создать вебхук"

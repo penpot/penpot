@@ -2,14 +2,14 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-07-05 02:17+0000\n"
 "Last-Translator: Kristijan Žic <kristijan.zic@gmail.com>\n"
-"Language-Team: Croatian <https://hosted.weblate.org/projects/penpot/frontend/"
-"hr/>\n"
+"Language-Team: Croatian "
+"<https://hosted.weblate.org/projects/penpot/frontend/hr/>\n"
 "Language: hr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
-"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Generator: Weblate 5.0-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
@@ -18,8 +18,7 @@ msgstr "Već imaš račun?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
-msgstr ""
-"Provjeri svoj e-mail i klikni na vezu da potvrdiš i počneš koristiti Penpot."
+msgstr "Provjeri svoj e-mail i klikni na vezu da potvrdiš i počneš koristiti Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -371,8 +370,8 @@ msgstr "Izvezi zajedničke biblioteke"
 
 msgid "dashboard.export.options.detach.message"
 msgstr ""
-"Zajedničke biblioteke neće biti uključene u izvoz i nikakve stavke neće biti "
-"dodani u biblioteku. "
+"Zajedničke biblioteke neće biti uključene u izvoz i nikakve stavke neće "
+"biti dodani u biblioteku. "
 
 msgid "dashboard.export.options.detach.title"
 msgstr "Tretiraj stavke zajedničke biblioteke kao osnovne objekte"
@@ -805,8 +804,7 @@ msgid "errors.team-leave.member-does-not-exists"
 msgstr "Član kojeg pokušavaš dodijeliti ne postoji."
 
 msgid "errors.team-leave.owner-cant-leave"
-msgstr ""
-"Vlasnik ne može napustiti tim, moraš ponovno dodijeliti ulogu vlasnika."
+msgstr "Vlasnik ne može napustiti tim, moraš ponovno dodijeliti ulogu vlasnika."
 
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
@@ -836,8 +834,7 @@ msgstr "Idi na Penpot forum"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-subtitle1"
-msgstr ""
-"Sretni smo što si ovdje. Ako trebaš pomoć, pretraži prije objavljivanja."
+msgstr "Sretni smo što si ovdje. Ako trebaš pomoć, pretraži prije objavljivanja."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-title"
@@ -1758,8 +1755,9 @@ msgstr "Ukloni kao zajedničku biblioteku"
 #, fuzzy
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
-"Nakon uklanjanja kao zajedničke biblioteke, biblioteka datoteka ove datoteke "
-"više neće biti dostupna za korištenje među tvojim ostalim datotekama."
+"Nakon uklanjanja kao zajedničke biblioteke, biblioteka datoteka ove "
+"datoteke više neće biti dostupna za korištenje među tvojim ostalim "
+"datotekama."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1832,7 +1830,8 @@ msgstr "Pozivnica je uspješno poslana"
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
 msgstr ""
-"Ne možeš izbrisati svoj profil. Ponovno dodijeli svoje timove prije nastavka."
+"Ne možeš izbrisati svoj profil. Ponovno dodijeli svoje timove prije "
+"nastavka."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -1921,8 +1920,7 @@ msgid "onboarding.newsletter.accept"
 msgstr "Da, pretplati se"
 
 msgid "onboarding.newsletter.acceptance-message"
-msgstr ""
-"Tvoj zahtjev za pretplatu je poslan, poslat ćemo ti e-mail da ga potvrdiš."
+msgstr "Tvoj zahtjev za pretplatu je poslan, poslat ćemo ti e-mail da ga potvrdiš."
 
 msgid "onboarding.newsletter.policy"
 msgstr "Politika privatnosti."
@@ -2381,6 +2379,9 @@ msgstr "Pričvrsti na guides"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Promijeni paletu teksta"
 
+msgid "shortcuts.toggle-visibility"
+msgstr "Promijeni vidljivost"
+
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Promijeni stil zooma"
 
@@ -2466,8 +2467,8 @@ msgstr "%s - Penpot"
 
 msgid "viewer.breaking-change.description"
 msgstr ""
-"Ova poveznica za dijeljenje više nije važeća. Napravi novu ili traži novu od "
-"vlasnika."
+"Ova poveznica za dijeljenje više nije važeća. Napravi novu ili traži novu "
+"od vlasnika."
 
 msgid "viewer.breaking-change.message"
 msgstr "Oprosti!"
@@ -2570,8 +2571,7 @@ msgstr "Kreiraj grupu"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.create-group-hint"
-msgstr ""
-"Tvoje stavke će se automatski imenovati kao \"naziv grupe / naziv stavke\""
+msgstr "Tvoje stavke će se automatski imenovati kao \"naziv grupe / naziv stavke\""
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
@@ -3605,13 +3605,12 @@ msgid "workspace.options.radius"
 msgstr "Radius"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius.all-corners"
-msgstr "Svi kutevi"
+msgid "workspace.options.radius-bottom-left"
+msgstr "Dolje lijevo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-#, fuzzy
-msgid "workspace.options.radius.single-corners"
-msgstr "Jednostruki kutovi"
+msgid "workspace.options.radius-bottom-right"
+msgstr "Dolje desno"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius-top-left"
@@ -3622,12 +3621,13 @@ msgid "workspace.options.radius-top-right"
 msgstr "Gore desno"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius-bottom-left"
-msgstr "Dolje lijevo"
+msgid "workspace.options.radius.all-corners"
+msgstr "Svi kutevi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius-bottom-right"
-msgstr "Dolje desno"
+#, fuzzy
+msgid "workspace.options.radius.single-corners"
+msgstr "Jednostruki kutovi"
 
 msgid "workspace.options.recent-fonts"
 msgstr "Nedavni"
@@ -3793,25 +3793,8 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Poravnaj dno"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-center"
-msgstr "Poravnaj sredinu (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-#, fuzzy
-msgid "workspace.options.text-options.text-align-justify"
-msgstr "Složi u blok (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-left"
-msgstr "Poravnaj lijevo (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
 msgstr "Poravnaj sredinu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-right"
-msgstr "Poravnaj desno (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -3858,6 +3841,23 @@ msgstr "Nijedan"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Precrtanko (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Poravnaj sredinu (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "Složi u blok (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-left"
+msgstr "Poravnaj lijevo (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-right"
+msgstr "Poravnaj desno (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -4343,6 +4343,3 @@ msgstr "Ažuriraj"
 #, fuzzy
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pritisni da zatvoriš path"
-
-msgid "shortcuts.toggle-visibility"
-msgstr "Promijeni vidljivost"
