@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-06-03 00:50+0000\n"
+"PO-Revision-Date: 2023-10-04 11:47+0000\n"
 "Last-Translator: \"Ņikita K.\" <nikita.kozlovs@gmail.com>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
 "19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 4.18-dev\n"
+"X-Generator: Weblate 5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -3096,7 +3096,7 @@ msgstr "BIBLIOTĒKAS"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.library"
-msgstr "BIBLIOTĒKAS"
+msgstr "BIBLIOTĒKA"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
@@ -4595,8 +4595,440 @@ msgstr "Samazināt fonta izmēru"
 msgid "shortcuts.font-size-inc"
 msgstr "Palielināt fonta izmēru"
 
-msgid "dashboard.import.import-message"
-msgstr "%s faili tika veiksmīgi importēti."
-
 msgid "shortcuts.toggle-visibility"
 msgstr "Pārslēgt redzamību"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.try-out-before-using-penpot-on-premise"
+msgstr "Izmēģiniet, pirms izmantojat Penpot lokāli"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-in-concept-ideas"
+msgstr "Darbs koncepcijas idejās"
+
+#: src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "Jūsu bibliotēkā vēl nav krāsu stilu"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30 dienas"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.message"
+msgstr "Vai tiešām vēlaties dzēst šo marķieri?"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.access-tokens"
+msgstr "Piekļuves marķieri"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "Marķierim nav noteikts derīguma termiņš"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.your-feedback-will-help-us"
+msgstr ""
+"Jūsu atsauksmes palīdzēs mums saprast, kādi ir jūsu paradumi un vēlmes, lai "
+"mēs varētu turpināt padarīt Penpot par noderīgu un baudāmu rīku."
+
+msgid "workspace.options.component.create-annotation"
+msgstr "Izveidot anotāciju"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Ģenerēt jaunu marķieri"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "Vai tiešām vēlaties izdzēst šo anotāciju?"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180 dienas"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "Rediģēt anotāciju"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "Koda iegūšana no manas grupas projekta "
+
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Vairāku komponentu izveide"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.personal-project"
+msgstr "Strādāju personīgā projektā"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "Nosaukums ir obligāts"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "Šīs bibliotēkas ir aktivizētas šeit: "
+msgstr[1] "Šīs bibliotēkas ir aktivizētas šeit: "
+msgstr[2] "Šīs bibliotēkas ir aktivizētas šeit: "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.freelancer"
+msgstr "Esmu ārštātnieks(-ce)/Pašnodarbināts(-ā)"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "Marķieris kopēts"
+
+msgid "modals.publish-empty-library.title"
+msgstr "Publicēt tukšu bibliotēku"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.figma"
+msgstr "Figma"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "apskatīties visas izmaiņas"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "... zīmolrades, ilustrācijām, mārketinga materiāliem utt."
+
+#: src/app/main/ui/workspace/textpalette.cljs
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "Bibliotēkā vēl nav tipogrāfijas stilu"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90 dienas"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Tālummaiņas palielinājums"
+
+msgid "workspace.shape.menu.add-grid"
+msgstr "Pievienot režģa izkārtojumu"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom"
+msgstr "Tālummaiņa"
+
+msgid "workspace.options.component.annotation"
+msgstr "Anotācija"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.some"
+msgstr "Nelielā"
+
+msgid "shortcuts.text-align-justify"
+msgstr "Izkliedēt"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "team.webhooks.max-length"
+msgstr "Tīmekļa āķa nosaukumā jābūt ne vairāk kā 2048 rakstzīmēm."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Izbeidzās %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.expiration-date.label"
+msgstr "Derīguma termiņš"
+
+msgid "workspace.header.menu.undo"
+msgstr "Atsaukt"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.more-than-50"
+msgstr "Vairāk nekā 50"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "Parolei jāsatur rakstzīmes, kas nav atstarpes."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.next"
+msgstr "Nākamais"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.team-size"
+msgstr "Cik lielā ir jūsu komanda?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.wireframes-user-journeys-flows-navigation-trees"
+msgstr "... struktūrskices, lietotāju ceļi un plūsmas, navigācijas koki utt."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60 dienas"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Atspējot proporcionālo mērogu"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.a-lot"
+msgstr "Plaša"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start"
+msgstr "Sākt"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
+msgstr[0] "Bibliotēkas ir aktivizētas šeit:"
+msgstr[1] "Šīs bibliotēkas ir aktivizētas šeit:"
+msgstr[2] "Šīs bibliotēkas ir aktivizētas šeit:"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.questions-how-are-you-planning-to-use-penpot"
+msgstr "Kā plānojat lietot Penpot?"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "Marķieris ir derīgs līdz %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.accept"
+msgstr "Dzēst marķieri"
+
+msgid "workspace.header.menu.redo"
+msgstr "Atkārtot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "Apgrieztā kolonna"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.describe-your-experience-working-on"
+msgstr "Kā jūs vislabāk raksturotu savu pieredzi, strādājot pie..."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.select-option"
+msgstr "Atlasiet izvēli"
+
+msgid "shortcuts.text-align-left"
+msgstr "Līdzināt pa kreisi"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.submit-label"
+msgstr "Izveidot marķieri"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.none"
+msgstr "Nav"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.lets-get-started"
+msgstr "Ķersimies pie darba!"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.placeholder"
+msgstr "Nosaukums var palīdzēt noskaidrot, kam domāts šīs marķieris"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.adobe-xd"
+msgstr "Adobe XD"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.sketch"
+msgstr "Sketch"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library-updates"
+msgstr "BIBLIOTĒKAS JAUNINĀJUMI"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "Apgrieztā rinda"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.label"
+msgstr "Nosaukums"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] "Tie nav aktivizēti nevienā failā."
+msgstr[1] "Tie nav aktivizēti nevienā failā."
+msgstr[2] "Tie nav aktivizēti nevienā failā."
+
+msgid "modals.publish-empty-library.message"
+msgstr "Jūsu bibliotēka ir tukša. Vai tiešām vēlaties to publicēt?"
+
+msgid "workspace.assets.open-library"
+msgstr "Atvērt bibliotēkas failu"
+
+msgid "modals.delete-component-annotation.title"
+msgstr "Dzēst anotāciju"
+
+msgid "shortcuts.select-parent-layer"
+msgstr "Atlasīt vecākslāni"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared-library"
+msgstr "Koplietojama bibliotēka"
+
+msgid "shortcuts.select-next"
+msgstr "Atlasīt nākamo slāni"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Iespējot proporcionālo mērogu"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.more-info"
+msgstr "Vairāk informācijas"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
+msgstr[0] "Nav aktivizēti nevienā failā."
+msgstr[1] "Tie nav aktivizēti nevienā failā."
+msgstr[2] "Tie nav aktivizēti nevienā failā."
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "Nosaukumam jāsatur simboli, kas nav atstarpe."
+
+msgid "shortcuts.line-height-inc"
+msgstr "Palielināt līnijas augstumu"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other"
+msgstr "Cits (norādiet)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-a-tool"
+msgstr "Nekad agrāk neesmu izmantojis dizaina rīku"
+
+msgid "labels.discard"
+msgstr "Atmest"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
+msgstr "Izmēģiniet Penpot, lai saprastu, cik tas ir piemērots Jūsu komandai "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.2-10"
+msgstr "2-10"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.leave-feedback-for-my-team-project"
+msgstr "Atstāt atsauksmes par manas grupas projektu"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.31-50"
+msgstr "31-50"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "Jums līdz šim nav izveidotu marķieru."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.invision"
+msgstr "InVision"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Personiskās piekļuves marķieri darbojas, kā alternatīva mūsu pieteikšanās/"
+"paroles autentifikācijas sistēmai, un tos var izmantot, lai "
+"lietojumprogrammas varētu piekļūt iekšējam Penpot API"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Personiskās piekļuves marķieris"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.canva"
+msgstr "Canva"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.discover-more-about-penpot"
+msgstr "Uzziniet vairāk par Penpot"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Derīgs līdz %s"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.previous"
+msgstr "Iepriekšējais"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Nospiediet pogu \"Ģenerēt jaunu marķieri\" lai to izveidotu."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.title"
+msgstr "Dzēst marķieri"
+
+msgid "workspace.shape.menu.create-annotation"
+msgstr "Izveidot anotāciju"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start-to-work-on-my-project"
+msgstr "Sākt strādāt pie projekta"
+
+msgid "shortcuts.text-align-center"
+msgstr "Centrēt"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "question.design-tool-more-experienced-with"
+msgstr "Ar kuru no šiem rīkiem, jums ir lielāka pieredze?"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "Piekļuves marķieris ir veiksmīgi izveidots."
+
+msgid "shortcuts.text-align-right"
+msgstr "Līdzināt pa labi"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Nekad"
+
+msgid "modals.publish-empty-library.accept"
+msgstr "Publicēt"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.title"
+msgstr "Ģenerēt jaunu piekļuves marķieri"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Bez derīguma termiņa"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "Nosaukumus nedrīkst pārsniegt 250 simbolus."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.11-30"
+msgstr "11-30"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.copy-token"
+msgstr "Kopēt marķieri"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.interface-design-visual-assets-design-systems"
+msgstr "... saskarnes dizains, vizuālie līdzekļi, dizaina sistēmas utt."
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Tālummaiņas samazinājums"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Samazināt līnijas augstumu"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "title.settings.access-tokens"
+msgstr "Profils - piekļuves marķieri"
+
+msgid "shortcuts.select-prev"
+msgstr "Atlasīt iepriekšējo slāni"
+
+msgid "shortcuts.line-through"
+msgstr "Pārslēgt svītrojumu"
+
+msgid "errors.cannot-upload"
+msgstr "Nevar augšupielādēt multivides failu."
