@@ -556,7 +556,7 @@
           viewbox        (str/ffmt "% % % %" x y width height)
 
           [fixed-width
-           fixed-height] (th/get-proportional-size width height)
+           fixed-height] (th/get-relative-size width height)
 
           data           (rds/renderToStaticMarkup
                           (mf/element frame-imposter
