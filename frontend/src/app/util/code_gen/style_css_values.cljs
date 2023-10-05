@@ -280,9 +280,14 @@
   [_ shape _]
   (:layout-grid-columns shape))
 
+(defn area-cell?
+  [{:keys [position area-name]}]
+  (and (= position :area) (d/not-empty? area-name)))
+
 (defmethod get-value :grid-template-areas
   [_ shape _]
-  (when (ctl/grid-layout? shape)
+  (when (and (ctl/grid-layout? shape)
+             (some area-cell? (vals (:layout-grid-cells shape))))
     (let [result
           (->> (d/enumerate (:layout-grid-rows shape))
                (map
