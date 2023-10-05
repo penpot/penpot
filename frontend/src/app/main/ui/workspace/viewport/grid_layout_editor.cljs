@@ -762,10 +762,12 @@
         height (gpo/height-points bounds)
         origin (gpo/origin bounds)
 
+        all-bounds (d/lazy-map (keys objects) #(gsh/shape->points (get objects %)))
+
         {:keys [row-tracks column-tracks] :as layout-data}
         (mf/use-memo
          (mf/deps shape children)
-         #(gsg/calc-layout-data shape children bounds))
+         #(gsg/calc-layout-data shape bounds children all-bounds objects))
 
         handle-pointer-down
         (mf/use-callback

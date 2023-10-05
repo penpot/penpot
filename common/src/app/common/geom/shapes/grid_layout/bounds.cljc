@@ -8,21 +8,15 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.grid-layout.layout-data :as ld]
    [app.common.geom.shapes.points :as gpo]))
 
 (defn layout-content-points
-  [bounds parent children]
+  [bounds parent {:keys [row-tracks column-tracks]}]
   (let [parent-id (:id parent)
         parent-bounds @(get bounds parent-id)
 
         hv #(gpo/start-hv parent-bounds %)
-        vv #(gpo/start-vv parent-bounds %)
-
-        children (->> children
-                      (map #(vector @(get bounds (:id %)) %)))
-
-        {:keys [row-tracks column-tracks]} (ld/calc-layout-data parent children parent-bounds)]
+        vv #(gpo/start-vv parent-bounds %)]
     (d/concat-vec
      (->> row-tracks
           (mapcat #(vector (:start-p %)
@@ -32,7 +26,7 @@
                            (gpt/add (:start-p %) (hv (:size %)))))))))
 
 (defn layout-content-bounds
-  [bounds {:keys [layout-padding] :as parent} children]
+  [bounds {:keys [layout-padding] :as parent} layout-data]
 
   (let [parent-id (:id parent)
         parent-bounds @(get bounds parent-id)
@@ -43,7 +37,7 @@
         pad-bottom (or pad-bottom 0)
         pad-left   (or pad-left 0)
         
-        layout-points (layout-content-points bounds parent children)]
+        layout-points (layout-content-points bounds parent layout-data)]
 
     (if (d/not-empty? layout-points)
       (-> layout-points

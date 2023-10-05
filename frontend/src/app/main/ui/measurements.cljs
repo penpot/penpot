@@ -706,7 +706,9 @@
         wrap-blocks
         (let [block-children (->> children
                                   (map #(vector (gpo/parent-coords-bounds (:points %) (:points frame)) %)))
-              layout-data (gsl/calc-layout-data frame block-children (:points frame))
+              bounds (d/lazy-map (keys objects) #(gsh/shape->points (get objects %)))
+
+              layout-data (gsl/calc-layout-data frame (:points frame) block-children bounds objects)
               layout-bounds (:layout-bounds layout-data)
               xv   #(gpo/start-hv layout-bounds %)
               yv   #(gpo/start-vv layout-bounds %)]

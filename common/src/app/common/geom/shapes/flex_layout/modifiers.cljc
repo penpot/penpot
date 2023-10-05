@@ -34,7 +34,8 @@
     (let [line-width (min line-width (or to-bound-width line-width))
           target-width (max (- line-width (ctl/child-width-margin child)) 0.01)
           max-width (max (ctl/child-max-width child) 0.01)
-          target-width (mth/clamp target-width (ctl/child-min-width child) max-width)
+          child-min-width (get-in children-data [(:id child) :child-min-width])
+          target-width (mth/clamp target-width child-min-width max-width)
           fill-scale (/ target-width child-width)]
       {:width target-width
        :modifiers (ctm/resize-modifiers (gpt/point fill-scale 1) child-origin transform transform-inverse)})))
@@ -58,7 +59,8 @@
     (let [line-height (min line-height (or to-bound-height line-height))
           target-height (max (- line-height (ctl/child-height-margin child)) 0.01)
           max-height (max (ctl/child-max-height child) 0.01)
-          target-height (mth/clamp target-height (ctl/child-min-height child) max-height)
+          child-min-height (get-in children-data [(:id child) :child-min-height])
+          target-height (mth/clamp target-height child-min-height max-height)
           fill-scale (/ target-height child-height)]
       {:height target-height
        :modifiers (ctm/resize-modifiers (gpt/point 1 fill-scale) child-origin transform transform-inverse)})))
