@@ -61,6 +61,23 @@
         gradient-color? (and (not multiple-colors?)
                              (:gradient color)
                              (get-in color [:gradient :type]))
+
+        editing-text*  (mf/use-state false)
+        editing-text?  (deref editing-text*)
+
+        on-focus
+        (mf/use-fn
+         (mf/deps on-focus)
+         (fn []
+           (reset! editing-text* true)
+           (on-focus)))
+
+        on-blur
+        (mf/use-fn
+         (mf/deps on-blur)
+         (fn []
+           (reset! editing-text* false)
+           (on-blur)))
         parse-color
         (mf/use-fn
          (fn [color]
@@ -157,7 +174,6 @@
       (when (not= prev-color color)
         (modal/update-props! :colorpicker {:data (parse-color color)})))
 
-
     (if new-css-system
       [:div {:class (stl/css-case
                      :color-data true
@@ -166,6 +182,7 @@
              :ref dref}
        [:span {:class (stl/css :color-info)}
         [:span {:class (stl/css-case :color-name-wrapper true
+                                     :editing editing-text?
                                      :gradient-name-wrapper gradient-color?)}
          [:span {:class (stl/css :color-bullet-wrapper)}
           [:& cbn/color-bullet {:color (cond-> color
