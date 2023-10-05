@@ -553,7 +553,7 @@
             parent-ids (->> ids (map #(cph/get-parent-id objects %)))
             undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dwc/update-shapes ids #(d/deep-merge (or % {}) changes))
+               (dwc/update-shapes ids #(d/without-nils-deep (d/deep-merge (or % {}) changes)))
                (dwc/update-shapes children-ids (partial fix-child-sizing objects changes))
                (dwc/update-shapes parent-ids
                                   (fn [parent]

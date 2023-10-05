@@ -45,20 +45,17 @@
         m1             (when (and (not (= :multiple (:layout-item-margin values)))
                                 (= (dm/get-in values [:layout-item-margin :m1])
                                    (dm/get-in values [:layout-item-margin :m3])))
-                         (dm/get-in values [:layout-item-margin :m1])
-                         )
+                         (dm/get-in values [:layout-item-margin :m1]))
 
         m2             (when (and (not (= :multiple (:layout-item-margin values)))
                                 (= (dm/get-in values [:layout-item-margin :m2])
                                    (dm/get-in values [:layout-item-margin :m4])))
-                         (dm/get-in values [:layout-item-margin :m2])
-                         )
+                         (dm/get-in values [:layout-item-margin :m2]))
         select-margins
         (fn [m1? m2? m3? m4?]
           (st/emit! (udw/set-margins-selected {:m1 m1? :m2 m2? :m3 m3? :m4 m4?})))
 
         select-margin #(select-margins (= % :m1) (= % :m2) (= % :m3) (= % :m4))]
-
 
     (mf/use-effect
      (fn []

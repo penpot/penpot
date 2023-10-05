@@ -223,6 +223,20 @@
   ([data]
    (into {} (without-nils) data)))
 
+(defn without-nils-deep
+  "Given a map remove the `nil` values and when a child map is found
+  recursively removes them as well."
+  [data]
+  (let [data (without-nils
+              (c/update-vals
+               data
+               (fn [value]
+                 (cond-> value
+                   (map? value)
+                   (without-nils-deep)))))]
+    (when (not-empty? data)
+      data)))
+
 (defn without-qualified
   ([]
    (remove (comp qualified-keyword? key)))
