@@ -24,7 +24,7 @@
 (defn is-main-instance-subroot
   [shape]
   (t/is (some? (:component-id shape)))       ; shape-ref may or may be not nil
-  (t/is (= (:component-root shape) true)))
+  (t/is (nil? (:component-root shape))))
 
 (defn is-main-instance-child
   [shape]

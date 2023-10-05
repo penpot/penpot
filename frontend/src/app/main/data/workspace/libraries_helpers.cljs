@@ -96,33 +96,46 @@
   [it shapes objects page-id file-id components-v2 prepare-create-group prepare-create-board]
   (let [changes (pcb/empty-changes it page-id)
 
-        [root changes]
+        [root changes old-root-ids]
         (if (and (= (count shapes) 1)
                  (or (and (= (:type (first shapes)) :group) (not components-v2))
                      (= (:type (first shapes)) :frame))
                  (not (ctk/instance-head? (first shapes))))
-          [(first shapes) (-> (pcb/empty-changes it page-id)
-                              (pcb/with-objects objects))]
+
+          [(first shapes)
+           (-> (pcb/empty-changes it page-id)
+               (pcb/with-objects objects))
+           (:shapes (first shapes))]
+
           (let [root-name (if (= 1 (count shapes))
                             (:name (first shapes))
-                            "Component 1")]
-            (if-not components-v2
-              (prepare-create-group it            ; These functions needs to be passed as argument
-                                    objects       ; to avoid a circular dependence
-                                    page-id
-                                    shapes
-                                    root-name
-                                    (not (ctk/instance-head? (first shapes))))
-              (prepare-create-board changes
-                                    (uuid/next)
-                                    (:parent-id (first shapes))
-                                    objects
-                                    (map :id shapes)
-                                    nil
-                                    root-name
-                                    true))))
+                            "Component 1")
 
-        [root-shape changes] (generate-add-component-changes changes root objects file-id page-id components-v2)]
+                [root changes] (if-not components-v2
+                                 (prepare-create-group it            ; These functions needs to be passed as argument
+                                                       objects       ; to avoid a circular dependence
+                                                       page-id
+                                                       shapes
+                                                       root-name
+                                                       (not (ctk/instance-head? (first shapes))))
+                                 (prepare-create-board changes
+                                                       (uuid/next)
+                                                       (:parent-id (first shapes))
+                                                       objects
+                                                       (map :id shapes)
+                                                       nil
+                                                       root-name
+                                                       true))]
+
+            [root changes (map :id shapes)]))
+
+        [root-shape changes] (generate-add-component-changes changes root objects file-id page-id components-v2)
+
+        changes  (pcb/update-shapes changes
+                                    old-root-ids
+                                    #(dissoc % :component-root)
+                                    [:component-root])]
+
     [root (:id root-shape) changes]))
 
 (defn duplicate-component
