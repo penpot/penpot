@@ -175,7 +175,7 @@
                     (and (= type :multiple) (some? (:hide-fill-on-export values))))
             [:div {:class (stl/css :checkbox)}
              [:label {:for "show-fill-on-export"
-                      :class (stl/css-case :checked (not hide-fill-on-export?))}
+                      :class (stl/css-case :global/checked (not hide-fill-on-export?))}
               [:span {:class (stl/css-case :check-mark true
                                            :checked (not hide-fill-on-export?))}
                (when (not hide-fill-on-export?)

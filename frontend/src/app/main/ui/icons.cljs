@@ -7,7 +7,11 @@
 (ns app.main.ui.icons
   (:refer-clojure :exclude [import mask])
   (:require-macros [app.main.ui.icons :refer [icon-xref]])
-  (:require [rumext.v2 :as mf]))
+  (:require
+   [app.common.data :as d]
+   [rumext.v2 :as mf]))
+
+
 
 ;; Keep the list of icons sorted
 
@@ -320,6 +324,11 @@
 (def detach-refactor (icon-xref :detach-refactor))
 (def document-refactor (icon-xref :document-refactor))
 (def drop-refactor (icon-xref :drop-refactor))
+(def easing-linear-refactor (icon-xref :easing-linear-refactor))
+(def easing-ease-refactor (icon-xref :easing-ease-refactor))
+(def easing-ease-in-refactor (icon-xref :easing-ease-in-refactor))
+(def easing-ease-out-refactor (icon-xref :easing-ease-out-refactor))
+(def easing-ease-in-out-refactor (icon-xref :easing-ease-in-out-refactor))
 (def effects-refactor (icon-xref :effects-refactor))
 (def elipse-refactor (icon-xref :elipse-refactor))
 (def fill-content-refactor (icon-xref :fill-content-refactor))
@@ -348,6 +357,7 @@
 (def hug-content-refactor (icon-xref :hug-content-refactor))
 (def img-refactor (icon-xref :img-refactor))
 (def icon-refactor (icon-xref :icon-refactor))
+(def interaction-refactor (icon-xref :interaction-refactor))
 (def join-nodes-refactor (icon-xref :join-nodes-refactor))
 (def justify-content-column-around-refactor (icon-xref :justify-content-column-around-refactor))
 (def justify-content-column-between-refactor (icon-xref :justify-content-column-between-refactor))
@@ -466,3 +476,8 @@
        [:div.icon-item {:key key}
         (deref val)
         [:span (pr-str key)]]))])
+
+(defn key->icon
+  [icon-key]
+  (when icon-key
+    (get (ns-publics 'app.main.ui.icons) (symbol (d/name icon-key)))))

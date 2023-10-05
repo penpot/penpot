@@ -375,6 +375,37 @@
   }
 }
 
+.input-checkbox {
+  display: flex;
+  align-items: center;
+  label {
+    @include titleTipography;
+    display: flex;
+    align-items: center;
+    gap: $s-6;
+    cursor: pointer;
+    span {
+      @include flexCenter;
+      width: $s-16;
+      height: $s-16;
+      min-width: $s-16;
+      min-height: $s-16;
+      border-radius: $br-6;
+      background-color: var(--input-background-color);
+      &:global(.checked) {
+        background-color: var(--input-border-color-active);
+        svg {
+          @extend .button-icon-small;
+          stroke: var(--input-details-color);
+        }
+      }
+    }
+    input {
+      margin: 0;
+    }
+  }
+}
+
 //MODALS
 .modal-background {
   @include menuShadow;
@@ -467,8 +498,14 @@
     border-color: var(--colorpicker-details-color-selected);
   }
 }
-// SELECTS AND DROPDOWNS
 
+.attr-row {
+  display: grid;
+  grid-template-areas: "name content";
+  grid-template-columns: $s-92 1fr;
+}
+
+// SELECTS AND DROPDOWNS
 .menu-dropdown {
   @include menuShadow;
   position: absolute;

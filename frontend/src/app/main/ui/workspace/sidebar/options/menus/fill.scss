@@ -38,35 +38,10 @@
       }
     }
     .checkbox {
-      display: flex;
-      align-items: center;
+      @extend .input-checkbox;
       margin-bottom: $s-8;
       margin-top: calc(-1 * $s-4);
       padding-left: $s-8;
-      input {
-        margin: 0;
-      }
-      label {
-        @include titleTipography;
-        display: flex;
-        align-items: center;
-        gap: $s-6;
-        cursor: pointer;
-        .check-mark {
-          @include flexCenter;
-          width: $s-16;
-          height: $s-16;
-          border-radius: $br-6;
-          background-color: var(--input-background-color);
-          &.checked {
-            background-color: var(--input-border-color-active);
-            svg {
-              @extend .button-icon-small;
-              stroke: var(--input-details-color);
-            }
-          }
-        }
-      }
     }
   }
 }
