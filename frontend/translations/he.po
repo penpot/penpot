@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-09-24 15:02+0000\n"
+"PO-Revision-Date: 2023-10-07 12:12+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4913,3 +4913,67 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.try-out-before-using-penpot-on-premise"
+msgstr "אפשר להתנסות לפני שימוש ב־Penpot אצלך בעבודה"
+
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "קובץ ייובא בהצלחה"
+msgstr[1] "%s קבצים ייובאו בהצלחה"
+msgstr[2] "%s קבצים ייובאו בהצלחה"
+msgstr[3] "%s קבצים ייובאו בהצלחה"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "למחוק את הסימון הזה?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "הספרייה הזאת מופעלת כאן: "
+msgstr[1] "הספריות האלו מופעלות כאן: "
+msgstr[2] "הספריות האלו מופעלות כאן: "
+msgstr[3] "הספריות האלו מופעלות כאן: "
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] "לא מופעל באף קובץ."
+msgstr[1] "לא מופעלים באף קובץ."
+msgstr[2] "לא מופעלים באף קובץ."
+msgstr[3] "לא מופעלים באף קובץ."
+
+msgid "modals.delete-component-annotation.title"
+msgstr "מחיקת סימון"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
+msgstr "לבדוק את Penpot ולראות אם הוא מתאים לצוות שלי "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.student-teacher"
+msgstr "סטודנט/ית או מרצה"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.leave-feedback-for-my-team-project"
+msgstr "להשאיר משוב למיזם הצוותי שלי"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"אסימוני גישה אישיים הם דרך חלופית למערכת אימות הכניסה/סיסמה שלנו ומאפשרים "
+"ליישום לגשת ל־API הפנימי של Penpot"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "נא ללחוץ על הכפתור „יצירת אסימון חדש” כדי ליצור אחד חדש."
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"הספרייה שלך ריקה. לאחר שנוספה כתיקייה משותפת, הנכסים שנוצרים על ידיך יהיו "
+"זמינים לצד שאר הקבצים שלך. לפרסם אותה?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.interface-design-visual-assets-design-systems"
+msgstr "… עיצוב מנשק, נכסים חזותיים, מערכות עיצוב, וכו׳."
