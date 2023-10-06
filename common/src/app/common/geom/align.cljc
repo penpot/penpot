@@ -8,8 +8,7 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :refer [get-children]]))
+   [app.common.geom.shapes :as gsh]))
 
 ;; --- Alignment
 
@@ -18,25 +17,18 @@
 
 (declare calc-align-pos)
 
-(defn- recursive-move
-  "Move the shape and all its recursive children."
-  [shape dpoint objects]
-  (->> (get-children objects (:id shape))
-       (cons shape)
-       (map #(gsh/move % dpoint))))
-
 (defn align-to-rect
   "Move the shape so that it is aligned with the given rectangle
   in the given axis. Take account the form of the shape and the
   possible rotation. What is aligned is the rectangle that wraps
   the shape with the given rectangle. If the shape is a group,
   move also all of its recursive children."
-  [shape rect axis objects]
+  [shape rect axis]
   (let [wrapper-rect (gsh/shapes->rect [shape])
         align-pos    (calc-align-pos wrapper-rect rect axis)
         delta        (gpt/point (- (:x align-pos) (:x wrapper-rect))
                                 (- (:y align-pos) (:y wrapper-rect)))]
-    (recursive-move shape delta objects)))
+    (gsh/move shape delta)))
 
 (defn calc-align-pos
   [wrapper-rect rect axis]
@@ -75,22 +67,22 @@
   It takes into account the form of the shape and the rotation,
   what is distributed is the wrapping rectangles of the shapes.
   If any shape is a group, move also all of its recursive children."
-  [shapes axis objects]
+  [shapes axis]
   (let [coord (if (= axis :horizontal) :x :y)
         other-coord (if (= axis :horizontal) :y :x)
         size (if (= axis :horizontal) :width :height)
-        ; The rectangle that wraps the whole selection
+        ;; The rectangle that wraps the whole selection
         wrapper-rect (gsh/shapes->rect shapes)
-        ; Sort shapes by the center point in the given axis
+        ;; Sort shapes by the center point in the given axis
         sorted-shapes (sort-by #(coord (gsh/shape->center %)) shapes)
-        ; Each shape wrapped in its own rectangle
+        ;; Each shape wrapped in its own rectangle
         wrapped-shapes (map #(gsh/shapes->rect [%]) sorted-shapes)
-        ; The total space between shapes
+        ;; The total space between shapes
         space (reduce - (size wrapper-rect) (map size wrapped-shapes))
         unit-space (/ space (- (count wrapped-shapes) 1))
-        ; Calculate the distance we need to move each shape.
-        ; The new position of each one is the position of the
-        ; previous one plus its size plus the unit space.
+        ;; Calculate the distance we need to move each shape.
+        ;; The new position of each one is the position of the
+        ;; previous one plus its size plus the unit space.
         deltas (loop [shapes' wrapped-shapes
                       start-pos (coord wrapper-rect)
                       deltas []]
@@ -102,11 +94,11 @@
                    (if (= (count shapes') 1)
                      (conj deltas delta)
                      (recur (rest shapes')
-                       new-pos
-                       (conj deltas delta)))))]
+                            new-pos
+                            (conj deltas delta)))))]
 
-        (mapcat #(recursive-move %1 {coord %2 other-coord 0} objects)
-                sorted-shapes deltas)))
+    (map #(gsh/move %1 {coord %2 other-coord 0})
+         sorted-shapes deltas)))
 
 ;; Adjust to viewport
 
