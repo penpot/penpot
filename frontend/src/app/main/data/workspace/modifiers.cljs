@@ -402,14 +402,15 @@
   ([]
    (apply-modifiers nil))
 
-  ([{:keys [modifiers undo-transation? stack-undo?] :or {undo-transation? true stack-undo? false}}]
+  ([{:keys [modifiers undo-transation? stack-undo? ignore-constraints ignore-snap-pixel]
+     :or {undo-transation? true stack-undo? false ignore-constraints false ignore-snap-pixel false}}]
    (ptk/reify ::apply-modifiers
      ptk/WatchEvent
      (watch [_ state _]
        (let [text-modifiers    (get state :workspace-text-modifier)
              objects           (wsh/lookup-page-objects state)
              object-modifiers  (if modifiers
-                                 (calculate-modifiers state modifiers)
+                                 (calculate-modifiers state ignore-constraints ignore-snap-pixel modifiers)
                                  (get state :workspace-modifiers))
 
              ids (or (keys object-modifiers) [])

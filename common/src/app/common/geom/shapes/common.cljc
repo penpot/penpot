@@ -12,6 +12,16 @@
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]))
 
+(defn shapes->rect
+  "Returns a rect that contains all the shapes and is aware of the
+  rotation of each shape. Mainly used for multiple selection."
+  [shapes]
+  (->> shapes
+       (keep (fn [shape]
+               (-> (:points shape)
+                   (gpr/points->rect))))
+       (gpr/join-rects)))
+
 (defn center-rect
   [{:keys [x y width height]}]
   (when (d/num? x y width height)
