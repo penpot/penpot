@@ -55,6 +55,7 @@
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.path :as dwdp]
@@ -2081,38 +2082,42 @@
   [it file-data page [index [media-obj pos]]]
   (let [process-shapes
         (fn [[shape children]]
-          (let [page'  (reduce #(ctst/add-shape (:id %2) %2 %1 uuid/zero (:parent-id %2) nil false)
-                               page
-                               (cons shape children))
+          (let [changes1       (-> (pcb/empty-changes it)
+                                   (pcb/set-save-undo? false)
+                                   (pcb/with-page page)
+                                   (pcb/with-objects (:objects page))
+                                   (pcb/with-library-data file-data)
+                                   (pcb/delete-media (:id media-obj))
+                                   (pcb/add-objects (cons shape children)))
 
-                shape' (ctn/get-shape page' (:id shape))
+                page' (reduce (fn [page shape]
+                                (ctst/add-shape (:id shape)
+                                                shape
+                                                page
+                                                uuid/zero
+                                                uuid/zero
+                                                nil
+                                                true))
+                              page
+                              (cons shape children))
 
-                path   (cph/merge-path-item (tr "workspace.assets.graphics") (:path media-obj))
+                [_ _ changes2] (dwlh/generate-add-component it
+                                                            [shape]
+                                                            (:objects page')
+                                                            (:id page)
+                                                            (:id file-data)
+                                                            true
+                                                            nil
+                                                            dwsh/prepare-create-artboard-from-selection)
 
-                [component-shape component-shapes updated-shapes]
-                (ctn/make-component-shape shape' (:objects page') (:id file-data) true)
-
-                changes (-> (pcb/empty-changes it)
-                            (pcb/set-save-undo? false)
-                            (pcb/with-page page')
-                            (pcb/with-objects (:objects page'))
-                            (pcb/with-library-data file-data)
-                            (pcb/delete-media (:id media-obj))
-                            (pcb/add-objects (cons shape children))
-                            (pcb/add-component (:id component-shape)
-                                               path
-                                               (:name media-obj)
-                                               component-shapes
-                                               updated-shapes
-                                               (:id shape)
-                                               (:id page)))]
+                changes (pcb/concat-changes changes1 changes2)]
 
             (dch/commit-changes changes)))
 
         shapes (if (= (:mtype media-obj) "image/svg+xml")
                  (->> (dwm/load-and-parse-svg media-obj)
                       (rx/mapcat (partial dwm/create-shapes-svg (:id file-data) (:objects page) pos)))
-                 (dwm/create-shapes-img pos media-obj))]
+                 (dwm/create-shapes-img pos media-obj :wrapper-type :frame))]
 
     (->> (rx/concat
           (rx/of (update-remove-graphics index))

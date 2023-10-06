@@ -100,7 +100,7 @@
         parent-id (get-in objects [frame-id :parent-id])
         ordered-indexes (->> ordered-indexes (remove #(= % parent-id)))
         to-move-shapes (map (d/getf objects) ordered-indexes)]
-    (when (d/not-empty? to-move-shapes)
+    (if (d/not-empty? to-move-shapes)
       (-> changes
           (cond-> (not (ctl/any-layout? objects frame-id))
             (pcb/update-shapes ordered-indexes ctl/remove-layout-item-data))
@@ -108,7 +108,8 @@
           (pcb/change-parent frame-id to-move-shapes 0)
           (cond-> (ctl/grid-layout? objects frame-id)
             (pcb/update-shapes [frame-id] ctl/assign-cells))
-          (pcb/reorder-grid-children [frame-id])))))
+          (pcb/reorder-grid-children [frame-id]))
+      changes)))
 
 (defn move-shapes-into-frame
   [frame-id shapes]
