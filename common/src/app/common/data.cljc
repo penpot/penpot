@@ -223,20 +223,6 @@
   ([data]
    (into {} (without-nils) data)))
 
-(defn without-nils-deep
-  "Given a map remove the `nil` values and when a child map is found
-  recursively removes them as well."
-  [data]
-  (let [data (without-nils
-              (c/update-vals
-               data
-               (fn [value]
-                 (cond-> value
-                   (map? value)
-                   (without-nils-deep)))))]
-    (when (not-empty? data)
-      data)))
-
 (defn without-qualified
   ([]
    (remove (comp qualified-keyword? key)))
@@ -250,6 +236,36 @@
   (if (editable-collection? data)
     (persistent! (reduce dissoc! (transient data) keys))
     (reduce dissoc data keys)))
+
+(defn patch-object
+  "Changes is some attributes that need to change in object.
+  When the attribute is nil it will be removed.
+
+  For example
+    - object:  {:a 1 :b {:foo 1 :bar 2} :c 10}
+    - changes: {:a 2 :b {:foo nil :k 3}}
+    - result:  {:a 2 :b {:bar 2 :k 3} :c 10}
+  "
+  ([changes]
+   #(patch-object % changes))
+
+  ([object changes]
+   (->> changes
+        (reduce-kv
+         (fn [object key value]
+           (cond
+             (map? value)
+             (update object key patch-object  value)
+
+             (and (nil? value) (record? object))
+             (assoc object key nil)
+
+             (nil? value)
+             (dissoc object key value)
+
+             :else
+             (assoc object key value)))
+         object))))
 
 (defn remove-at-index
   "Takes a vector and returns a vector with an element in the

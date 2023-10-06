@@ -369,7 +369,7 @@
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dwc/update-shapes ids #(d/deep-merge % changes))
+               (dwc/update-shapes ids (d/patch-object changes))
                (ptk/data-event :layout/update ids)
                (dwu/commit-undo-transaction undo-id))))))
 
@@ -553,14 +553,15 @@
             parent-ids (->> ids (map #(cph/get-parent-id objects %)))
             undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dwc/update-shapes ids #(d/without-nils-deep (d/deep-merge (or % {}) changes)))
+               (dwc/update-shapes ids (d/patch-object changes))
                (dwc/update-shapes children-ids (partial fix-child-sizing objects changes))
-               (dwc/update-shapes parent-ids
-                                  (fn [parent]
-                                    (-> parent
-                                        (fix-parent-sizing objects (set ids) changes)
-                                        (cond-> (ctl/grid-layout? parent)
-                                          (ctl/assign-cells)))))
+               (dwc/update-shapes
+                parent-ids
+                (fn [parent]
+                  (-> parent
+                      (fix-parent-sizing objects (set ids) changes)
+                      (cond-> (ctl/grid-layout? parent)
+                        (ctl/assign-cells)))))
                (ptk/data-event :layout/update ids)
                (dwu/commit-undo-transaction undo-id))))))
 
@@ -577,11 +578,13 @@
           [layout-id]
           (fn [shape]
             (->> ids
-                 (reduce (fn [shape cell-id]
-                           (-> shape
-                               (d/update-in-when [:layout-grid-cells cell-id]
-                                                 #(d/without-nils (merge % props)))))
-                         shape))))
+                 (reduce
+                  (fn [shape cell-id]
+                    (d/update-in-when
+                     shape
+                     [:layout-grid-cells cell-id]
+                     d/patch-object props))
+                  shape))))
          (ptk/data-event :layout/update [layout-id])
          (dwu/commit-undo-transaction undo-id))))))
 
