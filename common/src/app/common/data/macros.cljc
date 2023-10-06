@@ -13,8 +13,8 @@
    #?(:clj [clojure.core :as c]
       :cljs [cljs.core :as c])
    [app.common.data :as d]
-   [cuerdas.core :as str]
-   [cljs.analyzer.api :as aapi]))
+   [cljs.analyzer.api :as aapi]
+   [cuerdas.core :as str]))
 
 (defmacro select-keys
   "A macro version of `select-keys`. Useful when keys vector is known
@@ -120,12 +120,9 @@
   "A macro based, optimized variant of `get` that access the property
   directly on CLJS, on CLJ works as get."
   [obj prop]
-  ;; This throws an exception if obj is nul, that does not occur with CLJ get.
-  ;; This is causing many internal errors in places that obj null does not harm and should not throw.
-  ;; (if (:ns &env)
-  ;;   (list (symbol ".") (with-meta obj {:tag 'js}) (symbol (str "-" (c/name prop))))
-    (list `c/get obj prop))
-  ;;)
+  (if (:ns &env)
+    (list 'js* (c/str "(~{}?." (str/snake prop) ")") obj)
+    (list `c/get obj prop)))
 
 (def ^:dynamic *assert-context* nil)
 
