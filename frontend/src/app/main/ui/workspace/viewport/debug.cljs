@@ -41,9 +41,11 @@
                           (remove :hidden))
             bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points]))
 
+            children+bounds (->> children (map (fn [shape] [@(get bounds (:id shape)) shape])))
+
             grid-layout-data
             (when (ctl/grid-layout? shape)
-              (gsg/calc-layout-data shape (:points shape) children bounds objects))
+              (gsg/calc-layout-data shape (:points shape) children+bounds bounds objects))
 
             layout-bounds
             (cond (ctl/flex-layout? shape)

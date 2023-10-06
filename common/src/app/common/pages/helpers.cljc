@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes.common :as gco]
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape.layout :as ctl]
@@ -266,12 +267,18 @@
 (defn get-immediate-children
   "Retrieve resolved shape objects that are immediate children
    of the specified shape-id"
-  ([objects] (get-immediate-children objects uuid/zero))
-  ([objects shape-id]
+  ([objects] (get-immediate-children objects uuid/zero nil))
+  ([objects shape-id] (get-immediate-children objects shape-id nil))
+  ([objects shape-id {:keys [remove-hidden remove-blocked] :or {remove-hidden false remove-blocked false}}]
    (let [lookup (d/getf objects)]
      (->> (lookup shape-id)
           (:shapes)
-          (keep lookup)))))
+          (keep (fn [cid]
+                  (when-let [child (lookup cid)]
+                    (when (and (or (not remove-hidden) (not (:hidden child)))
+                               (or (not remove-blocked) (not (:blocked child))))
+                      child))))
+          (remove gco/invalid-geometry?)))))
 
 (declare indexed-shapes)
 

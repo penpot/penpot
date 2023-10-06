@@ -748,10 +748,10 @@
                  objects (-> objects
                              (gsh/apply-objects-modifiers (select-keys modifiers ids))
                              (gsh/update-shapes-geometry (reverse ids)))]
-             (->> (:shapes shape)
-                  (map (d/getf objects))
-                  (remove :hidden)
-                  (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %))))))
+             (->> (cph/get-immediate-children objects (:id shape))
+                  (keep (fn [child]
+                          (when-not (:hidden child)
+                            [(gpo/parent-coords-bounds (:points child) (:points shape)) child])))))))
 
         children (hooks/use-equal-memo children)
 
