@@ -712,7 +712,6 @@
 (defn update-position
   "Move shapes to a new position"
   [id position]
-  (js/console.log "DEBUG" (pr-str position))
   (dm/assert! (uuid? id))
 
   (ptk/reify ::update-position

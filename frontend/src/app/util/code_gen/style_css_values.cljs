@@ -75,9 +75,9 @@
   [_ shape objects]
   (let [parent (cph/get-parent objects (:id shape))]
     (when (and (ctl/flex-layout-immediate-child? objects shape)
-               (or (and (contains? #{:row :reverse-row} (:layout-flex-dir parent))
+               (or (and (contains? #{:row :row-reverse} (:layout-flex-dir parent))
                         (= :fill (:layout-item-h-sizing shape)))
-                   (and (contains? #{:column :column-row} (:layout-flex-dir parent))
+                   (and (contains? #{:column :column-reverse} (:layout-flex-dir parent))
                         (= :fill (:layout-item-v-sizing shape)))))
       1)))
 
@@ -90,10 +90,10 @@
     (cond
       (and (ctl/flex-layout-immediate-child? objects shape)
            (or (and (= type :height)
-                    (contains? #{:row :reverse-row} (:layout-flex-dir parent))
+                    (contains? #{:row :row-reverse} (:layout-flex-dir parent))
                     (= :fill (:layout-item-v-sizing shape)))
                (and (= type :width)
-                    (contains? #{:column :column-row} (:layout-flex-dir parent))
+                    (contains? #{:column :column-reverse} (:layout-flex-dir parent))
                     (= :fill (:layout-item-h-sizing shape)))))
       :fill
 
