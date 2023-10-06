@@ -68,16 +68,18 @@
         on-focus
         (mf/use-fn
          (mf/deps on-focus)
-         (fn []
+         (fn [event]
            (reset! editing-text* true)
-           (on-focus)))
+           (when on-focus
+             (on-focus event))))
 
         on-blur
         (mf/use-fn
          (mf/deps on-blur)
-         (fn []
+         (fn [event]
            (reset! editing-text* false)
-           (on-blur)))
+           (when on-blur
+             (on-blur event))))
         parse-color
         (mf/use-fn
          (fn [color]
@@ -186,10 +188,11 @@
                                      :gradient-name-wrapper gradient-color?)}
          [:span {:class (stl/css :color-bullet-wrapper)}
           [:& cbn/color-bullet {:color (cond-> color
-                                        (nil? color-name) (assoc
-                                                           :id nil
-                                                           :file-id nil))
-                               :on-click handle-click-color}]]
+                                         (nil? color-name) (assoc
+                                                            :id nil
+                                                            :file-id nil))
+                                :mini? true
+                                :on-click handle-click-color}]]
         (cond
           ;; Rendering a color with ID
           library-color?

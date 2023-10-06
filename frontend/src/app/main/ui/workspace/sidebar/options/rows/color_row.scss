@@ -23,9 +23,11 @@
       @extend .input-element;
       flex-grow: 1;
       border-radius: $br-8 0 0 $br-8;
+      padding: 0;
+      margin-right: 0;
       .color-bullet-wrapper {
         height: $s-28;
-        padding: 0 $s-4 0 $s-8;
+        padding: 0 $s-2 0 $s-8;
         border-radius: $br-8 0 0 $br-8;
         background-color: transparent;
         &:hover {
