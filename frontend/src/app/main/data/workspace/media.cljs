@@ -282,9 +282,9 @@
 (defn create-shapes-img
   "Convert a media object that contains a bitmap image into shapes,
   one shape of type :image and one group that contains it."
-  [pos {:keys [name width height id mtype] :as media-obj}]
+  [pos {:keys [name width height id mtype] :as media-obj} & {:keys [wrapper-type] :or {wrapper-type :group}}]
   (let [group-shape (cts/setup-shape
-                     {:type :group
+                     {:type wrapper-type
                       :x (:x pos)
                       :y (:y pos)
                       :width width

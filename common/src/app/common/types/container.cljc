@@ -271,9 +271,10 @@
          update-new-shape
          (fn [new-shape original-shape]
            (let [new-name (:name new-shape)
-                 main-instance? (and main-instance? (ctk/instance-root? new-shape))] ; Only the instance root can be a main instance
+                 root?    (or (ctk/instance-root? original-shape)   ; If shape is inside a component (not components-v2)
+                              (nil? (:parent-id original-shape)))]  ; we detect it by having no parent)
 
-             (when (nil? (:parent-id original-shape))
+             (when root?
                (vswap! unames conj new-name))
 
              (vswap! ids-map assoc (:id original-shape) (:id new-shape))
@@ -283,11 +284,14 @@
                (-> (gsh/move delta)
                    (dissoc :touched))
 
-               main-instance?
+               (and main-instance? root?)
                (assoc :main-instance true)
 
                (not main-instance?)
                (dissoc :main-instance)
+
+               main-instance?
+               (dissoc :shape-ref)
 
                (and (not main-instance?)
                     (or components-v2                        ; In v1, shape-ref points to the remote instance
@@ -300,21 +304,17 @@
                       :component-root true
                       :name new-name)
 
-               (and (nil? (:parent-id original-shape)) main-instance? components-v2)
-               (assoc :main-instance true)
-
                (some? (:parent-id original-shape))
                (dissoc :component-root))))
 
          [new-shape new-shapes _]
-         (ctst/clone-object
-          component-shape
-          nil
-          (if components-v2 (:objects component-page) (:objects component))
-          update-new-shape
-          (fn [object _] object)
-          force-id
-          keep-ids?)
+         (ctst/clone-object component-shape
+                            nil
+                            (if components-v2 (:objects component-page) (:objects component))
+                            update-new-shape
+                            (fn [object _] object)
+                            force-id
+                            keep-ids?)
 
          ;; If frame-id points to a shape inside the component, remap it to the
          ;; corresponding new frame shape. If not, set it to the destination frame.

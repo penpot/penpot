@@ -313,8 +313,6 @@
                      (ptk/data-event :layout/update parents)
                      (dwt/update-thumbnail file-id page-id (:id root))))))))))
 
-
-
 (defn add-component
   "Add a new component to current file library, from the currently selected shapes.
   This operation is made in two steps, first one for calculate the
@@ -329,7 +327,6 @@
                                (cph/clean-loops objects))
             components-v2 (features/active-feature? state :components-v2)]
         (rx/of (add-component2 selected components-v2))))))
-
 
 (defn add-multiple-components
   "Add several new components to current file library, from the currently selected shapes."

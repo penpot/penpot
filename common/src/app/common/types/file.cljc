@@ -394,7 +394,7 @@
                                                      file-data
                                                      position
                                                      false
-                                                     {:main-instance true
+                                                     {:main-instance? true
                                                       :force-frame-id uuid/zero
                                                       :keep-ids? true})
                         add-shapes
