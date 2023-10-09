@@ -159,6 +159,8 @@
            :options options
            :on-change handle-change-blend-mode
            :is-open? option-highlighted?
+           :class (stl/css-case :hidden-select (or hidden?
+                                                   blocked?))
            :on-pointer-enter-option handle-blend-mode-enter
            :on-pointer-leave-option handle-blend-mode-leave}]]
         [:div {:class (stl/css :input)

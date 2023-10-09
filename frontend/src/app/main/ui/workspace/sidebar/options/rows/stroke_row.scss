@@ -18,7 +18,6 @@
       @extend .input-element;
       width: $s-60;
       border-radius: $br-8;
-      padding: $s-8;
       .icon {
         @include flexCenter;
         height: $s-32;

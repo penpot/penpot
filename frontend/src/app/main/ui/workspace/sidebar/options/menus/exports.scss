@@ -75,7 +75,6 @@
         .suffix-input {
           @extend .input-element;
           min-width: $s-92;
-          padding: 0 $s-8;
           flex-grow: 1;
         }
       }

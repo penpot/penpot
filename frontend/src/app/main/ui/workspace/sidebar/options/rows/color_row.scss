@@ -22,6 +22,7 @@
     .color-name-wrapper {
       @extend .input-element;
       flex-grow: 1;
+      width: 100%;
       border-radius: $br-8 0 0 $br-8;
       padding: 0;
       margin-right: 0;
@@ -39,6 +40,7 @@
         display: flex;
         align-items: center;
         height: $s-32;
+        width: 100%;
         flex-grow: 1;
         color: var(--input-foreground-color-active);
       }
@@ -57,12 +59,14 @@
         align-items: center;
         height: $s-28;
         padding: 0 $s-0;
+        width: 100%;
         margin: 0;
+        flex-grow: 1;
         background-color: var(--input-background-color);
         color: var(--input-foreground-color);
         border-radius: $br-0;
       }
-      &:hover{
+      &:hover {
         background-color: var(--input-background-color-hover);
         .color-bullet-wrapper,
         .color-name,
@@ -101,7 +105,6 @@
       @extend .input-element;
       width: $s-60;
       border-radius: 0 $br-8 $br-8 0;
-      padding-left: $s-8;
       .opacity-input {
         border-radius: 0 $br-8 $br-8 0;
         min-width: $s-28;

@@ -67,10 +67,10 @@
               @extend .button-icon;
             }
             &.selected {
-              background-color: var(--button-secondary-background-color-active);
-              color: var(--button-secondary-foreground-color-active);
+              background-color: var(--button-tertiary-background-color-hover);
+              color: var(--button-tertiary-foreground-color-active);
               svg {
-                stroke: var(--button-secondary-foreground-color-active);
+                stroke: var(--button-tertiary-foreground-color-active);
               }
             }
           }
@@ -114,7 +114,6 @@
             @extend .input-element;
             width: $s-60;
             min-width: $s-60;
-            padding: 0 0 0 $s-8;
             input {
               width: $s-32;
             }

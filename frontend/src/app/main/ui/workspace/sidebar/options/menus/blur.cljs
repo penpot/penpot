@@ -89,11 +89,9 @@
                                        :group (tr "workspace.options.blur-options.title.group")
                                        (tr "workspace.options.blur-options.title"))
                        :class        (stl/css-case :title-spacing-blur (not has-value?))}
-
          (when-not has-value?
            [:button {:class (stl/css :add-blur)
                      :on-click handle-add} i/add-refactor])]]
-
        (when (and open? has-value?)
          [:div {:class (stl/css :element-set-content)}
           [:div {:class (stl/css :first-row)}
@@ -114,11 +112,13 @@
                       :on-click handle-delete} i/remove-refactor]]]
           (when more-options?
             [:div {:class (stl/css :second-row)}
-             [:span {:class (stl/css :label)}
+             [:label {:class (stl/css :label)
+                      :for "blur-input-sidebar"}
               (tr "inspect.attributes.blur.value")]
              [:> numeric-input*
               {:className (stl/css :numeric-input)
                :placeholder "--"
+               :id "blur-input-sidebar"
                :min "0"
                :on-change handle-change
                :value (:value blur)}]])])]
@@ -134,7 +134,8 @@
 
         [:div.element-set-title-actions
          (when (and has-value? (not multiple?))
-           [:div.add-page {:on-click handle-toggle-visibility} (if (:hidden blur) i/eye-closed i/eye)])
+           [:div.add-page {:on-click handle-toggle-visibility}
+            (if (:hidden blur) i/eye-closed i/eye)])
 
          (if has-value?
            [:div.add-page {:on-click handle-delete} i/minus]

@@ -17,10 +17,11 @@
   (let [klass (dm/str (stl/css :title-bar) " " class)]
     [:div {:class klass}
      (if collapsable?
-       [:button {:class (stl/css :toggle-btn) :on-click on-collapsed}
-        [:span {:class (stl/css-case
-                        :collased-icon true
-                        :rotated collapsed?)}
+       [:div {:class (stl/css :title-wrapper)}
+        [:button {:class (stl/css-case
+                          :collased-icon true
+                          :rotated collapsed?)
+                  :on-click on-collapsed}
          i/arrow-refactor]
         [:div {:class (stl/css :title)} title]]
        [:div {:class (stl/css :title-only)} title])

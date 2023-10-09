@@ -42,7 +42,7 @@
          (fn [event]
            (let [enter? (kbd/enter? event)
                  esc?   (kbd/esc? event)
-                 node   (dom/event->target event)]
+                 node   (dom/get-target event)]
              (when ^boolean enter? (dom/blur! node))
              (when ^boolean esc? (dom/blur! node)))))]
     [:span {:class (dom/classnames (css :search-box) true

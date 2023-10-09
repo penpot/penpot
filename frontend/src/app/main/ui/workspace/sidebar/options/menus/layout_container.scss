@@ -50,8 +50,7 @@
           stroke: var(--icon-foreground);
         }
         &.selected {
-          background-color: var(--button-tertiary-background-color-active);
-          color: var(--button-tertiary-foreground-color-active);
+          background-color: var(--button-tertiary-background-color-hover);
           svg {
             stroke: var(--button-tertiary-foreground-color-active);
           }
@@ -72,7 +71,6 @@
         .column-gap {
           @extend .input-element;
           width: $s-108;
-          padding-left: $s-8;
           &.disabled {
             @extend .disabled-input;
           }
@@ -80,7 +78,6 @@
         .row-gap {
           @extend .input-element;
           width: $s-108;
-          padding-left: $s-8;
           &.disabled {
             @extend .disabled-input;
           }
@@ -98,7 +95,6 @@
             .padding-simple {
               @extend .input-element;
               width: $s-108;
-              padding-left: $s-8;
             }
           }
           .paddings-multiple {
@@ -108,7 +104,6 @@
             .padding-multiple {
               @extend .input-element;
               width: $s-108;
-              padding-left: $s-8;
             }
           }
         }

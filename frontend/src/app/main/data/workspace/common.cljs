@@ -169,7 +169,6 @@
   (ptk/reify ::hide-toolbar
     ptk/UpdateEvent
     (update [_ state]
-            (let [_ (prn "hide toolbar")])
             (assoc-in state [:workspace-local :hide-toolbar] true))))
 
 (defn show-toolbar
@@ -177,5 +176,4 @@
   (ptk/reify ::show-toolbar
     ptk/UpdateEvent
     (update [_ state]
-      (let [_ (prn "show toolbar")])
       (assoc-in state [:workspace-local :hide-toolbar] false))))

@@ -30,8 +30,7 @@
     margin-left: $s-8;
   }
 
-  .toggle-btn {
-    @include buttonStyle;
+  .title-wrapper {
     display: flex;
     align-items: center;
     flex-grow: 1;
@@ -39,10 +38,10 @@
     color: var(--title-foreground-color);
     stroke: var(--title-foreground-color);
     .collased-icon {
+      @include buttonStyle;
       @include flexCenter;
       height: $s-24;
       border-radius: $br-8;
-
       svg {
         @extend .button-icon-small;
         transform: rotate(90deg);

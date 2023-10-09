@@ -168,14 +168,13 @@
   @include flexCenter;
   border-radius: $br-8;
   color: var(--button-radio-foreground-color-rest);
-  background-color: var(--button-radio-background-color-rest);
   border: $s-1 solid var(--button-radio-background-color-rest);
   svg,
   span svg {
     stroke: var(--button-radio-foreground-color-rest);
   }
   &:hover {
-    background-color: transparent;
+    background-color: var(--button-radio-background-color-rest);
     color: var(--button-radio-foreground-color-hover);
     border: $s-1 solid transparent;
     svg,
@@ -288,8 +287,10 @@
   @include textEllipsis;
   height: $s-28;
   width: 100%;
+  flex-grow: 1;
   margin: $s-2 0;
-  padding: 0 0 0 $s-4;
+  padding: 0 0 0 $s-6;
+  border-radius: $br-8;
   color: var(--input-foreground-color-active);
   &:focus-within,
   &:active {
@@ -302,18 +303,17 @@
   @include flexCenter;
   min-width: $s-12;
   height: $s-32;
-  margin-right: $s-4;
   svg {
-    @extend .button-icon;
+    @extend .button-icon-small;
   }
 }
 
 .input-label {
   @include tabTitleTipography;
   @include flexCenter;
-  min-width: $s-12;
+  width: $s-20;
+  padding-left: $s-8;
   height: $s-32;
-  margin-right: $s-4;
   color: var(--input-foreground-color);
 }
 
@@ -322,15 +322,15 @@
   display: flex;
   align-items: center;
   height: $s-32;
-  padding: 0 $s-4;
   border-radius: $br-8;
   background-color: var(--input-background-color);
   border: $s-1 solid var(--input-background-color);
   color: var(--input-foreground-color);
-  span {
+  span,
+  label {
     @extend .input-label;
     svg {
-      @extend .button-icon;
+      @extend .button-icon-small;
       stroke: var(--input-foreground-color);
     }
   }

@@ -113,8 +113,7 @@
         (mf/use-fn
          (mf/deps rename-color)
          (fn [event]
-           (let [target (dom/event->target event)
-                 name   (dom/get-value target)]
+           (let [name (dom/get-target-val event)]
              (rename-color name)
              (st/emit! dwl/clear-color-for-rename)
              (reset! editing* false))))

@@ -177,7 +177,6 @@
           .height {
             @extend .input-element;
             width: $s-108;
-            padding-left: $s-8;
             .icon-text {
               padding-top: $s-1;
             }
@@ -186,7 +185,6 @@
           .margin {
             @extend .input-element;
             width: $s-108;
-            padding-left: $s-8;
             .icon {
               &.rotated svg {
                 transform: rotate(90deg);

@@ -20,7 +20,6 @@
   {::mf/wrap-props false}
   [props]
   (let [context   (mf/use-ctx context)
-
         icon       (unchecked-get props "icon")
         id         (unchecked-get props "id")
         value      (unchecked-get props "value")
@@ -28,18 +27,18 @@
         title      (unchecked-get props "title")
         unique-key (unchecked-get props "unique-key")
         icon-class (unchecked-get props "icon-class")
+        type       (or (unchecked-get props "type") "radio")
 
         on-change  (unchecked-get context "on-change")
         selected   (unchecked-get context "selected")
         name       (unchecked-get context "name")
-        encode-fn  (unchecked-get context "encode-fn")
 
+        encode-fn  (unchecked-get context "encode-fn")
         checked?   (= selected value)]
 
     [:label {:for id
              :title title
              :key unique-key
-             :tabIndex "0"
              :class (stl/css-case
                      :radio-icon true
                      :checked checked?
@@ -53,48 +52,7 @@
 
      [:input {:id id
               :on-change on-change
-              :type "radio"
-              :name name
-              :disabled disabled
-              :value (encode-fn value)
-              :checked checked?}]]))
-
-(mf/defc nilable-option
-  {::mf/wrap-props false}
-  [props]
-  (let [context    (mf/use-ctx context)
-        icon       (unchecked-get props "icon")
-        id         (unchecked-get props "id")
-        value      (unchecked-get props "value")
-        title      (unchecked-get props "title")
-        disabled   (unchecked-get props "disabled")
-        unique-key (unchecked-get props "unique-key")
-        icon-class (unchecked-get props "icon-class")
-
-        on-change  (unchecked-get context "on-change")
-        selected   (unchecked-get context "selected")
-        name       (unchecked-get context "name")
-
-        encode-fn  (unchecked-get context "encode-fn")
-        checked?   (= selected value)]
-
-    [:label {:for id
-             :key unique-key
-             :title title
-             :class (stl/css-case
-                     :radio-icon true
-                     :disabled disabled
-                     :checked checked?)}
-
-     (if (some? icon)
-       [:span {:class (when icon-class icon-class)}
-        icon]
-       [:span {:class (stl/css :title-name)}
-        (encode-fn value)])
-
-     [:input {:id id
-              :on-change on-change
-              :type "checkbox"
+              :type type
               :name name
               :disabled disabled
               :value (encode-fn value)
@@ -128,9 +86,11 @@
         (mf/use-fn
          (mf/deps on-change)
          (fn [event]
-           (let [value (dom/get-target-val event)]
+           (let [input-node (dom/get-target event)
+                 value (dom/get-target-val event)]
              (when (fn? on-change)
-               (on-change (decode-fn value) event)))))
+               (do (on-change (decode-fn value) event)
+                   (dom/blur! input-node))))))
 
         context-value
         (mf/with-memo [selected on-change' name encode-fn decode-fn]

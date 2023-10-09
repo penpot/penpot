@@ -101,22 +101,22 @@
                              :value "union"
                              :disabled disabled-bool-btns
                              :title (str (tr "workspace.shape.menu.union") " (" (sc/get-tooltip :bool-union) ")")
-                             :id :union}]
+                             :id "bool-opt-union"}]
            [:& radio-button {:icon i/boolean-difference-refactor
                              :value "difference"
                              :disabled disabled-bool-btns
                              :title (str (tr "workspace.shape.menu.difference") " (" (sc/get-tooltip :bool-difference) ")")
-                             :id :difference}]
+                             :id "bool-opt-differente"}]
            [:& radio-button {:icon i/boolean-intersection-refactor
                              :value "intersection"
                              :disabled disabled-bool-btns
                              :title (str (tr "intersection") " (" (sc/get-tooltip :bool-intersection) ")")
-                             :id :intersection}]
+                             :id "bool-opt-intersection"}]
            [:& radio-button {:icon i/boolean-exclude-refactor
                              :value "exclude"
                              :disabled disabled-bool-btns
                              :title (str (tr "exclude") " (" (sc/get-tooltip :bool-exclude) ")")
-                             :id :exclude}]]]
+                             :id "bool-opt-exclude"}]]]
 
          [:div {:class (stl/css :bool-group)}
           [:button

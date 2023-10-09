@@ -205,14 +205,14 @@
   .listing-option-btn {
     @include flexCenter;
     cursor: pointer;
+    background-color: var(--button-radio-background-color-rest);
 
     &.first {
       margin-left: auto;
     }
 
     svg {
-      height: 16px;
-      width: 16px;
+      @extend .button-icon;
     }
   }
 }

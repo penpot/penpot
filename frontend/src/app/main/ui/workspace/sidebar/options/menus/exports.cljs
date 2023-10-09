@@ -220,8 +220,11 @@
                       :options size-options
                       :dropdown-class (stl/css :dropdown-upwards)
                       :on-change (partial on-scale-change index)}]])
-                 [:div {:class (stl/css :suffix-input)}
+                 [:label {:class (stl/css :suffix-input)
+                          :for "suffix-export-input"}
                   [:input {:class (stl/css :type-input)
+                           :id "suffix-export-input"
+                           :type "text"
                            :value (:suffix export)
                            :placeholder (tr "workspace.options.export.suffix")
                            :data-value index

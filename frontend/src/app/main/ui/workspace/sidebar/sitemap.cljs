@@ -56,8 +56,7 @@
         on-blur
         (mf/use-callback
          (fn [event]
-           (let [target (dom/event->target event)
-                 name   (str/trim (dom/get-value target))]
+           (let [name   (str/trim (dom/get-target-val event))]
              (when-not (str/empty? name)
                (st/emit! (dw/rename-page id name)))
              (st/emit! (dw/stop-rename-page-item)))))

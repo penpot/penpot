@@ -206,7 +206,7 @@
         (mf/use-fn
          (mf/deps file-id)
          (fn [event]
-           (let [input-node (dom/event->target event)
+           (let [input-node (dom/get-target event)
                  publish-library #(st/emit! (dwl/set-file-shared file-id true))
                  cancel-publish #(st/emit! (modal/show :libraries-dialog {}))]
              (if empty-library?
@@ -237,7 +237,7 @@
          (fn [event]
            (let [enter?     (kbd/enter? event)
                  esc?       (kbd/esc? event)
-                 input-node (dom/event->target event)]
+                 input-node (dom/get-target event)]
              (when ^boolean enter?
                (dom/blur! input-node))
              (when ^boolean esc?

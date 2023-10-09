@@ -411,6 +411,7 @@
            (modal/show! :name-group-dialog {:path path
                                             :last-path last-path
                                             :accept rename-group})))
+
         on-ungroup
         (mf/use-fn
          (mf/deps typographies)
@@ -547,7 +548,6 @@
                         {:option-name    (tr "workspace.assets.group")
                          :id             "assets-group-typography"
                          :option-handler on-group})]
-
 
                      [(when-not (or multi-typographies? multi-assets?)
                         [(tr "workspace.assets.rename") handle-rename-typography-clicked])

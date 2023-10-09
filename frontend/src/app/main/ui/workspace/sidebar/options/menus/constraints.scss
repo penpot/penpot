@@ -13,14 +13,14 @@
     .constraints-widget {
       background-color: var(--constraint-widget-background-color);
       display: grid;
-      grid-template-columns: $s-24 $s-72 $s-24;
-      grid-template-rows: $s-24 $s-72 $s-24;
+      grid-template-columns: $s-24 $s-60 $s-24;
+      grid-template-rows: $s-24 $s-60 $s-24;
       grid-template-areas:
         "top top top"
         "left center right"
         "bottom bottom bottom";
-      height: $s-120;
-      width: $s-120;
+      height: $s-108;
+      width: $s-108;
       border-radius: $br-8;
       .constraints-top,
       .constraints-left,
@@ -37,8 +37,8 @@
           width: 100%;
           height: 100%;
           .resalted-area {
-            width: $s-40;
-            height: $s-4;
+            width: $s-32;
+            height: $s-3;
             border-radius: $br-8;
             background-color: var(--button-constraint-background-color-rest);
             padding: 0;
@@ -58,11 +58,11 @@
       .constraints-left {
         grid-area: left;
         .constraint-btn-rotated {
-          height: $s-72;
+          height: $s-60;
           width: $s-24;
           .resalted-area {
-            height: $s-40;
-            width: $s-4;
+            height: $s-32;
+            width: $s-3;
           }
         }
       }
@@ -72,20 +72,20 @@
         background-color: var(--constraint-center-area-background-color);
         border-radius: $br-8;
         .constraint-btn {
-          width: $s-72;
+          width: $s-60;
           height: $s-24;
           .resalted-area {
-            width: $s-40;
-            height: $s-4;
+            width: $s-32;
+            height: $s-3;
           }
         }
         .constraint-btn-special {
           position: absolute;
-          height: $s-72;
+          height: $s-60;
           width: $s-24;
           .resalted-area {
-            height: $s-40;
-            width: $s-4;
+            height: $s-32;
+            width: $s-3;
           }
         }
       }
@@ -95,8 +95,8 @@
           height: $s-72;
           width: $s-24;
           .resalted-area {
-            height: $s-40;
-            width: $s-4;
+            height: $s-32;
+            width: $s-3;
           }
         }
       }

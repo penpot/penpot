@@ -57,6 +57,16 @@
   &:hover {
     background-color: var(--assets-item-background-color-hover);
   }
+  .element-set-actions {
+    .element-set-actions-button {
+      @extend .button-tertiary;
+      height: $s-32;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+      }
+    }
+  }
 }
 
 .font-name-wrapper {
@@ -111,7 +121,7 @@
   background-color: var(--assets-title-background-color);
 }
 
-.typography-options {
+.text-options {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -129,7 +139,7 @@
       height: $s-28;
       width: $s-28;
       svg {
-        @extend .button-icon;
+        @extend .button-icon-small;
         stroke: var(--icon-foreground);
         transform: rotate(90deg);
       }
@@ -151,13 +161,11 @@
         height: $s-32;
         .numeric-input {
           @extend .input-base;
-          margin: 0;
-          padding: 0;
         }
         span {
           @include flexCenter;
           svg {
-            @extend .button-icon;
+            @extend .button-icon-small;
           }
         }
       }
@@ -166,7 +174,7 @@
         height: $s-28;
         min-width: $s-28;
         svg {
-          @extend .button-icon;
+          @extend .button-icon-small;
           stroke: var(--icon-foreground);
           transform: rotate(90deg);
         }

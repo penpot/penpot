@@ -57,7 +57,6 @@
       .z-index-wrapper {
         @extend .input-element;
         width: $s-124;
-        padding-left: $s-8;
       }
     }
     .second-row {
@@ -93,7 +92,6 @@
             .horizontal-margin {
               @extend .input-element;
               width: $s-108;
-              padding-left: $s-8;
             }
           }
           .margin-multiple {
@@ -106,7 +104,6 @@
             .right-margin {
               @extend .input-element;
               width: $s-108;
-              padding-left: $s-8;
             }
           }
         }
@@ -127,7 +124,6 @@
         .layout-item-max-h {
           @extend .input-element;
           width: $s-108;
-          padding-left: $s-8;
           .icon-text {
             justify-content: flex-start;
             width: $s-80;

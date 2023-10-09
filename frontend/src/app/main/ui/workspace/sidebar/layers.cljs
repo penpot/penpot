@@ -241,7 +241,7 @@
         handle-key-down
         (mf/use-fn
          (fn [event]
-           (when-let [node (dom/event->target event)]
+           (when-let [node (dom/get-target event)]
              (when (kbd/enter? event)
                (dom/blur! node))
              (when (kbd/esc? event)
