@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.defaults :as cfd]
    [app.common.files.features :as ffeat]
    [app.common.files.migrations :as pmg]
    [app.common.fressian :as fres]
@@ -684,6 +685,7 @@
                            (update :pages-index relink-shapes)
                            (update :components relink-shapes)
                            (update :media relink-media)
+                           (assoc  :version cfd/version)
                            (postprocess-file))
 
               params  {:id file-id'
