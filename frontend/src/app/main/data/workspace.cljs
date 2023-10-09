@@ -1037,9 +1037,6 @@
 
 ;; --- Shape / Selection Alignment and Distribution
 
-(declare align-object-to-parent)
-(declare align-objects-list)
-
 (defn can-align? [selected objects]
   (cond
     (empty? selected) false
@@ -1047,11 +1044,18 @@
     :else
     (not= uuid/zero (:parent-id (get objects (first selected))))))
 
-(defn- move-shape
-  [shape]
-  (let [bbox  (-> shape :points grc/points->rect)
-        pos   (gpt/point (:x bbox) (:y bbox))]
-    (dwt/update-position (:id shape) pos)))
+(defn align-object-to-parent
+  [objects object-id axis]
+  (let [object     (get objects object-id)
+        parent-id  (:parent-id (get objects object-id))
+        parent     (get objects parent-id)]
+    [(gal/align-to-rect object parent axis)]))
+
+(defn align-objects-list
+  [objects selected axis]
+  (let [selected-objs (map #(get objects %) selected)
+        rect (gsh/shapes->rect selected-objs)]
+    (map #(gal/align-to-rect % rect axis) selected-objs)))
 
 (defn align-objects
   [axis]
@@ -1067,27 +1071,12 @@
             moved    (if (= 1 (count selected))
                        (align-object-to-parent objects (first selected) axis)
                        (align-objects-list objects selected axis))
-            undo-id  (js/Symbol)]
+            undo-id (js/Symbol)]
         (when (can-align? selected objects)
-          (rx/concat
-           (rx/of (dwu/start-undo-transaction undo-id))
-           (->> (rx/from moved)
-                (rx/map move-shape))
-           (rx/of (ptk/data-event :layout/update (mapv :id moved))
-                  (dwu/commit-undo-transaction undo-id))))))))
-
-(defn align-object-to-parent
-  [objects object-id axis]
-  (let [object     (get objects object-id)
-        parent-id  (:parent-id (get objects object-id))
-        parent     (get objects parent-id)]
-    (gal/align-to-rect object parent axis objects)))
-
-(defn align-objects-list
-  [objects selected axis]
-  (let [selected-objs (map #(get objects %) selected)
-        rect (gsh/shapes->rect selected-objs)]
-    (mapcat #(gal/align-to-rect % rect axis objects) selected-objs)))
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 (dwt/position-shapes moved)
+                 (ptk/data-event :layout/update selected)
+                 (dwu/commit-undo-transaction undo-id)))))))
 
 (defn can-distribute? [selected]
   (cond
@@ -1108,14 +1097,13 @@
             objects   (wsh/lookup-page-objects state page-id)
             selected  (wsh/lookup-selected state)
             moved     (-> (map #(get objects %) selected)
-                          (gal/distribute-space axis objects))
-
-            moved     (d/index-by :id moved)
-            ids       (keys moved)
-
-            update-fn #(get moved (:id %))]
+                          (gal/distribute-space axis))
+            undo-id  (js/Symbol)]
         (when (can-distribute? selected)
-          (rx/of (dch/update-shapes ids update-fn {:reg-objects? true})))))))
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 (dwt/position-shapes moved)
+                 (ptk/data-event :layout/update selected)
+                 (dwu/commit-undo-transaction undo-id)))))))
 
 ;; --- Shape Proportions
 

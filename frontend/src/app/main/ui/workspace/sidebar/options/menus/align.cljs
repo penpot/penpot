@@ -167,7 +167,7 @@
           [:div.align-button.tooltip.tooltip-bottom-left
            {:alt (tr "workspace.align.vdistribute" (sc/get-tooltip :v-distribute))
             :class (when disabled-distribute "disabled")
-            :data-value :horizontal
+            :data-value :vertical
             :on-click distribute-objects}
            i/shape-vdistribute]]]))))
 

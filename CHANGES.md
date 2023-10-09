@@ -14,6 +14,12 @@
 
 ### :heart: Community contributions by (Thank you!)
 
+## 1.19.5
+
+### :bug: New features
+
+- Fix problem with alignment performance
+
 ## 1.19.4
 
 ### :sparkles: New features
