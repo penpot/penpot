@@ -13,7 +13,10 @@
    [app.common.spec :as us]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.refs :as refs]
+   [app.main.render :refer [component-svg]]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
@@ -257,3 +260,32 @@
          (rename
           (:id target-asset)
           (cph/merge-path-item prefix (:name target-asset))))))))
+
+
+(defn- get-component-thumbnail-uri
+  "Returns the component thumbnail uri"
+  [file-id component]
+  (let [page-id   (:main-instance-page component)
+        root-id   (:main-instance-id component)
+        object-id (dwt/fmt-object-id file-id page-id root-id)]
+    (if (= file-id (:id @refs/workspace-file))
+      (mf/deref (refs/workspace-thumbnail-by-id object-id))
+      (let [thumbnails (dm/get-in @refs/workspace-libraries [file-id :thumbnails (dm/str object-id)])]
+        thumbnails))))
+
+(mf/defc component-item-thumbnail
+  "Component that renders the thumbnail image or the original SVG."
+  {::mf/wrap-props false}
+  [{:keys [file-id root-shape component container]}]
+  (let [retry (mf/use-state 0)
+        thumbnail-uri (get-component-thumbnail-uri file-id component)]
+    (if (some? thumbnail-uri)
+      [:img {:src thumbnail-uri
+             :on-error (fn []
+                         (when (@retry < 3)
+                           (inc retry)))
+             :loading "lazy"
+             :decoding "async"
+             :class (dom/classnames (css :thumbnail) true)}]
+      [:& component-svg {:root-shape root-shape
+                         :objects (:objects container)}])))
