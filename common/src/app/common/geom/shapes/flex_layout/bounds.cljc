@@ -27,91 +27,94 @@
 
 (defn child-layout-bound-points
   "Returns the bounds of the children as points"
-  [parent child parent-bounds child-bounds correct-v bounds objects]
+  ([parent child parent-bounds child-bounds bounds objects]
+   (child-layout-bound-points parent child parent-bounds child-bounds (gpt/point) bounds objects))
 
-  (let [row? (ctl/row? parent)
-        col? (ctl/col? parent)
+  ([parent child parent-bounds child-bounds correct-v bounds objects]
 
-        hv   (partial gpo/start-hv parent-bounds)
-        vv   (partial gpo/start-vv parent-bounds)
+   (let [row? (ctl/row? parent)
+         col? (ctl/col? parent)
 
-        v-start? (ctl/v-start? parent)
-        v-center? (ctl/v-center? parent)
-        v-end? (ctl/v-end? parent)
-        h-start? (ctl/h-start? parent)
-        h-center? (ctl/h-center? parent)
-        h-end? (ctl/h-end? parent)
+         hv   (partial gpo/start-hv parent-bounds)
+         vv   (partial gpo/start-vv parent-bounds)
 
-        base-p (gpo/origin child-bounds)
+         v-start? (ctl/v-start? parent)
+         v-center? (ctl/v-center? parent)
+         v-end? (ctl/v-end? parent)
+         h-start? (ctl/h-start? parent)
+         h-center? (ctl/h-center? parent)
+         h-end? (ctl/h-end? parent)
 
-        width (gpo/width-points child-bounds)
-        height (gpo/height-points child-bounds)
+         base-p (gpo/origin child-bounds)
 
-        min-width (child-min-width child child-bounds bounds objects)
-        min-height (child-min-height child child-bounds bounds objects)
+         width (gpo/width-points child-bounds)
+         height (gpo/height-points child-bounds)
 
-        ;; This is the leftmost (when row) or topmost (when col) point
-        ;; Will be added always to the bounds and then calculated the other limits
-        ;; from there
-        base-p (cond-> base-p
-                 (and row? v-center?)
-                 (gpt/add (vv (/ height 2)))
+         min-width (child-min-width child child-bounds bounds objects)
+         min-height (child-min-height child child-bounds bounds objects)
 
-                 (and row? v-end?)
-                 (gpt/add (vv height))
+         ;; This is the leftmost (when row) or topmost (when col) point
+         ;; Will be added always to the bounds and then calculated the other limits
+         ;; from there
+         base-p (cond-> base-p
+                  (and row? v-center?)
+                  (gpt/add (vv (/ height 2)))
 
-                 (and col? h-center?)
-                 (gpt/add (hv (/ width 2)))
+                  (and row? v-end?)
+                  (gpt/add (vv height))
 
-                 (and col? h-end?)
-                 (gpt/add (hv width)))
+                  (and col? h-center?)
+                  (gpt/add (hv (/ width 2)))
 
-        ;; We need some height/width to calculate the bounds. We stablish the minimum
-        min-width (max min-width 0.01)
-        min-height (max min-height 0.01)
+                  (and col? h-end?)
+                  (gpt/add (hv width)))
 
-        base-p (gpt/add base-p correct-v)
+         ;; We need some height/width to calculate the bounds. We stablish the minimum
+         min-width (max min-width 0.01)
+         min-height (max min-height 0.01)
 
-        result
-        (cond-> [base-p
-                 (gpt/add base-p (hv 0.01))
-                 (gpt/add base-p (vv 0.01))]
+         base-p (gpt/add base-p correct-v)
 
-          col?
-          (conj (gpt/add base-p (vv min-height)))
+         result
+         (cond-> [base-p
+                  (gpt/add base-p (hv 0.01))
+                  (gpt/add base-p (vv 0.01))]
 
-          row?
-          (conj (gpt/add base-p (hv min-width)))
+           col?
+           (conj (gpt/add base-p (vv min-height)))
 
-          (and col? h-start?)
-          (conj (gpt/add base-p (hv min-width)))
+           row?
+           (conj (gpt/add base-p (hv min-width)))
 
-          (and col? h-center?)
-          (conj (gpt/add base-p (hv (/ min-width 2)))
-                (gpt/subtract base-p (hv (/ min-width 2))))
+           (and col? h-start?)
+           (conj (gpt/add base-p (hv min-width)))
 
-          (and col? h-end?)
-          (conj (gpt/subtract base-p (hv min-width)))
+           (and col? h-center?)
+           (conj (gpt/add base-p (hv (/ min-width 2)))
+                 (gpt/subtract base-p (hv (/ min-width 2))))
 
-          (and row? v-start?)
-          (conj (gpt/add base-p (vv min-height)))
+           (and col? h-end?)
+           (conj (gpt/subtract base-p (hv min-width)))
 
-          (and row? v-center?)
-          (conj (gpt/add base-p (vv (/ min-height 2)))
-                (gpt/subtract base-p (vv (/ min-height 2))))
+           (and row? v-start?)
+           (conj (gpt/add base-p (vv min-height)))
 
-          (and row? v-end?)
-          (conj (gpt/subtract base-p (vv min-height))))
+           (and row? v-center?)
+           (conj (gpt/add base-p (vv (/ min-height 2)))
+                 (gpt/subtract base-p (vv (/ min-height 2))))
 
-        correct-v
-        (cond-> correct-v
-          (and row? (ctl/fill-width? child))
-          (gpt/subtract (hv (+ width min-width)))
+           (and row? v-end?)
+           (conj (gpt/subtract base-p (vv min-height))))
 
-          (and col? (ctl/fill-height? child))
-          (gpt/subtract (vv (+ height min-height)))
-          )]
-    [result correct-v]))
+         correct-v
+         (cond-> correct-v
+           (and row? (ctl/fill-width? child))
+           (gpt/subtract (hv (+ width min-width)))
+
+           (and col? (ctl/fill-height? child))
+           (gpt/subtract (vv (+ height min-height)))
+           )]
+     [result correct-v])))
 
 (defn layout-content-points
   [bounds parent children objects]
