@@ -525,6 +525,7 @@
               :on-focus #(do
                            (dom/select-target %)
                            (select-paddings true false true false))
+              :nillable true
               :min 0
               :value p1}]]
            [:div {:class (stl/css :padding-simple)
@@ -539,6 +540,7 @@
               :on-focus #(do (dom/select-target %)
                              (select-paddings false true false true))
               :on-blur #(select-paddings false false false false)
+              :nillable true
               :min 0
               :value p2}]]]
           (= padding-type :multiple)
@@ -555,6 +557,7 @@
               :on-focus #(do (dom/select-target %)
                              (select-padding :p1))
               :on-blur #(select-paddings false false false false)
+              :nillable true
               :min 0
               :value  (:p1 (:layout-padding values))}]]
 
@@ -569,6 +572,7 @@
               :on-focus #(do (dom/select-target %)
                              (select-padding :p2))
               :on-blur #(select-paddings false false false false)
+              :nillable true
               :min 0
               :value  (:p2 (:layout-padding values))}]]
 
@@ -583,6 +587,7 @@
               :on-focus #(do (dom/select-target %)
                              (select-padding :p3))
               :on-blur #(select-paddings false false false false)
+              :nillable true
               :min 0
               :value  (:p3 (:layout-padding values))}]]
 
@@ -597,6 +602,7 @@
               :on-focus #(do (dom/select-target %)
                              (select-padding :p4))
               :on-blur #(select-paddings false false false false)
+              :nillable true
               :min 0
               :value  (:p4 (:layout-padding values))}]]])]
        [:button {:class (stl/css-case :padding-toggle true
@@ -618,6 +624,7 @@
              :on-focus #(do
                           (dom/select-target %)
                           (select-paddings true false true false))
+             :nillable true
              :min 0
              :value p1}]]
 
@@ -630,6 +637,7 @@
              :on-focus #(do (dom/select-target %)
                             (select-paddings false true false true))
              :on-blur #(select-paddings false false false false)
+             :nillable true
              :min 0
              :value p2}]]]
 
@@ -650,6 +658,7 @@
                 :on-focus #(do (dom/select-target %)
                                (select-padding num))
                 :on-blur #(select-paddings false false false false)
+                :nillable true
                 :min 0
                 :value (num (:layout-padding values))}]]])])
 
@@ -691,6 +700,7 @@
                             :on-blur (fn [_]
                                        (select-gap nil)
                                        (reset! gap-selected? :none))
+                            :nillable true
                             :min 0
                             :value (:row-gap gap-value)
                             :disabled (and (= :nowrap wrap-type) (not is-col?))}]]
@@ -710,6 +720,7 @@
                             :on-blur (fn [_]
                                        (select-gap nil)
                                        (reset! gap-selected? :none))
+                            :nillable true
                             :min 0
                             :value (:column-gap gap-value)
                             :disabled (and (= :nowrap wrap-type) is-col?)}]]]
@@ -731,6 +742,7 @@
                              :on-blur (fn [_]
                                         (select-gap nil)
                                         (reset! gap-selected? :none))
+                             :nillable true
                              :min 0
                              :value (:column-gap gap-value)
                              :disabled (and (= :nowrap wrap-type) is-col?)}]]
@@ -749,6 +761,7 @@
                              :on-blur (fn [_]
                                         (select-gap nil)
                                         (reset! gap-selected? :none))
+                             :nillable true
                              :min 0
                              :value (:row-gap gap-value)
                              :disabled (and (= :nowrap wrap-type) (not is-col?))}]]]])))

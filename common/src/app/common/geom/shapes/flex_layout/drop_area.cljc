@@ -11,7 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
-   [app.common.geom.shapes.flex-layout.lines :as fli]
+   [app.common.geom.shapes.flex-layout.layout-data :as fld]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.pages.helpers :as cph]
@@ -197,21 +197,22 @@
     [shape nil]))
 
 (defn get-drop-areas
-  [frame objects]
+  [frame objects bounds]
   (let [[frame modifiers] (get-flip-modifiers frame)
         children    (->> (cph/get-immediate-children objects (:id frame))
                          (remove :hidden)
                          (map #(cond-> % (some? modifiers)
                                        (gtr/transform-shape modifiers)))
                          (map #(vector (gpo/parent-coords-bounds (:points %) (:points frame)) %)))
-        layout-data (fli/calc-layout-data frame children (:points frame))
+        layout-data (fld/calc-layout-data frame (:points frame) children bounds objects)
         drop-areas  (layout-drop-areas frame layout-data children)]
     drop-areas))
 
 (defn get-drop-index
   [frame-id objects position]
   (let [frame       (get objects frame-id)
-        drop-areas  (get-drop-areas frame objects)
+        bounds (d/lazy-map (keys objects) #(gco/shape->points (get objects %)))
+        drop-areas  (get-drop-areas frame objects bounds)
         position    (gmt/transform-point-center position (gco/shape->center frame) (:transform-inverse frame))
         area        (d/seek #(grc/contains-point? % position) drop-areas)]
     (:index area)))

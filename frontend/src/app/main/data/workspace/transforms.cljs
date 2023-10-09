@@ -611,7 +611,9 @@
                                        (ctl/swap-shapes id (:id next-cell)))))
                                  parent))]
                 (-> changes
-                    (pcb/update-shapes [(:id parent)] (fn [shape] (assoc shape :layout-grid-cells layout-grid-cells)))
+                    (pcb/update-shapes [(:id parent)] (fn [shape] (-> shape
+                                                                      (assoc :layout-grid-cells layout-grid-cells)
+                                                                      (ctl/assign-cells))))
                     (pcb/reorder-grid-children [(:id parent)]))))
 
             changes
@@ -710,7 +712,6 @@
 (defn update-position
   "Move shapes to a new position"
   [id position]
-  (js/console.log "DEBUG" (pr-str position))
   (dm/assert! (uuid? id))
 
   (ptk/reify ::update-position

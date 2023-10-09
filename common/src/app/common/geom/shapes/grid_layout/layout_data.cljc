@@ -55,24 +55,24 @@
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]))
 
+;; Setted in app.common.geom.shapes.common-layout
+;; We do it this way because circular dependencies
+(def -child-min-width nil)
+
+(defn child-min-width
+  [child child-bounds bounds objects]
+  (-child-min-width child child-bounds bounds objects))
+
+(def -child-min-height nil)
+
+(defn child-min-height
+  [child child-bounds bounds objects]
+  (-child-min-height child child-bounds bounds objects))
+
 (defn layout-bounds
   [parent shape-bounds]
   (let [[pad-top pad-right pad-bottom pad-left] (ctl/paddings parent)]
     (gpo/pad-points shape-bounds pad-top pad-right pad-bottom pad-left)))
-
-(defn child-min-width
-  [child bounds]
-  (+ (if (ctl/fill-width? child)
-       (ctl/child-min-width child)
-       (gpo/width-points bounds))
-     (ctl/child-width-margin child)))
-
-(defn child-min-height
-  [child bounds]
-  (+ (if (ctl/fill-height? child)
-       (ctl/child-min-height child)
-       (gpo/height-points bounds))
-     (ctl/child-height-margin child)))
 
 (defn calculate-initial-track-size
   [total-value {:keys [type value] :as track}]
@@ -91,12 +91,12 @@
     (assoc track :size size :max-size max-size)))
 
 (defn set-auto-base-size
-  [track-list children shape-cells type]
+  [track-list children shape-cells bounds objects type]
 
   (let [[prop prop-span size-fn]
         (if (= type :column)
-           [:column :column-span child-min-width]
-           [:row :row-span child-min-height])]
+          [:column :column-span child-min-width]
+          [:row :row-span child-min-height])]
 
     (reduce (fn [tracks [child-bounds child-shape]]
               (let [cell (get shape-cells (:id child-shape))
@@ -105,7 +105,7 @@
                 (cond-> tracks
                   (and (= (get cell prop-span) 1)
                        (contains? #{:flex :auto} (:type track)))
-                  (update-in [idx :size] max (size-fn child-shape child-bounds)))))
+                  (update-in [idx :size] max (size-fn child-shape child-bounds bounds objects)))))
             track-list
             children)))
 
@@ -216,28 +216,29 @@
     (some? (->> tracks (d/seek #(= :flex (:type %)))))))
 
 (defn size-to-allocate
-  [type parent [child-bounds child] cell]
+  [type parent [child-bounds child] cell bounds objects]
   (let [[row-gap column-gap] (ctl/gaps parent)
         [sfn gap prop-span]
         (if (= type :column)
           [child-min-width column-gap :column-span]
           [child-min-height row-gap :row-span])
         span (get cell prop-span)]
-    (- (sfn child child-bounds) (* gap (dec span)))))
+    (- (sfn child child-bounds bounds objects) (* gap (dec span)))))
 
 (defn allocate-auto-tracks
   [allocations indexed-tracks to-allocate]
   (if (empty? indexed-tracks)
-    allocations
+    [allocations to-allocate]
     (let [[idx track] (first indexed-tracks)
           old-allocated (get allocations idx 0.01)
           auto-track? (= :auto (:type track))
 
-          allocated (if auto-track?
-                      (max old-allocated
-                           (/ to-allocate (count indexed-tracks))
-                           (:size track))
-                      (:size track))]
+          allocated
+          (if auto-track?
+            (max old-allocated
+                 (/ to-allocate (count indexed-tracks))
+                 (:size track))
+            (:size track))]
       (recur (cond-> allocations
                auto-track?
                (assoc idx allocated))
@@ -270,7 +271,7 @@
              fr-value))))
 
 (defn set-auto-multi-span
-  [parent track-list children-map shape-cells type]
+  [parent track-list children-map shape-cells bounds objects type]
 
   (let [[prop prop-span]
         (if (= type :column)
@@ -292,7 +293,7 @@
                       to-idx (+ (dec (get cell prop)) (get cell prop-span))
 
                       indexed-tracks (subvec (d/enumerate track-list) from-idx to-idx)
-                      to-allocate (size-to-allocate type parent (get children-map shape-id) cell)
+                      to-allocate (size-to-allocate type parent (get children-map shape-id) cell bounds objects)
 
                       ;; Remove the size and the tracks that are not allocated
                       [to-allocate indexed-tracks]
@@ -304,8 +305,21 @@
                                        [to-allocate (conj result idx-track)]
                                        ;; If fixed, we remove from allocate and don't add the track
                                        [(- to-allocate (:size track)) result]))
-                                   [to-allocate []]))]
-                  (allocate-auto-tracks allocated indexed-tracks (max to-allocate 0))))
+                                   [to-allocate []]))
+
+                      non-assigned-indexed-tracks
+                      (->> indexed-tracks
+                           (remove (fn [[idx _]] (contains? allocated idx))))
+
+                      ;; First we try to assign into the non-assigned tracks
+                      [allocated to-allocate]
+                      (allocate-auto-tracks allocated non-assigned-indexed-tracks (max to-allocate 0))
+
+                      ;; In the second pass we use every track for the rest of the space
+                      [allocated _]
+                      (allocate-auto-tracks allocated indexed-tracks (max to-allocate 0))]
+
+                  allocated))
               {}))
 
         ;; Apply the allocations to the tracks
@@ -316,7 +330,7 @@
     track-list))
 
 (defn set-flex-multi-span
-  [parent track-list children-map shape-cells type]
+  [parent track-list children-map shape-cells bounds objects type]
 
   (let [[prop prop-span]
         (if (= type :column)
@@ -337,7 +351,7 @@
                       to-idx (+ (dec (get cell prop)) (get cell prop-span))
                       indexed-tracks (subvec (d/enumerate track-list) from-idx to-idx)
 
-                      to-allocate (size-to-allocate type parent (get children-map shape-id) cell)
+                      to-allocate (size-to-allocate type parent (get children-map shape-id) cell bounds objects)
 
                       ;; Remove the size and the tracks that are not allocated
                       [to-allocate total-frs indexed-tracks]
@@ -375,197 +389,202 @@
         (recur (rest tracks) min-fr)))))
 
 (defn calc-layout-data
-  [parent children transformed-parent-bounds]
+  ([parent transformed-parent-bounds children bounds objects]
+   (calc-layout-data parent transformed-parent-bounds children bounds objects false))
 
-  (let [hv     #(gpo/start-hv transformed-parent-bounds %)
-        vv     #(gpo/start-vv transformed-parent-bounds %)
+  ([parent transformed-parent-bounds children bounds objects auto?]
+   (let [hv     #(gpo/start-hv transformed-parent-bounds %)
+         vv     #(gpo/start-vv transformed-parent-bounds %)
 
-        layout-bounds (layout-bounds parent transformed-parent-bounds)
+         layout-bounds (layout-bounds parent transformed-parent-bounds)
 
-        bound-height (gpo/height-points layout-bounds)
-        bound-width  (gpo/width-points layout-bounds)
-        bound-corner (gpo/origin layout-bounds)
+         bound-height (gpo/height-points layout-bounds)
+         bound-width  (gpo/width-points layout-bounds)
+         bound-corner (gpo/origin layout-bounds)
 
-        [row-gap column-gap] (ctl/gaps parent)
-        auto-height? (ctl/auto-height? parent)
-        auto-width? (ctl/auto-width? parent)
+         [row-gap column-gap] (ctl/gaps parent)
+         auto-height? (or (ctl/auto-height? parent) auto?)
+         auto-width? (or (ctl/auto-width? parent) auto?)
 
-        {:keys [layout-grid-columns layout-grid-rows layout-grid-cells]} parent
-        num-columns (count layout-grid-columns)
-        num-rows (count layout-grid-rows)
+         {:keys [layout-grid-columns layout-grid-rows layout-grid-cells]} parent
+         num-columns (count layout-grid-columns)
+         num-rows (count layout-grid-rows)
 
-        column-total-gap  (* column-gap (dec num-columns))
-        row-total-gap     (* row-gap (dec num-rows))
+         column-total-gap  (* column-gap (dec num-columns))
+         row-total-gap     (* row-gap (dec num-rows))
 
-        ;; Map shape->cell
-        shape-cells
-        (into {}
-              (mapcat (fn [[_ cell]]
-                        (->> (:shapes cell) (map #(vector % cell)))))
-              layout-grid-cells)
+         ;; Map shape->cell
+         shape-cells
+         (into {}
+               (mapcat (fn [[_ cell]]
+                         (->> (:shapes cell) (map #(vector % cell)))))
+               layout-grid-cells)
 
-        children (->> children (remove #(ctl/layout-absolute? (second %))))
-        children-map
-        (into {}
-              (map #(vector (:id (second %)) %))
-              children)
+         children
+         (->> children
+              (remove #(ctl/layout-absolute? (second %))))
 
-        ;; Initialize tracks
-        column-tracks
-        (->> layout-grid-columns
-             (mapv (partial calculate-initial-track-size bound-width)))
+         children-map
+         (into {}
+               (map #(vector (:id (second %)) %))
+               children)
 
-        row-tracks
-        (->> layout-grid-rows
-             (mapv (partial calculate-initial-track-size bound-height)))
+         ;; Initialize tracks
+         column-tracks
+         (->> layout-grid-columns
+              (mapv (partial calculate-initial-track-size bound-width)))
 
-        ;; Go through cells to adjust auto sizes for span=1. Base is the max of its children
-        column-tracks (set-auto-base-size column-tracks children shape-cells :column)
-        row-tracks    (set-auto-base-size row-tracks children shape-cells :row)
+         row-tracks
+         (->> layout-grid-rows
+              (mapv (partial calculate-initial-track-size bound-height)))
 
-        ;; Adjust multi-spaned cells with no flex columns
-        column-tracks (set-auto-multi-span parent column-tracks children-map shape-cells :column)
-        row-tracks (set-auto-multi-span parent row-tracks children-map shape-cells :row)
+         ;; Go through cells to adjust auto sizes for span=1. Base is the max of its children
+         column-tracks (set-auto-base-size column-tracks children shape-cells bounds objects :column)
+         row-tracks    (set-auto-base-size row-tracks children shape-cells bounds objects :row)
 
-        ;; Calculate the `fr` unit and adjust the size
-        column-total-size-nofr (tracks-total-size (->> column-tracks (remove #(= :flex (:type %)))))
-        row-total-size-nofr    (tracks-total-size (->> row-tracks (remove #(= :flex (:type %)))))
+         ;; Adjust multi-spaned cells with no flex columns
+         column-tracks (set-auto-multi-span parent column-tracks children-map shape-cells bounds objects :column)
+         row-tracks (set-auto-multi-span parent row-tracks children-map shape-cells bounds objects :row)
 
-        column-frs        (tracks-total-frs column-tracks)
-        row-frs           (tracks-total-frs row-tracks)
+         ;; Calculate the `fr` unit and adjust the size
+         column-total-size-nofr (tracks-total-size (->> column-tracks (remove #(= :flex (:type %)))))
+         row-total-size-nofr    (tracks-total-size (->> row-tracks (remove #(= :flex (:type %)))))
 
-        ;; Assign minimum size to the multi-span flex tracks. We do this after calculating
-        ;; the fr size because will affect only the minimum. The maximum will be set by the
-        ;; fracion
-        column-tracks (set-flex-multi-span parent column-tracks children-map shape-cells :column)
-        row-tracks (set-flex-multi-span parent row-tracks children-map shape-cells :row)
+         column-frs        (tracks-total-frs column-tracks)
+         row-frs           (tracks-total-frs row-tracks)
 
-        ;; Once auto sizes have been calculated we get calculate the `fr` unit with the remainining size and adjust the size
-        free-column-space (max 0 (- bound-width (+ column-total-size-nofr column-total-gap)))
-        free-row-space    (max 0 (- bound-height (+ row-total-size-nofr row-total-gap)))
+         ;; Assign minimum size to the multi-span flex tracks. We do this after calculating
+         ;; the fr size because will affect only the minimum. The maximum will be set by the
+         ;; fracion
+         column-tracks (set-flex-multi-span parent column-tracks children-map shape-cells bounds objects :column)
+         row-tracks (set-flex-multi-span parent row-tracks children-map shape-cells bounds objects :row)
 
-        ;; Get the minimum values for fr's
-        min-column-fr     (min-fr-value column-tracks)
-        min-row-fr        (min-fr-value row-tracks)
+         ;; Once auto sizes have been calculated we get calculate the `fr` unit with the remainining size and adjust the size
+         free-column-space (max 0 (- bound-width (+ column-total-size-nofr column-total-gap)))
+         free-row-space    (max 0 (- bound-height (+ row-total-size-nofr row-total-gap)))
 
-        column-fr         (if auto-width? min-column-fr (mth/finite (/ free-column-space column-frs) 0))
-        row-fr            (if auto-height? min-row-fr (mth/finite (/ free-row-space row-frs) 0))
+         ;; Get the minimum values for fr's
+         min-column-fr     (min-fr-value column-tracks)
+         min-row-fr        (min-fr-value row-tracks)
 
-        column-tracks     (set-fr-value column-tracks column-fr auto-width?)
-        row-tracks        (set-fr-value row-tracks row-fr auto-height?)
+         column-fr         (if auto-width? min-column-fr (mth/finite (/ free-column-space column-frs) 0))
+         row-fr            (if auto-height? min-row-fr (mth/finite (/ free-row-space row-frs) 0))
 
-        ;; Distribute free space between `auto` tracks
-        column-total-size (tracks-total-size column-tracks)
-        row-total-size    (tracks-total-size row-tracks)
+         column-tracks     (set-fr-value column-tracks column-fr auto-width?)
+         row-tracks        (set-fr-value row-tracks row-fr auto-height?)
 
-        free-column-space (max 0 (if auto-width? 0 (- bound-width (+ column-total-size column-total-gap))))
-        free-row-space    (max 0 (if auto-height? 0 (- bound-height (+ row-total-size row-total-gap))))
-        column-autos      (tracks-total-autos column-tracks)
-        row-autos         (tracks-total-autos row-tracks)
+         ;; Distribute free space between `auto` tracks
+         column-total-size (tracks-total-size column-tracks)
+         row-total-size    (tracks-total-size row-tracks)
 
-        column-add-auto   (/ free-column-space column-autos)
-        row-add-auto      (/ free-row-space row-autos)
+         free-column-space (max 0 (if auto-width? 0 (- bound-width (+ column-total-size column-total-gap))))
+         free-row-space    (max 0 (if auto-height? 0 (- bound-height (+ row-total-size row-total-gap))))
+         column-autos      (tracks-total-autos column-tracks)
+         row-autos         (tracks-total-autos row-tracks)
 
-        column-tracks (cond-> column-tracks
-                        (= :stretch (:layout-justify-content parent))
-                        (add-auto-size column-add-auto))
+         column-add-auto   (/ free-column-space column-autos)
+         row-add-auto      (/ free-row-space row-autos)
 
-        row-tracks    (cond-> row-tracks
-                        (= :stretch (:layout-align-content parent))
-                        (add-auto-size row-add-auto))
+         column-tracks (cond-> column-tracks
+                         (= :stretch (:layout-justify-content parent))
+                         (add-auto-size column-add-auto))
 
-        column-total-size (tracks-total-size column-tracks)
-        row-total-size    (tracks-total-size row-tracks)
+         row-tracks    (cond-> row-tracks
+                         (= :stretch (:layout-align-content parent))
+                         (add-auto-size row-add-auto))
 
-        num-columns (count column-tracks)
-        column-gap
-        (case (:layout-justify-content parent)
-          auto-width?
-          column-gap
+         column-total-size (tracks-total-size column-tracks)
+         row-total-size    (tracks-total-size row-tracks)
 
-          :space-evenly
-          (max column-gap (/ (- bound-width column-total-size) (inc num-columns)))
+         num-columns (count column-tracks)
+         column-gap
+         (case (:layout-justify-content parent)
+           auto-width?
+           column-gap
 
-          :space-around
-          (max column-gap (/ (- bound-width column-total-size) num-columns))
+           :space-evenly
+           (max column-gap (/ (- bound-width column-total-size) (inc num-columns)))
 
-          :space-between
-          (max column-gap (if (= num-columns 1) column-gap (/ (- bound-width column-total-size) (dec num-columns))))
+           :space-around
+           (max column-gap (/ (- bound-width column-total-size) num-columns))
 
-          column-gap)
+           :space-between
+           (max column-gap (if (= num-columns 1) column-gap (/ (- bound-width column-total-size) (dec num-columns))))
 
-        num-rows (count row-tracks)
-        row-gap
-        (case (:layout-align-content parent)
-          auto-height?
-          row-gap
+           column-gap)
 
-          :space-evenly
-          (max row-gap (/ (- bound-height row-total-size) (inc num-rows)))
+         num-rows (count row-tracks)
+         row-gap
+         (case (:layout-align-content parent)
+           auto-height?
+           row-gap
 
-          :space-around
-          (max row-gap (/ (- bound-height row-total-size) num-rows))
+           :space-evenly
+           (max row-gap (/ (- bound-height row-total-size) (inc num-rows)))
 
-          :space-between
-          (max row-gap (if (= num-rows 1) row-gap (/ (- bound-height row-total-size) (dec num-rows))))
+           :space-around
+           (max row-gap (/ (- bound-height row-total-size) num-rows))
 
-          row-gap)
+           :space-between
+           (max row-gap (if (= num-rows 1) row-gap (/ (- bound-height row-total-size) (dec num-rows))))
 
-        start-p
-        (cond-> bound-corner
-          (and (not auto-width?) (= :end (:layout-justify-content parent)))
-          (gpt/add (hv (- bound-width (+ column-total-size column-total-gap))))
+           row-gap)
 
-          (and (not auto-width?) (= :center (:layout-justify-content parent)))
-          (gpt/add (hv (/ (- bound-width (+ column-total-size column-total-gap)) 2)))
+         start-p
+         (cond-> bound-corner
+           (and (not auto-width?) (= :end (:layout-justify-content parent)))
+           (gpt/add (hv (- bound-width (+ column-total-size column-total-gap))))
 
-          (and (not auto-height?) (= :end (:layout-align-content parent)))
-          (gpt/add (vv (- bound-height (+ row-total-size row-total-gap))))
+           (and (not auto-width?) (= :center (:layout-justify-content parent)))
+           (gpt/add (hv (/ (- bound-width (+ column-total-size column-total-gap)) 2)))
 
-          (and (not auto-height?) (= :center (:layout-align-content parent)))
-          (gpt/add (vv (/ (- bound-height (+ row-total-size row-total-gap)) 2)))
+           (and (not auto-height?) (= :end (:layout-align-content parent)))
+           (gpt/add (vv (- bound-height (+ row-total-size row-total-gap))))
 
-          (and (not auto-width?) (= :space-around (:layout-justify-content parent)))
-          (gpt/add (hv (/ column-gap 2)))
+           (and (not auto-height?) (= :center (:layout-align-content parent)))
+           (gpt/add (vv (/ (- bound-height (+ row-total-size row-total-gap)) 2)))
 
-          (and (not auto-width?) (= :space-evenly (:layout-justify-content parent)))
-          (gpt/add (hv column-gap))
+           (and (not auto-width?) (= :space-around (:layout-justify-content parent)))
+           (gpt/add (hv (/ column-gap 2)))
 
-          (and (not auto-height?) (= :space-around (:layout-align-content parent)))
-          (gpt/add (vv (/ row-gap 2)))
+           (and (not auto-width?) (= :space-evenly (:layout-justify-content parent)))
+           (gpt/add (hv column-gap))
 
-          (and (not auto-height?) (= :space-evenly (:layout-align-content parent)))
-          (gpt/add (vv row-gap)))
+           (and (not auto-height?) (= :space-around (:layout-align-content parent)))
+           (gpt/add (vv (/ row-gap 2)))
 
-        column-tracks
-        (->> column-tracks
-             (reduce (fn [[tracks start-p] {:keys [size] :as track}]
-                       [(conj tracks (assoc track :start-p start-p))
-                        (gpt/add start-p (hv (+ size column-gap)))])
-                     [[] start-p])
-             (first))
+           (and (not auto-height?) (= :space-evenly (:layout-align-content parent)))
+           (gpt/add (vv row-gap)))
 
-        row-tracks
-        (->> row-tracks
-             (reduce (fn [[tracks start-p] {:keys [size] :as track}]
-                       [(conj tracks (assoc track :start-p start-p))
-                        (gpt/add start-p (vv (+ size row-gap)))])
-                     [[] start-p])
-             (first))]
+         column-tracks
+         (->> column-tracks
+              (reduce (fn [[tracks start-p] {:keys [size] :as track}]
+                        [(conj tracks (assoc track :start-p start-p))
+                         (gpt/add start-p (hv (+ size column-gap)))])
+                      [[] start-p])
+              (first))
 
-    {:origin start-p
-     :layout-bounds layout-bounds
-     :row-tracks row-tracks
-     :column-tracks column-tracks
-     :shape-cells shape-cells
-     :column-gap column-gap
-     :row-gap row-gap
+         row-tracks
+         (->> row-tracks
+              (reduce (fn [[tracks start-p] {:keys [size] :as track}]
+                        [(conj tracks (assoc track :start-p start-p))
+                         (gpt/add start-p (vv (+ size row-gap)))])
+                      [[] start-p])
+              (first))]
 
-     ;; Convenient informaton for visualization
-     :column-total-size column-total-size
-     :column-total-gap column-total-gap
-     :row-total-size row-total-size
-     :row-total-gap row-total-gap}))
+     {:origin start-p
+      :layout-bounds layout-bounds
+      :row-tracks row-tracks
+      :column-tracks column-tracks
+      :shape-cells shape-cells
+      :column-gap column-gap
+      :row-gap row-gap
+
+      ;; Convenient informaton for visualization
+      :column-total-size column-total-size
+      :column-total-gap column-total-gap
+      :row-total-size row-total-size
+      :row-total-gap row-total-gap})))
 
 (defn get-cell-data
   [{:keys [origin row-tracks column-tracks shape-cells]} _transformed-parent-bounds [_ child]]

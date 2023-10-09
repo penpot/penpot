@@ -100,6 +100,7 @@ body {
    ;; Grid related properties
    :grid-template-rows
    :grid-template-columns
+   :grid-template-areas
 
    ;; Flex/grid self properties
    :flex-shrink
@@ -114,6 +115,7 @@ body {
    ;; Grid cell properties
    :grid-column
    :grid-row
+   :grid-area
    ])
 
 (def text-node-css-properties

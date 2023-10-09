@@ -748,10 +748,10 @@
                  objects (-> objects
                              (gsh/apply-objects-modifiers (select-keys modifiers ids))
                              (gsh/update-shapes-geometry (reverse ids)))]
-             (->> (:shapes shape)
-                  (map (d/getf objects))
-                  (remove :hidden)
-                  (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %))))))
+             (->> (cph/get-immediate-children objects (:id shape))
+                  (keep (fn [child]
+                          (when-not (:hidden child)
+                            [(gpo/parent-coords-bounds (:points child) (:points shape)) child])))))))
 
         children (hooks/use-equal-memo children)
 
@@ -762,10 +762,12 @@
         height (gpo/height-points bounds)
         origin (gpo/origin bounds)
 
+        all-bounds (d/lazy-map (keys objects) #(gsh/shape->points (get objects %)))
+
         {:keys [row-tracks column-tracks] :as layout-data}
         (mf/use-memo
          (mf/deps shape children)
-         #(gsg/calc-layout-data shape children bounds))
+         #(gsg/calc-layout-data shape bounds children all-bounds objects))
 
         handle-pointer-down
         (mf/use-callback

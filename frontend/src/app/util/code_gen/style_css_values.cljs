@@ -14,7 +14,8 @@
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [app.main.ui.formats :as fmt]
-   [app.util.code-gen.common :as cgc]))
+   [app.util.code-gen.common :as cgc]
+   [cuerdas.core :as str]))
 
 (defn fill->color
   [{:keys [fill-color fill-opacity fill-color-gradient]}]
@@ -74,9 +75,9 @@
   [_ shape objects]
   (let [parent (cph/get-parent objects (:id shape))]
     (when (and (ctl/flex-layout-immediate-child? objects shape)
-               (or (and (contains? #{:row :reverse-row} (:layout-flex-dir parent))
+               (or (and (contains? #{:row :row-reverse} (:layout-flex-dir parent))
                         (= :fill (:layout-item-h-sizing shape)))
-                   (and (contains? #{:column :column-row} (:layout-flex-dir parent))
+                   (and (contains? #{:column :column-reverse} (:layout-flex-dir parent))
                         (= :fill (:layout-item-v-sizing shape)))))
       1)))
 
@@ -89,10 +90,10 @@
     (cond
       (and (ctl/flex-layout-immediate-child? objects shape)
            (or (and (= type :height)
-                    (contains? #{:row :reverse-row} (:layout-flex-dir parent))
+                    (contains? #{:row :row-reverse} (:layout-flex-dir parent))
                     (= :fill (:layout-item-v-sizing shape)))
                (and (= type :width)
-                    (contains? #{:column :column-row} (:layout-flex-dir parent))
+                    (contains? #{:column :column-reverse} (:layout-flex-dir parent))
                     (= :fill (:layout-item-h-sizing shape)))))
       :fill
 
@@ -279,15 +280,43 @@
   [_ shape _]
   (:layout-grid-columns shape))
 
+(defn area-cell?
+  [{:keys [position area-name]}]
+  (and (= position :area) (d/not-empty? area-name)))
+
+(defmethod get-value :grid-template-areas
+  [_ shape _]
+  (when (and (ctl/grid-layout? shape)
+             (some area-cell? (vals (:layout-grid-cells shape))))
+    (let [result
+          (->> (d/enumerate (:layout-grid-rows shape))
+               (map
+                (fn [[row _]]
+                  (dm/str
+                   "\""
+                   (->> (d/enumerate (:layout-grid-columns shape))
+                        (map (fn [[column _]]
+                               (let [cell (ctl/get-cell-by-position shape (inc row) (inc column))]
+                                 (str/replace (:area-name cell ".") " " "-"))))
+                        (str/join " "))
+                   "\"")))
+               (str/join "\n"))]
+      result)))
+
 (defn get-grid-coord
   [shape objects prop span-prop]
   (when (and (ctl/grid-layout-immediate-child? objects shape)
              (not (ctl/layout-absolute? shape)))
     (let [parent (get objects (:parent-id shape))
           cell (ctl/get-cell-by-shape-id parent (:id shape))]
-      (if (> (get cell span-prop) 1)
-        (dm/str (get cell prop) " / " (+ (get cell prop) (get cell span-prop)))
-        (get cell prop)))))
+      (when (and
+             (not (and (= (:position cell) :area) (d/not-empty? (:area-name cell))))
+             (or (= (:position cell) :manual)
+                 (> (:row-span cell) 1)
+                 (> (:column-span cell) 1)))
+        (if (> (get cell span-prop) 1)
+          (dm/str (get cell prop) " / " (+ (get cell prop) (get cell span-prop)))
+          (get cell prop))))))
 
 (defmethod get-value :grid-column
   [_ shape objects]
@@ -296,6 +325,15 @@
 (defmethod get-value :grid-row
   [_ shape objects]
   (get-grid-coord shape objects :row :row-span))
+
+(defmethod get-value :grid-area
+  [_ shape objects]
+  (when (and (ctl/grid-layout-immediate-child? objects shape)
+             (not (ctl/layout-absolute? shape)))
+    (let [parent (get objects (:parent-id shape))
+          cell (ctl/get-cell-by-shape-id parent (:id shape))]
+      (when (and (= (:position cell) :area) (d/not-empty? (:area-name cell)))
+        (str/replace (:area-name cell) " " "-")))))
 
 (defmethod get-value :flex-shrink
   [_ shape objects]
@@ -334,13 +372,13 @@
 (defmethod get-value :max-height
   [_ shape objects]
   (cond
-    (ctl/flex-layout-immediate-child? objects shape)
+    (ctl/any-layout-immediate-child? objects shape)
     (:layout-item-max-h shape)))
 
 (defmethod get-value :min-height
   [_ shape objects]
   (cond
-    (and (ctl/flex-layout-immediate-child? objects shape) (some? (:layout-item-min-h shape)))
+    (and (ctl/any-layout-immediate-child? objects shape) (some? (:layout-item-min-h shape)))
     (:layout-item-min-h shape)
 
     (and (ctl/auto-height? shape) (cph/frame-shape? shape) (not (:show-content shape)))
@@ -349,13 +387,13 @@
 (defmethod get-value :max-width
   [_ shape objects]
   (cond
-    (ctl/flex-layout-immediate-child? objects shape)
+    (ctl/any-layout-immediate-child? objects shape)
     (:layout-item-max-w shape)))
 
 (defmethod get-value :min-width
   [_ shape objects]
   (cond
-    (and (ctl/flex-layout-immediate-child? objects shape) (some? (:layout-item-min-w shape)))
+    (and (ctl/any-layout-immediate-child? objects shape) (some? (:layout-item-min-w shape)))
     (:layout-item-min-w shape)
 
     (and (ctl/auto-width? shape) (cph/frame-shape? shape) (not (:show-content shape)))

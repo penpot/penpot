@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.grid-layout.layout-data :as ld]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
@@ -254,6 +255,8 @@
         children    (->> (cph/get-immediate-children objects (:id frame))
                          (remove :hidden)
                          (map #(vector (gpo/parent-coords-bounds (:points %) (:points frame)) %)))
-        layout-data (ld/calc-layout-data frame children (:points frame))]
+
+        bounds (d/lazy-map (keys objects) #(gco/shape->points (get objects %)))
+        layout-data (ld/calc-layout-data frame (:points frame) children bounds objects)]
 
     (get-position-grid-coord layout-data position)))

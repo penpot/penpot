@@ -13,6 +13,7 @@
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.flex-layout :as gcfl]
    [app.common.geom.shapes.grid-layout :as gcgl]
+   [app.common.geom.shapes.min-size-layout]
    [app.common.geom.shapes.pixel-precision :as gpp]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
@@ -181,7 +182,8 @@
                             (remove :hidden)
                             (remove gco/invalid-geometry?)
                             (map apply-modifiers))
-          layout-data  (gcfl/calc-layout-data parent children @transformed-parent-bounds)
+
+          layout-data  (gcfl/calc-layout-data parent @transformed-parent-bounds children bounds objects)
           children     (into [] (cond-> children (not (:reverse? layout-data)) reverse))
           max-idx      (dec (count children))
           layout-lines (:layout-lines layout-data)]
@@ -220,7 +222,7 @@
                             (remove :hidden)
                             (remove gco/invalid-geometry?)
                             (map apply-modifiers))
-          grid-data    (gcgl/calc-layout-data parent children @transformed-parent-bounds)]
+          grid-data    (gcgl/calc-layout-data parent @transformed-parent-bounds children bounds objects)]
       (loop [modif-tree modif-tree
              bound+child (first children)
              pending (rest children)]
@@ -260,10 +262,13 @@
         (when (and (d/not-empty? children) (or (ctl/auto-height? parent) (ctl/auto-width? parent)))
           (cond
             (ctl/flex-layout? parent)
-            (gcfl/layout-content-bounds bounds parent children)
+            (gcfl/layout-content-bounds bounds parent children objects)
 
             (ctl/grid-layout? parent)
-            (gcgl/layout-content-bounds bounds parent children)))
+            (let [children (->>  children
+                                 (map (fn [child] [@(get bounds (:id child)) child])))
+                  layout-data (gcgl/calc-layout-data parent @parent-bounds children bounds objects)]
+              (gcgl/layout-content-bounds bounds parent layout-data))))
 
         auto-width (when content-bounds (gpo/width-points content-bounds))
         auto-height (when content-bounds (gpo/height-points content-bounds))]
@@ -302,6 +307,8 @@
         flex-layout?   (ctl/flex-layout? parent)
         grid-layout?   (ctl/grid-layout? parent)
         auto?          (or (ctl/auto-height? parent) (ctl/auto-width? parent))
+        fill-with-grid? (and (ctl/grid-layout? objects (:parent-id parent))
+                             (or (ctl/fill-width? parent) (ctl/fill-height? parent)))
         parent?        (or (cph/group-like-shape? parent) (cph/frame-shape? parent))
 
         transformed-parent-bounds (delay (gtr/transform-bounds @(get bounds parent-id) modifiers))
@@ -328,7 +335,8 @@
        (set-grid-layout-modifiers objects bounds parent transformed-parent-bounds))
 
      ;; Auto-width/height can change the positions in the parent so we need to recalculate
-     (cond-> autolayouts auto? (conj (:id parent)))]))
+     ;; also if the child is fill width/height inside a grid layout
+     (cond-> autolayouts (or auto? fill-with-grid?) (conj (:id parent)))]))
 
 (defn- apply-structure-modifiers
   [objects modif-tree]
@@ -410,7 +418,8 @@
                     (contains? to-reflow current)
                     (disj current))]
 
-              (if (ctm/empty? auto-resize-modifiers)
+              (if (and (ctm/empty? auto-resize-modifiers)
+                       (not (ctl/grid-layout? objects (:parent-id parent-base))))
                 (recur modif-tree
                        bounds
                        (rest sizing-auto-layouts)

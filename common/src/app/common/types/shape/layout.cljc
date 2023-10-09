@@ -715,42 +715,38 @@
   [parent from-index to-index]
   (reorder-grid-track :layout-grid-rows parent from-index to-index))
 
-(defn get-cells
-  ([parent]
-   (get-cells parent nil))
+(defn cells-seq
+  [{:keys [layout-grid-cells layout-grid-dir]} & {:keys [sort?] :or {sort? false}}]
 
-  ([{:keys [layout-grid-cells layout-grid-dir]} {:keys [sort? remove-empty?] :or {sort? false remove-empty? false}}]
-   (let [comp-fn (if (= layout-grid-dir :row)
-                   (juxt :row :column)
-                   (juxt :column :row))
+  (let [comp-fn (if (= layout-grid-dir :row)
+                  (juxt :row :column)
+                  (juxt :column :row))
+        maybe-sort?
+        (if sort? (partial sort-by (comp comp-fn second)) identity)]
 
-         maybe-sort?
-         (if sort? (partial sort-by (comp comp-fn second)) identity)
-
-         maybe-remove?
-         (if remove-empty? (partial remove #(empty? (:shapes (second %)))) identity)]
-
-     (->> layout-grid-cells
-          (maybe-sort?)
-          (maybe-remove?)
-          (map (fn [[id cell]] (assoc cell :id id)))))))
+    (->> layout-grid-cells
+         (maybe-sort?)
+         (map second))))
 
 (defn get-free-cells
   ([parent]
    (get-free-cells parent nil))
 
-  ([{:keys [layout-grid-cells layout-grid-dir]} {:keys [sort?] :or {sort? false}}]
-   (let [comp-fn (if (= layout-grid-dir :row)
-                   (juxt :row :column)
-                   (juxt :column :row))
+  ([parent {:keys [sort?] :or {sort? false}}]
+   (->> (cells-seq parent :sort? sort?)
+        (filter (comp empty? :shapes))
+        (map :id))))
 
-         maybe-sort?
-         (if sort? (partial sort-by (comp comp-fn second)) identity)]
+(defn get-cells
+  ([parent]
+   (get-cells parent nil))
 
-     (->> layout-grid-cells
-          (filter (comp empty? :shapes second))
-          (maybe-sort?)
-          (map first)))))
+  ([parent {:keys [sort? remove-empty?] :or {sort? false remove-empty? false}}]
+   (let [maybe-remove?
+         (if remove-empty? (partial remove (comp empty? :shapes)) identity)]
+
+     (->> (cells-seq parent :sort? sort?)
+          (maybe-remove?)))))
 
 (defn check-deassigned-cells
   "Clean the cells whith shapes that are no longer in the layout"
@@ -782,7 +778,7 @@
     (reduce find-overlaps #{} cells)))
 
 ;; FIXME: This is only for development
-#_(defn fix-overlaps
+(defn fix-overlaps
   [parent overlaps]
   (reduce (fn [parent ids]
             (let [id (if (empty? (get-in parent [:layout-grid-cells (first ids)]))
@@ -791,6 +787,32 @@
               (update parent :layout-grid-cells dissoc id)))
           parent
           overlaps))
+
+(defn position-auto-shapes
+  [parent]
+  ;; Iterate through the cells. While auto and contains shape no changes.
+  ;; If auto without shape start moving auto
+  ;; Move shapes in auto-cells to the first free auto.
+  (let [auto-cells (->> (cells-seq parent :sort? true)
+                        (filter #(and (= (:position %) :auto)
+                                      (= (:row-span %) 1)
+                                      (= (:column-span %) 1))))
+
+        shapes     (->> auto-cells (mapcat :shapes))
+
+        parent
+        (loop [parent parent
+               cells (seq auto-cells)
+               shapes (seq shapes)]
+          (if (empty? cells)
+            parent
+            (let [shape (first shapes)
+                  cell (first cells)
+                  parent (assoc-in parent [:layout-grid-cells (:id cell) :shapes] (if (some? shape) [shape] []))]
+              (recur parent
+                     (rest cells)
+                     (rest shapes)))))]
+    parent))
 
 ;; Assign cells takes the children and move them into the allotted cells. If there are not enough cells it creates
 ;; not-tracked rows/columns and put the shapes there
@@ -803,13 +825,21 @@
 ;;  - (maybe) create group/frames. This case will assigna a cell that had one of its children
 (defn assign-cells
   [parent]
-  (let [parent (-> parent check-deassigned-cells)
+  (let [;; TODO: Remove this, shouldn't be happening
+        ;;overlaps (overlapping-cells parent)
+        ;;_ (when (not (empty? overlaps))
+        ;;    (.warn js/console "OVERLAPS" overlaps))
+        parent (cond-> (check-deassigned-cells parent)
+                 #_(d/not-empty? overlaps)
+                 #_(fix-overlaps overlaps))
 
         shape-has-cell?
         (into #{} (mapcat (comp :shapes second)) (:layout-grid-cells parent))
 
         no-cell-shapes
-        (->> (:shapes parent) (remove shape-has-cell?))]
+        (->> (:shapes parent) (remove shape-has-cell?))
+
+        parent (position-auto-shapes parent)]
 
     (if (empty? no-cell-shapes)
       ;; All shapes are within a cell. No need to assign
@@ -840,9 +870,10 @@
                  (reduce (fn [parent _] (add-track parent default-track-value)) parent))
 
             cells
-            (loop [cells (:layout-grid-cells parent)
+            (loop [cells      (:layout-grid-cells parent)
                    free-cells (get-free-cells parent {:sort? true})
-                   pending no-cell-shapes]
+                   pending    no-cell-shapes]
+
               (if (or (empty? free-cells) (empty? pending))
                 cells
                 (let [next-free (first free-cells)
@@ -924,7 +955,8 @@
              (reduce (fn [[parent cells] [shape-id idx]]
                        (let [[parent cells] (free-cell-push parent cells idx)]
                          [(update-in parent [:layout-grid-cells (get-in cells [idx :id])]
-                                     assoc :position :manual :shapes [shape-id])
+                                     assoc :position :manual
+                                     :shapes [shape-id])
                           cells]))
                      [parent cells])
              (first)))
