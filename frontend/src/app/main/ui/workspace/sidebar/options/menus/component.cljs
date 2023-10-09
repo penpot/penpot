@@ -24,6 +24,7 @@
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -280,8 +281,10 @@
                   :on-click #(when-not loop?
                                (st/emit!
                                 (dwl/component-swap shape (:file-id filters) (:id item))))}
-                 [:& component-svg {:root-shape root-shape
-                                    :objects (:objects container)}]
+                 [:& cmm/component-item-thumbnail {:file-id (:file-id item)
+                                                   :root-shape root-shape
+                                                   :component item
+                                                   :container container}]
                  [:span.component-name
                   {:class (stl/css-case :selected (= (:id item) (:component-id shape)))}
                   (:name item)]])
