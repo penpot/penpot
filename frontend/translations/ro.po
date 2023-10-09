@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-09 09:00+0000\n"
+"PO-Revision-Date: 2023-10-10 10:01+0000\n"
 "Last-Translator: AlexTECPlayz <alextec70@outlook.com>\n"
 "Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ro/>\n"
@@ -5065,3 +5065,39 @@ msgid_plural "dashboard.import.import-message"
 msgstr[0] "1 fișier a fost importat cu succes."
 msgstr[1] "% fișiere au fost importate cu succes."
 msgstr[2] "% de fișiere au fost importate cu succes."
+
+msgid "workspace.options.component.copy"
+msgstr "Copiați"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Dreptunghi"
+
+msgid "workspace.options.component.main"
+msgstr "Principal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Diamant"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Detașați"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Triunghi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "Săgeată"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Biblioteca dumneavoastră este goală. Odată adăugate ca bibliotecă partajată, "
+"obiectele pe care le creați vor fi disponibile pentru a fi utilizate în "
+"celelalte fișiere. Sunteți sigur că doriți să o publicați?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Cerc"
