@@ -33,6 +33,7 @@
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
+   ;; [app.util.timers :as tm]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
@@ -70,6 +71,14 @@
   [{:keys [file-id root-shape component container]}]
   (let [retry (mf/use-state 0)
         thumbnail-uri (get-component-thumbnail-uri file-id component)]
+
+    ;; NOTE: We don't schedule the thumbnail generation on idle right now
+    ;; until we can queue and handle thumbnail batching properly.
+    #_(mf/with-effect []
+      (when-not (some? thumbnail-uri)
+        (tm/schedule-on-idle
+         #(st/emit! (dwl/update-component-thumbnail (:id component) file-id)))))
+
     (if (some? thumbnail-uri)
       [:img {:src thumbnail-uri
              :on-error (fn []

@@ -134,11 +134,11 @@
      [:image.frame-thumbnail
       {:id (dm/str "thumbnail-" shape-id)
        :href thumb
-       :decoding "async"
        :x bx
        :y by
        :width bw
        :height bh
+       :decoding "async"
        :style {:filter (when (and (not ^boolean safari?) ^boolean debug?) "sepia(1)")}}]
 
      ;; Safari don't support filters so instead we add a rectangle around the thumbnail
