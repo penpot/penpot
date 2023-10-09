@@ -310,8 +310,7 @@
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
                      (dws/select-shapes (d/ordered-set (:id root)))
-                     (ptk/data-event :layout/update parents)
-                     (dwt/update-thumbnail file-id page-id (:id root))))))))))
+                     (ptk/data-event :layout/update parents)))))))))
 
 (defn add-component
   "Add a new component to current file library, from the currently selected shapes.
@@ -731,12 +730,8 @@
       (let [data            (get state :workspace-data)
             component       (ctkl/get-component data component-id)
             page-id         (:main-instance-page component)
-            root-id         (:main-instance-id component)
-            current-file-id (:current-file-id state)]
-           (rx/of
-            (dwt/update-thumbnail current-file-id page-id root-id)
-            (when (not= current-file-id file-id)
-              (dwt/update-thumbnail file-id page-id root-id)))))))
+            root-id         (:main-instance-id component)]
+           (rx/of (dwt/update-thumbnail file-id page-id root-id))))))
 
 (defn update-component-in-bulk
   [shapes file-id]
@@ -899,11 +894,13 @@
    in the current file and in the copies. And also update its thumbnails."
   [component-id file-id undo-group]
   (ptk/reify ::component-changed
+    cljs.core/IDeref
+    (-deref [_] [component-id file-id])
+
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (launch-component-sync component-id file-id undo-group)
-       (update-component-thumbnail component-id file-id)))))
+       (launch-component-sync component-id file-id undo-group)))))
 
 (defn watch-component-changes
   "Watch the state for changes that affect to any main instance. If a change is detected will throw
@@ -914,7 +911,7 @@
     (watch [_ state stream]
       (let [components-v2? (features/active-feature? state :components-v2)
 
-            stopper
+            stopper-s
             (->> stream
                  (rx/filter #(or (= ::dw/finalize-page (ptk/type %))
                                  (= ::watch-component-changes (ptk/type %)))))
@@ -928,7 +925,7 @@
                  (rx/buffer 3 1)
                  (rx/filter (fn [[old-data]] (some? old-data))))
 
-            change-s
+            changes-s
             (->> stream
                  (rx/filter #(or (dch/commit-changes? %)
                                  (ptk/type? % ::dwn/handle-file-change)))
@@ -945,20 +942,38 @@
                              (map (partial ch/components-changed old-data))
                              (reduce into #{})))]
 
-                  (when (and (d/not-empty? changed-components) save-undo?)
-                    (log/info :msg "DETECTED COMPONENTS CHANGED"
-                              :ids (map str changed-components)
-                              :undo-group undo-group)
+                  (if (and (d/not-empty? changed-components) save-undo?)
+                    (do (log/info :msg "DETECTED COMPONENTS CHANGED"
+                                  :ids (map str changed-components)
+                                  :undo-group undo-group)
 
-                    (->> changed-components
-                         (map #(component-changed % (:id old-data) undo-group))
-                         (run! st/emit!))))))]
+                        (->> (rx/from changed-components)
+                             (rx/map #(component-changed % (:id old-data) undo-group))))
+                    (rx/empty)))))
+
+            changes-s
+            (->> changes-s
+                 (rx/with-latest-from workspace-data-s)
+                 (rx/mapcat check-changes)
+                 (rx/share))
+
+            notifier-s
+            (->> changes-s
+                 (rx/debounce 5000)
+                 (rx/tap #(log/trc :hint "buffer initialized")))]
 
         (when components-v2?
-          (->> change-s
-               (rx/with-latest-from workspace-data-s)
-               (rx/map check-changes)
-               (rx/take-until stopper)))))))
+          (->> (rx/merge
+                changes-s
+
+                (->> changes-s
+                     (rx/map deref)
+                     (rx/buffer-until notifier-s)
+                     (rx/mapcat #(into #{} %))
+                     (rx/map (fn [[component-id file-id]]
+                               (update-component-thumbnail component-id file-id)))))
+
+               (rx/take-until stopper-s)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Backend interactions

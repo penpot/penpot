@@ -6,10 +6,8 @@
 
 (ns app.common.geom.align
   (:require
-   [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :refer [get-children]]))
+   [app.common.geom.shapes :as gsh]   ))
 
 ;; --- Alignment
 

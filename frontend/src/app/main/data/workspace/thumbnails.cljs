@@ -105,7 +105,7 @@
         (update state :workspace-thumbnails assoc new-id thumbnail)))))
 
 (defn update-thumbnail
-  "Updates the thumbnail information for the given frame `id`"
+  "Updates the thumbnail information for the given `id`"
 
   [file-id page-id frame-id]
   (let [object-id (fmt-object-id file-id page-id frame-id)]
@@ -256,4 +256,3 @@
                              (update-thumbnail file-id page-id frame-id)))))
 
              (rx/take-until stopper-s))))))
-
