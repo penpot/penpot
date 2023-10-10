@@ -17,7 +17,6 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.specialized-panel :as dwsp]
    [app.main.refs :as refs]
-   [app.main.render :refer [component-svg]]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -162,7 +161,7 @@
         filters*            (mf/use-state
                              {:term ""
                               :file-id (:component-file shape)
-                              :path (cph/prev-path (:name shape))})
+                              :path (cph/butlast-path (:name shape))})
         filters             (deref filters*)
 
         components          (-> (get-in libraries [(:file-id filters) :data :components])
@@ -173,7 +172,7 @@
                               (filter #(str/includes? (str/lower (:name %)) (str/lower (:term filters))) components))
 
         groups              (->> (map :path components)
-                                 (filter #(= (cph/prev-path (:path %)) (:path filters)))
+                                 (filter #(= (cph/butlast-path (:path %)) (:path filters)))
                                  (remove str/empty?)
                                  distinct
                                  (map #(hash-map :name %)))
@@ -222,7 +221,7 @@
         on-go-back
         (mf/use-fn
          (mf/deps (:path filters))
-         #(swap! filters* assoc :path (cph/prev-path (:path filters))))
+         #(swap! filters* assoc :path (cph/butlast-path (:path filters))))
 
         on-enter-group
         (mf/use-fn #(swap! filters* assoc :path %))

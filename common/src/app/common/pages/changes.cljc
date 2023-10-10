@@ -109,7 +109,8 @@
       [:parent-id ::sm/uuid]
       [:shapes :any]
       [:index {:optional true} [:maybe :int]]
-      [:after-shape {:optional true} :any]]]
+      [:after-shape {:optional true} :any]
+      [:component-swap {:optional true} :boolean]]]
 
     [:reorder-children
      [:map {:title "ReorderChildrenChange"}

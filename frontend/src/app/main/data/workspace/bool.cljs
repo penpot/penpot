@@ -11,6 +11,7 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.path.shapes-to-path :as stp]
+   [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -92,7 +93,8 @@
             ordered-indexes (cph/order-by-indexed-shapes objects ids)
             shapes (->> ordered-indexes
                         (map (d/getf objects))
-                        (remove cph/frame-shape?))]
+                        (remove cph/frame-shape?)
+                        (remove #(ctn/has-any-copy-parent? objects %)))]
 
         (when-not (empty? shapes)
           (let [[boolean-data index] (create-bool-data bool-type name (reverse shapes) objects)
@@ -114,7 +116,8 @@
       (let [objects (wsh/lookup-page-objects state)
             change-to-bool
             (fn [shape] (group->bool shape bool-type objects))]
-        (rx/of (dch/update-shapes [shape-id] change-to-bool {:reg-objects? true}))))))
+        (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
+          (rx/of (dch/update-shapes [shape-id] change-to-bool {:reg-objects? true})))))))
 
 (defn bool-to-group
   [shape-id]
@@ -124,14 +127,17 @@
       (let [objects (wsh/lookup-page-objects state)
             change-to-group
             (fn [shape] (bool->group shape objects))]
-        (rx/of (dch/update-shapes [shape-id] change-to-group {:reg-objects? true}))))))
+        (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
+          (rx/of (dch/update-shapes [shape-id] change-to-group {:reg-objects? true})))))))
 
 
 (defn change-bool-type
   [shape-id bool-type]
   (ptk/reify ::change-bool-type
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [change-type
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            change-type
             (fn [shape] (assoc shape :bool-type bool-type))]
-        (rx/of (dch/update-shapes [shape-id] change-type {:reg-objects? true}))))))
+        (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
+          (rx/of (dch/update-shapes [shape-id] change-type {:reg-objects? true})))))))

@@ -9,6 +9,7 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.path.shapes-to-path :as upsp]
+   [app.common.types.container :as ctn]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
@@ -20,7 +21,8 @@
     (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state)
-            selected (wsh/lookup-selected state)
+            selected (->> (wsh/lookup-selected state)
+                          (remove #(ctn/has-any-copy-parent? objects (get objects %))))
 
             children-ids
             (into #{}

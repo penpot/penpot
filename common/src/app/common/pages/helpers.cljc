@@ -531,7 +531,7 @@
                    (merge-path other-path item))))
         [other-path last-item false]))))
 
-(defn prev-path
+(defn butlast-path
   "Remove the last item of the path."
   [path]
   (let [split (split-path path)]
