@@ -394,6 +394,7 @@
   (binding [*throw-on-error* throw?
             *errors* (volatile! [])]
     (->> (ctpl/pages-seq (:data file))
+         (filter #(some? (:id %)))
          (run! #(validate-shape uuid/zero file % libraries :throw? throw?)))
 
     (deref *errors*)))

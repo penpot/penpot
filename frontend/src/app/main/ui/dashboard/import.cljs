@@ -343,7 +343,6 @@
                        (->> files (filter #(= (:status %) :importing)) count)
                        (:importing-templates @state))
 
-
         warning-files (->> files (filter #(and (= (:status %) :import-finish) (d/not-empty? (:errors %)))) count)
         success-files (->> files (filter #(and (= (:status %) :import-finish) (empty? (:errors %)))) count)
         pending-analysis? (> (->> files (filter #(= (:status %) :analyzing)) count) 0)
