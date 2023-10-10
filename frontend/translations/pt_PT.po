@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-07 12:12+0000\n"
+"PO-Revision-Date: 2023-10-11 12:01+0000\n"
 "Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
@@ -623,7 +623,7 @@ msgstr "Não há resultados para \"%s\""
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.no-projects-placeholder"
-msgstr "Projetos fixos aparecerão aqui"
+msgstr "Projetos afixados aparecerão aqui"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "dashboard.notifications.email-changed-successfully"
@@ -654,7 +654,7 @@ msgstr "Alterar palavra-passe"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.pin-unpin"
-msgstr "Fixar/Desafixar"
+msgstr "Afixar/Desafixar"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.projects-title"
