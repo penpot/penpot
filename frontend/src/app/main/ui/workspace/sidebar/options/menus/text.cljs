@@ -197,21 +197,20 @@
 
         handle-change-grow
         (mf/use-fn
-         (mf/deps ids)
+         (mf/deps ids new-css-system)
          (fn [value]
-          (let [uid (js/Symbol)
-
-                grow-type (if new-css-system
-                            (keyword value)
-                            (-> (dom/get-current-target value)
-                                (dom/get-data "value")
-                                (keyword)))]
-            (st/emit!
-             (dwu/start-undo-transaction uid)
-             (dch/update-shapes ids #(assoc % :grow-type grow-type)))
+           (let [uid (js/Symbol)
+                 grow-type (if new-css-system
+                             (keyword value)
+                             (-> (dom/get-current-target value)
+                                 (dom/get-data "value")
+                                 (keyword)))]
+             (st/emit!
+              (dwu/start-undo-transaction uid)
+              (dch/update-shapes ids #(assoc % :grow-type grow-type)))
             ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
-            (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
-          (when (some? on-blur) (on-blur))))]
+             (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
+           (when (some? on-blur) (on-blur))))]
 
     (if new-css-system
       [:div {:class (stl/css :grow-options)}

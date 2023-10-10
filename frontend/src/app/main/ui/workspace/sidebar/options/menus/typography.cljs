@@ -596,7 +596,9 @@
 (mf/defc typography-advanced-options
   {::mf/wrap [mf/memo]}
   [{:keys [visible?  typography editable? name-input-ref on-close on-change on-name-blur local? navigate-to-library on-key-down]}]
-  (let [ref (mf/use-ref nil)]
+  (let [ref       (mf/use-ref nil)
+        font-data (fonts/get-font-data (:font-id typography))]
+
     (mf/use-effect
      (mf/deps visible?)
      (fn []
@@ -607,14 +609,14 @@
     (when visible?
       [:div {:ref ref
              :class (stl/css :advanced-options-wrapper)}
+
        (if ^boolean editable?
          [:*
           [:div {:class (stl/css :font-name-wrapper)}
-           [:div
-            {:class (stl/css :typography-sample-input)
-             :style {:font-family (:font-family typography)
-                     :font-weight (:font-weight typography)
-                     :font-style (:font-style typography)}}
+           [:div {:class (stl/css :typography-sample-input)
+                  :style {:font-family (:font-family typography)
+                          :font-weight (:font-weight typography)
+                          :font-style (:font-style typography)}}
             (tr "workspace.assets.typography.sample")]
 
            [:input
@@ -633,44 +635,48 @@
                             :on-change on-change
                             :show-recent false}]]
 
-        ;;  TODO¡¡¡¡¡
-         [:div.element-set-content.typography-read-only-data
-          [:div.row-flex.typography-name
-           [:span {:title (:name typography)} (:name typography)]]
+         [:div {:class (stl/css :typography-info-wrapper)}
+          [:div {:class (stl/css :typography-name-wrapper)}
+           [:div {:class (stl/css :typography-sample)
 
-          [:div.row-flex
-           [:span.label (tr "workspace.assets.typography.font-id")]
-           [:span (:font-id typography)]]
+                  :style {:font-family (:font-family typography)
+                          :font-weight (:font-weight typography)
+                          :font-style (:font-style typography)}}
+            (tr "workspace.assets.typography.sample")]
 
-          [:div.element-set-actions-button.actions-inside
-           {:on-click on-close}
-           i/menu-refactor]
+           [:div {:class (stl/css :typography-name)
+                  :title (:name typography)}
+            (:name typography)]
+           [:span {:class (stl/css :typography-font)}
+            (:name font-data)]
+           [:div {:class (stl/css :action-btn)
+                  :on-click on-close}
+            i/menu-refactor]]
 
-          [:div.row-flex
-           [:span.label (tr "workspace.assets.typography.font-variant-id")]
-           [:span (:font-variant-id typography)]]
+          [:div {:class (stl/css :info-row)}
+           [:span {:class (stl/css :info-label)}  (tr "workspace.assets.typography.font-variant-id")]
+           [:span {:class (stl/css :info-content)} (:font-variant-id typography)]]
 
-          [:div.row-flex
-           [:span.label (tr "workspace.assets.typography.font-size")]
-           [:span (:font-size typography)]]
+          [:div {:class (stl/css :info-row)}
+           [:span {:class (stl/css :info-label)}  (tr "workspace.assets.typography.font-size")]
+           [:span {:class (stl/css :info-content)} (:font-size typography)]]
 
-          [:div.row-flex
-           [:span.label (tr "workspace.assets.typography.line-height")]
-           [:span (:line-height typography)]]
+          [:div {:class (stl/css :info-row)}
+           [:span {:class (stl/css :info-label)}  (tr "workspace.assets.typography.line-height")]
+           [:span {:class (stl/css :info-content)} (:line-height typography)]]
 
-          [:div.row-flex
-           [:span.label (tr "workspace.assets.typography.letter-spacing")]
-           [:span (:letter-spacing typography)]]
+          [:div {:class (stl/css :info-row)}
+           [:span {:class (stl/css :info-label)}  (tr "workspace.assets.typography.letter-spacing")]
+           [:span {:class (stl/css :info-content)} (:letter-spacing typography)]]
 
-          [:div.row-flex
-           [:span.label (tr "workspace.assets.typography.text-transform")]
-           [:span (:text-transform typography)]]
+          [:div {:class (stl/css :info-row)}
+           [:span {:class (stl/css :info-label)}  (tr "workspace.assets.typography.text-transform")]
+           [:span {:class (stl/css :info-content)} (:text-transform typography)]]
 
           (when-not local?
-            [:div.row-flex
-             [:a.go-to-lib-button
-              {:on-click navigate-to-library}
-              (tr "workspace.assets.typography.go-to-edit")]])])])))
+            [:a {:class (stl/css :link-btn)
+                 :on-click navigate-to-library}
+             (tr "workspace.assets.typography.go-to-edit")])])])))
 
 
 (mf/defc typography-entry
@@ -783,12 +789,14 @@
              [:div {:class (stl/css :typography-font)
                     :title (:name font-data)}
               (:name font-data)])])
-
-        (when ^boolean on-detach
-          [:div {:class (stl/css :element-set-actions)}
+        [:div {:class (stl/css :element-set-actions)}
+         (when ^boolean on-detach
            [:button {:class (stl/css :element-set-actions-button)
                      :on-click on-detach}
-            i/detach-refactor]])]
+            i/detach-refactor])
+         [:button {:class (stl/css :menu-btn)
+                   :on-click on-open}
+          i/menu-refactor]]]
 
        [:& typography-advanced-options
         {:visible? open?

@@ -134,7 +134,6 @@
 
     [:div {:class (dom/classnames (css :text-palette) true)
            :style #js {"--height" (str size "px")}}
-     
      (when show-arrows?
        [:button {:class (dom/classnames (css :left-arrow) true)
                  :disabled (= offset 0)

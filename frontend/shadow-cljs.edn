@@ -10,7 +10,8 @@
    :output-dir "resources/public/js/"
    :asset-path "/js"
    :devtools {:browser-inject :main
-              :watch-dir "resources/public"}
+              :watch-dir "resources/public"
+              :reload-strategy :full}
    :build-options {:manifest-name "manifest.json"}
 
    :modules

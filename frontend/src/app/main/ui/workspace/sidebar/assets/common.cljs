@@ -143,6 +143,7 @@
       [:div {:class (dom/classnames (css :asset-section) true)}
        [:& title-bar {:collapsable? true
                       :collapsed?   (not open?)
+                      :clickable-all? true
                       :on-collapsed #(st/emit! (dw/set-assets-section-open file-id section (not open?)))
                       :class        (css :title-spacing)
                       :title        (mf/html [:span {:class (dom/classnames (css :title-name) true)}

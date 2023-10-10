@@ -237,11 +237,12 @@
       [:div {:class (dom/classnames (css :sitemap) true)
              :style #js {"--height" (str size "px")}}
 
-       [:& title-bar {:collapsable? true
-                      :collapsed?   (not show-pages?)
-                      :on-collapsed toggle-pages
-                      :title        (tr "workspace.sidebar.sitemap")
-                      :class        (css :title-spacing-sitemap)}
+       [:& title-bar {:collapsable?   true
+                      :collapsed?     (not show-pages?)
+                      :on-collapsed   toggle-pages
+                      :clickable-all? true
+                      :title          (tr "workspace.sidebar.sitemap")
+                      :class          (css :title-spacing-sitemap)}
 
         (if workspace-read-only?
           [:div

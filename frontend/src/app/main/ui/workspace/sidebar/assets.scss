@@ -105,18 +105,16 @@
     }
   }
   .libraries-wrapper {
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
     display: flex;
     flex-direction: column;
     padding-left: $s-8;
-    height: calc(100% - $s-80);
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-gutter: stable;
-    overflow-y: overlay;
+    height: calc(100vh - $s-180);
   }
   .assets-header {
-    padding: $s-8 $s-12 $s-12 $s-12;
+    padding: $s-8 0 $s-12 $s-12;
     .search-wrapper {
       display: flex;
       gap: $s-4;

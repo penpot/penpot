@@ -184,6 +184,7 @@
              :ref dref}
        [:span {:class (stl/css :color-info)}
         [:span {:class (stl/css-case :color-name-wrapper true
+                                     :library-name-wrapper library-color?
                                      :editing editing-text?
                                      :gradient-name-wrapper gradient-color?)}
          [:span {:class (stl/css :color-bullet-wrapper)}
@@ -231,7 +232,6 @@
         (when (and (not gradient-color?)
                    (not multiple-colors?)
                    (not library-color?))
-
 
           [:div {:class (stl/css :opacity-element-wrapper)}
            [:span {:class (stl/css :icon-text)}
