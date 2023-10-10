@@ -10,6 +10,8 @@
    ["jszip" :as zip]
    [app.common.data :as d]
    [app.common.files.builder :as fb]
+   [app.common.files.repair :as cfr]
+   [app.common.files.validate :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gpa]
    [app.common.logging :as log]
@@ -640,6 +642,32 @@
                              (let [error (or (.-message data) (tr "dashboard.import.analyze-error"))]
                                (rx/of {:uri (:uri file) :error error}))))))))))
 
+(defn repair-file
+  [{:keys [status project-id imported-ids] :as result}]
+  (let [do-repair (fn [files]
+                    (let [file      (first files)
+                          libraries (rest files)
+                          errors    (cfv/validate-file file libraries)
+                          changes   (-> (cfr/repair-file (:data file) libraries errors)
+                                        (get :redo-changes))
+                          params    {:id (:id file)
+                                     :revn (:revn file)
+                                     :session-id (uuid/next)
+                                     :changes changes
+                                     :features (:features file)
+                                     :skip-validate true}]
+                      (rp/cmd! :update-file params)))]
+
+    (if (and (= status :import-finish)
+             (seq imported-ids))
+      (rx/concat
+       (->> (rx/from imported-ids)
+            (rx/mapcat #(rp/cmd! :get-file {:id % :project-id project-id}))
+            (rx/reduce conj [])
+            (rx/mapcat do-repair))
+       (rx/of result))
+      (rx/of result))))
+
 (defmethod impl/handler :import-files
   [{:keys [project-id files]}]
 
@@ -661,14 +689,18 @@
                           (let [[progress-stream file-stream] (process-file context file)]
                             (rx/merge progress-stream
                                       (->> file-stream
+                                           (rx/reduce conj [])
                                            (rx/map
-                                            (fn [file]
+                                            (fn [files]
+                                              (js/console.log "wwwfiles" (clj->js files))
                                               {:status :import-finish
-                                               :errors (:errors file)
-                                               :file-id (:file-id data)})))))))
+                                               :errors (:errors (first file))
+                                               :file-id (:file-id data)
+                                               :imported-ids (map :id files)})))))))
                        (rx/catch (fn [cause]
                                    (log/error :hint (ex-message cause) :file-id (:file-id data) :cause cause)
                                    (rx/of {:status :import-error
+                                           :project-id project-id
                                            :file-id (:file-id data)
                                            :error (ex-message cause)
                                            :error-data (ex-data cause)})))))))
@@ -682,11 +714,15 @@
                          :method :get})
                        (rx/map :body)
                        (rx/mapcat #(rp/cmd! :import-binfile {:file %
-                                                                 :project-id project-id}))
+                                                             :project-id project-id}))
                        (rx/map
-                        (fn [_]
+                        (fn [imported-ids]
                           {:status :import-finish
-                           :file-id (:file-id data)})))))))
+                           :project-id project-id
+                           :file-id (:file-id data)
+                           :imported-ids imported-ids})))))))
+
+         (rx/mapcat repair-file)
 
          (rx/catch (fn [cause]
                      (log/error :hint "unexpected error on import process"
