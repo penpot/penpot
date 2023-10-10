@@ -2668,8 +2668,10 @@
     display: flex;
     align-items: center;
     margin-bottom: 0.5rem;
+    font-size: 12px;
     cursor: pointer;
-    svg, img {
+    svg,
+    img {
       background-color: $color-canvas;
       border-radius: $br4;
       border: 2px solid transparent;
@@ -2697,6 +2699,7 @@
     align-items: center;
     margin-bottom: 0.5rem;
     justify-content: space-between;
+    font-size: 12px;
     cursor: pointer;
     height: 24px;
     svg {

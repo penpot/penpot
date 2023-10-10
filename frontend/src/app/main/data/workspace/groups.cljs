@@ -12,6 +12,7 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -226,8 +227,9 @@
     (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (wsh/lookup-selected state)
-            selected (cph/clean-loops objects selected)
+            selected (->> (wsh/lookup-selected state)
+                          (cph/clean-loops objects)
+                          (remove #(ctn/has-any-copy-parent? objects (get objects %))))
             shapes   (shapes-for-grouping objects selected)
             parents  (into #{} (map :parent-id) shapes)]
         (when-not (empty? shapes)
@@ -264,7 +266,8 @@
                   (ctl/grid-layout? objects (:parent-id shape))
                   (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells))))
 
-            selected (wsh/lookup-selected state)
+            selected (->> (wsh/lookup-selected state)
+                          (remove #(ctn/has-any-copy-parent? objects (get objects %))))
             changes-list (sequence
                           (keep prepare)
                           selected)
@@ -284,11 +287,12 @@
                      :origin it}
             undo-id (js/Symbol)]
 
-        (rx/of (dwu/start-undo-transaction undo-id)
+        (when-not (empty? selected)
+          (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
                (ptk/data-event :layout/update parents)
                (dwu/commit-undo-transaction undo-id)
-               (dws/select-shapes child-ids))))))
+               (dws/select-shapes child-ids)))))))
 
 (def mask-group
   (ptk/reify ::mask-group
@@ -296,8 +300,9 @@
     (watch [it state _]
       (let [page-id     (:current-page-id state)
             objects     (wsh/lookup-page-objects state page-id)
-            selected    (wsh/lookup-selected state)
-            selected    (cph/clean-loops objects selected)
+            selected    (->> (wsh/lookup-selected state)
+                             (cph/clean-loops objects)
+                             (remove #(ctn/has-any-copy-parent? objects (get objects %))))
             shapes      (shapes-for-grouping objects selected)
             first-shape (first shapes)]
         (when-not (empty? shapes)
