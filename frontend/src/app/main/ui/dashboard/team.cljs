@@ -950,7 +950,7 @@
     [:*
      [:& header {:team team :section :dashboard-team-webhooks}]
      [:section.dashboard-container.dashboard-team-webhooks
-      [:div
+      [:*
        [:& webhooks-hero]
        (if (empty? webhooks)
          [:div.webhooks-empty
