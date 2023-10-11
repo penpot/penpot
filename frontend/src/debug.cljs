@@ -23,6 +23,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.path.shortcuts]
+   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shortcuts]
    [app.main.features :as features]
    [app.main.repo :as rp]
@@ -240,6 +241,10 @@
     (when frame
       (prn (str (:name frame) " - " (:id frame))))
     nil))
+
+(defn ^:export select-by-id
+  [shape-id]
+  (st/emit! (dws/select-shape (uuid/uuid shape-id))))
 
 (defn dump-tree'
   ([state] (dump-tree' state false false false))

@@ -230,7 +230,7 @@
         ;; to be executed on a separated executor for avoid to do the
         ;; CPU intensive operation on vthread.
         file (-> (climit/configure cfg :update-file)
-                 (climit/submit! (partial update-file-data file libraries changes skip-validate)))]
+                 (climit/submit! (partial update-file-data conn file libraries changes skip-validate)))]
 
     (db/insert! conn :file-change
                 {:id (uuid/next)
@@ -264,11 +264,22 @@
       (get-lagged-changes conn params))))
 
 (defn- update-file-data
-  [file libraries changes skip-validate]
+  [conn file libraries changes skip-validate]
   (let [validate (fn [file]
                    (when (and (cf/flags :file-validation)
                               (not skip-validate))
-                     (val/validate-file file libraries :throw? true)))]
+                     (val/validate-file file libraries :throw? true)))
+        
+        do-migrate-v2 (fn [file]
+                        ;; When migrating to components-v2 we need the libraries even
+                        ;; if the validations are disabled.
+                        (let [libraries (or (seq libraries)
+                                            (-> (->> (files/get-file-libraries conn (:id file))
+                                                     (map #(get-file conn (:id %)))
+                                                     (map #(update % :data blob/decode))
+                                                     (d/index-by :id))
+                                                (assoc (:id file) file)))]
+                          (ctf/migrate-to-components-v2 file libraries)))]
     (-> file
         (update :revn inc)
         (update :data (fn [data]
@@ -280,7 +291,7 @@
 
                           (and (contains? ffeat/*current* "components/v2")
                                (not (contains? ffeat/*previous* "components/v2")))
-                          (ctf/migrate-to-components-v2)
+                          (do-migrate-v2)
 
                           :always
                           (cp/process-changes changes))))

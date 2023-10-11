@@ -253,11 +253,18 @@
        (into #{} (comp (filter pmap/pointer-map?)
                        (map pmap/get-id)))))
 
+(declare get-file-libraries)
+
 ;; FIXME: file locking
 (defn- process-components-v2-feature
   "A special case handling of the components/v2 feature."
-  [{:keys [features data] :as file}]
-  (let [data     (ctf/migrate-to-components-v2 data)
+  [conn {:keys [features data] :as file}]
+  (let [libraries (-> (->> (get-file-libraries conn (:id file))      ; This may be slow, but it's executed only once,
+                           (map #(db/get conn :file {:id (:id %)}))  ; in the migration to components-v2
+                           (map #(update % :data blob/decode))
+                           (d/index-by :id))
+                      (assoc (:id file) file))
+        data     (ctf/migrate-to-components-v2 data libraries)
         features (conj features "components/v2")]
     (-> file
         (assoc ::pmg/migrated true)
@@ -265,7 +272,7 @@
         (assoc :data data))))
 
 (defn handle-file-features!
-  [{:keys [features] :as file} client-features]
+  [conn {:keys [features] :as file} client-features]
 
   ;; Check features compatibility between the currently supported features on
   ;; the current backend instance and the file retrieved from the database
@@ -287,7 +294,7 @@
     ;; components and breaking the whole file."
     (and (contains? client-features "components/v2")
          (not (contains? features "components/v2")))
-    (as-> file (process-components-v2-feature file))
+    (as-> file (process-components-v2-feature conn file))
 
     ;; This operation is needed for backward comapatibility with frontends that
     ;; does not support pointer-map resolution mechanism; this just resolves the
@@ -355,7 +362,7 @@
                       (decode-row)
                       (pmg/migrate-file))
 
-           file   (handle-file-features! file client-features)]
+           file   (handle-file-features! conn file client-features)]
 
        ;; NOTE: when file is migrated, we break the rule of no perform
        ;; mutations on get operations and update the file with all
