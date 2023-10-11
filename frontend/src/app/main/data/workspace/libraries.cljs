@@ -324,7 +324,8 @@
     (watch [_ state _]
       (let [objects       (wsh/lookup-page-objects state)
             selected      (->> (wsh/lookup-selected state)
-                               (cph/clean-loops objects))
+                               (cph/clean-loops objects)
+                               (remove #(ctn/has-any-copy-parent? objects (get objects %)))) ;; We don't want to change the structure of component copies
             components-v2 (features/active-feature? state :components-v2)]
         (rx/of (add-component2 selected components-v2))))))
 
@@ -337,7 +338,8 @@
       (let [components-v2    (features/active-feature? state :components-v2)
             objects       (wsh/lookup-page-objects state)
             selected      (->> (wsh/lookup-selected state)
-                               (cph/clean-loops objects))
+                               (cph/clean-loops objects)
+                               (remove #(ctn/has-any-copy-parent? objects (get objects %)))) ;; We don't want to change the structure of component copies
             added-components (map
                               #(add-component2 [%] components-v2)
                               selected)
@@ -483,6 +485,20 @@
 
         (rx/of (dch/commit-changes (assoc changes :file-id library-id)))))))
 
+
+(defn restore-components
+  "Restore multiple deleted component definded by a map with the component id as key and the component library as value"
+  [components-data]
+  (dm/assert! (map? components-data))
+  (ptk/reify ::restore-components
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (rx/map #(restore-component (val %) (key %)) (rx/from components-data))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+
 (defn instantiate-component
   "Create a new shape in the current page, from the component with the given id
   in the given file library. Then selects the newly created instance."
@@ -533,6 +549,19 @@
                           (dwlh/generate-detach-instance container id))]
 
         (rx/of (dch/commit-changes changes))))))
+
+(defn detach-components
+  "Remove all references to components in the shapes with the given ids"
+  [ids]
+  (dm/assert! (seq ids))
+  (ptk/reify ::detach-components
+    ptk/WatchEvent
+    (watch [_ _ _]
+           (let [undo-id (js/Symbol)]
+             (rx/concat
+              (rx/of (dwu/start-undo-transaction undo-id))
+              (rx/map #(detach-component %) (rx/from ids))
+              (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (def detach-selected-components
   (ptk/reify ::detach-selected-components
@@ -620,6 +649,20 @@
                                                                  (:redo-changes changes)
                                                                  file))
         (rx/of (dch/commit-changes changes))))))
+
+(defn reset-components
+  "Cancels all modifications in the shapes with the given ids"
+  [ids]
+  (dm/assert! (seq ids))
+  (ptk/reify ::reset-components
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (rx/map #(reset-component %) (rx/from ids))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+
 
 (defn update-component
   "Modify the component linked to the shape with the given id, in the
@@ -734,17 +777,6 @@
             root-id         (:main-instance-id component)]
            (rx/of (dwt/update-thumbnail file-id page-id root-id))))))
 
-(defn update-component-in-bulk
-  [shapes file-id]
-  (ptk/reify ::update-component-in-bulk
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [undo-id (js/Symbol)]
-       (rx/concat
-        (rx/of (dwu/start-undo-transaction undo-id))
-        (rx/map #(update-component-sync (:id %) file-id (uuid/next)) (rx/from shapes))
-        (rx/of (dwu/commit-undo-transaction undo-id)))))))
-
 (defn- find-shape-index
   [objects id shape-id]
   (let [object (get objects id)]
@@ -757,7 +789,7 @@
                  second)
             0)))))
 
-(defn component-swap
+(defn- component-swap
   "Swaps a component with another one"
   [shape file-id id-new-component]
   (dm/assert! (uuid? id-new-component))
@@ -782,18 +814,29 @@
                                                  position
                                                  page
                                                  libraries)
-            changes (pcb/change-parent changes (:parent-id shape) [new-shape] index {:component-swap true})
-            undo-id (js/Symbol)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
+            changes (pcb/change-parent changes (:parent-id shape) [new-shape] index {:component-swap true})]
+        (rx/of (dch/commit-changes changes)
                (ptk/data-event :layout/update [(:id new-shape)])
-               (dws/select-shapes (d/ordered-set (:id new-shape)))
-               (dwsh/delete-shapes nil (d/ordered-set (:id shape)) {:component-swap true})
-               (dwu/commit-undo-transaction undo-id)
-               (dwsp/open-specialized-panel :component-swap [(assoc new-shape :parent-id (:parent-id shape))]))))))
+               (dws/select-shape (:id new-shape) true)
+               (dwsh/delete-shapes nil (d/ordered-set (:id shape)) {:component-swap true}))))))
 
 
 
+(defn component-multi-swap
+  "Swaps several components with another one"
+  [shapes file-id id-new-component]
+  (dm/assert! (seq shapes))
+  (dm/assert! (uuid? id-new-component))
+  (dm/assert! (uuid? file-id))
+  (ptk/reify ::component-multi-swap
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (rx/map #(component-swap % file-id id-new-component) (rx/from shapes))
+         (rx/of (dwu/commit-undo-transaction undo-id))
+         (rx/of (dwsp/open-specialized-panel :component-swap)))))))
 
 
 (def valid-asset-types

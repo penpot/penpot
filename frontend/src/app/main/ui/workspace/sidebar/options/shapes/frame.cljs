@@ -62,7 +62,7 @@
                         :values measure-values
                         :type type
                         :shape shape}]
-     [:& component-menu {:shape shape}]
+     [:& component-menu {:shapes [shape]}]
      (when (or (not is-layout-child?) is-layout-child-absolute?)
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
