@@ -277,6 +277,12 @@
   ([child]
    (= :fill (:layout-item-v-sizing child))))
 
+(defn fill?
+  ([objects id]
+   (or (fill-height? objects id) (fill-width? objects id)))
+  ([shape]
+   (or (fill-height? shape) (fill-width? shape))))
+
 (defn auto-width?
   ([objects id]
    (= :auto (dm/get-in objects [id :layout-item-h-sizing])))
@@ -288,6 +294,12 @@
    (= :auto (dm/get-in objects [id :layout-item-v-sizing])))
   ([child]
    (= :auto (:layout-item-v-sizing child))))
+
+(defn auto?
+  ([objects id]
+   (or (auto-height? objects id) (auto-width? objects id)))
+  ([shape]
+   (or (auto-height? shape) (auto-width? shape))))
 
 (defn col?
   ([objects id]
