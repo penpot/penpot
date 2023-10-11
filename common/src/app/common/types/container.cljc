@@ -94,6 +94,18 @@
   [container shape]
   (map #(get-shape container %) (:shapes shape)))
 
+(defn get-children-in-instance
+  "Get the shape and their children recursively, but stopping when
+   a component nested instance is found."
+  [objects id]
+  (letfn [(get-children-rec [children id]
+            (let [shape (get objects id)]
+              (if (and (ctk/instance-head? shape) (seq children))
+                children
+                (into (conj children shape)
+                      (mapcat #(get-children-rec children %) (:shapes shape))))))]
+    (get-children-rec [] id)))
+
 (defn get-component-shape
   "Get the parent top shape linked to a component for this shape, if any"
   ([objects shape] (get-component-shape objects shape nil))
@@ -163,6 +175,8 @@
   (cond
     (or (nil? shape) (cph/root? shape))
     false
+    (nil? (:parent-id shape))  ; This occurs in the root of components v1
+    true
     (ctk/main-instance? shape)
     true
     (ctk/instance-head? shape)
@@ -253,7 +267,6 @@
                                (assoc :parent-id nil)
                                (assoc :frame-id uuid/zero))
                            (get-shape component (:id component)))
-
 
          orig-pos        (gpt/point (:x component-shape) (:y component-shape))
          delta           (gpt/subtract position orig-pos)

@@ -91,7 +91,7 @@
 (defn validate-geometry
   "Validate that the shape has valid coordinates, selrect and points."
   [shape file page]
-  (when (and (not= (:type shape) :path)
+  (when (and (not (#{:path :bool} (:type shape)))
              (or (nil? (:x shape))       ; This may occur in root shape (uuid/zero) in old files
                  (nil? (:y shape))
                  (nil? (:width shape))
