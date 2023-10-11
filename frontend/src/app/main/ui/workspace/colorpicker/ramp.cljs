@@ -7,12 +7,12 @@
 (ns app.main.ui.workspace.colorpicker.ramp
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.common.math :as mth]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.components.color-bullet-new :as cb]
    [app.main.ui.context :as ctx]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
-   [app.util.color :as uc]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
@@ -72,8 +72,8 @@
 
         on-change-value-saturation
         (fn [new-saturation new-value]
-          (let [hex (uc/hsv->hex [hue new-saturation new-value])
-                [r g b] (uc/hex->rgb hex)]
+          (let [hex (cc/hsv->hex [hue new-saturation new-value])
+                [r g b] (cc/hex->rgb hex)]
             (on-change {:hex hex
                         :r r :g g :b b
                         :s new-saturation
@@ -81,8 +81,8 @@
 
         on-change-hue
         (fn [new-hue]
-          (let [hex (uc/hsv->hex [new-hue saturation value])
-                [r g b] (uc/hex->rgb hex)]
+          (let [hex (cc/hsv->hex [new-hue saturation value])
+                [r g b] (cc/hex->rgb hex)]
             (on-change {:hex hex
                         :r r :g g :b b
                         :h new-hue})))

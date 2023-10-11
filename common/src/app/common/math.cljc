@@ -133,9 +133,10 @@
 (defn ceil
   "Returns the smallest integer greater than
   or equal to a given number."
+  ^double
   [v]
   #?(:cljs (js/Math.ceil v)
-     :clj (Math/ceil v)))
+     :clj (Math/ceil ^double v)))
 
 (defn precision
   [v n]

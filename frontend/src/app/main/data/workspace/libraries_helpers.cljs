@@ -62,6 +62,8 @@
 
 ;; ---- Components and instances creation ----
 
+
+;; TODO: moved to common
 (defn generate-add-component-changes
   [changes root objects file-id page-id components-v2]
   (let [name (:name root)
@@ -89,6 +91,7 @@
                                        page-id))]
     [root-shape changes]))
 
+;; TODO: moved to common
 (defn generate-add-component
   "If there is exactly one id, and it's a frame (or a group in v1), and not already a component,
   use it as root. Otherwise, create a frame (v2) or group (v1) that contains all ids. Then, make a

@@ -7,11 +7,11 @@
 (ns app.main.ui.workspace.colorpicker.harmony
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.main.ui.context :as ctx]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
-   [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [cuerdas.core :as str]
@@ -82,8 +82,8 @@
                               angle (mth/degrees (mth/atan2 px py))
                               new-hue (mod (- angle 90) 360)
                               new-saturation (mth/clamp (mth/distance [px py] [0 0]) 0 1)
-                              hex (uc/hsv->hex [new-hue new-saturation value])
-                              [r g b] (uc/hex->rgb hex)]
+                              hex (cc/hsv->hex [new-hue new-saturation value])
+                              [r g b] (cc/hex->rgb hex)]
                           (on-change {:hex hex
                                       :r r :g g :b b
                                       :h new-hue
@@ -108,15 +108,15 @@
              (on-finish-drag))))
 
         on-change-value (fn [new-value]
-                          (let [hex (uc/hsv->hex [hue saturation new-value])
-                                [r g b] (uc/hex->rgb hex)]
+                          (let [hex (cc/hsv->hex [hue saturation new-value])
+                                [r g b] (cc/hex->rgb hex)]
                             (on-change {:hex hex
                                         :r r :g g :b b
                                         :v new-value})))
         on-complement-click (fn [_]
                               (let [new-hue (mod (+ hue 180) 360)
-                                    hex (uc/hsv->hex [new-hue saturation value])
-                                    [r g b] (uc/hex->rgb hex)]
+                                    hex (cc/hsv->hex [new-hue saturation value])
+                                    [r g b] (cc/hex->rgb hex)]
                                 (on-change {:hex hex
                                             :r r :g g :b b
                                             :h new-hue

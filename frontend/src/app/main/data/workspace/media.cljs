@@ -13,6 +13,7 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.schema :as sm]
    [app.common.svg :refer [optimize]]
+   [app.common.svg.shapes-builder :as csvg.shapes-builder]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -273,7 +274,7 @@
         process-svg
         (fn [svg-data]
           (let [[shape children]
-                (svg/create-svg-shapes svg-data pos objects uuid/zero nil #{} false)]
+                (csvg.shapes-builder/create-svg-shapes svg-data pos objects uuid/zero nil #{} false)]
             [shape children]))]
 
     (->> (upload-images svg-data)

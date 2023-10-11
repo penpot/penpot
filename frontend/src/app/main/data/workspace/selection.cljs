@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.files.libraries-helpers :as cflh]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
@@ -408,6 +409,7 @@
           (instantiate-component))]
     changes))
 
+;; TODO: move to common.files.shape-helpers
 (defn- prepare-duplicate-shape-change
   ([changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id]
    (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id (:frame-id obj) (:parent-id obj) false false))
@@ -437,7 +439,7 @@
            regenerate-component
            (fn [changes shape]
              (let [components-v2 (dm/get-in library-data [:options :components-v2])
-                   [_ changes] (dwlh/generate-add-component-changes changes shape objects file-id (:id page) components-v2)]
+                   [_ changes] (cflh/generate-add-component-changes changes shape objects file-id (:id page) components-v2)]
                changes))
 
            new-obj

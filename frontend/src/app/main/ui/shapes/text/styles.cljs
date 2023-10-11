@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.text.styles
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.text :as txt]
    [app.common.transit :as transit]
@@ -76,7 +77,7 @@
          fill-opacity    (or (-> data :fills first :fill-opacity) (:fill-opacity data))
          fill-gradient   (or (-> data :fills first :fill-color-gradient) (:fill-color-gradient data))
 
-         [r g b a]       (uc/hex->rgba fill-color fill-opacity)
+         [r g b a]       (cc/hex->rgba fill-color fill-opacity)
          text-color      (when (and (some? fill-color) (some? fill-opacity))
                            (str/format "rgba(%s, %s, %s, %s)" r g b a))
 

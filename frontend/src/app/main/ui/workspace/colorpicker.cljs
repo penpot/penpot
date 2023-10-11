@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.colorpicker
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.libraries :as dwl]
@@ -22,7 +23,6 @@
    [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector]]
    [app.main.ui.workspace.colorpicker.libraries :refer [libraries]]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
-   [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -190,9 +190,9 @@
       (let [node (mf/ref-val node-ref)
             {:keys [r g b h v]} current-color
             rgb [r g b]
-            hue-rgb (uc/hsv->rgb [h 1.0 255])
-            hsl-from (uc/hsv->hsl [h 0.0 v])
-            hsl-to (uc/hsv->hsl [h 1.0 v])
+            hue-rgb (cc/hsv->rgb [h 1.0 255])
+            hsl-from (cc/hsv->hsl [h 0.0 v])
+            hsl-to (cc/hsv->hsl [h 1.0 v])
 
             format-hsl (fn [[h s l]]
                          (str/fmt "hsl(%s, %s, %s)"
@@ -208,8 +208,8 @@
     (mf/with-effect [picking-color? picked-color picked-color-select]
       (when (and picking-color? picked-color picked-color-select)
         (let [[r g b alpha] picked-color
-              hex (uc/rgb->hex [r g b])
-              [h s v] (uc/hex->hsv hex)]
+              hex (cc/rgb->hex [r g b])
+              [h s v] (cc/hex->hsv hex)]
           (handle-change-color {:hex hex
                                 :r r :g g :b b
                                 :h h :s s :v v

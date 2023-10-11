@@ -6,15 +6,15 @@
 
 (ns app.util.import.parser
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.svg.path :as svg.path]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
-   [app.util.color :as uc]
    [app.util.json :as json]
-   [app.util.path.parser :as upp]
    [cuerdas.core :as str]))
 
 (def url-regex
@@ -278,7 +278,7 @@
 
 (defn parse-path
   [props center svg-data]
-  (let [content           (upp/parse-path (:d svg-data))]
+  (let [content (svg.path/parse (:d svg-data))]
     (-> props
         (assoc :content content)
         (assoc :center center))))
@@ -454,7 +454,7 @@
              :fill-color nil
              :fill-opacity nil)
 
-      (uc/hex? fill)
+      (cc/valid-hex-color? fill)
       (assoc :fill-color fill
              :fill-opacity (-> svg-data (:fill-opacity "1") d/parse-double))
 

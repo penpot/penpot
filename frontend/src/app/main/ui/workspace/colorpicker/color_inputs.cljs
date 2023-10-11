@@ -7,10 +7,10 @@
 (ns app.main.ui.workspace.colorpicker.color-inputs
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.main.ui.context :as ctx]
-   [app.util.color :as uc]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
@@ -45,23 +45,27 @@
 
         setup-hex-color
         (fn [hex]
-          (let [[r g b] (uc/hex->rgb hex)
-                [h s v] (uc/hex->hsv hex)]
+          (let [[r g b] (cc/hex->rgb hex)
+                [h s v] (cc/hex->hsv hex)]
             (on-change {:hex hex
                         :h h :s s :v v
                         :r r :g g :b b})))
         on-change-hex
         (fn [e]
           (let [val (-> e dom/get-target-val parse-hex)]
-            (when (uc/hex? val)
+            (when (cc/valid-hex-color? val)
               (setup-hex-color val))))
 
         on-blur-hex
         (fn [e]
           (let [val (-> e dom/get-target-val)
+                ;; FIXME: looks redundant, cc/parse already handles
+                ;; hex colors; also it performs the parse-hex twice
+                ;; that is completly unnecessary
                 val (cond
-                      (uc/color? val) (uc/parse-color val)
-                      (uc/hex? (parse-hex val)) (parse-hex val))]
+                      (cc/color-string? val) (cc/parse val)
+                      (cc/valid-hex-color? (parse-hex val)) (parse-hex val))]
+
             (when (some? val)
               (setup-hex-color val))))
 
@@ -76,15 +80,15 @@
               (when (not (nil? val))
                 (if (#{:r :g :b} property)
                   (let [{:keys [r g b]} (merge color (hash-map property val))
-                        hex (uc/rgb->hex [r g b])
-                        [h s v] (uc/hex->hsv hex)]
+                        hex (cc/rgb->hex [r g b])
+                        [h s v] (cc/hex->hsv hex)]
                     (on-change {:hex hex
                                 :h h :s s :v v
                                 :r r :g g :b b}))
 
                   (let [{:keys [h s v]} (merge color (hash-map property val))
-                        hex (uc/hsv->hex [h s v])
-                        [r g b] (uc/hex->rgb hex)]
+                        hex (cc/hsv->hex [h s v])
+                        [r g b] (cc/hex->rgb hex)]
                     (on-change {:hex hex
                                 :h h :s s :v v
                                 :r r :g g :b b})))))))

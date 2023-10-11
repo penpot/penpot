@@ -6,7 +6,7 @@
 
 (ns app.main.data.workspace.colors
   (:require
-   [app.common.colors :as colors]
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
@@ -355,7 +355,7 @@
               (assoc-in [:workspace-global :picking-color?] true)
               (assoc ::md/modal {:id (random-uuid)
                                  :type :colorpicker
-                                 :props {:data {:color colors/black
+                                 :props {:data {:color cc/black
                                                 :opacity 1}
                                          :disable-opacity false
                                          :disable-gradient false
@@ -438,9 +438,9 @@
 
 (defn split-color-components
   [{:keys [color opacity] :as data}]
-  (let [value (if (uc/hex? color) color colors/black)
-        [r g b] (uc/hex->rgb value)
-        [h s v] (uc/hex->hsv value)]
+  (let [value (if (cc/valid-hex-color? color) color cc/black)
+        [r g b] (cc/hex->rgb value)
+        [h s v] (cc/hex->hsv value)]
     (merge data
            {:hex (or value "000000")
             :alpha (or opacity 1)

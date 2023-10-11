@@ -6,12 +6,11 @@
 
 (ns app.main.ui.shapes.text.fo-text
   (:require
-   [app.common.colors :as clr]
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.styles :as sts]
-   [app.util.color :as uc]
    [app.util.object :as obj]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -85,9 +84,9 @@
   [colors]
   (assert (set? colors))
   (loop [current-rgb [0 0 0]]
-    (let [current-hex (uc/rgb->hex current-rgb)]
+    (let [current-hex (cc/rgb->hex current-rgb)]
       (if (contains? colors current-hex)
-        (recur (uc/next-rgb current-rgb))
+        (recur (cc/next-rgb current-rgb))
         current-hex))))
 
 (defn- fill->color
@@ -122,7 +121,7 @@
              (filter some?))
 
         colors (->> color-data
-                    (into #{clr/black}
+                    (into #{cc/black}
                           (comp (filter #(= :solid (:type %)))
                                 (map :hex))))
 

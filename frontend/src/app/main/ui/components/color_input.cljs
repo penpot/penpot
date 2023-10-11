@@ -6,8 +6,8 @@
 
 (ns app.main.ui.components.color-input
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
-   [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
@@ -19,9 +19,9 @@
 (defn clean-color
   [value]
   (-> value
-      (uc/expand-hex)
-      (uc/parse-color)
-      (uc/prepend-hash)))
+      (cc/expand-hex)
+      (cc/parse)
+      (cc/prepend-hash)))
 
 (mf/defc color-input*
   {::mf/wrap-props false
@@ -62,14 +62,14 @@
          (mf/deps ref)
          (fn [new-value]
            (let [input-node (mf/ref-val ref)]
-             (dom/set-value! input-node (uc/remove-hash new-value)))))
+             (dom/set-value! input-node (cc/remove-hash new-value)))))
 
         apply-value
         (mf/use-fn
          (mf/deps on-change update-input)
          (fn [new-value]
            (mf/set-ref-val! dirty-ref false)
-           (when (and new-value (not= (uc/remove-hash new-value) value))
+           (when (and new-value (not= (cc/remove-hash new-value) value))
              (when on-change
                (on-change new-value))
              (update-input new-value))))
@@ -170,7 +170,7 @@
      [:> :input props]
      ;; FIXME: this causes some weird interactions because of using apply-value
      ;; [:datalist {:id list-id}
-     ;;  (for [color-name uc/color-names]
+     ;;  (for [color-name cc/color-names]
      ;;    [:option color-name])]
      ]))
 

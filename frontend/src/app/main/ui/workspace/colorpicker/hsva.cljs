@@ -7,9 +7,9 @@
 (ns app.main.ui.workspace.colorpicker.hsva
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.main.ui.context :as ctx]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
-   [app.util.color :as uc]
    [rumext.v2 :as mf]))
 
 (mf/defc hsva-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
@@ -19,8 +19,8 @@
                                (fn [new-value]
                                  (let [change (hash-map key new-value)
                                        {:keys [h s v]} (merge color change)
-                                       hex (uc/hsv->hex [h s v])
-                                       [r g b] (uc/hex->rgb hex)]
+                                       hex (cc/hsv->hex [h s v])
+                                       [r g b] (cc/hex->rgb hex)]
                                    (on-change (merge change
                                                      {:hex hex
                                                       :r r :g g :b b})))))

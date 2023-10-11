@@ -11,6 +11,8 @@
    [app.common.data.macros :as dm]
    [app.common.files.features :as ffeat]
    [app.common.files.helpers :as cfh]
+   [app.common.files.libraries-helpers :as cflh]
+   [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpp]
@@ -55,7 +57,6 @@
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.path :as dwdp]
@@ -2094,14 +2095,14 @@
                               page
                               (cons shape children))
 
-                [_ _ changes2] (dwlh/generate-add-component it
+                [_ _ changes2] (cflh/generate-add-component it
                                                             [shape]
                                                             (:objects page')
                                                             (:id page)
                                                             (:id file-data)
                                                             true
                                                             nil
-                                                            dwsh/prepare-create-artboard-from-selection)
+                                                            cfsh/prepare-create-artboard-from-selection)
 
                 changes (pcb/concat-changes changes1 changes2)]
 

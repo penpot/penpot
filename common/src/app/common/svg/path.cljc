@@ -4,16 +4,16 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.util.path.parser
+(ns app.common.svg.path
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as upg]
+   [app.common.math :as mth]
    [app.common.path.commands :as upc]
    [app.common.svg :as csvg]
-   [app.util.path.arc-to-curve :refer [a2c]]
    [cuerdas.core :as str]))
-;;
+
 (def commands-regex #"(?i)[mzlhvcsqta][^mzlhvcsqta]*")
 
 ;; Matches numbers for path values allows values like... -.01, 10, +12.22
@@ -22,7 +22,8 @@
 
 (def flag-regex #"[01]")
 
-(defn extract-params [cmd-str extract-commands]
+(defn extract-params
+  [cmd-str extract-commands]
   (loop [result []
          extract-idx 0
          current {}
@@ -35,7 +36,9 @@
           match (re-find regex remain)]
 
       (if match
-        (let [value (-> match first csvg/fix-dot-number d/read-string)
+        (let [value (if (= type :flag)
+                      (d/parse-integer match)
+                      (-> match first csvg/fix-dot-number d/parse-double))
               remain (str/replace-first remain regex "")
               current (assoc current param value)
               extract-idx (inc extract-idx)
@@ -44,7 +47,7 @@
                 [(conj result current) {} 0]
                 [result current extract-idx])]
           (recur result
-                 extract-idx
+                 (int extract-idx)
                  current
                  remain))
         (cond-> result
@@ -52,7 +55,9 @@
 
 ;; Path specification
 ;; https://www.w3.org/TR/SVG11/paths.html
-(defmulti parse-command (comp str/upper first))
+(defmulti parse-command
+  (fn [cmd]
+    (str/upper (subs cmd 0 1))))
 
 (defmethod parse-command "M" [cmd]
   (let [relative (str/starts-with? cmd "m")
@@ -125,8 +130,8 @@
   (let [relative (str/starts-with? cmd "q")
         param-list (extract-params cmd [[:cx :number]
                                         [:cy :number]
-                                        [:x   :number]
-                                        [:y   :number]])]
+                                        [:x  :number]
+                                        [:y  :number]])]
     (for [params param-list]
       {:command :quadratic-bezier-curve-to
        :relative relative
@@ -178,6 +183,116 @@
      :c2x (:x cp2)
      :c2y (:y cp2)}))
 
+(defn- unit-vector-angle
+  [ux uy vx vy]
+  (let [sign (if (> 0 (- (* ux vy) (* uy vx))) -1.0 1.0)
+        dot  (+ (* ux vx) (* uy vy))
+        dot  (cond
+               (> dot 1.0)   1.0
+               (< dot -1.0) -1.0
+               :else         dot)]
+    (* sign (mth/acos dot))))
+
+(defn- get-arc-center [x1 y1 x2 y2 fa fs rx ry sin-phi cos-phi]
+  (let [x1p      (+ (* cos-phi (/ (- x1 x2) 2)) (* sin-phi (/ (- y1 y2) 2)))
+        y1p      (+ (* (- sin-phi) (/ (- x1 x2) 2)) (* cos-phi (/ (- y1 y2) 2)))
+        rx-sq    (* rx rx)
+        ry-sq    (* ry ry)
+        x1p-sq   (* x1p x1p)
+        y1p-sq   (* y1p y1p)
+        radicant (- (* rx-sq ry-sq)
+                    (* rx-sq y1p-sq)
+                    (* ry-sq x1p-sq))
+        radicant (if (< radicant 0) 0 radicant)
+        radicant (/ radicant (+ (* rx-sq y1p-sq) (* ry-sq x1p-sq)))
+        radicant (* (mth/sqrt radicant) (if (= fa fs) -1 1))
+
+        cxp      (* radicant (/ rx ry) y1p)
+        cyp      (* radicant (/ (- ry) rx) x1p)
+        cx       (+ (- (* cos-phi cxp)
+                       (* sin-phi cyp))
+                    (/ (+ x1 x2) 2))
+        cy       (+ (* sin-phi cxp)
+                    (* cos-phi cyp)
+                    (/ (+ y1 y2) 2))
+
+        v1x      (/ (- x1p cxp) rx)
+        v1y      (/ (- y1p cyp) ry)
+        v2x      (/ (- (- x1p) cxp) rx)
+        v2y      (/ (- (- y1p) cyp) ry)
+        theta1   (unit-vector-angle 1 0 v1x v1y)
+
+        dtheta (unit-vector-angle v1x v1y v2x v2y)
+        dtheta (if (and (= fs 0) (> dtheta 0)) (- dtheta (* mth/PI 2)) dtheta)
+        dtheta (if (and (= fs 1) (< dtheta 0)) (+ dtheta (* mth/PI 2)) dtheta)]
+
+    [cx cy theta1 dtheta]))
+
+(defn approximate-unit-arc
+  [theta1 dtheta]
+  (let [alpha (* (/ 4 3) (mth/tan (/ dtheta 4)))
+        x1 (mth/cos theta1)
+        y1 (mth/sin theta1)
+        x2 (mth/cos (+ theta1 dtheta))
+        y2 (mth/sin (+ theta1 dtheta))]
+    [x1 y1 (- x1 (* y1 alpha)) (+ y1 (* x1 alpha)) (+ x2 (* y2 alpha)) (- y2 (* x2 alpha)) x2 y2]))
+
+(defn- process-curve
+  [curve cc rx ry sin-phi cos-phi]
+  (reduce (fn [curve i]
+            (let [x  (nth curve i)
+                  y  (nth curve (inc i))
+                  x  (* x rx)
+                  y  (* y ry)
+                  xp (- (* cos-phi x) (* sin-phi y))
+                  yp (+ (* sin-phi x) (* cos-phi y))]
+              (-> curve
+                  (assoc i (+ xp (nth cc 0)))
+                  (assoc (inc i) (+ yp (nth cc 1))))))
+          curve
+          (range 0 (count curve) 2)))
+
+(defn arc->beziers*
+  [x1 y1 x2 y2 fa fs rx ry phi]
+  (let [tau      (* mth/PI 2)
+        phi-tau  (/ (* phi tau) 360)
+        sin-phi  (mth/sin phi-tau)
+        cos-phi  (mth/cos phi-tau)
+
+        x1p      (+ (/ (* cos-phi (- x1 x2)) 2)
+                    (/ (* sin-phi (- y1 y2)) 2))
+        y1p      (+ (/ (* (- sin-phi) (- x1 x2)) 2)
+                    (/ (* cos-phi (- y1 y2)) 2))]
+
+    (if (or (= x1p 0)
+            (= y1p 0)
+            (= rx 0)
+            (= ry 0))
+      []
+      (let [rx       (mth/abs rx)
+            ry       (mth/abs ry)
+            lambda   (+ (/ (* x1p x1p) (* rx rx))
+                        (/ (* y1p y1p) (* ry ry)))
+            rx       (if (> lambda 1) (* rx (mth/sqrt lambda)) rx)
+            ry       (if (> lambda 1) (* ry (mth/sqrt lambda)) ry)
+
+            cc       (get-arc-center x1 y1 x2 y2 fa fs rx ry sin-phi cos-phi)
+            theta1   (nth cc 2)
+            dtheta   (nth cc 3)
+            segments (mth/max (mth/ceil (/ (mth/abs dtheta) (/ tau 4))) 1)
+            dtheta   (/ dtheta segments)]
+
+        (loop [i 0.0
+               t (double theta1)
+               r []]
+          (if (< i segments)
+            (let [curve (approximate-unit-arc t dtheta)
+                  curve (process-curve curve cc rx ry sin-phi cos-phi)]
+              (recur (inc i)
+                     (+ t dtheta)
+                     (conj r curve)))
+            r))))))
+
 (defn arc->beziers [from-p command]
   (let [to-command
         (fn [[_ _ c1x c1y c2x c2y x y]]
@@ -189,7 +304,7 @@
 
         {from-x :x from-y :y} from-p
         {:keys [rx ry x-axis-rotation large-arc-flag sweep-flag x y]} (:params command)
-        result (a2c from-x from-y x y large-arc-flag sweep-flag rx ry x-axis-rotation)]
+        result (arc->beziers* from-x from-y x y large-arc-flag sweep-flag rx ry x-axis-rotation)]
     (mapv to-command result)))
 
 (defn simplify-commands
@@ -301,7 +416,8 @@
          (reduce simplify-command [[start] start-pos start-pos start-pos start-pos])
          (first))))
 
-(defn parse-path [path-str]
+(defn parse
+  [path-str]
   (if (empty? path-str)
     path-str
     (let [clean-path-str
@@ -314,4 +430,3 @@
           commands (re-seq commands-regex clean-path-str)]
       (-> (mapcat parse-command commands)
           (simplify-commands)))))
-
