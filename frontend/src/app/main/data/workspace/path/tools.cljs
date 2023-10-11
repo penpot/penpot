@@ -6,8 +6,8 @@
 
 (ns app.main.data.workspace.path.tools
   (:require
-   [app.common.path.shapes-to-path :as upsp]
-   [app.common.path.subpaths :as ups]
+   [app.common.svg.path.shapes-to-path :as upsp]
+   [app.common.svg.path.subpath :as ups]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]

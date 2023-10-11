@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.path.shapes-to-path
+(ns app.common.svg.path.shapes-to-path
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
@@ -13,8 +13,8 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.corners :as gso]
    [app.common.geom.shapes.path :as gsp]
-   [app.common.path.bool :as pb]
-   [app.common.path.commands :as pc]
+   [app.common.svg.path.bool :as pb]
+   [app.common.svg.path.command :as pc]
    [app.common.types.shape.radius :as ctsr]))
 
 (def ^:const bezier-circle-c 0.551915024494)

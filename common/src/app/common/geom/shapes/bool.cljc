@@ -7,8 +7,8 @@
 (ns app.common.geom.shapes.bool
   (:require
    [app.common.data :as d]
-   [app.common.path.bool :as pb]
-   [app.common.path.shapes-to-path :as stp]))
+   [app.common.svg.path.bool :as pb]
+   [app.common.svg.path.shapes-to-path :as stp]))
 
 (defn calc-bool-content
   [shape objects]

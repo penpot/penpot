@@ -7,9 +7,13 @@
 (ns frontend-tests.helpers.pages
   (:require
    [app.common.data :as d]
+   [app.common.files.libraries-helpers :as cflh]
+   [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
+   [app.common.files.libraries-helpers :as cflh]
+   [app.common.files.shapes-helpers :as cfsh]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -113,7 +117,7 @@
      (if (empty? shapes)
        state
        (let [[frame changes]
-             (dwsh/prepare-create-artboard-from-selection changes
+             (cfsh/prepare-create-artboard-from-selection changes
                                                           nil
                                                           nil
                                                           (:objects page)
@@ -133,14 +137,14 @@
         shapes  (dwg/shapes-for-grouping objects shape-ids)
 
         [group component-id changes]
-        (dwlh/generate-add-component nil
+        (cflh/generate-add-component nil
                                      shapes
                                      (:objects page)
                                      (:id page)
                                      current-file-id
                                      true
                                      dwg/prepare-create-group
-                                     dwsh/prepare-create-artboard-from-selection)]
+                                     cfsh/prepare-create-artboard-from-selection)]
 
     (swap! idmap assoc instance-label (:id group)
                        component-label component-id)

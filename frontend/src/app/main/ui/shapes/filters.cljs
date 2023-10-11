@@ -6,11 +6,11 @@
 
 (ns app.main.ui.shapes.filters
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.uuid :as uuid]
-   [app.util.color :as color]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -26,7 +26,7 @@
 (mf/defc color-matrix
   [{:keys [color]}]
   (let [{:keys [color opacity]} color
-        [r g b a] (color/hex->rgba color opacity)
+        [r g b a] (cc/hex->rgba color opacity)
         [r g b] [(/ r 255) (/ g 255) (/ b 255)]]
     [:feColorMatrix
      {:type "matrix"

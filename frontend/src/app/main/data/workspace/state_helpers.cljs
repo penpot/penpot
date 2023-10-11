@@ -11,7 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
-   [app.common.path.commands :as upc]
+   [app.common.svg.path.command :as upc]
    [app.common.uuid :as uuid]))
 
 (defn lookup-page

@@ -26,6 +26,7 @@
   com.cognitect/transit-cljs {:mvn/version "0.8.280"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
+  funcool/tubax {:mvn/version "2021.05.20-0"}
   funcool/cuerdas {:mvn/version "2022.06.16-403"}
   funcool/promesa {:mvn/version "11.0.678"}
   funcool/datoteka {:mvn/version "3.0.66"
@@ -43,7 +44,7 @@
   fipp/fipp {:mvn/version "0.6.26"}
   io.aviso/pretty {:mvn/version "1.4.4"}
   environ/environ {:mvn/version "1.2.0"}}
- :paths ["src" "target/classes"]
+ :paths ["src" "vendor" "target/classes"]
  :aliases
  {:dev
   {:extra-deps

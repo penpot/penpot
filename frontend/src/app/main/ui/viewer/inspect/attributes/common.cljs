@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.inspect.attributes.common
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet color-name]]
@@ -14,7 +15,6 @@
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.context :as ctx]
-   [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -85,10 +85,10 @@
                 (case format
                   :hex [:& cbn/color-name {:color color
                                            :size 80}]
-                  :rgba (let [[r g b a] (uc/hex->rgba (:color color) (:opacity color))]
+                  :rgba (let [[r g b a] (cc/hex->rgba (:color color) (:opacity color))]
                           [:* (str/fmt "%s, %s, %s, %s" r g b a)])
-                  :hsla (let [[h s l a] (uc/hex->hsla (:color color) (:opacity color))
-                              result (uc/format-hsla [h s l a])]
+                  :hsla (let [[h s l a] (cc/hex->hsla (:color color) (:opacity color))
+                              result (cc/format-hsla [h s l a])]
                           [:* result])))]
 
              (when-not (:gradient color)
@@ -111,10 +111,10 @@
                (case format
                  :hex [:& cbn/color-name {:color color
                                           :size 80}]
-                 :rgba (let [[r g b a] (uc/hex->rgba (:color color) (:opacity color))]
+                 :rgba (let [[r g b a] (cc/hex->rgba (:color color) (:opacity color))]
                          [:* (str/fmt "%s, %s, %s, %s" r g b a)])
-                 :hsla (let [[h s l a] (uc/hex->hsla (:color color) (:opacity color))
-                             result (uc/format-hsla [h s l a])]
+                 :hsla (let [[h s l a] (cc/hex->hsla (:color color) (:opacity color))
+                             result (cc/format-hsla [h s l a])]
                          [:* result])))]
 
             (when-not (:gradient color)
@@ -135,10 +135,10 @@
           ;;     (case format
           ;;       :hex [:& cbn/color-name {:color color
           ;;                                :size 80}]
-          ;;       :rgba (let [[r g b a] (uc/hex->rgba (:color color) (:opacity color))]
+          ;;       :rgba (let [[r g b a] (cc/hex->rgba (:color color) (:opacity color))]
           ;;               [:* (str/fmt "%s, %s, %s, %s" r g b a)])
-          ;;       :hsla (let [[h s l a] (uc/hex->hsla (:color color) (:opacity color))
-          ;;                   result (uc/format-hsla [h s l a])]
+          ;;       :hsla (let [[h s l a] (cc/hex->hsla (:color color) (:opacity color))
+          ;;                   result (cc/format-hsla [h s l a])]
           ;;               [:* result])))]
 
           ;;  (when color-library-name
@@ -163,10 +163,10 @@
         (if (:gradient color)
           [:& color-name {:color color}]
           (case format
-            :rgba (let [[r g b a] (uc/hex->rgba (:color color) (:opacity color))]
+            :rgba (let [[r g b a] (cc/hex->rgba (:color color) (:opacity color))]
                     [:div (str/fmt "%s, %s, %s, %s" r g b a)])
-            :hsla (let [[h s l a] (uc/hex->hsla (:color color) (:opacity color))
-                        result (uc/format-hsla [h s l a])]
+            :hsla (let [[h s l a] (cc/hex->hsla (:color color) (:opacity color))
+                        result (cc/format-hsla [h s l a])]
                     [:div result])
             [:*
              [:& color-name {:color color}]
