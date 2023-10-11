@@ -6,7 +6,7 @@
 
 (ns common-tests.helpers.files
   (:require
-   [app.common.files.features :as ffeat]
+   [app.common.features :as ffeat]
    [app.common.geom.point :as gpt]
    [app.common.types.colors-list :as ctcl]
    [app.common.types.components-list :as ctkl]

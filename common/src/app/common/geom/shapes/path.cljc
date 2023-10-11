@@ -12,8 +12,8 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.math :as mth]
-   [app.common.path.commands :as upc]
-   [app.common.path.subpaths :as sp]))
+   [app.common.svg.path.command :as upc]
+   [app.common.svg.path.subpath :as sp]))
 
 (def ^:const curve-curve-precision 0.1)
 (def ^:const curve-range-precision 2)

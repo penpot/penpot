@@ -201,7 +201,9 @@
                                        (t/is (= (:shape-ref c-shape1) nil))
                                        (t/is (= (:name c-shape2) "Rect 2"))
                                        (t/is (= (:touched c-shape2) nil))
-                                       (t/is (= (:shape-ref c-shape2) nil)))))]
+                                       (t/is (= (:shape-ref c-shape2) nil))
+
+                                       )))]
 
       (ptk/emit!
        store

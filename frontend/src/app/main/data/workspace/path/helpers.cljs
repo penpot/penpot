@@ -11,8 +11,8 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.path.commands :as upc]
-   [app.common.path.subpaths :as ups]
+   [app.common.svg.path.command :as upc]
+   [app.common.svg.path.subpath :as ups]
    [app.main.data.workspace.path.common :as common]
    [app.main.streams :as ms]
    [potok.core :as ptk]))

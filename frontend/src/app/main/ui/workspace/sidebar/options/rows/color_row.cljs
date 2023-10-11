@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.rows.color-row
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.shape.attrs :refer [default-color]]
@@ -222,7 +223,7 @@
           [:span {:class (stl/css :color-input-wrapper)}
            [:> color-input* {:value (if multiple-colors?
                                       ""
-                                      (-> color :color uc/remove-hash))
+                                      (-> color :color cc/remove-hash))
                              :placeholder (tr "settings.multiple")
                              :className   (stl/css :color-input)
                              :on-focus on-focus
@@ -301,7 +302,7 @@
           [:div.color-info
            [:> color-input* {:value (if multiple-colors?
                                       ""
-                                      (-> color :color uc/remove-hash))
+                                      (-> color :color cc/remove-hash))
                              :placeholder (tr "settings.multiple")
                              :on-focus on-focus
                              :on-blur on-blur

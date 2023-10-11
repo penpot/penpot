@@ -6,7 +6,7 @@
 
 (ns common-tests.pages-test
   (:require
-   [app.common.files.features :as ffeat]
+   [app.common.features :as ffeat]
    [app.common.pages :as cp]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]

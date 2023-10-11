@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.path.subpaths
+(ns app.common.svg.path.subpath
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.path.commands :as upc]))
+   [app.common.svg.path.command :as upc]))
 
 (defn pt=
   "Check if two points are close"

@@ -10,7 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
-   [app.common.path.shapes-to-path :as stp]
+   [app.common.svg.path.shapes-to-path :as stp]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]

@@ -6,8 +6,8 @@
 
 (ns app.util.path.format
   (:require
-   [app.common.path.commands :as upc]
-   [app.common.path.subpaths :refer [pt=]]
+   [app.common.svg.path.command :as upc]
+   [app.common.svg.path.subpath :refer [pt=]]
    [app.util.array :as arr]))
 
 (def path-precision 3)

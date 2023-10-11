@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.shapes.path
   (:require
-   [app.common.path.commands :as upc]
+   [app.common.svg.path.command :as upc]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.refs :as refs]
    [app.main.ui.shapes.path :as path]

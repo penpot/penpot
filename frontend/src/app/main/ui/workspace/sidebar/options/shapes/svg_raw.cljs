@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.svg-raw
   (:require
-   [app.common.colors :as clr]
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
@@ -21,7 +21,6 @@
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
-   [app.util.color :as uc]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -45,7 +44,7 @@
       {:color :multiple
        :opacity :multiple}
 
-      :else {:color (uc/parse-color color)
+      :else {:color (cc/parse color)
              :opacity 1})
 
     (catch :default e
@@ -71,7 +70,7 @@
                               (get-in shape [:content :attrs :style :stroke]))
                           (parse-color))
 
-        stroke-color (:color color clr/black)
+        stroke-color (:color color cc/black)
         stroke-opacity (:opacity color 1)
         stroke-style (-> (or (get-in shape [:content :attrs :stroke-style])
                              (get-in shape [:content :attrs :style :stroke-style])

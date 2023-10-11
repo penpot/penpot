@@ -9,6 +9,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.features :as ffeat]
+   [app.common.files.libraries-helpers :as cflh]
+   [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.common.pages :as cp]
@@ -305,9 +307,9 @@
             parents  (into #{} (map :parent-id) shapes)]
         (when-not (empty? shapes)
           (let [[root _ changes]
-                (dwlh/generate-add-component it shapes objects page-id file-id components-v2
+                (cflh/generate-add-component it shapes objects page-id file-id components-v2
                                              dwg/prepare-create-group
-                                             dwsh/prepare-create-artboard-from-selection)]
+                                             cfsh/prepare-create-artboard-from-selection)]
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
                      (dws/select-shapes (d/ordered-set (:id root)))

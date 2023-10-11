@@ -6,7 +6,7 @@
 
 (ns app.main.data.workspace.path.state
   (:require
-   [app.common.path.shapes-to-path :as upsp]))
+   [app.common.svg.path.shapes-to-path :as upsp]))
 
 (defn get-path-id
   "Retrieves the currently editing path id"

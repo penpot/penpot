@@ -4,14 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.path.bool
+(ns app.common.svg.path.bool
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.path :as gsp]
-   [app.common.path.commands :as upc]
-   [app.common.path.subpaths :as ups]))
+   [app.common.svg.path.command :as upc]
+   [app.common.svg.path.subpath :as ups]))
 
 (defn add-previous
   ([content]
