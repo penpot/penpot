@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.text :as txt]
+   [app.common.types.component :as ctk]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.texts :as dwt]
@@ -19,6 +20,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
@@ -342,7 +344,9 @@
              (get-attrs shapes objects-no-measures :stroke)
              (get-attrs shapes objects-no-measures :exports)
              (get-attrs shapes objects-no-measures :layout-container)
-             (get-attrs shapes objects-no-measures :layout-item)])))]
+             (get-attrs shapes objects-no-measures :layout-item)])))
+
+        components (filter ctk/instance-head? shapes)]
 
     [:div {:class (stl/css-case new-css-system
                                 :options true)}
@@ -352,7 +356,11 @@
      (when-not (empty? measure-ids)
        [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
 
+     (when-not (empty? components)
+       [:& component-menu {:shapes components}])
+
      [:& layout-container-menu {:type type :ids layout-container-ids :values layout-container-values :multiple true}]
+
 
      (when (or is-layout-child? has-flex-layout-container?)
        [:& layout-item-menu

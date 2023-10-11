@@ -73,7 +73,7 @@
                                 :options true)}
      [:& layer-menu {:type type :ids layer-ids :values layer-values}]
      [:& measures-menu {:type type :ids measure-ids :values measure-values :shape shape}]
-     [:& component-menu {:shape shape}] ;;remove this in components-v2
+     [:& component-menu {:shapes [shape]}] ;;remove this in components-v2
      [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)

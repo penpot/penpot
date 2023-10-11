@@ -72,7 +72,7 @@
   {::mf/wrap [mf/memo]}
   [{:keys [panel]}]
   (when (= (:type panel) :component-swap)
-    [:& component-menu {:shape (first (:shapes panel)) :swap-opened? true}]))
+    [:& component-menu {:shapes (:shapes panel) :swap-opened? true}]))
 
 
 (mf/defc options-content

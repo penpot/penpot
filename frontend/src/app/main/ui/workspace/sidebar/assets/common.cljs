@@ -11,8 +11,11 @@
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.types.component :as ctk]
+   [app.common.types.file :as ctf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
@@ -25,6 +28,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.strings :refer [matches-search]]
    [app.util.timers :as ts]
    [cljs.spec.alpha :as s]
@@ -290,3 +294,131 @@
              :class (dom/classnames (css :thumbnail) true)}]
       [:& component-svg {:root-shape root-shape
                          :objects (:objects container)}])))
+
+
+(defn generate-components-menu-entries
+  [shapes components-v2]
+  (let [multi               (> (count shapes) 1)
+        copies              (filter ctk/in-component-copy? shapes)
+
+        current-file-id     (mf/use-ctx ctx/current-file-id)
+        objects             (deref refs/workspace-page-objects)
+        workspace-data      (deref refs/workspace-data)
+        workspace-libraries (deref refs/workspace-libraries)
+        current-file        {:id current-file-id :data workspace-data}
+
+        find-component      #(ctf/resolve-component % current-file workspace-libraries)
+
+        local-or-exists (fn [shape]
+                          (let [library-id (:component-file shape)]
+                            (or (= library-id current-file-id)
+                                (some? (get workspace-libraries library-id)))))
+
+        restorable-copies (->> copies
+                               (filter #(nil? (find-component %)))
+                               (filter #(local-or-exists %)))
+
+
+        touched-components  (filter #(cph/component-touched? objects (:id %)) copies)
+
+        can-reset-overrides? (or (not components-v2) (seq touched-components))
+
+
+        ;; For when it's only one shape
+        shape               (first shapes)
+        id                  (:id shape)
+        main-instance?      (if components-v2 (ctk/main-instance? shape) true)
+
+        component-id        (:component-id shape)
+        library-id          (:component-file shape)
+
+        local-component?    (= library-id current-file-id)
+        component           (find-component shape)
+        lacks-annotation?   (nil? (:annotation shape))
+        is-dangling?        (nil? component)
+
+        can-update-main?     (or (not components-v2)
+                                 (and
+                                  (not main-instance?)
+                                  (cph/component-touched? objects (:id shape))))
+
+        do-detach-component
+        #(st/emit! (dwl/detach-components (map :id copies)))
+
+        do-reset-component
+        #(st/emit! (dwl/reset-components (map :id touched-components)))
+
+        do-restore-component
+        #(let [;; Extract a map of component-id -> component-file in order to avoid duplicates
+               comps-to-restore (reduce (fn [id-file-map {:keys [component-id component-file]}]
+                                          (assoc id-file-map component-id component-file))
+                                        {}
+                                        restorable-copies)]
+
+           (st/emit! (dwl/restore-components comps-to-restore)
+                     (when (= 1 (count comps-to-restore))
+                       (dw/go-to-main-instance (val (first comps-to-restore)) (key (first comps-to-restore))))))
+
+        do-update-component-sync
+        #(st/emit! (dwl/update-component-sync id library-id))
+
+        do-update-remote-component
+        (fn []
+          (st/emit! (modal/show
+                     {:type :confirm
+                      :message ""
+                      :title (tr "modals.update-remote-component.message")
+                      :hint (tr "modals.update-remote-component.hint")
+                      :cancel-label (tr "modals.update-remote-component.cancel")
+                      :accept-label (tr "modals.update-remote-component.accept")
+                      :accept-style :primary
+                      :on-accept do-update-component-sync})))
+
+        do-update-component
+        #(if local-component?
+           (do-update-component-sync)
+           (do-update-remote-component))
+
+        do-show-local-component
+        #(st/emit! (dw/go-to-component component-id))
+
+        do-show-in-assets
+        #(st/emit! (if components-v2
+                     (dw/show-component-in-assets component-id)
+                     (dw/go-to-component component-id)))
+        do-create-annotation
+        #(st/emit! (dw/set-annotations-id-for-create id))
+
+        do-navigate-component-file
+        #(st/emit! (dwl/nav-to-component-file library-id))
+
+        do-show-component
+        #(if local-component?
+           (do-show-local-component)
+           (do-navigate-component-file))
+
+        menu-entries [(when (and (not multi) main-instance?)
+                        {:msg "workspace.shape.menu.show-in-assets"
+                         :action do-show-in-assets})
+                      (when (and (not multi) main-instance? local-component? lacks-annotation? components-v2)
+                        {:msg "workspace.shape.menu.create-annotation"
+                         :action do-create-annotation})
+                      (when (seq copies)
+                        {:msg (if (> (count copies) 1)
+                           "workspace.shape.menu.detach-instances-in-bulk"
+                           "workspace.shape.menu.detach-instance")
+                         :action do-detach-component
+                         :shortcut :detach-component})
+                      (when can-reset-overrides?
+                        {:msg "workspace.shape.menu.reset-overrides"
+                         :action do-reset-component})
+                      (when (and (seq restorable-copies) components-v2)
+                        {:msg "workspace.shape.menu.restore-main"
+                         :action do-restore-component})
+                      (when (and (not multi) (not main-instance?) (not is-dangling?))
+                        {:msg "workspace.shape.menu.show-main"
+                         :action do-show-component})
+                      (when (and (not multi) can-update-main? (not is-dangling?))
+                        {:msg "workspace.shape.menu.update-main"
+                         :action do-update-component})]]
+    (filter (complement nil?) menu-entries)))
