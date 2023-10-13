@@ -12,6 +12,7 @@
    [app.common.types.modifiers :as ctm]))
 
 (defn add-modifiers
+  "Add the given modifiers to the map of modifiers."
   [modif-tree id modifiers]
   (if (ctm/empty? modifiers)
     modif-tree
@@ -27,6 +28,7 @@
         (assoc-in [id :modifiers] new-modifiers)))))
 
 (defn merge-modif-tree
+  "Merge two maps of modifiers into a single one"
   [modif-tree other-tree]
   (reduce
    (fn [modif-tree [id {:keys [modifiers]}]]
@@ -35,6 +37,7 @@
    other-tree))
 
 (defn apply-structure-modifiers
+  "Only applies the structure modifiers to the objects tree map"
   [objects modif-tree]
   (letfn [(update-children-structure-modifiers
             [objects ids modifiers]

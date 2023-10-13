@@ -884,3 +884,13 @@
    (extend-protocol ICloseable
      AutoCloseable
      (close! [this] (.close this))))
+
+(defn take-until
+  "Returns a lazy sequence of successive items from coll until
+  (pred item) returns true, including that item"
+  ([pred]
+   (halt-when pred (fn [r h] (conj r h))))
+
+  ([pred coll]
+   (transduce (take-until pred) conj [] coll)))
+

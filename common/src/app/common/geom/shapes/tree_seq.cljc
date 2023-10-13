@@ -85,3 +85,9 @@
     (if (contains? ids uuid/zero)
       (cons (get objects uuid/zero) child-seq)
       child-seq)))
+
+(defn resolve-subtree
+  "Resolves the subtree but only partialy from-to the parameters"
+  [from-id to-id objects]
+  (->> (get-children-seq from-id objects)
+       (d/take-until #(= (:id %) to-id))))

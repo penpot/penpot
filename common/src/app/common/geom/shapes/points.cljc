@@ -116,45 +116,47 @@
   (if (empty? child-bounds)
     parent-bounds
 
-    (let [rh [p1 p2]
-          rv [p1 p4]
+    (if (and (axis-aligned? child-bounds) (axis-aligned? parent-bounds))
+      child-bounds
 
-          hv (gpt/to-vec p1 p2)
-          vv (gpt/to-vec p1 p4)
+      (let [rh [p1 p2]
+            rv [p1 p4]
 
-          ph #(gpt/add p1 (gpt/scale hv %))
-          pv #(gpt/add p1 (gpt/scale vv %))
+            hv (gpt/to-vec p1 p2)
+            vv (gpt/to-vec p1 p4)
 
-          find-boundary-ts
-          (fn [[th-min th-max tv-min tv-max] current-point]
-            (let [cth (project-t current-point rh vv)
-                  ctv (project-t current-point rv hv)]
-              [(mth/min th-min cth)
-               (mth/max th-max cth)
-               (mth/min tv-min ctv)
-               (mth/max tv-max ctv)]))
+            ph #(gpt/add p1 (gpt/scale hv %))
+            pv #(gpt/add p1 (gpt/scale vv %))
 
-          [th-min th-max tv-min tv-max]
-          (->> child-bounds
-               (filter #(and (d/num? (:x %)) (d/num? (:y %))))
-               (reduce find-boundary-ts [##Inf ##-Inf ##Inf ##-Inf]))
+            find-boundary-ts
+            (fn [[th-min th-max tv-min tv-max] current-point]
+              (let [cth (project-t current-point rh vv)
+                    ctv (project-t current-point rv hv)]
+                [(mth/min th-min cth)
+                 (mth/max th-max cth)
+                 (mth/min tv-min ctv)
+                 (mth/max tv-max ctv)]))
 
-          minv-start (pv tv-min)
-          minv-end   (gpt/add minv-start hv)
-          minh-start (ph th-min)
-          minh-end   (gpt/add minh-start vv)
+            [th-min th-max tv-min tv-max]
+            (->> child-bounds
+                 (filter #(and (d/num? (:x %)) (d/num? (:y %))))
+                 (reduce find-boundary-ts [##Inf ##-Inf ##Inf ##-Inf]))
 
-          maxv-start (pv tv-max)
-          maxv-end   (gpt/add maxv-start hv)
-          maxh-start (ph th-max)
-          maxh-end   (gpt/add maxh-start vv)
+            minv-start (pv tv-min)
+            minv-end   (gpt/add minv-start hv)
+            minh-start (ph th-min)
+            minh-end   (gpt/add minh-start vv)
 
-          i1 (gsi/line-line-intersect minv-start minv-end minh-start minh-end)
-          i2 (gsi/line-line-intersect minv-start minv-end maxh-start maxh-end)
-          i3 (gsi/line-line-intersect maxv-start maxv-end maxh-start maxh-end)
-          i4 (gsi/line-line-intersect maxv-start maxv-end minh-start minh-end)]
+            maxv-start (pv tv-max)
+            maxv-end   (gpt/add maxv-start hv)
+            maxh-start (ph th-max)
+            maxh-end   (gpt/add maxh-start vv)
 
-      [i1 i2 i3 i4])))
+            i1 (gsi/line-line-intersect minv-start minv-end minh-start minh-end)
+            i2 (gsi/line-line-intersect minv-start minv-end maxh-start maxh-end)
+            i3 (gsi/line-line-intersect maxv-start maxv-end maxh-start maxh-end)
+            i4 (gsi/line-line-intersect maxv-start maxv-end minh-start minh-end)]
+        [i1 i2 i3 i4]))))
 
 (defn merge-parent-coords-bounds
   [bounds parent-bounds]

@@ -68,9 +68,11 @@
        (= :bool (dm/get-prop shape :type))))
 
 (defn group-like-shape?
-  [shape]
-  (or ^boolean (group-shape? shape)
-      ^boolean (bool-shape? shape)))
+  ([objects id]
+   (group-like-shape? (get objects id)))
+  ([shape]
+   (or ^boolean (group-shape? shape)
+       ^boolean (bool-shape? shape))))
 
 (defn text-shape?
   [shape]
@@ -160,6 +162,13 @@
         (recur (conj result parent-id) parent-id)
         result))))
 
+(defn get-parent-ids-seq
+  "Returns a vector of parents of the specified shape."
+  [objects shape-id]
+  (let [parent-id (get-parent-id objects shape-id)]
+    (when (and (some? parent-id) (not= parent-id shape-id))
+      (lazy-seq (cons parent-id (get-parent-ids-seq objects parent-id))))))
+
 (defn get-parents
   "Returns a vector of parents of the specified shape."
   [objects shape-id]
@@ -168,6 +177,17 @@
       (if (and (some? parent-id) (not= parent-id id))
         (recur (conj result (get objects parent-id)) parent-id)
         result))))
+
+(defn get-parent-seq
+  "Returns a vector of parents of the specified shape."
+  ([objects shape-id]
+   (get-parent-seq objects (get objects shape-id) shape-id))
+
+  ([objects shape shape-id]
+   (let [parent-id (dm/get-prop shape :parent-id)
+         parent    (get objects parent-id)]
+     (when (and (some? parent) (not= parent-id shape-id))
+       (lazy-seq (cons parent (get-parent-seq objects parent parent-id)))))))
 
 (defn get-parents-with-self
   [objects id]
