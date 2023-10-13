@@ -20,7 +20,9 @@
   --button-background-focus: var(--color-background-secondary);
   --button-foreground-focus: var(--color-foreground-primary);
   --button-border-focus: var(--color-accent-primary);
-  --button-foreground-color-disabled: var(--color-background-quaternary);
+  --button-foreground-color-disabled: var(--color-foreground-secondary);
+  --button-background-color-disabled: var(--color-background-primary);
+  --button-border-color-disabled: var(--color-background-quaternary);
 
   --button-primary-background-color-rest: var(--color-accent-primary);
   --button-primary-border-color-rest: var(--color-accent-primary);
@@ -228,4 +230,18 @@
   --colorpicker-details-color: var(--color-background-quaternary);
   --colorpicker-details-color-selected: var(--color-accent-primary);
   --colorpicker-handlers-color: var(--color-foreground-primary);
+
+  // COMMENTS
+  --comment-title-color: var(--color-foreground-primary);
+  --comment-subtitle-color: var(--color-foreground-secondary);
+  --comment-bullet-background-color-rest: var(--color-background-quaternary);
+  --comment-bullet-foreground-color-rest: var(--color-foreground-primary);
+  --comment-bullet-border-color-rest: var(--color-background-secondary);
+  --comment-bullet-background-color-unread: var(--color-accent-primary);
+  --comment-bullet-foreground-color-unread: var(--color-background-primary);
+  --comment-bullet-border-color-unread: var(--color-background-secondary);
+  --comment-bullet-background-color-resolved: var(--color-background-primary);
+  --comment-bullet-foreground-color-resolved: var(--color-foreground-secondary);
+  --comment-bullet-border-color-resolved: var(--color-background-quaternary);
+  --comment-modal-background-color: var(--color-background-primary);
 }

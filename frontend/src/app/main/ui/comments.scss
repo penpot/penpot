@@ -1,0 +1,232 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+// Comment-thread-group
+.thread-group {
+  padding: 0 $s-12;
+  .section-title {
+    @include titleTipography;
+    height: $s-32;
+    display: flex;
+    align-items: center;
+    margin-bottom: $s-8;
+    .file-name {
+      color: var(--comment-subtitle-color);
+    }
+    .page-name {
+      color: var(--comment-subtitle-color);
+    }
+    .icon {
+      display: flex;
+      align-items: center;
+      padding: 0 $s-6 0 $s-4;
+      width: $s-24;
+      height: $s-32;
+      margin-left: $s-6;
+      svg {
+        @extend .button-icon-small;
+        stroke: var(--icon-foreground);
+      }
+    }
+  }
+  .threads {
+    display: flex;
+    flex-direction: column;
+    gap: $s-24;
+  }
+}
+
+// Comment-thread
+.comment {
+  @include titleTipography;
+  display: flex;
+  flex-direction: column;
+  gap: $s-12;
+  .author {
+    display: flex;
+    gap: $s-8;
+    .thread-bubble {
+      @extend .comment-bubbles;
+      &.resolved {
+        @extend .resolved-comment-bubble;
+      }
+      &.unread {
+        @extend .unread-comment-bubble;
+      }
+    }
+    .avatar {
+      height: $s-32;
+      width: $s-32;
+      border-radius: $br-circle;
+      img {
+        border-radius: $br-circle;
+      }
+    }
+    .name {
+      flex-grow: 1;
+      .fullname {
+        @include textEllipsis;
+        color: var(--comment-title-color);
+      }
+      .timeago {
+        @include textEllipsis;
+        color: var(--comment-subtitle-color);
+      }
+    }
+  }
+  .content {
+    @include titleTipography;
+    color: var(--color-foreground-primary);
+  }
+  .replies {
+    display: flex;
+    gap: $s-8;
+    .total-replies {
+      color: var(--color-foreground-secondary);
+    }
+    .new-replies {
+      color: var(--color-accent-primary);
+    }
+  }
+}
+
+// Thread-bubble
+
+.floating-thread-bubble {
+  @extend .comment-bubbles;
+  position: absolute;
+  cursor: pointer;
+  pointer-events: auto;
+  transform: translate(calc(-1 * $s-16), calc(-1 * $s-16));
+
+  &.resolved {
+    @extend .resolved-comment-bubble;
+  }
+  &.unread {
+    @extend .unread-comment-bubble;
+  }
+}
+
+// thread-content
+.thread-content {
+  position: absolute;
+  pointer-events: auto;
+  user-select: text;
+  width: $s-284;
+  padding: $s-12;
+  border-radius: $br-8;
+  background-color: var(--comment-modal-background-color);
+  .comments {
+    display: flex;
+    flex-direction: column;
+    gap: $s-24;
+  }
+}
+
+// comment-item
+
+.comment-container {
+  position: relative;
+  .comment {
+    @include titleTipography;
+    .author {
+      display: flex;
+      gap: $s-8;
+      .avatar {
+        height: $s-32;
+        width: $s-32;
+        border-radius: $br-circle;
+        img {
+          border-radius: $br-circle;
+        }
+      }
+      .name {
+        flex-grow: 1;
+        .fullname {
+          @include textEllipsis;
+          color: var(--comment-title-color);
+        }
+        .timeago {
+          @include textEllipsis;
+          color: var(--comment-subtitle-color);
+        }
+      }
+      .options-resolve-wrapper {
+        @include flexCenter;
+        width: $s-16;
+        height: $s-32;
+        .options-resolve {
+          @extend .checkbox-icon;
+          cursor: pointer;
+        }
+      }
+      .options {
+        @extend .button-tertiary;
+        height: $s-32;
+        width: $s-28;
+        svg {
+          @extend .button-icon;
+        }
+      }
+    }
+    .content {
+      position: relative;
+      .text {
+        @include titleTipography;
+      }
+    }
+  }
+  .comment-options-dropdown {
+    @extend .dropdown-wrapper;
+    position: absolute;
+    width: $s-120;
+    right: 0;
+    left: unset;
+    .context-menu-option {
+      @extend .dropdown-element-base;
+    }
+  }
+}
+
+// edit-form & reply-form
+
+.edit-form,
+.reply-form {
+  textarea {
+    @extend .input-element;
+    line-height: 1.45;
+    height: 100%;
+    width: 100%;
+    max-width: $s-260;
+    min-width: $s-260;
+    margin-bottom: $s-8;
+    padding: $s-8;
+    color: var(--input-foreground-color-active);
+    &:focus {
+      border: $s-1 solid var(--input-border-color-active);
+      outline: none;
+    }
+  }
+  .buttons-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    gap: $s-4;
+    .post-btn {
+      @extend .button-primary;
+      height: $s-32;
+      width: $s-92;
+      margin-bottom: 0;
+    }
+    .cancel-btn {
+      @extend .button-secondary;
+      height: $s-32;
+      width: $s-92;
+      margin-bottom: 0;
+    }
+  }
+}

@@ -17,7 +17,7 @@
     position: relative;
     height: $s-32;
     min-height: $s-32;
-    margin: $s-4 $s-4 0 $s-4;
+    margin: $s-8 $s-8 0 $s-8;
     border-radius: $br-8;
     background-color: var(--panel-title-background-color);
 
@@ -53,7 +53,7 @@
       @include flexCenter;
       height: $s-48;
       width: $s-48;
-      border-radius: 50%;
+      border-radius: $br-circle;
       background-color: var(--empty-message-background-color);
       svg {
         @extend .button-icon;

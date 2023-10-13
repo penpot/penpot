@@ -28,12 +28,12 @@
       &.disabled {
         cursor: default;
         svg {
-          stroke: var(--button-foreground-color-disabled);
+          stroke: var(--button-background-color-disabled);
         }
         &:hover {
           background-color: var(--panel-background-color);
           svg {
-            stroke: var(--button-foreground-color-disabled);
+            stroke: var(--button-background-color-disabled);
           }
         }
       }
