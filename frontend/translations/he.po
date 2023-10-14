@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-07 12:12+0000\n"
+"PO-Revision-Date: 2023-10-16 04:09+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -4920,10 +4920,10 @@ msgstr "אפשר להתנסות לפני שימוש ב־Penpot אצלך בעבו
 
 msgid "dashboard.import.import-message"
 msgid_plural "dashboard.import.import-message"
-msgstr[0] "קובץ ייובא בהצלחה"
-msgstr[1] "%s קבצים ייובאו בהצלחה"
-msgstr[2] "%s קבצים ייובאו בהצלחה"
-msgstr[3] "%s קבצים ייובאו בהצלחה"
+msgstr[0] "קובץ יובא בהצלחה."
+msgstr[1] "%s קבצים יובאו בהצלחה."
+msgstr[2] "%s קבצים יובאו בהצלחה."
+msgstr[3] "%s קבצים יובאו בהצלחה."
 
 msgid "modals.delete-component-annotation.message"
 msgstr "למחוק את הסימון הזה?"
@@ -4977,3 +4977,98 @@ msgstr ""
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.interface-design-visual-assets-design-systems"
 msgstr "… עיצוב מנשק, נכסים חזותיים, מערכות עיצוב, וכו׳."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-in-concept-ideas"
+msgstr "עבודה עם רעיונות למימוש"
+
+msgid "workspace.options.component.copy"
+msgstr "העתקה"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.your-feedback-will-help-us"
+msgstr ""
+"המשוב שלך יסייע לנו להבין מה הם ההרגלים וההעדפות שלך כדי שנוכל להמשיך להפוך "
+"את Penpot לכלי מהנה ושימושי."
+
+msgid "workspace.options.component.create-annotation"
+msgstr "יצירת הסבר"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "עריכת הסבר"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "הורדת הקוד מהמיזם הצוותי שלי "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "מרובע"
+
+msgid "workspace.options.component.main"
+msgstr "ראשי"
+
+#: src/app/main/ui/workspace/textpalette.cljs
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "עדיין אין סוגי טיפוגרפיה בספרייה שלך"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
+msgstr[0] "נכסים שכבר נעשה בהם שימוש בקובץ הזה יישארו שם (אף עיצוב לא ייפגע)."
+msgstr[1] "נכסים שכבר נעשה בהם שימוש בקבצים האלה יישארו שם (אף עיצוב לא ייפגע)."
+msgstr[2] "נכסים שכבר נעשה בהם שימוש בקבצים האלה יישארו שם (אף עיצוב לא ייפגע)."
+msgstr[3] "נכסים שכבר נעשה בהם שימוש בקבצים האלה יישארו שם (אף עיצוב לא ייפגע)."
+
+msgid "workspace.options.component.annotation"
+msgstr "הסבר"
+
+msgid "workspace.layout_grid.editor.title"
+msgstr "רשת עריכה"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.wireframes-user-journeys-flows-navigation-trees"
+msgstr "… תרשימי מתאר, סיפורי ותהליכי משתמשים, עצי ניווט ועוד."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "יהלום"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
+msgstr[0] "הספרייה הזאת מופעלת כאן:"
+msgstr[1] "הספריות האלו מופעלות כאן:"
+msgstr[2] "הספריות האלו מופעלות כאן:"
+msgstr[3] "הספריות האלו מופעלות כאן:"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "ניתוק"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "משולש"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.activated.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
+msgstr[0] "אינו מופעל באף קובץ."
+msgstr[1] "אינם מופעלים באף קובץ."
+msgstr[2] "אינם מופעלים באף קובץ."
+msgstr[3] "אינם מופעלים באף קובץ."
+
+msgid "workspace.shape.menu.create-annotation"
+msgstr "יצירת הסבר"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "חץ"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.founder"
+msgstr "מייסד/סגן נשיא"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "עיגול"
