@@ -7,6 +7,9 @@
 @import "refactor/common-refactor.scss";
 
 .element-set {
+  .title-spacing-svg-attrs {
+    padding-left: $s-12;
+  }
   .element-set-content {
     display: flex;
     flex-direction: column;
@@ -33,7 +36,6 @@
       .attr-input {
         @extend .input-element;
         width: $s-124;
-        padding-left: $s-8;
       }
       .attr-actions {
         display: flex;

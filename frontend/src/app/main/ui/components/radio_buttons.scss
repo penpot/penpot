@@ -14,11 +14,11 @@
 }
 .radio-icon {
   @extend .button-radio;
-  height: $s-28;
+  height: $s-32;
   flex-grow: 1;
-  border-radius: $s-6;
-  border: solid $s-1 transparent;
+  border-radius: $s-8;
   box-sizing: content-box;
+  border: none;
   input {
     display: none;
   }
@@ -30,8 +30,15 @@
     @include tabTitleTipography;
     color: var(--radio-btn-foreground-color);
   }
+  &:hover {
+    border: none;
+    svg {
+      color: var(--radio-btn-foreground-color-selected);
+    }
+  }
 
   &.checked {
+    border: none;
     background-color: var(--radio-btn-background-color-selected);
     svg {
       stroke: var(--radio-btn-foreground-color-selected);
@@ -43,6 +50,7 @@
 
   &.disabled {
     cursor: default;
+    background-color: transparent;
     svg {
       stroke: var(--button-foreground-color-disabled);
     }

@@ -9,6 +9,7 @@
 $s-0: 0px;
 $s-1: 1px;
 $s-2: math.div(0.25rem, 2);
+$s-3: calc($s-1 + $s-2);
 $s-4: var(--s-4);
 $s-6: calc($s-2 + $s-4);
 $s-8: calc(var(--s-4) * 2);

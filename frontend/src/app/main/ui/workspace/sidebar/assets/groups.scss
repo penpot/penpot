@@ -7,12 +7,14 @@
 @import "refactor/common-refactor.scss";
 
 .group-title {
-  padding-left: $s-16;
+  padding-left: $s-4;
   .pre-path {
+    margin-left: $s-2;
     text-transform: initial;
     color: var(--title-foreground-color);
   }
   .path {
+    margin-left: $s-2;
     text-transform: initial;
     color: var(--title-foreground-color-hover);
   }

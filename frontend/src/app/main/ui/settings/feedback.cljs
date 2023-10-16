@@ -64,8 +64,8 @@
                  :form form}
 
      ;; --- Feedback section
-     [:h2 (tr "feedback.title")]
-     [:p (tr "feedback.subtitle")]
+     [:h2.field-title (tr "feedback.title")]
+     [:p.field-text (tr "feedback.subtitle")]
 
      [:div.fields-row
       [:& fm/input {:label (tr "feedback.subject")
@@ -82,22 +82,20 @@
 
      [:hr]
 
-     [:h2 (tr "feedback.discourse-title")]
-     [:p (tr "feedback.discourse-subtitle1")]
+     [:h2.field-title (tr "feedback.discourse-title")]
+     [:p.field-text (tr "feedback.discourse-subtitle1")]
 
      [:a.btn-secondary.btn-large
       {:href "https://community.penpot.app" :target "_blank"}
       (tr "feedback.discourse-go-to")]
      [:hr]
 
-     [:h2 (tr "feedback.twitter-title")]
-     [:p (tr "feedback.twitter-subtitle1")]
+     [:h2.field-title (tr "feedback.twitter-title")]
+     [:p.field-text (tr "feedback.twitter-subtitle1")]
 
      [:a.btn-secondary.btn-large
       {:href "https://twitter.com/penpotapp" :target "_blank"}
-      (tr "feedback.twitter-go-to")]
-
-     ]))
+      (tr "feedback.twitter-go-to")]]))
 
 (mf/defc feedback-page
   []

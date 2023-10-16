@@ -61,6 +61,25 @@
         gradient-color? (and (not multiple-colors?)
                              (:gradient color)
                              (get-in color [:gradient :type]))
+
+        editing-text*  (mf/use-state false)
+        editing-text?  (deref editing-text*)
+
+        on-focus
+        (mf/use-fn
+         (mf/deps on-focus)
+         (fn [event]
+           (reset! editing-text* true)
+           (when on-focus
+             (on-focus event))))
+
+        on-blur
+        (mf/use-fn
+         (mf/deps on-blur)
+         (fn [event]
+           (reset! editing-text* false)
+           (when on-blur
+             (on-blur event))))
         parse-color
         (mf/use-fn
          (fn [color]
@@ -157,7 +176,6 @@
       (when (not= prev-color color)
         (modal/update-props! :colorpicker {:data (parse-color color)})))
 
-
     (if new-css-system
       [:div {:class (stl/css-case
                      :color-data true
@@ -166,13 +184,16 @@
              :ref dref}
        [:span {:class (stl/css :color-info)}
         [:span {:class (stl/css-case :color-name-wrapper true
+                                     :library-name-wrapper library-color?
+                                     :editing editing-text?
                                      :gradient-name-wrapper gradient-color?)}
          [:span {:class (stl/css :color-bullet-wrapper)}
           [:& cbn/color-bullet {:color (cond-> color
-                                        (nil? color-name) (assoc
-                                                           :id nil
-                                                           :file-id nil))
-                               :on-click handle-click-color}]]
+                                         (nil? color-name) (assoc
+                                                            :id nil
+                                                            :file-id nil))
+                                :mini? true
+                                :on-click handle-click-color}]]
         (cond
           ;; Rendering a color with ID
           library-color?
@@ -211,7 +232,6 @@
         (when (and (not gradient-color?)
                    (not multiple-colors?)
                    (not library-color?))
-
 
           [:div {:class (stl/css :opacity-element-wrapper)}
            [:span {:class (stl/css :icon-text)}

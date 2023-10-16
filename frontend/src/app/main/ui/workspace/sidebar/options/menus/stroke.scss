@@ -8,6 +8,9 @@
 
 .element-set {
   .element-title {
+    .title-spacing-stroke {
+      padding-left: $s-12;
+    }
     .add-stroke {
       @extend .button-tertiary;
       height: $s-32;

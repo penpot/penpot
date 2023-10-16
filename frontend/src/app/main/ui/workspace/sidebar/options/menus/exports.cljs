@@ -32,6 +32,7 @@
   [{:keys [ids type values page-id file-id] :as props}]
   (let [new-css-system     (mf/use-ctx ctx/new-css-system)
         exports            (:exports values [])
+        has-exports?       (or (= :multiple exports) (some? (seq exports)))
 
         comp-state*        (mf/use-state true)
         open?              (deref comp-state*)
@@ -52,7 +53,7 @@
                                   (str suffix))))
 
         scale-enabled?
-        (mf/use-callback
+        (mf/use-fn
          (fn [export]
            (#{:png :jpeg} (:type export))))
 
@@ -94,7 +95,7 @@
 
         ;; TODO: maybe move to specific events for avoid to have this logic here?
         add-export
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn []
            (let [xspec {:type :png :suffix "" :scale 1}]
@@ -103,7 +104,7 @@
                                             (assoc shape :exports (into [xspec] (:exports shape)))))))))
 
         delete-export
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [position]
            (let [remove-fill-by-index (fn [values index] (->> (d/enumerate values)
@@ -114,7 +115,7 @@
              (st/emit! (dch/update-shapes ids remove)))))
 
         on-scale-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [index event]
            (let [scale (if new-css-system
@@ -127,7 +128,7 @@
                                             (assoc-in shape [:exports index :scale] scale)))))))
 
         on-suffix-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [event]
            (let [value   (dom/get-target-val event)
@@ -139,7 +140,7 @@
                                             (assoc-in shape [:exports index :suffix] value)))))))
 
         on-type-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [index event]
            (let [type (if new-css-system
@@ -152,14 +153,14 @@
                                             (assoc-in shape [:exports index :type] type)))))))
 
         on-remove-all
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn []
            (st/emit! (dch/update-shapes ids
                                         (fn [shape]
                                           (assoc shape :exports []))))))
         manage-key-down
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (let [esc?   (kbd/esc? event)]
              (when esc?
@@ -181,11 +182,11 @@
     (if new-css-system
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
-        [:& title-bar {:collapsable? true
+        [:& title-bar {:collapsable? has-exports?
                        :collapsed?   (not open?)
                        :on-collapsed toggle-content
                        :title        (tr (if (> (count ids) 1) "workspace.options.export-multiple" "workspace.options.export"))
-                       :class        (stl/css :title-spacing-export)}
+                       :class        (stl/css-case :title-spacing-export (not has-exports?))}
          [:button {:class (stl/css :add-export)
                    :on-click add-export} i/add-refactor]]]
        (when open?
@@ -210,15 +211,20 @@
                   [:& select
                    {:default-value (d/name (:type export))
                     :options format-options
+                    :dropdown-class (stl/css :dropdown-upwards)
                     :on-change (partial on-type-change index)}]]
                  (when (scale-enabled? export)
                    [:div {:class (stl/css :size-select)}
                     [:& select
                      {:default-value (str (:scale export))
                       :options size-options
+                      :dropdown-class (stl/css :dropdown-upwards)
                       :on-change (partial on-scale-change index)}]])
-                 [:div {:class (stl/css :suffix-input)}
+                 [:label {:class (stl/css :suffix-input)
+                          :for "suffix-export-input"}
                   [:input {:class (stl/css :type-input)
+                           :id "suffix-export-input"
+                           :type "text"
                            :value (:suffix export)
                            :placeholder (tr "workspace.options.export.suffix")
                            :data-value index

@@ -600,10 +600,10 @@
                                :name "listing-style"}
              [:& radio-button {:icon i/view-as-list-refactor
                                :value "list"
-                               :id :list}]
+                               :id "opt-list"}]
              [:& radio-button {:icon i/flex-grid-refactor
                                :value "grid"
-                               :id :grid}]]])
+                               :id "opt-grid"}]]])
 
          (when (and components-v2 (not read-only?) local?)
            [:div {:on-click add-component

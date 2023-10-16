@@ -22,14 +22,7 @@
     flex-direction: column;
     gap: $s-4;
     .multiple-typography {
-      display: flex;
-      align-items: center;
-      padding: 0 $s-8;
-      gap: $s-4;
-      border-radius: $s-8;
-      background-color: var(--input-background-color);
-      height: $s-32;
-      flex-grow: 1;
+      @extend .mixed-bar;
       .multiple-text {
         @include titleTipography;
         flex-grow: 1;

@@ -350,7 +350,7 @@
 
         shadows        (:shadow values [])
         open-state-ref (mf/with-memo [] (l/atom {}))
-
+        has-shadows?   (or (= :multiple shadows) (some? (seq shadows)))
 
         state*         (mf/use-state {:show-content true
                                       :disable-drag false})
@@ -386,14 +386,14 @@
     (if new-css-system
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
-        [:& title-bar {:collapsable? true
+        [:& title-bar {:collapsable? has-shadows?
                        :collapsed?   (not open?)
                        :on-collapsed toggle-content
                        :title        (case type
                                        :multiple (tr "workspace.options.shadow-options.title.multiple")
                                        :group (tr "workspace.options.shadow-options.title.group")
                                        (tr "workspace.options.shadow-options.title"))
-                       :class        (stl/css :title-spacing-shadow)}
+                       :class        (stl/css-case :title-spacing-shadow (not has-shadows?))}
 
          (when-not (= :multiple shadows)
            [:button {:class (stl/css :add-shadow)

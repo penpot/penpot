@@ -56,6 +56,7 @@
       [:div  {:class (dom/classnames (css :library-title) true)}
        [:& title-bar {:collapsable? true
                       :collapsed?   (not open?)
+                      :clickable-all? true
                       :on-collapsed  toggle-open
                       :title        (if local?
                                       (mf/html [:div {:class (dom/classnames (css :special-title) true)} (tr "workspace.assets.local-library")])

@@ -161,6 +161,8 @@
         state*          (mf/use-state true)
         open?           (deref state*)
 
+        has-colors?     (or (some? (seq colors)) (some? (seq library-colors)))
+
         toggle-content  (mf/use-fn #(swap! state* not))
 
         expand-lib-color (mf/use-state false)
@@ -215,11 +217,11 @@
     (if new-css-system
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
-        [:& title-bar {:collapsable? true
+        [:& title-bar {:collapsable? has-colors?
                        :collapsed?   (not open?)
                        :on-collapsed toggle-content
                        :title        (tr "workspace.options.selection-color")
-                       :class        (stl/css :title-spacing-selected-colors)}]]
+                       :class        (stl/css-case :title-spacing-selected-colors (not has-colors?))}]]
 
        (when open?
          [:div {:class (stl/css :element-content)}

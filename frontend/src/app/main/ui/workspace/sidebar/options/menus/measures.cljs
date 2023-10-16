@@ -386,10 +386,10 @@
                              :name "frame-otientation"}
            [:& radio-button {:icon i/size-vertical-refactor
                              :value "vert"
-                             :id :vert}]
+                             :id "size-vertical"}]
            [:& radio-button {:icon i/size-horizontal-refactor
                              :value "horiz"
-                             :id :horiz}]]])
+                             :id "size-horizontal"}]]])
        (when (options :size)
          [:div {:class (stl/css :size)}
           [:div {:class (stl/css-case :width true

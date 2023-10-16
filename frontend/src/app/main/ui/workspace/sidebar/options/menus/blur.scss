@@ -8,6 +8,9 @@
 
 .element-set {
   .element-title {
+    .title-spacing-blur {
+      padding-left: $s-12;
+    }
     .add-blur {
       @extend .button-tertiary;
       height: $s-32;
@@ -43,10 +46,10 @@
             @extend .button-icon;
           }
           &.selected {
-            background-color: var(--button-secondary-background-color-active);
-            color: var(--button-secondary-foreground-color-active);
+            background-color: var(--button-tertiary-background-color-hover);
+            color: var(--button-tertiary-foreground-color-active);
             svg {
-              stroke: var(--button-secondary-foreground-color-active);
+              stroke: var(--button-tertiary-foreground-color-active);
             }
           }
         }
@@ -77,9 +80,11 @@
     }
     .second-row {
       @extend .input-element;
-      gap: $s-4;
       width: $s-92;
-      padding-left: $s-8;
+      .label {
+        padding-left: $s-8;
+        width: $s-60;
+      }
     }
   }
 }

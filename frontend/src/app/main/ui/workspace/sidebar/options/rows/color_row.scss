@@ -13,24 +13,24 @@
   .color-info {
     display: flex;
     align-items: center;
-    gap: $s-1;
+    gap: $s-2;
     border-radius: $s-8;
     background-color: var(--input-details-color);
     height: $s-32;
     width: 100%;
     flex-grow: 1;
     .color-name-wrapper {
-      display: flex;
-      align-items: center;
-      border-radius: $br-8;
-      background-color: var(--input-background-color);
+      @extend .input-element;
       flex-grow: 1;
-
+      width: 100%;
+      border-radius: $br-8 0 0 $br-8;
+      padding: 0;
+      margin-right: 0;
       .color-bullet-wrapper {
-        @extend .input-element;
-        background-color: transparent;
+        height: $s-28;
+        padding: 0 $s-2 0 $s-8;
         border-radius: $br-8 0 0 $br-8;
-        padding: 0 $s-4 0 $s-8;
+        background-color: transparent;
         &:hover {
           background-color: transparent;
         }
@@ -39,35 +39,67 @@
         @include titleTipography;
         display: flex;
         align-items: center;
-        height: $s-32;
+        height: $s-28;
+        padding-left: $s-6;
+        border-radius: $br-8;
+        width: 100%;
         flex-grow: 1;
         color: var(--input-foreground-color-active);
       }
       .detach-btn {
         @extend .button-tertiary;
-        height: $s-32;
+        height: $s-28;
         width: $s-28;
         border-radius: 0 $br-8 $br-8 0;
+        display: none;
         svg {
           @extend .button-icon;
         }
       }
       .color-input-wrapper {
-        @extend .input-element;
+        @include titleTipography;
+        display: flex;
+        align-items: center;
+        height: $s-28;
+        padding: 0 $s-0;
+        width: 100%;
+        margin: 0;
+        flex-grow: 1;
+        background-color: var(--input-background-color);
+        color: var(--input-foreground-color);
         border-radius: $br-0;
       }
-      &:hover,
-      &:focus,
-      &:focus-within {
+      &:hover {
+        background-color: var(--input-background-color-hover);
         .color-bullet-wrapper,
         .color-name,
         .detach-btn,
         .color-input-wrapper {
           background-color: var(--input-background-color-hover);
         }
-        .detach-btn svg {
-          stroke: var(--input-foreground-color-active);
+        .detach-btn {
+          display: flex;
+          svg {
+            stroke: var(--input-foreground-color-active);
+          }
         }
+        &.editing {
+          background-color: var(--input-background-color-active);
+          .color-bullet-wrapper,
+          .color-name,
+          .detach-btn,
+          .color-input-wrapper {
+            background-color: var(--input-background-color-active);
+          }
+        }
+      }
+      &:focus,
+      &:focus-within {
+        background-color: var(--input-background-color-active);
+      }
+
+      &.editing {
+        background-color: var(--input-background-color-active);
       }
     }
     .gradient-name-wrapper {
@@ -75,11 +107,13 @@
         border-radius: 0 $br-8 $br-8 0;
       }
     }
+    .library-name-wrapper {
+      border-radius: $br-8;
+    }
     .opacity-element-wrapper {
       @extend .input-element;
       width: $s-60;
       border-radius: 0 $br-8 $br-8 0;
-      padding-left: $s-8;
       .opacity-input {
         border-radius: 0 $br-8 $br-8 0;
         min-width: $s-28;

@@ -49,16 +49,17 @@
       (if new-css-system
         [:div {:class (dom/classnames (css :group-title) true)
                :on-context-menu on-context-menu}
-         [:& title-bar {:collapsable? true
-                        :collapsed?   (not group-open?)
-                        :on-collapsed  on-fold-group
-                        :title        (mf/html [:* (when-not (empty? other-path)
-                                                     [:span {:class (dom/classnames (css :pre-path) true)
-                                                             :title (when truncated path)}
-                                                      other-path "\u00A0\u2022\u00A0"])
-                                                [:span {:class (dom/classnames (css :path) true)
-                                                        :title (when truncated path)}
-                                                 last-path]])}]
+         [:& title-bar {:collapsable?   true
+                        :collapsed?     (not group-open?)
+                        :clickable-all? true
+                        :on-collapsed   on-fold-group
+                        :title          (mf/html [:* (when-not (empty? other-path)
+                                                       [:span {:class (dom/classnames (css :pre-path) true)
+                                                               :title (when truncated path)}
+                                                        other-path "\u00A0\u2022\u00A0"])
+                                                  [:span {:class (dom/classnames (css :path) true)
+                                                          :title (when truncated path)}
+                                                   last-path]])}]
          [:& cmm/assets-context-menu
           {:on-close on-close-menu
            :state @menu-state

@@ -50,34 +50,39 @@
                 :group (tr "workspace.options.group-fill")
                 (tr "workspace.options.fill"))
 
-        state*          (mf/use-state true)
+        ;; Excluding nil values
+        values (d/without-nils values)
+        fills (:fills values)
+        has-fills? (or (= :multiple fills) (some? (seq fills)))
+
+
+        state*          (mf/use-state has-fills?)
         open?           (deref state*)
 
         toggle-content  (mf/use-fn #(swap! state* not))
 
-        ;; Excluding nil values
-        values (d/without-nils values)
+
 
         hide-fill-on-export? (:hide-fill-on-export values false)
 
         checkbox-ref (mf/use-ref)
 
         on-add
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [_]
            (st/emit! (dc/add-fill ids {:color default-color
                                        :opacity 1}))))
 
         on-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [index]
            (fn [color]
              (st/emit! (dc/change-fill ids color index)))))
 
         on-reorder
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [new-index]
            (fn [index]
@@ -94,7 +99,7 @@
                                               :opacity 1})))
 
         on-detach
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [index]
            (fn [color]
@@ -103,7 +108,7 @@
                (st/emit! (dc/change-fill ids color index))))))
 
         on-change-show-fill-on-export
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [event]
            (let [value (-> event dom/get-target dom/checked?)]
@@ -130,20 +135,20 @@
     (if new-css-system
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
-        [:& title-bar {:collapsable? true
+        [:& title-bar {:collapsable? has-fills?
                        :collapsed?   (not open?)
                        :on-collapsed toggle-content
                        :title        label
-                       :class        (stl/css :title-spacing-fill)}
+                       :class        (stl/css-case :title-spacing-fill (not has-fills?))}
 
-         (when (and (not disable-remove?) (not (= :multiple (:fills values))))
+         (when (and (not disable-remove?) (not (= :multiple fills)))
            [:button {:class (stl/css :add-fill)
                      :on-click on-add} i/add-refactor])]]
 
        (when open?
          [:div {:class (stl/css :element-content)}
           (cond
-            (= :multiple (:fills values))
+            (= :multiple fills)
             [:div {:class (stl/css :element-set-options-group)}
              [:div {:class (stl/css :group-label)}
               (tr "settings.multiple")]
@@ -151,7 +156,7 @@
                        :class (stl/css :remove-btn)}
               i/remove-refactor]]
 
-            (seq (:fills values))
+            (seq fills)
             [:& h/sortable-container {}
              (for [[index value] (d/enumerate (:fills values []))]
                [:& color-row {:color {:color (:fill-color value)
@@ -190,20 +195,20 @@
       [:div.element-set
        [:div.element-set-title
         [:span label]
-        (when (and (not disable-remove?) (not (= :multiple (:fills values))))
+        (when (and (not disable-remove?) (not (= :multiple fills)))
           [:div.add-page {:on-click on-add} i/close])]
 
        [:div.element-set-content
 
         (cond
-          (= :multiple (:fills values))
+          (= :multiple fills)
           [:div.element-set-options-group
            [:div.element-set-label (tr "settings.multiple")]
            [:div.element-set-actions
             [:div.element-set-actions-button {:on-click on-remove-all}
              i/minus]]]
 
-          (seq (:fills values))
+          (seq fills)
           [:& h/sortable-container {}
            (for [[index value] (d/enumerate (:fills values []))]
              [:& color-row {:color {:color (:fill-color value)

@@ -18,7 +18,6 @@
     .input {
       @extend .input-element;
       width: $s-60;
-      padding-left: $s-8;
     }
     .actions {
       display: flex;
@@ -37,7 +36,7 @@
     }
 
     &.hidden {
-      .select {
+      .hidden-select {
         background-color: transparent;
         border: $s-1 solid var(--input-border-color-disabled);
         color: var(--input-foreground-color-disabled);

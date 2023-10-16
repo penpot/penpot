@@ -17,11 +17,11 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons nilable-option]]
+   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry typography-options]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry text-options]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
@@ -113,14 +113,16 @@
        [:& radio-buttons {:selected direction
                           :on-change handle-change
                           :name "text-direction-options"}
-        [:& nilable-option {:value "ltr"
+        [:& radio-button {:value "ltr"
+                          :type "checkbox"
                             :id "ltr-text-direction"
                             :title (tr "workspace.options.text-options.direction-ltr")
                             :icon i/text-ltr-refactor}]
-        [:& nilable-option {:value "rtl"
-                            :id "rtl-text-direction"
-                            :title (tr "workspace.options.text-options.direction-rtl")
-                            :icon i/text-rtl-refactor}]]]
+        [:& radio-button {:value "rtl"
+                          :type "checkbox"
+                          :id "rtl-text-direction"
+                          :title (tr "workspace.options.text-options.direction-rtl")
+                          :icon i/text-rtl-refactor}]]]
     ;; --- Align
     [:div.align-icons
      [:span.tooltip.tooltip-bottom-left
@@ -195,21 +197,20 @@
 
         handle-change-grow
         (mf/use-fn
-         (mf/deps ids)
+         (mf/deps ids new-css-system)
          (fn [value]
-          (let [uid (js/Symbol)
-
-                grow-type (if new-css-system
-                            (keyword value)
-                            (-> (dom/get-current-target value)
-                                (dom/get-data "value")
-                                (keyword)))]
-            (st/emit!
-             (dwu/start-undo-transaction uid)
-             (dch/update-shapes ids #(assoc % :grow-type grow-type)))
+           (let [uid (js/Symbol)
+                 grow-type (if new-css-system
+                             (keyword value)
+                             (-> (dom/get-current-target value)
+                                 (dom/get-data "value")
+                                 (keyword)))]
+             (st/emit!
+              (dwu/start-undo-transaction uid)
+              (dch/update-shapes ids #(assoc % :grow-type grow-type)))
             ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
-            (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
-          (when (some? on-blur) (on-blur))))]
+             (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
+           (when (some? on-blur) (on-blur))))]
 
     (if new-css-system
       [:div {:class (stl/css :grow-options)}
@@ -271,14 +272,16 @@
        [:& radio-buttons {:selected text-decoration
                           :on-change handle-change
                           :name "text-decoration-options"}
-        [:& nilable-option {:value "underline"
-                            :id "underline-text-decoration"
-                            :title (tr "workspace.options.text-options.underline" (sc/get-tooltip :underline))
-                            :icon i/text-underlined-refactor}]
-        [:& nilable-option {:value "line-through"
-                            :id "line-through-text-decoration"
-                            :title (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
-                            :icon i/text-stroked-refactor}]]]
+        [:& radio-button {:value "underline"
+                          :type "checkbox"
+                          :id "underline-text-decoration"
+                          :title (tr "workspace.options.text-options.underline" (sc/get-tooltip :underline))
+                          :icon i/text-underlined-refactor}]
+        [:& radio-button {:value "line-through"
+                          :type "checkbox"
+                          :id "line-through-text-decoration"
+                          :title (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
+                          :icon i/text-stroked-refactor}]]]
 
       [:div.align-icons
        [:span.tooltip.tooltip-bottom
@@ -335,7 +338,7 @@
         typography-file (:typography-ref-file values)
 
         emit-update!
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps values)
          (fn [ids attrs]
            (st/emit! (dwt/save-font (-> (merge txt/default-text-attrs values attrs)
@@ -343,7 +346,7 @@
                      (dwt/update-all-attrs ids attrs))))
 
         on-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids emit-update!)
          (fn [attrs]
            (emit-update! ids attrs)))
@@ -381,14 +384,14 @@
                            :typography-ref-file file-id})))
 
         handle-detach-typography
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-change)
          (fn []
            (on-change {:typography-ref-file nil
                        :typography-ref-id nil})))
 
         handle-change-typography
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps typography file-id)
          (fn [changes]
            (st/emit! (dwl/update-typography (merge typography changes) file-id))))
@@ -440,7 +443,7 @@
               i/detach-refactor]]
 
             :else
-            [:> typography-options opts])
+            [:> text-options opts])
 
           [:div {:class (stl/css :text-align-options)}
            [:> text-align-options opts]
@@ -477,7 +480,7 @@
                                             :title (tr "workspace.libraries.text.multiple-typography-tooltip")} i/unchain]]
 
          :else
-         [:> typography-options opts])
+         [:> text-options opts])
 
        [:div.element-set-content
 

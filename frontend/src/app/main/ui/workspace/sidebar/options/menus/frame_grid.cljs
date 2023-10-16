@@ -397,27 +397,30 @@
   (let [new-css-system      (mf/use-ctx ctx/new-css-system)
         state*              (mf/use-state true)
         open?               (deref state*)
+        frame-grids         (:grids shape)
+        has-frame-grids?    (or (= :multiple frame-grids) (some? (seq frame-grids)))
 
         toggle-content      (mf/use-fn #(swap! state* not))
-        id (:id shape)
+        id                  (:id shape)
         saved-grids         (mf/deref workspace-saved-grids)
         default-grid-params (mf/use-memo (mf/deps saved-grids) #(merge dw/default-grid-params saved-grids))
         handle-create-grid  (mf/use-fn (mf/deps id) #(st/emit! (dw/add-frame-grid id)))]
 
     (if new-css-system
       [:div {:class (stl/css :element-set)}
-       [:& title-bar {:collapsable? true
+       [:& title-bar {:collapsable? has-frame-grids?
                       :collapsed?   (not open?)
                       :on-collapsed toggle-content
+                      :class (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
                       :title        (tr "workspace.options.grid.grid-title")}
 
         [:button  {:on-click handle-create-grid
                    :class (stl/css :add-grid)}
          i/add-refactor]]
 
-       (when (and open? (seq (:grids shape)))
+       (when (and open? (seq frame-grids))
          [:div  {:class (stl/css :element-set-content)}
-          (for [[index grid] (map-indexed vector (:grids shape))]
+          (for [[index grid] (map-indexed vector frame-grids)]
             [:& grid-options {:key (str id "-" index)
                               :shape-id id
                               :grid grid
@@ -432,9 +435,9 @@
         [:span (tr "workspace.options.grid.grid-title")]
         [:div.add-page {:on-click handle-create-grid} i/close]]
 
-       (when (seq (:grids shape))
+       (when (seq frame-grids)
          [:div.element-set-content
-          (for [[index grid] (map-indexed vector (:grids shape))]
+          (for [[index grid] (map-indexed vector frame-grids)]
             [:& grid-options {:key (str id "-" index)
                               :shape-id id
                               :grid grid

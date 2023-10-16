@@ -22,6 +22,8 @@
   &.mini {
     width: var(--bullet-size, $s-16);
     height: var(--bullet-size, $s-16);
+    min-width: var(--bullet-size, $s-16);
+    min-height: var(--bullet-size, $s-16);
     margin-top: 0;
     border: 1px solid var(--color-bullet-border-color);
   }
@@ -29,7 +31,6 @@
   &.is-not-library-color {
     overflow: hidden;
     border-radius: $br-8;
-
     & .color-bullet-wrapper {
       clip-path: none;
     }
@@ -59,6 +60,9 @@
     width: 100%;
     height: 100%;
     background-color: var(--color-bullet-background-color);
+  }
+  &:hover {
+    border: $s-2 solid var(--color-bullet-border-color-selected);
   }
 }
 

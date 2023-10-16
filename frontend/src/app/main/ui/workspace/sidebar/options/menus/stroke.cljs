@@ -48,38 +48,42 @@
         open?           (deref state*)
 
         toggle-content  (mf/use-fn #(swap! state* not))
+        strokes         (:strokes values)
+        has-strokes?    (or (= :multiple strokes) (some? (seq strokes)))
 
         handle-change-stroke-color
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [index]
            (fn [color]
              (st/emit! (dc/change-stroke ids color index)))))
 
         on-color-change-refactor
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [index color]
            (st/emit! (dc/change-stroke ids color index))))
 
         handle-remove
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [index]
            (fn []
              (st/emit! (dc/remove-stroke ids index)))))
         on-remove-refactor
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [index]
            (st/emit! (dc/remove-stroke ids index))))
 
         handle-remove-all
-        (fn [_]
-          (st/emit! (dc/remove-all-strokes ids)))
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [_]
+          (st/emit! (dc/remove-all-strokes ids))))
 
         handle-detach
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [index]
            (fn [color]
@@ -88,7 +92,7 @@
                (st/emit! (dc/change-stroke ids color index))))))
 
         on-color-detach-refactor
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [index color]
            (let [color (-> color
@@ -96,7 +100,7 @@
              (st/emit! (dc/change-stroke ids color index)))))
 
         handle-reorder
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [new-index]
            (fn [index]
@@ -111,7 +115,7 @@
               (st/emit! (dc/change-stroke ids {:stroke-style value} index)))))
 
         on-stroke-style-change-refactor
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [index value]
            (st/emit! (dc/change-stroke ids {:stroke-style value} index))))
@@ -202,25 +206,25 @@
     (if new-css-system
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
-        [:& title-bar {:collapsable? true
+        [:& title-bar {:collapsable? has-strokes?
                        :collapsed?   (not open?)
                        :on-collapsed toggle-content
                        :title        label
-                       :class        (stl/css :title-spacing-fill)}
+                       :class        (stl/css-case :title-spacing-stroke (not has-strokes?))}
 
          [:button {:class (stl/css :add-stroke)
                    :on-click on-add-stroke} i/add-refactor]]]
        (when open?
          [:div {:class (stl/css :element-content)}
           (cond
-            (= :multiple (:strokes values))
+            (= :multiple strokes)
             [:div {:class (stl/css :element-set-options-group)}
              [:div {:class (stl/css :group-label)}
               (tr "settings.multiple")]
              [:button {:on-click handle-remove-all
                        :class (stl/css :remove-btn)}
               i/remove-refactor]]
-            (seq (:strokes values))
+            (seq strokes)
             [:& h/sortable-container {}
              (for [[index value] (d/enumerate (:strokes values []))]
                [:& stroke-row {:key (dm/str "stroke-" index)
@@ -254,7 +258,7 @@
 
        [:div.element-set-content
         (cond
-          (= :multiple (:strokes values))
+          (= :multiple strokes)
           [:div.element-set-options-group
            [:div.element-set-label (tr "settings.multiple")]
            [:div.element-set-actions
@@ -262,7 +266,7 @@
              i/minus]]]
 
 
-          (seq (:strokes values))
+          (seq strokes)
           [:& h/sortable-container {}
            (for [[index value] (d/enumerate (:strokes values []))]
              [:& stroke-row {:key (dm/str "stroke-" index)

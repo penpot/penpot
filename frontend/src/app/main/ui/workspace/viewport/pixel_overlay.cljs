@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
+   [app.common.math :as mth]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.undo :as dwu]
@@ -58,8 +59,8 @@
                      canvas-height (if new-css-system 140 160)
                      {brx :left bry :top} (dom/get-bounding-rect viewport-node)
 
-                     x (- (.-clientX event) brx)
-                     y (- (.-clientY event) bry)
+                     x (mth/floor (- (.-clientX event) brx))
+                     y (mth/floor (- (.-clientY event) bry))
 
                      zoom-context (mf/ref-val zoom-view-context)
 

@@ -21,7 +21,7 @@
   .dropdown-button {
     @include flexCenter;
     svg {
-      @extend .button-icon;
+      @extend .button-icon-small;
       transform: rotate(90deg);
       stroke: var(--icon-foreground);
     }
