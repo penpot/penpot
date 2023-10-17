@@ -20,6 +20,7 @@
    [app.util.router :as rt]
    [app.util.timers :as tm]
    [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -126,6 +127,9 @@
 
         roles   (mf/use-memo #(get-available-roles))
 
+        profile  (mf/deref refs/profile)
+        email    (-> profile :email str/lower)
+
         on-success
         (mf/use-callback
          (fn [_form response]
@@ -160,11 +164,17 @@
          (fn [form _]
            (let [mdata  {:on-success (partial on-success form)
                          :on-error   (partial on-error form)}
-                 params (:clean-data @form)]
-             (st/emit! (dd/create-team-with-invitations (with-meta params mdata))
+                 params (:clean-data @form)
+                 emails (disj (:emails params) email)
+                 params (assoc params :emails emails)]
+             
+             (st/emit! (if (> (count emails) 0)
+                         ;; If the user is only inviting to itself we don't call to create-team-with-invitations
+                         (dd/create-team-with-invitations (with-meta params mdata))
+                         (dd/create-team (with-meta {:name name} mdata)))
                        (ptk/event ::ev/event {::ev/name "create-team-and-send-invitations"
                                               ::ev/origin "onboarding"
-                                              :invites (count (:emails params))
+                                              :invites (count emails)
                                               :role (:role params)
                                               :name name
                                               :step 2})))))]
