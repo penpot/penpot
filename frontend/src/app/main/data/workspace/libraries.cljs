@@ -775,7 +775,7 @@
             component       (ctkl/get-component data component-id)
             page-id         (:main-instance-page component)
             root-id         (:main-instance-id component)]
-           (rx/of (dwt/update-thumbnail file-id page-id root-id))))))
+           (rx/of (dwt/request-thumbnail file-id page-id root-id))))))
 
 (defn- find-shape-index
   [objects id shape-id]

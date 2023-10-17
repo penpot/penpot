@@ -17,7 +17,9 @@
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.util.http :as http]
+   [app.util.queue :as q]
    [app.util.time :as tp]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
@@ -27,11 +29,54 @@
 
 (l/set-level! :info)
 
+(declare update-thumbnail)
+
+(defn resolve-request
+  "Resolves the request to generate a thumbnail for the given ids."
+  [item]
+  (let [file-id (unchecked-get item "file-id")
+        page-id  (unchecked-get item "page-id")
+        shape-id (unchecked-get item "shape-id")]
+    (st/emit! (update-thumbnail file-id page-id shape-id))))
+
+;; Defines the thumbnail queue
+(defonce queue
+  (q/create resolve-request (/ 1000 30)))
+
+(defn create-request
+  "Creates a request to generate a thumbnail for the given ids."
+  [file-id page-id shape-id]
+  #js {:file-id file-id :page-id page-id :shape-id shape-id})
+
+(defn find-request
+  "Returns true if the given item matches the given ids."
+  [file-id page-id shape-id item]
+  (and (= file-id (unchecked-get item "file-id"))
+       (= page-id (unchecked-get item "page-id"))
+       (= shape-id (unchecked-get item "shape-id"))))
+
+(defn request-thumbnail
+  "Enqueues a request to generate a thumbnail for the given ids."
+  [file-id page-id shape-id]
+  (ptk/reify ::request-thumbnail
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (l/dbg :hint "request thumbnail" :file-id file-id :page-id page-id :shape-id shape-id)
+      (q/enqueue-unique
+       queue
+       (create-request file-id page-id shape-id)
+       (partial find-request file-id page-id shape-id)))))
+
 (defn fmt-object-id
+  "Returns ids formatted as a string (object-id)"
   [file-id page-id frame-id]
   (str/ffmt "%/%/%" file-id page-id frame-id))
 
+;; This function first renders the HTML calling `render/render-frame` that
+;; returns HTML as a string, then we send that data to the iframe rasterizer
+;; that returns the image as a Blob. Finally we create a URI for that blob.
 (defn get-thumbnail
+  "Returns the thumbnail for the given ids"
   [state file-id page-id frame-id & {:keys [object-id]}]
 
   (let [object-id (or object-id (fmt-object-id file-id page-id frame-id))
@@ -236,7 +281,7 @@
             ;; BUFFER NOTIFIER (window of 5s of inactivity)
             notifier-s
             (->> changes-s
-                 (rx/debounce 5000)
+                 (rx/debounce 1000)
                  (rx/tap #(l/trc :hint "buffer initialized")))]
 
         (->> (rx/merge
@@ -253,6 +298,6 @@
                    (rx/buffer-until notifier-s)
                    (rx/mapcat #(into #{} %))
                    (rx/map (fn [frame-id]
-                             (update-thumbnail file-id page-id frame-id)))))
+                             (request-thumbnail file-id page-id frame-id)))))
 
              (rx/take-until stopper-s))))))

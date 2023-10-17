@@ -125,7 +125,7 @@
         (mf/with-effect []
           (when-not (some? thumbnail-uri)
             (tm/schedule-on-idle
-             #(st/emit! (dwt/update-thumbnail file-id page-id frame-id)))))
+             #(st/emit! (dwt/request-thumbnail file-id page-id frame-id)))))
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val content-ref) modifiers)
 
