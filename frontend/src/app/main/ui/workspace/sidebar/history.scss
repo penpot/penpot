@@ -50,17 +50,9 @@
     text-align: center;
 
     .history-entry-empty-icon {
-      @include flexCenter;
-      height: $s-48;
-      width: $s-48;
-      border-radius: $br-circle;
-      background-color: var(--empty-message-background-color);
+      @extend .empty-icon;
       svg {
-        @extend .button-icon;
-        height: $s-28;
-        width: $s-28;
         margin-left: calc(-1 * $s-2);
-        stroke: var(--empty-message-foreground-color);
       }
     }
 

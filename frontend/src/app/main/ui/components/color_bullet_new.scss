@@ -80,6 +80,11 @@
   }
 }
 
+.big-text {
+  @include inspectValue;
+  height: $s-16;
+}
+
 .no-text {
   display: none;
 }

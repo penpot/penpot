@@ -1,0 +1,131 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.attributes-color-row {
+  display: grid;
+  grid-template-columns: $s-16 $s-72 $s-156;
+  gap: $s-4;
+  .bullet-wrapper {
+    @include flexCenter;
+    height: $s-32;
+  }
+  .format-wrapper {
+    width: $s-72;
+    height: $s-32;
+    .select-format-wrapper {
+      width: 100%;
+      div {
+        background-color: transparent;
+        border: none;
+        padding-left: $s-2;
+        color: var(--menu-foreground-color-rest);
+      }
+    }
+    .format-info {
+      @include tabTitleTipography;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      padding-left: $s-2;
+      font-size: $fs-12;
+      color: var(--menu-foreground-color-rest);
+    }
+  }
+}
+
+.color-info {
+  display: flex;
+  align-items: flex-start;
+  gap: $s-4;
+  flex-grow: 1;
+
+  .color-name-wrapper {
+    @include titleTipography;
+    @include flexColumn;
+    padding: $s-8 $s-4 $s-8 $s-8;
+    height: $s-32;
+    max-width: $s-80;
+    &.gradient-color {
+      max-width: $s-124;
+    }
+    .color-name-library {
+      @include titleTipography;
+      @include textEllipsis;
+      text-align: left;
+      height: $s-16;
+      color: var(--menu-foreground-color-rest);
+    }
+    .color-value-wrapper {
+      @include titleTipography;
+      height: $s-16;
+      color: var(--menu-foreground-color);
+    }
+  }
+
+  .opacity-info {
+    @include titleTipography;
+    color: var(--menu-foreground-color);
+    padding: $s-8 0;
+    height: $s-32;
+  }
+
+  button {
+    visibility: hidden;
+    min-width: $s-28;
+  }
+  &:hover button {
+    visibility: visible;
+  }
+}
+
+.color-info,
+.color-row-copy-btn {
+  @include copyWrapper;
+  .first-row {
+    display: grid;
+    grid-template-columns: 1fr $s-20;
+    grid-template-areas: "name button";
+    height: fit-content;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    .name-opacity {
+      grid-area: name;
+      height: fit-content;
+      max-width: $s-124;
+      line-height: $s-16;
+      .color-value-wrapper {
+        @include inspectValue;
+        text-transform: uppercase;
+        max-width: $s-124;
+        padding-right: $s-8;
+        &.gradient-name {
+          text-transform: none;
+        }
+      }
+      .opacity-info {
+        @include inspectValue;
+        text-transform: uppercase;
+      }
+    }
+  }
+
+  .second-row {
+    min-height: $s-16;
+    padding-right: $s-8;
+    width: 100%;
+    text-align: left;
+    margin: 0;
+    padding: 0;
+    .color-name-library {
+      @include inspectValue;
+      color: var(--menu-foreground-color-rest);
+    }
+  }
+}

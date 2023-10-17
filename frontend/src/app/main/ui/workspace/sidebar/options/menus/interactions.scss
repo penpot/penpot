@@ -11,9 +11,7 @@
   flex-direction: column;
   gap: $s-8;
   .interaction-options {
-    display: flex;
-    flex-direction: column;
-    gap: $s-4;
+    @include flexColumn;
     .element-title {
       .add-interaction-btn {
         @extend .button-tertiary;
@@ -50,18 +48,12 @@
       }
     }
     .groups {
-      display: flex;
-      flex-direction: column;
-      gap: $s-4;
+      @include flexColumn;
       .element-set-options-group {
         &.open {
-          display: flex;
-          flex-direction: column;
-          gap: $s-4;
+          @include flexColumn;
           .extended-options {
-            display: flex;
-            flex-direction: column;
-            gap: $s-4;
+            @include flexColumn;
             .property-row {
               @extend .attr-row;
               .interaction-name {
@@ -155,9 +147,7 @@
               }
               .inputs-wrapper {
                 grid-area: content;
-                display: flex;
-                align-items: center;
-                gap: $s-4;
+                @include flexRow;
                 .radio-btn {
                   @extend .input-checkbox;
                 }
@@ -202,9 +192,7 @@
     }
   }
   .element-set {
-    display: flex;
-    flex-direction: column;
-    gap: $s-4;
+    @include flexColumn;
     .add-flow-btn {
       @extend .button-tertiary;
       height: $s-32;

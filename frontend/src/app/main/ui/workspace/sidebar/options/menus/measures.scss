@@ -7,9 +7,7 @@
 @import "refactor/common-refactor.scss";
 
 .element-set {
-  display: flex;
-  flex-direction: column;
-  gap: $s-4;
+  @include flexColumn;
   .presets {
     display: flex;
     align-items: flex-start;
@@ -94,9 +92,7 @@
     }
   }
   .size {
-    display: flex;
-    align-items: center;
-    gap: $s-4;
+    @include flexRow;
     .height,
     .width {
       @extend .input-element;
@@ -120,9 +116,7 @@
     }
   }
   .position {
-    display: flex;
-    align-items: center;
-    gap: $s-4;
+    @include flexRow;
     .x-position,
     .y-position {
       @extend .input-element;

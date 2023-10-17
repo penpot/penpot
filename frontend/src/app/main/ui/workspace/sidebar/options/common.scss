@@ -7,7 +7,5 @@
 @import "refactor/common-refactor.scss";
 
 .advanced-options-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: $s-4;
+  @include flexColumn;
 }

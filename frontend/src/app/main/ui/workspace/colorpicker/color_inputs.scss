@@ -7,25 +7,19 @@
 @import "refactor/common-refactor.scss";
 
 .color-values {
-  display: flex;
-  flex-direction: column;
-  gap: $s-4;
+  @include flexColumn;
   &.disable-opacity {
     grid-template-columns: 3.5rem repeat(3, 1fr);
   }
   .colors-row {
-    display: flex;
-    align-items: center;
-    gap: $s-4;
+    @include flexRow;
     .input-wrapper {
       @extend .input-element;
       width: $s-84;
     }
   }
   .hex-alpha-wrapper {
-    display: flex;
-    align-items: center;
-    gap: $s-4;
+    @include flexRow;
     .input-wrapper {
       @extend .input-element;
       width: $s-84;

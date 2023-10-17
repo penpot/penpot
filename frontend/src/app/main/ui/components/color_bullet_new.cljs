@@ -36,7 +36,6 @@
                   :is-gradient (some? gradient)
                   :is-transparent (and opacity (> 1 opacity))
                   :grid-area area)
-
           :on-click on-click}
 
          (if (some? gradient)
@@ -56,8 +55,9 @@
   (let [{:keys [name color gradient]} (if (string? color) {:color color :opacity 1} color)]
     (when (or (not size) (> size 64))
       [:span {:class (stl/css-case
-                      :color-text true
-                      :small-text (and (>= size 64) (< size 72)))
+                      :color-text (< size 72)
+                      :small-text (and (>= size 64) (< size 72))
+                      :big-text   (>= size 72))
               :on-click on-click
               :on-double-click on-double-click}
        (or name color (uc/gradient-type->string (:type gradient)))])))

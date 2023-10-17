@@ -19,14 +19,10 @@
     }
   }
   .element-set-content {
-    display: flex;
-    flex-direction: column;
-    gap: $s-4;
+    @include flexColumn;
     .grid-option {
       .grid-title {
-        display: flex;
-        align-items: center;
-        gap: $s-4;
+        @include flexRow;
         .option-row {
           display: flex;
           align-items: center;
@@ -130,9 +126,7 @@
         }
 
         .actions {
-          display: flex;
-          align-items: center;
-          gap: $s-4;
+          @include flexRow;
           .action-btn {
             @extend .button-tertiary;
             height: $s-32;
@@ -145,15 +139,11 @@
       }
     }
     .grid-advanced-options {
-      display: flex;
-      flex-direction: column;
-      gap: $s-4;
+      @include flexColumn;
       margin-top: $s-4;
       .column-row,
       .square-row {
-        display: flex;
-        flex-direction: column;
-        gap: $s-4;
+        @include flexColumn;
         position: relative;
         .advanced-row {
           position: relative;
@@ -193,12 +183,10 @@
           }
           .more-options {
             @include menuShadow;
+            @include flexColumn;
             position: absolute;
             top: $s-36;
             right: 0;
-            display: flex;
-            flex-direction: column;
-            gap: $s-4;
             width: $s-156;
             max-height: $s-300;
             padding: $s-2;

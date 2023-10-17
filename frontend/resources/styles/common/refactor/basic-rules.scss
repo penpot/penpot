@@ -98,6 +98,7 @@
     background-color: var(--button-secondary-background-color-hover);
     border: $s-1 solid var(--button-secondary-border-color-hover);
     color: var(--button-secondary-foreground-color-hover);
+    text-decoration: none;
     svg,
     span svg {
       stroke: var(--button-secondary-foreground-color-hover);
@@ -524,10 +525,80 @@
   }
 }
 
+.empty-icon {
+  @include flexCenter;
+  height: $s-48;
+  width: $s-48;
+  border-radius: $br-circle;
+  background-color: var(--empty-message-background-color);
+  svg {
+    @extend .button-icon;
+    height: $s-28;
+    width: $s-28;
+    stroke: var(--empty-message-foreground-color);
+  }
+}
+
+.attr-title {
+  div {
+    margin-left: 0;
+    color: var(--entry-foreground-color-hover);
+  }
+  button {
+    @extend .button-tertiary;
+    display: none;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &:hover {
+    button {
+      display: flex;
+    }
+  }
+}
+
 .attr-row {
   display: grid;
   grid-template-areas: "name content";
   grid-template-columns: $s-92 1fr;
+  gap: $s-4;
+  height: $s-32;
+  :global(.attr-label) {
+    @include titleTipography;
+    @include twoLineTextEllipsis;
+    width: $s-92;
+    margin: auto 0;
+    color: var(--entry-foreground-color);
+    grid-area: name;
+  }
+
+  :global(.attr-value) {
+    grid-area: content;
+    display: flex;
+    color: var(--entry-foreground-color-hover);
+    @include titleTipography;
+  }
+}
+
+.copy-button-children {
+  @include titleTipography;
+  color: var(--color-foreground-primary);
+  text-align: left;
+
+  display: grid;
+  grid-template-columns: 1fr 22px;
+  grid-template-areas: "name button";
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  height: fit-content;
+  &:hover {
+    div {
+      color: var(--entry-foreground-color-hover);
+    }
+  }
 }
 
 .comment-bubbles {
@@ -555,10 +626,8 @@
 // SELECTS AND DROPDOWNS
 .menu-dropdown {
   @include menuShadow;
+  @include flexColumn;
   position: absolute;
-  display: flex;
-  flex-direction: column;
-  gap: $s-4;
   padding: $s-4;
   border-radius: $br-8;
   z-index: $z-index-10;

@@ -143,9 +143,7 @@
   width: 100%;
   background-color: var(--assets-title-background-color);
   .typography-info-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: $s-4;
+    @include flexColumn;
     margin-bottom: $s-12;
     .typography-name-wrapper {
       @extend .asset-element;
@@ -248,9 +246,7 @@
 
 .text-options {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: $s-4;
+  @include flexColumn;
   .font-option {
     @include titleTipography;
     @extend .asset-element;
@@ -319,13 +315,9 @@
     }
   }
   .typography-variations {
-    display: flex;
-    gap: $s-4;
-    align-items: center;
+    @include flexRow;
     .spacing-options {
-      display: flex;
-      align-items: center;
-      gap: $s-4;
+      @include flexRow;
       .line-height,
       .letter-spacing {
         @extend .input-element;

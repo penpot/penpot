@@ -130,10 +130,8 @@
     }
   }
   .active-filters {
-    display: flex;
-    align-items: center;
+    @include flexRow;
     flex-wrap: wrap;
-    gap: $s-4;
     margin: 0 $s-12;
     .layer-filter {
       @extend .button-tag;

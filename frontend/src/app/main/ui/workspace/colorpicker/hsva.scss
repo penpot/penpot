@@ -7,9 +7,7 @@
 @import "refactor/common-refactor.scss";
 
 .hsva-selector {
-  display: flex;
-  flex-direction: column;
-  gap: $s-4;
+  @include flexColumn;
   padding: $s-4;
   grid-row-gap: $s-8;
   margin-bottom: $s-8;

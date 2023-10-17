@@ -62,9 +62,7 @@
       margin-bottom: $s-12;
     }
     .forth-row {
-      display: flex;
-      flex-direction: column;
-      gap: $s-4;
+      @include flexColumn;
       .gap-group {
         display: flex;
         gap: $s-4;

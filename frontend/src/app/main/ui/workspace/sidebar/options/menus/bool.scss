@@ -8,8 +8,8 @@
 
 .boolean-options {
   display: flex;
-  height: $s-32;
   gap: $s-4;
+  height: $s-32;
   margin: 0 calc(-1 * $s-2);
   .bool-group {
     display: flex;

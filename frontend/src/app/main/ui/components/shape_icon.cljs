@@ -47,3 +47,39 @@
               #_:default    i/bool-union)
       :svg-raw i/file-svg
       nil)))
+
+(mf/defc element-icon-refactor
+  [{:keys [shape main-instance?] :as props}]
+  (if (ctk/instance-head? shape)
+    (if main-instance?
+      i/component-refactor
+      i/copy-refactor)
+    (case (:type shape)
+      :frame (cond
+               (and (ctl/flex-layout? shape) (ctl/col? shape))
+               i/flex-vertical-refactor
+
+               (and (ctl/flex-layout? shape) (ctl/row? shape))
+               i/flex-horizontal-refactor
+
+               (ctl/grid-layout? shape)
+               i/grid-refactor
+
+               :else
+               i/board-refactor)
+      :image i/img-refactor
+      :line i/path-refactor
+      :circle i/elipse-refactor
+      :path i/curve-refactor
+      :rect i/rectangle-refactor
+      :text i/text-refactor
+      :group (if (:masked-group shape)
+               i/mask-refactor
+               i/group-refactor)
+      :bool (case (:bool-type shape)
+              :difference   i/boolean-difference-refactor
+              :exclude      i/boolean-exclude-refactor
+              :intersection i/boolean-intersection-refactor
+              #_:default    i/boolean-union-refactor)
+      :svg-raw i/svg-refactor
+      nil)))

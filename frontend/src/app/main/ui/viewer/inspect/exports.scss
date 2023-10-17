@@ -1,0 +1,87 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  .element-title {
+    .title-spacing-export-viewer {
+      @extend .attr-title;
+    }
+    .add-export {
+      @extend .button-tertiary;
+      height: $s-32;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+      }
+    }
+  }
+  .element-set-content {
+    @include flexColumn;
+    margin-bottom: $s-4;
+    .multiple-exports {
+      @include flexRow;
+      .label {
+        @extend .mixed-bar;
+      }
+      .actions {
+        @include flexRow;
+        .action-btn {
+          @extend .button-tertiary;
+          height: $s-32;
+          width: $s-28;
+          svg {
+            @extend .button-icon;
+          }
+        }
+      }
+    }
+    .element-group {
+      @include flexRow;
+      .input-wrapper {
+        @include flexRow;
+        .format-select {
+          width: $s-60;
+          padding: 0;
+          .dropdown-upwards {
+            bottom: $s-36;
+            width: $s-80;
+            top: unset;
+          }
+        }
+        .size-select {
+          width: $s-60;
+          padding: 0;
+          .dropdown-upwards {
+            bottom: $s-36;
+            top: unset;
+            width: $s-80;
+          }
+        }
+        .suffix-input {
+          @extend .input-element;
+          min-width: $s-92;
+          flex-grow: 1;
+        }
+      }
+      .action-btn {
+        @extend .button-tertiary;
+        height: $s-32;
+        width: $s-28;
+        svg {
+          @extend .button-icon;
+        }
+      }
+    }
+  }
+  .export-btn {
+    @extend .button-secondary;
+    @include tabTitleTipography;
+    height: $s-32;
+    width: $s-252;
+  }
+}
