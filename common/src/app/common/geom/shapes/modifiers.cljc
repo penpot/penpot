@@ -55,7 +55,11 @@
                 (if-let [child (get objects child-id)]
                   (let [child-bounds @(get bounds child-id)
                         child-modifiers
-                        (gct/calc-child-modifiers parent child modifiers ignore-constraints child-bounds parent-bounds transformed-parent-bounds)]
+                        (gct/calc-child-modifiers
+                         parent child modifiers ignore-constraints
+                         child-bounds
+                         parent-bounds transformed-parent-bounds)]
+
                     (cgt/add-modifiers modif-tree child-id child-modifiers))
                   modif-tree))
               modif-tree))))))
@@ -73,7 +77,7 @@
                   (gcfl/layout-child-modifiers parent transformed-parent-bounds child child-bounds layout-line)]
               [layout-line (cgt/add-modifiers modif-tree (:id child) modifiers)]))]
 
-    (let [bounds (cgb/transform-bounds-map bounds objects modif-tree)
+    (let [bounds (cgb/transform-bounds-map bounds objects modif-tree children)
 
           children
           (->> children
@@ -113,7 +117,7 @@
                   (gcgl/child-modifiers parent transformed-parent-bounds child child-bounds grid-data cell-data)]
               (cgt/add-modifiers modif-tree (:id child) modifiers)))]
 
-    (let [bounds (cgb/transform-bounds-map bounds objects modif-tree)
+    (let [bounds (cgb/transform-bounds-map bounds objects modif-tree (:shapes parent))
 
           children
           (->> (cph/get-immediate-children objects (:id parent) {:remove-hidden true})

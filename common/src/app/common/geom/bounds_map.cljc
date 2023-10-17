@@ -56,24 +56,55 @@
          (not (ctm/empty? modifiers))
          (gtr/transform-bounds modifiers))))))
 
+#?(:clj
+   (defn- resolve-modif-tree-ids
+     [objects modif-tree]
+     ;; These are the new bounds calculated. Are the "modified" plus any groups they belong to
+     (let [ids (keys modif-tree)]
+       (into (set ids)
+             (mapcat #(->> (cph/get-parent-ids-seq objects %)
+                           (take-while (partial cph/group-like-shape? objects))))
+             ids)))
+
+   :cljs
+   ;; More performant version using javascript mutable sets
+   (defn- resolve-modif-tree-ids
+     [objects modif-tree]
+
+     (let [base-ids (keys modif-tree)
+           ids (js/Set. base-ids)]
+       (loop [base-ids (seq base-ids)]
+         (when (some? base-ids)
+           (let [cid (first base-ids)]
+             (loop [new-ids
+                    (->> (cph/get-parent-seq objects cid)
+                         (take-while #(and (cph/group-like-shape? %)
+                                           (not (.has ids %))))
+                         (seq))]
+               (when (some? new-ids)
+                 (.add ids (first new-ids))
+                 (recur (next new-ids))))
+             (recur (next base-ids)))))
+       ids)))
+
 (defn transform-bounds-map
-  [bounds-map objects modif-tree]
-  ;; We use the volatile in order to solve the dependencies problem. We want the groups to reference the new
-  ;; bounds instead of the old ones. The current as last parameter is to fix a possible infinite loop
-  ;; with self-references
-  (let [bm-holder (volatile! nil)
+  ([bounds-map objects modif-tree]
+   (transform-bounds-map bounds-map objects modif-tree nil))
+  ([bounds-map objects modif-tree ids]
+   ;; We use the volatile in order to solve the dependencies problem. We want the groups to reference the new
+   ;; bounds instead of the old ones. The current as last parameter is to fix a possible infinite loop
+   ;; with self-references
+   (let [bm-holder (volatile! nil)
 
-        ;; These are the new bounds calculated. Are the "modified" plus any groups they belong to
-        ids (keys modif-tree)
-        ids (into (set ids)
-                  (mapcat #(->> (cph/get-parent-ids-seq objects %)
-                                (take-while (partial cph/group-like-shape? objects))))
-                  ids)
+         ids (or ids (resolve-modif-tree-ids objects modif-tree))
 
-        new-bounds-map
-        (->> ids
-             (reduce
-              (fn [tr-bounds-map shape-id]
+         new-bounds-map
+         (loop [tr-bounds-map (transient bounds-map)
+                ids (seq ids)]
+           (if (not ids)
+             (persistent! tr-bounds-map)
+             (let [shape-id (first ids)]
+               (recur
                 (cond-> tr-bounds-map
                   (not= uuid/zero shape-id)
                   (assoc! shape-id
@@ -81,11 +112,10 @@
                                                 @bm-holder
                                                 objects
                                                 modif-tree
-                                                (get bounds-map shape-id))))))
-              (transient bounds-map))
-             (persistent!))]
-    (vreset! bm-holder new-bounds-map)
-    new-bounds-map))
+                                                (get bounds-map shape-id)))))
+                (next ids)))))]
+     (vreset! bm-holder new-bounds-map)
+     new-bounds-map)))
 
 ;; Tool for debugging
 (defn bounds-map
