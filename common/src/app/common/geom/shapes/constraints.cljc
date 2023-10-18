@@ -314,21 +314,37 @@
       (let [transformed-parent-bounds @transformed-parent-bounds
 
             modifiers (ctm/select-child modifiers)
-            transformed-child-bounds (gtr/transform-bounds child-bounds modifiers)
-            modifiers (normalize-modifiers constraints-h constraints-v modifiers
-                                           child-bounds transformed-child-bounds parent-bounds transformed-parent-bounds)
-            transformed-child-bounds (gtr/transform-bounds child-bounds modifiers)
 
-            child-points-before  (gpo/parent-coords-bounds child-bounds parent-bounds)
-            child-points-after   (gpo/parent-coords-bounds transformed-child-bounds transformed-parent-bounds)
+            reset-modifiers?
+            (and (gpo/axis-aligned? parent-bounds)
+                 (gpo/axis-aligned? child-bounds)
+                 (gpo/axis-aligned? transformed-parent-bounds))
 
-            modifiers-h (constraint-modifier (constraints-h const->type+axis) :x
-                                             child-points-before parent-bounds
-                                             child-points-after transformed-parent-bounds)
+            modifiers
+            (if reset-modifiers?
+              (ctm/empty)
+              (normalize-modifiers constraints-h constraints-v modifiers
+                                   child-bounds (gtr/transform-bounds child-bounds modifiers)
+                                   parent-bounds transformed-parent-bounds))
 
-            modifiers-v (constraint-modifier (constraints-v const->type+axis) :y
-                                             child-points-before parent-bounds
-                                             child-points-after transformed-parent-bounds)]
-        (-> modifiers
-            (ctm/add-modifiers modifiers-h)
-            (ctm/add-modifiers modifiers-v))))))
+            transformed-child-bounds (if reset-modifiers?
+                                       child-bounds
+                                       (gtr/transform-bounds child-bounds modifiers))]
+
+        ;; If the parent is a layout we don't need to calculate its constraints. Finish
+        ;; after normalize the children (to keep proper proportions)
+        (if (ctl/any-layout? parent)
+          modifiers
+          (let [child-points-before  (gpo/parent-coords-bounds child-bounds parent-bounds)
+                child-points-after   (gpo/parent-coords-bounds transformed-child-bounds transformed-parent-bounds)
+
+                modifiers-h (constraint-modifier (constraints-h const->type+axis) :x
+                                                 child-points-before parent-bounds
+                                                 child-points-after transformed-parent-bounds)
+
+                modifiers-v (constraint-modifier (constraints-v const->type+axis) :y
+                                                 child-points-before parent-bounds
+                                                 child-points-after transformed-parent-bounds)]
+            (-> modifiers
+                (ctm/add-modifiers modifiers-h)
+                (ctm/add-modifiers modifiers-v))))))))
