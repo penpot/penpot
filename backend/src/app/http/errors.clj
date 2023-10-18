@@ -40,41 +40,43 @@
      :version/frontend   (or (yrq/get-header request "x-frontend-version") "unknown")
      :version/backend    (:full cf/version)}))
 
-(defmulti handle-exception
-  (fn [err & _rest]
-    (let [edata (ex-data err)]
-      (or (:type edata)
-          (class err)))))
+(defmulti handle-error
+  (fn [cause _ _]
+    (-> cause ex-data :type)))
 
-(defmethod handle-exception :authentication
-  [err _]
+(defmulti handle-exception
+  (fn [cause _ _]
+    (class cause)))
+
+(defmethod handle-error :authentication
+  [err _ _]
   {::yrs/status 401
    ::yrs/body (ex-data err)})
 
-(defmethod handle-exception :authorization
-  [err _]
+(defmethod handle-error :authorization
+  [err _ _]
   {::yrs/status 403
    ::yrs/body (ex-data err)})
 
-(defmethod handle-exception :restriction
-  [err _]
+(defmethod handle-error :restriction
+  [err _ _]
   {::yrs/status 400
    ::yrs/body (ex-data err)})
 
-(defmethod handle-exception :rate-limit
-  [err _]
+(defmethod handle-error :rate-limit
+  [err _ _]
   (let [headers (-> err ex-data ::http/headers)]
     {::yrs/status 429
      ::yrs/headers headers}))
 
-(defmethod handle-exception :concurrency-limit
-  [err _]
+(defmethod handle-error :concurrency-limit
+  [err _ _]
   (let [headers (-> err ex-data ::http/headers)]
     {::yrs/status 429
      ::yrs/headers headers}))
 
-(defmethod handle-exception :validation
-  [err request]
+(defmethod handle-error :validation
+  [err request parent-cause]
   (let [{:keys [code] :as data} (ex-data err)]
     (cond
       (= code :spec-validation)
@@ -97,21 +99,23 @@
 
       (= code :invalid-image)
       (binding [l/*context* (request->context request)]
-        (l/error :hint "unexpected error on processing image" :cause err)
-        {::yrs/status 400 ::yrs/body data})
+        (let [cause (or parent-cause err)]
+          (l/error :hint "unexpected error on processing image" :cause cause)
+          {::yrs/status 400 ::yrs/body data}))
 
       :else
       {::yrs/status 400 ::yrs/body data})))
 
-(defmethod handle-exception :assertion
-  [error request]
+(defmethod handle-error :assertion
+  [error request parent-cause]
   (binding [l/*context* (request->context request)]
-    (let [{:keys [code] :as data} (ex-data error)]
+    (let [{:keys [code] :as data} (ex-data error)
+          cause (or parent-cause error)]
       (cond
         (= code :data-validation)
         (let [explain (::sm/explain data)
               payload (sm/humanize-data explain)]
-          (l/error :hint "Data assertion error" :message (ex-message error) :cause error)
+          (l/error :hint "data assertion error" :message (ex-message error) :cause cause)
           {::yrs/status 500
            ::yrs/body   {:type :server-error
                          :code :assertion
@@ -121,7 +125,7 @@
 
         (= code :spec-validation)
         (let [explain (ex/explain data)]
-          (l/error :hint "Spec assertion error" :message (ex-message error) :cause error)
+          (l/error :hint "spec assertion error" :message (ex-message error) :cause cause)
           {::yrs/status 500
            ::yrs/body   {:type :server-error
                          :code :assertion
@@ -131,33 +135,48 @@
 
         :else
         (do
-          (l/error :hint "Assertion error" :message (ex-message error) :cause error)
+          (l/error :hint "assertion error" :message (ex-message error) :cause cause)
           {::yrs/status 500
            ::yrs/body   {:type :server-error
                          :code :assertion
                          :data data}})))))
 
-
-(defmethod handle-exception :not-found
-  [err _]
+(defmethod handle-error :not-found
+  [err _ _]
   {::yrs/status 404
    ::yrs/body (ex-data err)})
 
-(defmethod handle-exception :internal
-  [error request]
+(defmethod handle-error :internal
+  [error request parent-cause]
   (binding [l/*context* (request->context request)]
-    (l/error :hint "Internal error" :message (ex-message error) :cause error)
-    {::yrs/status 500
-     ::yrs/body {:type :server-error
-                 :code :unhandled
-                 :hint (ex-message error)
-                 :data (ex-data error)}}))
+    (let [cause (or parent-cause error)]
+      (l/error :hint "internal error" :message (ex-message error) :cause cause)
+      {::yrs/status 500
+       ::yrs/body {:type :server-error
+                   :code :unhandled
+                   :hint (ex-message error)
+                   :data (ex-data error)}})))
+
+(defmethod handle-error :default
+  [error request parent-cause]
+  (let [edata (ex-data error)]
+    ;; This is a special case for the idle-in-transaction error;
+    ;; when it happens, the connection is automatically closed and
+    ;; next-jdbc combines the two errors in a single ex-info. We
+    ;; only need the :handling error, because the :rollback error
+    ;; will be always "connection closed".
+    (if (and (ex/exception? (:rollback edata))
+             (ex/exception? (:handling edata)))
+      (handle-exception (:handling edata) request error)
+      (handle-exception error request parent-cause))))
 
 (defmethod handle-exception org.postgresql.util.PSQLException
-  [error request]
-  (let [state (.getSQLState ^java.sql.SQLException error)]
+  [error request parent-cause]
+  (let [state (.getSQLState ^java.sql.SQLException error)
+        cause (or parent-cause error)]
     (binding [l/*context* (request->context request)]
-      (l/error :hint "PSQL error" :message (ex-message error) :cause error)
+      (l/error :hint "PSQL error" :message (ex-message error)
+               :cause cause)
       (cond
         (= state "57014")
         {::yrs/status 504
@@ -179,39 +198,44 @@
                      :state state}}))))
 
 (defmethod handle-exception :default
-  [error request]
-  (let [edata (ex-data error)]
+  [error request parent-cause]
+  (let [edata (ex-data error)
+        cause (or parent-cause error)]
     (cond
       ;; This means that exception is not a controlled exception.
       (nil? edata)
       (binding [l/*context* (request->context request)]
-        (l/error :hint "Unexpected error" :message (ex-message error) :cause error)
+        (l/error :hint "unexpected error" :message (ex-message error) :cause cause)
         {::yrs/status 500
          ::yrs/body {:type :server-error
                      :code :unexpected
                      :hint (ex-message error)}})
 
-      ;; This is a special case for the idle-in-transaction error;
-      ;; when it happens, the connection is automatically closed and
-      ;; next-jdbc combines the two errors in a single ex-info. We
-      ;; only need the :handling error, because the :rollback error
-      ;; will be always "connection closed".
-      (and (ex/exception? (:rollback edata))
-           (ex/exception? (:handling edata)))
-      (handle-exception (:handling edata) request)
-
       :else
       (binding [l/*context* (request->context request)]
-        (l/error :hint "Unhandled error" :message (ex-message error) :cause error)
+        (l/error :hint "unhandled error" :message (ex-message error) :cause cause)
         {::yrs/status 500
          ::yrs/body {:type :server-error
                      :code :unhandled
                      :hint (ex-message error)
                      :data edata}}))))
 
+(defmethod handle-exception java.util.concurrent.CompletionException
+  [cause request _]
+  (let [cause' (ex-cause cause)]
+    (if (ex/error? cause)
+      (handle-error cause' request cause)
+      (handle-exception cause' request cause))))
+
+(defmethod handle-exception java.util.concurrent.ExecutionException
+  [cause request _]
+  (let [cause' (ex-cause cause)]
+    (if (ex/error? cause')
+      (handle-error cause' request cause)
+      (handle-exception cause' request cause))))
+
 (defn handle
   [cause request]
-  (if (or (instance? java.util.concurrent.CompletionException cause)
-          (instance? java.util.concurrent.ExecutionException cause))
-    (handle-exception (ex-cause cause) request)
-    (handle-exception cause request)))
+  (if (ex/error? cause)
+    (handle-error cause request nil)
+    (handle-exception cause request nil)))
