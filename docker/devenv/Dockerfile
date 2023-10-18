@@ -3,9 +3,9 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v18.17.1 \
+ENV NODE_VERSION=v20.9.0 \
     CLOJURE_VERSION=1.11.1.1347 \
-    CLJKONDO_VERSION=2023.07.13 \
+    CLJKONDO_VERSION=2023.09.07 \
     BABASHKA_VERSION=1.3.184 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
@@ -104,12 +104,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='b16c0271899de1f0e277dc0398bfff11b54511765f104fa938929ac484dc926d'; \
-         BINARY_URL='https://github.com/adoptium/temurin20-binaries/releases/download/jdk-20.0.1%2B9/OpenJDK20U-jdk_aarch64_linux_hotspot_20.0.1_9.tar.gz'; \
+         ESUM='aa43295803595f78d73e9c7c02866301c9729377277144e2829f54a58e5f6d21'; \
+         BINARY_URL='https://corretto.aws/downloads/resources/21.0.1.12.1/amazon-corretto-21.0.1.12.1-linux-aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='43ad054f135a7894dc87ad5d10ad45d8e82846186515892acdbc17c2c5cd27e4'; \
-         BINARY_URL='https://github.com/adoptium/temurin20-binaries/releases/download/jdk-20.0.1%2B9/OpenJDK20U-jdk_x64_linux_hotspot_20.0.1_9.tar.gz'; \
+         ESUM='3e718a86cfa6c1173c469f5e9d6b07fa37381a28ebb1f80593250cc380baf22f'; \
+         BINARY_URL='https://corretto.aws/downloads/resources/21.0.1.12.1/amazon-corretto-21.0.1.12.1-linux-x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \

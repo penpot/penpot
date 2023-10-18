@@ -97,5 +97,5 @@
   [queue item f]
   (assert (instance? Queue queue))
   (let [items (unchecked-get queue "items")]
-    (when-not (.findLast items f)
+    (when-not (.findLast ^js items f)
       (enqueue queue item))))
