@@ -53,11 +53,11 @@
         layout-height (gpo/height-points layout-bounds)]
 
     (loop [line-data    nil
-           result       []
+           result       (transient [])
            children     (seq children)]
 
-      (if (empty? children)
-        (cond-> result (some? line-data) (conj line-data))
+      (if (not children)
+        (persistent! (cond-> result (some? line-data) (conj! line-data)))
 
         (let [[child-bounds child] (first children)
               {:keys [line-min-width line-min-height
@@ -91,25 +91,27 @@
               next-max-width   (+ child-margin-width (:child-max-width child-data))
               next-max-height  (+ child-margin-height (:child-max-height child-data))
 
-              total-gap-col (cond
-                              space-evenly?
-                              (* layout-gap-col (+ num-children 2))
+              total-gap-col
+              (cond
+                space-evenly?
+                (* layout-gap-col (+ num-children 2))
 
-                              space-around?
-                              (* layout-gap-col (+ num-children 1))
+                space-around?
+                (* layout-gap-col (+ num-children 1))
 
-                              :else
-                              (* layout-gap-col num-children))
+                :else
+                (* layout-gap-col num-children))
 
-              total-gap-row (cond
-                              space-evenly?
-                              (* layout-gap-row (+ num-children 2))
+              total-gap-row
+              (cond
+                space-evenly?
+                (* layout-gap-row (+ num-children 2))
 
-                              space-around?
-                              (* layout-gap-row (+ num-children 1))
+                space-around?
+                (* layout-gap-row (+ num-children 1))
 
-                              :else
-                              (* layout-gap-row num-children))
+                :else
+                (* layout-gap-row num-children))
 
               next-line-min-width  (+ line-min-width  next-min-width  total-gap-col)
               next-line-min-height (+ line-min-height next-min-height total-gap-row)]
@@ -128,7 +130,7 @@
                     :num-children    (inc num-children)
                     :children-data   (conjv children-data child-data)}
                    result
-                   (rest children))
+                   (next children))
 
             (recur {:line-min-width  next-min-width
                     :line-min-height next-min-height
@@ -136,29 +138,31 @@
                     :line-max-height next-max-height
                     :num-children    1
                     :children-data   [child-data]}
-                   (cond-> result (some? line-data) (conj line-data))
-                   (rest children))))))))
+                   (cond-> result (some? line-data) (conj! line-data))
+                   (next children))))))))
 
 (defn add-space-to-items
   ;; Distributes the remainder space between the lines
   [prop prop-min prop-max to-share items]
   (let [num-items (->> items (remove #(mth/close? (get % prop) (get % prop-max))) count)
         per-line-target (/ to-share num-items)]
-    (loop [current (first items)
-           items   (rest items)
+
+    (loop [items (seq items)
            remainder to-share
-           result []]
-      (if (nil? current)
-        [result remainder]
-        (let [cur-val (or (get current prop) (get current prop-min) 0)
+           result (transient [])]
+
+      (if (not items)
+        [(persistent! result) remainder]
+
+        (let [current (first items)
+              cur-val (or (get current prop) (get current prop-min) 0)
               max-val (get current prop-max)
               cur-inc (if (> (+ cur-val per-line-target) max-val)
                         (- max-val cur-val)
                         per-line-target)
               current (assoc current prop (+ cur-val cur-inc))
-              remainder (- remainder cur-inc)
-              result (conj result current)]
-          (recur (first items) (rest items) remainder result))))))
+              remainder (- remainder cur-inc)]
+          (recur (next items) remainder (conj! result current)))))))
 
 (defn distribute-space
   [prop prop-min prop-max min-value bound-value items]
@@ -200,35 +204,23 @@
             (add-starts [total-width total-height num-lines [result base-p] layout-line]
               (let [start-p (flp/get-start-line parent layout-bounds layout-line base-p total-width total-height num-lines)
                     next-p  (flp/get-next-line  parent layout-bounds layout-line base-p total-width total-height num-lines)]
+                [(-> result (conj! (assoc layout-line :start-p start-p)))
+                 next-p]))
 
-                [(conj result (assoc layout-line :start-p start-p))
-                 next-p]))]
+            (get-layout-width [{:keys [num-children]}]
+              (let [num-gap (cond space-evenly? (inc num-children)
+                                  space-around? num-children
+                                  :else         (dec num-children))]
+                (- layout-width (* layout-gap-col num-gap))))
+
+            (get-layout-height [{:keys [num-children]}]
+              (let [num-gap (cond space-evenly? (inc num-children)
+                                  space-around? num-children
+                                  :else         (dec num-children))]
+                (- layout-height (* layout-gap-row num-gap))))]
 
       (let [[total-min-width total-min-height total-max-width total-max-height]
             (->> layout-lines (reduce add-ranges [0 0 0 0]))
-
-            get-layout-width (fn [{:keys [num-children]}]
-                               (let [num-gap (cond
-                                               space-evenly?
-                                               (inc num-children)
-
-                                               space-around?
-                                               num-children
-
-                                               :else
-                                               (dec num-children))]
-                                 (- layout-width (* layout-gap-col num-gap))))
-            get-layout-height (fn [{:keys [num-children]}]
-                                (let [num-gap (cond
-                                                space-evenly?
-                                                (inc num-children)
-
-                                                space-around?
-                                                num-children
-
-                                                :else
-                                                (dec num-children))]
-                                  (- layout-height (* layout-gap-row num-gap))))
 
             num-lines (count layout-lines)
 
@@ -247,6 +239,7 @@
             rest-layout-width  (- layout-width (* (dec num-lines) layout-gap-col))
 
             ;; Distributes the space between the layout lines based on its max/min constraints
+
             layout-lines
             (cond->> layout-lines
               row?
@@ -267,14 +260,16 @@
               (and row? (<= total-max-height rest-layout-height) (not auto-height?))
               (map #(assoc % :line-height (+ (:line-max-height %) stretch-height-fix)))
 
-              (and row? (< total-min-height rest-layout-height total-max-height) (not auto-height?))
-              (distribute-space :line-height :line-min-height :line-max-height total-min-height rest-layout-height)
-
               (and col? (or (>= total-min-width rest-layout-width) auto-width?))
               (map #(assoc % :line-width (:line-min-width %)))
 
               (and col? (<= total-max-width rest-layout-width) (not auto-width?))
-              (map #(assoc % :line-width (+ (:line-max-width %) stretch-width-fix)))
+              (map #(assoc % :line-width (+ (:line-max-width %) stretch-width-fix))))
+
+            layout-lines
+            (cond->> layout-lines
+              (and row? (< total-min-height rest-layout-height total-max-height) (not auto-height?))
+              (distribute-space :line-height :line-min-height :line-max-height total-min-height rest-layout-height)
 
               (and col? (< total-min-width rest-layout-width total-max-width) (not auto-width?))
               (distribute-space :line-width :line-min-width :line-max-width total-min-width rest-layout-width))
@@ -286,19 +281,21 @@
               (->> layout-lines
                    (reduce
                     (fn [[result rest-layout-height] {:keys [line-height] :as line}]
-                      [(conj result (assoc line :to-bound-height rest-layout-height))
+                      [(conj! result (assoc line :to-bound-height rest-layout-height))
                        (- rest-layout-height line-height layout-gap-row)])
-                    [[] layout-height])
-                   (first))
+                    [(transient []) layout-height])
+                   (first)
+                   (persistent!))
 
               col?
               (->> layout-lines
                    (reduce
                     (fn [[result rest-layout-width] {:keys [line-width] :as line}]
-                      [(conj result (assoc line :to-bound-width rest-layout-width))
+                      [(conj! result (assoc line :to-bound-width rest-layout-width))
                        (- rest-layout-width line-width layout-gap-col)])
-                    [[] layout-width])
-                   (first))
+                    [(transient []) layout-width])
+                   (first)
+                   (persistent!))
 
               :else
               layout-lines)
@@ -307,7 +304,10 @@
 
             base-p (flp/get-base-line parent layout-bounds total-width total-height num-lines)]
 
-        (first (reduce (partial add-starts total-width total-height num-lines) [[] base-p] layout-lines))))))
+        (->> layout-lines
+             (reduce (partial add-starts total-width total-height num-lines) [(transient []) base-p])
+             (first)
+             (persistent!))))))
 
 (defn add-line-spacing
   "Calculates the baseline for a flex layout"
