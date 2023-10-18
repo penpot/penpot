@@ -624,3 +624,17 @@
             (update container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container))))
+
+(defmethod migrate 34
+  [data]
+  (letfn [(update-object [object]
+            (if (or (cph/path-shape? object)
+                    (cph/bool-shape? object))
+              (dissoc object :x :y :width :height)
+              object))
+          (update-container [container]
+            (update container :objects update-vals update-object))]
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
