@@ -91,6 +91,17 @@
       :else
       0)))
 
+(defn axis-aligned?
+  "Check if the points are parallel to the coordinate axis."
+  [[p1 p2 _ p4 :as pts]]
+  (and (= (count pts) 4)
+       (let [hv (gpt/to-vec p1 p2)
+             vv (gpt/to-vec p1 p4)]
+         (and (mth/almost-zero? (:y hv))
+              (mth/almost-zero? (:x vv))
+              (> (:x hv) 0)
+              (> (:y vv) 0)))))
+
 (defn parent-coords-bounds
   [child-bounds [p1 p2 _ p4 :as parent-bounds]]
 
