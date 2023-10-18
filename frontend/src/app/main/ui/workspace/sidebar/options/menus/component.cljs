@@ -186,8 +186,9 @@
                               :path path})
         filters             (deref filters*)
 
-        components          (-> (get-in libraries [(:file-id filters) :data :components])
-                                vals)
+        components          (->> (get-in libraries [(:file-id filters) :data :components])
+                                 vals
+                                 (remove #(true? (:deleted %))))
 
         components          (if (str/empty? (:term filters))
                               components
