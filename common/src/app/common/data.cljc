@@ -832,45 +832,30 @@
 ;; String Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def stylize-re1 (re-pattern "(?u)(\\p{Lu}+[\\p{Ll}\\u0027\\p{Ps}\\p{Pe}]*)"))
-(def stylize-re2 (re-pattern "(?u)[^\\p{L}\\p{N}\\u0027\\p{Ps}\\p{Pe}\\?!]+"))
+(def ^:const trail-zeros-regex-1 #"\.0+$")
+(def ^:const trail-zeros-regex-2 #"(\.\d*[^0])0+$")
 
-(defn- stylize-split
-  [s]
-  (some-> s
-          (name)
-          (str/replace stylize-re1 "-$1")
-          (str/split stylize-re2)
-          (seq)))
+#?(:cljs
+(defn format-precision
+  "Creates a number with predetermined precision and then removes the trailing 0.
+  Examples:
+    12.0123, 0 => 12
+    12.0123, 1 => 12
+    12.0123, 2 => 12.01"
+  [num precision]
 
-(defn- stylize-join
-  ([coll every-fn join-with]
-   (when (seq coll)
-     (str/join join-with (map every-fn coll))))
-  ([[fst & rst] first-fn rest-fn join-with]
-   (when (string? fst)
-     (str/join join-with (cons (first-fn fst) (map rest-fn rst))))))
-
-(defn stylize
-  ([s every-fn join-with]
-   (stylize s every-fn every-fn join-with))
-  ([s first-fn rest-fn join-with]
-    (let [remove-empty #(seq (remove empty? %))]
-      (some-> (stylize-split s)
-              (remove-empty)
-              (stylize-join first-fn rest-fn join-with)))))
-
-(defn camel
-  "Output will be: lowerUpperUpperNoSpaces
-  accepts strings and keywords"
-  [s]
-  (stylize s str/lower str/capital ""))
-
-(defn kebab
-  "Output will be: lower-cased-and-separated-with-dashes
-  accepts strings and keywords"
-  [s]
-  (stylize s str/lower "-"))
+  (if (number? num)
+    (try
+      (let [num-str (mth/to-fixed num precision)
+            ;; Remove all trailing zeros after the comma 100.00000
+            num-str (str/replace num-str trail-zeros-regex-1 "")]
+        ;; Remove trailing zeros after a decimal number: 0.001|00|
+        (if-let [m (re-find trail-zeros-regex-2 num-str)]
+          (str/replace num-str (first m) (second m))
+          num-str))
+      (catch :default _
+        (str num)))
+    (str num))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Util protocols
