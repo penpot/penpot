@@ -11,12 +11,12 @@
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.thumbnails :as thc]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg]]
@@ -272,7 +272,7 @@
   [file-id component]
   (let [page-id   (:main-instance-page component)
         root-id   (:main-instance-id component)
-        object-id (dwt/fmt-object-id file-id page-id root-id)]
+        object-id (thc/fmt-object-id file-id page-id root-id "component")]
     (if (= file-id (:id @refs/workspace-file))
       (mf/deref (refs/workspace-thumbnail-by-id object-id))
       (let [thumbnails (dm/get-in @refs/workspace-libraries [file-id :thumbnails (dm/str object-id)])]

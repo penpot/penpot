@@ -330,6 +330,9 @@
    {:name "0105-mod-server-error-report-table"
     :fn (mg/resource "app/migrations/sql/0105-mod-server-error-report-table.sql")}
 
+   {:name "0106-mod-file-object-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0106-mod-file-object-thumbnail-table.sql")}
+
    ])
 
 (defn apply-migrations!

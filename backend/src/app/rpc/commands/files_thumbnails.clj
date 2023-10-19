@@ -13,6 +13,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.spec :as us]
+   [app.common.thumbnails :as thc]
    [app.common.types.shape-tree :as ctt]
    [app.db :as db]
    [app.db.sql :as sql]
@@ -38,10 +39,23 @@
 
 ;; --- COMMAND QUERY: get-file-object-thumbnails
 
+(defn- get-object-thumbnails-by-tag
+  [conn file-id tag]
+  (let [sql (str/concat
+             "select object_id, data, media_id, tag "
+             "  from file_object_thumbnail"
+             " where file_id=? and tag=?")
+        res (db/exec! conn [sql file-id tag])]
+    (->> res
+         (d/index-by :object-id (fn [row]
+                                  (or (some-> row :media-id files/resolve-public-uri)
+                                      (:data row))))
+         (d/without-nils))))
+
 (defn- get-object-thumbnails
   ([conn file-id]
    (let [sql (str/concat
-              "select object_id, data, media_id "
+              "select object_id, data, media_id, tag "
               "  from file_object_thumbnail"
               " where file_id=?")
          res (db/exec! conn [sql file-id])]
@@ -53,7 +67,7 @@
 
   ([conn file-id object-ids]
    (let [sql (str/concat
-              "select object_id, data, media_id "
+              "select object_id, data, media_id, tag "
               "  from file_object_thumbnail"
               " where file_id=? and object_id = ANY(?)")
          ids (db/create-array conn "text" (seq object-ids))
@@ -69,15 +83,18 @@
   {::doc/added "1.17"
    ::doc/module :files
    ::sm/params [:map {:title "get-file-object-thumbnails"}
-                [:file-id ::sm/uuid]]
+                [:file-id ::sm/uuid]
+                [:tag {:optional true} :string]]
    ::sm/result [:map-of :string :string]
    ::cond/get-object #(files/get-minimal-file %1 (:file-id %2))
    ::cond/reuse-key? true
    ::cond/key-fn files/get-file-etag}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id tag] :as params}]
   (dm/with-open [conn (db/open pool)]
     (files/check-read-permissions! conn profile-id file-id)
-    (get-object-thumbnails conn file-id)))
+    (if tag
+      (get-object-thumbnails-by-tag conn file-id tag)
+      (get-object-thumbnails conn file-id))))
 
 ;; --- COMMAND QUERY: get-file-thumbnail
 
@@ -165,7 +182,7 @@
 
               (if-let [frame  (-> frames first)]
                 (let [frame-id  (:id frame)
-                      object-id (str page-id frame-id)
+                      object-id (thc/fmt-object-id (:id file) page-id frame-id "frame")
                       frame     (if-let [thumb (get thumbnails object-id)]
                                   (assoc frame :thumbnail thumb :shapes [])
                                   (dissoc frame :thumbnail))
@@ -202,7 +219,7 @@
             page      (cond-> page (pmap/pointer-map? page) deref)
             frame-ids (if (some? frame) (list frame-id) (map :id (ctt/get-frames (:objects page))))
 
-            obj-ids   (map #(str page-id %) frame-ids)
+            obj-ids   (map #(thc/fmt-object-id (:id file) page-id % "frame") frame-ids)
             thumbs    (get-object-thumbnails conn id obj-ids)]
 
         (cond-> page
@@ -254,15 +271,15 @@
 ;; --- MUTATION COMMAND: upsert-file-object-thumbnail
 
 (def sql:upsert-object-thumbnail
-  "insert into file_object_thumbnail(file_id, object_id, data)
-   values (?, ?, ?)
-       on conflict(file_id, object_id) do
+  "insert into file_object_thumbnail(file_id, tag, object_id, data)
+   values (?, ?, ?, ?)
+       on conflict(file_id, tag, object_id) do
           update set data = ?;")
 
 (defn upsert-file-object-thumbnail!
-  [conn {:keys [file-id object-id data]}]
+  [conn {:keys [file-id tag object-id data]}]
   (if data
-    (db/exec-one! conn [sql:upsert-object-thumbnail file-id object-id data data])
+    (db/exec-one! conn [sql:upsert-object-thumbnail file-id (or tag "frame") object-id data data])
     (db/delete! conn :file-object-thumbnail {:file-id file-id :object-id object-id})))
 
 (s/def ::data (s/nilable ::us/string))
@@ -290,13 +307,13 @@
 ;; --- MUTATION COMMAND: create-file-object-thumbnail
 
 (def ^:private sql:create-object-thumbnail
-  "insert into file_object_thumbnail(file_id, object_id, media_id)
-   values (?, ?, ?)
-       on conflict(file_id, object_id) do
+  "insert into file_object_thumbnail(file_id, object_id, media_id, tag)
+   values (?, ?, ?, ?)
+       on conflict(file_id, tag, object_id) do
           update set media_id = ?;")
 
 (defn- create-file-object-thumbnail!
-  [{:keys [::db/conn ::sto/storage]} file-id object-id media]
+  [{:keys [::db/conn ::sto/storage]} file-id object-id media tag]
 
   (let [path  (:path media)
         mtype (:mtype media)
@@ -310,14 +327,15 @@
                                 :bucket "file-object-thumbnail"})]
 
     (db/exec-one! conn [sql:create-object-thumbnail file-id object-id
-                        (:id media) (:id media)])))
+                        (:id media) tag (:id media)])))
 
 
 (def schema:create-file-object-thumbnail
   [:map {:title "create-file-object-thumbnail"}
    [:file-id ::sm/uuid]
    [:object-id :string]
-   [:media ::media/upload]])
+   [:media ::media/upload]
+   [:tag {:optional true} :string]])
 
 (sv/defmethod ::create-file-object-thumbnail
   {:doc/added "1.19"
@@ -325,7 +343,7 @@
    ::audit/skip true
    ::sm/params schema:create-file-object-thumbnail}
 
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id object-id media]}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id object-id media tag]}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (media/validate-media-type! media)
@@ -335,7 +353,7 @@
       (-> cfg
           (update ::sto/storage media/configure-assets-storage)
           (assoc ::db/conn conn)
-          (create-file-object-thumbnail! file-id object-id media))
+          (create-file-object-thumbnail! file-id object-id media (or tag "frame")))
       nil)))
 
 ;; --- MUTATION COMMAND: delete-file-object-thumbnail
