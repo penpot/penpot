@@ -10,6 +10,9 @@
 
 ### :bug: Bugs fixed
 
+- Fix pixelated thumbnails [Github
+  #3681](https://github.com/penpot/penpot/issues/3681) [Github #3661](https://github.com/penpot/penpot/issues/3661)
+
 ### :arrow_up: Deps updates
 
 ### :heart: Community contributions by (Thank you!)
