@@ -450,7 +450,7 @@
                 page-id   (:main-instance-page component)
                 root-id   (:main-instance-id component)]
             (rx/of
-             (dwt/clear-thumbnail (:current-file-id state) page-id root-id)
+             (dwt/clear-thumbnail (:current-file-id state) page-id root-id "component")
              (dwsh/delete-shapes page-id #{root-id}))) ;; Deleting main root triggers component delete
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
@@ -615,7 +615,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id})
+      (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
            (rx/map (fn [thumbnails]
                      (fn [state]
                        (assoc-in state [:workspace-libraries library-id :thumbnails] thumbnails))))))))
@@ -775,7 +775,7 @@
             component       (ctkl/get-component data component-id)
             page-id         (:main-instance-page component)
             root-id         (:main-instance-id component)]
-           (rx/of (dwt/request-thumbnail file-id page-id root-id))))))
+           (rx/of (dwt/request-thumbnail file-id page-id root-id "component"))))))
 
 (defn- find-shape-index
   [objects id shape-id]
@@ -1136,7 +1136,7 @@
               (rx/map (fn [file]
                         (fn [state]
                           (assoc-in state [:workspace-libraries library-id] file)))))
-         (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id})
+         (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
               (rx/map (fn [thumbnails]
                         (fn [state]
                           (assoc-in state [:workspace-libraries library-id :thumbnails] thumbnails))))))))))

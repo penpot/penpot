@@ -228,7 +228,7 @@
                             (rx/map (fn [data] (assoc file :data data))))))
                     (rx/merge-map
                      (fn [{:keys [id] :as file}]
-                       (->> (rp/cmd! :get-file-object-thumbnails {:file-id id})
+                       (->> (rp/cmd! :get-file-object-thumbnails {:file-id id :tag "component"})
                             (rx/map #(assoc file :thumbnails %)))))
                     (rx/reduce conj [])
                     (rx/map libraries-fetched)))
