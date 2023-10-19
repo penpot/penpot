@@ -680,12 +680,17 @@
 
         (let [file-id' (lookup-index file-id)
               data     (-> (:data file)
-                           (assoc :id file-id')
+                           (assoc :id file-id'))
+
+              data     (if (> (:version data) cfd/version)
+                         (assoc data :version cfd/version)
+                         data)
+
+              data     (-> data
                            (cond-> migrate? (pmg/migrate-data))
                            (update :pages-index relink-shapes)
                            (update :components relink-shapes)
                            (update :media relink-media)
-                           (assoc  :version cfd/version)
                            (postprocess-file))
 
               params  {:id file-id'

@@ -433,7 +433,8 @@
         attrs (get-minimal-shape type)]
 
     (cond-> attrs
-      (not= :path type)
+      (and (not= :path type)
+           (not= :bool type))
       (-> (assoc :x 0)
           (assoc :y 0)
           (assoc :width 0.01)
@@ -481,7 +482,7 @@
   (let [shape (make-minimal-shape type)
         shape (merge shape (d/without-nils props))
         shape (case (:type shape)
-                :path  (setup-path shape)
+                (:bool :path)  (setup-path shape)
                 :image (-> shape setup-rect setup-image)
                 (setup-rect shape))]
     (-> shape
