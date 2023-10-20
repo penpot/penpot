@@ -13,15 +13,19 @@
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
-   [app.util.code-gen.style-css-formats :as cssf]
-
+   [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn has-shadow? [shape]
   (:shadow shape))
 
+(defn shape-copy-data [shape]
+  (str/join ", " (map css/shadow->css (:shadow shape))))
 
+(defn shadow-copy-data [shadow]
+  (css/shadow->css shadow))
 
 (mf/defc shadow-block [{:keys [shadow]}]
   (let [color-format (mf/use-state :hex)]
@@ -29,8 +33,7 @@
      [:div {:class (stl/css :shadow-row)}
       [:div {:class (stl/css :global/attr-label)} (->> shadow :style d/name (str "workspace.options.shadow-options.") (tr))]
       [:div {:class (stl/css :global/attr-value)}
-
-       [:& copy-button {:data  (cssf/format-shadow (cssf/format-value :shadows shadow) shadow)
+       [:& copy-button {:data  (shadow-copy-data shadow)
                         :class (stl/css :color-row-copy-btn)}
         [:div  {:class (stl/css :button-children)
                 :title  (dm/str (tr "workspace.options.shadow-options.offsetx") " "
