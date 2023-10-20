@@ -15,43 +15,40 @@
    [cuerdas.core :as str]))
 
 (def commands-regex #"(?i)[mzlhvcsqta][^mzlhvcsqta]*")
+(def regex #"([+-]?(\d+(\.\d+)?|\.\d+)(e[+-]?\d+)?|[01])")
 
-;; Matches numbers for path values allows values like... -.01, 10, +12.22
-;; 0 and 1 are special because can refer to flags
-(def num-regex #"[+-]?(\d+(\.\d+)?|\.\d+)(e[+-]?\d+)?")
-
-(def flag-regex #"[01]")
 
 (defn extract-params
-  [cmd-str extract-commands]
+  [data params-pattern]
   (loop [result []
-         extract-idx 0
+         pattern (seq params-pattern)
          current {}
-         remain (-> cmd-str (subs 1) (str/trim))]
+         entries (re-seq regex data)]
 
-    (let [[param type] (nth extract-commands extract-idx)
-          regex (case type
-                  :flag     flag-regex
-                  #_:number num-regex)
-          match (re-find regex remain)]
+    (if (and entries pattern)
+      (let [[attr-name
+             attr-type] (first pattern)
+            match       (first entries)
+            rval        (first match)
+            val         (if (= attr-type :flag)
+                          (d/parse-integer rval)
+                          (-> rval csvg/fix-dot-number d/parse-double))
+            current     (assoc current attr-name val)
+            next-pattern (next pattern)]
 
-      (if match
-        (let [value (if (= type :flag)
-                      (d/parse-integer match)
-                      (-> match first csvg/fix-dot-number d/parse-double))
-              remain (str/replace-first remain regex "")
-              current (assoc current param value)
-              extract-idx (inc extract-idx)
-              [result current extract-idx]
-              (if (>=  extract-idx (count extract-commands))
-                [(conj result current) {} 0]
-                [result current extract-idx])]
+        (if (some? next-pattern)
           (recur result
-                 (int extract-idx)
+                 next-pattern
                  current
-                 remain))
-        (cond-> result
-          (seq current) (conj current))))))
+                 (next entries))
+          (recur (conj result current)
+                 (seq params-pattern)
+                 {}
+                 (next entries))))
+
+      (if (seq current)
+        (conj result current)
+        result))))
 
 ;; Path specification
 ;; https://www.w3.org/TR/SVG11/paths.html
@@ -322,24 +319,28 @@
                 (cond-> command
                   (:relative command)
                   (-> (assoc :relative false)
-                      (d/update-in-when [:params :c1x] + (:x prev-pos))
-                      (d/update-in-when [:params :c1y] + (:y prev-pos))
+                      (update :params (fn [params]
+                                        (let [x (:x prev-pos)
+                                              y (:y prev-pos)
+                                              c (:command command)]
+                                          (-> params
+                                              (d/update-when :c1x + x)
+                                              (d/update-when :c1y + y)
 
-                      (d/update-in-when [:params :c2x] + (:x prev-pos))
-                      (d/update-in-when [:params :c2y] + (:y prev-pos))
+                                              (d/update-when :c2x + x)
+                                              (d/update-when :c2y + y)
 
-                      (d/update-in-when [:params :cx] + (:x prev-pos))
-                      (d/update-in-when [:params :cy] + (:y prev-pos))
+                                              (d/update-when :cx + x)
+                                              (d/update-when :cy + y)
 
-                      (d/update-in-when [:params :x] + (:x prev-pos))
-                      (d/update-in-when [:params :y] + (:y prev-pos))
+                                              (d/update-when :x + x)
+                                              (d/update-when :y + y)
 
-                      (cond->
-                          (= :line-to-horizontal (:command command))
-                        (d/update-in-when [:params :value] + (:x prev-pos))
+                                              (cond-> (= :line-to-horizontal c)
+                                                (d/update-when :value + x))
 
-                        (= :line-to-vertical (:command command))
-                        (d/update-in-when [:params :value] + (:y prev-pos)))))
+                                              (cond-> (= :line-to-vertical c)
+                                                (d/update-when :value + y))))))))
 
                 params (:params command)
                 orig-command command
@@ -349,8 +350,10 @@
                   (= :line-to-horizontal (:command command))
                   (-> (assoc :command :line-to)
                       (update :params dissoc :value)
-                      (assoc-in [:params :x] (:value params))
-                      (assoc-in [:params :y] (:y prev-pos)))
+                      (update :params (fn [params]
+                                        (-> params
+                                            (assoc :x (:value params))
+                                            (assoc :y (:y prev-pos))))))
 
                   (= :line-to-vertical (:command command))
                   (-> (assoc :command :line-to)
@@ -420,13 +423,6 @@
   [path-str]
   (if (empty? path-str)
     path-str
-    (let [clean-path-str
-          (-> path-str
-              (str/trim)
-              ;; Change "commas" for spaces
-              (str/replace #"," " ")
-              ;; Remove all consecutive spaces
-              (str/replace #"\s+" " "))
-          commands (re-seq commands-regex clean-path-str)]
+    (let [commands (re-seq commands-regex path-str)]
       (-> (mapcat parse-command commands)
           (simplify-commands)))))
