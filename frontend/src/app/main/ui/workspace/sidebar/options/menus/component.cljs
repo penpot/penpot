@@ -387,8 +387,12 @@
            (swap! state* update :menu-open not)))
 
         on-menu-close
-        (mf/use-callback
+        (mf/use-fn
          #(swap! state* assoc :menu-open false))
+
+        on-component-back
+        (mf/use-fn
+         #(st/emit! :interrupt))
 
         menu-entries         (cmm/generate-components-menu-entries shapes components-v2)
         show-menu?           (seq menu-entries)]
@@ -427,17 +431,25 @@
               [:& component-annotation {:id id :shape shape :component component}])])]
 
         [:div.element-set
-         [:div.element-set-title {:class (stl/css-case :back swap-opened?)
-                                  :on-click #(when swap-opened? (st/emit! :interrupt))}
-          [:div
-           (when swap-opened?
-             [:span
-              i/arrow-slide])
-           [:span (tr "workspace.options.component")]]
-          (when-not multi
-            [:span (if main-instance?
-                     (tr "workspace.options.component.main")
-                     (tr "workspace.options.component.copy"))])]
+         (if swap-opened?
+           [:button.element-set-title.component-block-title {:class (stl/css-case :back swap-opened?)
+                                                             :on-click on-component-back}
+            [:div
+             [:span i/arrow-slide]
+             [:span (tr "workspace.options.component")]]
+
+            (when-not multi
+              [:span (if main-instance?
+                       (tr "workspace.options.component.main")
+                       (tr "workspace.options.component.copy"))])]
+           [:div.element-set-title
+            [:span (tr "workspace.options.component")]
+            (when-not multi
+              [:span (if main-instance?
+                       (tr "workspace.options.component.main")
+                       (tr "workspace.options.component.copy"))])])
+
+
          [:div.element-set-content
           [:div.row-flex.component-row
            {:class (stl/css-case :copy can-swap?)
