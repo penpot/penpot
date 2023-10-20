@@ -1190,6 +1190,9 @@ msgstr "Lower Case"
 msgid "inspect.attributes.typography.text-transform.none"
 msgstr "None"
 
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Unset"
+
 msgid "inspect.attributes.typography.text-transform.titlecase"
 msgstr "Title Case"
 

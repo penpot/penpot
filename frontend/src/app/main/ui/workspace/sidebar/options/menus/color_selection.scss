@@ -21,13 +21,9 @@
     }
   }
   .element-content {
-    display: flex;
-    flex-direction: column;
-    gap: $s-4;
+    @include flexColumn;
     .selected-color-group {
-      display: flex;
-      flex-direction: column;
-      gap: $s-4;
+      @include flexColumn;
       .more-colors-btn {
         @extend .button-secondary;
         @include tabTitleTipography;

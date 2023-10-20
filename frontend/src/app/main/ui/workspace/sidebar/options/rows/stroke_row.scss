@@ -7,13 +7,9 @@
 @import "refactor/common-refactor.scss";
 
 .stroke-data {
-  display: flex;
-  flex-direction: column;
-  gap: $s-4;
+  @include flexColumn;
   .stroke-options {
-    display: flex;
-    align-items: center;
-    gap: $s-4;
+    @include flexRow;
     .stroke-width-input-element {
       @extend .input-element;
       width: $s-60;
@@ -30,9 +26,7 @@
     }
   }
   .stroke-caps-options {
-    display: flex;
-    align-items: center;
-    gap: $s-4;
+    @include flexRow;
     .cap-select {
       width: $s-124;
     }

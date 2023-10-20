@@ -80,12 +80,10 @@
   }
   .sections-container {
     @include menuShadow;
+    @include flexColumn;
     position: absolute;
     top: $s-84;
     left: $s-12;
-    display: flex;
-    flex-direction: column;
-    gap: $s-4;
     width: $s-192;
     padding: $s-4;
     border-radius: $br-8;

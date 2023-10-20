@@ -1228,6 +1228,9 @@ msgstr "Minúsculas"
 msgid "inspect.attributes.typography.text-transform.none"
 msgstr "Ninguna"
 
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Sin asignar"
+
 msgid "inspect.attributes.typography.text-transform.titlecase"
 msgstr "Primera en mayúscula"
 

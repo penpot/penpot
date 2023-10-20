@@ -112,11 +112,9 @@
       gap: $s-24;
     }
     .thread-group-placeholder {
-      display: flex;
-      flex-direction: column;
+      @include flexColumn;
       align-items: center;
       justify-content: flex-start;
-      gap: $s-4;
       margin-top: $s-36;
       .placeholder-icon {
         @include flexCenter;

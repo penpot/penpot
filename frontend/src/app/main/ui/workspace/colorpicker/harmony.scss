@@ -35,9 +35,7 @@
   }
 
   .handlers-wrapper {
-    display: flex;
-    align-items: center;
-    gap: $s-4;
+    @include flexRow;
     height: $s-200;
     width: $s-52;
     flex-grow: 1;

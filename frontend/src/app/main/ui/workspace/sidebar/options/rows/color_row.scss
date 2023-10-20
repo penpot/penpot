@@ -7,9 +7,7 @@
 @import "refactor/common-refactor.scss";
 
 .color-data {
-  display: flex;
-  align-items: center;
-  gap: $s-4;
+  @include flexRow;
   .color-info {
     display: flex;
     align-items: center;
@@ -103,7 +101,9 @@
       }
     }
     .gradient-name-wrapper {
+      border-radius: 0 $br-8 $br-8 0;
       .color-name {
+        @include flexRow;
         border-radius: 0 $br-8 $br-8 0;
       }
     }

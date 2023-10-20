@@ -5,7 +5,10 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.viewer.inspect.attributes.fill
+  (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
@@ -30,33 +33,63 @@
 (mf/defc fill-block
   {::mf/wrap-props false}
   [{:keys [objects shape]}]
-  (let [format*   (mf/use-state :hex)
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        format*   (mf/use-state :hex)
         format    (deref format*)
 
         color     (shape->color shape)
-        on-change (mf/use-fn #(reset! format* %))]
+        on-change
+        (mf/use-fn
+         (fn [format]
+           (reset! format* format)))]
+    (if new-css-system
+      [:div {:class (stl/css :attributes-fill-block)}
+       [:& color-row
+        {:color color
+         :format format
+         :on-change-format on-change
+         :copy-data (css/get-shape-properties-css objects {:fills [shape]} properties)}]]
 
-    [:div.attributes-fill-block
-     [:& color-row
-      {:color color
-       :format format
-       :on-change-format on-change
-       :copy-data (css/get-shape-properties-css objects {:fills [shape]} properties)}]]))
+
+      [:div.attributes-fill-block
+       [:& color-row
+        {:color color
+         :format format
+         :on-change-format on-change
+         :copy-data (css/get-shape-properties-css objects {:fills [shape]} properties)}]])))
 
 (mf/defc fill-panel
   {::mf/wrap-props false}
   [{:keys [shapes]}]
-  (let [shapes (filter has-fill? shapes)]
-    (when (seq shapes)
-      [:div.attributes-block
-       [:div.attributes-block-title
-        [:div.attributes-block-title-text (tr "inspect.attributes.fill")]]
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        shapes (filter has-fill? shapes)]
+    (if new-css-system
+      (when (seq shapes)
+        [:div {:class (stl/css :attributes-block)}
+          [:& title-bar {:collapsable? false
+                        :title        (tr "inspect.attributes.fill")
+                        :class        (stl/css :title-spacing-fill)}]
 
-       [:div.attributes-fill-blocks
-        (for [shape shapes]
-          (if (seq (:fills shape))
-            (for [value (:fills shape [])]
-              [:& fill-block {:key (str "fill-block-" (:id shape) value)
-                              :shape value}])
-            [:& fill-block {:key (str "fill-block-only" (:id shape))
-                            :shape shape}]))]])))
+         [:div {:class (stl/css :attributes-content)}
+          (for [shape shapes]
+            (if (seq (:fills shape))
+              (for [value (:fills shape [])]
+                [:& fill-block {:key (str "fill-block-" (:id shape) value)
+                                :shape value}])
+              [:& fill-block {:key (str "fill-block-only" (:id shape))
+                              :shape shape}]))]])
+
+
+     (when (seq shapes)
+       [:div.attributes-block
+        [:div.attributes-block-title
+         [:div.attributes-block-title-text (tr "inspect.attributes.fill")]]
+
+        [:div.attributes-fill-blocks
+         (for [shape shapes]
+           (if (seq (:fills shape))
+             (for [value (:fills shape [])]
+               [:& fill-block {:key (str "fill-block-" (:id shape) value)
+                               :shape value}])
+             [:& fill-block {:key (str "fill-block-only" (:id shape))
+                             :shape shape}]))]]))))

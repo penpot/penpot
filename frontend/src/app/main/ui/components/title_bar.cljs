@@ -26,7 +26,6 @@
                            :rotated collapsed?)}
             i/arrow-refactor]
            [:div {:class (stl/css :title)} title]]
-
           [:*
            [:button {:class (stl/css-case
                              :collapsabled-icon true

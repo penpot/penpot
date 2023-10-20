@@ -5,11 +5,13 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.viewer.inspect.attributes.image
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.media :as cm]
    [app.common.pages.helpers :as cph]
    [app.config :as cf]
    [app.main.ui.components.copy-button :refer [copy-button]]
+   [app.main.ui.context :as ctx]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -20,26 +22,58 @@
 
 (mf/defc image-panel
   [{:keys [objects shapes]}]
-  (for [shape (filter cph/image-shape? shapes)]
-    [:div.attributes-block {:key (str "image-" (:id shape))}
-     [:div.attributes-image-row
-      [:div.attributes-image
-       [:img {:src (cf/resolve-file-media (-> shape :metadata))}]]]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      (for [shape (filter cph/image-shape? shapes)]
+        [:div {:class (stl/css :attributes-block)
+               :key (str "image-" (:id shape))}
+        [:div {:class (stl/css :image-wrapper)}
+         [:img {:src (cf/resolve-file-media (-> shape :metadata))}]]
 
-     [:div.attributes-unit-row
-      [:div.attributes-label (tr "inspect.attributes.image.width")]
-      [:div.attributes-value (css/get-css-value objects (:metadata shape) :width)]
-      [:& copy-button {:data (css/get-css-property objects (:metadata shape) :width)}]]
+        [:div {:class (stl/css :image-row)}
+         [:div {:class (stl/css :global/attr-label)}
+          (tr "inspect.attributes.image.width")]
+         [:div {:class (stl/css :global/attr-value)}
+          [:& copy-button {:data (css/get-css-property objects (:metadata shape) :width)}
+           [:div {:class (stl/css :button-children)} (css/get-css-value objects (:metadata shape) :width)]]]]
 
-     [:div.attributes-unit-row
-      [:div.attributes-label (tr "inspect.attributes.image.height")]
-      [:div.attributes-value (css/get-css-value objects (:metadata shape) :height)]
-      [:& copy-button {:data (css/get-css-property objects (:metadata shape) :height)}]]
+        [:div {:class (stl/css :image-row)}
+         [:div {:class (stl/css :global/attr-label)}
+          (tr "inspect.attributes.image.height")]
+         [:div {:class (stl/css :global/attr-value)}
+          [:& copy-button {:data (css/get-css-property objects (:metadata shape) :height)}
+           [:div {:class (stl/css :button-children)} (css/get-css-value objects (:metadata shape) :height)]]]]
 
-     (let [mtype     (-> shape :metadata :mtype)
-           name      (:name shape)
-           extension (cm/mtype->extension mtype)]
-       [:a.download-button {:target "_blank"
-                            :download (cond-> name extension (str/concat extension))
-                            :href (cf/resolve-file-media (-> shape :metadata))}
-        (tr "inspect.attributes.image.download")])]))
+        (let [mtype     (-> shape :metadata :mtype)
+              name      (:name shape)
+              extension (cm/mtype->extension mtype)]
+          [:a   {:class (stl/css :download-button)
+                 :target "_blank"
+                               :download (cond-> name extension (str/concat extension))
+                               :href (cf/resolve-file-media (-> shape :metadata))}
+           (tr "inspect.attributes.image.download")])])
+
+
+      (for [shape (filter cph/image-shape? shapes)]
+        [:div.attributes-block {:key (str "image-" (:id shape))}
+         [:div.attributes-image-row
+          [:div.attributes-image
+           [:img {:src (cf/resolve-file-media (-> shape :metadata))}]]]
+
+         [:div.attributes-unit-row
+          [:div.attributes-label (tr "inspect.attributes.image.width")]
+          [:div.attributes-value (css/get-css-value objects (:metadata shape) :width)]
+          [:& copy-button {:data (css/get-css-property objects (:metadata shape) :width)}]]
+
+         [:div.attributes-unit-row
+          [:div.attributes-label (tr "inspect.attributes.image.height")]
+          [:div.attributes-value (css/get-css-value objects (:metadata shape) :height)]
+          [:& copy-button {:data (css/get-css-property objects (:metadata shape) :height)}]]
+
+         (let [mtype     (-> shape :metadata :mtype)
+               name      (:name shape)
+               extension (cm/mtype->extension mtype)]
+           [:a.download-button {:target "_blank"
+                                :download (cond-> name extension (str/concat extension))
+                                :href (cf/resolve-file-media (-> shape :metadata))}
+            (tr "inspect.attributes.image.download")])]))))

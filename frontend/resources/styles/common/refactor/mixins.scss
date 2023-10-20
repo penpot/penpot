@@ -10,6 +10,18 @@
   align-items: center;
 }
 
+@mixin flexColumn {
+  display: flex;
+  flex-direction: column;
+  gap: $s-4;
+}
+
+@mixin flexRow {
+  display: flex;
+  align-items: center;
+  gap: $s-4;
+}
+
 @mixin buttonStyle {
   border: none;
   background: none;
@@ -59,6 +71,27 @@
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+@mixin inspectValue {
+  @include titleTipography;
+  display: inline-block;
+  width: fit-content;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  color: var(--menu-foreground-color);
+}
+
+@mixin copyWrapper {
+  @include flexColumn;
+  position: relative;
+  min-height: $s-32;
+  width: $s-156;
+  max-width: $s-156;
+  padding: calc($s-8 - $s-1) 0 calc($s-8 - $s-1) calc($s-8 - $s-1);
+  border-radius: $s-8;
+  box-sizing: border-box;
 }
 
 @keyframes spin-animation {

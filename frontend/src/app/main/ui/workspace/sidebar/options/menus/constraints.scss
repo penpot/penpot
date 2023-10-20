@@ -105,9 +105,7 @@
       }
     }
     .contraints-selects {
-      display: flex;
-      flex-direction: column;
-      gap: $s-4;
+      @include flexColumn;
 
       .horizontal-select,
       .vertical-select {

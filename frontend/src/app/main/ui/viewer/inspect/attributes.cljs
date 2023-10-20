@@ -5,8 +5,10 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.viewer.inspect.attributes
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.types.components-list :as ctkl]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.viewer.inspect.annotation :refer [annotation]]
    [app.main.ui.viewer.inspect.attributes.blur :refer [blur-panel]]
@@ -34,35 +36,65 @@
 
 (mf/defc attributes
   [{:keys [page-id file-id shapes frame from libraries share-id objects]}]
-  (let [shapes  (hooks/use-equal-memo shapes)
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        shapes  (hooks/use-equal-memo shapes)
         type    (if (= (count shapes) 1) (-> shapes first :type) :multiple)
         options (type->options type)
         content (when (= (count shapes) 1)
                   (ctkl/get-component-annotation (first shapes) libraries))]
 
-    [:div.element-options
-     (for [[idx option] (map-indexed vector options)]
-       [:> (case option
-             :geometry         geometry-panel
-             :layout           layout-panel
-             :layout-element   layout-element-panel
-             :fill             fill-panel
-             :stroke           stroke-panel
-             :shadow           shadow-panel
-             :blur             blur-panel
-             :image            image-panel
-             :text             text-panel
-             :svg              svg-panel)
-        {:key idx
-         :shapes shapes
-         :objects objects
-         :frame frame
-         :from from}])
-     (when content
-       [:& annotation {:content content}])
-     [:& exports
-      {:shapes shapes
-       :type type
-       :page-id page-id
-       :file-id file-id
-       :share-id share-id}]]))
+    (if new-css-system
+      [:div {:class (stl/css :element-options)}
+       (for [[idx option] (map-indexed vector options)]
+         [:> (case option
+               :geometry         geometry-panel
+               :layout           layout-panel
+               :layout-element   layout-element-panel
+               :fill             fill-panel
+               :stroke           stroke-panel
+               :shadow           shadow-panel
+               :blur             blur-panel
+               :image            image-panel
+               :text             text-panel
+               :svg              svg-panel)
+          {:key idx
+           :shapes shapes
+           :objects objects
+           :frame frame
+           :from from}])
+       (when content
+         [:& annotation {:content content}])
+       [:& exports
+        {:shapes shapes
+         :type type
+         :page-id page-id
+         :file-id file-id
+         :share-id share-id}]]
+
+
+      [:div.element-options
+       (for [[idx option] (map-indexed vector options)]
+         [:> (case option
+               :geometry         geometry-panel
+               :layout           layout-panel
+               :layout-element   layout-element-panel
+               :fill             fill-panel
+               :stroke           stroke-panel
+               :shadow           shadow-panel
+               :blur             blur-panel
+               :image            image-panel
+               :text             text-panel
+               :svg              svg-panel)
+          {:key idx
+           :shapes shapes
+           :objects objects
+           :frame frame
+           :from from}])
+       (when content
+         [:& annotation {:content content}])
+       [:& exports
+        {:shapes shapes
+         :type type
+         :page-id page-id
+         :file-id file-id
+         :share-id share-id}]])))

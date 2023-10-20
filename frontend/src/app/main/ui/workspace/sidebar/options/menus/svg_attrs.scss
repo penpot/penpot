@@ -11,9 +11,7 @@
     padding-left: $s-12;
   }
   .element-set-content {
-    display: flex;
-    flex-direction: column;
-    gap: $s-4;
+    @include flexColumn;
     .attr-row {
       display: flex;
       gap: $s-4;

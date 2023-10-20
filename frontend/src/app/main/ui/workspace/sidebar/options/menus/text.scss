@@ -18,9 +18,7 @@
     }
   }
   .element-content {
-    display: flex;
-    flex-direction: column;
-    gap: $s-4;
+    @include flexColumn;
     .multiple-typography {
       @extend .mixed-bar;
       .multiple-text {

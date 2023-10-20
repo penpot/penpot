@@ -5,11 +5,15 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.viewer.inspect.attributes.common
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet color-name]]
+   [app.main.ui.components.color-bullet-new :as cbn]
    [app.main.ui.components.copy-button :refer [copy-button]]
+   [app.main.ui.components.select :refer [select]]
+   [app.main.ui.context :as ctx]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -41,41 +45,143 @@
   (or (mf/deref file-colors-ref) (mf/deref refs/workspace-file-colors)))
 
 (mf/defc color-row [{:keys [color format copy-data on-change-format]}]
-  (let [colors-library (get-colors-library color)
-        file-colors (get-file-colors)
+  (let [new-css-system     (mf/use-ctx ctx/new-css-system)
+        colors-library     (get-colors-library color)
+        file-colors        (get-file-colors)
         color-library-name (get-in (or colors-library file-colors) [(:id color) :name])
-        color (assoc color :color-library-name color-library-name)]
-    [:div.attributes-color-row
-     (when color-library-name
-       [:div.attributes-color-id
-        [:& color-bullet {:color color}]
-        [:div color-library-name]])
+        color              (assoc color :color-library-name color-library-name)]
 
-     [:div.attributes-color-value {:class (when color-library-name "hide-color")}
-      [:& color-bullet {:color color}]
+    (if new-css-system
+      [:div {:class (stl/css :attributes-color-row)}
+       [:div {:class (stl/css :bullet-wrapper)
+              :style #js {"--bullet-size" "16px"}}
+        [:& cbn/color-bullet {:color color
+                              :mini? true}]]
 
-      (if (:gradient color)
-        [:& color-name {:color color}]
-        (case format
-          :rgba (let [[r g b a] (uc/hex->rgba (:color color) (:opacity color))]
-                  [:div (str/fmt "%s, %s, %s, %s" r g b a)])
-          :hsla (let [[h s l a] (uc/hex->hsla (:color color) (:opacity color))
-                      result (uc/format-hsla [h s l a])]
-                  [:div result])
+       [:div {:class (stl/css :format-wrapper)}
+        (when-not (and on-change-format (:gradient color))
+
+          [:div {:class (stl/css :select-format-wrapper)}
+           [:& select
+            {:default-value format
+             :options [{:value :hex :label (tr "inspect.attributes.color.hex")}
+                       {:value :rgba :label (tr "inspect.attributes.color.rgba")}
+                       {:value :hsla :label (tr "inspect.attributes.color.hsla")}]
+             :on-change on-change-format}]])
+        (when (:gradient color)
+          [:div {:class (stl/css :format-info)} "rgba"])]
+
+       (if copy-data
+         [:& copy-button {:data copy-data
+                          :class (stl/css :color-row-copy-btn)}
           [:*
-           [:& color-name {:color color}]
-           (when-not (:gradient color) [:div (str (* 100 (:opacity color)) "%")])]))
+           [:div {:class (stl/css :first-row)}
+            [:div {:class (stl/css :name-opacity)}
+             [:span {:class (stl/css-case :color-value-wrapper true
+                                          :gradient-name (:gradient color))}
+              (if (:gradient color)
+                [:& cbn/color-name {:color color
+                                    :size 80}]
+                (case format
+                  :hex [:& cbn/color-name {:color color
+                                           :size 80}]
+                  :rgba (let [[r g b a] (uc/hex->rgba (:color color) (:opacity color))]
+                          [:* (str/fmt "%s, %s, %s, %s" r g b a)])
+                  :hsla (let [[h s l a] (uc/hex->hsla (:color color) (:opacity color))
+                              result (uc/format-hsla [h s l a])]
+                          [:* result])))]
 
-      (when-not (and on-change-format (:gradient color))
-        [:select.color-format-select {:on-change #(-> (dom/get-target-val %) keyword on-change-format)}
-         [:option {:value "hex"}
-          (tr "inspect.attributes.color.hex")]
+             (when-not (:gradient color)
+               [:span {:class (stl/css :opacity-info)}
+                (str (* 100 (:opacity color)) "%")])]]
 
-         [:option {:value "rgba"}
-          (tr "inspect.attributes.color.rgba")]
+           (when color-library-name
+             [:div {:class (stl/css :second-row)}
+              [:div {:class (stl/css :color-name-library)}
+               color-library-name]])]]
 
-         [:option {:value "hsla"}
-          (tr "inspect.attributes.color.hsla")]])]
-     (when copy-data
-       [:& copy-button {:data copy-data}])]))
+         [:div {:class (stl/css :color-info)}
+          [:div {:class (stl/css :first-row)}
+           [:div {:class (stl/css :name-opacity)}
+            [:span {:class (stl/css-case :color-value-wrapper true
+                                         :gradient-name (:gradient color))}
+             (if (:gradient color)
+               [:& cbn/color-name {:color color
+                                   :size 80}]
+               (case format
+                 :hex [:& cbn/color-name {:color color
+                                          :size 80}]
+                 :rgba (let [[r g b a] (uc/hex->rgba (:color color) (:opacity color))]
+                         [:* (str/fmt "%s, %s, %s, %s" r g b a)])
+                 :hsla (let [[h s l a] (uc/hex->hsla (:color color) (:opacity color))
+                             result (uc/format-hsla [h s l a])]
+                         [:* result])))]
+
+            (when-not (:gradient color)
+              [:span {:class (stl/css :opacity-info)}
+               (str (* 100 (:opacity color)) "%")])]]
+
+          (when color-library-name
+            [:div {:class (stl/css :second-row)}
+             [:div {:class (stl/css :color-name-library)}
+              color-library-name]])
+          ;; [:span {:class (stl/css-case :color-name-wrapper true
+          ;;                             :gradient-color (:gradient color))}
+
+          ;;  [:div {:class (stl/css :color-value-wrapper)}
+          ;;   (if (:gradient color)
+          ;;     [:& cbn/color-name {:color color
+          ;;                         :size 80}]
+          ;;     (case format
+          ;;       :hex [:& cbn/color-name {:color color
+          ;;                                :size 80}]
+          ;;       :rgba (let [[r g b a] (uc/hex->rgba (:color color) (:opacity color))]
+          ;;               [:* (str/fmt "%s, %s, %s, %s" r g b a)])
+          ;;       :hsla (let [[h s l a] (uc/hex->hsla (:color color) (:opacity color))
+          ;;                   result (uc/format-hsla [h s l a])]
+          ;;               [:* result])))]
+
+          ;;  (when color-library-name
+          ;;    [:div {:class (stl/css :color-name-library)}
+          ;;     color-library-name])]
+
+          ;; (when-not (:gradient color)
+          ;;   [:div {:class (stl/css :opacity-info)}
+          ;;    (str (* 100 (:opacity color)) "%")])
+          ])]
+
+
+      [:div.attributes-color-row
+       (when color-library-name
+         [:div.attributes-color-id
+          [:& color-bullet {:color color}]
+          [:div color-library-name]])
+
+       [:div.attributes-color-value {:class (when color-library-name "hide-color")}
+        [:& color-bullet {:color color}]
+
+        (if (:gradient color)
+          [:& color-name {:color color}]
+          (case format
+            :rgba (let [[r g b a] (uc/hex->rgba (:color color) (:opacity color))]
+                    [:div (str/fmt "%s, %s, %s, %s" r g b a)])
+            :hsla (let [[h s l a] (uc/hex->hsla (:color color) (:opacity color))
+                        result (uc/format-hsla [h s l a])]
+                    [:div result])
+            [:*
+             [:& color-name {:color color}]
+             (when-not (:gradient color) [:div (str (* 100 (:opacity color)) "%")])]))
+
+        (when-not (and on-change-format (:gradient color))
+          [:select.color-format-select {:on-change #(-> (dom/get-target-val %) keyword on-change-format)}
+           [:option {:value "hex"}
+            (tr "inspect.attributes.color.hex")]
+
+           [:option {:value "rgba"}
+            (tr "inspect.attributes.color.rgba")]
+
+           [:option {:value "hsla"}
+            (tr "inspect.attributes.color.hsla")]])]
+       (when copy-data
+         [:& copy-button {:data copy-data}])])))
 

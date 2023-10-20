@@ -115,8 +115,7 @@ body {
    ;; Grid cell properties
    :grid-column
    :grid-row
-   :grid-area
-   ])
+   :grid-area])
 
 (def text-node-css-properties
   [:font-family

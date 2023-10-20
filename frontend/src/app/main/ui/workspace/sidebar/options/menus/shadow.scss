@@ -21,20 +21,14 @@
     }
   }
   .element-set-content {
-    display: flex;
-    flex-direction: column;
-    gap: $s-4;
+    @include flexColumn;
     .multiple-shadows {
-      display: flex;
-      align-items: center;
-      gap: $s-4;
+      @include flexRow;
       .label {
         @extend .mixed-bar;
       }
       .actions {
-        display: flex;
-        align-items: center;
-        gap: $s-4;
+        @include flexRow;
         .action-btn {
           @extend .button-tertiary;
           height: $s-32;
@@ -46,13 +40,9 @@
       }
     }
     .shadow-element {
-      display: flex;
-      flex-direction: column;
-      gap: $s-4;
+      @include flexColumn;
       .basic-options {
-        display: flex;
-        align-items: center;
-        gap: $s-4;
+        @include flexRow;
         .shadow-info {
           display: flex;
           align-items: center;
@@ -85,9 +75,7 @@
           }
         }
         .actions {
-          display: flex;
-          align-items: center;
-          gap: $s-4;
+          @include flexRow;
           .action-btn {
             @extend .button-tertiary;
             height: $s-32;
@@ -99,14 +87,10 @@
         }
       }
       .shadow-advanced-options {
-        display: flex;
-        flex-direction: column;
-        gap: $s-4;
+        @include flexColumn;
         .first-row,
         .second-row {
-          display: flex;
-          align-items: center;
-          gap: $s-4;
+          @include flexRow;
           .offset-x-input,
           .blur-input,
           .spread-input,

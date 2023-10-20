@@ -7,17 +7,13 @@
 @import "refactor/common-refactor.scss";
 .element-set {
   .element-content {
-    display: flex;
-    flex-direction: column;
-    gap: $s-4;
+    @include flexColumn;
     .component-wrapper {
       display: flex;
       gap: $s-4;
       .component-name-wrapper {
         @extend .asset-element;
-        display: flex;
-        align-items: center;
-        gap: $s-4;
+        @include flexRow;
         flex-grow: 1;
         .component-icon {
           @include flexCenter;
