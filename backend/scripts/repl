@@ -51,18 +51,20 @@ export PENPOT_ASSETS_STORAGE_BACKEND=assets-s3
 export PENPOT_STORAGE_ASSETS_S3_ENDPOINT=http://minio:9000
 export PENPOT_STORAGE_ASSETS_S3_BUCKET=penpot
 
-#-J-Djdk.virtualThreadScheduler.parallelism=16
-
 export OPTIONS="
        -A:jmx-remote -A:dev \
        -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
        -J-Djdk.attach.allowAttachSelf \
+       -J-Dpolyglot.engine.WarnInterpreterOnly=false \
        -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
+       -J-XX:+EnableDynamicAgentLoading \
        -J-XX:-OmitStackTraceInFastThrow \
        -J-XX:+UnlockDiagnosticVMOptions \
        -J-XX:+DebugNonSafepoints \
-       -J-Djdk.tracePinnedThreads=full \
-       -J--enable-preview";
+       -J-Djdk.tracePinnedThreads=full"
+
+# Enable preview
+export OPTIONS="$OPTIONS -J--enable-preview"
 
 # Setup HEAP
 export OPTIONS="$OPTIONS -J-Xms50m -J-Xmx1024m"
