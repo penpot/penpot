@@ -1512,19 +1512,19 @@
       font-size: $fs26;
       font-weight: $fw700;
       color: $color-gray-60;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .info {
       font-size: $fs14;
       color: $color-black;
     }
     form {
-      margin-top: 60px;
       flex-grow: 1;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: start;
       align-items: flex-start;
+      row-gap: 1.5rem;
       .custom-input {
         width: 100%;
       }
@@ -1582,7 +1582,6 @@
       text-align: left;
       font-size: $fs12;
       color: $color-gray-30;
-      cursor: pointer;
     }
   }
 
@@ -1615,14 +1614,10 @@
 
 .onboarding-team-members {
   .team-left {
-    padding: 42px 64px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: auto;
     form {
-      margin-top: 5px;
+      align-items: stretch;
+      margin-top: 24px;
+      row-gap: normal;
       .invite-row {
         .custom-input {
           width: 100%;
@@ -1659,7 +1654,7 @@
         }
       }
       .buttons {
-        margin: 12px 0;
+        margin: 32px 0 16px 0;
         button {
           height: auto;
         }

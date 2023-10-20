@@ -2266,17 +2266,32 @@ msgstr "Guía de contribución"
 msgid "onboarding-v2.welcome.title"
 msgstr "¡Te damos la bienvenida a Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Crea un equipo más tarde"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "El nombre de tu equipo"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Tras nombrar tu equipo podrás invitar a personas para que se unan."
 
 msgid "onboarding.choice.team-up.create-team-placeholder"
 msgstr "Introduce el nombre del equipo"
+
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Continuar creando equipo"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Comenzar sin equipo"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Podrás crear un equipo después."
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Seguir sin equipo"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Crear equipo y enviar invitaciones"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Crear equipo sin invitar"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Podrás enviar invitaciones después"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Invitar integrantes"
@@ -2285,12 +2300,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "No olvides incluir personas de desarrollo, diseño, gestión… la diversidad "
 "suma :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Crear equipo e invitar después"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Crear equipo y enviar invitaciones"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Invitar con el rol:"

@@ -103,7 +103,11 @@
   [modif-tree children objects bounds parent transformed-parent-bounds ignore-constraints]
   (let [modifiers (dm/get-in modif-tree [(:id parent) :modifiers])]
     ;; Move modifiers don't need to calculate constraints
-    (if (ctm/only-move? modifiers)
+    (cond
+      (ctm/empty? modifiers)
+      modif-tree
+
+      (ctm/only-move? modifiers)
       (loop [modif-tree modif-tree
              children (seq children)]
         (if-let [current (first children)]
@@ -112,6 +116,7 @@
           modif-tree))
 
       ;; Check the constraints, then resize
+      :else
       (let [parent-id (:id parent)
             parent-bounds (gtr/transform-bounds @(get bounds parent-id) (ctm/select-parent modifiers))]
         (loop [modif-tree modif-tree

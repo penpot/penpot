@@ -6,7 +6,6 @@
 
 (ns app.main.ui.onboarding.team-choice
   (:require
-   [app.common.data :as d]
    [app.common.spec :as us]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -20,7 +19,6 @@
    [app.util.router :as rt]
    [app.util.timers :as tm]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -80,7 +78,7 @@
       [:div.modal-overlay
        [:div.modal-container.onboarding-team.animated.fadeIn
         [:div.team-left
-         [:h2.title (tr "onboarding.choice.team-up.create-team")]
+         [:h2.title (tr "onboarding.team-modal.create-team")]
          [:p.info (tr "onboarding.choice.team-up.create-team-desc")]
          [:& fm/form {:form form
                       :on-submit on-submit}
@@ -88,10 +86,14 @@
                         :name :name
                         :label (tr "onboarding.choice.team-up.create-team-placeholder")}]
 
-          [:> fm/submit-button*
-           {:label (tr "labels.continue")}]]
+          [:& fm/submit-button*
+           {:label (tr "onboarding.choice.team-up.continue-creating-team")}]]
 
-         [:button.skip-action {:on-click on-skip} (tr "onboarding.choice.team-up.create-later")]]
+         [:h2.title (tr "onboarding.choice.team-up.start-without-a-team")]
+         [:p.info (tr "onboarding.choice.team-up.start-without-a-team-description")]
+
+         [:div 
+          [:button.btn-primary.btn-large {:on-click on-skip} (tr "onboarding.choice.team-up.continue-without-a-team")]]]
         [:& team-modal-right]
         [:div.paginator "1/2"]
 
@@ -107,7 +109,7 @@
   [{:value "editor" :label (tr "labels.editor")}
    {:value "admin" :label (tr "labels.admin")}])
 
-(s/def ::emails (s/and ::us/set-of-valid-emails d/not-empty?))
+(s/def ::emails (s/and ::us/set-of-valid-emails))
 (s/def ::role  ::us/keyword)
 (s/def ::invite-form
   (s/keys :req-un [::role ::emails]))
@@ -124,11 +126,10 @@
                                :name name}))
         form    (fm/use-form :spec ::invite-form
                              :initial initial)
-
+        params  (:clean-data @form)
+        emails  (:emails params)
+        
         roles   (mf/use-memo #(get-available-roles))
-
-        profile  (mf/deref refs/profile)
-        email    (-> profile :email str/lower)
 
         on-success
         (mf/use-callback
@@ -146,7 +147,7 @@
            (st/emit! (dm/error "Error on creating team."))))
 
         ;; The SKIP branch only creates the team, without invitations
-        on-skip
+        on-invite-later
         (mf/use-callback
          (fn [_]
            (let [mdata  {:on-success (partial on-success form)
@@ -159,14 +160,13 @@
                                               :step 2})))))
 
         ;; The SUBMIT branch creates the team with the invitations
-        on-submit
+        on-invite-now
         (mf/use-callback
-         (fn [form _]
+         (fn [_]
            (let [mdata  {:on-success (partial on-success form)
                          :on-error   (partial on-error form)}
                  params (:clean-data @form)
-                 emails (disj (:emails params) email)
-                 params (assoc params :emails emails)]
+                 emails (:emails params)]
              
              (st/emit! (if (> (count emails) 0)
                          ;; If the user is only inviting to itself we don't call to create-team-with-invitations
@@ -177,7 +177,16 @@
                                               :invites (count emails)
                                               :role (:role params)
                                               :name name
-                                              :step 2})))))]
+                                              :step 2})))))
+   
+        on-submit
+        (mf/use-callback
+         (fn [_]
+           (let [params (:clean-data @form)
+                 emails (:emails params)]
+             (if (> (count emails) 0)
+               (on-invite-now form)
+               (on-invite-later form)))))]
 
     [:div.modal-overlay
      [:div.modal-container.onboarding-team-members.animated.fadeIn
@@ -209,12 +218,13 @@
                                                        :name name
                                                        :step 2}))}
           (tr "labels.back")]
-         [:> fm/submit-button*
-          {:label (tr "onboarding.choice.team-up.invite-members-submit")}]]
-
+         [:& fm/submit-button*
+          {:label
+           (if (> (count emails) 0)
+             (tr "onboarding.choice.team-up.create-team-and-send-invites")
+             (tr "onboarding.choice.team-up.create-team-without-inviting"))}]]
         [:div.skip-action
-         {:on-click on-skip}
-         [:div.action (tr "onboarding.choice.team-up.invite-members-skip")]]]]
+         (tr "onboarding.choice.team-up.create-team-and-send-invites-description")]]]
       [:& team-modal-right]
       [:div.paginator "2/2"]
 
