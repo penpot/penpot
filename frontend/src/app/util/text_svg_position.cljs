@@ -53,6 +53,7 @@
         font-id (dom/get-property-value styles "--font-id")]
 
     (->> (fonts/ensure-loaded! font-id)
+         (p/delay 125)
          (p/fmap (fn []
                    (when-not ^boolean (dom/check-font? font)
                      (load-font font))))

@@ -26,7 +26,6 @@
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as tsp]
-   [app.util.timers :as ts]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -96,13 +95,7 @@
                            (assoc :height height))
                          props))
                      props))))
-       (p/fmap (fn [props]
-                 ;; We need to wait for the text modifier to be updated before
-                 ;; we can update the position data. Otherwise the position data
-                 ;; will be wrong.
-                 ;; TODO: This is a hack. We need to find a better way to do this.
-                 (st/emit! (dwt/update-text-modifier id props))
-                 (ts/schedule 30 #(update-text-shape shape node))))))
+       (p/fmap #(st/emit! (dwt/update-text-modifier id %)))))
 
 (mf/defc text-container
   {::mf/wrap-props false
@@ -125,15 +118,15 @@
 
 (defn text-properties-equal?
   [shape other]
-  ;; FIXME: use dm/get-prop
   (or (identical? shape other)
-      (and (= (:content shape) (:content other))
+      (and (= (dm/get-prop shape :grow-type) (dm/get-prop other :grow-type))
+           (= (dm/get-prop shape :content) (dm/get-prop other :content))
            ;; Check if the position and size is close. If any of these changes the shape has changed
            ;; and if not there is no geometry relevant change
-           (mth/close? (:x shape) (:x other))
-           (mth/close? (:y shape) (:y other))
-           (mth/close? (:width shape) (:width other))
-           (mth/close? (:height shape) (:height other)))))
+           (mth/close? (dm/get-prop shape :x) (dm/get-prop other :x))
+           (mth/close? (dm/get-prop shape :y) (dm/get-prop other :y))
+           (mth/close? (dm/get-prop shape :width) (dm/get-prop other :width))
+           (mth/close? (dm/get-prop shape :height) (dm/get-prop other :height)))))
 
 (mf/defc text-changes-renderer
   {::mf/wrap-props false}
