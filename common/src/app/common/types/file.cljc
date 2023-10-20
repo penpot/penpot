@@ -167,7 +167,8 @@
   (let [components-v2 (dm/get-in file-data [:options :components-v2])]
     (if (and components-v2 (not (:deleted component)))
       (let [component-page (get-component-page file-data component)]
-        (ctn/get-shape component-page shape-id))
+        (when component-page
+          (ctn/get-shape component-page shape-id)))
       (dm/get-in component [:objects shape-id]))))
 
 (defn get-ref-shape
@@ -181,9 +182,10 @@
    referenced by the instance shape."
   [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
   (let [root-shape     (ctn/get-component-shape (:objects page) shape)
-        component-file (if (= (:component-file root-shape) (:id file))
-                         file
-                         (get libraries (:component-file root-shape)))
+        component-file (when root-shape
+                         (if (= (:component-file root-shape) (:id file))
+                           file
+                           (get libraries (:component-file root-shape))))
         component      (when component-file
                          (ctkl/get-component (:data component-file) (:component-id root-shape) include-deleted?))
         ref-shape (when component
