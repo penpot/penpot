@@ -73,18 +73,6 @@
       width: 100%;
       align-items: center;
       justify-content: space-between;
-
-      svg {
-        height: 8px;
-        width: 8px;
-        fill: $color-gray-20;
-        margin-right: 1rem;
-        transform: rotate(180deg);
-      }
-
-      &.back {
-        cursor: pointer;
-      }
     }
   }
 
@@ -2584,6 +2572,23 @@
       /* Place on top of each other */
       grid-area: 1 / 1 / 2 / 2;
     }
+  }
+}
+
+.component-block-title {
+  border: none;
+  background: none;
+
+  svg {
+    height: 8px;
+    width: 8px;
+    fill: $color-gray-20;
+    margin-right: 1rem;
+    transform: rotate(180deg);
+  }
+
+  &.back {
+    cursor: pointer;
   }
 }
 
