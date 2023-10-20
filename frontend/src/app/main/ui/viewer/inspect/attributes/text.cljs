@@ -82,55 +82,61 @@
           [:div {:class (stl/css :global/attr-label)}
            (tr "inspect.attributes.typography")]
           [:div {:class (stl/css :global/attr-value)}
-           [:div (:name typography)]
-           [:& copy-button {:data (copy-style-data typography :font-family :font-weight :font-style)}]]])
+           [:& copy-button {:data (copy-style-data typography :font-family :font-weight :font-style)}
+            [:div {:class (stl/css :button-children)} (:name typography)]]]])
 
        (when (:font-id style)
          [:div {:class (stl/css :text-row)}
           [:div {:class (stl/css :global/attr-label)} (tr "inspect.attributes.typography.font-family")]
           [:div {:class (stl/css :global/attr-value)}
-           [:div (-> style :font-id fonts/get-font-data :name)]
-           [:& copy-button {:data (copy-style-data style :font-family)}]]])
+           [:& copy-button {:data (copy-style-data style :font-family)}
+            [:div {:class (stl/css :button-children)}
+             (-> style :font-id fonts/get-font-data :name)]]]])
 
        (when (:font-style style)
          [:div {:class (stl/css :text-row)}
           [:div {:class (stl/css :global/attr-label)}
            (tr "inspect.attributes.typography.font-style")]
           [:div {:class (stl/css :global/attr-value)}
-           [:div (str (:font-style style))]
-           [:& copy-button {:data (copy-style-data style :font-style)}]]])
+           [:& copy-button {:data (copy-style-data style :font-style)}
+            [:div {:class (stl/css :button-children)}
+             (str (:font-style style))]]]])
 
        (when (:font-size style)
          [:div {:class (stl/css :text-row)}
           [:div {:class (stl/css :global/attr-label)}
            (tr "inspect.attributes.typography.font-size")]
-          [:div {:class (stl/css :global/attr-value)}
-           [:div (fmt/format-pixels (:font-size style))]
-           [:& copy-button {:data (copy-style-data style :font-size)}]]])
+          [:div  {:class (stl/css :global/attr-value)}
+           [:& copy-button {:data (copy-style-data style :font-size)}
+            [:div {:class (stl/css :button-children)}
+             (fmt/format-pixels (:font-size style))]]]])
 
        (when (:font-weight style)
          [:div {:class (stl/css :text-row)}
           [:div {:class (stl/css :global/attr-label)}
            (tr "inspect.attributes.typography.font-weight")]
           [:div {:class (stl/css :global/attr-value)}
-           [:span (str (:font-weight style))]
-           [:& copy-button {:data (copy-style-data style :font-weight)}]]])
+           [:& copy-button {:data (copy-style-data style :font-weight)}
+            [:div {:class (stl/css :button-children)}
+             (str (:font-weight style))]]]])
 
        (when (:line-height style)
          [:div {:class (stl/css :text-row)}
           [:div {:class (stl/css :global/attr-label)}
            (tr "inspect.attributes.typography.line-height")]
           [:div {:class (stl/css :global/attr-value)}
-           [:div (fmt/format-number (:line-height style))]
-           [:& copy-button {:data (copy-style-data style :line-height)}]]])
+           [:& copy-button {:data (copy-style-data style :line-height)}
+            [:div {:class (stl/css :button-children)}
+             (fmt/format-number (:line-height style))]]]])
 
        (when (:letter-spacing style)
          [:div {:class (stl/css :text-row)}
           [:div {:class (stl/css :global/attr-label)}
            (tr "inspect.attributes.typography.letter-spacing")]
           [:div {:class (stl/css :global/attr-value)}
-           [:div (fmt/format-pixels (:letter-spacing style))]
-           [:& copy-button {:data (copy-style-data style :letter-spacing)}]]])
+           [:& copy-button {:data (copy-style-data style :letter-spacing)}
+            [:div {:class (stl/css :button-children)}
+             (fmt/format-pixels (:letter-spacing style))]]]])
 
        (when (:text-decoration style)
          [:div {:class (stl/css :text-row)}
@@ -141,8 +147,9 @@
           ;;   inspect.attributes.typography.text-decoration.strikethrough
           ;;   inspect.attributes.typography.text-decoration.underline
           [:div {:class (stl/css :global/attr-value)}
-           [:div (tr (dm/str "inspect.attributes.typography.text-decoration." (:text-decoration style)))]
-           [:& copy-button {:data (copy-style-data style :text-decoration)}]]])
+           [:& copy-button {:data (copy-style-data style :text-decoration)}
+            [:div {:class (stl/css :button-children)}
+             (tr (dm/str "inspect.attributes.typography.text-decoration." (:text-decoration style)))]]]])
 
        (when (:text-transform style)
          [:div {:class (stl/css :text-row)}
@@ -155,8 +162,9 @@
           ;;   inspect.attributes.typography.text-transform.uppercase
           ;;   inspect.attributes.typography.text-transform.unset
           [:div {:class (stl/css :global/attr-value)}
-           [:div (tr (dm/str "inspect.attributes.typography.text-transform." (:text-transform style)))]
-           [:& copy-button {:data (copy-style-data style :text-transform)}]]])
+           [:& copy-button {:data (copy-style-data style :text-transform)}
+            [:div {:class (stl/css :button-children)}
+             (tr (dm/str "inspect.attributes.typography.text-transform." (:text-transform style)))]]]])
 
        [:& copy-button {:data (str/trim text)
                         :class (stl/css :attributes-content-row)}

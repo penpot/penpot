@@ -19,6 +19,9 @@
     :global(.attr-value) {
       align-items: center;
     }
+    .button-children {
+      @extend .copy-button-children;
+    }
   }
   .attributes-content-row {
     width: $s-252;
