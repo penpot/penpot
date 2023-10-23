@@ -16,7 +16,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.code-gen.common :as cgc]
-   [app.util.code-gen.style-css-formats :refer [format-value]]
+   [app.util.code-gen.style-css-formats :refer [format-value format-shadow]]
    [app.util.code-gen.style-css-values :refer [get-value]]
    [cuerdas.core :as str]))
 
@@ -116,17 +116,6 @@ body {
    :grid-column
    :grid-row
    :grid-area])
-
-(def text-node-css-properties
-  [:font-family
-   :font-style
-   :font-size
-   :font-weight
-   :line-height
-   :letter-spacing
-   :text-decoration
-   :text-transform
-   :color])
 
 (defn shape->css-property
   [shape objects property]
@@ -317,3 +306,7 @@ body {
     (->> shapes
          (keep #(get-shape-css-selector % objects options))
          (str/join "\n\n")))))
+
+(defn shadow->css
+  [shadow]
+  (dm/str "box-shadow: " (format-shadow shadow {})))

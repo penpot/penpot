@@ -24,6 +24,9 @@
    :align-self
    :justify-self
 
+   :flex-shrink
+   :flex
+
    ;; Grid cell properties
    :grid-column
    :grid-row])
@@ -40,7 +43,7 @@
             [:div {:class (stl/css :global/attr-value)}
 
              [:& copy-button {:data (css/get-css-property objects shape property)}
-               [:div {:class (stl/css :button-children)} value]]]]))]
+              [:div {:class (stl/css :button-children)} value]]]]))]
 
       [:*
        (for [property properties]
@@ -55,18 +58,28 @@
   (let [new-css-system  (mf/use-ctx ctx/new-css-system)
         shapes (->> shapes (filter #(ctl/any-layout-immediate-child? objects %)))
         only-flex? (every? #(ctl/flex-layout-immediate-child? objects %) shapes)
-        only-grid? (every? #(ctl/grid-layout-immediate-child? objects %) shapes)]
+        only-grid? (every? #(ctl/grid-layout-immediate-child? objects %) shapes)
+
+        some-layout-prop?
+        (->> shapes
+             (mapcat (fn [shape]
+                       (keep #(css/get-css-value objects shape %) properties)))
+             (seq))
+
+        menu-title
+        (cond
+          only-flex?
+          "Flex element"
+          only-grid?
+          "Flex element"
+          :else
+          "Layout element")]
+
     (if new-css-system
-      (when (seq shapes)
+      (when some-layout-prop?
         [:div {:class (stl/css :attributes-block)}
          [:& title-bar {:collapsable? false
-                        :title        (cond
-                                        only-flex?
-                                        "Flex element"
-                                        only-grid?
-                                        "Flex element"
-                                        :else
-                                        "Layout element")
+                        :title        menu-title
                         :class        (stl/css :title-spacing-layout-element)}
           (when (= (count shapes) 1)
             [:& copy-button {:data (css/get-shape-properties-css objects (first shapes) properties)}])]
@@ -76,16 +89,10 @@
                                      :objects objects
                                      :key (:id shape)}])])
 
-      (when (seq shapes)
+      (when some-layout-prop?
         [:div.attributes-block
          [:div.attributes-block-title
-          [:div.attributes-block-title-text (cond
-                                              only-flex?
-                                              "Flex element"
-                                              only-grid?
-                                              "Flex element"
-                                              :else
-                                              "Layout element")]
+          [:div.attributes-block-title-text menu-title]
           (when (= (count shapes) 1)
             [:& copy-button {:data (css/get-shape-properties-css objects (first shapes) properties)}])]
 
