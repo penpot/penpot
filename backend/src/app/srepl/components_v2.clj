@@ -57,8 +57,8 @@
 
 (def ^:dynamic *system* nil)
 (def ^:dynamic *stats* nil)
-(def ^:dynamic *semaphore* nil)
-(def ^:dynamic *tpoint* nil)
+(def ^:dynamic *files-semaphore* nil)
+(def ^:dynamic *teams-semaphore* nil)
 
 (def grid-gap 50)
 
@@ -586,22 +586,6 @@
 
         (dissoc file :data)))))
 
-;; (defn- progress-report
-;;   [_ _ oldv newv]
-;;   (when (or (not= (:files/completed oldv)
-;;                   (:files/completed newv))
-;;     (let [total     (:total newv)
-;;           completed (:completed newv)
-;;           progress  (if total
-;;                       (/ (* completed 100.0) total)
-;;                       0)
-;;           elapsed   (dt/format-duration (*tpoint*))]
-;;       (l/trc :hint "progress"
-;;              :completed-files (:files/completed
-;;              :progress (str (int progress) "%")
-;;              :elapsed elapsed))))
-
-
 (defn- report-progress-files
   [tpoint]
   (fn [_ _ oldv newv]
@@ -613,6 +597,20 @@
             elapsed   (dt/format-duration (tpoint))]
         (l/trc :hint "progress"
                :completed (:files/completed newv)
+               :progress (str (int progress) "%")
+               :elapsed elapsed)))))
+
+(defn- report-progress-teams
+  [tpoint]
+  (fn [_ _ oldv newv]
+    (when (not= (:teams/completed oldv)
+                (:teams/completed newv))
+      (let [total     (:teams/total newv)
+            completed (:teams/completed newv)
+            progress  (/ (* completed 100.0) total)
+            elapsed   (dt/format-duration (tpoint))]
+        (l/trc :hint "progress"
+               :completed (:teams/completed newv)
                :progress (str (int progress) "%")
                :elapsed elapsed)))))
 
@@ -633,6 +631,14 @@
           res (db/exec-one! pool [sql])]
       (:count res))))
 
+(defn- get-total-teams
+  [pool]
+  (let [sql (str/concat
+             "SELECT count(id) AS count FROM team "
+             " WHERE deleted_at IS NULL")
+        res (db/exec-one! pool [sql])]
+    (:count res)))
+
 (defn migrate-file!
   [file-id]
   (let [tpoint (dt/tpoint)]
@@ -652,7 +658,7 @@
         (l/err :hint "error on processing file" :file-id file-id :cause cause))
 
       (finally
-        (some-> *semaphore* ps/release!)
+        (some-> *files-semaphore* ps/release!)
         (let [elapsed (dt/format-duration (tpoint))
               stats   (deref *stats*)]
           (l/dbg :hint "migrate:file:end"
@@ -685,7 +691,7 @@
 
                       (pu/with-open [scope (px/structured-task-scope :thread-factory :virtual)]
                         (doseq [{:keys [id]} rows]
-                          (some-> *semaphore* ps/acquire!)
+                          (some-> *files-semaphore* ps/acquire!)
                           (px/submit! scope (partial migrate-file! id)))
                         (p/await! scope)))))
 
@@ -693,7 +699,7 @@
         (l/err :hint "error on processing team" :team-id team-id :cause cause))
 
       (finally
-        (some-> *semaphore* ps/release!)
+        (some-> *teams-semaphore* ps/release!)
         (let [elapsed (dt/format-duration (tpoint))
               stats   (deref *stats*)]
           (l/dbg :hint "migrate:team:end"
@@ -745,21 +751,21 @@
                  (map :id)))]
 
     (l/dbg :hint "migrate:start" )
-    (let [semaphore (ps/create :permits max-jobs)
-          total     (get-total-files pool)
-          stats     (atom {:files/total total})
-          tpoint    (dt/tpoint)]
+    (let [fsem   (ps/create :permits max-jobs)
+          total  (get-total-files pool)
+          stats  (atom {:files/total total})
+          tpoint (dt/tpoint)]
 
       (add-watch stats :progress-report (report-progress-files tpoint))
 
       (binding [*system* system
                 *stats* stats
-                *semaphore* semaphore]
+                *files-semaphore* fsem]
         (try
           (pu/with-open [scope (px/structured-task-scope {:thread-factory :virtual})]
             (loop [items (get-candidates)]
               (when-let [file-id (first items)]
-                (ps/acquire! *semaphore*)
+                (ps/acquire! *files-semaphore*)
                 (px/submit! scope (partial migrate-file! file-id))
                 (recur (next items))))
 
@@ -783,18 +789,17 @@
                                              :or {max-jobs Integer/MAX_VALUE}}]
   (l/dbg :hint "migrate:start")
 
-  (let [semaphore (ps/create :permits max-jobs)
-        total     (get-total-files pool :team-id team-id)
-        stats     (atom {:files/total total})
-        tpoint    (dt/tpoint)]
+  (let [fsem   (ps/create :permits max-jobs)
+        total  (get-total-files pool :team-id team-id)
+        stats  (atom {:files/total total})
+        tpoint (dt/tpoint)]
 
     (add-watch stats :progress-report (report-progress-files tpoint))
 
     (binding [*system* system
               *stats* stats
-              *semaphore* semaphore]
+              *files-semaphore* fsem]
       (try
-        (ps/acquire! semaphore)
         (migrate-team! team-id)
         (-> (deref *stats*)
             (assoc :elapsed (dt/format-duration (tpoint)))
@@ -808,3 +813,62 @@
         (finally
           (let [elapsed (dt/format-duration (tpoint))]
             (l/dbg :hint "migrate:end" :elapsed elapsed)))))))
+
+(defn repl-migrate-teams
+  [{:keys [::db/pool] :as system} & {:keys [chunk-size max-files-jobs
+                                            max-teams-jobs max-items start-at]
+                                     :or {chunk-size 100
+                                          max-teams-jobs Integer/MAX_VALUE
+                                          max-files-jobs Integer/MAX_VALUE
+                                          max-items Long/MAX_VALUE}}]
+  (letfn [(get-chunk [cursor]
+            (let [sql  (str/concat
+                        "SELECT id, created_at FROM team "
+                        " WHERE created_at < ? AND deleted_at IS NULL "
+                        " ORDER BY created_at desc LIMIT ?")
+                  rows (db/exec! pool [sql cursor chunk-size])]
+              [(some->> rows peek :created-at) (seq rows)]))
+
+          (get-candidates []
+            (->> (d/iteration get-chunk
+                              :vf second
+                              :kf first
+                              :initk (or start-at (dt/now)))
+                 (take max-items)
+                 (map :id)))]
+
+    (l/dbg :hint "migrate:start")
+    (let [fsem   (ps/create :permits max-files-jobs)
+          tsem   (ps/create :permits max-teams-jobs)
+          total  (get-total-teams pool)
+          stats  (atom {:teams/total total})
+          tpoint (dt/tpoint)]
+
+      (add-watch stats :progress-report (report-progress-teams tpoint))
+
+      (binding [*system* system
+                *stats* stats
+                *files-semaphore* fsem
+                *teams-semaphore* tsem]
+        (try
+          (pu/with-open [scope (px/structured-task-scope {:thread-factory :virtual})]
+            (loop [items (get-candidates)]
+              (when-let [team-id (first items)]
+                (ps/acquire! *teams-semaphore*)
+                (px/submit! scope (partial migrate-team! team-id))
+                (recur (next items))))
+
+            (p/await! scope))
+
+          (-> (deref *stats*)
+              (assoc :elapsed (dt/format-duration (tpoint)))
+              (dissoc :current/graphics)
+              (dissoc :current/components)
+              (dissoc :current/files))
+
+          (catch Throwable cause
+            (l/dbg :hint "migrate:error" :cause cause))
+
+          (finally
+            (let [elapsed (dt/format-duration (tpoint))]
+              (l/dbg :hint "migrate:end" :elapsed elapsed))))))))
