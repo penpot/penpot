@@ -403,7 +403,7 @@
        ptk/WatchEvent
        (watch [_ state _]
          (let [features  (cond-> #{}
-                           (features/active-feature? state :components-v2)
+                           (features/active-feature? state "components/v2")
                            (conj "components/v2"))
                sid       (:session-id state)
                file      (get state :workspace-file)

@@ -440,7 +440,7 @@
   [{:keys [shapes]}]
   (let [single?             (= (count shapes) 1)
         shapes              (filter ctk/instance-head? shapes)
-        components-v2       (features/use-feature :components-v2)
+        components-v2       (features/use-feature "components/v2")
         in-main?            (some true? (map #(ctk/main-instance? %) shapes))
         components-menu-entries (cmm/generate-components-menu-entries shapes components-v2)
         do-add-component #(st/emit! (dwl/add-component))

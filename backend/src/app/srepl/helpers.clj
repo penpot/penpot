@@ -12,7 +12,7 @@
    [app.auth :refer [derive-password]]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.files.features :as ffeat]
+   [app.common.features :as cfeat]
    [app.common.files.migrations :as pmg]
    [app.common.logging :as l]
    [app.common.pages :as cp]
@@ -100,9 +100,9 @@
       (binding [*conn* conn
                 pmap/*tracked* (atom {})
                 pmap/*load-fn* (partial files/load-pointer conn id)
-                ffeat/*wrap-with-pointer-map-fn*
+                cfeat/*wrap-with-pointer-map-fn*
                 (if (contains? (:features file) "storage/pointer-map") pmap/wrap identity)
-                ffeat/*wrap-with-objects-map-fn*
+                cfeat/*wrap-with-objects-map-fn*
                 (if (contains? (:features file) "storage/objectd-map") omap/wrap identity)]
         (let [file (-> file
                        (update :data blob/decode)
@@ -161,9 +161,9 @@
         (binding [*conn* conn
                   pmap/*tracked* (atom {})
                   pmap/*load-fn* (partial files/load-pointer conn (:id file))
-                  ffeat/*wrap-with-pointer-map-fn*
+                  cfeat/*wrap-with-pointer-map-fn*
                   (if (contains? (:features file) "storage/pointer-map") pmap/wrap identity)
-                  ffeat/*wrap-with-objects-map-fn*
+                  cfeat/*wrap-with-objects-map-fn*
                   (if (contains? (:features file) "storage/objects-map") omap/wrap identity)]
           (try
             (on-file file)
@@ -209,9 +209,9 @@
               (binding [*conn* conn
                         pmap/*tracked* (atom {})
                         pmap/*load-fn* (partial files/load-pointer conn (:id file))
-                        ffeat/*wrap-with-pointer-map-fn*
+                        cfeat/*wrap-with-pointer-map-fn*
                         (if (contains? (:features file) "storage/pointer-map") pmap/wrap identity)
-                        ffeat/*wrap-with-objects-map-fn*
+                        cfeat/*wrap-with-objects-map-fn*
                         (if (contains? (:features file) "storage/objectd-map") omap/wrap identity)]
                 (on-file file))
               (catch Throwable cause

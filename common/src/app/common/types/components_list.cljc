@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.features :as ffeat]
+   [app.common.features :as cfeat]
    [app.common.time :as dt]
    [app.common.types.component :as ctk]))
 
@@ -40,7 +40,7 @@
       (cond-> (update-in fdata [:components id] assoc :main-instance-id main-instance-id :main-instance-page main-instance-page)
         annotation (update-in [:components id] assoc :annotation annotation))
 
-      (let [wrap-object-fn ffeat/*wrap-with-objects-map-fn*]
+      (let [wrap-object-fn cfeat/*wrap-with-objects-map-fn*]
         (assoc-in fdata [:components id :objects]
                   (->> shapes
                        (d/index-by :id)
@@ -48,7 +48,7 @@
 
 (defn mod-component
   [file-data {:keys [id name path main-instance-id main-instance-page objects annotation]}]
-  (let [wrap-objects-fn ffeat/*wrap-with-objects-map-fn*]
+  (let [wrap-objects-fn cfeat/*wrap-with-objects-map-fn*]
     (d/update-in-when file-data [:components id]
                       (fn [component]
                         (let [objects (some-> objects wrap-objects-fn)]

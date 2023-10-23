@@ -100,7 +100,7 @@
 
 (mf/defc object-svg
   [{:keys [page-id file-id share-id object-id render-embed?]}]
-  (let [components-v2 (feat/use-feature :components-v2)
+  (let [components-v2 (feat/use-feature "components/v2")
         fetch-state   (mf/use-fn
                         (mf/deps file-id page-id share-id object-id components-v2)
                         (fn []
@@ -141,7 +141,7 @@
 
 (mf/defc objects-svg
   [{:keys [page-id file-id share-id object-ids render-embed?]}]
-  (let [components-v2 (feat/use-feature :components-v2)
+  (let [components-v2 (feat/use-feature "components/v2")
         fetch-state   (mf/use-fn
                        (mf/deps file-id page-id share-id components-v2)
                        (fn []

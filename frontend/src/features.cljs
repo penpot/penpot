@@ -7,18 +7,24 @@
 ;; This namespace is only to export the functions for toggle features
 (ns features
   (:require
-   [app.main.features :as features]))
-
-(defn ^:export components-v2 []
-  (features/toggle-feature! :components-v2)
-  nil)
+   [app.main.features :as features]
+   [app.main.store :as st]
+   [app.util.timers :as tm]))
 
 (defn ^:export is-components-v2 []
-  (let [active? (features/active-feature :components-v2)]
-    @active?))
+  (features/active-feature? "components/v2"))
+
+(defn ^:export components-v2 []
+  (tm/schedule-on-idle #(st/emit! (features/toggle-feature "components/v2")))
+  nil)
 
 (defn ^:export new-css-system []
-  (features/toggle-feature! :new-css-system))
+  (tm/schedule-on-idle #(st/emit! (features/toggle-feature "styles/v2")))
+  nil)
 
 (defn ^:export grid []
-  (features/toggle-feature! :grid-layout))
+  (tm/schedule-on-idle #(st/emit! (features/toggle-feature "layout/grid")))
+  nil)
+
+(defn ^:export get-enabled []
+  (clj->js (features/get-enabled-features @st/state)))

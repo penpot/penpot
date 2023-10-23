@@ -8,15 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.files.features :as ffeat]
+   [app.common.features :as cfeat]
    [app.common.files.migrations :as pmg]
    [app.common.files.validate :as val]
    [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.pages.changes :as cpc]
    [app.common.schema :as sm]
-   [app.common.schema.generators :as smg]
-   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -27,6 +25,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
@@ -37,33 +36,30 @@
 
 ;; --- SCHEMA
 
-(sm/def! ::changes
+(def ^:private schema:changes
   [:vector ::cpc/change])
 
-(sm/def! ::change-with-metadata
+(def ^:private schema:change-with-metadata
   [:map {:title "ChangeWithMetadata"}
-   [:changes ::changes]
+   [:changes schema:changes]
    [:hint-origin {:optional true} :keyword]
    [:hint-events {:optional true} [:vector :string]]])
 
-(sm/def! ::update-file-params
-  [:map {:title "UpdateFileParams"}
+(def ^:private schema:update-file
+  [:map {:title "update-file"}
    [:id ::sm/uuid]
    [:session-id ::sm/uuid]
    [:revn {:min 0} :int]
-   [:features {:optional true
-               :gen/max 3
-               :gen/gen (smg/subseq files/supported-features)}
-    ::sm/set-of-strings]
-   [:changes {:optional true} ::changes]
+   [:features {:optional true} ::cfeat/features]
+   [:changes {:optional true} schema:changes]
    [:changes-with-metadata {:optional true}
-    [:vector ::change-with-metadata]]
+    [:vector schema:change-with-metadata]]
    [:skip-validate {:optional true} :boolean]])
 
-(sm/def! ::update-file-result
-  [:vector {:title "UpdateFileResults"}
-   [:map {:title "UpdateFileResult"}
-    [:changes ::changes]
+(def ^:private schema:update-file-result
+  [:vector {:title "update-file-result"}
+   [:map
+    [:changes schema:changes]
     [:file-id ::sm/uuid]
     [:id ::sm/uuid]
     [:revn {:min 0} :int]
@@ -112,7 +108,7 @@
   (fn [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
     (binding [pmap/*tracked* (atom {})
               pmap/*load-fn* (partial files/load-pointer conn id)
-              ffeat/*wrap-with-pointer-map-fn* pmap/wrap]
+              cfeat/*wrap-with-pointer-map-fn* pmap/wrap]
       (let [result (f cfg file)]
         (files/persist-pointers! conn id)
         result))))
@@ -120,7 +116,7 @@
 (defn- wrap-with-objects-map-context
   [f]
   (fn [cfg file]
-    (binding [ffeat/*wrap-with-objects-map-fn* omap/wrap]
+    (binding [cfeat/*wrap-with-objects-map-fn* omap/wrap]
       (f cfg file))))
 
 (declare get-lagged-changes)
@@ -141,54 +137,57 @@
    ::webhooks/batch-timeout (dt/duration "2m")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
 
-   ::sm/params ::update-file-params
-   ::sm/result ::update-file-result
-
+   ::sm/params schema:update-file
+   ::sm/result schema:update-file-result
    ::doc/module :files
    ::doc/added "1.17"}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
-  (db/with-atomic [conn pool]
-    (files/check-edition-permissions! conn profile-id id)
-    (db/xact-lock! conn id)
+  [cfg {:keys [::rpc/profile-id id] :as params}]
+  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                    (files/check-edition-permissions! conn profile-id id)
+                    (db/xact-lock! conn id)
 
-    (let [cfg    (assoc cfg ::db/conn conn)
-          params (assoc params :profile-id profile-id)
-          tpoint (dt/tpoint)]
-      (-> (update-file cfg params)
-          (rph/with-defer #(let [elapsed (tpoint)]
-                             (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))
+                    (let [file     (get-file conn id)
+                          team     (teams/get-team cfg
+                                                   :profile-id profile-id
+                                                   :team-id (:team-id file))
+
+                          features (-> (cfeat/get-enabled-features cf/flags team)
+                                       (cfeat/check-client-features! (:features params))
+                                       (cfeat/check-file-features! (:features file)))
+
+                          params   (assoc params
+                                          :profile-id profile-id
+                                          :features features
+                                          :team team
+                                          :file file)
+
+                          tpoint   (dt/tpoint)]
+                      (-> (update-file cfg params)
+                          (rph/with-defer #(let [elapsed (tpoint)]
+                                             (l/trace :hint "update-file" :time (dt/format-duration elapsed)))))))))
 
 (defn update-file
-  [{:keys [::db/conn ::mtx/metrics] :as cfg} {:keys [profile-id id changes changes-with-metadata skip-validate] :as params}]
-  (let [file     (get-file conn id)
-        features (->> (concat (:features file)
-                              (:features params))
-                      (into (files/get-default-features))
-                      (files/check-features-compatibility!))]
+  [{:keys [::db/conn ::mtx/metrics] :as cfg} {:keys [id file features changes changes-with-metadata skip-validate] :as params}]
+  (binding [cfeat/*current*  features
+            cfeat/*previous* (:features file)]
+    (let [update-fn (cond-> update-file*
+                      (contains? features "storage/pointer-map")
+                      (wrap-with-pointer-map-context)
 
-    (files/check-edition-permissions! conn profile-id (:id file))
+                      (contains? features "storage/objects-map")
+                      (wrap-with-objects-map-context))
 
-    (binding [ffeat/*current*  features
-              ffeat/*previous* (:features file)]
+          file      (assoc file :features features)
 
-      (let [update-fn (cond-> update-file*
-                        (contains? features "storage/pointer-map")
-                        (wrap-with-pointer-map-context)
-
-                        (contains? features "storage/objects-map")
-                        (wrap-with-objects-map-context))
-
-            file      (assoc file :features features)
-
-            ;; TODO: this ruins performance.
-            ;;       We must find some other way to do general validation.
-            libraries (when (and (cf/flags :file-validation)
-                                 (not skip-validate))
-                        (-> (->> (files/get-file-libraries conn (:id file))
-                                 (map #(get-file conn (:id %)))
-                                 (map #(update % :data blob/decode))
-                                 (d/index-by :id))
-                            (assoc (:id file) file)))
+          ;; TODO: this ruins performance.
+          ;;       We must find some other way to do general validation.
+          libraries (when (and (cf/flags :file-validation)
+                               (not skip-validate))
+                      (-> (->> (files/get-file-libraries conn (:id file))
+                               (map #(get-file conn (:id %)))
+                               (map #(update % :data blob/decode))
+                               (d/index-by :id))
+                          (assoc (:id file) file)))
 
             changes   (if changes-with-metadata
                         (->> changes-with-metadata (mapcat :changes) vec)
@@ -222,7 +221,7 @@
                         :name       (:name file)
                         :features   (:features file)
                         :project-id (:project-id file)
-                        :team-id    (:team-id file)}))))))
+                        :team-id    (:team-id file)})))))
 
 (defn- update-file*
   [{:keys [::db/conn] :as cfg} {:keys [profile-id file libraries changes session-id ::created-at skip-validate] :as params}]
@@ -230,7 +229,7 @@
         ;; to be executed on a separated executor for avoid to do the
         ;; CPU intensive operation on vthread.
         file (-> (climit/configure cfg :update-file)
-                 (climit/submit! (partial update-file-data conn file libraries changes skip-validate)))]
+                 (climit/submit! (partial update-file-data file libraries changes skip-validate)))]
 
     (db/insert! conn :file-change
                 {:id (uuid/next)
@@ -264,22 +263,11 @@
       (get-lagged-changes conn params))))
 
 (defn- update-file-data
-  [conn file libraries changes skip-validate]
+  [file libraries changes skip-validate]
   (let [validate (fn [file]
                    (when (and (cf/flags :file-validation)
                               (not skip-validate))
-                     (val/validate-file file libraries :throw? true)))
-        
-        do-migrate-v2 (fn [file]
-                        ;; When migrating to components-v2 we need the libraries even
-                        ;; if the validations are disabled.
-                        (let [libraries (or (seq libraries)
-                                            (-> (->> (files/get-file-libraries conn (:id file))
-                                                     (map #(get-file conn (:id %)))
-                                                     (map #(update % :data blob/decode))
-                                                     (d/index-by :id))
-                                                (assoc (:id file) file)))]
-                          (ctf/migrate-to-components-v2 file libraries)))]
+                     (val/validate-file file libraries :throw? true)))]
     (-> file
         (update :revn inc)
         (update :data (fn [data]
@@ -288,10 +276,6 @@
                           (-> (blob/decode)
                               (assoc :id (:id file))
                               (pmg/migrate-data))
-
-                          (and (contains? ffeat/*current* "components/v2")
-                               (not (contains? ffeat/*previous* "components/v2")))
-                          (do-migrate-v2)
 
                           :always
                           (cp/process-changes changes))))
@@ -325,7 +309,7 @@
        (vec)))
 
 (defn- send-notifications!
-  [{:keys [::db/conn] :as cfg} {:keys [file changes session-id] :as params}]
+  [cfg {:keys [file team changes session-id] :as params}]
   (let [lchanges (filter library-change? changes)
         msgbus   (::mbus/msgbus cfg)]
 
@@ -339,14 +323,12 @@
                          :changes changes})
 
     (when (and (:is-shared file) (seq lchanges))
-      (let [team-id (or (:team-id file)
-                        (files/get-team-id conn (:project-id file)))]
-        (mbus/pub! msgbus
-                   :topic team-id
-                   :message {:type :library-change
-                             :profile-id (:profile-id params)
-                             :file-id (:id file)
-                             :session-id session-id
-                             :revn (:revn file)
-                             :modified-at (dt/now)
-                             :changes lchanges})))))
+      (mbus/pub! msgbus
+                 :topic (:id team)
+                 :message {:type :library-change
+                           :profile-id (:profile-id params)
+                           :file-id (:id file)
+                           :session-id session-id
+                           :revn (:revn file)
+                           :modified-at (dt/now)
+                           :changes lchanges}))))

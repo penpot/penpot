@@ -10,8 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.features :as cfeat]
    [app.common.files.defaults :as cfd]
-   [app.common.files.features :as ffeat]
    [app.common.files.migrations :as pmg]
    [app.common.fressian :as fres]
    [app.common.logging :as l]
@@ -26,6 +26,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.projects :as projects]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.storage :as sto]
@@ -574,14 +575,16 @@
 (defmulti read-import ::version)
 (defmulti read-section ::section)
 
+(s/def ::profile-id ::us/uuid)
 (s/def ::project-id ::us/uuid)
 (s/def ::input io/input-stream?)
 (s/def ::overwrite? (s/nilable ::us/boolean))
 (s/def ::migrate? (s/nilable ::us/boolean))
 (s/def ::ignore-index-errors? (s/nilable ::us/boolean))
 
+;; FIXME: replace with schema
 (s/def ::read-import-options
-  (s/keys :req [::db/pool ::sto/storage ::project-id ::input]
+  (s/keys :req [::db/pool ::sto/storage ::project-id ::profile-id ::input]
           :opt [::overwrite? ::migrate? ::ignore-index-errors?]))
 
 (defn read-import!
@@ -605,27 +608,32 @@
     (read-import (assoc options ::version version ::timestamp timestamp))))
 
 (defmethod read-import :v1
-  [{:keys [::db/pool ::input] :as options}]
-  (with-open [input (zstd-input-stream input)]
-    (with-open [input (io/data-input-stream input)]
-      (db/with-atomic [conn pool]
-        (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED;"])
-        (binding [*state* (volatile! {:media [] :index {}})]
-          (run! (fn [section]
-                  (l/debug :hint "reading section" :section section ::l/sync? true)
-                  (assert-read-label! input section)
-                  (let [options (-> options
-                                    (assoc ::section section)
-                                    (assoc ::input input)
-                                    (assoc ::db/conn conn))]
-                    (binding [*options* options]
-                      (read-section options))))
-                [:v1/metadata :v1/files :v1/rels :v1/sobjects])
+  [options]
+  (db/tx-run! options
+              (fn [{:keys [::db/conn ::project-id ::profile-id ::input] :as options}]
+                (with-open [input (zstd-input-stream input)]
+                  (with-open [input (io/data-input-stream input)]
+                    (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
+                    (binding [*state* (volatile! {:media [] :index {}})]
+                      (let [team (teams/get-team options
+                                                 :profile-id profile-id
+                                                 :project-id project-id)
+                            feat (cfeat/get-enabled-features cf/flags team)]
+                        (run! (fn [section]
+                                (l/debug :hint "reading section" :section section ::l/sync? true)
+                                (assert-read-label! input section)
+                                (let [options (-> options
+                                                  (assoc ::features feat)
+                                                  (assoc ::section section)
+                                                  (assoc ::input input))]
+                                  (binding [*options* options]
+                                    (read-section options))))
+                              [:v1/metadata :v1/files :v1/rels :v1/sobjects])
 
-          ;; Knowing that the ids of the created files are in
-          ;; index, just lookup them and return it as a set
-          (let [files (-> *state* deref :files)]
-            (into #{} (keep #(get-in @*state* [:index %])) files)))))))
+                      ;; Knowing that the ids of the created files are in
+                      ;; index, just lookup them and return it as a set
+                      (let [files (-> *state* deref :files)]
+                        (into #{} (keep #(get-in @*state* [:index %])) files)))))))))
 
 (defmethod read-section :v1/metadata
   [{:keys [::input]}]
@@ -636,8 +644,8 @@
 
 (defn- postprocess-file
   [data]
-  (let [omap-wrap ffeat/*wrap-with-objects-map-fn*
-        pmap-wrap ffeat/*wrap-with-pointer-map-fn*]
+  (let [omap-wrap cfeat/*wrap-with-objects-map-fn*
+        pmap-wrap cfeat/*wrap-with-pointer-map-fn*]
     (-> data
         (update :pages-index update-vals #(update % :objects omap-wrap))
         (update :pages-index update-vals pmap-wrap)
@@ -645,12 +653,12 @@
         (update :components pmap-wrap))))
 
 (defmethod read-section :v1/files
-  [{:keys [::db/conn ::input ::migrate? ::project-id ::timestamp ::overwrite?]}]
+  [{:keys [::db/conn ::input ::migrate? ::project-id ::features ::timestamp ::overwrite? ]}]
   (doseq [expected-file-id (-> *state* deref :files)]
     (let [file     (read-obj! input)
           media'   (read-obj! input)
           file-id  (:id file)
-          features (files/get-default-features)]
+          features (cfeat/check-file-features! features (:features file))]
 
       (when (not= file-id expected-file-id)
         (ex/raise :type :validation
@@ -667,9 +675,9 @@
       (l/dbg :hint "update media references" ::l/sync? true)
       (vswap! *state* update :media into (map #(update % :id lookup-index)) media')
 
-      (binding [ffeat/*current* features
-                ffeat/*wrap-with-objects-map-fn* (if (features "storage/objects-map") omap/wrap identity)
-                ffeat/*wrap-with-pointer-map-fn* (if (features "storage/pointer-map") pmap/wrap identity)
+      (binding [cfeat/*current* features
+                cfeat/*wrap-with-objects-map-fn* (if (contains? features "storage/objects-map") omap/wrap identity)
+                cfeat/*wrap-with-pointer-map-fn* (if (contains? features "storage/pointer-map") pmap/wrap identity)
                 pmap/*tracked* (atom {})]
 
         (l/dbg :hint "processing file"
@@ -973,6 +981,7 @@
     (let [ids (import! (assoc cfg
                               ::input (:path file)
                               ::project-id project-id
+                              ::profile-id profile-id
                               ::ignore-index-errors? true))]
 
       (db/update! conn :project

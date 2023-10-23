@@ -665,7 +665,7 @@
   {::mf/register modal/components
    ::mf/register-as :libraries-dialog}
   [{:keys [starting-tab] :as props :or {starting-tab :libraries}}]
-  (let [new-css-system (features/use-feature :new-css-system)
+  (let [new-css-system (features/use-feature "styles/v2")
         project        (mf/deref refs/workspace-project)
         file-data      (mf/deref refs/workspace-data)
         file           (mf/deref ref:workspace-file)

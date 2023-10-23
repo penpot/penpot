@@ -5,103 +5,95 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.features
+  "A thin, frontend centric abstraction layer and collection of
+  helpers for `app.common.features` namespace."
   (:require
-   [app.common.data :as d]
+   [app.common.features :as cfeat]
    [app.common.logging :as log]
    [app.config :as cf]
    [app.main.store :as st]
-   [app.util.timers :as tm]
-   [beicon.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
-(log/set-level! :warn)
+(log/set-level! :trace)
 
-(def available-features
-  #{:components-v2 :new-css-system :grid-layout})
+(defn get-enabled-features
+  ([]
+   (get-enabled-features @st/state))
+  ([state]
+   (get state :features #{})))
 
-(defn- toggle-feature
-  [feature]
-  (ptk/reify ::toggle-feature
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [features (or (:features state) #{})]
-        (if (contains? features feature)
-          (do
-            (log/debug :hint "feature disabled" :feature (d/name feature))
-            (assoc state :features (disj features feature)))
-          (do
-            (log/debug :hint "feature enabled" :feature (d/name feature))
-            (assoc state :features (conj features feature))))))))
-
-(defn- enable-feature
-  [feature]
-  (ptk/reify ::enable-feature
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [features (or (:features state) #{})]
-        (if (contains? features feature)
-          state
-          (do
-            (log/debug :hint "feature enabled" :feature (d/name feature))
-            (assoc state :features (conj features feature))))))))
-
-(defn toggle-feature!
-  [feature]
-  (assert (contains? available-features feature) "Not supported feature")
-  (tm/schedule-on-idle #(st/emit! (toggle-feature feature))))
-
-(defn enable-feature!
-  [feature]
-  (assert (contains? available-features feature) "Not supported feature")
-  (tm/schedule-on-idle #(st/emit! (enable-feature feature))))
+(def features
+  (l/derived get-enabled-features st/state =))
 
 (defn active-feature?
   ([feature]
    (active-feature? @st/state feature))
   ([state feature]
-   (assert (contains? available-features feature) "Not supported feature")
-   (contains? (get state :features) feature)))
+   (assert (contains? cfeat/supported-features feature) "Not supported feature")
+   (let [features (get-enabled-features state)]
+     (contains? features feature))))
 
-(def features
-  (l/derived :features st/state))
-
-(defn active-feature
+(defn toggle-feature
   [feature]
-  (l/derived #(contains? % feature) features))
+  (ptk/reify ::toggle-feature
+    ptk/UpdateEvent
+    (update [_ state]
+      (assert (contains? cfeat/supported-features feature) "Not supported feature")
+      (if (active-feature? state feature)
+        (do
+          (log/trc :hint "feature disabled" :feature feature)
+          (update state :features disj feature))
+        (do
+          (log/trc :hint "feature enabled" :feature feature)
+          (update state :features conj feature))))))
+
+(defn enable-feature
+  [feature]
+  (ptk/reify ::enable-feature
+    ptk/UpdateEvent
+    (update [_ state]
+      (assert (contains? cfeat/supported-features feature) "Not supported feature")
+      (if (active-feature? state feature)
+        state
+        (do
+          (log/trc :hint "feature enabled" :feature feature)
+          (update state :features conj feature))))))
 
 (defn use-feature
   [feature]
-  (assert (contains? available-features feature) "Not supported feature")
-  (let [active-feature-ref (mf/use-memo (mf/deps feature) #(active-feature feature))
-        active-feature? (mf/deref active-feature-ref)]
-    active-feature?))
+  (assert (contains? cfeat/supported-features feature) "Not supported feature")
+  (let [active-features (mf/deref features)]
+    (contains? active-features feature)))
 
 (defn initialize
-  []
-  (ptk/reify ::initialize
-    ptk/WatchEvent
-    (watch [_ _ _]
-     (log/trace :hint "event:initialize" :fn "features")
-     (rx/concat
-      ;; Enable all features set on the configuration
-      (->> (rx/from cf/flags)
-           (rx/map name)
-           (rx/map (fn [flag]
-                     (when (str/starts-with? flag "frontend-feature-")
-                       (subs flag 17))))
-           (rx/filter some?)
-           (rx/map keyword)
-           (rx/map enable-feature))
+  ([] (initialize #{}))
+  ([features]
+   (assert (set? features) "expected a set of features")
+   (assert (every? string? features) "expected a set of strings")
 
-      ;; Enable the rest of available configuration if we are on development
-      ;; environemnt (aka devenv).
-      (when *assert*
-        ;; By default, all features disabled, except in development
-        ;; environment, that are enabled except components-v2 and new css
-        (->> (rx/from available-features)
-             (rx/filter #(not= % :components-v2))
-             (rx/filter #(not= % :new-css-system))
-             (rx/map enable-feature)))))))
+   (ptk/reify ::initialize
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [features (into #{}
+                            (filter #(contains? cfeat/supported-features %))
+                            features)
+             features (into features
+                            (filter #(not (str/starts-with? "storage/" %)))
+                            (cfeat/get-enabled-features cf/flags))
+             features (if *assert*
+                        (into features
+                              (comp
+                               (filter #(not= % "components/v2"))
+                               (filter #(not= % "styles/v2"))
+                               (filter #(not (str/starts-with? % "storage/"))))
+                              cfeat/supported-features)
+                        features)]
+         (assoc state :features features)))
+
+     ptk/EffectEvent
+     (effect [_ state _]
+       (let [features (str/join "," (:features state))]
+         (log/trc :hint "initialized features" :features features))))))

@@ -60,7 +60,7 @@
     (files/check-edition-permissions! pool profile-id file-id)
     (media/validate-media-type! content)
     (media/validate-media-size! content)
-    (let [object (create-file-media-object cfg params)
+    (let [object (db/run! cfg #(create-file-media-object % params))
           props  {:name (:name params)
                   :file-id file-id
                   :is-local (:is-local params)
@@ -142,7 +142,7 @@
       (assoc ::image (process-main-image info)))))
 
 (defn create-file-media-object
-  [{:keys [::sto/storage ::db/pool] :as cfg}
+  [{:keys [::sto/storage ::db/conn] :as cfg}
    {:keys [id file-id is-local name content]}]
 
   (let [result (-> (climit/configure cfg :process-image)
@@ -152,7 +152,7 @@
         thumb  (when-let [params (::thumb result)]
                  (sto/put-object! storage params))]
 
-    (db/exec-one! pool [sql:create-file-media-object
+    (db/exec-one! conn [sql:create-file-media-object
                         (or id (uuid/next))
                         file-id is-local name
                         (:id image)
@@ -176,9 +176,9 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (files/check-edition-permissions! pool profile-id file-id)
-    (create-file-media-object-from-url cfg params)))
+    (db/run! cfg #(create-file-media-object-from-url % params))))
 
-(defn- download-image
+(defn download-image
   [{:keys [::http/client]} uri]
   (letfn [(parse-and-validate [{:keys [headers] :as response}]
             (let [size     (some-> (get headers "content-length") d/parse-integer)
@@ -209,7 +209,6 @@
                                                  {:method :get :uri uri}
                                                  {:response-type :input-stream :sync? true})
           {:keys [size mtype]} (parse-and-validate response)
-
           path    (tmp/tempfile :prefix "penpot.media.download.")
           written (io/write-to-file! body path :size size)]
 
@@ -222,7 +221,6 @@
        :size size
        :path path
        :mtype mtype})))
-
 
 (defn- create-file-media-object-from-url
   [cfg {:keys [url name] :as params}]

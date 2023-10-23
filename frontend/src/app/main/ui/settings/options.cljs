@@ -42,7 +42,7 @@
                   (update profile :lang #(or % "")))
         form    (fm/use-form :spec ::options-form
                              :initial initial)
-        new-css-system (features/use-feature :new-css-system)]
+        new-css-system (features/use-feature "styles/v2")]
 
     [:& fm/form {:class "options-form"
                  :on-submit on-submit
