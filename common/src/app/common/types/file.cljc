@@ -579,13 +579,13 @@
                             libraries    (assoc-in libraries [(:id file-data) :data] file-data)
                             library      (get libraries (:component-file root))
                             component    (ctkl/get-component (:data library) (:component-id root) true)
-                            direct-shape (ctst/get-shape component (:shape-ref shape))]
+                            direct-shape (get-component-shape (:data library) component (:shape-ref shape))]
                         (if (some? direct-shape)
                           ; If it exists, there is nothing else to do.
                           container
                           ; If not found, find the near shape.
                           (let [near-shape (d/seek #(= (:shape-ref %) (:shape-ref shape))
-                                                   (ctn/shapes-seq component))]
+                                                   (get-component-shapes (:data library) component))]
                             (if (some? near-shape)
                               ; If found, update the ref to point to the near shape.
                               (ctn/update-shape container (:id shape) #(assoc % :shape-ref (:id near-shape)))
@@ -594,7 +594,7 @@
                               (let [head           (ctn/get-head-shape (:objects container) shape)
                                     library-2      (get libraries (:component-file head))
                                     component-2    (ctkl/get-component (:data library-2) (:component-id head) true)
-                                    direct-shape-2 (ctst/get-shape component-2 (:shape-ref shape))]
+                                    direct-shape-2 (get-component-shape (:data library-2) component-2 (:shape-ref shape))]
                                 (if (some? direct-shape-2)
                                   ; If it exists, there is nothing else to do.
                                   container
