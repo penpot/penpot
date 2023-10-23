@@ -428,24 +428,22 @@
 (defn generate-shape-grid
   "Generate a sequence of positions that lays out the list of
   shapes in a grid of equal-sized rows and columns."
-  [shapes start-pos gap]
-  (let [shapes-bounds (map gsh/bounding-box shapes)
+  [shapes start-position gap]
+  (when (seq shapes)
+    (let [bounds      (map gsh/bounding-box shapes)
 
-        grid-size   (mth/ceil (mth/sqrt (count shapes)))
-        row-size    (+ (apply max (map :height shapes-bounds))
-                       gap)
-        column-size (+ (apply max (map :width shapes-bounds))
-                       gap)
+          grid-size   (-> shapes count mth/sqrt mth/ceil)
+          row-size    (+ (reduce d/max ##-Inf (map :height bounds)) gap)
+          column-size (+ (reduce d/max ##-Inf (map :width bounds)) gap)
 
-        next-pos (fn [position]
-                   (let [counter (inc (:counter (meta position)))
-                         row     (quot counter grid-size)
-                         column  (mod counter grid-size)
-                         new-pos (gpt/add start-pos
-                                          (gpt/point (* column column-size)
-                                                     (* row row-size)))]
-                     (with-meta new-pos
-                                {:counter counter})))]
-    (iterate next-pos
-             (with-meta start-pos
-                        {:counter 0}))))
+          get-next    (fn get-next
+                        [counter]
+                        (let [row      (quot counter grid-size)
+                              column   (mod counter grid-size)
+                              position (->> (gpt/point (* column column-size)
+                                                       (* row row-size))
+                                            (gpt/add start-position))]
+                          (lazy-seq
+                           (cons position (get-next (inc counter))))))]
+
+      (get-next 0))))

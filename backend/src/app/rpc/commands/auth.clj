@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
@@ -291,9 +292,12 @@
 
 (defn create-profile-rels!
   [conn {:keys [id] :as profile}]
-  (let [team (teams/create-team conn {:profile-id id
-                                      :name "Default"
-                                      :is-default true})]
+  (let [features (cfeat/get-enabled-features cf/flags)
+        team     (teams/create-team conn
+                                    {:profile-id id
+                                     :name "Default"
+                                     :features features
+                                     :is-default true})]
     (-> (db/update! conn :profile
                     {:default-team-id (:id team)
                      :default-project-id  (:default-project-id team)}

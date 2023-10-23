@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.features :as ffeat]
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
@@ -108,12 +107,8 @@
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
     (watch [_ state _]
-      (let [features (cond-> ffeat/enabled
-                       (features/active-feature? state :components-v2)
-                       (conj "components/v2")
+      (let [features (features/get-team-enabled-features state)
 
-                       :always
-                       (conj "storage/pointer-map"))
             params'  (cond-> {:file-id file-id :features features}
                        (uuid? share-id)
                        (assoc :share-id share-id))

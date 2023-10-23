@@ -10,11 +10,12 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.features :as cfeat]
    [app.common.flags :as flags]
    [app.common.pages :as cp]
    [app.common.pprint :as pp]
-   [app.common.spec :as us]
    [app.common.schema :as sm]
+   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -66,8 +67,9 @@
    :enable-email-verification
    :enable-smtp
    :enable-quotes
-   :enable-fdata-storage-pointer-map
-   :enable-fdata-storage-objets-map
+   :enable-feature-fdata-pointer-map
+   :enable-feature-fdata-objets-map
+   :enable-feature-components-v2
    :disable-file-validation])
 
 (def test-init-sql
@@ -206,65 +208,72 @@
 ;; --- FACTORIES
 
 (defn create-profile*
-  ([i] (create-profile* *pool* i {}))
-  ([i params] (create-profile* *pool* i params))
-  ([pool i params]
+  ([i] (create-profile* *system* i {}))
+  ([i params] (create-profile* *system* i params))
+  ([system i params]
    (let [params (merge {:id (mk-uuid "profile" i)
                         :fullname (str "Profile " i)
                         :email (str "profile" i ".test@nodomain.com")
                         :password "123123"
                         :is-demo false}
                        params)]
-     (dm/with-open [conn (db/open pool)]
-       (->> params
-            (cmd.auth/create-profile! conn)
-            (cmd.auth/create-profile-rels! conn))))))
+     (db/run! system
+              (fn [{:keys [::db/conn]}]
+                (->> params
+                     (cmd.auth/create-profile! conn)
+                     (cmd.auth/create-profile-rels! conn)))))))
 
 (defn create-project*
-  ([i params] (create-project* *pool* i params))
-  ([pool i {:keys [profile-id team-id] :as params}]
+  ([i params] (create-project* *system* i params))
+  ([system i {:keys [profile-id team-id] :as params}]
    (us/assert uuid? profile-id)
    (us/assert uuid? team-id)
-   (dm/with-open [conn (db/open pool)]
-     (->> (merge {:id (mk-uuid "project" i)
-                  :name (str "project" i)}
-                 params)
-          (#'teams/create-project conn)))))
+
+   (db/run! system
+            (fn [{:keys [::db/conn]}]
+              (->> (merge {:id (mk-uuid "project" i)
+                           :name (str "project" i)}
+                          params)
+                   (#'teams/create-project conn))))))
 
 (defn create-file*
   ([i params]
-   (create-file* *pool* i params))
-  ([pool i {:keys [profile-id project-id] :as params}]
-   (us/assert uuid? profile-id)
-   (us/assert uuid? project-id)
-   (db/with-atomic [conn (db/open pool)]
-     (files.create/create-file conn
-                               (merge {:id (mk-uuid "file" i)
-                                       :name (str "file" i)
-                                       :components-v2 true}
-                                      params)))))
+   (create-file* *system* i params))
+  ([system i {:keys [profile-id project-id] :as params}]
+   (dm/assert! "expected uuid" (uuid? profile-id))
+   (dm/assert! "expected uuid" (uuid? project-id))
+   (db/run! system
+            (fn [system]
+              (let [features (cfeat/get-enabled-features cf/flags)]
+                (files.create/create-file system
+                                          (merge {:id (mk-uuid "file" i)
+                                                  :name (str "file" i)
+                                                  :features features}
+                                                 params)))))))
 
 (defn mark-file-deleted*
-  ([params] (mark-file-deleted* *pool* params))
+  ([params] (mark-file-deleted* *system* params))
   ([conn {:keys [id] :as params}]
    (#'files/mark-file-deleted! conn {:id id})))
 
 (defn create-team*
-  ([i params] (create-team* *pool* i params))
-  ([pool i {:keys [profile-id] :as params}]
+  ([i params] (create-team* *system* i params))
+  ([system i {:keys [profile-id] :as params}]
    (us/assert uuid? profile-id)
-   (dm/with-open [conn (db/open pool)]
-     (let [id   (mk-uuid "team" i)]
+   (dm/with-open [conn (db/open system)]
+     (let [id       (mk-uuid "team" i)
+           features (cfeat/get-enabled-features cf/flags)]
        (teams/create-team conn {:id id
                                 :profile-id profile-id
+                                :features features
                                 :name (str "team" i)})))))
 
 (defn create-file-media-object*
-  ([params] (create-file-media-object* *pool* params))
-  ([pool {:keys [name width height mtype file-id is-local media-id]
+  ([params] (create-file-media-object* *system* params))
+  ([system {:keys [name width height mtype file-id is-local media-id]
           :or {name "sample" width 100 height 100 mtype "image/svg+xml" is-local true}}]
 
-   (dm/with-open [conn (db/open pool)]
+   (dm/with-open [conn (db/open system)]
      (db/insert! conn :file-media-object
                  {:id (uuid/next)
                   :file-id file-id
@@ -276,14 +285,14 @@
                   :mtype  mtype}))))
 
 (defn link-file-to-library*
-  ([params] (link-file-to-library* *pool* params))
-  ([pool {:keys [file-id library-id] :as params}]
-   (dm/with-open [conn (db/open pool)]
+  ([params] (link-file-to-library* *system* params))
+  ([system {:keys [file-id library-id] :as params}]
+   (dm/with-open [conn (db/open system)]
      (#'files/link-file-to-library conn {:file-id file-id :library-id library-id}))))
 
 (defn create-complaint-for
-  [pool {:keys [id created-at type]}]
-  (dm/with-open [conn (db/open pool)]
+  [system {:keys [id created-at type]}]
+  (dm/with-open [conn (db/open system)]
     (db/insert! conn :profile-complaint-report
                 {:profile-id id
                  :created-at (or created-at (dt/now))
@@ -291,8 +300,8 @@
                  :content (db/tjson {})})))
 
 (defn create-global-complaint-for
-  [pool {:keys [email type created-at]}]
-  (dm/with-open [conn (db/open pool)]
+  [system {:keys [email type created-at]}]
+  (dm/with-open [conn (db/open system)]
     (db/insert! conn :global-complaint-report
                 {:email email
                  :type (name type)
@@ -300,71 +309,72 @@
                  :content (db/tjson {})})))
 
 (defn create-team-role*
-  ([params] (create-team-role* *pool* params))
-  ([pool {:keys [team-id profile-id role] :or {role :owner}}]
-   (dm/with-open [conn (db/open pool)]
+  ([params] (create-team-role* *system* params))
+  ([system {:keys [team-id profile-id role] :or {role :owner}}]
+   (dm/with-open [conn (db/open system)]
      (#'teams/create-team-role conn {:team-id team-id
                                      :profile-id profile-id
                                      :role role}))))
 
 (defn create-project-role*
-  ([params] (create-project-role* *pool* params))
-  ([pool {:keys [project-id profile-id role] :or {role :owner}}]
-   (dm/with-open [conn (db/open pool)]
+  ([params] (create-project-role* *system* params))
+  ([system {:keys [project-id profile-id role] :or {role :owner}}]
+   (dm/with-open [conn (db/open system)]
      (#'teams/create-project-role conn {:project-id project-id
                                            :profile-id profile-id
                                            :role role}))))
 
 (defn create-file-role*
-  ([params] (create-file-role* *pool* params))
-  ([pool {:keys [file-id profile-id role] :or {role :owner}}]
-   (dm/with-open [conn (db/open pool)]
+  ([params] (create-file-role* *system* params))
+  ([system {:keys [file-id profile-id role] :or {role :owner}}]
+   (dm/with-open [conn (db/open system)]
      (files.create/create-file-role! conn {:file-id file-id
                                            :profile-id profile-id
                                            :role role}))))
 
 (defn update-file*
-  ([params] (update-file* *pool* params))
-  ([pool {:keys [file-id changes session-id profile-id revn]
+  ([params] (update-file* *system* params))
+  ([system {:keys [file-id changes session-id profile-id revn]
           :or {session-id (uuid/next) revn 0}}]
-   (dm/with-open [conn (db/open pool)]
-     (let [features #{"components/v2"}
-           cfg      (-> (select-keys *system* [::mbus/msgbus ::mtx/metrics])
-                        (assoc ::db/conn conn))]
-       (files.update/update-file cfg
-                                 {:id file-id
-                                  :revn revn
-                                  :features features
-                                  :changes changes
-                                  :session-id session-id
-                                  :profile-id profile-id})))))
+   (db/tx-run! system (fn [{:keys [::db/conn] :as system}]
+                        (let [file (files.update/get-file conn file-id)]
+                          (files.update/update-file system
+                                                    {:id file-id
+                                                     :revn revn
+                                                     :file file
+                                                     :features (:features file)
+                                                     :changes changes
+                                                     :session-id session-id
+                                                     :profile-id profile-id}))))))
 
 (declare command!)
 
 (defn update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
-  (let [params {::type :update-file
-                ::rpc/profile-id profile-id
-                :id file-id
-                :session-id (uuid/random)
-                :revn revn
-                :components-v2 true
-                :changes changes}
-        out    (command! params)]
+  (let [features (cfeat/get-enabled-features cf/flags)
+        params   {::type :update-file
+                  ::rpc/profile-id profile-id
+                  :id file-id
+                  :session-id (uuid/random)
+                  :revn revn
+                  :features features
+                  :changes changes}
+        out      (command! params)]
     (t/is (nil? (:error out)))
     (:result out)))
 
 (defn create-webhook*
-  ([params] (create-webhook* *pool* params))
-  ([pool {:keys [team-id id uri mtype is-active]
-          :or {is-active true
-               mtype "application/json"
-               uri "http://example.com/webhook"}}]
-   (db/insert! pool :webhook
-               {:id (or id (uuid/next))
-                :team-id team-id
-                :uri uri
-                :is-active is-active
-                :mtype mtype})))
+  ([params] (create-webhook* *system* params))
+  ([system {:keys [team-id id uri mtype is-active]
+            :or {is-active true
+                 mtype "application/json"
+                 uri "http://example.com/webhook"}}]
+   (db/run! system (fn [{:keys [::db/conn]}]
+                     (db/insert! conn :webhook
+                                 {:id (or id (uuid/next))
+                                  :team-id team-id
+                                  :uri uri
+                                  :is-active is-active
+                                  :mtype mtype})))))
 
 ;; --- RPC HELPERS
 

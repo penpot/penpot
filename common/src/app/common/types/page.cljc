@@ -7,7 +7,7 @@
 (ns app.common.types.page
   (:require
    [app.common.data :as d]
-   [app.common.files.features :as ffeat]
+   [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.types.color :as-alias ctc]
    [app.common.types.grid :as ctg]
@@ -74,8 +74,8 @@
 
 (defn make-empty-page
   [id name]
-  (let [wrap-objects-fn ffeat/*wrap-with-objects-map-fn*
-        wrap-pointer-fn ffeat/*wrap-with-pointer-map-fn*]
+  (let [wrap-objects-fn cfeat/*wrap-with-objects-map-fn*
+        wrap-pointer-fn cfeat/*wrap-with-pointer-map-fn*]
     (-> empty-page-data
         (assoc :id id)
         (assoc :name name)

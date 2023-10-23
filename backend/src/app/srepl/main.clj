@@ -10,16 +10,18 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.pprint :as p]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as features.fdata]
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
-   [app.rpc.commands.profile :as profile]
    [app.rpc.commands.files-snapshot :as fsnap]
+   [app.rpc.commands.profile :as profile]
    [app.srepl.fixes :as f]
    [app.srepl.helpers :as h]
    [app.storage :as sto]
@@ -110,41 +112,57 @@
 
 (defn enable-objects-map-feature-on-file!
   [system & {:keys [save? id]}]
-  (letfn [(update-file [{:keys [features] :as file}]
-            (if (contains? features "storage/objects-map")
-              file
-              (-> file
-                  (update :data migrate)
-                  (update :features conj "storage/objects-map"))))
-
-          (migrate [data]
-            (-> data
-                (update :pages-index update-vals #(update % :objects omap/wrap))
-                (update :components update-vals #(update % :objects omap/wrap))))]
-
-    (h/update-file! system
-                    :id id
-                    :update-fn update-file
-                    :save? save?)))
+  (h/update-file! system
+                  :id id
+                  :update-fn features.fdata/enable-objects-map
+                  :save? save?))
 
 (defn enable-pointer-map-feature-on-file!
   [system & {:keys [save? id]}]
-  (letfn [(update-file [{:keys [features] :as file}]
-            (if (contains? features "storage/pointer-map")
-              file
-              (-> file
-                  (update :data migrate)
-                  (update :features conj "storage/pointer-map"))))
+  (h/update-file! system
+                  :id id
+                  :update-fn features.fdata/enable-pointer-map
+                  :save? save?))
 
-          (migrate [data]
-            (-> data
-                (update :pages-index update-vals pmap/wrap)
-                (update :components pmap/wrap)))]
+(defn enable-team-feature!
+  [system team-id feature]
+  (dm/verify!
+   "feature should be supported"
+   (contains? cfeat/supported-features feature))
 
-    (h/update-file! system
-                    :id id
-                    :update-fn update-file
-                    :save? save?)))
+  (let [team-id (if (string? team-id)
+                  (parse-uuid team-id)
+                  team-id)]
+    (db/tx-run! system
+                (fn [{:keys [::db/conn]}]
+                  (let [team     (-> (db/get conn :team {:id team-id})
+                                     (update :features db/decode-pgarray #{}))
+                        features (conj (:features team) feature)]
+                    (when (not= features (:features team))
+                      (db/update! conn :team
+                                  {:features (db/create-array conn "text" features)}
+                                  {:id team-id})
+                      :enabled))))))
+
+(defn disable-team-feature!
+  [system team-id feature]
+  (dm/verify!
+   "feature should be supported"
+   (contains? cfeat/supported-features feature))
+
+  (let [team-id (if (string? team-id)
+                  (parse-uuid team-id)
+                  team-id)]
+    (db/tx-run! system
+                (fn [{:keys [::db/conn]}]
+                  (let [team     (-> (db/get conn :team {:id team-id})
+                                     (update :features db/decode-pgarray #{}))
+                        features (disj (:features team) feature)]
+                    (when (not= features (:features team))
+                      (db/update! conn :team
+                                  {:features (db/create-array conn "text" features)}
+                                  {:id team-id})
+                      :disabled))))))
 
 (defn enable-storage-features-on-file!
   [system & {:as params}]

@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
    [app.common.uri :as u]
@@ -28,6 +29,7 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
+   [clojure.set :as set]
    [potok.core :as ptk]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -43,11 +45,10 @@
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
-      (du/set-current-team! id)
       (let [prev-team-id (:current-team-id state)]
         (cond-> state
           (not= prev-team-id id)
-          (-> (assoc :current-team-id id)
+          (-> (dissoc :current-team-id)
               (dissoc :dashboard-files)
               (dissoc :dashboard-projects)
               (dissoc :dashboard-shared-files)
@@ -58,27 +59,36 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/concat
-       (rx/of (features/initialize))
-       (rx/merge
-        ;; fetch teams must be first in case the team doesn't exist
-        (ptk/watch (du/fetch-teams) state stream)
-        (ptk/watch (df/load-team-fonts id) state stream)
-        (ptk/watch (fetch-projects) state stream)
-        (ptk/watch (fetch-team-members) state stream)
-        (ptk/watch (du/fetch-users {:team-id id}) state stream)
+      (let [stoper-s   (rx/filter (ptk/type? ::finalize) stream)
+            profile-id (:profile-id state)]
 
-        (let [stoper    (rx/filter (ptk/type? ::finalize) stream)
-              profile-id (:profile-id state)]
-          (->> stream
-               (rx/filter (ptk/type? ::dws/message))
-               (rx/map deref)
-               (rx/filter (fn [{:keys [subs-id type] :as msg}]
-                            (and (or (= subs-id uuid/zero)
-                                     (= subs-id profile-id))
-                                 (= :notification type))))
-               (rx/map handle-notification)
-               (rx/take-until stoper))))))))
+        (->> (rx/merge
+              ;; fetch teams must be first in case the team doesn't exist
+              (ptk/watch (du/fetch-teams) state stream)
+              (ptk/watch (df/load-team-fonts id) state stream)
+              (ptk/watch (fetch-projects id) state stream)
+              (ptk/watch (fetch-team-members id) state stream)
+              (ptk/watch (du/fetch-users {:team-id id}) state stream)
+
+              (->> stream
+                   (rx/filter (ptk/type? ::dws/message))
+                   (rx/map deref)
+                   (rx/filter (fn [{:keys [subs-id type] :as msg}]
+                                (and (or (= subs-id uuid/zero)
+                                         (= subs-id profile-id))
+                                     (= :notification type))))
+                   (rx/map handle-notification))
+
+              ;; Once the teams are fecthed, initialize features related
+              ;; to currently active team
+              (->> stream
+                   (rx/filter (ptk/type? ::du/teams-fetched))
+                   (rx/observe-on :async)
+                   (rx/mapcat deref)
+                   (rx/filter #(= id (:id %)))
+                   (rx/map du/set-current-team)))
+
+             (rx/take-until stoper-s))))))
 
 (defn finalize
   [params]
@@ -98,13 +108,12 @@
       (assoc state :dashboard-team-members (d/index-by :id members)))))
 
 (defn fetch-team-members
-  []
+  [team-id]
   (ptk/reify ::fetch-team-members
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-team-members {:team-id team-id})
-             (rx/map team-members-fetched))))))
+    (watch [_ _ _]
+      (->> (rp/cmd! :get-team-members {:team-id team-id})
+           (rx/map team-members-fetched)))))
 
 ;; --- EVENT: fetch-team-stats
 
@@ -116,13 +125,12 @@
       (assoc state :dashboard-team-stats stats))))
 
 (defn fetch-team-stats
-  []
+  [team-id]
   (ptk/reify ::fetch-team-stats
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-team-stats {:team-id team-id})
-             (rx/map team-stats-fetched))))))
+    (watch [_ _ _]
+      (->> (rp/cmd! :get-team-stats {:team-id team-id})
+           (rx/map team-stats-fetched)))))
 
 ;; --- EVENT: fetch-team-invitations
 
@@ -171,13 +179,12 @@
         (assoc state :dashboard-projects projects)))))
 
 (defn fetch-projects
-  []
+  [team-id]
   (ptk/reify ::fetch-projects
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-projects {:team-id team-id})
-             (rx/map projects-fetched))))))
+    (watch [_ _ _]
+      (->> (rp/cmd! :get-projects {:team-id team-id})
+           (rx/map projects-fetched)))))
 
 ;; --- EVENT: search
 
@@ -344,11 +351,12 @@
   (dm/assert! (string? name))
   (ptk/reify ::create-team
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
-                  on-error rx/throw}} (meta params)]
-        (->> (rp/cmd! :create-team {:name name})
+                  on-error rx/throw}} (meta params)
+            features (features/get-enabled-features state)]
+        (->> (rp/cmd! :create-team {:name name :features features})
              (rx/tap on-success)
              (rx/map team-created)
              (rx/catch on-error))))))
@@ -359,13 +367,15 @@
   [{:keys [name emails role] :as params}]
   (ptk/reify ::create-team-with-invitations
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
-            params {:name name
-                    :emails #{emails}
-                    :role role}]
+            features (features/get-enabled-features state)]
+            params   {:name name
+                      :emails #{emails}
+                      :role role
+                      :features features}
         (->> (rp/cmd! :create-team-with-invitations params)
              (rx/tap on-success)
              (rx/map team-created)
@@ -419,7 +429,7 @@
             params  (assoc params :team-id team-id)]
         (->> (rp/cmd! :update-team-member-role params)
              (rx/mapcat (fn [_]
-                          (rx/of (fetch-team-members)
+                          (rx/of (fetch-team-members team-id)
                                  (du/fetch-teams)))))))))
 
 (defn delete-team-member
@@ -432,7 +442,7 @@
             params  (assoc params :team-id team-id)]
         (->> (rp/cmd! :delete-team-member params)
              (rx/mapcat (fn [_]
-                          (rx/of (fetch-team-members)
+                          (rx/of (fetch-team-members team-id)
                                  (du/fetch-teams)))))))))
 
 (defn leave-team
@@ -846,9 +856,8 @@
             files    (get state :dashboard-files)
             unames   (cfh/get-used-names files)
             name     (cfh/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1"))
-            features (cond-> #{}
-                       (features/active-feature? state :components-v2)
-                       (conj "components/v2"))
+            features (-> (features/get-team-enabled-features state)
+                         (set/difference cfeat/frontend-only-features))
             params   (-> params
                          (assoc :name name)
                          (assoc :features features))]

@@ -4588,35 +4588,6 @@ msgstr "Separar nós (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Ajustar nós (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Para tentar de novo, podes recarregar este ficheiro. Se o problema "
-"persistir, sugerimos que observes a lista e consideres em apagar os "
-"gráficos problemáticos."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Não foi possível atualizar alguns gráficos."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "A converter %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"A partir de agora, os Gráficos da biblioteca passarão a ser Componentes, o "
-"que os tornará mais poderosos."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Esta atualização só ocorrerá uma única vez."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "A atualizar %s..."
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "Adicionar layout flex"

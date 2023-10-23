@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.features :as ffeat]
+   [app.common.features :as cfeat]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -75,7 +75,7 @@
 
 (defn with-objects
   [changes objects]
-  (let [fdata (binding [ffeat/*current* #{"components/v2"}]
+  (let [fdata (binding [cfeat/*current* #{"components/v2"}]
                 (ctf/make-file-data (uuid/next) uuid/zero))
         fdata (assoc-in fdata [:pages-index uuid/zero :objects] objects)]
     (vary-meta changes assoc

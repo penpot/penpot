@@ -89,7 +89,7 @@
   {::mf/wrap-props false}
   []
   (let [modal (mf/deref modal-ref)
-        new-css-system (features/use-feature :new-css-system)]
+        new-css-system (features/use-feature "styles/v2")]
     (when modal
       [:& (mf/provider ctx/new-css-system) {:value new-css-system}
        [:& modal-wrapper {:data modal

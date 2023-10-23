@@ -38,7 +38,7 @@
                     :pages []
                     :pages-index {}}
    :workspace-libraries {}
-   :features {:components-v2 true}})
+   :features/team #{"components/v2"}})
 
 (def ^:private idmap (atom {}))
 

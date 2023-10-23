@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.features :as cfeat]
    [app.common.files.defaults :refer [version]]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.rect :as grc]
@@ -441,6 +442,7 @@
 
 (defmethod migrate 25
   [data]
+  (some-> cfeat/*new* (swap! conj "fdata/shape-data-type"))
   (letfn [(update-object [object]
             (-> object
                 (d/update-when :selrect grc/make-rect)
@@ -594,6 +596,7 @@
 
 (defmethod migrate 32
   [data]
+  (some-> cfeat/*new* (swap! conj "fdata/shape-data-type"))
   (letfn [(update-object [object]
             (as-> object object
               (if (contains? object :svg-attrs)
@@ -637,4 +640,14 @@
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
+
+
+;; NOTE: We need to repeat this migration for correct feature handling
+
+(defmethod migrate 35
+  [data]
+  (-> data
+      (assoc :version 25)
+      (migrate)
+      (assoc :version 35)))
 

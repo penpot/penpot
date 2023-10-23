@@ -78,13 +78,13 @@
                             ::audit/profile-id (:id profile)}))))))
 
 (defn- login-or-register
-  [{:keys [::db/pool] :as cfg} info]
-  (db/with-atomic [conn pool]
-    (or (some->> (:email info)
-                 (profile/get-profile-by-email conn)
-                 (profile/decode-row))
-        (->> (assoc info :is-active true :is-demo false)
-             (auth/create-profile! conn)
-             (auth/create-profile-rels! conn)
-             (profile/strip-private-attrs)))))
-
+  [cfg info]
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn] :as cfg}]
+                (or (some->> (:email info)
+                             (profile/get-profile-by-email conn)
+                             (profile/decode-row))
+                    (->> (assoc info :is-active true :is-demo false)
+                         (auth/create-profile! conn)
+                         (auth/create-profile-rels! conn)
+                         (profile/strip-private-attrs))))))

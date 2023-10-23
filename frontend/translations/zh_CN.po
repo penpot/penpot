@@ -4069,30 +4069,6 @@ msgstr "拆分节点（%s）"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "对接节点 (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr "要重试，您可以重新加载此文件。如果问题仍然存在，我们建议您查看列表并考虑删除损坏的图形。"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "某些图形无法更新。"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "转换%s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr "从现在开始，库图形是组件，这将使它们更加强大。"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "此更新是一次性操作。"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "正在更新 %s..."
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "添加弹性布局"

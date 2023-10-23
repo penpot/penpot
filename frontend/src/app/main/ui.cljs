@@ -40,7 +40,7 @@
   {::mf/wrap [#(mf/catch % {:fallback on-main-error})]}
   [{:keys [route profile]}]
   (let [{:keys [data params]} route
-        new-css-system (features/use-feature :new-css-system)]
+        new-css-system (features/use-feature "styles/v2")]
     [:& (mf/provider ctx/current-route) {:value route}
      [:& (mf/provider ctx/new-css-system) {:value new-css-system}
      (case (:name data)

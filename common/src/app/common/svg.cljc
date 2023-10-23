@@ -1045,7 +1045,9 @@
   (let [redfn (fn [acc {:keys [tag attrs]}]
                 (cond-> acc
                   (= :image tag)
-                  (conj (or (:href attrs) (:xlink:href attrs)))))]
+                  (conj {:href (or (:href attrs) (:xlink:href attrs))
+                         :width (d/parse-integer (:width attrs) 0)
+                         :height (d/parse-integer (:height attrs) 0)})))]
     (reduce-nodes redfn [] svg-data )))
 
 #?(:cljs

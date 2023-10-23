@@ -38,7 +38,6 @@
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [goog.events :as events]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -177,8 +176,8 @@
                            (make-file-ready-ref file-id))
         file-ready?      (mf/deref file-ready*)
 
-        components-v2?   (features/use-feature :components-v2)
-        new-css-system   (features/use-feature :new-css-system)
+        components-v2?   (features/use-feature "components/v2")
+        new-css-system   (features/use-feature "styles/v2")
 
         background-color (:background-color wglobal)]
 
@@ -236,49 +235,3 @@
                                     :wglobal wglobal
                                     :layout layout}]
                 [:& workspace-loader])])]]]]]]]))
-
-(mf/defc remove-graphics-dialog
-  {::mf/register modal/components
-   ::mf/register-as :remove-graphics-dialog}
-  [{:keys [] :as ctx}]
-  (let [remove-state (mf/deref refs/remove-graphics)
-        project      (mf/deref refs/workspace-project)
-        close        #(modal/hide!)
-        reload-file  #(dom/reload-current-window)
-        nav-out      #(st/emit! (rt/navigate :dashboard-files
-                                             {:team-id (:team-id project)
-                                              :project-id (:id project)}))]
-    (mf/use-effect
-     (fn []
-       #(st/emit! (dw/clear-remove-graphics))))
-
-    [:div.modal-overlay
-     [:div.modal-container.remove-graphics-dialog
-      [:div.modal-header
-       [:div.modal-header-title
-        [:h2 (tr "workspace.remove-graphics.title" (:file-name ctx))]]
-       (if (and (:completed remove-state) (:error remove-state))
-         [:div.modal-close-button
-          {:on-click close} i/close]
-         [:div.modal-close-button
-          {:on-click nav-out}
-          i/close])]
-      (if-not (and (:completed remove-state) (:error remove-state))
-        [:div.modal-content
-         [:p (tr "workspace.remove-graphics.text1")]
-         [:p (tr "workspace.remove-graphics.text2")]
-         [:p.progress-message (tr "workspace.remove-graphics.progress"
-                                  (:current remove-state)
-                                  (:total remove-state))]]
-        [:*
-         [:div.modal-content
-          [:p.error-message [:span i/close] (tr "workspace.remove-graphics.error-msg")]
-          [:p (tr "workspace.remove-graphics.error-hint")]]
-         [:div.modal-footer
-          [:div.action-buttons
-           [:input.button-secondary {:type "button"
-                                     :value (tr "labels.close")
-                                     :on-click close}]
-           [:input.button-primary {:type "button"
-                                   :value (tr "labels.reload-file")
-                                   :on-click reload-file}]]]])]]))

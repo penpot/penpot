@@ -7,7 +7,6 @@
 (ns app.main.data.common
   "A general purpose events."
   (:require
-   [app.common.files.features :as ffeat]
    [app.common.types.components-list :as ctkl]
    [app.config :as cf]
    [app.main.data.messages :as msg]
@@ -90,9 +89,7 @@
   (ptk/reify ::show-shared-dialog
     ptk/WatchEvent
     (watch [_ state _]
-      (let [features (cond-> ffeat/enabled
-                       (features/active-feature? state :components-v2)
-                       (conj "components/v2"))
+      (let [features (features/get-team-enabled-features state)
             data     (:workspace-data state)
             file     (:workspace-file state)]
         (->> (if (and data file)

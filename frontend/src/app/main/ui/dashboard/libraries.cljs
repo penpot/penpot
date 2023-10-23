@@ -33,7 +33,7 @@
                                  (sort-by :modified-at)
                                  (reverse))))
 
-        components-v2   (features/use-feature :components-v2)
+        components-v2   (features/use-feature "components/v2")
 
         width           (mf/use-state nil)
         rowref          (mf/use-ref)

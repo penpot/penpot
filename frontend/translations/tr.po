@@ -4087,35 +4087,6 @@ msgstr "Düğümleri ayır (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Düğümleri tuttur (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Tekrar denemek için bu dosyayı yeniden yükleyebilirsiniz. Sorun devam "
-"ederse, listeye bir göz atmanızı ve bozuk grafikleri silmeyi düşünmenizi "
-"öneririz."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Bazı grafikler güncellenemedi."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "%s/%s dönüştürülüyor"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Kütüphane Grafikleri bundan böyle Bileşenlerdir ve bu da onları çok daha "
-"güçlü kılacaktır."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Bu güncelleme tek seferlik bir işlemdir."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "%s güncelleniyor..."
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "Düzen esnekliği ekle"

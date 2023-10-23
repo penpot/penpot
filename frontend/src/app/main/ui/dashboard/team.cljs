@@ -355,7 +355,7 @@
         (mf/use-fn
          (mf/deps profile team on-leave-accepted)
          (fn []
-           (st/emit! (dd/fetch-team-members)
+           (st/emit! (dd/fetch-team-members (:id team))
                      (modal/show
                       {:type :leave-and-reassign
                        :profile profile
@@ -452,8 +452,8 @@
              (tr "dashboard.your-penpot")
              (:name team)))))
 
-    (mf/with-effect []
-      (st/emit! (dd/fetch-team-members)))
+    (mf/with-effect [team]
+      (st/emit! (dd/fetch-team-members (:id team))))
 
     [:*
      [:& header {:section :dashboard-team-members :team team}]
@@ -992,9 +992,10 @@
                                 (:name team)))))
 
 
-    (mf/with-effect []
-      (st/emit! (dd/fetch-team-members)
-                (dd/fetch-team-stats)))
+    (mf/with-effect [team]
+      (let [team-id (:id team)]
+        (st/emit! (dd/fetch-team-members team-id)
+                  (dd/fetch-team-stats team-id))))
 
     [:*
      [:& header {:section :dashboard-team-settings :team team}]

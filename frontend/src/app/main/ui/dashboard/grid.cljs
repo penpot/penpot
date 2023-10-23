@@ -7,7 +7,6 @@
 (ns app.main.ui.dashboard.grid
   (:require
    [app.common.data.macros :as dm]
-   [app.common.files.features :as ffeat]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
@@ -51,22 +50,18 @@
 (defn- ask-for-thumbnail
   "Creates some hooks to handle the files thumbnails cache"
   [file-id revn]
-  (let [features (cond-> ffeat/enabled
-                   (features/active-feature? :components-v2)
-                   (conj "components/v2"))]
-
-    (->> (wrk/ask! {:cmd :thumbnails/generate-for-file
-                    :revn revn
-                    :file-id file-id
-                    :features features})
-         (rx/mapcat (fn [{:keys [fonts] :as result}]
-                      (->> (fonts/render-font-styles fonts)
-                           (rx/map (fn [styles]
-                                     (assoc result
-                                            :styles styles
-                                            :width 250))))))
-         (rx/mapcat thr/render)
-         (rx/mapcat (partial persist-thumbnail file-id revn)))))
+  (->> (wrk/ask! {:cmd :thumbnails/generate-for-file
+                  :revn revn
+                  :file-id file-id
+                  :features (features/get-team-enabled-features @st/state)})
+       (rx/mapcat (fn [{:keys [fonts] :as result}]
+                    (->> (fonts/render-font-styles fonts)
+                         (rx/map (fn [styles]
+                                   (assoc result
+                                          :styles styles
+                                          :width 250))))))
+       (rx/mapcat thr/render)
+       (rx/mapcat (partial persist-thumbnail file-id revn))))
 
 (mf/defc grid-item-thumbnail
   {::mf/wrap-props false}

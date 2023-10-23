@@ -443,7 +443,7 @@
 
 (mf/defc context-menu-component
   [{:keys [shapes]}]
-  (let [components-v2              (features/use-feature :components-v2)
+  (let [components-v2              (features/use-feature "components/v2")
         single?                    (= (count shapes) 1)
         objects                    (deref refs/workspace-page-objects)
         any-in-copy?               (some true? (map #(ctn/has-any-copy-parent? objects %) shapes))

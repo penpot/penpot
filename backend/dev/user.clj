@@ -21,7 +21,7 @@
    [app.common.transit :as t]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main :as main]
    [app.srepl.helpers :as srepl.helpers]
    [app.srepl.main :as srepl]
@@ -96,7 +96,9 @@
   (try
     (alter-var-root #'system (fn [sys]
                                (when sys (ig/halt! sys))
-                               (-> (merge main/system-config main/worker-config)
+                               (-> main/system-config
+                                   (cond-> (contains? cf/flags :backend-worker)
+                                     (merge main/worker-config))
                                    (ig/prep)
                                    (ig/init))))
     :started

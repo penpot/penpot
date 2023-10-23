@@ -4173,35 +4173,6 @@ msgstr "Banatu nodoak (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Atxikitu nodoak (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Berriz saiatzeko, fitxategi hau berriz kargatu dezakezu. Hala ere arazoa "
-"izaten jarraitzen baduzu, begiratu zerrenda eta ezabatu apurtutako "
-"grafikoak."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Grafiko batzuk ezin izan dira eguneratu."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Bihurtzen %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Liburutegiko grafikoak osagaiak izango dira orain, horrek ahaltsuago egingo "
-"ditu."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Eguneraketa hau behin bakarrik gertatuko da."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Eguneratzen %s..."
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "Gehitu flex diseinua"

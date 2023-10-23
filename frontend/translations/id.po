@@ -4585,35 +4585,6 @@ msgstr "Simpul terpisah (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Tancap simpul (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Untuk mencoba lagi, Anda dapat memuat ulang berkas ini. Jika masalah tetap "
-"ada, kami menyarankan Anda untuk melihat daftar dan mempertimbangkan untuk "
-"menghapus grafis yang rusak."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Beberapa grafis tidak dapat diperbarui."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Mengubah %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Grafis Pustaka itu Komponen dari sekarang, yang akan membuatnya lebih "
-"berdaya."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Pembaruan ini adalah tindakan satu kali."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Memperbarui %s..."
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "Tambahkan tata letak flex"

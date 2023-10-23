@@ -165,6 +165,25 @@
 (defmethod ptk/handle-error :restriction
   [{:keys [code] :as error}]
   (cond
+    (= :migration-in-progress code)
+    (let [message    (tr "errors.migration-in-progress" (:feature error))
+          on-accept  (constantly nil)]
+      (st/emit! (modal/show {:type :alert :message message :on-accept on-accept})))
+
+    (= :team-feature-mismatch code)
+    (let [message    (tr "errors.team-feature-mismatch" (:feature error))
+          on-accept  (constantly nil)]
+      (st/emit! (modal/show {:type :alert :message message :on-accept on-accept})))
+
+    (= :file-feature-mismatch code)
+    (let [message    (tr "errors.file-feature-mismatch" (:feature error))
+          team-id    (:current-team-id @st/state)
+          project-id (:current-project-id @st/state)
+          on-accept  #(if (and project-id team-id)
+                        (st/emit! (rt/nav :dashboard-files {:team-id team-id :project-id project-id}))
+                        (set! (.-href glob/location) ""))]
+      (st/emit! (modal/show {:type :alert :message message :on-accept on-accept})))
+
     (= :feature-mismatch code)
     (let [message    (tr "errors.feature-mismatch" (:feature error))
           team-id    (:current-team-id @st/state)
@@ -174,7 +193,7 @@
                         (set! (.-href glob/location) ""))]
       (st/emit! (modal/show {:type :alert :message message :on-accept on-accept})))
 
-    (= :features-not-supported code)
+    (= :feature-not-supported code)
     (let [message    (tr "errors.feature-not-supported" (:feature error))
           team-id    (:current-team-id @st/state)
           project-id (:current-project-id @st/state)

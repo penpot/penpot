@@ -10,9 +10,10 @@ export PENPOT_FLAGS="\
        enable-login-with-google \
        enable-login-with-github \
        enable-login-with-gitlab \
+       disable-backend-worker \
        enable-backend-asserts \
-       enable-fdata-storage-pointer-map \
-       enable-fdata-storage-objets-map \
+       enable-feature-fdata-pointer-map \
+       enable-feature-fdata-objects-map \
        enable-audit-log \
        enable-transit-readable-response \
        enable-demo-users \

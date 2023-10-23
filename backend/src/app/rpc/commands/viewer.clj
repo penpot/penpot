@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.db :as db]
    [app.rpc :as-alias rpc]
@@ -83,7 +84,7 @@
   [:map {:title "get-view-only-bundle"}
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
-   [:features {:optional true} files/schema:features]])
+   [:features {:optional true} ::cfeat/features]])
 
 (sv/defmethod ::get-view-only-bundle
   {::rpc/auth false

@@ -104,7 +104,7 @@
              page          (wsh/lookup-page state page-id)
              objects       (wsh/lookup-page-objects state page-id)
 
-             components-v2 (features/active-feature? state :components-v2)
+             components-v2 (features/active-feature? state "components/v2")
 
              ids           (cph/clean-loops objects ids)
 

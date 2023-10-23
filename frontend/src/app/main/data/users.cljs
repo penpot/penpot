@@ -16,6 +16,7 @@
    [app.main.data.events :as ev]
    [app.main.data.media :as di]
    [app.main.data.websocket :as ws]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.util.i18n :as i18n]
    [app.util.router :as rt]
@@ -56,21 +57,20 @@
 
 (defn teams-fetched
   [teams]
-  (let [teams (d/index-by :id teams)
-        ids   (into #{} (keys teams))]
+  (ptk/reify ::teams-fetched
+    IDeref
+    (-deref [_] teams)
 
-    (ptk/reify ::teams-fetched
-      IDeref
-      (-deref [_] teams)
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :teams (d/index-by :id teams)))
 
-      ptk/UpdateEvent
-      (update [_ state]
-        (assoc state :teams teams))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      ;; Check if current team-id is part of available teams
+      ;; if not, dissoc it from storage.
 
-      ptk/EffectEvent
-      (effect [_ _ _]
-        ;; Check if current team-id is part of available teams
-        ;; if not, dissoc it from storage.
+      (let [ids (into #{} (map :id) teams)]
         (when-let [ctid (::current-team-id @storage)]
           (when-not (contains? ids ctid)
             (swap! storage dissoc ::current-team-id)))))))
@@ -82,6 +82,23 @@
     (watch [_ _ _]
       (->> (rp/cmd! :get-teams)
            (rx/map teams-fetched)))))
+
+(defn set-current-team
+  [team]
+  (ptk/reify ::set-current-team
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc :team team)
+          (assoc :current-team-id (:id team))))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (features/initialize (:features team #{}))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (set-current-team! (:id team)))))
 
 ;; --- EVENT: fetch-profile
 
