@@ -29,7 +29,7 @@
 
 (defmethod ig/prep-key ::cleaner
   [_ cfg]
-  (assoc cfg ::min-age (dt/duration "30m")))
+  (assoc cfg ::min-age (dt/duration "60m")))
 
 (defmethod ig/init-key ::cleaner
   [_ cfg]

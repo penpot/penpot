@@ -12,7 +12,7 @@
    [app.auth :refer [derive-password]]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.files.features :as ffeat]
+   [app.common.features :as cfeat]
    [app.common.files.migrations :as pmg]
    [app.common.logging :as l]
    [app.common.pages :as cp]
@@ -100,10 +100,10 @@
       (binding [*conn* conn
                 pmap/*tracked* (atom {})
                 pmap/*load-fn* (partial files/load-pointer conn id)
-                ffeat/*wrap-with-pointer-map-fn*
-                (if (contains? (:features file) "storage/pointer-map") pmap/wrap identity)
-                ffeat/*wrap-with-objects-map-fn*
-                (if (contains? (:features file) "storage/objectd-map") omap/wrap identity)]
+                cfeat/*wrap-with-pointer-map-fn*
+                (if (contains? (:features file) "fdata/pointer-map") pmap/wrap identity)
+                cfeat/*wrap-with-objects-map-fn*
+                (if (contains? (:features file) "fdata/objectd-map") omap/wrap identity)]
         (let [file (-> file
                        (update :data blob/decode)
                        (cond-> migrate? (update :data pmg/migrate-data))
@@ -118,7 +118,7 @@
                            :features features}
                           {:id id})
 
-              (when (contains? (:features file) "storage/pointer-map")
+              (when (contains? (:features file) "fdata/pointer-map")
                 (files/persist-pointers! conn id))))
 
           (dissoc file :data))))))
@@ -161,10 +161,10 @@
         (binding [*conn* conn
                   pmap/*tracked* (atom {})
                   pmap/*load-fn* (partial files/load-pointer conn (:id file))
-                  ffeat/*wrap-with-pointer-map-fn*
-                  (if (contains? (:features file) "storage/pointer-map") pmap/wrap identity)
-                  ffeat/*wrap-with-objects-map-fn*
-                  (if (contains? (:features file) "storage/objects-map") omap/wrap identity)]
+                  cfeat/*wrap-with-pointer-map-fn*
+                  (if (contains? (:features file) "fdata/pointer-map") pmap/wrap identity)
+                  cfeat/*wrap-with-objects-map-fn*
+                  (if (contains? (:features file) "fdata/objects-map") omap/wrap identity)]
           (try
             (on-file file)
             (catch Throwable cause
@@ -209,10 +209,10 @@
               (binding [*conn* conn
                         pmap/*tracked* (atom {})
                         pmap/*load-fn* (partial files/load-pointer conn (:id file))
-                        ffeat/*wrap-with-pointer-map-fn*
-                        (if (contains? (:features file) "storage/pointer-map") pmap/wrap identity)
-                        ffeat/*wrap-with-objects-map-fn*
-                        (if (contains? (:features file) "storage/objectd-map") omap/wrap identity)]
+                        cfeat/*wrap-with-pointer-map-fn*
+                        (if (contains? (:features file) "fdata/pointer-map") pmap/wrap identity)
+                        cfeat/*wrap-with-objects-map-fn*
+                        (if (contains? (:features file) "fdata/objectd-map") omap/wrap identity)]
                 (on-file file))
               (catch Throwable cause
                 ((or on-error on-error*) cause file))))

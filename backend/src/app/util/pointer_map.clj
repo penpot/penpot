@@ -73,7 +73,7 @@
 
   IPointerMap
   (load! [_]
-    (l/trace :hint "pointer-map:load" :id id)
+    (l/trace :hint "pointer-map:load" :id (str id))
 
     (when-not *load-fn*
       (throw (UnsupportedOperationException. "load is not supported when *load-fn* is not bind")))

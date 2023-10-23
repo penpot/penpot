@@ -4011,35 +4011,6 @@ msgstr "Rozłącz węzły (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Przyciągnij węzły (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Aby spróbować ponownie, możesz ponownie załadować ten plik. Jeśli problem "
-"będzie się powtarzał, sugerujemy przejrzenie listy i rozważenie usunięcia "
-"uszkodzonej grafiki."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Niektórych grafik nie udało się zaktualizować."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Konwersja %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Grafika biblioteczna jest od teraz komponentami, co sprawi, że będą "
-"znacznie potężniejsze."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Ta aktualizacja jest działaniem jednorazowym."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Aktualizowanie %s..."
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "Dodaj układ flex"

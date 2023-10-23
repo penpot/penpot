@@ -4568,34 +4568,6 @@ msgstr "Atdalīt mezglus (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Pieķert mezglus (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Lai to mēģinātu vēlreiz, varat atkārtoti ielādēt šo failu. Ja problēma "
-"joprojām pastāv, ieteicams apskatīt sarakstu un dzēst bojātās grafikas."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Dažas grafikas nevar atjaunināt."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "%s/%s pārvēršana"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Bibliotēkas grafikas turpmāk sauksies Komponentes, kas padarīs tās daudz "
-"jaudīgākas."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Šis atjauninājums ir vienreizēja darbība."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Notiek %s atjaunināšana..."
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "Pievienot elastīgo izkārtojumu"

@@ -4174,35 +4174,6 @@ msgstr "Oddělit uzly (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Přichytit uzly (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Chcete-li to zkusit znovu, můžete tento soubor znovu načíst. Pokud problém "
-"přetrvává, doporučujeme vám podívat se na seznam a zvážit odstranění "
-"poškozené grafiky."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Některé grafiky nebylo možné aktualizovat."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Převádí se %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Grafiky knihovny jsou od nynějška komponenty, díky čemuž budou mnohem "
-"výkonnější."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Tato aktualizace je jednorázová."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Aktualizace %s..."
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "Přidat flexibilní rozložení"

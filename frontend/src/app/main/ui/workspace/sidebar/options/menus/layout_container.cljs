@@ -1207,6 +1207,8 @@
         grid-justify-content-row    (:layout-justify-content values)
         grid-justify-content-column (:layout-align-content values)
 
+        grid-enabled?  (features/use-feature "layout/grid")
+
         set-justify-grid
         (mf/use-fn
          (mf/deps ids)
@@ -1225,7 +1227,7 @@
                        :class        (stl/css-case :title-spacing-layout (not has-layout?))}
          (if (and (not multiple) (:layout values))
            [:div {:class (stl/css :title-actions)}
-            (when (features/active-feature? :grid-layout)
+            (when ^boolean grid-enabled?
               [:div {:class (stl/css :layout-options)}
                [:& radio-buttons {:selected (d/name layout-type)
                                   :on-change toggle-layout-style
@@ -1317,7 +1319,7 @@
         [:*
          [:span "Layout"]
 
-         (if (features/active-feature? :grid-layout)
+         (if ^boolean grid-enabled?
            [:div.title-actions
             [:div.layout-btns
              [:button {:on-click set-flex

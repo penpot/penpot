@@ -3994,35 +3994,6 @@ msgstr "Separar pontos (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Aderir aos pontos (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Para tentar novamente, recarregue este arquivo. Se o problema persistir, "
-"sugerimos olhar a lista e considerar excluir gráficos que não estejam "
-"funcionando."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Alguns gráficos não puderam ser atualizados."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Convertendo %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"A partir de agora os gráficos da biblioteca são Componentes, o que os "
-"tornarão bem mais poderosos."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Essa atualização acontecerá apenas uma vez."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Atualizando %s..."
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "Adicionar Flex Layout"

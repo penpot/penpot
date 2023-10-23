@@ -60,7 +60,7 @@
    ::mf/register-as :export
    ::mf/wrap-props false}
   [{:keys [team-id files has-libraries? binary?]}]
-  (let [components-v2 (features/use-feature :components-v2)
+  (let [components-v2 (features/use-feature "components/v2")
         state*        (mf/use-state
                        #(let [files (mapv (fn [file] (assoc file :loading? true)) files)]
                           {:status :prepare

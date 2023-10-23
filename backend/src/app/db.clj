@@ -231,60 +231,76 @@
     `(jdbc/with-transaction ~@args)))
 
 (defn open
-  [pool]
-  (jdbc/get-connection pool))
+  [system-or-pool]
+  (if (pool? system-or-pool)
+    (jdbc/get-connection system-or-pool)
+    (if (map? system-or-pool)
+      (open (::pool system-or-pool))
+      (ex/raise :type :internal
+                :code :unable-resolve-pool))))
 
-(defn- resolve-connectable
+(defn get-connection
+  [cfg-or-conn]
+  (if (connection? cfg-or-conn)
+    cfg-or-conn
+    (if (map? cfg-or-conn)
+      (get-connection (::conn cfg-or-conn))
+      (ex/raise :type :internal
+                :code :unable-resolve-connection
+                :hint "expected conn or system map"))))
+
+(defn- get-connectable
   [o]
-  (if (connection? o)
-    o
-    (if (pool? o)
-      o
-      (or (::conn o) (::pool o)))))
-
+  (cond
+    (connection? o) o
+    (pool? o)       o
+    (map? o)        (get-connectable (or (:conn o) (::pool o)))
+    :else           (ex/raise :type :internal
+                              :code :unable-resolve-connectable
+                              :hint "expected conn, pool or system")))
 
 (def ^:private default-opts
   {:builder-fn sql/as-kebab-maps})
 
 (defn exec!
   ([ds sv]
-   (-> (resolve-connectable ds)
+   (-> (get-connectable ds)
        (jdbc/execute! sv default-opts)))
   ([ds sv opts]
-   (-> (resolve-connectable ds)
+   (-> (get-connectable ds)
        (jdbc/execute! sv (merge default-opts opts)))))
 
 (defn exec-one!
   ([ds sv]
-   (-> (resolve-connectable ds)
+   (-> (get-connectable ds)
        (jdbc/execute-one! sv default-opts)))
   ([ds sv opts]
-   (-> (resolve-connectable ds)
+   (-> (get-connectable ds)
        (jdbc/execute-one! sv
                           (-> (merge default-opts opts)
                               (assoc :return-keys (::return-keys? opts false)))))))
 
 (defn insert!
   [ds table params & {:as opts}]
-  (-> (resolve-connectable ds)
+  (-> (get-connectable ds)
       (exec-one! (sql/insert table params opts)
                  (merge {::return-keys? true} opts))))
 
 (defn insert-multi!
   [ds table cols rows & {:as opts}]
-  (-> (resolve-connectable ds)
+  (-> (get-connectable ds)
       (exec! (sql/insert-multi table cols rows opts)
              (merge {::return-keys? true} opts))))
 
 (defn update!
   [ds table params where & {:as opts}]
-  (-> (resolve-connectable ds)
+  (-> (get-connectable ds)
       (exec-one! (sql/update table params where opts)
                  (merge {::return-keys? true} opts))))
 
 (defn delete!
   [ds table params & {:as opts}]
-  (-> (resolve-connectable ds)
+  (-> (get-connectable ds)
       (exec-one! (sql/delete table params opts)
                  (merge {::return-keys? true} opts))))
 
@@ -318,7 +334,7 @@
 
 (defn plan
   [ds sql]
-  (-> (resolve-connectable ds)
+  (-> (get-connectable ds)
       (jdbc/plan sql sql/default-opts)))
 
 (defn get-by-id
@@ -422,12 +438,16 @@
           (release! conn sp)
           result)
         (catch Throwable cause
-          (rollback! sp)
+          (rollback! conn sp)
           (throw cause))))
 
     (::pool cfg)
     (with-atomic [conn (::pool cfg)]
-      (f (assoc cfg ::conn conn)))
+      (let [result (f (assoc cfg ::conn conn))]
+        (when (::rollback cfg)
+          (l/dbg :hint "explicit rollback requested")
+          (rollback! conn))
+        result))
 
     :else
     (throw (IllegalArgumentException. "invalid arguments"))))

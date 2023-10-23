@@ -904,6 +904,13 @@ msgstr ""
 "o esta deshabilitada."
 
 #: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Parece que hay discordancia entre las features habilitadas y las features "
+"del fichero que se esta intentando abrir. Falta aplicar migraciones para "
+"'%s' antes de poder abrir el fichero."
+
+#: src/app/main/errors.cljs
 msgid "errors.feature-not-supported"
 msgstr "Caracteristica no soportada: '%s'."
 
@@ -4649,35 +4656,6 @@ msgstr "Separar nodos (%s)"
 
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Alinear nodos (%s)"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Para intentarlo de nuevo, puedes recargar este archivo. Si el problema "
-"persiste, te sugerimos que compruebes la lista y consideres borrar los "
-"gráficos que estén mal."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Algunos gráficos no han podido ser actualizados."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Convirtiendo %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Desde ahora los gráficos de la librería serán componentes, lo cual los hará "
-"mucho más potentes."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Esta actualización sólo ocurrirá una vez."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Actualizando %s..."
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"

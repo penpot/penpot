@@ -6,9 +6,14 @@
 
 (ns backend-tests.rpc-file-test
   (:require
+   [app.common.features :as cfeat]
+   [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.db :as db]
+   [app.db.sql :as sql]
+   [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.util.time :as dt]
@@ -127,7 +132,7 @@
                           :id file-id
                           :session-id (uuid/random)
                           :revn revn
-                          :components-v2 true
+                          :features cfeat/supported-features
                           :changes changes}
                   out    (th/command! params)]
               ;; (th/print-result! out)
@@ -248,7 +253,7 @@
                           :id file-id
                           :session-id (uuid/random)
                           :revn revn
-                          :components-v2 true
+                          :features cfeat/supported-features
                           :changes changes}
                   out    (th/command! params)]
               ;; (th/print-result! out)
@@ -596,10 +601,11 @@
       (let [data {::th/type :get-page
                   ::rpc/profile-id (:id prof)
                   :file-id (:id file)
-                  :components-v2 true}
+                  :features cfeat/supported-features}
             {:keys [error result] :as out} (th/command! data)]
 
         ;; (th/print-result! out)
+        (t/is (nil? error))
         (t/is (map? result))
         (t/is (contains? result :objects))
         (t/is (contains? (:objects result) frame1-id))
@@ -614,7 +620,7 @@
                   ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :page-id page-id
-                  :components-v2 true}
+                  :features cfeat/supported-features}
             {:keys [error result] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (map? result))
@@ -631,7 +637,7 @@
                   :file-id (:id file)
                   :page-id page-id
                   :object-id frame1-id
-                  :components-v2 true}
+                  :features cfeat/supported-features}
             {:keys [error result] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? error))
@@ -648,7 +654,7 @@
                   ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :object-id frame1-id
-                  :components-v2 true}
+                  :features cfeat/supported-features}
             out  (th/command! data)]
 
         ;; (th/print-result! out)
@@ -675,9 +681,10 @@
       (let [data {::th/type :get-file-data-for-thumbnail
                   ::rpc/profile-id (:id prof)
                   :file-id (:id file)
-                  :components-v2 true}
+                  :features cfeat/supported-features}
             {:keys [error result] :as out} (th/command! data)]
         ;; (th/print-result! out)
+        (t/is (nil? error))
         (t/is (map? result))
         (t/is (contains? result :page))
         (t/is (contains? result :revn))
@@ -702,7 +709,7 @@
       (let [data {::th/type :get-file-data-for-thumbnail
                   ::rpc/profile-id (:id prof)
                   :file-id (:id file)
-                  :components-v2 true}
+                  :features cfeat/supported-features}
             {:keys [error result] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (map? result))

@@ -9,12 +9,14 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.features :as cfeat]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.thumbnails :as thc]
    [app.common.types.shape-tree :as ctt]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.loggers.audit :as-alias audit]
@@ -22,6 +24,7 @@
    [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
@@ -237,7 +240,7 @@
 (def ^:private schema:get-file-data-for-thumbnail
   [:map {:title "get-file-data-for-thumbnail"}
    [:file-id ::sm/uuid]
-   [:features {:optional true} files/schema:features]])
+   [:features {:optional true} ::cfeat/features]])
 
 (def ^:private schema:partial-file
   [:map {:title "PartialFile"}
@@ -252,17 +255,23 @@
    ::doc/module :files
    ::sm/params schema:get-file-data-for-thumbnail
    ::sm/result schema:partial-file}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id features] :as props}]
-  (dm/with-open [conn (db/open pool)]
-    (files/check-read-permissions! conn profile-id file-id)
-    ;; NOTE: we force here the "storage/pointer-map" feature, because
-    ;; it used internally only and is independent if user supports it
-    ;; or not.
-    (let [feat (into #{"storage/pointer-map"} features)
-          file (files/get-file conn file-id feat)]
-      {:file-id file-id
-       :revn (:revn file)
-       :page (get-file-data-for-thumbnail conn file)})))
+  [cfg {:keys [::rpc/profile-id file-id] :as params}]
+  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                 (files/check-read-permissions! conn profile-id file-id)
+
+                 (let [team     (teams/get-team cfg
+                                                :profile-id profile-id
+                                                :file-id file-id)
+
+                       file     (files/get-file conn file-id)]
+
+                   (-> (cfeat/get-team-enabled-features cf/flags team)
+                       (cfeat/check-client-features! (:features params))
+                       (cfeat/check-file-features! (:features file) (:features params)))
+
+                   {:file-id file-id
+                    :revn (:revn file)
+                    :page (get-file-data-for-thumbnail conn file)}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS

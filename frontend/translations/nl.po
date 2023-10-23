@@ -4537,35 +4537,6 @@ msgstr "Verschillende knooppunten (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Snap knooppunten (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Om het opnieuw te proberen, kun je dit bestand opnieuw laden. Als het "
-"probleem zich blijft voordoen, raden we aan de lijst te bekijken en te "
-"overwegen om kapotte afbeeldingen te verwijderen."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Sommige afbeeldingen kunnen niet worden bijgewerkt."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "%s/%s converteren"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Bibliotheekafbeeldingen zijn vanaf nu componenten, waardoor ze veel "
-"krachtiger worden."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Deze update is een eenmalige actie."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "%s bijwerken..."
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "Flex-indeling toevoegen"

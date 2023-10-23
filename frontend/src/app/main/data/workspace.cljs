@@ -9,17 +9,13 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.features :as ffeat]
    [app.common.files.helpers :as cfh]
-   [app.common.files.libraries-helpers :as cflh]
-   [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpp]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout :as gslg]
-   [app.common.logging :as log]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
@@ -27,8 +23,6 @@
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
-   [app.common.types.file :as ctf]
-   [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -39,7 +33,6 @@
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.messages :as msg]
-   [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.changes :as dch]
@@ -94,18 +87,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare ^:private workspace-initialized)
-(declare ^:private remove-graphics)
 (declare ^:private libraries-fetched)
 
 ;; --- Initialize Workspace
 
 (defn initialize-layout
   [lname]
-  ;; (dm/assert!
-  ;;  "expected valid layout"
-  ;;  (and (keyword? lname)
-  ;;       (contains? layout/presets lname)))
-
   (ptk/reify ::initialize-layout
     ptk/UpdateEvent
     (update [_ state]
@@ -129,18 +116,10 @@
           (assoc :workspace-ready? true)))
 
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [file           (:workspace-data state)
-            has-graphics?  (-> file :media seq)
-            components-v2  (features/active-feature? state :components-v2)]
-        (rx/merge
-         (rx/of (fbc/fix-bool-contents)
-                (fdf/fix-deleted-fonts)
-                (fbs/fix-broken-shapes))
-
-         (if (and has-graphics? components-v2)
-           (rx/of (remove-graphics (:id file) (:name file)))
-           (rx/empty)))))))
+    (watch [_ _ _]
+      (rx/of (fbc/fix-bool-contents)
+             (fdf/fix-deleted-fonts)
+             (fbs/fix-broken-shapes)))))
 
 (defn- workspace-data-loaded
   [data]
@@ -171,39 +150,43 @@
                    (assoc data :pages-index pages-index))))))
 
 (defn- bundle-fetched
-  [features [{:keys [id data] :as file} thumbnails project users comments-users]]
+  [{:keys [features file thumbnails project team team-users comments-users]}]
   (ptk/reify ::bundle-fetched
     ptk/UpdateEvent
     (update [_ state]
       (-> state
+          (assoc :users (d/index-by :id team-users))
           (assoc :workspace-thumbnails thumbnails)
           (assoc :workspace-file (dissoc file :data))
           (assoc :workspace-project project)
-          (assoc :current-team-id (:team-id project))
-          (assoc :users (d/index-by :id users))
           (assoc :current-file-comments-users (d/index-by :id comments-users))))
 
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [team-id  (:team-id project)
-            stoper   (rx/filter (ptk/type? ::bundle-fetched) stream)]
+      (let [team-id   (:id team)
+            file-id   (:id file)
+            file-data (:data file)
+            stoper-s  (rx/filter (ptk/type? ::bundle-fetched) stream)]
+
         (->> (rx/concat
               ;; Initialize notifications
-              (rx/of (dwn/initialize team-id id)
+              (rx/of (dwn/initialize team-id file-id)
                      (dwsl/initialize))
 
               ;; Load team fonts. We must ensure custom fonts are
               ;; fully loadad before mark workspace as initialized
               (rx/merge
                (->> stream
-                    (rx/filter (ptk/type? :app.main.data.fonts/team-fonts-loaded))
+                    (rx/filter (ptk/type? ::df/team-fonts-loaded))
                     (rx/take 1)
                     (rx/ignore))
 
                (rx/of (df/load-team-fonts team-id))
 
+               ;; FIXME: move to bundle fetch stages
+
                ;; Load main file
-               (->> (resolve-file-data id data)
+               (->> (resolve-file-data file-id file-data)
                     (rx/mapcat (fn [{:keys [pages-index] :as data}]
                                  (->> (rx/from (seq pages-index))
                                       (rx/mapcat
@@ -217,7 +200,7 @@
                     (rx/map workspace-data-loaded))
 
                ;; Load libraries
-               (->> (rp/cmd! :get-file-libraries {:file-id id})
+               (->> (rp/cmd! :get-file-libraries {:file-id file-id})
                     (rx/mapcat identity)
                     (rx/merge-map
                      (fn [{:keys [id synced-at]}]
@@ -233,8 +216,10 @@
                             (rx/map #(assoc file :thumbnails %)))))
                     (rx/reduce conj [])
                     (rx/map libraries-fetched)))
-              (rx/of (with-meta (workspace-initialized) {:file-id id})))
-             (rx/take-until stoper))))))
+
+              (rx/of (with-meta (workspace-initialized)
+                       {:file-id file-id})))
+             (rx/take-until stoper-s))))))
 
 (defn- libraries-fetched
   [libraries]
@@ -255,7 +240,7 @@
           (rx/concat (rx/timer 1000)
                      (rx/of (dwl/notify-sync-file file-id))))))))
 
-(defn- fetch-thumbnail-blob-uri
+(defn- datauri->blob-uri
   [uri]
   (->> (http/send! {:uri uri
                     :response-type :blob
@@ -263,47 +248,86 @@
        (rx/map :body)
        (rx/map (fn [blob] (wapi/create-uri blob)))))
 
-(defn- fetch-thumbnail-blobs
+(defn- fetch-file-object-thumbnails
   [file-id]
   (->> (rp/cmd! :get-file-object-thumbnails {:file-id file-id})
        (rx/mapcat (fn [thumbnails]
-          (->> (rx/from thumbnails)
-               (rx/mapcat (fn [[k v]]
-                  ;; we only need to fetch the thumbnail if
-                  ;; it is a data:uri, otherwise we can just
-                  ;; use the value as is.
-                  (if (.startsWith v "data:")
-                    (->> (fetch-thumbnail-blob-uri v)
-                         (rx/map (fn [uri] [k uri])))
-                    (rx/of [k v])))))))
+                    (->> (rx/from thumbnails)
+                         (rx/mapcat (fn [[k v]]
+                                      ;; we only need to fetch the thumbnail if
+                                      ;; it is a data:uri, otherwise we can just
+                                      ;; use the value as is.
+                                      (if (str/starts-with? v "data:")
+                                        (->> (datauri->blob-uri v)
+                                             (rx/map (fn [uri] [k uri])))
+                                        (rx/of [k v])))))))
        (rx/reduce conj {})))
 
-(defn- fetch-bundle
+(defn- fetch-bundle-stage-1
   [project-id file-id]
-  (ptk/reify ::fetch-bundle
+  (ptk/reify ::fetch-bundle-stage-1
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (->> (rp/cmd! :get-project {:id project-id})
+           (rx/mapcat (fn [project]
+                        (->> (rp/cmd! :get-team {:id (:team-id project)})
+                             (rx/mapcat (fn [team]
+                                          (let [bundle {:team team
+                                                        :project project
+                                                        :file-id file-id
+                                                        :project-id project-id}]
+                                            (rx/of (du/set-current-team team)
+                                                   (ptk/data-event ::bundle-stage-1 bundle))))))))
+           (rx/take-until
+            (rx/filter (ptk/type? ::fetch-bundle) stream))))))
+
+(defn- fetch-bundle-stage-2
+  [{:keys [file-id project-id] :as bundle}]
+  (ptk/reify ::fetch-bundle-stage-2
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [features (cond-> ffeat/enabled
-                       (features/active-feature? state :components-v2)
-                       (conj "components/v2")
-
-                       ;; We still put the feature here and not in the
-                       ;; ffeat/enabled var because the pointers map is only
-                       ;; supported on workspace bundle fetching mechanism.
-                       :always
-                       (conj "storage/pointer-map"))
+      (let [features (features/get-team-enabled-features state)
 
             ;; WTF is this?
-            share-id (-> state :viewer-local :share-id)
-            stoper   (rx/filter (ptk/type? ::fetch-bundle) stream)]
+            share-id (-> state :viewer-local :share-id)]
         (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features :project-id project-id})
-                     (fetch-thumbnail-blobs file-id)
-                     (rp/cmd! :get-project {:id project-id})
+                     (fetch-file-object-thumbnails file-id)
                      (rp/cmd! :get-team-users {:file-id file-id})
                      (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id}))
              (rx/take 1)
-             (rx/map (partial bundle-fetched features))
-             (rx/take-until stoper))))))
+             (rx/map (fn [[file thumbnails team-users comments-users]]
+                       (let [bundle (-> bundle
+                                        (assoc :file file)
+                                        (assoc :thumbnails thumbnails)
+                                        (assoc :team-users team-users)
+                                        (assoc :comments-users comments-users))]
+                         (ptk/data-event ::bundle-stage-2 bundle))))
+             (rx/take-until
+              (rx/filter (ptk/type? ::fetch-bundle) stream)))))))
+
+(defn- fetch-bundle
+  "Multi-stage file bundle fetch coordinator"
+  [project-id file-id]
+  (ptk/reify ::fetch-bundle
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (->> (rx/merge
+            (rx/of (fetch-bundle-stage-1 project-id file-id))
+
+            (->> stream
+                 (rx/filter (ptk/type? ::bundle-stage-1))
+                 (rx/observe-on :async)
+                 (rx/map deref)
+                 (rx/map fetch-bundle-stage-2))
+
+            (->> stream
+                 (rx/filter (ptk/type? ::bundle-stage-2))
+                 (rx/observe-on :async)
+                 (rx/map deref)
+                 (rx/map bundle-fetched)))
+
+             (rx/take-until
+              (rx/filter (ptk/type? ::fetch-bundle) stream))))))
 
 (defn initialize-file
   [project-id file-id]
@@ -322,7 +346,6 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of msg/hide
-             (features/initialize)
              (dcm/retrieve-comment-threads file-id)
              (dwp/initialize-file-persistence file-id)
              (fetch-bundle project-id file-id)))
@@ -548,7 +571,7 @@
   (ptk/reify ::delete-page
     ptk/WatchEvent
     (watch [it state _]
-      (let [components-v2 (features/active-feature? state :components-v2)
+      (let [components-v2 (features/active-feature? state "components/v2")
             file-id       (:current-file-id state)
             file          (wsh/get-file state file-id)
             pages (get-in state [:workspace-data :pages])
@@ -1326,7 +1349,7 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [components-v2 (features/active-feature? state :components-v2)]
+      (let [components-v2 (features/active-feature? state "components/v2")]
         (if components-v2
           (rx/of (go-to-main-instance nil component-id))
           (let [project-id    (get-in state [:workspace-project :id])
@@ -1341,7 +1364,7 @@
 
     ptk/EffectEvent
     (effect [_ state _]
-      (let [components-v2 (features/active-feature? state :components-v2)
+      (let [components-v2 (features/active-feature? state "components/v2")
             wrapper-id    (str "component-shape-id-" component-id)]
         (when-not components-v2
           (tm/schedule-on-idle #(dom/scroll-into-view-if-needed! (dom/get-element wrapper-id))))))))
@@ -2006,143 +2029,6 @@
                         (pcb/set-page-option :background (:color color)))]
 
         (rx/of (dch/commit-changes changes))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Remove graphics
-;; TODO: this should be deprecated and removed together with components-v2
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- initialize-remove-graphics
-  [total]
-  (ptk/reify ::initialize-remove-graphics
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :remove-graphics {:total total
-                                     :current nil
-                                     :error false
-                                     :completed false}))))
-
-(defn- update-remove-graphics
-  [current]
-  (ptk/reify ::update-remove-graphics
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:remove-graphics :current] current))))
-
-(defn- error-in-remove-graphics
-  []
-  (ptk/reify ::error-in-remove-graphics
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:remove-graphics :error] true))))
-
-(defn clear-remove-graphics
-  []
-  (ptk/reify ::clear-remove-graphics
-    ptk/UpdateEvent
-    (update [_ state]
-      (dissoc state :remove-graphics))))
-
-(defn- complete-remove-graphics
-  []
-  (ptk/reify ::complete-remove-graphics
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:remove-graphics :completed] true))
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (when-not (get-in state [:remove-graphics :error])
-        (rx/of (modal/hide))))))
-
-(defn- remove-graphic
-  [it file-data page [index [media-obj pos]]]
-  (let [process-shapes
-        (fn [[shape children]]
-          (let [changes1       (-> (pcb/empty-changes it)
-                                   (pcb/set-save-undo? false)
-                                   (pcb/with-page page)
-                                   (pcb/with-objects (:objects page))
-                                   (pcb/with-library-data file-data)
-                                   (pcb/delete-media (:id media-obj))
-                                   (pcb/add-objects (cons shape children)))
-
-                page' (reduce (fn [page shape]
-                                (ctst/add-shape (:id shape)
-                                                shape
-                                                page
-                                                uuid/zero
-                                                uuid/zero
-                                                nil
-                                                true))
-                              page
-                              (cons shape children))
-
-                [_ _ changes2] (cflh/generate-add-component it
-                                                            [shape]
-                                                            (:objects page')
-                                                            (:id page)
-                                                            (:id file-data)
-                                                            true
-                                                            nil
-                                                            cfsh/prepare-create-artboard-from-selection)
-
-                changes (pcb/concat-changes changes1 changes2)]
-
-            (dch/commit-changes changes)))
-
-        shapes (if (= (:mtype media-obj) "image/svg+xml")
-                 (->> (dwm/load-and-parse-svg media-obj)
-                      (rx/mapcat (partial dwm/create-shapes-svg (:id file-data) (:objects page) pos)))
-                 (dwm/create-shapes-img pos media-obj :wrapper-type :frame))]
-
-    (->> (rx/concat
-          (rx/of (update-remove-graphics index))
-          (rx/map process-shapes shapes))
-         (rx/catch #(do
-                      (log/error :msg (str "Error removing " (:name media-obj))
-                                 :hint (ex-message %)
-                                 :error %)
-                      (js/console.log (.-stack %))
-                      (rx/of (error-in-remove-graphics)))))))
-
-(defn- remove-graphics
-  [file-id file-name]
-  (ptk/reify ::remove-graphics
-    ptk/WatchEvent
-    (watch [it state stream]
-      (let [file-data (wsh/get-file state file-id)
-
-            grid-gap 50
-
-            [file-data' page-id start-pos]
-            (ctf/get-or-add-library-page file-data grid-gap)
-
-            new-page? (nil? (ctpl/get-page file-data page-id))
-            page      (ctpl/get-page file-data' page-id)
-            media     (vals (:media file-data'))
-
-            media-points
-            (map #(assoc % :points (-> (grc/make-rect 0 0 (:width %) (:height %))
-                                       (grc/rect->points)))
-                 media)
-
-            shape-grid
-            (ctst/generate-shape-grid media-points start-pos grid-gap)
-
-            stoper (rx/filter (ptk/type? ::finalize-file) stream)]
-
-        (rx/concat
-         (rx/of (modal/show {:type :remove-graphics-dialog :file-name file-name})
-                (initialize-remove-graphics (count media)))
-         (when new-page?
-           (rx/of (dch/commit-changes (-> (pcb/empty-changes it)
-                                          (pcb/set-save-undo? false)
-                                          (pcb/add-page (:id page) page)))))
-         (->> (rx/mapcat (partial remove-graphic it file-data' page)
-                         (rx/from (d/enumerate (d/zip media shape-grid))))
-              (rx/take-until stoper))
-         (rx/of (complete-remove-graphics)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Read only

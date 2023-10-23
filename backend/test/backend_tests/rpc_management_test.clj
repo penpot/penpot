@@ -622,9 +622,9 @@
       (t/is (uuid? (first result)))
       (t/is (= 1 (count result))))))
 
-(t/deftest retrieve-list-of-buitin-templates
+(t/deftest get-list-of-buitin-templates
   (let [prof (th/create-profile* 1 {:is-active true})
-        data {::th/type :retrieve-list-of-builtin-templates
+        data {::th/type :get-builtin-templates
               ::rpc/profile-id (:id prof)}
         out  (th/command! data)]
     ;; (th/print-result! out)

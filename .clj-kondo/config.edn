@@ -5,6 +5,7 @@
   promesa.exec.csp/go-loop clojure.core/loop
   rumext.v2/defc clojure.core/defn
   rumext.v2/fnc clojure.core/fn
+  promesa.util/with-open clojure.core/with-open
   app.common.data/export clojure.core/def
   app.common.data.macros/get-in clojure.core/get-in
   app.common.data.macros/with-open clojure.core/with-open
@@ -62,4 +63,3 @@
    :exclude-destructured-keys-in-fn-args false
    }
   }}
-

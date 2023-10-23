@@ -4453,35 +4453,6 @@ msgstr "Ankerpunkte trennen (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "An Ankerpunkten ausrichten (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Um es erneut zu versuchen, können Sie diese Datei neu laden. Wenn das "
-"Problem weiterhin besteht, empfehlen wir Ihnen, einen Blick auf die Liste "
-"zu werfen und zu überlegen, ob Sie defekte Grafiken löschen wollen."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Einige Grafiken konnten nicht aktualisiert werden."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Konvertieren von %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Von nun an sind Grafiken in der Bibliothek auch Komponenten. Das macht sie "
-"viel leistungsfähiger."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Diese Aktualisierung ist eine einmalige Aktion."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Aktualisierung von %s..."
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "Flex-Layout hinzufügen"

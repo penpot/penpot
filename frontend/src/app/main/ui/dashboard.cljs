@@ -157,7 +157,7 @@
     (mf/with-effect [profile team-id]
       (st/emit! (dd/initialize {:id team-id}))
       (fn []
-        (dd/finalize {:id team-id})))
+        (st/emit! (dd/finalize {:id team-id}))))
 
     (mf/with-effect []
       (let [key (events/listen goog/global "keydown"

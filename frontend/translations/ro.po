@@ -4626,35 +4626,6 @@ msgstr "Separă noduri (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Trage noduri (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Pentru a încerca din nou, puteți reîncărca acest fișier. Dacă problema "
-"persistă, vă sugerăm să aruncați o privire pe listă și să luați în "
-"considerare ștergerea graficii rupte."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Unele elemente grafice nu au putut fi actualizate."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Se convertește %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Bibliotecile Grafice sunt Componente de acum înainte, ceea ce le va face "
-"mult mai puternice."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Această actualizare este o acțiune unică."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Actualizare %s..."
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "Adăugați aspect flexibil"

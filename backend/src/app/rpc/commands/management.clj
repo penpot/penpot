@@ -9,9 +9,9 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.features :as cfeat]
    [app.common.files.migrations :as pmg]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.loggers.webhooks :as-alias webhooks]
@@ -27,7 +27,6 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [clojure.walk :as walk]
    [promesa.exec :as px]))
 
@@ -35,21 +34,16 @@
 
 (declare duplicate-file)
 
-(s/def ::id ::us/uuid)
-(s/def ::project-id ::us/uuid)
-(s/def ::file-id ::us/uuid)
-(s/def ::team-id ::us/uuid)
-(s/def ::name ::us/string)
-
-(s/def ::duplicate-file
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id]
-          :opt-un [::name]))
+(def ^:private schema:duplicate-file
+  [:map {:title "duplicate-file"}
+   [:file-id ::sm/uuid]
+   [:name {:optional true} :string]])
 
 (sv/defmethod ::duplicate-file
   "Duplicate a single file in the same team."
   {::doc/added "1.16"
-   ::webhooks/event? true}
+   ::webhooks/event? true
+   ::sm/params schema:duplicate-file}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (duplicate-file conn (assoc params :profile-id profile-id))))
@@ -125,14 +119,14 @@
                       (files/persist-pointers! conn file-id)
                       data)))))))
 
-(def sql:retrieve-used-libraries
+(def sql:get-used-libraries
   "select flr.*
      from file_library_rel as flr
     inner join file as l on (flr.library_file_id = l.id)
     where flr.file_id = ?
       and l.deleted_at is null")
 
-(def sql:retrieve-used-media-objects
+(def sql:get-used-media-objects
   "select fmo.*
      from file_media_object as fmo
     inner join storage_object as so on (fmo.media_id = so.id)
@@ -141,8 +135,8 @@
 
 (defn duplicate-file*
   [conn {:keys [profile-id file index project-id name flibs fmeds]} {:keys [reset-shared-flag]}]
-  (let [flibs    (or flibs (db/exec! conn [sql:retrieve-used-libraries (:id file)]))
-        fmeds    (or fmeds (db/exec! conn [sql:retrieve-used-media-objects (:id file)]))
+  (let [flibs    (or flibs (db/exec! conn [sql:get-used-libraries (:id file)]))
+        fmeds    (or fmeds (db/exec! conn [sql:get-used-media-objects (:id file)]))
 
         ;; memo uniform creation/modification date
         now      (dt/now)
@@ -216,15 +210,16 @@
 
 (declare duplicate-project)
 
-(s/def ::duplicate-project
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::project-id]
-          :opt-un [::name]))
+(def ^:private schema:duplicate-project
+  [:map {:title "duplicate-project"}
+   [:project-id ::sm/uuid]
+   [:name {:optional true} :string]])
 
 (sv/defmethod ::duplicate-project
   "Duplicate an entire project with all the files"
   {::doc/added "1.16"
-   ::webhooks/event? true}
+   ::webhooks/event? true
+   ::sm/params schema:duplicate-project}
   [{:keys [::db/pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (duplicate-project conn (assoc params :profile-id (::rpc/profile-id params)))))
@@ -275,7 +270,7 @@
 
 ;; --- COMMAND: Move file
 
-(def sql:retrieve-files
+(def sql:get-files
   "select id, project_id from file where id = ANY(?)")
 
 (def sql:move-files
@@ -297,13 +292,18 @@
       and rel.library_file_id = br.library_file_id")
 
 (defn move-files
-  [conn {:keys [profile-id ids project-id] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id ids project-id] :as params}]
 
   (let [fids    (db/create-array conn "uuid" ids)
-        files   (db/exec! conn [sql:retrieve-files fids])
+        files   (db/exec! conn [sql:get-files fids])
         source  (into #{} (map :project-id) files)
         pids    (->> (conj source project-id)
                      (db/create-array conn "uuid"))]
+
+    (when (contains? source project-id)
+      (ex/raise :type :validation
+                :code :cant-move-to-same-project
+                :hint "Unable to move a file to the same project"))
 
     ;; Check if we have permissions on the destination project
     (proj/check-edition-permissions! conn profile-id project-id)
@@ -312,10 +312,10 @@
     (doseq [project-id source]
       (proj/check-edition-permissions! conn profile-id project-id))
 
-    (when (contains? source project-id)
-      (ex/raise :type :validation
-                :code :cant-move-to-same-project
-                :hint "Unable to move a file to the same project"))
+    ;; Check the team compatibility
+    (let [orig-team (teams/get-team cfg :profile-id profile-id :project-id (first source))
+          dest-team (teams/get-team cfg :profile-id profile-id :project-id project-id)]
+      (cfeat/check-teams-compatibility! orig-team dest-team))
 
     ;; move all files to the project
     (db/exec-one! conn [sql:move-files project-id fids])
@@ -337,35 +337,40 @@
 
     nil))
 
-(s/def ::ids (s/every ::us/uuid :kind set?))
-(s/def ::move-files
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::ids ::project-id]))
+(def ^:private schema:move-files
+  [:map {:title "move-files"}
+   [:ids ::sm/set-of-uuid]
+   [:project-id ::sm/uuid]])
 
 (sv/defmethod ::move-files
   "Move a set of files from one project to other."
   {::doc/added "1.16"
-   ::webhooks/event? true}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (db/with-atomic [conn pool]
-    (move-files conn (assoc params :profile-id profile-id))))
+   ::webhooks/event? true
+   ::sm/params schema:move-files}
+  [cfg {:keys [::rpc/profile-id] :as params}]
+  (db/tx-run! cfg #(move-files % (assoc params :profile-id profile-id))))
 
 ;; --- COMMAND: Move project
 
 (defn move-project
-  [conn {:keys [profile-id team-id project-id] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id project-id] :as params}]
   (let [project (db/get-by-id conn :project project-id {:columns [:id :team-id]})
         pids    (->> (db/query conn :project {:team-id (:team-id project)} {:columns [:id]})
                      (map :id)
                      (db/create-array conn "uuid"))]
 
-    (teams/check-edition-permissions! conn profile-id (:team-id project))
-    (teams/check-edition-permissions! conn profile-id team-id)
-
     (when (= team-id (:team-id project))
       (ex/raise :type :validation
                 :code :cant-move-to-same-team
                 :hint "Unable to move a project to same team"))
+
+    (teams/check-edition-permissions! conn profile-id (:team-id project))
+    (teams/check-edition-permissions! conn profile-id team-id)
+
+    ;; Check the teams compatibility
+    (let [orig-team (teams/get-team cfg :profile-id profile-id :team-id (:team-id project))
+          dest-team (teams/get-team cfg :profile-id profile-id :team-id team-id)]
+      (cfeat/check-teams-compatibility! orig-team dest-team))
 
     ;; move project to the destination team
     (db/update! conn :project
@@ -377,17 +382,18 @@
 
     nil))
 
-(s/def ::move-project
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id ::project-id]))
+(def ^:private schema:move-project
+  [:map {:title "move-project"}
+   [:team-id ::sm/uuid]
+   [:project-id ::sm/uuid]])
 
 (sv/defmethod ::move-project
-  "Move projects between teams."
+  "Move projects between teams"
   {::doc/added "1.16"
-   ::webhooks/event? true}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (db/with-atomic [conn pool]
-    (move-project conn (assoc params :profile-id profile-id))))
+   ::webhooks/event? true
+   ::sm/params schema:move-project}
+  [cfg {:keys [::rpc/profile-id] :as params}]
+  (db/tx-run! cfg #(move-project % (assoc params :profile-id profile-id))))
 
 ;; --- COMMAND: Clone Template
 
@@ -409,6 +415,7 @@
         (dissoc ::db/conn)
         (assoc ::binfile/input template)
         (assoc ::binfile/project-id (:id project))
+        (assoc ::binfile/profile-id profile-id)
         (assoc ::binfile/ignore-index-errors? true)
         (assoc ::binfile/migrate? true)
         (binfile/import!))))
@@ -429,14 +436,6 @@
         (clone-template! (assoc params :profile-id profile-id)))))
 
 ;; --- COMMAND: Get list of builtin templates
-
-(s/def ::retrieve-list-of-builtin-templates any?)
-
-(sv/defmethod ::retrieve-list-of-builtin-templates
-  {::doc/added "1.10"
-   ::doc/deprecated "1.19"}
-  [cfg _params]
-  (mapv #(select-keys % [:id :name]) (::setup/templates cfg)))
 
 (sv/defmethod ::get-builtin-templates
   {::doc/added "1.19"}

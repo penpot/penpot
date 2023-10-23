@@ -4457,32 +4457,6 @@ msgstr "הפרדת מפרקים (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "הצמדת מפרקים (%s)"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"כדי לנסות שוב, אפשר לרענן את הקובץ הזה. אם הבעיה נמשכת, אנו ממליצים לך "
-"להביט ברשימה ולשקול למחוק גרפיקה פגומה."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "לא ניתן לעדכן חלק מהגרפיקה."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "מתבצעת המרה %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr "גרפיקות ספרייה הן רכיבים מעתה ואילך, מה שהופך אותן להרבה יותר עוצמתיות."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "העדכון הזה הוא חד־פעמי."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "%s מתעדכן…"
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "הוספת פריסת flex"

@@ -298,7 +298,7 @@
       (clean-file-thumbnails! cfg id revn)
       (clean-deleted-components! conn id data)
 
-      (when (contains? features "storage/pointer-map")
+      (when (contains? features "fdata/pointer-map")
         (clean-data-fragments! conn id data))
 
       ;; Mark file as trimmed

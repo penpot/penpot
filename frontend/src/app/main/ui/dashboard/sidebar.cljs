@@ -336,7 +336,7 @@
 
         on-leave-as-owner-clicked
         (fn []
-          (st/emit! (dd/fetch-team-members)
+          (st/emit! (dd/fetch-team-members (:id team))
                     (modal/show
                      {:type :leave-and-reassign
                       :profile profile

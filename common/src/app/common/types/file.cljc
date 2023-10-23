@@ -8,8 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.features :as cfeat]
    [app.common.files.defaults :refer [version]]
-   [app.common.files.features :as ffeat]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as l]
@@ -57,7 +57,6 @@
     [:map-of {:gen/max 2} ::sm/uuid ::cty/typography]]
    [:media {:optional true}
     [:map-of {:gen/max 5} ::sm/uuid ::media-object]]])
-   
 
 (def file-data?
   (sm/pred-fn ::data))
@@ -82,11 +81,11 @@
    (let [page (when (some? page-id)
                 (ctp/make-empty-page page-id "Page 1"))]
 
-     (cond-> (assoc empty-file-data :id file-id)
+     (cond-> (assoc empty-file-data :id file-id :version version)
        (some? page-id)
        (ctpl/add-page page)
 
-       (contains? ffeat/*current* "components/v2")
+       (contains? cfeat/*current* "components/v2")
        (assoc-in [:options :components-v2] true)))))
 
 ;; Helpers
@@ -610,7 +609,7 @@
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (update :components update-vals fix-container))))
-                
+
         fix-copies-of-detached
         (fn [file-data]
           ; Find any copy that is referencing a detached shape inside a component, and
@@ -1012,7 +1011,7 @@
                                           (-> libs-to-show
                                               (add-component library-id component-id))))))
                                               ;; (find-used-components-cumulative page root)
-                                              
+
                                   libs-to-show
                                   components))
                         libs-to-show

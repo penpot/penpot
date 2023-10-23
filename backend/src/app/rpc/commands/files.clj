@@ -9,11 +9,11 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.features :as cfeat]
    [app.common.files.migrations :as pmg]
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
-   [app.common.schema.generators :as sg]
    [app.common.spec :as us]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
@@ -42,23 +42,6 @@
   [media-id]
   (when media-id
     (str (cf/get :public-uri) "/assets/by-id/" media-id)))
-
-(def supported-features
-  #{"storage/objects-map"
-    "storage/pointer-map"
-    "internal/shape-record"
-    "internal/geom-record"
-    "components/v2"})
-
-(defn get-default-features
-  []
-  (cond-> #{"internal/shape-record"
-            "internal/geom-record"}
-    (contains? cf/flags :fdata-storage-pointer-map)
-    (conj "storage/pointer-map")
-
-    (contains? cf/flags :fdata-storage-objects-map)
-    (conj "storage/objects-map")))
 
 ;; --- SPECS
 
@@ -181,27 +164,9 @@
                 :code :object-not-found
                 :hint "not found"))))
 
-;; --- HELPERS
-
-(defn get-team-id
-  [conn project-id]
-  (:team-id (db/get-by-id conn :project project-id {:columns [:team-id]})))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FEATURES: pointer-map
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn check-features-compatibility!
-  "Function responsible to check if provided features are supported by
-  the current backend"
-  [features]
-  (let [not-supported (set/difference features supported-features)]
-    (when (seq not-supported)
-      (ex/raise :type :restriction
-                :code :features-not-supported
-                :feature (first not-supported)
-                :hint (format "features %s not supported" (str/join "," (map name not-supported)))))
-    features))
 
 (defn load-pointer
   [conn file-id id]
@@ -253,73 +218,16 @@
        (into #{} (comp (filter pmap/pointer-map?)
                        (map pmap/get-id)))))
 
-(declare get-file-libraries)
-
-;; FIXME: file locking
-(defn- process-components-v2-feature
-  "A special case handling of the components/v2 feature."
-  [conn {:keys [features data] :as file}]
-  (let [libraries (-> (->> (get-file-libraries conn (:id file))      ; This may be slow, but it's executed only once,
-                           (map #(db/get conn :file {:id (:id %)}))  ; in the migration to components-v2
-                           (map #(update % :data blob/decode))
-                           (d/index-by :id))
-                      (assoc (:id file) file))
-        data     (ctf/migrate-to-components-v2 data libraries)
-        features (conj features "components/v2")]
-    (-> file
-        (assoc ::pmg/migrated true)
-        (assoc :features features)
-        (assoc :data data))))
-
-(defn handle-file-features!
-  [conn {:keys [features] :as file} client-features]
-
-  ;; Check features compatibility between the currently supported features on
-  ;; the current backend instance and the file retrieved from the database
-  (check-features-compatibility! features)
-
-  (cond-> file
-    (and (contains? features "components/v2")
-         (not (contains? client-features "components/v2")))
-    (as-> file (ex/raise :type :restriction
-                         :code :feature-mismatch
-                         :feature "components/v2"
-                         :hint "file has 'components/v2' feature enabled but frontend didn't specifies it"
-                         :file-id (:id file)))
-
-    ;; This operation is needed because the components migration generates a new
-    ;; page with random id which is returned to the client; without persisting
-    ;; the migration this can cause that two simultaneous clients can have a
-    ;; different view of the file data and end persisting two pages with main
-    ;; components and breaking the whole file."
-    (and (contains? client-features "components/v2")
-         (not (contains? features "components/v2")))
-    (as-> file (process-components-v2-feature conn file))
-
-    ;; This operation is needed for backward comapatibility with frontends that
-    ;; does not support pointer-map resolution mechanism; this just resolves the
-    ;; pointers on backend and return a complete file.
-    (and (contains? features "storage/pointer-map")
-         (not (contains? client-features "storage/pointer-map")))
-    (process-pointers deref)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUERY COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; --- COMMAND QUERY: get-file (by id)
 
-(def schema:features
-  [:schema
-   {:title "FileFeatures"
-    ::smdj/inline true
-    :gen/gen (sg/subseq supported-features)}
-   ::sm/set-of-strings])
-
 (def schema:file
   [:map {:title "File"}
    [:id ::sm/uuid]
-   [:features schema:features]
+   [:features ::cfeat/features]
    [:has-media-trimmed :boolean]
    [:comment-thread-seqn {:min 0} :int]
    [:name :string]
@@ -341,18 +249,21 @@
 
 (def schema:get-file
   [:map {:title "get-file"}
-   [:features {:optional true} schema:features]
+   [:features {:optional true} ::cfeat/features]
    [:id ::sm/uuid]
    [:project-id {:optional true} ::sm/uuid]])
 
 (defn get-file
-  ([conn id client-features]
-   (get-file conn id client-features nil))
-  ([conn id client-features project-id]
-   ;; here we check if client requested features are supported
-   (check-features-compatibility! client-features)
+  ([conn id] (get-file conn id nil))
+  ([conn id project-id]
+
+   (dm/assert!
+    "expected raw connection"
+    (db/connection? conn))
+
    (binding [pmap/*load-fn* (partial load-pointer conn id)
-             pmap/*tracked* (atom {})]
+             pmap/*tracked* (atom {})
+             cfeat/*new*    (atom #{})]
 
      (let [params (merge {:id id}
                          (when (some? project-id)
@@ -360,22 +271,21 @@
 
            file   (-> (db/get conn :file params)
                       (decode-row)
-                      (pmg/migrate-file))
-
-           file   (handle-file-features! conn file client-features)]
+                      (pmg/migrate-file))]
 
        ;; NOTE: when file is migrated, we break the rule of no perform
        ;; mutations on get operations and update the file with all
        ;; migrations applied
-       (when (pmg/migrated? file)
-         (let [features (db/create-array conn "text" (:features file))]
+       (if (pmg/migrated? file)
+         (let [features (set/union (deref cfeat/*new*) (:features file))]
            (db/update! conn :file
                        {:data (blob/encode (:data file))
-                        :features features}
+                        :features (db/create-array conn "text" features)}
                        {:id id})
-           (persist-pointers! conn id)))
+           (persist-pointers! conn id)
+           (assoc file :features features))
 
-       file))))
+         file)))))
 
 (defn get-minimal-file
   [{:keys [::db/pool] :as cfg} id]
@@ -392,14 +302,32 @@
    ::cond/key-fn get-file-etag
    ::sm/params schema:get-file
    ::sm/result schema:file-with-permissions}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id features project-id] :as params}]
-  (db/with-atomic [conn pool]
-    (let [perms (get-permissions conn profile-id id)]
-      (check-read-permissions! perms)
-      (let [file (-> (get-file conn id features project-id)
-                     (assoc :permissions perms))]
-        (vary-meta file assoc ::cond/key (get-file-etag params file))))))
+  [cfg {:keys [::rpc/profile-id id project-id] :as params}]
+  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                    (let [perms (get-permissions conn profile-id id)]
+                      (check-read-permissions! perms)
+                      (let [team (teams/get-team cfg
+                                                 :profile-id profile-id
+                                                 :project-id project-id
+                                                 :file-id id)
 
+                            file (-> (get-file conn id project-id)
+                                     (assoc :permissions perms))
+
+                            _    (-> (cfeat/get-team-enabled-features cf/flags team)
+                                     (cfeat/check-client-features! (:features params))
+                                     (cfeat/check-file-features! (:features file) (:features params)))
+
+                            ;; This operation is needed for backward comapatibility with frontends that
+                            ;; does not support pointer-map resolution mechanism; this just resolves the
+                            ;; pointers on backend and return a complete file.
+                            file (if (and (contains? (:features file) "fdata/pointer-map")
+                                          (not (contains? (:features params) "fdata/pointer-map")))
+                                   (binding [pmap/*load-fn* (partial load-pointer conn id)]
+                                     (process-pointers file deref))
+                                   file)]
+
+                        (vary-meta file assoc ::cond/key (get-file-etag params file)))))))
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
@@ -422,7 +350,7 @@
           (update :content blob/decode)))
 
 (sv/defmethod ::get-file-fragment
-  "Retrieve a file by its ID. Only authenticated users."
+  "Retrieve a file fragment by its ID. Only authenticated users."
   {::doc/added "1.17"
    ::sm/params schema:get-file-fragment
    ::sm/result schema:file-fragment}
@@ -477,7 +405,6 @@
     (projects/check-read-permissions! conn profile-id project-id)
     (get-project-files conn project-id)))
 
-
 ;; --- COMMAND QUERY: has-file-libraries
 
 (declare get-has-file-libraries)
@@ -528,30 +455,41 @@
   (update page :objects update-vals #(dissoc % :thumbnail)))
 
 (defn get-page
-  [conn {:keys [file-id page-id object-id features]}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id page-id object-id] :as params}]
   (when (and (uuid? object-id)
              (not (uuid? page-id)))
     (ex/raise :type :validation
               :code :params-validation
               :hint "page-id is required when object-id is provided"))
 
-  (let [file     (get-file conn file-id features)
-        page-id  (or page-id (-> file :data :pages first))
-        page     (dm/get-in file [:data :pages-index page-id])
-        page     (if (pmap/pointer-map? page)
+  (let [team (teams/get-team cfg
+                             :profile-id profile-id
+                             :file-id file-id)
+
+        file (get-file conn file-id)
+
+        _    (-> (cfeat/get-team-enabled-features cf/flags team)
+                 (cfeat/check-client-features! (:features params))
+                 (cfeat/check-file-features! (:features file) (:features params)))
+
+        page (binding [pmap/*load-fn* (partial load-pointer conn file-id)]
+               (let [page-id (or page-id (-> file :data :pages first))
+                     page    (dm/get-in file [:data :pages-index page-id])]
+                 (if (pmap/pointer-map? page)
                    (deref page)
-                   page)]
+                     page)))]
+
     (cond-> (prune-thumbnails page)
       (uuid? object-id)
       (prune-objects object-id))))
 
 (def schema:get-page
-  [:map {:title "GetPage"}
+  [:map {:title "get-page"}
    [:file-id ::sm/uuid]
    [:page-id {:optional true} ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
    [:object-id {:optional true} ::sm/uuid]
-   [:features {:optional true} schema:features]])
+   [:features {:optional true} ::cfeat/features]])
 
 (sv/defmethod ::get-page
   "Retrieves the page data from file and returns it. If no page-id is
@@ -565,12 +503,11 @@
   Mainly used for rendering purposes."
   {::doc/added "1.17"
    ::sm/params schema:get-page}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id share-id] :as params}]
-  (dm/with-open [conn (db/open pool)]
-    (let [perms (get-permissions conn profile-id file-id share-id)]
-      (check-read-permissions! perms)
-      (binding [pmap/*load-fn* (partial load-pointer conn file-id)]
-        (get-page conn params)))))
+  [cfg {:keys [::rpc/profile-id file-id share-id] :as params}]
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn] :as cfg}]
+                (check-read-permissions! conn profile-id file-id share-id)
+                (get-page cfg (assoc params :profile-id profile-id)))))
 
 ;; --- COMMAND QUERY: get-team-shared-files
 
@@ -593,6 +530,7 @@
       and p.team_id = ?
     order by f.modified_at desc")
 
+;; FIXME: i'm not sure about feature handling here... ???
 (defn get-team-shared-files
   [conn team-id]
   (letfn [(assets-sample [assets limit]
@@ -626,18 +564,18 @@
                     (map #(assoc % :library-summary (library-summary %)))
                     (map #(dissoc % :data)))))))
 
-(s/def ::get-team-shared-files
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id]))
+(def ^:private schema:get-team-shared-files
+  [:map {:title "get-team-shared-files"}
+   [:team-id ::sm/uuid]])
 
 (sv/defmethod ::get-team-shared-files
   "Get all file (libraries) for the specified team."
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:get-team-shared-files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (get-team-shared-files conn team-id)))
-
 
 ;; --- COMMAND QUERY: get-file-libraries
 
@@ -669,17 +607,20 @@
   [conn file-id]
   (into []
         (comp
+         ;; FIXME: :is-indirect set to false to all rows looks
+         ;; completly useless
          (map #(assoc % :is-indirect false))
          (map decode-row))
         (db/exec! conn [sql:get-file-libraries file-id])))
 
-(s/def ::get-file-libraries
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id]))
+(def ^:private schema:get-file-libraries
+  [:map {:title "get-file-libraries"}
+   [:file-id ::sm/uuid]])
 
 (sv/defmethod ::get-file-libraries
   "Get libraries used by the specified file."
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:get-file-libraries}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
@@ -700,12 +641,14 @@
   [conn file-id]
   (db/exec! conn [sql:library-using-files file-id]))
 
-(s/def ::get-library-file-references
-  (s/keys :req [::rpc/profile-id] :req-un [::file-id]))
+(def ^:private schema:get-library-file-references
+  [:map {:title "get-library-file-references"}
+   [:file-id ::sm/uuid]])
 
 (sv/defmethod ::get-library-file-references
   "Returns all the file references that use specified file (library) id."
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:get-library-file-references}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
@@ -745,12 +688,13 @@
                      (assoc :thumbnail-uri (resolve-public-uri media-id)))
                  (dissoc row :media-id))))))
 
-(s/def ::get-team-recent-files
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id]))
+(def ^:private schema:get-team-recent-files
+  [:map {:title "get-team-recent-files"}
+   [:team-id ::sm/uuid]])
 
 (sv/defmethod ::get-team-recent-files
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:get-team-recent-files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
@@ -763,15 +707,26 @@
   "Retrieve a file summary by its ID. Only authenticated users."
   {::doc/added "1.20"
    ::sm/params schema:get-file}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id features project-id] :as params}]
-  (db/with-atomic [conn pool]
-    (check-read-permissions! conn profile-id id)
-    (let [file (get-file conn id features project-id)]
-      {:name             (:name file)
-       :components-count (count (ctkl/components-seq (:data file)))
-       :graphics-count   (count (get-in file [:data :media] []))
-       :colors-count     (count (get-in file [:data :colors] []))
-       :typography-count (count (get-in file [:data :typographies] []))})))
+  [cfg {:keys [::rpc/profile-id id project-id] :as params}]
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn] :as cfg}]
+                (check-read-permissions! conn profile-id id)
+                (let [team (teams/get-team cfg
+                                           :profile-id profile-id
+                                           :project-id project-id
+                                           :file-id id)
+
+                      file (get-file conn id project-id)]
+
+                  (-> (cfeat/get-team-enabled-features cf/flags team)
+                      (cfeat/check-client-features! (:features params))
+                      (cfeat/check-file-features! (:features file) (:features params)))
+
+                  {:name             (:name file)
+                   :components-count (count (ctkl/components-seq (:data file)))
+                   :graphics-count   (count (get-in file [:data :media] []))
+                   :colors-count     (count (get-in file [:data :colors] []))
+                   :typography-count (count (get-in file [:data :typographies] []))}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS
@@ -927,13 +882,15 @@
   [conn {:keys [file-id library-id] :as params}]
   (db/exec-one! conn [sql:link-file-to-library file-id library-id]))
 
-(s/def ::link-file-to-library
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::library-id]))
+(def ^:private schema:link-file-to-library
+  [:map {:title "link-file-to-library"}
+   [:file-id ::sm/uuid]
+   [:library-id ::sm/uuid]])
 
 (sv/defmethod ::link-file-to-library
   {::doc/added "1.17"
-   ::webhooks/event? true}
+   ::webhooks/event? true
+   ::sm/params schema:link-file-to-library}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id library-id] :as params}]
   (when (= file-id library-id)
     (ex/raise :type :validation
@@ -952,13 +909,15 @@
               {:file-id file-id
                :library-file-id library-id}))
 
-(s/def ::unlink-file-from-library
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::library-id]))
+(def ^:private schema:unlink-file-to-library
+  [:map {:title "unlink-file-to-library"}
+   [:file-id ::sm/uuid]
+   [:library-id ::sm/uuid]])
 
 (sv/defmethod ::unlink-file-from-library
   {::doc/added "1.17"
-   ::webhooks/event? true}
+   ::webhooks/event? true
+   ::sm/params schema:unlink-file-to-library}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
@@ -974,15 +933,15 @@
               {:file-id file-id
                :library-file-id library-id}))
 
-(s/def ::update-file-library-sync-status
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::library-id]))
-
-;; TODO: improve naming
+(def ^:private schema:update-file-library-sync-status
+  [:map {:title "update-file-library-sync-status"}
+   [:file-id ::sm/uuid]
+   [:library-id ::sm/uuid]])
 
 (sv/defmethod ::update-file-library-sync-status
   "Update the synchronization status of a file->library link"
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:update-file-library-sync-status}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
