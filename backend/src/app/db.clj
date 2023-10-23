@@ -422,7 +422,7 @@
           (release! conn sp)
           result)
         (catch Throwable cause
-          (rollback! sp)
+          (rollback! conn sp)
           (throw cause))))
 
     (::pool cfg)

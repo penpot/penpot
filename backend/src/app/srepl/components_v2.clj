@@ -586,54 +586,152 @@
 
         (dissoc file :data)))))
 
-(defn- progress-report
-  [_ _ oldv newv]
-  (when (not= (:completed oldv)
-              (:completed newv))
-    (let [total     (:total newv)
-          completed (:completed newv)
-          progress  (if total
-                      (/ (* completed 100.0) total)
-                      0)
-          elapsed   (dt/format-duration (*tpoint*))]
-      (l/trc :hint "progress"
-             :total total
-             :completed completed
-             :progress (str (int progress) "%")
-             :elapsed elapsed))))
+;; (defn- progress-report
+;;   [_ _ oldv newv]
+;;   (when (or (not= (:files/completed oldv)
+;;                   (:files/completed newv))
+;;     (let [total     (:total newv)
+;;           completed (:completed newv)
+;;           progress  (if total
+;;                       (/ (* completed 100.0) total)
+;;                       0)
+;;           elapsed   (dt/format-duration (*tpoint*))]
+;;       (l/trc :hint "progress"
+;;              :completed-files (:files/completed
+;;              :progress (str (int progress) "%")
+;;              :elapsed elapsed))))
 
-(defn repl-migrate-file
-  [{:keys [::db/pool] :as system} file-id]
-  (binding [*system*  (update system ::sto/storage media/configure-assets-storage)
-            *stats*   (atom {})
-            *tpoint*  (dt/tpoint)]
 
-    (l/dbg :hint "migrate:file:start" :file-id (dm/str file-id))
+(defn- report-progress-files
+  [tpoint]
+  (fn [_ _ oldv newv]
+    (when (not= (:files/completed oldv)
+                (:files/completed newv))
+      (let [total     (:files/total newv)
+            completed (:files/completed newv)
+            progress  (/ (* completed 100.0) total)
+            elapsed   (dt/format-duration (tpoint))]
+        (l/trc :hint "progress"
+               :completed (:files/completed newv)
+               :progress (str (int progress) "%")
+               :elapsed elapsed)))))
+
+(defn- get-total-files
+  [pool & {:keys [team-id]}]
+  (if (some? team-id)
+    (let [sql (str/concat
+               "SELECT count(f.id) AS count FROM file AS f "
+               "  JOIN project AS p ON (p.id = f.project_id) "
+               " WHERE p.team_id = ? AND f.deleted_at IS NULL "
+               "  AND p.deleted_at IS NULL")
+          res (db/exec-one! pool [sql team-id])]
+      (:count res))
+
+    (let [sql (str/concat
+               "SELECT count(id) AS count FROM file "
+               " WHERE deleted_at IS NULL")
+          res (db/exec-one! pool [sql])]
+      (:count res))))
+
+(defn migrate-file!
+  [file-id]
+  (let [tpoint (dt/tpoint)]
+    (try
+      (l/dbg :hint "migrate:file:start" :file-id (str file-id))
+      (let [system (update *system* ::sto/storage media/configure-assets-storage)
+            pool   (::db/pool system)
+            file   (-> (db/get pool :file {:id file-id})
+                       (update :features db/decode-pgarray #{}))]
+
+        (db/tx-run! system
+                    (fn [system]
+                      (binding [*system* system]
+                        (process-file file)))))
+
+      (catch Throwable cause
+        (l/err :hint "error on processing file" :file-id file-id :cause cause))
+
+      (finally
+        (some-> *semaphore* ps/release!)
+        (let [elapsed (dt/format-duration (tpoint))
+              stats   (deref *stats*)]
+          (l/dbg :hint "migrate:file:end"
+                 :file-id (str file-id)
+                 :components (:current/components stats 0)
+                 :graphics   (:current/graphics stats 0)
+                 :elapsed    elapsed))
+
+        (swap! *stats* update :files/completed (fnil inc 0))))))
+
+(defn migrate-team!
+  [team-id]
+  (let [tpoint (dt/tpoint)]
+
+    (l/dbg :hint "migrate:team:start" :team-id (dm/str team-id))
     (try
       (db/tx-run! *system*
                   (fn [{:keys [::db/conn] :as system}]
-                    (binding [*system* system]
-                      (-> (db/get pool :file {:id file-id})
-                          (update :features db/decode-pgarray #{})
-                          (process-file)))))
+                    ;; Lock the team
+                    (db/exec-one! conn ["SET idle_in_transaction_session_timeout = 0"])
+                    (db/exec-one! conn ["select id from team where id=? for update" team-id])
 
-      (let [elapsed (dt/format-duration (*tpoint*))]
-        (-> (deref *stats*)
-            (assoc :elapsed elapsed)
-            (dissoc :current/graphics)
-            (dissoc :current/components)))
+                    (let [sql  (str/concat
+                                "SELECT DISTINCT f.id FROM file AS f "
+                                "  JOIN project AS p ON (p.id = f.project_id) "
+                                "WHERE p.team_id = ? AND f.deleted_at IS NULL AND p.deleted_at IS NULL")
+                          rows (db/exec! conn [sql team-id])]
+
+                      (swap! *stats* assoc :current/files (count rows))
+
+                      (pu/with-open [scope (px/structured-task-scope :thread-factory :virtual)]
+                        (doseq [{:keys [id]} rows]
+                          (some-> *semaphore* ps/acquire!)
+                          (px/submit! scope (partial migrate-file! id)))
+                        (p/await! scope)))))
+
+      (catch Throwable cause
+        (l/err :hint "error on processing team" :team-id team-id :cause cause))
 
       (finally
-        (let [elapsed (dt/format-duration (*tpoint*))]
-          (l/dbg :hint "migrate:file:end" :file-id (dm/str file-id) :elapsed elapsed))))))
+        (some-> *semaphore* ps/release!)
+        (let [elapsed (dt/format-duration (tpoint))
+              stats   (deref *stats*)]
+          (l/dbg :hint "migrate:team:end"
+                 :team-id (dm/str team-id)
+                 :files (:current/files stats 0)
+                 :elapsed elapsed))
+
+        (swap! *stats* update :teams/completed (fnil inc 0))))))
+
+(defn repl-migrate-file
+  [{:keys [::db/pool] :as system} file-id]
+
+  (l/dbg :hint "migrate:start")
+  (let [tpoint (dt/tpoint)]
+    (try
+      (binding [*system* system
+                *stats*  (atom {})]
+        (migrate-file! file-id)
+        (-> (deref *stats*)
+            (assoc :elapsed (dt/format-duration (tpoint)))
+            (dissoc :current/graphics)
+            (dissoc :current/components)
+            (dissoc :current/files)))
+
+      (catch Throwable cause
+        (l/dbg :hint "migrate:error" :cause cause))
+
+      (finally
+        (let [elapsed (dt/format-duration (tpoint))]
+          (l/dbg :hint "migrate:end" :elapsed elapsed))))))
 
 (defn repl-migrate-files
   [{:keys [::db/pool] :as system} & {:keys [chunk-size max-jobs max-items start-at]
                                      :or {chunk-size 10 max-jobs 10 max-items Long/MAX_VALUE}}]
   (letfn [(get-chunk [cursor]
             (let [sql  (str/concat
-                        "SELECT id, name, features, created_at, revn, data FROM file "
-                        " WHERE created_at < ? AND deleted_at is NULL "
+                        "SELECT id, created_at FROM file "
+                        " WHERE created_at < ? AND deleted_at IS NULL "
                         " ORDER BY created_at desc LIMIT ?")
                   rows (db/exec! pool [sql cursor chunk-size])]
               [(some->> rows peek :created-at) (seq rows)]))
@@ -644,123 +742,69 @@
                               :kf first
                               :initk (or start-at (dt/now)))
                  (take max-items)
-                 (map #(update % :features db/decode-pgarray #{}))))
+                 (map :id)))]
 
-          (migrate-file! [{:keys [id] :as file}]
-            (let [tpoint (dt/tpoint)]
-              (l/dbg :hint "migrate:file:start" :file-id (str id))
-              (try
-                (db/tx-run! *system*
-                            (fn [system]
-                              (binding [*system* system]
-                                (process-file file))))
-                (finally
-                  (ps/release! *semaphore*)
-                  (let [elapsed (dt/format-duration (tpoint))
-                        stats   (deref *stats*)]
-                    (l/dbg :hint "migrate:file:end" :file-id (str (:id file))
-                           :components (:current/components stats 0)
-                           :graphics   (:current/components stats 0)
-                           :elapsed    elapsed))
-                  (swap! *stats* update :completed (fnil inc 0))))))]
+    (l/dbg :hint "migrate:start" )
+    (let [semaphore (ps/create :permits max-jobs)
+          total     (get-total-files pool)
+          stats     (atom {:files/total total})
+          tpoint    (dt/tpoint)]
 
-    (l/dbg :hint "migrate:files:start")
-    (binding [*semaphore* (ps/create :permits max-jobs)
-              *tpoint*    (dt/tpoint)
-              *stats*     (atom {:total 0})
-              *system*    (update system ::sto/storage media/configure-assets-storage)]
+      (add-watch stats :progress-report (report-progress-files tpoint))
 
-      (add-watch *stats* :progress-report progress-report)
+      (binding [*system* system
+                *stats* stats
+                *semaphore* semaphore]
+        (try
+          (pu/with-open [scope (px/structured-task-scope {:thread-factory :virtual})]
+            (loop [items (get-candidates)]
+              (when-let [file-id (first items)]
+                (ps/acquire! *semaphore*)
+                (px/submit! scope (partial migrate-file! file-id))
+                (recur (next items))))
 
-      (try
-        (pu/with-open [scope (px/structured-task-scope {:name "migration" :thread-factory :virtual})]
-          (loop [items (get-candidates)]
-            (when-let [item (first items)]
-              (ps/acquire! *semaphore*)
-              (px/submit! scope (partial migrate-file! item))
-              (recur (next items))))
+            (p/await! scope))
 
-          (p/await! scope)
+        (-> (deref *stats*)
+            (assoc :elapsed (dt/format-duration (tpoint)))
+            (dissoc :current/graphics)
+            (dissoc :current/components)
+            (dissoc :current/files))
 
-          (let [elapsed (dt/format-duration (*tpoint*))]
-            (-> (deref *stats*)
-                (assoc :elapsed elapsed)
-                (dissoc :current/graphics)
-                (dissoc :current/components))))
+        (catch Throwable cause
+          (l/dbg :hint "migrate:error" :cause cause))
 
-          (finally
-            (let [elapsed (dt/format-duration (*tpoint*))]
-              (l/dbg :hint "migrate:files:end" :elapsed elapsed)))))))
-
+        (finally
+          (let [elapsed (dt/format-duration (tpoint))]
+            (l/dbg :hint "migrate:end" :elapsed elapsed))))))))
 
 (defn repl-migrate-team
   [{:keys [::db/pool] :as system} team-id & {:keys [max-jobs]
                                              :or {max-jobs Integer/MAX_VALUE}}]
-  (letfn [(migrate-file! [file-id index]
-            (let [tpoint (dt/tpoint)]
-              (try
-                (l/dbg :hint "migrate:file:start" :file-id (str file-id) :index index)
-                (let [system (update system ::sto/storage media/configure-assets-storage)
-                      file   (-> (db/get pool :file {:id file-id})
-                                 (update :features db/decode-pgarray #{}))]
-                  (db/tx-run! system
-                              (fn [system]
-                                (binding [*system* system]
-                                  (process-file file)))))
+  (l/dbg :hint "migrate:start")
 
-                (catch Throwable cause
-                  (l/err :hint "error on processing file" :file-id file-id :index index :cause cause))
+  (let [semaphore (ps/create :permits max-jobs)
+        total     (get-total-files pool :team-id team-id)
+        stats     (atom {:files/total total})
+        tpoint    (dt/tpoint)]
 
-                (finally
-                  (ps/release! *semaphore*)
-                  (let [elapsed (dt/format-duration (tpoint))
-                        stats   (deref *stats*)]
-                    (l/dbg :hint "migrate:file:end"
-                           :file-id (str file-id)
-                           :index index
-                           :components (:current/components stats 0)
-                           :graphics   (:current/graphics stats 0)
-                           :elapsed    elapsed))
+    (add-watch stats :progress-report (report-progress-files tpoint))
 
-                  (swap! *stats* (fn [stats]
-                                   (let [completed (inc (:completed stats 0))]
-                                     (assoc stats :completed completed))))))))
-
-          (migrate-team! [{:keys [::db/conn] :as system}]
-            ;; Lock the team
-            (db/exec-one! conn ["SET idle_in_transaction_session_timeout = 0"])
-            (db/exec-one! conn ["select id from team where id=? for update" team-id])
-
-            (let [sql  (str/concat
-                        "SELECT DISTINCT f.id FROM file AS f "
-                        "  JOIN project AS p ON (p.id = f.project_id) "
-                        "WHERE p.team_id = ? AND f.deleted_at IS NULL AND p.deleted_at IS NULL")
-                  rows (db/exec! conn [sql team-id])]
-              (swap! *stats* assoc :total (count rows))
-
-              (pu/with-open [scope (px/structured-task-scope :thread-factory :virtual)]
-                (doseq [[index {:keys [id]}] (d/enumerate rows)]
-                  (ps/acquire! *semaphore*)
-                  (px/submit! scope (partial migrate-file! id index)))
-
-                (p/await! scope))))
-          ]
-
-    (l/dbg :hint "migrate:start")
-    (binding [*semaphore* (ps/create :permits max-jobs)
-              *tpoint*    (dt/tpoint)
-              *stats*     (atom {})]
-      (add-watch *stats* :progress-report progress-report)
-
+    (binding [*system* system
+              *stats* stats
+              *semaphore* semaphore]
       (try
-        (db/tx-run! system migrate-team!)
+        (ps/acquire! semaphore)
+        (migrate-team! team-id)
+        (-> (deref *stats*)
+            (assoc :elapsed (dt/format-duration (tpoint)))
+            (dissoc :current/graphics)
+            (dissoc :current/components)
+            (dissoc :current/files))
 
-        (let [elapsed (dt/format-duration (*tpoint*))]
-          (-> (deref *stats*)
-              (assoc :elapsed elapsed)
-              (dissoc :current/graphics)
-              (dissoc :current/components)))
+        (catch Throwable cause
+          (l/dbg :hint "migrate:error" :cause cause))
 
         (finally
-          (let [elapsed (dt/format-duration (*tpoint*))]
+          (let [elapsed (dt/format-duration (tpoint))]
             (l/dbg :hint "migrate:end" :elapsed elapsed)))))))
