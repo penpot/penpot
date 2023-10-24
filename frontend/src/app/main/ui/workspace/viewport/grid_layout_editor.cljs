@@ -283,7 +283,6 @@
         hover?      (unchecked-get props "hover?")
         selected?   (unchecked-get props "selected?")
 
-
         cell-bounds (gsg/cell-bounds layout-data cell)
         cell-origin (gpo/origin cell-bounds)
         cell-width  (gpo/width-points cell-bounds)

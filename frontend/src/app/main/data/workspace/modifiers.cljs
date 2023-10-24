@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
@@ -328,11 +329,11 @@
      (as-> objects $
        (apply-text-modifiers $ (get state :workspace-text-modifier))
        ;;(apply-path-modifiers $ (get-in state [:workspace-local :edit-path]))
-       (gsh/set-objects-modifiers modif-tree $ (merge
-                                                params
-                                                {:ignore-constraints ignore-constraints
-                                                 :snap-pixel? snap-pixel?
-                                                 :snap-precision snap-precision}))))))
+       (gm/set-objects-modifiers modif-tree $ (merge
+                                               params
+                                               {:ignore-constraints ignore-constraints
+                                                :snap-pixel? snap-pixel?
+                                                :snap-precision snap-precision}))))))
 
 (defn- calculate-update-modifiers
   [old-modif-tree state ignore-constraints ignore-snap-pixel modif-tree]
@@ -348,7 +349,14 @@
         objects
         (-> objects
             (apply-text-modifiers (get state :workspace-text-modifier)))]
-    (gsh/set-objects-modifiers old-modif-tree modif-tree objects {:ignore-constraints ignore-constraints :snap-pixel? snap-pixel? :snap-precision snap-precision})))
+
+    (gm/set-objects-modifiers
+     old-modif-tree
+     modif-tree
+     objects
+     {:ignore-constraints ignore-constraints
+      :snap-pixel? snap-pixel?
+      :snap-precision snap-precision})))
 
 (defn update-modifiers
   ([modif-tree]
@@ -405,7 +413,7 @@
 
              modif-tree
              (-> (build-modif-tree ids objects get-modifier)
-                 (gsh/set-objects-modifiers objects))]
+                 (gm/set-objects-modifiers objects))]
 
          (assoc state :workspace-modifiers modif-tree))))))
 
@@ -432,7 +440,7 @@
 
              modif-tree
              (-> (build-modif-tree ids objects get-modifier)
-                 (gsh/set-objects-modifiers objects))]
+                 (gm/set-objects-modifiers objects))]
 
          (assoc state :workspace-modifiers modif-tree))))))
 

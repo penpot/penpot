@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
@@ -254,7 +255,7 @@
 
             modif-tree
             (-> (dwm/build-modif-tree ids objects get-modifier)
-                (gsh/set-objects-modifiers objects))]
+                (gm/set-objects-modifiers objects))]
 
         (assoc state :workspace-modifiers modif-tree)))
 
@@ -283,7 +284,7 @@
 
             modif-tree
             (-> (dwm/build-modif-tree ids objects get-modifier)
-                (gsh/set-objects-modifiers objects))]
+                (gm/set-objects-modifiers objects))]
 
         (assoc state :workspace-modifiers modif-tree)))
 

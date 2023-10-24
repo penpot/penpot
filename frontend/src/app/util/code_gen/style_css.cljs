@@ -101,6 +101,7 @@ body {
    :grid-template-rows
    :grid-template-columns
    :grid-template-areas
+   :grid-auto-flow
 
    ;; Flex/grid self properties
    :flex-shrink

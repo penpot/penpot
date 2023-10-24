@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.shapes.grid-layout.bounds :as glpb]
    [app.common.geom.shapes.grid-layout.layout-data :as glld]
+   [app.common.geom.shapes.grid-layout.params :as glpr]
    [app.common.geom.shapes.grid-layout.positions :as glp]))
 
 (dm/export glld/calc-layout-data)
@@ -19,3 +20,4 @@
 (dm/export glp/cell-bounds)
 (dm/export glpb/layout-content-points)
 (dm/export glpb/layout-content-bounds)
+(dm/export glpr/calculate-params)

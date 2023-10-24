@@ -227,8 +227,7 @@
 
   ([objects ids {:keys [bottom-frames?] :as options
                  :or   {bottom-frames? false}}]
-   (letfn [
-           (comp [id-a id-b]
+   (letfn [(comp [id-a id-b]
              (cond
                (= id-a id-b)
                0

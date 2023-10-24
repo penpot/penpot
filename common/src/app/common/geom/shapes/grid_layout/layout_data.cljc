@@ -590,7 +590,7 @@
   [{:keys [origin row-tracks column-tracks shape-cells]} _transformed-parent-bounds [_ child]]
 
   (let [grid-cell (get shape-cells (:id child))]
-    (when (some? grid-cell)
+    (when (and (some? grid-cell) (d/not-empty? grid-cell))
       (let [column (nth column-tracks (dec (:column grid-cell)) nil)
             row (nth row-tracks (dec (:row grid-cell)) nil)
 

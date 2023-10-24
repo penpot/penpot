@@ -410,14 +410,18 @@
   [{:keys [shapes]}]
   (let [single?            (= (count shapes) 1)
         has-frame?         (->> shapes (d/seek cph/frame-shape?))
-        is-frame?          (and single? has-frame?)
-        is-flex-container? (and is-frame? (= :flex (:layout (first shapes))))
+        is-flex-container? (and single? has-frame? (= :flex (:layout (first shapes))))
         ids                (->> shapes (map :id))
-        add-layout         (fn [type]
-                             (st/emit! (if is-frame?
-                                         (dwsl/create-layout-from-id ids type true)
-                                         (dwsl/create-layout-from-selection type))))
-        remove-flex        #(st/emit! (dwsl/remove-layout ids))]
+
+        add-layout
+        (fn [type]
+          (if (and single? has-frame?)
+            (st/emit! (dwsl/create-layout-from-id (first ids) type true))
+            (st/emit! (dwsl/create-layout-from-selection type))))
+
+        remove-flex
+        (fn []
+          (st/emit! (dwsl/remove-layout ids)))]
 
     [:*
      (when (not is-flex-container?)
