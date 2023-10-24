@@ -21,6 +21,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
@@ -143,6 +144,31 @@
            :read-only (not (or creating? @editing?))}]]
         (when (or @editing? creating?)
           [:div.counter (str @size "/300")])]])))
+
+
+(mf/defc component-swap-item
+  {::mf/wrap-props false}
+  [{:keys [item loop? shapes file-id root-shape container component-id] :as props}]
+  (let [on-select-component
+        (mf/use-fn
+         #(when-not loop?
+            (st/emit! (dwl/component-multi-swap shapes file-id (:id item)))))
+        item-ref       (mf/use-ref)
+        visible?       (h/use-visible item-ref :once? true)]
+    [:div.component-item
+     {:ref item-ref
+      :class (stl/css-case :disabled loop?)
+      :key (:id item)
+      :on-click on-select-component}
+     (when visible?
+       [:& cmm/component-item-thumbnail {:file-id (:file-id item)
+                                         :root-shape root-shape
+                                         :component item
+                                         :container container}])
+     [:span.component-name
+      {:class (stl/css-case :selected (= (:id item) component-id))}
+      (:name item)]]))
+
 
 (mf/defc component-swap
   [{:keys [shapes] :as props}]
@@ -313,22 +339,17 @@
                     root-shape (ctf/get-component-root data item)
                     loop?      (or (contains? parent-components (:main-instance-id item))
                                    (contains? parent-components (:id item)))]
-                [:div.component-item
-                 {:class (stl/css-case :disabled loop?)
-                  :key (:id item)
-                  :on-click #(when-not loop?
-                               (st/emit!
-                                (dwl/component-multi-swap shapes (:file-id filters) (:id item))))}
-                 [:& cmm/component-item-thumbnail {:file-id (:file-id item)
-                                                   :root-shape root-shape
-                                                   :component item
-                                                   :container container}]
-                 [:span.component-name
-                  {:class (stl/css-case :selected (= (:id item) current-comp-id))}
-                  (:name item)]])
-              [:div.component-group {:key (uuid/next) :on-click #(on-enter-group item)}
-               [:span (cph/last-path item)]
-               [:span i/arrow-slide]]))]]]))
+                [:& component-swap-item {:item item
+                                         :loop? loop?
+                                         :shapes shapes
+                                         :file-id (:file-id filters)
+                                         :root-shape root-shape
+                                         :container container
+                                         :component-id current-comp-id}])
+              (let [on-group-click #(on-enter-group item)]
+                [:div.component-group {:key (uuid/next) :on-click on-group-click}
+                 [:span (cph/last-path item)]
+                 [:span i/arrow-slide]])))]]]))
 
 (mf/defc component-ctx-menu
   [{:keys [menu-entries on-close show type] :as props}]
