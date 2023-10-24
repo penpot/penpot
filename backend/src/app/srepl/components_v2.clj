@@ -143,7 +143,7 @@
                  (take max-items)
                  (map :id)))]
 
-    (l/dbg :hint "migrate:start" )
+    (l/dbg :hint "migrate:start")
     (let [fsem   (ps/create :permits max-jobs)
           total  (get-total-files pool)
           stats  (atom {:files/total total})
@@ -151,16 +151,15 @@
 
       (add-watch stats :progress-report (report-progress-files tpoint))
 
-      (binding [feat/*system* system
-                feat/*stats* stats
-                feat/*files-semaphore* fsem]
+      (binding [feat/*stats* stats
+                feat/*semaphore* fsem]
         (try
           (pu/with-open [scope (px/structured-task-scope {:thread-factory :virtual})]
-            (loop [items (get-candidates)]
-              (when-let [file-id (first items)]
-                (ps/acquire! feat/*files-semaphore*)
-                (px/submit! scope (partial migrate-file! file-id))
-                (recur (next items))))
+
+            (run! (fn [file-id]
+                    (ps/acquire! feat/*semaphore*)
+                    (px/submit! scope (partial migrate-file! system file-id)))
+                  (get-candidates))
 
             (p/await! scope))
 
@@ -182,18 +181,17 @@
                                              :or {max-jobs Integer/MAX_VALUE}}]
   (l/dbg :hint "migrate:start")
 
-  (let [fsem   (ps/create :permits max-jobs)
+  (let [sem    (ps/create :permits max-jobs)
         total  (get-total-files pool :team-id team-id)
         stats  (atom {:files/total total})
         tpoint (dt/tpoint)]
 
     (add-watch stats :progress-report (report-progress-files tpoint))
 
-    (binding [feat/*system* system
-              feat/*stats* stats
-              feat/*files-semaphore* fsem]
+    (binding [feat/*stats* stats
+              feat/*semaphore* sem]
       (try
-        (migrate-team! team-id)
+        (migrate-team! system team-id)
         (-> (deref feat/*stats*)
             (assoc :elapsed (dt/format-duration (tpoint)))
             (dissoc :current/graphics)
@@ -208,11 +206,9 @@
             (l/dbg :hint "migrate:end" :elapsed elapsed)))))))
 
 (defn repl-migrate-teams
-  [{:keys [::db/pool] :as system} & {:keys [chunk-size max-files-jobs
-                                            max-teams-jobs max-items start-at]
+  [{:keys [::db/pool] :as system} & {:keys [chunk-size max-jobs max-items start-at]
                                      :or {chunk-size 100
-                                          max-teams-jobs Integer/MAX_VALUE
-                                          max-files-jobs Integer/MAX_VALUE
+                                          max-jobs Integer/MAX_VALUE
                                           max-items Long/MAX_VALUE}}]
   (letfn [(get-chunk [cursor]
             (let [sql  (str/concat
@@ -231,26 +227,22 @@
                  (map :id)))]
 
     (l/dbg :hint "migrate:start")
-    (let [fsem   (ps/create :permits max-files-jobs)
-          tsem   (ps/create :permits max-teams-jobs)
+    (let [sem    (ps/create :permits max-jobs)
           total  (get-total-teams pool)
           stats  (atom {:teams/total total})
           tpoint (dt/tpoint)]
 
       (add-watch stats :progress-report (report-progress-teams tpoint))
 
-      (binding [feat/*system* system
-                feat/*stats* stats
-                feat/*files-semaphore* fsem
-                feat/*teams-semaphore* tsem]
+      (binding [feat/*stats* stats
+                feat/*semaphore* sem]
         (try
-          (pu/with-open [scope (px/structured-task-scope {:thread-factory :virtual})]
-            (loop [items (get-candidates)]
-              (when-let [team-id (first items)]
-                (ps/acquire! feat/*teams-semaphore*)
-                (px/submit! scope (partial feat/migrate-team! team-id))
-                (recur (next items))))
-
+          (pu/with-open [scope (px/structured-task-scope {:preset :shutdown-on-failure})]
+            (prn scope)
+            (run! (fn [team-id]
+                    (ps/acquire! feat/*semaphore*)
+                    (px/submit! scope (partial feat/migrate-team! system team-id)))
+                  (get-candidates))
             (p/await! scope))
 
           (-> (deref feat/*stats*)

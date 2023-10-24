@@ -57,8 +57,7 @@
 
 (def ^:dynamic *system* nil)
 (def ^:dynamic *stats* nil)
-(def ^:dynamic *files-semaphore* nil)
-(def ^:dynamic *teams-semaphore* nil)
+(def ^:dynamic *semaphore* nil)
 
 (def grid-gap 50)
 
@@ -600,7 +599,7 @@
                             (process-file))))))
 
       (finally
-        (some-> *files-semaphore* ps/release!)
+        (some-> *semaphore* ps/release!)
         (let [elapsed (dt/format-duration (tpoint))
               stats   (some-> *stats* deref)]
           (l/dbg :hint "migrate:file:end"
@@ -617,7 +616,7 @@
     (l/dbg :hint "migrate:team:start" :team-id (dm/str team-id))
     (try
       (db/tx-run! system
-                  (fn [{:keys [::db/conn]}]
+                  (fn [{:keys [::db/conn] :as system}]
                     ;; Lock the team
                     (when lock?
                       (db/exec-one! conn ["SET idle_in_transaction_session_timeout = 0"])
@@ -627,22 +626,18 @@
                                 "SELECT DISTINCT f.id FROM file AS f "
                                 "  JOIN project AS p ON (p.id = f.project_id) "
                                 "WHERE p.team_id = ? AND f.deleted_at IS NULL AND p.deleted_at IS NULL")
-                          rows (db/exec! conn [sql team-id])]
+                          rows (->> (db/exec! conn [sql team-id])
+                                    (map :id))]
 
-                      (some-> *stats* (swap! *stats* assoc :current/files (count rows)))
+                      (some-> *stats* (swap! assoc :current/files (count rows)))
+                      (binding [*semaphore* nil]
+                        (run! (partial migrate-file! system) rows))
 
-                      ;; TODO: properly handle errors / missing stuff from promesa library
-                      (pu/with-open [scope (px/structured-task-scope :thread-factory :virtual)]
-                        (doseq [id (map :id rows)]
-                          (some-> *teams-semaphore* ps/acquire!)
-                          (px/submit! scope (partial migrate-file! system id))
-                          (p/await! scope)))
-
-                      ;; TODO: update team wit`h new feature
+                      ;; TODO: update team with new feature
                       )))
 
       (finally
-        (some-> *teams-semaphore* ps/release!)
+        (some-> *semaphore* ps/release!)
         (let [elapsed (dt/format-duration (tpoint))
               stats   (some-> *stats* deref)]
           (l/dbg :hint "migrate:team:end"
