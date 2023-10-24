@@ -38,3 +38,6 @@
   border: 1px solid var(--input-border-color-focus);
   color: var(--layer-row-foreground-color);
 }
+.element-name-touched {
+  color: var(--layer-row-component-foreground-color);
+}
