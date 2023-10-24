@@ -344,21 +344,6 @@
      [(remap-ids new-shape)
       (map remap-ids new-shapes)])))
 
-(defn get-top-instance
-  "The case of having an instance that contains another instances.
-  The topmost one, that is not part of other instance, is the Top instance"
-  [objects shape current-top]
-  (let [current-top (if (and
-                         (not (ctk/main-instance? shape))
-                         (ctk/instance-head? shape))
-                      shape current-top)
-        parent-id   (:parent-id shape)
-        parent      (get objects parent-id)]
-    (if (= parent-id uuid/zero)
-      current-top
-      (get-top-instance objects parent current-top))))
-
-
 (defn get-first-not-copy-parent
   "Go trough the parents until we find a shape that is not a copy of a component."
   [objects id]
