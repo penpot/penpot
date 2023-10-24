@@ -321,8 +321,8 @@
                             ;; This operation is needed for backward comapatibility with frontends that
                             ;; does not support pointer-map resolution mechanism; this just resolves the
                             ;; pointers on backend and return a complete file.
-                            file     (if (and (contains? features "storage/pointer-map")
-                                              (not (contains? (:features params) "storage/pointer-map")))
+                            file     (if (and (contains? features "fdata/pointer-map")
+                                              (not (contains? (:features params) "fdata/pointer-map")))
                                        (binding [pmap/*load-fn* (partial load-pointer conn id)]
                                          (process-pointers file deref))
                                        file)]

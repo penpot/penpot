@@ -83,11 +83,11 @@
        (let [features (into #{}
                             (comp
                              (filter #(contains? cfeat/supported-features %))
-                             (filter #(not (str/starts-with? % "storage/"))))
+                             #_(filter #(not (str/starts-with? % "fdata/"))))
                             features)
 
              features (into features
-                            (filter #(not (str/starts-with? % "storage/")))
+                            #_(filter #(not (str/starts-with? % "fdata/")))
                             (cfeat/get-enabled-features cf/flags))
 
              ;; features (if *assert*
@@ -95,7 +95,7 @@
              ;;                  (comp
              ;;                   (filter #(not= % "components/v2"))
              ;;                   (filter #(not= % "styles/v2"))
-             ;;                   (filter #(not (str/starts-with? % "storage/"))))
+             ;;                   (filter #(not (str/starts-with? % "fdata/"))))
              ;;                  cfeat/supported-features)
              ;;            features)
              ]

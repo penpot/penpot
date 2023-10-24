@@ -18,7 +18,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.features.storage :refer [enable-pointer-map enable-objects-map]]
+   [app.features.fdata :refer [enable-pointer-map enable-objects-map]]
    [app.loggers.audit :as audit]
    [app.loggers.webhooks :as webhooks]
    [app.metrics :as mtx]
@@ -164,12 +164,6 @@
                                        (set/difference cfeat/frontend-only-features)
                                        (set/union (:features file)))
 
-                          ;; ;; NOTE: we don't need to store in the file features the frontend only
-                          ;; features (set/difference features cfeat/frontend-only-features)
-
-                          _ (prn "FFFF1" features)
-                          _ (prn "FFFF2" (:features file))
-
                           params   (assoc params
                                           :profile-id profile-id
                                           :features features
@@ -186,10 +180,10 @@
   (binding [cfeat/*current*  features
             cfeat/*previous* (:features file)]
     (let [update-fn (cond-> update-file*
-                      (contains? features "storage/pointer-map")
+                      (contains? features "fdata/pointer-map")
                       (wrap-with-pointer-map-context)
 
-                      (contains? features "storage/objects-map")
+                      (contains? features "fdata/objects-map")
                       (wrap-with-objects-map-context))
 
           ;; TODO: this ruins performance.
@@ -218,9 +212,7 @@
 
         (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
-        (prn "KKKK1" features)
-        (prn "KKKK2" (:features file))
-        #_(when (not= features (:features file))
+        (when (not= features (:features file))
           (let [features (db/create-array conn "text" features)]
             (db/update! conn :file
                         {:features features}
@@ -296,19 +288,20 @@
 
                                        :always
                                        (cp/process-changes changes))))
-                     (d/tap-r validate)
-                     (update :data blob/encode))
+                     (d/tap-r validate))
 
-        file     (if (and (contains? cfeat/*current* "storage/objects-map")
-                          (not (contains? cfeat/*previous* "storage/objects-map")))
+        file     (if (and (contains? cfeat/*current* "fdata/objects-map")
+                          (not (contains? cfeat/*previous* "fdata/objects-map")))
                    (enable-objects-map file)
                    file)
 
-        file     (if (and (contains? cfeat/*current* "storage/pointer-map")
-                          (not (contains? cfeat/*previous* "storage/pointer-map")))
+        file     (if (and (contains? cfeat/*current* "fdata/pointer-map")
+                          (not (contains? cfeat/*previous* "fdata/pointer-map")))
                    (enable-pointer-map file)
-                   file)]
-    file))
+                   file)
+        ]
+
+    (update file :data blob/encode)))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."

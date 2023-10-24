@@ -107,8 +107,7 @@
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
     (watch [_ state _]
-      (let [features (-> (features/get-enabled-features state)
-                         (conj "storage/pointer-map"))
+      (let [features (features/get-enabled-features state)
 
             params'  (cond-> {:file-id file-id :features features}
                        (uuid? share-id)

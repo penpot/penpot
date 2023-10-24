@@ -552,9 +552,9 @@
     (binding [pmap/*tracked* (atom {})
               pmap/*load-fn* (partial files/load-pointer conn id)
               cfeat/*wrap-with-pointer-map-fn*
-              (if (contains? (:features file) "storage/pointer-map") pmap/wrap identity)
+              (if (contains? (:features file) "fdata/pointer-map") pmap/wrap identity)
               cfeat/*wrap-with-objects-map-fn*
-              (if (contains? (:features file) "storage/objectd-map") omap/wrap identity)]
+              (if (contains? (:features file) "fdata/objectd-map") omap/wrap identity)]
 
       #_(locking prn
         (app.common.pprint/pprint file {:level 1}))
@@ -575,7 +575,7 @@
                      (update :data migrate-file-data libs)
                      (update :features conj "components/v2"))]
 
-        #_(when (contains? (:features file) "storage/pointer-map")
+        #_(when (contains? (:features file) "fdata/pointer-map")
             (files/persist-pointers! conn id))
 
         #_(db/update! conn conn :file

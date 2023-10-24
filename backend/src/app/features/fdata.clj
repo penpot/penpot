@@ -4,8 +4,8 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.features.storage
-  "A `storage/*` related feature migration helpers"
+(ns app.features.fdata
+  "A `fdata/*` related feature migration helpers"
   (:require
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]))
@@ -17,7 +17,7 @@
                       (-> data
                           (update :pages-index update-vals #(update % :objects omap/wrap))
                           (update :components update-vals #(update % :objects omap/wrap)))))
-      (update :features conj "storage/objects-map")))
+      (update :features conj "fdata/objects-map")))
 
 (defn enable-pointer-map
   [file]
@@ -27,4 +27,4 @@
                           (update :pages-index update-vals pmap/wrap)
                           (update :components pmap/wrap))))
 
-      (update :features conj "storage/pointer-map")))
+      (update :features conj "fdata/pointer-map")))

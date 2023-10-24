@@ -286,11 +286,7 @@
   (ptk/reify ::fetch-bundle-stage-2
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [features (-> (features/get-enabled-features state)
-                         ;; We force the `storage/pointer-map` feature support
-                         ;; here because the pointer map are only supported here
-                         ;; and not in the rest of the application
-                         (conj "storage/pointer-map"))
+      (let [features (features/get-enabled-features state)
 
             ;; WTF is this?
             share-id (-> state :viewer-local :share-id)]

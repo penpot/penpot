@@ -49,8 +49,8 @@
         pointers (atom {})
         data     (binding [pmap/*tracked* pointers
                            cfeat/*current* features
-                           cfeat/*wrap-with-objects-map-fn* (if (features "storate/objects-map") omap/wrap identity)
-                           cfeat/*wrap-with-pointer-map-fn* (if (features "storage/pointer-map") pmap/wrap identity)]
+                           cfeat/*wrap-with-objects-map-fn* (if (features "fdata/objects-map") omap/wrap identity)
+                           cfeat/*wrap-with-pointer-map-fn* (if (features "fdata/pointer-map") pmap/wrap identity)]
                    (if create-page
                      (ctf/make-file-data id)
                      (ctf/make-file-data id nil)))
