@@ -274,6 +274,10 @@ span.element-name {
   }
 }
 
+span.element-name-touched {
+  color: $color-component;
+}
+
 .element-actions {
   display: flex;
   flex-shrink: 0;

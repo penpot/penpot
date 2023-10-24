@@ -70,6 +70,9 @@
     ;; Show shape name and id
     :shape-titles
 
+    ;; Show an asterisk for touched copies
+    :show-touched
+
     ;;
     :grid-layout
     })
@@ -92,9 +95,3 @@
   (if (enabled? option)
     (disable! option)
     (enable! option)))
-
-
-
-
-
-
