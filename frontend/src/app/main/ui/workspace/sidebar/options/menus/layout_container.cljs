@@ -1225,7 +1225,7 @@
                        :class        (stl/css-case :title-spacing-layout (not has-layout?))}
          (if (and (not multiple) (:layout values))
            [:div {:class (stl/css :title-actions)}
-            (when (features/active-feature? :grid-layout)
+            (when (features/active-feature? "layout/grid")
               [:div {:class (stl/css :layout-options)}
                [:& radio-buttons {:selected (d/name layout-type)
                                   :on-change toggle-layout-style
@@ -1318,7 +1318,7 @@
          [:span "Layout"]
          (if (and (not multiple) (:layout values))
            [:div.title-actions
-            (when (features/active-feature? :grid-layout)
+            (when (features/active-feature? "layout/grid")
               [:div.layout-btns
                [:button {:on-click set-flex
                          :class (dom/classnames

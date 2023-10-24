@@ -12,6 +12,7 @@
    [app.common.logging :as log]
    [app.config :as cf]
    [app.main.store :as st]
+   [clojure.set :as set]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
@@ -23,7 +24,9 @@
   ([]
    (get-enabled-features @st/state))
   ([state]
-   (get state :features #{})))
+   (set/union
+    (get state :features #{})
+    (get state :runtime-features #{}))))
 
 (def features
   (l/derived get-enabled-features st/state =))
@@ -45,10 +48,10 @@
       (if (active-feature? state feature)
         (do
           (log/trc :hint "feature disabled" :feature feature)
-          (update state :features disj feature))
+          (update state :runtime-features (fnil disj #{}) feature))
         (do
           (log/trc :hint "feature enabled" :feature feature)
-          (update state :features conj feature))))))
+          (update state :runtime-features (fnil conj #{}) feature))))))
 
 (defn enable-feature
   [feature]
@@ -60,7 +63,7 @@
         state
         (do
           (log/trc :hint "feature enabled" :feature feature)
-          (update state :features conj feature))))))
+          (update state :runtime-features (fnil conj #{}) feature))))))
 
 (defn use-feature
   [feature]
@@ -78,22 +81,27 @@
      ptk/UpdateEvent
      (update [_ state]
        (let [features (into #{}
-                            (filter #(contains? cfeat/supported-features %))
+                            (comp
+                             (filter #(contains? cfeat/supported-features %))
+                             (filter #(not (str/starts-with? % "storage/"))))
                             features)
+
              features (into features
-                            (filter #(not (str/starts-with? "storage/" %)))
+                            (filter #(not (str/starts-with? % "storage/")))
                             (cfeat/get-enabled-features cf/flags))
-             features (if *assert*
-                        (into features
-                              (comp
-                               (filter #(not= % "components/v2"))
-                               (filter #(not= % "styles/v2"))
-                               (filter #(not (str/starts-with? % "storage/"))))
-                              cfeat/supported-features)
-                        features)]
+
+             ;; features (if *assert*
+             ;;            (into features
+             ;;                  (comp
+             ;;                   (filter #(not= % "components/v2"))
+             ;;                   (filter #(not= % "styles/v2"))
+             ;;                   (filter #(not (str/starts-with? % "storage/"))))
+             ;;                  cfeat/supported-features)
+             ;;            features)
+             ]
          (assoc state :features features)))
 
      ptk/EffectEvent
      (effect [_ state _]
-       (let [features (str/join "," (:features state))]
+       (let [features (str/join "," (get-enabled-features state))]
          (log/trc :hint "initialized features" :features features))))))

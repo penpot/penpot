@@ -29,6 +29,7 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
+   [clojure.set :as set]
    [potok.core :as ptk]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -855,9 +856,11 @@
             files    (get state :dashboard-files)
             unames   (cfh/get-used-names files)
             name     (cfh/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1"))
+            features (-> (features/get-enabled-features state)
+                         (set/difference cfeat/frontend-only-features))
             params   (-> params
                          (assoc :name name)
-                         (assoc :features cfeat/supported-features))]
+                         (assoc :features features))]
 
         (->> (rp/cmd! :create-file params)
              (rx/tap on-success)

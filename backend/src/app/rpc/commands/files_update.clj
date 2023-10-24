@@ -18,6 +18,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.storage :refer [enable-pointer-map enable-objects-map]]
    [app.loggers.audit :as audit]
    [app.loggers.webhooks :as webhooks]
    [app.metrics :as mtx]
@@ -32,7 +33,8 @@
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.util.time :as dt]))
+   [app.util.time :as dt]
+   [clojure.set :as set]))
 
 ;; --- SCHEMA
 
@@ -155,6 +157,19 @@
                                        (cfeat/check-client-features! (:features params))
                                        (cfeat/check-file-features! (:features file)))
 
+                          ;; NOTE: the objective of this operation is have a set of features
+                          ;; that can be automatically auto-enabled
+                          features (-> features
+                                       (set/intersection cfeat/no-migration-features)
+                                       (set/difference cfeat/frontend-only-features)
+                                       (set/union (:features file)))
+
+                          ;; ;; NOTE: we don't need to store in the file features the frontend only
+                          ;; features (set/difference features cfeat/frontend-only-features)
+
+                          _ (prn "FFFF1" features)
+                          _ (prn "FFFF2" (:features file))
+
                           params   (assoc params
                                           :profile-id profile-id
                                           :features features
@@ -177,8 +192,6 @@
                       (contains? features "storage/objects-map")
                       (wrap-with-objects-map-context))
 
-          file      (assoc file :features features)
-
           ;; TODO: this ruins performance.
           ;;       We must find some other way to do general validation.
           libraries (when (and (cf/flags :file-validation)
@@ -193,11 +206,7 @@
                         (->> changes-with-metadata (mapcat :changes) vec)
                         (vec changes))
 
-            params    (-> params
-                          (assoc :file file)
-                          (assoc :libraries libraries)
-                          (assoc :changes changes)
-                          (assoc ::created-at (dt/now)))]
+          ]
 
         (when (> (:revn params)
                  (:revn file))
@@ -209,19 +218,27 @@
 
         (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
-        (when (not= features (:features file))
+        (prn "KKKK1" features)
+        (prn "KKKK2" (:features file))
+        #_(when (not= features (:features file))
           (let [features (db/create-array conn "text" features)]
             (db/update! conn :file
                         {:features features}
                         {:id id})))
 
-        (-> (update-fn cfg params)
-            (vary-meta assoc ::audit/replace-props
-                       {:id         (:id file)
-                        :name       (:name file)
-                        :features   (:features file)
-                        :project-id (:project-id file)
-                        :team-id    (:team-id file)})))))
+        (let [file   (assoc file :features features)
+              params (-> params
+                         (assoc :file file)
+                         (assoc :libraries libraries)
+                         (assoc :changes changes)
+                         (assoc ::created-at (dt/now)))]
+          (-> (update-fn cfg params)
+              (vary-meta assoc ::audit/replace-props
+                         {:id         (:id file)
+                          :name       (:name file)
+                          :features   (:features file)
+                          :project-id (:project-id file)
+                          :team-id    (:team-id file)}))))))
 
 (defn- update-file*
   [{:keys [::db/conn] :as cfg} {:keys [profile-id file libraries changes session-id ::created-at skip-validate] :as params}]
@@ -267,20 +284,31 @@
   (let [validate (fn [file]
                    (when (and (cf/flags :file-validation)
                               (not skip-validate))
-                     (val/validate-file file libraries :throw? true)))]
-    (-> file
-        (update :revn inc)
-        (update :data (fn [data]
-                        (cond-> data
-                          :always
-                          (-> (blob/decode)
-                              (assoc :id (:id file))
-                              (pmg/migrate-data))
+                     (val/validate-file file libraries :throw? true)))
+        file     (-> file
+                     (update :revn inc)
+                     (update :data (fn [data]
+                                     (cond-> data
+                                       :always
+                                       (-> (blob/decode)
+                                           (assoc :id (:id file))
+                                           (pmg/migrate-data))
 
-                          :always
-                          (cp/process-changes changes))))
-        (d/tap-r validate)
-        (update :data blob/encode))))
+                                       :always
+                                       (cp/process-changes changes))))
+                     (d/tap-r validate)
+                     (update :data blob/encode))
+
+        file     (if (and (contains? cfeat/*current* "storage/objects-map")
+                          (not (contains? cfeat/*previous* "storage/objects-map")))
+                   (enable-objects-map file)
+                   file)
+
+        file     (if (and (contains? cfeat/*current* "storage/pointer-map")
+                          (not (contains? cfeat/*previous* "storage/pointer-map")))
+                   (enable-pointer-map file)
+                   file)]
+    file))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."

@@ -26,7 +26,8 @@
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.util.time :as dt]))
+   [app.util.time :as dt]
+   [clojure.set :as set]))
 
 (defn create-file-role!
   [conn {:keys [file-id profile-id role]}]
@@ -103,7 +104,8 @@
                       team-id  (:id team)
 
                       features (-> (cfeat/get-enabled-features cf/flags team)
-                                   (cfeat/check-client-features! (:features params)))
+                                   (cfeat/check-client-features! (:features params))
+                                   (set/difference cfeat/frontend-only-features))
 
                       params   (-> params
                                    (assoc :profile-id profile-id)

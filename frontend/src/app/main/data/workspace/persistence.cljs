@@ -141,11 +141,15 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [sid      (:session-id state)
+
+            features (features/get-enabled-features state)
             params   {:id file-id
                       :revn file-revn
                       :session-id sid
                       :changes-with-metadata (into [] changes)
-                      :features cfeat/supported-features}]
+                      :features features
+                      ;; :features cfeat/supported-features
+                      }]
 
         (->> (rp/cmd! :update-file params)
              (rx/mapcat (fn [lagged]

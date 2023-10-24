@@ -24,6 +24,7 @@
 (def ^:dynamic *wrap-with-objects-map-fn* identity)
 (def ^:dynamic *wrap-with-pointer-map-fn* identity)
 
+;; A set of supported features
 (def supported-features
   #{"storage/objects-map"
     "storage/pointer-map"
@@ -33,10 +34,19 @@
     "styles/v2"
     "layout/grid"})
 
-;; A set of features enabled by default for each file
+;; A set of features enabled by default for each file, they are
+;; implicit and are enabled by default and can't be disabled
 (def default-enabled-features
   #{"internal/shape-record"
     "internal/geom-record"})
+
+;; A set of features which only affects on frontend and can be enabled
+;; and disabled freely by the user any time. This features does not
+;; persist on file features field but can be permanently enabled on
+;; team feature field
+(def frontend-only-features
+  #{"styles/v2"
+    "layout/grid"})
 
 ;; Features that are mainly backend only or there are a proper
 ;; fallback when frontend reports no support for it
@@ -44,10 +54,17 @@
   #{"storage/objects-map"
     "storage/pointer-map"})
 
-;; Features that does not require any file data migrations and/or can
-;; be enabled and disabled safelly
+;; This is a set of features that does not require an explicit
+;; migration like components/v2 or the migration is not mandatory to
+;; be applied (per example backend can operate in both modes with or
+;; without migration applied)
 (def no-migration-features
-  #{"styles/v2"})
+  #{"storage/objects-map"
+    "storage/pointer-map"
+    })
+
+(def auto-enabling-features
+  #{"layout/grid"})
 
 (sm/def! ::features
   [:schema
@@ -62,7 +79,7 @@
     :feature-components-v2 "components/v2"
     :feature-new-css-system "styles/v2"
     :feature-grid-layout "layout/grid"
-    :feature-storage-object-map "storage/objects-map"
+    :feature-storage-objects-map "storage/objects-map"
     :feature-storage-pointer-map "storage/pointer-map"
     nil))
 
@@ -70,22 +87,12 @@
   ([flags]
    (get-enabled-features flags nil))
   ([flags team]
-   (cond-> default-enabled-features
+   (-> default-enabled-features
+       ;; add all team enabled features to the set
+       (into (:features team #{}))
 
-     ;; TEMPORAL BACKWARD COMPATIBILITY
-     (contains? flags :fdata-storage-pointer-map)
-     (conj "storage/pointer-map")
-
-     (contains? flags :fdata-storage-objects-map)
-     (conj "storage/objects-map")
-
-     ;; add all team enabled features to the set
-     :always
-     (into (:features team #{}))
-
-     ;; add globally enabled features to the set
-     :always
-     (into (keep flag->feature) flags))))
+       ;; add globally enabled features to the set
+       (into (keep flag->feature) flags))))
 
 (defn check-client-features!
   "Function used for check feature compability between currently
@@ -110,19 +117,23 @@
                   :feature (first not-supported)
                   :hint (str/ffmt "backend does not support '%' features requested by client"
                                   (str/join "," not-supported))))))
-  features)
+
+  (-> features
+      (set/union client-features)
+      #_(set/difference frontend-only-features)))
 
 (defn check-file-features!
   "Function used for check feature compability between currently
   enabled features set on backend with the provided featured set by
   the penpot file"
-  [features file-features]
-  (let [not-supported (-> features
+  [enabled-features file-features]
+  (let [not-supported (-> enabled-features
                           (set/difference file-features)
                           ;; NOTE: we don't want to raise a feature-mismatch
                           ;; exception for features which don't require an
                           ;; explicit file migration process or has no real
                           ;; effect on file data structure
+                          (set/difference frontend-only-features)
                           (set/difference no-migration-features))]
     (when (seq not-supported)
       (ex/raise :type :restriction
@@ -139,14 +150,16 @@
                 :hint (str/ffmt "file features '%' not supported by this backend"
                                 (str/join "," not-supported)))))
 
-  (let [not-supported (set/difference file-features features)]
-    (when (seq not-supported)
-      (ex/raise :type :restriction
-                :code :features-mismatch
-                :feature (first not-supported)
-                :hint (str/ffmt "file features '%' not enabled by this backend"
-                                (str/join "," not-supported)))))
+  ;; (let [not-supported (-> file-features
+  ;;                         (set/difference features)
+  ;;                         (set/difference frontend-only-features))]
+  ;;   (when (seq not-supported)
+  ;;     (ex/raise :type :restriction
+  ;;               :code :features-mismatch
+  ;;               :feature (first not-supported)
+  ;;               :hint (str/ffmt "file features '%' not enabled by this backend"
+  ;;                               (str/join "," not-supported)))))
 
-  features)
+  enabled-features)
 
 

@@ -358,10 +358,8 @@
                                                ::quotes/profile-id profile-id})
 
                     (let [features (-> (cfeat/get-enabled-features cf/flags)
-                                       (cfeat/check-client-features! (:features params)))
-                          ;; NOTE: for team creation we take in account the
-                          ;; client enabled features
-                          features (set/union features (:features params))]
+                                       (cfeat/check-client-features! (:features params)))]
+                      (prn  "QQQQ" features)
                       (create-team cfg (assoc params
                                               :profile-id profile-id
                                               :features features))))))
