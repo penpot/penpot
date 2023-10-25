@@ -316,12 +316,12 @@
 
                             features (-> (cfeat/get-enabled-features cf/flags team)
                                          (cfeat/check-client-features! (:features params))
-                                         (cfeat/check-file-features! (:features file)))
+                                         (cfeat/check-file-features! (:features file) (:features params)))
 
                             ;; This operation is needed for backward comapatibility with frontends that
                             ;; does not support pointer-map resolution mechanism; this just resolves the
                             ;; pointers on backend and return a complete file.
-                            file     (if (and (contains? features "fdata/pointer-map")
+                            file     (if (and (contains? (:features file) "fdata/pointer-map")
                                               (not (contains? (:features params) "fdata/pointer-map")))
                                        (binding [pmap/*load-fn* (partial load-pointer conn id)]
                                          (process-pointers file deref))
@@ -471,7 +471,7 @@
 
           _        (-> (cfeat/get-enabled-features cf/flags team)
                        (cfeat/check-client-features! (:features params))
-                       (cfeat/check-file-features! (:features file)))
+                       (cfeat/check-file-features! (:features file) (:features params)))
 
           page-id  (or page-id (-> file :data :pages first))
           page     (dm/get-in file [:data :pages-index page-id])
@@ -718,7 +718,7 @@
 
                       (-> (cfeat/get-enabled-features cf/flags team)
                           (cfeat/check-client-features! (:features params))
-                          (cfeat/check-file-features! (:features file)))
+                          (cfeat/check-file-features! (:features file) (:features params)))
 
                       {:name             (:name file)
                        :components-count (count (ctkl/components-seq (:data file)))

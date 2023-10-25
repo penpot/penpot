@@ -250,7 +250,7 @@
 
                    (-> (cfeat/get-enabled-features cf/flags team)
                        (cfeat/check-client-features! (:features params))
-                       (cfeat/check-file-features! (:features file)))
+                       (cfeat/check-file-features! (:features file) (:features params)))
 
                    {:file-id file-id
                     :revn (:revn file)

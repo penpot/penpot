@@ -16,11 +16,9 @@
 ;; A set of enabled by default file features. Will be used in feature
 ;; negotiation on obtaining files from backend.
 
-;; FIXME: don't know if is used or not
-(def ^:dynamic *enabled* #{})
-
 (def ^:dynamic *previous* #{})
 (def ^:dynamic *current* #{})
+
 (def ^:dynamic *wrap-with-objects-map-fn* identity)
 (def ^:dynamic *wrap-with-pointer-map-fn* identity)
 
@@ -121,7 +119,7 @@
   backend. Usually used for check if imported file features are
   supported by the current backend"
   [features]
-  (let [not-supported (set/difference file-features supported-features)]
+  (let [not-supported (set/difference features supported-features)]
     (when (seq not-supported)
       (ex/raise :type :restriction
                 :code :features-mismatch

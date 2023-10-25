@@ -20,7 +20,8 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.features.fdata :refer [enable-pointer-map enable-objects-map]]
+   [app.features.components-v2 :as features.components-v2]
+   [app.features.fdata :as features.fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
@@ -38,6 +39,7 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [clojure.set :as set]
    [clojure.spec.alpha :as s]
    [clojure.walk :as walk]
    [cuerdas.core :as str]
@@ -622,6 +624,8 @@
                                        :profile-id profile-id
                                        :project-id project-id)
               features (cfeat/get-enabled-features cf/flags team)]
+
+          ;; Process all sections
           (run! (fn [section]
                   (l/dbg :hint "reading section" :section section ::l/sync? true)
                   (assert-read-label! input section)
@@ -633,12 +637,17 @@
                       (read-section options))))
                 [:v1/metadata :v1/files :v1/rels :v1/sobjects])
 
+          ;; Run all pending migrations
           (doseq [[feature file-id] (-> *state* deref :pending-to-migrate)]
             (case feature
-              "components/v2" (features.components-v2/migrate-file! options file-id)))
+              "components/v2" (features.components-v2/migrate-file! options file-id)
+              (ex/raise :type :internal
+                        :code :no-migration-defined
+                        :hint (str/ffmt "no migation for feature '%' on file importation" feature)
+                        :feature feature)))
 
-          ;; Knowing that the ids of the created files are in
-          ;; index, just lookup them and return it as a set
+          ;; Knowing that the ids of the created files are in index,
+          ;; just lookup them and return it as a set
           (let [files (-> *state* deref :files)]
             (into #{} (keep #(get-in @*state* [:index %])) files)))))))
 
@@ -658,18 +667,20 @@
   (cond-> file
     (and (contains? cfeat/*current* "fdata/objects-map")
          (not (contains? cfeat/*previous* "fdata/objects-map")))
-    (enable-objects-map)
+    (features.fdata/enable-objects-map)
 
     (and (contains? cfeat/*current* "fdata/pointer-map")
          (not (contains? cfeat/*previous* "fdata/pointer-map")))
-    (enable-pointer-map)))
+    (features.fdata/enable-pointer-map)))
 
 (defmethod read-section :v1/files
   [{:keys [::db/conn ::input ::migrate? ::project-id ::enabled-features ::timestamp ::overwrite?]}]
   (doseq [expected-file-id (-> *state* deref :files)]
     (let [file      (read-obj! input)
           media'    (read-obj! input)
+
           file-id   (:id file)
+          file-id'  (lookup-index file-id)
 
           features (-> enabled-features
                         (set/intersection cfeat/no-migration-features)
@@ -681,7 +692,7 @@
       ;; are added to the state for a posterior migration step
       (doseq [feature (-> enabled-features
                           (set/difference cfeat/no-migration-features)
-                          (set/difference (:features params)))]
+                          (set/difference (:features file)))]
         (vswap! *state* :pending-to-migrate (fnil conj []) [feature file-id']))
 
       (when (not= file-id expected-file-id)
@@ -711,26 +722,25 @@
                :version (-> file :data :version)
                ::l/sync? true)
 
-        (let [file-id' (lookup-index file-id)
-              params   (-> file
-                           (assoc :id file-id')
-                           (assoc :features features)
-                           (assoc :project-id project-id)
-                           (assoc :created-at timestamp)
-                           (assoc :modified-at timestamp)
-                           (update :data (fn [data]
-                                           (-> data
-                                               (assoc :id file-id')
-                                               (cond-> (> (:version data) cfd/version)
-                                                 (assoc :version cfd/version))
-                                               (cond-> migrate?
-                                                 (pmg/migrate-data))
-                                               (update :pages-index relink-shapes)
-                                               (update :components relink-shapes)
-                                               (update :media relink-media))))
-                           (postprocess-file)
-                           (update :features #(db/create-array conn "text" %))
-                           (update :data blob/encode))]
+        (let [params (-> file
+                         (assoc :id file-id')
+                         (assoc :features features)
+                         (assoc :project-id project-id)
+                         (assoc :created-at timestamp)
+                         (assoc :modified-at timestamp)
+                         (update :data (fn [data]
+                                         (-> data
+                                             (assoc :id file-id')
+                                             (cond-> (> (:version data) cfd/version)
+                                               (assoc :version cfd/version))
+                                             (cond-> migrate?
+                                               (pmg/migrate-data))
+                                             (update :pages-index relink-shapes)
+                                             (update :components relink-shapes)
+                                             (update :media relink-media))))
+                         (postprocess-file)
+                         (update :features #(db/create-array conn "text" %))
+                         (update :data blob/encode))]
 
           (l/dbg :hint "create file" :id file-id' ::l/sync? true)
 
