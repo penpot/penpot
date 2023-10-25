@@ -70,14 +70,7 @@
         [root-shape new-shapes updated-shapes]
         (if-not components-v2
           (ctn/make-component-shape root objects file-id components-v2)
-          (let [new-id (uuid/next)]
-            [(assoc root :id new-id)
-             nil
-             [(assoc root
-                     :component-id new-id
-                     :component-file file-id
-                     :component-root true
-                     :main-instance true)]]))
+          (ctn/convert-shape-in-component root objects file-id))
 
         changes (-> changes
                     (pcb/add-component (:id root-shape)

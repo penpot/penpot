@@ -192,6 +192,23 @@
       (ctk/instance-head? shape)
       (inside-component-main? objects shape)))
 
+(defn convert-shape-in-component
+  "Set the shape as a main root instance, pointing to a new component.
+   Also remove component-root of all children. Return the same structure
+   as make-component-shape."
+  [root objects file-id]
+  (let [new-id       (uuid/next)
+        new-root     (assoc root
+                            :component-id new-id
+                            :component-file file-id
+                            :component-root true
+                            :main-instance true)
+        new-children (->> (cph/get-children objects (:id root))
+                          (map #(dissoc % :component-root)))]
+    [(assoc new-root :id new-id)
+     nil
+     (into [new-root] new-children)]))
+
 (defn make-component-shape
   "Clone the shape and all children. Generate new ids and detach
   from parent and frame. Update the original shapes to have links
