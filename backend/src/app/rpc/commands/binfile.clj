@@ -686,7 +686,14 @@
                          (assoc data :version cfd/version)
                          data)
 
+              ;; FIXME
+              ;; We're temporarily activating all migrations because a problem in
+              ;; the environments messed up with the version numbers
+              ;; When this problem is fixed delete the following line
+              data     (-> data (assoc :version 0))
+
               data     (-> data
+
                            (cond-> migrate? (pmg/migrate-data))
                            (update :pages-index relink-shapes)
                            (update :components relink-shapes)
