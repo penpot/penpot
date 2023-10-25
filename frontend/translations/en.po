@@ -5007,3 +5007,7 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "**Inspect mode** (View Only)"

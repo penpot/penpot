@@ -42,6 +42,7 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
+   [app.main.ui.workspace.viewport.top-bar :as top-bar]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
@@ -299,7 +300,7 @@
                                          :layout layout
                                          :viewport-ref viewport-ref}])
 
-      [:& widgets/viewport-actions]]
+      [:& top-bar/top-bar]]
 
      [:svg.render-shapes
       {:id "render"

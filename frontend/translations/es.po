@@ -5112,3 +5112,7 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "**Modo inspección** (View only)"
