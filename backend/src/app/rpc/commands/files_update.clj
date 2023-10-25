@@ -155,10 +155,8 @@
 
                           features (-> (cfeat/get-enabled-features cf/flags team)
                                        (cfeat/check-client-features! (:features params))
-                                       (cfeat/check-file-features! (:features file)))
+                                       (cfeat/check-file-features! (:features file) (:features params)))
 
-                          ;; NOTE: the objective of this operation is have a set of features
-                          ;; that can be automatically auto-enabled
                           features (-> features
                                        (set/intersection cfeat/no-migration-features)
                                        (set/difference cfeat/frontend-only-features)

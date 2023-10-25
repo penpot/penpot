@@ -44,7 +44,7 @@
 ;; team feature field
 (def frontend-only-features
   #{"styles/v2"
-    "layout/grid"
+    "layout/grid" ;; FIXME: ?
     })
 
 ;; Features that are mainly backend only or there are a proper
@@ -60,10 +60,7 @@
 (def no-migration-features
   #{"fdata/objects-map"
     "fdata/pointer-map"
-    "layout/grid"})
-
-(def auto-enabling-features
-  #{"layout/grid"})
+    "layout/grid"}) ;; FIXME: ?
 
 (sm/def! ::features
   [:schema
@@ -117,46 +114,49 @@
                   :hint (str/ffmt "backend does not support '%' features requested by client"
                                   (str/join "," not-supported))))))
 
-  (set/union enabled-features client-features))
+  enabled-features)
 
 (defn check-file-features!
   "Function used for check feature compability between currently
   enabled features set on backend with the provided featured set by
   the penpot file"
-  [enabled-features file-features]
-  (let [not-supported (-> enabled-features
-                          (set/difference file-features)
-                          ;; NOTE: we don't want to raise a feature-mismatch
-                          ;; exception for features which don't require an
-                          ;; explicit file migration process or has no real
-                          ;; effect on file data structure
-                          (set/difference frontend-only-features)
-                          (set/difference no-migration-features))]
-    (when (seq not-supported)
-      (ex/raise :type :restriction
+  ([enabled-features file-features]
+   (check-file-features! enabled-features file-features #{}))
+  ([enabled-features file-features client-features]
+   (let [not-supported (-> enabled-features
+                           (set/difference file-features)
+                           ;; NOTE: we don't want to raise a feature-mismatch
+                           ;; exception for features which don't require an
+                           ;; explicit file migration process or has no real
+                           ;; effect on file data structure
+                           (set/difference frontend-only-features)
+                           (set/difference no-migration-features))]
+     (when (seq not-supported)
+       (ex/raise :type :restriction
                  :code :features-mismatch
                  :feature (first not-supported)
                  :hint (str/ffmt "enabled features '%' not present in file (missing migration?)"
                                  (str/join "," not-supported)))))
 
-  (let [not-supported (set/difference file-features supported-features)]
-    (when (seq not-supported)
-      (ex/raise :type :restriction
-                :code :features-mismatch
-                :feature (first not-supported)
-                :hint (str/ffmt "file features '%' not supported"
-                                (str/join "," not-supported)))))
+   (let [not-supported (set/difference file-features supported-features)]
+     (when (seq not-supported)
+       (ex/raise :type :restriction
+                 :code :features-mismatch
+                 :feature (first not-supported)
+                 :hint (str/ffmt "file features '%' not supported"
+                                 (str/join "," not-supported)))))
 
-  (let [not-supported (-> file-features
-                          (set/difference enabled-features)
-                          (set/difference frontend-only-features))]
-    (when (seq not-supported)
-      (ex/raise :type :restriction
-                :code :features-mismatch
-                :feature (first not-supported)
-                :hint (str/ffmt "file features '%' not enabled"
-                                (str/join "," not-supported)))))
+   (let [not-supported (-> file-features
+                           (set/difference enabled-features)
+                           (set/difference client-features)
+                           (set/difference frontend-only-features))]
+     (when (seq not-supported)
+       (ex/raise :type :restriction
+                 :code :features-mismatch
+                 :feature (first not-supported)
+                 :hint (str/ffmt "file features '%' not enabled"
+                                 (str/join "," not-supported)))))
 
-  enabled-features)
+   enabled-features))
 
 
