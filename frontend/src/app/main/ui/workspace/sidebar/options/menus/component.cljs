@@ -57,7 +57,8 @@
                                 (let [textarea (mf/ref-val textarea-ref)]
                                   (aset textarea "value" annotation)
                                   (reset! editing? false)
-                                  (st/emit! (dw/set-annotations-id-for-create nil))))
+                                  (st/emit! (dw/set-annotations-id-for-create nil))
+                                  (autogrow)))
         save                  (fn [event]
                                 (dom/stop-propagation event)
                                 (let [textarea (mf/ref-val textarea-ref)
