@@ -58,9 +58,9 @@
 ;; be applied (per example backend can operate in both modes with or
 ;; without migration applied)
 (def no-migration-features
-  #{"fdata/objects-map"
-    "fdata/pointer-map"
-    "layout/grid"}) ;; FIXME: ?
+  (into frontend-only-features
+        #{"fdata/objects-map"
+          "fdata/pointer-map"}))
 
 (sm/def! ::features
   [:schema
@@ -116,6 +116,20 @@
 
   enabled-features)
 
+(defn check-supported-features!
+  "Check if a given set of features are supported by this
+  backend. Usually used for check if imported file features are
+  supported by the current backend"
+  [features]
+  (let [not-supported (set/difference file-features supported-features)]
+    (when (seq not-supported)
+      (ex/raise :type :restriction
+                :code :features-mismatch
+                :feature (first not-supported)
+                :hint (str/ffmt "features '%' not supported"
+                                (str/join "," not-supported)))))
+  features)
+
 (defn check-file-features!
   "Function used for check feature compability between currently
   enabled features set on backend with the provided featured set by
@@ -135,16 +149,10 @@
        (ex/raise :type :restriction
                  :code :features-mismatch
                  :feature (first not-supported)
-                 :hint (str/ffmt "enabled features '%' not present in file (missing migration?)"
+                 :hint (str/ffmt "enabled features '%' not present in file (missing migration)"
                                  (str/join "," not-supported)))))
 
-   (let [not-supported (set/difference file-features supported-features)]
-     (when (seq not-supported)
-       (ex/raise :type :restriction
-                 :code :features-mismatch
-                 :feature (first not-supported)
-                 :hint (str/ffmt "file features '%' not supported"
-                                 (str/join "," not-supported)))))
+   (check-supported-features! file-features)
 
    (let [not-supported (-> file-features
                            (set/difference enabled-features)

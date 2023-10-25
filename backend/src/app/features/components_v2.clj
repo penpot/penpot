@@ -594,6 +594,7 @@
         (db/tx-run! system
                     (fn [{:keys [::db/conn] :as system}]
                       (binding [*system* system]
+                        ;; FIXME: check if migration is needed
                         (-> (db/get conn :file {:id file-id})
                             (update :features db/decode-pgarray #{})
                             (process-file))))))

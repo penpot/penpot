@@ -20,6 +20,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :refer [enable-pointer-map enable-objects-map]]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
@@ -367,7 +368,7 @@
                                 " WHERE flr.file_id = ANY(?)")]
                    (db/exec! conn [sql ids])))))
 
-(defn- create-or-update-file
+(defn- create-or-update-file!
   [conn params]
   (let [sql (str "INSERT INTO file (id, project_id, name, revn, is_shared, data, created_at, modified_at) "
                  "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
@@ -389,6 +390,7 @@
 (def ^:dynamic *options* nil)
 
 ;; --- EXPORT WRITER
+
 (defn- embed-file-assets
   [data cfg file-id]
   (letfn [(walk-map-form [form state]
@@ -477,7 +479,7 @@
     (with-open [output (io/data-output-stream output)]
       (binding [*state* (volatile! {})]
         (run! (fn [section]
-                (l/debug :hint "write section" :section section ::l/sync? true)
+                (l/dbg :hint "write section" :section section ::l/sync? true)
                 (write-label! output section)
                 (let [options (-> options
                                   (assoc ::output output)
@@ -507,23 +509,24 @@
 
   (doseq [file-id (-> *state* deref :files)]
     (let [detach? (and (not embed-assets?) (not include-libraries?))
-          file  (cond-> (get-file cfg file-id)
-                  detach?
-                  (-> (ctf/detach-external-references file-id)
-                   (dissoc :libraries))
-                  embed-assets?
-                  (update :data embed-file-assets cfg file-id))
+          file    (cond-> (get-file cfg file-id)
+                    detach?
+                    (-> (ctf/detach-external-references file-id)
+                        (dissoc :libraries))
+                    embed-assets?
+                    (update :data embed-file-assets cfg file-id))
 
-          media (get-file-media cfg file)]
+          media   (get-file-media cfg file)]
 
-      (l/debug :hint "write penpot file"
-               :id file-id
-               :name (:name file)
-               :media (count media)
-               ::l/sync? true)
+      (l/dbg :hint "write penpot file"
+             :id file-id
+             :name (:name file)
+             :features (:features file)
+             :media (count media)
+             ::l/sync? true)
 
       (doseq [item media]
-        (l/debug :hint "write penpot file media object" :id (:id item) ::l/sync? true))
+        (l/dbg :hint "write penpot file media object" :id (:id item) ::l/sync? true))
 
       (doto output
         (write-obj! file)
@@ -536,7 +539,7 @@
   (let [ids  (-> *state* deref :files)
         rels (when include-libraries?
                (get-library-relations cfg ids))]
-    (l/debug :hint "found rels" :total (count rels) ::l/sync? true)
+    (l/dbg :hint "found rels" :total (count rels) ::l/sync? true)
     (write-obj! output rels)))
 
 (defmethod write-section :v1/sobjects
@@ -544,16 +547,16 @@
   (let [sids    (-> *state* deref :sids)
         storage (media/configure-assets-storage storage)]
 
-    (l/debug :hint "found sobjects"
-             :items (count sids)
-             ::l/sync? true)
+    (l/dbg :hint "found sobjects"
+           :items (count sids)
+           ::l/sync? true)
 
     ;; Write all collected storage objects
     (write-obj! output sids)
 
     (doseq [id sids]
       (let [{:keys [size] :as obj} (sto/get-object storage id)]
-        (l/debug :hint "write sobject" :id id ::l/sync? true)
+        (l/dbg :hint "write sobject" :id id ::l/sync? true)
         (doto output
           (write-uuid! id)
           (write-obj! (meta obj)))
@@ -607,58 +610,79 @@
   (let [version (read-header! input)]
     (read-import (assoc options ::version version ::timestamp timestamp))))
 
+(defn- read-import-v1
+  [{:keys [::db/conn ::project-id ::profile-id ::input] :as options}]
+  (db/exec-one! conn ["SET idle_in_transaction_session_timeout = 0"])
+  (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
+
+  (with-open [input (zstd-input-stream input)]
+    (with-open [input (io/data-input-stream input)]
+      (binding [*state* (volatile! {:media [] :index {}})]
+        (let [team     (teams/get-team options
+                                       :profile-id profile-id
+                                       :project-id project-id)
+              features (cfeat/get-enabled-features cf/flags team)]
+          (run! (fn [section]
+                  (l/dbg :hint "reading section" :section section ::l/sync? true)
+                  (assert-read-label! input section)
+                  (let [options (-> options
+                                    (assoc ::enabled-features features)
+                                    (assoc ::section section)
+                                    (assoc ::input input))]
+                    (binding [*options* options]
+                      (read-section options))))
+                [:v1/metadata :v1/files :v1/rels :v1/sobjects])
+
+          (doseq [[feature file-id] (-> *state* deref :pending-to-migrate)]
+            (case feature
+              "components/v2" (features.components-v2/migrate-file! options file-id)))
+
+          ;; Knowing that the ids of the created files are in
+          ;; index, just lookup them and return it as a set
+          (let [files (-> *state* deref :files)]
+            (into #{} (keep #(get-in @*state* [:index %])) files)))))))
+
 (defmethod read-import :v1
   [options]
-  (db/tx-run! options
-              (fn [{:keys [::db/conn ::project-id ::profile-id ::input] :as options}]
-                (with-open [input (zstd-input-stream input)]
-                  (with-open [input (io/data-input-stream input)]
-                    (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
-                    (binding [*state* (volatile! {:media [] :index {}})]
-                      (let [team (teams/get-team options
-                                                 :profile-id profile-id
-                                                 :project-id project-id)
-                            feat (cfeat/get-enabled-features cf/flags team)]
-                        (run! (fn [section]
-                                (l/debug :hint "reading section" :section section ::l/sync? true)
-                                (assert-read-label! input section)
-                                (let [options (-> options
-                                                  (assoc ::features feat)
-                                                  (assoc ::section section)
-                                                  (assoc ::input input))]
-                                  (binding [*options* options]
-                                    (read-section options))))
-                              [:v1/metadata :v1/files :v1/rels :v1/sobjects])
-
-                      ;; Knowing that the ids of the created files are in
-                      ;; index, just lookup them and return it as a set
-                      (let [files (-> *state* deref :files)]
-                        (into #{} (keep #(get-in @*state* [:index %])) files)))))))))
+  (db/tx-run! options read-import-v1))
 
 (defmethod read-section :v1/metadata
   [{:keys [::input]}]
   (let [{:keys [version files]} (read-obj! input)]
-    (l/debug :hint "metadata readed" :version (:full version) :files files ::l/sync? true)
+    (l/dbg :hint "metadata readed" :version (:full version) :files files ::l/sync? true)
     (vswap! *state* update :index update-index files)
     (vswap! *state* assoc :version version :files files)))
 
 (defn- postprocess-file
-  [data]
-  (let [omap-wrap cfeat/*wrap-with-objects-map-fn*
-        pmap-wrap cfeat/*wrap-with-pointer-map-fn*]
-    (-> data
-        (update :pages-index update-vals #(update % :objects omap-wrap))
-        (update :pages-index update-vals pmap-wrap)
-        (update :components update-vals #(d/update-when % :objects omap-wrap))
-        (update :components pmap-wrap))))
+  [file]
+  (cond-> file
+    (and (contains? cfeat/*current* "fdata/objects-map")
+         (not (contains? cfeat/*previous* "fdata/objects-map")))
+    (enable-objects-map)
+
+    (and (contains? cfeat/*current* "fdata/pointer-map")
+         (not (contains? cfeat/*previous* "fdata/pointer-map")))
+    (enable-pointer-map)))
 
 (defmethod read-section :v1/files
-  [{:keys [::db/conn ::input ::migrate? ::project-id ::features ::timestamp ::overwrite? ]}]
+  [{:keys [::db/conn ::input ::migrate? ::project-id ::enabled-features ::timestamp ::overwrite?]}]
   (doseq [expected-file-id (-> *state* deref :files)]
-    (let [file     (read-obj! input)
-          media'   (read-obj! input)
-          file-id  (:id file)
-          features (cfeat/check-file-features! features (:features file))]
+    (let [file      (read-obj! input)
+          media'    (read-obj! input)
+          file-id   (:id file)
+
+          features (-> enabled-features
+                        (set/intersection cfeat/no-migration-features)
+                        (set/difference cfeat/frontend-only-features)
+                        (set/union (cfeat/check-supported-features! (:features file))))
+          ]
+
+      ;; All features that are enabled and requires explicit migration
+      ;; are added to the state for a posterior migration step
+      (doseq [feature (-> enabled-features
+                          (set/difference cfeat/no-migration-features)
+                          (set/difference (:features params)))]
+        (vswap! *state* :pending-to-migrate (fnil conj []) [feature file-id']))
 
       (when (not= file-id expected-file-id)
         (ex/raise :type :validation
@@ -676,51 +700,50 @@
       (vswap! *state* update :media into (map #(update % :id lookup-index)) media')
 
       (binding [cfeat/*current* features
-                cfeat/*wrap-with-objects-map-fn* (if (contains? features "storage/objects-map") omap/wrap identity)
-                cfeat/*wrap-with-pointer-map-fn* (if (contains? features "storage/pointer-map") pmap/wrap identity)
+                cfeat/*previous* (:features file)
+                ;; cfeat/*wrap-with-objects-map-fn* (if (contains? features "storage/objects-map") omap/wrap identity)
+                ;; cfeat/*wrap-with-pointer-map-fn* (if (contains? features "storage/pointer-map") pmap/wrap identity)
                 pmap/*tracked* (atom {})]
 
         (l/dbg :hint "processing file"
                :id file-id
-               :features features
+               :features (:features file)
                :version (-> file :data :version)
                ::l/sync? true)
 
         (let [file-id' (lookup-index file-id)
-              data     (-> (:data file)
-                           (assoc :id file-id'))
+              params   (-> file
+                           (assoc :id file-id')
+                           (assoc :features features)
+                           (assoc :project-id project-id)
+                           (assoc :created-at timestamp)
+                           (assoc :modified-at timestamp)
+                           (update :data (fn [data]
+                                           (-> data
+                                               (assoc :id file-id')
+                                               (cond-> (> (:version data) cfd/version)
+                                                 (assoc :version cfd/version))
+                                               (cond-> migrate?
+                                                 (pmg/migrate-data))
+                                               (update :pages-index relink-shapes)
+                                               (update :components relink-shapes)
+                                               (update :media relink-media))))
+                           (postprocess-file)
+                           (update :features #(db/create-array conn "text" %))
+                           (update :data blob/encode))]
 
-              data     (if (> (:version data) cfd/version)
-                         (assoc data :version cfd/version)
-                         data)
-
-              data     (-> data
-                           (cond-> migrate? (pmg/migrate-data))
-                           (update :pages-index relink-shapes)
-                           (update :components relink-shapes)
-                           (update :media relink-media)
-                           (postprocess-file))
-
-              params  {:id file-id'
-                       :project-id project-id
-                       :features (db/create-array conn "text" features)
-                       :name (:name file)
-                       :revn (:revn file)
-                       :is-shared (:is-shared file)
-                       :data (blob/encode data)
-                       :created-at timestamp
-                       :modified-at timestamp}]
-
-          (l/debug :hint "create file" :id file-id' ::l/sync? true)
+          (l/dbg :hint "create file" :id file-id' ::l/sync? true)
 
           (if overwrite?
-            (create-or-update-file conn params)
+            (create-or-update-file! conn params)
             (db/insert! conn :file params))
 
           (files/persist-pointers! conn file-id')
 
           (when overwrite?
-            (db/delete! conn :file-thumbnail {:file-id file-id'})))))))
+            (db/delete! conn :file-thumbnail {:file-id file-id'}))
+
+          file-id')))))
 
 (defmethod read-section :v1/rels
   [{:keys [::db/conn ::input ::timestamp]}]
@@ -735,10 +758,10 @@
 
         (if (contains? ids library-file-id)
           (do
-            (l/debug :hint "create file library link"
-                     :file-id (:file-id rel)
-                     :lib-id (:library-file-id rel)
-                     ::l/sync? true)
+            (l/dbg :hint "create file library link"
+                   :file-id (:file-id rel)
+                   :lib-id (:library-file-id rel)
+                   ::l/sync? true)
             (db/insert! conn :file-library-rel rel))
 
           (l/warn :hint "ignoring file library link"
@@ -760,7 +783,7 @@
                     :code :inconsistent-penpot-file
                     :hint "the penpot file seems corrupt, found unexpected uuid (storage-object-id)"))
 
-        (l/debug :hint "readed storage object" :id id ::l/sync? true)
+        (l/dbg :hint "readed storage object" :id id ::l/sync? true)
 
         (let [[size resource] (read-stream! input)
               hash            (sto/calculate-hash resource)
@@ -774,14 +797,14 @@
 
               sobject         (sto/put-object! storage params)]
 
-          (l/debug :hint "persisted storage object" :id id :new-id (:id sobject) ::l/sync? true)
+          (l/dbg :hint "persisted storage object" :id id :new-id (:id sobject) ::l/sync? true)
           (vswap! *state* update :index assoc id (:id sobject)))))
 
     (doseq [item (:media @*state*)]
-      (l/debug :hint "inserting file media object"
-               :id (:id item)
-               :file-id (:file-id item)
-               ::l/sync? true)
+      (l/dbg :hint "inserting file media object"
+             :id (:id item)
+             :file-id (:file-id item)
+             ::l/sync? true)
 
       (let [file-id (lookup-index (:file-id item))]
         (if (= file-id (:file-id item))

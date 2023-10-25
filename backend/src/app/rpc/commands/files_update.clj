@@ -194,9 +194,9 @@
                                (d/index-by :id))
                           (assoc (:id file) file)))
 
-            changes   (if changes-with-metadata
-                        (->> changes-with-metadata (mapcat :changes) vec)
-                        (vec changes))
+          changes   (if changes-with-metadata
+                      (->> changes-with-metadata (mapcat :changes) vec)
+                      (vec changes))
 
           ]
 
