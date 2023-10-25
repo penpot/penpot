@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
    [app.common.uuid :as uuid]
    [app.main.data.events :as ev]
@@ -442,21 +443,23 @@
 
 (mf/defc context-menu-component
   [{:keys [shapes]}]
-  (let [single?             (= (count shapes) 1)
-        shapes              (filter ctk/instance-head? shapes)
-        components-v2       (features/use-feature :components-v2)
-        in-main?            (some true? (map #(ctk/main-instance? %) shapes))
-        components-menu-entries (cmm/generate-components-menu-entries shapes components-v2)
-        do-add-component #(st/emit! (dwl/add-component))
+  (let [components-v2              (features/use-feature :components-v2)
+        single?                    (= (count shapes) 1)
+        objects                    (deref refs/workspace-page-objects)
+        any-in-copy?               (some true? (map #(ctn/has-any-copy-parent? objects %) shapes))
+        heads                      (filter ctk/instance-head? shapes)
+        components-menu-entries    (cmm/generate-components-menu-entries heads components-v2)
+        do-add-component           #(st/emit! (dwl/add-component))
         do-add-multiple-components #(st/emit! (dwl/add-multiple-components))]
     [:*
-     (when-not in-main?
+     (when-not any-in-copy? ;; We don't want to change the structure of component copies
        [:*
         [:& menu-separator]
-        (if single?
-          [:& menu-entry {:title (tr "workspace.shape.menu.create-component")
-                          :shortcut (sc/get-tooltip :create-component)
-                          :on-click do-add-component}]
+
+        [:& menu-entry {:title (tr "workspace.shape.menu.create-component")
+                        :shortcut (sc/get-tooltip :create-component)
+                        :on-click do-add-component}]
+        (when (not single?)
           [:& menu-entry {:title (tr "workspace.shape.menu.create-multiple-components")
                           :on-click do-add-multiple-components}])])
 
