@@ -3,7 +3,7 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v18.18.2 \
+ENV NODE_VERSION=v20.9.0 \
     CLOJURE_VERSION=1.11.1.1347 \
     CLJKONDO_VERSION=2023.09.07 \
     BABASHKA_VERSION=1.3.184 \
@@ -104,12 +104,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='33e440c237438aa2e3866d84ead8d4e00dc0992d98d9fd0ee2fe48192f2dbc4b'; \
-         BINARY_URL='https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21%2B35/OpenJDK21U-jdk_aarch64_linux_hotspot_21_35.tar.gz'; \
+         ESUM='aa43295803595f78d73e9c7c02866301c9729377277144e2829f54a58e5f6d21'; \
+         BINARY_URL='https://corretto.aws/downloads/resources/21.0.1.12.1/amazon-corretto-21.0.1.12.1-linux-aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='82f64c53acaa045370d6762ebd7441b74e6fda14b464d54d1ff8ca941ec069e6'; \
-         BINARY_URL='https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21%2B35/OpenJDK21U-jdk_x64_linux_hotspot_21_35.tar.gz'; \
+         ESUM='3e718a86cfa6c1173c469f5e9d6b07fa37381a28ebb1f80593250cc380baf22f'; \
+         BINARY_URL='https://corretto.aws/downloads/resources/21.0.1.12.1/amazon-corretto-21.0.1.12.1-linux-x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
