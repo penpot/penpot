@@ -36,7 +36,7 @@
         component-id          (:component-id shape)
         annotation            (:annotation component)
         editing?              (mf/use-state false)
-        invalid-text?         (mf/use-state (or (nil? annotation)(str/empty? annotation)))
+        invalid-text?         (mf/use-state (or (nil? annotation) (str/blank? annotation)))
         size                  (mf/use-state (count annotation))
         textarea-ref          (mf/use-ref)
 
@@ -44,7 +44,7 @@
         ;; based on https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/
         autogrow              #(let [textarea (mf/ref-val textarea-ref)
                                      text (when textarea (.-value textarea))]
-                                 (reset! invalid-text? (str/empty? text))
+                                 (reset! invalid-text? (str/blank? text))
                                  (when textarea
                                    (reset! size (count text))
                                    (aset (.-dataset (.-parentNode textarea)) "replicatedValue" text)))
