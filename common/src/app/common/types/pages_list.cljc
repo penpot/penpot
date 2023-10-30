@@ -13,6 +13,12 @@
   [file-data id]
   (dm/get-in file-data [:pages-index id]))
 
+(defn get-last-page
+  [file-data]
+  (let [id (-> file-data :pages last)]
+    (when id
+      (get-page file-data id))))
+
 (defn add-page
   [file-data {:keys [id index] :as page}]
   (-> file-data

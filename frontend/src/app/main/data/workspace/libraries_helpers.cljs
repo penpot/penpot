@@ -21,6 +21,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.typography :as cty]
@@ -234,7 +235,9 @@
   ([library-data component-id current-page it]
    (let [component    (ctkl/get-deleted-component library-data component-id)
          page         (or (ctf/get-component-page library-data component)
-                          current-page)]
+                          (when (some #(= (:id current-page) %) (:pages library-data)) ;; If the page doesn't belong to the library, it's not valid
+                            current-page)
+                          (ctpl/get-last-page library-data))]
      (prepare-restore-component nil library-data component-id it page (gpt/point 0 0) nil nil)))
 
   ([changes library-data component-id it page delta old-id parent-id]
