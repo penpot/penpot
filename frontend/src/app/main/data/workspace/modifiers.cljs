@@ -15,10 +15,12 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
+   [app.common.uuid :as uuid]
    [app.main.constants :refer [zoom-half-pixel-precision]]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.comments :as-alias dwcm]
@@ -43,34 +45,11 @@
 ;; When the interaction is finished (e.g. user releases mouse button), the
 ;; apply-modifiers event is done, that consolidates all modifiers into the base
 ;; geometric attributes of the shapes.
-
-
 (defn- check-delta
   "If the shape is a component instance, check its relative position respect the
   root of the component, and see if it changes after applying a transformation."
-  [shape root transformed-shape transformed-root objects modif-tree]
-  (let [root
-        (cond
-          (:component-root shape)
-          shape
-
-          (nil? root)
-          (ctn/get-component-shape objects shape {:allow-main? true})
-
-          :else root)
-
-        transformed-root
-        (cond
-          (:component-root transformed-shape)
-          transformed-shape
-
-          (nil? transformed-root)
-          (as-> (ctn/get-component-shape objects transformed-shape {:allow-main? true}) $
-            (gsh/transform-shape (merge $ (get modif-tree (:id $)))))
-
-          :else transformed-root)
-
-        shape-delta
+  [shape root transformed-shape transformed-root]
+  (let [shape-delta
         (when root
           (gpt/point (- (gsh/left-bound shape) (gsh/left-bound root))
                      (- (gsh/top-bound shape) (gsh/top-bound root))))
@@ -80,45 +59,73 @@
           (gpt/point (- (gsh/left-bound transformed-shape) (gsh/left-bound transformed-root))
                      (- (gsh/top-bound transformed-shape) (gsh/top-bound transformed-root))))
 
-        distance (if (and shape-delta transformed-shape-delta)
-                   (gpt/distance-vector shape-delta transformed-shape-delta)
-                   (gpt/point 0 0))
+        distance
+        (if (and shape-delta transformed-shape-delta)
+          (gpt/distance-vector shape-delta transformed-shape-delta)
+          (gpt/point 0 0))
 
         selrect (:selrect shape)
-        transformed-selrect (:selrect transformed-shape)
+        transformed-selrect (:selrect transformed-shape)]
 
-        ;; There are cases in that the coordinates change slightly (e.g. when rounding
-        ;; to pixel, or when recalculating text positions in different zoom levels).
-        ;; To take this into account, we ignore movements smaller than 1 pixel.
-        ;;
-        ;; When the change is a resize, also has a transformation that may have the
-        ;; shape position unchanged. But in this case we do not want to ignore it.
-        ignore-geometry? (and (and (< (:x distance) 1) (< (:y distance) 1))
-                              (mth/close? (:width selrect) (:width transformed-selrect))
-                              (mth/close? (:height selrect) (:height transformed-selrect)))]
-    [root transformed-root ignore-geometry?]))
+    ;; There are cases in that the coordinates change slightly (e.g. when rounding
+    ;; to pixel, or when recalculating text positions in different zoom levels).
+    ;; To take this into account, we ignore movements smaller than 1 pixel.
+    ;;
+    ;; When the change is a resize, also has a transformation that may have the
+    ;; shape position unchanged. But in this case we do not want to ignore it.
+    (and (and (< (:x distance) 1) (< (:y distance) 1))
+         (mth/close? (:width selrect) (:width transformed-selrect))
+         (mth/close? (:height selrect) (:height transformed-selrect)))))
 
-(defn- get-ignore-tree
+(defn calculate-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
-  ([modif-tree objects shape]
-   (get-ignore-tree modif-tree objects shape nil nil {}))
+  [modif-tree objects]
 
-  ([modif-tree objects shape root transformed-root ignore-tree]
-   (let [children (map (d/getf objects) (:shapes shape))
+  (letfn [(get-ignore-tree
+            ([ignore-tree shape]
+             (let [shape-id (dm/get-prop shape :id)
+                   transformed-shape (gsh/transform-shape shape (dm/get-in modif-tree [shape-id :modifiers]))
 
-         shape-id (:id shape)
-         transformed-shape (gsh/transform-shape shape (dm/get-in modif-tree [shape-id :modifiers]))
+                   root
+                   (if (:component-root shape)
+                     shape
+                     (ctn/get-component-shape objects shape {:allow-main? true}))
 
-         [root transformed-root ignore-geometry?]
-         (check-delta shape root transformed-shape transformed-root objects modif-tree)
+                   transformed-root
+                   (if (:component-root shape)
+                     transformed-shape
+                     (gsh/transform-shape root (dm/get-in modif-tree [(:id root) :modifiers])))]
+               
+               (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
 
-         ignore-tree (assoc ignore-tree shape-id ignore-geometry?)
+            ([ignore-tree shape root transformed-root]
+             (let [shape-id (dm/get-prop shape :id)
+                   transformed-shape (gsh/transform-shape shape (dm/get-in modif-tree [shape-id :modifiers]))]
+               (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
 
-         set-child
-         (fn [ignore-tree child]
-           (get-ignore-tree modif-tree objects child root transformed-root ignore-tree))]
+            ([ignore-tree shape transformed-shape root transformed-root]
+             (let [shape-id (dm/get-prop shape :id)
 
-     (reduce set-child ignore-tree children))))
+                   ignore-tree
+                   (cond-> ignore-tree
+                     (and (some? root) (ctk/in-component-copy? shape))
+                     (assoc
+                      shape-id
+                      (check-delta shape root transformed-shape transformed-root)))
+                   
+                   set-child
+                   (fn [ignore-tree child]
+                     (get-ignore-tree ignore-tree child root transformed-root))]
+
+               (->> (:shapes shape)
+                    (map (d/getf objects))
+                    (reduce set-child ignore-tree)))))]
+
+    ;; we check twice because we want only to search parents of components but once the
+    ;; tree is traversed we only want to process the objects in components
+    (->> (keys modif-tree)
+         (map #(get objects %))
+         (reduce get-ignore-tree nil))))
 
 (defn assoc-position-data
   [shape position-data old-shape]
@@ -130,7 +137,6 @@
     (cond-> shape
       (d/not-empty? position-data)
       (assoc :position-data position-data))))
-
 
 (defn update-grow-type
   [shape old-shape]
@@ -455,17 +461,26 @@
      (watch [_ state _]
        (let [text-modifiers    (get state :workspace-text-modifier)
              objects           (wsh/lookup-page-objects state)
-             object-modifiers  (if modifiers
-                                 (calculate-modifiers state ignore-constraints ignore-snap-pixel modifiers)
-                                 (get state :workspace-modifiers))
 
-             ids (or (keys object-modifiers) [])
-             ids-with-children (into (vec ids) (mapcat #(cph/get-children-ids objects %)) ids)
+             object-modifiers
+             (if (some? modifiers)
+               (calculate-modifiers state ignore-constraints ignore-snap-pixel modifiers)
+               (get state :workspace-modifiers))
 
-             shapes            (map (d/getf objects) ids)
-             ignore-tree       (->> (map #(get-ignore-tree object-modifiers objects %) shapes)
-                                    (reduce merge {}))
-             undo-id (js/Symbol)]
+             ids
+             (into []
+                   (remove #(= % uuid/zero))
+                   (keys object-modifiers))
+
+             ids-with-children
+             (into ids
+                   (mapcat (partial cph/get-children-ids objects))
+                   ids)
+
+             ignore-tree
+             (calculate-ignore-tree object-modifiers objects)
+
+             undo-id     (js/Symbol)]
 
          (rx/concat
           (if undo-transation?
