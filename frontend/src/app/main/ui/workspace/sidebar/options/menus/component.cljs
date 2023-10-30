@@ -151,6 +151,7 @@
   [{:keys [item loop? shapes file-id root-shape container component-id] :as props}]
   (let [on-select-component
         (mf/use-fn
+         (mf/deps shapes file-id item)
          #(when-not loop?
             (st/emit! (dwl/component-multi-swap shapes file-id (:id item)))))
         item-ref       (mf/use-ref)
