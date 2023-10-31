@@ -713,7 +713,7 @@
         (t/is (nil? (get-in result [:page :objects frame1-id :thumbnail])))
         (t/is (not= [] (get-in result [:page :objects frame1-id :shapes])))))
 
-    #_(t/testing "TASK :file-gc"
+    (t/testing "TASK :file-gc"
 
       ;; insert object snapshot for known frame
       (let [data {::th/type :upsert-file-object-thumbnail
