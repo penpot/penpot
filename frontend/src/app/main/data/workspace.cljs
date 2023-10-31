@@ -1814,15 +1814,6 @@
                 (assoc change :index (get map-ids (:old-id change)))
                 change)))
 
-          ;; Check if the shape is an instance whose master is defined in a
-          ;; library that is not linked to the current file
-          (foreign-instance? [shape paste-objects state]
-            (let [root         (ctn/get-component-shape paste-objects shape {:allow-main? true})
-                  root-file-id (:component-file root)]
-              (and (some? root)
-                   (not= root-file-id (:current-file-id state))
-                   (nil? (get-in state [:workspace-libraries root-file-id])))))
-
           ;; Proceed with the standard shape paste process.
           (do-paste [it state mouse-pos media]
             (let [libraries    (wsh/get-libraries state)
@@ -1841,25 +1832,13 @@
 
                   process-shape
                   (fn [_ shape]
-                    (let [parent                 (get page-objects parent-id)
-                          component-shape        (ctn/get-component-shape page-objects shape)
-                          component-shape-parent (ctn/get-component-shape page-objects parent)
-                          ;; if foreign instance, or a shape belonging to another component, detach the shape
-                          detach? (or (foreign-instance? shape paste-objects state)
-                                      (and (ctk/in-component-copy-not-head? shape)
-                                           (not= (:id component-shape)
-                                                 (:id component-shape-parent))))
-                          assign-shapes? (and (or (cph/group-shape? shape)
+                    (let [assign-shapes? (and (or (cph/group-shape? shape)
                                                   (cph/bool-shape? shape))
                                               (nil? (:shapes shape)))]
                       (-> shape
                           (assoc :frame-id frame-id :parent-id parent-id)
                           (cond-> assign-shapes?
                             (assoc :shapes []))
-                          (cond-> detach?
-                            ;; this is used later, if the paste needs to create a new component from the detached shape
-                            (-> (assoc :saved-component-root (:component-root shape))
-                                (ctk/detach-shape)))
                           ;; if is a text, remove references to external typographies
                           (cond-> (= (:type shape) :text)
                             (ctt/remove-external-typographies file-id)))))
