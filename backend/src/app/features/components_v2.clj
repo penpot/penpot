@@ -601,7 +601,6 @@
                             (process-file))))))
 
       (finally
-        (some-> *semaphore* ps/release!)
         (let [elapsed (dt/format-duration (tpoint))
               stats   (some-> *stats* deref)]
           (l/dbg :hint "migrate:file:end"
@@ -639,14 +638,13 @@
                                         (map :id))]
 
                           (some-> *stats* (swap! assoc :current/files (count rows)))
-                          (binding [*semaphore* nil]
-                            (run! (partial migrate-file! system) rows))
+                          (run! (partial migrate-file! system) rows)
 
                           (db/update! conn :team
                                       {:features (db/create-array conn "text" (conj features "components/v2"))}
                                       {:id team-id}))))))
       (finally
-        (some-> *semaphore* ps/release!)
+        (-> *semaphore* ps/release!)
         (let [elapsed (dt/format-duration (tpoint))
               stats   (some-> *stats* deref)]
           (l/dbg :hint "migrate:team:end"
