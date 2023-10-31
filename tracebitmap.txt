@@ -22,6 +22,7 @@ Extract a list of colors from an image:
   convert download.png +dither -colors 10 -unique-colors txt:
 
 
+
 Articles:
 
 - http://confluence.concord.org/display/CCTR/Removing%20Antialiasing.html
