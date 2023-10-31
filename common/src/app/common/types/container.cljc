@@ -296,7 +296,7 @@
                                                             (gpt/add orig-pos delta)
                                                             {:skip-components? true
                                                              :bottom-frames? true}))
-         ids-map   (volatile! {})
+         ids-map         (volatile! {})
 
          update-new-shape
          (fn [new-shape original-shape]
@@ -339,7 +339,7 @@
 
          [new-shape new-shapes _]
          (ctst/clone-object component-shape
-                            nil
+                            uuid/zero
                             (if components-v2 (:objects component-page) (:objects component))
                             update-new-shape
                             (fn [object _] object)

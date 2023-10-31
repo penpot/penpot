@@ -354,29 +354,38 @@
   the order of the children of each parent."
 
   ([object parent-id objects]
-   (clone-object object parent-id objects (fn [object _] object) (fn [object _] object) nil false))
+   (clone-object object parent-id objects (fn [object _] object) (fn [object _] object) nil false true))
 
   ([object parent-id objects update-new-object]
-   (clone-object object parent-id objects update-new-object (fn [object _] object) nil false))
+   (clone-object object parent-id objects update-new-object (fn [object _] object) nil false true))
 
   ([object parent-id objects update-new-object update-original-object]
-   (clone-object object parent-id objects update-new-object update-original-object nil false))
+   (clone-object object parent-id objects update-new-object update-original-object nil false true))
 
   ([object parent-id objects update-new-object update-original-object force-id]
-   (clone-object object parent-id objects update-new-object update-original-object force-id false))
+   (clone-object object parent-id objects update-new-object update-original-object force-id false true))
 
   ([object parent-id objects update-new-object update-original-object force-id keep-ids?]
+   (clone-object object parent-id objects update-new-object update-original-object force-id keep-ids? true))
+
+  ([object parent-id objects update-new-object update-original-object force-id keep-ids? calc-frame?]
    (let [new-id (cond
                   (some? force-id) force-id
                   keep-ids? (:id object)
                   :else (uuid/next))
 
-         ;; Assign the correct frame-id for the given parent.
-         ;; It's the parent-id (if frame) or the parent's frame-id otherwise.
-         frame-id
-         (if (cph/frame-shape? objects parent-id)
-           parent-id
-           (dm/get-in objects [parent-id :frame-id]))]
+         ;; Assign the correct frame-id for the given parent. It's the parent-id (if parent is frame)
+         ;; or the parent's frame-id otherwise. Only for the first cloned shapes. In recursive calls
+         ;; this is not needed.
+         frame-id (cond
+                    (and calc-frame? (cph/frame-shape? objects parent-id))
+                    parent-id
+
+                    calc-frame?
+                    (dm/get-in objects [parent-id :frame-id])
+
+                    :else
+                    (:frame-id object))]
 
      (loop [child-ids (seq (:shapes object))
             new-direct-children []
@@ -408,7 +417,7 @@
                _        (dm/assert! (some? child))
 
                [new-child new-child-objects updated-child-objects]
-               (clone-object child new-id objects update-new-object update-original-object nil keep-ids?)]
+               (clone-object child new-id objects update-new-object update-original-object nil keep-ids? false)]
 
            (recur
             (next child-ids)
