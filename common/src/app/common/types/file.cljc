@@ -205,7 +205,7 @@
 (defn find-remote-shape
   "Recursively go back by the :shape-ref of the shape until find the correct shape of the original component"
   [container libraries shape]
-  (let [top-instance        (ctn/get-top-instance (:objects container) shape nil)
+  (let [top-instance        (ctn/get-component-shape (:objects container) shape)
         component-file      (get-in libraries [(:component-file top-instance) :data])
         component           (ctkl/get-component component-file (:component-id top-instance) true)
         remote-shape        (get-ref-shape component-file component shape)

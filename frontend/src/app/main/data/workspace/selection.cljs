@@ -463,7 +463,7 @@
 
            new-obj (cond-> new-obj
                      (not duplicating-component?)
-                     (dissoc :shape-ref))
+                     (ctk/detach-shape))
 
            ; We want the first added object to touch it's parent, but not subsequent children
            changes (-> (pcb/add-object changes new-obj {:ignore-touched (and duplicating-component? child?)})

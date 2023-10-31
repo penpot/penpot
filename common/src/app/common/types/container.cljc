@@ -192,6 +192,23 @@
       (ctk/instance-head? shape)
       (inside-component-main? objects shape)))
 
+(defn convert-shape-in-component
+  "Set the shape as a main root instance, pointing to a new component.
+   Also remove component-root of all children. Return the same structure
+   as make-component-shape."
+  [root objects file-id]
+  (let [new-id       (uuid/next)
+        new-root     (assoc root
+                            :component-id new-id
+                            :component-file file-id
+                            :component-root true
+                            :main-instance true)
+        new-children (->> (cph/get-children objects (:id root))
+                          (map #(dissoc % :component-root)))]
+    [(assoc new-root :id new-id)
+     nil
+     (into [new-root] new-children)]))
+
 (defn make-component-shape
   "Clone the shape and all children. Generate new ids and detach
   from parent and frame. Update the original shapes to have links
@@ -343,21 +360,6 @@
 
      [(remap-ids new-shape)
       (map remap-ids new-shapes)])))
-
-(defn get-top-instance
-  "The case of having an instance that contains another instances.
-  The topmost one, that is not part of other instance, is the Top instance"
-  [objects shape current-top]
-  (let [current-top (if (and
-                         (not (ctk/main-instance? shape))
-                         (ctk/instance-head? shape))
-                      shape current-top)
-        parent-id   (:parent-id shape)
-        parent      (get objects parent-id)]
-    (if (= parent-id uuid/zero)
-      current-top
-      (get-top-instance objects parent current-top))))
-
 
 (defn get-first-not-copy-parent
   "Go trough the parents until we find a shape that is not a copy of a component."
