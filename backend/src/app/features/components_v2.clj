@@ -644,9 +644,11 @@
                                       {:features (db/create-array conn "text" (conj features "components/v2"))}
                                       {:id team-id}))))))
       (finally
-        (prn "sem:pre:release" (.availablePermits *semaphore*) (dm/str team-id))
+        (locking prn
+          (prn "sem:pre:release" (.availablePermits *semaphore*) (dm/str team-id)))
         (-> *semaphore* ps/release!)
-        (prn "sem:post:release" (.availablePermits *semaphore*) (dm/str team-id))
+        (locking prn
+          (prn "sem:post:release" (.availablePermits *semaphore*) (dm/str team-id)))
 
         (let [elapsed (dt/format-duration (tpoint))
               stats   (some-> *stats* deref)]
