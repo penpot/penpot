@@ -23,6 +23,11 @@
   padding: 0;
   cursor: pointer;
 
+  .code-block & {
+    visibility: visible;
+    opacity: 1;
+  }
+
   svg {
     width: 16px;
     height: 16px;

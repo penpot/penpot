@@ -228,7 +228,7 @@
                 (do (reset! hover selected-shape)
                     (st/emit! (dw/select-shape (:id selected-shape))))
 
-                (and (not selected-shape) (some? grid-layout-id))
+                (and (not selected-shape) (some? grid-layout-id) (not workspace-read-only?))
                 (st/emit! (dw/start-edition-mode grid-layout-id)))))))))))
 
 (defn on-context-menu

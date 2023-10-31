@@ -366,7 +366,7 @@ $height-palette-max: 80px;
   pointer-events: none;
 
   .path-actions,
-  .grid-actions {
+  .viewport-actions-container {
     pointer-events: initial;
     display: flex;
     flex-direction: row;
@@ -377,7 +377,7 @@ $height-palette-max: 80px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
-  .grid-actions {
+  .viewport-actions-container {
     padding-left: 1rem;
     gap: 12px;
     color: var(--color-gray-60);
@@ -389,7 +389,7 @@ $height-palette-max: 80px;
       height: 24px;
     }
 
-    .grid-edit-title {
+    .viewport-actions-title {
       margin-right: 2rem;
     }
 

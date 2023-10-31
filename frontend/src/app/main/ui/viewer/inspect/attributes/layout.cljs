@@ -37,7 +37,8 @@
        (for [property properties]
          (when-let [value (css/get-css-value objects shape property)]
            [:div {:class (stl/css :layout-row)}
-            [:div {:class (stl/css :global/attr-label)} (d/name property)]
+            [:div {:title (d/name property)
+                   :class (stl/css :global/attr-label)} (d/name property)]
             [:div {:class (stl/css :global/attr-value)}
 
              [:& copy-button {:data (css/get-css-property objects shape property)}
@@ -47,7 +48,7 @@
        (for [property properties]
          (when-let [value (css/get-css-value objects shape property)]
            [:div.attributes-unit-row
-            [:div.attributes-label (d/name property)]
+            [:div.attributes-label {:title (d/name property)} (d/name property)]
             [:div.attributes-value value]
             [:& copy-button {:data (css/get-css-property objects shape property)}]]))])))
 
