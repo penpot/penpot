@@ -13,6 +13,7 @@
    [app.common.data :as d]
    [app.common.files.migrations :as pmg]
    [app.common.logging :as l]
+   [app.common.thumbnails :as thc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
@@ -152,15 +153,19 @@
 
 (defn- clean-file-object-thumbnails!
   [{:keys [::db/conn ::sto/storage]} file-id data]
-  (let [stored (->> (db/query conn :file-object-thumbnail
+  (let [stored (->> (db/query conn :file_object_thumbnail
                               {:file-id file-id}
                               {:columns [:object-id]})
                     (into #{} (map :object-id)))
 
         using  (into #{}
-                     (mapcat (fn [{:keys [id objects]}]
-                               (->> (ctt/get-frames objects)
-                                    (map #(str id (:id %))))))
+                     (mapcat
+                      (fn [{:keys [id objects]}]
+                        (->> (ctt/get-frames objects)
+                             (mapcat
+                              #(vector
+                                (thc/fmt-object-id file-id id (:id %) "frame")
+                                (thc/fmt-object-id file-id id (:id %) "component"))))))
                      (vals (:pages-index data)))
 
         unused (set/difference stored using)]

@@ -6,8 +6,9 @@
 
 (ns backend-tests.rpc-file-thumbnails-test
   (:require
-   [app.common.uuid :as uuid]
+   [app.common.thumbnails :as thc]
    [app.common.types.shape :as cts]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
@@ -66,7 +67,7 @@
         data2   {::th/type :create-file-object-thumbnail
                  ::rpc/profile-id (:id profile)
                  :file-id (:id file)
-                 :object-id (str page-id shid)
+                 :object-id (thc/fmt-object-id (:id file) page-id shid "frame")
                  :media {:filename "sample.jpg"
                          :size 7923
                          :path (th/tempfile "backend_tests/test_files/sample2.jpg")
