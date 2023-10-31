@@ -10,7 +10,8 @@
    [app.common.geom.shapes.flex-layout.bounds :as fbo]
    [app.common.geom.shapes.flex-layout.drop-area :as fdr]
    [app.common.geom.shapes.flex-layout.layout-data :as fld]
-   [app.common.geom.shapes.flex-layout.modifiers :as fmo]))
+   [app.common.geom.shapes.flex-layout.modifiers :as fmo]
+   [app.common.geom.shapes.flex-layout.params :as fp]))
 
 (dm/export fbo/layout-content-bounds)
 (dm/export fbo/layout-content-points)
@@ -19,3 +20,4 @@
 (dm/export fdr/get-drop-areas)
 (dm/export fld/calc-layout-data)
 (dm/export fmo/layout-child-modifiers)
+(dm/export fp/calculate-params)

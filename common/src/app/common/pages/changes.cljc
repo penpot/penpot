@@ -373,7 +373,7 @@
 
             (cond-> objects
               @changed?
-              (assoc-in [parent-id :shapes] new-shapes))))
+              (d/assoc-in-when [parent-id :shapes] new-shapes))))
 
         check-modify-component
         (fn [data]

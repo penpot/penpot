@@ -420,6 +420,11 @@
           justify-self (:justify-self cell)]
       (when (not= justify-self :auto) justify-self))))
 
+(defmethod get-value :grid-auto-flow
+  [_ shape _]
+  (when (and (ctl/grid-layout? shape) (= (:layout-grid-dir shape) :column))
+    "column"))
+
 (defmethod get-value :default
   [property shape _]
   (get shape property))

@@ -1316,20 +1316,25 @@
        [:div.element-set-title
         [:*
          [:span "Layout"]
-         (if (and (not multiple) (:layout values))
-           [:div.title-actions
-            (when (features/active-feature? :grid-layout)
-              [:div.layout-btns
-               [:button {:on-click set-flex
-                         :class (dom/classnames
-                                 :active (= :flex layout-type))} "Flex"]
-               [:button {:on-click set-grid
-                         :class (dom/classnames
-                                 :active (= :grid layout-type))} "Grid"]])
-            [:button.remove-layout {:on-click on-remove-layout} i/minus]]
 
-           [:button.add-page {:data-value :flex
-                              :on-click on-set-layout} i/close])]]
+         (if (features/active-feature? :grid-layout)
+           [:div.title-actions
+            [:div.layout-btns
+             [:button {:on-click set-flex
+                       :class (dom/classnames
+                               :active (= :flex layout-type))} "Flex"]
+             [:button {:on-click set-grid
+                       :class (dom/classnames
+                               :active (= :grid layout-type))} "Grid"]]
+
+            (when (and (not multiple) (:layout values))
+              [:button.remove-layout {:on-click on-remove-layout} i/minus])]
+
+           [:div.title-actions
+            (if (and (not multiple) (:layout values))
+              [:button.remove-layout {:on-click on-remove-layout} i/minus]
+              [:button.add-page {:data-value :flex
+                                 :on-click on-set-layout} i/close])])]]
 
        (when (:layout values)
          (when (not= :multiple layout-type)

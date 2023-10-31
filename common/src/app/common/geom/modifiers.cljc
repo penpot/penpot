@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.geom.shapes.modifiers
+(ns app.common.geom.modifiers
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
