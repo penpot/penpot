@@ -125,17 +125,29 @@
                           :child-id child-id)))))))
 
 (defn validate-frame
-  "Validate that the frame-id shape exists and is indeed a frame."
+  "Validate that the frame-id shape exists and is indeed a frame. Also it must point to the
+   parent shape (if this is a frame) or to the frame-id of the parent (if not)."
   [shape file page]
   (let [frame (ctst/get-shape page (:frame-id shape))]
     (if (nil? frame)
       (report-error :frame-not-found
                     (str/format "Frame %s not found" (:frame-id shape))
                     shape file page)
-      (when (not= (:type frame) :frame)
+      (if (not= (:type frame) :frame)
         (report-error :invalid-frame
                       (str/format "Frame %s is not actually a frame" (:frame-id shape))
-                      shape file page)))))
+                      shape file page)
+        (let [parent (ctst/get-shape page (:parent-id shape))]
+          (when (some? parent)
+            (if (= (:type parent) :frame)
+              (when-not (= (:frame-id shape) (:id parent))
+                (report-error :invalid-frame
+                              (str/format "Frame-id should point to parent" (:id parent))
+                              shape file page))
+              (when-not (= (:frame-id shape) (:frame-id parent))
+                (report-error :invalid-frame
+                              (str/format "Frame-id should point to parent frame" (:frame-id parent))
+                              shape file page)))))))))
 
 (defn validate-component-main-head
   "Validate shape is a main instance head, component exists and its main-instance points to this shape."
