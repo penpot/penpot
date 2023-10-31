@@ -555,33 +555,32 @@
       #_(locking prn
         (app.common.pprint/pprint file {:level 1}))
 
-      (let [libs (->> (sequence
-                       (map (fn [{:keys [id] :as lib}]
-                              (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
-                                (-> (db/get conn :file {:id id})
-                                    (files/decode-row)
-                                    (files/process-pointers deref) ; ensure all pointers resolved
-                                    (pmg/migrate-file)))))
-                       (files/get-file-libraries conn id))
-                      (d/index-by :id))
+      (let [libs (sequence
+                  (map (fn [{:keys [id] :as lib}]
+                         (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
+                           (-> (db/get conn :file {:id id})
+                               (files/decode-row)
+                               (files/process-pointers deref) ; ensure all pointers resolved
+                               (pmg/migrate-file)))))
+                  (files/get-file-libraries conn id))
 
-
-            file (-> file
-                     (update :data blob/decode))
+            libs (-> (d/index-by :id libs)
+                     (assoc (:id file) file))
 
             file (-> file
+                     (update :data blob/decode)
                      (update :data assoc :id id)
                      (update :data migrate-file-data libs)
                      (update :features conj "components/v2"))]
 
-        (when (contains? (:features file) "fdata/pointer-map")
-          (files/persist-pointers! conn id))
+        #_(when (contains? (:features file) "fdata/pointer-map")
+            (files/persist-pointers! conn id))
 
-        (db/update! conn :file
-                    {:data (blob/encode (:data file))
-                     :features (db/create-array conn "text" (:features file))
-                     :revn (:revn file)}
-                    {:id (:id file)})
+        #_(db/update! conn :file
+                      {:data (blob/encode (:data file))
+                       :features (db/create-array conn "text" (:features file))
+                       :revn (:revn file)}
+                      {:id (:id file)})
 
         (dissoc file :data)))))
 
