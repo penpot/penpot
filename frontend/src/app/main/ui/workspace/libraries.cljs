@@ -441,9 +441,8 @@
   {::mf/wrap-props false}
   [{:keys [file-id file-data libraries]}]
   (let [summary?*  (mf/use-state true)
-        updating?* (mf/use-state false)
         summary?   (deref summary?*)
-        updating?  (deref updating?*)
+        updating?  (mf/deref refs/updating-library)
 
         see-all-assets
         (mf/use-fn
@@ -467,8 +466,9 @@
                             (let [library-id (some-> (dom/get-target event)
                                                      (dom/get-data "library-id")
                                                      (parse-uuid))]
-                              (reset! updating?* true)
-                              (st/emit! (dwl/sync-file file-id library-id))))))]
+                              (st/emit!
+                               (dwl/set-updating-library true)
+                               (dwl/sync-file file-id library-id))))))]
 
     (if new-css-system
       [:div {:class (stl/css :section)}
