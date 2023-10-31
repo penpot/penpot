@@ -232,14 +232,15 @@
       (binding [feat/*stats* stats
                 feat/*semaphore* sem]
         (try
-          (pu/with-open [scope (px/structured-task-scope {:preset :shutdown-on-failure})]
+          (pu/with-open [scope (px/structured-task-scope #_{:preset :shutdown-on-failure})]
             (run! (fn [team-id]
-                    (locking prn
-                      (prn "sem:pre:acquire" (.availablePermits sem) (dm/str team-id)))
                     (ps/acquire! sem)
-                    (locking prn
-                      (prn "sem:post:acquire" (.availablePermits sem) (dm/str team-id)))
-                    (px/submit! scope (partial feat/migrate-team! system team-id)))
+                    (px/submit! scope (fn []
+                                        (try
+                                          (feat/migrate-team! system team-id)
+                                          (catch Throwable cause
+                                            (l/err :hint "unexpected error" :cause cause))))))
+
                   (get-candidates))
             (p/await! scope))
 
