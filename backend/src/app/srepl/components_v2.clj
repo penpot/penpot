@@ -233,7 +233,6 @@
                 feat/*semaphore* sem]
         (try
           (pu/with-open [scope (px/structured-task-scope {:preset :shutdown-on-failure})]
-            (prn scope)
             (run! (fn [team-id]
                     (ps/acquire! feat/*semaphore*)
                     (px/submit! scope (partial feat/migrate-team! system team-id)))
