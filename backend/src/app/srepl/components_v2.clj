@@ -222,7 +222,7 @@
                  (map :id)))]
 
     (l/dbg :hint "migrate:start")
-    (let [sem    (ps/create :permits max-jobs)
+    (let [sem    (java.util.concurrent.Semaphore. (int max-jobs) true)
           total  (get-total-teams pool)
           stats  (atom {:teams/total total})
           tpoint (dt/tpoint)]
@@ -234,11 +234,9 @@
         (try
           (pu/with-open [scope (px/structured-task-scope {:preset :shutdown-on-failure})]
             (run! (fn [team-id]
-
                     (prn "sem:pre:acquire" (.availablePermits sem))
-                    (ps/acquire! feat/*semaphore*)
+                    (ps/acquire! sem)
                     (prn "sem:post:acquire" (.availablePermits sem))
-
                     (px/submit! scope (partial feat/migrate-team! system team-id)))
                   (get-candidates))
             (p/await! scope))
