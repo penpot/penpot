@@ -644,7 +644,10 @@
                                       {:features (db/create-array conn "text" (conj features "components/v2"))}
                                       {:id team-id}))))))
       (finally
+        (prn "sem:pre:release" (.availablePermits *semaphore*))
         (-> *semaphore* ps/release!)
+        (prn "sem:post:release" (.availablePermits *semaphore*))
+
         (let [elapsed (dt/format-duration (tpoint))
               stats   (some-> *stats* deref)]
           (l/dbg :hint "migrate:team:end"

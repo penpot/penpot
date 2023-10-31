@@ -234,7 +234,11 @@
         (try
           (pu/with-open [scope (px/structured-task-scope {:preset :shutdown-on-failure})]
             (run! (fn [team-id]
+
+                    (prn "sem:pre:acquire" (.availablePermits sem))
                     (ps/acquire! feat/*semaphore*)
+                    (prn "sem:post:acquire" (.availablePermits sem))
+
                     (px/submit! scope (partial feat/migrate-team! system team-id)))
                   (get-candidates))
             (p/await! scope))
