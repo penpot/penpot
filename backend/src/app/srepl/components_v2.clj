@@ -30,8 +30,8 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
-   [app.features.components-v2 :as feat :refer [migrate-file! migrate-team!]]
    [app.db :as db]
+   [app.features.components-v2 :as feat]
    [app.media :as media]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.media :as cmd.media]
@@ -102,15 +102,14 @@
         res (db/exec-one! pool [sql])]
     (:count res)))
 
-(defn repl-migrate-file
+(defn migrate-file!
   [{:keys [::db/pool] :as system} file-id]
 
   (l/dbg :hint "migrate:start")
   (let [tpoint (dt/tpoint)]
     (try
-      (binding [feat/*system* system
-                feat/*stats*  (atom {})]
-        (feat/migrate-file! file-id)
+      (binding [feat/*stats*  (atom {})]
+        (feat/migrate-file! system file-id)
         (-> (deref feat/*stats*)
             (assoc :elapsed (dt/format-duration (tpoint)))
             (dissoc :current/graphics)
@@ -124,7 +123,7 @@
         (let [elapsed (dt/format-duration (tpoint))]
           (l/dbg :hint "migrate:end" :elapsed elapsed))))))
 
-(defn repl-migrate-files
+(defn migrate-files!
   [{:keys [::db/pool] :as system} & {:keys [chunk-size max-jobs max-items start-at]
                                      :or {chunk-size 10 max-jobs 10 max-items Long/MAX_VALUE}}]
   (letfn [(get-chunk [cursor]
@@ -158,7 +157,7 @@
 
             (run! (fn [file-id]
                     (ps/acquire! feat/*semaphore*)
-                    (px/submit! scope (partial migrate-file! system file-id)))
+                    (px/submit! scope (partial feat/migrate-file! system file-id)))
                   (get-candidates))
 
             (p/await! scope))
@@ -176,36 +175,32 @@
           (let [elapsed (dt/format-duration (tpoint))]
             (l/dbg :hint "migrate:end" :elapsed elapsed))))))))
 
-(defn repl-migrate-team
-  [{:keys [::db/pool] :as system} team-id & {:keys [max-jobs]
-                                             :or {max-jobs Integer/MAX_VALUE}}]
+(defn migrate-team!
+  [{:keys [::db/pool] :as system} team-id]
   (l/dbg :hint "migrate:start")
 
-  (let [sem    (ps/create :permits max-jobs)
-        total  (get-total-files pool :team-id team-id)
+  (let [total  (get-total-files pool :team-id team-id)
         stats  (atom {:files/total total})
         tpoint (dt/tpoint)]
 
     (add-watch stats :progress-report (report-progress-files tpoint))
-
-    (binding [feat/*stats* stats
-              feat/*semaphore* sem]
-      (try
-        (migrate-team! system team-id)
+    (try
+      (binding [feat/*stats* stats]
+        (feat/migrate-team! system team-id)
         (-> (deref feat/*stats*)
             (assoc :elapsed (dt/format-duration (tpoint)))
             (dissoc :current/graphics)
             (dissoc :current/components)
-            (dissoc :current/files))
+            (dissoc :current/files)))
 
-        (catch Throwable cause
-          (l/dbg :hint "migrate:error" :cause cause))
+      (catch Throwable cause
+        (l/dbg :hint "migrate:error" :cause cause))
 
-        (finally
-          (let [elapsed (dt/format-duration (tpoint))]
-            (l/dbg :hint "migrate:end" :elapsed elapsed)))))))
+      (finally
+        (let [elapsed (dt/format-duration (tpoint))]
+          (l/dbg :hint "migrate:end" :elapsed elapsed))))))
 
-(defn repl-migrate-teams
+(defn migrate-teams!
   [{:keys [::db/pool] :as system} & {:keys [chunk-size max-jobs max-items start-at]
                                      :or {chunk-size 100
                                           max-jobs Integer/MAX_VALUE

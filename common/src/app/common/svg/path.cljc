@@ -15,36 +15,65 @@
    [cuerdas.core :as str]))
 
 (def commands-regex #"(?i)[mzlhvcsqta][^mzlhvcsqta]*")
-(def regex #"([+-]?(\d+(\.\d+)?|\.\d+)(e[+-]?\d+)?|[01])")
+;; (def regex #"(([+-]?(\d+(\.\d+)?|\.\d+)(e[+-]?\d+)?)|[01])")
+
+;; Matches numbers for path values allows values like... -.01, 10, +12.22
+;; 0 and 1 are special because can refer to flags
+(def regex #"[+-]?(\d+(\.\d+)?|\.\d+)(e[+-]?\d+)?")
 
 
+;; ;; FIX BUGS
 (defn extract-params
-  [data params-pattern]
-  (loop [result []
-         pattern (seq params-pattern)
+  [data pattern]
+  (loop [result  []
+         ptt-idx 0
          current {}
-         entries (re-seq regex data)]
+         entries (re-seq regex data)
+         match   (ffirst entries)]
 
-    (if (and entries pattern)
-      (let [[attr-name
-             attr-type] (first pattern)
-            match       (first entries)
-            rval        (first match)
-            val         (if (= attr-type :flag)
-                          (d/parse-integer rval)
-                          (-> rval csvg/fix-dot-number d/parse-double))
-            current     (assoc current attr-name val)
-            next-pattern (next pattern)]
+    (if match
+      (let [[attr-name attr-type] (nth pattern ptt-idx)
+            ptt-idx (inc ptt-idx)
+            ptt-cnt (count pattern)
 
-        (if (some? next-pattern)
-          (recur result
-                 next-pattern
-                 current
-                 (next entries))
-          (recur (conj result current)
-                 (seq params-pattern)
-                 {}
-                 (next entries))))
+            value   (if (= attr-type :flag)
+                      (if (= 1 (count match))
+                        (d/parse-integer match)
+                        (d/parse-integer (subs match 0 1)))
+                      (-> match csvg/fix-dot-number d/parse-double))
+
+            current (assoc current attr-name value)
+
+            result  (if (>= ptt-idx ptt-cnt)
+                      (conj result current)
+                      result)
+
+            current (if (>= ptt-idx ptt-cnt)
+                      {}
+                      current)
+
+            match   (if (and (= attr-type :flag)
+                             (> (count match) 1))
+                      (subs match 1)
+                      nil)
+
+            entries (if match
+                      entries
+                      (rest entries))
+
+            match   (if match
+                      match
+                      (ffirst entries))
+
+            ptt-idx (if (>= ptt-idx ptt-cnt)
+                      0
+                      ptt-idx)]
+
+        (recur result
+               ptt-idx
+               current
+               entries
+               match))
 
       (if (seq current)
         (conj result current)
@@ -144,7 +173,7 @@
        :params params})))
 
 (defmethod parse-command "A" [cmd]
-  (let [relative (str/starts-with? cmd "a")
+  (let [relative   (str/starts-with? cmd "a")
         param-list (extract-params cmd [[:rx :number]
                                         [:ry :number]
                                         [:x-axis-rotation :number]
@@ -253,6 +282,7 @@
   [x1 y1 x2 y2 fa fs rx ry phi]
   (let [tau      (* mth/PI 2)
         phi-tau  (/ (* phi tau) 360)
+
         sin-phi  (mth/sin phi-tau)
         cos-phi  (mth/cos phi-tau)
 
@@ -261,12 +291,13 @@
         y1p      (+ (/ (* (- sin-phi) (- x1 x2)) 2)
                     (/ (* cos-phi (- y1 y2)) 2))]
 
-    (if (or (= x1p 0)
-            (= y1p 0)
-            (= rx 0)
-            (= ry 0))
+    (if (or (zero? x1p)
+            (zero? y1p)
+            (zero? rx)
+            (zero? ry))
       []
-      (let [rx       (mth/abs rx)
+      (let [
+            rx       (mth/abs rx)
             ry       (mth/abs ry)
             lambda   (+ (/ (* x1p x1p) (* rx rx))
                         (/ (* y1p y1p) (* ry ry)))
@@ -290,7 +321,8 @@
                      (conj r curve)))
             r))))))
 
-(defn arc->beziers [from-p command]
+(defn arc->beziers
+  [from-p {:keys [params] :as command}]
   (let [to-command
         (fn [[_ _ c1x c1y c2x c2y x y]]
           {:command :curve-to
@@ -300,8 +332,16 @@
                     :x   x   :y   y}})
 
         {from-x :x from-y :y} from-p
-        {:keys [rx ry x-axis-rotation large-arc-flag sweep-flag x y]} (:params command)
-        result (arc->beziers* from-x from-y x y large-arc-flag sweep-flag rx ry x-axis-rotation)]
+
+        x               (get params :x 0.0)
+        y               (get params :y 0.0)
+        rx              (get params :rx 0.0)
+        ry              (get params :ry 0.0)
+        x-axis-rotation (get params :x-axis-rotation 0)
+        large-arc-flag  (get params :large-arc-flag 0)
+        sweep-flag      (get params :sweep-flag 0)
+        result          (arc->beziers* from-x from-y x y large-arc-flag sweep-flag rx ry x-axis-rotation)]
+
     (mapv to-command result)))
 
 (defn simplify-commands
@@ -314,33 +354,28 @@
         ;; prev-qc    : previous command control point for quadratic curves
         (fn [[result prev-pos prev-start prev-cc prev-qc] [command _prev]]
           (let [command (assoc command :prev-pos prev-pos)
-
                 command
                 (cond-> command
                   (:relative command)
                   (-> (assoc :relative false)
-                      (update :params (fn [params]
-                                        (let [x (:x prev-pos)
-                                              y (:y prev-pos)
-                                              c (:command command)]
-                                          (-> params
-                                              (d/update-when :c1x + x)
-                                              (d/update-when :c1y + y)
+                      (d/update-in-when [:params :c1x] + (:x prev-pos))
+                      (d/update-in-when [:params :c1y] + (:y prev-pos))
 
-                                              (d/update-when :c2x + x)
-                                              (d/update-when :c2y + y)
+                      (d/update-in-when [:params :c2x] + (:x prev-pos))
+                      (d/update-in-when [:params :c2y] + (:y prev-pos))
 
-                                              (d/update-when :cx + x)
-                                              (d/update-when :cy + y)
+                      (d/update-in-when [:params :cx] + (:x prev-pos))
+                      (d/update-in-when [:params :cy] + (:y prev-pos))
 
-                                              (d/update-when :x + x)
-                                              (d/update-when :y + y)
+                      (d/update-in-when [:params :x] + (:x prev-pos))
+                      (d/update-in-when [:params :y] + (:y prev-pos))
 
-                                              (cond-> (= :line-to-horizontal c)
-                                                (d/update-when :value + x))
+                      (cond->
+                          (= :line-to-horizontal (:command command))
+                        (d/update-in-when [:params :value] + (:x prev-pos))
 
-                                              (cond-> (= :line-to-vertical c)
-                                                (d/update-when :value + y))))))))
+                        (= :line-to-vertical (:command command))
+                        (d/update-in-when [:params :value] + (:y prev-pos)))))
 
                 params (:params command)
                 orig-command command
@@ -350,10 +385,8 @@
                   (= :line-to-horizontal (:command command))
                   (-> (assoc :command :line-to)
                       (update :params dissoc :value)
-                      (update :params (fn [params]
-                                        (-> params
-                                            (assoc :x (:value params))
-                                            (assoc :y (:y prev-pos))))))
+                      (assoc-in [:params :x] (:value params))
+                      (assoc-in [:params :y] (:y prev-pos)))
 
                   (= :line-to-vertical (:command command))
                   (-> (assoc :command :line-to)
@@ -405,6 +438,7 @@
                            (upc/command->point prev-pos command))
 
                 next-start (if (= :move-to (:command command)) next-pos prev-start)]
+
 
             [result next-pos next-start next-cc next-qc]))
 

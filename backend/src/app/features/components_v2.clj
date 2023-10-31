@@ -33,6 +33,7 @@
    [app.db :as db]
    [app.media :as media]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.commands.media :as cmd.media]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
@@ -42,8 +43,10 @@
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
    [cuerdas.core :as str]
+   [datoteka.fs :as fs]
    [datoteka.io :as io]
    [promesa.core :as p]
+   [app.common.transit :as t]
    [promesa.exec :as px]
    [promesa.exec.semaphore :as ps]
    [promesa.util :as pu]))
@@ -158,8 +161,7 @@
           (letfn [(fix-container [container]
                     (reduce fix-shape container (ctn/shapes-seq container)))
 
-                  (fix-shape
-                    [container shape]
+                  (fix-shape [container shape]
                     (if (ctk/in-component-copy? shape)
                       ; First look for the direct shape.
                       (let [root         (ctn/get-component-shape (:objects container) shape)
@@ -296,25 +298,19 @@
                     (ctkl/update-component (:id component) update-component))))
 
             add-instance-grid
-            (fn [file-data]
-              (let [components   (->> file-data
-                                      (ctkl/components-seq)
-                                      (sort-by :name)
-                                      (reverse))
-                    position-seq (ctst/generate-shape-grid
-                                  (map (partial ctf/get-component-root file-data) components)
-                                  start-pos
-                                  grid-gap)]
-                (loop [file-data      file-data
-                       components-seq (seq components)
-                       position-seq   position-seq]
-                  (let [component (first components-seq)
-                        position  (first position-seq)]
-                    (if (nil? component)
-                      file-data
-                      (recur (add-main-instance file-data component position)
-                             (rest components-seq)
-                             (rest position-seq)))))))]
+            (fn [fdata]
+              (let [components (->> fdata
+                                    (ctkl/components-seq)
+                                    (sort-by :name)
+                                    (reverse))
+                    positions  (ctst/generate-shape-grid
+                                (map (partial ctf/get-component-root fdata) components)
+                                start-pos
+                                grid-gap)]
+                (reduce (fn [result [component position]]
+                          (add-main-instance result component position))
+                        fdata
+                        (d/zip components positions))))]
 
         (when (some? *stats*)
           (let [total (count components)]
@@ -504,7 +500,6 @@
                                      cfsh/prepare-create-artboard-from-selection)
         changes (pcb/concat-changes changes changes2)]
 
-    ;; (app.common.pprint/pprint change {:level 2 :lenght 5})
     (cp/process-changes fdata (:redo-changes changes) false)))
 
 (defn- migrate-graphics
@@ -528,12 +523,13 @@
                              (update :graphics (fnil + 0) total)
                              (assoc :current/graphics total))))))
 
-    (->> (d/enumerate (d/zip media grid))
-         (reduce (fn [fdata [_index [mobj position]]]
+    (->> (d/zip media grid)
+         (reduce (fn [fdata [mobj position]]
                    (try
                      (process-media-object fdata page-id mobj position)
-                     (catch Throwable _cause
-                       #_(l/warn :hint "unable to process file media object" :id (:id mobj)))))
+                     (catch Throwable cause
+                       (l/warn :hint "unable to process file media object" :id (:id mobj))
+                       (throw cause))))
                  fdata))))
 
 (defn- migrate-file-data
@@ -542,7 +538,8 @@
     (if migrated?
       fdata
       (let [fdata (migrate-components fdata libs)
-            fdata (migrate-graphics fdata)]
+            fdata (migrate-graphics fdata)
+            ]
         (update fdata :options assoc :components-v2 true)))))
 
 (defn- process-file
@@ -568,33 +565,38 @@
                        (files/get-file-libraries conn id))
                       (d/index-by :id))
 
+
             file (-> file
-                     (update :data blob/decode)
+                     (update :data blob/decode))
+
+            file (-> file
                      (update :data assoc :id id)
                      (update :data migrate-file-data libs)
                      (update :features conj "components/v2"))]
 
-        #_(when (contains? (:features file) "fdata/pointer-map")
-            (files/persist-pointers! conn id))
+        (when (contains? (:features file) "fdata/pointer-map")
+          (files/persist-pointers! conn id))
 
-        #_(db/update! conn conn :file
-                      {:data (blob/encode (:data file))
-                       :features (db/create-array conn "text" (:features file))
-                       :revn (:revn file)}
-                      {:id (:id file)})
+        (db/update! conn :file
+                    {:data (blob/encode (:data file))
+                     :features (db/create-array conn "text" (:features file))
+                     :revn (:revn file)}
+                    {:id (:id file)})
 
         (dissoc file :data)))))
 
 (defn migrate-file!
   [system file-id]
-  (let [tpoint (dt/tpoint)]
+  (let [tpoint  (dt/tpoint)
+        file-id (if (string? file-id)
+                  (parse-uuid file-id)
+                  file-id)]
     (try
       (l/dbg :hint "migrate:file:start" :file-id (str file-id))
       (let [system (update system ::sto/storage media/configure-assets-storage)]
         (db/tx-run! system
                     (fn [{:keys [::db/conn] :as system}]
                       (binding [*system* system]
-                        ;; FIXME: check if migration is needed
                         (-> (db/get conn :file {:id file-id})
                             (update :features db/decode-pgarray #{})
                             (process-file))))))
@@ -613,7 +615,10 @@
 
 (defn migrate-team!
   [system team-id & {:keys [lock?] :or {lock? true}}]
-  (let [tpoint (dt/tpoint)]
+  (let [tpoint  (dt/tpoint)
+        team-id (if (string? team-id)
+                  (parse-uuid team-id)
+                  team-id)]
     (l/dbg :hint "migrate:team:start" :team-id (dm/str team-id))
     (try
       (db/tx-run! system
@@ -623,20 +628,24 @@
                       (db/exec-one! conn ["SET idle_in_transaction_session_timeout = 0"])
                       (db/exec-one! conn ["select id from team where id=? for update" team-id]))
 
-                    (let [sql  (str/concat
-                                "SELECT DISTINCT f.id FROM file AS f "
-                                "  JOIN project AS p ON (p.id = f.project_id) "
-                                "WHERE p.team_id = ? AND f.deleted_at IS NULL AND p.deleted_at IS NULL")
-                          rows (->> (db/exec! conn [sql team-id])
-                                    (map :id))]
+                    (let [{:keys [features] :as team} (-> (db/get conn :team {:id team-id})
+                                                         (update :features db/decode-pgarray #{}))]
+                      (if (contains? features "components/v2")
+                        (l/dbg :hint "team already migrated")
+                        (let [sql  (str/concat
+                                    "SELECT DISTINCT f.id FROM file AS f "
+                                    "  JOIN project AS p ON (p.id = f.project_id) "
+                                    "WHERE p.team_id = ? AND f.deleted_at IS NULL AND p.deleted_at IS NULL")
+                              rows (->> (db/exec! conn [sql team-id])
+                                        (map :id))]
 
-                      (some-> *stats* (swap! assoc :current/files (count rows)))
-                      (binding [*semaphore* nil]
-                        (run! (partial migrate-file! system) rows))
+                          (some-> *stats* (swap! assoc :current/files (count rows)))
+                          (binding [*semaphore* nil]
+                            (run! (partial migrate-file! system) rows))
 
-                      ;; TODO: update team with new feature
-                      )))
-
+                          (db/update! conn :team
+                                      {:features (db/create-array conn "text" (conj features "components/v2"))}
+                                      {:id team-id}))))))
       (finally
         (some-> *semaphore* ps/release!)
         (let [elapsed (dt/format-duration (tpoint))

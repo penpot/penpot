@@ -431,6 +431,7 @@
         (dissoc ::db/conn)
         (assoc ::binfile/input template)
         (assoc ::binfile/project-id (:id project))
+        (assoc ::binfile/profile-id profile-id)
         (assoc ::binfile/ignore-index-errors? true)
         (assoc ::binfile/migrate? true)
         (binfile/import!))))

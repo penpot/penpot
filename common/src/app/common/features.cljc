@@ -41,9 +41,7 @@
 ;; persist on file features field but can be permanently enabled on
 ;; team feature field
 (def frontend-only-features
-  #{"styles/v2"
-    "layout/grid" ;; FIXME: ?
-    })
+  #{"styles/v2"})
 
 ;; Features that are mainly backend only or there are a proper
 ;; fallback when frontend reports no support for it
@@ -58,7 +56,8 @@
 (def no-migration-features
   (into frontend-only-features
         #{"fdata/objects-map"
-          "fdata/pointer-map"}))
+          "fdata/pointer-map"
+          "layout/grid"}))
 
 (sm/def! ::features
   [:schema
@@ -118,15 +117,15 @@
   "Check if a given set of features are supported by this
   backend. Usually used for check if imported file features are
   supported by the current backend"
-  [features]
-  (let [not-supported (set/difference features supported-features)]
+  [enabled-features]
+  (let [not-supported (set/difference enabled-features supported-features)]
     (when (seq not-supported)
       (ex/raise :type :restriction
                 :code :features-mismatch
                 :feature (first not-supported)
                 :hint (str/ffmt "features '%' not supported"
                                 (str/join "," not-supported)))))
-  features)
+  enabled-features)
 
 (defn check-file-features!
   "Function used for check feature compability between currently
@@ -141,7 +140,7 @@
                            ;; exception for features which don't require an
                            ;; explicit file migration process or has no real
                            ;; effect on file data structure
-                           (set/difference frontend-only-features)
+                           #_(set/difference frontend-only-features)
                            (set/difference no-migration-features))]
      (when (seq not-supported)
        (ex/raise :type :restriction

@@ -640,7 +640,14 @@
           ;; Run all pending migrations
           (doseq [[feature file-id] (-> *state* deref :pending-to-migrate)]
             (case feature
-              "components/v2" (features.components-v2/migrate-file! options file-id)
+              "components/v2"
+              (features.components-v2/migrate-file! options file-id)
+
+              "fdata/shape-data-type"
+              nil
+
+              ;; "fdata/shape-data-type"
+              ;; (features.fdata/enable-objects-map
               (ex/raise :type :internal
                         :code :no-migration-defined
                         :hint (str/ffmt "no migation for feature '%' on file importation" feature)
@@ -675,6 +682,7 @@
 
 (defmethod read-section :v1/files
   [{:keys [::db/conn ::input ::migrate? ::project-id ::enabled-features ::timestamp ::overwrite?]}]
+
   (doseq [expected-file-id (-> *state* deref :files)]
     (let [file      (read-obj! input)
           media'    (read-obj! input)
@@ -682,10 +690,11 @@
           file-id   (:id file)
           file-id'  (lookup-index file-id)
 
-          features (-> enabled-features
+          features  (-> enabled-features
                         (set/intersection cfeat/no-migration-features)
                         (set/difference cfeat/frontend-only-features)
-                        (set/union (cfeat/check-supported-features! (:features file))))
+                        (set/union (cfeat/check-supported-features! (:features file)))
+                        (set/union cfeat/default-enabled-features))
           ]
 
       ;; All features that are enabled and requires explicit migration
@@ -693,7 +702,7 @@
       (doseq [feature (-> enabled-features
                           (set/difference cfeat/no-migration-features)
                           (set/difference (:features file)))]
-        (vswap! *state* :pending-to-migrate (fnil conj []) [feature file-id']))
+        (vswap! *state* update :pending-to-migrate (fnil conj []) [feature file-id']))
 
       (when (not= file-id expected-file-id)
         (ex/raise :type :validation
@@ -733,11 +742,10 @@
                                              (assoc :id file-id')
                                              (cond-> (> (:version data) cfd/version)
                                                (assoc :version cfd/version))
-                                             (cond-> migrate?
-                                               (pmg/migrate-data))
                                              (update :pages-index relink-shapes)
                                              (update :components relink-shapes)
-                                             (update :media relink-media))))
+                                             (update :media relink-media)
+                                             (pmg/migrate-data))))
                          (postprocess-file)
                          (update :features #(db/create-array conn "text" %))
                          (update :data blob/encode))]
@@ -1012,6 +1020,7 @@
   (db/with-atomic [conn pool]
     (projects/check-read-permissions! conn profile-id project-id)
     (let [ids (import! (assoc cfg
+                              ::migrate? true
                               ::input (:path file)
                               ::project-id project-id
                               ::profile-id profile-id

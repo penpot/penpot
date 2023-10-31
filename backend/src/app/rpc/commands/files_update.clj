@@ -155,11 +155,12 @@
 
                           features (-> (cfeat/get-enabled-features cf/flags team)
                                        (cfeat/check-client-features! (:features params))
-                                       (cfeat/check-file-features! (:features file) (:features params)))
+                                       (cfeat/check-file-features! (:features file) (:features params))
 
-                          features (-> features
+                                       (set/union (:features params))
                                        (set/intersection cfeat/no-migration-features)
                                        (set/difference cfeat/frontend-only-features)
+                                       (set/union cfeat/default-enabled-features)
                                        (set/union (:features file)))
 
                           params   (assoc params
@@ -188,11 +189,11 @@
           ;;       We must find some other way to do general validation.
           libraries (when (and (cf/flags :file-validation)
                                (not skip-validate))
-                      (-> (->> (files/get-file-libraries conn (:id file))
-                               (map #(get-file conn (:id %)))
-                               (map #(update % :data blob/decode))
-                               (d/index-by :id))
-                          (assoc (:id file) file)))
+                      (let [libs (->> (files/get-file-libraries conn (:id file))
+                                      (map #(get-file conn (:id %)))
+                                      (map #(update % :data blob/decode))
+                                      (d/index-by :id))]
+                        (assoc libs (:id file) file)))
 
           changes   (if changes-with-metadata
                       (->> changes-with-metadata (mapcat :changes) vec)
