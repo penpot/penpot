@@ -19,3 +19,41 @@
     color: var(--title-foreground-color-hover);
   }
 }
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+  .modal-container {
+    @extend .modal-container-base;
+    .modal-header {
+      margin-bottom: $s-24;
+      .modal-title {
+        @include tabTitleTipography;
+        color: var(--modal-title-foreground-color);
+      }
+      .modal-close-btn {
+        @extend .modal-close-btn-base;
+      }
+    }
+    .modal-content {
+      @include titleTipography;
+      margin-bottom: $s-24;
+      .input-wrapper {
+        @extend .input-with-label;
+      }
+    }
+    .modal-footer {
+      .action-buttons {
+        @extend .modal-action-btns;
+        .cancel-button {
+          @extend .modal-cancel-btn;
+        }
+        .accept-btn {
+          @extend .modal-accept-btn;
+          &.danger {
+            @extend .modal-danger-btn;
+          }
+        }
+      }
+    }
+  }
+}

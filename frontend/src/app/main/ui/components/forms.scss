@@ -1,0 +1,336 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+// INPUT
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-6;
+  align-items: center;
+  .input-with-label {
+    @include flexColumn;
+    gap: $s-8;
+    @include titleTipography;
+    justify-content: flex-start;
+    align-items: flex-start;
+    height: 100%;
+    width: 100%;
+    padding: 0;
+    cursor: pointer;
+    color: var(--modal-title-foreground-color);
+    text-transform: none;
+    input {
+      @extend .input-element;
+      color: var(--input-foreground-color-active);
+      width: calc(100% - $s-1);
+      margin-top: 0;
+    }
+    // Input autofill
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-text-fill-color: var(--input-foreground-color-active) !important;
+      -webkit-box-shadow: 0 0 0 28px var(--input-background-color) inset !important;
+      border: $s-1 solid var(--input-background-color);
+    }
+    &:focus {
+      outline: none;
+      border: $s-1 solid var(--input-border-color-focus);
+      border-radius: $br-8;
+    }
+  }
+  &:global(.invalid) {
+    input {
+      border: $s-1 solid var(--input-border-color-error);
+      @extend .disabled-input;
+    }
+  }
+}
+
+.help-icon {
+  cursor: pointer;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--input-details-color);
+  }
+}
+.error {
+  color: var(--input-border-color-error);
+}
+
+.hint {
+  @include titleTipography;
+  width: 99%;
+}
+
+.checkbox {
+  @extend .input-checkbox;
+  .checkbox-label {
+    @include titleTipography;
+    display: flex;
+    align-items: center;
+    flex-direction: row-reverse;
+    gap: $s-6;
+    min-height: $s-32;
+    cursor: pointer;
+    span {
+      @extend .checkbox-icon;
+    }
+    input {
+      display: none !important;
+    }
+    &:hover {
+      span {
+        border-color: var(--input-checkbox-border-color-hover);
+      }
+    }
+  }
+}
+
+// SELECT
+.custom-select {
+  @extend .select-wrapper;
+  height: $s-32;
+  .input-container {
+    @include flexRow;
+    height: $s-32;
+    width: 100%;
+    border-radius: $br-8;
+    border: $s-1 solid var(--input-background-color);
+    color: var(--input-foreground-color-active);
+    background-color: var(--input-background-color);
+    .main-content {
+      @include flexColumn;
+      @include titleTipography;
+      position: relative;
+      justify-content: center;
+      flex-grow: 1;
+      height: 100%;
+      padding: $s-8;
+
+      .label {
+        color: var(--input-foreground-color);
+      }
+      .value {
+        width: 100%;
+        padding: 0px;
+        margin: 0px;
+        border: 0px;
+        color: var(--input-foreground-color-active);
+      }
+    }
+    .icon {
+      @include flexCenter;
+      height: $s-32;
+      width: $s-24;
+      pointer-events: none;
+      svg {
+        @extend .button-icon-small;
+        stroke: var(--icon-foreground);
+        transform: rotate(90deg);
+      }
+    }
+
+    &.disabled {
+      background-color: var(--input-background-color-disabled);
+      border: $s-1 solid var(--input-border-color-disabled);
+      color: var(--input-foreground-color-disabled);
+    }
+    &.focus {
+      outline: none;
+      color: var(--input-foreground-color-active);
+      background-color: var(--input-background-color-active);
+      border: $s-1 solid var(--input-border-color-active);
+    }
+  }
+
+  select {
+    @extend .menu-dropdown;
+    @include titleTipography;
+    box-sizing: border-box;
+    position: absolute;
+    top: 0;
+    left: 0;
+    min-height: $s-32;
+    height: auto;
+    width: calc(100% - 1px);
+    padding: 0 $s-12;
+    margin: 0;
+    border: none;
+    opacity: 0;
+    z-index: $z-index-10;
+    background-color: transparent;
+    cursor: pointer;
+    option {
+      @include titleTipography;
+      color: var(--title-foreground-color-hover);
+      background-color: var(--menu-background-color);
+      appearance: none;
+      height: $s-32;
+    }
+  }
+}
+
+// SUBMIT-BUTTON
+.btn-disabled {
+  @extend .button-disabled;
+  height: $s-32;
+  padding: $s-8 $s-24;
+  border-radius: $br-8;
+}
+
+// MULTI INPUT
+
+.custom-multi-input {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: $s-40;
+  max-height: $s-180;
+  width: 100%;
+  overflow-y: hidden;
+  .inside-input {
+    @include removeInputStyle;
+    @include titleTipography;
+    @include textEllipsis;
+    width: 100%;
+    max-width: calc(100% - $s-1);
+    min-height: $s-32;
+    padding-top: 0;
+    height: $s-32;
+    padding: $s-8;
+    margin: 0;
+    border-radius: $br-8;
+    background-color: var(--input-background-color);
+    border: $s-1 solid var(--input-background-color);
+    color: var(--input-foreground-color-active);
+    &:focus {
+      outline: none;
+      border: $s-1 solid var(--input-border-color-focus);
+    }
+  }
+  label {
+    display: none;
+  }
+  .selected-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $s-4;
+    max-height: $s-136;
+    padding: $s-4 0;
+    overflow-y: scroll;
+    .selected-item {
+      .around {
+        @include flexRow;
+        height: $s-24;
+        width: fit-content;
+        padding-left: $s-6;
+        border-radius: $br-6;
+        background-color: var(--pill-background-color);
+        border: $s-1 solid var(--pill-background-color);
+        box-sizing: border-box;
+        .text {
+          @include titleTipography;
+          padding-right: $s-8;
+          color: var(--pill-foreground-color);
+        }
+
+        .icon {
+          @include flexCenter;
+          @include buttonStyle;
+          height: $s-32;
+          width: $s-24;
+          svg {
+            @extend .button-icon-small;
+            stroke: var(--icon-foreground);
+          }
+        }
+        &.invalid {
+          background-color: var(--status-error-background-color);
+          .text {
+            color: var(--alert-foreground-color-error);
+          }
+          .icon svg {
+            stroke: var(--alert-foreground-color-error);
+          }
+        }
+      }
+    }
+  }
+  &.empty {
+  }
+  &.invalid {
+  }
+
+  &.focus {
+  }
+  &.valid {
+  }
+}
+
+// RADIO BUTTONS
+
+.custom-radio {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.radio-label {
+  @include titleTipography;
+  @include flexRow;
+  min-height: $s-32;
+  border-radius: $br-8;
+  padding: $s-0 $s-2;
+  &:focus,
+  &:focus-within {
+    outline: none;
+    border: $s-1 solid var(--input-border-color-active);
+  }
+}
+
+.radio-dot {
+  height: $s-8;
+  width: $s-8;
+  border-radius: $br-circle;
+  background-color: var(--color-background-tertiary);
+}
+
+.radio-input {
+  width: 0;
+  margin: 0;
+}
+
+.radio-icon {
+  @extend .checkbox-icon;
+  border-radius: $br-circle;
+}
+
+.radio-label.with-image {
+  display: flex;
+  justify-content: center;
+  height: $s-120;
+  width: $s-140;
+  padding: $s-64 $s-4 0 $s-4;
+  margin-top: $s-16;
+  margin-right: 0;
+  border-radius: $br-8;
+  border: 1px solid var(--color-background-tertiary);
+  background-size: 50px;
+  background-repeat: no-repeat;
+  background-position: center 0.75rem;
+  cursor: pointer;
+  &:global(.checked) {
+    border: 1px solid var(--color-accent-primary);
+  }
+  &:focus,
+  &:focus-within {
+    outline: none;
+    border: $s-1 solid var(--input-border-color-active);
+  }
+}

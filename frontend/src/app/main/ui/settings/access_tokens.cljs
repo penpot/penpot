@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.settings.access-tokens
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.spec :as us]
    [app.main.data.messages :as dm]
@@ -13,6 +14,7 @@
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -49,7 +51,8 @@
   {::mf/register modal/components
    ::mf/register-as :access-token}
   []
-  (let [form    (fm/use-form
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        form    (fm/use-form
                  :initial initial-data
                  :spec ::access-token-form
                  :validators [name-validator
@@ -61,38 +64,38 @@
 
         on-success
         (mf/use-fn
-          (mf/deps created)
-          (fn [_]
-            (let [message (tr "dashboard.access-tokens.create.success")]
-              (st/emit! (du/fetch-access-tokens)
-                (dm/success message)
-                (reset! created? true)))))
+         (mf/deps created)
+         (fn [_]
+           (let [message (tr "dashboard.access-tokens.create.success")]
+             (st/emit! (du/fetch-access-tokens)
+                       (dm/success message)
+                       (reset! created? true)))))
 
         on-close
         (mf/use-fn
-          (mf/deps created)
-          (fn [_]
-            (reset! created? false)
-            (st/emit! (modal/hide))))
+         (mf/deps created)
+         (fn [_]
+           (reset! created? false)
+           (st/emit! (modal/hide))))
 
         on-error
         (mf/use-fn
-          (fn [_]
-            (st/emit! (dm/error (tr "errors.generic"))
-              (modal/hide))))
+         (fn [_]
+           (st/emit! (dm/error (tr "errors.generic"))
+                     (modal/hide))))
 
         on-submit
         (mf/use-fn
-          (fn [form]
-            (let [cdata      (:clean-data @form)
-                  mdata      {:on-success (partial on-success form)
-                              :on-error   (partial on-error form)}
-                  expiration (:expiration-date cdata)
-                  params     (cond-> {:name       (:name cdata)
-                                      :perms      (:perms cdata)}
-                               (not= "never" expiration) (assoc :expiration expiration))]
-              (st/emit! (du/create-access-token
-                          (with-meta params mdata))))))
+         (fn [form]
+           (let [cdata      (:clean-data @form)
+                 mdata      {:on-success (partial on-success form)
+                             :on-error   (partial on-error form)}
+                 expiration (:expiration-date cdata)
+                 params     (cond-> {:name       (:name cdata)
+                                     :perms      (:perms cdata)}
+                              (not= "never" expiration) (assoc :expiration expiration))]
+             (st/emit! (du/create-access-token
+                        (with-meta params mdata))))))
 
         copy-token
         (mf/use-fn
@@ -104,70 +107,143 @@
                                :content (tr "dashboard.access-tokens.copied-success")
                                :timeout 1000}))))]
 
-    [:div.modal-overlay
-     [:div.modal-container.access-tokens-modal
-      [:& fm/form {:form form :on-submit on-submit}
+    (if new-css-system
+      [:div {:class (stl/css :modal-overlay)}
+       [:div {:class (stl/css :modal-container)}
+        [:& fm/form {:form form :on-submit on-submit}
 
-       [:div.modal-header
-        [:div.modal-header-title
-         [:h2 (tr "modals.create-access-token.title")]]
+         [:div {:class (stl/css :modal-header)}
+          [:h2 {:class (stl/css :modal-title)} (tr "modals.create-access-token.title")]
 
-        [:div.modal-close-button
-         {:on-click on-close} i/close]]
+          [:button {:class (stl/css :modal-close-btn)
+                    :on-click on-close} i/close-refactor]]
 
-       [:div.modal-content.generic-form
-        [:div.fields-container
-         [:div.fields-row
-          [:& fm/input {:type "text"
-                        :auto-focus? true
-                        :form form
-                        :name :name
-                        :disabled @created?
-                        :label (tr "modals.create-access-token.name.label")
-                        :placeholder (tr "modals.create-access-token.name.placeholder")}]]
-
-         [:div.fields-row
-          [:& fm/select {:options [{:label (tr "dashboard.access-tokens.expiration-never")    :value "never" :key "never"}
-                                   {:label (tr "dashboard.access-tokens.expiration-30-days")  :value "720h"  :key "720h"}
-                                   {:label (tr "dashboard.access-tokens.expiration-60-days")  :value "1440h" :key "1440h"}
-                                   {:label (tr "dashboard.access-tokens.expiration-90-days")  :value "2160h" :key "2160h"}
-                                   {:label (tr "dashboard.access-tokens.expiration-180-days") :value "4320h" :key "4320h"}]
-                         :label (tr "modals.create-access-token.expiration-date.label")
-                         :default "never"
+         [:div {:class (stl/css :modal-content)}
+          [:div {:class (stl/css :fields-row)}
+           [:& fm/input {:type "text"
+                         :auto-focus? true
+                         :form form
+                         :name :name
                          :disabled @created?
-                         :name :expiration-date}]
-          (when @created?
-            [:span.token-created-info
-             (if (:expires-at created)
-               (tr "dashboard.access-tokens.token-will-expire" (dt/format-date-locale (:expires-at created) {:locale locale}))
-               (tr "dashboard.access-tokens.token-will-not-expire"))])]
+                         :label (tr "modals.create-access-token.name.label")
+                         :placeholder (tr "modals.create-access-token.name.placeholder")}]]
 
-         [:div.fields-row.access-token-created
-          (when @created?
-            [:div.custom-input.with-icon
-             [:input {:type "text"
-                      :value (:token created "")
-                      :placeholder (tr "modals.create-access-token.token")
-                      :read-only true}]
-             [:button.help-icon {:title (tr "modals.create-access-token.copy-token")
-                                 :on-click copy-token}
+          [:div {:class (stl/css :fields-row)}
+           [:div {:class (stl/css :select-title)}  (tr "modals.create-access-token.expiration-date.label")]
+           [:& fm/select {:options [{:label (tr "dashboard.access-tokens.expiration-never")    :value "never" :key "never"}
+                                    {:label (tr "dashboard.access-tokens.expiration-30-days")  :value "720h"  :key "720h"}
+                                    {:label (tr "dashboard.access-tokens.expiration-60-days")  :value "1440h" :key "1440h"}
+                                    {:label (tr "dashboard.access-tokens.expiration-90-days")  :value "2160h" :key "2160h"}
+                                    {:label (tr "dashboard.access-tokens.expiration-180-days") :value "4320h" :key "4320h"}]
+                          :default "never"
+                          :disabled @created?
+                          :name :expiration-date}]
+           (when @created?
+             [:span.token-created-info
+              (if (:expires-at created)
+                (tr "dashboard.access-tokens.token-will-expire" (dt/format-date-locale (:expires-at created) {:locale locale}))
+                (tr "dashboard.access-tokens.token-will-not-expire"))])]
 
-              i/copy]])]]]
+          [:div {:class (stl/css :fields-row)}
+           (when @created?
+             [:div {:class (stl/css :custon-input-wrapper)}
+              [:input {:type "text"
+                       :value (:token created "")
+                       :class (stl/css :custom-input-token)
+                       :placeholder (tr "modals.create-access-token.token")
+                       :read-only true}]
+              [:button {:title (tr "modals.create-access-token.copy-token")
+                        :class (stl/css :copy-btn)
+                        :on-click copy-token}
+               i/clipboard-refactor]])
+           #_(when @created?
+             [:button {:class (stl/css :copy-btn)
+                       :title (tr "modals.create-access-token.copy-token")
+                       :on-click copy-token}
+              [:span {:class (stl/css :token-value)}(:token created "")]
+              [:span {:class (stl/css :icon)}
+               i/clipboard-refactor]])]]
 
-       [:div.modal-footer
-        [:div.action-buttons
-         (if @created?
-           [:input.cancel-button
-            {:type "button"
-             :value (tr "labels.close")
-             :on-click #(modal/hide!)}]
-           [:*
-            [:input.cancel-button
-             {:type "button"
-              :value (tr "labels.cancel")
-              :on-click #(modal/hide!)}]
-            [:> fm/submit-button*
-             {:label (tr "modals.create-access-token.submit-label")}]])]]]]]))
+         [:div {:class (stl/css :modal-footer)}
+          [:div {:class (stl/css :action-buttons)}
+
+           (if @created?
+             [:input {:class (stl/css :cancel-button)
+                      :type "button"
+                      :value (tr "labels.close")
+                      :on-click #(modal/hide!)}]
+             [:*
+              [:input {:class (stl/css :cancel-button)
+                       :type "button"
+                       :value (tr "labels.cancel")
+                       :on-click #(modal/hide!)}]
+              [:> fm/submit-button*
+               {:label (tr "modals.create-access-token.submit-label")}]])]]]]]
+
+
+      [:div.modal-overlay
+       [:div.modal-container.access-tokens-modal
+        [:& fm/form {:form form :on-submit on-submit}
+
+         [:div.modal-header
+          [:div.modal-header-title
+           [:h2 (tr "modals.create-access-token.title")]]
+
+          [:div.modal-close-button
+           {:on-click on-close} i/close]]
+
+         [:div.modal-content.generic-form
+          [:div.fields-container
+           [:div.fields-row
+            [:& fm/input {:type "text"
+                          :auto-focus? true
+                          :form form
+                          :name :name
+                          :disabled @created?
+                          :label (tr "modals.create-access-token.name.label")
+                          :placeholder (tr "modals.create-access-token.name.placeholder")}]]
+
+           [:div.fields-row
+            [:& fm/select {:options [{:label (tr "dashboard.access-tokens.expiration-never")    :value "never" :key "never"}
+                                     {:label (tr "dashboard.access-tokens.expiration-30-days")  :value "720h"  :key "720h"}
+                                     {:label (tr "dashboard.access-tokens.expiration-60-days")  :value "1440h" :key "1440h"}
+                                     {:label (tr "dashboard.access-tokens.expiration-90-days")  :value "2160h" :key "2160h"}
+                                     {:label (tr "dashboard.access-tokens.expiration-180-days") :value "4320h" :key "4320h"}]
+                           :label (tr "modals.create-access-token.expiration-date.label")
+                           :default "never"
+                           :disabled @created?
+                           :name :expiration-date}]
+            (when @created?
+              [:span.token-created-info
+               (if (:expires-at created)
+                 (tr "dashboard.access-tokens.token-will-expire" (dt/format-date-locale (:expires-at created) {:locale locale}))
+                 (tr "dashboard.access-tokens.token-will-not-expire"))])]
+
+           [:div.fields-row.access-token-created
+            (when @created?
+              [:div.custom-input.with-icon
+               [:input {:type "text"
+                        :value (:token created "")
+                        :placeholder (tr "modals.create-access-token.token")
+                        :read-only true}]
+               [:button.help-icon {:title (tr "modals.create-access-token.copy-token")
+                                   :on-click copy-token}
+                i/copy]])]]]
+
+         [:div.modal-footer
+          [:div.action-buttons
+           (if @created?
+             [:input.cancel-button
+              {:type "button"
+               :value (tr "labels.close")
+               :on-click #(modal/hide!)}]
+             [:*
+              [:input.cancel-button
+               {:type "button"
+                :value (tr "labels.cancel")
+                :on-click #(modal/hide!)}]
+              [:> fm/submit-button*
+               {:label (tr "modals.create-access-token.submit-label")}]])]]]]])))
 
 (mf/defc access-tokens-hero
   []

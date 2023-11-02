@@ -175,7 +175,7 @@
           grid-column: span 3;
           grid-template-columns: repeat(auto-fill, minmax($s-160, 1fr));
           grid-gap: $s-24;
-          font-size: $fs12;
+          font-size: $fs-12;
           margin-top: $s-16;
 
           .libraries-updates-item {

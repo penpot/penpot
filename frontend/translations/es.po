@@ -2300,6 +2300,12 @@ msgstr "Crear equipo y enviar invitaciones"
 msgid "onboarding.choice.team-up.create-team-without-inviting"
 msgstr "Crear equipo sin invitar"
 
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Crear equipo e invitar"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Crear equipo"
+
 msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
 msgstr "Podrás enviar invitaciones después"
 

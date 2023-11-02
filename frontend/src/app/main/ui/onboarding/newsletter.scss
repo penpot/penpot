@@ -1,0 +1,82 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-container {
+  @extend .modal-container-base;
+  position: relative;
+  min-width: $s-712;
+  border: $s-1 solid var(--modal-border-color);
+}
+
+.modal-header {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: $s-80;
+  margin-bottom: $s-32;
+}
+
+.modal-title {
+  @include bigTitleTipography;
+  text-align: center;
+  color: var(--modal-title-foreground-color);
+  margin-bottom: $s-16;
+}
+
+.modal-text {
+  @include titleTipography;
+  color: var(--modal-text-foreground-color);
+  margin: 0;
+}
+
+.modal-content {
+  @include flexColumn;
+  @include titleTipography;
+  gap: $s-32;
+  margin-bottom: $s-24;
+}
+
+.newsletter-options {
+  @include flexColumn;
+  gap: $s-16;
+}
+
+.input-wrapper {
+  @extend .input-checkbox;
+}
+
+.modal-info {
+  @include flexColumn;
+  gap: $s-16;
+  margin-bottom: $s-32;
+}
+
+.modal-link {
+  @include titleTipography;
+  color: var(--modal-link-foreground-color);
+  margin: 0;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  button {
+    @extend .modal-accept-btn;
+  }
+}
+
+.deco {
+  position: absolute;
+  width: 183px;
+  top: -106px;
+  left: 261px;
+}

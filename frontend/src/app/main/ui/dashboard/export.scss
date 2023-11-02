@@ -1,0 +1,115 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+
+  .modal-container {
+    @extend .modal-container-base;
+    .modal-header {
+      margin-bottom: $s-24;
+      .modal-title {
+        @include tabTitleTipography;
+        color: var(--modal-title-foreground-color);
+      }
+      .modal-close-btn {
+        @extend .modal-close-btn-base;
+      }
+    }
+
+    .modal-content {
+      @include titleTipography;
+      margin-bottom: $s-24;
+      .modal-msg,
+      .modal-scd-msg,
+      .modal-subtitle {
+        @include titleTipography;
+      }
+      .export-option {
+        @extend .input-checkbox;
+        width: 100%;
+        align-items: flex-start;
+        label {
+          align-items: flex-start;
+          .modal-subtitle {
+            @include tabTitleTipography;
+            color: var(--modal-title-foreground-color);
+          }
+        }
+        span {
+          margin-top: $s-8;
+        }
+        .option-content {
+          @include flexColumn;
+          @include titleTipography;
+        }
+      }
+    }
+
+    .modal-footer {
+      .action-buttons {
+        @extend .modal-action-btns;
+        .cancel-button {
+          @extend .modal-cancel-btn;
+        }
+        .accept-btn {
+          @extend .modal-accept-btn;
+          &.danger {
+            @extend .modal-danger-btn;
+          }
+        }
+      }
+    }
+  }
+}
+
+.file-entry {
+  .file-name {
+    @include flexRow;
+    .file-icon {
+      @include flexCenter;
+      height: $s-16;
+      width: $s-16;
+
+      svg {
+        @extend .button-icon-small;
+        stroke: var(--input-foreground);
+      }
+    }
+    .file-name-label {
+      @include titleTipography;
+    }
+  }
+  &.loading {
+    .file-name {
+      color: var(--pending-color);
+      .file-icon svg:global(#loader-pencil) {
+        color: var(--pending-color);
+        stroke: var(--pending-color);
+        fill: var(--pending-color);
+      }
+    }
+  }
+  &.error {
+    .file-name {
+      color: var(--error-color);
+      .file-icon svg {
+        stroke: var(--error-color);
+      }
+    }
+  }
+
+  &.success {
+    .file-name {
+      color: var(--ok-color);
+      .file-icon svg {
+        stroke: var(--ok-color);
+      }
+    }
+  }
+}

@@ -1,0 +1,145 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-container {
+  @extend .modal-container-base;
+  padding: 0;
+  display: flex;
+  position: relative;
+  min-width: $s-712;
+  border: $s-1 solid var(--modal-border-color);
+}
+
+.modal-left {
+  width: $s-356;
+  padding: $s-48 $s-28 $s-48 $s-48;
+}
+
+.first-block,
+.second-block {
+  @include flexColumn;
+  width: 100%;
+}
+
+.first-block {
+  margin-bottom: $s-72;
+}
+
+.modal-right {
+  width: $s-356;
+  padding: $s-48;
+  background-color: var(--color-background-tertiary);
+}
+
+.modal-title {
+  @include bigTitleTipography;
+  color: var(--modal-title-foreground-color);
+  margin-bottom: $s-8;
+}
+
+.modal-subtitle {
+  @include tabTitleTipography;
+  color: var(--modal-title-foreground-color);
+  margin-bottom: $s-8;
+}
+
+.modal-text,
+.modal-hint {
+  @include titleTipography;
+  color: var(--modal-text-foreground-color);
+  margin: 0;
+}
+.modal-hint {
+  margin-top: $s-24;
+}
+.modal-form {
+  margin: $s-24 0;
+}
+
+.team-name-input {
+  @extend .input-element-label;
+  label {
+    @include flexColumn;
+    @include titleTipography;
+    align-items: flex-start;
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    height: 100%;
+
+    input {
+      @include titleTipography;
+      margin-top: $s-8;
+    }
+  }
+}
+
+.role-select {
+  @include flexColumn;
+  .role-title {
+    @include titleTipography;
+    margin: 0;
+    color: var(--modal-title-foreground-color);
+  }
+}
+
+.invitation-row {
+  margin-top: $s-8;
+  margin-bottom: $s-24;
+}
+
+.paginator {
+  @include titleTipography;
+  position: absolute;
+  top: $s-8;
+  right: $s-8;
+  padding: $s-4;
+  border-radius: $br-6;
+  color: var(--color-foreground-secondary);
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+  justify-content: flex-start;
+  margin-top: $s-24;
+}
+
+.accept-button {
+  @extend .modal-accept-btn;
+}
+
+.back-button {
+  @extend .modal-cancel-btn;
+}
+
+.team-features {
+  @include flexColumn;
+  gap: $s-24;
+  margin-top: $s-24;
+}
+
+.feature {
+  @include flexRow;
+  gap: $s-8;
+}
+
+.icon {
+  @include flexCenter;
+  height: $s-32;
+  width: $s-32;
+  border-radius: $br-circle;
+  background-color: var(--color-accent-primary);
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-background-tertiary);
+  }
+}

@@ -37,7 +37,7 @@
       cursor: pointer;
     }
     .file-name {
-      @include titleBigTipography;
+      @include medTitleTipography;
       text-transform: none;
       color: var(--title-foreground-color-hover);
     }

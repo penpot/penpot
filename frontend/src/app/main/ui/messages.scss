@@ -1,0 +1,130 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.banner {
+  --bg-color: var(--alert-background-color-error);
+  --fg-color: var(--alert-foreground-color-error);
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: $br-8;
+  background-color: var(--bg-color);
+  color: var(--fg-color);
+}
+.warning {
+  --bg-color: var(--alert-background-color-warning);
+  --fg-color: var(--alert-foreground-color-warning);
+}
+
+.success {
+  --bg-color: var(--alert-background-color-ok);
+  --fg-color: var(--alert-foreground-color-ok);
+}
+
+.info {
+  --bg-color: var(--alert-background-color-neutral);
+  --fg-color: var(--alert-foreground-color-neutral-active);
+}
+.banner.info .icon {
+  --fg-color: var(--alert-foreground-color-neutral);
+}
+.banner.info:hover .icon {
+  --fg-color: var(--alert-foreground-color-neutral);
+}
+
+.wrapper {
+  display: grid;
+  grid-template-columns: $s-16 1fr $s-40;
+  padding: $s-8 $s-8 $s-8 $s-16;
+  gap: $s-8;
+  height: 100%;
+  width: 100%;
+}
+
+.icon {
+  @include flexCenter;
+  height: 100%;
+  width: $s-16;
+  svg {
+    @extend .button-icon;
+    stroke: var(--fg-color);
+  }
+}
+
+.fixed {
+  @include alertShadow;
+  position: fixed;
+  top: $s-16;
+  right: $s-16;
+  display: flex;
+  align-items: center;
+  height: $s-48;
+  min-width: $s-500;
+  max-width: calc(10 * $s-100);
+  padding-left: $s-16;
+  z-index: $z-index-alert;
+}
+
+.floating {
+  @include alertShadow;
+  position: absolute;
+  min-height: $s-32;
+  top: $s-72;
+  left: 0;
+  right: 0;
+  width: $s-640;
+  margin-left: auto;
+  margin-right: auto;
+  z-index: $z-index-modal;
+}
+
+.inline {
+  min-height: $s-40;
+  width: 100%;
+}
+
+.hide {
+  display: none;
+}
+
+.content {
+  @include flexRow;
+}
+
+.text {
+  @include titleTipography;
+}
+
+.inline-actions {
+}
+
+.bottom-actions {
+}
+
+.actions {
+}
+
+.action-btn {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-32;
+  color: black;
+  svg {
+    @extend .button-icon-small;
+  }
+}
+
+.btn-close {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-32;
+  svg {
+    @extend .button-icon-small;
+    stroke: black;
+  }
+}

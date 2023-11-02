@@ -5,11 +5,13 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.delete-shared
+    (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
    [app.main.store :as st]
+      [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -25,7 +27,8 @@
    ::mf/register-as :delete-shared-libraries
    ::mf/wrap-props false}
   [{:keys [ids on-accept on-cancel accept-style origin count-libraries]}]
-  (let [references*  (mf/use-state {})
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        references*  (mf/use-state {})
         references   (deref references*)
 
         on-accept    (or on-accept noop)
@@ -93,45 +96,91 @@
         (let [key (events/listen js/document "keydown" on-keydown)]
           (partial events/unlistenByKey key))))
 
-    [:div.modal-overlay
-     [:div.modal-container.confirm-dialog
-      [:div.modal-header
-       [:div.modal-header-title
-        [:h2 title]]
-       [:div.modal-close-button
-        {:on-click cancel-fn} i/close]]
+    (if new-css-system
+      [:div {:class (stl/css :modal-overlay)}
+       [:div {:class (stl/css :modal-container)}
+        [:div {:class (stl/css :modal-header)}
+         [:h2 {:class (stl/css :modal-title)} title]
+         [:button {:class (stl/css :modal-close-btn)
+                   :on-click cancel-fn} i/close-refactor]]
 
-      [:div.modal-content.delete-shared
-       (when (and (string? subtitle) (not= subtitle ""))
-         [:h3 subtitle])
-       (when (not= 0 count-libraries)
-         (if (pos? (count references))
-           [:*
-            [:div
-             (when (and (string? scd-msg) (not= scd-msg ""))
-               [:h3 scd-msg])
-             [:ul.file-list
-              (for [[file-id file-name] references]
-                [:li.modal-item-element
-                 {:key (dm/str file-id)}
-                 [:span "- " file-name]])]]
-            (when (and (string? hint) (not= hint ""))
-              [:h3 hint])]
-           [:*
-            [:h3 no-files-msg]]))]
+        [:div {:class (stl/css :modal-content)}
+         (when (and (string? subtitle) (not= subtitle ""))
+           [:h3 {:class (stl/css :modal-subtitle)}  subtitle])
+         (when (not= 0 count-libraries)
+           (if (pos? (count references))
+             [:*
+              [:div
+               (when (and (string? scd-msg) (not= scd-msg ""))
+                 [:h3 {:class (stl/css :modal-scd-msg)} scd-msg])
+               [:ul {:class (stl/css :element-list)}
+                (for [[file-id file-name] references]
+                  [:li {:class (stl/css :list-item)
+                        :key (dm/str file-id)}
+                   [:span "- " file-name]])]]
+              (when (and (string? hint) (not= hint ""))
+                [:h3 {:class (stl/css :modal-hint)}hint])]
+             [:*
+              [:h3 {:class (stl/css :modal-msg)} no-files-msg]]))]
 
-      [:div.modal-footer
-       [:div.action-buttons
-        (when-not (= cancel-label :omit)
-          [:input.cancel-button
-           {:type "button"
-            :value cancel-label
-            :on-click cancel-fn}])
+        [:div {:class (stl/css :modal-footer)}
+         [:div {:class (stl/css :action-buttons)}
+          (when-not (= cancel-label :omit)
+            [:input {:class (stl/css :cancel-button)
+                     :type "button"
+                     :value cancel-label
+                     :on-click cancel-fn}])
 
-        [:input.accept-button
-         {:class (dom/classnames
-                  :danger (= accept-style :danger)
-                  :primary (= accept-style :primary))
-          :type "button"
-          :value accept-label
-          :on-click accept-fn}]]]]]))
+          [:input {:class (stl/css-case :accept-btn true
+                                        :danger (= accept-style :danger)
+                                        :primary (= accept-style :primary))
+                   :type "button"
+                   :value accept-label
+                   :on-click accept-fn}]]]]]
+
+
+      [:div.modal-overlay
+       [:div.modal-container.confirm-dialog
+        [:div.modal-header
+         [:div.modal-header-title
+          [:h2 title]]
+         [:div.modal-close-button
+          {:on-click cancel-fn} i/close]]
+
+        [:div.modal-content.delete-shared
+         (when (and (string? subtitle) (not= subtitle ""))
+           [:h3 subtitle])
+         (when (not= 0 count-libraries)
+           (if (pos? (count references))
+             [:*
+              [:div
+               (when (and (string? scd-msg) (not= scd-msg ""))
+                 [:h3 scd-msg])
+               [:ul.file-list
+                (for [[file-id file-name] references]
+                  [:li.modal-item-element
+                   {:key (dm/str file-id)}
+                   [:span "- " file-name]])]]
+              (when (and (string? hint) (not= hint ""))
+                [:h3 hint])]
+             [:*
+              [:h3 no-files-msg]]))]
+
+        [:div.modal-footer
+         [:div.action-buttons
+          (when-not (= cancel-label :omit)
+            [:input.cancel-button
+             {:type "button"
+              :value cancel-label
+              :on-click cancel-fn}])
+
+          [:input.accept-button
+           {:class (dom/classnames
+                    :danger (= accept-style :danger)
+                    :primary (= accept-style :primary))
+            :type "button"
+            :value accept-label
+            :on-click accept-fn}]]]]]
+      )
+
+    ))

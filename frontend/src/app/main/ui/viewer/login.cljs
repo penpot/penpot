@@ -51,7 +51,6 @@
           (set-current-section :register-validate))]
     (mf/with-effect []
       (swap! storage assoc :redirect-url uri))
-
     [:div.modal-overlay
      [:div.modal-container.login-register
       [:div.title
