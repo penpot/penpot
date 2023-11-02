@@ -29,9 +29,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc resizing-textarea
-  {::mf/wrap-props false
-   ::mf/forward-ref true}
-  [props ref]
+  {::mf/wrap-props false }
+  [props]
   (let [value            (d/nilv (unchecked-get props "value") "")
         on-focus         (unchecked-get props "on-focus")
         on-blur          (unchecked-get props "on-blur")
@@ -43,7 +42,6 @@
         select-on-focus? (unchecked-get props "select-on-focus")
 
         local-ref   (mf/use-ref)
-        ref         (or ref local-ref)
 
         on-key-down
         (mf/use-fn
@@ -79,12 +77,12 @@
     (mf/use-layout-effect
      nil
      (fn []
-       (let [node (mf/ref-val ref)]
+       (let [node (mf/ref-val local-ref)]
          (set! (.-height (.-style node)) "0")
          (set! (.-height (.-style node)) (str (+ 2 (.-scrollHeight node)) "px")))))
 
     [:textarea
-     {:ref ref
+     {:ref local-ref
       :auto-focus autofocus?
       :on-key-down on-key-down
       :on-focus on-focus*
