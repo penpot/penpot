@@ -34,17 +34,16 @@
 (def viewport
   (l/derived :vport refs/workspace-local))
 
-(defn calculate-palette-padding []
+(defn calculate-palette-padding [rulers?]
   (let [left-sidebar           (dom/get-element "left-sidebar-aside")
-        left-sidebar-size      (d/parse-integer (dom/get-data left-sidebar  "size"))
-        rulers?                (:rules (mf/deref refs/workspace-layout))
-        rulers-width           (if rulers? 26 4)
-        min-left-sidebar-width  27
-        calculate-padding-left  (+ rulers-width (or left-sidebar-size
-                                                    min-left-sidebar-width))]
+        left-sidebar-size      (d/parse-integer (dom/get-data left-sidebar "size"))
+        rulers-width           (if rulers? 22 0)
+        min-left-sidebar-width 275
+        left-padding           4
+        calculate-padding-left (+ rulers-width (or left-sidebar-size min-left-sidebar-width) left-padding 1)]
 
     #js {"paddingLeft" (dm/str calculate-padding-left "px")
-         "paddingRight" "280px"}))
+         "paddingRight" "calc(var(--s-4) * 70)"}))
 
 (mf/defc palette
   [{:keys [layout]}]
@@ -56,6 +55,7 @@
         selected             (h/use-shared-state mdc/colorpalette-selected-broadcast-key :recent)
         selected-text        (mf/use-state :file)
         on-select            (mf/use-fn #(reset! selected %))
+        rulers?              (mf/deref refs/rules?)
         {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move parent-ref size]}
         (r/use-resize-hook :palette 72 54 80 :y true :bottom)
 
@@ -113,7 +113,7 @@
         (swap! state assoc :width width)))
 
     [:div {:class (dom/classnames (css :palette-wrapper) true)
-           :style  (calculate-palette-padding)}
+           :style  (calculate-palette-padding rulers?)}
      (when-not workspace-read-only?
        [:div {:ref parent-ref
               :class (dom/classnames (css :palettes) true

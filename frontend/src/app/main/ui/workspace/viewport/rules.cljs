@@ -23,7 +23,7 @@
 (def rule-area-size 22)
 (def rule-area-half-size (/ rule-area-size 2))
 (def rules-background "var(--color-gray-50)")
-(def new-css-rules-background "var(--dark-gray-1)")
+(def new-css-rules-background "var(--panel-background-color)")
 (def selection-area-color "var(--color-primary)")
 (def selection-area-opacity 0.3)
 (def over-number-size 50)
@@ -31,6 +31,9 @@
 
 (def font-size 12)
 (def font-family "worksans")
+(def font-color colors/gray-30)
+(def new-css-font-color "var(--layer-row-foreground-color)")
+(def new-css-canvas-border-radius 12)
 
 ;; ----------------
 ;;   RULES
@@ -114,17 +117,72 @@
        :line-x2 (+ (:x vbox) rules-pos (* 2 zoom-inverse) rules-size)
        :line-y2 val})))
 
+(defn- round-corner-path-tl
+  [cx cy radius]
+  (dm/str
+   "M" cx "," cy
+   "L" (+ cx radius) "," cy
+   "Q" cx "," cy "," cx "," (+ cy radius)
+   "Z"))
+
+(defn- round-corner-path-tr
+  [cx cy radius]
+  (dm/str
+   "M" cx "," cy
+   "L" (+ cx radius) "," cy
+   "L" (+ cx radius) "," (+ cy radius)
+   "Q" (+ cx radius) "," cy "," cx "," cy
+   "Z"))
+
+(defn- round-corner-path-bl
+  [cx cy radius]
+  (dm/str
+   "M" cx "," cy
+   "Q" cx "," (+ cy radius) "," (+ cx radius) "," (+ cy radius)
+   "L" cx "," (+ cy radius)
+   "Z"))
+
+(defn- round-corner-path-br
+  [cx cy radius]
+  (dm/str
+   "M" (+ cx radius) "," cy
+   "L" (+ cx radius) "," (+ cy radius)
+   "L" cx "," (+ cy radius)
+   "Q" (+ cx radius) "," (+ cy radius) "," (+ cx radius) "," cy
+   "Z"))
+
 (mf/defc rules-axis
   [{:keys [zoom zoom-inverse vbox axis offset]}]
   (let [rules-width (* rules-width zoom-inverse)
         step (calculate-step-size zoom)
         clip-id (str "clip-rule-" (d/name axis))
         new-css-system (mf/use-ctx ctx/new-css-system)
-        rules-background (if new-css-system new-css-rules-background rules-background)]
+        rules-background (if new-css-system new-css-rules-background rules-background)
+        font-color (if new-css-system new-css-font-color font-color)
+        rule-area-size (/ rule-area-size zoom)
+        border-radius (/ new-css-canvas-border-radius zoom)]
 
     [:*
      (let [{:keys [x y width height]} (get-background-area vbox zoom-inverse axis)]
-       [:rect {:x x :y y :width width :height height :style {:fill rules-background}}])
+       [:*
+        [:rect {:x x :y y :width width :height height :style {:fill rules-background}}]
+
+        ;; Draw the rules' rounded corners in the viewport corners
+        (when new-css-system
+          (if (= axis :x)
+            [:*
+             [:path {:d (round-corner-path-tl (+ x rule-area-size) (+ y rule-area-size) border-radius)
+                     :style {:fill rules-background}}]
+
+             [:path {:d (round-corner-path-tr (+ x width (- border-radius)) (+ y rule-area-size) border-radius)
+                     :style {:fill rules-background}}]]
+
+            [:*
+             [:path {:d (round-corner-path-bl (+ x rule-area-size) (+ y height (- border-radius)) border-radius)
+                     :style {:fill rules-background}}]
+
+             [:path {:d (round-corner-path-br (+ x (:width vbox) (- border-radius)) (+ y height (- border-radius)) border-radius)
+                     :style {:fill rules-background}}]]))])
 
      [:g.rules {:clipPath (str "url(#" clip-id ")")}
 
@@ -154,7 +212,7 @@
                      :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
                      :style {:font-size (* font-size zoom-inverse)
                              :font-family font-family
-                             :fill colors/gray-30}}
+                             :fill font-color}}
               ;; If the guide is associated to a frame we show the position relative to the frame
               (fmt/format-number (- step-val offset))]
 
@@ -163,7 +221,7 @@
                      :y1 line-y1
                      :x2 line-x2
                      :y2 line-y2
-                     :style {:stroke colors/gray-30
+                     :style {:stroke font-color
                              :stroke-width rules-width}}]])))]]))
 
 (mf/defc selection-area
@@ -172,88 +230,88 @@
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
         rules-background (if new-css-system new-css-rules-background rules-background)]
     [:g.selection-area
-   [:g
-    [:rect {:x (:x selection-rect)
-            :y (:y vbox)
-            :width (:width selection-rect)
-            :height (* rule-area-size zoom-inverse)
-            :style {:fill selection-area-color
-                    :fill-opacity selection-area-opacity}}]
-
-    [:rect {:x (- (:x selection-rect) (* over-number-size zoom-inverse))
-            :y (:y vbox)
-            :width (* over-number-size zoom-inverse)
-            :height (* rule-area-size zoom-inverse)
-            :style {:fill rules-background
-                    :fill-opacity over-number-opacity}}]
-
-    [:text {:x (- (:x1 selection-rect) (* 4 zoom-inverse))
-            :y (+ (:y vbox) (* 12 zoom-inverse))
-            :text-anchor "end"
-            :dominant-baseline "middle"
-            :style {:font-size (* font-size zoom-inverse)
-                    :font-family font-family
-                    :fill selection-area-color}}
-     (fmt/format-number (- (:x1 selection-rect) offset-x))]
-
-    [:rect {:x (:x2 selection-rect)
-            :y (:y vbox)
-            :width (* over-number-size zoom-inverse)
-            :height (* rule-area-size zoom-inverse)
-            :style {:fill rules-background
-                    :fill-opacity over-number-opacity}}]
-
-    [:text {:x (+ (:x2 selection-rect) (* 4 zoom-inverse))
-            :y (+ (:y vbox) (* 12 zoom-inverse))
-            :text-anchor "start"
-            :dominant-baseline "middle"
-            :style {:font-size (* font-size zoom-inverse)
-                    :font-family font-family
-                    :fill selection-area-color}}
-     (fmt/format-number (- (:x2 selection-rect) offset-x))]]
-
-   (let [center-x (+ (:x vbox) (* rule-area-half-size zoom-inverse))
-         center-y (- (+ (:y selection-rect) (/ (:height selection-rect) 2)) (* rule-area-half-size zoom-inverse))]
-
-     [:g {:transform (str "rotate(-90 " center-x "," center-y ")")}
-      [:rect {:x (- center-x (/ (:height selection-rect) 2) (* rule-area-half-size zoom-inverse))
-              :y (- center-y (* rule-area-half-size zoom-inverse))
-              :width (:height selection-rect)
+     [:g
+      [:rect {:x (:x selection-rect)
+              :y (:y vbox)
+              :width (:width selection-rect)
               :height (* rule-area-size zoom-inverse)
               :style {:fill selection-area-color
                       :fill-opacity selection-area-opacity}}]
 
-      [:rect {:x (- center-x (/ (:height selection-rect) 2) (* rule-area-half-size zoom-inverse) (* over-number-size zoom-inverse))
-              :y (- center-y (* rule-area-half-size zoom-inverse))
+      [:rect {:x (- (:x selection-rect) (* over-number-size zoom-inverse))
+              :y (:y vbox)
               :width (* over-number-size zoom-inverse)
               :height (* rule-area-size zoom-inverse)
               :style {:fill rules-background
                       :fill-opacity over-number-opacity}}]
 
-      [:rect {:x (+ (- center-x (/ (:height selection-rect) 2) (* rule-area-half-size zoom-inverse) ) (:height selection-rect))
-              :y (- center-y (* rule-area-half-size zoom-inverse))
-              :width (* over-number-size zoom-inverse)
-              :height (* rule-area-size zoom-inverse)
-              :style {:fill rules-background
-                      :fill-opacity over-number-opacity}}]
-
-      [:text {:x (- center-x (/ (:height selection-rect) 2) (* 15 zoom-inverse))
-              :y center-y
+      [:text {:x (- (:x1 selection-rect) (* 4 zoom-inverse))
+              :y (+ (:y vbox) (* 12 zoom-inverse))
               :text-anchor "end"
               :dominant-baseline "middle"
               :style {:font-size (* font-size zoom-inverse)
                       :font-family font-family
                       :fill selection-area-color}}
-       (fmt/format-number (- (:y2 selection-rect) offset-y))]
+       (fmt/format-number (- (:x1 selection-rect) offset-x))]
 
-      [:text {:x (+ center-x (/ (:height selection-rect) 2) )
-              :y center-y
+      [:rect {:x (:x2 selection-rect)
+              :y (:y vbox)
+              :width (* over-number-size zoom-inverse)
+              :height (* rule-area-size zoom-inverse)
+              :style {:fill rules-background
+                      :fill-opacity over-number-opacity}}]
+
+      [:text {:x (+ (:x2 selection-rect) (* 4 zoom-inverse))
+              :y (+ (:y vbox) (* 12 zoom-inverse))
               :text-anchor "start"
               :dominant-baseline "middle"
               :style {:font-size (* font-size zoom-inverse)
                       :font-family font-family
                       :fill selection-area-color}}
-       (fmt/format-number (- (:y1 selection-rect) offset-y))]])]))
+       (fmt/format-number (- (:x2 selection-rect) offset-x))]]
+
+     (let [center-x (+ (:x vbox) (* rule-area-half-size zoom-inverse))
+           center-y (- (+ (:y selection-rect) (/ (:height selection-rect) 2)) (* rule-area-half-size zoom-inverse))]
+
+       [:g {:transform (str "rotate(-90 " center-x "," center-y ")")}
+        [:rect {:x (- center-x (/ (:height selection-rect) 2) (* rule-area-half-size zoom-inverse))
+                :y (- center-y (* rule-area-half-size zoom-inverse))
+                :width (:height selection-rect)
+                :height (* rule-area-size zoom-inverse)
+                :style {:fill selection-area-color
+                        :fill-opacity selection-area-opacity}}]
+
+        [:rect {:x (- center-x (/ (:height selection-rect) 2) (* rule-area-half-size zoom-inverse) (* over-number-size zoom-inverse))
+                :y (- center-y (* rule-area-half-size zoom-inverse))
+                :width (* over-number-size zoom-inverse)
+                :height (* rule-area-size zoom-inverse)
+                :style {:fill rules-background
+                        :fill-opacity over-number-opacity}}]
+
+        [:rect {:x (+ (- center-x (/ (:height selection-rect) 2) (* rule-area-half-size zoom-inverse) ) (:height selection-rect))
+                :y (- center-y (* rule-area-half-size zoom-inverse))
+                :width (* over-number-size zoom-inverse)
+                :height (* rule-area-size zoom-inverse)
+                :style {:fill rules-background
+                        :fill-opacity over-number-opacity}}]
+
+        [:text {:x (- center-x (/ (:height selection-rect) 2) (* 15 zoom-inverse))
+                :y center-y
+                :text-anchor "end"
+                :dominant-baseline "middle"
+                :style {:font-size (* font-size zoom-inverse)
+                        :font-family font-family
+                        :fill selection-area-color}}
+         (fmt/format-number (- (:y2 selection-rect) offset-y))]
+
+        [:text {:x (+ center-x (/ (:height selection-rect) 2) )
+                :y center-y
+                :text-anchor "start"
+                :dominant-baseline "middle"
+                :style {:font-size (* font-size zoom-inverse)
+                        :font-family font-family
+                        :fill selection-area-color}}
+         (fmt/format-number (- (:y1 selection-rect) offset-y))]])]))
 
 (mf/defc rules
   {::mf/wrap-props false
