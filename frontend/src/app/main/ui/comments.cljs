@@ -29,27 +29,19 @@
    [rumext.v2 :as mf]))
 
 (mf/defc resizing-textarea
-  {::mf/wrap-props false
-   ::mf/forward-ref true}
-  [props ref]
+  {::mf/wrap-props false }
+  [props]
   (let [value            (d/nilv (unchecked-get props "value") "")
         on-focus         (unchecked-get props "on-focus")
         on-blur          (unchecked-get props "on-blur")
         placeholder      (unchecked-get props "placeholder")
         on-change        (unchecked-get props "on-change")
         on-esc           (unchecked-get props "on-esc")
+        on-ctrl-enter    (unchecked-get props "on-ctrl-enter")
         autofocus?       (unchecked-get props "autofocus")
         select-on-focus? (unchecked-get props "select-on-focus")
 
         local-ref   (mf/use-ref)
-        ref         (or ref local-ref)
-
-        on-key-down
-        (mf/use-fn
-         (fn [event]
-           (when (and (kbd/esc? event)
-                      (fn? on-esc))
-             (on-esc event))))
 
         on-change*
         (mf/use-fn
@@ -57,6 +49,17 @@
          (fn [event]
            (let [content (dom/get-target-val event)]
              (on-change content))))
+
+        on-key-down
+        (mf/use-fn
+          (mf/deps on-esc on-ctrl-enter on-change*)
+          (fn [event]
+            (cond
+              (and (kbd/esc? event) (fn? on-esc)) (on-esc event)
+              (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
+                (do
+                  (on-change* event)
+                  (on-ctrl-enter event)))))
 
         on-focus*
         (mf/use-fn
@@ -74,12 +77,12 @@
     (mf/use-layout-effect
      nil
      (fn []
-       (let [node (mf/ref-val ref)]
+       (let [node (mf/ref-val local-ref)]
          (set! (.-height (.-style node)) "0")
          (set! (.-height (.-style node)) (str (+ 2 (.-scrollHeight node)) "px")))))
 
     [:textarea
-     {:ref ref
+     {:ref local-ref
       :auto-focus autofocus?
       :on-key-down on-key-down
       :on-focus on-focus*
@@ -127,6 +130,7 @@
                               :on-blur on-blur
                               :on-focus on-focus
                               :select-on-focus? false
+                              :on-ctrl-enter on-submit
                               :on-change on-change}]
        (when (or @show-buttons? (seq @content))
          [:div {:class (stl/css :buttons-wrapper)}
@@ -149,6 +153,7 @@
                               :placeholder "Reply"
                               :on-blur on-blur
                               :on-focus on-focus
+                              :on-ctrl-enter on-submit
                               :on-change on-change}]
        (when (or @show-buttons? (seq @content))
          [:div.buttons
@@ -188,13 +193,15 @@
         on-change
         (mf/use-fn
          (mf/deps draft)
-         (fn [content]
-           (st/emit! (dcm/update-draft-thread {:content content}))))
+          (fn [content]
+            (st/emit! (dcm/update-draft-thread {:content content}))))
 
         on-submit
         (mf/use-fn
-         (mf/deps draft)
-         (partial on-submit draft))]
+          (mf/deps draft)
+          (partial on-submit draft))]
+
+
     (if new-css-system
       [:*
        [:div
@@ -213,7 +220,8 @@
                                 :autofocus true
                                 :select-on-focus? false
                                 :on-esc on-esc
-                                :on-change on-change}]
+                                :on-change on-change
+                                :on-ctrl-enter on-submit}]
          [:div {:class (stl/css :buttons-wrapper)}
 
           [:input {:on-click on-esc
@@ -243,6 +251,7 @@
                                 :value (or content "")
                                 :autofocus true
                                 :on-esc on-esc
+                                :on-ctrl-enter on-submit
                                 :on-change on-change}]
          [:div.buttons
           [:input.btn-primary
@@ -278,6 +287,7 @@
                               :autofocus true
                               :select-on-focus true
                               :select-on-focus? false
+                              :on-ctrl-enter on-submit*
                               :on-change on-change}]
        [:div {:class (stl/css :buttons-wrapper)}
         [:input  {:type "button"
@@ -296,6 +306,7 @@
        [:& resizing-textarea {:value @content
                               :autofocus true
                               :select-on-focus true
+                              :on-ctrl-enter on-submit*
                               :on-change on-change}]
        [:div.buttons
         [:input.btn-primary {:type "button"
