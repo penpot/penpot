@@ -43,23 +43,23 @@
 
         local-ref   (mf/use-ref)
 
-        on-key-down
-        (mf/use-fn
-          (mf/deps on-esc on-ctrl-enter)
-          (fn [event]
-            (cond
-              (and (kbd/esc? event) (fn? on-esc)) (on-esc event)
-              (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
-                (let [content (dom/get-target-val event)]
-                  (on-change content)
-                  (on-ctrl-enter event)))))
-
         on-change*
         (mf/use-fn
          (mf/deps on-change)
          (fn [event]
            (let [content (dom/get-target-val event)]
              (on-change content))))
+
+        on-key-down
+        (mf/use-fn
+          (mf/deps on-esc on-ctrl-enter on-change*)
+          (fn [event]
+            (cond
+              (and (kbd/esc? event) (fn? on-esc)) (on-esc event)
+              (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
+                (do
+                  (on-change* event)
+                  (on-ctrl-enter event)))))
 
         on-focus*
         (mf/use-fn
