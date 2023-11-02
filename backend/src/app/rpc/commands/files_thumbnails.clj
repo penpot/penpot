@@ -284,11 +284,12 @@
 
 (s/def ::data (s/nilable ::us/string))
 (s/def ::object-id ::us/string)
+(s/def ::tag ::us/string)
 
 (s/def ::upsert-file-object-thumbnail
   (s/keys :req [::rpc/profile-id]
           :req-un [::file-id ::object-id]
-          :opt-un [::data]))
+          :opt-un [::data ::tag]))
 
 (sv/defmethod ::upsert-file-object-thumbnail
   {::doc/added "1.17"
