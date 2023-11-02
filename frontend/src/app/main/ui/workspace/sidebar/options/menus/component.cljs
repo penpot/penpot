@@ -149,17 +149,17 @@
 
 (mf/defc component-swap-item
   {::mf/wrap-props false}
-  [{:keys [item loop? shapes file-id root-shape container component-id] :as props}]
+  [{:keys [item loop shapes file-id root-shape container component-id is-search] :as props}]
   (let [on-select-component
         (mf/use-fn
          (mf/deps shapes file-id item)
-         #(when-not loop?
+         #(when-not loop
             (st/emit! (dwl/component-multi-swap shapes file-id (:id item)))))
         item-ref       (mf/use-ref)
         visible?       (h/use-visible item-ref :once? true)]
     [:div.component-item
      {:ref item-ref
-      :class (stl/css-case :disabled loop?)
+      :class (stl/css-case :disabled loop)
       :key (:id item)
       :on-click on-select-component}
      (when visible?
@@ -169,7 +169,7 @@
                                          :container container}])
      [:span.component-name
       {:class (stl/css-case :selected (= (:id item) component-id))}
-      (:name item)]]))
+      (if is-search (:full-name item) (:name item))]]))
 
 
 (mf/defc component-swap
@@ -212,36 +212,40 @@
                              {:term ""
                               :file-id file-id
                               :path path})
+
         filters             (deref filters*)
+        is-search?          (not (str/blank? (:term filters)))
 
         components          (->> (get-in libraries [(:file-id filters) :data :components])
                                  vals
-                                 (remove #(true? (:deleted %))))
+                                 (remove #(true? (:deleted %)))
+                                 (map #(assoc % :full-name (cph/merge-path-item (:path %) (:name %)))))
 
-        components          (if (str/empty? (:term filters))
-                              components
-                              (filter #(str/includes? (str/lower (:name %)) (str/lower (:term filters))) components))
+        get-subgroups       (fn [path]
+                              (let [split-path (cph/split-path path)]
+                                (reduce (fn [acc dir]
+                                          (conj acc (str (last acc) " / " dir)))
+                                        [(first split-path)] (rest split-path))))
 
-        get-subgroups (fn [path]
-                        (let [split-path (cph/split-path path)]
-                          (reduce (fn [acc dir]
-                                    (conj acc (str (last acc) " / " dir)))
-                                  [(first split-path)] (rest split-path))))
+        xform               (comp
+                             (map :path)
+                             (mapcat get-subgroups)
+                             (remove str/empty?)
+                             (remove nil?)
+                             distinct
+                             (filter #(= (cph/butlast-path %) (:path filters))))
 
-        groups    (->> components
-                       (map :path)
-                       (map get-subgroups)
-                       (apply concat)
-                       (remove str/empty?)
-                       (remove nil?)
-                       distinct
-                       (filter #(= (cph/butlast-path %) (:path filters)))
-                       sort)
+        groups              (when-not is-search?
+                              (sort (sequence xform components)))
 
-        components          (filter #(= (:path %) (:path filters)) components)
+        components          (if is-search?
+                              (filter #(str/includes? (str/lower (:full-name %)) (str/lower (:term filters))) components)
+                              (filter #(= (:path %) (:path filters)) components))
 
-        items               (->> (concat groups components)
-                                 (sort-by :name))
+        items               (if is-search?
+                              (sort-by :full-name components)
+                              (->> (concat groups components)
+                                   (sort-by :name)))
 
         ;; Get the ids of the components and its root-shapes that are parents of the current shape, to avoid loops
         get-comps-ids       (fn get-comps-ids [shape ids]
@@ -255,8 +259,7 @@
         parent-components   (->> shapes
                                  (map :parent-id)
                                  (map #(get objects %))
-                                 (map #(get-comps-ids % []))
-                                 (apply concat)
+                                 (mapcat #(get-comps-ids % []))
                                  set)
 
 
@@ -315,12 +318,12 @@
             :on-change on-search-term-change
             :on-key-down handle-key-down}]
 
-          (if ^boolean (str/empty? (:term filters))
-            [:div.search-icon
-             i/search]
+          (if is-search?
             [:div.search-icon.close
              {:on-click on-search-clear-click}
-             i/close])]
+             i/close]
+            [:div.search-icon
+             i/search])]
 
          [:select.input-select {:value (:file-id filters)
                                 :data-mousetrap-dont-stop true
@@ -328,7 +331,7 @@
           (for [library (vals libraries)]
             [:option {:key (:id library) :value (:id library)} (:name library)])]
 
-         (when-not (str/empty? (:path filters))
+         (when-not (or is-search? (str/empty? (:path filters)))
            [:div.component-path {:on-click on-go-back}
             [:span i/arrow-slide]
             [:span (-> (cph/split-path (:path filters))
@@ -342,12 +345,13 @@
                     loop?      (or (contains? parent-components (:main-instance-id item))
                                    (contains? parent-components (:id item)))]
                 [:& component-swap-item {:item item
-                                         :loop? loop?
+                                         :loop loop?
                                          :shapes shapes
                                          :file-id (:file-id filters)
                                          :root-shape root-shape
                                          :container container
-                                         :component-id current-comp-id}])
+                                         :component-id current-comp-id
+                                         :is-search is-search?}])
               (let [on-group-click #(on-enter-group item)]
                 [:div.component-group {:key (uuid/next) :on-click on-group-click}
                  [:span (cph/last-path item)]
