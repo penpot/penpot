@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.builder :as fb]
    [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
@@ -134,7 +135,7 @@
                  (= (.-type blob) "image/svg+xml")))
 
           (prepare-blob [blob]
-            (let [name (or name (if (dmm/file? blob) (.-name blob) "blob"))]
+            (let [name (or name (if (dmm/file? blob) (fb/strip-image-extension (.-name blob)) "blob"))]
               {:file-id file-id
                :name name
                :is-local local?
