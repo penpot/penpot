@@ -619,6 +619,7 @@
                                    (assoc :elapsed/total-by-file total)
                                    (assoc :processed/files completed)))))))))))
 
+
 (defn migrate-team!
   [system team-id]
   (let [tpoint  (dt/tpoint)
@@ -627,14 +628,22 @@
                   team-id)]
     (l/dbg :hint "migrate:team:start" :team-id (dm/str team-id))
     (try
+      ;; We execute this out of transaction because we want this
+      ;; change to be visible to all other sessions before starting
+      ;; the migration
+      (let [sql (str "UPDATE team SET features = "
+                     "    array_append(features, 'ephimeral/v2-migration') "
+                     " WHERE id = ?")]
+        (db/exec-one! system [sql team-id]))
+
       (db/tx-run! system
                   (fn [{:keys [::db/conn] :as system}]
                     ;; Lock the team
                     (db/exec-one! conn ["SET idle_in_transaction_session_timeout = 0"])
-                    (db/exec-one! conn ["UPDATE team SET features = array_append(features, 'ephimeral/v2-migration') WHERE id = ?" team-id])
 
                     (let [{:keys [features] :as team} (-> (db/get conn :team {:id team-id})
                                                           (update :features db/decode-pgarray #{}))]
+
                       (if (contains? features "components/v2")
                         (l/dbg :hint "team already migrated")
                         (let [sql  (str/concat
@@ -650,6 +659,7 @@
                           (some-> *stats* (swap! assoc :current/files (count rows)))
 
                           (let [features (-> features
+                                             (disj "ephimeral/v2-migration")
                                              (conj "components/v2")
                                              (conj "layout/grid")
                                              (conj "styles/v2"))]
@@ -660,10 +670,6 @@
         (some-> *semaphore* ps/release!)
         (let [elapsed (tpoint)
               stats   (some-> *stats* deref)]
-          (l/dbg :hint "migrate:team:end"
-                 :team-id (dm/str team-id)
-                 :files (:current/files stats 0)
-                 :elapsed (dt/format-duration elapsed))
           (when (some? *stats*)
             (swap! *stats* (fn [stats]
                              (let [elapsed   (inst-ms elapsed)
@@ -674,4 +680,19 @@
                                    (update :elapsed/max-by-team (fnil max 0) elapsed)
                                    (assoc :elapsed/avg-by-team avg)
                                    (assoc :elapsed/total-by-team total)
-                                   (assoc :processed/teams completed)))))))))))
+                                   (assoc :processed/teams completed))))))
+
+          ;; We execute this out of transaction because we want this
+          ;; change to be visible to all other sessions before starting
+          ;; the migration
+          (let [sql (str "UPDATE team SET features = "
+                         "    array_remove(features, 'ephimeral/v2-migration') "
+                         " WHERE id = ?")]
+            (db/exec-one! system [sql team-id]))
+
+          (l/dbg :hint "migrate:team:end"
+                 :team-id (dm/str team-id)
+                 :files (:current/files stats 0)
+                 :elapsed (dt/format-duration elapsed)))))))
+
+
