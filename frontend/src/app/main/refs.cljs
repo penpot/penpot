@@ -576,3 +576,6 @@
 
 (def specialized-panel
   (l/derived :specialized-panel st/state))
+
+(def updating-library
+  (l/derived :updating-library st/state))

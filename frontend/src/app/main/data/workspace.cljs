@@ -1350,15 +1350,19 @@
   (ptk/reify ::show-component-in-assets
     ptk/WatchEvent
     (watch [_ state _]
-      (let [project-id    (get-in state [:workspace-project :id])
-            file-id       (get-in state [:workspace-file :id])
-            page-id       (get state :current-page-id)
-            pparams       {:file-id file-id :project-id project-id}
-            qparams       {:page-id page-id :layout :assets}]
-        (rx/of (rt/nav :workspace pparams qparams)
-               (set-assets-section-open file-id :library true)
-               (set-assets-section-open file-id :components true)
-               (select-single-asset file-id component-id :components))))
+      (let [project-id     (get-in state [:workspace-project :id])
+            file-id        (get-in state [:workspace-file :id])
+            page-id        (get state :current-page-id)
+            pparams        {:file-id file-id :project-id project-id}
+            qparams        {:page-id page-id :layout :assets}
+            component-path (cph/split-path (get-in state [:workspace-data :components component-id :path]))
+            paths          (map (fn [i] (cph/join-path (take (inc i) component-path))) (range (count component-path)))]
+        (rx/concat
+         (rx/from (map #(set-assets-group-open file-id :components % true) paths))
+         (rx/of (rt/nav :workspace pparams qparams)
+                (set-assets-section-open file-id :library true)
+                (set-assets-section-open file-id :components true)
+                (select-single-asset file-id component-id :components)))))
 
     ptk/EffectEvent
     (effect [_ _ _]

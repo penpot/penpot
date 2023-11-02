@@ -334,7 +334,7 @@
 
         local-component?    (= library-id current-file-id)
         component           (find-component shape)
-        lacks-annotation?   (nil? (:annotation shape))
+        lacks-annotation?   (nil? (:annotation component))
         is-dangling?        (nil? component)
 
         can-update-main?     (or (not components-v2)

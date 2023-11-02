@@ -842,6 +842,15 @@
 (def valid-asset-types
   #{:colors :components :typographies})
 
+(defn set-updating-library
+  [updating?]
+  (ptk/reify ::set-updating-library
+    ptk/UpdateEvent
+    (update [_ state]
+      (if updating?
+        (assoc state :updating-library true)
+        (dissoc state :updating-library)))))
+
 (defn sync-file
   "Synchronize the given file from the given library. Walk through all
   shapes in all pages in the file that use some color, typography or
@@ -912,7 +921,8 @@
                                                               (:redo-changes changes)
                                                               file))
            (rx/concat
-            (rx/of (msg/hide-tag :sync-dialog))
+            (rx/of (set-updating-library false)
+                   (msg/hide-tag :sync-dialog))
             (when (seq (:redo-changes changes))
               (rx/of (dch/commit-changes (assoc changes ;; TODO a ver qué pasa con esto
                                                 :file-id file-id))))
