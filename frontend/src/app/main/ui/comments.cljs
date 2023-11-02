@@ -37,7 +37,6 @@
         on-blur          (unchecked-get props "on-blur")
         placeholder      (unchecked-get props "placeholder")
         on-change        (unchecked-get props "on-change")
-        on-key-down      (unchecked-get props "on-key-down")
         on-esc           (unchecked-get props "on-esc")
         on-ctrl-enter    (unchecked-get props "on-ctrl-enter")
         autofocus?       (unchecked-get props "autofocus")
@@ -48,15 +47,14 @@
 
         on-key-down
         (mf/use-fn
-          (mf/deps on-esc on-ctrl-enter on-key-down)
+          (mf/deps on-esc on-ctrl-enter)
           (fn [event]
             (cond
               (and (kbd/esc? event) (fn? on-esc)) (on-esc event)
               (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
-                (on-ctrl-enter event)
-              (fn? on-key-down)
                 (let [content (dom/get-target-val event)]
-                  (on-key-down content)))))
+                  (on-change content)
+                  (on-ctrl-enter event)))))
 
         on-change*
         (mf/use-fn
@@ -112,7 +110,7 @@
         (mf/use-fn
          #(reset! show-buttons? false))
 
-        handle-content-changed
+        on-change
         (mf/use-fn
          #(reset! content %))
 
@@ -135,8 +133,7 @@
                               :on-focus on-focus
                               :select-on-focus? false
                               :on-ctrl-enter on-submit
-                              :on-key-down handle-content-changed
-                              :on-change handle-content-changed}]
+                              :on-change on-change}]
        (when (or @show-buttons? (seq @content))
          [:div {:class (stl/css :buttons-wrapper)}
           [:input.btn-secondary
@@ -159,8 +156,7 @@
                               :on-blur on-blur
                               :on-focus on-focus
                               :on-ctrl-enter on-submit
-                              :on-key-down handle-content-changed
-                              :on-change handle-content-changed}]
+                              :on-change on-change}]
        (when (or @show-buttons? (seq @content))
          [:div.buttons
           [:input.btn-primary
@@ -196,7 +192,7 @@
              (on-cancel)
              (st/emit! :interrupt))))
 
-        handle-content-changed
+        on-change
         (mf/use-fn
          (mf/deps draft)
           (fn [content]
@@ -226,8 +222,7 @@
                                 :autofocus true
                                 :select-on-focus? false
                                 :on-esc on-esc
-                                :on-change handle-content-changed
-                                :on-key-down handle-content-changed
+                                :on-change on-change
                                 :on-ctrl-enter on-submit}]
          [:div {:class (stl/css :buttons-wrapper)}
 
@@ -259,8 +254,7 @@
                                 :autofocus true
                                 :on-esc on-esc
                                 :on-ctrl-enter on-submit
-                                :on-key-down handle-content-changed
-                                :on-change handle-content-changed}]
+                                :on-change on-change}]
          [:div.buttons
           [:input.btn-primary
            {:on-click on-submit
@@ -277,7 +271,7 @@
   (let [new-css-system  (mf/use-ctx ctx/new-css-system)
         content (mf/use-state content)
 
-        handle-content-changed
+        on-change
         (mf/use-fn
          #(reset! content %))
 
@@ -296,8 +290,7 @@
                               :select-on-focus true
                               :select-on-focus? false
                               :on-ctrl-enter on-submit*
-                              :on-key-down handle-content-changed
-                              :on-change handle-content-changed}]
+                              :on-change on-change}]
        [:div {:class (stl/css :buttons-wrapper)}
         [:input  {:type "button"
                   :value "Cancel"
@@ -315,9 +308,8 @@
        [:& resizing-textarea {:value @content
                               :autofocus true
                               :select-on-focus true
-                              :on-key-down handle-content-changed
                               :on-ctrl-enter on-submit*
-                              :on-change handle-content-changed}]
+                              :on-change on-change}]
        [:div.buttons
         [:input.btn-primary {:type "button"
                              :value "Post"
