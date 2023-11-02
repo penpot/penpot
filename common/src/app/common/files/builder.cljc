@@ -746,3 +746,7 @@
           :page-id page-id
           :option :guides
           :value new-guides}))))
+
+(defn strip-image-extension [filename]
+  (let [image-extensions-re #"(\.png)|(\.jpg)|(\.jpeg)|(\.webp)|(\.gif)|(\.svg)$"]
+    (str/replace filename image-extensions-re "")))
