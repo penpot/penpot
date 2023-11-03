@@ -6,7 +6,7 @@
 
 (ns app.common.svg
   (:require
-   #?(:cljs ["./svg_optimizer.js" :as svgo])
+   #?(:cljs ["./svg/optimizer.js" :as svgo])
    #?(:clj  [clojure.xml :as xml]
       :cljs [tubax.core :as tubax])
    [app.common.data :as d]
