@@ -280,7 +280,12 @@ gulp.task("dev:dirs", async function(next) {
 });
 
 gulp.task("watch:main", function() {
-  gulp.watch("src/**/**.scss", gulp.series("scss"));
+  gulp.watch("src/**/**.scss", gulp.series("scss"))
+    .on("change", function(path) {
+      // Replace ".scss" for ".cljs" to refresh the file
+      gulp.src(path.replace(".scss", ".cljs"))
+        .pipe(touch());
+    });
   gulp.watch(paths.resources + "styles/**/**.scss", gulp.series("scss"));
   gulp.watch(paths.resources + "images/**/*", gulp.series("copy:assets:images"));
 
