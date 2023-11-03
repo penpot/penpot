@@ -119,8 +119,8 @@
 (defn text-properties-equal?
   [shape other]
   (or (identical? shape other)
-      (and (= (dm/get-prop shape :grow-type) (dm/get-prop other :grow-type))
-           (= (dm/get-prop shape :content) (dm/get-prop other :content))
+      (and (= (:grow-type shape) (:grow-type other))
+           (= (:content shape) (:content other))
            ;; Check if the position and size is close. If any of these changes the shape has changed
            ;; and if not there is no geometry relevant change
            (mth/close? (dm/get-prop shape :x) (dm/get-prop other :x))
@@ -132,6 +132,7 @@
   {::mf/wrap-props false}
   [props]
   (let [text-shapes      (unchecked-get props "text-shapes")
+
         prev-text-shapes (hooks/use-previous text-shapes)
 
         ;; We store in the state the texts still pending to be calculated so we can
@@ -295,7 +296,7 @@
            (into {}
                  (keep (fn [[id modifiers]]
                          (when-let [shape (get text-shapes id)]
-                           (vector id (merge shape modifiers)))))
+                           (vector id (d/patch-object shape modifiers)))))
                  modifiers)))]
 
     ;; We only need the effect to run on "mount" because the next fonts will be changed when the texts are
