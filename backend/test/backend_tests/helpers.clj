@@ -93,6 +93,7 @@
    "alter table file_library_rel set unlogged;\n"
    "alter table file_thumbnail set unlogged;\n"
    "alter table file_object_thumbnail set unlogged;\n"
+   "alter table file_tagged_object_thumbnail set unlogged;\n"
    "alter table file_media_object set unlogged;\n"
    "alter table file_data_fragment set unlogged;\n"
    "alter table file set unlogged;\n"

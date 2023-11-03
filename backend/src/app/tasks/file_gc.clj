@@ -151,9 +151,9 @@
       ;; them.
       (db/delete! conn :file-media-object {:id (:id mobj)}))))
 
-(defn- clean-file-object-thumbnails!
+(defn- clean-file-tagged-object-thumbnails!
   [{:keys [::db/conn ::sto/storage]} file-id data]
-  (let [stored (->> (db/query conn :file_object_thumbnail
+  (let [stored (->> (db/query conn :file_tagged_object_thumbnail
                               {:file-id file-id}
                               {:columns [:object-id]})
                     (into #{} (map :object-id)))
@@ -171,7 +171,7 @@
         unused (set/difference stored using)]
 
     (when (seq unused)
-      (let [sql (str "delete from file_object_thumbnail "
+      (let [sql (str "delete from file_tagged_object_thumbnail "
                      " where file_id=? and object_id=ANY(?)"
                      " returning media_id")
             res (db/exec! conn [sql file-id (db/create-array conn "text" unused)])]
@@ -294,7 +294,7 @@
                    (pmg/migrate-data))]
 
       (clean-file-media! conn id data)
-      (clean-file-object-thumbnails! cfg id data)
+      (clean-file-tagged-object-thumbnails! cfg id data)
       (clean-file-thumbnails! cfg id revn)
       (clean-deleted-components! conn id data)
 

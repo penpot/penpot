@@ -8,17 +8,14 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.common.thumbnails :as thc]
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
    [app.db :as db]
-   [app.db.sql :as sql]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
@@ -27,7 +24,6 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.helpers :as rph]
    [app.storage :as sto]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -45,41 +41,39 @@
 (defn- get-object-thumbnails-by-tag
   [conn file-id tag]
   (let [sql (str/concat
-             "select object_id, data, media_id, tag "
-             "  from file_object_thumbnail"
+             "select object_id, media_id, tag "
+             "  from file_tagged_object_thumbnail"
              " where file_id=? and tag=?")
         res (db/exec! conn [sql file-id tag])]
     (->> res
          (d/index-by :object-id (fn [row]
-                                  (or (some-> row :media-id files/resolve-public-uri)
-                                      (:data row))))
+                                  (files/resolve-public-uri (:media-id row))))
          (d/without-nils))))
 
 (defn- get-object-thumbnails
   ([conn file-id]
    (let [sql (str/concat
-              "select object_id, data, media_id, tag "
-              "  from file_object_thumbnail"
+              "select object_id, media_id, tag "
+              "  from file_tagged_object_thumbnail"
               " where file_id=?")
          res (db/exec! conn [sql file-id])]
      (->> res
           (d/index-by :object-id (fn [row]
-                                   (or (some-> row :media-id files/resolve-public-uri)
-                                       (:data row))))
+                                   (files/resolve-public-uri (:media-id row))))
           (d/without-nils))))
 
   ([conn file-id object-ids]
    (let [sql (str/concat
-              "select object_id, data, media_id, tag "
-              "  from file_object_thumbnail"
+              "select object_id, media_id, tag "
+              "  from file_tagged_object_thumbnail"
               " where file_id=? and object_id = ANY(?)")
          ids (db/create-array conn "text" (seq object-ids))
          res (db/exec! conn [sql file-id ids])]
-     (d/index-by :object-id
-                 (fn [row]
-                   (or (some-> row :media-id files/resolve-public-uri)
-                       (:data row)))
-                 res))))
+
+     (->> res
+          (d/index-by :object-id (fn [row]
+                                   (files/resolve-public-uri (:media-id row))))
+          (d/without-nils)))))
 
 (sv/defmethod ::get-file-object-thumbnails
   "Retrieve a file object thumbnails."
@@ -98,48 +92,6 @@
     (if tag
       (get-object-thumbnails-by-tag conn file-id tag)
       (get-object-thumbnails conn file-id))))
-
-;; --- COMMAND QUERY: get-file-thumbnail
-
-(defn get-file-thumbnail
-  [conn file-id revn]
-  (let [sql (sql/select :file-thumbnail
-                        (cond-> {:file-id file-id}
-                          revn (assoc :revn revn))
-                        {:limit 1
-                         :order-by [[:revn :desc]]})
-        row (db/exec-one! conn sql)]
-
-    (when-not row
-      (ex/raise :type :not-found
-                :code :file-thumbnail-not-found))
-
-    (when-not (:data row)
-      (ex/raise :type :not-found
-                :code :file-thumbnail-not-found))
-
-    {:data (:data row)
-     :props (some-> (:props row) db/decode-transit-pgobject)
-     :revn (:revn row)
-     :file-id (:file-id row)}))
-
-(s/def ::revn ::us/integer)
-(s/def ::file-id ::us/uuid)
-
-(s/def ::get-file-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id]
-          :opt-un [::revn]))
-
-(sv/defmethod ::get-file-thumbnail
-  {::doc/added "1.17"
-   ::doc/module :files
-   ::doc/deprecated "1.19"}
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id file-id revn]}]
-  (dm/with-open [conn (db/open pool)]
-    (files/check-read-permissions! conn profile-id file-id)
-    (-> (get-file-thumbnail conn file-id revn)
-        (rph/with-http-cache long-cache-duration))))
 
 ;; --- COMMAND QUERY: get-file-data-for-thumbnail
 
@@ -277,47 +229,10 @@
 ;; MUTATION COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; --- MUTATION COMMAND: upsert-file-object-thumbnail
-
-(def sql:upsert-object-thumbnail
-  "insert into file_object_thumbnail(file_id, tag, object_id, data)
-   values (?, ?, ?, ?)
-       on conflict(file_id, tag, object_id) do
-          update set data = ?;")
-
-(defn upsert-file-object-thumbnail!
-  [conn {:keys [file-id tag object-id data]}]
-  (if data
-    (db/exec-one! conn [sql:upsert-object-thumbnail file-id (or tag "frame") object-id data data])
-    (db/delete! conn :file-object-thumbnail {:file-id file-id :object-id object-id})))
-
-(s/def ::data (s/nilable ::us/string))
-(s/def ::object-id ::us/string)
-(s/def ::tag ::us/string)
-
-(s/def ::upsert-file-object-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::object-id]
-          :opt-un [::data ::tag]))
-
-(sv/defmethod ::upsert-file-object-thumbnail
-  {::doc/added "1.17"
-   ::doc/module :files
-   ::doc/deprecated "1.19"
-   ::audit/skip true}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
-  (db/with-atomic [conn pool]
-    (files/check-edition-permissions! conn profile-id file-id)
-
-    (when-not (db/read-only? conn)
-      (upsert-file-object-thumbnail! conn params)
-      nil)))
-
-
 ;; --- MUTATION COMMAND: create-file-object-thumbnail
 
 (def ^:private sql:create-object-thumbnail
-  "insert into file_object_thumbnail(file_id, object_id, media_id, tag)
+  "insert into file_tagged_object_thumbnail(file_id, object_id, media_id, tag)
    values (?, ?, ?, ?)
        on conflict(file_id, tag, object_id) do
           update set media_id = ?;")
@@ -338,7 +253,6 @@
 
     (db/exec-one! conn [sql:create-object-thumbnail file-id object-id
                         (:id media) tag (:id media)])))
-
 
 (def schema:create-file-object-thumbnail
   [:map {:title "create-file-object-thumbnail"}
@@ -370,14 +284,14 @@
 
 (defn- delete-file-object-thumbnail!
   [{:keys [::db/conn ::sto/storage]} file-id object-id]
-  (when-let [{:keys [media-id]} (db/get* conn :file-object-thumbnail
+  (when-let [{:keys [media-id]} (db/get* conn :file-tagged-object-thumbnail
                                          {:file-id file-id
                                           :object-id object-id}
                                          {::db/for-update? true})]
     (when media-id
       (sto/del-object! storage media-id))
 
-    (db/delete! conn :file-object-thumbnail
+    (db/delete! conn :file-tagged-object-thumbnail
                 {:file-id file-id
                  :object-id object-id})
     nil))
@@ -400,41 +314,6 @@
           (update ::sto/storage media/configure-assets-storage)
           (assoc ::db/conn conn)
           (delete-file-object-thumbnail! file-id object-id))
-      nil)))
-
-;; --- MUTATION COMMAND: upsert-file-thumbnail
-
-(def ^:private sql:upsert-file-thumbnail
-  "insert into file_thumbnail (file_id, revn, data, props)
-   values (?, ?, ?, ?::jsonb)
-       on conflict(file_id, revn) do
-          update set data = ?, props=?, updated_at=now();")
-
-(defn- upsert-file-thumbnail!
-  [conn {:keys [file-id revn data props]}]
-  (let [props (db/tjson (or props {}))]
-    (db/exec-one! conn [sql:upsert-file-thumbnail
-                        file-id revn data props data props])))
-
-(s/def ::revn ::us/integer)
-(s/def ::props map?)
-
-(s/def ::upsert-file-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::revn ::props ::data]))
-
-(sv/defmethod ::upsert-file-thumbnail
-  "Creates or updates the file thumbnail. Mainly used for paint the
-  grid thumbnails."
-  {::doc/added "1.17"
-   ::doc/module :files
-   ::doc/deprecated "1.19"
-   ::audit/skip true}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
-  (db/with-atomic [conn pool]
-    (files/check-edition-permissions! conn profile-id file-id)
-    (when-not (db/read-only? conn)
-      (upsert-file-thumbnail! conn params)
       nil)))
 
 ;; --- MUTATION COMMAND: create-file-thumbnail

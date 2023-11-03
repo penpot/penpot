@@ -18,7 +18,8 @@
    [app.storage :as sto]
    [app.util.time :as dt]
    [backend-tests.helpers :as th]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [cuerdas.core :as str]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -667,12 +668,14 @@
 
     (t/testing "RPC :file-data-for-thumbnail"
       ;; Insert a thumbnail data for the frame-id
-      (let [data {::th/type :upsert-file-object-thumbnail
+      (let [data {::th/type :create-file-object-thumbnail
                   ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :object-id (thc/fmt-object-id (:id file) page-id frame1-id "frame")
-                  :data "random-data-1"}
-
+                  :media {:filename "sample.jpg"
+                          :size 7923
+                          :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                          :mtype "image/jpeg"}}
             {:keys [error result] :as out} (th/command! data)]
         (t/is (nil? error))
         (t/is (nil? result)))
@@ -691,15 +694,15 @@
         (t/is (contains? result :file-id))
 
         (t/is (= (:id file) (:file-id result)))
-        (t/is (= "random-data-1" (get-in result [:page :objects frame1-id :thumbnail])))
+        (t/is (str/starts-with? (get-in result [:page :objects frame1-id :thumbnail])
+                                "http://localhost:3449/assets/by-id/"))
         (t/is (= [] (get-in result [:page :objects frame1-id :shapes]))))
 
       ;; Delete thumbnail data
-      (let [data {::th/type :upsert-file-object-thumbnail
+      (let [data {::th/type :delete-file-object-thumbnail
                   ::rpc/profile-id (:id prof)
                   :file-id (:id file)
-                  :object-id (thc/fmt-object-id (:id file) page-id frame1-id "frame")
-                  :data nil}
+                  :object-id (thc/fmt-object-id (:id file) page-id frame1-id "frame")}
             {:keys [error result] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? error))
@@ -723,11 +726,14 @@
     (t/testing "TASK :file-gc"
 
       ;; insert object snapshot for known frame
-      (let [data {::th/type :upsert-file-object-thumbnail
+      (let [data {::th/type :create-file-object-thumbnail
                   ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :object-id (thc/fmt-object-id (:id file) page-id frame1-id "frame")
-                  :data "new-data"}
+                  :media {:filename "sample.jpg"
+                          :size 7923
+                          :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                          :mtype "image/jpeg"}}
             {:keys [error result] :as out} (th/command! data)]
         (t/is (nil? error))
         (t/is (nil? result)))
@@ -736,22 +742,23 @@
       (th/sleep 300)
 
       ;; run the task again
-      (let [task  (:app.tasks.file-gc/handler th/*system*)
-            res   (task {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! "file-gc" {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       ;; check that object thumbnails are still here
-      (let [res (th/db-exec! ["select * from file_object_thumbnail"])]
-        (th/print-result! res)
-        (t/is (= 1 (count res)))
-        (t/is (= "new-data" (get-in res [0 :data]))))
+      (let [res (th/db-exec! ["select * from file_tagged_object_thumbnail"])]
+        ;; (th/print-result! res)
+        (t/is (= 1 (count res))))
 
       ;; insert object snapshot for for unknown frame
-      (let [data {::th/type :upsert-file-object-thumbnail
+      (let [data {::th/type :create-file-object-thumbnail
                   ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :object-id (thc/fmt-object-id (:id file) page-id (uuid/next) "frame")
-                  :data "new-data-2"}
+                  :media {:filename "sample.jpg"
+                          :size 7923
+                          :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                          :mtype "image/jpeg"}}
             {:keys [error result] :as out} (th/command! data)]
         (t/is (nil? error))
         (t/is (nil? result)))
@@ -760,18 +767,16 @@
       (th/db-exec! ["update file set has_media_trimmed=false where id=?" (:id file)])
 
       ;; check that we have all object thumbnails
-      (let [res (th/db-exec! ["select * from file_object_thumbnail"])]
+      (let [res (th/db-exec! ["select * from file_tagged_object_thumbnail"])]
         (t/is (= 2 (count res))))
 
       ;; run the task again
-      (let [task  (:app.tasks.file-gc/handler th/*system*)
-            res   (task {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! "file-gc" {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       ;; check that the unknown frame thumbnail is deleted
-      (let [res (th/db-exec! ["select * from file_object_thumbnail"])]
-        (t/is (= 1 (count res)))
-        (t/is (= "new-data" (get-in res [0 :data])))))
+      (let [res (th/db-exec! ["select * from file_tagged_object_thumbnail"])]
+        (t/is (= 1 (count res)))))
 
     ))
 
@@ -781,83 +786,53 @@
         file (th/create-file* 1 {:profile-id (:id prof)
                                  :project-id (:default-project-id prof)
                                  :revn 2
-                                 :is-shared false})
-        data {::th/type :get-file-thumbnail
-              ::rpc/profile-id (:id prof)
-              :file-id (:id file)}]
+                                 :is-shared false})]
 
-    (t/testing "query a thumbnail with single revn"
-
-      ;; insert an entry on the database with a test value for the thumbnail of this frame
-      (th/db-insert! :file-thumbnail
-                     {:file-id (:file-id data)
-                      :revn 1
-                      :data "testvalue1"})
-
-      (let [{:keys [result error] :as out} (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? error))
-        (t/is (= 4 (count result)))
-        (t/is (= "testvalue1" (:data result)))
-        (t/is (= 1 (:revn result)))))
-
-    (t/testing "query thumbnail with two revisions"
-      ;; insert an entry on the database with a test value for the thumbnail of this frame
-      (th/db-insert! :file-thumbnail
-                     {:file-id (:file-id data)
-                      :revn 2
-                      :data "testvalue2"})
-
-      (let [{:keys [result error] :as out} (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? error))
-        (t/is (= 4 (count result)))
-        (t/is (= "testvalue2" (:data result)))
-        (t/is (= 2 (:revn result))))
-
-      ;; Then query the specific revn
-      (let [{:keys [result error] :as out} (th/command! (assoc data :revn 1))]
-        ;; (th/print-result! out)
-        (t/is (nil? error))
-        (t/is (= 4 (count result)))
-        (t/is (= "testvalue1" (:data result)))
-        (t/is (= 1 (:revn result)))))
-
-    (t/testing "upsert file-thumbnail"
-      (let [data {::th/type :upsert-file-thumbnail
+    (t/testing "create a file thumbnail"
+      ;; insert object snapshot for known frame
+      (let [data {::th/type :create-file-thumbnail
                   ::rpc/profile-id (:id prof)
                   :file-id (:id file)
-                  :data "foobar"
-                  :props {:baz 1}
-                  :revn 2}
-            {:keys [result error] :as out} (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? error))
-        (t/is (nil? result))))
+                  :revn 1
+                  :media {:filename "sample.jpg"
+                          :size 7923
+                          :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                          :mtype "image/jpeg"}}
+            {:keys [error result] :as out} (th/command! data)]
 
-    (t/testing "query last result"
-      (let [{:keys [result error] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? error))
-        (t/is (= 4 (count result)))
-        (t/is (= "foobar" (:data result)))
-        (t/is (= {:baz 1} (:props result)))
-        (t/is (= 2 (:revn result)))))
+        (t/is (map? result)))
+
+      (let [data {::th/type :create-file-thumbnail
+                  ::rpc/profile-id (:id prof)
+                  :file-id (:id file)
+                  :revn 2
+                  :media {:filename "sample.jpg"
+                          :size 7923
+                          :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                          :mtype "image/jpeg"}}
+            {:keys [error result] :as out} (th/command! data)]
+
+        ;; (th/print-result! out)
+        (t/is (nil? error))
+        (t/is (map? result)))
+
+      (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
+        (t/is (= 2 (count rows))))
+
+      )
 
     (t/testing "gc task"
       ;; make the file eligible for GC waiting 300ms (configured
       ;; timeout for testing)
       (th/sleep 300)
 
-      ;; run the task again
-      (let [task  (:app.tasks.file-gc/handler th/*system*)
-            res   (task {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! "file-gc" {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
-      ;; Then query the specific revn
-      (let [{:keys [result error] :as out} (th/command! (assoc data :revn 1))]
-        (t/is (th/ex-of-type? error :not-found))
-        (t/is (th/ex-of-code? error :file-thumbnail-not-found))))
+      (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
+        (t/is (= 1 (count rows)))))
     ))
 
 
