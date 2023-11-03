@@ -47,7 +47,6 @@
   org.lz4/lz4-java {:mvn/version "1.8.0"}
 
   org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
-  integrant/integrant {:mvn/version "0.8.1"}
 
   dawran6/emoji {:mvn/version "0.1.5"}
   markdown-clj/markdown-clj {:mvn/version "1.11.4"}

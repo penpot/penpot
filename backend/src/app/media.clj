@@ -14,11 +14,11 @@
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.spec :as us]
+   [app.common.svg :as csvg]
    [app.config :as cf]
    [app.db :as-alias db]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
-   [app.util.svg :as svg]
    [app.util.time :as dt]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
@@ -201,7 +201,7 @@
   (us/assert ::input input)
   (let [{:keys [path mtype]} input]
     (if (= mtype "image/svg+xml")
-      (let [info (some-> path slurp svg/pre-process svg/parse get-basic-info-from-svg)]
+      (let [info (some-> path slurp csvg/parse get-basic-info-from-svg)]
         (when-not info
           (ex/raise :type :validation
                     :code :invalid-svg-file

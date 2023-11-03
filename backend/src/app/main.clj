@@ -10,6 +10,7 @@
    [app.auth.oidc :as-alias oidc]
    [app.auth.oidc.providers :as-alias oidc.providers]
    [app.common.logging :as l]
+   [app.common.svg :as csvg]
    [app.config :as cf]
    [app.db :as-alias db]
    [app.email :as-alias email]
@@ -411,6 +412,9 @@
     ;; NOTE: this dependency is only necessary for proper initialization ordering, props
     ;; module requires the migrations to run before initialize.
     ::migrations (ig/ref :app.migrations/migrations)}
+
+   ::csvg/optimizer
+   {}
 
    ::audit.tasks/archive
    {::props              (ig/ref ::setup/props)
