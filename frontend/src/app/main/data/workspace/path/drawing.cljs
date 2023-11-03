@@ -11,6 +11,7 @@
    [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.path.commands :as upc]
    [app.common.path.shapes-to-path :as upsp]
+   [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -242,7 +243,9 @@
       (let [objects      (wsh/lookup-page-objects state)
             content      (get-in state [:workspace-drawing :object :content] [])
             position     (gpt/point (get-in content [0 :params] nil))
-            frame-id     (ctst/top-nested-frame objects position)
+            frame-id     (->> (ctst/top-nested-frame objects position)
+                              (ctn/get-first-not-copy-parent objects) ;; We don't want to change the structure of component copies
+                              :id)
             flex-layout? (ctl/flex-layout? objects frame-id)
             drop-index   (when flex-layout? (gsl/get-drop-index frame-id objects position))]
 

@@ -13,6 +13,7 @@
    [app.common.geom.shapes.flex-layout :as gslf]
    [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.math :as mth]
+   [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -87,7 +88,9 @@
             objects      (wsh/lookup-page-objects state page-id)
             focus        (:workspace-focus-selected state)
 
-            fid          (ctst/top-nested-frame objects initial)
+            fid          (->> (ctst/top-nested-frame objects initial)
+                              (ctn/get-first-not-copy-parent objects) ;; We don't want to change the structure of component copies
+                              :id)
 
             flex-layout? (ctl/flex-layout? objects fid)
             grid-layout? (ctl/grid-layout? objects fid)
