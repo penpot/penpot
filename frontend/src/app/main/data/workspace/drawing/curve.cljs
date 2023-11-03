@@ -13,6 +13,7 @@
    [app.common.geom.shapes.flex-layout :as gslf]
    [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.geom.shapes.path :as gsp]
+   [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -57,7 +58,9 @@
             content      (dm/get-in state [:workspace-drawing :object :content] [])
             start        (dm/get-in content [0 :params] nil)
             position     (when start (gpt/point start))
-            frame-id     (ctst/top-nested-frame objects position)
+            frame-id     (->> (ctst/top-nested-frame objects position)
+                              (ctn/get-first-not-copy-parent objects) ;; We don't want to change the structure of component copies
+                              :id)
             flex-layout? (ctl/flex-layout? objects frame-id)
 
             grid-layout? (ctl/grid-layout? objects frame-id)
