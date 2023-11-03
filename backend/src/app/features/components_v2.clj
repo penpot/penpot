@@ -45,8 +45,6 @@
    [datoteka.io :as io]
    [promesa.exec.semaphore :as ps]))
 
-;; - What about use of svgo on converting graphics to components
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; END PROMESA HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -443,10 +441,15 @@
 
 (defn- create-shapes-for-svg
   [{:keys [id] :as mobj} file-id objects position]
-  (let [svg-text (get-svg-content id)
-        svg-data (-> (csvg/parse svg-text)
-                     (assoc :name (:name mobj))
-                     (collect-and-persist-images file-id))]
+  (let [svg-text  (get-svg-content id)
+
+        optimizer (::csvg/optimizer *system*)
+        svg-text  (csvg/optimize optimizer svg-text)
+
+        svg-data  (-> (csvg/parse svg-text)
+                      (assoc :name (:name mobj))
+                      (collect-and-persist-images file-id))]
+
     (sbuilder/create-svg-shapes svg-data position objects uuid/zero nil #{} false)))
 
 (defn- process-media-object
