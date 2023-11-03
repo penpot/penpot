@@ -1604,6 +1604,7 @@
     (watch [_ _ _]
       (try
         (let [clipboard-str (wapi/read-from-clipboard)
+
               paste-transit-str
               (->> clipboard-str
                    (rx/filter t/transit?)
