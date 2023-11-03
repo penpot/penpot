@@ -19,7 +19,6 @@
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
@@ -176,7 +175,6 @@
   [{:keys [shapes] :as props}]
   (let [single?             (= 1 (count shapes))
         shape               (first shapes)
-        new-css-system      (mf/use-ctx ctx/new-css-system)
         current-file-id     (mf/use-ctx ctx/current-file-id)
         workspace-file      (deref refs/workspace-file)
         workspace-data      (deref refs/workspace-data)
@@ -272,13 +270,8 @@
 
         on-search-term-change
         (mf/use-fn
-         (mf/deps new-css-system)
          (fn [event]
-                  ;;  NOTE: When old-css-system is removed this function will recibe value and event
-                  ;;  Let won't be necessary any more
-           (let [value (if ^boolean new-css-system
-                         event
-                         (dom/get-target-val event))]
+           (let [value (dom/get-target-val event)]
              (swap! filters* assoc :term value))))
 
 
@@ -375,8 +368,7 @@
 
 (mf/defc component-menu
   [{:keys [shapes swap-opened?] :as props}]
-  (let [new-css-system      (mf/use-ctx ctx/new-css-system)
-        current-file-id     (mf/use-ctx ctx/current-file-id)
+  (let [current-file-id     (mf/use-ctx ctx/current-file-id)
         components-v2       (mf/use-ctx ctx/components-v2)
         workspace-data      (deref refs/workspace-data)
         workspace-libraries (deref refs/workspace-libraries)
@@ -399,9 +391,6 @@
         component           (ctf/resolve-component shape {:id current-file-id :data workspace-data} workspace-libraries)
         main-instance?      (if components-v2 (ctk/main-instance? shape) true)
 
-        toggle-content
-        (mf/use-fn #(swap! state* update :show-content not))
-
         on-menu-click
         (mf/use-fn
          (fn [event]
@@ -421,38 +410,6 @@
         show-menu?           (seq menu-entries)]
 
     (when (seq shapes)
-      (if new-css-system
-        [:div {:class (stl/css :element-set)}
-         [:div {:class (stl/css :element-title)}
-          [:& title-bar {:collapsable? true
-                         :collapsed?   (not open?)
-                         :on-collapsed toggle-content
-                         :title        (tr "workspace.options.component")
-                         :class        (stl/css :title-spacing-component)}]]
-
-         (when open?
-           [:div {:class (stl/css :element-content)}
-            [:div {:class (stl/css :component-wrapper)}
-             [:div {:class (stl/css :component-name-wrapper)}
-              [:span {:class (stl/css :component-icon)}
-               (if main-instance?
-                 i/component-refactor
-                 i/copy-refactor)]
-
-              [:div {:class (stl/css :component-name)} shape-name]]
-
-             [:div {:class (stl/css :component-actions)}
-              [:button {:class (stl/css :menu-btn)
-                        :on-click on-menu-click}
-               i/menu-refactor]
-
-              [:& component-ctx-menu {:show menu-open?
-                                      :on-close on-menu-close
-                                      :menu-entries menu-entries
-                                      :type :dropdown}]]]
-            (when (and (not multi) components-v2)
-              [:& component-annotation {:id id :shape shape :component component}])])]
-
         [:div.element-set
          (if swap-opened?
            [:button.element-set-title.component-block-title {:class (stl/css-case :back swap-opened?)
@@ -502,4 +459,4 @@
             [:& component-swap {:shapes shapes}])
 
           (when (and (not swap-opened?) (not multi) components-v2)
-            [:& component-annotation {:id id :shape shape :component component}])]]))))
+            [:& component-annotation {:id id :shape shape :component component}])]])))
