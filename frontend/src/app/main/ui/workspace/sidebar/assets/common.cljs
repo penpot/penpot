@@ -309,19 +309,18 @@
 
         find-component      #(ctf/resolve-component % current-file workspace-libraries)
 
-        local-or-exists (fn [shape]
-                          (let [library-id (:component-file shape)]
-                            (or (= library-id current-file-id)
-                                (some? (get workspace-libraries library-id)))))
+        local-or-exists     (fn [shape]
+                              (let [library-id (:component-file shape)]
+                                (or (= library-id current-file-id)
+                                    (some? (get workspace-libraries library-id)))))
 
-        restorable-copies (->> copies
-                               (filter #(nil? (find-component %)))
-                               (filter #(local-or-exists %)))
+        restorable-copies   (->> copies
+                                 (filter #(nil? (find-component %)))
+                                 (filter #(local-or-exists %)))
 
-
-        touched-components  (filter #(cph/component-touched? objects (:id %)) copies)
-
-        can-reset-overrides? (or (not components-v2) (seq touched-components))
+        touched-not-dangling (filter #(and (cph/component-touched? objects (:id %))
+                                           (find-component %)) copies)
+        can-reset-overrides? (or (not components-v2) (seq touched-not-dangling))
 
 
         ;; For when it's only one shape
@@ -337,16 +336,22 @@
         lacks-annotation?   (nil? (:annotation component))
         is-dangling?        (nil? component)
 
-        can-update-main?     (or (not components-v2)
-                                 (and
-                                  (not main-instance?)
-                                  (cph/component-touched? objects (:id shape))))
+        can-show-component? (and (not multi)
+                                 (not main-instance?)
+                                 (not is-dangling?))
+
+        can-update-main?    (and (not multi)
+                                 (not is-dangling?)
+                                 (or (not components-v2)
+                                     (and (not main-instance?)
+                                          (cph/component-touched? objects (:id shape)))))
+
 
         do-detach-component
         #(st/emit! (dwl/detach-components (map :id copies)))
 
         do-reset-component
-        #(st/emit! (dwl/reset-components (map :id touched-components)))
+        #(st/emit! (dwl/reset-components (map :id touched-not-dangling)))
 
         do-restore-component
         #(let [;; Extract a map of component-id -> component-file in order to avoid duplicates
@@ -405,8 +410,8 @@
                          :action do-create-annotation})
                       (when (seq copies)
                         {:msg (if (> (count copies) 1)
-                           "workspace.shape.menu.detach-instances-in-bulk"
-                           "workspace.shape.menu.detach-instance")
+                                "workspace.shape.menu.detach-instances-in-bulk"
+                                "workspace.shape.menu.detach-instance")
                          :action do-detach-component
                          :shortcut :detach-component})
                       (when can-reset-overrides?
@@ -415,10 +420,10 @@
                       (when (and (seq restorable-copies) components-v2)
                         {:msg "workspace.shape.menu.restore-main"
                          :action do-restore-component})
-                      (when (and (not multi) (not main-instance?) (not is-dangling?))
+                      (when can-show-component?
                         {:msg "workspace.shape.menu.show-main"
                          :action do-show-component})
-                      (when (and (not multi) can-update-main? (not is-dangling?))
+                      (when can-update-main?
                         {:msg "workspace.shape.menu.update-main"
                          :action do-update-component})]]
     (filter (complement nil?) menu-entries)))
