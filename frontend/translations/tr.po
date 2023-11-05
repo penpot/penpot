@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-07 12:11+0000\n"
-"Last-Translator: Merih Güz <iletisim@merihguz.com>\n"
+"PO-Revision-Date: 2023-11-06 18:34+0000\n"
+"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.1-dev\n"
+"X-Generator: Weblate 5.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -4651,9 +4651,8 @@ msgid "questions.freelancer"
 msgstr "Serbest çalışıyorum"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-#, fuzzy
 msgid "dashboard.access-tokens.copied-success"
-msgstr "Kopyalanan belirteç"
+msgstr "Belirteç kopyalandı"
 
 msgid "modals.publish-empty-library.title"
 msgstr "Boş kütüphaneyi yayınla"
@@ -4791,7 +4790,6 @@ msgid "workspace.header.menu.redo"
 msgstr "Tekrarla"
 
 #: src/app/main/ui/onboarding/questions.cljs
-#, fuzzy
 msgid "questions.describe-your-experience-working-on"
 msgstr "... üzerinde çalışma deneyiminizi en iyi nasıl tarif edersiniz?"
 
@@ -5031,3 +5029,80 @@ msgstr "Üstü çizili yazı aç/kapat"
 
 msgid "errors.cannot-upload"
 msgstr "Medya dosyası yüklenemedi."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.message"
+msgstr "Bu belirteci silmek istediğinizden emin misiniz?"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.access-tokens"
+msgstr "Erişim belirteçleri"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "Belirtecin sona erme tarihi yok"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Yeni belirteç oluştur"
+
+msgid "workspace.options.component.main"
+msgstr "Ana bileşen"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "Belirtecin süresi %s tarihinde sona erecek"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.accept"
+msgstr "Belirteci sil"
+
+msgid "workspace.assets.duplicate-main"
+msgstr "Ana bileşeni çoğalt"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.submit-label"
+msgstr "Belirteç oluştur"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.placeholder"
+msgstr "Adı, belirtecin ne için olduğunu bilmenize yardımcı olabilir"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "Şu ana kadar hiç belirteciniz yok."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Kişisel erişim belirteçleri, oturum açma/parola kimlik doğrulama sistemimize "
+"alternatif olarak işlev görür ve bir uygulamanın dahili Penpot API'sine "
+"erişmesine izin vermek için kullanılabilir"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Kişisel erişim belirteçleri"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Bir belirteç oluşturmak için \"Yeni belirteç oluştur\" düğmesine basın."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.title"
+msgstr "Belirteci sil"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "Erişim belirteci başarıyla oluşturuldu."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.title"
+msgstr "Erişim belirteci oluştur"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.copy-token"
+msgstr "Belirteci kopyala"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "title.settings.access-tokens"
+msgstr "Profil - Erişim belirteçleri"
