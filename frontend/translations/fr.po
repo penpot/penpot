@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-11-05 17:33+0000\n"
+"PO-Revision-Date: 2023-11-06 18:34+0000\n"
 "Last-Translator: Luigi <luigi.joubert@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -4513,3 +4513,27 @@ msgstr "Quel est l'outil de design avec lequel vous avez plus d'expérience?"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.11-30"
 msgstr "11-30"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.personal-project"
+msgstr "Je travaille sur un projet personnel"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.team-size"
+msgstr "Quelle est la taille de votre équipe ?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.questions-how-are-you-planning-to-use-penpot"
+msgstr "Comment comptez-vous utiliser Penpot ?"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared-library"
+msgstr "Bibliothèque partagée"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other"
+msgstr "Autres (préciser)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.student-teacher"
+msgstr "Étudiant ou enseignant"
