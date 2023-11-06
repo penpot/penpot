@@ -7,6 +7,7 @@
 (ns app.main.style
   "A fonts loading macros."
   (:require
+   [app.common.exceptions :as ex]
    [clojure.core :as c]
    [clojure.data.json :as json]
    [clojure.java.io :as io]
@@ -37,16 +38,19 @@
        (interpose " ")
        (apply str)))
 
+(defn- read-json-file
+  [path]
+  (or (ex/ignoring (-> (slurp (io/resource path))
+                       (json/read-str :key-fn keyword)))
+      {}))
+
 (defmacro css
   "Uses a css-modules defined data for real class lookup, then concat
   all classes with space in the same way as `css*`."
   [& selectors]
   (let [fname (-> *ns* meta :file)
         path  (str (subs fname 0 (- (count fname) 4)) "css.json")
-        data  (-> (slurp (io/resource path))
-                  (json/read-str :key-fn keyword)
-                  (or {}))]
-
+        data  (read-json-file path)]
     (if (symbol? (first selectors))
       `(if ~(with-meta (first selectors) {:tag 'boolean})
          (css* ~@(binding [*css-data* data]
@@ -60,9 +64,7 @@
   ;; Get the associated styles will be module.cljs => module.css.json
   (let [fname (-> *ns* meta :file)
         path  (str (subs fname 0 (- (count fname) 4)) "css.json")]
-    (-> (slurp (io/resource path))
-        (json/read-str :key-fn keyword)
-        (or {}))))
+    (read-json-file path)))
 
 (def ^:private xform-css-case
   (comp
@@ -117,9 +119,7 @@
   [& params]
   (let [fname (-> *ns* meta :file)
         path  (str (subs fname 0 (- (count fname) 4)) "css.json")
-        data  (-> (slurp (io/resource path))
-                  (json/read-str :key-fn keyword)
-                  (or {}))]
+        data  (read-json-file path)]
 
     (if (symbol? (first params))
       `(if ~(with-meta (first params) {:tag 'boolean})
