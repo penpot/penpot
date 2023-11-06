@@ -387,6 +387,23 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defmethod repair-error :instance-head-not-frame
+  [_ {:keys [shape page-id] :as error} file-data _]
+  (let [repair-shape
+        (fn [shape]
+          ; Convert the shape in a frame.
+          (log/debug :hint "  -> Set :type :frame")
+          (assoc shape :type :frame
+                       :fills []
+                       :hide-in-viewer true
+                       :rx 0
+                       :ry 0))]
+
+    (log/info :hint "Repairing shape :instance-head-not-frame" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape))))
+
 (defmethod repair-error :default
   [_ error file _]
   (log/error :hint "Unknown error code, don't know how to repair" :code (:code error))
