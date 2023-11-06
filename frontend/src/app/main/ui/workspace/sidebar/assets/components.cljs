@@ -490,8 +490,9 @@
          (mf/deps current-component-id)
          (fn [new-name]
            (swap! state* dissoc :renaming)
-           (st/emit!
-            (dwl/rename-component-and-main-instance current-component-id new-name))))
+           (when (not (str/blank? new-name))
+             (st/emit!
+              (dwl/rename-component-and-main-instance current-component-id new-name)))))
 
         on-context-menu
         (mf/use-fn
