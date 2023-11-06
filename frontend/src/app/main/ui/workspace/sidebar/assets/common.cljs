@@ -395,7 +395,7 @@
         #(st/emit! (dw/set-annotations-id-for-create id))
 
         do-navigate-component-file
-        #(st/emit! (dwl/nav-to-component-file library-id))
+        #(st/emit! (dw/go-to-main-instance library-id component-id))
 
         do-show-component
         #(if local-component?
