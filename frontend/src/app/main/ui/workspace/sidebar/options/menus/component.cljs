@@ -176,7 +176,7 @@
   [{:keys [shapes] :as props}]
   (let [single?             (= 1 (count shapes))
         shape               (first shapes)
-        new-css-system      (mf/use-ctx ctx/new-css-system)
+        new-css-system      false ;;(mf/use-ctx ctx/new-css-system) ;;TODO do not show new-css-system until we have the new design
         current-file-id     (mf/use-ctx ctx/current-file-id)
         workspace-file      (deref refs/workspace-file)
         workspace-data      (deref refs/workspace-data)
@@ -375,7 +375,7 @@
 
 (mf/defc component-menu
   [{:keys [shapes swap-opened?] :as props}]
-  (let [new-css-system      (mf/use-ctx ctx/new-css-system)
+  (let [new-css-system      false ;;(mf/use-ctx ctx/new-css-system) ;;TODO do not show new-css-system until we have the new design
         current-file-id     (mf/use-ctx ctx/current-file-id)
         components-v2       (mf/use-ctx ctx/components-v2)
         workspace-data      (deref refs/workspace-data)
