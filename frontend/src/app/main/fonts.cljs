@@ -220,11 +220,13 @@
                         (swap! loading dissoc font-id)
                         (resolve font-id))
 
-              load-p (p/create
-                      (fn [resolve _]
-                        (-> font
-                            (assoc ::on-loaded (partial on-load resolve))
-                            (load-font))))]
+              load-p (->> (p/create
+                           (fn [resolve _]
+                             (-> font
+                                 (assoc ::on-loaded (partial on-load resolve))
+                                 (load-font))))
+                          ;; We need to wait for the font to be loaded
+                          (p/delay 120))]
 
           (swap! loading assoc font-id load-p)
           load-p))))))
