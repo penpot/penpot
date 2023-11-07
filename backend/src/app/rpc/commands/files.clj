@@ -46,6 +46,11 @@
 (def supported-features
   #{"storage/objects-map"
     "storage/pointer-map"
+    "internal/geom-record"
+    "internal/shape-record"
+    "fdata/pointer-map"
+    "fdata/objects-map"
+    "fdata/shape-data-type"
     "components/v2"})
 
 (defn get-default-features
@@ -250,17 +255,6 @@
        (into #{} (comp (filter pmap/pointer-map?)
                        (map pmap/get-id)))))
 
-;; FIXME: file locking
-(defn- process-components-v2-feature
-  "A special case handling of the components/v2 feature."
-  [{:keys [features data] :as file}]
-  (let [data     (ctf/migrate-to-components-v2 data)
-        features (conj features "components/v2")]
-    (-> file
-        (assoc ::pmg/migrated true)
-        (assoc :features features)
-        (assoc :data data))))
-
 (defn handle-file-features!
   [{:keys [features] :as file} client-features]
 
@@ -277,21 +271,17 @@
                          :hint "file has 'components/v2' feature enabled but frontend didn't specifies it"
                          :file-id (:id file)))
 
-    ;; This operation is needed because the components migration generates a new
-    ;; page with random id which is returned to the client; without persisting
-    ;; the migration this can cause that two simultaneous clients can have a
-    ;; different view of the file data and end persisting two pages with main
-    ;; components and breaking the whole file."
-    (and (contains? client-features "components/v2")
-         (not (contains? features "components/v2")))
-    (as-> file (process-components-v2-feature file))
-
     ;; This operation is needed for backward comapatibility with frontends that
     ;; does not support pointer-map resolution mechanism; this just resolves the
     ;; pointers on backend and return a complete file.
     (and (contains? features "storage/pointer-map")
          (not (contains? client-features "storage/pointer-map")))
+    (process-pointers deref)
+
+    (and (contains? features "fdata/pointer-map")
+         (not (contains? client-features "fdata/pointer-map")))
     (process-pointers deref)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUERY COMMANDS
@@ -350,9 +340,8 @@
 
            file   (-> (db/get conn :file params)
                       (decode-row)
-                      (pmg/migrate-file))
-
-           file   (handle-file-features! file client-features)]
+                      (pmg/migrate-file)
+                      (handle-file-features! client-features))]
 
        ;; NOTE: when file is migrated, we break the rule of no perform
        ;; mutations on get operations and update the file with all

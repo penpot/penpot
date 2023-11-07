@@ -79,6 +79,11 @@
 (def check-read-permissions!
   (perms/make-check-fn has-read-permissions?))
 
+(defn decode-row
+  [{:keys [features] :as row}]
+  (cond-> row
+    features (assoc :features (db/decode-pgarray features #{}))))
+
 ;; --- Query: Teams
 
 (declare retrieve-teams)
@@ -123,6 +128,7 @@
   [conn profile-id]
   (let [profile (profile/get-profile conn profile-id)]
     (->> (db/exec! conn [sql:teams (:default-team-id profile) profile-id])
+         (map decode-row)
          (mapv process-permissions))))
 
 ;; --- Query: Team (by ID)
@@ -148,8 +154,7 @@
     (when-not result
       (ex/raise :type :not-found
                 :code :team-does-not-exist))
-
-    (process-permissions result)))
+    (-> result decode-row process-permissions)))
 
 ;; --- Query: Team Members
 
