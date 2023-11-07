@@ -128,9 +128,12 @@
   [_ {:keys [shape page-id] :as error} file-data _]
   (let [repair-shape
         (fn [shape]
+          ; Set :component-file to local file
+          (log/debug :hint "  -> Set :component-file to local file")
+          (assoc shape :component-file (:id file-data)))]
           ; There is no solution that may recover it with confidence
-          (log/warn :hint "  -> CANNOT REPAIR THIS AUTOMATICALLY.")
-          shape)]
+          ;; (log/warn :hint "  -> CANNOT REPAIR THIS AUTOMATICALLY.")
+          ;; shape)]
 
     (log/info :hint "Repairing shape :component-main-external" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
@@ -144,12 +147,12 @@
 
         repair-shape
         (fn [shape]
-          ;; ; Detach the shape and convert it to non instance.
-          ;; (log/debug :hint "  -> Detach shape" :shape-id (:id shape))
-          ;; (ctk/detach-shape shape))]
+          ; Detach the shape and convert it to non instance.
+          (log/debug :hint "  -> Detach shape" :shape-id (:id shape))
+          (ctk/detach-shape shape))]
           ; There is no solution that may recover it with confidence
-          (log/warn :hint "  -> CANNOT REPAIR THIS AUTOMATICALLY.")
-          shape)]
+          ;; (log/warn :hint "  -> CANNOT REPAIR THIS AUTOMATICALLY.")
+          ;; shape)]
 
     (log/info :hint "Repairing shape :component-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
