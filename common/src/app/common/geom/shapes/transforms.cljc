@@ -486,7 +486,7 @@
          (transform-shape modifiers))))
 
   ([shape modifiers]
-   (if (and (some? modifiers) (not (ctm/empty? modifiers)))
+   (if (and (some? shape) (some? modifiers) (not (ctm/empty? modifiers)))
      (let [transform (ctm/modifiers->transform modifiers)]
        (cond-> shape
          (and (some? transform)

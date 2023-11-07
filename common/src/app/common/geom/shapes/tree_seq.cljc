@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.shapes.min-size-layout]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))

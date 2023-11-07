@@ -250,22 +250,25 @@
    #(patch-object % changes))
 
   ([object changes]
-   (->> changes
-        (reduce-kv
-         (fn [object key value]
-           (cond
-             (map? value)
-             (update object key patch-object  value)
+   (if object
+     (->> changes
+          (reduce-kv
+           (fn [object key value]
+             (cond
+               (map? value)
+               (let [current (get object key)]
+                 (assoc object key (patch-object current value)))
 
-             (and (nil? value) (record? object))
-             (assoc object key nil)
+               (and (nil? value) (record? object))
+               (assoc object key nil)
 
-             (nil? value)
-             (dissoc object key value)
+               (nil? value)
+               (dissoc object key value)
 
-             :else
-             (assoc object key value)))
-         object))))
+               :else
+               (assoc object key value)))
+           object))
+     changes)))
 
 (defn remove-at-index
   "Takes a vector and returns a vector with an element in the
