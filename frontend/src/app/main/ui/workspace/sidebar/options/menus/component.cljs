@@ -160,7 +160,7 @@
     [:div.component-item
      {:ref item-ref
       :class (stl/css-case :disabled loop)
-      :key (:id item)
+      :key (str "swap-item-" (:id item))
       :on-click on-select-component}
      (when visible?
        [:& cmm/component-item-thumbnail {:file-id (:file-id item)
@@ -232,7 +232,7 @@
                              (mapcat get-subgroups)
                              (remove str/empty?)
                              (remove nil?)
-                             distinct
+                             (distinct)
                              (filter #(= (cph/butlast-path %) (:path filters))))
 
         groups              (when-not is-search?
