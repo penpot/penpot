@@ -206,6 +206,46 @@
                               :component-root)))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
+                (update :components update-vals fix-container))))
+
+        transform-to-frames
+        (fn [file-data]
+                  ; Transform components and copies to frames, and set the
+                  ; frame-id of its childrens
+          (letfn [(fix-container
+                   [container]
+                   (update container :objects update-vals fix-shape))
+
+                  (fix-shape
+                   [shape]
+                   (if (ctk/instance-head? shape)
+                     (assoc shape
+                            :type :frame           ; Old groups must be converted
+                            :fills []              ; to frames and conform to spec
+                            :hide-in-viewer true
+                            :rx 0
+                            :ry 0)
+                     shape))]
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (update :components update-vals fix-container))))
+
+        remap-frame-ids
+        (fn [file-data]
+           ; Remap the frame-ids of the primary childs of the head instances
+           ; to point to the head instance.
+          (letfn [(fix-container
+                   [container]
+                   (update container :objects update-vals (partial fix-shape container)))
+
+                  (fix-shape
+                   [container shape]
+                   (let [parent (ctst/get-shape container (:parent-id shape))]
+                     (if (ctk/instance-head? parent)
+                       (assoc shape :frame-id (:id parent))
+                       shape)))]
+            (-> file-data
+                (update :pages-index update-vals fix-container)
                 (update :components update-vals fix-container))))]
 
     (-> file-data
@@ -214,7 +254,9 @@
         (add-not-nested-roots)
         (fix-orphan-copies)
         (remap-refs)
-        (fix-copies-of-detached))))
+        (fix-copies-of-detached)
+        (transform-to-frames)
+        (remap-frame-ids))))
 
 (defn- migrate-components
   "If there is any component in the file library, add a new 'Library
@@ -265,13 +307,20 @@
                     new-shapes
                     (into [] xf-shape shapes)
 
+                    find-frame-id ; if its parent is a frame, the frame-id should be the parent-id
+                    (fn [page shape]
+                      (let [parent (ctst/get-shape page (:parent-id shape))]
+                        (if (= :frame (:type parent))
+                          (:parent-id shape)
+                          (:frame-id shape))))
+
                     add-shapes
                     (fn [page]
                       (reduce (fn [page shape]
                                 (ctst/add-shape (:id shape)
                                                 shape
                                                 page
-                                                (:frame-id shape)
+                                                (find-frame-id page shape)
                                                 (:parent-id shape)
                                                 nil     ; <- As shapes are ordered, we can safely add each
                                                 true))  ;    one at the end of the parent's children list.
