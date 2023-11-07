@@ -226,7 +226,8 @@
                                       (not node-editing?)
                                       (or show-distances? mode-inspect?))
         show-artboard-names?     (contains? layout :display-artboard-names)
-        show-rules?              (and (contains? layout :rules) (not (contains? layout :hide-ui)))
+        hide-ui?                 (contains? layout :hide-ui)
+        show-rules?              (and (contains? layout :rules) (not hide-ui?))
 
 
         disabled-guides?         (or drawing-tool transform)
@@ -525,14 +526,15 @@
          :zoom zoom
          :vbox vbox}]
 
-       (when show-rules?
+       (when-not hide-ui?
          [:& rules/rules
           {:zoom zoom
            :zoom-inverse zoom-inverse
            :vbox vbox
            :selected-shapes selected-shapes
            :offset-x offset-x
-           :offset-y offset-y}])
+           :offset-y offset-y
+           :show-rules? show-rules?}])
 
        (when show-rules?
          [:& guides/viewport-guides

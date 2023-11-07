@@ -156,33 +156,12 @@
   (let [rules-width (* rules-width zoom-inverse)
         step (calculate-step-size zoom)
         clip-id (str "clip-rule-" (d/name axis))
-        new-css-system (mf/use-ctx ctx/new-css-system)
-        rules-background (if new-css-system new-css-rules-background rules-background)
-        font-color (if new-css-system new-css-font-color font-color)
-        rule-area-size (/ rule-area-size zoom)
-        border-radius (/ new-css-canvas-border-radius zoom)]
+        new-css-system  (mf/use-ctx ctx/new-css-system)
+        font-color (if new-css-system new-css-font-color font-color)]
 
     [:*
      (let [{:keys [x y width height]} (get-background-area vbox zoom-inverse axis)]
-       [:*
-        [:rect {:x x :y y :width width :height height :style {:fill rules-background}}]
-
-        ;; Draw the rules' rounded corners in the viewport corners
-        (when new-css-system
-          (if (= axis :x)
-            [:*
-             [:path {:d (round-corner-path-tl (+ x rule-area-size) (+ y rule-area-size) border-radius)
-                     :style {:fill rules-background}}]
-
-             [:path {:d (round-corner-path-tr (+ x width (- border-radius)) (+ y rule-area-size) border-radius)
-                     :style {:fill rules-background}}]]
-
-            [:*
-             [:path {:d (round-corner-path-bl (+ x rule-area-size) (+ y height (- border-radius)) border-radius)
-                     :style {:fill rules-background}}]
-
-             [:path {:d (round-corner-path-br (+ x (:width vbox) (- border-radius)) (+ y height (- border-radius)) border-radius)
-                     :style {:fill rules-background}}]]))])
+       [:rect {:x x :y y :width width :height height :style {:fill rules-background}}])
 
      [:g.rules {:clipPath (str "url(#" clip-id ")")}
 
@@ -315,7 +294,7 @@
 
 (mf/defc rules
   {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % (mf/check-props ["zoom" "vbox" "selected-shapes"]))]}
+   ::mf/wrap [#(mf/memo' % (mf/check-props ["zoom" "vbox" "selected-shapes" "show-rules?"]))]}
   [props]
   (let [zoom            (obj/get props "zoom")
         zoom-inverse    (obj/get props "zoom-inverse")
@@ -324,6 +303,11 @@
         offset-y        (obj/get props "offset-y")
         selected-shapes (-> (obj/get props "selected-shapes")
                             (hooks/use-equal-memo))
+        show-rules?     (obj/get props "show-rules?")
+
+        new-css-system  (mf/use-ctx ctx/new-css-system)
+        rules-background (if new-css-system new-css-rules-background rules-background)
+        border-radius (/ new-css-canvas-border-radius zoom)
 
         selection-rect
         (mf/use-memo
@@ -333,10 +317,29 @@
 
     (when (some? vbox)
       [:g.rules {:pointer-events "none"}
-       [:& rules-axis {:zoom zoom :zoom-inverse zoom-inverse :vbox vbox :axis :x :offset offset-x}]
-       [:& rules-axis {:zoom zoom :zoom-inverse zoom-inverse :vbox vbox :axis :y :offset offset-y}]
+       (when show-rules?
+         [:*
+          [:& rules-axis {:zoom zoom :zoom-inverse zoom-inverse :vbox vbox :axis :x :offset offset-x}]
+          [:& rules-axis {:zoom zoom :zoom-inverse zoom-inverse :vbox vbox :axis :y :offset offset-y}]])
 
-       (when (some? selection-rect)
+       ;; Draw the rules' rounded corners in the viewport corners
+       (when new-css-system
+         (let [{:keys [x y width height]} vbox
+               rule-area-size (if show-rules? (/ rule-area-size zoom) 0)]
+           [:*
+            [:path {:d (round-corner-path-tl (+ x rule-area-size) (+ y rule-area-size) border-radius)
+                    :style {:fill rules-background}}]
+
+            [:path {:d (round-corner-path-tr (+ x width (- border-radius)) (+ y rule-area-size) border-radius)
+                    :style {:fill rules-background}}]
+
+            [:path {:d (round-corner-path-bl (+ x rule-area-size) (+ y height (- border-radius)) border-radius)
+                    :style {:fill rules-background}}]
+
+            [:path {:d (round-corner-path-br (+ x (:width vbox) (- border-radius)) (+ y height (- border-radius)) border-radius)
+                    :style {:fill rules-background}}]]))
+
+       (when (and show-rules? (some? selection-rect))
          [:& selection-area {:zoom zoom
                              :zoom-inverse zoom-inverse
                              :vbox vbox
