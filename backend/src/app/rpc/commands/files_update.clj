@@ -15,7 +15,6 @@
    [app.common.schema :as sm]
    [app.common.schema.generators :as smg]
    [app.common.spec :as us]
-   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -201,7 +200,13 @@
                         (contains? features "storage/pointer-map")
                         (wrap-with-pointer-map-context)
 
+                        (contains? features "fdata/pointer-map")
+                        (wrap-with-pointer-map-context)
+
                         (contains? features "storage/objects-map")
+                        (wrap-with-objects-map-context)
+
+                        (contains? features "fdata/objects-map")
                         (wrap-with-objects-map-context))
 
             file      (assoc file :features features)
@@ -243,20 +248,12 @@
   (-> file
       (update :revn inc)
       (update :data (fn [data]
-                      (cond-> data
-                        :always
-                        (-> (blob/decode)
-                            (assoc :id (:id file))
-                            (pmg/migrate-data))
-
-                        (and (contains? ffeat/*current* "components/v2")
-                             (not (contains? ffeat/*previous* "components/v2")))
-                        (ctf/migrate-to-components-v2)
-
-                        :always
-                        (-> (cp/process-changes changes)
-                            (blob/encode)))))))
-
+                      (-> data
+                          (blob/decode)
+                          (assoc :id (:id file))
+                          (pmg/migrate-data)
+                          (cp/process-changes changes)
+                          (blob/encode))))))
 
 (defn- update-file*
   [{:keys [::db/conn] :as cfg} {:keys [profile-id file changes session-id ::created-at] :as params}]
