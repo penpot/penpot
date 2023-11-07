@@ -35,6 +35,7 @@
     "cypress-file-upload": "^5.0.8",
     "gettext-parser": "^7.0.1",
     "gulp": "4.0.2",
+    "gulp-cached": "^1.1.1",
     "gulp-concat": "^2.6.1",
     "gulp-gzip": "^1.4.2",
     "gulp-mustache": "^5.0.0",
