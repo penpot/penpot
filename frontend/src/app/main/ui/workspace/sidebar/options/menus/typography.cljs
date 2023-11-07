@@ -377,12 +377,18 @@
              :on-blur on-blur}])]
 
         [:div {:class (stl/css :font-variant-options)}
-         (let [basic-variant-options (map (fn [variant]
-                                            {:value (:id variant) :key (pr-str variant) :label (:name variant)}) (:variants font))
+         (let [basic-variant-options (->> (:variants font)
+                                          (map (fn [variant]
+                                                 {:value (:id variant)
+                                                  :key (pr-str variant)
+                                                  :label (:name variant)}) ))
                variant-options (if (= font-size :multiple)
-                                 (conj {:value :multiple :key :multiple-variants :label "--"} basic-variant-options)
+                                 (conj basic-variant-options
+                                       {:value :multiple
+                                        :key :multiple-variants
+                                        :label "--"} )
                                  basic-variant-options)]
-          ;;  TODO Add disabled mode
+           ;;  TODO Add disabled mode
            [:& select
             {:class (stl/css :font-variant-select)
              :default-value (attr->string font-variant-id)

@@ -30,15 +30,20 @@
    [rumext.v2 :as mf]))
 
 (defn fix-position [shape]
-  (let [modifiers (:modifiers shape)
-        shape' (gsh/transform-shape shape modifiers)
-        ;; We need to remove the movement because the dynamic modifiers will have move it
-        deltav (gpt/to-vec (gpt/point (:selrect shape'))
-                           (gpt/point (:selrect shape)))]
-    (-> shape
-        (gsh/transform-shape (ctm/move modifiers deltav))
-        (mdwm/update-grow-type shape)
-        (dissoc :modifiers))))
+  (if-let [modifiers (:modifiers shape)]
+    (let [shape' (gsh/transform-shape shape modifiers)
+
+          old-sr (dm/get-prop shape :selrect)
+          new-sr (dm/get-prop shape' :selrect)
+
+          ;; We need to remove the movement because the dynamic modifiers will have move it
+          deltav (gpt/to-vec (gpt/point new-sr)
+                             (gpt/point old-sr))]
+      (-> shape
+          (gsh/transform-shape (ctm/move modifiers deltav))
+          (mdwm/update-grow-type shape)
+          (dissoc :modifiers)))
+    shape))
 
 (defn- update-with-editor-state
   "Updates the shape with the current state in the editor"

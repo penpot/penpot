@@ -7,7 +7,6 @@
 (ns app.common.geom.modif-tree
   (:require
    [app.common.data.macros :as dm]
-   [app.common.geom.shapes.min-size-layout]
    [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]))
 

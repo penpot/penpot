@@ -70,11 +70,8 @@
               child-max-width  (ctl/child-max-width child)
               child-max-height (ctl/child-max-height child)
 
-              [child-margin-top child-margin-right child-margin-bottom child-margin-left]
-              (ctl/child-margins child)
-
-              child-margin-width (+ child-margin-left child-margin-right)
-              child-margin-height (+ child-margin-top child-margin-bottom)
+              child-margin-width (ctl/child-width-margin child)
+              child-margin-height (ctl/child-height-margin child)
 
               fill-width?  (ctl/fill-width? child)
               fill-height? (ctl/fill-height? child)
