@@ -65,26 +65,43 @@
 (defn duplicate-component
   "Clone the root shape of the component and all children. Generate new
   ids from all of them."
-  [component library-data]
+  [component new-component-id library-data]
   (let [components-v2 (dm/get-in library-data [:options :components-v2])]
     (if components-v2
 
       (let [main-instance-page  (ctf/get-component-page library-data component)
             main-instance-shape (ctf/get-component-root library-data component)
-            position            (gpt/point (+ (:x main-instance-shape)
-                                              (:width main-instance-shape)
-                                              50)
-                                           (:y main-instance-shape))
-            options             (if components-v2 {:main-instance? true} {})
+            delta               (gpt/point (+ (:width main-instance-shape) 50) 0)
 
-            [new-instance-shape new-instance-shapes]
-            (when (and (some? main-instance-page) (some? main-instance-shape))
-              (ctn/make-component-instance main-instance-page
-                                           component
-                                           library-data
-                                           position
-                                           true
-                                           options))]
+            ids-map (volatile! {})
+
+            update-original-shape
+            (fn [original-shape new-shape]
+              (vswap! ids-map assoc (:id original-shape) (:id new-shape))
+              original-shape)
+
+            update-new-shape
+            (fn [shape]
+              (cond-> shape
+                (= (:component-id shape) (:id component))
+                (assoc :component-id new-component-id)
+
+                :always
+                (gsh/move delta)))
+
+            [new-instance-shape new-instance-shapes _]
+            (ctst/clone-object main-instance-shape
+                               (:parent-id main-instance-shape)
+                               (:objects main-instance-page)
+                               update-new-shape
+                               update-original-shape)
+
+            remap-frame
+            (fn [shape]
+              (update shape :frame-id
+                      #(get @ids-map % (:frame-id shape))))
+
+            new-instance-shapes (map remap-frame new-instance-shapes)]
 
         [nil nil new-instance-shape new-instance-shapes])
 
