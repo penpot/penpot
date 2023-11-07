@@ -125,12 +125,13 @@
 
 (defn check-client-features!
   "Function used for check feature compability between currently enabled
-  features set on backend with the enabledq featured set by the
+  features set on backend with the enabled featured set by the
   frontend client"
   [enabled-features client-features]
   (when (set? client-features)
     (let [not-supported (-> enabled-features
                             (set/difference client-features)
+                            (set/difference frontend-only-features)
                             (set/difference backend-only-features))]
       (when (seq not-supported)
         (ex/raise :type :restriction
