@@ -226,6 +226,7 @@
   [id subscriber sem content]
   (px/thread
     {:name "penpot/s3/uploader"
+     :virtual true
      :daemon true}
     (l/trace :hint "start upload thread"
              :object-id (str id)
