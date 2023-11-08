@@ -221,12 +221,15 @@
           request  (cond-> request
                      (some? session)
                      (assoc ::profile-id (:profile-id session)
-                            ::id (:id session)))]
+                            ::id (:id session)))
+          response (handler request)]
 
-      (cond-> (handler request)
-        (renew-session? session)
-        (-> (assign-auth-token-cookie session)
-            (assign-authenticated-cookie session))))))
+      (if (renew-session? session)
+        (let [session (update! manager session)]
+          (-> response
+              (assign-auth-token-cookie session)
+              (assign-authenticated-cookie session)))
+        response))))
 
 (def soft-auth
   {:name ::soft-auth
