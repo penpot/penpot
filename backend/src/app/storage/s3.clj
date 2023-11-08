@@ -313,7 +313,7 @@
     ;; to the filesystem and then read with buffered inputstream; if
     ;; not, read the contento into memory using bytearrays.
     (if (> ^long size (* 1024 1024 2))
-      (let [path (tmp/tempfile :prefix "penpot.storage.s3.")
+      (let [path (tmp/tempfile :prefix "penpot.storage.s3." :min-age "6h")
             rxf  (AsyncResponseTransformer/toFile ^Path path)]
         (->> (.getObject ^S3AsyncClient client
                          ^GetObjectRequest gor
