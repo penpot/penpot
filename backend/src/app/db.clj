@@ -422,29 +422,30 @@
    (.rollback conn sp)))
 
 (defn tx-run!
-  [cfg f]
+  [system f & params]
   (cond
-    (connection? cfg)
-    (tx-run! {::conn cfg} f)
+    (connection? system)
+    (tx-run! {::conn system} f)
 
-    (pool? cfg)
-    (tx-run! {::pool cfg} f)
+    (pool? system)
+    (tx-run! {::pool system} f)
 
-    (::conn cfg)
-    (let [conn (::conn cfg)
+    (::conn system)
+    (let [conn (::conn system)
           sp   (savepoint conn)]
       (try
-        (let [result (f cfg)]
+        (let [result (apply f system params)]
           (release! conn sp)
           result)
         (catch Throwable cause
           (rollback! conn sp)
           (throw cause))))
 
-    (::pool cfg)
-    (with-atomic [conn (::pool cfg)]
-      (let [result (f (assoc cfg ::conn conn))]
-        (when (::rollback cfg)
+    (::pool system)
+    (with-atomic [conn (::pool system)]
+      (let [system (assoc system ::conn conn)
+            result (apply f system params)]
+        (when (::rollback system)
           (l/dbg :hint "explicit rollback requested")
           (rollback! conn))
         result))
@@ -453,20 +454,20 @@
     (throw (IllegalArgumentException. "invalid arguments"))))
 
 (defn run!
-  [cfg f]
+  [system f & params]
   (cond
-    (connection? cfg)
-    (run! {::conn cfg} f)
+    (connection? system)
+    (run! {::conn system} f)
 
-    (pool? cfg)
-    (run! {::pool cfg} f)
+    (pool? system)
+    (run! {::pool system} f)
 
-    (::conn cfg)
-    (f cfg)
+    (::conn system)
+    (apply f system params)
 
-    (::pool cfg)
-    (with-open [^Connection conn (open (::pool cfg))]
-      (f (assoc cfg ::conn conn)))
+    (::pool system)
+    (with-open [^Connection conn (open (::pool system))]
+      (apply f (assoc system ::conn conn) params))
 
     :else
     (throw (IllegalArgumentException. "invalid arguments"))))
