@@ -10,5 +10,8 @@
  :process-font  {:permits 4 :queue 32}
  :process-image {:permits 8 :queue 32}
 
+ :file-thumbnail-ops
+ {:permits 2}
+
  :submit-audit-events-by-profile
  {:permits 1 :queue 3}}

@@ -294,6 +294,7 @@
                    ::redis-uri
                    ::registration-domain-whitelist
                    ::rpc-rlimit-config
+                   ::rpc-climit-config
 
                    ::semaphore-process-font
                    ::semaphore-process-image

@@ -42,14 +42,15 @@
 
 (defn- io-loop
   [{:keys [::min-age] :as cfg}]
-  (l/info :hint "started tmp file cleaner")
+  (l/inf :hint "started tmp cleaner" :default-min-age (dt/format-duration min-age))
   (try
     (loop []
-      (when-let [path (sp/take! queue)]
-        (l/debug :hint "schedule tempfile deletion" :path path
+      (when-let [[path min-age'] (sp/take! queue)]
+        (let [min-age (or min-age' min-age)]
+          (l/dbg :hint "schedule tempfile deletion" :path path
                  :expires-at (dt/plus (dt/now) min-age))
-        (px/schedule! (inst-ms min-age) (partial remove-temp-file cfg path))
-        (recur)))
+          (px/schedule! (inst-ms min-age) (partial remove-temp-file cfg path))
+          (recur))))
     (catch InterruptedException _
       (l/trace :hint "cleaner interrupted"))
     (finally
@@ -57,11 +58,11 @@
 
 (defn- remove-temp-file
   "Permanently delete tempfile"
-  [{:keys [::wrk/executor path]}]
+  [{:keys [::wrk/executor]} path]
   (when (fs/exists? path)
     (px/run! executor
              (fn []
-               (l/debug :hint "permanently delete tempfile" :path path)
+               (l/dbg :hint "permanently delete tempfile" :path path)
                (fs/delete path)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -70,17 +71,17 @@
 
 (defn tempfile
   "Returns a tmpfile candidate (without creating it)"
-  [& {:keys [suffix prefix]
+  [& {:keys [suffix prefix min-age]
       :or {prefix "penpot."
            suffix ".tmp"}}]
-  (let [candidate (fs/tempfile :suffix suffix :prefix prefix)]
-    (sp/offer! queue candidate)
-    candidate))
+  (let [path (fs/tempfile :suffix suffix :prefix prefix)]
+    (sp/offer! queue [path (some-> min-age dt/duration)])
+    path))
 
 (defn create-tempfile
-  [& {:keys [suffix prefix]
+  [& {:keys [suffix prefix min-age]
       :or {prefix "penpot."
            suffix ".tmp"}}]
   (let [path (fs/create-tempfile :suffix suffix :prefix prefix)]
-    (sp/offer! queue path)
+    (sp/offer! queue [path (some-> min-age dt/duration)])
     path))

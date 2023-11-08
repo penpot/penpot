@@ -33,6 +33,7 @@
    [app.db :as db]
    [app.media :as media]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.files-snapshot :as fsnap]
    [app.rpc.commands.media :as cmd.media]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
@@ -645,6 +646,9 @@
       (let [system (update system ::sto/storage media/configure-assets-storage)]
         (db/tx-run! system
                     (fn [{:keys [::db/conn] :as system}]
+                      (fsnap/take-file-snapshot! system {:file-id file-id
+                                                         :label "migration/components-v2"})
+
                       (binding [*system* system]
                         (-> (db/get conn :file {:id file-id})
                             (update :features db/decode-pgarray #{})

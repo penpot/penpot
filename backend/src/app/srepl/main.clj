@@ -193,9 +193,7 @@
   collectable file-changes entry."
   [system & {:keys [file-id label]}]
   (let [file-id (h/parse-uuid file-id)]
-    (db/tx-run! system
-                (fn [cfg]
-                  (fsnap/take-file-snapshot! cfg {:file-id file-id :label label})))))
+    (db/tx-run! system fsnap/take-file-snapshot! {:file-id file-id :label label})))
 
 (defn restore-file-snapshot!
   [system & {:keys [file-id id]}]

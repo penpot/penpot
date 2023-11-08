@@ -35,7 +35,7 @@
   [{:keys [::wrk/executor]} config]
   (letfn [(load-fn [key]
             (let [config (get config (nth key 0))]
-              (l/trace :hint "insert into cache" :key key)
+              (l/trc :hint "insert into cache" :key key)
               (pbh/create :permits (or (:permits config) (:concurrency config))
                           :queue (or (:queue config) (:queue-size config))
                           :timeout (:timeout config)
@@ -43,7 +43,7 @@
                           :type (:type config :semaphore))))
 
           (on-remove [_ _ cause]
-            (l/trace :hint "evict from cache" :key key :reason (str cause)))]
+            (l/trc :hint "evict from cache" :key key :reason (str cause)))]
 
     (cache/create :executor :same-thread
                   :on-remove on-remove
@@ -71,7 +71,7 @@
   [_ {:keys [::path ::mtx/metrics ::wrk/executor] :as cfg}]
   (when (contains? cf/flags :rpc-climit)
     (when-let [params (some->> path slurp edn/read-string)]
-      (l/info :hint "initializing concurrency limit" :config (str path))
+      (l/inf :hint "initializing concurrency limit" :config (str path))
       (us/verify! ::config params)
       {::cache (create-bulkhead-cache cfg params)
        ::config params
@@ -99,15 +99,15 @@
         (fn []
           (let [elapsed (tpoint)
                 stats   (pbh/get-stats limiter)]
-            (l/trace :hint "executed"
-                     :id (name id)
-                     :key key
-                     :fnh (hash f)
-                     :permits (:permits stats)
-                     :queue (:queue stats)
-                     :max-permits (:max-permits stats)
-                     :max-queue (:max-queue stats)
-                     :elapsed (dt/format-duration elapsed))
+            (l/trc :hint "executed"
+                   :id (name id)
+                   :key key
+                   :fnh (hash f)
+                   :permits (:permits stats)
+                   :queue (:queue stats)
+                   :max-permits (:max-permits stats)
+                   :max-queue (:max-queue stats)
+                   :elapsed (dt/format-duration elapsed))
             (mtx/run! metrics
                       :id :rpc-climit-timing
                       :val (inst-ms elapsed)
@@ -116,15 +116,15 @@
               (f)
               (finally
                 (let [elapsed (tpoint)]
-                  (l/trace :hint "finished"
-                           :id (name id)
-                           :key key
-                           :fnh (hash f)
-                           :permits (:permits stats)
-                           :queue (:queue stats)
-                           :max-permits (:max-permits stats)
-                           :max-queue (:max-queue stats)
-                           :elapsed (dt/format-duration elapsed)))))))
+                  (l/trc :hint "finished"
+                         :id (name id)
+                         :key key
+                         :fnh (hash f)
+                         :permits (:permits stats)
+                         :queue (:queue stats)
+                         :max-permits (:max-permits stats)
+                         :max-queue (:max-queue stats)
+                         :elapsed (dt/format-duration elapsed)))))))
         measure!
         (fn [stats]
           (mtx/run! metrics
@@ -139,14 +139,14 @@
     (try
       (let [stats (pbh/get-stats limiter)]
         (measure! stats)
-        (l/trace :hint "enqueued"
-                 :id (name id)
-                 :key key
-                 :fnh (hash f)
-                 :permits (:permits stats)
-                 :queue (:queue stats)
-                 :max-permits (:max-permits stats)
-                 :max-queue (:max-queue stats))
+        (l/trc :hint "enqueued"
+               :id (name id)
+               :key key
+               :fnh (hash f)
+               :permits (:permits stats)
+               :queue (:queue stats)
+               :max-permits (:max-permits stats)
+               :max-queue (:max-queue stats))
         (pbh/invoke! limiter wrapped))
       (catch ExceptionInfo cause
         (let [{:keys [type code]} (ex-data cause)]
@@ -193,13 +193,6 @@
          (app.rpc.climit/run! (^:once fn* [] ~@body)))
     `(run! ~instance (^:once fn* [] ~@body))))
 
-(defmacro with-dispatch
-  "Dispatch blocking operation to a separated thread protected with
-  the specified semaphore.
-  DEPRECATED"
-  [& params]
-  `(with-dispatch! ~@params))
-
 (def noop-fn (constantly nil))
 
 (defn wrap
@@ -207,18 +200,19 @@
   (if (and (some? climit) (some? id))
     (if-let [config (get-in climit [::config id])]
       (let [cache (::cache climit)]
-        (l/debug :hint "wrap: instrumenting method"
-                 :limit (name id)
-                 :service-name (::sv/name mdata)
-                 :timeout (:timeout config)
-                 :permits (:permits config)
-                 :queue (:queue config)
-                 :keyed? (some? key-fn))
+        (l/dbg :hint "instrumenting method"
+               :limit (name id)
+               :service-name (::sv/name mdata)
+               :timeout (:timeout config)
+               :permits (:permits config)
+               :queue (:queue config)
+               :keyed? (not= key-fn noop-fn))
+
         (fn [cfg params]
           (invoke! cache metrics id (key-fn params) (partial f cfg params))))
 
       (do
-        (l/warn :hint "no config found for specified queue" :id id)
+        (l/wrn :hint "no config found for specified queue" :id id)
         f))
 
     f))
