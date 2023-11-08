@@ -210,6 +210,7 @@
            preset :shutdown-on-failure
            max-jobs Integer/MAX_VALUE
            max-items Long/MAX_VALUE}}]
+
   (letfn [(get-chunk [cursor]
             (let [sql  (str/concat
                         "SELECT id, created_at, features FROM team "
