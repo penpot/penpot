@@ -54,7 +54,7 @@
     "prettier": "^3.0.3",
     "rimraf": "^5.0.1",
     "sass": "^1.66.1",
-    "shadow-cljs": "2.25.3"
+    "shadow-cljs": "2.25.10"
   },
   "dependencies": {
     "@sentry/browser": "^6.17.4",
