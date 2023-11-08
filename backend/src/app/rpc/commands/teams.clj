@@ -100,7 +100,7 @@
   (dm/with-open [conn (db/open pool)]
     (get-teams conn profile-id)))
 
-(def sql:teams
+(def sql:get-teams-with-permissions
   "select t.*,
           tp.is_owner,
           tp.is_admin,
@@ -128,7 +128,7 @@
 (defn get-teams
   [conn profile-id]
   (let [profile (profile/get-profile conn profile-id)]
-    (->> (db/exec! conn [sql:teams (:default-team-id profile) profile-id])
+    (->> (db/exec! conn [sql:get-teams-with-permissions (:default-team-id profile) profile-id])
          (map decode-row)
          (map process-permissions)
          (vec))))
@@ -156,18 +156,19 @@
   (let [{:keys [default-team-id] :as profile} (profile/get-profile conn profile-id)
         result (cond
                  (some? team-id)
-                 (let [sql (str "WITH teams AS (" sql:teams ") SELECT * FROM teams WHERE id=?")]
+                 (let [sql (str "WITH teams AS (" sql:get-teams-with-permissions
+                                ") SELECT * FROM teams WHERE id=?")]
                    (db/exec-one! conn [sql default-team-id profile-id team-id]))
 
                  (some? project-id)
-                 (let [sql (str "WITH teams AS (" sql:teams ") "
+                 (let [sql (str "WITH teams AS (" sql:get-teams-with-permissions ") "
                                 "SELECT t.* FROM teams AS t "
                                 "  JOIN project AS p ON (p.team_id = t.id) "
                                 " WHERE p.id=?")]
                    (db/exec-one! conn [sql default-team-id profile-id project-id]))
 
                  (some? file-id)
-                 (let [sql (str "WITH teams AS (" sql:teams ") "
+                 (let [sql (str "WITH teams AS (" sql:get-teams-with-permissions ") "
                                 "SELECT t.* FROM teams AS t "
                                 "  JOIN project AS p ON (p.team_id = t.id) "
                                 "  JOIN file AS f ON (f.project_id = p.id) "

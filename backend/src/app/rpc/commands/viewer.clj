@@ -6,28 +6,49 @@
 
 (ns app.rpc.commands.viewer
   (:require
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
+   [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.comments :as comments]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]))
 
 ;; --- QUERY: View Only Bundle
 
-(defn- get-project
-  [conn id]
-  (db/get-by-id conn :project id {:columns [:id :name :team-id]}))
+(defn- remove-not-allowed-pages
+  [data allowed]
+  (-> data
+      (update :pages (fn [pages] (filterv #(contains? allowed %) pages)))
+      (update :pages-index select-keys allowed)))
 
-(defn- get-bundle
-  [conn file-id profile-id features]
-  (let [file    (files/get-file conn file-id features)
-        project (get-project conn (:project-id file))
+(defn- get-view-only-bundle
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id ::perms] :as params}]
+  (let [file    (files/get-file conn file-id)
+
+        project (db/get conn :project
+                        {:id (:project-id file)}
+                        {:columns [:id :name :team-id]})
+
+        team    (-> (db/get conn :team {:id (:team-id project)})
+                    (teams/decode-row))
+
+        _       (-> (cfeat/get-team-enabled-features cf/flags team)
+                    (cfeat/check-client-features! (:features params))
+                    (cfeat/check-file-features! (:features file) (:features params)))
+
+        file    (cond-> file
+                  (= :share-link (:type perms))
+                  (update :data remove-not-allowed-pages (:pages perms))
+
+                  :always
+                  (update :data select-keys [:id :options :pages :pages-index :components]))
+
         libs    (files/get-file-libraries conn file-id)
         users   (comments/get-file-comments-users conn file-id profile-id)
         links   (->> (db/query conn :share-link {:file-id file-id})
@@ -42,45 +63,19 @@
                                  (dissoc :flags)))))
 
         fonts   (db/query conn :team-font-variant
-                          {:team-id (:team-id project)
+                          {:team-id (:id team)
                            :deleted-at nil})]
 
-    {:file file
-     :users users
+    {:users users
      :fonts fonts
      :project project
      :share-links links
-     :libraries libs}))
+     :libraries libs
+     :file file
+     :team team
+     :permissions perms}))
 
-(defn- remove-not-allowed-pages
-  [data allowed]
-  (-> data
-      (update :pages (fn [pages] (filterv #(contains? allowed %) pages)))
-      (update :pages-index select-keys allowed)))
-
-(defn get-view-only-bundle
-  [conn {:keys [profile-id file-id share-id features] :as params}]
-  (let [perms  (files/get-permissions conn profile-id file-id share-id)
-        bundle (-> (get-bundle conn file-id profile-id features)
-                   (assoc :permissions perms))]
-
-    ;; When we have neither profile nor share, we just return a not
-    ;; found response to the user.
-    (when-not perms
-      (ex/raise :type :not-found
-                :code :object-not-found
-                :hint "object not found"))
-
-    (update bundle :file
-            (fn [file]
-              (cond-> file
-                (= :share-link (:type perms))
-                (update :data remove-not-allowed-pages (:pages perms))
-
-                :always
-                (update :data select-keys [:id :options :pages :pages-index :components]))))))
-
-(sm/def! ::get-view-only-bundle
+(def schema:get-view-only-bundle
   [:map {:title "get-view-only-bundle"}
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
@@ -89,7 +84,21 @@
 (sv/defmethod ::get-view-only-bundle
   {::rpc/auth false
    ::doc/added "1.17"
-   ::sm/params ::get-view-only-bundle}
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id] :as params}]
-  (dm/with-open [conn (db/open pool)]
-    (get-view-only-bundle conn (assoc params :profile-id profile-id))))
+   ::sm/params schema:get-view-only-bundle}
+  [system {:keys [::rpc/profile-id file-id share-id] :as params}]
+  (db/run! system (fn [{:keys [::db/conn] :as system}]
+                    (let [perms  (files/get-permissions conn profile-id file-id share-id)
+                          params (-> params
+                                     (assoc ::perms perms)
+                                     (assoc :profile-id profile-id))]
+
+                      ;; When we have neither profile nor share, we just return a not
+                      ;; found response to the user.
+                      (when-not perms
+                        (ex/raise :type :not-found
+                                  :code :object-not-found
+                                  :hint "object not found"))
+
+                      (get-view-only-bundle system params)))))
+
+
