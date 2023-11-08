@@ -574,7 +574,8 @@
                                      cfsh/prepare-create-artboard-from-selection)
         changes (pcb/concat-changes changes changes2)]
 
-    (cp/process-changes fdata (:redo-changes changes) false)))
+    (cp/process-changes (assoc-in fdata [:options :components-v2] true) ; Process component creation in v2 way
+                        (:redo-changes changes) false)))
 
 (defn- migrate-graphics
   [fdata]
