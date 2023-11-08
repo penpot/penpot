@@ -126,10 +126,9 @@
 
 (defn create-file
   "Create a new file on the back-end"
-  [context]
+  [context features]
   (let [resolve-fn (:resolve context)
-        file-id    (resolve-fn (:file-id context))
-        features   (into #{} (:features context))]
+        file-id    (resolve-fn (:file-id context))]
     (rp/cmd! :create-temp-file
              {:id file-id
               :name (:name context)
@@ -575,14 +574,14 @@
           (rx/tap #(rx/end! progress-str)))]))
 
 (defn create-files
-  [context files]
+  [{:keys [features] :as context} files]
 
   (let [data (group-by :file-id files)]
     (rx/concat
      (->> (rx/from files)
           (rx/map #(merge context %))
           (rx/flat-map (fn [context]
-                         (->> (create-file context)
+                         (->> (create-file context features)
                               (rx/map #(vector % (first (get data (:file-id context)))))))))
 
      (->> (rx/from files)
@@ -641,10 +640,11 @@
                                (rx/of {:uri (:uri file) :error error}))))))))))
 
 (defmethod impl/handler :import-files
-  [{:keys [project-id files]}]
+  [{:keys [project-id files features]}]
 
   (let [context {:project-id project-id
-                 :resolve    (resolve-factory)}
+                 :resolve    (resolve-factory)
+                 :features   features}
         zip-files (filter #(= "application/zip" (:type %)) files)
         binary-files (filter #(= "application/octet-stream" (:type %)) files)]
 
@@ -691,5 +691,9 @@
          (rx/catch (fn [cause]
                      (log/error :hint "unexpected error on import process"
                                 :project-id project-id
-                                :cause cause))))))
+                                :cause cause)
+                     (if (map? cause)
+                       (js/console.error (pr-str cause))
+                       (js/console.error cause)))))))
+
 

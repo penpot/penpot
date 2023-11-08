@@ -13,6 +13,7 @@
    [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.icons :as i]
@@ -272,7 +273,8 @@
            (->> (uw/ask-many!
                  {:cmd :import-files
                   :project-id project-id
-                  :files files})
+                  :files files
+                  :features @features/features-ref})
                 (rx/subs
                  (fn [{:keys [file-id status message errors] :as msg}]
                    (swap! state update :files update-status file-id status message errors))))))
@@ -347,7 +349,7 @@
         success-files (->> files (filter #(and (= (:status %) :import-finish) (empty? (:errors %)))) count)
         pending-analysis? (> (->> files (filter #(= (:status %) :analyzing)) count) 0)
         pending-import? (> num-importing 0)
-        
+
         valid-files? (or (some? template)
                          (> (+ (->> files (filterv (fn [x] (not= (:status x) :analyze-error))) count)) 0))]
 
