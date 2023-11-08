@@ -47,8 +47,9 @@
 (def default-options
   {:update-file {:query-params [:id]}
    :get-raw-file {:rename-to :get-file :raw-transit? true}
-   :upsert-file-object-thumbnail {:query-params [:file-id :object-id]}
-   :create-file-object-thumbnail {:query-params [:file-id :object-id]
+   :upsert-file-object-thumbnail {:query-params [:file-id :object-id :tag]
+                                  :form-data? true}
+   :create-file-object-thumbnail {:query-params [:file-id :object-id :tag]
                                   :form-data? true}
 
    :create-file-thumbnail

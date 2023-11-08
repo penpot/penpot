@@ -91,8 +91,8 @@
 
 (defn clear-thumbnail
   ([file-id page-id frame-id tag]
-   (clear-thumbnail file-id (thc/fmt-object-id file-id page-id frame-id tag)))
-  ([file-id object-id]
+   (clear-thumbnail (thc/fmt-object-id file-id page-id frame-id tag)))
+  ([object-id]
    (let [emit-rpc? (volatile! false)]
      (ptk/reify ::clear-thumbnail
        cljs.core/IDeref
@@ -108,14 +108,7 @@
                (tm/schedule-on-idle (partial wapi/revoke-uri uri))
                (update state :workspace-thumbnails dissoc object-id))
 
-             state)))
-
-     ptk/WatchEvent
-     (watch [_ _ _]
-       (when ^boolean @emit-rpc?
-         (->> (rp/cmd! :delete-file-object-thumbnail {:file-id file-id :object-id object-id})
-              (rx/catch rx/empty)
-              (rx/ignore))))))))
+             state)))))))
 
 (defn- assoc-thumbnail
   [object-id uri]
@@ -171,7 +164,7 @@
                                                            :object-id object-id
                                                            :media blob
                                                            :tag (or tag "frame")}]
-                                               (rp/cmd! :create-file-object-thumbnail params))))
+                                               (rp/cmd! :upsert-file-object-thumbnail params))))
                                 (rx/catch rx/empty)
                                 (rx/ignore)))))
              (rx/catch (fn [cause]
