@@ -20,6 +20,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
@@ -262,8 +263,10 @@
    [:tag {:optional true} :string]])
 
 (sv/defmethod ::create-file-object-thumbnail
-  {:doc/added "1.19"
+  {::doc/added "1.19"
    ::doc/module :files
+   ::climit/id :file-thumbnail-ops
+   ::climit/key-fn ::rpc/profile-id
    ::audit/skip true
    ::sm/params schema:create-file-object-thumbnail}
 
@@ -288,9 +291,8 @@
                                          {:file-id file-id
                                           :object-id object-id}
                                          {::db/for-update? true})]
-    (when media-id
-      (sto/del-object! storage media-id))
 
+    (sto/del-object! storage media-id)
     (db/delete! conn :file-tagged-object-thumbnail
                 {:file-id file-id
                  :object-id object-id})
@@ -301,8 +303,10 @@
           :req-un [::file-id ::object-id]))
 
 (sv/defmethod ::delete-file-object-thumbnail
-  {:doc/added "1.19"
+  {::doc/added "1.19"
    ::doc/module :files
+   ::climit/id :file-thumbnail-ops
+   ::climit/key-fn ::rpc/profile-id
    ::audit/skip true}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id object-id]}]
 
@@ -351,6 +355,8 @@
   {::doc/added "1.19"
    ::doc/module :files
    ::audit/skip true
+   ::climit/id :file-thumbnail-ops
+   ::climit/key-fn ::rpc/profile-id
    ::sm/params [:map {:title "create-file-thumbnail"}
                 [:file-id ::sm/uuid]
                 [:revn :int]
