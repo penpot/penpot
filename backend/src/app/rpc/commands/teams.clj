@@ -651,7 +651,7 @@
 
 (defn update-team-photo
   [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id team-id] :as params}]
-  (let [team  (get-team pool profile-id team-id)
+  (let [team  (get-team cfg :profile-id profile-id :team-id team-id)
         photo (profile/upload-photo cfg params)]
 
     (db/with-atomic [conn pool]
