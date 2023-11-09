@@ -10,11 +10,21 @@
     @include flexColumn;
     .component-wrapper {
       display: flex;
-      gap: $s-4;
+      margin: 0 $s-4 0 $s-8;
       .component-name-wrapper {
         @extend .asset-element;
         @include flexRow;
         flex-grow: 1;
+        height: 100%;
+        width: 100%;
+        flex-wrap: wrap;
+        padding: 0 0 0 $s-12;
+        margin-top: $s-8;
+
+        &.with-main {
+          padding-bottom: $s-12;
+        }
+
         .component-icon {
           @include flexCenter;
           height: $s-24;
@@ -26,8 +36,20 @@
         }
         .component-name {
           @include titleTipography;
-          flex-grow: 1;
+          @include textEllipsis;
+          width: 70%;
+          flex-grow: 2;
+          margin-left: $s-8;
         }
+        .component-parent-name {
+          @include titleTipography;
+          @include textEllipsis;
+          padding-left: $s-36;
+          color: var(--title-foreground-color);
+        }
+      }
+      .swappeable {
+        cursor: pointer;
       }
       .component-actions {
         position: relative;
@@ -48,6 +70,302 @@
           .dropdown-element {
             @extend .dropdown-element-base;
           }
+        }
+      }
+    }
+  }
+
+  .title-back {
+    @include tabTitleTipography;
+    cursor: pointer;
+    width: 100%;
+    background-color: var(--title-background-color);
+    color: var(--title-foreground-color);
+    text-align: left;
+    border: 0;
+    margin-bottom: $s-16;
+    svg {
+      height: $s-8;
+      width: $s-8;
+      fill: var(--icon-foreground);
+      margin-right: $s-16;
+      transform: rotate(180deg);
+    }
+  }
+
+  .component-swap {
+    .element-set-title {
+      @include titleTipography;
+      text-transform: uppercase;
+      margin: $s-16 $s-4 0 $s-12;
+    }
+
+    svg {
+      stroke: var(--icon-foreground);
+      fill: var(--icon-foreground);
+      height: $s-12;
+      width: $s-12;
+      cursor: pointer;
+    }
+
+    .search-field {
+      display: flex;
+      align-items: center;
+      height: $s-32;
+      margin: $s-16 $s-4 $s-4 $s-12;
+      border-radius: $br-8;
+      font-family: "worksans", sans-serif;
+      background-color: var(--input-background-color);
+      .search-box {
+        align-items: center;
+        display: flex;
+        width: 100%;
+
+        .icon-wrapper {
+          display: flex;
+          svg {
+            @extend .button-icon-small;
+            stroke: var(--icon-foreground);
+          }
+        }
+
+        .input-text {
+          @include removeInputStyle;
+          height: $s-32;
+          width: 100%;
+          margin: 0;
+          padding: $s-4;
+          border: 0;
+          font-size: $fs-12;
+          color: var(--input-foreground-color-active);
+          &::placeholder {
+            color: var(--input-foreground-color-disabled);
+          }
+          &:focus-visible {
+            border-color: var(--input-border-outline-color-active);
+          }
+        }
+        .clear-btn {
+          @include buttonStyle;
+          @include flexCenter;
+          height: $s-16;
+          width: $s-16;
+          .clear-icon {
+            @include flexCenter;
+            svg {
+              @extend .button-icon-small;
+              stroke: var(--icon-foreground);
+            }
+          }
+        }
+      }
+      .search-icon {
+        @include flexCenter;
+        width: $s-28;
+        svg {
+          @extend .button-icon-small;
+          stroke: var(--icon-foreground);
+        }
+      }
+    }
+
+    .select-field {
+      margin: $s-8 $s-4 0 $s-12;
+    }
+
+    .select-library {
+      padding-left: $s-20;
+    }
+
+    .library-name {
+      @include titleTipography;
+      @include textEllipsis;
+      margin: $s-20 $s-4 0 $s-12;
+    }
+
+    .listing-options-wrapper {
+      width: 100%;
+    }
+
+    .listing-options {
+      margin-left: auto;
+      margin-right: $s-4;
+    }
+
+    .component-path {
+      @include titleTipography;
+      @include textEllipsis;
+      text-align: left;
+      cursor: pointer;
+      width: 100%;
+      background-color: var(--title-background-color);
+      color: var(--title-foreground-color);
+      border: 0;
+      margin: $s-16 0 $s-12 0;
+      padding: 0 $s-16 0 $s-24;
+      svg {
+        height: $s-8;
+        width: $s-8;
+        fill: var(--icon-foreground);
+        margin-right: $s-16;
+        transform: rotate(180deg);
+      }
+    }
+
+    .component-path-empty {
+      height: $s-16;
+    }
+
+    .component-list {
+      margin: 0 $s-4 0 $s-8;
+      .component-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: $s-4;
+        font-size: $s-12;
+        cursor: pointer;
+        width: 100%;
+        height: $s-36;
+        border-radius: $br-8;
+        background-color: var(--assets-item-background-color);
+        color: var(--assets-item-name-foreground-color);
+
+        svg,
+        img {
+          background-color: var(--assets-component-background-color);
+          border-radius: $br-8;
+          height: $s-32;
+          width: $s-32;
+          margin: $s-2 $s-8 $s-2 $s-2;
+        }
+
+        .selected {
+          color: var(--assets-item-name-foreground-color-hover);
+        }
+
+        &:hover {
+          color: var(--assets-item-name-foreground-color-hover);
+          background-color: var(--assets-item-background-color-hover);
+        }
+
+        &.disabled {
+          cursor: auto;
+          color: var(--assets-item-name-foreground-color-disabled);
+          background-color: var(--assets-item-background-color);
+
+          svg {
+            cursor: auto;
+          }
+        }
+      }
+
+      .component-group {
+        @include titleTipography;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        margin: 0 $s-16 $s-8 $s-8;
+        justify-content: space-between;
+        cursor: pointer;
+        height: $s-24;
+        svg {
+          height: $s-8;
+          width: $s-8;
+        }
+
+        div {
+          display: flex;
+          width: 90%;
+        }
+        span {
+          @include textEllipsis;
+        }
+        .component-group-path {
+          direction: rtl;
+        }
+        .component-group-name {
+          color: var(--assets-item-name-foreground-color);
+        }
+        &:hover {
+          color: var(--assets-item-name-foreground-color-hover);
+          .component-group-name {
+            color: var(--assets-item-name-foreground-color-hover);
+          }
+        }
+      }
+    }
+  }
+
+  .component-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: calc(10vh + $s-16);
+    gap: $s-4;
+    margin: 0 $s-4 0 $s-8;
+    .grid-cell {
+      @include flexCenter;
+      flex-wrap: wrap;
+      position: relative;
+      padding: $s-8;
+      border-radius: $br-8;
+      background-color: var(--assets-component-background-color);
+      overflow: hidden;
+      cursor: pointer;
+      img {
+        height: auto;
+        width: auto;
+        max-height: 100%;
+        max-width: 100%;
+        pointer-events: none;
+        border: 0;
+      }
+      svg {
+        height: 10vh;
+        width: 10vh;
+        stroke: none;
+      }
+      .component-name {
+        @include titleTipography;
+        @include textEllipsis;
+        display: none;
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        padding: $s-2;
+        text-align: center;
+        direction: rtl;
+      }
+
+      &:hover {
+        background-color: var(--assets-item-background-color-hover);
+        .component-name {
+          display: block;
+          color: var(--assets-item-name-foreground-color-hover);
+          background: linear-gradient(to top, var(--assets-item-background-color-hover) 0%, transparent 100%);
+        }
+      }
+
+      &.selected {
+        border: $s-1 solid var(--assets-item-border-color);
+        .component-name {
+          color: var(--assets-item-name-foreground-color-hover);
+        }
+      }
+
+      &.disabled {
+        background: var(--assets-component-background-color-disabled);
+        cursor: auto;
+        svg {
+          cursor: auto;
+        }
+        .component-name {
+          background: linear-gradient(
+            to top,
+            var(--assets-component-background-color-disabled) 0%,
+            transparent 100%
+          );
+          color: var(--assets-item-name-foreground-color-hover);
         }
       }
     }

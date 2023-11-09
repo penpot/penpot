@@ -187,10 +187,14 @@
   --assets-item-background-color-hover: var(--color-background-quaternary);
   --assets-item-name-foreground-color: var(--color-foreground-secondary);
   --assets-item-name-foreground-color-hover: var(--color-foreground-primary);
+  --assets-item-name-foreground-color-disabled: var(--color-foreground-disabled);
   --assets-item-border-color: var(--color-accent-primary);
   --assets-item-background-color-drag: var(--color-accent-primary-muted);
   --assets-item-border-color-drag: var(--color-select);
   --assets-component-background-color: var(--white); // We don't want this color to change with palette
+  --assets-component-background-color-disabled: var(
+    --off-white
+  ); // We don't want this color to change with palette
 
   --radio-btns-background-color: var(--color-background-tertiary);
   --radio-btn-background-color-selected: var(--color-background-quaternary);
