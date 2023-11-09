@@ -6,6 +6,7 @@ export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
        enable-prepl-server \
        enable-urepl-server \
+       enable-nrepl-server \
        enable-webhooks \
        enable-backend-asserts \
        enable-audit-log \
@@ -18,22 +19,35 @@ export PENPOT_FLAGS="\
        enable-access-tokens \
        disable-file-validation";
 
-set -ex
+# Initialize MINIO config
+mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin
+mc admin user add penpot-s3 penpot-devenv penpot-devenv
+mc admin policy attach penpot-s3 readwrite --user=penpot-devenv
+mc mb penpot-s3/penpot -p
+
+export AWS_ACCESS_KEY_ID=penpot-devenv
+export AWS_SECRET_ACCESS_KEY=penpot-devenv
+export PENPOT_ASSETS_STORAGE_BACKEND=assets-s3
+export PENPOT_STORAGE_ASSETS_S3_ENDPOINT=http://minio:9000
+export PENPOT_STORAGE_ASSETS_S3_BUCKET=penpot
 
 if [ "$1" = "--watch" ]; then
+    trap "exit" INT TERM ERR
+    trap "kill 0" EXIT
+
     echo "Start Watch..."
 
     clojure -A:dev -M -m app.main &
-    PID=$!
 
     npx nodemon \
         --watch src \
         --watch ../common \
         --ext "clj" \
         --signal SIGKILL \
-        --exec 'echo "(user/restart)" | nc -N localhost 6062'
+        --exec 'echo "(app.main/stop)\n\r(repl/refresh)\n\r(app.main/start)\n" | nc -N localhost 6062'
 
-    kill -9 $PID
+    wait;
+
 else
-    clojure -A:dev -M -m app.main
+    clojure -A:dev -M -m app.main;
 fi

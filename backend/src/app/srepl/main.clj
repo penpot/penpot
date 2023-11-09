@@ -31,6 +31,7 @@
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.pprint :refer [pprint print-table]]
+   [clojure.tools.namespace.repl :as repl]
    [cuerdas.core :as str]))
 
 (defn print-available-tasks
