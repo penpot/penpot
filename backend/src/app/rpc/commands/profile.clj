@@ -53,7 +53,7 @@
    [:props {:optional true}
     [:map-of {:title "ProfileProps"} :keyword :any]]])
 
-(def profile?
+(def valid-profile?
   (sm/pred-fn schema:profile))
 
 ;; --- QUERY: Get profile (own)
@@ -95,7 +95,7 @@
 
   (dm/assert!
    "expected valid profile data"
-   (profile? params))
+   (valid-profile? params))
 
   (db/with-atomic [conn pool]
     ;; NOTE: we need to retrieve the profile independently if we use
