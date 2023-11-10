@@ -20,11 +20,11 @@
     (- (mth/sqrt (* 2 stroke-width stroke-width)) stroke-width)))
 
 (defn- apply-filters
-  [type filters]
+  [attr type filters]
   (sequence
    (comp
     (remove :hidden)
-    (filter #(= (:style %) type))
+    (filter #(= (attr %) type))
     (map (fn [item]
            {:id (dm/str "filter_" (:id item))
             :type type
@@ -40,10 +40,10 @@
    ;; We can revisit this in the future
    #_(->> shape :blur (into []) (blur-filters :background-blur))
 
-   (->> shape :shadow (apply-filters :drop-shadow))
+   (->> shape :shadow (apply-filters :style :drop-shadow))
    [{:id "shape" :type :blend-filters}]
-   (->> shape :shadow (apply-filters :inner-shadow))
-   (->> shape :blur   (into []) (apply-filters :layer-blur))))
+   (->> shape :shadow (apply-filters :style :inner-shadow))
+   (->> shape :blur list (apply-filters :type :layer-blur))))
 
 (defn- calculate-filter-bounds
   [selrect filter-entry]
