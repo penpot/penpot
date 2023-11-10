@@ -24,7 +24,6 @@
 
 (defn create-offscreen-canvas
   [width height]
-  #_(js/console.log "Creating offscreen canvas" width height)
   (js/OffscreenCanvas. width height))
 
 (defn resize-offscreen-canvas
@@ -36,8 +35,6 @@
     (when-not (= (unchecked-get canvas "height") height)
       (obj/set! canvas "height" height)
       (vreset! resized true))
-    #_(when @resized
-      (js/console.log "Resizing offscreen canvas" width height))
     canvas))
 
 (def get-offscreen-canvas ((fn []
@@ -112,6 +109,7 @@
                      dh canvas-height]
                  (when (obj/get zoom-context "imageSmoothingEnabled")
                    (obj/set! zoom-context "imageSmoothingEnabled" false))
+                 (.clearRect zoom-context 0 0 canvas-width canvas-height)
                  (.drawImage zoom-context canvas sx sy sw sh dx dy dw dh)
                  (st/emit! (dwc/pick-color [r g b a])))))))
 
@@ -139,6 +137,7 @@
              (->> (rx/of {:node svg-node
                           :width (:width vport)
                           :result "image-bitmap"})
+                  (rx/tap #(js/console.log "render-node" %))
                   (rx/mapcat thr/render-node)
                   (rx/subs (fn [image-bitmap]
                              (.drawImage canvas-context image-bitmap 0 0)
