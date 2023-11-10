@@ -22,6 +22,34 @@
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
+(defn create-offscreen-canvas
+  [width height]
+  #_(js/console.log "Creating offscreen canvas" width height)
+  (js/OffscreenCanvas. width height))
+
+(defn resize-offscreen-canvas
+  [canvas width height]
+  (let [resized (volatile! false)]
+    (when-not (= (unchecked-get canvas "width") width)
+      (obj/set! canvas "width" width)
+      (vreset! resized true))
+    (when-not (= (unchecked-get canvas "height") height)
+      (obj/set! canvas "height" height)
+      (vreset! resized true))
+    #_(when @resized
+      (js/console.log "Resizing offscreen canvas" width height))
+    canvas))
+
+(def get-offscreen-canvas ((fn []
+  (let [internal-state #js { :canvas nil }]
+    (fn [width height]
+      (let [canvas (unchecked-get internal-state "canvas")]
+        (if canvas
+          (resize-offscreen-canvas canvas width height)
+          (let [new-canvas (create-offscreen-canvas width height)]
+            (obj/set! internal-state "canvas" new-canvas)
+            new-canvas))))))))
+
 (mf/defc pixel-overlay
   {::mf/wrap-props false}
   [props]
@@ -31,12 +59,12 @@
         viewport-ref   (unchecked-get props "viewport-ref")
         viewport-node  (mf/ref-val viewport-ref)
 
-        canvas            (js/OffscreenCanvas. (:width vport) (:height vport))
+        canvas            (get-offscreen-canvas (:width vport) (:height vport))
         canvas-context    (.getContext canvas "2d" #js {:willReadFrequently true})
         canvas-image-data (mf/use-ref nil)
         zoom-view-context (mf/use-ref nil)
 
-        update-str     (rx/subject)
+        update-str        (rx/subject)
 
         handle-keydown
         (mf/use-callback
@@ -74,10 +102,10 @@
 
                      ;; I don't know why, but the zoom view is offset by 24px
                      ;; instead of 25.
-                     sx (- x 24)
-                     sy (- y 20)
-                     sw 50
-                     sh 40
+                     sx (- x (if new-css-system 32 24))
+                     sy (- y (if new-css-system 17 20))
+                     sw (if new-css-system 65 50)
+                     sh (if new-css-system 35 40)
                      dx 0
                      dy 0
                      dw canvas-width
