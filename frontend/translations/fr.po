@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-11-11 13:34+0000\n"
-"Last-Translator: Louis Chance <contact@louischance.com>\n"
+"Last-Translator: Locness <locness3@orange.fr>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -423,8 +423,8 @@ msgstr "Exporter"
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
-"Vous pouvez ajouter des paramètres d'exportation aux éléments depuis les "
-"propriétés de design (en bas de la barre latérale de droite)."
+"Vous pouvez ajouter des paramètres d'exportation aux formes depuis les "
+"propriétés de design (en bas de la barre latérale de droite)"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to-link"
@@ -546,9 +546,7 @@ msgid "dashboard.import.import-message"
 msgstr "%s fichiers ont été importés avec succès."
 
 msgid "dashboard.import.import-warning"
-msgstr ""
-"Certains fichiers contenaient des objets invalides qui n'ont pas été "
-"importés."
+msgstr "Certains fichiers contenaient des objets invalides qui ont été enlevés."
 
 msgid "dashboard.import.progress.process-colors"
 msgstr "Traitement des couleurs"
