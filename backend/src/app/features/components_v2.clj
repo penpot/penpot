@@ -632,21 +632,21 @@
               cfeat/*wrap-with-objects-map-fn*
               (if (contains? (:features file) "fdata/objectd-map") omap/wrap identity)]
 
-      (let [libs (sequence
-                  (map (fn [{:keys [id] :as lib}]
-                         (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
-                           (-> (db/get conn :file {:id id})
-                               (files/decode-row)
-                               (files/process-pointers deref) ; ensure all pointers resolved
-                               (pmg/migrate-file)))))
-                  (files/get-file-libraries conn id))
-
-            libs (-> (d/index-by :id libs)
-                     (assoc (:id file) file))
-
-            file (-> file
+      (let [file (-> file
                      (update :data blob/decode)
                      (update :data assoc :id id)
+                     (pmg/migrate-file))
+
+            libs (->> (files/get-file-libraries conn id)
+                      (into [file] (map (fn [{:keys [id]}]
+                                          (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
+                                            (-> (db/get conn :file {:id id})
+                                                (files/decode-row)
+                                                (files/process-pointers deref) ; ensure all pointers resolved
+                                                (pmg/migrate-file))))))
+                      (d/index-by :id))
+
+            file (-> file
                      (update :data migrate-file-data libs)
                      (update :features conj "components/v2"))]
 
