@@ -178,7 +178,8 @@
                                              (l/trace :hint "update-file" :time (dt/format-duration elapsed)))))))))
 
 (defn update-file
-  [{:keys [::db/conn ::mtx/metrics] :as cfg} {:keys [id file features changes changes-with-metadata skip-validate] :as params}]
+  [{:keys [::db/conn ::mtx/metrics] :as cfg}
+   {:keys [id file features changes changes-with-metadata] :as params}]
   (binding [cfeat/*current*  features
             cfeat/*previous* (:features file)]
     (let [update-fn (cond-> update-file*
@@ -187,16 +188,6 @@
 
                       (contains? features "fdata/objects-map")
                       (wrap-with-objects-map-context))
-
-          ;; TODO: this ruins performance.
-          ;;       We must find some other way to do general validation.
-          libraries (when (and (contains? cf/flags :file-validation)
-                               (not skip-validate))
-                      (let [libs (->> (files/get-file-libraries conn (:id file))
-                                      (map #(get-file conn (:id %)))
-                                      (map #(update % :data blob/decode))
-                                      (d/index-by :id))]
-                        (assoc libs (:id file) file)))
 
           changes   (if changes-with-metadata
                       (->> changes-with-metadata (mapcat :changes) vec)
@@ -225,9 +216,9 @@
       (let [file   (assoc file :features features)
             params (-> params
                        (assoc :file file)
-                       (assoc :libraries libraries)
                        (assoc :changes changes)
                        (assoc ::created-at (dt/now)))]
+
         (-> (update-fn cfg params)
             (vary-meta assoc ::audit/replace-props
                        {:id         (:id file)
@@ -237,12 +228,13 @@
                         :team-id    (:team-id file)}))))))
 
 (defn- update-file*
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id file libraries changes session-id ::created-at skip-validate] :as params}]
+  [{:keys [::db/conn] :as cfg}
+   {:keys [profile-id file changes session-id ::created-at skip-validate] :as params}]
   (let [;; Process the file data in the CLIMIT context; scheduling it
         ;; to be executed on a separated executor for avoid to do the
         ;; CPU intensive operation on vthread.
         file (-> (climit/configure cfg :update-file)
-                 (climit/submit! (partial update-file-data file libraries changes skip-validate)))]
+                 (climit/submit! (partial update-file-data conn file changes skip-validate)))]
 
     (db/insert! conn :file-change
                 {:id (uuid/next)
@@ -276,36 +268,44 @@
       (get-lagged-changes conn params))))
 
 (defn- update-file-data
-  [file libraries changes skip-validate]
-  (let [validate (fn [file]
-                   (when (and (cf/flags :file-validation)
-                              (not skip-validate))
-                     (val/validate-file file libraries :throw? true)))
-        file     (-> file
-                     (update :revn inc)
-                     (update :data (fn [data]
-                                     (cond-> data
-                                       :always
-                                       (-> (blob/decode)
-                                           (assoc :id (:id file))
-                                           (pmg/migrate-data))
+  [conn file changes skip-validate]
+  (let [file (update file :data (fn [data]
+                                  (-> data
+                                      (blob/decode)
+                                      (assoc :id (:id file))
+                                      (pmg/migrate-data))))
 
-                                       :always
-                                       (cp/process-changes changes))))
-                     (d/tap-r validate))
+        ;; WARNING: this ruins performance; maybe we need to find
+        ;; some other way to do general validation
+        libs (when (and (contains? cf/flags :file-validation)
+                        (not skip-validate))
+               ;; FIXME: we need properly handle pointer-map here ????
+               (->> (files/get-file-libraries conn (:id file))
+                    (into [file] (map (fn [{:keys [id]}]
+                                        (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
+                                          (-> (db/get conn :file {:id id})
+                                              (files/decode-row)
+                                              (files/process-pointers deref) ; ensure all pointers resolved
+                                              (pmg/migrate-file))))))
+                    (d/index-by :id)))]
 
-        file     (if (and (contains? cfeat/*current* "fdata/objects-map")
-                          (not (contains? cfeat/*previous* "fdata/objects-map")))
-                   (enable-objects-map file)
-                   file)
+    (-> file
+        (update :revn inc)
+        (update :data cp/process-changes changes)
 
-        file     (if (and (contains? cfeat/*current* "fdata/pointer-map")
-                          (not (contains? cfeat/*previous* "fdata/pointer-map")))
-                   (enable-pointer-map file)
-                   file)
-        ]
+        ;; If `libs` is defined, then full validation is performed
+        (val/validate-file! libs)
 
-    (update file :data blob/encode)))
+        (cond-> (and (contains? cfeat/*current* "fdata/objects-map")
+                     (not (contains? cfeat/*previous* "fdata/objects-map")))
+          (enable-objects-map))
+
+        (cond-> (and (contains? cfeat/*current* "fdata/pointer-map")
+                     (not (contains? cfeat/*previous* "fdata/pointer-map")))
+        (enable-pointer-map))
+
+        (update :data blob/encode))))
+
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."
