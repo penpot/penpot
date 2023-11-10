@@ -190,10 +190,16 @@
 
      (check-supported-features! file-features)
 
-     (let [not-supported (-> file-features
-                             (set/difference enabled-features)
-                             (set/difference client-features)
-                             (set/difference frontend-only-features))]
+     (let [;; We should ignore all features that does not match with
+           ;; the `no-migration-features` set because we can't enable
+           ;; them as-is, because they probably need migrations
+           client-features (set/intersection client-features no-migration-features)
+           not-supported   (-> file-features
+                               (set/difference enabled-features)
+                               (set/difference client-features)
+                               (set/difference backend-only-features)
+                               (set/difference frontend-only-features))]
+
        (when (seq not-supported)
          (ex/raise :type :restriction
                    :code :feature-mismatch
