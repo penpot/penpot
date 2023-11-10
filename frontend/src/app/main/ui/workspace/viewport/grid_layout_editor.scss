@@ -1,13 +1,19 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
 .grid-track-marker {
   .marker-shape {
-    fill: var(--color-distance);
-    fill-opacity: 0.3;
+    fill: var(--grid-editor-marker-color);
   }
   .marker-text {
-    fill: var(--color-distance);
-    font-size: calc(12px / var(--zoom));
+    fill: var(--white);
+    font-size: calc($s-12 / var(--zoom));
     font-family: worksans;
-    font-weight: 600;
   }
 }
 
@@ -21,21 +27,21 @@
 
 .grid-editor-label {
   background: none;
-  border-bottom: calc(1px / var(--zoom)) solid transparent;
+  border-bottom: calc($s-1 / var(--zoom)) solid transparent;
   border: 0;
-  color: var(--color-distance);
+  color: var(--grid-editor-marker-text);
   font-family: worksans;
-  font-size: calc(12px / var(--zoom));
-  font-weight: 600;
+  font-size: calc($fs-12 / var(--zoom));
+  font-weight: 400;
   margin: 0;
-  max-width: calc(80px / var(--zoom));
+  max-width: calc($s-80 / var(--zoom));
   padding: 0;
-  padding: 4px;
+  padding: $s-4;
   text-align: center;
 
   &:focus {
     outline: none;
-    border-bottom: calc(1px / var(--zoom)) solid var(--color-distance);
+    border-bottom: calc($s-1 / var(--zoom)) solid var(--grid-editor-marker-text);
   }
 }
 
@@ -46,40 +52,48 @@
   margin: 0;
   padding: 0;
   position: absolute;
-  right: calc(20px / var(--zoom));
-  width: calc(20px / var(--zoom));
-  height: calc(20px / var(--zoom));
+  top: calc($s-6 / var(--zoom));
+  right: calc($s-20 / var(--zoom));
+  width: calc($s-20 / var(--zoom));
+  height: calc($s-20 / var(--zoom));
 
   svg {
-    width: calc(16px / var(--zoom));
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc($s-16 / var(--zoom));
     height: auto;
-    fill: var(--color-distance);
+    stroke: var(--grid-editor-marker-color);
   }
 }
 
 .grid-frame {
-  fill: #f6f6f6;
-  stroke: var(--color-distance);
-  stroke-width: calc(1 / var(--zoom));
+  fill: var(--grid-editor-marker-color);
+  fill-opacity: 0.1;
 }
 
 .grid-plus-button {
   cursor: pointer;
+  opacity: 0.5;
 
   .grid-plus-shape {
-    fill: var(--color-distance);
-    stroke: var(--color-distance);
-    stroke-width: calc(1 / var(--zoom));
+    fill: var(--grid-editor-plus-btn-background);
+    stroke: var(--grid-editor-plus-btn-background);
+    stroke-width: calc($s-1 / var(--zoom));
   }
 
   .grid-plus-icon {
-    fill: white;
+    stroke: var(--grid-editor-plus-btn-foreground);
+  }
+
+  &:hover {
+    opacity: 1;
   }
 }
 
 .grid-cell-outline {
   fill: transparent;
-  stroke: var(--color-distance);
+  stroke: var(--grid-editor-line-color);
   stroke-opacity: 0.5;
   stroke-width: calc(1 / var(--zoom));
 
@@ -87,5 +101,54 @@
   &.selected {
     stroke-opacity: 1;
     stroke-width: calc(2 / var(--zoom));
+  }
+}
+
+.grid-actions {
+  pointer-events: none;
+  position: absolute;
+  top: $s-44;
+  left: 50%;
+
+  .grid-actions-container {
+    @include flexRow;
+    background: var(--panel-background-color);
+    border-radius: $br-12;
+    box-shadow: 0px 0px $s-12 0px var(--menu-shadow-color);
+    gap: $s-8;
+    height: $s-48;
+    margin-left: -50%;
+    padding: $s-8;
+    pointer-events: initial;
+    width: $s-512;
+  }
+
+  .grid-actions-title {
+    flex: 1;
+    font-size: $fs-12;
+    color: var(--color-foreground-secondary);
+    padding-left: $s-8;
+  }
+
+  .board-name {
+  }
+
+  .locate-btn {
+    @extend .button-secondary;
+    text-transform: uppercase;
+    padding: $s-8 $s-20;
+    font-size: $fs-11;
+  }
+  .done-btn {
+    @extend .button-primary;
+    text-transform: uppercase;
+    padding: $s-8 $s-20;
+    font-size: $fs-11;
+  }
+  .close-btn {
+    @extend .button-tertiary;
+    svg {
+      @extend .button-icon;
+    }
   }
 }

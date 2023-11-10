@@ -3536,6 +3536,18 @@ msgstr "Zoom a selección"
 msgid "workspace.layout_grid.editor.title"
 msgstr "Editando rejilla"
 
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Mostrar"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Hecho"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Editar rejilla"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Salir"
+
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
 msgstr "Añadir"
@@ -5094,6 +5106,9 @@ msgstr "Pulsar para cerrar la ruta"
 #, markdown
 msgid "workspace.top-bar.read-only"
 msgstr "**Modo inspección** (View only)"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Hecho"
 
 msgid "media.image"
 msgstr "Imagen"

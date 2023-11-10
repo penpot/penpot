@@ -882,3 +882,15 @@
   ([pred coll]
    (transduce (take-until pred) conj [] coll)))
 
+(defn safe-subvec
+  "Wrapper around subvec so it doesn't throw an exception but returns nil instead"
+  ([v start]
+   (when (and (some? v)
+              (> start 0) (< start (count v)))
+     (subvec v start)))
+  ([v start end]
+   (let [size (count v)]
+     (when (and (some? v)
+                (>= start 0) (< start size)
+                (>= end 0) (<= start end) (<= end size))
+       (subvec v start end)))))

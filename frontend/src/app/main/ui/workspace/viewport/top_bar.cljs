@@ -9,11 +9,11 @@
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.viewport.grid-layout-editor :refer [grid-edition-actions]]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -56,7 +56,7 @@
         [:div.viewport-actions-title
          [:& i18n/tr-html {:tag-name "span"
                            :label "workspace.top-bar.read-only"}]]
-        [:button.btn-primary {:on-click handle-close-view-mode} "Done"]
+        [:button.btn-primary {:on-click handle-close-view-mode} (tr "workspace.top-bar.read-only.done")]
         [:button.btn-icon-basic {:on-click handle-close-view-mode} i/close]]]
 
       path-edition?
@@ -64,10 +64,4 @@
        [:& path-actions {:shape shape}]]
 
       grid-edition?
-      [:div.viewport-actions
-       [:div.viewport-actions-container
-        [:div.viewport-actions-title
-         (tr "workspace.layout_grid.editor.title")  " " [:span.grid-edit-board-name (:name shape)]]
-        [:button.btn-secondary {:on-click #(st/emit! (dwge/locate-board (:id shape)))} "Locate"]
-        [:button.btn-primary {:on-click #(st/emit! dw/clear-edition-mode)} "Done"]
-        [:button.btn-icon-basic {:on-click #(st/emit! dw/clear-edition-mode)} i/close]]])))
+      [:& grid-edition-actions {:shape shape}])))

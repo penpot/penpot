@@ -28,6 +28,8 @@ paths.resources = "./resources/";
 paths.output = "./resources/public/";
 paths.dist = "./target/dist/";
 
+const touchSourceOnStyleChange = true;
+
 /***********************************************
  * Marked Extensions
  ***********************************************/
@@ -282,12 +284,15 @@ gulp.task("dev:dirs", async function(next) {
 });
 
 gulp.task("watch:main", function() {
-  gulp.watch("src/**/**.scss", gulp.series("scss"))
-    .on("change", function(path) {
+  const watchTask = gulp.watch("src/**/**.scss", gulp.series("scss"));
+
+  if (touchSourceOnStyleChange) {
+    watchTask.on("change", function(path) {
       // Replace ".scss" for ".cljs" to refresh the file
-      gulp.src(path.replace(".scss", ".cljs"))
-        .pipe(touch());
+      gulp.src(path.replace(".scss", ".cljs")).pipe(touch());
     });
+  }
+
   gulp.watch(paths.resources + "styles/**/**.scss", gulp.series("scss"));
   gulp.watch(paths.resources + "images/**/*", gulp.series("copy:assets:images"));
 

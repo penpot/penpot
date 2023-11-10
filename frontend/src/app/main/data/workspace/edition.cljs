@@ -7,6 +7,8 @@
 (ns app.main.data.workspace.edition
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.shape.layout :as ctl]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -31,11 +33,16 @@
           state)))
 
     ptk/WatchEvent
-    (watch [_ _ stream]
-      (->> stream
-           (rx/filter interrupt?)
-           (rx/take 1)
-           (rx/map (constantly clear-edition-mode))))))
+    (watch [_ state stream]
+      (let [objects (wsh/lookup-page-objects state)]
+        (rx/concat
+         (if (ctl/grid-layout? objects id)
+           (rx/of (dwc/hide-toolbar))
+           (rx/empty))
+         (->> stream
+              (rx/filter interrupt?)
+              (rx/take 1)
+              (rx/map (constantly clear-edition-mode))))))))
 
 ;; If these event change modules review /src/app/main/data/workspace/path/undo.cljs
 (def clear-edition-mode

@@ -3462,6 +3462,18 @@ msgstr "Zoom to selected"
 msgid "workspace.layout_grid.editor.title"
 msgstr "Editing grid"
 
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Locate"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Done"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Edit grid"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Exit"
+
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
 msgstr "Add"
@@ -4993,6 +5005,9 @@ msgstr "Click to close the path"
 #, markdown
 msgid "workspace.top-bar.read-only"
 msgstr "**Inspect mode** (View Only)"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Done"
 
 msgid "media.image"
 msgstr "Image"

@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.viewport.grid-layout-editor
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -18,17 +18,20 @@
    [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [cuerdas.core :as str]
@@ -47,30 +50,56 @@
     :flex (dm/str (fmt/format-number value) "FR")
     :auto "AUTO"))
 
+(mf/defc grid-edition-actions
+  {::mf/wrap-props false}
+  [{:keys [shape]}]
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:div {:class (stl/css :grid-actions)}
+       [:div {:class (stl/css :grid-actions-container)}
+        [:div {:class (stl/css :grid-actions-title)}
+         (tr "workspace.layout_grid.editor.title")  " " [:span {:stl/css :board-name} (:name shape)]]
+        [:button {:class (stl/css :locate-btn)
+                  :on-click #(st/emit! (dwge/locate-board (:id shape)))}
+         (tr "workspace.layout_grid.editor.top-bar.locate")]
+        [:button {:class (stl/css :done-btn)
+                  :on-click #(st/emit! dw/clear-edition-mode)}
+         (tr "workspace.layout_grid.editor.top-bar.done")]]]
+
+      [:div.viewport-actions
+       [:div.viewport-actions-container
+        [:div.viewport-actions-title
+         (tr "workspace.layout_grid.editor.title")  " " [:span.grid-edit-board-name (:name shape)]]
+        [:button.btn-secondary {:on-click #(st/emit! (dwge/locate-board (:id shape)))}
+         (tr "workspace.layout_grid.editor.top-bar.locate")]
+        [:button.btn-primary {:on-click #(st/emit! dw/clear-edition-mode)}
+         (tr "workspace.layout_grid.editor.top-bar.done")]
+        [:button.btn-icon-basic {:on-click #(st/emit! dw/clear-edition-mode)} i/close]]])))
+
 (mf/defc grid-editor-frame
   {::mf/wrap-props false}
   [props]
 
   (let [bounds (unchecked-get props "bounds")
+        width (unchecked-get props "width")
+        height (unchecked-get props "height")
         zoom (unchecked-get props "zoom")
         hv     #(gpo/start-hv bounds %)
         vv     #(gpo/start-vv bounds %)
-        width  (gpo/width-points bounds)
-        height (gpo/height-points bounds)
         origin (gpo/origin bounds)
 
         frame-points
         (reduce
          apply-to-point
          [origin]
-         [#(gpt/add % (hv width))
+         [#(gpt/add % (hv (+ width (/ 70 zoom))))
           #(gpt/subtract % (vv (/ 40 zoom)))
-          #(gpt/subtract % (hv (+ width (/ 40 zoom))))
-          #(gpt/add % (vv (+ height (/ 40 zoom))))
+          #(gpt/subtract % (hv (+ width (/ 110 zoom))))
+          #(gpt/add % (vv (+ height (/ 110 zoom))))
           #(gpt/add % (hv (/ 40 zoom)))])]
 
     [:polygon
-     {:class (css :grid-frame)
+     {:class (stl/css :grid-frame)
       :points (->> frame-points
                    (map #(dm/fmt "%,%" (:x %) (:y %)))
                    (str/join " "))}]))
@@ -78,7 +107,6 @@
 (mf/defc plus-btn
   {::mf/wrap-props false}
   [props]
-
   (let [start-p  (unchecked-get props "start-p")
         zoom     (unchecked-get props "zoom")
         type     (unchecked-get props "type")
@@ -88,34 +116,36 @@
         (if (= type :column)
           [(:x start-p)
            (- (:y start-p) (/ 40 zoom))
-           (+ (:x start-p) (/ 12 zoom))
-           (- (:y start-p) (/ 28 zoom))]
+           (+ (:x start-p) (/ 9 zoom))
+           (- (:y start-p) (/ 31 zoom))]
 
           [(- (:x start-p) (/ 40 zoom))
            (:y start-p)
-           (- (:x start-p) (/ 28 zoom))
-           (+ (:y start-p) (/ 12 zoom))])
+           (- (:x start-p) (/ 31 zoom))
+           (+ (:y start-p) (/ 9 zoom))])
 
         handle-click
         (mf/use-callback
          (mf/deps on-click)
          #(when on-click (on-click)))]
 
-    [:g {:class (css :grid-plus-button)
+    [:g {:class (stl/css :grid-plus-button)
          :on-click handle-click}
 
-     [:rect {:class (css :grid-plus-shape)
-             :x rect-x
-             :y rect-y
-             :width (/ 40 zoom)
-             :height (/ 40 zoom)}]
+     [:rect {:class (stl/css :grid-plus-shape)
+             :x (+ rect-x (/ 6 zoom))
+             :y (+ rect-y (/ 6 zoom))
+             :width (/ (- 40 12) zoom)
+             :height (/ (- 40 12) zoom)
+             :rx (/ 4 zoom)
+             :ry (/ 4 zoom)}]
 
-     [:use {:class (css :grid-plus-icon)
+     [:use {:class (stl/css :grid-plus-icon)
             :x icon-x
             :y icon-y
-            :width (/ 16 zoom)
-            :height (/ 16 zoom)
-            :href (dm/str "#icon-plus")}]]))
+            :width (/ 22 zoom)
+            :height (/ 22 zoom)
+            :href "#icon-add-refactor"}]]))
 
 (defn use-drag
   [{:keys [on-drag-start on-drag-end on-drag-delta on-drag-position]}]
@@ -260,11 +290,11 @@
              :y area-y
              :width area-width
              :height area-height
-             :style {:fill "var(--color-distance)"
+             :style {:fill "var(--grid-editor-area-background)"
                      :fill-opacity 0.3}}]
      [:text {:x area-text-x
              :y area-text-y
-             :style {:fill "var(--color-distance)"
+             :style {:fill "var(--grid-editor-area-text)"
                      :font-family "worksans"
                      :font-weight 600
                      :font-size (/ 14 zoom)
@@ -313,9 +343,9 @@
     [:g.cell-editor
      [:rect
       {:transform (dm/str (gmt/transform-in cell-center (:transform shape)))
-       :class (dom/classnames (css :grid-cell-outline) true
-                              (css :hover) hover?
-                              (css :selected) selected?)
+       :class (dom/classnames (stl/css :grid-cell-outline) true
+                              (stl/css :hover) hover?
+                              (stl/css :selected) selected?)
        :x (:x cell-origin)
        :y (:y cell-origin)
        :width cell-width
@@ -475,6 +505,78 @@
       :style {:fill "transparent"
               :stroke-width 0}}]))
 
+(def marker-width 24)
+(def marker-h1 20)
+(def marker-h2 10)
+(def marker-bradius 2)
+
+(defn marker-shape-d
+  [center zoom]
+  (let [marker-width (/ marker-width zoom)
+        marker-h1 (/ marker-h1 zoom)
+        marker-h2 (/ marker-h2 zoom)
+
+        marker-bradius (/ marker-bradius zoom)
+        marker-half-width (/ marker-width 2)
+        marker-half-height (/ (+ marker-h1 marker-h2) 2)
+
+        start-p
+        (gpt/subtract center (gpt/point marker-half-width marker-half-height))
+
+        [a b c d e]
+        (reduce
+         apply-to-point
+         [start-p]
+         [#(gpt/add % (gpt/point marker-width 0))
+          #(gpt/add % (gpt/point 0 marker-h1))
+          #(gpt/add % (gpt/point (- marker-half-width) marker-h2))
+          #(gpt/subtract % (gpt/point marker-half-width marker-h2))])
+
+        vea (gpt/to-vec e a)
+        vab (gpt/to-vec a b)
+        vbc (gpt/to-vec b c)
+        vcd (gpt/to-vec c d)
+        vde (gpt/to-vec d e)
+
+        lea (gpt/length vea)
+        lab (gpt/length vab)
+        lbc (gpt/length vbc)
+        lcd (gpt/length vcd)
+        lde (gpt/length vde)
+
+        a1 (gpt/add e (gpt/resize vea (- lea marker-bradius)))
+        a2 (gpt/add a (gpt/resize vab marker-bradius))
+
+        b1 (gpt/add a (gpt/resize vab (- lab marker-bradius)))
+        b2 (gpt/add b (gpt/resize vbc marker-bradius))
+
+        c1 (gpt/add b (gpt/resize vbc (- lbc marker-bradius)))
+        c2 (gpt/add c (gpt/resize vcd marker-bradius))
+
+        d1 (gpt/add c (gpt/resize vcd (- lcd marker-bradius)))
+        d2 (gpt/add d (gpt/resize vde marker-bradius))
+
+        e1 (gpt/add d (gpt/resize vde (- lde marker-bradius)))
+        e2 (gpt/add e (gpt/resize vea marker-bradius))]
+    (dm/str
+     (dm/fmt "M%,%" (:x a1) (:y a1))
+     (dm/fmt "Q%,%,%,%" (:x a) (:y a) (:x a2) (:y a2))
+
+     (dm/fmt "L%,%" (:x b1) (:y b1))
+     (dm/fmt "Q%,%,%,%" (:x b) (:y b) (:x b2) (:y b2))
+
+     (dm/fmt "L%,%" (:x c1) (:y c1))
+     (dm/fmt "Q%,%,%,%" (:x c) (:y c) (:x c2) (:y c2))
+
+     (dm/fmt "L%,%" (:x d1) (:y d1))
+     (dm/fmt "Q%,%,%,%" (:x d) (:y d) (:x d2) (:y d2))
+
+     (dm/fmt "L%,%" (:x e1) (:y e1))
+     (dm/fmt "Q%,%,%,%" (:x e) (:y e) (:x e2) (:y e2))
+
+     (dm/fmt "L%,%" (:x a1) (:y a1))
+     "Z")))
+
 (mf/defc track-marker
   {::mf/wrap-props false}
   [props]
@@ -489,23 +591,6 @@
         track-after (unchecked-get props "track-after")
         snap-pixel? (unchecked-get props "snap-pixel?")
 
-        marker-width (/ 24 zoom)
-        marker-h1 (/ 22 zoom)
-        marker-h2 (/ 8 zoom)
-
-        marker-half-width (/ marker-width 2)
-        marker-half-height (/ (+ marker-h1 marker-h2) 2)
-
-        marker-points
-        (reduce
-         apply-to-point
-         [(gpt/subtract center
-                        (gpt/point marker-half-width marker-half-height))]
-         [#(gpt/add % (gpt/point marker-width 0))
-          #(gpt/add % (gpt/point 0 marker-h1))
-          #(gpt/add % (gpt/point (- marker-half-width) marker-h2))
-          #(gpt/subtract % (gpt/point marker-half-width marker-h2))])
-
         text-x (:x center)
         text-y (:y center)
 
@@ -515,16 +600,14 @@
     [:g {:on-pointer-down handle-pointer-down
          :on-lost-pointer-capture handle-lost-pointer-capture
          :on-pointer-move handle-pointer-move
-         :class (dom/classnames (css :grid-track-marker) true
+         :class (dom/classnames (stl/css :grid-track-marker) true
                                 (cur/get-dynamic "resize-ew" (:rotation shape)) (= type :column)
                                 (cur/get-dynamic "resize-ns" (:rotation shape)) (= type :row))
          :transform (dm/str (gmt/transform-in center (:transform shape)))}
 
-     [:polygon {:class (css :marker-shape)
-                :points (->> marker-points
-                             (map #(dm/fmt "%,%" (:x %) (:y %)))
-                             (str/join " "))}]
-     [:text {:class (css :marker-text)
+     [:path {:class (stl/css :marker-shape)
+             :d (marker-shape-d center zoom)}]
+     [:text {:class (stl/css :marker-text)
              :x text-x
              :y text-y
              :width (/ 26.26 zoom)
@@ -656,23 +739,23 @@
                 :width (- text-width (/ 36 zoom))
                 :height (- text-height (/ 5 zoom))
                 :rx (/ 3 zoom)
-                :fill "var(--color-distance)"
+                :fill "var(--grid-editor-marker-color)"
                 :opacity 0.2}])
       (when (not small?)
         [:foreignObject {:x text-x :y text-y :width text-width :height text-height}
-         [:div {:class (css :grid-editor-wrapper)}
+         [:div {:class (stl/css :grid-editor-wrapper)}
           [:input
            {:ref track-input-ref
             :style {}
-            :class (css :grid-editor-label)
+            :class (stl/css :grid-editor-label)
             :type "text"
             :default-value (format-size track-data)
             :data-default-value (format-size track-data)
             :on-key-down handle-keydown-track-input
             :on-blur handle-blur-track-input}]
           (when (and hovering? (not medium?) (not small?))
-            [:button {:class (css :grid-editor-button)
-                      :on-click handle-remove-track} i/trash])]])]
+            [:button {:class (stl/css :grid-editor-button)
+                      :on-click handle-remove-track} i/delete-refactor])]])]
 
      [:g {:transform (when (= type :row) (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p)))}
       [:& track-marker
@@ -757,16 +840,19 @@
         bounds (:points shape)
         hv     #(gpo/start-hv bounds %)
         vv     #(gpo/start-vv bounds %)
-        width  (gpo/width-points bounds)
-        height (gpo/height-points bounds)
         origin (gpo/origin bounds)
 
         all-bounds (d/lazy-map (keys objects) #(gsh/shape->points (get objects %)))
 
-        {:keys [row-tracks column-tracks] :as layout-data}
+        {:keys [row-tracks column-tracks
+                column-total-size column-total-gap
+                row-total-size row-total-gap] :as layout-data}
         (mf/use-memo
          (mf/deps shape children)
          #(gsg/calc-layout-data shape bounds children all-bounds objects))
+
+        width  (max (gpo/width-points bounds) (+ column-total-size column-total-gap))
+        height (max (gpo/height-points bounds) (+ row-total-size row-total-gap))
 
         handle-pointer-down
         (mf/use-callback
@@ -806,15 +892,17 @@
        (when-not view-only
          [:*
           [:& grid-editor-frame {:zoom zoom
-                                 :bounds bounds}]
-          (let [start-p (-> origin (gpt/add (hv width)))]
+                                 :bounds bounds
+                                 :width width
+                                 :height height}]
+          (let [start-p (-> origin (gpt/add (hv (+ width (/ 30 zoom)))))]
             [:g {:transform (dm/str (gmt/transform-in start-p (:transform shape)))}
              [:& plus-btn {:start-p start-p
                            :zoom zoom
                            :type :column
                            :on-click handle-add-column}]])
 
-          (let [start-p (-> origin (gpt/add (vv height)))]
+          (let [start-p (-> origin (gpt/add (vv (+ height (/ 30 zoom)))))]
             [:g {:transform (dm/str (gmt/transform-in start-p (:transform shape)))}
              [:& plus-btn {:start-p start-p
                            :zoom zoom
