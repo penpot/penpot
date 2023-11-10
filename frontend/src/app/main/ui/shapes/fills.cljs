@@ -116,7 +116,7 @@
                       :width (* width no-repeat-padding)
                       :height (* height no-repeat-padding)
                       :fill "none"}]
-              [:image {:href (or (:data-uri shape) (get embed uri uri))
+              [:image {:href uri
                        :preserveAspectRatio "none"
                        :x 0
                        :y 0
