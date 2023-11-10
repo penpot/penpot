@@ -20,14 +20,7 @@
         [root-shape new-shapes updated-shapes]
         (if-not components-v2
           (ctn/make-component-shape root objects file-id components-v2)
-          (let [new-id (uuid/next)]
-            [(assoc root :id new-id)
-             nil
-             [(assoc root
-                     :component-id new-id
-                     :component-file file-id
-                     :component-root true
-                     :main-instance true)]]))
+          (ctn/convert-shape-in-component root objects file-id))
 
         changes (-> changes
                     (pcb/add-component (:id root-shape)
@@ -39,12 +32,10 @@
                                        page-id))]
     [root-shape changes]))
 
-
 (defn generate-add-component
-  "If there is exactly one id, and it's a frame (or a group in v1), and not already a
-  component, use it as root. Otherwise, create a frame (v2) or group (v1) that contains
-  all ids. Then, make a component with it, and link all shapes to their corresponding one
-  in the component."
+  "If there is exactly one id, and it's a frame (or a group in v1), and not already a component,
+  use it as root. Otherwise, create a frame (v2) or group (v1) that contains all ids. Then, make a
+  component with it, and link all shapes to their corresponding one in the component."
   [it shapes objects page-id file-id components-v2 prepare-create-group prepare-create-board]
   (let [changes (pcb/empty-changes it page-id)
 
@@ -81,7 +72,9 @@
 
             [root changes (map :id shapes)]))
 
-        [root-shape changes] (generate-add-component-changes changes root objects file-id page-id components-v2)
+        objects' (assoc objects (:id root) root)
+
+        [root-shape changes] (generate-add-component-changes changes root objects' file-id page-id components-v2)
 
         changes  (pcb/update-shapes changes
                                     old-root-ids

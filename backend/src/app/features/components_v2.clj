@@ -211,22 +211,22 @@
 
         transform-to-frames
         (fn [file-data]
-                  ; Transform components and copies to frames, and set the
-                  ; frame-id of its childrens
+          ; Transform component and copy heads to frames, and set the
+          ; frame-id of its childrens
           (letfn [(fix-container
-                   [container]
-                   (update container :objects update-vals fix-shape))
+                    [container]
+                    (update container :objects update-vals fix-shape))
 
                   (fix-shape
-                   [shape]
-                   (if (ctk/instance-head? shape)
-                     (assoc shape
-                            :type :frame           ; Old groups must be converted
-                            :fills []              ; to frames and conform to spec
-                            :hide-in-viewer true
-                            :rx 0
-                            :ry 0)
-                     shape))]
+                    [shape]
+                    (if (ctk/instance-head? shape)
+                      (assoc shape
+                             :type :frame           ; Old groups must be converted
+                             :fills []              ; to frames and conform to spec
+                             :hide-in-viewer true
+                             :rx 0
+                             :ry 0)
+                      shape))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (update :components update-vals fix-container))))
@@ -236,15 +236,39 @@
            ; Remap the frame-ids of the primary childs of the head instances
            ; to point to the head instance.
           (letfn [(fix-container
-                   [container]
-                   (update container :objects update-vals (partial fix-shape container)))
+                    [container]
+                    (update container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape
-                   [container shape]
-                   (let [parent (ctst/get-shape container (:parent-id shape))]
-                     (if (ctk/instance-head? parent)
-                       (assoc shape :frame-id (:id parent))
-                       shape)))]
+                    [container shape]
+                    (let [parent (ctst/get-shape container (:parent-id shape))]
+                      (if (ctk/instance-head? parent)
+                        (assoc shape :frame-id (:id parent))
+                        shape)))]
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (update :components update-vals fix-container))))
+
+        fix-frame-ids
+        (fn [file-data]
+          ;; Ensure that frame-id of all shapes point to the parent or to the frame-id
+          ;; of the parent, and that the destination is indeed a frame.
+          (letfn [(fix-container [container]
+                    (update container :objects #(cph/reduce-objects % fix-shape %)))
+
+                  (fix-shape [objects shape]
+                    (let [parent (when (:parent-id shape)
+                                   (get objects (:parent-id shape)))
+                          error? (when (some? parent)
+                                   (if (= (:type parent) :frame)
+                                     (not= (:frame-id shape) (:id parent))
+                                     (not= (:frame-id shape) (:frame-id parent))))]
+                      (if error?
+                        (let [nearest-frame (cph/get-frame objects (:parent-id shape))
+                              frame-id      (or (:id nearest-frame) uuid/zero)]
+                          (update objects (:id shape) assoc :frame-id frame-id))
+                          objects)))]
+
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (update :components update-vals fix-container))))]
@@ -257,7 +281,8 @@
         (remap-refs)
         (fix-copies-of-detached)
         (transform-to-frames)
-        (remap-frame-ids))))
+        (remap-frame-ids)
+        (fix-frame-ids))))
 
 (defn- migrate-components
   "If there is any component in the file library, add a new 'Library
@@ -312,8 +337,8 @@
                     (fn [page shape]
                       (let [parent (ctst/get-shape page (:parent-id shape))]
                         (if (= :frame (:type parent))
-                          (:parent-id shape)
-                          (:frame-id shape))))
+                          (:id parent)
+                          (:frame-id parent))))
 
                     add-shapes
                     (fn [page]
@@ -369,7 +394,7 @@
   "Convert a media object that contains a bitmap image into shapes,
   one shape of type :image and one group that contains it."
   [{:keys [name width height id mtype]} position]
-  (let [group-shape (cts/setup-shape
+  (let [frame-shape (cts/setup-shape
                      {:type :frame
                       :x (:x position)
                       :y (:y position)
@@ -390,9 +415,9 @@
                                  :height height
                                  :mtype mtype}
                       :name name
-                      :frame-id uuid/zero
-                      :parent-id (:id group-shape)})]
-    [group-shape [img-shape]]))
+                      :frame-id (:id frame-shape)
+                      :parent-id (:id frame-shape)})]
+    [frame-shape [img-shape]]))
 
 (defn- parse-datauri
   [data]
@@ -549,7 +574,8 @@
                                      cfsh/prepare-create-artboard-from-selection)
         changes (pcb/concat-changes changes changes2)]
 
-    (cp/process-changes fdata (:redo-changes changes) false)))
+    (cp/process-changes (assoc-in fdata [:options :components-v2] true) ; Process component creation in v2 way
+                        (:redo-changes changes) false)))
 
 (defn- migrate-graphics
   [fdata]

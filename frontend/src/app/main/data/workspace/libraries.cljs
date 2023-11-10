@@ -405,28 +405,29 @@
   (ptk/reify ::duplicate-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [libraries      (wsh/get-libraries state)
-            library        (get libraries library-id)
-            component      (ctkl/get-component (:data library) component-id)
-            new-name       (:name component)
+      (let [libraries          (wsh/get-libraries state)
+            library            (get libraries library-id)
+            component          (ctkl/get-component (:data library) component-id)
+            new-name           (:name component)
 
-            components-v2  (features/active-feature? state "components/v2")
+            components-v2      (features/active-feature? state "components/v2")
 
-            main-instance-page  (when components-v2
-                                  (ctf/get-component-page (:data library) component))
+            main-instance-page (when components-v2
+                                 (ctf/get-component-page (:data library) component))
 
-            new-component  (assoc component :id (uuid/next))
+            new-component-id   (when components-v2
+                                 (uuid/next))
 
             [new-component-shape new-component-shapes  ; <- null in components-v2
              new-main-instance-shape new-main-instance-shapes]
-            (dwlh/duplicate-component new-component (:data library))
+            (dwlh/duplicate-component component new-component-id (:data library))
 
             changes (-> (pcb/empty-changes it nil)
                         (pcb/with-page main-instance-page)
                         (pcb/with-objects (:objects main-instance-page))
                         (pcb/add-objects new-main-instance-shapes {:ignore-touched true})
                         (pcb/add-component (if components-v2
-                                             (:id new-component)
+                                             new-component-id
                                              (:id new-component-shape))
                                            (:path component)
                                            new-name

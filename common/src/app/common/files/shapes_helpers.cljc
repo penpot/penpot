@@ -86,7 +86,8 @@
 
                          :always
                          (assoc :frame-id frame-id
-                                :parent-id parent-id)
+                                :parent-id parent-id
+                                :shapes (into [] selected))
 
                          :always
                          (with-meta {:index new-index})
