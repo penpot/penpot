@@ -8,7 +8,9 @@
   (:refer-clojure :exclude [deref merge parse-uuid])
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.pprint :as pp]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.schema.registry :as sr]
@@ -142,10 +144,19 @@
    (m/decoder s options transformer)))
 
 (defn humanize-data
-  [explain-data]
-  (-> explain-data
-      (update :schema form)
-      (update :errors (fn [errors] (map #(update % :schema form) errors)))))
+  [{:keys [schema errors value]} & {:keys [length level]}]
+  (let [errors (mapv #(update % :schema form) errors)]
+    (with-out-str
+      (println "Schema: ")
+      (println (pp/pprint-str (form schema)) {:level (d/nilv level 10)
+                                              :length (d/nilv length 10)})
+      (println)
+      (println "Errors:")
+      (println (pp/pprint-str errors {:level (d/nilv level 10)
+                                      :length (d/nilv length 10)}))
+      (println "Value:")
+      (println (pp/pprint-str value {:level (d/nilv level 5)
+                                     :length (d/nilv length 10)})))))
 
 (defn pretty-explain
   [s d]
@@ -191,7 +202,7 @@
     (fn [v]
       (let [result (v-fn v)]
         (when (and (not result) (true? dm/*assert-context*))
-          (let [hint (str "schema assert: " (pr-str (form s)))
+          (let [hint "schema validation"
                 exp  (e-fn v)]
             (throw (ex-info hint {:type :assertion
                                   :code :data-validation
@@ -204,7 +215,7 @@
   [s v]
   (let [result (validate s v)]
     (when (and (not result) (true? dm/*assert-context*))
-      (let [hint (str "schema assert: " (pr-str (form s)))
+      (let [hint "schema validation"
             exp  (explain s v)]
         (throw (ex-info hint {:type :assertion
                               :code :data-validation

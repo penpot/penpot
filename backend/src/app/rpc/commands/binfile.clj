@@ -973,7 +973,6 @@
                 :import-id id
                 :elapsed (dt/format-duration (tp))
                 :error? (some? @cs)
-                :cause @cs
                 )))))
 
 ;; --- Command: export-binfile

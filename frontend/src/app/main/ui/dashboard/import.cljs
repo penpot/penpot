@@ -258,9 +258,9 @@
                  {:cmd :analyze-import
                   :files files})
                 (rx/delay-emit emit-delay)
+                (rx/filter some?)
                 (rx/subs
                  (fn [{:keys [uri data error type] :as msg}]
-                   (log/debug :uri uri :data data :error error)
                    (if (some? error)
                      (swap! state update :files set-analyze-error uri)
                      (swap! state update :files set-analyze-result uri type data)))))))
