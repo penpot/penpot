@@ -10,7 +10,8 @@
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.time :as dt]
-   [app.common.types.component :as ctk]))
+   [app.common.types.component :as ctk]
+   [clojure.set :as set]))
 
 (defn components
   ([file-data] (components file-data nil))
@@ -51,31 +52,35 @@
   (let [wrap-objects-fn cfeat/*wrap-with-objects-map-fn*]
     (d/update-in-when file-data [:components id]
                       (fn [component]
-                        (let [objects (some-> objects wrap-objects-fn)]
-                          (cond-> component
-                            (some? name)
-                            (assoc :name name)
+                        (let [objects  (some-> objects wrap-objects-fn)
+                              new-comp (cond-> component
+                                         (some? name)
+                                         (assoc :name name)
 
-                            (some? path)
-                            (assoc :path path)
+                                         (some? path)
+                                         (assoc :path path)
 
-                            (some? main-instance-id)
-                            (assoc :main-instance-id main-instance-id)
+                                         (some? main-instance-id)
+                                         (assoc :main-instance-id main-instance-id)
 
-                            (some? main-instance-page)
-                            (assoc :main-instance-page main-instance-page)
+                                         (some? main-instance-page)
+                                         (assoc :main-instance-page main-instance-page)
 
-                            (some? objects)
-                            (assoc :objects objects)
+                                         (some? objects)
+                                         (assoc :objects objects)
 
-                            (some? annotation)
-                            (assoc :annotation annotation)
+                                         (some? annotation)
+                                         (assoc :annotation annotation)
 
-                            (nil? annotation)
-                            (dissoc :annotation)
+                                         (nil? annotation)
+                                         (dissoc :annotation))
+                              diff     (set/difference
+                                        (ctk/diff-components component new-comp)
+                                        #{:annotation})] ;; The set of properties that doesn't mark a component as touched
 
-                            :always
-                            (touch)))))))
+                          (if (empty? diff)
+                            new-comp
+                            (touch new-comp)))))))
 
 (defn get-component
   ([file-data component-id]
