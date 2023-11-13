@@ -23,6 +23,7 @@
    :host "localhost"
    :http-server-port 6061
    :http-server-host "0.0.0.0"
+   :tempdir "/tmp/penpot-exporter"
    :redis-uri "redis://redis/0"})
 
 (def ^:private schema:config
@@ -32,6 +33,7 @@
    [:tenant {:optional true} :string]
    [:flags {:optional true} ::sm/set-of-keywords]
    [:redis-uri {:optional true} :string]
+   [:tempdir {:optional true} :string]
    [:browser-pool-max {:optional true} :int]
    [:browser-pool-min {:optional true} :int]])
 
