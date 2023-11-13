@@ -163,11 +163,16 @@
         result))))
 
 (defn get-parent-ids-seq
-  "Returns a vector of parents of the specified shape."
+  "Returns a sequence of parents of the specified shape."
   [objects shape-id]
   (let [parent-id (get-parent-id objects shape-id)]
     (when (and (some? parent-id) (not= parent-id shape-id))
       (lazy-seq (cons parent-id (get-parent-ids-seq objects parent-id))))))
+
+(defn get-parent-ids-seq-with-self
+  "Returns a sequence of parents of the specified shape, including itself."
+  [objects shape-id]
+  (cons shape-id (get-parent-ids-seq objects shape-id)))
 
 (defn get-parents
   "Returns a vector of parents of the specified shape."

@@ -73,17 +73,25 @@
             main-instance-shape (ctf/get-component-root library-data component)
             delta               (gpt/point (+ (:width main-instance-shape) 50) 0)
 
-            ids-map (volatile! {})
+            ids-map             (volatile! {})
+            inverted-ids-map    (volatile! {})
+            nested-main-heads   (volatile! #{})
 
             update-original-shape
             (fn [original-shape new-shape]
+              ; Save some ids for later
               (vswap! ids-map assoc (:id original-shape) (:id new-shape))
+              (vswap! inverted-ids-map assoc (:id new-shape) (:id original-shape))
+              (when (and (ctk/main-instance? original-shape)
+                         (not= (:component-id original-shape) (:id component)))
+                (vswap! nested-main-heads conj (:id original-shape)))
               original-shape)
 
             update-new-shape
-            (fn [shape]
-              (cond-> shape
-                (= (:component-id shape) (:id component))
+            (fn [new-shape _]
+              (cond-> new-shape
+                ; Link the new main to the new component
+                (= (:component-id new-shape) (:id component))
                 (assoc :component-id new-component-id)
 
                 :always
@@ -98,10 +106,28 @@
 
             remap-frame
             (fn [shape]
+              ; Remap all frame-ids internal to the component to the new shapes
               (update shape :frame-id
                       #(get @ids-map % (:frame-id shape))))
 
-            new-instance-shapes (map remap-frame new-instance-shapes)]
+            convert-nested-main
+            (fn [shape]
+              ; If there is some nested main instance, convert it into a copy of
+              ; main nested in the original component.
+              (let [origin-shape-id (get @inverted-ids-map (:id shape))
+                    objects         (:objects main-instance-page)
+                    parent-ids      (cph/get-parent-ids-seq-with-self objects origin-shape-id)]
+                (cond-> shape
+                  (@nested-main-heads origin-shape-id)
+                  (dissoc :main-instance)
+
+                  (some @nested-main-heads parent-ids)
+                  (assoc :shape-ref origin-shape-id))))
+            
+            xf-shape (comp (map remap-frame)
+                           (map convert-nested-main))
+
+            new-instance-shapes (into [] xf-shape new-instance-shapes)]
 
         [nil nil new-instance-shape new-instance-shapes])
 
