@@ -24,6 +24,7 @@
    [app.db.sql :as sql]
    [app.main :refer [system]]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.files-update :as files-update]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
@@ -134,7 +135,7 @@
 
   The `on-file` parameter should be a function that receives the file
   and the previous state and returns the new state."
-  [system & {:keys [chunk-size max-items start-at on-file on-error on-end on-init]
+  [system & {:keys [chunk-size max-items start-at on-file on-error on-end on-init with-libraries?]
              :or {chunk-size 10 max-items Long/MAX_VALUE}}]
   (letfn [(get-chunk [conn cursor]
             (let [rows (db/exec! conn [sql:retrieve-files-chunk cursor chunk-size])]
@@ -165,10 +166,17 @@
                   (if (contains? (:features file) "fdata/pointer-map") pmap/wrap identity)
                   cfeat/*wrap-with-objects-map-fn*
                   (if (contains? (:features file) "fdata/objects-map") omap/wrap identity)]
-          (try
-            (on-file file)
-            (catch Throwable cause
-              ((or on-error on-error*) cause file))))))
+          (let [libraries (when with-libraries?
+                            (->> (files/get-file-libraries conn (:id file))
+                                 (map #(files-update/get-file conn (:id %)))
+                                 (map #(update % :data blob/decode))
+                                 (d/index-by :id)))]
+            (try
+              (if with-libraries?
+                (on-file file libraries)
+                (on-file file))
+              (catch Throwable cause
+                ((or on-error on-error*) cause file)))))))
 
     (when (fn? on-end) (on-end))))
 
