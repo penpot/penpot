@@ -110,13 +110,14 @@
           (l/dbg :hint "migrate:end" :elapsed elapsed))))))
 
 (defn migrate-files!
-  [{:keys [::db/pool] :as system} & {:keys [chunk-size max-jobs max-items start-at preset rollback skip-on-error]
+  [{:keys [::db/pool] :as system} & {:keys [chunk-size max-jobs max-items start-at preset rollback skip-on-error validate]
                                      :or {chunk-size 10
                                           skip-on-error true
                                           max-jobs 10
                                           max-items Long/MAX_VALUE
                                           preset :shutdown-on-failure
-                                          rollback true}}]
+                                          rollback true
+                                          validate false}}]
   (letfn [(get-chunk [cursor]
             (let [sql  (str/concat
                         "SELECT id, created_at FROM file "
@@ -151,7 +152,7 @@
                     (ps/acquire! feat/*semaphore*)
                     (px/submit! scope (fn []
                                         (-> (assoc system ::db/rollback rollback)
-                                            (feat/migrate-file! file-id)))))
+                                            (feat/migrate-file! file-id :validate? validate)))))
                   (get-candidates))
 
             (p/await! scope))
@@ -171,8 +172,8 @@
 
 (defn migrate-team!
   [{:keys [::db/pool] :as system} team-id
-   & {:keys [rollback skip-on-error]
-      :or {rollback true skip-on-error true}}]
+   & {:keys [rollback skip-on-error validate]
+      :or {rollback true skip-on-error true validate false}}]
   (l/dbg :hint "migrate:start")
 
   (let [total  (get-total-files pool :team-id team-id)
@@ -185,7 +186,7 @@
       (binding [feat/*stats* stats
                 feat/*skip-on-error* skip-on-error]
         (-> (assoc system ::db/rollback rollback)
-            (feat/migrate-team! team-id))
+            (feat/migrate-team! team-id :validate? validate))
 
         (print-stats!
          (-> (deref feat/*stats*)
@@ -203,13 +204,14 @@
 
 (defn migrate-teams!
   [{:keys [::db/pool] :as system}
-   & {:keys [chunk-size max-jobs max-items start-at rollback preset skip-on-error max-time]
+   & {:keys [chunk-size max-jobs max-items start-at rollback preset skip-on-error max-time validate]
       :or {chunk-size 10000
            rollback true
            skip-on-error true
            preset :shutdown-on-failure
            max-jobs Integer/MAX_VALUE
-           max-items Long/MAX_VALUE}}]
+           max-items Long/MAX_VALUE
+           validate false}}]
 
   (letfn [(get-chunk [cursor]
             (let [sql  (str/concat
@@ -232,7 +234,7 @@
           (migrate-team [team-id]
             (try
               (-> (assoc system ::db/rollback rollback)
-                  (feat/migrate-team! team-id))
+                  (feat/migrate-team! team-id :validate? validate))
               (catch Throwable cause
                 (l/err :hint "unexpected error on processing team" :team-id (dm/str team-id) :cause cause))))
 

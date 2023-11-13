@@ -13,6 +13,7 @@
    [app.common.files.libraries-helpers :as cflh]
    [app.common.files.migrations :as pmg]
    [app.common.files.shapes-helpers :as cfsh]
+   [app.common.files.validate :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
@@ -623,7 +624,7 @@
         (update fdata :options assoc :components-v2 true)))))
 
 (defn- process-file
-  [{:keys [id] :as file}]
+  [{:keys [id] :as file} & {:keys [validate?]}]
   (let [conn (::db/conn *system*)]
     (binding [pmap/*tracked* (atom {})
               pmap/*load-fn* (partial files/load-pointer conn id)
@@ -659,10 +660,13 @@
                      :revn (:revn file)}
                     {:id (:id file)})
 
+        (when validate?
+          (cfv/validate-file file libs :throw? true))
+
         (dissoc file :data)))))
 
 (defn migrate-file!
-  [system file-id]
+  [system file-id & {:keys [validate?]}]
   (let [tpoint  (dt/tpoint)
         file-id (if (string? file-id)
                   (parse-uuid file-id)
@@ -678,7 +682,7 @@
                       (binding [*system* system]
                         (-> (db/get conn :file {:id file-id})
                             (update :features db/decode-pgarray #{})
-                            (process-file))))))
+                            (process-file :validate? validate?))))))
 
       (finally
         (let [elapsed (tpoint)
@@ -701,9 +705,8 @@
                                    (assoc :elapsed/total-by-file total)
                                    (assoc :processed/files completed)))))))))))
 
-
 (defn migrate-team!
-  [system team-id]
+  [system team-id & {:keys [validate?]}]
   (let [tpoint  (dt/tpoint)
         team-id (if (string? team-id)
                   (parse-uuid team-id)
@@ -737,7 +740,7 @@
                               rows (->> (db/exec! conn [sql team-id])
                                         (map :id))]
 
-                          (run! (partial migrate-file! system) rows)
+                          (run! #(migrate-file! system % :validate? validate?) rows)
                           (some-> *stats* (swap! assoc :current/files (count rows)))
 
                           (let [features (-> features
