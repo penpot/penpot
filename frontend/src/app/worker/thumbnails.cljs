@@ -63,8 +63,8 @@
       (let [objects  (:objects page)
             frame    (some->> page :thumbnail-frame-id (get objects))
             element  (if frame
-                       (mf/element render/frame-svg #js {:objects objects :frame frame :show-thumbnails? true})
-                       (mf/element render/page-svg #js {:data page :thumbnails? true :render-embed? true}))
+                       (mf/element render/frame-svg #js {:objects objects :frame frame :use-thumbnails true})
+                       (mf/element render/page-svg #js {:data page :use-thumbnails true :embed true}))
             data     (rds/renderToStaticMarkup element)]
         {:data data
          :fonts @fonts/loaded-hints

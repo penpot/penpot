@@ -143,6 +143,11 @@
   ([s options transformer]
    (m/decoder s options transformer)))
 
+(defn lazy-decoder
+  [s transformer]
+  (let [vfn (delay (decoder s transformer))]
+    (fn [v] (@vfn v))))
+
 (defn humanize-data
   [{:keys [schema errors value]} & {:keys [length level]}]
   (let [errors (mapv #(update % :schema form) errors)]

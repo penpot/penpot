@@ -138,14 +138,20 @@
 (declare get-team)
 
 (def ^:private schema:get-team
-  [:map {:title "get-team"}
-   [:id ::sm/uuid]])
+  [:and
+   [:map {:title "get-team"}
+    [:id {:optional true} ::sm/uuid]
+    [:file-id {:optional true} ::sm/uuid]]
+
+   [:fn (fn [params]
+          (or (contains? params :id)
+              (contains? params :file-id)))]])
 
 (sv/defmethod ::get-team
   {::doc/added "1.17"
    ::sm/params schema:get-team}
-  [cfg {:keys [::rpc/profile-id id]}]
-  (db/tx-run! cfg #(get-team % :profile-id profile-id :team-id id)))
+  [cfg {:keys [::rpc/profile-id id file-id]}]
+  (db/tx-run! cfg #(get-team % :profile-id profile-id :team-id id :file-id file-id)))
 
 (defn get-team
   [conn & {:keys [profile-id team-id project-id file-id] :as params}]
