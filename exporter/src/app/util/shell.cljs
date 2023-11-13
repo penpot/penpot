@@ -14,6 +14,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
@@ -22,11 +23,11 @@
 (def tempfile-minage (* 1000 60 60 1)) ;; 1h
 
 (def tmpdir
-  (let [path (path/join (os/tmpdir) "penpot")]
+  (let [path (cf/get :tempdir)]
+    (l/inf :hint "tmptdir setup" :path path)
     (when-not (fs/existsSync path)
       (fs/mkdirSync path #js {:recursive true}))
     path))
-
 
 (defn- schedule-deletion!
   [path]

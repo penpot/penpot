@@ -22,6 +22,7 @@
    :host "localhost"
    :http-server-port 6061
    :http-server-host "0.0.0.0"
+   :tempdir "/tmp/penpot-exporter"
    :redis-uri "redis://redis/0"})
 
 (s/def ::http-server-port ::us/integer)
