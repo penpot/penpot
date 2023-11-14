@@ -251,7 +251,7 @@
             "%"]
            [:> numeric-input* {:value (-> color :opacity opacity->string)
                                :className (stl/css :opacity-input)
-                               :placeholder (tr "settings.multiple")
+                               :placeholder "--"
                                :select-on-focus select-on-focus
                                :on-focus on-focus
                                :on-blur on-blur
