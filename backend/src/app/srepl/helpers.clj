@@ -168,8 +168,11 @@
                   (if (contains? (:features file) "fdata/objects-map") omap/wrap identity)]
           (let [libraries (when with-libraries?
                             (->> (files/get-file-libraries conn (:id file))
-                                 (map #(files-update/get-file conn (:id %)))
-                                 (map #(update % :data blob/decode))
+                                 (into [file] (map (fn [{:keys [id]}]
+                                                     (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
+                                                       (-> (files-update/get-file conn id)
+                                                           (update :data blob/decode)
+                                                           (files/process-pointers deref)))))) ; ensure all pointers resolved
                                  (d/index-by :id)))]
             (try
               (if with-libraries?
