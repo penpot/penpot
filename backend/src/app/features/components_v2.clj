@@ -580,39 +580,41 @@
 
 (defn- migrate-graphics
   [fdata]
-  (let [[fdata page-id position]
-        (ctf/get-or-add-library-page fdata grid-gap)
+  (if (empty? (:media fdata))
+    fdata
+    (let [[fdata page-id position]
+          (ctf/get-or-add-library-page fdata grid-gap)
 
-        media (->> (vals (:media fdata))
-                   (map (fn [{:keys [width height] :as media}]
-                          (let [points (-> (grc/make-rect 0 0 width height)
-                                           (grc/rect->points))]
-                            (assoc media :points points)))))
+          media (->> (vals (:media fdata))
+                     (map (fn [{:keys [width height] :as media}]
+                            (let [points (-> (grc/make-rect 0 0 width height)
+                                             (grc/rect->points))]
+                              (assoc media :points points)))))
 
         ;; FIXME: think about what to do with existing media entries ??
-        grid  (ctst/generate-shape-grid media position grid-gap)]
+          grid  (ctst/generate-shape-grid media position grid-gap)]
 
-    (when (some? *stats*)
-      (let [total (count media)]
-        (swap! *stats* (fn [stats]
-                         (-> stats
-                             (update :processed/graphics (fnil + 0) total)
-                             (assoc :current/graphics total))))))
+      (when (some? *stats*)
+        (let [total (count media)]
+          (swap! *stats* (fn [stats]
+                           (-> stats
+                               (update :processed/graphics (fnil + 0) total)
+                               (assoc :current/graphics total))))))
 
-    (->> (d/zip media grid)
-         (reduce (fn [fdata [mobj position]]
-                   (try
-                     (process-media-object fdata page-id mobj position)
-                     (catch Throwable cause
-                       (l/warn :hint "unable to process file media object (skiping)"
-                               :file-id (str (:id fdata))
-                               :id (str (:id mobj))
-                               :cause cause)
+      (->> (d/zip media grid)
+           (reduce (fn [fdata [mobj position]]
+                     (try
+                       (process-media-object fdata page-id mobj position)
+                       (catch Throwable cause
+                         (l/warn :hint "unable to process file media object (skiping)"
+                                 :file-id (str (:id fdata))
+                                 :id (str (:id mobj))
+                                 :cause cause)
 
-                       (if-not *skip-on-error*
-                         (throw cause)
-                         fdata))))
-                 fdata))))
+                         (if-not *skip-on-error*
+                           (throw cause)
+                           fdata))))
+                   fdata)))))
 
 (defn- migrate-file-data
   [fdata libs]
