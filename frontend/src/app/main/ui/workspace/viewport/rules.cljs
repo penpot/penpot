@@ -157,7 +157,8 @@
         step (calculate-step-size zoom)
         clip-id (str "clip-rule-" (d/name axis))
         new-css-system  (mf/use-ctx ctx/new-css-system)
-        font-color (if new-css-system new-css-font-color font-color)]
+        font-color (if new-css-system new-css-font-color font-color)
+        rules-background (if new-css-system new-css-rules-background rules-background)]
 
     [:*
      (let [{:keys [x y width height]} (get-background-area vbox zoom-inverse axis)]

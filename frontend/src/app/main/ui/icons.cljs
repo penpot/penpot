@@ -9,6 +9,7 @@
   (:require-macros [app.main.ui.icons :refer [icon-xref]])
   (:require
    [app.common.data :as d]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 
@@ -275,11 +276,13 @@
 (def align-content-column-evenly-refactor (icon-xref :align-content-column-evenly-refactor))
 (def align-content-column-start-refactor (icon-xref :align-content-column-start-refactor))
 (def align-content-column-end-refactor (icon-xref :align-content-column-end-refactor))
+(def align-content-column-stretch-refactor (icon-xref :align-content-column-stretch-refactor))
 (def align-content-row-end-refactor (icon-xref :align-content-row-end-refactor))
 (def align-content-row-around-refactor (icon-xref :align-content-row-around-refactor))
 (def align-content-row-between-refactor (icon-xref :align-content-row-between-refactor))
 (def align-content-row-evenly-refactor (icon-xref :align-content-row-evenly-refactor))
 (def align-content-row-start-refactor (icon-xref :align-content-row-start-refactor))
+(def align-content-row-stretch-refactor (icon-xref :align-content-row-stretch-refactor))
 (def align-horizontal-center-refactor (icon-xref :align-horizontal-center-refactor))
 (def align-vertical-center-refactor (icon-xref :align-vertical-center-refactor))
 (def align-items-row-center-refactor (icon-xref :align-items-row-center-refactor))
@@ -474,12 +477,29 @@
 (mf/defc debug-icons-preview
   {::mf/wrap-props false}
   []
-  [:section.debug-icons-preview
-   (for [[key val] (sort-by first (ns-publics 'app.main.ui.icons))]
-     (when (not= key 'debug-icons-preview)
-       [:div.icon-item {:key key}
-        (deref val)
-        [:span (pr-str key)]]))])
+  [:*
+   [:section.debug-icons-preview
+    [:h2 "Classic"]
+    [:*
+     (for [[key val] (->> (ns-publics 'app.main.ui.icons)
+                          (sort-by first)
+                          (remove (fn [[key _]]
+                                    (str/ends-with? (str key) "-refactor"))))]
+       (when (not= key 'debug-icons-preview)
+         [:div.icon-item {:key key}
+          (deref val)
+          [:span (pr-str key)]]))]]
+
+   [:section.debug-icons-preview
+    [:h2 "Refactor"]
+    [:*
+     (for [[key val] (->> (ns-publics 'app.main.ui.icons)
+                          (sort-by first)
+                          (filter (fn [[key _]] (str/ends-with? (str key) "-refactor"))))]
+       (when (not= key 'debug-icons-preview)
+         [:div.icon-item {:key key}
+          (deref val)
+          [:span (pr-str key)]]))]]])
 
 (defn key->icon
   [icon-key]

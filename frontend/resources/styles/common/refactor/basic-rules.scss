@@ -316,6 +316,10 @@
     color: var(--input-foreground-color-active);
     background-color: var(--input-background-color-active);
   }
+  &[disabled] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }
 
 .input-icon {

@@ -24,6 +24,7 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -231,6 +232,43 @@
         :stretch  i/align-self-column-strech
         :baseline i/align-self-column-baseline))))
 
+(defn get-layout-grid-icon-refactor
+  [type val is-col?]
+  (case type
+    :align-items
+    (if is-col?
+      (case val
+        :auto     i/remove-refactor
+        :start    i/align-self-row-left-refactor
+        :end      i/align-self-row-right-refactor
+        :center   i/align-self-row-center-refactor
+        :stretch  i/align-self-row-strech
+        :baseline i/align-self-row-baseline)
+      (case val
+        :auto     i/remove-refactor
+        :start    i/align-self-column-top-refactor
+        :end      i/align-self-column-bottom-refactor
+        :center   i/align-self-column-center-refactor
+        :stretch  i/align-self-column-strech
+        :baseline i/align-self-column-baseline))
+
+    :justify-items
+    (if (not is-col?)
+      (case val
+        :start         i/align-content-column-start-refactor
+        :center        i/align-content-column-center-refactor
+        :end           i/align-content-column-end-refactor
+        :space-around  i/align-content-column-around-refactor
+        :space-between i/align-content-column-between-refactor
+        :stretch       i/align-content-column-stretch-refactor)
+      (case val
+        :start         i/align-content-row-start-refactor
+        :center        i/align-content-row-center-refactor
+        :end           i/align-content-row-end-refactor
+        :space-around  i/align-content-row-around-refactor
+        :space-between i/align-content-row-between-refactor
+        :stretch       i/align-content-row-stretch-refactor))))
+
 (mf/defc direction-row-flex
   [{:keys [saved-dir on-change] :as props}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)]
@@ -310,7 +348,7 @@
                          :id    "align-items-end"}]]
 
       [:div.align-items-style
-        [:button.align-start.tooltip.tooltip-bottom
+       [:button.align-start.tooltip.tooltip-bottom
         {:class    (dom/classnames :active  (= align-items :start))
          :alt      "Align items start"
          :data-value :start
@@ -687,8 +725,7 @@
        [:div {:class (stl/css-case :row-gap true
                                    :disabled (and (= :nowrap wrap-type) (not is-col?)))
               :title "Row gap"}
-        [:span {:class (stl/css :icon)}
-         i/gap-vertical-refactor]
+        [:span {:class (stl/css :icon)} i/gap-vertical-refactor]
         [:> numeric-input* {:className (stl/css :numeric-input true)
                             :no-validate true
                             :placeholder "--"
@@ -704,6 +741,7 @@
                             :min 0
                             :value (:row-gap gap-value)
                             :disabled (and (= :nowrap wrap-type) (not is-col?))}]]
+
        [:div {:class (stl/css-case :column-gap true
                                    :disabled (and (= :nowrap wrap-type) is-col?))
               :title "Column gap"}
@@ -792,11 +830,11 @@
         :space-evenly  i/grid-justify-content-row-between))))
 
 (mf/defc direction-row-grid
-  [{:keys [saved-dir on-change-refactor on-click] :as props}]
+  [{:keys [saved-dir on-change on-click] :as props}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)]
     (if new-css-system
       [:& radio-buttons {:selected (d/name saved-dir)
-                         :on-change on-change-refactor
+                         :on-change on-change
                          :name "grid-direction"}
        [:& radio-button {:value "row"
                          :id "grid-direction-row"
@@ -832,13 +870,18 @@
              (st/emit! (udw/start-edition-mode id))
              (st/emit! :interrupt))))]
     (if new-css-system
-      [:div "new-edit-mode"]
+      [:button
+       {:class (stl/css :edit-mode-btn)
+        :alt  "Grid edit mode"
+        :on-click toggle-edit-mode}
+       (tr "workspace.layout_grid.editor.options.edit-grid")]
+
       [:button.tooltip.tooltip-bottom-left
        {:class  (dom/classnames :active  active?)
         :alt    "Grid edit mode"
-        :on-click #(toggle-edit-mode)
+        :on-click toggle-edit-mode
         :style {:padding 0}}
-       "Edit grid"
+       (tr "workspace.layout_grid.editor.options.edit-grid")
        i/grid-layout-mode])))
 
 (mf/defc align-grid-row
@@ -847,20 +890,20 @@
         type (if is-col? :column :row)]
     (if new-css-system
       [:& radio-buttons {:selected (d/name align-items)
-                         :on-change set-align
-                         :name "flex-align-items"}
+                         :on-change #(set-align % type)
+                         :name (dm/str "flex-align-items-" (d/name type))}
        [:& radio-button {:value "start"
-                         :icon  (get-layout-flex-icon-refactor :align-items :start is-col?)
+                         :icon  (get-layout-grid-icon-refactor :align-items :start is-col?)
                          :title "Align items start"
-                         :id     "align-items-start"}]
+                         :id     (dm/str "align-items-start-" (d/name type))}]
        [:& radio-button {:value "center"
-                         :icon  (get-layout-flex-icon-refactor :align-items :center is-col?)
+                         :icon  (get-layout-grid-icon-refactor :align-items :center is-col?)
                          :title "Align items center"
-                         :id    "align-items-center"}]
+                         :id    (dm/str "align-items-center-" (d/name type))}]
        [:& radio-button {:value "end"
-                         :icon  (get-layout-flex-icon-refactor :align-items :end is-col?)
+                         :icon  (get-layout-grid-icon-refactor :align-items :end is-col?)
                          :title "Align items end"
-                         :id    "align-items-end"}]]
+                         :id    (dm/str "align-items-end-" (d/name type))}]]
       [:div.align-items-style
        (for [align [:start :center :end]]
          [:button.align-start.tooltip
@@ -876,19 +919,31 @@
 
 (mf/defc justify-grid-row
   [{:keys [is-col? justify-items set-justify] :as props}]
-  (let [type (if is-col? :column :row)]
-    [:div.justify-content-style
-     (for [align [:start :center :end :space-around :space-between :stretch]]
-       [:button.align-start.tooltip
-        {:class    (dom/classnames :active  (= justify-items align)
-                                   :tooltip-bottom-left (not= align :start)
-                                   :tooltip-bottom (= align :start))
-         :alt      (if is-col?
-                     (dm/str "align-content: " (d/name align))
-                     (dm/str "justify-content: " (d/name align)))
-         :on-click #(set-justify align type)
-         :key      (dm/str "justify-content" (d/name align))}
-        (get-layout-grid-icon :justify-items align is-col?)])]))
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        type (if is-col? :column :row)]
+
+    (if new-css-system
+      [:& radio-buttons {:selected (d/name justify-items)
+                         :on-change #(set-justify % type)
+                         :name (dm/str "grid-justify-items-" (d/name type))}
+       (for [justify [:start :center :end :space-around :space-between :stretch]]
+         [:& radio-button {:value (d/name justify)
+                           :icon  (get-layout-grid-icon-refactor :justify-items justify is-col?)
+                           :title (dm/str "Justify items " (d/name justify))
+                           :id    (dm/str "justify-items-" (d/name justify) "-" (d/name type))}])]
+
+      [:div.justify-content-style
+       (for [align [:start :center :end :space-around :space-between :stretch]]
+         [:button.align-start.tooltip
+          {:class    (dom/classnames :active  (= justify-items align)
+                                     :tooltip-bottom-left (not= align :start)
+                                     :tooltip-bottom (= align :start))
+           :alt      (if is-col?
+                       (dm/str "align-content: " (d/name align))
+                       (dm/str "justify-content: " (d/name align)))
+           :on-click #(set-justify align type)
+           :key      (dm/str "justify-content" (d/name align))}
+          (get-layout-grid-icon :justify-items align is-col?)])])))
 
 (defn manage-values [{:keys [value type]}]
   (case type
@@ -900,7 +955,9 @@
 
 (mf/defc grid-track-info
   [{:keys [is-col? type index column set-column-value set-column-type remove-element reorder-track hover-track]}]
-  (let [drop-track
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+
+        drop-track
         (mf/use-fn
          (mf/deps type reorder-track index)
          (fn [drop-position data]
@@ -926,74 +983,139 @@
                 :index index
                 :column column}
          :draggable? true)]
-    [:div.column-info
-     {:ref dref
-      :class (dom/classnames
-              :dnd-over-top (or (= (:over dprops) :top)
-                                (= (:over dprops) :center))
-              :dnd-over-bot (= (:over dprops) :bot))
-      :on-pointer-enter pointer-enter
-      :on-pointer-leave pointer-leave}
-     [:div.direction-grid-icon
-      (if is-col?
-        i/layout-rows
-        i/layout-columns)]
 
-     [:div.grid-column-value
-      [:> numeric-input* {:no-validate true
-                          :value (:value column)
-                          :on-change #(set-column-value type index %)
-                          :placeholder "--"
-                          :disabled (= :auto (:type column))}]]
-     [:div.grid-column-unit
-      [:& select
-       {:class "grid-column-unit-selector"
-        :default-value (:type column)
-        :options [{:value :flex :label "FR"}
-                  {:value :auto :label "AUTO"}
-                  {:value :fixed :label "PX"}
-                  {:value :percent :label "%"}]
-        :on-change #(set-column-type type index %)}]]
-     [:button.remove-grid-column
-      {:on-click #(remove-element type index)}
-      i/minus]]))
+    (if new-css-system
+      [:div {:class
+             (stl/css-case :track-info true
+                           :dnd-over-top (or (= (:over dprops) :top)
+                                             (= (:over dprops) :center))
+                           :dnd-over-bot (= (:over dprops) :bot))
+             :ref dref
+             :on-pointer-enter pointer-enter
+             :on-pointer-leave pointer-leave}
+
+       [:div {:class (stl/css :track-info-container)}
+        [:div {:class (stl/css :track-info-dir-icon)}
+         (if is-col? i/flex-vertical-refactor i/flex-horizontal-refactor)]
+
+        [:div {:class (stl/css :track-info-value)}
+         [:> numeric-input* {:no-validate true
+                             :value (:value column)
+                             :on-change #(set-column-value type index %)
+                             :placeholder "--"
+                             :disabled (= :auto (:type column))}]]
+
+        [:div {:class (stl/css :track-info-unit)}
+         [:& select
+          {:class (stl/css :track-info-unit-selector)
+           :default-value (:type column)
+           :options [{:value :flex :label "FR"}
+                     {:value :auto :label "AUTO"}
+                     {:value :fixed :label "PX"}
+                     {:value :percent :label "%"}]
+           :on-change #(set-column-type type index %)}]]]
+
+       [:button
+        {:class (stl/css :remove-track-btn)
+         :on-click #(remove-element type index)}
+        i/remove-refactor]]
+
+      [:div.column-info
+       {:ref dref
+        :class (dom/classnames
+                :dnd-over-top (or (= (:over dprops) :top)
+                                  (= (:over dprops) :center))
+                :dnd-over-bot (= (:over dprops) :bot))
+        :on-pointer-enter pointer-enter
+        :on-pointer-leave pointer-leave}
+       [:div.direction-grid-icon
+        (if is-col?
+          i/layout-rows
+          i/layout-columns)]
+
+       [:div.grid-column-value
+        [:> numeric-input* {:no-validate true
+                            :value (:value column)
+                            :on-change #(set-column-value type index %)
+                            :placeholder "--"
+                            :disabled (= :auto (:type column))}]]
+       [:div.grid-column-unit
+        [:& select
+         {:class "grid-column-unit-selector"
+          :default-value (:type column)
+          :options [{:value :flex :label "FR"}
+                    {:value :auto :label "AUTO"}
+                    {:value :fixed :label "PX"}
+                    {:value :percent :label "%"}]
+          :on-change #(set-column-type type index %)}]]
+       [:button.remove-grid-column
+        {:on-click #(remove-element type index)}
+        i/minus]])))
 
 (mf/defc grid-columns-row
   [{:keys [is-col? expanded? column-values toggle add-new-element set-column-value set-column-type remove-element reorder-track hover-track] :as props}]
-  (let [column-num (count column-values)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+
+        column-num (count column-values)
         direction (if (> column-num 1)
                     (if is-col? "Columns " "Rows ")
                     (if is-col? "Column " "Row "))
 
-        column-vals (str/join ", " (map manage-values column-values))
-        generated-name (dm/str direction  (if (= column-num 0) " - empty" (dm/str column-num " (" column-vals ")")))
-        type (if is-col? :column :row)]
+        track-name (dm/str direction  (if (= column-num 0) " - empty" column-num))
+        track-detail (str/join ", " (map manage-values column-values))
+        generated-name (dm/str direction  (if (= column-num 0) " - empty" (dm/str column-num " (" track-detail ")")))
 
-    [:div.grid-columns
-     [:div.grid-columns-header
-      [:button.expand-icon
-       {:on-click toggle} i/actions]
+        type (if is-col? :column :row)
 
-      [:div.columns-info {:title generated-name
-                          :on-click toggle} generated-name]
-      [:button.add-column {:on-click #(do
-                                        (when-not expanded? (toggle))
-                                        (add-new-element type ctl/default-track-value))} i/plus]]
+        add-track
+        #(do
+           (when-not expanded? (toggle))
+           (add-new-element type ctl/default-track-value))]
 
-     (when expanded?
-       [:& h/sortable-container {}
-        [:div.columns-info-wrapper
-         (for [[index column] (d/enumerate column-values)]
-           [:& grid-track-info {:key (dm/str index "-" (name type) "-" column)
-                                :type type
-                                :is-col? is-col?
-                                :index index
-                                :column column
-                                :set-column-value set-column-value
-                                :set-column-type set-column-type
-                                :remove-element remove-element
-                                :reorder-track reorder-track
-                                :hover-track hover-track}])]])]))
+    (if new-css-system
+      [:div {:class (stl/css :grid-tracks)}
+       [:div {:class (stl/css :grid-track-header)}
+        [:button {:class (stl/css :expand-icon) :on-click toggle} i/menu-refactor]
+        [:div {:class (stl/css :track-title) :on-click toggle}
+         [:div {:class (stl/css :track-name) :title track-name} track-name]
+         [:div {:class (stl/css :track-detail) :title track-detail} track-detail]]
+        [:button {:class (stl/css :add-column) :on-click add-track} i/add-refactor]]
+
+       (when expanded?
+         [:& h/sortable-container {}
+          [:div {:class (stl/css :grid-tracks-info-container)}
+           (for [[index column] (d/enumerate column-values)]
+             [:& grid-track-info {:key (dm/str index "-" (name type))
+                                  :type type
+                                  :is-col? is-col?
+                                  :index index
+                                  :column column
+                                  :set-column-value set-column-value
+                                  :set-column-type set-column-type
+                                  :remove-element remove-element
+                                  :reorder-track reorder-track
+                                  :hover-track hover-track}])]])]
+
+      [:div.grid-columns
+       [:div.grid-columns-header
+        [:button.expand-icon {:on-click toggle} i/actions]
+        [:div.columns-info {:title generated-name :on-click toggle} generated-name]
+        [:button.add-column {:on-click add-track} i/plus]]
+
+       (when expanded?
+         [:& h/sortable-container {}
+          [:div.columns-info-wrapper
+           (for [[index column] (d/enumerate column-values)]
+             [:& grid-track-info {:key (dm/str index "-" (name type))
+                                  :type type
+                                  :is-col? is-col?
+                                  :index index
+                                  :column column
+                                  :set-column-value set-column-value
+                                  :set-column-type set-column-type
+                                  :remove-element remove-element
+                                  :reorder-track reorder-track
+                                  :hover-track hover-track}])]])])))
 
 ;; LAYOUT COMPONENT
 
@@ -1169,16 +1291,16 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [type prop val]
-          (let [val (mth/finite val 0)]
-            (cond
-              (and (= type :simple) (= prop :p1))
-              (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
+           (let [val (mth/finite val 0)]
+             (cond
+               (and (= type :simple) (= prop :p1))
+               (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
 
-              (and (= type :simple) (= prop :p2))
-              (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
+               (and (= type :simple) (= prop :p2))
+               (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
 
-              :else
-              (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))))
+               :else
+               (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))))
 
         ;; Grid-direction
 
@@ -1188,9 +1310,9 @@
         (mf/use-fn
          (mf/deps [layout-type ids new-css-system])
          (fn [dir]
-           (let [dir (if new-css-system (keyword dir) dir)]
+           (let [dir (cond-> dir new-css-system keyword)]
              (if (= :flex layout-type)
-               (st/emit! (dwsl/update-layout ids {:layout-flex-dir dir}))
+               (st/emit! (dwsl/update-layout ids {:layout-grid-dir dir}))
                (st/emit! (dwsl/update-layout ids {:layout-grid-dir dir}))))))
 
         ;; Align grid
@@ -1198,10 +1320,13 @@
         align-items-column (:layout-justify-items values)
 
         set-align-grid
-        (fn [value type]
-          (if (= type :row)
-            (st/emit! (dwsl/update-layout ids {:layout-align-items value}))
-            (st/emit! (dwsl/update-layout ids {:layout-justify-items value}))))
+        (mf/use-fn
+         (mf/deps ids new-css-system)
+         (fn [value type]
+           (let [value (cond-> value new-css-system keyword)]
+             (if (= type :row)
+               (st/emit! (dwsl/update-layout ids {:layout-align-items value}))
+               (st/emit! (dwsl/update-layout ids {:layout-justify-items value}))))))
 
         ;; Justify grid
         grid-justify-content-row    (:layout-justify-content values)
@@ -1211,11 +1336,12 @@
 
         set-justify-grid
         (mf/use-fn
-         (mf/deps ids)
+         (mf/deps ids new-css-system)
          (fn [value type]
-           (if (= type :row)
-             (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))
-             (st/emit! (dwsl/update-layout ids {:layout-align-content value})))))]
+           (let [value (cond-> value new-css-system keyword)]
+             (if (= type :row)
+               (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))
+               (st/emit! (dwsl/update-layout ids {:layout-align-content value}))))))]
 
     (if new-css-system
       [:div {:class (stl/css :element-set)}
@@ -1265,7 +1391,7 @@
               [:div {:class (stl/css :second-row)}
                [:& justify-content-row {:is-col? is-col?
                                         :justify-content justify-content
-                                         :on-change set-justify-content-refactor}]]
+                                        :on-change set-justify-content-refactor}]]
               (when (= :wrap wrap-type)
                 [:div {:class (stl/css :third-row)}
                  [:& align-content-row {:is-col? is-col?
@@ -1281,37 +1407,33 @@
                [:& padding-section {:values values
                                     :on-change-style change-padding-type
                                     :on-change on-padding-change}]]]
-             :grid ;; TODO Finish this with new UI
+
+
+             :grid
              [:div {:class (stl/css :grid-layout-menu)}
-              [:div {:class (stl/css :first-row)}
-                    [:div (stl/css :direction-edit)
-                     [:div {:class (stl/css :direction)}
-                      [:& direction-row-grid {:set-direction set-direction
-                                              :on-click saved-dir}]
-                      (when (= 1 (count ids))
-                        [:div {:class (stl/css :edit)}
-                         [:& grid-edit-mode {:id (first ids)}]])]]
+              [:div {:class (stl/css :row :first-row)}
+               [:div {:class (stl/css :direction-edit)}
+                [:div {:class (stl/css :direction)}
+                 [:& direction-row-grid {:saved-dir saved-grid-dir
+                                         :on-change set-direction}]]]
 
-                    [:div.layout-row
-                     [:div.align-items-grid.row-title "Items"]
-                     [:div.btn-wrapper.align-grid-items
-                      [:& align-grid-row {:is-col? false
-                                          :align-items align-items-row
-                                          :set-align set-align-grid}]
+               [:& align-grid-row {:is-col? false
+                                   :align-items align-items-row
+                                   :set-align set-align-grid}]
 
-                      [:& align-grid-row {:is-col? true
-                                          :align-items align-items-column
-                                          :set-align set-align-grid}]]]
+               [:& align-grid-row {:is-col? true
+                                   :align-items align-items-column
+                                   :set-align set-align-grid}]]
 
-                    [:div.layout-row
-                     [:div.jusfiy-content-grid.row-title "Content"]
-                     [:div.btn-wrapper.align-grid-content
-                      [:& justify-grid-row {:is-col? true
-                                            :justify-items grid-justify-content-column
-                                            :set-justify set-justify-grid}]
-                      [:& justify-grid-row {:is-col? false
-                                            :justify-items grid-justify-content-row
-                                            :set-justify set-justify-grid}]]]]]
+              [:div {:class (stl/css :row :grid-layout-align)}
+               [:& justify-grid-row {:is-col? true
+                                     :justify-items grid-justify-content-column
+                                     :set-justify set-justify-grid}]
+               [:& justify-grid-row {:is-col? false
+                                     :justify-items grid-justify-content-row
+                                     :set-justify set-justify-grid}]]
+              (when (= 1 (count ids))
+                [:& grid-edit-mode {:id (first ids)}])]
              nil)))]
 
       [:div.element-set
@@ -1427,13 +1549,15 @@
                                       :justify-items grid-justify-content-row
                                       :set-justify set-justify-grid}]]]]
 
-                 ;; Default if not grid or flex
+             ;; Default if not grid or flex
              nil)))])))
 
 (mf/defc grid-layout-edition
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values"]))]}
   [{:keys [ids values] :as props}]
-  (let [;; Gap
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+
+        ;; Gap
         gap-selected?  (mf/use-state :none)
         saved-grid-dir (:layout-grid-dir values)
 
@@ -1468,23 +1592,28 @@
         align-items-row    (:layout-align-items values)
         align-items-column (:layout-justify-items values)
 
-        set-items-grid
-        (fn [value type]
-          (if (= type :row)
-            (st/emit! (dwsl/update-layout ids {:layout-align-items value}))
-            (st/emit! (dwsl/update-layout ids {:layout-justify-items value}))))
+        set-align-grid
+        (mf/use-fn
+         (mf/deps ids new-css-system)
+         (fn [value type]
+           (let [value (cond-> value new-css-system keyword)]
+             (if (= type :row)
+               (st/emit! (dwsl/update-layout ids {:layout-align-items value}))
+               (st/emit! (dwsl/update-layout ids {:layout-justify-items value}))))))
+
 
         ;; Justify grid
-        grid-justify-content-row    (:layout-align-content values)
-        grid-justify-content-column (:layout-justify-content values)
+        grid-justify-content-row    (:layout-justify-content values)
+        grid-justify-content-column (:layout-align-content values)
 
-        set-content-grid
+        set-justify-grid
         (mf/use-fn
-         (mf/deps ids)
+         (mf/deps ids new-css-system)
          (fn [value type]
-           (if (= type :row)
-             (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))
-             (st/emit! (dwsl/update-layout ids {:layout-align-content value})))))
+           (let [value (cond-> value new-css-system keyword)]
+             (if (= type :row)
+               (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))
+               (st/emit! (dwsl/update-layout ids {:layout-align-content value}))))))
 
         ;;Grid columns
         column-grid-values  (:layout-grid-columns values)
@@ -1543,72 +1672,133 @@
              (st/emit! (dwsl/change-layout-track ids type index {:value value
                                                                  :type track-type})))))]
 
-    [:div.element-set
-     [:div.element-set-title
-      [:span "Grid Layout"]]
+    (if new-css-system
+      [:div {:class (stl/css :grid-layout-menu)}
+       [:div {:class (stl/css :row)}
+        [:div {:class (stl/css :grid-layout-menu-title)} "GRID LAYOUT"]
+        [:button {:class (stl/css :exit-btn)
+                  :on-click #(st/emit! udw/clear-edition-mode)}
+         (tr "workspace.layout_grid.editor.options.exit")]]
 
-     [:div.element-set-content.layout-menu
-      [:div.layout-row
-       [:div.direction-wrap.row-title "Direction"]
-       [:div.btn-wrapper
-        [:div.direction
-         (for [dir [:row :column]]
-           [:& direction-btn {:key (d/name dir)
-                              :dir dir
-                              :saved-dir saved-grid-dir
-                              :on-click set-direction
-                              :icon? true}])]
+       [:div {:class (stl/css :row :first-row)}
+        [:div {:class (stl/css :direction-edit)}
+         [:div {:class (stl/css :direction)}
+          [:& direction-row-grid {:saved-dir saved-grid-dir
+                                  :on-change set-direction}]]]
 
-        (when (= 1 (count ids))
-          [:div.edit-mode
-           [:& grid-edit-mode {:id (first ids)}]])]]
-
-      [:div.layout-row
-       [:div.align-items-grid.row-title "Items"]
-       [:div.btn-wrapper.align-grid
         [:& align-grid-row {:is-col? false
                             :align-items align-items-row
-                            :set-align set-items-grid}]
+                            :set-align set-align-grid}]
 
         [:& align-grid-row {:is-col? true
                             :align-items align-items-column
-                            :set-align set-items-grid}]]]
+                            :set-align set-align-grid}]]
 
-      [:div.layout-row
-       [:div.jusfiy-content-grid.row-title "Content"]
-       [:div.btn-wrapper.align-grid-content
+       [:div {:class (stl/css :row :grid-layout-align)}
         [:& justify-grid-row {:is-col? true
-                              :justify-items grid-justify-content-row
-                              :set-justify set-content-grid}]
-        [:& justify-grid-row {:is-col? false
                               :justify-items grid-justify-content-column
-                              :set-justify set-content-grid}]]]
-      [:& grid-columns-row {:is-col? true
-                            :expanded? @grid-columns-open?
-                            :toggle toggle-columns-info
-                            :column-values column-grid-values
-                            :add-new-element add-new-element
-                            :set-column-value set-column-value
-                            :set-column-type set-column-type
-                            :remove-element remove-element
-                            :reorder-track reorder-track
-                            :hover-track hover-track}]
+                              :set-justify set-justify-grid}]
+        [:& justify-grid-row {:is-col? false
+                              :justify-items grid-justify-content-row
+                              :set-justify set-justify-grid}]]
+       [:div {:class (stl/css :row :grid-tracks-row)}
+        [:& grid-columns-row {:is-col? true
+                              :expanded? @grid-columns-open?
+                              :toggle toggle-columns-info
+                              :column-values column-grid-values
+                              :add-new-element add-new-element
+                              :set-column-value set-column-value
+                              :set-column-type set-column-type
+                              :remove-element remove-element
+                              :reorder-track reorder-track
+                              :hover-track hover-track}]
 
-      [:& grid-columns-row {:is-col? false
-                            :expanded? @grid-rows-open?
-                            :toggle toggle-rows-info
-                            :column-values rows-grid-values
-                            :add-new-element add-new-element
-                            :set-column-value set-column-value
-                            :set-column-type set-column-type
-                            :remove-element remove-element
-                            :reorder-track reorder-track
-                            :hover-track hover-track}]
+        [:& grid-columns-row {:is-col? false
+                              :expanded? @grid-rows-open?
+                              :toggle toggle-rows-info
+                              :column-values rows-grid-values
+                              :add-new-element add-new-element
+                              :set-column-value set-column-value
+                              :set-column-type set-column-type
+                              :remove-element remove-element
+                              :reorder-track reorder-track
+                              :hover-track hover-track}]]
+       [:div {:class (stl/css :row)}
+        [:& gap-section {:gap-selected? gap-selected?
+                         :on-change set-gap
+                         :gap-value (:layout-gap values)}]]
 
-      [:& gap-section {:gap-selected? gap-selected?
-                       :on-change set-gap
-                       :gap-value (:layout-gap values)}]
+       [:div {:class (stl/css :row :padding-section)}
+        [:& padding-section {:values values
+                             :on-change-style change-padding-type
+                             :on-change on-padding-change}]]]
 
-      [:& padding-section {:values values
-                           :on-change-style change-padding-type
-                           :on-change on-padding-change}]]]))
+      [:div.element-set
+       [:div.element-set-title
+        [:span "Grid Layout"]]
+
+       [:div.element-set-content.layout-menu
+        [:div.layout-row
+         [:div.direction-wrap.row-title "Direction"]
+         [:div.btn-wrapper
+          [:div.direction
+           (for [dir [:row :column]]
+             [:& direction-btn {:key (d/name dir)
+                                :dir dir
+                                :saved-dir saved-grid-dir
+                                :on-click set-direction
+                                :icon? true}])]
+
+          (when (= 1 (count ids))
+            [:div.edit-mode
+             [:& grid-edit-mode {:id (first ids)}]])]]
+
+        [:div.layout-row
+         [:div.align-items-grid.row-title "Items"]
+         [:div.btn-wrapper.align-grid
+          [:& align-grid-row {:is-col? false
+                              :align-items align-items-row
+                              :set-align set-align-grid}]
+
+          [:& align-grid-row {:is-col? true
+                              :align-items align-items-column
+                              :set-align set-align-grid}]]]
+
+        [:div.layout-row
+         [:div.jusfiy-content-grid.row-title "Content"]
+         [:div.btn-wrapper.align-grid-content
+          [:& justify-grid-row {:is-col? true
+                                :justify-items grid-justify-content-row
+                                :set-justify set-justify-grid}]
+          [:& justify-grid-row {:is-col? false
+                                :justify-items grid-justify-content-column
+                                :set-justify set-justify-grid}]]]
+        [:& grid-columns-row {:is-col? true
+                              :expanded? @grid-columns-open?
+                              :toggle toggle-columns-info
+                              :column-values column-grid-values
+                              :add-new-element add-new-element
+                              :set-column-value set-column-value
+                              :set-column-type set-column-type
+                              :remove-element remove-element
+                              :reorder-track reorder-track
+                              :hover-track hover-track}]
+
+        [:& grid-columns-row {:is-col? false
+                              :expanded? @grid-rows-open?
+                              :toggle toggle-rows-info
+                              :column-values rows-grid-values
+                              :add-new-element add-new-element
+                              :set-column-value set-column-value
+                              :set-column-type set-column-type
+                              :remove-element remove-element
+                              :reorder-track reorder-track
+                              :hover-track hover-track}]
+
+        [:& gap-section {:gap-selected? gap-selected?
+                         :on-change set-gap
+                         :gap-value (:layout-gap values)}]
+
+        [:& padding-section {:values values
+                             :on-change-style change-padding-type
+                             :on-change on-padding-change}]]])))

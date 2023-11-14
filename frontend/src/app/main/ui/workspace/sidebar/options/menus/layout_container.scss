@@ -63,65 +63,242 @@
     }
     .forth-row {
       @include flexColumn;
-      .gap-group {
-        display: flex;
-        gap: $s-4;
-        .column-gap {
-          @extend .input-element;
-          width: $s-108;
-          &.disabled {
-            @extend .disabled-input;
-          }
-        }
-        .row-gap {
-          @extend .input-element;
-          width: $s-108;
-          &.disabled {
-            @extend .disabled-input;
-          }
-        }
+    }
+  }
+}
+
+.gap-group {
+  display: flex;
+  gap: $s-4;
+  .column-gap {
+    @extend .input-element;
+    width: $s-108;
+    &.disabled {
+      @extend .disabled-input;
+    }
+  }
+  .row-gap {
+    @extend .input-element;
+    width: $s-108;
+    &.disabled {
+      @extend .disabled-input;
+    }
+  }
+}
+
+.padding-group {
+  display: flex;
+  gap: $s-4;
+
+  .padding-inputs {
+    display: flex;
+    gap: $s-4;
+  }
+
+  .paddings-simple {
+    display: flex;
+    gap: $s-4;
+
+    .padding-simple {
+      @extend .input-element;
+      width: $s-108;
+    }
+  }
+
+  .paddings-multiple {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $s-4;
+
+    .padding-multiple {
+      @extend .input-element;
+      width: $s-108;
+    }
+  }
+
+  .padding-toggle {
+    @extend .button-tertiary;
+    height: $s-32;
+    width: $s-28;
+    border-radius: $br-8;
+    svg {
+      @extend .button-icon;
+      stroke: var(--icon-foreground);
+    }
+    &.selected {
+      background-color: var(--button-tertiary-background-color-hover);
+      svg {
+        stroke: var(--button-tertiary-foreground-color-active);
       }
-      .padding-group {
-        display: flex;
-        gap: $s-4;
-        .padding-inputs {
-          display: flex;
-          gap: $s-4;
-          .paddings-simple {
-            display: flex;
-            gap: $s-4;
-            .padding-simple {
-              @extend .input-element;
-              width: $s-108;
-            }
-          }
-          .paddings-multiple {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: $s-4;
-            .padding-multiple {
-              @extend .input-element;
-              width: $s-108;
-            }
-          }
-        }
-        .padding-toggle {
-          @extend .button-tertiary;
-          height: $s-32;
-          width: $s-28;
-          border-radius: $br-8;
-          svg {
-            @extend .button-icon;
-            stroke: var(--icon-foreground);
-          }
-          &.selected {
-            background-color: var(--button-tertiary-background-color-hover);
-            svg {
-              stroke: var(--button-tertiary-foreground-color-active);
-            }
-          }
-        }
+    }
+  }
+}
+
+.grid-layout-menu {
+  @include flexColumn;
+  gap: $s-8;
+
+  .row {
+    @include flexRow;
+  }
+
+  .first-row {
+    margin-bottom: $s-8;
+  }
+
+  .grid-layout-align {
+    @include flexColumn;
+    gap: $s-4;
+    align-items: flex-start;
+  }
+
+  .grid-layout-menu-title {
+    flex: 1;
+    font-size: $fs-11;
+  }
+
+  .edit-mode-btn {
+    @extend .button-secondary;
+    @include tabTitleTipography;
+    margin-top: $s-8;
+    width: 100%;
+    padding: $s-8;
+  }
+
+  .exit-btn {
+    @extend .button-secondary;
+    @include tabTitleTipography;
+    padding: $s-8 $s-20;
+  }
+
+  .grid-tracks-info-container {
+    @include flexColumn;
+    margin-top: $s-4;
+  }
+
+  .padding-section {
+    margin-top: $s-8;
+  }
+
+  .grid-tracks-row {
+    @include flexColumn;
+    margin: $s-8 0;
+    gap: $s-12;
+  }
+}
+
+.track-info {
+  display: flex;
+
+  &.dnd-over-top {
+    border-top: $s-2 solid var(--button-foreground-hover);
+  }
+
+  &.dnd-over-bot {
+    border-bottom: $s-2 solid var(--button-foreground-hover);
+  }
+
+  .track-info-container {
+    display: flex;
+  }
+
+  .track-info-dir-icon {
+    border-radius: $br-8 0 0 $br-8;
+    background-color: var(--input-background-color);
+    padding-left: $s-12;
+
+    svg {
+      @extend .button-icon;
+      stroke: var(--icon-foreground);
+      height: 100%;
+    }
+  }
+
+  .track-info-value {
+    @extend .input-element;
+    border-radius: 0;
+    border-right: $s-1 solid var(--panel-background-color);
+  }
+
+  .track-info-unit {
+  }
+
+  .track-info-unit-selector {
+    border-radius: 0 $br-8 $br-8 0;
+    width: $s-96;
+  }
+
+  .remove-track-btn {
+    @extend .button-tertiary;
+    padding: $s-8;
+
+    svg {
+      @extend .button-icon;
+      width: $s-12;
+      height: $s-12;
+      stroke: var(--icon-foreground);
+      fill: var(--icon-foreground);
+    }
+  }
+}
+
+.grid-tracks {
+  width: 100%;
+  margin-top: $s-8;
+
+  .grid-track-header {
+    @include flexRow;
+    font-size: $fs-12;
+    border-radius: $br-8;
+    overflow: hidden;
+    background: var(--button-secondary-background-color-rest);
+    height: $s-52;
+  }
+
+  .track-title {
+    @include flexColumn;
+    flex-grow: 1;
+    padding: $s-8;
+    gap: 0;
+  }
+
+  .track-name {
+    color: var(--color-foreground-secondary);
+  }
+
+  .expand-icon {
+    @extend .button-secondary;
+    height: $s-52;
+
+    border-radius: $s-8 0 0 $s-8;
+    border-right: $s-1 solid var(--panel-background-color);
+    svg {
+      @extend .button-icon;
+      stroke: var(--icon-foreground);
+      fill: var(--icon-foreground);
+    }
+    &:hover,
+    &:active {
+      svg {
+        stroke: var(--button-foreground-hover);
+        fill: var(--button-foreground-hover);
       }
+    }
+  }
+
+  .columns-info {
+  }
+
+  .add-column {
+    @extend .button-tertiary;
+    height: $s-52;
+
+    svg {
+      @extend .button-icon;
+      height: $s-12;
+      width: $s-12;
+      stroke: var(--icon-foreground);
+      fill: var(--icon-foreground);
     }
   }
 }

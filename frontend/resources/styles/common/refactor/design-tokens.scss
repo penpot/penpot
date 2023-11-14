@@ -250,4 +250,13 @@
   --comment-bullet-foreground-color-resolved: var(--color-foreground-secondary);
   --comment-bullet-border-color-resolved: var(--color-background-quaternary);
   --comment-modal-background-color: var(--color-background-primary);
+
+  // GRID LAYOUT
+  --grid-editor-marker-color: var(--color-foreground-tertiary);
+  --grid-editor-marker-text: var(--color-foreground-tertiary);
+  --grid-editor-area-background: var(--color-foreground-tertiary);
+  --grid-editor-area-text: var(--color-foreground-tertiary);
+  --grid-editor-line-color: var(--color-foreground-tertiary);
+  --grid-editor-plus-btn-foreground: var(--white);
+  --grid-editor-plus-btn-background: var(--color-foreground-tertiary);
 }

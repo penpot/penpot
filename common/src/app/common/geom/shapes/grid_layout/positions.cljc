@@ -25,32 +25,32 @@
   (let [hv     #(gpo/start-hv layout-bounds %)
         vv     #(gpo/start-vv layout-bounds %)
 
-        span-column-tracks (subvec column-tracks (dec column) (+ (dec column) column-span))
-        span-row-tracks (subvec row-tracks (dec row) (+ (dec row) row-span))
+        span-column-tracks (d/safe-subvec column-tracks (dec column) (+ (dec column) column-span))
+        span-row-tracks (d/safe-subvec row-tracks (dec row) (+ (dec row) row-span))]
 
-        p1
-        (gpt/add
-         origin
-         (gpt/add
-          (gpt/to-vec origin (dm/get-in span-column-tracks [0 :start-p]))
-          (gpt/to-vec origin (dm/get-in span-row-tracks [0 :start-p]))))
+    (when (and span-column-tracks span-row-tracks)
+      (let [p1
+            (gpt/add
+             origin
+             (gpt/add
+              (gpt/to-vec origin (dm/get-in span-column-tracks [0 :start-p]))
+              (gpt/to-vec origin (dm/get-in span-row-tracks [0 :start-p]))))
 
-        p2
-        (as-> p1  $
-          (reduce (fn [p track] (gpt/add p (hv (:size track)))) $ span-column-tracks)
-          (gpt/add $ (hv (* column-gap (dec (count span-column-tracks))))))
+            p2
+            (as-> p1  $
+              (reduce (fn [p track] (gpt/add p (hv (:size track)))) $ span-column-tracks)
+              (gpt/add $ (hv (* column-gap (dec (count span-column-tracks))))))
 
-        p3
-        (as-> p2  $
-          (reduce (fn [p track] (gpt/add p (vv (:size track)))) $ span-row-tracks)
-          (gpt/add $ (vv (* row-gap (dec (count span-row-tracks))))))
+            p3
+            (as-> p2  $
+              (reduce (fn [p track] (gpt/add p (vv (:size track)))) $ span-row-tracks)
+              (gpt/add $ (vv (* row-gap (dec (count span-row-tracks))))))
 
-        p4
-        (as-> p1  $
-          (reduce (fn [p track] (gpt/add p (vv (:size track)))) $ span-row-tracks)
-          (gpt/add $ (vv (* row-gap (dec (count span-row-tracks))))))]
-
-    [p1 p2 p3 p4]))
+            p4
+            (as-> p1  $
+              (reduce (fn [p track] (gpt/add p (vv (:size track)))) $ span-row-tracks)
+              (gpt/add $ (vv (* row-gap (dec (count span-row-tracks))))))]
+        [p1 p2 p3 p4]))))
 
 (defn calc-fill-width-data
   "Calculates the size and modifiers for the width of an auto-fill child"

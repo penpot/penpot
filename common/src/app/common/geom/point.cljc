@@ -495,6 +495,12 @@
     (pos->Point (if (mth/almost-zero? x) 0.001 x)
                 (if (mth/almost-zero? y) 0.001 y))))
 
+(defn resize
+  "Creates a new vector with the same direction but different length"
+  [vector new-length]
+  (let [old-length (length vector)]
+    (scale vector (/ new-length old-length))))
+
 ;; FIXME: perfromance
 (defn abs
   [point]
@@ -522,3 +528,4 @@
   :class Point
   :wfn #(into {} %)
   :rfn map->Point})
+
