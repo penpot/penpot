@@ -17,6 +17,7 @@
   (t/is (false? (colors/valid-hex-color? "#")))
   (t/is (false? (colors/valid-hex-color? "#qqqqqq")))
   (t/is (true? (colors/valid-hex-color? "#aaa")))
+  (t/is (false? (colors/valid-hex-color? "#aaaa")))
   (t/is (true? (colors/valid-hex-color? "#fabada")))
   )
 
