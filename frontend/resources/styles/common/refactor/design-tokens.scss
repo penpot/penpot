@@ -17,9 +17,9 @@
   // BUTTONS
 
   --button-foreground-hover: var(--color-accent-primary);
-  --button-background-focus: var(--color-background-secondary);
-  --button-foreground-focus: var(--color-foreground-primary);
-  --button-border-focus: var(--color-accent-primary);
+  --button-background-color-focus: var(--color-background-secondary);
+  --button-foreground-color-focus: var(--color-foreground-primary);
+  --button-border-color-focus: var(--color-accent-primary);
   --button-foreground-color-disabled: var(--color-foreground-secondary);
   --button-background-color-disabled: var(--color-background-primary);
   --button-border-color-disabled: var(--color-background-quaternary);

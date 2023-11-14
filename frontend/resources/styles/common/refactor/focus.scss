@@ -1,0 +1,50 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@mixin focusType($type) {
+  $realType: "";
+  @if $type {
+    $realType: $type + "-";
+  }
+  &:focus-visible {
+    outline: none;
+    background-color: var(--button-#{$realType}background-color-focus);
+    border: $s-1 solid var(--button-#{$realType}border-color-focus);
+    color: var(--button-#{$realType}foreground-color-focus);
+    svg,
+    span svg {
+      stroke: var(--button-#{$realType}foreground-color-focus);
+    }
+  }
+}
+
+@mixin focusPrimary {
+  @include focusType(primary);
+}
+
+@mixin focusSecondary {
+  @include focusType(secondary);
+}
+
+@mixin focusTertiary {
+  @include focusType(tertiary);
+}
+
+@mixin focusRadio {
+  @include focusType(radio);
+}
+
+@mixin focus {
+  @include focusType(null);
+}
+
+@mixin focusInput {
+  &:focus-within {
+    color: var(--input-foreground-color-active);
+    background-color: var(--input-background-color-active);
+    border: $s-1 solid var(--input-border-color-active);
+  }
+}
