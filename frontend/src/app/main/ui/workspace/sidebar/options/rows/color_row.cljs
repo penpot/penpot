@@ -68,6 +68,12 @@
         editing-text*  (mf/use-state false)
         editing-text?  (deref editing-text*)
 
+        opacity?
+        (and (not gradient-color?)
+             (not multiple-colors?)
+             (not library-color?)
+             (not disable-opacity))
+
         on-focus
         (mf/use-fn
          (mf/deps on-focus)
@@ -187,6 +193,7 @@
              :ref dref}
        [:span {:class (stl/css :color-info)}
         [:span {:class (stl/css-case :color-name-wrapper true
+                                     :no-opacity (not opacity?)
                                      :library-name-wrapper library-color?
                                      :editing editing-text?
                                      :gradient-name-wrapper gradient-color?)}
@@ -238,10 +245,7 @@
                              :on-blur on-blur
                              :on-change handle-value-change}]])]
 
-        (when (and (not gradient-color?)
-                   (not multiple-colors?)
-                   (not library-color?))
-
+        (when opacity?
           [:div {:class (stl/css :opacity-element-wrapper)}
            [:span {:class (stl/css :icon-text)}
             "%"]
@@ -263,14 +267,7 @@
                    :on-click handle-select}
           i/move-refactor])]
 
-
-
-
-
-
-
-
-
+      ;; OLD CSS
       [:div.row-flex.color-data {:title title
                                  :class (dom/classnames
                                          :dnd-over-top (= (:over dprops) :top)
