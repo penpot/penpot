@@ -895,8 +895,10 @@
                                                              root-main
                                                              root-instance)]
                              (cond-> new-shape
-                               true
-                               (assoc :frame-id (:frame-id parent-shape))
+                               :always
+                               (assoc :frame-id (if (= (:type parent-shape) :frame)
+                                                  (:id parent-shape)
+                                                  (:frame-id parent-shape)))
 
                                (nil? (:shape-ref original-shape))
                                (assoc :shape-ref (:id original-shape))
@@ -988,7 +990,9 @@
                                            :obj shape'})
 
                                    (ctn/page? component-container)
-                                   (assoc :frame-id (:frame-id shape')))))
+                                   (assoc :frame-id (if (= (:type shape') :frame)
+                                                      (:id shape')
+                                                      (:frame-id shape'))))))
 
         mod-obj-change (fn [changes shape']
                          (update changes :redo-changes conj
