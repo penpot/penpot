@@ -329,7 +329,8 @@
         image-url  (or (:href attrs) (:xlink:href attrs))
         image-data (dm/get-in svg-data [:image-data image-url])
 
-        metadata   {:width (:width image-data)
+        metadata   {:name name
+                    :width (:width image-data)
                     :height (:height image-data)
                     :mtype (:mtype image-data)
                     :id (:id image-data)}
@@ -344,9 +345,11 @@
     (when (some? image-data)
       (cts/setup-shape
        (-> (calculate-rect-metadata rect transform)
-           (assoc :type :image)
+           (assoc :type :rect)
            (assoc :name name)
            (assoc :frame-id frame-id)
+           (assoc :fills [{:fill-opacity 1
+                           :fill-image metadata}])
            (assoc :metadata metadata)
            (assoc :svg-viewbox rect)
            (assoc :svg-attrs props))))))

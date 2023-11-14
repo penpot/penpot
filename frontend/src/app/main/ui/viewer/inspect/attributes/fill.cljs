@@ -21,7 +21,8 @@
    :opacity (:fill-opacity shape)
    :gradient (:fill-color-gradient shape)
    :id (:fill-color-ref-id shape)
-   :file-id (:fill-color-ref-file shape)})
+   :file-id (:fill-color-ref-file shape)
+   :image (:fill-image shape)})
 
 (defn has-fill? [shape]
   (and

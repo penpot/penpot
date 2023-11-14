@@ -38,6 +38,7 @@
         [:& color-row
          {:disable-gradient true
           :disable-opacity true
+          :disable-image true
           :title (tr "workspace.options.canvas-background")
           :color {:color (get options :background clr/canvas)
                   :opacity 1}
@@ -51,6 +52,7 @@
         [:& color-row
          {:disable-gradient true
           :disable-opacity true
+          :disable-image true
           :title (tr "workspace.options.canvas-background")
           :color {:color (get options :background clr/canvas)
                   :opacity 1}

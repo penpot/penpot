@@ -21,6 +21,7 @@
   .top-actions {
     display: flex;
     margin-bottom: $size-1;
+    flex-direction: row-reverse;
     justify-content: space-between;
 
     .picker-btn {
@@ -38,8 +39,44 @@
         height: 14px;
       }
     }
+
+    .element-set-content {
+      width: auto;
+      padding: 0.25rem 0;
+      .custom-select {
+        border: none;
+        &:hover {
+          border: none;
+        }
+        .custom-select-dropdown {
+          left: auto;
+          right: 0;
+        }
+      }
+    }
   }
 
+  .select-image {
+    .content {
+      display: flex;
+      justify-content: center;
+      background-image: url("/images/colorpicker-no-image.png");
+      background-position: center;
+      background-size: auto 6.75rem;
+      height: 6.75rem;
+      img {
+        height: fit-content;
+        width: fit-content;
+        max-height: 100%;
+        max-width: 100%;
+        margin: auto;
+      }
+    }
+    button {
+      width: 100%;
+      margin-top: 10px;
+    }
+  }
   .gradients-buttons {
     .gradient {
       cursor: pointer;

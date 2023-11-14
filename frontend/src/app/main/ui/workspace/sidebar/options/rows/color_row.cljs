@@ -62,6 +62,8 @@
         gradient-color? (and (not multiple-colors?)
                              (:gradient color)
                              (get-in color [:gradient :type]))
+        image-color? (and (not multiple-colors?)
+                          (:image color))
 
         editing-text*  (mf/use-state false)
         editing-text?  (deref editing-text*)
@@ -217,6 +219,12 @@
           [:*
            [:div {:class (stl/css :color-name)}
             (uc/gradient-type->string (get-in color [:gradient :type]))]]
+
+          ;; Rendering an image
+          image-color?
+          [:*
+           [:div {:class (stl/css :color-name)}
+            (tr "media.image")]]
 
           ;; Rendering a plain color
           :else

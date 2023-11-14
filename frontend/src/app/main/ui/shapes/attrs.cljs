@@ -62,14 +62,14 @@
 
 (defn add-fill!
   [attrs fill-data render-id index type]
-  (let [index (if (some? index) (dm/str "_" index) "")]
+  (let [index (if (some? index) (dm/str "-" index) "")]
     (cond
       (contains? fill-data :fill-image)
       (let [id (dm/str "fill-image-" render-id)]
         (obj/set! attrs "fill" (dm/str "url(#" id ")")))
 
       (some? (:fill-color-gradient fill-data))
-      (let [id (dm/str "fill-color-gradient_" render-id index)]
+      (let [id (dm/str "fill-color-gradient-" render-id index)]
         (obj/set! attrs "fill" (dm/str "url(#" id ")")))
 
       (contains? fill-data :fill-color)
@@ -100,7 +100,7 @@
         (obj/set! attrs "strokeWidth" width)
 
         (when (some? gradient)
-          (let [gradient-id (dm/str "stroke-color-gradient_" render-id "_" index)]
+          (let [gradient-id (dm/str "stroke-color-gradient-" render-id "-" index)]
             (obj/set! attrs "stroke" (str/ffmt "url(#%)" gradient-id))))
 
         (when-not (some? gradient)

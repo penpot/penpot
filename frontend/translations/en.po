@@ -4993,3 +4993,21 @@ msgstr "Click to close the path"
 #, markdown
 msgid "workspace.top-bar.read-only"
 msgstr "**Inspect mode** (View Only)"
+
+msgid "media.image"
+msgstr "Image"
+
+msgid "media.solid"
+msgstr "Solid"
+
+msgid "media.linear"
+msgstr "Linear"
+
+msgid "media.radial"
+msgstr "Radial"
+
+msgid "media.gradient"
+msgstr "Gradient"
+
+msgid "media.choose-image"
+msgstr "Choose image"

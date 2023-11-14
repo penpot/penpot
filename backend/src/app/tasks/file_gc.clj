@@ -112,18 +112,21 @@
   (let [xform (comp
                (map :objects)
                (mapcat vals)
-               (keep (fn [{:keys [type] :as obj}]
-                       (case type
-                         :path  (get-in obj [:fill-image :id])
-                         :bool  (get-in obj [:fill-image :id])
+               (mapcat (fn [obj]
                          ;; NOTE: because of some bug, we ended with
                          ;; many shape types having the ability to
                          ;; have fill-image attribute (which initially
                          ;; designed for :path shapes).
-                         :group (get-in obj [:fill-image :id])
-                         :image (get-in obj [:metadata :id])
-
-                         nil))))
+                         (sequence
+                           (keep :id)
+                           (concat [(:fill-image obj)
+                                    (:metadata obj)]
+                             (map :fill-image (:fills obj))
+                             (map :stroke-image (:strokes obj))
+                             (->> (:content obj)
+                                  (tree-seq map? :children)
+                                  (mapcat :fills)
+                                  (map :fill-image)))))))
         pages (concat
                (vals (:pages-index data))
                (vals (:components data)))]

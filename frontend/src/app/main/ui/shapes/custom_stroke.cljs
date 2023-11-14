@@ -13,8 +13,10 @@
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.geom.shapes.text :as gst]
    [app.common.pages.helpers :as cph]
+   [app.config :as cfg]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
+   [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.gradients :as grad]
    [app.util.object :as obj]
    [cuerdas.core :as str]
@@ -83,11 +85,18 @@
   (let [id-prefix (dm/str "marker-" render-id)
 
         gradient  (:stroke-color-gradient stroke)
+        image     (:stroke-image stroke)
         cap-start (:stroke-cap-start stroke)
         cap-end   (:stroke-cap-end stroke)
 
-        color     (if (some? gradient)
+        color     (cond
+                    (some? gradient)
                     (str/ffmt "url(#stroke-color-gradient-%s-%s)" render-id index)
+
+                    (some? image)
+                    (str/ffmt "url(#stroke-fill-%-%)" render-id index)
+
+                    :else
                     (:stroke-color stroke))
 
         opacity   (when-not (some? gradient)
@@ -192,20 +201,56 @@
 (mf/defc stroke-defs
   {::mf/wrap-props false}
   [{:keys [shape stroke render-id index]}]
-  (let [open-path? (and ^boolean (cph/path-shape? shape)
-                        ^boolean (gsh/open-path? shape))
-        gradient   (:stroke-color-gradient stroke)
-        alignment  (:stroke-alignment stroke :center)
-        width      (:stroke-width stroke 0)
+  (let [open-path?    (and ^boolean (cph/path-shape? shape)
+                       ^boolean (gsh/open-path? shape))
+        gradient      (:stroke-color-gradient stroke)
+        alignment     (:stroke-alignment stroke :center)
+        width         (:stroke-width stroke 0)
 
-        props      #js {:id (dm/str "stroke-color-gradient-" render-id "-" index)
-                        :gradient gradient
-                        :shape shape}]
+        props         #js {:id (dm/str "stroke-color-gradient-" render-id "-" index)
+                           :gradient gradient
+                           :shape shape}
+        stroke-image  (:stroke-image stroke)
+        uri           (when stroke-image (cfg/resolve-file-media stroke-image))
+        embed         (embed/use-data-uris [uri])
+
+        stroke-width  (case (:stroke-alignment stroke :center)
+                        :center (/ (:stroke-width stroke 0) 2)
+                        :outer (:stroke-width stroke 0)
+                        0)
+        margin        (gsb/shape-stroke-margin stroke stroke-width)
+
+        selrect       (mf/with-memo [shape]
+                        (if (cph/text-shape? shape)
+                          (gst/shape->rect shape)
+                          (grc/points->rect (:points shape))))
+
+        stroke-margin (+ stroke-width margin)
+
+        w             (+ (dm/get-prop selrect :width) (* 2 stroke-margin))
+        h             (+ (dm/get-prop selrect :height) (* 2 stroke-margin))
+        image-props   #js {:href (get embed uri uri)
+                           :preserveAspectRatio "xMidYMid slice"
+                           :width 1
+                           :height 1
+                           :id (dm/str "stroke-image-" render-id "-" index)}]
     [:*
      (when (some? gradient)
        (case (:type gradient)
          :linear [:> grad/linear-gradient props]
          :radial [:> grad/radial-gradient props]))
+
+     (when (:stroke-image stroke)
+       ;; We need to make the pattern size and the image fit so it's not repeated
+       [:pattern {:id (dm/str "stroke-fill-" render-id "-" index)
+                  :patternContentUnits "objectBoundingBox"
+                  :x (- (/ stroke-margin (dm/get-prop selrect :width)))
+                  :y (- (/ stroke-margin (dm/get-prop selrect :height)))
+                  :width (/ w (dm/get-prop selrect :width))
+                  :height (/ h (dm/get-prop selrect :height))
+                  :viewBox "0 0 1 1"
+                  :preserveAspectRatio "xMidYMid slice"}
+        [:> :image image-props]])
 
      (cond
        (and (not open-path?)
@@ -345,6 +390,7 @@
         index           (unchecked-get props "index")
 
         render-id       (mf/use-ctx muc/render-id)
+        render-id       (d/nilv (unchecked-get props "render-id") render-id)
 
         stroke-width    (:stroke-width stroke 0)
         stroke-style    (:stroke-style stroke :none)
@@ -385,7 +431,8 @@
         url-fill?    (or ^boolean (some? (:fill-image shape))
                          ^boolean (cph/image-shape? shape)
                          ^boolean (> (count shape-fills) 1)
-                         ^boolean (some? (some :fill-color-gradient shape-fills)))
+                         ^boolean (some? (some :fill-color-gradient shape-fills))
+                         ^boolean (some? (some :fill-image shape-fills)))
 
         props        (if (cph/frame-shape? shape)
                        props
@@ -446,6 +493,10 @@
                   (obj/set! "fill" "none")
                   (obj/set! "fillOpacity" "none")
                   (obj/merge! (attrs/get-stroke-style value position render-id)))
+
+        style     (if (:stroke-image value)
+                    (obj/set! style "stroke" (dm/fmt "url(#stroke-fill-%-%)" render-id position))
+                    style)
 
         props (-> (obj/clone props)
                   (obj/unset! "fill")

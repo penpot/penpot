@@ -32,10 +32,12 @@
                                               :opacity  (:fill-opacity fill)
                                               :id       color-id
                                               :file-id  color-file-id
-                                              :gradient (:fill-color-gradient fill)})
+                                              :gradient (:fill-color-gradient fill)
+                                              :image    (:fill-image fill)})
                              (d/without-nils {:color    (str/lower (:fill-color fill))
                                               :opacity  (:fill-opacity fill)
-                                              :gradient (:fill-color-gradient fill)}))]
+                                              :gradient (:fill-color-gradient fill)
+                                              :image    (:fill-image fill)}))]
     {:attrs attrs
      :prop :fill
      :shape-id (:shape-id fill)
@@ -47,16 +49,18 @@
         color-id           (:stroke-color-ref-id stroke)
         shared-libs-colors (dm/get-in shared-libs [color-file-id :data :colors])
         is-shared?         (contains? shared-libs-colors color-id)
-        has-color?         (not (nil? (:stroke-color stroke)))
+        has-color?         (or (not (nil? (:stroke-color stroke))) (not (nil? (:stroke-image stroke))) )
         attrs              (if (or is-shared? (= color-file-id file-id))
                              (d/without-nils {:color    (str/lower (:stroke-color stroke))
                                               :opacity  (:stroke-opacity stroke)
                                               :id       color-id
                                               :file-id  color-file-id
-                                              :gradient (:stroke-color-gradient stroke)})
+                                              :gradient (:stroke-color-gradient stroke)
+                                              :image    (:stroke-image stroke)})
                              (d/without-nils {:color    (str/lower (:stroke-color stroke))
                                               :opacity  (:stroke-opacity stroke)
-                                              :gradient (:stroke-color-gradient stroke)}))]
+                                              :gradient (:stroke-color-gradient stroke)
+                                              :image    (:stroke-image stroke)}))]
     (when has-color?
       {:attrs attrs
        :prop :stroke

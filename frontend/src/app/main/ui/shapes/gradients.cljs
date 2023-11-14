@@ -125,7 +125,7 @@
 
         id       (if (some? id)
                    id
-                   (dm/str (name attr) "_" rid))
+                   (dm/str (name attr) "-" rid))
 
         gradient (get shape attr)
         props    #js {:id id

@@ -35,12 +35,13 @@
           (get-in state [:viewer-libraries file-id :data :typographies]))]
     #(l/derived get-library st/state)))
 
-(defn fill->color [{:keys [fill-color fill-opacity fill-color-gradient fill-color-ref-id fill-color-ref-file]}]
+(defn fill->color [{:keys [fill-color fill-opacity fill-color-gradient fill-color-ref-id fill-color-ref-file fill-image]}]
   {:color fill-color
    :opacity fill-opacity
    :gradient fill-color-gradient
    :id fill-color-ref-id
-   :file-id fill-color-ref-file})
+   :file-id fill-color-ref-file
+   :image fill-image})
 
 (defn copy-style-data
   [style & properties]
