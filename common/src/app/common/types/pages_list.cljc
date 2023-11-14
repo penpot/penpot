@@ -33,8 +33,8 @@
       (update :pages-index assoc id (dissoc page :index))))
 
 (defn pages-seq
-  [file-data]
-  (vals (:pages-index file-data)))
+  [fdata]
+  (vals (:pages-index fdata)))
 
 (defn update-page
   [file-data page-id f]

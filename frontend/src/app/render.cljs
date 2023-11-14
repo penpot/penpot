@@ -8,125 +8,54 @@
   "The main entry point for UI part needed by the exporter."
   (:require
    [app.common.geom.shapes.bounds :as gsb]
-   [app.common.logging :as l]
+   [app.common.logging :as log]
    [app.common.math :as mth]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.types.components-list :as ctkl]
    [app.common.uri :as u]
    [app.main.data.fonts :as df]
-   [app.main.features :as feat]
+   [app.main.data.users :as du]
+   [app.main.features :as features]
    [app.main.render :as render]
    [app.main.repo :as repo]
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.globals :as glob]
    [beicon.core :as rx]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [garden.core :refer [css]]
+   [okulary.core :as l]
+   [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SETUP
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(log/setup! {:app :info})
 
-(l/setup! {:app :info})
-
-(defonce app-root
-  (let [el (dom/get-element "app")]
-    (mf/create-root el)))
-
-(declare ^:private render-single-object)
-(declare ^:private render-components)
-(declare ^:private render-objects)
-
-(defn- parse-params
-  [loc]
-  (let [href (unchecked-get loc "href")]
-    (some-> href u/uri :query u/query-string->map)))
-
-(defn init-ui
-  []
-  (when-let [params (parse-params glob/location)]
-    (when-let [component (case (:route params)
-                           "objects"    (render-objects params)
-                           "components" (render-components params)
-                           nil)]
-      (mf/render! app-root component))))
-
-(defn ^:export init
-  []
-  (st/emit! (feat/initialize))
-  (init-ui))
-
-(defn reinit
-  []
-  (mf/unmount! app-root)
-  (init-ui))
-
-(defn ^:dev/after-load after-load
-  []
-  (reinit))
+(defn- fetch-team
+  [& {:keys [file-id]}]
+  (ptk/reify ::fetch-team
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (repo/cmd! :get-team {:file-id file-id})
+           (rx/mapcat (fn [team]
+                        (rx/of (du/set-current-team team)
+                               (ptk/data-event ::team-fetched team))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPONENTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; ---- SINGLE OBJECT
-
-(defn use-resource
-  "A general purpose hook for retrieve or subscribe to remote changes
-  using the reactive-streams mechanism mechanism.
-
-  It receives a function to execute for retrieve the stream that will
-  be used for creating the subscription. The function should be
-  stable, so is the responsibility of the user of this hook to
-  properly memoize it.
-
-  TODO: this should be placed in some generic hooks namespace but his
-  right now is pending of refactor and it will be done later."
-  [f]
-  (let [[state ^js update-state!] (mf/useState {:loaded? false})]
-    (mf/with-effect [f]
-      (update-state! (fn [prev] (assoc prev :refreshing? true)))
-      (let [on-value (fn [data]
-                       (update-state! #(-> %
-                                           (assoc :refreshing? false)
-                                           (assoc :loaded? true)
-                                           (merge data))))
-            subs     (rx/subscribe (f) on-value)]
-        #(rx/dispose! subs)))
-    state))
+(def ^:private ref:objects
+  (l/derived :objects st/state))
 
 (mf/defc object-svg
-  [{:keys [page-id file-id share-id object-id render-embed?]}]
-  (let [components-v2 (feat/use-feature "components/v2")
-        fetch-state   (mf/use-fn
-                        (mf/deps file-id page-id share-id object-id components-v2)
-                        (fn []
-                          (let [features (cond-> #{} components-v2 (conj "components/v2"))]
-                            (->> (rx/zip
-                                  (repo/cmd! :get-font-variants {:file-id file-id :share-id share-id})
-                                  (repo/cmd! :get-page {:file-id file-id
-                                                        :page-id page-id
-                                                        :share-id share-id
-                                                        :object-id object-id
-                                                        :features features}))
-                                 (rx/tap (fn [[fonts]]
-                                           (when (seq fonts)
-                                             (st/emit! (df/fonts-fetched fonts)))))
-                                 (rx/map (comp :objects second))
-                                 (rx/map (fn [objects]
-                                           (let [objects (render/adapt-objects-for-shape objects object-id)]
-                                             {:objects objects
-                                              :object (get objects object-id)})))))))
-
-        {:keys [objects object]} (use-resource fetch-state)]
+  {::mf/wrap-props false}
+  [{:keys [object-id embed]}]
+  (let [objects (mf/deref ref:objects)]
 
     ;; Set the globa CSS to assign the page size, needed for PDF
     ;; exportation process.
-    (mf/with-effect [object]
-      (when object
+    (mf/with-effect [objects]
+      (when-let [object (get objects object-id)]
         (let [{:keys [width height]} (gsb/get-object-bounds [objects] object)]
           (dom/set-page-style!
            {:size (str/concat
@@ -137,90 +66,107 @@
       [:& render/object-svg
        {:objects objects
         :object-id object-id
-        :render-embed? render-embed?}])))
+        :embed embed}])))
 
 (mf/defc objects-svg
-  [{:keys [page-id file-id share-id object-ids render-embed?]}]
-  (let [components-v2 (feat/use-feature "components/v2")
-        fetch-state   (mf/use-fn
-                       (mf/deps file-id page-id share-id components-v2)
-                       (fn []
-                         (let [features (cond-> #{} components-v2 (conj "components/v2"))]
-                           (->> (rx/zip
-                                 (repo/cmd! :get-font-variants {:file-id file-id :share-id share-id})
-                                 (repo/cmd! :get-page {:file-id file-id
-                                                       :page-id page-id
-                                                       :share-id share-id
-                                                       :features features}))
-                                (rx/tap (fn [[fonts]]
-                                          (when (seq fonts)
-                                            (st/emit! (df/fonts-fetched fonts)))))
-                                (rx/map (fn [[_ page]] {:objects (:objects page)}))))))
+  {::mf/wrap-props false}
+  [{:keys [object-ids embed]}]
+  (when-let [objects (mf/deref ref:objects)]
+    (for [object-id object-ids]
+      (let [objects (render/adapt-objects-for-shape objects object-id)]
+        [:& render/object-svg
+         {:objects objects
+          :key (str object-id)
+          :object-id object-id
+          :embed embed}]))))
 
-        {:keys [objects]} (use-resource fetch-state)]
+(defn- fetch-objects-bundle
+  [& {:keys [file-id page-id share-id object-id] :as options}]
+  (ptk/reify ::fetch-objects-bundle
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [features (features/get-team-enabled-features state)]
+        (->> (rx/zip
+              (repo/cmd! :get-font-variants {:file-id file-id :share-id share-id})
+              (repo/cmd! :get-page {:file-id file-id
+                                    :page-id page-id
+                                    :share-id share-id
+                                    :object-id object-id
+                                    :features features}))
+             (rx/tap (fn [[fonts]]
+                       (when (seq fonts)
+                         (st/emit! (df/fonts-fetched fonts)))))
+             (rx/observe-on :async)
+             (rx/map (comp :objects second))
+             (rx/map (fn [objects]
+                       (let [objects (render/adapt-objects-for-shape objects object-id)]
+                         #(assoc % :objects objects)))))))))
 
-    (when objects
-      (for [object-id object-ids]
-        (let [objects (render/adapt-objects-for-shape objects object-id)]
-          [:& render/object-svg
-           {:objects objects
-            :key (str object-id)
-            :object-id object-id
-            :render-embed? render-embed?}])))))
+(def ^:private schema:render-objects
+  [:map {:title "render-objets"}
+   [:page-id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:share-id {:optional true} ::sm/uuid]
+   [:embed {:optional true} :boolean]
+   [:object-id
+    [:or
+     ::sm/uuid
+     ::sm/coll-of-uuid]]])
 
-(s/def ::page-id ::us/uuid)
-(s/def ::file-id ::us/uuid)
-(s/def ::share-id ::us/uuid)
-(s/def ::object-id
-  (s/or :single ::us/uuid
-        :multiple (s/coll-of ::us/uuid)))
-(s/def ::embed ::us/boolean)
+(def ^:private render-objects-decoder
+  (sm/lazy-decoder schema:render-objects
+                   sm/default-transformer))
 
-(s/def ::render-objects
-  (s/keys :req-un [::file-id ::page-id ::object-id]
-          :opt-un [::render-embed ::share-id]))
+(def ^:private render-objects-validator
+  (sm/lazy-validator schema:render-objects))
 
 (defn- render-objects
   [params]
-  (let [{:keys [file-id
-                page-id
-                render-embed
-                share-id]
-         :as params}
-        (us/conform ::render-objects params)
+  (let [{:keys [file-id page-id embed share-id object-id] :as params} (render-objects-decoder params)]
+    (if-not (render-objects-validator params)
+      (do
+        (js/console.error "invalid arguments")
+        (sm/pretty-explain schema:render-objects params)
+        nil)
 
-        [type object-id] (:object-id params)]
-    (case type
-      :single
-      (mf/html
-       [:& object-svg
-        {:file-id file-id
-         :page-id page-id
-         :share-id share-id
-         :object-id object-id
-         :render-embed? render-embed}])
+      (do
+        (st/emit! (ptk/reify ::initialize-render-objects
+                    ptk/WatchEvent
+                    (watch [_ _ stream]
+                      (rx/merge
+                       (rx/of (fetch-team :file-id file-id))
 
-      :multiple
-      (mf/html
-       [:& objects-svg
-        {:file-id file-id
-         :page-id page-id
-         :share-id share-id
-         :object-ids (into #{} object-id)
-         :render-embed? render-embed}]))))
+                       (->> stream
+                            (rx/filter (ptk/type? ::team-fetched))
+                            (rx/observe-on :async)
+                            (rx/map (constantly params))
+                            (rx/map fetch-objects-bundle))))))
+
+        (if (uuid? object-id)
+          (mf/html
+           [:& object-svg
+            {:file-id file-id
+             :page-id page-id
+             :share-id share-id
+             :object-id object-id
+             :embed embed}])
+
+          (mf/html
+           [:& objects-svg
+            {:file-id file-id
+             :page-id page-id
+             :share-id share-id
+             :object-ids (into #{} object-id)
+             :embed embed}]))))))
 
 ;; ---- COMPONENTS SPRITE
 
-(mf/defc components-sprite-svg
-  [{:keys [file-id embed] :as props}]
-  (let [fetch (mf/use-fn
-               (mf/deps file-id)
-               (fn [] (repo/cmd! :get-file {:id file-id})))
-
-        file  (use-resource fetch)
-        state (mf/use-state nil)]
-
-    (when file
+(mf/defc components-svg
+  {::mf/wrap-props false}
+  [{:keys [embed component-id]}]
+  (let [file-ref (mf/with-memo [] (l/derived :file st/state))
+        state    (mf/use-state {:component-id component-id})]
+    (when-let [file (mf/deref file-ref)]
       [:*
        [:style
         (css [[:body
@@ -266,7 +212,7 @@
              [:a {:on-click on-click} (:name data)]]))]
 
        [:main
-        [:& render/components-sprite-svg
+        [:& render/components-svg
          {:data (:data file)
           :embed embed}
 
@@ -275,16 +221,93 @@
 
        ])))
 
-(s/def ::component-id ::us/uuid)
-(s/def ::render-components
-  (s/keys :req-un [::file-id]
-          :opt-un [::embed ::component-id]))
+(defn- fetch-components-bundle
+  [& {:keys [file-id]}]
+  (ptk/reify ::fetch-components-bundle
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [features (features/get-team-enabled-features state)]
+        (->> (repo/cmd! :get-file {:id file-id :features features})
+             (rx/map (fn [file] #(assoc % :file file))))))))
+
+(def ^:private schema:render-components
+  [:map {:title "render-components"}
+   [:file-id ::sm/uuid]
+   [:embed {:optional true} :boolean]
+   [:component-id {:optional true} ::sm/uuid]])
+
+(def ^:private render-components-decoder
+  (sm/lazy-decoder schema:render-components
+                   sm/default-transformer))
+
+(def ^:private render-components-validator
+  (sm/lazy-validator schema:render-components))
 
 (defn render-components
   [params]
-  (let [{:keys [file-id component-id embed]} (us/conform ::render-components params)]
-    (mf/html
-     [:& components-sprite-svg
-      {:file-id file-id
-       :component-id component-id
-       :embed embed}])))
+  (let [{:keys [file-id component-id embed] :as params} (render-components-decoder params)]
+    (if-not (render-components-validator params)
+      (do
+        (js/console.error "invalid arguments")
+        (sm/pretty-explain schema:render-components params)
+        nil)
+
+      (do
+        (st/emit! (ptk/reify ::initialize-render-components
+                    ptk/WatchEvent
+                    (watch [_ _ stream]
+                      (rx/merge
+                       (rx/of (fetch-team :file-id file-id))
+
+                       (->> stream
+                            (rx/filter (ptk/type? ::team-fetched))
+                            (rx/observe-on :async)
+                            (rx/map (constantly params))
+                            (rx/map fetch-components-bundle))))))
+
+        (mf/html
+         [:& components-svg
+          {:component-id component-id
+           :embed embed}])))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SETUP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce app-root
+  (let [el (dom/get-element "app")]
+    (mf/create-root el)))
+
+(declare ^:private render-single-object)
+(declare ^:private render-components)
+(declare ^:private render-objects)
+
+(defn- parse-params
+  [loc]
+  (let [href (unchecked-get loc "href")]
+    (some-> href u/uri :query u/query-string->map)))
+
+(defn init-ui
+  []
+  (when-let [params (parse-params glob/location)]
+    (when-let [component (case (:route params)
+                           "objects"    (render-objects params)
+                           "components" (render-components params)
+                           nil)]
+      (mf/render! app-root component))))
+
+(defn ^:export init
+  []
+  (st/emit! (features/initialize))
+  (init-ui))
+
+(defn reinit
+  []
+  (init-ui))
+
+(defn ^:dev/after-load after-load
+  []
+  (reinit))
+
+
+

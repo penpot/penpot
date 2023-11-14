@@ -271,7 +271,7 @@
                       (js/console.error n (pr-str v))
                       (js/console.error n v))))
 
-         (when cause
+         (when (ex/exception? cause)
            (let [data    (ex-data cause)
                  explain (ex/explain data)]
              (when explain

@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.files.defaults :as cfd]
    [app.common.files.migrations :as pmg]
+   [app.common.files.validate :as fval]
    [app.common.fressian :as fres]
    [app.common.logging :as l]
    [app.common.spec :as us]
@@ -743,7 +744,13 @@
                                              (update :pages-index relink-shapes)
                                              (update :components relink-shapes)
                                              (update :media relink-media)
-                                             (pmg/migrate-data))))
+                                             (pmg/migrate-data)
+                                             (d/without-nils))))
+
+                         ;; Without providing all libs, here we just
+                         ;; peform a structural file data validation,
+                         ;; full referential check is omited.
+                         (fval/validate-file!)
                          (postprocess-file)
                          (update :features #(db/create-array conn "text" %))
                          (update :data blob/encode))]
@@ -973,7 +980,6 @@
                 :import-id id
                 :elapsed (dt/format-duration (tp))
                 :error? (some? @cs)
-                :cause @cs
                 )))))
 
 ;; --- Command: export-binfile

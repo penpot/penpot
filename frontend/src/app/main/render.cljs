@@ -43,7 +43,6 @@
    [app.main.ui.shapes.text :as text]
    [app.main.ui.shapes.text.fontfaces :as ff]
    [app.util.http :as http]
-   [app.util.object :as obj]
    [app.util.strings :as ust]
    [app.util.thumbnails :as th]
    [app.util.timers :as ts]
@@ -83,11 +82,11 @@
   (let [shape-wrapper (shape-wrapper-factory objects)
         frame-shape   (frame/frame-shape shape-wrapper)]
     (mf/fnc frame-wrapper
-      [{:keys [shape] :as props}]
-
-      (let [render-thumbnails? (mf/use-ctx muc/render-thumbnails)
-            childs (mapv #(get objects %) (:shapes shape))]
-        (if (and render-thumbnails? (some? (:thumbnail shape)))
+      {::mf/wrap-props false}
+      [{:keys [shape]}]
+      (let [thumbnails? (mf/use-ctx muc/render-thumbnails)
+            childs      (mapv (d/getf objects) (:shapes shape))]
+        (if (and thumbnails? (some? (:thumbnail shape)))
           [:& frame/frame-thumbnail {:shape shape :bounds (:children-bounds shape)}]
           [:& frame-shape {:shape shape :childs childs}])))))
 
@@ -193,8 +192,8 @@
 
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [data thumbnails? render-embed? include-metadata?] :as props
-    :or {render-embed? false include-metadata? false}}]
+  [{:keys [data use-thumbnails embed include-metadata] :as props
+    :or {embed false include-metadata false}}]
   (let [objects (:objects data)
         shapes  (cph/get-immediate-children objects)
         dim     (calculate-dimensions objects)
@@ -206,20 +205,20 @@
          (mf/deps objects)
          #(shape-wrapper-factory objects))]
 
-    [:& (mf/provider muc/render-thumbnails) {:value thumbnails?}
-     [:& (mf/provider embed/context) {:value render-embed?}
-      [:& (mf/provider export/include-metadata-ctx) {:value include-metadata?}
+    [:& (mf/provider muc/render-thumbnails) {:value use-thumbnails}
+     [:& (mf/provider embed/context) {:value embed}
+      [:& (mf/provider export/include-metadata-ctx) {:value include-metadata}
        [:svg {:view-box vbox
               :version "1.1"
               :xmlns "http://www.w3.org/2000/svg"
               :xmlnsXlink "http://www.w3.org/1999/xlink"
-              :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
+              :xmlns:penpot (when include-metadata "https://penpot.app/xmlns")
               :style {:width "100%"
                       :height "100%"
                       :background bgcolor}
               :fill "none"}
 
-        (when include-metadata?
+        (when include-metadata
           [:& export/export-page {:id (:id data) :options (:options data)}])
 
         (let [shapes (->> shapes
@@ -250,9 +249,9 @@
 ;; the viewer and inspector
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects frame zoom show-thumbnails?] :or {zoom 1} :as props}]
-  (let [frame-id          (:id frame)
-        include-metadata? (mf/use-ctx export/include-metadata-ctx)
+  [{:keys [objects frame zoom use-thumbnails] :or {zoom 1} :as props}]
+  (let [frame-id         (:id frame)
+        include-metadata (mf/use-ctx export/include-metadata-ctx)
 
         bounds (gsb/get-object-bounds objects frame)
 
@@ -294,14 +293,14 @@
         height (* (:height bounds) zoom)
         vbox   (format-viewbox {:width (:width bounds 0) :height (:height bounds 0)})]
 
-    [:& (mf/provider muc/render-thumbnails) {:value show-thumbnails?}
+    [:& (mf/provider muc/render-thumbnails) {:value use-thumbnails}
      [:svg {:view-box vbox
             :width (ust/format-precision width viewbox-decimal-precision)
             :height (ust/format-precision height viewbox-decimal-precision)
             :version "1.1"
             :xmlns "http://www.w3.org/2000/svg"
             :xmlnsXlink "http://www.w3.org/1999/xlink"
-            :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
+            :xmlns:penpot (when include-metadata "https://penpot.app/xmlns")
             :fill "none"}
       [:& shape-wrapper {:shape frame}]]]))
 
@@ -312,7 +311,7 @@
   [{:keys [objects root-shape zoom] :or {zoom 1} :as props}]
   (when root-shape
   (let [root-shape-id (:id root-shape)
-        include-metadata? (mf/use-ctx export/include-metadata-ctx)
+        include-metadata (mf/use-ctx export/include-metadata-ctx)
 
         vector
         (mf/use-memo
@@ -348,7 +347,7 @@
            :version "1.1"
            :xmlns "http://www.w3.org/2000/svg"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
+           :xmlns:penpot (when include-metadata "https://penpot.app/xmlns")
            :fill "none"}
 
      [:> shape-container {:shape root-shape'}
@@ -357,8 +356,8 @@
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects object-id render-embed?]
-    :or {render-embed? false}
+  [{:keys [objects object-id embed]
+    :or {embed false}
     :as props}]
   (let [object  (get objects object-id)
         object (cond-> object
@@ -375,7 +374,7 @@
           (shape-wrapper-factory objects))]
 
     [:& (mf/provider export/include-metadata-ctx) {:value false}
-     [:& (mf/provider embed/context) {:value render-embed?}
+     [:& (mf/provider embed/context) {:value embed}
       [:svg {:id (dm/str "screenshot-" object-id)
              :view-box vbox
              :width (ust/format-precision width viewbox-decimal-precision)
@@ -439,20 +438,16 @@
         :group [:& group-wrapper {:shape root-shape :view-box vbox}]
         :frame [:& frame-wrapper {:shape root-shape :view-box vbox}])]]))
 
-(mf/defc components-sprite-svg
+(mf/defc components-svg
   {::mf/wrap-props false}
-  [props]
-  (let [data              (obj/get props "data")
-        children          (obj/get props "children")
-        render-embed?     (obj/get props "render-embed?")
-        include-metadata? (obj/get props "include-metadata?")
-        source            (keyword (obj/get props "source" "components"))]
-    [:& (mf/provider embed/context) {:value render-embed?}
-     [:& (mf/provider export/include-metadata-ctx) {:value include-metadata?}
+  [{:keys [data children embed include-metadata source]}]
+  (let [source (keyword (d/nilv source "components"))]
+    [:& (mf/provider embed/context) {:value embed}
+     [:& (mf/provider export/include-metadata-ctx) {:value include-metadata}
       [:svg {:version "1.1"
              :xmlns "http://www.w3.org/2000/svg"
              :xmlnsXlink "http://www.w3.org/1999/xlink"
-             :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
+             :xmlns:penpot (when include-metadata "https://penpot.app/xmlns")
              :style {:display (when-not (some? children) "none")}
              :fill "none"}
        [:defs
@@ -511,7 +506,7 @@
    (->> (rx/of data)
         (rx/map
          (fn [data]
-           (let [elem (mf/element page-svg #js {:data data :render-embed? true :include-metadata? true})]
+           (let [elem (mf/element page-svg #js {:data data :embed true :include-metadata true})]
              (rds/renderToStaticMarkup elem)))))))
 
 (defn render-components
@@ -531,8 +526,8 @@
      (->> (rx/of data)
           (rx/map
            (fn [data]
-             (let [elem (mf/element components-sprite-svg
-                                    #js {:data data :render-embed? true :include-metadata? true
+             (let [elem (mf/element components-svg
+                                    #js {:data data :embed true :include-metadata true
                                          :source (name source)})]
                (rds/renderToStaticMarkup elem))))))))
 

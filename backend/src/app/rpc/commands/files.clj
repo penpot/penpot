@@ -443,10 +443,17 @@
   "Given the page data and the object-id returns the page data with all
   other not needed objects removed from the `:objects` data
   structure."
-  [{:keys [objects] :as page} object-id]
-  (let [objects (->> (cph/get-children-with-self objects object-id)
-                     (filter some?))]
-    (assoc page :objects (d/index-by :id objects))))
+  [page id-or-ids]
+  (update page :objects (fn [objects]
+                          (reduce (fn [result object-id]
+                                    (->> (cph/get-children-with-self objects object-id)
+                                         (filter some?)
+                                         (d/index-by :id)
+                                         (merge result)))
+                                  {}
+                                  (if (uuid? id-or-ids)
+                                    [id-or-ids]
+                                    id-or-ids)))))
 
 (defn- prune-thumbnails
   "Given the page data, removes the `:thumbnail` prop from all
@@ -480,7 +487,7 @@
                      page)))]
 
     (cond-> (prune-thumbnails page)
-      (uuid? object-id)
+      (some? object-id)
       (prune-objects object-id))))
 
 (def schema:get-page
@@ -488,7 +495,7 @@
    [:file-id ::sm/uuid]
    [:page-id {:optional true} ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
-   [:object-id {:optional true} ::sm/uuid]
+   [:object-id {:optional true} [:or ::sm/uuid ::sm/coll-of-uuid]]
    [:features {:optional true} ::cfeat/features]])
 
 (sv/defmethod ::get-page
@@ -500,7 +507,8 @@
   If you specify the object-id, the page-id parameter becomes
   mandatory.
 
-  Mainly used for rendering purposes."
+  Mainly used for rendering purposes on the exporter. It does not
+  accepts client features."
   {::doc/added "1.17"
    ::sm/params schema:get-page}
   [cfg {:keys [::rpc/profile-id file-id share-id] :as params}]

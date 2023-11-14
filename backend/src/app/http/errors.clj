@@ -88,11 +88,19 @@
 
       (= code :params-validation)
       (let [explain (::sm/explain data)
-            payload (sm/humanize-data explain)]
+            explain (sm/humanize-data explain)]
         {::yrs/status 400
          ::yrs/body   (-> data
                           (dissoc ::sm/explain)
-                          (assoc :data payload))})
+                          (assoc :explain explain))})
+
+      (= code :data-validation)
+      (let [explain (::sm/explain data)
+            explain (sm/humanize-data explain)]
+        {::yrs/status 400
+         ::yrs/body   (-> data
+                          (dissoc ::sm/explain)
+                          (assoc :explain explain))})
 
       (= code :request-body-too-large)
       {::yrs/status 413 ::yrs/body data}
@@ -114,18 +122,18 @@
       (cond
         (= code :data-validation)
         (let [explain (::sm/explain data)
-              payload (sm/humanize-data explain)]
-          (l/error :hint "data assertion error" :message (ex-message error) :cause cause)
+              explain (sm/humanize-data explain)]
+          (l/error :hint "data assertion error" :cause cause)
           {::yrs/status 500
            ::yrs/body   {:type :server-error
                          :code :assertion
                          :data (-> data
                                    (dissoc ::sm/explain)
-                                   (assoc :data payload))}})
+                                   (assoc :explain explain))}})
 
         (= code :spec-validation)
         (let [explain (ex/explain data)]
-          (l/error :hint "spec assertion error" :message (ex-message error) :cause cause)
+          (l/error :hint "spec assertion error" :cause cause)
           {::yrs/status 500
            ::yrs/body   {:type :server-error
                          :code :assertion
@@ -135,7 +143,7 @@
 
         :else
         (do
-          (l/error :hint "assertion error" :message (ex-message error) :cause cause)
+          (l/error :hint "assertion error" :cause cause)
           {::yrs/status 500
            ::yrs/body   {:type :server-error
                          :code :assertion
@@ -150,7 +158,7 @@
   [error request parent-cause]
   (binding [l/*context* (request->context request)]
     (let [cause (or parent-cause error)]
-      (l/error :hint "internal error" :message (ex-message error) :cause cause)
+      (l/error :hint "internal error" :cause cause)
       {::yrs/status 500
        ::yrs/body {:type :server-error
                    :code :unhandled
@@ -175,7 +183,7 @@
   (let [state (.getSQLState ^java.sql.SQLException error)
         cause (or parent-cause error)]
     (binding [l/*context* (request->context request)]
-      (l/error :hint "PSQL error" :message (ex-message error)
+      (l/error :hint "PSQL error"
                :cause cause)
       (cond
         (= state "57014")
@@ -205,7 +213,7 @@
       ;; This means that exception is not a controlled exception.
       (nil? edata)
       (binding [l/*context* (request->context request)]
-        (l/error :hint "unexpected error" :message (ex-message error) :cause cause)
+        (l/error :hint "unexpected error" :cause cause)
         {::yrs/status 500
          ::yrs/body {:type :server-error
                      :code :unexpected
@@ -213,7 +221,7 @@
 
       :else
       (binding [l/*context* (request->context request)]
-        (l/error :hint "unhandled error" :message (ex-message error) :cause cause)
+        (l/error :hint "unhandled error" :cause cause)
         {::yrs/status 500
          ::yrs/body {:type :server-error
                      :code :unhandled

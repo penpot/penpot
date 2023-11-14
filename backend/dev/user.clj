@@ -122,23 +122,23 @@
   (stop)
   (repl/refresh-all :after 'user/start))
 
-(defn compression-bench
-  [data]
-  (let [humanize (fn [v] (hum/filesize v :binary true :format " %.4f "))
-        v1 (time (humanize (alength (blob/encode data {:version 1}))))
-        v3 (time (humanize (alength (blob/encode data {:version 3}))))
-        v4 (time (humanize (alength (blob/encode data {:version 4}))))
-        v5 (time (humanize (alength (blob/encode data {:version 5}))))
-        v6 (time (humanize (alength (blob/encode data {:version 6}))))
-        ]
-    (print-table
-     [{
-       :v1 v1
-       :v3 v3
-       :v4 v4
-       :v5 v5
-       :v6 v6
-       }])))
+;; (defn compression-bench
+;;   [data]
+;;   (let [humanize (fn [v] (hum/filesize v :binary true :format " %.4f "))
+;;         v1 (time (humanize (alength (blob/encode data {:version 1}))))
+;;         v3 (time (humanize (alength (blob/encode data {:version 3}))))
+;;         v4 (time (humanize (alength (blob/encode data {:version 4}))))
+;;         v5 (time (humanize (alength (blob/encode data {:version 5}))))
+;;         v6 (time (humanize (alength (blob/encode data {:version 6}))))
+;;         ]
+;;     (print-table
+;;      [{
+;;        :v1 v1
+;;        :v3 v3
+;;        :v4 v4
+;;        :v5 v5
+;;        :v6 v6
+;;        }])))
 
 (defonce debug-tap
   (do

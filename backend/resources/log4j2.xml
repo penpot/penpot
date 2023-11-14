@@ -13,9 +13,13 @@
     <Logger name="org.postgresql" level="error" />
 
     <Logger name="app.util" level="info" />
+
+    <Logger name="app.loggers" level="debug" />
+
     <Logger name="app" level="info" additivity="false">
       <AppenderRef ref="console" />
     </Logger>
+
 
     <Root level="info">
       <AppenderRef ref="console" />

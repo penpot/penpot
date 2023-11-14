@@ -58,10 +58,10 @@
    [:media {:optional true}
     [:map-of {:gen/max 5} ::sm/uuid ::media-object]]])
 
-(def file-data?
+(def valid-file-data?
   (sm/pred-fn ::data))
 
-(def media-object?
+(def valid-media-object?
   (sm/pred-fn ::media-object))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

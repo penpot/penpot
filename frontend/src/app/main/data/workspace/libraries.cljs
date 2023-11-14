@@ -182,7 +182,7 @@
 
 (defn add-media
   [media]
-  (dm/assert! (ctf/media-object? media))
+  (dm/assert! (ctf/valid-media-object? media))
   (ptk/reify ::add-media
     ptk/WatchEvent
     (watch [it _ _]

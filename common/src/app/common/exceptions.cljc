@@ -66,9 +66,9 @@
 
 (defn explain
   ([data] (explain data nil))
-  ([data {:keys [level length] :or {level 8 length 10} :as opts}]
+  ([data {:keys [level length] :or {level 8 length 12} :as opts}]
    (cond
-     ;; ;; NOTE: a special case for spec validation errors on integrant
+     ;; NOTE: a special case for spec validation errors on integrant
      (and (= (:reason data) :integrant.core/build-failed-spec)
           (contains? data :explain))
      (explain (:explain data) opts)
@@ -81,8 +81,7 @@
          (s/explain-out (update data ::s/problems #(take length %)))))
 
      (contains? data ::sm/explain)
-     (-> (sm/humanize-data (::sm/explain data))
-         (pp/pprint-str {:level level :length length})))))
+     (sm/humanize-data (::sm/explain data) :level level :length length))))
 
 #?(:clj
 (defn format-throwable

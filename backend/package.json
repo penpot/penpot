@@ -1,18 +1,16 @@
 {
-  "name": "uxbox-back",
-  "version": "0.1.0",
-  "description": "The Open-Source prototyping tool",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build-emails": "./scripts/build-email-templates.sh"
+  "name": "penpot-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "luxon": "^3.4.2",
+    "sax": "^1.2.4"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/uxbox/uxbox.git"
-  },
-  "author": "Uxbox",
-  "license": "SEE LICENSE IN <LICENSE>",
+  "scripts": {},
   "devDependencies": {
-    "mjml": "^4.6.3"
+    "nodemon": "^3.0.1",
+    "source-map-support": "^0.5.21",
+    "ws": "^8.13.0"
   }
 }

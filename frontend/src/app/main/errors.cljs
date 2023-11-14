@@ -25,7 +25,7 @@
   [data]
   (-> data
       (dissoc ::sm/explain)
-      (dissoc :hint)
+      (dissoc :explain)
       (dissoc ::trace)
       (dissoc ::instance)
       (pp/pprint {:width 70})))
@@ -33,8 +33,9 @@
 (defn- print-explain!
   [data]
   (when-let [explain (::sm/explain data)]
-    (-> (sm/humanize-data explain)
-        (pp/pprint {:width 70}))))
+    (js/console.log (sm/humanize-data explain)))
+  (when-let [explain (:explain data)]
+    (js/console.log explain)))
 
 (defn- print-trace!
   [data]
@@ -98,7 +99,8 @@
 
   (print-group! "Validation Error"
                 (fn []
-                  (print-data! error))))
+                  (print-data! error)
+                  (print-explain! error))))
 
 
 ;; This is a pure frontend error that can be caused by an active
@@ -223,7 +225,22 @@
 
   (print-group! "Server Error"
                 (fn []
-                  (print-data! error))))
+                  (print-data! (dissoc error :data))
+
+                  (when-let [werror (:data error)]
+                    (cond
+                      (= :assertion (:type werror))
+                      (print-group! "Assertion Error"
+                                    (fn []
+                                      (print-data! werror)
+                                      (print-explain! werror)))
+
+                      :else
+                      (print-group! "Unexpected"
+                                    (fn []
+                                      (print-data! werror)
+                                      (print-explain! werror))))))))
+
 
 (defonce uncaught-error-handler
   (letfn [(is-ignorable-exception? [cause]

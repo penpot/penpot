@@ -326,8 +326,8 @@
                  (rx/map deref)
                  (rx/map bundle-fetched)))
 
-             (rx/take-until
-              (rx/filter (ptk/type? ::fetch-bundle) stream))))))
+           (rx/take-until
+            (rx/filter (ptk/type? ::fetch-bundle) stream))))))
 
 (defn initialize-file
   [project-id file-id]

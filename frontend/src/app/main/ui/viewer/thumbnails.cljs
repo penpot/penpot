@@ -88,7 +88,7 @@
                                        (assoc :thumbnail (get thumbnail-data (dm/str page-id (:id frame))))
                                        (assoc :children-bounds children-bounds))
                             :objects objects
-                            :show-thumbnails? true}]]
+                            :use-thumbnails true}]]
      [:div.thumbnail-info
       [:span.name {:title (:name frame)} (:name frame)]]]))
 

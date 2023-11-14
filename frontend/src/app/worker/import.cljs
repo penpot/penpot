@@ -14,6 +14,7 @@
    [app.common.geom.shapes.path :as gpa]
    [app.common.logging :as log]
    [app.common.media :as cm]
+   [app.common.pprint :as pp]
    [app.common.text :as ct]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
@@ -639,6 +640,7 @@
                              (let [error (or (.-message data) (tr "dashboard.import.analyze-error"))]
                                (rx/of {:uri (:uri file) :error error}))))))))))
 
+
 (defmethod impl/handler :import-files
   [{:keys [project-id files features]}]
 
@@ -648,52 +650,60 @@
         zip-files (filter #(= "application/zip" (:type %)) files)
         binary-files (filter #(= "application/octet-stream" (:type %)) files)]
 
-    (->> (rx/merge
-          (->> (create-files context zip-files)
-               (rx/flat-map
-                (fn [[file data]]
-                  (->> (uz/load-from-url (:uri data))
-                       (rx/map #(-> context (assoc :zip %) (merge data)))
-                       (rx/merge-map
-                        (fn [context]
-                          ;; process file retrieves a stream that will emit progress notifications
-                          ;; and other that will emit the files once imported
-                          (let [[progress-stream file-stream] (process-file context file)]
-                            (rx/merge progress-stream
-                                      (->> file-stream
-                                           (rx/map
-                                            (fn [file]
-                                              {:status :import-finish
-                                               :errors (:errors file)
-                                               :file-id (:file-id data)})))))))
-                       (rx/catch (fn [cause]
-                                   (log/error :hint (ex-message cause) :file-id (:file-id data) :cause cause)
-                                   (rx/of {:status :import-error
-                                           :file-id (:file-id data)
-                                           :error (ex-message cause)
-                                           :error-data (ex-data cause)})))))))
+    (rx/merge
+     (->> (create-files context zip-files)
+          (rx/flat-map
+           (fn [[file data]]
+             (->> (uz/load-from-url (:uri data))
+                  (rx/map #(-> context (assoc :zip %) (merge data)))
+                  (rx/merge-map
+                   (fn [context]
+                     ;; process file retrieves a stream that will emit progress notifications
+                     ;; and other that will emit the files once imported
+                     (let [[progress-stream file-stream] (process-file context file)]
+                       (rx/merge progress-stream
+                                 (->> file-stream
+                                      (rx/map
+                                       (fn [file]
+                                         {:status :import-finish
+                                          :errors (:errors file)
+                                          :file-id (:file-id data)})))))))
+                  (rx/catch (fn [cause]
+                              (log/error :hint (ex-message cause)
+                                         :file-id (:file-id data)
+                                         :cause cause)
+                              (rx/of {:status :import-error
+                                      :file-id (:file-id data)
+                                      :error (ex-message cause)
+                                      :error-data (ex-data cause)})))))))
 
-          (->> (rx/from binary-files)
-               (rx/flat-map
-                (fn [data]
-                  (->> (http/send!
-                        {:uri (:uri data)
-                         :response-type :blob
-                         :method :get})
-                       (rx/map :body)
-                       (rx/mapcat #(rp/cmd! :import-binfile {:file %
-                                                                 :project-id project-id}))
-                       (rx/map
-                        (fn [_]
-                          {:status :import-finish
-                           :file-id (:file-id data)})))))))
+     (->> (rx/from binary-files)
+          (rx/flat-map
+           (fn [data]
+             (->> (http/send!
+                   {:uri (:uri data)
+                    :response-type :blob
+                    :method :get})
+                  (rx/map :body)
+                  (rx/mapcat #(rp/cmd! :import-binfile {:file % :project-id project-id}))
+                  (rx/map (fn [_]
+                            {:status :import-finish
+                             :file-id (:file-id data)}))
+                  (rx/catch (fn [cause]
+                              (log/error :hint "unexpected error on import process"
+                                         :project-id project-id
+                                         ::log/sync? true)
+                              ;; TODO: consider do thi son logging directly ?
 
-         (rx/catch (fn [cause]
-                     (log/error :hint "unexpected error on import process"
-                                :project-id project-id
-                                :cause cause)
-                     (if (map? cause)
-                       (js/console.error (pr-str cause))
-                       (js/console.error cause)))))))
+                              (when (map? cause)
+                                (println "Error data:")
+                                (pp/pprint (dissoc cause :explain) {:level 2 :length 10}))
 
+                              (when (string? (:explain cause))
+                                (js/console.log (:explain cause)))
+
+                              (rx/of {:status :import-error
+                                      :file-id (:file-id data)
+                                      :error (:hint cause)
+                                      :error-data cause}))))))))))
 

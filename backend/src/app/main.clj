@@ -37,8 +37,12 @@
    [app.storage.s3 :as-alias sto.s3]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
+   [cider.nrepl :refer [cider-nrepl-handler]]
+   [clojure.test :as test]
+   [clojure.tools.namespace.repl :as repl]
    [cuerdas.core :as str]
    [integrant.core :as ig]
+   [nrepl.server :as nrepl]
    [promesa.exec :as px])
   (:gen-class))
 
@@ -527,22 +531,65 @@
                                    (merge worker-config))
                                  (ig/prep)
                                  (ig/init))))
-  (l/info :hint "welcome to penpot"
-          :flags (str/join "," (map name cf/flags))
-          :worker? (contains? cf/flags :backend-worker)
-          :version (:full cf/version)))
+  (l/inf :hint "welcome to penpot"
+         :flags (str/join "," (map name cf/flags))
+         :worker? (contains? cf/flags :backend-worker)
+         :version (:full cf/version)))
 
 (defn stop
   []
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))
                              nil)))
+(defn restart
+  []
+  (stop)
+  (repl/refresh :after 'app.main/start))
+
+(defn restart-all
+  []
+  (stop)
+  (repl/refresh-all :after 'app.main/start))
+
+(defmacro run-bench
+  [& exprs]
+  `(do
+     (require 'criterium.core)
+     (criterium.core/with-progress-reporting (crit/quick-bench (do ~@exprs) :verbose))))
+
+(defn run-tests
+  ([] (run-tests #"^backend-tests.*-test$"))
+  ([o]
+   (repl/refresh)
+   (cond
+     (instance? java.util.regex.Pattern o)
+     (test/run-all-tests o)
+
+     (symbol? o)
+     (if-let [sns (namespace o)]
+       (do (require (symbol sns))
+           (test/test-vars [(resolve o)]))
+       (test/test-ns o)))))
+
+(repl/disable-reload! (find-ns 'integrant.core))
 
 (defn -main
   [& _args]
   (try
-    (start)
+    (let [p (promise)]
+      (when (contains? cf/flags :nrepl-server)
+        (l/inf :hint "start nrepl server" :port 6064)
+        (nrepl/start-server :bind "0.0.0.0" :port 6064 :handler cider-nrepl-handler))
+
+      (start)
+      (deref p))
     (catch Throwable cause
-      (l/error :hint (ex-message cause)
-               :cause cause)
+      (binding [*out* *err*]
+        (println "==== ERROR ===="))
+      (.printStackTrace cause)
+      (when-let [cause' (ex-cause cause)]
+        (binding [*out* *err*]
+          (println "==== CAUSE ===="))
+        (.printStackTrace cause'))
+      (px/sleep 500)
       (System/exit -1))))
