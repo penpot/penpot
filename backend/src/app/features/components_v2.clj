@@ -661,7 +661,12 @@
                     {:id (:id file)})
 
         (when validate?
-          (cfv/validate-file file libs :throw? true))
+          (let [errors (cfv/validate-file file libs)]
+            (when (seq errors)
+              (l/err :hint "migrate:file:validation-error"
+                     :file-id (str (:id file))
+                     :file-name (:name file)
+                     :errors errors))))
 
         (dissoc file :data)))))
 
