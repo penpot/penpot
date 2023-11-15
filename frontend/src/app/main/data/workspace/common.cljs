@@ -8,16 +8,42 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
+   [app.common.transit :as t]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.repo :as rp]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn resolve-file-data
+  [file-id {:keys [pages-index] :as data}]
+  (letfn [(resolve-pointer [[key val :as kv]]
+            (if (t/pointer? val)
+              (->> (rp/cmd! :get-file-fragment {:file-id file-id :fragment-id @val})
+                   (rx/map #(get % :content))
+                   (rx/map #(vector key %)))
+              (rx/of kv)))
+
+          (resolve-pointers [coll]
+            (->> (rx/from (seq coll))
+                 (rx/merge-map resolve-pointer)
+                 (rx/reduce conj {})))]
+
+    (->> (rx/zip (resolve-pointers data)
+                 (resolve-pointers pages-index))
+         (rx/take 1)
+         (rx/map (fn [[data pages-index]]
+                   (assoc data :pages-index pages-index))))))
 
 (defn initialized?
   "Check if the state is properly initialized in a workspace. This means
@@ -26,11 +52,9 @@
   (and (uuid? (:current-file-id state))
        (uuid? (:current-page-id state))))
 
-;; --- Helpers
-
-(defn interrupt? [e] (= e :interrupt))
-
-(declare undo-to-index)
+(defn interrupt?
+  [e]
+  (= e :interrupt))
 
 (defn- assure-valid-current-page
   []
@@ -49,9 +73,16 @@
           (rx/empty)
           (rx/of (rt/nav :workspace pparams qparams)))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; UNDO
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; These functions should've been in `src/app/main/data/workspace/undo.cljs` but doing that causes
-;; a circular dependency with `src/app/main/data/workspace/changes.cljs`
+(declare undo-to-index)
+
+;; These functions should've been in
+;; `src/app/main/data/workspace/undo.cljs` but doing that causes a
+;; circular dependency with `src/app/main/data/workspace/changes.cljs`
+
 (def undo
   (ptk/reify ::undo
     ptk/WatchEvent

@@ -36,6 +36,7 @@
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwco]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
@@ -128,26 +129,6 @@
       (let [data (d/removem (comp t/pointer? val) data)]
         (assoc state :workspace-data data)))))
 
-(defn- resolve-file-data
-  [file-id {:keys [pages-index] :as data}]
-  (letfn [(resolve-pointer [[key val :as kv]]
-            (if (t/pointer? val)
-              (->> (rp/cmd! :get-file-fragment {:file-id file-id :fragment-id @val})
-                   (rx/map #(get % :content))
-                   (rx/map #(vector key %)))
-              (rx/of kv)))
-
-          (resolve-pointers [coll]
-            (->> (rx/from (seq coll))
-                 (rx/merge-map resolve-pointer)
-                 (rx/reduce conj {})))]
-
-    (->> (rx/zip (resolve-pointers data)
-                 (resolve-pointers pages-index))
-         (rx/take 1)
-         (rx/map (fn [[data pages-index]]
-                   (assoc data :pages-index pages-index))))))
-
 (defn- bundle-fetched
   [{:keys [features file thumbnails project team team-users comments-users]}]
   (ptk/reify ::bundle-fetched
@@ -185,7 +166,7 @@
                ;; FIXME: move to bundle fetch stages
 
                ;; Load main file
-               (->> (resolve-file-data file-id file-data)
+               (->> (dwc/resolve-file-data file-id file-data)
                     (rx/mapcat (fn [{:keys [pages-index] :as data}]
                                  (->> (rx/from (seq pages-index))
                                       (rx/mapcat
@@ -207,7 +188,7 @@
                             (rx/map #(assoc % :synced-at synced-at)))))
                     (rx/merge-map
                      (fn [{:keys [id data] :as file}]
-                       (->> (resolve-file-data id data)
+                       (->> (dwc/resolve-file-data id data)
                             (rx/map (fn [data] (assoc file :data data))))))
                     (rx/merge-map
                      (fn [{:keys [id] :as file}]
