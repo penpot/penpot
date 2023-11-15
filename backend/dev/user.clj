@@ -94,22 +94,14 @@
 (defn- start
   []
   (try
-    (alter-var-root #'system (fn [sys]
-                               (when sys (ig/halt! sys))
-                               (-> main/system-config
-                                   (cond-> (contains? cf/flags :backend-worker)
-                                     (merge main/worker-config))
-                                   (ig/prep)
-                                   (ig/init))))
+    (main/start)
     :started
     (catch Throwable cause
       (ex/print-throwable cause))))
 
 (defn- stop
   []
-  (alter-var-root #'system (fn [sys]
-                             (when sys (ig/halt! sys))
-                             nil))
+  (main/stop)
   :stopped)
 
 (defn restart
