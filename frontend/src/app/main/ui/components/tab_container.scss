@@ -14,10 +14,13 @@
   .tab-container-content {
     overflow-y: auto;
     overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   .tab-element {
-    height: fit-content;
+    flex: 1;
+    height: 100%;
   }
 }
 .tab-container-tabs {

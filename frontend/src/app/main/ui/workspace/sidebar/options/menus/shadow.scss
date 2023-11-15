@@ -98,6 +98,7 @@
             @extend .input-element;
             width: $s-60;
             min-width: $s-60;
+            align-items: baseline;
             input {
               width: $s-32;
             }
@@ -108,6 +109,9 @@
             .input-label {
               width: $s-44;
             }
+          }
+          .spread-input {
+            gap: $s-8;
           }
         }
       }

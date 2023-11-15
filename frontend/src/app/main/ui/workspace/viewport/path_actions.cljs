@@ -115,14 +115,14 @@
       [:div {:class (stl/css :sub-actions)}
        [:div {:class (stl/css :sub-actions-group)}
 
-      ;; Draw Mode
+        ;; Draw Mode
         [:button
          {:class  (stl/css-case :is-toggled (= edit-mode :draw))
           :title (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
           :on-click on-select-draw-mode}
          i/pentool-refactor]
 
-      ;; Edit mode
+        ;; Edit mode
         [:button
          {:class (stl/css-case :is-toggled (= edit-mode :move))
           :title (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))
@@ -130,59 +130,58 @@
          i/move-refactor]]
 
        [:div {:class (stl/css :sub-actions-group)}
-
-      ;; Add Node
+        ;; Add Node
         [:button
-         {:class  (stl/css-case :is-disabled (not (:add-node enabled-buttons)))
+         {:disabled (not (:add-node enabled-buttons))
           :title (tr "workspace.path.actions.add-node" (sc/get-tooltip :add-node))
           :on-click on-add-node}
          i/add-refactor]
 
-      ;; Remove node
+        ;; Remove node
         [:button
-         {:class (stl/css-case :is-disabled (not (:remove-node enabled-buttons)))
+         {:disabled (not (:remove-node enabled-buttons))
           :title (tr "workspace.path.actions.delete-node" (sc/get-tooltip :delete-node))
           :on-click on-remove-node}
          i/remove-refactor]]
 
        [:div {:class (stl/css :sub-actions-group)}
-      ;; Merge Nodes
+        ;; Merge Nodes
         [:button
-         {:class (stl/css-case :is-disabled (not (:merge-nodes enabled-buttons)))
+         {:disabled (not (:merge-nodes enabled-buttons))
           :title (tr "workspace.path.actions.merge-nodes" (sc/get-tooltip :merge-nodes))
           :on-click on-merge-nodes}
          i/merge-nodes-refactor]
 
-      ;; Join Nodes
+        ;; Join Nodes
         [:button
-         {:class (stl/css-case :is-disabled (not (:join-nodes enabled-buttons)))
+         {:disabled (not (:join-nodes enabled-buttons))
           :title (tr "workspace.path.actions.join-nodes" (sc/get-tooltip :join-nodes))
           :on-click on-join-nodes}
          i/join-nodes-refactor]
 
-      ;; Separate Nodes
+        ;; Separate Nodes
         [:button
-         {:class (stl/css-case :is-disabled (not (:separate-nodes enabled-buttons)))
+         {:disabled (not (:separate-nodes enabled-buttons))
           :title (tr "workspace.path.actions.separate-nodes" (sc/get-tooltip :separate-nodes))
           :on-click on-separate-nodes}
          i/separate-nodes-refactor]]
 
-     ;; Make Corner
+       ;; Make Corner
        [:div {:class (stl/css :sub-actions-group)}
         [:button
-         {:class (stl/css-case :is-disabled (not (:make-corner enabled-buttons)))
+         {:disabled (not (:make-corner enabled-buttons))
           :title (tr "workspace.path.actions.make-corner" (sc/get-tooltip :make-corner))
           :on-click on-make-corner}
          i/to-corner-refactor]
 
-      ;; Make Curve
+        ;; Make Curve
         [:button
-         {:class (stl/css-case :is-disabled (not (:make-curve enabled-buttons)))
+         {:disabled (not (:make-curve enabled-buttons))
           :title (tr "workspace.path.actions.make-curve" (sc/get-tooltip :make-curve))
           :on-click on-make-curve}
          i/to-curve-refactor]]
 
-     ;; Toggle snap
+       ;; Toggle snap
        [:div {:class (stl/css :sub-actions-group)}
         [:button
          {:class  (stl/css-case :is-toggled snap-toggled)
@@ -195,14 +194,14 @@
       [:div.path-actions
        [:div.viewport-actions-group
 
-      ;; Draw Mode
+        ;; Draw Mode
         [:div.viewport-actions-entry.tooltip.tooltip-bottom
          {:class (when (= edit-mode :draw) "is-toggled")
           :alt (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
           :on-click on-select-draw-mode}
          i/pen]
 
-      ;; Edit mode
+        ;; Edit mode
         [:div.viewport-actions-entry.tooltip.tooltip-bottom
          {:class (when (= edit-mode :move) "is-toggled")
           :alt (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))
@@ -210,14 +209,14 @@
          i/pointer-inner]]
 
        [:div.viewport-actions-group
-      ;; Add Node
+        ;; Add Node
         [:div.viewport-actions-entry.tooltip.tooltip-bottom
          {:class (when-not (:add-node enabled-buttons) "is-disabled")
           :alt (tr "workspace.path.actions.add-node" (sc/get-tooltip :add-node))
           :on-click on-add-node}
          i/nodes-add]
 
-      ;; Remove node
+        ;; Remove node
         [:div.viewport-actions-entry.tooltip.tooltip-bottom
          {:class (when-not (:remove-node enabled-buttons) "is-disabled")
           :alt (tr "workspace.path.actions.delete-node" (sc/get-tooltip :delete-node))
@@ -225,28 +224,28 @@
          i/nodes-remove]]
 
        [:div.viewport-actions-group
-      ;; Merge Nodes
+        ;; Merge Nodes
         [:div.viewport-actions-entry.tooltip.tooltip-bottom
          {:class (when-not (:merge-nodes enabled-buttons) "is-disabled")
           :alt (tr "workspace.path.actions.merge-nodes" (sc/get-tooltip :merge-nodes))
           :on-click on-merge-nodes}
          i/nodes-merge]
 
-      ;; Join Nodes
+        ;; Join Nodes
         [:div.viewport-actions-entry.tooltip.tooltip-bottom
          {:class (when-not (:join-nodes enabled-buttons) "is-disabled")
           :alt (tr "workspace.path.actions.join-nodes" (sc/get-tooltip :join-nodes))
           :on-click on-join-nodes}
          i/nodes-join]
 
-      ;; Separate Nodes
+        ;; Separate Nodes
         [:div.viewport-actions-entry.tooltip.tooltip-bottom
          {:class (when-not (:separate-nodes enabled-buttons) "is-disabled")
           :alt (tr "workspace.path.actions.separate-nodes" (sc/get-tooltip :separate-nodes))
           :on-click on-separate-nodes}
          i/nodes-separate]]
 
-     ;; Make Corner
+       ;; Make Corner
        [:div.viewport-actions-group
         [:div.viewport-actions-entry.tooltip.tooltip-bottom
          {:class (when-not (:make-corner enabled-buttons) "is-disabled")
@@ -254,14 +253,14 @@
           :on-click on-make-corner}
          i/nodes-corner]
 
-      ;; Make Curve
+        ;; Make Curve
         [:div.viewport-actions-entry.tooltip.tooltip-bottom
          {:class (when-not (:make-curve enabled-buttons) "is-disabled")
           :alt (tr "workspace.path.actions.make-curve" (sc/get-tooltip :make-curve))
           :on-click on-make-curve}
          i/nodes-curve]]
 
-     ;; Toggle snap
+       ;; Toggle snap
        [:div.viewport-actions-group
         [:div.viewport-actions-entry.tooltip.tooltip-bottom
          {:class (when snap-toggled "is-toggled")

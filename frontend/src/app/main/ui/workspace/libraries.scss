@@ -62,7 +62,7 @@
           flex-direction: column;
           height: calc(100% - $s-12);
           .title-spacing-lib {
-            margin: 0 0 $s-24 calc(-1 * $s-8);
+            margin: 0 0 0 calc(-1 * $s-8);
           }
           .section-list,
           .section-list-shared {
@@ -70,6 +70,7 @@
             max-height: $s-320;
             margin-top: $s-12;
             overflow: auto;
+            padding-right: $s-8;
             .section-list-item {
               display: grid;
               grid-template-columns: 1fr auto;

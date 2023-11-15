@@ -7,6 +7,8 @@
 @import "refactor/common-refactor.scss";
 
 .element-set {
+  padding-bottom: $s-16;
+
   .element-title {
     .title-spacing-export-viewer {
       @extend .attr-title;

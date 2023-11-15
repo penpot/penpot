@@ -65,7 +65,8 @@
       stroke: var(--button-primary-foreground-color-active);
     }
   }
-  &:global(.disabled) {
+  &:global(.disabled),
+  &[disabled] {
     background-color: var(--button-background-color-disabled);
     border: $s-1 solid var(--button-border-color-disabled);
     color: var(--button-foreground-color-disabled);
@@ -105,7 +106,8 @@
       stroke: var(--button-secondary-foreground-color-active);
     }
   }
-  &:global(.disabled) {
+  &:global(.disabled),
+  &[disabled] {
     background-color: var(--button-background-color-disabled);
     border: $s-1 solid var(--button-border-color-disabled);
     color: var(--button-foreground-color-disabled);
@@ -144,11 +146,16 @@
       stroke: var(--button-tertiary-foreground-color-active);
     }
   }
-  &:global(.disabled) {
-    background-color: var(--button-background-color-disabled);
-    border: $s-1 solid var(--button-border-color-disabled);
+  &:global(.disabled),
+  &[disabled] {
     color: var(--button-foreground-color-disabled);
     cursor: unset;
+    pointer-events: none;
+
+    svg,
+    span svg {
+      stroke: var(--button-background-color-disabled);
+    }
   }
 }
 
