@@ -17,7 +17,6 @@
    [app.storage.impl :as impl]
    [app.storage.tmp :as tmp]
    [app.util.time :as dt]
-   [app.worker :as wrk]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [datoteka.fs :as fs]
@@ -40,7 +39,6 @@
    software.amazon.awssdk.core.async.AsyncRequestBody
    software.amazon.awssdk.core.async.AsyncResponseTransformer
    software.amazon.awssdk.core.client.config.ClientAsyncConfiguration
-   software.amazon.awssdk.core.client.config.SdkAdvancedAsyncClientOption
    software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
    software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup
    software.amazon.awssdk.regions.Region
@@ -77,9 +75,10 @@
 (s/def ::bucket ::us/string)
 (s/def ::prefix ::us/string)
 (s/def ::endpoint ::us/string)
+(s/def ::io-threads ::us/integer)
 
 (defmethod ig/pre-init-spec ::backend [_]
-  (s/keys :opt [::region ::bucket ::prefix ::endpoint ::wrk/executor]))
+  (s/keys :opt [::region ::bucket ::prefix ::endpoint ::io-threads]))
 
 (defmethod ig/prep-key ::backend
   [_ {:keys [::prefix ::region] :as cfg}]
@@ -114,8 +113,7 @@
                 ::client
                 ::presigner]
           :opt [::prefix
-                ::sto/id
-                ::wrk/executor]))
+                ::sto/id]))
 
 ;; --- API IMPL
 
@@ -161,7 +159,6 @@
 
 ;; --- HELPERS
 
-(def default-eventloop-threads 4)
 (def default-timeout
   (dt/duration {:seconds 30}))
 
@@ -171,18 +168,18 @@
   (Region/of (name region)))
 
 (defn- build-s3-client
-  [{:keys [::region ::endpoint ::wrk/executor]}]
+  [{:keys [::region ::endpoint ::io-threads]}]
   (let [aconfig (-> (ClientAsyncConfiguration/builder)
-                    (.advancedOption SdkAdvancedAsyncClientOption/FUTURE_COMPLETION_EXECUTOR executor)
                     (.build))
 
         sconfig (-> (S3Configuration/builder)
                     (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
                     (.build))
 
+        thr-num (or io-threads (min 16 (px/get-available-processors)))
         hclient (-> (NettyNioAsyncHttpClient/builder)
                     (.eventLoopGroupBuilder (-> (SdkEventLoopGroup/builder)
-                                                (.numberOfThreads (int default-eventloop-threads))))
+                                                (.numberOfThreads (int thr-num))))
                     (.connectionAcquisitionTimeout default-timeout)
                     (.connectionTimeout default-timeout)
                     (.readTimeout default-timeout)

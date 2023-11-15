@@ -920,8 +920,8 @@
              (rx/tap on-success)
              (rx/catch on-error))))))
 
-
 ;; --- EVENT: clone-template
+
 (defn clone-template
   [{:keys [template-id project-id] :as params}]
   (dm/assert! (uuid? project-id))
