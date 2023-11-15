@@ -183,7 +183,7 @@
    "yellowgreen" "#9acd32"})
 
 (def ^:private hex-color-re
-  #"\#[0-9a-fA-F]{3,6}")
+  #"\#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})")
 
 (def ^:private rgb-color-re
   #"(?:|rgb)\((\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\)")
@@ -431,7 +431,8 @@
 (defn parse
   [color]
   (when (string? color)
-    (if (valid-hex-color? color)
+    (if (or (valid-hex-color? color)
+            (valid-hex-color? (dm/str "#" color)))
       (normalize-hex color)
       (or (some-> (parse-rgb color) (rgb->hex))
           (get names (str/lower color))))))

@@ -37,6 +37,7 @@
 .button-primary {
   @include buttonStyle;
   @include flexCenter;
+  @include focusPrimary;
   background-color: var(--button-primary-background-color-rest);
   border: $s-1 solid var(--button-primary-border-color-rest);
   color: var(--button-primary-foreground-color-rest);
@@ -52,17 +53,6 @@
     svg,
     span svg {
       stroke: var(--button-primary-foreground-color-hover);
-    }
-  }
-  &:focus,
-  &:focus-visible {
-    outline: none;
-    background-color: var(--button-primary-background-color-focus);
-    border: $s-1 solid var(--button-primary-border-color-focus);
-    color: var(--button-primary-foreground-color-focus);
-    svg,
-    span svg {
-      stroke: var(--button-primary-foreground-color-focus);
     }
   }
   &:active {
@@ -86,6 +76,7 @@
 .button-secondary {
   @include buttonStyle;
   @include flexCenter;
+  @include focusSecondary;
   border-radius: $br-8;
   background-color: var(--button-secondary-background-color-rest);
   border: $s-1 solid var(--button-secondary-border-color-rest);
@@ -102,17 +93,6 @@
     svg,
     span svg {
       stroke: var(--button-secondary-foreground-color-hover);
-    }
-  }
-  &:focus,
-  &:focus-visible {
-    outline: none;
-    background-color: var(--button-secondary-background-color-focus);
-    border: $s-1 solid var(--button-secondary-border-color-focus);
-    color: var(--button-secondary-foreground-color-focus);
-    svg,
-    span svg {
-      stroke: var(--button-secondary-foreground-color-focus);
     }
   }
   &:active {
@@ -136,6 +116,7 @@
 .button-tertiary {
   @include buttonStyle;
   @include flexCenter;
+  @include focusTertiary;
   border-radius: $br-8;
   color: var(--button-tertiary-foreground-color-rest);
   background-color: transparent;
@@ -151,17 +132,6 @@
     svg,
     span svg {
       stroke: var(--button-tertiary-foreground-color-hover);
-    }
-  }
-  &:focus,
-  &:focus-visible {
-    outline: none;
-    border: $s-1 solid var(--button-tertiary-border-color-focus);
-    background-color: var(--button-tertiary-background-color-focus);
-    color: var(--button-tertiary-foreground-color-focus);
-    svg,
-    span svg {
-      stroke: var(--button-tertiary-foreground-color-focus);
     }
   }
   &:active {
@@ -185,6 +155,7 @@
 .button-radio {
   @include buttonStyle;
   @include flexCenter;
+  @include focusRadio;
   border-radius: $br-8;
   color: var(--button-radio-foreground-color-rest);
   border: $s-1 solid var(--button-radio-background-color-rest);
@@ -199,17 +170,6 @@
     svg,
     span svg {
       stroke: var(--button-radio-foreground-color-hover);
-    }
-  }
-  &:focus,
-  &:focus-visible {
-    outline: none;
-    border: $s-1 solid var(--button-radio-border-color-focus);
-    background-color: var(--button-radio-background-color-focus);
-    color: var(--button-radio-foreground-color-focus);
-    svg,
-    span svg {
-      stroke: var(--button-radio-foreground-color-focus);
     }
   }
   &:active {
@@ -244,26 +204,15 @@
 .button-tag {
   @include buttonStyle;
   @include flexCenter;
+  @include focus;
   &:hover {
     svg {
       stroke: var(--title-foreground-color-hover);
     }
   }
-  &:focus {
-    outline: none;
-    border: 1px solid var(--button-border-focus);
-    background-color: var(--button-background-focus);
-    svg {
-      stroke: var(--button-foreground-focus);
-    }
-  }
   &:active {
     border: none;
     background-color: transparent;
-  }
-  &:focus-visible {
-    border: none;
-    outline: none;
   }
 }
 
@@ -291,8 +240,7 @@
   background-color: var(--button-constraint-background-color-rest);
   padding: 0;
   margin: 0;
-  &:hover,
-  &:focus {
+  &:hover {
     outline: $s-4 solid var(--button-constraint-border-color-hover);
     background-color: var(--button-constraint-background-color-hover);
   }
@@ -304,6 +252,7 @@
   @include removeInputStyle;
   @include titleTipography;
   @include textEllipsis;
+  // @include focusInput;
   height: $s-28;
   width: 100%;
   flex-grow: 1;
@@ -311,11 +260,6 @@
   padding: 0 0 0 $s-6;
   border-radius: $br-8;
   color: var(--input-foreground-color-active);
-  &:focus-within,
-  &:active {
-    color: var(--input-foreground-color-active);
-    background-color: var(--input-background-color-active);
-  }
   &[disabled] {
     opacity: 0.5;
     pointer-events: none;
@@ -342,6 +286,7 @@
 
 .input-element {
   @include titleTipography;
+  @include focusInput;
   display: flex;
   align-items: center;
   height: $s-32;
@@ -372,15 +317,6 @@
       color: var(--input-foreground-color-active);
     }
     background-color: var(--input-background-color-hover);
-  }
-
-  &:focus-within,
-  &:active {
-    input {
-      color: var(--input-foreground-color-active);
-    }
-    background-color: var(--input-background-color-active);
-    border: $s-1 solid var(--input-border-color-active);
   }
 }
 
@@ -459,8 +395,7 @@
   padding: $s-8 $s-12;
   background-color: var(--assets-item-background-color);
   color: var(--assets-item-name-foreground-color-hover);
-  &:hover,
-  &:focus-within {
+  &:hover {
     background-color: var(--assets-item-background-color-hover);
     color: var(--assets-item-name-foreground-color-hover);
   }

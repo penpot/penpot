@@ -24,6 +24,9 @@
       border-radius: $br-8 0 0 $br-8;
       padding: 0;
       margin-right: 0;
+      &.no-opacity {
+        border-radius: $br-8;
+      }
       .color-bullet-wrapper {
         height: $s-28;
         padding: 0 $s-2 0 $s-8;
@@ -115,6 +118,7 @@
       width: $s-60;
       border-radius: 0 $br-8 $br-8 0;
       .opacity-input {
+        padding: 0;
         border-radius: 0 $br-8 $br-8 0;
         min-width: $s-28;
       }
