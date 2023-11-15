@@ -450,10 +450,10 @@
      :assets-fs (ig/ref [::assets :app.storage.fs/backend])}}
 
    [::assets :app.storage.s3/backend]
-   {::sto.s3/region   (cf/get :storage-assets-s3-region)
-    ::sto.s3/endpoint (cf/get :storage-assets-s3-endpoint)
-    ::sto.s3/bucket   (cf/get :storage-assets-s3-bucket)
-    ::wrk/executor    (ig/ref ::wrk/executor)}
+   {::sto.s3/region     (cf/get :storage-assets-s3-region)
+    ::sto.s3/endpoint   (cf/get :storage-assets-s3-endpoint)
+    ::sto.s3/bucket     (cf/get :storage-assets-s3-bucket)
+    ::sto.s3/io-threads (cf/get :storage-assets-s3-io-threads)}
 
    [::assets :app.storage.fs/backend]
    {::sto.fs/directory (cf/get :storage-assets-fs-directory)}
