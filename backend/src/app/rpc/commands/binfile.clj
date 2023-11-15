@@ -731,6 +731,7 @@
                          (assoc :modified-at timestamp)
                          (update :data (fn [data]
                                          (-> data
+                                             (dissoc :recent-colors)
                                              (assoc :id file-id')
                                              (cond-> (> (:version data) cfd/version)
                                                (assoc :version cfd/version))
