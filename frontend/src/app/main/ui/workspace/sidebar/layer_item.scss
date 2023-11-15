@@ -12,7 +12,6 @@
   align-items: center;
   width: 100%;
   background-color: var(--layer-row-background-color);
-  padding-left: $s-8;
 
   .element-list-body {
     display: flex;
@@ -144,6 +143,7 @@
     --context-hover-color: var(--layer-row-foreground-color-hover);
     --context-hover-opacity: $op-10;
     background-color: var(--layer-row-background-color-hover);
+    box-shadow: $s-16 0px 0px 0px var(--layer-row-background-color-hover);
     &.hidden {
       opacity: $op-10;
     }
@@ -197,6 +197,7 @@
   }
   &.selected {
     background-color: var(--layer-row-background-color-selected);
+    box-shadow: $s-16 0px 0px 0px var(--layer-row-background-color-selected);
     .element-list-body {
       .button-content {
         .toggle-content {

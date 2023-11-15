@@ -48,6 +48,8 @@
         open?           (deref state*)
 
         toggle-content  (mf/use-fn #(swap! state* not))
+        open-content    (mf/use-fn #(reset! state* true))
+
         strokes         (:strokes values)
         has-strokes?    (or (= :multiple strokes) (some? (seq strokes)))
 
@@ -70,6 +72,7 @@
          (fn [index]
            (fn []
              (st/emit! (dc/remove-stroke ids index)))))
+
         on-remove-refactor
         (mf/use-fn
          (mf/deps ids)
@@ -80,7 +83,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [_]
-          (st/emit! (dc/remove-all-strokes ids))))
+           (st/emit! (dc/remove-all-strokes ids))))
 
         handle-detach
         (mf/use-fn
@@ -193,7 +196,8 @@
           (st/emit! (dc/add-stroke ids {:stroke-style :solid
                                         :stroke-color clr/black
                                         :stroke-opacity 1
-                                        :stroke-width 1})))
+                                        :stroke-width 1}))
+          (when (not (some? (seq strokes))) (open-content)))
 
         disable-drag    (mf/use-state false)
 

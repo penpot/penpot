@@ -42,6 +42,7 @@
         toggle-content (mf/use-fn #(swap! state* update :show-content not))
 
         toggle-more-options (mf/use-fn #(swap! state* update :show-more-options not))
+        hidden? (:hidden blur)
 
         change!
         (mf/use-fn
@@ -94,7 +95,8 @@
                      :on-click handle-add} i/add-refactor])]]
        (when (and open? has-value?)
          [:div {:class (stl/css :element-set-content)}
-          [:div {:class (stl/css :first-row)}
+          [:div {:class (stl/css-case :first-row true
+                                      :hidden hidden?)}
            [:div {:class (stl/css :blur-info)}
             [:button {:class (stl/css-case :show-more true
                                            :selected more-options?)
@@ -105,7 +107,7 @@
            [:div {:class (stl/css :actions)}
             [:button {:class (stl/css :action-btn)
                       :on-click handle-toggle-visibility}
-             (if (:hidden blur)
+             (if hidden?
                i/hide-refactor
                i/shown-refactor)]
             [:button {:class (stl/css :action-btn)
@@ -135,7 +137,7 @@
         [:div.element-set-title-actions
          (when (and has-value? (not multiple?))
            [:div.add-page {:on-click handle-toggle-visibility}
-            (if (:hidden blur) i/eye-closed i/eye)])
+            (if hidden?  i/eye-closed i/eye)])
 
          (if has-value?
            [:div.add-page {:on-click handle-delete} i/minus]

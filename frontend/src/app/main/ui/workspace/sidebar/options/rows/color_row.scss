@@ -28,9 +28,6 @@
       input {
         padding: 0;
       }
-      &.no-opacity {
-        border-radius: $br-8;
-      }
       .color-bullet-wrapper {
         height: $s-28;
         padding: 0 $s-2 0 $s-8;
@@ -74,8 +71,15 @@
         color: var(--input-foreground-color);
         border-radius: $br-0;
       }
+      &.no-opacity {
+        border-radius: $br-8;
+        .color-input-wrapper {
+          border-radius: $br-8;
+        }
+      }
       &:hover {
         background-color: var(--input-background-color-hover);
+        border: $s-1 solid var(--input-background-color-hover);
         .color-bullet-wrapper,
         .color-name,
         .detach-btn,

@@ -123,17 +123,17 @@
 ;; --- Handle: Presence
 
 (def ^:private presence-palette
-  #{"#02bf51" ; darkpastelgreen text white
-    "#00fa9a" ; mediumspringgreen text black
-    "#b22222" ; firebrick text white
-    "#ff8c00" ; darkorage text white
-    "#ffd700" ; gold text black
-    "#ba55d3" ; mediumorchid text white
-    "#dda0dd" ; plum text black
-    "#008ab8" ; blueNCS text white
-    "#00bfff" ; deepskyblue text white
-    "#ff1493" ; deeppink text white
-    "#ffafda" ; carnationpink text black
+  #{"#82e590" ; green
+    "#7ad7c5" ; blue-green
+    "#75cafc" ; blue
+    "#a9bdfa" ; blue-purple
+    "#cbaaff" ; purple
+    "#f49ef7" ; pink
+    "#faa6b7" ; salmon
+    "#f9b489" ; orange
+    "#fdcd79" ; soft-orange
+    "#dee563" ; yellow
+    "#b1e96f" ; yellow-green
     })
 
 (defn handle-presence
@@ -158,10 +158,7 @@
                 (assoc :updated-at (dt/now))
                 (assoc :version version)
                 (update :color update-color presence)
-                (assoc :text-color (if (contains? ["#00fa9a" "#ffd700" "#dda0dd" "#ffafda"]
-                                                  (update-color (:color presence) presence))
-                                     "#000"
-                                     "#fff"))))
+                (assoc :text-color "#000")))
 
           (update-presence [presence]
             (-> presence

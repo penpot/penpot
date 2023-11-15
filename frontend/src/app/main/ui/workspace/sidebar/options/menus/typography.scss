@@ -279,17 +279,18 @@
       border: $s-1 solid var(--input-background-color);
       position: relative;
       .font-size-select {
+        @include removeInputStyle;
+        @include titleTipography;
         height: $s-32;
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
         .numeric-input {
           @extend .input-base;
         }
-        span {
-          @include flexCenter;
-          svg {
-            @extend .button-icon-small;
-          }
-        }
       }
+
       .icon {
         @include flexCenter;
         height: $s-28;
@@ -299,14 +300,6 @@
           stroke: var(--icon-foreground);
           transform: rotate(90deg);
         }
-      }
-      .font-size-select {
-        @include removeInputStyle;
-        @include titleTipography;
-        height: 100%;
-        width: 100%;
-        margin: 0;
-        padding: 0;
       }
     }
     .font-variant-options {

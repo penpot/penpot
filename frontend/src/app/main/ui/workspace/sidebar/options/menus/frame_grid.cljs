@@ -193,7 +193,8 @@
                            :disable-image true
                            :on-change handle-change-color
                            :on-detach handle-detach-color}]
-            [:button {:class (stl/css :show-more-options)
+            [:button {:class (stl/css-case :show-more-options true
+                                           :selected show-more-options?)
                       :on-click toggle-more-options}
              i/menu-refactor]]
            (when show-more-options?
@@ -212,10 +213,10 @@
         (when (or (= :column type) (= :row type))
           [:div {:class (stl/css :column-row)}
            [:div {:class (stl/css :advanced-row)}
-            [:div {:class (stl/css :select-wrapper)}
+            [:div {:class (stl/css :orientation-select-wrapper)}
              [:& select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
                          :default-value (:type params)
-                         :class (stl/css :orientation)
+                         :class (stl/css :orientation-select)
                          :options [{:value :stretch :label (tr "workspace.options.grid.params.type.stretch")}
                                    {:value :left :label (if (= type :row)
                                                           (tr "workspace.options.grid.params.type.top")
@@ -269,7 +270,8 @@
                                  :className (stl/css :numeric-input)
                                  :value (or (:margin params) 0)}]]
 
-            [:button {:class (stl/css :show-more-options)
+            [:button {:class (stl/css-case :show-more-options true
+                                           :selected show-more-options?)
                       :on-click toggle-more-options}
              i/menu-refactor]
             (when show-more-options?

@@ -32,40 +32,26 @@
         @include flexCenter;
         cursor: pointer;
         svg {
-          @extend .button-icon;
+          @extend .button-icon-small;
           stroke: var(--icon-foreground);
           transform: rotate(90deg);
         }
       }
       .custom-select-dropdown {
         @extend .dropdown-wrapper;
+        margin-top: $s-2;
         width: $s-252;
         .dropdown-element {
           @extend .dropdown-element-base;
-
-          &.disabled {
-            pointer-events: none;
-            cursor: default;
-            .preset-name {
-              color: var(--menu-foreground-color);
-            }
-
-            &:hover {
-              background-color: var(--menu-background-color);
-              .preset-name {
-                color: var(--menu-foreground-color);
-              }
-            }
-          }
           .name-wrapper {
             display: flex;
             gap: $s-8;
             flex-grow: 1;
             .preset-name {
-              color: var(--menu-foreground-color-hover);
+              color: var(--menu-foreground-color-rest);
             }
             .preset-size {
-              color: var(--menu-foreground-color);
+              color: var(--menu-foreground-color-rest);
             }
           }
 
@@ -76,8 +62,29 @@
               stroke: var(--icon-foreground);
             }
           }
+
+          &.disabled {
+            pointer-events: none;
+            cursor: default;
+            .preset-name {
+              color: var(--menu-foreground-color);
+            }
+          }
+
+          &.match {
+            .name-wrapper .preset-name {
+              color: var(--menu-foreground-color-hover);
+            }
+            .check-icon svg {
+              stroke: var(--menu-foreground-color-hover);
+            }
+          }
+
           &:hover {
             background-color: var(--menu-background-color-hover);
+            .name-wrapper .preset-name {
+              color: var(--menu-foreground-color-hover);
+            }
             .check-icon svg {
               stroke: var(--menu-foreground-color-hover);
             }
@@ -112,6 +119,9 @@
       svg {
         @extend .button-icon;
         stroke: var(--icon-foreground);
+      }
+      &.selected {
+        @extend .button-icon-selected;
       }
     }
   }

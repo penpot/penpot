@@ -101,6 +101,15 @@
   box-sizing: border-box;
 }
 
+@mixin hiddenElement {
+  cursor: default;
+  pointer-events: none;
+  box-sizing: border-box;
+  color: var(--input-foreground-color-disabled);
+  stroke: var(--input-foreground-color-disabled);
+  background-color: transparent;
+}
+
 @keyframes spin-animation {
   0% {
     transform: rotate(0deg);

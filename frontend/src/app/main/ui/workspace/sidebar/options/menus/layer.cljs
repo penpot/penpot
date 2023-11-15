@@ -151,16 +151,14 @@
     (if new-css-system
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css-case :element-set-content true
-                                   :hidden (or hidden?
-                                               blocked?))}
+                                   :hidden hidden?)}
         [:div {:class (stl/css :select)}
          [:& select
           {:default-value selected-blend-mode
            :options options
            :on-change handle-change-blend-mode
            :is-open? option-highlighted?
-           :class (stl/css-case :hidden-select (or hidden?
-                                                   blocked?))
+           :class (stl/css-case :hidden-select hidden?)
            :on-pointer-enter-option handle-blend-mode-enter
            :on-pointer-leave-option handle-blend-mode-leave}]]
         [:div {:class (stl/css :input)
@@ -192,7 +190,8 @@
 
            :else
            [:button {:on-click handle-set-unblocked
-                     :class (stl/css :lock-btn)} i/lock-refactor])]]]
+                     :class (stl/css-case :lock-btn true
+                                          :locked blocked?)} i/lock-refactor])]]]
 
       [:div.element-set
        [:div.element-set-title

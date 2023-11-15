@@ -47,9 +47,16 @@
           @extend .button-icon;
           stroke: var(--color-foreground-secondary);
         }
+        &.selected {
+          background-color: var(--button-radio-background-color-active);
+          svg {
+            stroke: var(--button-radio-foreground-color-active);
+          }
+        }
       }
     }
   }
+
   .toolbar-handler {
     @include flexCenter;
     @include buttonStyle;
@@ -68,6 +75,7 @@
       background-color: var(--palette-handler-background-color);
     }
   }
+
   &.hidden-toolbar {
     top: $s-20;
     height: $s-16;
@@ -75,6 +83,12 @@
     border-radius: 0 0 $s-8 $s-8;
     .main-toolbar-options {
       opacity: $op-0;
+    }
+  }
+  &.not-rulers-present {
+    top: $s-8;
+    &.hidden-toolbar {
+      top: $s-0;
     }
   }
 

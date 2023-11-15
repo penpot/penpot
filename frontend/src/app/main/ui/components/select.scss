@@ -51,7 +51,6 @@
   }
   .checked-element {
     @extend .dropdown-element-base;
-
     .icon {
       @include flexCenter;
       height: $s-24;

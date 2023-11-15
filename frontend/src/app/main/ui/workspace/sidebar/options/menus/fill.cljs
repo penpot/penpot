@@ -61,7 +61,9 @@
 
         toggle-content  (mf/use-fn #(swap! state* not))
 
+        open-content    (mf/use-fn #(reset! state* true))
 
+        close-content    (mf/use-fn #(reset! state* false))
 
         hide-fill-on-export? (:hide-fill-on-export values false)
 
@@ -72,7 +74,9 @@
          (mf/deps ids)
          (fn [_]
            (st/emit! (dc/add-fill ids {:color default-color
-                                       :opacity 1}))))
+                                       :opacity 1}))
+
+          (when (not (some? (seq fills))) (open-content))))
 
         on-change
         (mf/use-fn
@@ -92,7 +96,8 @@
         (fn [index]
           (fn []
             (st/emit! (dc/remove-fill ids {:color default-color
-                                           :opacity 1} index))))
+                                           :opacity 1} index))
+            (when (= 1 (count (seq fills))) (close-content))))
         on-remove-all
         (fn [_]
           (st/emit! (dc/remove-all-fills ids {:color clr/black
@@ -163,7 +168,7 @@
                                       :opacity (:fill-opacity value)
                                       :id (:fill-color-ref-id value)
                                       :file-id (:fill-color-ref-file value)
-                                      :gradient (:fill-color-gradient value) 
+                                      :gradient (:fill-color-gradient value)
                                       :image (:fill-image value)}
                               :key index
                               :index index

@@ -13,7 +13,6 @@
   flex: 1;
   width: 100%;
   height: var(--height, 200px);
-  padding-left: $s-8;
   .title-bar {
     .title {
       margin-left: $s-2;
@@ -166,6 +165,7 @@
           .element-list-body {
             color: var(--layer-row-foreground-color-selected);
             background-color: var(--layer-row-background-color-selected);
+            box-shadow: $s-16 0px 0px 0px var(--layer-row-background-color-selected);
             .page-actions button {
               svg {
                 stroke: var(--layer-row-foreground-color-selected);
@@ -181,6 +181,7 @@
           .element-list-body {
             color: var(--layer-row-foreground-color-hover);
             background-color: var(--layer-row-background-color-hover);
+            box-shadow: $s-16 0px 0px 0px var(--layer-row-background-color-hover);
             .page-actions button {
               opacity: $op-10;
               svg {

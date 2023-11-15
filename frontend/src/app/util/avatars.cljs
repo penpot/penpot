@@ -28,7 +28,7 @@
 
     (obj/set! context "font" (str (/ size 2) "px Arial"))
     (obj/set! context "textAlign" "center")
-    (obj/set! context "fillStyle" "#ffffff")
+    (obj/set! context "fillStyle" "#2e3434")
     (.fillText context letters (/ size 2) (/ size 1.5))
 
     (.toDataURL canvas)))

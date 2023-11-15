@@ -162,6 +162,16 @@
   }
 }
 
+.button-icon-selected {
+  outline: none;
+  border: $s-1 solid transparent;
+  background-color: var(--button-tertiary-background-color-hover);
+  color: var(--button-tertiary-foreground-color-active);
+  svg {
+    stroke: var(--button-tertiary-foreground-color-active);
+  }
+}
+
 .button-radio {
   @include buttonStyle;
   @include flexCenter;
@@ -321,6 +331,7 @@
   }
 
   &:hover {
+    border: $s-1 solid var(--input-background-color-hover);
     span {
       color: var(--input-foreground-color);
     }
@@ -619,6 +630,7 @@
   height: $s-24;
   width: $s-24;
   border-radius: $br-circle;
+  margin-left: calc(-1 * $s-4);
   img {
     border-radius: $br-circle;
     border: $s-2 solid var(--user-count-foreground-color);
@@ -823,7 +835,7 @@
   max-height: $s-300;
   padding: $s-2;
   margin: 0;
-  margin-top: $s-4;
+  margin-top: $s-1;
   border-radius: $br-8;
   z-index: $z-index-3;
   overflow-y: auto;

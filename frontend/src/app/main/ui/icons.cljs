@@ -307,6 +307,7 @@
 (def boolean-flatten-refactor (icon-xref :boolean-flatten-refactor))
 (def boolean-intersection-refactor (icon-xref :boolean-intersection-refactor))
 (def boolean-union-refactor (icon-xref :boolean-union-refactor))
+(def bug-refactor (icon-xref :bug-refactor))
 (def clip-content-refactor (icon-xref :clip-content-refactor))
 (def clipboard-refactor (icon-xref :clipboard-refactor))
 (def close-refactor (icon-xref :close-refactor))

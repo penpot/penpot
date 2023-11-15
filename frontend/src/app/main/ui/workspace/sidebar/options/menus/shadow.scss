@@ -57,10 +57,9 @@
               @extend .button-icon;
             }
             &.selected {
-              background-color: var(--button-tertiary-background-color-hover);
-              color: var(--button-tertiary-foreground-color-active);
+              background-color: var(--button-radio-background-color-active);
               svg {
-                stroke: var(--button-tertiary-foreground-color-active);
+                stroke: var(--button-radio-foreground-color-active);
               }
             }
           }
@@ -71,6 +70,20 @@
             .shadow-type-select {
               flex-grow: 1;
               border-radius: 0 $br-8 $br-8 0;
+            }
+          }
+
+          &.hidden {
+            .more-options {
+              @include hiddenElement;
+              border: $s-1 solid var(--input-border-color-disabled);
+            }
+            .type-select {
+              @include hiddenElement;
+              .shadow-type-select {
+                @include hiddenElement;
+                border: $s-1 solid var(--input-border-color-disabled);
+              }
             }
           }
         }

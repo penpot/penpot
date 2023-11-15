@@ -22,12 +22,13 @@
     (case (:type shape)
       :frame (cond
                (and (ctl/flex-layout? shape) (ctl/col? shape))
-               i/flex-vertical-refactor
-
-               (and (ctl/flex-layout? shape) (ctl/row? shape))
                i/flex-horizontal-refactor
 
-               ;; TODO: GRID ICON
+               (and (ctl/flex-layout? shape) (ctl/row? shape))
+               i/flex-vertical-refactor
+
+               (ctl/grid-layout? shape)
+               i/flex-grid-refactor
 
                :else
                i/board-refactor)
@@ -35,7 +36,7 @@
       :image i/img-refactor
       :line (if (cts/has-images? shape) i/img-refactor i/path-refactor)
       :circle (if (cts/has-images? shape) i/img-refactor i/elipse-refactor)
-      :path (if (cts/has-images? shape) i/img-refactor i/curve-refactor)
+      :path (if (cts/has-images? shape) i/img-refactor i/path-refactor)
       :rect (if (cts/has-images? shape) i/img-refactor i/rectangle-refactor)
       :text i/text-refactor
       :group (if (:masked-group shape)

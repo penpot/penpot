@@ -19,13 +19,14 @@
 
 (mf/defc session-widget
   [{:keys [session profile index] :as props}]
-  [:li.tooltip.tooltip-bottom
-   {:class (stl/css :session-icon)
-    :style #js {"zIndex" (str (or (+ 1 (* -1 index)) 0))}
-    :alt (:fullname profile)}
-   [:img {:alt (:fullname profile)
-          :style {:border-color (:color session)}
-          :src (cfg/resolve-profile-photo-url profile)}]])
+  (let [profile (assoc profile :color (:color session))]
+    [:li {:class (stl/css :session-icon)
+          :style #js {"zIndex" (str (or (+ 1 (* -1 index)) 0)),
+                      "background-color" (:color session)}
+          :title (:fullname profile)}
+     [:img {:alt (:fullname profile)
+            :style {:background-color (:color session)}
+            :src (cfg/resolve-profile-photo-url profile)}]]))
 
 (mf/defc active-sessions
   {::mf/wrap [mf/memo]}
@@ -56,7 +57,7 @@
            :on-blur close-users-widget}
           [:ul {:class (stl/css :active-users-list)}
            (when (< 2 num-users)
-             [:span {:class (stl/css :users-num)} num-users])
+             [:li [:span {:class (stl/css :users-num)} num-users]])
            (for [session user-ids]
              [:& session-widget
               {:session session

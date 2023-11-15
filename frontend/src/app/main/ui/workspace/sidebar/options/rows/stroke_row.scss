@@ -12,13 +12,7 @@
     @include flexRow;
     .stroke-width-input-element {
       @extend .input-element;
-      width: $s-96;
-      border-radius: $br-8;
-      .icon {
-        @include flexCenter;
-        height: $s-32;
-        width: $s-20;
-      }
+      width: $s-60;
     }
     .select-wrapper {
       width: $s-124;
