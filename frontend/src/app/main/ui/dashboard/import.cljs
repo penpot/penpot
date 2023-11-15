@@ -13,6 +13,7 @@
    [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.errors :as errors]
    [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
@@ -296,10 +297,10 @@
           (st/emit! (dd/fetch-recent-files)))
 
         on-template-cloned-error
-        (fn []
-          (st/emit!
-           (modal/hide)
-           (msg/error (tr "dashboard.libraries-and-templates.import-error"))))
+        (fn [cause]
+          (errors/print-cause! "Template Clone Error" cause)
+          (st/emit! (modal/hide)
+                    (msg/error (tr "dashboard.libraries-and-templates.import-error"))))
 
         continue-files
         (fn []
@@ -314,7 +315,8 @@
 
         continue-template
         (fn []
-          (let [mdata  {:on-success on-template-cloned-success :on-error on-template-cloned-error}
+          (let [mdata  {:on-success on-template-cloned-success
+                        :on-error on-template-cloned-error}
                 params {:project-id project-id :template-id (:id template)}]
             (swap! state
                    (fn [state]

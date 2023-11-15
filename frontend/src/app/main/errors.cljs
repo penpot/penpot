@@ -50,6 +50,13 @@
     (finally
       (js/console.groupEnd message))))
 
+(defn print-cause!
+  [message cause]
+  (print-group! message (fn []
+                          (print-data! cause)
+                          (print-explain! cause)
+                          (print-trace! cause))))
+
 (defn on-error
   "A general purpose error handler."
   [error]
