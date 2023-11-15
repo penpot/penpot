@@ -21,17 +21,9 @@
 
 (defn- print-stats!
   [stats]
-  (let [stats (-> stats
-                  (d/update-when :elapsed/max-by-team (comp dt/format-duration dt/duration int))
-                  (d/update-when :elapsed/avg-by-team (comp dt/format-duration dt/duration int))
-                  (d/update-when :elapsed/total-by-team (comp dt/format-duration dt/duration int))
-                  (d/update-when :elapsed/max-by-file (comp dt/format-duration dt/duration int))
-                  (d/update-when :elapsed/avg-by-file (comp dt/format-duration dt/duration int))
-                  (d/update-when :elapsed/total-by-file (comp dt/format-duration dt/duration int))
-                  )]
-    (->> stats
-         (into (sorted-map))
-         (pp/pprint))))
+  (->> stats
+       (into (sorted-map))
+       (pp/pprint)))
 
 (defn- report-progress-files
   [tpoint]
@@ -42,7 +34,7 @@
             completed (:processed/files newv)
             progress  (/ (* completed 100.0) total)
             elapsed   (tpoint)]
-        (l/trc :hint "progress"
+        (l/dbg :hint "progress"
                :completed (:processed/files newv)
                :total     (:total/files newv)
                :progress  (str (int progress) "%")
@@ -57,8 +49,11 @@
             completed (:processed/teams newv)
             progress  (/ (* completed 100.0) total)
             elapsed   (tpoint)]
-        (l/trc :hint "progress"
-               :completed (:processed/teams newv)
+        (l/dbg :hint "progress"
+               :completed-teams (:processed/teams newv)
+               :completed-files (:processed/files newv)
+               :completed-graphics (:processed/graphics newv)
+               :completed-components (:processed/components newv)
                :progress  (str (int progress) "%")
                :elapsed   (dt/format-duration elapsed))))))
 
@@ -88,36 +83,35 @@
     (:count res)))
 
 (defn migrate-file!
-  [system file-id & {:keys [rollback] :or {rollback true}}]
+  [system file-id & {:keys [rollback?] :or {rollback? true}}]
 
   (l/dbg :hint "migrate:start")
   (let [tpoint (dt/tpoint)]
     (try
       (binding [feat/*stats* (atom {})]
-        (-> (assoc system ::db/rollback rollback)
+        (-> (assoc system ::db/rollback rollback?)
             (feat/migrate-file! file-id))
+
         (-> (deref feat/*stats*)
-            (assoc :elapsed (dt/format-duration (tpoint)))
-            (dissoc :current/graphics)
-            (dissoc :current/components)
-            (dissoc :current/files)))
+            (assoc :elapsed (dt/format-duration (tpoint)))))
 
       (catch Throwable cause
-        (l/dbg :hint "migrate:error" :cause cause))
+        (l/wrn :hint "migrate:error" :cause cause))
 
       (finally
         (let [elapsed (dt/format-duration (tpoint))]
           (l/dbg :hint "migrate:end" :elapsed elapsed))))))
 
 (defn migrate-files!
-  [{:keys [::db/pool] :as system} & {:keys [chunk-size max-jobs max-items start-at preset rollback skip-on-error validate]
-                                     :or {chunk-size 10
-                                          skip-on-error true
-                                          max-jobs 10
-                                          max-items Long/MAX_VALUE
-                                          preset :shutdown-on-failure
-                                          rollback true
-                                          validate false}}]
+  [{:keys [::db/pool] :as system}
+   & {:keys [chunk-size max-jobs max-items start-at preset rollback? skip-on-error validate?]
+      :or {chunk-size 10
+           skip-on-error true
+           max-jobs 10
+           max-items Long/MAX_VALUE
+           preset :shutdown-on-failure
+           rollback? true
+           validate? false}}]
   (letfn [(get-chunk [cursor]
             (let [sql  (str/concat
                         "SELECT id, created_at FROM file "
@@ -151,17 +145,14 @@
             (run! (fn [file-id]
                     (ps/acquire! feat/*semaphore*)
                     (px/submit! scope (fn []
-                                        (-> (assoc system ::db/rollback rollback)
-                                            (feat/migrate-file! file-id :validate? validate)))))
+                                        (-> (assoc system ::db/rollback rollback?)
+                                            (feat/migrate-file! file-id :validate? validate?)))))
                   (get-candidates))
 
             (p/await! scope))
 
         (-> (deref feat/*stats*)
-            (assoc :elapsed (dt/format-duration (tpoint)))
-            (dissoc :current/graphics)
-            (dissoc :current/components)
-            (dissoc :current/files))
+            (assoc :elapsed (dt/format-duration (tpoint))))
 
         (catch Throwable cause
           (l/dbg :hint "migrate:error" :cause cause))
@@ -172,8 +163,8 @@
 
 (defn migrate-team!
   [{:keys [::db/pool] :as system} team-id
-   & {:keys [rollback skip-on-error validate]
-      :or {rollback true skip-on-error true validate false}}]
+   & {:keys [rollback? skip-on-error validate?]
+      :or {rollback? true skip-on-error true validate? false}}]
   (l/dbg :hint "migrate:start")
 
   (let [total  (get-total-files pool :team-id team-id)
@@ -185,15 +176,13 @@
     (try
       (binding [feat/*stats* stats
                 feat/*skip-on-error* skip-on-error]
-        (-> (assoc system ::db/rollback rollback)
-            (feat/migrate-team! team-id :validate? validate))
+        (-> (assoc system ::db/rollback rollback?)
+            (feat/migrate-team! team-id :validate? validate?))
 
         (print-stats!
          (-> (deref feat/*stats*)
              (dissoc :total/files)
-             (dissoc :current/graphics)
-             (dissoc :current/components)
-             (dissoc :current/files))))
+             (assoc :elapsed (dt/format-duration (tpoint))))))
 
       (catch Throwable cause
         (l/dbg :hint "migrate:error" :cause cause))
@@ -204,14 +193,14 @@
 
 (defn migrate-teams!
   [{:keys [::db/pool] :as system}
-   & {:keys [chunk-size max-jobs max-items start-at rollback preset skip-on-error max-time validate]
+   & {:keys [chunk-size max-jobs max-items start-at rollback? preset skip-on-error max-time validate?]
       :or {chunk-size 10000
-           rollback true
+           validate? false
+           rollback? true
            skip-on-error true
            preset :shutdown-on-failure
            max-jobs Integer/MAX_VALUE
-           max-items Long/MAX_VALUE
-           validate false}}]
+           max-items Long/MAX_VALUE}}]
 
   (letfn [(get-chunk [cursor]
             (let [sql  (str/concat
@@ -233,8 +222,8 @@
 
           (migrate-team [team-id]
             (try
-              (-> (assoc system ::db/rollback rollback)
-                  (feat/migrate-team! team-id :validate? validate))
+              (-> (assoc system ::db/rollback rollback?)
+                  (feat/migrate-team! team-id :validate? validate?))
               (catch Throwable cause
                 (l/err :hint "unexpected error on processing team" :team-id (dm/str team-id) :cause cause))))
 
@@ -242,7 +231,7 @@
             (ps/acquire! feat/*semaphore*)
             (let [ts (tpoint)]
               (if (and mtime (neg? (compare mtime ts)))
-                (l/trc :hint "max time constraint reached" :elapsed (dt/format-duration ts))
+                (l/inf :hint "max time constraint reached" :elapsed (dt/format-duration ts))
                 (px/submit! scope (partial migrate-team team-id)))))]
 
     (l/dbg :hint "migrate:start")
@@ -270,10 +259,8 @@
 
           (print-stats!
            (-> (deref feat/*stats*)
-               (dissoc :total/teams)
-               (dissoc :current/graphics)
-               (dissoc :current/components)
-               (dissoc :current/files)))
+               (assoc :elapsed/total (dt/format-duration (tpoint)))
+               (dissoc :total/teams)))
 
           (catch Throwable cause
             (l/dbg :hint "migrate:error" :cause cause))
