@@ -170,11 +170,18 @@
 
 (defn load-pointer
   [conn file-id id]
-  (let [row (db/get conn :file-data-fragment
-                    {:id id :file-id file-id}
-                    {:columns [:content]
-                     ::db/check-deleted? false})]
-    (blob/decode (:content row))))
+  (let [{:keys [content]} (db/get conn :file-data-fragment
+                                  {:id id :file-id file-id}
+                                  {:columns [:content]
+                                   ::db/check-deleted? false})]
+    (when-not content
+      (ex/raise :type :internal
+                :code :fragment-not-found
+                :hint "fragment not found"
+                :file-id file-id
+                :fragment-id id))
+
+    (blob/decode content)))
 
 (defn- load-all-pointers!
   [{:keys [data] :as file}]
