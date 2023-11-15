@@ -8,14 +8,14 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpp]
    [app.common.geom.shapes.text :as gte]
-   [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]))
+   [app.common.math :as mth]))
 
 (defn orientation
   "Given three ordered points gives the orientation
@@ -315,15 +315,15 @@
                    (update :height + (* 2 swidth)))]
     (or (not shape)
         (cond
-          (cph/path-shape? shape)
+          (cfh/path-shape? shape)
           (and (overlaps-rect-points? rect (:points shape))
                (overlaps-path? shape rect true))
 
-          (cph/circle-shape? shape)
+          (cfh/circle-shape? shape)
           (and (overlaps-rect-points? rect (:points shape))
                (overlaps-ellipse? shape rect))
 
-          (cph/text-shape? shape)
+          (cfh/text-shape? shape)
           (overlaps-text? shape rect)
 
           :else
@@ -354,9 +354,9 @@
 
 (defn has-point?
   [shape point]
-  (if (or ^boolean (cph/path-shape? shape)
-          ^boolean (cph/bool-shape? shape)
-          ^boolean (cph/circle-shape? shape))
+  (if (or ^boolean (cfh/path-shape? shape)
+          ^boolean (cfh/bool-shape? shape)
+          ^boolean (cfh/circle-shape? shape))
     (slow-has-point? shape point)
     (fast-has-point? shape point)))
 

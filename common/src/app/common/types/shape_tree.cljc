@@ -8,10 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
@@ -40,7 +40,7 @@
               (update :shapes update-parent-shapes)
               (update :shapes d/vec-without-nils)
               (cond-> (and (ctk/in-component-copy? parent) (not ignore-touched))
-                (-> (update :touched cph/set-touched-group :shapes-group)
+                (-> (update :touched cfh/set-touched-group :shapes-group)
                     (dissoc :remote-synced)))))
 
         update-objects
@@ -85,14 +85,14 @@
              (let [parent (update parent :shapes d/without-obj shape-id)]
                (cond-> parent
                  (and (:shape-ref parent) (not ignore-touched))
-                 (-> (update :touched cph/set-touched-group :shapes-group)
+                 (-> (update :touched cfh/set-touched-group :shapes-group)
                      (dissoc :remote-synced)))))
 
            (delete-from-objects [objects]
              (if-let [target (get objects shape-id)]
                (let [parent-id    (or (:parent-id target)
                                       (:frame-id target))
-                     children-ids (cph/get-children-ids objects shape-id)]
+                     children-ids (cfh/get-children-ids objects shape-id)]
                  (-> (reduce dissoc objects (cons shape-id children-ids))
                      (d/update-when parent-id delete-from-parent)))
                objects))]
@@ -118,7 +118,7 @@
             (let [lookup (d/getf objects)
                   xform  (comp (remove #(= uuid/zero %))
                                (keep lookup)
-                               (filter cph/frame-shape?))]
+                               (filter cfh/frame-shape?))]
               (->> (keys objects)
                    (sequence xform))))
         (remove #(or (and ^boolean skip-components?
@@ -137,21 +137,21 @@
 (defn get-nested-frames
   [objects frame-id]
   (into #{}
-        (comp (filter cph/frame-shape?)
+        (comp (filter cfh/frame-shape?)
               (map :id))
-        (cph/get-children objects frame-id)))
+        (cfh/get-children objects frame-id)))
 
 (defn get-root-frames-ids
   "Retrieves all frame objects as vector. It is not implemented in
-  function of `cph/get-immediate-children` for performance
+  function of `cfh/get-immediate-children` for performance
   reasons. This function is executed in the render hot path."
   [objects]
   (let [add-frame
         (fn [result shape]
           (cond-> result
-            (cph/frame-shape? shape)
+            (cfh/frame-shape? shape)
             (conj (:id shape))))]
-    (cph/reduce-objects objects (complement cph/frame-shape?) add-frame [])))
+    (cfh/reduce-objects objects (complement cfh/frame-shape?) add-frame [])))
 
 (defn get-root-objects
   "Get all the objects under the root object"
@@ -159,7 +159,7 @@
   (let [add-shape
         (fn [result shape]
           (conj result shape))]
-    (cph/reduce-objects objects (complement cph/frame-shape?) add-shape [])))
+    (cfh/reduce-objects objects (complement cfh/frame-shape?) add-shape [])))
 
 (defn get-root-shapes
   "Get all shapes that are not frames"
@@ -167,9 +167,9 @@
   (let [add-shape
         (fn [result shape]
           (cond-> result
-            (not (cph/frame-shape? shape))
+            (not (cfh/frame-shape? shape))
             (conj shape)))]
-    (cph/reduce-objects objects (complement cph/frame-shape?) add-shape [])))
+    (cfh/reduce-objects objects (complement cfh/frame-shape?) add-shape [])))
 
 (defn get-root-shapes-ids
   [objects]
@@ -179,8 +179,8 @@
 (defn get-base
   [objects id-a id-b]
 
-  (let [[parents-a parents-a-index] (cph/get-parent-ids-with-index objects id-a)
-        [parents-b parents-b-index] (cph/get-parent-ids-with-index objects id-b)
+  (let [[parents-a parents-a-index] (cfh/get-parent-ids-with-index objects id-a)
+        [parents-b parents-b-index] (cfh/get-parent-ids-with-index objects id-b)
 
         parents-a (cons id-a parents-a)
         parents-b (into #{id-b} parents-b)
@@ -201,12 +201,12 @@
       ;; The base the base shape, so the other item is below (if not bottom-frames)
       (= base-id base-shape-id)
       (and ^boolean bottom-frames?
-           ^boolean (cph/frame-shape? objects base-id))
+           ^boolean (cfh/frame-shape? objects base-id))
 
       ;; The base is the testing over, so it's over (if not bottom-frames)
       (= base-id over-shape-id)
       (or (not ^boolean bottom-frames?)
-          (not ^boolean (cph/frame-shape? objects base-id)))
+          (not ^boolean (cfh/frame-shape? objects base-id)))
 
       ;; Check which index is lower
       :else
@@ -378,7 +378,7 @@
          ;; or the parent's frame-id otherwise. Only for the first cloned shapes. In recursive calls
          ;; this is not needed.
          frame-id (cond
-                    (and calc-frame? (cph/frame-shape? objects parent-id))
+                    (and calc-frame? (cfh/frame-shape? objects parent-id))
                     parent-id
 
                     calc-frame?

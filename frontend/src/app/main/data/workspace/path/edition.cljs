@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as upg]
-   [app.common.pages.helpers :as cph]
    [app.common.svg.path.command :as upc]
    [app.common.svg.path.shapes-to-path :as upsp]
    [app.common.svg.path.subpath :as ups]
@@ -289,7 +289,7 @@
             edit-path (dm/get-in state [:workspace-local :edit-path id])
             content (st/get-path state :content)
             state (cond-> state
-                    (cph/path-shape? objects id)
+                    (cfh/path-shape? objects id)
                     (st/set-content (ups/close-subpaths content)))]
         (cond-> state
           (or (not edit-path) (= :draw (:edit-mode edit-path)))

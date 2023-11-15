@@ -8,11 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.export :as ed]
    [app.util.object :as obj]
@@ -32,7 +32,7 @@
   {::mf/wrap-props false}
   [{:keys [id gradient shape]}]
   (let [transform (mf/with-memo [shape]
-                    (when (cph/frame-shape? shape)
+                    (when (cfh/frame-shape? shape)
                       (gsh/transform-matrix shape nil (gpt/point 0.5 0.5))))
 
         metadata? (mf/use-ctx ed/include-metadata-ctx)
@@ -56,7 +56,7 @@
 (mf/defc radial-gradient
   {::mf/wrap-props false}
   [{:keys [id gradient shape]}]
-  (let [path?         (cph/path-shape? shape)
+  (let [path?         (cfh/path-shape? shape)
 
         transform     (when ^boolean path?
                         (dm/get-prop shape :transform))

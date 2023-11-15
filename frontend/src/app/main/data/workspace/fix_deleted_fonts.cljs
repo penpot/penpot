@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.fix-deleted-fonts
   (:require
    [app.common.data :as d]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.text :as txt]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -39,7 +39,7 @@
 (defn should-fix-deleted-font-shape?
   [shape]
   (let [text-nodes (txt/node-seq txt/is-text-node? (:content shape))]
-    (and (cph/text-shape? shape) (some has-invalid-font-family text-nodes))))
+    (and (cfh/text-shape? shape) (some has-invalid-font-family text-nodes))))
 
 (defn should-fix-deleted-font-component?
   [component]

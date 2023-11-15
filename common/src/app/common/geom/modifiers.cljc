@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.bounds-map :as cgb]
    [app.common.geom.modif-tree :as cgt]
    [app.common.geom.point :as gpt]
@@ -20,7 +21,6 @@
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.geom.shapes.tree-seq :as cgst]
-   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
@@ -120,7 +120,7 @@
     (let [bounds (cgb/transform-bounds-map bounds objects modif-tree (:shapes parent))
 
           children
-          (->> (cph/get-immediate-children objects (:id parent) {:remove-hidden true})
+          (->> (cfh/get-immediate-children objects (:id parent) {:remove-hidden true})
                (map (partial apply-modifiers bounds)))
           grid-data    (gcgl/calc-layout-data parent @transformed-parent-bounds children bounds objects)]
       (loop [modif-tree modif-tree
@@ -143,7 +143,7 @@
         modifiers      (-> (dm/get-in modif-tree [parent-id :modifiers])
                            (ctm/select-geometry))
         has-modifiers? (ctm/child-modifiers? modifiers)
-        parent?        (or (cph/group-like-shape? parent) (cph/frame-shape? parent))
+        parent?        (or (cfh/group-like-shape? parent) (cfh/frame-shape? parent))
         transformed-parent-bounds (delay (gtr/transform-bounds @(get bounds parent-id) modifiers))]
 
     (cond-> modif-tree
@@ -162,7 +162,7 @@
          has-modifiers?  (ctm/child-modifiers? modifiers)
          flex-layout?    (ctl/flex-layout? parent)
          grid-layout?    (ctl/grid-layout? parent)
-         parent?         (or (cph/group-like-shape? parent) (cph/frame-shape? parent))
+         parent?         (or (cfh/group-like-shape? parent) (cfh/frame-shape? parent))
 
          transformed-parent-bounds (delay (gtr/transform-bounds @(get bounds parent-id) modifiers))
 
@@ -221,7 +221,7 @@
             (-> modifiers
                 (ctm/resize (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))
 
-        children (->> (cph/get-immediate-children objects parent-id)
+        children (->> (cfh/get-immediate-children objects parent-id)
                       (remove :hidden)
                       (remove gco/invalid-geometry?))
 
@@ -274,7 +274,7 @@
               [modif-tree bounds]
 
               (let [from-layout
-                    (->> (cph/get-parent-ids objects layout-id)
+                    (->> (cfh/get-parent-ids objects layout-id)
                          (d/seek sizing-auto-layouts))
 
                     shapes

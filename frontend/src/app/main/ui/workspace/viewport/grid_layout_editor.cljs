@@ -9,13 +9,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout :as gsg]
    [app.common.geom.shapes.points :as gpo]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as dw]
@@ -826,11 +826,11 @@
         (mf/use-memo
          (mf/deps objects shape modifiers)
          (fn []
-           (let [ids (cph/get-children-ids objects (:id shape))
+           (let [ids (cfh/get-children-ids objects (:id shape))
                  objects (-> objects
                              (gsh/apply-objects-modifiers (select-keys modifiers ids))
                              (gsh/update-shapes-geometry (reverse ids)))]
-             (->> (cph/get-immediate-children objects (:id shape))
+             (->> (cfh/get-immediate-children objects (:id shape))
                   (keep (fn [child]
                           (when-not (:hidden child)
                             [(gpo/parent-coords-bounds (:points child) (:points shape)) child])))))))

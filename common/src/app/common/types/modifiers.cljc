@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
@@ -16,7 +17,6 @@
    [app.common.geom.shapes.effects :as gse]
    [app.common.geom.shapes.strokes :as gss]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.common.types.shape.layout :as ctl]
    [clojure.core :as c]))
@@ -739,7 +739,7 @@
           (apply-scale-content
             [shape value]
             (cond-> shape
-              (cph/text-shape? shape)
+              (cfh/text-shape? shape)
               (update-text-content scale-text-content value)
 
               :always

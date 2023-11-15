@@ -7,9 +7,9 @@
 (ns app.main.ui.viewer.inspect.render
   "The main container for a frame in inspect mode"
   (:require
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
    [app.main.ui.shapes.bool :as bool]
@@ -33,16 +33,16 @@
 (defn handle-hover-shape
   [shape hover?]
   (fn [event]
-    (when-not (or (cph/group-shape? shape)
-                  (cph/root-frame? shape))
+    (when-not (or (cfh/group-shape? shape)
+                  (cfh/root-frame? shape))
       (dom/prevent-default event)
       (dom/stop-propagation event)
       (st/emit! (dv/hover-shape (:id shape) hover?)))))
 
 (defn select-shape [shape]
   (fn [event]
-    (when-not (or (cph/group-shape? shape)
-                  (cph/root-frame? shape))
+    (when-not (or (cfh/group-shape? shape)
+                  (cfh/root-frame? shape))
       (dom/stop-propagation event)
       (dom/prevent-default event)
       (cond
@@ -119,7 +119,7 @@
       {::mf/wrap-props false}
       [props]
       (let [shape    (unchecked-get props "shape")
-            children (->> (cph/get-children-ids objects (:id shape))
+            children (->> (cfh/get-children-ids objects (:id shape))
                           (select-keys objects))
             props    (-> (obj/create)
                          (obj/merge! props)

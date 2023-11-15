@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.files.shapes-helpers :as cfsh]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
@@ -52,7 +52,7 @@
                  (cfsh/prepare-add-shape shape objects selected))
 
              changes (cond-> changes
-                       (cph/text-shape? shape)
+                       (cfh/text-shape? shape)
                        (pcb/set-undo-group (:id shape)))
 
              undo-id (js/Symbol)]
@@ -65,7 +65,7 @@
                  (when-not no-select?
                    (dws/select-shapes (d/ordered-set (:id shape))))
                  (dwu/commit-undo-transaction undo-id))
-          (when (cph/text-shape? shape)
+          (when (cfh/text-shape? shape)
             (->> (rx/of (dwe/start-edition-mode (:id shape)))
                  (rx/observe-on :async)))))))))
 
@@ -106,7 +106,7 @@
 
              components-v2 (features/active-feature? state "components/v2")
 
-             ids           (cph/clean-loops objects ids)
+             ids           (cfh/clean-loops objects ids)
 
              in-component-copy?
              (fn [shape-id]
@@ -194,14 +194,14 @@
          all-parents
          (reduce (fn [res id]
                   ;; All parents of any deleted shape must be resized.
-                   (into res (cph/get-parent-ids objects id)))
+                   (into res (cfh/get-parent-ids objects id)))
                  (d/ordered-set)
                  ids)
 
          all-children
          (->> ids ;; Children of deleted shapes must be also deleted.
               (reduce (fn [res id]
-                        (into res (cph/get-children-ids objects id)))
+                        (into res (cfh/get-children-ids objects id)))
                       [])
               (reverse)
               (into (d/ordered-set)))
@@ -211,7 +211,7 @@
            (let [all-ids   (into empty-parents ids)
                  contains? (partial contains? all-ids)
                  xform     (comp (map lookup)
-                                 (filter #(or (cph/group-shape? %) (cph/bool-shape? %)))
+                                 (filter #(or (cfh/group-shape? %) (cfh/bool-shape? %)))
                                  (remove #(->> (:shapes %) (remove contains?) seq))
                                  (map :id))
                  parents   (into #{} xform all-parents)]
@@ -298,10 +298,10 @@
                           (ctst/top-nested-frame {:x frame-x :y frame-y}))
 
             selected  (wsh/lookup-selected state)
-            base      (cph/get-base-shape objects selected)
+            base      (cfh/get-base-shape objects selected)
 
             parent-id (if (or (and (= 1 (count selected))
-                                   (cph/frame-shape? (get objects (first selected))))
+                                   (cfh/frame-shape? (get objects (first selected))))
                               (empty? selected))
                         frame-id
                         (:parent-id base))
@@ -339,7 +339,7 @@
        (let [page-id  (:current-page-id state)
              objects  (wsh/lookup-page-objects state page-id)
              selected (wsh/lookup-selected state)
-             selected (cph/clean-loops objects selected)
+             selected (cfh/clean-loops objects selected)
 
              changes  (-> (pcb/empty-changes it page-id)
                           (pcb/with-objects objects))
@@ -390,7 +390,7 @@
             ;; We have change only the hidden behaviour, to hide only the
             ;; selected shape, block behaviour remains the same.
             ids     (if (boolean? blocked)
-                      (into ids (->> ids (mapcat #(cph/get-children-ids objects %))))
+                      (into ids (->> ids (mapcat #(cfh/get-children-ids objects %))))
                       ids)]
         (rx/of (dch/update-shapes ids update-fn {:attrs #{:blocked :hidden}}))))))
 

@@ -10,8 +10,8 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as pmg]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
    [app.common.spec :as us]
@@ -453,7 +453,7 @@
   [page id-or-ids]
   (update page :objects (fn [objects]
                           (reduce (fn [result object-id]
-                                    (->> (cph/get-children-with-self objects object-id)
+                                    (->> (cfh/get-children-with-self objects object-id)
                                          (filter some?)
                                          (d/index-by :id)
                                          (merge result)))

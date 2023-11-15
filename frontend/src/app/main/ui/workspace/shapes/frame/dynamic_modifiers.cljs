@@ -8,11 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
@@ -37,9 +37,9 @@
   (when (some? base-node)
     (let [shape-node     (get-shape-node base-node id)
           parent-node    (get-shape-node base-node parent-id)
-          frame?         (cph/frame-shape? shape)
-          group?         (cph/group-shape? shape)
-          text?          (cph/text-shape? shape)
+          frame?         (cfh/frame-shape? shape)
+          group?         (cfh/group-shape? shape)
+          text?          (cfh/text-shape? shape)
           masking-child? (:masking-child? (meta shape))]
       (cond
         frame?
@@ -222,7 +222,7 @@
   [objects]
   (fn [{:keys [id parent-id] :as shape}]
     (let [parent (get objects parent-id)
-          masking-child? (and (cph/mask-shape? parent) (= id (first (:shapes parent))))]
+          masking-child? (and (cfh/mask-shape? parent) (= id (first (:shapes parent))))]
 
       (cond-> shape
         masking-child?

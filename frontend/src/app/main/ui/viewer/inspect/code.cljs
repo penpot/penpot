@@ -10,13 +10,12 @@
    ["js-beautify" :as beautify]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctst]
    [app.config :as cfg]
    [app.main.data.events :as ev]
    [app.main.fonts :as fonts]
-   ;; [app.main.data.preview :as dp]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.code-block :refer [code-block]]
@@ -128,7 +127,7 @@
 
         all-children (->> shapes
                           (map :id)
-                          (cph/selected-with-children objects)
+                          (cfh/selected-with-children objects)
                           (ctst/sort-z-index objects)
                           (map (d/getf objects)))
 

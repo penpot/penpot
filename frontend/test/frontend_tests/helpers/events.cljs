@@ -8,8 +8,6 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages :as cp]
-   [app.common.pages.helpers :as cph]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]

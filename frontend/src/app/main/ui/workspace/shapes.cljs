@@ -13,8 +13,8 @@
   common."
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
-   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as ctx]
    [app.main.ui.shapes.circle :as circle]
@@ -49,7 +49,7 @@
   [props]
   (let [objects       (obj/get props "objects")
         active-frames (obj/get props "active-frames")
-        shapes        (cph/get-immediate-children objects)
+        shapes        (cfh/get-immediate-children objects)
         vbox          (mf/use-ctx ctx/current-vbox)
 
         shapes        (mf/with-memo [shapes vbox]
@@ -64,14 +64,14 @@
       ;; Render font faces only for shapes that are part of the root
       ;; frame but don't belongs to any other frame.
       (let [xform (comp
-                   (remove cph/frame-shape?)
-                   (mapcat #(cph/get-children-with-self objects (:id %))))]
+                   (remove cfh/frame-shape?)
+                   (mapcat #(cfh/get-children-with-self objects (:id %))))]
         [:& ff/fontfaces-style {:shapes (into [] xform shapes)}])
 
       [:g.frame-children
        (for [shape shapes]
          [:g.ws-shape-wrapper {:key (dm/str (dm/get-prop shape :id))}
-          (if ^boolean (cph/frame-shape? shape)
+          (if ^boolean (cfh/frame-shape? shape)
             [:& root-frame-wrapper
              {:shape shape
               :objects objects
@@ -88,7 +88,7 @@
 
         ;; FIXME: WARN: this breaks react rule of hooks (hooks can't be under conditional)
         active-frames
-        (when (cph/root-frame? shape)
+        (when (cfh/root-frame? shape)
           (mf/use-ctx ctx/active-frames))
 
         thumbnail?

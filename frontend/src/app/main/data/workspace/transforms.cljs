@@ -9,6 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
@@ -17,8 +19,6 @@
    [app.common.geom.shapes.flex-layout :as gslf]
    [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.math :as mth]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
@@ -450,12 +450,12 @@
 
              exclude-frames
              (into #{}
-                   (filter (partial cph/frame-shape? objects))
-                   (cph/selected-with-children objects selected))
+                   (filter (partial cfh/frame-shape? objects))
+                   (cfh/selected-with-children objects selected))
 
              exclude-frames-siblings
              (into exclude-frames
-                   (comp (mapcat (partial cph/get-siblings-ids objects))
+                   (comp (mapcat (partial cfh/get-siblings-ids objects))
                          (filter (partial ctl/any-layout-immediate-child-id? objects)))
                    selected)
 
@@ -514,7 +514,7 @@
                               :else
                               [move-vector nil])
 
-                            nesting-loop? (some #(cph/components-nesting-loop? objects (:id %) target-frame) shapes)
+                            nesting-loop? (some #(cfh/components-nesting-loop? objects (:id %) target-frame) shapes)
                             is-component-copy? (ctk/in-component-copy? (get objects target-frame))]
 
                         (cond-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
@@ -578,7 +578,7 @@
               (->> children
                    ;; Add the position to move the children
                    (map (fn [id]
-                          (let [position (cph/get-position-on-parent objects id)]
+                          (let [position (cfh/get-position-on-parent objects id)]
                             [id (get-move-to-index parent-id position)])))
                    (sort-by second >)
                    (reduce (fn [changes [child-id index]]
@@ -771,7 +771,7 @@
             frame    (get objects frame-id)
             layout?  (:layout frame)
 
-            shapes (->> ids (cph/clean-loops objects) (keep lookup))
+            shapes (->> ids (cfh/clean-loops objects) (keep lookup))
 
             moving-shapes
             (cond->> shapes
@@ -782,12 +782,12 @@
               (remove #(and (= (:frame-id %) frame-id)
                             (not= (:parent-id %) frame-id))))
 
-            ordered-indexes (cph/order-by-indexed-shapes objects (map :id moving-shapes))
+            ordered-indexes (cfh/order-by-indexed-shapes objects (map :id moving-shapes))
             moving-shapes (map (d/getf objects) ordered-indexes)
 
             all-parents
             (reduce (fn [res id]
-                      (into res (cph/get-parent-ids objects id)))
+                      (into res (cfh/get-parent-ids objects id)))
                     (d/ordered-set)
                     ids)
 
@@ -796,7 +796,7 @@
               (let [all-ids   (into empty-parents ids)
                     contains? (partial contains? all-ids)
                     xform     (comp (map lookup)
-                                    (filter cph/group-shape?)
+                                    (filter cfh/group-shape?)
                                     (remove #(->> (:shapes %) (remove contains?) seq))
                                     (map :id))
                     parents   (into #{} xform all-parents)]
@@ -826,7 +826,7 @@
                         (let [shape-component (ctn/get-component-shape objects shape)]
                           (if (= (:id frame-component) (:id shape-component))
                             result
-                            (into result (cph/get-children-ids-with-self objects (:id shape)))))
+                            (into result (cfh/get-children-ids-with-self objects (:id shape)))))
                         result))
                     #{}
                     moving-shapes)
@@ -840,7 +840,7 @@
                 ;; Remove layout-item properties when moving a shape outside a layout
                 (cond-> (not (ctl/any-layout? objects frame-id))
                   (pcb/update-shapes moving-shapes-ids ctl/remove-layout-item-data))
-                (pcb/update-shapes moving-shapes-ids #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true)))
+                (pcb/update-shapes moving-shapes-ids #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true)))
                 (pcb/update-shapes shape-ids-to-detach ctk/detach-shape)
                 (pcb/change-parent frame-id moving-shapes drop-index)
                 (pcb/reorder-grid-children [frame-id])

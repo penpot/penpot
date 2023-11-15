@@ -10,6 +10,9 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.changes :as cp]
+   [app.common.files.changes-builder :as fcb]
+   [app.common.files.helpers :as cph]
    [app.common.files.libraries-helpers :as cflh]
    [app.common.files.migrations :as pmg]
    [app.common.files.shapes-helpers :as cfsh]
@@ -18,9 +21,6 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as l]
-   [app.common.pages.changes :as cp]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.svg :as csvg]
    [app.common.svg.shapes-builder :as sbuilder]
    [app.common.types.component :as ctk]
@@ -540,13 +540,13 @@
           (create-shapes-for-bitmap mobj position))
 
         changes
-        (-> (pcb/empty-changes nil)
-            (pcb/set-save-undo? false)
-            (pcb/with-page page)
-            (pcb/with-objects (:objects page))
-            (pcb/with-library-data fdata)
-            (pcb/delete-media (:id mobj))
-            (pcb/add-objects (cons shape children)))
+        (-> (fcb/empty-changes nil)
+            (fcb/set-save-undo? false)
+            (fcb/with-page page)
+            (fcb/with-objects (:objects page))
+            (fcb/with-library-data fdata)
+            (fcb/delete-media (:id mobj))
+            (fcb/add-objects (cons shape children)))
 
         ;; NOTE: this is a workaround for `generate-add-component`, it
         ;; is needed because that function always starts from empty
@@ -574,7 +574,7 @@
                                      true
                                      nil
                                      cfsh/prepare-create-artboard-from-selection)
-        changes (pcb/concat-changes changes changes2)]
+        changes (fcb/concat-changes changes changes2)]
 
     (:redo-changes changes)))
 

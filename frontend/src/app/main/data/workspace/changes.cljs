@@ -9,11 +9,10 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.changes :as cpc]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cph]
    [app.common.logging :as log]
-   [app.common.pages :as cp]
-   [app.common.pages.changes :as cpc]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
@@ -218,7 +217,7 @@
 
             (update-in state path (fn [file]
                                     (-> file
-                                        (cp/process-changes redo-changes false)
+                                        (cpc/process-changes redo-changes false)
                                         (ctst/update-object-indices page-id))))
 
             (catch :default err

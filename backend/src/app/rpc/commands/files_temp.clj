@@ -8,7 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
-   [app.common.pages :as cp]
+   [app.common.files.changes :as fch]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -113,7 +113,7 @@
     (let [data
           (->> revs
                (mapcat #(->> % :changes blob/decode))
-               (cp/process-changes (blob/decode (:data file))))]
+               (fch/process-changes (blob/decode (:data file))))]
       (db/update! conn :file
                   {:deleted-at nil
                    :revn revn

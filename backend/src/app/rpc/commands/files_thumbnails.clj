@@ -9,8 +9,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.thumbnails :as thc]
    [app.common.types.shape-tree :as ctt]
@@ -127,14 +127,14 @@
           ;; all unneeded shapes if a concrete frame is provided. If no
           ;; frame, the objects is returned untouched.
           (filter-objects [objects frame-id]
-            (d/index-by :id (cph/get-children-with-self objects frame-id)))
+            (d/index-by :id (cfh/get-children-with-self objects frame-id)))
 
           ;; function responsible of assoc available thumbnails
           ;; to frames and remove all children shapes from objects if
           ;; thumbnails is available
           (assoc-thumbnails [objects page-id thumbnails]
             (loop [objects objects
-                   frames  (filter cph/frame-shape? (vals objects))]
+                   frames  (filter cfh/frame-shape? (vals objects))]
 
               (if-let [frame  (-> frames first)]
                 (let [frame-id  (:id frame)
@@ -144,7 +144,7 @@
                                   (dissoc frame :thumbnail))
 
                       children-ids
-                      (cph/get-children-ids objects frame-id)
+                      (cfh/get-children-ids objects frame-id)
 
                       bounds
                       (when (:show-content frame)

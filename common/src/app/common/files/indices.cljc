@@ -4,9 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.pages.indices
+(ns app.common.files.indices
   (:require
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.uuid :as uuid]))
 
 (defn generate-child-all-parents-index
@@ -18,7 +18,7 @@
   ([objects shapes]
    (let [shape->entry
          (fn [shape]
-           [(:id shape) (cph/get-parent-ids objects (:id shape))])]
+           [(:id shape) (cfh/get-parent-ids objects (:id shape))])]
      (into {} (map shape->entry) shapes))))
 
 (defn create-clip-index

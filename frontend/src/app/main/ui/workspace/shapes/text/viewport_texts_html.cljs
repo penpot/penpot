@@ -8,11 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gsht]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.common.types.modifiers :as ctm]
    [app.main.data.workspace.modifiers :as mdwm]
@@ -275,7 +275,7 @@
         (mf/use-memo
          (mf/deps objects)
          (fn []
-           (into {} (filter (comp cph/text-shape? second)) objects)))
+           (into {} (filter (comp cfh/text-shape? second)) objects)))
 
         text-shapes
         (hooks/use-equal-memo text-shapes)

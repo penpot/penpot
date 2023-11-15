@@ -6,8 +6,8 @@
 
 (ns app.main.data.workspace.path.shapes-to-path
   (:require
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cph]
    [app.common.svg.path.shapes-to-path :as upsp]
    [app.common.types.container :as ctn]
    [app.main.data.workspace.changes :as dch]

@@ -10,9 +10,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.bounds :as gsb]
-   [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.comments :as dcm]
@@ -276,7 +276,7 @@
         (hooks/use-equal-memo
          (->> (:objects page)
               (vals)
-              (filter cph/text-shape?)))
+              (filter cfh/text-shape?)))
 
         zoom      (:zoom local)
         zoom-type (:zoom-type local)

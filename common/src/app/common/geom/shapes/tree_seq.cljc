@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
 
@@ -34,7 +34,7 @@
              parent    (get objects parent-id)]
          (cond
            ;; Frame found, but not layout we return the last layout found (or the id)
-           (and ^boolean (cph/frame-shape? parent)
+           (and ^boolean (cfh/frame-shape? parent)
                 (not ^boolean (ctl/any-layout? parent)))
            last-root
 
@@ -59,12 +59,12 @@
             (let [root (get-reflow-root id objects)
                   ;; Remove the children from the current root
                   roots
-                  (if ^boolean (cph/has-children? objects root)
-                    (into #{} (remove (partial cph/is-child? objects root)) roots)
+                  (if ^boolean (cfh/has-children? objects root)
+                    (into #{} (remove (partial cfh/is-child? objects root)) roots)
                     roots)
 
                   contains-parent?
-                  (->> (cph/get-parent-ids objects root)
+                  (->> (cfh/get-parent-ids objects root)
                        (some (partial contains? roots)))]
 
               (cond-> roots

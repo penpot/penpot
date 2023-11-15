@@ -9,7 +9,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
+   [app.common.files.changes :as cpc]
    [app.common.files.defaults :refer [version]]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
@@ -17,8 +19,6 @@
    [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as l]
    [app.common.math :as mth]
-   [app.common.pages.changes :as cpc]
-   [app.common.pages.helpers :as cph]
    [app.common.svg :as csvg]
    [app.common.text :as txt]
    [app.common.types.shape :as cts]
@@ -111,7 +111,7 @@
               (#{:curve :path} (:type object))
               (migrate-path)
 
-              (cph/frame-shape? object)
+              (cfh/frame-shape? object)
               (fix-frames-selrects)
 
               (and (empty? (:points object)) (not= (:id object) uuid/zero))
@@ -258,7 +258,7 @@
 (defmethod migrate 11
   [data]
   (letfn [(update-object [objects shape]
-            (if (cph/frame-shape? shape)
+            (if (cfh/frame-shape? shape)
               (d/update-when shape :shapes (fn [shapes]
                                              (filterv (fn [id] (contains? objects id)) shapes)))
               shape))
@@ -293,7 +293,7 @@
 
           (update-object [object]
             (cond-> object
-              (cph/image-shape? object)
+              (cfh/image-shape? object)
               (fix-radius)))
 
           (update-page [page]
@@ -315,7 +315,7 @@
           (update-container [{:keys [objects] :as container}]
             (loop [objects objects
                    shapes  (->> (vals objects)
-                                (filter cph/image-shape?))]
+                                (filter cfh/image-shape?))]
               (if-let [shape (first shapes)]
                 (let [{:keys [id frame-id] :as shape'} (process-shape shape)]
                   (if (identical? shape shape')
@@ -365,11 +365,11 @@
 
           (update-object [object]
             (cond-> object
-              (and (not (cph/text-shape? object))
+              (and (not (cfh/text-shape? object))
                    (not (contains? object :strokes)))
               (assign-strokes)
 
-              (and (not (cph/text-shape? object))
+              (and (not (cfh/text-shape? object))
                    (not (contains? object :fills)))
               (assign-fills)))
 
@@ -383,7 +383,7 @@
 (defmethod migrate 17
   [data]
   (letfn [(affected-object? [object]
-            (and (cph/image-shape? object)
+            (and (cfh/image-shape? object)
                  (some? (:fills object))
                  (= 1 (count (:fills object)))
                  (some? (:fill-color object))
@@ -414,7 +414,7 @@
   [data]
   (letfn [(update-object [object]
             (cond-> object
-              (cph/text-shape? object)
+              (cfh/text-shape? object)
               (dissoc :position-data)))
 
           (update-container [container]
@@ -428,7 +428,7 @@
   [data]
   (letfn [(update-object [object]
             (cond-> object
-              (and (cph/text-shape? object)
+              (and (cfh/text-shape? object)
                    (d/not-empty? (:position-data object))
                    (not (gsht/overlaps-position-data? object (:position-data object))))
               (dissoc :position-data)))
@@ -506,9 +506,9 @@
   (letfn [(update-object [objects object]
             (let [frame-id (:frame-id object)
                   calculated-frame-id
-                  (or (->> (cph/get-parent-ids objects (:id object))
+                  (or (->> (cfh/get-parent-ids objects (:id object))
                            (map (d/getf objects))
-                           (d/seek cph/frame-shape?)
+                           (d/seek cfh/frame-shape?)
                            :id)
                       ;; If we cannot find any we let the frame-id as it was before
                       frame-id)]
@@ -555,7 +555,7 @@
           (update-object [object]
             (let [invalid-node? (complement valid-node?)]
               (cond-> object
-                (cph/text-shape? object)
+                (cfh/text-shape? object)
                 (update :content #(txt/transform-nodes invalid-node? fix-node %)))))
 
           (update-container [container]
@@ -568,7 +568,7 @@
 (defmethod migrate 30
   [data]
   (letfn [(update-object [object]
-            (if (and (cph/frame-shape? object)
+            (if (and (cfh/frame-shape? object)
                      (not (:shapes object)))
               (assoc object :shapes [])
               object))
@@ -631,8 +631,8 @@
 (defmethod migrate 34
   [data]
   (letfn [(update-object [object]
-            (if (or (cph/path-shape? object)
-                    (cph/bool-shape? object))
+            (if (or (cfh/path-shape? object)
+                    (cfh/bool-shape? object))
               (dissoc object :x :y :width :height)
               object))
           (update-container [container]

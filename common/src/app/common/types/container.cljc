@@ -10,7 +10,6 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -114,7 +113,7 @@
      (nil? shape)
      nil
 
-     (cph/root? shape)
+     (cfh/root? shape)
      nil
 
      (ctk/instance-root? shape)
@@ -134,7 +133,7 @@
      (nil? shape)
      nil
 
-     (cph/root? shape)
+     (cfh/root? shape)
      nil
 
      (ctk/instance-head? shape)
@@ -153,7 +152,7 @@
     (nil? shape)
     nil
 
-    (cph/root? shape)
+    (cfh/root? shape)
     nil
 
     (ctk/instance-root? shape)
@@ -166,14 +165,14 @@
   "Get the top shape of the copy."
   [objects shape]
   (when (:shape-ref shape)
-    (let [parent (cph/get-parent objects (:id shape))]
+    (let [parent (cfh/get-parent objects (:id shape))]
       (or (get-copy-root objects parent) shape))))
 
 (defn inside-component-main?
   "Check if the shape is a component main instance or is inside one."
   [objects shape]
   (cond
-    (or (nil? shape) (cph/root? shape))
+    (or (nil? shape) (cfh/root? shape))
     false
     (nil? (:parent-id shape))  ; This occurs in the root of components v1
     true
@@ -203,7 +202,7 @@
                             :component-file file-id
                             :component-root true
                             :main-instance true)
-        new-children (->> (cph/get-children objects (:id root))
+        new-children (->> (cfh/get-children objects (:id root))
                           (map #(dissoc % :component-root)))]
     [(assoc new-root :id new-id)
      nil

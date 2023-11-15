@@ -7,7 +7,7 @@
 (ns app.common.geom.modif-tree
   (:require
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.modifiers :as ctm]))
 
 (defn add-modifiers
@@ -22,7 +22,7 @@
       (cond-> modif-tree
         (ctm/empty? new-modifiers)
         (dissoc id)
-        
+
         (not (ctm/empty? new-modifiers))
         (assoc-in [id :modifiers] new-modifiers)))))
 
@@ -50,6 +50,6 @@
               (and (ctm/has-structure? modifiers)
                    (ctm/has-structure-child? modifiers))
               (update-children-structure-modifiers
-               (cph/get-children-ids objects id)
+               (cfh/get-children-ids objects id)
                (ctm/select-child-structre-modifiers modifiers))))]
     (reduce apply-shape objects modif-tree)))

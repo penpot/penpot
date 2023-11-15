@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.top-bar
   (:require
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
@@ -30,14 +30,14 @@
         single? (= (count selected) 1)
         editing? (= (:id shape) edition)
         draw-path? (and (some? drawing-obj)
-                        (cph/path-shape? drawing-obj)
+                        (cfh/path-shape? drawing-obj)
                         (not= :curve (:tool drawing)))
 
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
 
         path-edition? (or (and single? editing?
-                               (and (not (cph/text-shape? shape))
-                                    (not (cph/frame-shape? shape))))
+                               (and (not (cfh/text-shape? shape))
+                                    (not (cfh/frame-shape? shape))))
                           draw-path?)
 
         grid-edition? (and single? editing? (ctl/grid-layout? shape))

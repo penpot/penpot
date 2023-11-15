@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.pages.diff
+(ns app.common.files.page-diff
   "Given a page in its old version and the new will retrieve a map with
   the differences that will have an impact in the snap data"
   (:require

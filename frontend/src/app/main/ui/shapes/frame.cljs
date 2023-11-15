@@ -7,9 +7,9 @@
 (ns app.main.ui.shapes.frame
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [app.config :as cf]
    [app.main.ui.context :as muc]
@@ -32,7 +32,7 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")]
-    (when (and ^boolean (cph/frame-shape? shape)
+    (when (and ^boolean (cfh/frame-shape? shape)
                (not ^boolean (:show-content shape)))
 
       (let [render-id (unchecked-get props "render-id")
@@ -168,7 +168,7 @@
           is-component? (mf/use-ctx muc/is-component?)
           childs        (cond-> childs
                           (ctl/any-layout? shape)
-                          (cph/sort-layout-children-z-index))]
+                          (cfh/sort-layout-children-z-index))]
 
       [:> frame-container props
        [:g.frame-children {:opacity (:opacity shape)}

@@ -8,8 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.shape-tree :as ctt]
@@ -688,7 +688,7 @@
                           (conj id))]
         (-> state
             (assoc-in [:viewer-local :selected]
-                      (cph/expand-region-selection objects selection)))))))
+                      (cfh/expand-region-selection objects selection)))))))
 
 (defn select-all
   []

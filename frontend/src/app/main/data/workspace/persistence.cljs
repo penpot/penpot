@@ -7,9 +7,8 @@
 (ns app.main.data.workspace.persistence
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.changes :as cpc]
    [app.common.logging :as log]
-   [app.common.pages :as cp]
-   [app.common.pages.changes :as cpc]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -259,12 +258,12 @@
                                                  entries (seq changes)]
                                             (if-let [[page-id changes] (first entries)]
                                               (recur (-> fdata
-                                                         (cp/process-changes changes)
+                                                         (cpc/process-changes changes)
                                                          (ctst/update-object-indices page-id))
                                                      (rest entries))
                                               fdata))))))
           (-> state
               (update-in [:workspace-libraries file-id :revn] max revn)
-              (update-in [:workspace-libraries file-id :data] cp/process-changes changes)))
+              (update-in [:workspace-libraries file-id :data] cpc/process-changes changes)))
 
         state))))

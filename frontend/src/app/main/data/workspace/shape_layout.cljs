@@ -9,9 +9,9 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes.flex-layout :as flex]
    [app.common.geom.shapes.grid-layout :as grid]
-   [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctc]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
@@ -78,13 +78,13 @@
       (let [shape
             (-> shape
                 (merge initial-layout-data)
-                
+
                 ;; (cond-> (= type :grid) (-> ctl/assign-cells ctl/reorder-grid-children))
                 ;; If the original shape is not a frame we set clip content and show-viewer to false
                 (cond-> (not from-frame?)
                   (assoc :show-content true :hide-in-viewer true)))
-            
-            params (calculate-params objects (cph/get-immediate-children objects (:id shape)) shape)]
+
+            params (calculate-params objects (cfh/get-immediate-children objects (:id shape)) shape)]
 
         (cond-> (merge shape params)
           (= type :grid) (-> ctl/assign-cells ctl/reorder-grid-children)))
@@ -149,9 +149,9 @@
             selected        (wsh/lookup-selected state)
             selected-shapes (map (d/getf objects) selected)
             single?         (= (count selected-shapes) 1)
-            has-group?      (->> selected-shapes (d/seek cph/group-shape?))
+            has-group?      (->> selected-shapes (d/seek cfh/group-shape?))
             is-group?       (and single? has-group?)
-            has-mask?       (->> selected-shapes (d/seek cph/mask-shape?))
+            has-mask?       (->> selected-shapes (d/seek cfh/mask-shape?))
             is-mask?        (and single? has-mask?)
             has-component?  (some true? (map ctc/instance-root? selected-shapes))
             is-component?   (and single? has-component?)
@@ -167,7 +167,7 @@
            (let [parent-id    (:parent-id (first selected-shapes))
                  shapes-ids   (:shapes (first selected-shapes))
                  ordered-ids  (into (d/ordered-set) shapes-ids)
-                 group-index  (cph/get-index-replacement selected objects)]
+                 group-index  (cfh/get-index-replacement selected objects)]
              (rx/of
               (dwse/select-shapes ordered-ids)
               (dws/create-artboard-from-selection new-shape-id parent-id group-index)
@@ -186,7 +186,7 @@
             (create-layout-from-id new-shape-id type false)
             (dwc/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
             (dwc/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))))
-         
+
          (rx/of (ptk/data-event :layout/update [new-shape-id])
                 (dwu/commit-undo-transaction undo-id)))))))
 
@@ -348,7 +348,7 @@
 (defn fix-child-sizing
   [objects parent-changes shape]
 
-  (let [parent (-> (cph/get-parent objects (:id shape))
+  (let [parent (-> (cfh/get-parent objects (:id shape))
                    (d/deep-merge parent-changes))
 
         auto-width? (ctl/auto-width? parent)
@@ -425,8 +425,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)
-            children-ids (->> ids (mapcat #(cph/get-children-ids objects %)))
-            parent-ids (->> ids (map #(cph/get-parent-id objects %)))
+            children-ids (->> ids (mapcat #(cfh/get-children-ids objects %)))
+            parent-ids (->> ids (map #(cfh/get-parent-id objects %)))
             undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
                (dwc/update-shapes ids (d/patch-object changes))

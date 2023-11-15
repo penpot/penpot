@@ -9,7 +9,7 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.changes-builder :as pcb]
+   [app.common.files.changes-builder :as pcb]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]

@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -15,7 +16,6 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpa]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.record :as cr]
    [app.common.types.modifiers :as ctm]))
 
@@ -461,16 +461,16 @@
        (reduce
         (fn [objects id]
           (let [shape (get objects id)
-                children (cph/get-immediate-children objects id)
+                children (cfh/get-immediate-children objects id)
                 shape
                 (cond
-                  (cph/mask-shape? shape)
+                  (cfh/mask-shape? shape)
                   (update-mask-selrect shape children)
 
-                  (cph/bool-shape? shape)
+                  (cfh/bool-shape? shape)
                   (update-bool-selrect shape children objects)
 
-                  (cph/group-shape? shape)
+                  (cfh/group-shape? shape)
                   (update-group-selrect shape children)
 
                   :else
@@ -490,7 +490,7 @@
      (let [transform (ctm/modifiers->transform modifiers)]
        (cond-> shape
          (and (some? transform)
-              (not (cph/root? shape)))
+              (not (cfh/root? shape)))
          (apply-transform transform)
 
          (ctm/has-structure? modifiers)
@@ -545,7 +545,7 @@
               (let [modifiers (cond-> (get-in modif-tree [(:id child) :modifiers])
                                 propagate? (ctm/add-modifiers parent-modifiers))
                     child     (transform-shape child modifiers)
-                    parent?   (cph/group-like-shape? child)
+                    parent?   (cfh/group-like-shape? child)
 
                     modif-tree
                     (cond-> modif-tree
@@ -568,13 +568,13 @@
            (map (d/getf objects) $)
            (apply-children-modifiers objects modif-tree modifiers $ propagate?))]
      (cond
-       (cph/mask-shape? group)
+       (cfh/mask-shape? group)
        (update-mask-selrect group children)
 
-       (cph/bool-shape? group)
+       (cfh/bool-shape? group)
        (transform-shape group modifiers)
 
-       (cph/group-shape? group)
+       (cfh/group-shape? group)
        (update-group-selrect group children)
 
        :else

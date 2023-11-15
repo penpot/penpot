@@ -7,8 +7,8 @@
 (ns app.main.data.workspace.thumbnails
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
-   [app.common.pages.helpers :as cph]
    [app.common.thumbnails :as thc]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -200,8 +200,8 @@
                 new-shape    (get new-objects id)
                 old-shape    (get old-objects id)
 
-                old-frame-id (if (cph/frame-shape? old-shape) id (:frame-id old-shape))
-                new-frame-id (if (cph/frame-shape? new-shape) id (:frame-id new-shape))]
+                old-frame-id (if (cfh/frame-shape? old-shape) id (:frame-id old-shape))
+                new-frame-id (if (cfh/frame-shape? new-shape) id (:frame-id new-shape))]
 
             (cond-> #{}
               (and (some? old-frame-id) (not= uuid/zero old-frame-id))

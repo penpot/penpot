@@ -9,7 +9,7 @@
    ["react-dom/server" :as rds]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.shape.layout :as ctl]
    [app.config :as cfg]
    [app.main.ui.shapes.text.html-text :as text]
@@ -38,7 +38,7 @@
                        svg-markup
                        indent))
 
-             (cph/text-shape? shape)
+             (cfh/text-shape? shape)
              (let [text-shape-html (rds/renderToStaticMarkup (mf/element text/text-shape #js {:shape shape :code? true}))]
                (dm/fmt "%<div class=\"%\">\n%\n%</div>"
                        indent
@@ -47,7 +47,7 @@
                        text-shape-html
                        indent))
 
-             (cph/image-shape? shape)
+             (cfh/image-shape? shape)
              (let [data (or (:metadata shape) (:fill-image shape))
                    image-url (cfg/resolve-file-media data)]
                (dm/fmt "%<img src=\"%\" class=\"%\">\n%</img>"

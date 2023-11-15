@@ -8,8 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes :as cpc]
    [app.common.logging :as log]
-   [app.common.pages.changes :as cpc]
    [app.common.schema :as sm]
    [app.util.time :as dt]
    [beicon.core :as rx]

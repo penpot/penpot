@@ -9,6 +9,7 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
@@ -16,8 +17,6 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout :as gslg]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.component :as ctk]
@@ -495,7 +494,7 @@
             objects            (->> (:objects page)
                                     (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail))))
             main-instances-ids (set (keep #(when (ctk/main-instance? (val %)) (key %)) objects))
-            ids-to-remove      (set (apply concat (map #(cph/get-children-ids objects %) main-instances-ids)))
+            ids-to-remove      (set (apply concat (map #(cfh/get-children-ids objects %) main-instances-ids)))
 
             add-component-copy
             (fn [objs id shape]
@@ -688,7 +687,7 @@
      (watch [_ state _]
        (when-let [shape-id (dm/get-in state [:workspace-local :shape-for-rename])]
          (let [shape (wsh/lookup-shape state shape-id)
-               name  (cph/clean-path name)]
+               name  (cfh/clean-path name)]
            (rx/concat
             ;; Remove rename state from workspace local state
             (rx/of #(update % :workspace-local dissoc :shape-for-rename))
@@ -781,7 +780,7 @@
 (defn relocate-shapes-changes [it objects parents parent-id page-id to-index ids
                                groups-to-delete groups-to-unmask shapes-to-detach
                                shapes-to-reroot shapes-to-deroot shapes-to-unconstraint]
-  (let [ordered-indexes (cph/order-by-indexed-shapes objects ids)
+  (let [ordered-indexes (cfh/order-by-indexed-shapes objects ids)
         shapes (map (d/getf objects) ordered-indexes)
         parent (get objects parent-id)]
 
@@ -793,8 +792,8 @@
           (pcb/update-shapes ordered-indexes ctl/remove-layout-item-data))
 
         ;; Remove the hide in viewer flag
-        (cond-> (and (not= uuid/zero parent-id) (cph/frame-shape? parent))
-          (pcb/update-shapes ordered-indexes #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true))))
+        (cond-> (and (not= uuid/zero parent-id) (cfh/frame-shape? parent))
+          (pcb/update-shapes ordered-indexes #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true))))
 
         ;; Move the shapes
         (pcb/change-parent parent-id
@@ -880,12 +879,12 @@
             objects  (wsh/lookup-page-objects state page-id)
 
             ;; Ignore any shape whose parent is also intended to be moved
-            ids      (cph/clean-loops objects ids)
+            ids      (cfh/clean-loops objects ids)
 
             ;; If we try to move a parent into a child we remove it
-            ids      (filter #(not (cph/is-parent? objects parent-id %)) ids)
+            ids      (filter #(not (cfh/is-parent? objects parent-id %)) ids)
 
-            all-parents (into #{parent-id} (map #(cph/get-parent-id objects %)) ids)
+            all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
             parents  (if ignore-parents? #{parent-id} all-parents)
 
             groups-to-delete
@@ -904,7 +903,7 @@
                            (empty? (remove removed-id? (:shapes group))))
 
                     ;; Adds group to the remove and check its parent
-                    (let [to-check (concat to-check [(cph/get-parent-id objects current-id)])]
+                    (let [to-check (concat to-check [(cfh/get-parent-id objects current-id)])]
                       (recur (first to-check)
                              (rest to-check)
                              (conj removed-id? current-id)
@@ -955,7 +954,7 @@
                                          (not component-shape-parent))
 
                             ids-to-detach (when detach?
-                                            (cons id (cph/get-children-ids objects id)))]
+                                            (cons id (cfh/get-children-ids objects id)))]
 
                         [(cond-> shapes-to-detach detach? (into ids-to-detach))
                          (cond-> shapes-to-deroot deroot? (conj id))
@@ -1380,8 +1379,8 @@
             page-id        (get state :current-page-id)
             pparams        {:file-id file-id :project-id project-id}
             qparams        {:page-id page-id :layout :assets}
-            component-path (cph/split-path (get-in state [:workspace-data :components component-id :path]))
-            paths          (map (fn [i] (cph/join-path (take (inc i) component-path))) (range (count component-path)))]
+            component-path (cfh/split-path (get-in state [:workspace-data :components component-id :path]))
+            paths          (map (fn [i] (cfh/join-path (take (inc i) component-path))) (range (count component-path)))]
         (rx/concat
          (rx/from (map #(set-assets-group-open file-id :components % true) paths))
          (rx/of (rt/nav :workspace pparams qparams)
@@ -1462,7 +1461,7 @@
     (watch [_ state _]
       (let [selected        (wsh/lookup-selected state)
             objects         (wsh/lookup-page-objects state)
-            all-selected    (into [] (mapcat #(cph/get-children-with-self objects %)) selected)
+            all-selected    (into [] (mapcat #(cfh/get-children-with-self objects %)) selected)
             head            (get objects (first selected))
 
             not-group-like? (and (= (count selected) 1)
@@ -1510,7 +1509,7 @@
 
                   ;; Narrow the objects map so it contains only relevant data for
                   ;; selected and its parents
-                  objects  (cph/selected-subtree objects selected)
+                  objects  (cfh/selected-subtree objects selected)
                   selected (->> (ctst/sort-z-index objects selected)
                                 (reverse)
                                 (into (d/ordered-set)))]
@@ -1538,7 +1537,7 @@
                                           (reduce into [])
                                           (filter :fill-image)
                                           (map :fill-image))
-                  
+
                   stroke-images-data (->> (:strokes obj)
                                           (filter :stroke-image)
                                           (map :stroke-image))
@@ -1547,7 +1546,7 @@
                                        stroke-images-data
                                        (when (= type :image)
                                          [(:metadata obj)]))]
-              
+
               (if (> (count images-data) 0)
                 (->> (rx/from images-data)
                      (rx/mapcat (fn [image-data]
@@ -1587,9 +1586,9 @@
       (watch [_ state _]
         (let [objects  (wsh/lookup-page-objects state)
               selected (->> (wsh/lookup-selected state)
-                            (cph/clean-loops objects))
+                            (cfh/clean-loops objects))
 
-              parent-frame-id (cph/common-parent-frame objects selected)
+              parent-frame-id (cfh/common-parent-frame objects selected)
               pdata    (reduce (partial collect-object-ids objects) {} selected)
               initial  {:type :copied-shapes
                         :file-id (:current-file-id state)
@@ -1767,7 +1766,7 @@
                                              (let [fills (mapv #(translate-staled-media % :fill-image media-idx) (:fills p-data))]
                                                (assoc p-data :fills fills)))))
                   content (txt/transform-nodes #(translate-staled-media % :fill-image media-idx) (:content obj))]
-              
+
               (if (= (:type item) :add-obj)
                 (-> item
                     (update-in [:obj :metadata]
@@ -1793,15 +1792,15 @@
                   orig-pos             (gpt/point (:x1 wrapper) (:y1 wrapper))
                   frame-id             (first page-selected)
                   frame-object         (get page-objects frame-id)
-                  base                 (cph/get-base-shape page-objects page-selected)
-                  index                (cph/get-position-on-parent page-objects (:id base))
+                  base                 (cfh/get-base-shape page-objects page-selected)
+                  index                (cfh/get-position-on-parent page-objects (:id base))
                   tree-root            (get-tree-root-shapes paste-objects)
                   only-one-root-shape? (and
                                         (< 1 (count paste-objects))
                                         (= 1 (count tree-root)))
                   all-objects           (merge page-objects paste-objects)
                   comps-nesting-loop?   (not (->> (keys paste-objects)
-                                                  (map #(cph/components-nesting-loop? all-objects % (:id base)))
+                                                  (map #(cfh/components-nesting-loop? all-objects % (:id base)))
                                                   (every? nil?)))]
 
               (cond
@@ -1904,8 +1903,8 @@
 
                   process-shape
                   (fn [_ shape]
-                    (let [assign-shapes? (and (or (cph/group-shape? shape)
-                                                  (cph/bool-shape? shape))
+                    (let [assign-shapes? (and (or (cfh/group-shape? shape)
+                                                  (cfh/bool-shape? shape))
                                               (nil? (:shapes shape)))]
                       (-> shape
                           (assoc :frame-id frame-id :parent-id parent-id)
@@ -2234,7 +2233,7 @@
             copies-no-ref (filter #(not (:shape-ref %)) copies)
             find-childs-no-ref (fn [acc-map item]
                                  (let [id (:id item)
-                                       childs (->> (cph/get-children objects id)
+                                       childs (->> (cfh/get-children objects id)
                                                    (filter #(not (:shape-ref %))))]
                                    (if (seq childs)
                                      (assoc acc-map id childs)

@@ -9,7 +9,7 @@
   (:require-macros [app.main.style :refer [css]])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.spec :as us]
    [app.common.thumbnails :as thc]
    [app.common.types.component :as ctk]
@@ -56,36 +56,36 @@
                  (let [path (if (str/empty? path)
                               (if reverse? "z" "a")
                               path)]
-                   (str/lower (cph/merge-path-item path name))))
+                   (str/lower (cfh/merge-path-item path name))))
                (if ^boolean reverse? > <)))))
 
 (defn add-group
   [asset group-name]
   (-> (:path asset)
-      (cph/merge-path-item group-name)
-      (cph/merge-path-item (:name asset))))
+      (cfh/merge-path-item group-name)
+      (cfh/merge-path-item (:name asset))))
 
 (defn rename-group
   [asset path last-path]
   (-> (:path asset)
       (str/slice 0 (count path))
-      (cph/split-path)
+      (cfh/split-path)
       butlast
       (vec)
       (conj last-path)
-      (cph/join-path)
+      (cfh/join-path)
       (str (str/slice (:path asset) (count path)))
-      (cph/merge-path-item (:name asset))))
+      (cfh/merge-path-item (:name asset))))
 
 (defn ungroup
   [asset path]
   (-> (:path asset)
       (str/slice 0 (count path))
-      (cph/split-path)
+      (cfh/split-path)
       butlast
-      (cph/join-path)
+      (cfh/join-path)
       (str (str/slice (:path asset) (count path)))
-      (cph/merge-path-item (:name asset))))
+      (cfh/merge-path-item (:name asset))))
 
 (s/def ::asset-name ::us/not-empty-string)
 (s/def ::name-group-form
@@ -264,7 +264,7 @@
         (st/emit!
          (rename
           (:id target-asset)
-          (cph/merge-path-item prefix (:name target-asset))))))))
+          (cfh/merge-path-item prefix (:name target-asset))))))))
 
 
 (defn- get-component-thumbnail-uri
@@ -318,7 +318,7 @@
                                  (filter #(nil? (find-component %)))
                                  (filter #(local-or-exists %)))
 
-        touched-not-dangling (filter #(and (cph/component-touched? objects (:id %))
+        touched-not-dangling (filter #(and (cfh/component-touched? objects (:id %))
                                            (find-component %)) copies)
         can-reset-overrides? (or (not components-v2) (seq touched-not-dangling))
 
@@ -344,7 +344,7 @@
                                  (not is-dangling?)
                                  (or (not components-v2)
                                      (and (not main-instance?)
-                                          (cph/component-touched? objects (:id shape)))))
+                                          (cfh/component-touched? objects (:id shape)))))
 
 
         do-detach-component

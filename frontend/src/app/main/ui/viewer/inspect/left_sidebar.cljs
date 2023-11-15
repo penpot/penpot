@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.viewer :as dv]
@@ -90,7 +90,7 @@
                       :shape-touched? touched?
                       :hidden? hidden?
                       :selected? selected?
-                      :type-frame (cph/frame-shape? item)
+                      :type-frame (cfh/frame-shape? item)
                       :disabled-double-click true}]
 
       (when (and (not disable-collapse?) (:shapes item))

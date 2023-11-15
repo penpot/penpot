@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.main.refs :as refs]
    [app.main.ui.context :as muc]
    [app.main.ui.hooks :as h]
@@ -78,9 +78,9 @@
         shape-without-shadows (assoc shape :shadow [])
 
         filter-str
-        (when (and (or (cph/group-shape? shape)
-                     (cph/frame-shape? shape)
-                     (cph/svg-raw-shape? shape))
+        (when (and (or (cfh/group-shape? shape)
+                     (cfh/frame-shape? shape)
+                     (cfh/svg-raw-shape? shape))
                 (not disable-shadows?))
           (filters/filter-str filter-id shape))
 

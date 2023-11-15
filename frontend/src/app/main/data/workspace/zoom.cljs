@@ -6,12 +6,12 @@
 
 (ns app.main.data.workspace.zoom
   (:require
+   [app.common.files.helpers :as cfh]
    [app.common.geom.align :as gal]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [beicon.core :as rx]
@@ -75,7 +75,7 @@
     (update [_ state]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            shapes  (cph/get-immediate-children objects)
+            shapes  (cfh/get-immediate-children objects)
             srect   (gsh/shapes->rect shapes)]
         (if (empty? shapes)
           state

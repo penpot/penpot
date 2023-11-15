@@ -8,8 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.svg :as csvg]
    [app.common.svg.shapes-builder :as csvg.shapes-builder]
    [app.common.types.shape-tree :as ctst]
@@ -69,7 +69,7 @@
               objects         (wsh/lookup-page-objects state page-id)
               frame-id        (ctst/top-nested-frame objects position)
               selected        (wsh/lookup-selected state)
-              base            (cph/get-base-shape objects selected)
+              base            (cfh/get-base-shape objects selected)
 
               selected-id     (first selected)
               selected-frame? (and (= 1 (count selected))

@@ -6,7 +6,7 @@
 
 (ns frontend-tests.helpers.libraries
   (:require
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -82,7 +82,7 @@
    verify that they are a well constructed instance tree."
   [state root-id]
   (let [page   (thp/current-page state)
-        shapes (cph/get-children-with-self (:objects page)
+        shapes (cfh/get-children-with-self (:objects page)
                                            root-id)]
     (is-instance-root (first shapes))
     (run! is-instance-inner (rest shapes))
@@ -94,7 +94,7 @@
    verify that they are not a component instance."
   [state root-id]
   (let [page   (thp/current-page state)
-        shapes (cph/get-children-with-self (:objects page)
+        shapes (cfh/get-children-with-self (:objects page)
                                            root-id)]
     (run! is-noninstance shapes)
 
@@ -115,7 +115,7 @@
          component      (ctf/find-component libs (:component-id root-inst))
          library        (ctf/get-component-library libs root-inst)
 
-         shapes-inst    (cph/get-children-with-self (:objects page) root-inst-id)
+         shapes-inst    (cfh/get-children-with-self (:objects page) root-inst-id)
          shapes-main    (ctf/get-component-shapes (:data library) component)
          unique-refs    (into #{} (map :shape-ref) shapes-inst)
 
@@ -155,7 +155,7 @@
         component     (ctf/find-component libs (:component-id root-inst))
         library       (ctf/get-component-library libs root-inst)
 
-        shapes-inst   (cph/get-children-with-self (:objects page) root-inst-id)
+        shapes-inst   (cfh/get-children-with-self (:objects page) root-inst-id)
         shapes-main   (ctf/get-component-shapes (:data library) component)]
 
     ;; Validate that the instance tree is well constructed

@@ -9,12 +9,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
@@ -95,7 +95,7 @@
                    (if (:component-root shape)
                      transformed-shape
                      (gsh/transform-shape root (dm/get-in modif-tree [(:id root) :modifiers])))]
-               
+
                (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
 
             ([ignore-tree shape root transformed-root]
@@ -112,7 +112,7 @@
                      (assoc
                       shape-id
                       (check-delta shape root transformed-shape transformed-root)))
-                   
+
                    set-child
                    (fn [ignore-tree child]
                      (get-ignore-tree ignore-tree child root transformed-root))]
@@ -474,7 +474,7 @@
 
              ids-with-children
              (into ids
-                   (mapcat (partial cph/get-children-ids objects))
+                   (mapcat (partial cfh/get-children-ids objects))
                    ids)
 
              ignore-tree
@@ -492,7 +492,7 @@
                   ids
                   (fn [shape]
                     (let [modif (get-in object-modifiers [(:id shape) :modifiers])
-                          text-shape? (cph/text-shape? shape)
+                          text-shape? (cfh/text-shape? shape)
                           position-data (when text-shape?
                                           (dm/get-in text-modifiers [(:id shape) :position-data]))]
                       (-> shape

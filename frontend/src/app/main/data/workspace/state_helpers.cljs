@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.svg.path.command :as upc]
    [app.common.uuid :as uuid]))
 
@@ -53,7 +53,7 @@
              (and (contains? objects id)
                   (or (not omit-blocked?)
                       (not (get-in objects [id :blocked] false)))))]
-     (let [selected (->> selected (cph/clean-loops objects))]
+     (let [selected (->> selected (cfh/clean-loops objects))]
        (into (d/ordered-set)
              (filter selectable?)
              selected)))))
@@ -126,7 +126,7 @@
   [parent-id state]
   (let [objects   (lookup-page-objects state)
         modifiers (:workspace-modifiers state)
-        children-ids (cph/get-children-ids objects parent-id)
+        children-ids (cfh/get-children-ids objects parent-id)
         children
         (-> (select-keys objects children-ids)
             (update-vals

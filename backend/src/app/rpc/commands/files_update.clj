@@ -9,11 +9,10 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.changes :as cpc]
    [app.common.files.migrations :as pmg]
    [app.common.files.validate :as val]
    [app.common.logging :as l]
-   [app.common.pages :as cp]
-   [app.common.pages.changes :as cpc]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -291,7 +290,7 @@
 
     (-> file
         (update :revn inc)
-        (update :data cp/process-changes changes)
+        (update :data cpc/process-changes changes)
 
         ;; If `libs` is defined, then full validation is performed
         (val/validate-file! libs)

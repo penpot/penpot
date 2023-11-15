@@ -10,7 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
@@ -234,7 +234,7 @@
 (mf/defc context-menu-thumbnail
   [{:keys [shapes]}]
   (let [single?    (= (count shapes) 1)
-        has-frame? (some cph/frame-shape? shapes)
+        has-frame? (some cfh/frame-shape? shapes)
         do-toggle-thumbnail #(st/emit! (dw/toggle-file-thumbnail-selected))]
     (when (and single? has-frame?)
       [:*
@@ -253,9 +253,9 @@
         single?   (= (count shapes) 1)
         do-create-artboard-from-selection #(st/emit! (dwsh/create-artboard-from-selection))
 
-        has-frame? (->> shapes (d/seek cph/frame-shape?))
-        has-group? (->> shapes (d/seek cph/group-shape?))
-        has-bool? (->> shapes (d/seek cph/bool-shape?))
+        has-frame? (->> shapes (d/seek cfh/frame-shape?))
+        has-group? (->> shapes (d/seek cfh/group-shape?))
+        has-bool? (->> shapes (d/seek cfh/bool-shape?))
         has-mask? (->> shapes (d/seek :masked-group))
 
         is-group? (and single? has-group?)
@@ -307,10 +307,10 @@
   (let [multiple?            (> (count shapes) 1)
         single?              (= (count shapes) 1)
 
-        has-group?           (->> shapes (d/seek cph/group-shape?))
-        has-bool?            (->> shapes (d/seek cph/bool-shape?))
-        has-frame?           (->> shapes (d/seek cph/frame-shape?))
-        has-path?            (->> shapes (d/seek cph/path-shape?))
+        has-group?           (->> shapes (d/seek cfh/group-shape?))
+        has-bool?            (->> shapes (d/seek cfh/bool-shape?))
+        has-frame?           (->> shapes (d/seek cfh/frame-shape?))
+        has-path?            (->> shapes (d/seek cfh/path-shape?))
 
         is-group?            (and single? has-group?)
         is-bool?             (and single? has-bool?)
@@ -396,7 +396,7 @@
 
         prototype?      (= options-mode :prototype)
         single?         (= (count shapes) 1)
-        has-frame?      (->> shapes (d/seek cph/frame-shape?))
+        has-frame?      (->> shapes (d/seek cfh/frame-shape?))
         is-frame?       (and single? has-frame?)]
 
     (when (and prototype? is-frame?)
@@ -410,7 +410,7 @@
 (mf/defc context-menu-flex
   [{:keys [shapes]}]
   (let [single?            (= (count shapes) 1)
-        has-frame?         (->> shapes (d/seek cph/frame-shape?))
+        has-frame?         (->> shapes (d/seek cfh/frame-shape?))
         is-flex-container? (and single? has-frame? (= :flex (:layout (first shapes))))
         ids                (->> shapes (map :id))
 

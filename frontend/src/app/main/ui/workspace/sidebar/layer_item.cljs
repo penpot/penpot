@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.shape.layout :as ctl]
@@ -53,8 +53,8 @@
 
         selected?         (contains? selected id)
         highlighted?      (contains? highlighted id)
-        container?        (or (cph/frame-shape? item)
-                              (cph/group-shape? item))
+        container?        (or (cfh/frame-shape? item)
+                              (cfh/group-shape? item))
         absolute?         (ctl/layout-absolute? item)
 
         components-v2     (mf/use-ctx ctx/components-v2)
@@ -63,7 +63,7 @@
         main-instance?    (if components-v2
                             (:main-instance item)
                             true)
-        parent-board?     (and (cph/frame-shape? item)
+        parent-board?     (and (cfh/frame-shape? item)
                                (= uuid/zero (:parent-id item)))
         toggle-collapse
         (mf/use-fn
@@ -153,7 +153,7 @@
                              :else index)
                  parent-id (if (= side :center)
                              id
-                             (cph/get-parent-id objects id))
+                             (cfh/get-parent-id objects id))
                  parent    (get objects parent-id)]
              (when-not (ctk/in-component-copy? parent) ;; We don't want to change the structure of component copies
                (st/emit! (dw/relocate-selected-shapes parent-id to-index))))))
@@ -232,8 +232,8 @@
                       :component (some? (:component-id item))
                       :masked (:masked-group item)
                       :selected selected?
-                      :type-frame (cph/frame-shape? item)
-                      :type-bool (cph/bool-shape? item)
+                      :type-frame (cfh/frame-shape? item)
+                      :type-bool (cfh/bool-shape? item)
                       :type-comp component-tree?
                       :hidden hidden?
                       :dnd-over (= (:over dprops) :center)
@@ -294,7 +294,7 @@
                          :parent-size parent-size
                          :selected? selected?
                          :type-comp component-tree?
-                         :type-frame (cph/frame-shape? item)
+                         :type-frame (cfh/frame-shape? item)
                          :hidden? hidden?}]
          [:div {:class (stl/css-case
                         :element-actions true
@@ -348,7 +348,7 @@
                     :dnd-over-top (= (:over dprops) :top)
                     :dnd-over-bot (= (:over dprops) :bot)
                     :selected     selected?
-                    :type-frame   (cph/frame-shape? item))}
+                    :type-frame   (cfh/frame-shape? item))}
 
        [:div.element-list-body {:class (stl/css-case*
                                         :selected selected?
@@ -375,7 +375,7 @@
                         :disabled-double-click read-only?
                         :selected? selected?
                         :type-comp component-tree?
-                        :type-frame (cph/frame-shape? item)
+                        :type-frame (cfh/frame-shape? item)
                         :hidden? hidden?}]
 
         [:div.element-actions {:class (when ^boolean has-shapes? "is-parent")}

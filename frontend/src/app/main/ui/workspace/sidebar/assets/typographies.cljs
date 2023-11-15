@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -232,7 +232,7 @@
           (for [[path-item content] groups]
             (when-not (empty? path-item)
               [:& typographies-group {:file-id file-id
-                                      :prefix (cph/merge-path-item prefix path-item)
+                                      :prefix (cfh/merge-path-item prefix path-item)
                                       :key (dm/str "group-" path-item)
                                       :groups content
                                       :open-groups open-groups
@@ -294,7 +294,7 @@
           (for [[path-item content] groups]
             (when-not (empty? path-item)
               [:& typographies-group {:file-id file-id
-                                      :prefix (cph/merge-path-item prefix path-item)
+                                      :prefix (cfh/merge-path-item prefix path-item)
                                       :key (dm/str "group-" path-item)
                                       :groups content
                                       :open-groups open-groups

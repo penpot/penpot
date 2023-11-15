@@ -9,7 +9,7 @@
    ["js-beautify" :as beautify]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.shape-tree :as ctst]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.fonts :as fonts]
@@ -23,7 +23,7 @@
 
 (def style-type "css")
 (def markup-type "html")
-            
+
 
 (def page-template
   "<!DOCTYPE html>
@@ -57,7 +57,7 @@
 (defn shapes->fonts
   [shapes]
   (->> shapes
-       (filter cph/text-shape?)
+       (filter cfh/text-shape?)
        (map (comp fonts/get-content-fonts :content))
        (reduce set/union #{})))
 
@@ -70,7 +70,7 @@
             shape (get objects shape-id)
 
             all-children
-            (->> (cph/selected-with-children objects [shape-id])
+            (->> (cfh/selected-with-children objects [shape-id])
                  (ctst/sort-z-index objects)
                  (keep (d/getf objects)))
 

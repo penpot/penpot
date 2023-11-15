@@ -4,18 +4,18 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.pages.changes-builder
+(ns app.common.files.changes-builder
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
+   [app.common.files.changes :as cfc]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
@@ -69,7 +69,7 @@
 
 (defn with-container
   [changes container]
-  (if (cph/page? container)
+  (if (cfh/page? container)
     (vary-meta changes assoc ::page-id (:id container))
     (vary-meta changes assoc ::component-id (:id container))))
 
@@ -169,7 +169,7 @@
                                        (assoc :page-id uuid/zero)
                                        (dissoc :component-id))))
                           [])
-          new-file-data (cp/process-changes file-data new-changes)]
+          new-file-data (cfc/process-changes file-data new-changes)]
       (vary-meta changes assoc ::file-data new-file-data
                                ::applied-changes-count (count redo-changes)))
     changes))
@@ -332,7 +332,7 @@
 
          mk-undo-change
          (fn [undo-changes shape]
-           (let [prev-sibling (cph/get-prev-sibling objects (:id shape))]
+           (let [prev-sibling (cfh/get-prev-sibling objects (:id shape))]
            (conj undo-changes
                  {:type :mov-objects
                   :page-id (::page-id (meta changes))
@@ -465,7 +465,7 @@
                :page-id page-id
                :parent-id (:frame-id shape)
                :frame-id (:frame-id shape)
-               :index (cph/get-position-on-parent objects id)
+               :index (cfh/get-position-on-parent objects id)
                :obj (cond-> shape
                       (contains? shape :shapes)
                       (assoc :shapes []))})))
@@ -473,7 +473,7 @@
          add-undo-change-parent
          (fn [change-set id]
            (let [shape (get objects id)
-                 prev-sibling (cph/get-prev-sibling objects (:id shape))]
+                 prev-sibling (cfh/get-prev-sibling objects (:id shape))]
              (conj
               change-set
               {:type :mov-objects
@@ -499,7 +499,7 @@
 
         objects (lookup-objects changes)
         xform   (comp
-                  (mapcat #(cons % (cph/get-parent-ids objects %)))
+                  (mapcat #(cons % (cfh/get-parent-ids objects %)))
                   (map (d/getf objects))
                   (filter #(contains? #{:group :bool} (:type %)))
                   (distinct))

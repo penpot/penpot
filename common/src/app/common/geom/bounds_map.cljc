@@ -8,11 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]))
 
@@ -32,12 +32,12 @@
 
   ([{:keys [id] :as shape} bounds-map objects modif-tree current-ref]
    (cond
-     (and (cph/mask-shape? shape) (d/not-empty? (:shapes shape)))
+     (and (cfh/mask-shape? shape) (d/not-empty? (:shapes shape)))
      (create-bounds (get objects (first (:shapes shape))) bounds-map objects modif-tree)
 
-     (cph/group-shape? shape)
+     (cfh/group-shape? shape)
      (let [modifiers (dm/get-in modif-tree [id :modifiers])
-           children (cph/get-immediate-children objects id)
+           children (cfh/get-immediate-children objects id)
            shape-bounds (if current-ref @current-ref @(get bounds-map id))
            current-bounds
            (cond-> shape-bounds
@@ -62,8 +62,8 @@
      ;; These are the new bounds calculated. Are the "modified" plus any groups they belong to
      (let [ids (keys modif-tree)]
        (into (set ids)
-             (mapcat #(->> (cph/get-parent-ids-seq objects %)
-                           (take-while (partial cph/group-like-shape? objects))))
+             (mapcat #(->> (cfh/get-parent-ids-seq objects %)
+                           (take-while (partial cfh/group-like-shape? objects))))
              ids)))
 
    :cljs
@@ -77,8 +77,8 @@
          (when (some? base-ids)
            (let [cid (first base-ids)]
              (loop [new-ids
-                    (->> (cph/get-parent-seq objects cid)
-                         (take-while #(and (cph/group-like-shape? %)
+                    (->> (cfh/get-parent-seq objects cid)
+                         (take-while #(and (cfh/group-like-shape? %)
                                            (not (.has ids %))))
                          (seq))]
                (when (some? new-ids)

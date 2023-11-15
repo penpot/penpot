@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -15,7 +16,6 @@
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]))
 
 (defn size-pixel-precision
@@ -30,7 +30,7 @@
         transform         (gtr/calculate-transform points center selrect)
         transform-inverse (when (some? transform) (gmt/inverse transform))
 
-        path?             (cph/path-shape? shape)
+        path?             (cfh/path-shape? shape)
         vertical-line?    (and path? (<= curr-width 0.01))
         horizontal-line?  (and path? (<= curr-height 0.01))
 

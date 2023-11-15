@@ -7,12 +7,12 @@
 (ns app.worker.selection
   (:require
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
+   [app.common.files.indices :as cfi]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gst]
-   [app.common.pages :as cp]
-   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
    [app.util.quadtree :as qdt]
@@ -31,7 +31,7 @@
   (fn [index shape]
     (let [{:keys [x y width height]}
           (cond
-            (and ^boolean (cph/text-shape? shape)
+            (and ^boolean (cfh/text-shape? shape)
                  ^boolean (some? (:position-data shape))
                  ^boolean (d/not-empty? (:position-data shape)))
             (gst/shape->bounds shape)
@@ -81,10 +81,10 @@
 (defn- create-index
   [objects]
   (let [shapes             (-> objects (dissoc uuid/zero) vals)
-        parents-index      (cp/generate-child-all-parents-index objects)
-        clip-parents-index (cp/create-clip-index objects parents-index)
+        parents-index      (cfi/generate-child-all-parents-index objects)
+        clip-parents-index (cfi/create-clip-index objects parents-index)
 
-        root-shapes        (cph/get-immediate-children objects uuid/zero)
+        root-shapes        (cfh/get-immediate-children objects uuid/zero)
         bounds             (-> root-shapes gsh/shapes->rect add-padding-bounds)
 
         index-shape        (make-index-shape objects parents-index clip-parents-index)
@@ -103,13 +103,13 @@
         changed-ids (into #{}
                           (comp (filter #(not= % uuid/zero))
                                 (filter changes?)
-                                (mapcat #(into [%] (cph/get-children-ids new-objects %))))
+                                (mapcat #(into [%] (cfh/get-children-ids new-objects %))))
                           (set/union (set (keys old-objects))
                                      (set (keys new-objects))))
 
         shapes             (->> changed-ids (mapv #(get new-objects %)) (filterv (comp not nil?)))
-        parents-index      (cp/generate-child-all-parents-index new-objects shapes)
-        clip-parents-index (cp/create-clip-index new-objects parents-index)
+        parents-index      (cfi/generate-child-all-parents-index new-objects shapes)
+        clip-parents-index (cfi/create-clip-index new-objects parents-index)
 
         new-index (qdt/remove-all index changed-ids)
 

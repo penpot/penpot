@@ -4,22 +4,18 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.pages.changes
-  #_:clj-kondo/ignore
+(ns app.common.files.changes
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.schema.desc-native :as smd]
-   [app.common.spec :as us]
    [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
-   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
@@ -423,7 +419,7 @@
             (let [lookup    (d/getf objects)
                   update-fn #(d/update-when %1 %2 update-group %1)
                   xform     (comp
-                             (mapcat #(cons % (cph/get-parent-ids objects %)))
+                             (mapcat #(cons % (cfh/get-parent-ids objects %)))
                              (filter #(contains? #{:group :bool} (-> % lookup :type)))
                              (distinct))]
 
@@ -477,7 +473,7 @@
             (let [invalid-targets (calculate-invalid-targets objects shape-id)]
               (and (contains? objects shape-id)
                    (not (invalid-targets parent-id))
-                   (not (cph/components-nesting-loop? objects shape-id parent-id))
+                   (not (cfh/components-nesting-loop? objects shape-id parent-id))
                    (or component-swap
                        (not (ctk/in-component-copy? (get objects parent-id))))))) ;; We don't want to change the structure of component copies
 
@@ -485,7 +481,7 @@
             (let [prev-shapes (or prev-shapes [])]
               (if index
                 (d/insert-at-index prev-shapes index shapes)
-                (cph/append-at-the-end prev-shapes shapes))))
+                (cfh/append-at-the-end prev-shapes shapes))))
 
           (add-to-parent [parent index shapes]
             (let [parent (-> parent
@@ -498,7 +494,7 @@
                 (and (:shape-ref parent)
                      (#{:group :frame} (:type parent))
                      (not ignore-touched))
-                (-> (update :touched cph/set-touched-group :shapes-group)
+                (-> (update :touched cfh/set-touched-group :shapes-group)
                     (dissoc :remote-synced)))))
 
           (remove-from-old-parent [old-objects objects shape-id]
@@ -517,7 +513,7 @@
                       (d/update-in-when [pid :shapes] d/without-obj sid)
                       (d/update-in-when [pid :shapes] d/vec-without-nils)
                       (cond-> component? (d/update-when pid #(-> %
-                                                                 (update :touched cph/set-touched-group :shapes-group)
+                                                                 (update :touched cfh/set-touched-group :shapes-group)
                                                                  (dissoc :remote-synced)))))))))
           (update-parent-id [objects id]
             (-> objects
@@ -698,7 +694,7 @@
       ;; geometric (position, width or transformation).
       (and in-copy? group (not ignore) (not equal?)
            (not (and ignore-geometry is-geometry?)))
-      (-> (update :touched cph/set-touched-group group)
+      (-> (update :touched cfh/set-touched-group group)
           (dissoc :remote-synced))
 
       (nil? val)
@@ -744,7 +740,7 @@
   (when page-id
     (let [page (ctpl/get-page file-data page-id)
           shape-and-parents (map #(ctn/get-shape page %)
-                                 (cons id (cph/get-parent-ids (:objects page) id)))
+                                 (cons id (cfh/get-parent-ids (:objects page) id)))
           need-sync? (fn [operation]
                        ; We need to trigger a sync if the shape has changed any
                        ; attribute that participates in components synchronization.
@@ -766,7 +762,7 @@
           check-shape
           (fn [shape-id others]
             (let [all-parents (map (partial ctn/get-shape page)
-                                   (concat others (cph/get-parent-ids (:objects page) shape-id)))]
+                                   (concat others (cfh/get-parent-ids (:objects page) shape-id)))]
               (into #{} xform all-parents)))]
 
       (reduce #(set/union %1 (check-shape %2 []))
@@ -778,7 +774,7 @@
   (when page-id
     (let [page (ctpl/get-page file-data page-id)
           shape-and-parents (map (partial ctn/get-shape page)
-                                 (cons id (cph/get-parent-ids (:objects page) id)))
+                                 (cons id (cfh/get-parent-ids (:objects page) id)))
           xform (comp (filter :main-instance)
                       (map :component-id))]
       (into #{} xform shape-and-parents))))
