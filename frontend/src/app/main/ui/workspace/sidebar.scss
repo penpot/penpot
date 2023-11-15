@@ -32,18 +32,16 @@ $width-settings-bar-max: $s-500;
     left: 0;
     width: 100%;
     height: $s-12;
-    border-top: 2px solid var(--color-background-secondary);
+    border-top: 2px solid var(--color-background-quaternary);
     background-color: var(--color-background-primary);
     cursor: ns-resize;
-    &:hover {
-      border-color: var(--color-background-quaternary);
-    }
   }
   .settings-bar-inside {
     display: grid;
     grid-template-columns: 100%;
     grid-template-rows: 100%;
     height: calc(100vh - $s-52);
+    overflow: hidden;
     .tabs-wrapper {
       .layers-tab {
         display: grid;
@@ -63,6 +61,8 @@ $width-settings-bar-max: $s-500;
   width: $width-settings-bar;
   background-color: var(--panel-background-color);
   height: 100%;
+  display: flex;
+  flex-direction: column;
   &.not-expand {
     max-width: $width-settings-bar;
   }

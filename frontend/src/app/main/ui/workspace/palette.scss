@@ -112,6 +112,7 @@
   .palette {
     grid-area: palette;
     width: 100%;
+    min-width: 0;
   }
   .handler {
     @include buttonStyle;

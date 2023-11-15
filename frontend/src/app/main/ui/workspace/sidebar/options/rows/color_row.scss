@@ -24,6 +24,10 @@
       border-radius: $br-8 0 0 $br-8;
       padding: 0;
       margin-right: 0;
+      gap: $s-4;
+      input {
+        padding: 0;
+      }
       &.no-opacity {
         border-radius: $br-8;
       }

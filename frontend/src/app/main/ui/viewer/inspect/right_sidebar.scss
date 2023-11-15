@@ -15,6 +15,9 @@
   right: unset;
   grid-area: right-sidebar;
   .tool-windows {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     .shape-row {
       display: flex;
       gap: $s-8;
@@ -60,5 +63,10 @@
       height: $s-32;
       padding: $s-8 $s-24;
     }
+  }
+
+  .inspect-content {
+    flex: 1;
+    overflow: hidden;
   }
 }

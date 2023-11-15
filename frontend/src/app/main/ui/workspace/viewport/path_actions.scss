@@ -41,10 +41,6 @@
       border-radius: $s-8;
       border: none;
       margin: 0 $s-2;
-      &.is-disabled {
-        pointer-events: none;
-        opacity: 40%;
-      }
       &.is-toggled {
         background-color: var(--button-radio-background-color-active);
         svg {
