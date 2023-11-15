@@ -18,7 +18,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
@@ -44,9 +43,8 @@
                          (refs/children-objects shape-id))
             childs     (mf/deref childs-ref)]
 
-        [:& (mf/provider embed/context) {:value true}
          [:& shape-container {:shape shape :ref ref :disable-shadows? (cfh/is-direct-child-of-root? shape)}
-          [:& frame-shape {:shape shape :childs childs}]]]))))
+          [:& frame-shape {:shape shape :childs childs}]]))))
 
 (defn check-props
   [new-props old-props]

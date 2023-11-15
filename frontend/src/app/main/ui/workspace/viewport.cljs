@@ -18,7 +18,6 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.measurements :as msr]
-   [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.export :as use]
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.text.editor :as editor]
@@ -329,11 +328,10 @@
 
       [:& (mf/provider ctx/current-vbox) {:value vbox'}
        [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
-        [:& (mf/provider embed/context) {:value true}
          ;; Render root shape
          [:& shapes/root-shape {:key page-id
                                 :objects base-objects
-                                :active-frames @active-frames}]]]]]
+                                :active-frames @active-frames}]]]]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"

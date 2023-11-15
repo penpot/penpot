@@ -9,9 +9,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.gradients :as grad]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -40,29 +39,24 @@
 
         uri        (cond
                      (some? metadata)
-                     (cfg/resolve-file-media metadata)
+                     (cf/resolve-file-media metadata)
 
                      (some? image)
-                     (cfg/resolve-file-media image))
+                     (cf/resolve-file-media image))
 
         uris       (into [uri]
                      (comp
                        (keep :fill-image)
-                       (map cfg/resolve-file-media))
+                       (map cf/resolve-file-media))
                      fills)
 
-        embed       (embed/use-data-uris uris)
         transform   (gsh/transform-str shape)
-
-        ;; When true the image has not loaded yet
-        loading?    (not-any? (partial contains? embed) uris)
 
         pat-props   #js {:patternUnits "userSpaceOnUse"
                          :x x
                          :y y
                          :width width
-                         :height height
-                         :data-loading loading?}
+                         :height height}
 
         pat-props   (if (= :path type)
                      (obj/set! pat-props "patternTransform" transform)
@@ -96,9 +90,9 @@
                               :height height
                               :style style}]
                (if (:fill-image value)
-                 (let [uri (cfg/resolve-file-media (:fill-image value))
+                 (let [uri (cf/resolve-file-media (:fill-image value))
                        image-props #js {:id (dm/str "fill-image-" render-id "-" fill-index)
-                                        :href (get embed uri uri)
+                                        :href (get uris uri uri)
                                         :preserveAspectRatio "xMidYMid slice"
                                         :width width
                                         :height height
