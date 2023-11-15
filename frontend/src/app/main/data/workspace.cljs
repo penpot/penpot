@@ -298,6 +298,7 @@
              (rx/map (fn [[file thumbnails team-users comments-users]]
                        (let [bundle (-> bundle
                                         (assoc :file file)
+                                        (assoc :features features)
                                         (assoc :thumbnails thumbnails)
                                         (assoc :team-users team-users)
                                         (assoc :comments-users comments-users))]
