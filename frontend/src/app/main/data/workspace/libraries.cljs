@@ -113,7 +113,7 @@
 
 (defn add-recent-color
   [color]
-  (dm/assert! (ctc/recent-color? color))
+  (dm/assert! (ctc/valid-recent-color? color))
   (ptk/reify ::add-recent-color
     ptk/WatchEvent
     (watch [it _ _]
@@ -143,7 +143,7 @@
 
 (defn update-color
   [color file-id]
-  (dm/assert! (ctc/color? color))
+  (dm/assert! (ctc/valid-color? color))
   (dm/assert! (uuid? file-id))
 
   (ptk/reify ::update-color

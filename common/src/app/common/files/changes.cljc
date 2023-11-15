@@ -13,6 +13,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.schema.desc-native :as smd]
+   [app.common.types.color :as ctc]
    [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -166,7 +167,7 @@
     [:add-recent-color
      [:map {:title "AddRecentColorChange"}
       [:type [:= :add-recent-color]]
-      [:color :any]]]
+      [:color ::ctc/recent-color]]]
 
     [:add-media
      [:map {:title "AddMediaChange"}
