@@ -81,12 +81,7 @@
           stroke: var(--icon-foreground);
         }
         &.selected {
-          border: $s-2 solid var(--palette-btn-border-color-selected);
-          background-color: var(--palette-btn-background-color-selected);
-          color: var(--palette-btn-foreground-color-selected);
-          svg {
-            stroke: var(--palette-btn-foreground-color-selected);
-          }
+          @extend .button-icon-selected;
         }
         &:hover {
           border: $s-2 solid transparent;

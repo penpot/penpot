@@ -71,6 +71,7 @@
                              (-> (l/key shadow-id)
                                  (l/derived open-state-ref)))
         open-shadow        (mf/deref open-status-ref)
+        hidden?            (:hidden value)
 
         on-remove-shadow
         (mf/use-fn
@@ -163,8 +164,10 @@
      (if new-css-system
        [:*
         [:div {:class (stl/css :basic-options)}
-         [:div {:class (stl/css :shadow-info)}
-          [:button {:class (stl/css :more-options)
+         [:div {:class (stl/css-case :shadow-info true
+                                     :hidden hidden?)}
+          [:button {:class (stl/css-case :more-options true
+                                         :selected open-shadow)
                     :on-click on-toggle-open-shadow}
            i/menu-refactor]
           [:div {:class (stl/css :type-select)}
@@ -176,7 +179,7 @@
          [:div {:class (stl/css :actions)}
           [:button {:class (stl/css :action-btn)
                     :on-click toggle-visibility}
-           (if (:hidden value)
+           (if hidden?
              i/hide-refactor
              i/shown-refactor)]
           [:button {:class (stl/css :action-btn)
@@ -268,7 +271,7 @@
 
          [:div.shadow-option-main-actions
           [:div.element-set-actions-button {:on-click toggle-visibility}
-           (if (:hidden value) i/eye-closed i/eye)]
+           (if hidden? i/eye-closed i/eye)]
           [:div.element-set-actions-button
            {:data-index index
             :on-click on-remove-shadow}

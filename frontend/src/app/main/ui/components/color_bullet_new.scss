@@ -85,6 +85,7 @@
 
 .big-text {
   @include inspectValue;
+  color: var(--palette-text-color);
   height: $s-16;
 }
 

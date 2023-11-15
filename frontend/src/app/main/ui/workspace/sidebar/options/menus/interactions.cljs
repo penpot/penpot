@@ -175,7 +175,8 @@
       [:div  {:class (stl/css :flow-element)}
        [:button {:class (stl/css :start-flow-btn)
                  :on-click start-flow}
-        i/play-refactor]
+        [:span {:class (stl/css :button-icon)}
+         i/play-refactor]]
 
        (if @editing?
          [:input
@@ -509,7 +510,8 @@
                                    :open extended-open?)}
       ; Summary
        [:div {:class (stl/css :interactions-summary)}
-        [:div {:class (stl/css :extend-btn)
+        [:div {:class (stl/css-case :extend-btn true
+                                    :extended extended-open?)
                :on-click toggle-extended}
          i/menu-refactor]
 
@@ -614,7 +616,8 @@
                            :on-change change-overlay-pos-type}]]]
 
              ;; Overlay position (buttons)
-             [:div {:class (stl/css :property-row)}
+             [:div {:class (stl/css-case :property-row true
+                                         :big-row true)}
               [:div {:class (stl/css :position-btns-wrapper)}
                [:button {:class (stl/css-case :direction-btn true
                                               :center-btn true
@@ -767,6 +770,7 @@
                 [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-easing")]
                 [:div {:class (stl/css :select-wrapper)}
                  [:& select {:class (stl/css :easing-select)
+                             :dropdown-class (stl/css :dropdown-upwards)
                              :default-value (-> interaction :animation :easing)
                              :options easing-options
                              :on-change change-easing}]]])

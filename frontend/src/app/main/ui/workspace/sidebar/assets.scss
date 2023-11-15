@@ -112,7 +112,7 @@
     height: calc(100vh - $s-180);
   }
   .assets-header {
-    padding: $s-8 0 $s-12 $s-12;
+    padding: $s-8 $s-12 $s-12 $s-12;
     .search-wrapper {
       display: flex;
       gap: $s-4;

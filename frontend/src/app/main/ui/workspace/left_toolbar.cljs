@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.left-toolbar
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.geom.point :as gpt]
    [app.common.media :as cm]
@@ -77,8 +77,8 @@
         read-only?           (mf/use-ctx ctx/workspace-read-only?)
 
         show-palette-btn?    (and (not ^boolean read-only?) (not ^boolean new-css-system))
-
-        hide-toolbar?         (mf/deref refs/toolbar-visibility)
+        rulers?              (mf/deref refs/rules?)
+        hide-toolbar?        (mf/deref refs/toolbar-visibility)
 
         interrupt
         (mf/use-fn #(st/emit! :interrupt))
@@ -145,15 +145,16 @@
 
     (if new-css-system
       (when-not ^boolean read-only?
-        [:aside {:class (dom/classnames (css :main-toolbar) true
-                                        (css :hidden-toolbar) hide-toolbar?)}
-         [:ul {:class (css :main-toolbar-options)}
+        [:aside {:class (stl/css-case :main-toolbar true
+                                      :not-rulers-present (not rulers?)
+                                      :hidden-toolbar hide-toolbar?)}
+         [:ul {:class (stl/css :main-toolbar-options)}
           [:li
            [:button
             {:title (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
              :aria-label (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
-             :class (when (and (nil? selected-drawtool)
-                               (not edition)) "selected")
+             :class (stl/css-case :selected (and (nil? selected-drawtool)
+                                                 (not edition)))
              :on-click interrupt}
             i/move-refactor]]
           [:*
@@ -161,7 +162,7 @@
             [:button
              {:title (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
               :aria-label (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
-              :class (when (= selected-drawtool :frame) "selected")
+              :class  (stl/css-case :selected (= selected-drawtool :frame))
               :on-click select-drawtool
               :data-tool "frame"
               :data-test "artboard-btn"}
@@ -170,7 +171,7 @@
             [:button
              {:title (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
               :aria-label (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
-              :class (when (= selected-drawtool :rect) "selected")
+              :class (stl/css-case :selected (= selected-drawtool :rect))
               :on-click select-drawtool
               :data-tool "rect"
               :data-test "rect-btn"}
@@ -179,7 +180,7 @@
             [:button
              {:title (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
               :aria-label (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
-              :class (when (= selected-drawtool :circle) "selected")
+              :class (stl/css-case :selected (= selected-drawtool :circle))
               :on-click select-drawtool
               :data-tool "circle"
               :data-test "ellipse-btn"}
@@ -188,7 +189,7 @@
             [:button
              {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
               :aria-label (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
-              :class (when (= selected-drawtool :text) "selected")
+              :class (stl/css-case :selected (= selected-drawtool :text))
               :on-click select-drawtool
               :data-tool "text"}
              i/text-refactor]]
@@ -199,7 +200,7 @@
             [:button
              {:title  (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
               :aria-label (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
-              :class (when (= selected-drawtool :curve) "selected")
+              :class (stl/css-case :selected (= selected-drawtool :curve))
               :on-click select-drawtool
               :data-tool "curve"
               :data-test "curve-btn"}
@@ -208,30 +209,32 @@
             [:button
              {:title (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
               :aria-label (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
-              :class (when (= selected-drawtool :path) "selected")
+              :class (stl/css-case :selected (= selected-drawtool :path))
               :on-click select-drawtool
               :data-tool "path"
               :data-test "path-btn"}
-             i/pentool-refactor]]]]
-         [:button {:class (dom/classnames (css :toolbar-handler) true)
-                   :on-click toggle-toolbar}
-          [:div {:class (dom/classnames (css :toolbar-handler-btn) true)}]]
+             i/path-refactor]]
 
-         [:ul {:class (dom/classnames (css :main-toolbar-panels) true)}
+           (when *assert*
+             [:li
+              [:button
+               {:title "Debugging tool"
+                :class (stl/css-case :selected (contains? layout :debug-panel))
+                :on-click toggle-debug-panel}
+               i/bug-refactor]])]]
+
+         [:button {:class (stl/css :toolbar-handler)
+                   :on-click toggle-toolbar}
+          [:div {:class (stl/css :toolbar-handler-btn)}]]
+
+         [:ul {:class  (stl/css :main-toolbar-panels)}
           [:li
            [:button
             {:title (tr "workspace.toolbar.shortcuts" (sc/get-tooltip :show-shortcuts))
              :aria-label (tr "workspace.toolbar.shortcuts" (sc/get-tooltip :show-shortcuts))
              :class (when (contains? layout :shortcuts) "selected")
              :on-click toggle-shortcuts}
-            i/shortcut]
-
-           (when *assert*
-             [:button
-              {:title "Debugging tool"
-               :class (when (contains? layout :debug-panel) "selected")
-               :on-click toggle-debug-panel}
-              i/bug])]]])
+            i/shortcut]]]])
 
       [:aside.left-toolbar
        [:ul.left-toolbar-options

@@ -56,6 +56,9 @@
             @include flexColumn;
             .property-row {
               @extend .attr-row;
+              &.big-row {
+                height: 100%;
+              }
               .interaction-name {
                 @include twoLineTextEllipsis;
                 @include titleTipography;
@@ -68,6 +71,15 @@
                 display: flex;
                 align-items: center;
                 grid-area: content;
+                .easing-select {
+                  width: $s-156;
+                  padding: 0 $s-8;
+                  .dropdown-upwards {
+                    bottom: $s-36;
+                    width: $s-156;
+                    top: unset;
+                  }
+                }
               }
               .input-element-wrapper {
                 @extend .input-element;
@@ -163,10 +175,16 @@
           gap: $s-4;
           .extend-btn {
             @extend .button-tertiary;
-            height: $s-32;
+            height: 100%;
             width: $s-28;
             svg {
               @extend .button-icon;
+            }
+            &.extended {
+              background-color: var(--button-radio-background-color-active);
+              svg {
+                stroke: var(--button-radio-foreground-color-active);
+              }
             }
           }
 
@@ -184,7 +202,7 @@
             height: $s-32;
             width: $s-28;
             svg {
-              @extend .button-icon;
+              @extend .button-icon-small;
             }
           }
         }

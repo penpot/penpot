@@ -36,7 +36,7 @@
     }
     .dropdown-element {
       @extend .dropdown-element-base;
-      color: var(--menu-foreground-color);
+      color: var(--menu-foreground-color-rest);
       .label {
         flex-grow: 1;
         width: 100%;
@@ -52,6 +52,7 @@
       }
 
       &.is-selected {
+        color: var(--menu-foreground-color);
         .check-icon svg {
           stroke: var(--menu-foreground-color);
           visibility: visible;

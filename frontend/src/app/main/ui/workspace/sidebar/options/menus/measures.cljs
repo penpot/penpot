@@ -368,18 +368,20 @@
                        :class (stl/css-case :dropdown-element true
                                             :disabled true)}
                   [:span {:class (stl/css :preset-name)} (:name size-preset)]]
-                 [:li {:key (:name size-preset)
-                       :class (stl/css :dropdown-element)
+
+                 (let [preset-match (and (= (:width size-preset) (d/parse-integer (:width values) 0))
+                                         (= (:height size-preset) (d/parse-integer (:height values) 0)))]
+                   [:li {:key (:name size-preset)
+                       :class (stl/css-case :dropdown-element true
+                                            :match preset-match)
                        :data-width (:width size-preset)
                        :data-height (:height size-preset)
                        :on-click on-preset-selected}
                   [:div {:class (stl/css :name-wrapper)}
                    [:span {:class (stl/css :preset-name)} (:name size-preset)]
                    [:span {:class (stl/css :preset-size)} (:width size-preset) " x " (:height size-preset)]]
-
-                  (when (and (= (:width size-preset) (d/parse-integer (:width values) 0))
-                             (= (:height size-preset) (d/parse-integer (:height values) 0)))
-                    [:span {:class (stl/css :check-icon)} i/tick-refactor])]))]]]
+                  (when preset-match
+                    [:span {:class (stl/css :check-icon)} i/tick-refactor])])))]]]
 
           [:& radio-buttons {:selected (or (d/name orientation) "")
                              :on-change on-orientation-change-refactor

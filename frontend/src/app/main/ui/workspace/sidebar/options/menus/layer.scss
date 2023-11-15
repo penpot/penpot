@@ -37,29 +37,17 @@
 
     &.hidden {
       .hidden-select {
-        background-color: transparent;
+        @include hiddenElement;
         border: $s-1 solid var(--input-border-color-disabled);
-        color: var(--input-foreground-color-disabled);
       }
       .input {
-        background-color: transparent;
+        @include hiddenElement;
         border: $s-1 solid var(--input-border-color-disabled);
-        color: var(--input-foreground-color-disabled);
-
         .icon {
           stroke: var(--input-foreground-color-disabled);
         }
         .numeric-input {
           color: var(--input-foreground-color-disabled);
-        }
-      }
-      .actions {
-        .hidden-btn,
-        .lock-btn {
-          background-color: transparent;
-          svg {
-            stroke: var(--input-foreground-color-disabled);
-          }
         }
       }
     }

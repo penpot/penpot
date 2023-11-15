@@ -205,7 +205,7 @@
                [:li
                 {:key (str element-id "-" index)
                  :class (stl/css-case :dropdown-element true
-                                      :is-selected (= value current-value))
+                                      :is-selected (= (dm/str value) current-value))
                  :data-value value
                  :on-click select-item}
                 [:span {:class (stl/css :label)} label]

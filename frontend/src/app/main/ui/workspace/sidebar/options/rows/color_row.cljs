@@ -193,7 +193,8 @@
              :ref dref}
        [:span {:class (stl/css :color-info)}
         [:span {:class (stl/css-case :color-name-wrapper true
-                                     :no-opacity (not opacity?)
+                                     :no-opacity (or disable-opacity
+                                                     (not opacity?))
                                      :library-name-wrapper library-color?
                                      :editing editing-text?
                                      :gradient-name-wrapper gradient-color?)}

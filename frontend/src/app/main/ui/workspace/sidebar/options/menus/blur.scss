@@ -38,19 +38,20 @@
           height: $s-32;
           width: $s-28;
           border-radius: $br-8 0 0 $br-8;
+          box-sizing: border-box;
+          border: $s-1 solid var(--button-secondary-background-color-rest);
           svg {
             @extend .button-icon;
           }
           &.selected {
-            background-color: var(--button-tertiary-background-color-hover);
-            color: var(--button-tertiary-foreground-color-active);
+            background-color: var(--button-radio-background-color-active);
             svg {
-              stroke: var(--button-tertiary-foreground-color-active);
+              stroke: var(--button-radio-foreground-color-active);
             }
           }
         }
         .label {
-          @include tabTitleTipography;
+          @include titleTipography;
           flex-grow: 1;
           display: flex;
           align-items: center;
@@ -58,16 +59,35 @@
           padding: 0 $s-8;
           border-radius: 0 $br-8 $br-8 0;
           background-color: var(--input-background-color);
+          color: var(--menu-foreground-color);
+          box-sizing: border-box;
+          border: $s-1 solid var(--input-background-color);
         }
       }
       .actions {
         @include flexRow;
         .action-btn {
           @extend .button-tertiary;
+          box-sizing: border-box;
+          border: $s-1 solid var(--button-tertiary-background-color-rest);
           height: $s-32;
           width: $s-28;
           svg {
             @extend .button-icon;
+          }
+        }
+      }
+
+      &.hidden {
+        .blur-info {
+          @include hiddenElement;
+          .show-more {
+            @include hiddenElement;
+            border: $s-1 solid var(--input-border-color-disabled);
+          }
+          .label {
+            @include hiddenElement;
+            border: $s-1 solid var(--input-border-color-disabled);
           }
         }
       }
