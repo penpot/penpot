@@ -153,9 +153,8 @@
   (let [errors (mapv #(update % :schema form) errors)]
     (with-out-str
       (println "Schema: ")
-      (println (pp/pprint-str (form schema)) {:level (d/nilv level 10)
-                                              :length (d/nilv length 10)})
-      (println)
+      (println (pp/pprint-str (form schema) {:level (d/nilv level 10)
+                                             :length (d/nilv length 10)}))
       (println "Errors:")
       (println (pp/pprint-str errors {:level (d/nilv level 10)
                                       :length (d/nilv length 10)}))
