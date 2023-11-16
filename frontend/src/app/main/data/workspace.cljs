@@ -36,7 +36,6 @@
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwco]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
@@ -65,6 +64,7 @@
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.features :as features]
+   [app.main.features.pointer-map :as fpmap]
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
@@ -145,7 +145,6 @@
     (watch [_ _ stream]
       (let [team-id   (:id team)
             file-id   (:id file)
-            file-data (:data file)
             stoper-s  (rx/filter (ptk/type? ::bundle-fetched) stream)]
 
         (->> (rx/concat
@@ -166,7 +165,8 @@
                ;; FIXME: move to bundle fetch stages
 
                ;; Load main file
-               (->> (dwc/resolve-file-data file-id file-data)
+               (->> (fpmap/resolve-file file)
+                    (rx/map :data)
                     (rx/mapcat (fn [{:keys [pages-index] :as data}]
                                  (->> (rx/from (seq pages-index))
                                       (rx/mapcat
@@ -186,10 +186,7 @@
                      (fn [{:keys [id synced-at]}]
                        (->> (rp/cmd! :get-file {:id id :features features})
                             (rx/map #(assoc % :synced-at synced-at)))))
-                    (rx/merge-map
-                     (fn [{:keys [id data] :as file}]
-                       (->> (dwc/resolve-file-data id data)
-                            (rx/map (fn [data] (assoc file :data data))))))
+                    (rx/merge-map fpmap/resolve-file)
                     (rx/merge-map
                      (fn [{:keys [id] :as file}]
                        (->> (rp/cmd! :get-file-object-thumbnails {:file-id id :tag "component"})

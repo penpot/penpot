@@ -6,7 +6,7 @@
 
 (ns app.main.ui.dashboard.file-menu
   (:require
-   [app.main.data.common :refer [show-shared-dialog]]
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
@@ -148,11 +148,10 @@
          (fn [_]
            (run! #(st/emit! (dd/set-file-shared (assoc % :is-shared false))) files)))
 
-
         on-add-shared
         (fn [event]
           (dom/stop-propagation event)
-          (st/emit! (show-shared-dialog (:id file) add-shared)))
+          (st/emit! (dcm/show-shared-dialog (:id file) add-shared)))
 
         on-del-shared
         (fn [event]
@@ -166,38 +165,26 @@
                       :count-libraries file-count})))
 
         on-export-files
-        (fn [event-name binary?]
-          (st/emit! (ptk/event ::ev/event {::ev/name event-name
-                                           ::ev/origin "dashboard"
-                                           :num-files (count files)}))
-
-          (->> (rx/from files)
-               (rx/flat-map
-                (fn [file]
-                  (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
-                       (rx/map #(assoc file :has-libraries? %)))))
-               (rx/reduce conj [])
-               (rx/subs
-                (fn [files]
-                  (st/emit!
-                   (modal/show
-                    {:type :export
-                     :team-id current-team-id
-                     :has-libraries? (->> files (some :has-libraries?))
-                     :files files
-                     :binary? binary?}))))))
+        (mf/use-fn
+         (mf/deps files)
+         (fn [binary?]
+           (let [evname (if binary?
+                          "export-binary-files"
+                          "export-standard-files")]
+             (st/emit! (ptk/event ::ev/event {::ev/name evname
+                                              ::ev/origin "dashboard"
+                                              :num-files (count files)})
+                       (dcm/export-files files binary?)))))
 
         on-export-binary-files
-        (mf/use-callback
-         (mf/deps files current-team-id)
-         (fn [_]
-           (on-export-files "export-binary-files" true)))
+        (mf/use-fn
+         (mf/deps on-export-files)
+         (partial on-export-files true))
 
         on-export-standard-files
-        (mf/use-callback
-         (mf/deps files current-team-id)
-         (fn [_]
-           (on-export-files "export-standard-files" false)))
+        (mf/use-fn
+         (mf/deps on-export-files)
+         (partial on-export-files false))
 
         ;; NOTE: this is used for detect if component is still mounted
         mounted-ref (mf/use-ref true)]

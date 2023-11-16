@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
-   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
@@ -79,30 +78,29 @@
   {::mf/register modal/components
    ::mf/register-as :export
    ::mf/wrap-props false}
-  [{:keys [team-id files has-libraries? binary?]}]
+  [{:keys [team-id files has-libraries? binary? features]}]
   (let [new-css-system  (mf/use-ctx ctx/new-css-system)
-        components-v2 (features/use-feature :components-v2)
-        state*        (mf/use-state
-                       #(let [files (mapv (fn [file] (assoc file :loading? true)) files)]
-                          {:status :prepare
-                           :selected :all
-                           :files files}))
+        state*          (mf/use-state
+                         #(let [files (mapv (fn [file] (assoc file :loading? true)) files)]
+                            {:status :prepare
+                             :selected :all
+                             :files files}))
 
-        state         (deref state*)
-        selected      (:selected state)
-        status        (:status state)
+        state           (deref state*)
+        selected        (:selected state)
+        status          (:status state)
 
         start-export
         (mf/use-fn
-         (mf/deps team-id selected files components-v2)
+         (mf/deps team-id selected files features)
          (fn []
            (swap! state* assoc :status :exporting)
            (->> (uw/ask-many!
                  {:cmd (if binary? :export-binary-file :export-standard-file)
                   :team-id team-id
+                  :features features
                   :export-type selected
-                  :files files
-                  :components-v2 components-v2})
+                  :files files})
                 (rx/delay-emit 1000)
                 (rx/subs
                  (fn [msg]

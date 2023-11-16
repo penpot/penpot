@@ -12,6 +12,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.config :as cfg]
+   [app.main.features.pointer-map :as fpmap]
    [app.main.render :as r]
    [app.main.repo :as rp]
    [app.util.http :as http]
@@ -26,7 +27,7 @@
 
 (defn create-manifest
   "Creates a manifest entry for the given files"
-  [team-id file-id export-type files components-v2]
+  [team-id file-id export-type files features]
   (letfn [(format-page [manifest page]
             (-> manifest
                 (assoc (str (:id page))
@@ -39,10 +40,7 @@
                                  (mapv str))
                   index     (->> (get-in file [:data :pages-index])
                                  (vals)
-                                 (reduce format-page {}))
-                  features  (cond-> []
-                              components-v2
-                              (conj "components/v2"))]
+                                 (reduce format-page {}))]
               (-> manifest
                   (assoc (str (:id file))
                          {:name                 name
@@ -162,14 +160,14 @@
        (rx/map #(vector (str (:id file) "/deleted-components.svg") %))))
 
 (defn fetch-file-with-libraries
-  [file-id components-v2]
-  (let [features (cond-> #{} components-v2 (conj "components/v2"))]
-    (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
-                 (rp/cmd! :get-file-libraries {:file-id file-id}))
-         (rx/map
-          (fn [[file file-libraries]]
-            (let [libraries-ids (->> file-libraries (map :id) (filterv #(not= (:id file) %)))]
-              (assoc file :libraries libraries-ids)))))))
+  [file-id features]
+  (->> (rx/zip (->> (rp/cmd! :get-file {:id file-id :features features})
+                    (rx/mapcat fpmap/resolve-file))
+               (rp/cmd! :get-file-libraries {:file-id file-id}))
+       (rx/map
+        (fn [[file file-libraries]]
+          (let [libraries-ids (->> file-libraries (map :id) (filterv #(not= (:id file) %)))]
+            (assoc file :libraries libraries-ids))))))
 
 (defn make-local-external-references
   [file file-id]
@@ -307,8 +305,7 @@
                 (update file-id dissoc :libraries))))
 
 (defn collect-files
-  [file-id export-type components-v2]
-
+  [file-id export-type features]
   (letfn [(fetch-dependencies [[files pending]]
             (if (empty? pending)
               ;; When not pending, we finish the generation
@@ -321,7 +318,7 @@
                   ;; The file is already in the result
                   (rx/of [files pending])
 
-                  (->> (fetch-file-with-libraries next components-v2)
+                  (->> (fetch-file-with-libraries next features)
                        (rx/map
                         (fn [file]
                           [(-> files
@@ -337,14 +334,13 @@
            (rx/map #(process-export file-id export-type %))))))
 
 (defn export-file
-  [team-id file-id export-type components-v2]
-
-  (let [files-stream (->> (collect-files file-id export-type components-v2)
+  [team-id file-id export-type features]
+  (let [files-stream (->> (collect-files file-id export-type features)
                           (rx/share))
 
         manifest-stream
         (->> files-stream
-             (rx/map #(create-manifest team-id file-id export-type % components-v2))
+             (rx/map #(create-manifest team-id file-id export-type % features))
              (rx/map #(vector "manifest.json" %)))
 
         render-stream
@@ -434,12 +430,12 @@
                           :file-id (:id file)}))))))))
 
 (defmethod impl/handler :export-standard-file
-  [{:keys [team-id files export-type components-v2] :as message}]
+  [{:keys [team-id files export-type features] :as message}]
 
   (->> (rx/from files)
        (rx/mapcat
         (fn [file]
-          (->> (export-file team-id (:id file) export-type components-v2)
+          (->> (export-file team-id (:id file) export-type features)
                (rx/map
                 (fn [value]
                   (if (contains? value :type)
