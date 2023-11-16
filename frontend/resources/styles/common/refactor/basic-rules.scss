@@ -402,10 +402,13 @@
   min-width: $s-16;
   min-height: $s-16;
   border-radius: $br-6;
-  background-color: var(--input-checkbox-background-color-rest);
-  border: $s-1 solid var(--input-checkbox-background-color-rest);
+
+  background-color: var(--input-checkbox-inactive-background-color);
+  border-radius: $br-4;
+  box-shadow: inset 0 0 0px 2px rgb(255 255 255 / 20%);
   svg {
     display: none;
+    stroke: var(--input-checkbox-inactive-foreground-color);
   }
   &:hover {
     border-color: var(--input-checkbox-border-color-hover);
@@ -414,11 +417,11 @@
     border-color: var(--input-checkbox-border-color-focus);
   }
   &:global(.checked) {
-    background-color: var(--input-border-color-active);
     border-color: var(--input-checkbox-border-color-active);
+    background-color: var(--input-checkbox-active-background-color);
     svg {
       @extend .button-icon-small;
-      stroke: var(--input-details-color);
+      stroke: var(--input-checkbox-active-foreground-color);
     }
   }
   &:global(.intermediate) {
