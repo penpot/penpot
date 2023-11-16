@@ -546,7 +546,13 @@
    ;; PREVIEW
    :preview-frame        {:tooltip (ds/meta (ds/alt ds/enter))
                           :command (ds/c-mod "alt+enter")
-                          :fn #(emit-when-no-readonly (dp/open-preview-selected))}})
+                          :fn #(emit-when-no-readonly (dp/open-preview-selected))}
+
+
+   ;; THEME
+   :toggle-light-dark    {:tooltip (ds/meta (ds/alt "Q"))
+                          :command (ds/c-mod "alt+q")
+                          :fn #(st/emit! (dw/toggle-theme))}})
 
 (def opacity-shortcuts
   (into {} (->>
