@@ -17,7 +17,7 @@
    [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item]]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.components.link :refer [link]]
    [app.main.ui.dashboard.comments :refer [comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
@@ -207,7 +207,7 @@
        :placeholder (tr "dashboard.search-placeholder")
        :default-value search-term
        :auto-complete "off"
-      ;;  :on-focus on-search-focus
+       ;;  :on-focus on-search-focus
        :on-blur on-search-blur
        :on-change on-search-change
        :on-key-press on-key-press
@@ -239,27 +239,25 @@
            (st/emit! (dd/go-to-projects team-id))))]
 
     [:*
-     [:& dropdown-menu-item {:on-click    (partial team-selected (:default-team-id profile))
-                             :on-key-down (fn [event]
-                                            (when (kbd/enter? event)
-                                              (team-selected (:default-team-id profile) event)))
-                             :id          "teams-selector-default-team"
-                             :unique-key  "default-team"
-                             :klass       "team-name"}
+     [:> dropdown-menu-item* {:on-click    (partial team-selected (:default-team-id profile))
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (team-selected (:default-team-id profile) event)))
+                              :id          "teams-selector-default-team"
+                              :class       "team-name"}
       [:span.team-icon i/logo-icon]
       [:span.team-text (tr "dashboard.your-penpot")]
       (when (= (:default-team-id profile) (:id team))
         [:span.icon i/tick])]
 
      (for [team-item (remove :is-default (vals teams))]
-       [:& dropdown-menu-item {:on-click    (partial team-selected (:id team-item))
-                               :on-key-down (fn [event]
-                                              (when (kbd/enter? event)
-                                                (team-selected (:id team-item) event)))
-                               :id          (str "teams-selector-" (:id team-item))
-                               :klass       "team-name"
-                               :key         (str "teams-selector-" (:id team-item))
-                               :unique-key  (dm/str (:id team-item))}
+       [:> dropdown-menu-item* {:on-click    (partial team-selected (:id team-item))
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (team-selected (:id team-item) event)))
+                                :id          (str "teams-selector-" (:id team-item))
+                                :class       "team-name"
+                                :key         (str "teams-selector-" (:id team-item))}
         [:span.team-icon
          [:img {:src (cf/resolve-team-photo-url team-item)
                 :alt (:name team-item)}]]
@@ -267,13 +265,12 @@
         (when (= (:id team-item) (:id team))
           [:span.icon i/tick])])
      [:hr {:role "separator"}]
-     [:& dropdown-menu-item {:on-click    on-create-clicked
-                             :on-key-down (fn [event]
-                                            (when (kbd/enter? event)
-                                              (on-create-clicked event)))
-                             :id          "teams-selector-create-team"
-                             :klass       "team-name action"
-                             :unique-key  "teams-selector-create-team"}
+     [:> dropdown-menu-item* {:on-click    on-create-clicked
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (on-create-clicked event)))
+                              :id          "teams-selector-create-team"
+                              :class       "team-name action"}
       [:span.team-icon.new-team i/close]
       [:span.team-text (tr "dashboard.create-new-team")]]]))
 
@@ -362,92 +359,82 @@
             :on-accept delete-fn}))]
 
     [:*
-     [:& dropdown-menu-item {:on-click    go-members
-                             :on-key-down (fn [event]
-                                            (when (kbd/enter? event)
-                                              (go-members)))
-                             :id          "teams-options-members"
-                             :unique-key  "teams-options-members"
-                             :data-test   "team-members"}
+     [:> dropdown-menu-item* {:on-click    go-members
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (go-members)))
+                              :id          "teams-options-members"
+                              :data-test   "team-members"}
       (tr "labels.members")]
-     [:& dropdown-menu-item {:on-click    go-invitations
-                             :on-key-down (fn [event]
-                                            (when (kbd/enter? event)
-                                              (go-invitations)))
-                             :id          "teams-options-invitations"
-                             :unique-key  "teams-options-invitations"
-                             :data-test   "team-invitations"}
+     [:> dropdown-menu-item* {:on-click    go-invitations
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (go-invitations)))
+                              :id          "teams-options-invitations"
+                              :data-test   "team-invitations"}
       (tr "labels.invitations")]
 
      (when (contains? cf/flags :webhooks)
-       [:& dropdown-menu-item {:on-click    go-webhooks
-                               :on-key-down (fn [event]
-                                              (when (kbd/enter? event)
-                                                (go-webhooks)))
-                               :id          "teams-options-webhooks"
-                               :unique-key  "teams-options-webhooks"}
+       [:> dropdown-menu-item* {:on-click    go-webhooks
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (go-webhooks)))
+                                :id          "teams-options-webhooks"}
         (tr "labels.webhooks")])
 
-     [:& dropdown-menu-item {:on-click    go-settings
-                             :on-key-down (fn [event]
-                                            (when (kbd/enter? event)
-                                              (go-settings)))
-                             :id          "teams-options-settings"
-                             :unique-key  "teams-options-settings"
-                             :data-test   "team-settings"}
+     [:> dropdown-menu-item* {:on-click    go-settings
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (go-settings)))
+                              :id          "teams-options-settings"
+                              :data-test   "team-settings"}
       (tr "labels.settings")]
 
      [:hr]
      (when can-rename?
-       [:& dropdown-menu-item {:on-click    on-rename-clicked
-                               :on-key-down (fn [event]
-                                              (when (kbd/enter? event)
-                                                (on-rename-clicked)))
-                               :id          "teams-options-rename"
-                               :unique-key  "teams-options-rename"
-                               :data-test   "rename-team"}
+       [:> dropdown-menu-item* {:on-click    on-rename-clicked
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (on-rename-clicked)))
+                                :id          "teams-options-rename"
+                                :data-test   "rename-team"}
         (tr "labels.rename")])
 
      (cond
        (= (count members) 1)
-       [:& dropdown-menu-item {:on-click    leave-and-close
-                               :on-key-down (fn [event]
-                                              (when (kbd/enter? event)
-                                                (leave-and-close)))
-                               :id          "teams-options-leave-team"
-                               :unique-key  "teams-options-leave-team"}
+       [:> dropdown-menu-item* {:on-click    leave-and-close
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (leave-and-close)))
+                                :id          "teams-options-leave-team"}
         (tr "dashboard.leave-team")]
 
 
        (get-in team [:permissions :is-owner])
-       [:& dropdown-menu-item {:on-click    on-leave-as-owner-clicked
-                               :on-key-down (fn [event]
-                                              (when (kbd/enter? event)
-                                                (on-leave-as-owner-clicked)))
-                               :id          "teams-options-leave-team"
-                               :unique-key  "teams-options-leave-team"
-                               :data-test   "leave-team"}
+       [:> dropdown-menu-item* {:on-click    on-leave-as-owner-clicked
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (on-leave-as-owner-clicked)))
+                                :id          "teams-options-leave-team"
+                                :data-test   "leave-team"}
         (tr "dashboard.leave-team")]
 
        (> (count members) 1)
-       [:& dropdown-menu-item {:on-click    on-leave-clicked
-                               :on-key-down (fn [event]
-                                              (when (kbd/enter? event)
-                                                (on-leave-clicked)))
-                               :id          "teams-options-leave-team"
-                               :unique-key  "teams-options-leave-team"}
+       [:> dropdown-menu-item* {:on-click    on-leave-clicked
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (on-leave-clicked)))
+                                :id          "teams-options-leave-team"}
         (tr "dashboard.leave-team")])
 
-
      (when (get-in team [:permissions :is-owner])
-       [:& dropdown-menu-item {:on-click    on-delete-clicked
-                               :on-key-down (fn [event]
-                                              (when (kbd/enter? event)
-                                                (on-delete-clicked)))
-                               :id          "teams-options-delete-team"
-                               :unique-key  "teams-options-delete-team"
-                               :klass       "warning"
-                               :data-test   "delete-team"}
+       [:> dropdown-menu-item* {:on-click    on-delete-clicked
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (on-delete-clicked)))
+                                :id          "teams-options-delete-team"
+                                :class       "warning"
+                                :data-test   "delete-team"}
         (tr "dashboard.delete-team")])]))
 
 
