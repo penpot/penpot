@@ -570,11 +570,16 @@
   (when (some? node)
     (= (get-active) node)))
 
-(defn get-data [^js node ^string attr]
+(defn get-data
+  [^js node ^string attr]
+  ;; NOTE: we use getAttribute instead of .dataset for performance
+  ;; reasons. The getAttribute is x2 faster than dataset. See more on:
+  ;; https://www.measurethat.net/Benchmarks/Show/14432/0/getattribute-vs-dataset
   (when (some? node)
     (.getAttribute node (dm/str "data-" attr))))
 
-(defn set-data! [^js node ^string attr value]
+(defn set-data!
+  [^js node ^string attr value]
   (when (some? node)
     (.setAttribute node (dm/str "data-" attr) (dm/str value))))
 
