@@ -12,13 +12,10 @@
    [app.config :as cf]
    [app.util.json :as json]
    [cuerdas.core :as str]
-   [promesa.core :as p]
-   [promesa.exec :as px]
-   [promesa.util :as pu]
+   [ring.request :as rreq]
+   [ring.response :as rres]
    [yetti.adapter :as yt]
-   [yetti.middleware :as ymw]
-   [yetti.request :as yrq]
-   [yetti.response :as yrs])
+   [yetti.middleware :as ymw])
   (:import
    com.fasterxml.jackson.core.JsonParseException
    com.fasterxml.jackson.core.io.JsonEOFException
@@ -46,17 +43,17 @@
 (defn wrap-parse-request
   [handler]
   (letfn [(process-request [request]
-            (let [header (yrq/get-header request "content-type")]
+            (let [header (rreq/get-header request "content-type")]
               (cond
                 (str/starts-with? header "application/transit+json")
-                (with-open [^InputStream is (yrq/body request)]
+                (with-open [^InputStream is (rreq/body request)]
                   (let [params (t/read! (t/reader is))]
                     (-> request
                         (assoc :body-params params)
                         (update :params merge params))))
 
                 (str/starts-with? header "application/json")
-                (with-open [^InputStream is (yrq/body request)]
+                (with-open [^InputStream is (rreq/body request)]
                   (let [params (json/decode is json-mapper)]
                     (-> request
                         (assoc :body-params params)
@@ -65,37 +62,36 @@
                 :else
                 request)))
 
-          (handle-error [raise cause]
+          (handle-error [cause]
             (cond
               (instance? RuntimeException cause)
               (if-let [cause (ex-cause cause)]
-                (handle-error raise cause)
-                (raise cause))
+                (handle-error cause)
+                (throw cause))
 
               (instance? RequestTooBigException cause)
-              (raise (ex/error :type :validation
-                               :code :request-body-too-large
-                               :hint (ex-message cause)))
-
+              (ex/raise :type :validation
+                        :code :request-body-too-large
+                        :hint (ex-message cause))
 
               (or (instance? JsonEOFException cause)
                   (instance? JsonParseException cause)
                   (instance? MismatchedInputException cause))
-              (raise (ex/error :type :validation
-                               :code :malformed-json
-                               :hint (ex-message cause)
-                               :cause cause))
+              (ex/raise :type :validation
+                        :code :malformed-json
+                        :hint (ex-message cause)
+                        :cause cause)
 
               :else
-              (raise cause)))]
+              (throw cause)))]
 
-    (fn [request respond raise]
-      (if (= (yrq/method request) :post)
+    (fn [request]
+      (if (= (rreq/method request) :post)
         (let [request (ex/try! (process-request request))]
           (if (ex/exception? request)
-            (handle-error raise request)
-            (handler request respond raise)))
-        (handler request respond raise)))))
+            (handle-error request)
+            (handler request)))
+        (handler request)))))
 
 (def parse-request
   {:name ::parse-request
@@ -113,7 +109,7 @@
 (defn wrap-format-response
   [handler]
   (letfn [(transit-streamable-body [data opts]
-            (reify yrs/StreamableResponseBody
+            (reify rres/StreamableResponseBody
               (-write-body-to-stream [_ _ output-stream]
                 (try
                   (with-open [^OutputStream bos (buffered-output-stream output-stream buffer-size)]
@@ -128,7 +124,7 @@
                     (.close ^OutputStream output-stream))))))
 
           (json-streamable-body [data]
-            (reify yrs/StreamableResponseBody
+            (reify rres/StreamableResponseBody
               (-write-body-to-stream [_ _ output-stream]
                 (try
                   (with-open [^OutputStream bos (buffered-output-stream output-stream buffer-size)]
@@ -143,24 +139,24 @@
                     (.close ^OutputStream output-stream))))))
 
           (format-response-with-json [response _]
-            (let [body (::yrs/body response)]
+            (let [body (::rres/body response)]
               (if (or (boolean? body) (coll? body))
                 (-> response
-                    (update ::yrs/headers assoc "content-type" "application/json")
-                    (assoc ::yrs/body (json-streamable-body body)))
+                    (update ::rres/headers assoc "content-type" "application/json")
+                    (assoc ::rres/body (json-streamable-body body)))
                 response)))
 
           (format-response-with-transit [response request]
-            (let [body (::yrs/body response)]
+            (let [body (::rres/body response)]
               (if (or (boolean? body) (coll? body))
-                (let [qs   (yrq/query request)
+                (let [qs   (rreq/query request)
                       opts (if (or (contains? cf/flags :transit-readable-response)
                                    (str/includes? qs "transit_verbose"))
                              {:type :json-verbose}
                              {:type :json})]
                   (-> response
-                      (update ::yrs/headers assoc "content-type" "application/transit+json")
-                      (assoc ::yrs/body (transit-streamable-body body opts))))
+                      (update ::rres/headers assoc "content-type" "application/transit+json")
+                      (assoc ::rres/body (transit-streamable-body body opts))))
                 response)))
 
           (format-from-params [{:keys [query-params] :as request}]
@@ -169,7 +165,7 @@
 
           (format-response [response request]
             (let [accept (or (format-from-params request)
-                             (yrq/get-header request "accept"))]
+                             (rreq/get-header request "accept"))]
               (cond
                 (or (= accept "application/transit+json")
                     (str/includes? accept "application/transit+json"))
@@ -186,11 +182,9 @@
             (cond-> response
               (map? response) (format-response request)))]
 
-    (fn [request respond raise]
-      (handler request
-               (fn [response]
-                 (respond (process-response response request)))
-               raise))))
+    (fn [request]
+      (let [response (handler request)]
+        (process-response response request)))))
 
 (def format-response
   {:name ::format-response
@@ -198,12 +192,11 @@
 
 (defn wrap-errors
   [handler on-error]
-  (fn [request respond raise]
-    (handler request respond (fn [cause]
-                               (try
-                                 (respond (on-error cause request))
-                                 (catch Throwable cause
-                                   (raise cause)))))))
+  (fn [request]
+    (try
+      (handler request)
+      (catch Throwable cause
+        (on-error cause request)))))
 
 (def errors
   {:name ::errors
@@ -221,11 +214,11 @@
 (defn wrap-cors
   [handler]
   (fn [request]
-    (let [response (if (= (yrq/method request) :options)
-                     {::yrs/status 200}
+    (let [response (if (= (rreq/method request) :options)
+                     {::rres/status 200}
                      (handler request))
-          origin   (yrq/get-header request "origin")]
-      (update response ::yrs/headers with-cors-headers origin))))
+          origin   (rreq/get-header request "origin")]
+      (update response ::rres/headers with-cors-headers origin))))
 
 (def cors
   {:name ::cors
@@ -239,18 +232,8 @@
    (fn [data _]
      (when-let [allowed (:allowed-methods data)]
        (fn [handler]
-         (fn [request respond raise]
-           (let [method (yrq/method request)]
+         (fn [request]
+           (let [method (rreq/method request)]
              (if (contains? allowed method)
-               (handler request respond raise)
-               (respond {::yrs/status 405})))))))})
-
-(def with-dispatch
-  {:name ::with-dispatch
-   :compile
-   (fn [& _]
-     (fn [handler executor]
-       (let [executor (px/resolve-executor executor)]
-         (fn [request respond raise]
-           (->> (px/submit! executor (partial handler request))
-                (p/fnly (pu/handler respond raise)))))))})
+               (handler request)
+               {::rres/status 405}))))))})

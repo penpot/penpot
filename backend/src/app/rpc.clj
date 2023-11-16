@@ -34,8 +34,8 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [yetti.request :as yrq]
-   [yetti.response :as yrs]))
+   [ring.request :as rreq]
+   [ring.response :as rres]))
 
 (s/def ::profile-id ::us/uuid)
 
@@ -61,9 +61,9 @@
   (if (fn? result)
     (result request)
     (let [mdata (meta result)]
-      (-> {::yrs/status  (::http/status mdata 200)
-           ::yrs/headers (::http/headers mdata {})
-           ::yrs/body    (rph/unwrap result)}
+      (-> {::rres/status  (::http/status mdata 200)
+           ::rres/headers (::http/headers mdata {})
+           ::rres/body    (rph/unwrap result)}
           (handle-response-transformation request mdata)
           (handle-before-comple-hook mdata)))))
 
@@ -72,7 +72,7 @@
   internal async flow into ring async flow."
   [methods {:keys [params path-params] :as request}]
   (let [type       (keyword (:type path-params))
-        etag       (yrq/get-header request "if-none-match")
+        etag       (rreq/get-header request "if-none-match")
         profile-id (or (::session/profile-id request)
                        (::actoken/profile-id request))
 
@@ -137,6 +137,8 @@
       (fn [cfg params]
         (f cfg (us/conform spec params)))
       f)))
+
+;; TODO: integrate with sm/define
 
 (defn- wrap-params-validation
   [_ f mdata]

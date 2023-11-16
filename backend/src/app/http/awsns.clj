@@ -20,8 +20,8 @@
    [integrant.core :as ig]
    [jsonista.core :as j]
    [promesa.exec :as px]
-   [yetti.request :as yrq]
-   [yetti.response :as-alias yrs]))
+   [ring.request :as rreq]
+   [ring.response :as-alias rres]))
 
 (declare parse-json)
 (declare handle-request)
@@ -37,9 +37,9 @@
 (defmethod ig/init-key ::routes
   [_ {:keys [::wrk/executor] :as cfg}]
   (letfn [(handler [request]
-            (let [data (-> request yrq/body slurp)]
+            (let [data (-> request rreq/body slurp)]
               (px/run! executor #(handle-request cfg data)))
-            {::yrs/status 200})]
+            {::rres/status 200})]
     ["/sns" {:handler handler
              :allowed-methods #{:post}}]))
 

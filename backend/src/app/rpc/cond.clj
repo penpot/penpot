@@ -29,7 +29,7 @@
    [app.util.services :as-alias sv]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
-   [yetti.response :as yrs]))
+   [ring.response :as-alias rres]))
 
 (def
   ^{:dynamic true
@@ -57,7 +57,7 @@
           (let [key' (when (or key reuse-key?)
                        (some->> (get-object cfg params) (key-fn params) (fmt-key)))]
             (if (and (some? key) (= key key'))
-              (fn [_] {::yrs/status 304})
+              (fn [_] {::rres/status 304})
               (let [result (f cfg params)
                     etag   (or (and reuse-key? key')
                                (some-> result meta ::key fmt-key)

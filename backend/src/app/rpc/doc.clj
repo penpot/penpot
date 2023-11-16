@@ -27,7 +27,7 @@
    [integrant.core :as ig]
    [malli.transform :as mt]
    [pretty-spec.core :as ps]
-   [yetti.response :as yrs]))
+   [ring.response :as-alias rres]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DOC (human readable)
@@ -86,11 +86,11 @@
       (let [params  (:query-params request)
             pstyle  (:type params "js")
             context (assoc context :param-style pstyle)]
-        {::yrs/status 200
-         ::yrs/body (-> (io/resource "app/templates/api-doc.tmpl")
+        {::rres/status 200
+         ::rres/body (-> (io/resource "app/templates/api-doc.tmpl")
                         (tmpl/render context))}))
     (fn [_]
-      {::yrs/status 404})))
+      {::rres/status 404})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OPENAPI / SWAGGER (v3.1)
@@ -173,12 +173,12 @@
   [context]
   (if (contains? cf/flags :backend-openapi-doc)
     (fn [_]
-      {::yrs/status 200
-       ::yrs/headers {"content-type" "application/json; charset=utf-8"}
-       ::yrs/body (json/encode context)})
+      {::rres/status 200
+       ::rres/headers {"content-type" "application/json; charset=utf-8"}
+       ::rres/body (json/encode context)})
 
     (fn [_]
-      {::yrs/status 404})))
+      {::rres/status 404})))
 
 (defn openapi-handler
   []
@@ -189,12 +189,12 @@
             context    {:public-uri (cf/get :public-uri)
                         :swagger-js swagger-js
                         :swagger-css swagger-cs}]
-        {::yrs/status 200
-         ::yrs/headers {"content-type" "text/html"}
-         ::yrs/body (-> (io/resource "app/templates/openapi.tmpl")
+        {::rres/status 200
+         ::rres/headers {"content-type" "text/html"}
+         ::rres/body (-> (io/resource "app/templates/openapi.tmpl")
                         (tmpl/render context))}))
     (fn [_]
-      {::yrs/status 404})))
+      {::rres/status 404})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MODULE INIT
