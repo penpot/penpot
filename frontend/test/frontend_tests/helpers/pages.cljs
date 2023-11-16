@@ -7,14 +7,12 @@
 (ns frontend-tests.helpers.pages
   (:require
    [app.common.data :as d]
+   [app.common.files.changes :as cp]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.files.libraries-helpers :as cflh]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
-   [app.common.pages :as cp]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.files.libraries-helpers :as cflh]
-   [app.common.files.shapes-helpers :as cfsh]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.groups :as dwg]
@@ -62,7 +60,7 @@
 (defn get-children
   [state label]
   (let [page (current-page state)]
-    (cph/get-children (:objects page) (id label))))
+    (cfh/get-children (:objects page) (id label))))
 
 (defn sample-page
   ([state] (sample-page state {}))
@@ -83,7 +81,7 @@
   ([state label type] (sample-shape state type {}))
   ([state label type props]
    (let [page  (current-page state)
-         frame (cph/get-frame (:objects page))
+         frame (cfh/get-frame (:objects page))
          shape (cts/setup-shape (merge {:type type :x 0 :y 0 :width 1 :height 1} props))]
      (swap! idmap assoc label (:id shape))
      (update state :workspace-data

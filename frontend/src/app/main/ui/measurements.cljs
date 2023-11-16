@@ -8,13 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.geom.shapes.points :as gpo]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.modifiers :as dwm]
@@ -692,7 +692,7 @@
                                     :row-gap (if flip-y true false)}
 
         objects                    (wsh/lookup-page-objects @st/state)
-        children              (->> (cph/get-immediate-children objects frame-id)
+        children              (->> (cfh/get-immediate-children objects frame-id)
                                    (remove :layout-item-absolute)
                                    (remove :hidden))
 

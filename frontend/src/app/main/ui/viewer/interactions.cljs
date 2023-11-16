@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
    [app.common.uuid :as uuid]
@@ -34,7 +34,7 @@
                     (gpt/add delta)
                     (gpt/negate))
         update-fn #(d/update-when %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
-    (->> (cph/get-children-ids objects frame-id)
+    (->> (cfh/get-children-ids objects frame-id)
          (into [frame-id])
          (reduce update-fn objects))))
 
@@ -54,11 +54,11 @@
 
         ;; we have con consider the children if the fixed element is a group
         fixed-children-ids
-        (into #{} (mapcat #(cph/get-children-ids (:objects page) (:id %)) fixed-ids))
+        (into #{} (mapcat #(cfh/get-children-ids (:objects page) (:id %)) fixed-ids))
 
         parent-children-ids
         (->> fixed-ids
-             (mapcat #(cons (:id %) (cph/get-parent-ids (:objects page) (:id %))))
+             (mapcat #(cons (:id %) (cfh/get-parent-ids (:objects page) (:id %))))
              (remove #(= % uuid/zero)))
 
         fixed-ids

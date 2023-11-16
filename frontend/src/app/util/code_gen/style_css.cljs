@@ -8,10 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.geom.shapes.points :as gpo]
-   [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.common.types.shape.layout :as ctl]
    [app.main.ui.shapes.text.styles :as sts]
@@ -279,7 +279,7 @@ body {
                        (when wrapper? (str/fmt ".%s-wrapper > * {\n%s\n}" selector wrapper-child-properties))
                        (when svg?     (str/fmt ".%s > svg {\n%s\n}" selector svg-child-props))
                        (str/fmt ".%s {\n%s\n}" selector properties)
-                       (when (cph/text-shape? shape) (generate-text-css shape))]))))))
+                       (when (cfh/text-shape? shape) (generate-text-css shape))]))))))
 
 (defn get-css-property
   ([objects shape property]

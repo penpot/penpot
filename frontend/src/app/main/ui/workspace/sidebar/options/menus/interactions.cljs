@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.page :as ctp]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.interactions :as ctsi]
@@ -265,7 +265,7 @@
         destination          (get objects (:destination interaction))
 
         frames               (mf/with-memo [objects] (ctt/get-viewer-frames objects {:all-frames? true}))
-        shape-parent-ids     (mf/with-memo [objects] (cph/get-parent-ids objects (:id shape)))
+        shape-parent-ids     (mf/with-memo [objects] (cfh/get-parent-ids objects (:id shape)))
         shape-parents        (mf/with-memo [frames shape] (filter (comp (set shape-parent-ids) :id) frames))
 
         overlay-pos-type     (:overlay-pos-type interaction)
@@ -1082,7 +1082,7 @@
                           :shape shape}]
          [:& page-flows {:flows flows}])
        [:div {:class (stl/css :interaction-options)}
-        (when (and shape (not (cph/unframed-shape? shape)))
+        (when (and shape (not (cfh/unframed-shape? shape)))
           [:div {:class (stl/css :element-title)}
            [:& title-bar {:collapsable? false
                           :title        (tr "workspace.options.interactions")
@@ -1094,7 +1094,7 @@
         [:div {:class (stl/css :help-content)}
          (when (= (count interactions) 0)
            [:*
-            (when (and shape (not (cph/unframed-shape? shape)))
+            (when (and shape (not (cfh/unframed-shape? shape)))
               [:div {:class (stl/css :help-group)}
                [:div {:class (stl/css :interactions-help-icon)} i/add-refactor]
                [:div {:class (stl/css :interactions-help)}
@@ -1123,7 +1123,7 @@
          [:& page-flows {:flows flows}])
 
        [:div.element-set.interactions-options
-        (when (and shape (not (cph/unframed-shape? shape)))
+        (when (and shape (not (cfh/unframed-shape? shape)))
           [:div.element-set-title
            [:span (tr "workspace.options.interactions")]
            [:div.add-page {:on-click add-interaction}
@@ -1131,7 +1131,7 @@
         [:div.element-set-content
          (when (= (count interactions) 0)
            [:*
-            (when (and shape (not (cph/unframed-shape? shape)))
+            (when (and shape (not (cfh/unframed-shape? shape)))
               [:*
                [:div.interactions-help-icon i/plus]
                [:div.interactions-help.separator (tr "workspace.options.add-interaction")]])

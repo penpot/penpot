@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.header
   (:require
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :refer [show-shared-dialog]]
@@ -351,8 +351,8 @@
         shared?   (:is-shared file)
 
         objects   (mf/deref refs/workspace-page-objects)
-        frames    (->> (cph/get-immediate-children objects uuid/zero)
-                       (filterv cph/frame-shape?))
+        frames    (->> (cfh/get-immediate-children objects uuid/zero)
+                       (filterv cfh/frame-shape?))
 
         add-shared-fn
         (mf/use-fn

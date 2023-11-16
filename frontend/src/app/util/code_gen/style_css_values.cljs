@@ -9,9 +9,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [app.main.ui.formats :as fmt]
    [app.util.code-gen.common :as cgc]
@@ -31,10 +31,10 @@
   (cond
     (or (and (ctl/any-layout-immediate-child? objects shape)
              (not (ctl/layout-absolute? shape))
-             (or (cph/group-like-shape? shape)
-                 (cph/frame-shape? shape)
+             (or (cfh/group-like-shape? shape)
+                 (cfh/frame-shape? shape)
                  (cgc/svg-markup? shape)))
-        (cph/root-frame? shape))
+        (cfh/root-frame? shape))
     :relative
 
     (and (ctl/any-layout-immediate-child? objects shape)
@@ -47,7 +47,7 @@
 (defn get-shape-position
   [shape objects coord]
 
-  (when (and (not (cph/root-frame? shape))
+  (when (and (not (cfh/root-frame? shape))
              (or (not (ctl/any-layout-immediate-child? objects shape))
                  (ctl/layout-absolute? shape)))
 
@@ -73,7 +73,7 @@
 
 (defmethod get-value :flex
   [_ shape objects]
-  (let [parent (cph/get-parent objects (:id shape))]
+  (let [parent (cfh/get-parent objects (:id shape))]
     (when (and (ctl/flex-layout-immediate-child? objects shape)
                (or (and (contains? #{:row :row-reverse} (:layout-flex-dir parent))
                         (= :fill (:layout-item-h-sizing shape)))
@@ -83,7 +83,7 @@
 
 (defn get-shape-size
   [shape objects type]
-  (let [parent (cph/get-parent objects (:id shape))
+  (let [parent (cfh/get-parent objects (:id shape))
         sizing (if (= type :width)
                  (:layout-item-h-sizing shape)
                  (:layout-item-v-sizing shape))]
@@ -148,7 +148,7 @@
   (let [single-fill? (= (count fills) 1)
         ffill (first fills)
         gradient? (some? (:fill-color-gradient ffill))]
-    (when (and (not (cgc/svg-markup? shape)) (not (cph/group-shape? shape)) single-fill? gradient?)
+    (when (and (not (cgc/svg-markup? shape)) (not (cfh/group-shape? shape)) single-fill? gradient?)
       (fill->color ffill))))
 
 (defmethod get-value :background-color
@@ -156,12 +156,12 @@
   (let [single-fill? (= (count fills) 1)
         ffill (first fills)
         gradient? (some? (:fill-color-gradient ffill))]
-    (when (and (not (cgc/svg-markup? shape)) (not (cph/group-shape? shape)) single-fill? (not gradient?))
+    (when (and (not (cgc/svg-markup? shape)) (not (cfh/group-shape? shape)) single-fill? (not gradient?))
       (fill->color ffill))))
 
 (defmethod get-value :background-image
   [_ {:keys [fills] :as shape} _]
-  (when (and (not (cgc/svg-markup? shape)) (not (cph/group-shape? shape)) (> (count fills) 1))
+  (when (and (not (cgc/svg-markup? shape)) (not (cfh/group-shape? shape)) (> (count fills) 1))
     (->> fills
          (map fill->color))))
 
@@ -186,7 +186,7 @@
 (defmethod get-value :border-radius
   [_ {:keys [rx r1 r2 r3 r4] :as shape} _]
   (cond
-    (cph/circle-shape? shape)
+    (cfh/circle-shape? shape)
     "50%"
 
     (some? rx)
@@ -219,7 +219,7 @@
 
 (defmethod get-value :overflow
   [_ shape _]
-  (when (and (cph/frame-shape? shape)
+  (when (and (cfh/frame-shape? shape)
              (not (cgc/svg-markup? shape))
              (not (:show-content shape)))
     "hidden"))
@@ -363,7 +363,7 @@
 (defmethod get-value :z-index
   [_ {:keys [layout-item-z-index] :as shape} objects]
   (cond
-    (cph/root-frame? shape)
+    (cfh/root-frame? shape)
     0
 
     (ctl/any-layout-immediate-child? objects shape)
@@ -381,7 +381,7 @@
     (and (ctl/any-layout-immediate-child? objects shape) (some? (:layout-item-min-h shape)))
     (:layout-item-min-h shape)
 
-    (and (ctl/auto-height? shape) (cph/frame-shape? shape) (not (:show-content shape)))
+    (and (ctl/auto-height? shape) (cfh/frame-shape? shape) (not (:show-content shape)))
     (-> shape :selrect :height)))
 
 (defmethod get-value :max-width
@@ -396,7 +396,7 @@
     (and (ctl/any-layout-immediate-child? objects shape) (some? (:layout-item-min-w shape)))
     (:layout-item-min-w shape)
 
-    (and (ctl/auto-width? shape) (cph/frame-shape? shape) (not (:show-content shape)))
+    (and (ctl/auto-width? shape) (cfh/frame-shape? shape) (not (:show-content shape)))
     (-> shape :selrect :width)))
 
 (defmethod get-value :align-self

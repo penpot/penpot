@@ -10,10 +10,10 @@
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.files.defaults :refer [version]]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as l]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.text :as ct]
    [app.common.types.color :as ctc]
@@ -147,8 +147,8 @@
   (let [components-v2 (dm/get-in file-data [:options :components-v2])]
     (if (and components-v2 (not (:deleted component)))
       (let [component-page (get-component-page file-data component)]
-        (cph/make-container component-page :page))
-      (cph/make-container component :component))))
+        (cfh/make-container component-page :page))
+      (cfh/make-container component :component))))
 
 (defn get-component-root
   "Retrieve the root shape of the component."
@@ -220,7 +220,7 @@
     (if (and components-v2
              (not (:deleted component))) ;; the deleted components have its children in the :objects property
       (let [instance-page (get-component-page file-data component)]
-        (cph/get-children-with-self (:objects instance-page) (:main-instance-id component)))
+        (cfh/get-children-with-self (:objects instance-page) (:main-instance-id component)))
       (vals (:objects component)))))
 
 ;; Return true if the object is a component that exists on the file or its libraries (even a deleted one)
@@ -241,7 +241,7 @@
       (let [component-page (get-component-page file-data component)
             page-objects   (:objects component-page)
             objects        (->> (cons (:main-instance-id component)
-                                      (cph/get-children-ids page-objects (:main-instance-id component)))
+                                      (cfh/get-children-ids page-objects (:main-instance-id component)))
                                 (map #(get page-objects %))
                                 (d/index-by :id))]
         (assoc component :objects objects))
@@ -716,7 +716,7 @@
 
             (find-used-components
               [page root]
-              (let [children (cph/get-children-with-self (:objects page) (:id root))]
+              (let [children (cfh/get-children-with-self (:objects page) (:id root))]
                 (reduce (fn [libs-to-show shape]
                           (if (ctk/instance-head? shape)
                             (add-component libs-to-show (:component-file shape) (:component-id shape))

@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.pages-list :as ctpl]
@@ -29,7 +29,7 @@
 (defn shapes-for-grouping
   [objects selected]
   (->> selected
-       (cph/order-by-indexed-shapes objects)
+       (cfh/order-by-indexed-shapes objects)
        reverse
        (map #(get objects %))))
 
@@ -42,8 +42,8 @@
   group, one (or many) groups can become empty because they have had a
   single shape which is moved to the created group."
   [objects parent-id shapes]
-  (let [ids     (cph/clean-loops objects (into #{} (map :id) shapes))
-        parents (into #{} (map #(cph/get-parent-id objects %)) ids)]
+  (let [ids     (cfh/clean-loops objects (into #{} (map :id) shapes))
+        parents (into #{} (map #(cfh/get-parent-id objects %)) ids)]
     (loop [current-id (first parents)
            to-check (rest parents)
            removed-id? ids
@@ -59,7 +59,7 @@
                    (empty? (remove removed-id? (:shapes group))))
 
             ;; Adds group to the remove and check its parent
-            (let [to-check (concat to-check [(cph/get-parent-id objects current-id)]) ]
+            (let [to-check (concat to-check [(cfh/get-parent-id objects current-id)]) ]
               (recur (first to-check)
                      (rest to-check)
                      (conj removed-id? current-id)
@@ -85,7 +85,7 @@
         group-idx (->> shapes
                        last
                        :id
-                       (cph/get-position-on-parent objects)
+                       (cfh/get-position-on-parent objects)
                        inc)
 
         group     (cts/setup-shape {:type :group
@@ -137,9 +137,9 @@
 (defn remove-group-changes
   [it page-id group objects]
   (let [children (->> (:shapes group)
-                      (cph/order-by-indexed-shapes objects)
+                      (cfh/order-by-indexed-shapes objects)
                       (mapv #(get objects %)))
-        parent-id (cph/get-parent-id objects (:id group))
+        parent-id (cfh/get-parent-id objects (:id group))
         parent    (get objects parent-id)
 
         index-in-parent
@@ -152,7 +152,7 @@
         ;; Shapes that are in a component (including root) must be detached,
         ;; because cannot be easyly synchronized back to the main component.
         shapes-to-detach (filter ctk/in-component-copy?
-                                 (cph/get-children-with-self objects (:id group)))]
+                                 (cfh/get-children-with-self objects (:id group)))]
 
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
@@ -163,11 +163,11 @@
 (defn remove-frame-changes
   [it page-id frame objects]
   (let [children (->> (:shapes frame)
-                      (cph/order-by-indexed-shapes objects)
+                      (cfh/order-by-indexed-shapes objects)
                       (mapv #(get objects %)))
-        parent-id     (cph/get-parent-id objects (:id frame))
+        parent-id     (cfh/get-parent-id objects (:id frame))
         idx-in-parent (->> (:id frame)
-                           (cph/get-position-on-parent objects)
+                           (cfh/get-position-on-parent objects)
                            inc)]
 
     (-> (pcb/empty-changes it page-id)
@@ -228,7 +228,7 @@
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (->> (wsh/lookup-selected state)
-                          (cph/clean-loops objects)
+                          (cfh/clean-loops objects)
                           (remove #(ctn/has-any-copy-parent? objects (get objects %))))
             shapes   (shapes-for-grouping objects selected)
             parents  (into #{} (map :parent-id) shapes)]
@@ -256,10 +256,10 @@
                       (ctk/main-instance? shape)
                       (remove-component-changes it page-id shape objects file-data file)
 
-                      (or (cph/group-shape? shape) (cph/bool-shape? shape))
+                      (or (cfh/group-shape? shape) (cfh/bool-shape? shape))
                       (remove-group-changes it page-id shape objects)
 
-                      (cph/frame-shape? shape)
+                      (cfh/frame-shape? shape)
                       (remove-frame-changes it page-id shape objects))]
 
                 (cond-> changes
@@ -273,7 +273,7 @@
                           selected)
 
             parents (into #{}
-                          (comp (map #(cph/get-parent objects %))
+                          (comp (map #(cfh/get-parent objects %))
                                 (keep :id))
                           selected)
 
@@ -301,7 +301,7 @@
       (let [page-id     (:current-page-id state)
             objects     (wsh/lookup-page-objects state page-id)
             selected    (->> (wsh/lookup-selected state)
-                             (cph/clean-loops objects)
+                             (cfh/clean-loops objects)
                              (remove #(ctn/has-any-copy-parent? objects (get objects %))))
             shapes      (shapes-for-grouping objects selected)
             first-shape (first shapes)]

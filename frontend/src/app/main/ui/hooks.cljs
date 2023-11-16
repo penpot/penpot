@@ -7,7 +7,7 @@
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
-   [app.common.pages.focus :as cpf]
+   [app.common.files.focus :as cpf]
    [app.main.broadcast :as mbc]
    [app.main.data.shortcuts :as dsc]
    [app.main.refs :as refs]

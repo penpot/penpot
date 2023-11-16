@@ -8,8 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.main.data.viewer :as dv]
    [app.main.render :as render]
    [app.main.store :as st]
@@ -79,7 +79,7 @@
               #(mf/deferred % ts/idle-then-raf)]}
   [{:keys [selected? frame on-click index objects page-id thumbnail-data]}]
 
-  (let [children-ids (cph/get-children-ids objects (:id frame))
+  (let [children-ids (cfh/get-children-ids objects (:id frame))
         children-bounds (gsh/shapes->rect (concat [frame] (->> children-ids (keep (d/getf objects)))))]
     [:div.thumbnail-item {:on-click #(on-click % index)}
      [:div.thumbnail-preview

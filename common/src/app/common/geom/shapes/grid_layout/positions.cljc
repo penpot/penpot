@@ -8,13 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.grid-layout.layout-data :as ld]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]))
 
@@ -252,7 +252,7 @@
   [frame-id objects position]
 
   (let [frame       (get objects frame-id)
-        children    (->> (cph/get-immediate-children objects (:id frame))
+        children    (->> (cfh/get-immediate-children objects (:id frame))
                          (remove :hidden)
                          (map #(vector (gpo/parent-coords-bounds (:points %) (:points frame)) %)))
 

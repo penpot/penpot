@@ -8,12 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.geom.shapes.grid-layout :as gsg]
    [app.common.geom.shapes.points :as gpo]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]
@@ -37,7 +37,7 @@
         shape (or selected-frame (get objects hover-top-frame-id))]
 
     (when (and shape (:layout shape))
-      (let [children (->> (cph/get-immediate-children objects (:id shape))
+      (let [children (->> (cfh/get-immediate-children objects (:id shape))
                           (remove :hidden))
             bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points]))
 
@@ -91,7 +91,7 @@
       (let [row? (ctl/row? shape)
             col? (ctl/col? shape)
 
-            children (->> (cph/get-immediate-children objects (:id shape))
+            children (->> (cfh/get-immediate-children objects (:id shape))
                           (remove :hidden)
                           (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))
 
@@ -201,7 +201,7 @@
         bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points]))]
 
     (when (and (some? parent) (not= uuid/zero (:id parent)))
-      (let [children (->> (cph/get-immediate-children objects (:id parent))
+      (let [children (->> (cfh/get-immediate-children objects (:id parent))
                           (remove :hidden))]
         [:g.debug-parent-bounds {:pointer-events "none"}
          (for [[idx child] (d/enumerate children)]
@@ -241,7 +241,7 @@
         bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points]))]
 
     (when (and (some? parent) (not= uuid/zero (:id parent)))
-      (let [children (->> (cph/get-immediate-children objects (:id parent))
+      (let [children (->> (cfh/get-immediate-children objects (:id parent))
                           (remove :hidden)
                           (map #(vector (gpo/parent-coords-bounds (:points %) (:points parent)) %)))
 

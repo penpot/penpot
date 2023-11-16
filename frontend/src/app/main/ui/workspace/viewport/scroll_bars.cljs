@@ -7,9 +7,9 @@
 (ns app.main.ui.workspace.viewport.scroll-bars
   (:require
    [app.common.colors :as clr]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
    [app.main.ui.workspace.viewport.viewport-ref :refer [point->viewport]]
@@ -53,7 +53,7 @@
 
         base-objects-rect         (mf/with-memo [objects]
                                     (-> objects
-                                        (cph/get-immediate-children)
+                                        (cfh/get-immediate-children)
                                         (gsh/shapes->rect)))
 
         inv-zoom                 (/ 1 zoom)

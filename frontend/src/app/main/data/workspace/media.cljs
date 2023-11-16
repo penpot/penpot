@@ -9,9 +9,9 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.files.builder :as fb]
+   [app.common.files.changes-builder :as pcb]
    [app.common.logging :as log]
    [app.common.math :as mth]
-   [app.common.pages.changes-builder :as pcb]
    [app.common.schema :as sm]
    [app.common.svg :refer [optimize]]
    [app.common.svg.shapes-builder :as csvg.shapes-builder]
@@ -259,7 +259,7 @@
   (ptk/reify ::upload-fill-image
     ptk/WatchEvent
     (watch [_ state _]
-      (let [on-upload-success 
+      (let [on-upload-success
             (fn [image]
               (on-success image)
               (dmm/notify-finished-loading))

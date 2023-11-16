@@ -8,10 +8,10 @@
   "A collection of adhoc fixes scripts."
   (:require
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
    [app.common.files.validate :as cfv]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as l]
-   [app.common.pages.helpers :as cph]
    [app.common.pprint :refer [pprint]]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -139,7 +139,7 @@
              (let [component        (ctf/find-component libs (:component-id copy) {:include-deleted? true})
                    component-file   (get libs (:component-file copy))
                    component-shapes (ctf/get-component-shapes (:data component-file) component)
-                   copy-shapes      (cph/get-children-with-self objects (:id copy))
+                   copy-shapes      (cfh/get-children-with-self objects (:id copy))
 
                    copy-updates (fix-copy-item true copy-shapes component-shapes (:id copy) (:main-instance-id component))]
                (concat updates copy-updates)))
@@ -301,8 +301,8 @@
              (if-not (ctk/instance-head? shape)
                shape
                (let [component (ctf/get-component libs (:component-file shape) (:component-id shape) {:include-deleted? true})
-                     [_path name] (cph/parse-path-name (:name shape))
-                     full-name (cph/clean-path (str (:path component) "/" (:name component)))]
+                     [_path name] (cfh/parse-path-name (:name shape))
+                     full-name (cfh/clean-path (str (:path component) "/" (:name component)))]
                  (if (= name (:name component))
                    (assoc shape :name full-name)
                    shape))))
@@ -355,12 +355,12 @@
                                               (gsh/close-attrs? attr (get shape attr) (get ref-shape attr) 1)
                                               true)
                                             (gsh/close-attrs? attr (get shape attr) (get ref-shape attr)))]
-                                      (when (and (not equal?) (not (cph/touched-group? shape group)))
+                                      (when (and (not equal?) (not (cfh/touched-group? shape group)))
                                         (println " -> set touched " (:name shape) (:id shape) attr group))
                                       (cond-> shape
-                                        (and (not equal?) (not (cph/touched-group? shape group)))
-                                        (update :touched cph/set-touched-group group)))))
-                                
+                                        (and (not equal?) (not (cfh/touched-group? shape group)))
+                                        (update :touched cfh/set-touched-group group)))))
+
                                 fix-touched-children
                                 (fn [shape]
                                   (let [matches? (fn [[child-id ref-child-id]]
@@ -369,11 +369,11 @@
                                                        (= (:shape-ref child) ref-child-id))
                                                      false))
                                         equal? (every? matches? (d/zip-all (:shapes shape) (:shapes ref-shape)))]
-                                      (when (and (not equal?) (not (cph/touched-group? shape :shapes-group)))
+                                      (when (and (not equal?) (not (cfh/touched-group? shape :shapes-group)))
                                         (println " -> set touched " (:name shape) (:id shape) :shapes :shapes-group))
                                       (cond-> shape
-                                        (and (not equal?) (not (cph/touched-group? shape :shapes-group)))
-                                        (update :touched cph/set-touched-group :shapes-group))))]
+                                        (and (not equal?) (not (cfh/touched-group? shape :shapes-group)))
+                                        (update :touched cfh/set-touched-group :shapes-group))))]
 
                             (as-> shape $
                               (reduce fix-touched-attr $ ctk/sync-attrs)

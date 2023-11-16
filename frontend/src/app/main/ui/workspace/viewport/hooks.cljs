@@ -8,10 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.focus :as cpf]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.focus :as cpf]
-   [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
@@ -117,7 +117,7 @@
        ;; If there are no children in the hover-ids we're in the empty side
        (->> hover-ids
             (remove #(contains? #{:group :bool} (get-in objects [% :type])))
-            (some #(cph/is-parent? objects % group-id))
+            (some #(cfh/is-parent? objects % group-id))
             (not))))
 
 (defn setup-hover-shapes
@@ -220,15 +220,15 @@
                             (ctt/sort-z-index objects ids {:bottom-frames? mod?}))
 
              grouped? (fn [id]
-                        (and (cph/group-shape? objects id)
-                             (not (cph/mask-shape? objects id))))
+                        (and (cfh/group-shape? objects id)
+                             (not (cfh/mask-shape? objects id))))
 
              selected-with-parents
-             (into #{} (mapcat #(cph/get-parent-ids objects %)) selected)
+             (into #{} (mapcat #(cfh/get-parent-ids objects %)) selected)
 
              root-frame-with-data?
              #(as-> (get objects %) obj
-                (and (cph/root-frame? obj)
+                (and (cfh/root-frame? obj)
                      (d/not-empty? (:shapes obj))
                      (not (ctk/instance-head? obj))
                      (not (ctk/main-instance? obj))))
@@ -252,14 +252,14 @@
              no-fill-nested-frames?
              (fn [id]
                (let [shape (get objects id)]
-                 (and (cph/frame-shape? shape)
-                      (not (cph/is-direct-child-of-root? shape))
+                 (and (cfh/frame-shape? shape)
+                      (not (cfh/is-direct-child-of-root? shape))
                       (empty? (get shape :fills)))))
 
              hover-shape
              (->> ids
                   (remove remove-id?)
-                  (remove (partial cph/hidden-parent? objects))
+                  (remove (partial cfh/hidden-parent? objects))
                   (remove #(and mod? (no-fill-nested-frames? %)))
                   (filter #(or (empty? focus) (cpf/is-in-focus? objects focus %)))
                   (first)
@@ -287,8 +287,8 @@
   (let [all-frames             (mf/use-memo (mf/deps objects) #(ctt/get-root-frames-ids objects))
         selected-frames        (mf/use-memo (mf/deps selected) #(->> all-frames (filter selected)))
 
-        xf-selected-frame      (comp (remove cph/root-frame?)
-                                     (map #(cph/get-shape-id-root-frame objects %)))
+        xf-selected-frame      (comp (remove cfh/root-frame?)
+                                     (map #(cfh/get-shape-id-root-frame objects %)))
 
         selected-shapes-frames (mf/use-memo (mf/deps selected) #(into #{} xf-selected-frame selected))
 
@@ -312,7 +312,7 @@
        ;; - If no hovering over any frames we keep the previous active one
        ;; - Check always that the active frames are inside the vbox
 
-       (let [hover-ids? (set (->> @hover-ids (map #(cph/get-shape-id-root-frame objects %))))
+       (let [hover-ids? (set (->> @hover-ids (map #(cfh/get-shape-id-root-frame objects %))))
 
              is-active-frame?
              (fn [id]

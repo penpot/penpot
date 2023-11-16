@@ -7,12 +7,12 @@
 (ns app.common.geom.shapes.min-size-layout
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes.flex-layout.bounds :as fb]
    [app.common.geom.shapes.flex-layout.layout-data :as fd]
    [app.common.geom.shapes.grid-layout.bounds :as gb]
    [app.common.geom.shapes.grid-layout.layout-data :as gd]
    [app.common.geom.shapes.points :as gpo]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]))
 
 (defn child-min-width
@@ -21,14 +21,14 @@
     (and (ctl/fill-width? child) (ctl/flex-layout? child))
     (ctl/child-min-width child)
     ;; Uncomment this to activate "auto" as min size
-    #_(let [children (cph/get-immediate-children objects (dm/get-prop child :id) {:remove-hidden true})]
+    #_(let [children (cfh/get-immediate-children objects (dm/get-prop child :id) {:remove-hidden true})]
       (max (ctl/child-min-width child)
            (gpo/width-points (fb/layout-content-bounds bounds child children objects))))
 
     (and (ctl/fill-width? child)
          (ctl/grid-layout? child))
     (let [children
-          (->> (cph/get-immediate-children objects (:id child) {:remove-hidden true})
+          (->> (cfh/get-immediate-children objects (:id child) {:remove-hidden true})
                (map #(vector @(get bounds (:id %)) %)))
           layout-data (gd/calc-layout-data child @(get bounds (:id child)) children bounds objects true)]
       (max (ctl/child-min-width child)
@@ -46,13 +46,13 @@
     (and (ctl/fill-height? child) (ctl/flex-layout? child))
     ;; Uncomment this to activate "auto" as min size
     (ctl/child-min-height child)
-    #_(let [children (cph/get-immediate-children objects (dm/get-prop child :id) {:remove-hidden true})]
+    #_(let [children (cfh/get-immediate-children objects (dm/get-prop child :id) {:remove-hidden true})]
       (max (ctl/child-min-height child)
            (gpo/height-points (fb/layout-content-bounds bounds child children objects))))
 
     (and (ctl/fill-height? child) (ctl/grid-layout? child))
     (let [children
-          (->> (cph/get-immediate-children objects (dm/get-prop child :id) {:remove-hidden true})
+          (->> (cfh/get-immediate-children objects (dm/get-prop child :id) {:remove-hidden true})
                (map  (fn [child] [@(get bounds (:id  child)) child])))
           layout-data (gd/calc-layout-data child (:points child) children bounds objects true)
           auto-bounds (gb/layout-content-bounds bounds child layout-data)]

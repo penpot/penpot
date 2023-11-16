@@ -8,12 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logging :as log]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.types.color :as ctc]
@@ -116,14 +116,14 @@
               ; main nested in the original component.
               (let [origin-shape-id (get @inverted-ids-map (:id shape))
                     objects         (:objects main-instance-page)
-                    parent-ids      (cph/get-parent-ids-seq-with-self objects origin-shape-id)]
+                    parent-ids      (cfh/get-parent-ids-seq-with-self objects origin-shape-id)]
                 (cond-> shape
                   (@nested-main-heads origin-shape-id)
                   (dissoc :main-instance)
 
                   (some @nested-main-heads parent-ids)
                   (assoc :shape-ref origin-shape-id))))
-            
+
             xf-shape (comp (map remap-frame)
                            (map convert-nested-main))
 
@@ -219,7 +219,7 @@
   ([changes library-data component-id it page delta old-id parent-id]
    (let [component    (ctkl/get-deleted-component library-data component-id)
 
-         shapes       (cph/get-children-with-self (:objects component) (:main-instance-id component))
+         shapes       (cfh/get-children-with-self (:objects component) (:main-instance-id component))
          shapes       (map #(gsh/move % delta) shapes)
          first-shape  (cond-> (first shapes)
                         (not (nil? parent-id))
@@ -269,7 +269,7 @@
                                          asset-id
                                          library-id
                                          state
-                                         (cph/make-container page :page)
+                                         (cfh/make-container page :page)
                                          components-v2)))
         changes))))
 
@@ -305,7 +305,7 @@
                                          asset-id
                                          library-id
                                          state
-                                         (cph/make-container local-component :component)
+                                         (cfh/make-container local-component :component)
                                          components-v2)))
         changes))))
 
@@ -314,7 +314,7 @@
   or a component) that use assets of the given type in the given library."
   [it asset-type asset-id library-id state container components-v2]
 
-  (if (cph/page? container)
+  (if (cfh/page? container)
     (log/debug :msg "Sync page in local file" :page-id (:id container))
     (log/debug :msg "Sync component in local library" :component-id (:id container)))
 
@@ -884,10 +884,10 @@
   (log/info :msg (str "ADD [P] " (:name component-shape)))
   (let [component-parent-shape (ctn/get-shape component-page (:parent-id component-shape))
         parent-shape           (d/seek #(ctk/is-main-of? component-parent-shape %)
-                                       (cph/get-children-with-self (:objects container)
+                                       (cfh/get-children-with-self (:objects container)
                                                                    (:id root-instance)))
         all-parents            (into [(:id parent-shape)]
-                                     (cph/get-parent-ids (:objects container)
+                                     (cfh/get-parent-ids (:objects container)
                                                          (:id parent-shape)))
 
         update-new-shape (fn [new-shape original-shape]
@@ -945,7 +945,7 @@
                                                        :shapes all-parents}))
         changes' (reduce del-obj-change changes' new-shapes)]
 
-    (if (and (cph/touched-group? parent-shape :shapes-group) omit-touched?)
+    (if (and (cfh/touched-group? parent-shape :shapes-group) omit-touched?)
       changes
       changes')))
 
@@ -954,10 +954,10 @@
   (log/info :msg (str "ADD [C] " (:name shape)))
   (let [parent-shape           (ctn/get-shape page (:parent-id shape))
         component-parent-shape (d/seek #(ctk/is-main-of? % parent-shape)
-                                       (cph/get-children-with-self (:objects component-container)
+                                       (cfh/get-children-with-self (:objects component-container)
                                                                    (:id root-main)))
         all-parents  (into [(:id component-parent-shape)]
-                           (cph/get-parent-ids (:objects component-container)
+                           (cfh/get-parent-ids (:objects component-container)
                                                (:id component-parent-shape)))
 
         update-new-shape (fn [new-shape _original-shape]
@@ -1034,12 +1034,12 @@
 (defn- remove-shape
   [changes shape container omit-touched?]
   (log/info :msg (str "REMOVE-SHAPE "
-                      (if (cph/page? container) "[P] " "[C] ")
+                      (if (cfh/page? container) "[P] " "[C] ")
                       (:name shape)))
   (let [objects    (get container :objects)
-        parents    (cph/get-parent-ids objects (:id shape))
+        parents    (cfh/get-parent-ids objects (:id shape))
         parent     (first parents)
-        children   (cph/get-children-ids objects (:id shape))
+        children   (cfh/get-children-ids objects (:id shape))
         ids        (into [(:id shape)] children)
 
         add-redo-change (fn [changes id]
@@ -1057,7 +1057,7 @@
                                      container
                                      (as-> {:type :add-obj
                                             :id id
-                                            :index (cph/get-position-on-parent objects id)
+                                            :index (cfh/get-position-on-parent objects id)
                                             :parent-id (:parent-id shape')
                                             :ignore-touched true
                                             :obj shape'} $
@@ -1076,14 +1076,14 @@
                          changes'
                          children)]
 
-    (if (and (cph/touched-group? parent :shapes-group) omit-touched?)
+    (if (and (cfh/touched-group? parent :shapes-group) omit-touched?)
       changes
       changes')))
 
 (defn- move-shape
   [changes shape index-before index-after container omit-touched?]
   (log/info :msg (str "MOVE "
-                      (if (cph/page? container) "[P] " "[C] ")
+                      (if (cfh/page? container) "[P] " "[C] ")
                       (:name shape)
                       " "
                       index-before
@@ -1107,7 +1107,7 @@
                                                   :index index-before
                                                   :ignore-touched true})))]
 
-    (if (and (cph/touched-group? parent :shapes-group) omit-touched?)
+    (if (and (cfh/touched-group? parent :shapes-group) omit-touched?)
       changes
       changes')))
 
@@ -1119,7 +1119,7 @@
     changes
     (do
       (log/info :msg (str "CHANGE-TOUCHED "
-                          (if (cph/page? container) "[P] " "[C] ")
+                          (if (cfh/page? container) "[P] " "[C] ")
                           (:name dest-shape))
                 :options options)
       (let [new-touched (cond
@@ -1154,7 +1154,7 @@
     changes
     (do
       (log/info :msg (str "CHANGE-REMOTE-SYNCED? "
-                          (if (cph/page? container) "[P] " "[C] ")
+                          (if (cfh/page? container) "[P] " "[C] ")
                           (:name shape))
                 :remote-synced remote-synced?)
       (-> changes
@@ -1184,7 +1184,7 @@
   (log/info :msg (str "SYNC "
                       (:name origin-shape)
                       " -> "
-                      (if (cph/page? container) "[P] " "[C] ")
+                      (if (cfh/page? container) "[P] " "[C] ")
                       (:name dest-shape)))
 
   (let [;; To synchronize geometry attributes we need to make a prior
@@ -1205,7 +1205,7 @@
         (if (nil? attr)
           (if (empty? roperations)
             changes
-            (let [all-parents (cph/get-parent-ids (:objects container)
+            (let [all-parents (cfh/get-parent-ids (:objects container)
                                                   (:id dest-shape))]
               (-> changes
                   (update :redo-changes conj (make-change
@@ -1259,7 +1259,7 @@
 
 (defn- make-change
   [container change]
-  (if (cph/page? container)
+  (if (cfh/page? container)
     (assoc change :page-id (:id container))
     (assoc change :component-id (:id container))))
 

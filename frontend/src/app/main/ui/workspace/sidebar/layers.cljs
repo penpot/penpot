@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
@@ -52,7 +52,7 @@
      [:& hooks/sortable-container {}
       (for [[index id] (reverse (d/enumerate (:shapes root)))]
         (when-let [obj (get objects id)]
-          (if (cph/frame-shape? obj)
+          (if (cfh/frame-shape? obj)
             [:& frame-wrapper
              {:item obj
               :selected selected
@@ -131,7 +131,7 @@
                  (let [direct-filters (into #{} (filter #{:frame :rect :circle :path :bool :image :text}) filters)]
                    (contains? direct-filters (:type shape)))
                  (and (contains? filters :group)
-                      (and (cph/group-shape? shape)
+                      (and (cfh/group-shape? shape)
                            (not (contains? shape :component-id))
                            (or (not (contains? shape :masked-group))
                                (false? (:masked-group shape)))))

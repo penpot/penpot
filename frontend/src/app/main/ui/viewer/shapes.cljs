@@ -8,8 +8,8 @@
   "The main container for a frame in viewer mode"
   (:require
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
@@ -40,9 +40,9 @@
 (defn- find-relative-to-base-frame
   [shape objects overlays-ids base-frame]
   (cond
-    (cph/frame-shape? shape) shape
-    (or (empty? overlays-ids) (nil? shape) (cph/root? shape)) base-frame
-    :else (find-relative-to-base-frame (cph/get-parent objects (:id shape)) objects overlays-ids base-frame)))
+    (cfh/frame-shape? shape) shape
+    (or (empty? overlays-ids) (nil? shape) (cfh/root? shape)) base-frame
+    :else (find-relative-to-base-frame (cfh/get-parent objects (:id shape)) objects overlays-ids base-frame)))
 
 (defn- activate-interaction
   [interaction shape base-frame frame-offset objects overlays]
@@ -416,7 +416,7 @@
     (mf/fnc bool-container
             {::mf/wrap-props false}
             [props]
-            (let [childs (->> (cph/get-children-ids objects (:id (unchecked-get props "shape")))
+            (let [childs (->> (cfh/get-children-ids objects (:id (unchecked-get props "shape")))
                               (select-keys objects))
                   props  (obj/merge! #js {} props
                                      #js {:childs childs

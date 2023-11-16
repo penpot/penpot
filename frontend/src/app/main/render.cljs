@@ -16,13 +16,13 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as l]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
@@ -108,7 +108,7 @@
     (mf/fnc bool-wrapper
       [{:keys [shape] :as props}]
       (let [childs (mf/with-memo [(:id shape) objects]
-                     (->> (cph/get-children-ids objects (:id shape))
+                     (->> (cfh/get-children-ids objects (:id shape))
                           (select-keys objects)))]
         [:& bool-shape {:shape shape :childs childs}]))))
 
@@ -166,7 +166,7 @@
 
 (defn adapt-root-frame
   [objects object]
-  (let [shapes   (cph/get-immediate-children objects)
+  (let [shapes   (cfh/get-immediate-children objects)
         srect    (gsh/shapes->rect shapes)
         object   (merge object (select-keys srect [:x :y :width :height]))]
     (assoc object :fill-color "#f0f0f0")))
@@ -175,7 +175,7 @@
   [objects object-id]
   (let [object   (get objects object-id)
         object   (cond->> object
-                   (cph/root? object)
+                   (cfh/root? object)
                    (adapt-root-frame objects))
 
         ;; Replace the previous object with the new one
@@ -184,7 +184,7 @@
         vector (-> (gpt/point (:x object) (:y object))
                    (gpt/negate))
 
-        mod-ids  (cons object-id (cph/get-children-ids objects object-id))
+        mod-ids  (cons object-id (cfh/get-children-ids objects object-id))
 
         updt-fn  #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
 
@@ -195,7 +195,7 @@
   [{:keys [data use-thumbnails embed include-metadata] :as props
     :or {embed false include-metadata false}}]
   (let [objects (:objects data)
-        shapes  (cph/get-immediate-children objects)
+        shapes  (cfh/get-immediate-children objects)
         dim     (calculate-dimensions objects)
         vbox    (format-viewbox dim)
         bgcolor (dm/get-in data [:options :background] default-color)
@@ -222,8 +222,8 @@
           [:& export/export-page {:id (:id data) :options (:options data)}])
 
         (let [shapes (->> shapes
-                          (remove cph/frame-shape?)
-                          (mapcat #(cph/get-children-with-self objects (:id %))))
+                          (remove cfh/frame-shape?)
+                          (mapcat #(cfh/get-children-with-self objects (:id %))))
               fonts (ff/shapes->fonts shapes)]
           [:& ff/fontfaces-style {:fonts fonts}])
 
@@ -262,7 +262,7 @@
         vector (gpt/negate delta-bounds)
 
         children-ids
-        (cph/get-children-ids objects frame-id)
+        (cfh/get-children-ids objects frame-id)
 
         objects
         (mf/with-memo [frame-id objects vector]
@@ -324,7 +324,7 @@
         (mf/use-memo
          (mf/deps vector objects root-shape-id)
          (fn []
-           (let [children-ids (cons root-shape-id (cph/get-children-ids objects root-shape-id))
+           (let [children-ids (cons root-shape-id (cfh/get-children-ids objects root-shape-id))
                  update-fn    #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
              (reduce update-fn objects children-ids))))
 
@@ -538,7 +538,7 @@
           fonts         (ff/shape->fonts shape objects)
 
           bounds         (if (:show-content shape)
-                           (let [ids      (cph/get-children-ids objects shape-id)
+                           (let [ids      (cfh/get-children-ids objects shape-id)
                                  children (sequence (keep (d/getf objects)) ids)]
                              (gsh/shapes->rect (cons shape children)))
                            (-> shape :points grc/points->rect))

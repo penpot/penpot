@@ -4,10 +4,10 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.pages.focus
+(ns app.common.files.focus
   (:require
    [app.common.data :as d]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cph]
    [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]))
 

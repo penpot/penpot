@@ -8,10 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.types.page :as ctp]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
@@ -100,7 +99,7 @@
   "Check if some frame is origin or destination of any navigate interaction
   in the page"
   [objects frame-id]
-  (let [children (cph/get-children-with-self objects frame-id)]
+  (let [children (cfh/get-children-with-self objects frame-id)]
     (or (some ctsi/flow-origin? (map :interactions children))
         (some #(ctsi/flow-to? % frame-id) (map :interactions (vals objects))))))
 
@@ -112,7 +111,7 @@
      (watch [_ state _]
        (let [page-id  (:current-page-id state)
              objects  (wsh/lookup-page-objects state page-id)
-             frame    (cph/get-root-frame objects (:id shape))
+             frame    (cfh/get-root-frame objects (:id shape))
              flows    (get-in state [:workspace-data
                                      :pages-index
                                      page-id
@@ -203,7 +202,7 @@
         from-id (-> state wsh/lookup-selected first)
         from-shape (wsh/lookup-shape state from-id)
 
-        from-frame-id (if (cph/frame-shape? from-shape)
+        from-frame-id (if (cfh/frame-shape? from-shape)
                         from-id (:frame-id from-shape))
 
         target-frame (ctst/get-frame-by-position objects position)]
@@ -307,7 +306,7 @@
                 overlay-pos (-> shape
                                 (get-in [:interactions index])
                                 :overlay-position)
-                orig-frame  (cph/get-frame objects shape)
+                orig-frame  (cfh/get-frame objects shape)
                 frame-pos   (gpt/point (:x orig-frame) (:y orig-frame))
                 offset      (-> initial-pos
                                 (gpt/subtract overlay-pos)

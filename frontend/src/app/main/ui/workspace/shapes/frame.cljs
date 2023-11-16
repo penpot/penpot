@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.thumbnails :as thc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
@@ -43,7 +43,7 @@
             childs     (mf/deref childs-ref)]
 
         [:& (mf/provider embed/context) {:value true}
-         [:& shape-container {:shape shape :ref ref :disable-shadows? (cph/is-direct-child-of-root? shape)}
+         [:& shape-container {:shape shape :ref ref :disable-shadows? (cfh/is-direct-child-of-root? shape)}
           [:& frame-shape {:shape shape :childs childs}]]]))))
 
 (defn check-props
@@ -100,7 +100,7 @@
 
             ;; FIXME: apply specific rendering optimizations separating to a component
             bounds         (if (:show-content shape)
-                             (let [ids      (cph/get-children-ids objects frame-id)
+                             (let [ids      (cfh/get-children-ids objects frame-id)
                                    children (sequence (keep (d/getf objects)) ids)]
                                (gsh/shapes->rect (cons shape children)))
                              (-> shape :points grc/points->rect))

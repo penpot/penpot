@@ -8,14 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes :as ch]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.files.libraries-helpers :as cflh]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
-   [app.common.pages :as cp]
-   [app.common.pages.changes :as ch]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -28,6 +27,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.notifications :as-alias dwn]
@@ -85,7 +85,7 @@
 
 (defn extract-path-if-missing
   [item]
-  (let [[path name] (cph/parse-path-name (:name item))]
+  (let [[path name] (cfh/parse-path-name (:name item))]
     (if (and
          (= (:name item) name)
          (contains? item :path))
@@ -114,7 +114,7 @@
 
 (defn add-recent-color
   [color]
-  (dm/assert! (ctc/recent-color? color))
+  (dm/assert! (ctc/valid-recent-color? color))
   (ptk/reify ::add-recent-color
     ptk/WatchEvent
     (watch [it _ _]
@@ -131,7 +131,7 @@
 (defn- do-update-color
   [it state color file-id]
   (let [data        (get state :workspace-data)
-        [path name] (cph/parse-path-name (:name color))
+        [path name] (cfh/parse-path-name (:name color))
         color       (assoc color :path path :name name)
         changes     (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
@@ -144,7 +144,7 @@
 
 (defn update-color
   [color file-id]
-  (dm/assert! (ctc/color? color))
+  (dm/assert! (ctc/valid-color? color))
   (dm/assert! (uuid? file-id))
 
   (ptk/reify ::update-color
@@ -202,7 +202,7 @@
       (let [new-name (str/trim new-name)]
         (if (str/empty? new-name)
           (rx/empty)
-          (let [[path name] (cph/parse-path-name new-name)
+          (let [[path name] (cfh/parse-path-name new-name)
                 data        (get state :workspace-data)
                 object      (get-in data [:media id])
                 new-object  (assoc object :path path :name name)
@@ -274,7 +274,7 @@
     (watch [it state _]
       (when (and (some? new-name) (not= "" new-name))
         (let [data        (get state :workspace-data)
-              [path name] (cph/parse-path-name new-name)
+              [path name] (cfh/parse-path-name new-name)
               object      (get-in data [:typographies id])
               new-object  (assoc object :path path :name name)]
           (do-update-tipography it state new-object file-id))))))
@@ -326,7 +326,7 @@
     (watch [_ state _]
       (let [objects       (wsh/lookup-page-objects state)
             selected      (->> (wsh/lookup-selected state)
-                               (cph/clean-loops objects)
+                               (cfh/clean-loops objects)
                                (remove #(ctn/has-any-copy-parent? objects (get objects %)))) ;; We don't want to change the structure of component copies
             components-v2 (features/active-feature? state "components/v2")]
         (rx/of (add-component2 selected components-v2))))))
@@ -340,7 +340,7 @@
       (let [components-v2    (features/active-feature? state "components/v2")
             objects       (wsh/lookup-page-objects state)
             selected      (->> (wsh/lookup-selected state)
-                               (cph/clean-loops objects)
+                               (cfh/clean-loops objects)
                                (remove #(ctn/has-any-copy-parent? objects (get objects %)))) ;; We don't want to change the structure of component copies
             added-components (map
                               #(add-component2 [%] components-v2)
@@ -363,7 +363,7 @@
         (if (str/empty? new-name)
           (rx/empty)
           (let [data          (get state :workspace-data)
-                [path name]   (cph/parse-path-name new-name)
+                [path name]   (cfh/parse-path-name new-name)
                 components-v2 (features/active-feature? state "components/v2")
 
                 update-fn
@@ -390,7 +390,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (when-let [component (dm/get-in state [:workspace-data :components component-id])]
-        (let [name     (cph/clean-path name)
+        (let [name     (cfh/clean-path name)
               shape-id (:main-instance-id component)
               page-id  (:main-instance-page component)]
           (rx/concat
@@ -544,7 +544,7 @@
     (watch [it state _]
       (let [file      (wsh/get-local-file state)
             page-id   (get state :current-page-id)
-            container (cph/get-container file :page page-id)
+            container (cfh/get-container file :page page-id)
 
             changes   (-> (pcb/empty-changes it)
                           (pcb/with-container container)
@@ -573,10 +573,10 @@
       (let [page-id   (:current-page-id state)
             objects   (wsh/lookup-page-objects state page-id)
             file      (wsh/get-local-file state)
-            container (cph/get-container file :page page-id)
+            container (cfh/get-container file :page page-id)
             selected  (->> state
                            (wsh/lookup-selected)
-                           (cph/clean-loops objects))
+                           (cfh/clean-loops objects))
 
             changes (reduce
                      (fn [changes id]
@@ -614,7 +614,7 @@
           (update-in [:workspace-libraries library-id]
                      assoc :modified-at modified-at :revn revn)
           (d/update-in-when [:workspace-libraries library-id :data]
-                            cp/process-changes changes)))
+                            ch/process-changes changes)))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -637,7 +637,7 @@
             libraries (wsh/get-libraries state)
 
             page-id   (:current-page-id state)
-            container (cph/get-container file :page page-id)
+            container (cfh/get-container file :page page-id)
 
             components-v2
             (features/active-feature? state "components/v2")
@@ -685,7 +685,7 @@
        (log/info :msg "UPDATE-COMPONENT of shape" :id (str id) :undo-group undo-group)
        (let [page-id       (get state :current-page-id)
              local-file    (wsh/get-local-file state)
-             container     (cph/get-container local-file :page page-id)
+             container     (cfh/get-container local-file :page page-id)
              shape         (ctn/get-shape container id)
              components-v2 (features/active-feature? state "components/v2")]
 
@@ -1144,6 +1144,9 @@
          (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
               (rx/ignore))
          (->> (rp/cmd! :get-file {:id library-id :features features})
+              (rx/merge-map (fn [{:keys [id data] :as file}]
+                              (->> (dwc/resolve-file-data id data)
+                                   (rx/map (fn [data] (assoc file :data data))))))
               (rx/map (fn [file]
                         (fn [state]
                           (assoc-in state [:workspace-libraries library-id] file)))))

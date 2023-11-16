@@ -8,7 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -114,7 +114,7 @@
                      (str/ffmt "Parent % not found" (:parent-id shape))
                      shape file page)
       (do
-        (when-not (cph/root? shape)
+        (when-not (cfh/root? shape)
           (when-not (some #{(:id shape)} (:shapes parent))
             (report-error! :child-not-in-parent
                            (str/ffmt "Shape % not in parent's children list" (:id shape))

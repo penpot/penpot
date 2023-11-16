@@ -9,8 +9,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.types.container :as ctn]
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
@@ -43,7 +43,7 @@
         selrect   (dm/get-prop shape :selrect)
         type      (dm/get-prop shape :type)
         content   (get shape :content)
-        path?     (cph/path-shape? shape)
+        path?     (cfh/path-shape? shape)
 
         path-data
         (mf/with-memo [path? content]

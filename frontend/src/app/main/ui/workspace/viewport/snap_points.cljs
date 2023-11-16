@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.snap :as sp]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [app.main.snap :as snap]
    [beicon.core :as rx]
@@ -159,7 +159,7 @@
   (let [shapes  (into [] (keep (d/getf objects)) selected)
 
         filter-shapes
-        (into selected (mapcat #(cph/get-children-ids objects %)) selected)
+        (into selected (mapcat #(cfh/get-children-ids objects %)) selected)
 
         remove-snap-base?
         (mf/with-memo [layout filter-shapes objects focus]

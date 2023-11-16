@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
@@ -179,14 +179,14 @@
 (mf/defc component-group-item
   [{:keys [item on-enter-group] :as props}]
   (let [group-name (:name item)
-        path (cph/butlast-path group-name)
+        path (cfh/butlast-path group-name)
         on-group-click #(on-enter-group group-name)]
     [:div {:class (stl/css :component-group)
            :key (uuid/next) :on-click on-group-click}
      [:div
       (when-not (str/blank? path)
         [:span {:class (stl/css :component-group-path)} (str "\u00A0/\u00A0" path)])
-      [:span {:class (stl/css :component-group-name)} (cph/last-path group-name)]]
+      [:span {:class (stl/css :component-group-name)} (cfh/last-path group-name)]]
      [:span i/arrow-slide]]))
 
 
@@ -209,7 +209,7 @@
                               current-file-id)
         paths                (->> shapes
                                   (map :name)
-                                  (map cph/split-path)
+                                  (map cfh/split-path)
                                   (map butlast))
 
         find-common-path    (fn common-path [path n]
@@ -220,8 +220,8 @@
                                   (common-path (conj path current) (inc n)))))
 
         path                (if single?
-                              (cph/butlast-path (:name shape))
-                              (cph/join-path (if (not every-same-file?)
+                              (cfh/butlast-path (:name shape))
+                              (cfh/join-path (if (not every-same-file?)
                                                ""
                                                (find-common-path [] 0))))
 
@@ -237,10 +237,10 @@
         components          (->> (get-in libraries [(:file-id filters) :data :components])
                                  vals
                                  (remove #(true? (:deleted %)))
-                                 (map #(assoc % :full-name (cph/merge-path-item (:path %) (:name %)))))
+                                 (map #(assoc % :full-name (cfh/merge-path-item (:path %) (:name %)))))
 
         get-subgroups       (fn [path]
-                              (let [split-path (cph/split-path path)]
+                              (let [split-path (cfh/split-path path)]
                                 (reduce (fn [acc dir]
                                           (conj acc (str (last acc) " / " dir)))
                                         [(first split-path)] (rest split-path))))
@@ -251,7 +251,7 @@
                              (remove str/empty?)
                              (remove nil?)
                              (distinct)
-                             (filter #(= (cph/butlast-path %) (:path filters))))
+                             (filter #(= (cfh/butlast-path %) (:path filters))))
 
         groups              (when-not is-search?
                               (->> (sort (sequence xform components))
@@ -305,7 +305,7 @@
         on-go-back
         (mf/use-fn
          (mf/deps (:path filters))
-         #(swap! filters* assoc :path (cph/butlast-path (:path filters))))
+         #(swap! filters* assoc :path (cfh/butlast-path (:path filters))))
 
         on-enter-group
         (mf/use-fn #(swap! filters* assoc :path %))
@@ -490,7 +490,7 @@
                                        :type :dropdown}]])
             (when (and can-swap? (not multi))
               [:div {:class (stl/css :component-parent-name)}
-               (cph/merge-path-item (:path component) (:name component))])]]
+               (cfh/merge-path-item (:path component) (:name component))])]]
           (when swap-opened?
             [:& component-swap {:shapes shapes}])
 

@@ -8,13 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
-   [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]))
+   [app.common.math :as mth]))
 
 (defn shape-stroke-margin
   [shape stroke-width]
-  (if (cph/path-shape? shape)
+  (if (cfh/path-shape? shape)
     ;; TODO: Calculate with the stroke offset (not implemented yet
     (mth/sqrt (* 2 stroke-width stroke-width))
     (- (mth/sqrt (* 2 stroke-width stroke-width)) stroke-width)))
@@ -81,7 +81,7 @@
 
 (defn get-shape-filter-bounds
   [shape]
-  (if (and (cph/svg-raw-shape? shape)
+  (if (and (cfh/svg-raw-shape? shape)
            (not= :svg (dm/get-in shape [:content :tag])))
     (dm/get-prop shape :selrect)
     (let [filters    (shape->filters shape)
@@ -155,19 +155,19 @@
           (or (:masked-group shape) (= :bool (:type shape)))
           [(calculate-base-bounds shape)]
 
-          (and (cph/frame-shape? shape) (not (:show-content shape)))
+          (and (cfh/frame-shape? shape) (not (:show-content shape)))
           [(calculate-base-bounds shape)]
 
           :else
-          (cph/reduce-objects
+          (cfh/reduce-objects
            objects
 
            (fn [shape]
              (and (d/not-empty? (:shapes shape))
-                  (or (not (cph/frame-shape? shape))
+                  (or (not (cfh/frame-shape? shape))
                       (:show-content shape))
 
-                  (or (not (cph/group-shape? shape))
+                  (or (not (cfh/group-shape? shape))
                       (not (:masked-group shape)))))
            (:id shape)
            (fn [result child]
@@ -177,7 +177,7 @@
 
         children-bounds
         (cond->> (grc/join-rects bounds)
-          (not (cph/frame-shape? shape)) (or (:children-bounds shape)))
+          (not (cfh/frame-shape? shape)) (or (:children-bounds shape)))
 
         filters (shape->filters shape)
         blur-value (or (-> shape :blur :value) 0)]

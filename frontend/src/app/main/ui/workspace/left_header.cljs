@@ -4,36 +4,37 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.left-header (:require-macros [app.main.style :as stl])
-    (:require
-     [app.common.pages.helpers :as cph]
-     [app.common.uuid :as uuid]
-     [app.config :as cf]
-     [app.main.data.common :refer [show-shared-dialog]]
-     [app.main.data.events :as ev]
-     [app.main.data.exports :as de]
-     [app.main.data.modal :as modal]
-     [app.main.data.shortcuts :as scd]
-     [app.main.data.workspace :as dw]
-     [app.main.data.workspace.colors :as dc]
-     [app.main.data.workspace.common :as dwc]
-     [app.main.data.workspace.libraries :as dwl]
-     [app.main.data.workspace.shortcuts :as sc]
-     [app.main.refs :as refs]
-     [app.main.repo :as rp]
-     [app.main.store :as st]
-     [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item]]
-     [app.main.ui.context :as ctx]
-     [app.main.ui.hooks.resize :as r]
-     [app.main.ui.icons :as i]
-     [app.util.dom :as dom]
-     [app.util.i18n :as i18n :refer [tr]]
-     [app.util.keyboard :as kbd]
-     [app.util.router :as rt]
-     [beicon.core :as rx]
-     [cuerdas.core :as str]
-     [potok.core :as ptk]
-     [rumext.v2 :as mf]))
+(ns app.main.ui.workspace.left-header
+  (:require-macros [app.main.style :as stl])
+  (:require
+   [app.common.files.helpers :as cfh]
+   [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.main.data.common :refer [show-shared-dialog]]
+   [app.main.data.events :as ev]
+   [app.main.data.exports :as de]
+   [app.main.data.modal :as modal]
+   [app.main.data.shortcuts :as scd]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.shortcuts :as sc]
+   [app.main.refs :as refs]
+   [app.main.repo :as rp]
+   [app.main.store :as st]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item]]
+   [app.main.ui.context :as ctx]
+   [app.main.ui.hooks.resize :as r]
+   [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
+   [app.util.router :as rt]
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [potok.core :as ptk]
+   [rumext.v2 :as mf]))
 
 ;; --- Header menu and submenus
 
@@ -466,8 +467,8 @@
         shared?   (:is-shared file)
 
         objects   (mf/deref refs/workspace-page-objects)
-        frames    (->> (cph/get-immediate-children objects uuid/zero)
-                       (filterv cph/frame-shape?))
+        frames    (->> (cfh/get-immediate-children objects uuid/zero)
+                       (filterv cfh/frame-shape?))
 
         add-shared-fn
         (mf/use-fn

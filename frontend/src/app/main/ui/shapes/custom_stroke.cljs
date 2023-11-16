@@ -8,12 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.geom.shapes.text :as gst]
-   [app.common.pages.helpers :as cph]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.embed :as embed]
@@ -51,7 +51,7 @@
         ;; dependencies to really useful shape attrs instead of using
         ;; the shepe as-is.
         selrect       (mf/with-memo [shape]
-                        (if (cph/text-shape? shape)
+                        (if (cfh/text-shape? shape)
                           (gst/shape->rect shape)
                           (grc/points->rect (:points shape))))
 
@@ -201,7 +201,7 @@
 (mf/defc stroke-defs
   {::mf/wrap-props false}
   [{:keys [shape stroke render-id index]}]
-  (let [open-path?    (and ^boolean (cph/path-shape? shape)
+  (let [open-path?    (and ^boolean (cfh/path-shape? shape)
                        ^boolean (gsh/open-path? shape))
         gradient      (:stroke-color-gradient stroke)
         alignment     (:stroke-alignment stroke :center)
@@ -211,7 +211,7 @@
                            :gradient gradient
                            :shape shape}
         stroke-image  (:stroke-image stroke)
-        uri           (when stroke-image (cfg/resolve-file-media stroke-image))
+        uri           (when stroke-image (cf/resolve-file-media stroke-image))
         embed         (embed/use-data-uris [uri])
 
         stroke-width  (case (:stroke-alignment stroke :center)
@@ -221,7 +221,7 @@
         margin        (gsb/shape-stroke-margin stroke stroke-width)
 
         selrect       (mf/with-memo [shape]
-                        (if (cph/text-shape? shape)
+                        (if (cfh/text-shape? shape)
                           (gst/shape->rect shape)
                           (grc/points->rect (:points shape))))
 
@@ -398,7 +398,7 @@
 
         has-stroke?     (and (> stroke-width 0)
                              (not= stroke-style :none))
-        closed?         (or (not ^boolean (cph/path-shape? shape))
+        closed?         (or (not ^boolean (cfh/path-shape? shape))
                             (not ^boolean (gsh/open-path? shape)))
         inner?          (= :inner stroke-position)
         outer?          (= :outer stroke-position)]
@@ -429,12 +429,12 @@
                          (obj/clone))
 
         url-fill?    (or ^boolean (some? (:fill-image shape))
-                         ^boolean (cph/image-shape? shape)
+                         ^boolean (cfh/image-shape? shape)
                          ^boolean (> (count shape-fills) 1)
                          ^boolean (some? (some :fill-color-gradient shape-fills))
                          ^boolean (some? (some :fill-image shape-fills)))
 
-        props        (if (cph/frame-shape? shape)
+        props        (if (cfh/frame-shape? shape)
                        props
                        (if (or (some? (->> shape-shadow (remove :hidden) seq))
                                (and (some? shape-blur) (not ^boolean (:hidden shape-blur))))
@@ -476,7 +476,7 @@
       (let [fill (nth shape-fills 0)]
         (obj/merge! style (attrs/get-fill-style fill render-id 0 (dm/get-prop shape :type))))
 
-      (and ^boolean (cph/path-shape? shape)
+      (and ^boolean (cfh/path-shape? shape)
            ^boolean (empty? shape-fills))
       (obj/set! style "fill" "none"))
 
@@ -540,7 +540,7 @@
         shape-strokes (get shape :strokes)
 
         props         #js {:id stroke-id :className "strokes"}
-        props         (if ^boolean (cph/frame-shape? shape)
+        props         (if ^boolean (cfh/frame-shape? shape)
                         props
                         (cond
                           (and (some? shape-blur)

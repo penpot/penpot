@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.changes :as cpc]
+   [app.common.files.changes :as cpc]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.main.data.common :refer [handle-notification]]

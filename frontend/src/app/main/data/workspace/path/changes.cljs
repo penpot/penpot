@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.path.changes
   (:require
    [app.common.data.macros :as dm]
-   [app.common.pages.changes-builder :as pcb]
+   [app.common.files.changes-builder :as pcb]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.path.common :refer [content?]]
    [app.main.data.workspace.path.helpers :as helpers]

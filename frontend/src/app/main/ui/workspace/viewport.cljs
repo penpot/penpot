@@ -9,8 +9,8 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.modifiers :as dwm]
@@ -60,7 +60,7 @@
       objects id
       (fn [shape]
         (cond-> shape
-          (and (cph/text-shape? shape) (contains? text-modifiers id))
+          (and (cfh/text-shape? shape) (contains? text-modifiers id))
           (dwm/apply-text-modifier (get text-modifiers id))
 
           (contains? modifiers id)
@@ -144,7 +144,7 @@
                            (fn []
                              (let [parent-id
                                    (->> @hover-ids
-                                        (d/seek (partial cph/root-frame? base-objects)))]
+                                        (d/seek (partial cfh/root-frame? base-objects)))]
                                (when (some? parent-id)
                                  (get base-objects parent-id)))))
 
@@ -248,7 +248,7 @@
 
         first-selected-shape (first selected-shapes)
         selecting-first-level-frame? (and one-selected-shape?
-                                          (cph/root-frame? first-selected-shape))
+                                          (cfh/root-frame? first-selected-shape))
 
         offset-x (if selecting-first-level-frame?
                    (:x first-selected-shape)
@@ -374,7 +374,7 @@
        (when show-frame-outline?
          (let [outlined-frame-id
                (->> @hover-ids
-                    (filter #(cph/frame-shape? (get base-objects %)))
+                    (filter #(cfh/frame-shape? (get base-objects %)))
                     (remove selected)
                     (first))
                outlined-frame (get objects outlined-frame-id)]

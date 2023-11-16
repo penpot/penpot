@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
@@ -43,7 +43,7 @@
 
 (defn prepare-move-shapes-into-frame
   [changes frame-id shapes objects]
-  (let [ordered-indexes (cph/order-by-indexed-shapes objects shapes)
+  (let [ordered-indexes (cfh/order-by-indexed-shapes objects shapes)
         parent-id (get-in objects [frame-id :parent-id])
         ordered-indexes (->> ordered-indexes (remove #(= % parent-id)))
         to-move-shapes (map (d/getf objects) ordered-indexes)]
@@ -51,7 +51,7 @@
       (-> changes
           (cond-> (not (ctl/any-layout? objects frame-id))
             (pcb/update-shapes ordered-indexes ctl/remove-layout-item-data))
-          (pcb/update-shapes ordered-indexes #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true)))
+          (pcb/update-shapes ordered-indexes #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true)))
           (pcb/change-parent frame-id to-move-shapes 0)
           (cond-> (ctl/grid-layout? objects frame-id)
             (pcb/update-shapes [frame-id] ctl/assign-cells))
@@ -62,7 +62,7 @@
   [changes id parent-id objects selected index frame-name without-fill?]
   (let [selected-objs (map #(get objects %) selected)
         new-index (or index
-                      (cph/get-index-replacement selected objects))]
+                      (cfh/get-index-replacement selected objects))]
     (when (d/not-empty? selected)
       (let [srect       (gsh/shapes->rect selected-objs)
             selected-id (first selected)

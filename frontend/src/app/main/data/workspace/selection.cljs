@@ -8,14 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.focus :as cpf]
    [app.common.files.helpers :as cfh]
    [app.common.files.libraries-helpers :as cflh]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.focus :as cpf]
-   [app.common.pages.helpers :as cph]
    [app.common.record :as cr]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
@@ -202,7 +201,7 @@
      ptk/UpdateEvent
      (update [_ state]
        (let [objects (or objects (wsh/lookup-page-objects state))
-             append-to-selection (cph/expand-region-selection objects (into #{} [(get-in state [:workspace-local :last-selected]) id]))
+             append-to-selection (cfh/expand-region-selection objects (into #{} [(get-in state [:workspace-local :last-selected]) id]))
              selection (-> state
                            wsh/lookup-selected
                            (conj id))]
@@ -259,7 +258,7 @@
                        (-> parents first lookup)
                        (lookup uuid/zero))
 
-            toselect (->> (cph/get-immediate-children objects (:id parent))
+            toselect (->> (cfh/get-immediate-children objects (:id parent))
                           (into (d/ordered-set) (comp (remove :hidden) (remove :blocked) (map :id))))]
 
         (rx/of (select-shapes toselect))))))
@@ -313,10 +312,10 @@
                  :ignore-groups? ignore-groups?
                  :full-frame? true
                  :using-selrect? true})
-               (rx/map #(cph/clean-loops objects %))
+               (rx/map #(cfh/clean-loops objects %))
                (rx/map #(into initial-set (comp
                                            (filter (complement blocked?))
-                                           (remove (partial cph/hidden-parent? objects))) %))
+                                           (remove (partial cfh/hidden-parent? objects))) %))
                (rx/map select-shapes)))))))
 
 (defn select-inside-group
@@ -357,7 +356,7 @@
    (let [shapes         (map (d/getf all-objects) ids)
          unames         (volatile! (cfh/get-used-names (:objects page)))
          update-unames! (fn [new-name] (vswap! unames conj new-name))
-         all-ids        (reduce #(into %1 (cons %2 (cph/get-children-ids all-objects %2))) (d/ordered-set) ids)
+         all-ids        (reduce #(into %1 (cons %2 (cfh/get-children-ids all-objects %2))) (d/ordered-set) ids)
          ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
 
          changes
@@ -423,9 +422,9 @@
      (prepare-duplicate-component-change changes objects page obj parent-id delta libraries library-data it)
 
      :else
-     (let [frame?      (cph/frame-shape? obj)
-           group?      (cph/group-shape? obj)
-           bool?       (cph/bool-shape? obj)
+     (let [frame?      (cfh/frame-shape? obj)
+           group?      (cfh/group-shape? obj)
+           bool?       (cfh/bool-shape? obj)
            new-id      (ids-map (:id obj))
            parent-id   (or parent-id frame-id)
            name        (:name obj)
@@ -554,7 +553,7 @@
   (let [;; index-map is a map that goes from parent-id => vector([id index-in-parent])
         index-map (reduce (fn [index-map id]
                             (let [parent-id    (get-in objects [id :parent-id])
-                                  parent-index (cph/get-position-on-parent objects id)]
+                                  parent-index (cfh/get-position-on-parent objects id)]
                               (update index-map parent-id (fnil conj []) [id parent-index])))
                           {}
                           ids)
@@ -608,7 +607,7 @@
   [obj state objects]
   (let [{:keys [id-original id-duplicated]}
         (get-in state [:workspace-local :duplicated])
-        move? (and (cph/frame-shape? obj)
+        move? (and (cfh/frame-shape? obj)
                    (not (ctk/instance-head? obj)))]
     (if (or (and (not= id-original (:id obj))
                  (not= id-duplicated (:id obj)))
@@ -706,7 +705,7 @@
             focus (-> (:workspace-focus-selected state)
                       (set/union added)
                       (set/difference removed))
-            focus (cph/clean-loops objects focus)]
+            focus (cfh/clean-loops objects focus)]
 
         (-> state
             (assoc :workspace-focus-selected focus))))))

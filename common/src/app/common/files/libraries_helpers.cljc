@@ -6,8 +6,8 @@
 
 (ns app.common.files.libraries-helpers
   (:require
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.uuid :as uuid]))
@@ -15,7 +15,7 @@
 (defn generate-add-component-changes
   [changes root objects file-id page-id components-v2]
   (let [name (:name root)
-        [path name] (cph/parse-path-name name)
+        [path name] (cfh/parse-path-name name)
 
         [root-shape new-shapes updated-shapes]
         (if-not components-v2

@@ -10,10 +10,10 @@
    https://en.wikipedia.org/wiki/Range_tree"
   (:require
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
+   [app.common.files.page-diff :as diff]
    [app.common.geom.grid :as gg]
    [app.common.geom.snap :as snap]
-   [app.common.pages.diff :as diff]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -87,7 +87,7 @@
     (cond-> page-data
       (and (not (ctl/any-layout-descent? objects frame))
            (not (:hidden frame))
-           (not (cph/hidden-parent? objects frame-id)))
+           (not (cfh/hidden-parent? objects frame-id)))
 
       (-> ;; Update root frame information
        (assoc-in [uuid/zero :objects-data frame-id] frame-data)
@@ -115,7 +115,7 @@
     (cond-> page-data
       (and (not (ctl/any-layout-descent? objects shape))
            (not (:hidden shape))
-           (not (cph/hidden-parent? objects (:id shape))))
+           (not (cfh/hidden-parent? objects (:id shape))))
       (-> (assoc-in [frame-id :objects-data (:id shape)] shape-data)
           (update-in [frame-id :x] (make-insert-tree-data shape-data :x))
           (update-in [frame-id :y] (make-insert-tree-data shape-data :y))))))
@@ -135,7 +135,7 @@
       ;; Guide inside frame, we add the information only on that frame
       (cond-> page-data
         (and (not (:hidden frame))
-             (not (cph/hidden-parent? objects frame-id)))
+             (not (cfh/hidden-parent? objects frame-id)))
         (-> (assoc-in [frame-id :objects-data (:id guide)] guide-data)
             (update-in [frame-id (:axis guide)] (make-insert-tree-data guide-data (:axis guide)))))
 
@@ -214,7 +214,7 @@
   [snap-data {:keys [objects options] :as page}]
   (let [frames     (ctst/get-frames objects)
         shapes     (->> (vals (:objects page))
-                        (remove cph/frame-shape?))
+                        (remove cfh/frame-shape?))
         guides     (vals (:guides options))
 
         page-data

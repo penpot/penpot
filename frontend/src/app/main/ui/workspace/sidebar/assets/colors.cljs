@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -82,7 +82,7 @@
         (mf/use-fn
          (mf/deps color file-id)
          (fn [attrs]
-           (let [name  (cph/merge-path-item (:path color) (:name color))
+           (let [name  (cfh/merge-path-item (:path color) (:name color))
                  color (-> attrs
                            (assoc :id (:id color))
                            (assoc :file-id file-id)
@@ -220,7 +220,7 @@
            :on-blur input-blur
            :on-key-down input-key-down
            :auto-focus true
-           :default-value (cph/merge-path-item (:path color) (:name color))}]
+           :default-value (cfh/merge-path-item (:path color) (:name color))}]
 
          [:div {:title (:name color)
                 :class (dom/classnames (css :name-block) true)
@@ -278,7 +278,7 @@
            :on-blur input-blur
            :on-key-down input-key-down
            :auto-focus true
-           :default-value (cph/merge-path-item (:path color) (:name color))}]
+           :default-value (cfh/merge-path-item (:path color) (:name color))}]
 
          [:div.name-block {:title (:name color)
                            :on-double-click rename-color-clicked}
@@ -387,7 +387,7 @@
           (for [[path-item content] groups]
             (when-not (empty? path-item)
               [:& colors-group {:file-id file-id
-                                :prefix (cph/merge-path-item prefix path-item)
+                                :prefix (cfh/merge-path-item prefix path-item)
                                 :key (dm/str "group-" path-item)
                                 :groups content
                                 :open-groups open-groups
@@ -451,7 +451,7 @@
           (for [[path-item content] groups]
             (when-not (empty? path-item)
               [:& colors-group {:file-id file-id
-                                :prefix (cph/merge-path-item prefix path-item)
+                                :prefix (cfh/merge-path-item prefix path-item)
                                 :key (dm/str "group-" path-item)
                                 :groups content
                                 :open-groups open-groups

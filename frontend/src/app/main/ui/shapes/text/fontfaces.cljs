@@ -7,7 +7,7 @@
 (ns app.main.ui.shapes.text.fontfaces
   (:require
    [app.common.data :as d]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.main.fonts :as fonts]
    [app.main.ui.shapes.embed :as embed]
    [app.util.object :as obj]
@@ -93,17 +93,17 @@
 (defn shape->fonts
   [shape objects]
   (let [initial (cond-> #{}
-                  (cph/text-shape? shape)
+                  (cfh/text-shape? shape)
                   (into (fonts/get-content-fonts (:content shape))))]
-    (->> (cph/get-children objects (:id shape))
-         (filter cph/text-shape?)
+    (->> (cfh/get-children objects (:id shape))
+         (filter cfh/text-shape?)
          (map (comp fonts/get-content-fonts :content))
          (reduce set/union initial))))
 
 (defn shapes->fonts
   [shapes]
   (->> shapes
-       (filter cph/text-shape?)
+       (filter cfh/text-shape?)
        (map (comp fonts/get-content-fonts :content))
        (reduce set/union #{})))
 

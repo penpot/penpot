@@ -8,12 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [beicon.core :as rx]
@@ -40,7 +40,7 @@
           (initialize [state local]
             (let [page-id (:current-page-id state)
                   objects (wsh/lookup-page-objects state page-id)
-                  shapes  (cph/get-immediate-children objects)
+                  shapes  (cfh/get-immediate-children objects)
                   srect   (gsh/shapes->rect shapes)
                   local   (assoc local :vport size :zoom 1 :zoom-inverse 1 :hide-toolbar false)]
 

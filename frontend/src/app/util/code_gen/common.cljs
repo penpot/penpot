@@ -8,8 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [cuerdas.core :as str]))
 
@@ -34,18 +34,18 @@
   [shape]
   (or
    ;; path and path-like shapes
-   (cph/path-shape? shape)
-   (cph/bool-shape? shape)
+   (cfh/path-shape? shape)
+   (cfh/bool-shape? shape)
 
    ;; imported SVG images
-   (cph/svg-raw-shape? shape)
+   (cfh/svg-raw-shape? shape)
    (some? (:svg-attrs shape))
 
    ;; CSS masks are not enough we need to delegate to SVG
-   (cph/mask-shape? shape)
+   (cfh/mask-shape? shape)
 
    ;; Texts with shadows or strokes we render in SVG
-   (and (cph/text-shape? shape)
+   (and (cfh/text-shape? shape)
         (or (d/not-empty? (:shadow shape))
             (d/not-empty? (:strokes shape))))
 

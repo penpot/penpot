@@ -9,7 +9,7 @@
    [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.main.broadcast :as mbc]
@@ -231,7 +231,7 @@
                           (contains? attrs :image)
                           (assoc :stroke-image (:image attrs)))
 
-            attrs (-> 
+            attrs (->
                    (merge attrs color-attrs)
                    (dissoc :image)
                    (dissoc :gradient))]
@@ -415,7 +415,7 @@
     (watch [_ state _]
       (let [objects  (wsh/lookup-page-objects state)
             selected (->> (wsh/lookup-selected state)
-                          (cph/clean-loops objects))
+                          (cfh/clean-loops objects))
 
             ids
             (loop [pending (seq selected)
@@ -424,8 +424,8 @@
                 result
                 (let [cur (first pending)
                       ;; We treat frames that aren't components and with no fill the same as groups
-                      group? (or (cph/group-shape? objects cur)
-                                 (and (cph/frame-shape? objects cur)
+                      group? (or (cfh/group-shape? objects cur)
+                                 (and (cfh/frame-shape? objects cur)
                                       (empty? (dm/get-in objects [cur :fills]))
                                       (not (ctk/instance-head? (get objects cur)))))
 
@@ -666,7 +666,7 @@
       (let [selected   (wsh/lookup-selected state)
             shapes     (wsh/lookup-shapes state selected)
             shape      (first shapes)
-            fills      (if (cph/text-shape? shape)
+            fills      (if (cfh/text-shape? shape)
                          (:fills (dwt/current-text-values
                                    {:editor-state (dm/get-in state [:workspace-editor-state (:id shape)])
                                     :shape shape

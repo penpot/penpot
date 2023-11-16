@@ -70,7 +70,7 @@
       [:offset ::sm/safe-number]]]]])
 
 (sm/def! ::color
-  [:map
+  [:map {:title "Color"}
    [:id {:optional true} ::sm/uuid]
    [:name {:optional true} :string]
    [:path {:optional true} [:maybe :string]]
@@ -83,8 +83,6 @@
    [:gradient {:optional true} [:maybe ::gradient]]
    [:image {:optional true} [:maybe ::image-color]]])
 
-
-;; FIXME: incomplete schema
 (sm/def! ::recent-color
   [:and
    [:map {:title "RecentColor"}
@@ -94,10 +92,10 @@
     [:image {:optional true} [:maybe ::image-color]]]
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
-(def color?
+(def valid-color?
   (sm/pred-fn ::color))
 
-(def recent-color?
+(def valid-recent-color?
   (sm/pred-fn ::recent-color))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -7,7 +7,7 @@
 (ns common-tests.helpers.components
   (:require
    [clojure.test :as t]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]))
@@ -58,7 +58,7 @@
    verify that they are a well constructed instance tree."
   [page root-inst-id]
   (let [root-inst   (ctn/get-shape page root-inst-id)
-        shapes-inst (cph/get-children-with-self (:objects page)
+        shapes-inst (cfh/get-children-with-self (:objects page)
                                                 root-inst-id)]
     (check-instance-root (first shapes-inst))
     (run! check-instance-inner (rest shapes-inst))
@@ -70,7 +70,7 @@
    verify that they are not a component instance."
   [page root-inst-id]
   (let [root-inst   (ctn/get-shape page root-inst-id)
-        shapes-inst (cph/get-children-with-self (:objects page)
+        shapes-inst (cfh/get-children-with-self (:objects page)
                                                 root-inst-id)]
     (run! check-noninstance shapes-inst)
 
@@ -84,8 +84,8 @@
 
         component     (ctf/find-component libraries (:component-id root-inst))
 
-        shapes-inst   (cph/get-children-with-self (:objects page) root-inst-id)
-        shapes-main   (cph/get-children-with-self (:objects component) (:shape-ref root-inst))
+        shapes-inst   (cfh/get-children-with-self (:objects page) root-inst-id)
+        shapes-main   (cfh/get-children-with-self (:objects component) (:shape-ref root-inst))
 
         unique-refs   (into #{} (map :shape-ref) shapes-inst)
 
@@ -120,8 +120,8 @@
 
         component     (ctf/find-component libraries (:component-id root-inst))
 
-        shapes-inst   (cph/get-children-with-self (:objects page) root-inst-id)
-        shapes-main   (cph/get-children-with-self (:objects component) (:shape-ref root-inst))
+        shapes-inst   (cfh/get-children-with-self (:objects page) root-inst-id)
+        shapes-main   (cfh/get-children-with-self (:objects component) (:shape-ref root-inst))
 
         unique-refs   (into #{} (map :shape-ref) shapes-inst)
 
@@ -147,7 +147,7 @@
   [page component-id libraries]
   (let [component   (ctf/find-component libraries component-id)
         root-main   (ctk/get-component-root component)
-        shapes-main (cph/get-children-with-self (:objects component) (:id root-main))]
+        shapes-main (cfh/get-children-with-self (:objects component) (:id root-main))]
 
     ;; Validate that the component tree is well constructed
     (run! check-noninstance shapes-main)

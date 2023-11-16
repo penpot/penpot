@@ -7,6 +7,7 @@
 (ns app.common.geom.shapes.flex-layout.drop-area
   (:require
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -14,7 +15,6 @@
    [app.common.geom.shapes.flex-layout.layout-data :as fld]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
-   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]))
 
@@ -199,7 +199,7 @@
 (defn get-drop-areas
   [frame objects bounds]
   (let [[frame modifiers] (get-flip-modifiers frame)
-        children    (->> (cph/get-immediate-children objects (:id frame))
+        children    (->> (cfh/get-immediate-children objects (:id frame))
                          (remove :hidden)
                          (map #(cond-> % (some? modifiers)
                                        (gtr/transform-shape modifiers)))

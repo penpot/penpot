@@ -7,9 +7,9 @@
 (ns app.common.files.repair
   (:require
    [app.common.data :as d]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -85,7 +85,7 @@
         (fn [shape]
           ; Locate the first frame in parents and set frame-id to it.
           (let [page     (ctpl/get-page file-data page-id)
-                frame    (cph/get-frame (:objects page) (:parent-id shape))
+                frame    (cfh/get-frame (:objects page) (:parent-id shape))
                 frame-id (or (:id frame) uuid/zero)]
             (log/debug :hint "  -> Set to " :frame-id frame-id)
             (assoc shape :frame-id frame-id)))]
@@ -101,7 +101,7 @@
         (fn [shape]
           ; Locate the first frame in parents and set frame-id to it.
           (let [page     (ctpl/get-page file-data page-id)
-                frame    (cph/get-frame (:objects page) (:parent-id shape))
+                frame    (cfh/get-frame (:objects page) (:parent-id shape))
                 frame-id (or (:id frame) uuid/zero)]
             (log/debug :hint "  -> Set to " :frame-id frame-id)
             (assoc shape :frame-id frame-id)))]
@@ -143,7 +143,7 @@
 (defmethod repair-error :component-not-found
   [_ {:keys [shape page-id] :as error} file-data _]
   (let [page      (ctpl/get-page file-data page-id)
-        shape-ids (cph/get-children-ids-with-self (:objects page) (:id shape))
+        shape-ids (cfh/get-children-ids-with-self (:objects page) (:id shape))
 
         repair-shape
         (fn [shape]
@@ -278,7 +278,7 @@
           (pcb/with-file-data file-data)
           (pcb/update-shapes [(:id shape)] reassign-shape))
       (let [page      (ctpl/get-page file-data page-id)
-            shape-ids (cph/get-children-ids-with-self (:objects page) (:id shape))]
+            shape-ids (cfh/get-children-ids-with-self (:objects page) (:id shape))]
         (-> (pcb/empty-changes nil page-id)
             (pcb/with-file-data file-data)
             (pcb/update-shapes shape-ids detach-shape))))))

@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.bounds :as gsb]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]))
 
 ;; WARNING: options are not deleted when changing event or action type, so it can be
@@ -182,7 +182,7 @@
   (dm/assert!
    "The `:after-delay` event type incompatible with frame shapes"
    (or (not= event-type :after-delay)
-       (cph/frame-shape? shape)))
+       (cfh/frame-shape? shape)))
 
   (if (= (:event-type interaction) event-type)
     interaction
@@ -497,12 +497,12 @@
 
   (let [;; When the interactive item is inside a nested frame we need to add to the offset the position
         ;; of the parent-frame otherwise the position won't match
-        shape-frame (cph/get-frame objects shape)
+        shape-frame (cfh/get-frame objects shape)
 
         frame-offset (if (or (not= :manual (:overlay-pos-type interaction))
                              (nil? shape-frame)
-                             (cph/is-direct-child-of-root? shape-frame)
-                             (cph/root? shape-frame))
+                             (cfh/is-direct-child-of-root? shape-frame)
+                             (cfh/root? shape-frame))
                        frame-offset
                        (gpt/add frame-offset (gpt/point shape-frame)))]
 

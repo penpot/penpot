@@ -7,9 +7,9 @@
 (ns app.main.ui.workspace.viewport.actions
   (:require
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
@@ -208,7 +208,7 @@
 
              editable? (contains? #{:text :rect :path :image :circle} type)
 
-             hover-shape (->> @hover-ids (filter (partial cph/is-child? objects id)) first)
+             hover-shape (->> @hover-ids (filter (partial cfh/is-child? objects id)) first)
              selected-shape (get objects hover-shape)
 
              grid-layout-id (->> @hover-ids reverse (d/seek (partial ctl/grid-layout? objects)))]

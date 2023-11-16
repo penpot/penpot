@@ -9,8 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.media :as cm]
-   [app.common.pages.helpers :as cph]
    [app.common.types.file :as ctf]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
@@ -31,7 +31,6 @@
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
-   ;; [app.util.timers :as tm]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
@@ -165,8 +164,8 @@
                        (css :cell-name) listing-thumbs?
                        (css :item-name) (not listing-thumbs?)
                        (css :editing) renaming?)
-               :value (cph/merge-path-item (:path component) (:name component))
-               :tooltip (cph/merge-path-item (:path component) (:name component))
+               :value (cfh/merge-path-item (:path component) (:name component))
+               :tooltip (cfh/merge-path-item (:path component) (:name component))
                :display-value (:name component)
                :editing renaming?
                :disable-dbl-click true
@@ -207,8 +206,8 @@
                        :cell-name listing-thumbs?
                        :item-name (not listing-thumbs?)
                        :editing renaming?)
-               :value (cph/merge-path-item (:path component) (:name component))
-               :tooltip (cph/merge-path-item (:path component) (:name component))
+               :value (cfh/merge-path-item (:path component) (:name component))
+               :tooltip (cfh/merge-path-item (:path component) (:name component))
                :display-value (:name component)
                :editing renaming?
                :disable-dbl-click true
@@ -311,7 +310,7 @@
             (when-not (empty? path-item)
               [:& components-group {:file-id file-id
                                     :key path-item
-                                    :prefix (cph/merge-path-item prefix path-item)
+                                    :prefix (cfh/merge-path-item prefix path-item)
                                     :groups content
                                     :open-groups open-groups
                                     :force-open? force-open?
@@ -385,7 +384,7 @@
             (when-not (empty? path-item)
               [:& components-group {:file-id file-id
                                     :key path-item
-                                    :prefix (cph/merge-path-item prefix path-item)
+                                    :prefix (cfh/merge-path-item prefix path-item)
                                     :groups content
                                     :open-groups open-groups
                                     :force-open? force-open?

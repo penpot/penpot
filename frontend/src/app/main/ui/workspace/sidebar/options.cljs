@@ -9,8 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
@@ -88,7 +88,7 @@
 
         selected-shapes      (into [] (keep (d/getf objects)) selected)
         first-selected-shape (first selected-shapes)
-        shape-parent-frame   (cph/get-frame objects (:frame-id first-selected-shape))
+        shape-parent-frame   (cfh/get-frame objects (:frame-id first-selected-shape))
 
         edit-grid?           (ctl/grid-layout? objects edition)
         selected-cells       (->> (dm/get-in grid-edition [edition :selected])

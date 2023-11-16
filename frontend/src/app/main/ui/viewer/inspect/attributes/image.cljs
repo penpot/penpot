@@ -7,8 +7,8 @@
 (ns app.main.ui.viewer.inspect.attributes.image
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.files.helpers :as cfh]
    [app.common.media :as cm]
-   [app.common.pages.helpers :as cph]
    [app.config :as cf]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.context :as ctx]
@@ -24,7 +24,7 @@
   [{:keys [objects shapes]}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)]
     (if new-css-system
-      (for [shape (filter cph/image-shape? shapes)]
+      (for [shape (filter cfh/image-shape? shapes)]
         [:div {:class (stl/css :attributes-block)
                :key (str "image-" (:id shape))}
         [:div {:class (stl/css :image-wrapper)}
@@ -54,7 +54,7 @@
            (tr "inspect.attributes.image.download")])])
 
 
-      (for [shape (filter cph/image-shape? shapes)]
+      (for [shape (filter cfh/image-shape? shapes)]
         [:div.attributes-block {:key (str "image-" (:id shape))}
          [:div.attributes-image-row
           [:div.attributes-image

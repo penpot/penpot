@@ -7,9 +7,9 @@
 (ns app.main.data.workspace.comments
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.changes-builder :as pcb]
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
    [app.main.data.comments :as dcm]

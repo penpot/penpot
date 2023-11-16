@@ -9,8 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.media :as cm]
-   [app.common.pages.helpers :as cph]
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
@@ -112,8 +112,8 @@
                        (css :cell-name) listing-thumbs?
                        (css :item-name) (not listing-thumbs?)
                        (css :editing) renaming?)
-               :value (cph/merge-path-item (:path object) (:name object))
-               :tooltip (cph/merge-path-item (:path object) (:name object))
+               :value (cfh/merge-path-item (:path object) (:name object))
+               :tooltip (cfh/merge-path-item (:path object) (:name object))
                :display-value (:name object)
                :editing renaming?
                :disable-dbl-click true
@@ -151,8 +151,8 @@
                        :cell-name listing-thumbs?
                        :item-name (not listing-thumbs?)
                        :editing renaming?)
-               :value (cph/merge-path-item (:path object) (:name object))
-               :tooltip (cph/merge-path-item (:path object) (:name object))
+               :value (cfh/merge-path-item (:path object) (:name object))
+               :tooltip (cfh/merge-path-item (:path object) (:name object))
                :display-value (:name object)
                :editing renaming?
                :disable-dbl-click true
@@ -248,7 +248,7 @@
             (when-not (empty? path-item)
               [:& graphics-group {:file-id file-id
                                   :key path-item
-                                  :prefix (cph/merge-path-item prefix path-item)
+                                  :prefix (cfh/merge-path-item prefix path-item)
                                   :groups content
                                   :open-groups open-groups
                                   :force-open? force-open?
@@ -315,7 +315,7 @@
             (when-not (empty? path-item)
               [:& graphics-group {:file-id file-id
                                   :key path-item
-                                  :prefix (cph/merge-path-item prefix path-item)
+                                  :prefix (cfh/merge-path-item prefix path-item)
                                   :groups content
                                   :open-groups open-groups
                                   :force-open? force-open?

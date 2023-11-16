@@ -9,10 +9,10 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
@@ -277,8 +277,8 @@
                 (update-text-content shape txt/is-root-node? d/txt-merge attrs)
                 (assoc shape :content (d/txt-merge {:type "root"} attrs))))
 
-            shape-ids (cond (cph/text-shape? shape)  [id]
-                            (cph/group-shape? shape) (cph/get-children-ids objects id))]
+            shape-ids (cond (cfh/text-shape? shape)  [id]
+                            (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
 
         (rx/of (dch/update-shapes shape-ids update-fn))))))
 
@@ -304,8 +304,8 @@
 
                 update-fn #(update-text-content % txt/is-paragraph-node? merge-fn attrs)
                 shape-ids (cond
-                            (cph/text-shape? shape)  [id]
-                            (cph/group-shape? shape) (cph/get-children-ids objects id))]
+                            (cfh/text-shape? shape)  [id]
+                            (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
 
             (rx/of (dch/update-shapes shape-ids update-fn))))))))
 
@@ -325,8 +325,8 @@
                              (or (txt/is-text-node? node)
                                  (txt/is-paragraph-node? node)))
               shape-ids (cond
-                          (cph/text-shape? shape)  [id]
-                          (cph/group-shape? shape) (cph/get-children-ids objects id))]
+                          (cfh/text-shape? shape)  [id]
+                          (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
           (rx/of (dch/update-shapes shape-ids #(update-text-content % update-node? d/txt-merge attrs))))))))
 
 
@@ -363,8 +363,8 @@
 
               shape-ids
               (cond
-                (cph/text-shape? shape)  [id]
-                (cph/group-shape? shape) (cph/get-children-ids objects id))
+                (cfh/text-shape? shape)  [id]
+                (cfh/group-shape? shape) (cfh/get-children-ids objects id))
 
               update-content
               (fn [content]
@@ -677,7 +677,7 @@
             objects    (wsh/lookup-page-objects state)
 
             xform      (comp (keep (d/getf objects))
-                             (filter cph/text-shape?))
+                             (filter cfh/text-shape?))
             shapes     (into [] xform selected)
             shape      (first shapes)
 
