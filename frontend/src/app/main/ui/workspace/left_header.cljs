@@ -161,7 +161,7 @@
       [:span {:class (stl/css :shortcut)}
 
        (for [sc (scd/split-sc (sc/get-tooltip :show-shortcuts))]
-         [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
      (when (contains? cf/flags :user-feedback)
        [:& dropdown-menu-item {:klass (stl/css :submenu-item)
@@ -198,7 +198,7 @@
          (tr "workspace.header.menu.enable-scale-content"))]
       [:span {:class (stl/css :shortcut)}
       (for [sc (scd/split-sc (sc/get-tooltip :toggle-scale-text))]
-        [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+        [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
      [:& dropdown-menu-item {:on-click    toggle-flag
                              :klass       (stl/css :submenu-item)
@@ -215,7 +215,7 @@
       [:span {:class (stl/css :shortcut)}
 
       (for [sc (scd/split-sc (sc/get-tooltip :toggle-snap-guide))]
-        [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+        [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
      [:& dropdown-menu-item {:on-click    toggle-flag
                              :klass       (stl/css :submenu-item)
@@ -231,7 +231,7 @@
          (tr "workspace.header.menu.enable-snap-grid"))]
       [:span {:class (stl/css :shortcut)}
       (for [sc (scd/split-sc (sc/get-tooltip :toggle-snap-grid))]
-        [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+        [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
      [:& dropdown-menu-item {:on-click    toggle-flag
                              :klass       (stl/css :submenu-item)
@@ -247,7 +247,7 @@
          (tr "workspace.header.menu.enable-dynamic-alignment"))]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :toggle-alignment))]
-         [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
      [:& dropdown-menu-item {:on-click    toggle-flag
                              :klass       (stl/css :submenu-item)
@@ -263,7 +263,7 @@
          (tr "workspace.header.menu.enable-snap-pixel-grid"))]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :snap-pixel-grid))]
-         [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
      [:& dropdown-menu-item {:on-click    show-nudge-options
                              :klass       (stl/css :submenu-item)
@@ -316,7 +316,7 @@
          (tr "workspace.header.menu.show-rules"))]
       [:span {:class (stl/css :shortcut)}
       (for [sc (scd/split-sc (sc/get-tooltip :toggle-rules))]
-        [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+        [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
 
      [:& dropdown-menu-item {:klass (stl/css :submenu-item)
@@ -333,7 +333,7 @@
          (tr "workspace.header.menu.show-grid"))]
       [:span {:class (stl/css :shortcut)}
       (for [sc (scd/split-sc (sc/get-tooltip :toggle-grid))]
-        [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+        [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
 
      (when-not ^boolean read-only?
@@ -350,7 +350,7 @@
             (tr "workspace.header.menu.show-palette"))]
          [:span {:class (stl/css :shortcut)}
          (for [sc (scd/split-sc (sc/get-tooltip :toggle-colorpalette))]
-           [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+           [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
         [:& dropdown-menu-item {:klass (stl/css :submenu-item)         :on-click    toggle-text-palette
                                 :on-key-down (fn [event]
@@ -364,7 +364,7 @@
             (tr "workspace.header.menu.show-palette"))]
          [:span {:class (stl/css :shortcut)}
          (for [sc (scd/split-sc (sc/get-tooltip :toggle-textpalette))]
-           [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]])
+           [:span {:class (stl/css :shortcut-key) :key sc} sc])]]])
 
      [:& dropdown-menu-item {:klass (stl/css :submenu-item)
                              :on-click    toggle-flag
@@ -393,7 +393,7 @@
          (tr "workspace.header.menu.show-pixel-grid"))]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :show-pixel-grid))]
-         [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
      [:& dropdown-menu-item {:klass (stl/css :submenu-item)
                              :on-click    toggle-flag
@@ -407,7 +407,7 @@
        (tr "workspace.shape.menu.hide-ui")]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :hide-ui))]
-         [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]]))
+         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]]))
 
 (mf/defc edit-menu
   {::mf/wrap-props false
@@ -433,7 +433,9 @@
       [:span {:class (stl/css :shortcut)}
 
        (for [sc (scd/split-sc (sc/get-tooltip :select-all))]
-         [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc}
+          sc])]]
 
      [:& dropdown-menu-item {:klass (stl/css :submenu-item)
                              :on-click    undo
@@ -445,7 +447,9 @@
       [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.undo")]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :undo))]
-         [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc}
+          sc])]]
 
      [:& dropdown-menu-item {:klass (stl/css :submenu-item)
                              :on-click    redo
@@ -458,7 +462,9 @@
       [:span {:class (stl/css :shortcut)}
 
       (for [sc (scd/split-sc (sc/get-tooltip :redo))]
-        [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]]))
+        [:span {:class (stl/css :shortcut-key)
+                :key sc}
+         sc])]]]))
 
 (mf/defc file-menu
   {::mf/wrap-props false}
@@ -567,7 +573,7 @@
       [:span {:class (stl/css :item-name)} (tr "dashboard.export-shapes")]
       [:span  {:class (stl/css :shortcut)}
       (for [sc (scd/split-sc (sc/get-tooltip :export-shapes))]
-        [:span {:class (dom/classnames (stl/css :shortcut-key) true)} sc])]]
+        [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
      [:& dropdown-menu-item {:klass (stl/css :submenu-item)
                              :on-click    on-export-binary-file
