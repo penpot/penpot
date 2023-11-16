@@ -5,12 +5,14 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.export
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
    [app.main.features :as features]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.worker :as uw]
    [app.util.dom :as dom]
@@ -23,18 +25,36 @@
 (mf/defc export-entry
   {::mf/wrap-props false}
   [{:keys [file]}]
-  [:div.file-entry
-   {:class (dom/classnames
-            :loading  (:loading? file)
-            :success  (:export-success? file)
-            :error    (:export-error? file))}
-   [:div.file-name
-    [:div.file-icon
-     (cond (:export-success? file) i/tick
-           (:export-error? file)   i/close
-           (:loading? file)        i/loader-pencil)]
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)]
 
-    [:div.file-name-label (:name file)]]])
+    (if new-css-system
+      [:div {:class (stl/css-case :file-entry true
+                                  :loading  (:loading? file)
+                                  :success  (:export-success? file)
+                                  :error    (:export-error? file))}
+
+       [:div {:class (stl/css :file-name)}
+        [:span {:class (stl/css :file-icon)}
+         (cond (:export-success? file) i/tick-refactor
+               (:export-error? file)   i/close-refactor
+               (:loading? file)        i/loader-pencil)]
+
+        [:div {:class (stl/css :file-name-label)}
+         (:name file)]]]
+
+
+      [:div.file-entry
+       {:class (dom/classnames
+                :loading  (:loading? file)
+                :success  (:export-success? file)
+                :error    (:export-error? file))}
+       [:div.file-name
+        [:div.file-icon
+         (cond (:export-success? file) i/tick
+               (:export-error? file)   i/close
+               (:loading? file)        i/loader-pencil)]
+
+        [:div.file-name-label (:name file)]]])))
 
 (defn- mark-file-error
   [files file-id]
@@ -60,7 +80,8 @@
    ::mf/register-as :export
    ::mf/wrap-props false}
   [{:keys [team-id files has-libraries? binary?]}]
-  (let [components-v2 (features/use-feature "components/v2")
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        components-v2 (features/use-feature :components-v2)
         state*        (mf/use-state
                        #(let [files (mapv (fn [file] (assoc file :loading? true)) files)]
                           {:status :prepare
@@ -120,66 +141,136 @@
       (when-not has-libraries?
         (start-export)))
 
-    [:div.modal-overlay
-     [:div.modal-container.export-dialog
-      [:div.modal-header
-       [:div.modal-header-title
-        [:h2 (tr "dashboard.export.title")]]
+    (if new-css-system
+      [:div {:class (stl/css :modal-overlay)}
+       [:div {:class (stl/css :modal-container)}
+        [:div {:class (stl/css :modal-header)}
+         [:h2 {:class (stl/css :modal-title)}
+          (tr "dashboard.export.title")]
+         [:button {:class (stl/css :modal-close-btn)
+                   :on-click on-cancel} i/close-refactor]]
 
-       [:div.modal-close-button
-        {:on-click on-cancel} i/close]]
+        (cond
+          (= status :prepare)
+          [:*
+           [:div {:class (stl/css :modal-content)}
+            [:p {:class (stl/css :modal-msg)} (tr "dashboard.export.explain")]
+            [:p {:class (stl/css :modal-scd-msg)} (tr "dashboard.export.detail")]
 
-      (cond
-        (= status :prepare)
-        [:*
-         [:div.modal-content
-          [:p.explain (tr "dashboard.export.explain")]
-          [:p.detail (tr "dashboard.export.detail")]
+            (for [type export-types]
+              [:div {:class (stl/css :export-option true)
+                     :key (name type)}
+               [:label {:for (str "export-" type)
+                        :class (stl/css-case :global/checked (= selected type))}
+                            ;; Execution time translation strings:
+                            ;;   dashboard.export.options.all.message
+                            ;;   dashboard.export.options.all.title
+                            ;;   dashboard.export.options.detach.message
+                            ;;   dashboard.export.options.detach.title
+                            ;;   dashboard.export.options.merge.message
+                            ;;   dashboard.export.options.merge.title
+                [:span {:class (stl/css-case :global/checked (= selected type))}
+                 (when (= selected type)
+                   i/status-tick-refactor)]
+                [:div {:class (stl/css :option-content)}
+                 [:h3 {:class (stl/css :modal-subtitle)} (tr (dm/str "dashboard.export.options." (d/name type) ".title"))]
+                 [:p  {:class (stl/css :modal-msg)} (tr (dm/str "dashboard.export.options." (d/name type) ".message"))]]
 
-          (for [type export-types]
-            [:div.export-option {:class (when (= selected type) "selected")
-                                 :key (name type)}
-             [:label.option-container
-              ;; Execution time translation strings:
-              ;;   dashboard.export.options.all.message
-              ;;   dashboard.export.options.all.title
-              ;;   dashboard.export.options.detach.message
-              ;;   dashboard.export.options.detach.title
-              ;;   dashboard.export.options.merge.message
-              ;;   dashboard.export.options.merge.title
-              [:h3 (tr (dm/str "dashboard.export.options." (d/name type) ".title"))]
-              [:p  (tr (dm/str "dashboard.export.options." (d/name type) ".message"))]
-              [:input {:type "radio"
-                       :checked (= selected type)
-                       :data-type (name type)
-                       :on-change on-change
-                       :name "export-option"}]
-              [:span {:class "option-radio-check"}]]])]
+                [:input {:type "radio"
+                         :class (stl/css :option-input)
+                         :id (str "export-" type)
+                         :checked (= selected type)
+                         :name "export-option"
+                         :data-type (name type)
+                         :on-change on-change}]]])]
 
-         [:div.modal-footer
-          [:div.action-buttons
-           [:input.cancel-button
-            {:type "button"
-             :value (tr "labels.cancel")
-             :on-click on-cancel}]
+           [:div {:class (stl/css :modal-footer)}
+            [:div {:class (stl/css :action-buttons)}
+             [:input {:class (stl/css :cancel-button)
+                      :type "button"
+                      :value (tr "labels.cancel")
+                      :on-click on-cancel}]
 
-           [:input.accept-button
-            {:class "primary"
-             :type "button"
-             :value (tr "labels.continue")
-             :on-click on-accept}]]]]
+             [:input {:class (stl/css :accept-btn)
+                      :type "button"
+                      :value (tr "labels.continue")
+                      :on-click on-accept}]]]]
 
-        (= status :exporting)
-        [:*
-         [:div.modal-content
-          (for [file (:files state)]
-            [:& export-entry {:file file :key (dm/str (:id file))}])]
+          (= status :exporting)
+          [:*
+           [:div {:class (stl/css :modal-content)}
+            (for [file (:files state)]
+              [:& export-entry {:file file :key (dm/str (:id file))}])]
 
-         [:div.modal-footer
-          [:div.action-buttons
-           [:input.accept-button
-            {:class "primary"
-             :type "button"
-             :value (tr "labels.close")
-             :disabled (->> state :files (some :loading?))
-             :on-click on-cancel}]]]])]]))
+           [:div {:class (stl/css :modal-footer)}
+            [:div {:class (stl/css :action-buttons)}
+             [:input {:class (stl/css :accept-btn)
+                      :type "button"
+                      :value (tr "labels.close")
+                      :disabled (->> state :files (some :loading?))
+                      :on-click on-cancel}]]]])]]
+
+
+      [:div.modal-overlay
+       [:div.modal-container.export-dialog
+        [:div.modal-header
+         [:div.modal-header-title
+          [:h2 (tr "dashboard.export.title")]]
+
+         [:div.modal-close-button
+          {:on-click on-cancel} i/close]]
+
+        (cond
+          (= status :prepare)
+          [:*
+           [:div.modal-content
+            [:p.explain (tr "dashboard.export.explain")]
+            [:p.detail (tr "dashboard.export.detail")]
+
+            (for [type export-types]
+              [:div.export-option {:class (when (= selected type) "selected")
+                                   :key (name type)}
+               [:label.option-container
+                    ;; Execution time translation strings:
+                    ;;   dashboard.export.options.all.message
+                    ;;   dashboard.export.options.all.title
+                    ;;   dashboard.export.options.detach.message
+                    ;;   dashboard.export.options.detach.title
+                    ;;   dashboard.export.options.merge.message
+                    ;;   dashboard.export.options.merge.title
+                [:h3 (tr (dm/str "dashboard.export.options." (d/name type) ".title"))]
+                [:p  (tr (dm/str "dashboard.export.options." (d/name type) ".message"))]
+                [:input {:type "radio"
+                         :checked (= selected type)
+                         :data-type (name type)
+                         :on-change on-change
+                         :name "export-option"}]
+                [:span {:class "option-radio-check"}]]])]
+
+           [:div.modal-footer
+            [:div.action-buttons
+             [:input.cancel-button
+              {:type "button"
+               :value (tr "labels.cancel")
+               :on-click on-cancel}]
+
+             [:input.accept-button
+              {:class "primary"
+               :type "button"
+               :value (tr "labels.continue")
+               :on-click on-accept}]]]]
+
+          (= status :exporting)
+          [:*
+           [:div.modal-content
+            (for [file (:files state)]
+              [:& export-entry {:file file :key (dm/str (:id file))}])]
+
+           [:div.modal-footer
+            [:div.action-buttons
+             [:input.accept-button
+              {:class "primary"
+               :type "button"
+               :value (tr "labels.close")
+               :disabled (->> state :files (some :loading?))
+               :on-click on-cancel}]]]])]])))

@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.team
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -20,6 +21,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.change-owner]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i]
@@ -107,7 +109,8 @@
    ::mf/register-as :invite-members
    ::mf/wrap-props false}
   [{:keys [team origin]}]
-  (let [members-map (mf/deref refs/dashboard-team-members)
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        members-map (mf/deref refs/dashboard-team-members)
         perms       (:permissions team)
 
         roles       (mf/use-memo (mf/deps perms) #(get-available-roles perms))
@@ -153,42 +156,81 @@
                           (with-meta {::ev/origin origin}))
                       (dd/fetch-team-invitations))))]
 
-    [:div.modal.dashboard-invite-modal.form-container
-     {:class (dom/classnames
-              :hero (= origin :hero))}
-     [:& fm/form {:on-submit on-submit :form form}
-      [:div.title
-       [:span.text (tr "modals.invite-team-member.title")]]
 
-      (when-not (= "" @error-text)
-        [:div.error
-         [:span.icon i/msg-error]
-         [:span.text @error-text]])
+    (if new-css-system
+      [:div {:class (stl/css-case :modal-team-container true
+                                  :hero (= origin :hero))}
+       [:& fm/form {:on-submit on-submit :form form}
+        [:div {:class (stl/css :modal-title)}
+         (tr "modals.invite-team-member.title")]
 
-      (when (some current-data-emails current-members-emails)
-        [:div.warning
-         [:span.icon i/msg-warning]
-         [:span.text (tr "modals.invite-member.repeated-invitation")]])
+        (when-not (= "" @error-text)
+          [:div {:class (stl/css :error-msg)}
+           [:span {:class (stl/css :icon)} i/msg-error]
+           [:span {:class (stl/css :message)} @error-text]])
 
-      [:div.form-row
-       [:p.label (tr "onboarding.choice.team-up.roles")]
-       [:& fm/select {:name :role :options roles}]]
+        (when (some current-data-emails current-members-emails)
+          [:div {:class (stl/css :warning-msg)}
+           [:span  {:class (stl/css :icon)} i/msg-warning]
+           [:span {:class (stl/css :message)} (tr "modals.invite-member.repeated-invitation")]])
 
-      [:div.form-row
-       [:& fm/multi-input {:type "email"
-                           :name :emails
-                           :auto-focus? true
-                           :trim true
-                           :valid-item-fn us/parse-email
-                           :caution-item-fn current-members-emails
-                           :label (tr "modals.invite-member.emails")
-                           :on-submit  on-submit}]]
+        [:div {:class (stl/css :role-select)}
+         [:p {:class (stl/css :role-title)} (tr "onboarding.choice.team-up.roles")]
+         [:& fm/select {:name :role :options roles}]]
 
-      [:div.action-buttons
-       [:> fm/submit-button*
-        {:label (tr "modals.invite-member-confirm.accept")
-         :disabled (and (boolean (some current-data-emails current-members-emails))
-                        (empty? (remove current-members-emails current-data-emails)))}]]]]))
+        [:div {:class (stl/css :invitation-row)}
+         [:& fm/multi-input {:type "email"
+                             :name :emails
+                             :auto-focus? true
+                             :trim true
+                             :valid-item-fn us/parse-email
+                             :caution-item-fn current-members-emails
+                             :label (tr "modals.invite-member.emails")
+                             :on-submit  on-submit}]]
+
+        [:div {:class (stl/css :action-buttons)}
+         [:> fm/submit-button*
+          {:label (tr "modals.invite-member-confirm.accept")
+           :disabled (and (boolean (some current-data-emails current-members-emails))
+                          (empty? (remove current-members-emails current-data-emails)))}]]]]
+
+
+      [:div.modal.dashboard-invite-modal.form-container
+       {:class (dom/classnames
+                :hero (= origin :hero))}
+       [:& fm/form {:on-submit on-submit :form form}
+        [:div.title
+         [:span.text (tr "modals.invite-team-member.title")]]
+
+        (when-not (= "" @error-text)
+          [:div.error
+           [:span.icon i/msg-error]
+           [:span.text @error-text]])
+
+        (when (some current-data-emails current-members-emails)
+          [:div.warning
+           [:span.icon i/msg-warning]
+           [:span.text (tr "modals.invite-member.repeated-invitation")]])
+
+        [:div.form-row
+         [:p.label (tr "onboarding.choice.team-up.roles")]
+         [:& fm/select {:name :role :options roles}]]
+
+        [:div.form-row
+         [:& fm/multi-input {:type "email"
+                             :name :emails
+                             :auto-focus? true
+                             :trim true
+                             :valid-item-fn us/parse-email
+                             :caution-item-fn current-members-emails
+                             :label (tr "modals.invite-member.emails")
+                             :on-submit  on-submit}]]
+
+        [:div.action-buttons
+         [:> fm/submit-button*
+          {:label (tr "modals.invite-member-confirm.accept")
+           :disabled (and (boolean (some current-data-emails current-members-emails))
+                          (empty? (remove current-members-emails current-data-emails)))}]]]])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MEMBERS SECTION
@@ -710,7 +752,8 @@
    ::mf/register-as :webhook}
   [{:keys [webhook] :as props}]
   ;; FIXME: this is a workaround because input fields do not support rendering hooks
-  (let [initial (mf/use-memo (fn [] (or (some-> webhook (update :uri str))
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        initial (mf/use-memo (fn [] (or (some-> webhook (update :uri str))
                                         {:is-active false :mtype "application/json"})))
         form    (fm/use-form :spec ::webhook-form
                              :initial initial
@@ -771,54 +814,100 @@
            (let [data (:clean-data @form)]
              (if (:id data)
                (on-update-submit form)
-               (on-create-submit form)))))]
+               (on-create-submit form)))))
 
-    [:div.modal-overlay
-     [:div.modal-container.webhooks-modal
-      [:& fm/form {:form form :on-submit on-submit}
+        on-modal-close #(st/emit! (modal/hide))]
+    (if new-css-system
+      [:div {:class (stl/css :modal-overlay)}
+       [:div {:class (stl/css :modal-container)}
+        [:& fm/form {:form form :on-submit on-submit}
+         [:div {:class (stl/css :modal-header)}
+          (if webhook
+            [:h2 {:class (stl/css :modal-title)} (tr "modals.edit-webhook.title")]
+            [:h2 {:class (stl/css :modal-title)} (tr "modals.create-webhook.title")])
 
-       [:div.modal-header
-        [:div.modal-header-title
-         (if webhook
-           [:h2 (tr "modals.edit-webhook.title")]
-           [:h2 (tr "modals.create-webhook.title")])]
+          [:button {:class (stl/css :modal-close-btn)
+                    :on-click on-modal-close} i/close-refactor]]
 
-        [:div.modal-close-button
-         {:on-click #(st/emit! (modal/hide))} i/close]]
-
-       [:div.modal-content.generic-form
-        [:div.fields-container
-         [:div.fields-row
-          [:& fm/input {:type "text"
-                        :auto-focus? true
-                        :form form
-                        :name :uri
-                        :label (tr "modals.create-webhook.url.label")
-                        :placeholder (tr "modals.create-webhook.url.placeholder")}]]
-
-         [:div.fields-row
+         [:div {:class (stl/css :modal-content)}
+          [:div {:class (stl/css :fields-row)}
+           [:& fm/input {:type "text"
+                         :auto-focus? true
+                         :form form
+                         :name :uri
+                         :label (tr "modals.create-webhook.url.label")
+                         :placeholder (tr "modals.create-webhook.url.placeholder")}]]
+         [:div  {:class (stl/css :fields-row)}
+          [:div {:class (stl/css :select-title)} (tr "dashboard.webhooks.content-type")]
           [:& fm/select {:options valid-webhook-mtypes
-                         :label (tr "dashboard.webhooks.content-type")
                          :default "application/json"
-                         :name :mtype}]]]
-        [:div.fields-row
-         [:div.input-checkbox.check-primary
-          [:& fm/input {:type "checkbox"
-                        :form form
-                        :name :is-active
-                        :label (tr "dashboard.webhooks.active")}]]
-         [:div.explain (tr "dashboard.webhooks.active.explain")]]]
+                         :name :mtype}]]
+          [:div  {:class (stl/css :fields-row)}
+           [:& fm/input {:type "checkbox"
+                         :class (stl/css :custom-input-checkbox)
+                         :form form
+                         :name :is-active
+                         :label (tr "dashboard.webhooks.active")}]
+           [:div {:class (stl/css :hint)} (tr "dashboard.webhooks.active.explain")]]]
 
-       [:div.modal-footer
-        [:div.action-buttons
-         [:input.cancel-button
-          {:type "button"
-           :value (tr "labels.cancel")
-           :on-click #(modal/hide!)}]
-         [:> fm/submit-button*
-          {:label (if webhook
-                    (tr "modals.edit-webhook.submit-label")
-                    (tr "modals.create-webhook.submit-label"))}]]]]]]))
+         [:div {:class (stl/css :modal-footer)}
+          [:div {:class (stl/css :action-buttons)}
+           [:input {:class (stl/css :cancel-button)
+                    :type "button"
+                    :value (tr "labels.cancel")
+                    :on-click #(modal/hide!)}]
+           [:> fm/submit-button*
+            {:label (if webhook
+                      (tr "modals.edit-webhook.submit-label")
+                      (tr "modals.create-webhook.submit-label"))}]]]]]]
+
+
+      [:div.modal-overlay
+       [:div.modal-container.webhooks-modal
+        [:& fm/form {:form form :on-submit on-submit}
+
+         [:div.modal-header
+          [:div.modal-header-title
+           (if webhook
+             [:h2 (tr "modals.edit-webhook.title")]
+             [:h2 (tr "modals.create-webhook.title")])]
+
+          [:div.modal-close-button
+           {:on-click #(st/emit! (modal/hide))} i/close]]
+
+         [:div.modal-content.generic-form
+          [:div.fields-container
+           [:div.fields-row
+            [:& fm/input {:type "text"
+                          :auto-focus? true
+                          :form form
+                          :name :uri
+                          :label (tr "modals.create-webhook.url.label")
+                          :placeholder (tr "modals.create-webhook.url.placeholder")}]]
+
+           [:div.fields-row
+            [:& fm/select {:options valid-webhook-mtypes
+                           :label (tr "dashboard.webhooks.content-type")
+                           :default "application/json"
+                           :name :mtype}]]]
+          [:div.fields-row
+           [:div.input-checkbox.check-primary
+            [:& fm/input {:type "checkbox"
+                          :form form
+                          :name :is-active
+                          :label (tr "dashboard.webhooks.active")}]]
+           [:div.explain (tr "dashboard.webhooks.active.explain")]]]
+
+         [:div.modal-footer
+          [:div.action-buttons
+           [:input.cancel-button
+            {:type "button"
+             :value (tr "labels.cancel")
+             :on-click #(modal/hide!)}]
+           [:> fm/submit-button*
+            {:label (if webhook
+                      (tr "modals.edit-webhook.submit-label")
+                      (tr "modals.create-webhook.submit-label"))}]]]]]])))
 
 
 (mf/defc webhooks-hero

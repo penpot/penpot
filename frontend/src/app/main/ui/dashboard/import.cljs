@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.import
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -17,6 +18,7 @@
    [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.worker :as uw]
    [app.util.dom :as dom]
@@ -150,7 +152,8 @@
 (mf/defc import-entry
   [{:keys [state file editing? can-be-deleted?]}]
 
-  (let [loading?       (or (= :analyzing (:status file))
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        loading?       (or (= :analyzing (:status file))
                            (= :importing (:status file)))
         analyze-error? (= :analyze-error (:status file))
         import-finish? (= :import-finish (:status file))
@@ -188,32 +191,89 @@
          (fn []
            (swap! state update :files remove-file (:file-id file))))]
 
-    [:div.file-entry
-     {:class (dom/classnames
-              :loading  loading?
-              :success  (and import-finish? (not import-warn?) (not import-error?))
-              :warning  (and import-finish? import-warn? (not import-error?))
-              :error    (or import-error? analyze-error?)
-              :editable (and ready? (not editing?)))}
+    (if new-css-system
+      [:div {:class (stl/css-case :file-entry true
+                                  :loading  loading?
+                                  :success  (and import-finish? (not import-warn?) (not import-error?))
+                                  :warning  (and import-finish? import-warn? (not import-error?))
+                                  :error    (or import-error? analyze-error?)
+                                  :editable (and ready? (not editing?)))}
 
-     [:div.file-name
-      [:div.file-icon
-       (cond loading?       i/loader-pencil
-             ready?         i/logo-icon
-             import-warn?   i/msg-warning
-             import-error?  i/close
-             import-finish? i/tick
-             analyze-error? i/close)]
+       [:div {:class (stl/css :file-name)}
+        [:div {:class (stl/css-case :file-icon true
+                                    :icon-fill ready?)}
+         (cond loading?       i/loader-pencil
+               ready?         i/logo-icon
+               import-warn?   i/msg-warning
+               import-error?  i/close-refactor
+               import-finish? i/tick-refactor
+               analyze-error? i/close-refactor)]
 
-      (if editing?
-        [:div.file-name-edit
-         [:input {:type "text"
-                  :auto-focus true
-                  :default-value (:name file)
-                  :on-key-press handle-edit-key-press
-                  :on-blur handle-edit-blur}]]
+        (if editing?
+          [:div {:class (stl/css :file-name-edit)}
+           [:input {:type "text"
+                    :auto-focus true
+                    :default-value (:name file)
+                    :on-key-press handle-edit-key-press
+                    :on-blur handle-edit-blur}]]
 
-        [:div.file-name-label (:name file) (when is-shared? i/library)])
+          [:div {:class (stl/css :file-name-label)}
+           (:name file)
+           (when is-shared? i/library-refactor)])
+
+        [:div {:class (stl/css :edit-entry-buttons)}
+         (when (= "application/zip" (:type file))
+           [:button {:on-click handle-edit-entry}   i/curve-refactor])
+         (when can-be-deleted?
+           [:button {:on-click handle-remove-entry} i/delete-refactor])]]
+       (cond
+         analyze-error?
+         [:div {:class (stl/css :error-message)}
+          (tr "dashboard.import.analyze-error")]
+
+         import-error?
+         [:div {:class (stl/css :error-message)}
+          (tr "dashboard.import.import-error")]
+
+         (and (not import-finish?) (some? progress))
+         [:div {:class (stl/css :progress-message)} (parse-progress-message progress)])
+
+       [:div {:class (stl/css :linked-libraries)}
+        (for [library-id (:libraries file)]
+          (let [library-data (->> @state :files (d/seek #(= library-id (:file-id %))))
+                error? (or (:deleted? library-data) (:import-error library-data))]
+            (when (some? library-data)
+              [:div  {:class (stl/css-case :linked-library-tag true
+                                           :error error?)}
+               i/detach-refactor (:name library-data)])))]]
+
+
+      [:div.file-entry
+       {:class (dom/classnames
+                :loading  loading?
+                :success  (and import-finish? (not import-warn?) (not import-error?))
+                :warning  (and import-finish? import-warn? (not import-error?))
+                :error    (or import-error? analyze-error?)
+                :editable (and ready? (not editing?)))}
+
+       [:div.file-name
+        [:div.file-icon
+         (cond loading?       i/loader-pencil
+               ready?         i/logo-icon
+               import-warn?   i/msg-warning
+               import-error?  i/close
+               import-finish? i/tick
+               analyze-error? i/close)]
+
+        (if editing?
+          [:div.file-name-edit
+           [:input {:type "text"
+                    :auto-focus true
+                    :default-value (:name file)
+                    :on-key-press handle-edit-key-press
+                    :on-blur handle-edit-blur}]]
+
+          [:div.file-name-label (:name file) (when is-shared? i/library)])
 
         [:div.edit-entry-buttons
          (when (= "application/zip" (:type file))
@@ -221,31 +281,32 @@
          (when can-be-deleted?
            [:button {:on-click handle-remove-entry} i/trash])]]
 
-     (cond
-       analyze-error?
-       [:div.error-message
-        (tr "dashboard.import.analyze-error")]
+       (cond
+         analyze-error?
+         [:div.error-message
+          (tr "dashboard.import.analyze-error")]
 
-       import-error?
-       [:div.error-message
-        (tr "dashboard.import.import-error")]
+         import-error?
+         [:div.error-message
+          (tr "dashboard.import.import-error")]
 
-       (and (not import-finish?) (some? progress))
-       [:div.progress-message (parse-progress-message progress)])
+         (and (not import-finish?) (some? progress))
+         [:div.progress-message (parse-progress-message progress)])
 
-     [:div.linked-libraries
-      (for [library-id (:libraries file)]
-        (let [library-data (->> @state :files (d/seek #(= library-id (:file-id %))))
-              error? (or (:deleted? library-data) (:import-error library-data))]
-          (when (some? library-data)
-            [:div.linked-library-tag {:class (when error? "error")}
-             (if error? i/unchain i/chain) (:name library-data)])))]]))
+       [:div.linked-libraries
+        (for [library-id (:libraries file)]
+          (let [library-data (->> @state :files (d/seek #(= library-id (:file-id %))))
+                error? (or (:deleted? library-data) (:import-error library-data))]
+            (when (some? library-data)
+              [:div.linked-library-tag {:class (when error? "error")}
+               (if error? i/unchain i/chain) (:name library-data)])))]])))
 
 (mf/defc import-dialog
   {::mf/register modal/components
    ::mf/register-as :import}
   [{:keys [project-id files template on-finish-import]}]
-  (let [state (mf/use-state
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        state (mf/use-state
                {:status :analyzing
                 :editing nil
                 :importing-templates 0
@@ -366,61 +427,122 @@
        #(doseq [file files]
           (wapi/revoke-uri (:uri file)))))
 
-    [:div.modal-overlay
-     [:div.modal-container.import-dialog
-      [:div.modal-header
-       [:div.modal-header-title
-        [:h2 (tr "dashboard.import")]]
+    (if new-css-system
+      [:div {:class (stl/css :modal-overlay)}
+       [:div {:class (stl/css :modal-container)}
+        [:div {:class (stl/css :modal-header)}
+         [:h2  {:class (stl/css :modal-title)} (tr "dashboard.import")]
 
-       [:div.modal-close-button
-        {:on-click handle-cancel} i/close]]
+         [:button {:class (stl/css :modal-close-btn)
+                   :on-click handle-cancel} i/close-refactor]]
 
-      [:div.modal-content
-       (when (and (= :importing (:status @state)) (not pending-import?))
-         (if (> warning-files 0)
-           [:div.feedback-banner.warning
-            [:div.icon i/msg-warning]
-            [:div.message (tr "dashboard.import.import-warning" warning-files success-files)]]
+        [:div {:class (stl/css :modal-content)}
 
-           [:div.feedback-banner
-            [:div.icon i/checkbox-checked]
-            [:div.message (tr "dashboard.import.import-message" (i18n/c (if (some? template) 1 success-files)))]]))
+         (when (and (= :importing (:status @state)) (not pending-import?))
+           (if (> warning-files 0)
+             [:div {:class (stl/css-case :feedback-banner true
+                                         :warning true)}
+              [:div {:class (stl/css :icon)} i/msg-warning-refactor]
+              [:div {:class (stl/css :message)} (tr "dashboard.import.import-warning" warning-files success-files)]]
 
-       (for [file files]
-         (let [editing? (and (some? (:file-id file))
-                             (= (:file-id file) (:editing @state)))]
+             [:div {:class (stl/css :feedback-banner)}
+              [:div {:class (stl/css :icon)}  i/msg-success-refactor]
+              [:div {:class (stl/css :message)} (tr "dashboard.import.import-message" (i18n/c (if (some? template) 1 success-files)))]]))
+
+         (for [file files]
+           (let [editing? (and (some? (:file-id file))
+                               (= (:file-id file) (:editing @state)))]
+             [:& import-entry {:state state
+                               :key (dm/str (:uri file))
+                               :file file
+                               :editing? editing?
+                               :can-be-deleted? (> (count files) 1)}]))
+
+         (when (some? template)
            [:& import-entry {:state state
-                             :key (dm/str (:uri file))
-                             :file file
-                             :editing? editing?
-                             :can-be-deleted? (> (count files) 1)}]))
+                             :file (assoc template :status (if (= 1 (:importing-templates @state)) :importing :ready))
+                             :editing? false
+                             :can-be-deleted? false}])]
 
-       (when (some? template)
-         [:& import-entry {:state state
-                           :file (assoc template :status (if (= 1 (:importing-templates @state)) :importing :ready))
-                           :editing? false
-                           :can-be-deleted? false}])]
+        [:div {:class (stl/css :modal-footer)}
+         [:div {:class (stl/css :action-buttons)}
+          (when (= :analyzing (:status @state))
+            [:input {:class (stl/css :cancel-button)
+                     :type "button"
+                     :value (tr "labels.cancel")
+                     :on-click handle-cancel}])
 
-      [:div.modal-footer
-       [:div.action-buttons
-        (when (= :analyzing (:status @state))
-          [:input.cancel-button
-           {:type "button"
-            :value (tr "labels.cancel")
-            :on-click handle-cancel}])
+          (when (= :analyzing (:status @state))
+            [:input {:class (stl/css :accept-btn)
+                     :type "button"
+                     :value (tr "labels.continue")
+                     :disabled (or pending-analysis? (not valid-files?))
+                     :on-click handle-continue}])
 
-        (when (= :analyzing (:status @state))
-          [:input.accept-button
-           {:class "primary"
-            :type "button"
-            :value (tr "labels.continue")
-            :disabled (or pending-analysis? (not valid-files?))
-            :on-click handle-continue}])
+          (when (= :importing (:status @state))
+            [:input {:class (stl/css :accept-btn)
+                     :type "button"
+                     :value (tr "labels.accept")
+                     :disabled (or pending-import? (not valid-files?))
+                     :on-click handle-accept}])]]]]
 
-        (when (= :importing (:status @state))
-          [:input.accept-button
-           {:class "primary"
-            :type "button"
-            :value (tr "labels.accept")
-            :disabled (or pending-import? (not valid-files?))
-            :on-click handle-accept}])]]]]))
+
+
+      [:div.modal-overlay
+       [:div.modal-container.import-dialog
+        [:div.modal-header
+         [:div.modal-header-title
+          [:h2 (tr "dashboard.import")]]
+
+         [:div.modal-close-button
+          {:on-click handle-cancel} i/close]]
+
+        [:div.modal-content
+         (when (and (= :importing (:status @state)) (not pending-import?))
+           (if (> warning-files 0)
+             [:div.feedback-banner.warning
+              [:div.icon i/msg-warning]
+              [:div.message (tr "dashboard.import.import-warning" warning-files success-files)]]
+
+             [:div.feedback-banner
+              [:div.icon i/checkbox-checked]
+              [:div.message (tr "dashboard.import.import-message" (i18n/c (if (some? template) 1 success-files)))]]))
+
+         (for [file files]
+           (let [editing? (and (some? (:file-id file))
+                               (= (:file-id file) (:editing @state)))]
+             [:& import-entry {:state state
+                               :key (dm/str (:uri file))
+                               :file file
+                               :editing? editing?
+                               :can-be-deleted? (> (count files) 1)}]))
+
+         (when (some? template)
+           [:& import-entry {:state state
+                             :file (assoc template :status (if (= 1 (:importing-templates @state)) :importing :ready))
+                             :editing? false
+                             :can-be-deleted? false}])]
+
+        [:div.modal-footer
+         [:div.action-buttons
+          (when (= :analyzing (:status @state))
+            [:input.cancel-button
+             {:type "button"
+              :value (tr "labels.cancel")
+              :on-click handle-cancel}])
+
+          (when (= :analyzing (:status @state))
+            [:input.accept-button
+             {:class "primary"
+              :type "button"
+              :value (tr "labels.continue")
+              :disabled (or pending-analysis? (not valid-files?))
+              :on-click handle-continue}])
+
+          (when (= :importing (:status @state))
+            [:input.accept-button
+             {:class "primary"
+              :type "button"
+              :value (tr "labels.accept")
+              :disabled (or pending-import? (not valid-files?))
+              :on-click handle-accept}])]]]])))

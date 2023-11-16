@@ -1,0 +1,142 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-team-container {
+  @extend .modal-container-base;
+  @include menuShadow;
+  position: fixed;
+  top: $s-72;
+  right: $s-12;
+  left: unset;
+  width: $s-400;
+  padding: $s-32;
+  background-color: var(--modal-background-color);
+  border: $s-1 solid var(--modal-border-color);
+  &.hero {
+    top: $s-216;
+    right: $s-32;
+  }
+  .modal-title {
+    @include tabTitleTipography;
+    height: $s-32;
+    color: var(--modal-title-foreground-color);
+  }
+  .error-msg {
+    @include flexRow;
+    height: $s-32;
+    border-radius: $br-8;
+    background-color: var(--alert-background-color-error);
+    .icon {
+      @include flexCenter;
+      width: $s-16;
+      height: $s-24;
+      svg {
+        @extend .button-icon;
+        stroke: var(--alert-foreground-color-error);
+      }
+    }
+    .message {
+      @include titleTipography;
+      color: var(--alert-foreground-color-error);
+    }
+  }
+
+  .warning-msg {
+    @include flexRow;
+    height: $s-32;
+    border-radius: $br-8;
+    background-color: var(--alert-background-color-warning);
+    .icon {
+      @include flexCenter;
+      width: $s-16;
+      height: $s-24;
+      svg {
+        @extend .button-icon;
+        stroke: var(--alert-foreground-color-warning);
+      }
+    }
+    .message {
+      @include titleTipography;
+      color: var(--alert-foreground-color-warning);
+    }
+  }
+
+  .role-select {
+    @include flexColumn;
+    .role-title {
+      @include titleTipography;
+      margin: 0;
+      color: var(--modal-title-foreground-color);
+    }
+  }
+  .invitation-row {
+    margin-top: $s-8;
+    margin-bottom: $s-24;
+  }
+
+  .action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    button {
+      @extend .modal-accept-btn;
+      &:disabled {
+        @extend .button-disabled;
+      }
+    }
+  }
+}
+
+// WEBHOOKS
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+  .modal-container {
+    @extend .modal-container-base;
+    border: $s-1 solid var(--modal-border-color);
+    .modal-header {
+      margin-bottom: $s-24;
+      .modal-title {
+        @include tabTitleTipography;
+        color: var(--modal-title-foreground-color);
+      }
+      .modal-close-btn {
+        @extend .modal-close-btn-base;
+      }
+    }
+
+    .modal-content {
+      @include flexColumn;
+      gap: $s-24;
+      @include titleTipography;
+      margin-bottom: $s-24;
+
+      .fields-row {
+        @include flexColumn;
+        .select-title {
+          @include titleTipography;
+          color: var(--modal-title-foreground-color);
+        }
+        .custom-input-checkbox {
+          align-items: flex-start;
+        }
+      }
+    }
+
+    .modal-footer {
+      .action-buttons {
+        @extend .modal-action-btns;
+        button {
+          @extend .modal-accept-btn;
+        }
+        .cancel-button {
+          @extend .modal-cancel-btn;
+        }
+      }
+    }
+  }
+}

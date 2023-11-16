@@ -33,7 +33,7 @@
   background: var(--color-background-secondary);
   padding: $s-2;
   cursor: pointer;
-  font-size: $fs12;
+  font-size: $fs-12;
   .tab-container-tab-wrapper {
     @include flexCenter;
     flex-direction: row;

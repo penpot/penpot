@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.modal
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.modal :as dm]
    [app.main.features :as features]
@@ -78,8 +78,9 @@
 
     (when-let [component (get components (:type data))]
       [:div {:ref wrapper-ref
-             :class (dom/classnames (css :modal-wrapper) new-css-system
-                                    :modal-wrapper (not new-css-system))}
+             :class (stl/css-case
+                     :modal-wrapper  new-css-system
+                     :old-css/modal-wrapper (not  new-css-system))}
        (mf/element component (:props data))])))
 
 (def modal-ref

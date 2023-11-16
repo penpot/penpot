@@ -1,0 +1,197 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+
+  .modal-container {
+    @extend .modal-container-base;
+    border: $s-1 solid var(--modal-border-color);
+    .modal-header {
+      margin-bottom: $s-24;
+      .modal-title {
+        @include tabTitleTipography;
+        color: var(--modal-title-foreground-color);
+      }
+      .modal-close-btn {
+        @extend .modal-close-btn-base;
+      }
+    }
+
+    .modal-content {
+      @include titleTipography;
+      margin-bottom: $s-24;
+      .modal-msg,
+      .modal-scd-msg,
+      .modal-subtitle {
+        @include titleTipography;
+      }
+      .feedback-banner {
+        @include flexRow;
+        height: $s-32;
+        width: 100%;
+        margin-bottom: $s-24;
+        border-radius: $br-8;
+        background-color: var(--alert-background-color-ok);
+        color: var(--alert-foreground-color-ok);
+
+        .icon {
+          @include flexCenter;
+          height: $s-24;
+          width: $s-24;
+          svg {
+            @extend .button-icon;
+            stroke: var(--alert-foreground-color-ok);
+          }
+        }
+        .message {
+          @include titleTipography;
+        }
+        &.warning {
+          background-color: var(--alert-background-color-warning);
+          color: var(--alert-foreground-color-warning);
+          .icon svg {
+            stroke: var(--alert-foreground-color-warning);
+          }
+        }
+      }
+    }
+
+    .modal-footer {
+      .action-buttons {
+        @extend .modal-action-btns;
+        .cancel-button {
+          @extend .modal-cancel-btn;
+        }
+        .accept-btn {
+          @extend .modal-accept-btn;
+          &.danger {
+            @extend .modal-danger-btn;
+          }
+        }
+      }
+    }
+  }
+}
+
+.file-entry {
+  .file-name {
+    @include flexRow;
+    margin-bottom: $s-8;
+    .file-icon {
+      @include flexCenter;
+      height: $s-24;
+      width: $s-16;
+      svg {
+        @extend .button-icon;
+        stroke: var(--icon-foreground);
+      }
+      &.icon-fill svg {
+        fill: var(--icon-foreground);
+      }
+    }
+    .file-name-edit {
+      @extend .input-element;
+      flex-grow: 1;
+    }
+    .file-name-label {
+      @include titleTipography;
+      flex-grow: 1;
+    }
+    .edit-entry-buttons {
+      @include flexRow;
+      button {
+        @extend .button-tertiary;
+        width: $s-28;
+        height: $s-32;
+        svg {
+          @extend .button-icon;
+          stroke: var(--icon-foreground);
+        }
+      }
+    }
+  }
+  .error-message,
+  .progress-message {
+    height: $s-32;
+  }
+
+  .linked-libraries {
+    .linked-library-tag {
+      @include flexCenter;
+      height: $s-24;
+      width: $s-16;
+      svg {
+        @extend .button-icon;
+        stroke: var(--icon-foreground);
+      }
+      &.error {
+        svg {
+          stroke: var(--error-color);
+        }
+      }
+    }
+  }
+
+  &.loading {
+    .file-name {
+      color: var(--pending-color);
+      .file-icon {
+        :global(#loader-pencil) {
+          color: var(--pending-color);
+          stroke: var(--pending-color);
+          fill: var(--pending-color);
+        }
+      }
+    }
+  }
+  &.warning {
+    .file-name {
+      color: var(--warning-color);
+      .file-icon svg {
+        stroke: var(--warning-color);
+      }
+      .file-icon.icon-fill svg {
+        fill: var(--warning-color);
+      }
+    }
+  }
+  &.success {
+    .file-name {
+      color: var(--ok-color);
+      .file-icon svg {
+        stroke: var(--ok-color);
+      }
+      .file-icon.icon-fill svg {
+        fill: var(--ok-color);
+      }
+    }
+  }
+  &.error {
+    .file-name {
+      color: var(--error-color);
+      .file-icon svg {
+        stroke: var(--error-color);
+      }
+      .file-icon.icon-fill svg {
+        fill: var(--error-color);
+      }
+    }
+  }
+  &.editable {
+    .file-name {
+      color: var(--icon-foreground);
+      .file-icon svg {
+        stroke: var(--icon-foreground);
+      }
+      .file-icon.icon-fill svg {
+        fill: var(--icon-foreground);
+      }
+    }
+  }
+}

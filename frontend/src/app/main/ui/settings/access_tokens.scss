@@ -1,0 +1,82 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+  .modal-container {
+    @extend .modal-container-base;
+    min-width: $s-408;
+    border: $s-1 solid var(--modal-border-color);
+    .modal-header {
+      margin-bottom: $s-24;
+      .modal-title {
+        @include tabTitleTipography;
+        color: var(--modal-title-foreground-color);
+      }
+      .modal-close-btn {
+        @extend .modal-close-btn-base;
+      }
+    }
+
+    .modal-content {
+      @include flexColumn;
+      gap: $s-24;
+      @include titleTipography;
+      margin-bottom: $s-24;
+
+      .fields-row {
+        @include flexColumn;
+        .select-title {
+          @include titleTipography;
+          color: var(--modal-title-foreground-color);
+        }
+        .custon-input-wrapper {
+          @include flexRow;
+          border-radius: $br-8;
+          height: $s-32;
+          background-color: var(--input-background-color);
+        }
+        .custom-input-token {
+          @extend .input-element;
+          margin: 0;
+          flex-grow: 1;
+          &:focus {
+            outline: none;
+            border: $s-1 solid var(--input-border-color-active);
+          }
+        }
+        .token-value {
+          @include textEllipsis;
+          @include titleTipography;
+          flex-grow: 1;
+        }
+        .copy-btn {
+          @include flexCenter;
+          @extend .button-secondary;
+          height: $s-28;
+          width: $s-28;
+          svg {
+            @extend .button-icon-small;
+          }
+        }
+      }
+    }
+
+    .modal-footer {
+      .action-buttons {
+        @extend .modal-action-btns;
+        button {
+          @extend .modal-accept-btn;
+        }
+        .cancel-button {
+          @extend .modal-cancel-btn;
+        }
+      }
+    }
+  }
+}

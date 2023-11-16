@@ -7,6 +7,7 @@
 
 .light,
 .default {
+  // BASE COLORS
   --canvas-background-color: var(--color-background-primary);
   --canvas-fill-color: var(--canvas-color);
 
@@ -15,7 +16,6 @@
   --panel-title-background-color: var(--color-background-secondary);
 
   // BUTTONS
-
   --button-foreground-hover: var(--color-accent-primary);
   --button-background-color-focus: var(--color-background-secondary);
   --button-foreground-color-focus: var(--color-foreground-primary);
@@ -88,22 +88,19 @@
   --constraint-widget-background-color: var(--color-background-tertiary);
   --constraint-center-area-background-color: var(--color-background-primary);
 
-  // ICONS
-  --icon-foreground: var(--color-foreground-secondary);
-  --icon-foreground-hover: var(--color-foreground-primary);
-
-  --link-foreground-color: var(--color-accent-primary);
-
+  // TABS
   --tab-background-color-hover: var(--color-background-primary);
   --tab-background-color-selected: var(--color-background-quaternary);
   --tab-foreground-color: var(--color-foreground-secondary);
   --tab-foreground-color-hover: var(--color-foreground-primary);
   --tab-foreground-color-selected: var(--color-accent-primary);
 
+  // SECTION TITLE
   --title-background-color: var(--color-background-primary);
   --title-foreground-color: var(--color-foreground-secondary);
   --title-foreground-color-hover: var(--color-foreground-primary);
 
+  // LAYER ELEMENT
   --layer-row-background-color: var(--color-background-primary);
   --layer-row-background-color-hover: var(--color-background-secondary);
   --layer-row-background-color-selected: var(--color-background-quaternary);
@@ -118,9 +115,26 @@
   --layer-child-row-foreground-color: var(--color-foreground-secondary);
   --layer-row-component-foreground-color: var(--color-accent-secondary);
 
-  --search-bar-background-color: var(--color-background-primary);
-  --search-bar-input-background-color: var(--color-background-tertiary);
-  --search-bar-input-border-color: var(--color-background-tertiary);
+  // PALETTE & COLOR BULLET
+  --palette-background-color: var(--color-background-primary);
+  --palette-btn-background-color-selected: var(--color-background-secondary);
+  --palette-btn-border-color-selected: var(--color-background-quaternary);
+  --palette-btn-foreground-color-selected: var(--color-accent-primary);
+  --palette-text-color: var(--color-foreground-secondary);
+  --palette-text-color-selected: var(--color-foreground-primary);
+  --palette-text-background-color: var(--color-background-tertiary);
+  --palette-text-background-color-hover: var(--color-background-quaternary);
+  --palette-button-shadow-initial: var(--color-background-primary);
+  --palette-button-shadow-final: transparent;
+  --palette-handler-background-color: var(--color-background-quaternary);
+
+  --color-bullet-background-color: var(--white); // We don't want this color to change with palette
+  --color-bullet-border-color: var(--color-background-quaternary);
+  --color-bullet-border-color-selected: var(--color-accent-primary);
+
+  // ICONS
+  --icon-foreground: var(--color-foreground-secondary);
+  --icon-foreground-hover: var(--color-foreground-primary);
 
   // INPUTS, SELECTS, DROPDOWNS
   --input-background-color: var(--color-background-tertiary);
@@ -136,7 +150,14 @@
   --input-background-color-disabled: var(--color-background-primary);
   --input-foreground-color-disabled: var(--color-foreground-secondary);
   --input-border-color-disabled: var(--color-background-quaternary);
+  --input-border-color-error: var(--error-color);
   --input-details-color: var(--color-background-primary);
+  --input-checkbox-background-color-rest: var(--color-background-quaternary);
+  --input-checkbox-border-color-active: var(--color-background-quaternary);
+  --input-checkbox-border-color-focus: var(--color-accent-primary);
+  --input-checkbox-border-color: var(--color-background-secondary);
+  --input-checkbox-border-color-hover: var(--color-accent-primary-muted);
+  --input-checkbox-background-color-intermediate: var(--color-foreground-secondary);
 
   --menu-background-color: var(--color-background-tertiary);
   --menu-foreground-color: var(--color-foreground-primary);
@@ -156,32 +177,12 @@
   --menu-foreground-color-disabled: var(--color-foreground-secondary);
   --menu-border-color-disabled: var(--color-background-quaternary);
 
-  --pill-background-color: var(--color-background-tertiary);
-  --pill-foreground-color: var(--color-foreground-primary);
-
-  --tag-background-color: var(--color-accent-primary);
-
-  --palette-background-color: var(--color-background-primary);
-  --palette-btn-background-color-selected: var(--color-background-secondary);
-  --palette-btn-border-color-selected: var(--color-background-quaternary);
-  --palette-btn-foreground-color-selected: var(--color-accent-primary);
-  --palette-text-color: var(--color-foreground-secondary);
-  --palette-text-color-selected: var(--color-foreground-primary);
-  --palette-text-background-color: var(--color-background-tertiary);
-  --palette-text-background-color-hover: var(--color-background-quaternary);
-  --palette-button-shadow-initial: var(--color-background-primary);
-  --palette-button-shadow-final: transparent;
-
   --context-menu-background-color: var(--color-background-tertiary);
   --context-menu-foreground-color: var(--color-foreground-secondary);
   --context-menu-background-color-selected: var(--color-background-quaternary);
   --context-menu-foreground-color-selected: var(--color-foreground-primary);
 
-  --color-bullet-background-color: var(--white); // We don't want this color to change with palette
-  --color-bullet-border-color: var(--color-background-quaternary);
-  --color-bullet-border-color-selected: var(--color-accent-primary);
-  --palette-handler-background-color: var(--color-background-quaternary);
-
+  // ASSETS
   --assets-title-background-color: var(--color-background-primary);
   --assets-item-background-color: var(--color-background-tertiary);
   --assets-item-background-color-hover: var(--color-background-quaternary);
@@ -220,19 +221,10 @@
   --empty-message-background-color: var(--color-background-tertiary);
   --empty-message-foreground-color: var(--color-foreground-secondary);
 
-  --status-ok-background-color: var(--ok-color);
-  --status-warning-background-color: var(--warning-color);
-  --status-pending-background-color: var(--pending-color);
-  --status-error-background-color: var(--error-color);
-  --status-icon-foreground-color: var(--color-background-primary);
-
   --user-count-background-color: var(--color-background-secondary);
   --user-count-foreground-color: var(--color-accent-primary);
 
-  --modal-background-color: var(--color-background-primary);
-  --modal-foreground-color: var(--color-foreground-primary);
-  --modal-foreground-color-secondary: var(--color-foreground-secondary);
-
+  // COLORPICKER
   --colorpicker-details-color: var(--color-background-quaternary);
   --colorpicker-details-color-selected: var(--color-accent-primary);
   --colorpicker-handlers-color: var(--color-foreground-primary);
@@ -259,4 +251,43 @@
   --grid-editor-line-color: var(--color-foreground-tertiary);
   --grid-editor-plus-btn-foreground: var(--white);
   --grid-editor-plus-btn-background: var(--color-foreground-tertiary);
+
+  // MODALS
+  --modal-background-color: var(--color-background-primary);
+  --modal-title-foreground-color: var(--color-foreground-primary);
+  --modal-text-foreground-color: var(--color-foreground-secondary);
+  --modal-hint-border-color: var(--color-background-quaternary);
+  --modal-button-background-color-error: var(--error-color);
+  --modal-button-foreground-color-error: var(--color-foreground-primary);
+  --modal-link-foreground-color: var(--color-accent-primary);
+  --modal-border-color: var(--color-background-quaternary);
+
+  // ALERTS & STATUS
+  --alert-background-color-ok: var(--ok-color);
+  --alert-foreground-color-ok: var(--color-background-secondary);
+  --alert-background-color-warning: var(--warning-color);
+  --alert-foreground-color-warning: var(--color-foreground-primary);
+  --alert-background-color-error: var(--error-color);
+  --alert-foreground-color-error: var(--color-foreground-primary);
+  --alert-background-color-neutral: var(--color-background-quaternary);
+  --alert-foreground-color-neutral: var(--color-foreground-secondary);
+  --alert-foreground-color-neutral-active: var(--color-foreground-primary);
+
+  --status-ok-background-color: var(--ok-color);
+  --status-warning-background-color: var(--warning-color);
+  --status-pending-background-color: var(--pending-color);
+  --status-error-background-color: var(--error-color);
+  --status-icon-foreground-color: var(--color-background-primary);
+
+  // INTERFACE ELEMENTS
+  --search-bar-background-color: var(--color-background-primary);
+  --search-bar-input-background-color: var(--color-background-tertiary);
+  --search-bar-input-border-color: var(--color-background-tertiary);
+
+  --pill-background-color: var(--color-background-tertiary);
+  --pill-foreground-color: var(--color-foreground-primary);
+
+  --tag-background-color: var(--color-accent-primary);
+
+  --link-foreground-color: var(--color-accent-primary);
 }

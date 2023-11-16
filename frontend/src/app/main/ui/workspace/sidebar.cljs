@@ -66,8 +66,8 @@
              :id "left-sidebar-aside"
              :data-size size
              :class (stl/css-case new-css-system
-                                  :old-css/settings-bar true
-                                  :old-css/settings-bar-left true
+                                  :global/settings-bar true
+                                  :global/settings-bar-left true
                                   :left-settings-bar true
                                   :global/two-row   (<= size 300)
                                   :global/three-row (and (> size 300) (<= size 400))

@@ -26,7 +26,8 @@
 
 (mf/defc export-multiple-dialog
   [{:keys [exports title cmd no-selection]}]
-  (let [lstate          (mf/deref refs/export)
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        lstate          (mf/deref refs/export)
         in-progress?    (:in-progress lstate)
 
         exports         (mf/use-state exports)
@@ -61,91 +62,198 @@
         (fn [_]
           (swap! exports (fn [exports]
                            (mapv #(assoc % :enabled (not all-checked?)) exports))))]
-    [:div.modal-overlay
-     [:div.modal-container.export-multiple-dialog
-      {:class (when (empty? all-exports) "empty")}
 
-      [:div.modal-header
-       [:div.modal-header-title
-        [:h2 title]]
+    (if new-css-system
+      [:div {:class (stl/css :modal-overlay)}
+       [:div.modal-container.export-multiple-dialog
+        {:class (stl/css-case :modal-container true
+                              :empty (empty? all-exports))}
 
-       [:div.modal-close-button
-        {:on-click cancel-fn} i/close]]
+        [:div {:class (stl/css :modal-header)}
+         [:h2 {:class (stl/css :modal-title)} title]
+         [:button {:class (stl/css :modal-close-btn)
+                   :on-click cancel-fn}
+          i/close-refactor]]
 
-      [:*
-       [:div.modal-content
-        (if (> (count all-exports) 0)
-          [:*
-           [:div.header
-            [:div.field.check {:on-click change-all}
-             (cond
-               all-checked? [:span.checked i/checkbox-checked]
-               all-unchecked? [:span.unchecked i/checkbox-unchecked]
-               :else [:span.intermediate i/checkbox-intermediate])]
-            [:div.field.title (tr "dashboard.export-multiple.selected"
-                                  (c (count enabled-exports))
-                                  (c (count all-exports)))]]
+        [:*
+         [:div {:class (stl/css :modal-content)}
+          (if (> (count all-exports) 0)
+            [:*
+             [:div {:class (stl/css :selection-header)}
+              [:button {:class (stl/css :selection-btn)
+                        :on-click change-all}
+               [:span {:class (stl/css :checkbox-wrapper)}
+                (cond
+                  all-checked? [:span {:class (stl/css-case :checkbox-icon2 true
+                                                            :global/checked true)} i/tick-refactor]
+                  all-unchecked? [:span {:class (stl/css-case :checkbox-icon2 true
+                                                              :global/uncheked true)}]
+                  :else [:span {:class (stl/css-case :checkbox-icon2 true
+                                                     :global/intermediate true)} i/remove-refactor])]]
+              [:div {:class (stl/css :selection-title)} (tr "dashboard.export-multiple.selected"
+                                                            (c (count enabled-exports))
+                                                            (c (count all-exports)))]]
+             [:div {:class (stl/css :selection-wrapper)}
+              [:div {:class (stl/css-case :selection-list true
+                                          :selection-shadow (> (count all-exports) 8))}
+              (for [[index {:keys [shape suffix] :as export}] (d/enumerate @exports)]
+                (let [{:keys [x y width height]} (:selrect shape)]
+                  [:div {:class (stl/css :selection-row)}
+                   [:button {:class (stl/css :selection-btn)
+                             :on-click #(on-toggle-enabled index)}
+                    [:span {:class (stl/css :checkbox-wrapper)}
+                     (if (:enabled export)
+                       [:span {:class (stl/css-case :checkbox-icon2 true
+                                                    :global/checked true)} i/tick-refactor]
+                       [:span {:class (stl/css-case :checkbox-icon2 true
+                                                    :global/uncheked true)}])]
 
-           [:div.body
-            (for [[index {:keys [shape suffix] :as export}] (d/enumerate @exports)]
-              (let [{:keys [x y width height]} (:selrect shape)]
-                [:div.row
-                 [:div.field.check {:on-click #(on-toggle-enabled index)}
-                  (if (:enabled export)
-                    [:span.checked i/checkbox-checked]
-                    [:span.unchecked i/checkbox-unchecked])]
+                    [:div {:class (stl/css :image-wrapper)}
+                     (if (some? (:thumbnail shape))
+                       [:img {:src (:thumbnail shape)}]
+                       [:svg {:view-box (dm/str x " " y " " width " " height)
+                              :width 24
+                              :height 20
+                              :version "1.1"
+                              :xmlns "http://www.w3.org/2000/svg"
+                              :xmlnsXlink "http://www.w3.org/1999/xlink"
+                                                   ;; Fix Chromium bug about color of html texts
+                                                   ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
+                              :style {:-webkit-print-color-adjust :exact}
+                              :fill "none"}
 
-                 [:div.field.image
-                  (if (some? (:thumbnail shape))
-                    [:img {:src (:thumbnail shape)}]
-                    [:svg {:view-box (dm/str x " " y " " width " " height)
-                           :width 24
-                           :height 20
-                           :version "1.1"
-                           :xmlns "http://www.w3.org/2000/svg"
-                           :xmlnsXlink "http://www.w3.org/1999/xlink"
-                           ;; Fix Chromium bug about color of html texts
-                           ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
-                           :style {:-webkit-print-color-adjust :exact}
-                           :fill "none"}
+                        [:& shape-wrapper {:shape shape}]])]
 
-                     [:& shape-wrapper {:shape shape}]])]
+                    [:div {:class (stl/css :selection-name)} (cond-> (:name shape) suffix (str suffix))]
+                    (when (:scale export)
+                      [:div {:class (stl/css :selection-scale)}
+                       (dm/str (ust/format-precision (* width (:scale export)) 2) "x"
+                               (ust/format-precision (* height (:scale export)) 2) "px ")])
 
-                 [:div.field.name (cond-> (:name shape) suffix (str suffix))]
-                 (when (:scale export)
-                   [:div.field.scale (dm/str (ust/format-precision (* width (:scale export)) 2) "x"
-                                             (ust/format-precision (* height (:scale export)) 2) "px ")])
+                    (when (:type export)
+                      [:div {:class (stl/css :selection-extension)}
+                       (-> export :type d/name str/upper)])]]))]]]
 
-                 (when (:type export)
-                   [:div.field.extension (-> export :type d/name str/upper)])]))]
+            [:& no-selection])]
 
-           [:div.modal-footer
-            [:div.action-buttons
-             [:input.cancel-button
-              {:type "button"
+         (when (> (count all-exports) 0)
+           [:div {:class (stl/css :modal-footer)}
+            [:div {:class (stl/css :action-buttons)}
+             [:input
+              {:class (stl/css :cancel-button)
+               :type "button"
                :value (tr "labels.cancel")
                :on-click cancel-fn}]
 
-             [:input.accept-button.primary
-              {:class (dom/classnames
-                       :btn-disabled (or in-progress? all-unchecked?))
-               :disabled (or in-progress? all-unchecked?)
-               :type "button"
-               :value (if in-progress?
-                        (tr "workspace.options.exporting-object")
-                        (tr "labels.export"))
-               :on-click (when-not in-progress? accept-fn)}]]]]
+             [:input {:class (stl/css-case :accept-btn true
+                                           :btn-disabled (or in-progress? all-unchecked?))
+                      :disabled (or in-progress? all-unchecked?)
+                      :type "button"
+                      :value (if in-progress?
+                               (tr "workspace.options.exporting-object")
+                               (tr "labels.export"))
+                      :on-click (when-not in-progress? accept-fn)}]]])]]]
 
-          [:& no-selection])]]]]))
+
+
+      [:div.modal-overlay
+       [:div.modal-container.export-multiple-dialog
+        {:class (when (empty? all-exports) "empty")}
+
+        [:div.modal-header
+         [:div.modal-header-title
+          [:h2 title]]
+
+         [:div.modal-close-button
+          {:on-click cancel-fn} i/close]]
+
+        [:*
+         [:div.modal-content
+          (if (> (count all-exports) 0)
+            [:*
+
+
+             [:div.header
+              [:div.field.check {:on-click change-all}
+               (cond
+                 all-checked? [:span.checked i/checkbox-checked]
+                 all-unchecked? [:span.unchecked i/checkbox-unchecked]
+                 :else [:span.intermediate i/checkbox-intermediate])]
+              [:div.field.title (tr "dashboard.export-multiple.selected"
+                                    (c (count enabled-exports))
+                                    (c (count all-exports)))]]
+
+             [:div.body
+              (for [[index {:keys [shape suffix] :as export}] (d/enumerate @exports)]
+                (let [{:keys [x y width height]} (:selrect shape)]
+                  [:div.row
+                   [:div.field.check {:on-click #(on-toggle-enabled index)}
+                    (if (:enabled export)
+                      [:span.checked i/checkbox-checked]
+                      [:span.unchecked i/checkbox-unchecked])]
+
+                   [:div.field.image
+                    (if (some? (:thumbnail shape))
+                      [:img {:src (:thumbnail shape)}]
+                      [:svg {:view-box (dm/str x " " y " " width " " height)
+                             :width 24
+                             :height 20
+                             :version "1.1"
+                             :xmlns "http://www.w3.org/2000/svg"
+                             :xmlnsXlink "http://www.w3.org/1999/xlink"
+                                 ;; Fix Chromium bug about color of html texts
+                                 ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
+                             :style {:-webkit-print-color-adjust :exact}
+                             :fill "none"}
+
+                       [:& shape-wrapper {:shape shape}]])]
+
+                   [:div.field.name (cond-> (:name shape) suffix (str suffix))]
+                   (when (:scale export)
+                     [:div.field.scale (dm/str (ust/format-precision (* width (:scale export)) 2) "x"
+                                               (ust/format-precision (* height (:scale export)) 2) "px ")])
+
+                   (when (:type export)
+                     [:div.field.extension (-> export :type d/name str/upper)])]))]
+
+             [:div.modal-footer
+              [:div.action-buttons
+               [:input.cancel-button
+                {:type "button"
+                 :value (tr "labels.cancel")
+                 :on-click cancel-fn}]
+
+               [:input.accept-button.primary
+                {:class (dom/classnames
+                         :btn-disabled (or in-progress? all-unchecked?))
+                 :disabled (or in-progress? all-unchecked?)
+                 :type "button"
+                 :value (if in-progress?
+                          (tr "workspace.options.exporting-object")
+                          (tr "labels.export"))
+                 :on-click (when-not in-progress? accept-fn)}]]]]
+
+            [:& no-selection])]]]])))
 
 (mf/defc shapes-no-selection []
-  [:div.no-selection
-   [:img {:src "images/export-no-shapes.png" :border "0"}]
-   [:p (tr "dashboard.export-shapes.no-elements")]
-   [:p (tr "dashboard.export-shapes.how-to")]
-   [:p [:a {:target "_blank"
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:div {:class (stl/css :no-selection)}
+       [:p {:class (stl/css :modal-msg)}(tr "dashboard.export-shapes.no-elements")]
+       [:p {:class (stl/css :modal-scd-msg)}(tr "dashboard.export-shapes.how-to")]
+       [:a {:target "_blank"
+            :class (stl/css :modal-link)
             :href "https://help.penpot.app/user-guide/exporting/ "}
-        (tr "dashboard.export-shapes.how-to-link")]]])
+        (tr "dashboard.export-shapes.how-to-link")]]
+
+
+      [:div.no-selection
+       [:img {:src "images/export-no-shapes.png" :border "0"}]
+       [:p (tr "dashboard.export-shapes.no-elements")]
+       [:p (tr "dashboard.export-shapes.how-to")]
+       [:p [:a {:target "_blank"
+                :href "https://help.penpot.app/user-guide/exporting/ "}
+            (tr "dashboard.export-shapes.how-to-link")]]])))
 
 (mf/defc export-shapes-dialog
   {::mf/register modal/components

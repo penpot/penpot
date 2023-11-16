@@ -44,8 +44,7 @@
                         (fn [error]
                           (js/console.log "error" error))
                         (fn []
-                          (reset! downloading? false)))))
-        ]
+                          (reset! downloading? false)))))]
 
     [:div.template-item
      [:div.template-item-content

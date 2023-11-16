@@ -38,14 +38,14 @@
           @include titleTipography;
           padding: 0;
           margin: 0;
-          color: var(--modal-foreground-color);
+          color: var(--modal-title-foreground-color);
           padding-left: $s-4;
         }
         .progress {
           @include titleTipography;
           padding-left: $s-8;
           margin: 0;
-          color: var(--modal-foreground-color-secondary);
+          color: var(--modal-text-foreground-color);
         }
         .retry-btn {
           @extend .button-tertiary;
@@ -63,6 +63,162 @@
     }
     .progress-bar {
       margin-top: 0;
+    }
+  }
+}
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+  &.transparent {
+    background-color: transparent;
+  }
+  .modal-container {
+    @extend .modal-container-base;
+    max-height: calc(10 * $s-80);
+    .modal-header {
+      margin-bottom: $s-24;
+      .modal-title {
+        @include tabTitleTipography;
+        color: var(--modal-title-foreground-color);
+      }
+      .modal-close-btn {
+        @extend .modal-close-btn-base;
+      }
+    }
+    .modal-content,
+    .no-selection {
+      @include titleTipography;
+      margin-bottom: $s-24;
+      .modal-msg,
+      .modal-scd-msg,
+      .modal-hint,
+      .modal-subtitle {
+        @include titleTipography;
+        color: var(--modal-text-foreground-color);
+      }
+      .modal-link {
+        @include titleTipography;
+        text-decoration: none;
+        cursor: pointer;
+        color: var(--modal-link-foreground-color);
+      }
+      .selection-header {
+        @include flexRow;
+        height: $s-32;
+        margin-bottom: $s-4;
+        .selection-btn {
+          @include buttonStyle;
+          @extend .input-checkbox;
+          @include flexCenter;
+          height: $s-24;
+          width: $s-24;
+          padding: 0;
+          margin-left: $s-16;
+          span {
+            @extend .checkbox-icon;
+          }
+        }
+        .selection-title {
+          @include titleTipography;
+        }
+      }
+      .selection-wrapper {
+        position: relative;
+        width: 100%;
+        height: fit-content;
+      }
+      .selection-shadow {
+        width: 100%;
+        height: 100%;
+        &:after {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 50px;
+          background: linear-gradient(to top, rgba(24, 24, 26, 1) 0%, rgba(24, 24, 26, 0) 100%);
+          content: "";
+          pointer-events: none;
+        }
+      }
+      .selection-list {
+        @include flexColumn;
+        max-height: $s-400;
+        overflow-y: auto;
+        padding-bottom: $s-12;
+        .selection-row {
+          @include flexRow;
+          background-color: var(--entry-background-color);
+          min-height: $s-40;
+          border-radius: $br-8;
+          .selection-btn {
+            @include buttonStyle;
+            @include flexRow;
+            width: 100%;
+            height: 10%;
+            gap: $s-8;
+            padding: 0 $s-16;
+            .checkbox-wrapper {
+              @extend .input-checkbox;
+              @include flexCenter;
+              height: $s-24;
+              width: $s-24;
+              padding: 0;
+              .checkbox-icon2 {
+                @extend .checkbox-icon;
+              }
+            }
+            .selection-name {
+              @include titleTipography;
+              @include textEllipsis;
+              flex-grow: 1;
+              color: var(--modal-text-foreground-color);
+              text-align: start;
+            }
+            .selection-scale {
+              @include titleTipography;
+              @include textEllipsis;
+              min-width: $s-108;
+              padding: $s-12;
+              color: var(--modal-text-foreground-color);
+            }
+            .selection-extension {
+              @include titleTipography;
+              @include textEllipsis;
+              min-width: $s-72;
+              padding: $s-12;
+              color: var(--modal-text-foreground-color);
+            }
+          }
+          .image-wrapper {
+            @include flexCenter;
+            height: 100%;
+            min-height: $s-32;
+            min-width: $s-32;
+            background-color: var(--white);
+            border-radius: $br-6;
+            margin: auto 0;
+            img,
+            svg {
+              object-fit: contain;
+            }
+          }
+        }
+      }
+    }
+    .modal-footer {
+      .action-buttons {
+        @extend .modal-action-btns;
+        .cancel-button {
+          @extend .modal-cancel-btn;
+        }
+        .accept-btn {
+          @extend .modal-accept-btn;
+          &.danger {
+            @extend .modal-danger-btn;
+          }
+        }
+      }
     }
   }
 }

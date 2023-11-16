@@ -1,0 +1,72 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-container {
+  @extend .modal-container-base;
+  min-width: $s-512;
+  position: relative;
+  border: $s-1 solid var(--modal-border-color);
+}
+
+// STEP CONTAINER
+.paginator {
+  @include titleTipography;
+  position: absolute;
+  top: $s-8;
+  right: $s-8;
+  padding: $s-4;
+  border-radius: $br-6;
+  color: var(--color-foreground-secondary);
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+  margin-top: $s-32;
+}
+.next-button {
+  @extend .modal-accept-btn;
+}
+
+.prev-button {
+  @extend .modal-cancel-btn;
+}
+
+// STEP 1
+
+.header-image {
+  height: auto;
+  width: $s-200;
+}
+
+.modal-title {
+  @include bigTitleTipography;
+  color: var(--modal-title-foreground-color);
+  margin: $s-32 0 $s-8 0;
+}
+
+.modal-subtitle {
+  @include titleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+// STEP-2
+
+.modal-text {
+  @include titleTipography;
+  color: var(--modal-text-foreground-color);
+  margin: 0;
+}
+
+.modal-question {
+  @include flexColumn;
+  margin-top: $s-32;
+}

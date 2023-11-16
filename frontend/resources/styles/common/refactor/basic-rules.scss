@@ -66,7 +66,8 @@
     }
   }
   &:global(.disabled),
-  &[disabled] {
+  &[disabled],
+  &:disabled {
     background-color: var(--button-background-color-disabled);
     border: $s-1 solid var(--button-border-color-disabled);
     color: var(--button-foreground-color-disabled);
@@ -107,7 +108,8 @@
     }
   }
   &:global(.disabled),
-  &[disabled] {
+  &[disabled],
+  &:disabled {
     background-color: var(--button-background-color-disabled);
     border: $s-1 solid var(--button-border-color-disabled);
     color: var(--button-foreground-color-disabled);
@@ -147,7 +149,8 @@
     }
   }
   &:global(.disabled),
-  &[disabled] {
+  &[disabled],
+  &:disabled {
     color: var(--button-foreground-color-disabled);
     cursor: unset;
     pointer-events: none;
@@ -202,9 +205,9 @@
 .button-disabled {
   @include buttonStyle;
   @include flexCenter;
-  background-color: var(--button-disabled-background-color-rest);
-  border: $s-1 solid var(--button-disabled-border-color-rest);
-  color: var(--button-disabled-foreground-color-rest);
+  background-color: var(--button-background-color-disabled);
+  border: $s-1 solid var(--button-border-color-disabled);
+  color: var(--button-foreground-color-disabled);
   cursor: unset;
 }
 
@@ -254,7 +257,6 @@
 }
 
 // INPUTS
-
 .input-base {
   @include removeInputStyle;
   @include titleTipography;
@@ -313,9 +315,11 @@
   input {
     @extend .input-base;
   }
+
   ::placeholder {
     color: var(--input-placeholder-color);
   }
+
   &:hover {
     span {
       color: var(--input-foreground-color);
@@ -327,9 +331,48 @@
   }
 }
 
+.input-element-label {
+  @include titleTipography;
+  display: flex;
+  align-items: flex-start;
+  padding: 0;
+  input {
+    @extend .input-base;
+    padding-left: $s-8;
+    display: flex;
+    align-items: flex-start;
+    height: $s-32;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    border-radius: $br-8;
+    border: $s-1 solid var(--input-background-color);
+    color: var(--input-foreground-color-active);
+    background-color: var(--input-background-color);
+  }
+  ::placeholder {
+    color: var(--input-placeholder-color);
+  }
+  &:hover {
+    input {
+      color: var(--input-foreground-color-active);
+      background-color: var(--input-background-color-hover);
+    }
+  }
+
+  &:focus-within,
+  &:active {
+    input {
+      color: var(--input-foreground-color-active);
+      background-color: var(--input-background-color-active);
+      border: $s-1 solid var(--input-border-color-active);
+    }
+  }
+}
+
 .disabled-input {
   background-color: var(--input-background-color-disabled);
-  border: 1px solid var(--input-border-color-disabled);
+  border: $s-1 solid var(--input-border-color-disabled);
   color: var(--input-foreground-color-disabled);
   input {
     pointer-events: none;
@@ -348,15 +391,38 @@
   min-width: $s-16;
   min-height: $s-16;
   border-radius: $br-6;
-  background-color: var(--input-background-color);
+  background-color: var(--input-checkbox-background-color-rest);
+  border: $s-1 solid var(--input-checkbox-background-color-rest);
   svg {
     display: none;
   }
+  &:hover {
+    border-color: var(--input-checkbox-border-color-hover);
+  }
+  &:focus {
+    border-color: var(--input-checkbox-border-color-focus);
+  }
   &:global(.checked) {
     background-color: var(--input-border-color-active);
+    border-color: var(--input-checkbox-border-color-active);
     svg {
       @extend .button-icon-small;
       stroke: var(--input-details-color);
+    }
+  }
+  &:global(.intermediate) {
+    background-color: var(--input-checkbox-background-color-intermediate);
+    border-color: var(--input-checkbox-border-color-active);
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--input-details-color);
+    }
+  }
+  &:global(.unchecked) {
+    background-color: var(--input-checkbox-background-color-rest);
+    border: $s-1 solid var(--input-checkbox-background-color-rest);
+    svg {
+      display: none;
     }
   }
 }
@@ -376,6 +442,53 @@
     input {
       margin: 0;
     }
+    &:hover {
+      span {
+        border-color: var(--input-checkbox-border-color-hover);
+      }
+    }
+  }
+}
+
+.input-with-label {
+  display: flex;
+  flex-direction: column;
+  label {
+    @include titleTipography;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    min-height: $s-16;
+    color: var(--input-foreground-color-active);
+  }
+
+  input {
+    @extend .input-base;
+    @include titleTipography;
+    border-radius: $br-8;
+    height: $s-32;
+    min-height: $s-32;
+    margin-top: $s-8;
+    background-color: var(--input-background-color);
+    border: $s-1 solid var(--input-background-color);
+    color: var(--input-foreground-color-active);
+    &:focus-within,
+    &:active {
+      input {
+        color: var(--input-foreground-color-active);
+      }
+      background-color: var(--input-background-color-active);
+      border: $s-1 solid var(--input-border-color-active);
+    }
+  }
+  &:global(.disabled) {
+    @extend .disabled-input;
+  }
+
+  &:global(.invalid) {
+    input {
+      border: $s-1 solid var(--input-border-color-error);
+    }
   }
 }
 
@@ -390,6 +503,83 @@
   z-index: $z-index-10;
   color: var(--color-foreground-primary);
   background-color: var(--modal-background-color);
+}
+
+.modal-overlay-base {
+  @include flexCenter;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  z-index: $z-index-modal;
+  background-color: var(--color-background-subtle);
+}
+
+.modal-container-base {
+  position: relative;
+  padding: $s-32;
+  border-radius: $br-8;
+  background-color: var(--modal-background-color);
+  min-width: $s-364;
+  min-height: $s-192;
+  max-width: $s-512;
+  max-height: $s-512;
+}
+
+.modal-close-btn-base {
+  @extend .button-tertiary;
+  position: absolute;
+  top: $s-8;
+  right: $s-6;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.modal-hint-base {
+  @include titleTipography;
+  color: var(--modal-title-foreground-color);
+  border-top: $s-1 solid var(--modal-hint-border-color);
+  border-bottom: $s-1 solid var(--modal-hint-border-color);
+}
+
+.modal-action-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: $s-16;
+}
+
+.modal-cancel-btn {
+  @extend .button-secondary;
+  @include tabTitleTipography;
+  padding: $s-8 $s-24;
+  border-radius: $br-8;
+  height: $s-32;
+  margin: 0;
+}
+
+.modal-accept-btn {
+  @extend .button-primary;
+  @include tabTitleTipography;
+  padding: $s-8 $s-24;
+  border-radius: $br-8;
+  height: $s-32;
+  margin: 0;
+}
+
+.modal-danger-btn {
+  @extend .button-primary;
+  @include tabTitleTipography;
+  padding: $s-8 $s-24;
+  border-radius: $br-8;
+  height: $s-32;
+  margin: 0;
+  background-color: var(--modal-button-background-color-error);
+  border: $s-1 solid var(--modal-button-background-color-error);
+  color: var(--modal-button-foreground-color-error);
 }
 
 // UI ELEMENTS
@@ -640,4 +830,14 @@
   overflow-x: hidden;
   background-color: var(--menu-background-color);
   color: var(--menu-foreground-color);
+}
+
+.select-wrapper {
+  @include titleTipography;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: normal;
+  width: 100%;
+  overflow: hidden;
 }

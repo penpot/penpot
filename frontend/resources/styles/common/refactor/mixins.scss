@@ -49,9 +49,16 @@
   line-height: 1.2;
 }
 
-@mixin titleBigTipography {
+@mixin medTitleTipography {
   font-family: "worksans", sans-serif;
   font-size: $fs-14;
+  font-weight: $fw400;
+  line-height: 1.2;
+}
+
+@mixin bigTitleTipography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-24;
   font-weight: $fw400;
   line-height: 1.2;
 }

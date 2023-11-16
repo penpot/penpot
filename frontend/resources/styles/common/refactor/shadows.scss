@@ -7,3 +7,7 @@
 @mixin menuShadow {
   box-shadow: 0px 0px $s-12 0px var(--menu-shadow-color);
 }
+
+@mixin alertShadow {
+  box-shadow: 0px $s-4 $s-4 var(--menu-shadow-color);
+}
