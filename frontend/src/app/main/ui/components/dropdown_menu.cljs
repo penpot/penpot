@@ -11,33 +11,18 @@
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
    [goog.events :as events]
    [goog.object :as gobj]
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
-(mf/defc dropdown-menu-item
+(mf/defc dropdown-menu-item*
   {::mf/wrap-props false}
   [props]
-
-  (let [children         (gobj/get props "children")
-        on-click         (gobj/get props "on-click")
-        on-key-down      (gobj/get props "on-key-down")
-        on-pointer-enter (gobj/get props "on-pointer-enter")
-        id               (gobj/get props "id")
-        klass            (gobj/get props "klass")
-        key              (gobj/get props "unique-key")
-        data-test        (gobj/get props "data-test")]
-    [:li {:id id
-          :class klass
-          :tab-index "0"
-          :on-key-down on-key-down
-          :on-click on-click
-          :on-pointer-enter on-pointer-enter
-          :key key
-          :role "menuitem"
-          :data-test data-test}
-     children]))
+  (let [props (-> (obj/clone props)
+                  (obj/set! "role" "menuitem"))]
+    [:> :li props]))
 
 (mf/defc dropdown-menu'
   {::mf/wrap-props false}
