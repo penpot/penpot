@@ -27,14 +27,16 @@
 (defn get-enabled-features
   [state]
   (-> (get state :features/runtime #{})
+      (set/intersection cfeat/no-migration-features)
       (set/union global-enabled-features)))
 
 (defn get-team-enabled-features
   [state]
-  (-> global-enabled-features
-      (set/union (get state :features/runtime #{}))
-      (set/intersection cfeat/no-migration-features)
-      (set/union (get state :features/team #{}))))
+  (let [runtime-features (set/intersection (:features/runtime state #{})
+                                           cfeat/no-migration-features)]
+    (-> global-enabled-features
+        (set/union runtime-features)
+        (set/union (:features/team state #{})))))
 
 (def features-ref
   (l/derived get-team-enabled-features st/state =))
