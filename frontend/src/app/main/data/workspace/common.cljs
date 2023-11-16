@@ -8,12 +8,10 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
-   [app.common.transit :as t]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.repo :as rp]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -24,26 +22,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn resolve-file-data
-  [file-id {:keys [pages-index] :as data}]
-  (letfn [(resolve-pointer [[key val :as kv]]
-            (if (t/pointer? val)
-              (->> (rp/cmd! :get-file-fragment {:file-id file-id :fragment-id @val})
-                   (rx/map #(get % :content))
-                   (rx/map #(vector key %)))
-              (rx/of kv)))
-
-          (resolve-pointers [coll]
-            (->> (rx/from (seq coll))
-                 (rx/merge-map resolve-pointer)
-                 (rx/reduce conj {})))]
-
-    (->> (rx/zip (resolve-pointers data)
-                 (resolve-pointers pages-index))
-         (rx/take 1)
-         (rx/map (fn [[data pages-index]]
-                   (assoc data :pages-index pages-index))))))
 
 (defn initialized?
   "Check if the state is properly initialized in a workspace. This means

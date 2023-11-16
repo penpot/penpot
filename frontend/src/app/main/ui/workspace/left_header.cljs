@@ -10,7 +10,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.data.common :refer [show-shared-dialog]]
+   [app.main.data.common :as dcm]
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
    [app.main.data.modal :as modal]
@@ -21,7 +21,6 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
-   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.context :as ctx]
@@ -31,7 +30,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
-   [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
@@ -443,7 +441,7 @@
 
 (mf/defc file-menu
   {::mf/wrap-props false}
-  [{:keys [on-close file team-id]}]
+  [{:keys [on-close file]}]
   (let [file-id   (:id file)
         shared?   (:is-shared file)
 
@@ -451,96 +449,106 @@
         frames    (->> (cfh/get-immediate-children objects uuid/zero)
                        (filterv cfh/frame-shape?))
 
-        add-shared-fn
+        on-remove-shared
         (mf/use-fn
          (mf/deps file-id)
-         #(st/emit! (dwl/set-file-shared file-id true)))
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (modal/show!
+            {:type :delete-shared-libraries
+             :origin :unpublish
+             :ids #{file-id}
+             :on-accept #(st/emit! (dwl/set-file-shared file-id false))
+             :count-libraries 1})))
+
+        on-remove-shared-key-down
+        (mf/use-fn
+         (mf/deps on-remove-shared)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-remove-shared event))))
 
         on-add-shared
         (mf/use-fn
-         (mf/deps file-id add-shared-fn)
-         #(st/emit! (show-shared-dialog file-id add-shared-fn)))
+         (mf/deps file-id)
+         (fn [_event]
+           (let [on-accept #(st/emit! (dwl/set-file-shared file-id true))]
+             (st/emit! (dcm/show-shared-dialog file-id on-accept)))))
 
-        on-remove-shared
-        (mf/use-fn (mf/deps file-id)
-                   (fn [event]
-                     (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (modal/show!
-                      {:type :delete-shared-libraries
-                       :origin :unpublish
-                       :ids #{file-id}
-                       :on-accept #(st/emit! (dwl/set-file-shared file-id false))
-                       :count-libraries 1})))
+        on-add-shared-key-down
+        (mf/use-fn
+         (mf/deps on-add-shared)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-add-shared event))))
 
         on-export-shapes
         (mf/use-fn #(st/emit! (de/show-workspace-export-dialog)))
 
+        on-export-shapes-key-down
+        (mf/use-fn
+         (mf/deps on-export-shapes)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-export-shapes event))))
+
         on-export-file
         (mf/use-fn
          (mf/deps file)
-         (fn [event-name binary?]
-           (st/emit! (ptk/event ::ev/event {::ev/name event-name
-                                            ::ev/origin "workspace"
-                                            :num-files 1}))
+         (fn [event]
+           (let [target  (dom/get-current-target event)
+                 binary? (= (dom/get-data target "binary") "true")
+                 evname  (if binary?
+                           "export-binary-files"
+                           "export-standard-files")]
+             (st/emit!
+              (ptk/event ::ev/event {::ev/name evname
+                                     ::ev/origin "workspace"
+                                     :num-files 1})
+              (dcm/export-files [file] binary?)))))
 
-           (->> (rx/of file)
-                (rx/flat-map
-                 (fn [file]
-                   (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
-                        (rx/map #(assoc file :has-libraries? %)))))
-                (rx/reduce conj [])
-                (rx/subs
-                 (fn [files]
-                   (modal/show!
-                    {:type :export
-                     :team-id team-id
-                     :has-libraries? (->> files (some :has-libraries?))
-                     :files files
-                     :binary? binary?}))))))
-
-        on-export-binary-file
+        on-export-file-key-down
         (mf/use-fn
          (mf/deps on-export-file)
-         (partial on-export-file "export-binary-files" true))
-
-        on-export-standard-file
-        (mf/use-fn
-         (mf/deps on-export-file)
-         (partial on-export-file "export-standard-files" false))
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-export-file event))))
 
         on-export-frames
         (mf/use-fn
          (mf/deps frames)
          (fn [_]
-           (st/emit! (de/show-workspace-export-frames-dialog (reverse frames)))))]
+           (st/emit! (de/show-workspace-export-frames-dialog (reverse frames)))))
+
+        on-export-frames-key-down
+        (mf/use-fn
+         (mf/deps on-export-frames)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-export-frames event))))]
 
     [:& dropdown-menu {:show true
                        :list-class (stl/css-case :sub-menu true
                                                  :file true)
                        :on-close on-close}
+
      (if ^boolean shared?
        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                                 :on-click    on-remove-shared
-                                :on-key-down (fn [event]
-                                               (when (kbd/enter? event)
-                                                 (on-remove-shared event)))
+                                :on-key-down on-remove-shared-key-down
                                 :id          "file-menu-remove-shared"}
         [:span {:class (stl/css :item-name)} (tr "dashboard.unpublish-shared")]]
 
        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                                 :on-click    on-add-shared
-                                :on-key-down (fn [event]
-                                               (when (kbd/enter? event)
-                                                 (on-add-shared event)))
+                                :on-key-down on-add-shared-key-down
                                 :id          "file-menu-add-shared"}
         [:span {:class (stl/css :item-name)} (tr "dashboard.add-shared")]])
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    on-export-shapes
-                              :on-key-down (fn [event]
-                                             (when (kbd/enter? event)
-                                               (on-export-shapes event)))
+                              :on-key-down on-export-shapes-key-down
                               :id          "file-menu-export-shapes"}
       [:span {:class (stl/css :item-name)} (tr "dashboard.export-shapes")]
       [:span  {:class (stl/css :shortcut)}
@@ -548,35 +556,32 @@
          [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                              :on-click    on-export-binary-file
-                              :on-key-down (fn [event]
-                                             (when (kbd/enter? event)
-                                               (on-export-binary-file event)))
+                              :on-click    on-export-file
+                              :on-key-down on-export-file-key-down
+                              :data-binary true
                               :id          "file-menu-binary-file"}
-      [:span {:class (stl/css :item-name)}  (tr "dashboard.download-binary-file")]]
+      [:span {:class (stl/css :item-name)}
+       (tr "dashboard.download-binary-file")]]
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                              :on-click    on-export-standard-file
-                              :on-key-down (fn [event]
-                                             (when (kbd/enter? event)
-                                               (on-export-standard-file event)))
+                              :on-click    on-export-file
+                              :on-key-down on-export-file-key-down
+                              :data-binary false
                               :id          "file-menu-standard-file"}
-      [:span {:class (stl/css :item-name)} (tr "dashboard.download-standard-file")]]
-
+      [:span {:class (stl/css :item-name)}
+       (tr "dashboard.download-standard-file")]]
 
      (when (seq frames)
        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                                 :on-click    on-export-frames
-                                :on-key-down (fn [event]
-                                               (when (kbd/enter? event)
-                                                 (on-export-frames event)))
+                                :on-key-down on-export-frames-key-down
                                 :id          "file-menu-export-frames"}
         [:span {:class (stl/css :item-name)}
          (tr "dashboard.export-frames")]])]))
 
 (mf/defc menu
   {::mf/wrap-props false}
-  [{:keys [layout file team-id]}]
+  [{:keys [layout file]}]
   (let [show-menu*     (mf/use-state false)
         show-menu?     (deref show-menu*)
         sub-menu*      (mf/use-state false)
@@ -688,7 +693,6 @@
        :file
        [:& file-menu
         {:file file
-         :team-id team-id
          :on-close close-sub-menu}]
 
        :edit

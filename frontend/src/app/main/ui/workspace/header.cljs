@@ -380,6 +380,10 @@
         on-export-shapes
         (mf/use-fn #(st/emit! (de/show-workspace-export-dialog)))
 
+        ;; WARNING: this is broken, but as it is unused code because
+        ;; it belongs to the pre styles/v2 feature which is enabled by
+        ;; default right now. THIS CODE IS PENDING TO BE DELETED
+
         on-export-file
         (mf/use-fn
          (mf/deps file)

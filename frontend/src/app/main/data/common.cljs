@@ -113,3 +113,31 @@
                            :accept-label (tr "modals.add-shared-confirm.accept")
                            :accept-style :primary
                            :on-accept add-shared})))))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Exportations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn export-files
+  [files binary?]
+  (ptk/reify ::request-file-export
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [features (features/get-team-enabled-features state)
+            team-id  (:current-team-id state)]
+        (->> (rx/from files)
+             (rx/mapcat
+              (fn [file]
+                (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
+                     (rx/map #(assoc file :has-libraries? %)))))
+             (rx/reduce conj [])
+             (rx/map (fn [files]
+                       (modal/show
+                        {:type :export
+                         :features features
+                         :team-id team-id
+                         :has-libraries? (->> files (some :has-libraries?))
+                         :files files
+                         :binary? binary?}))))))))
+
