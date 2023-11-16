@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
@@ -106,9 +107,13 @@
 
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [features (features/get-team-enabled-features state)
-
+    (watch [_ _ _]
+      (let [;; NOTE: in viewer we don't have access to the team when
+            ;; user is not logged-in, so we can't know which features
+            ;; are active from team, so in this case it is necesary
+            ;; report the whole set of supported features instead of
+            ;; the enabled ones.
+            features cfeat/supported-features
             params'  (cond-> {:file-id file-id :features features}
                        (uuid? share-id)
                        (assoc :share-id share-id))
@@ -146,8 +151,9 @@
                      (rx/map (fn [data]
                                (update bundle :file assoc :data data))))))
              (rx/mapcat
-              (fn [{:keys [fonts] :as bundle}]
+              (fn [{:keys [fonts team] :as bundle}]
                 (rx/of (df/fonts-fetched fonts)
+                       (features/initialize (:features team))
                        (bundle-fetched (merge bundle params))))))))))
 
 (declare go-to-frame)

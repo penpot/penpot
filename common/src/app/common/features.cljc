@@ -117,7 +117,7 @@
   Team features are defined as: all features found on team plus all
   no-migration features enabled globally."
   [flags team]
-  (let [enabled-features (into #{} xf-flag-to-feature flags)
+  (let [enabled-features (get-enabled-features flags)
         team-features    (into #{} xf-remove-ephimeral (:features team))]
     (-> enabled-features
         (set/intersection no-migration-features)
@@ -141,7 +141,7 @@
                   :hint (str/ffmt "client declares no support for '%' features"
                                   (str/join "," not-supported)))))
 
-    (let [not-supported (set/difference client-features supported-features)]
+    (let [not-supported (set/difference client-features enabled-features)]
       (when (seq not-supported)
         (ex/raise :type :restriction
                   :code :feature-not-supported

@@ -33,7 +33,10 @@
                  }]
 
     (binding [cond/*enabled* true]
-      (let [{:keys [error result]} (th/command! params)]
+      (let [{:keys [error result] :as out} (th/command! params)]
+        ;; NOTE: Fails on print because fipps used for pretty print
+        ;; tries to load pointers
+        ;; (th/print-result! out)
         (t/is (nil? error))
         (t/is (map? result))
         (t/is (contains? (meta result) :app.http/headers))
