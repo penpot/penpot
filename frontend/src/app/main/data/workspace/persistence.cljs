@@ -259,7 +259,8 @@
                                             (if-let [[page-id changes] (first entries)]
                                               (recur (-> fdata
                                                          (cpc/process-changes changes)
-                                                         (ctst/update-object-indices page-id))
+                                                         (cond-> (some? page-id)
+                                                           (ctst/update-object-indices page-id)))
                                                      (rest entries))
                                               fdata))))))
           (-> state
