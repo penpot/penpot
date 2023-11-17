@@ -12,13 +12,12 @@ export PENPOT_FLAGS="\
        enable-audit-log \
        enable-transit-readable-response \
        enable-demo-users \
-       enable-file-validation \
        enable-feature-fdata-pointer-map \
        enable-feature-fdata-objects-map \
        disable-secure-session-cookies \
        enable-smtp \
        enable-access-tokens \
-       disable-file-validation";
+       enable-file-validation";
 
 # Initialize MINIO config
 mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin
