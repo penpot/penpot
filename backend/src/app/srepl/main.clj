@@ -22,6 +22,7 @@
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files-snapshot :as fsnap]
    [app.rpc.commands.profile :as profile]
+   [app.srepl.cli :as cli]
    [app.srepl.fixes :as f]
    [app.srepl.helpers :as h]
    [app.storage :as sto]
