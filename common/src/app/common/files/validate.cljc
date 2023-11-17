@@ -191,11 +191,15 @@
                    "Shape not expected to be main instance"
                    shape file page))
 
-  (let [component (ctf/resolve-component shape file libraries {:include-deleted? true})]
+  (let [library-exists? (or (= (:component-file shape) (:id file))
+                           (contains? libraries (:component-file shape)))
+        component (when library-exists?
+                    (ctf/resolve-component shape file libraries {:include-deleted? true}))]
     (if (nil? component)
-      (report-error! :component-not-found
-                     (str/ffmt "Component % not found in file %" (:component-id shape) (:component-file shape))
-                     shape file page)
+      (when library-exists?
+        (report-error! :component-not-found
+                       (str/ffmt "Component % not found in file %" (:component-id shape) (:component-file shape))
+                       shape file page))
       (when (and (= (:main-instance-id component) (:id shape))
                  (= (:main-instance-page component) (:id page)))
         (report-error! :invalid-main-instance
@@ -234,8 +238,11 @@
 (defn validate-component-ref!
   "Validate that the referenced shape exists in the near component."
   [shape file page libraries]
-  (let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true)]
-    (when (nil? ref-shape)
+  (let [library-exists? (or (= (:component-file shape) (:id file))
+                           (contains? libraries (:component-file shape)))
+        ref-shape (when library-exists?
+                    (ctf/find-ref-shape file page libraries shape :include-deleted? true))]
+    (when (and library-exists? (nil? ref-shape))
       (report-error! :ref-shape-not-found
                      (str/ffmt "Referenced shape % not found in near component" (:shape-ref shape))
                      shape file page))))
