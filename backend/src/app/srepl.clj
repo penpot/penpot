@@ -10,7 +10,7 @@
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.config :as cf]
-   [app.srepl.ext]
+   [app.srepl.cli]
    [app.srepl.main]
    [app.util.json :as json]
    [app.util.locks :as locks]

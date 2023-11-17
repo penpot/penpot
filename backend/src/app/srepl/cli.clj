@@ -4,14 +4,16 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.srepl.ext
+(ns app.srepl.cli
   "PREPL API for external usage (CLI or ADMIN)"
   (:require
    [app.auth :as auth]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.main :as main]
    [app.rpc.commands.auth :as cmd.auth]
+   [app.srepl.components-v2]
    [app.util.json :as json]
    [app.util.time :as dt]
    [cuerdas.core :as str]))
@@ -21,18 +23,18 @@
   (or (deref (requiring-resolve 'app.main/system))
       (deref (requiring-resolve 'user/system))))
 
-(defmulti ^:private run-json-cmd* ::cmd)
+(defmulti ^:private exec-command ::cmd)
 
-(defn run-json-cmd
+(defn exec
   "Entry point with external tools integrations that uses PREPL
   interface for interacting with running penpot backend."
   [data]
-  (let [data (json/decode data)
-        params (merge {::cmd (keyword (:cmd data "default"))}
-                      (:params data))]
-    (run-json-cmd* params)))
+  (let [data (json/decode data)]
+    (-> {::cmd (keyword (:cmd data "default"))}
+        (merge (:params data))
+        (exec-command))))
 
-(defmethod run-json-cmd* :create-profile
+(defmethod exec-command :create-profile
   [{:keys [fullname email password is-active]
     :or {is-active true}}]
   (when-let [system (get-current-system)]
@@ -46,7 +48,7 @@
         (->> (cmd.auth/create-profile! conn params)
              (cmd.auth/create-profile-rels! conn))))))
 
-(defmethod run-json-cmd* :update-profile
+(defmethod exec-command :update-profile
   [{:keys [fullname email password is-active]}]
   (when-let [system (get-current-system)]
     (db/with-atomic [conn (:app.db/pool system)]
@@ -67,7 +69,7 @@
                                 {::db/return-keys? false})]
             (pos? (:next.jdbc/update-count res))))))))
 
-(defmethod run-json-cmd* :delete-profile
+(defmethod exec-command :delete-profile
   [{:keys [email soft]}]
   (when-not email
     (ex/raise :type :assertion
@@ -87,7 +89,7 @@
                               {::db/return-keys? false}))]
         (pos? (:next.jdbc/update-count res))))))
 
-(defmethod run-json-cmd* :search-profile
+(defmethod exec-command :search-profile
   [{:keys [email]}]
   (when-not email
     (ex/raise :type :assertion
@@ -101,11 +103,33 @@
                      " where email similar to ? order by created_at desc limit 100")]
         (db/exec! conn [sql email])))))
 
-(defmethod run-json-cmd* :derive-password
+(defmethod exec-command :derive-password
   [{:keys [password]}]
   (auth/derive-password password))
 
-(defmethod run-json-cmd* :default
+(defmethod exec-command :migrate-v2
+  [_]
+  (letfn [(on-start [{:keys [total rollback]}]
+            (println
+             (str/ffmt "The components/v2 migration started (rollback:%, teams:%)"
+                       (if rollback "on" "off")
+                       total)))
+
+          (on-progress [{:keys [total elapsed progress completed]}]
+            (println (str/ffmt "Progress % (total: %, completed: %, elapsed: %)"
+                               progress total completed elapsed)))
+          (on-error [cause]
+            (println "ERR:" (ex-message cause)))
+
+          (on-end [_]
+            (println "Migration finished"))]
+    (app.srepl.components-v2/migrate-teams! main/system
+                                            :on-start on-start
+                                            :on-error on-error
+                                            :on-progress on-progress
+                                            :on-end on-end)))
+
+(defmethod exec-command :default
   [{:keys [::cmd]}]
   (ex/raise :type :internal
             :code :not-implemented
