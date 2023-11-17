@@ -73,11 +73,11 @@
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
         new-css-system (mf/use-ctx ctx/new-css-system)
         filters*       (mf/use-state
-                       {:term ""
-                        :section "all"
-                        :ordering (dwa/get-current-assets-ordering)
-                        :list-style (dwa/get-current-assets-list-style)
-                        :open-menu false})
+                        {:term ""
+                         :section "all"
+                         :ordering (dwa/get-current-assets-ordering)
+                         :list-style (dwa/get-current-assets-list-style)
+                         :open-menu false})
         filters        (deref filters*)
         term           (:term filters)
         list-style     (:list-style filters)
@@ -88,19 +88,19 @@
 
         toggle-ordering
         (mf/use-fn
-          (mf/deps ordering)
-          (fn []
-            (let [new-value (toggle-values ordering [:asc :desc])]
-              (swap! filters* assoc :ordering new-value)
-              (dwa/set-current-assets-ordering! new-value))))
+         (mf/deps ordering)
+         (fn []
+           (let [new-value (toggle-values ordering [:asc :desc])]
+             (swap! filters* assoc :ordering new-value)
+             (dwa/set-current-assets-ordering! new-value))))
 
         toggle-list-style
         (mf/use-fn
-          (mf/deps list-style)
-          (fn []
-            (let [new-value (toggle-values list-style [:thumbs :list])]
-              (swap! filters* assoc :list-style new-value)
-              (dwa/set-current-assets-list-style! new-value))))
+         (mf/deps list-style)
+         (fn []
+           (let [new-value (toggle-values list-style [:thumbs :list])]
+             (swap! filters* assoc :list-style new-value)
+             (dwa/set-current-assets-list-style! new-value))))
 
         on-search-term-change
         (mf/use-fn
@@ -148,30 +148,32 @@
         on-menu-close
         (mf/use-fn #(swap! filters* assoc :open-menu false))
 
-        options [{:option-name    (tr "workspace.assets.box-filter-all")
-                  :id             "section-all"
-                  :option-handler on-section-filter-change
-                  :data-test      "all"}
+        options (into [] (remove nil?
+                        [{:option-name    (tr "workspace.assets.box-filter-all")
+                          :id             "section-all"
+                          :option-handler on-section-filter-change
+                          :data-test      "all"}
 
-                 {:option-name    (tr "workspace.assets.components")
-                  :id             "section-components"
-                  :option-handler on-section-filter-change
-                  :data-test      "components"}
+                         {:option-name    (tr "workspace.assets.components")
+                          :id             "section-components"
+                          :option-handler on-section-filter-change
+                          :data-test      "components"}
 
-                 {:option-name    (tr "workspace.assets.graphics")
-                  :id             "section-graphics"
-                  :option-handler on-section-filter-change
-                  :data-test      "graphics"}
+                         (when (not components-v2)
+                           {:option-name    (tr "workspace.assets.graphics")
+                            :id             "section-graphics"
+                            :option-handler on-section-filter-change
+                            :data-test      "graphics"})
 
-                 {:option-name    (tr "workspace.assets.colors")
-                  :id             "section-color"
-                  :option-handler on-section-filter-change
-                  :data-test      "colors"}
+                         {:option-name    (tr "workspace.assets.colors")
+                          :id             "section-color"
+                          :option-handler on-section-filter-change
+                          :data-test      "colors"}
 
-                 {:option-name    (tr "workspace.assets.typography")
-                  :id             "section-typography"
-                  :option-handler on-section-filter-change
-                  :data-test      "typographies"}]]
+                         {:option-name    (tr "workspace.assets.typography")
+                          :id             "section-typography"
+                          :option-handler on-section-filter-change
+                          :data-test      "typographies"}]))]
 
     (if ^boolean new-css-system
       [:div  {:class (stl/css :assets-bar)}
