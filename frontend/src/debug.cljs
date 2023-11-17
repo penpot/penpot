@@ -25,6 +25,7 @@
    [app.main.data.workspace.path.shortcuts]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shortcuts]
+   [app.main.errors :as errors]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -370,6 +371,9 @@
   [read-only?]
   (st/emit! (dw/set-workspace-read-only read-only?)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; REPAIR & VALIDATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Validation and repair
 
@@ -378,16 +382,17 @@
   ([shape-id]
    (let [file      (assoc (get @st/state :workspace-file)
                           :data (get @st/state :workspace-data))
-         libraries (get @st/state :workspace-libraries)
+         libraries (get @st/state :workspace-libraries)]
 
-         errors    (if shape-id
-                     (let [page (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])]
-                       (cfv/validate-shape (uuid shape-id) file page libraries))
-                     (cfv/validate-file file libraries))]
-
-     (clj->js (d/group-by :code errors)))))
-
-;; --- Repair file
+     (try
+       (->> (if shape-id
+              (let [page (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])]
+                (cfv/validate-shape (uuid shape-id) file page libraries))
+              (cfv/validate-file file libraries))
+            (group-by :code)
+            (clj->js))
+       (catch :default cause
+         (errors/print-error! cause))))))
 
 (defn ^:export repair
   []
