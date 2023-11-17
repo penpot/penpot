@@ -728,7 +728,7 @@
                                       :main-instance-id (:main-instance-id new-component)
                                       :main-instance-page (:main-instance-page new-component)
                                       :annotation (:annotation new-component)
-                                      :objects (:objects new-component)}) ;; this won't exist in components-v2
+                                      :objects (:objects new-component)}) ;; this won't exist in components-v2 (except for deleted components)
           (update :undo-changes conj {:type :mod-component
                                       :id id
                                       :name (:name prev-component)

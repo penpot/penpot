@@ -404,6 +404,24 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defmethod repair-error :component-nil-objects-not-allowed
+  [_ {:keys [shape] :as error} file-data _]
+  (let [repair-component
+        (fn [component]
+          ; Remove the objects key, or set it to [] if the component is deleted
+          (if (:deleted component)
+            (do
+              (log/debug :hint "  -> Set :objects []")
+              (assoc component :objects []))
+            (do
+              (log/debug :hint "  -> Remove :objects")
+              (dissoc component :objects))))]
+
+    (log/info :hint "Repairing component :component-nil-objects-not-allowed" :id (:id shape) :name (:name shape))
+    (-> (pcb/empty-changes nil)
+        (pcb/with-library-data file-data)
+        (pcb/update-component (:id shape) repair-component))))
+
 (defmethod repair-error :default
   [_ error file _]
   (log/error :hint "Unknown error code, don't know how to repair" :code (:code error))
