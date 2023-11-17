@@ -7,6 +7,7 @@
 (ns app.main.errors
   "Generic error handling"
   (:require
+   [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.main.data.messages :as msg]
@@ -56,6 +57,22 @@
                           (print-data! cause)
                           (print-explain! cause)
                           (print-trace! cause))))
+
+(defn print-error!
+  [cause]
+  (cond
+    (map? cause)
+    (print-cause! (:hint cause "Unexpected Error") cause)
+
+    (ex/error? cause)
+    (print-cause! (ex-message cause) (ex-data cause))
+
+    :else
+    (let [trace (.-stack cause)]
+      (print-cause! (ex-message cause)
+                    {:hint (ex-message cause)
+                     ::trace trace
+                     ::instance cause}))))
 
 (defn on-error
   "A general purpose error handler."

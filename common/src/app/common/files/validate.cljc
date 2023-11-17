@@ -447,11 +447,16 @@
   ([file] (validate-file! file nil))
   ([{:keys [id data] :as file} libraries]
    (when-not (valid-fdata? data)
-     (ex/raise :type :validation
-               :code :data-validation
-               :hint (str/ffmt "invalid file data found on file '%'" id)
-               :file-id id
-               ::sm/explain (get-fdata-explain data)))
+     (if (some? *errors*)
+       (vswap! *errors* conj
+               {:code :invalid-file-data-structure
+                :hint (str/ffmt "invalid file data structure found on file '%'" id)
+                :file-id id})
+       (ex/raise :type :validation
+                 :code :data-validation
+                 :hint (str/ffmt "invalid file data found on file '%'" id)
+                 :file-id id
+                 ::sm/explain (get-fdata-explain data))))
 
    ;; If `libraries` is provided, this means the full file
    ;; validation is activated so we proceed to execute the
