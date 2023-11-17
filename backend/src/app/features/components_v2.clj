@@ -626,7 +626,7 @@
 
                              (if-not *skip-on-error*
                                (throw cause)
-                               fdata))
+                               nil))
                            (finally
                              (l/trc :hint "graphic processed"
                                     :file-id (str (:id fdata))
