@@ -284,7 +284,7 @@
                    [component]
                    (if (and (contains? component :objects) (nil? (:objects component)))
                      (if (:deleted component)
-                       (assoc component :objects [])
+                       (assoc component :objects {})
                        (dissoc component :objects))
                      component))]
             (-> file-data
