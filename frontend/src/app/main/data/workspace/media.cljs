@@ -17,7 +17,6 @@
    [app.common.svg.shapes-builder :as csvg.shapes-builder]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.media :as dmm]
@@ -315,9 +314,9 @@
 (defn create-shapes-img
   "Convert a media object that contains a bitmap image into shapes,
   one shape of type :rect containing an image fill and one group that contains it."
-  [pos {:keys [name width height id mtype] :as media-obj} & {:keys [wrapper-type] :or {wrapper-type :group}}]
-  (let [group-shape (cts/setup-shape
-                     {:type wrapper-type
+  [pos {:keys [name width height id mtype] :as media-obj}]
+  (let [frame-shape (cts/setup-shape
+                     {:type :frame
                       :x (:x pos)
                       :y (:y pos)
                       :width width
@@ -339,24 +338,18 @@
                                             :height height
                                             :mtype mtype}}]
                       :name name
-                      :frame-id uuid/zero
-                      :parent-id (:id group-shape)})]
-    (rx/of [group-shape [img-shape]])))
+                      :frame-id (:id frame-shape)
+                      :parent-id (:id frame-shape)})]
+    (rx/of [frame-shape [img-shape]])))
 
 (defn- add-shapes-and-component
   [it file-data page name [shape children]]
-  (let [page'  (reduce #(ctst/add-shape (:id %2) %2 %1 uuid/zero (:parent-id %2) nil false)
-                       page
-                       (cons shape children))
-
-        shape' (ctn/get-shape page' (:id shape))
-
-        [component-shape component-shapes updated-shapes]
-        (ctn/make-component-shape shape' (:objects page') (:id file-data) true)
+  (let [[component-shape component-shapes updated-shapes]
+        (ctn/convert-shape-in-component shape children (:id file-data))
 
         changes (-> (pcb/empty-changes it)
-                    (pcb/with-page page')
-                    (pcb/with-objects (:objects page'))
+                    (pcb/with-page page)
+                    (pcb/with-objects (:objects page))
                     (pcb/with-library-data file-data)
                     (pcb/add-objects (cons shape children))
                     (pcb/add-component (:id component-shape)
