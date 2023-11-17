@@ -1318,7 +1318,8 @@
                (rx/of (go-to-page page-id))
                (->> stream
                     (rx/filter (ptk/type? ::initialize-page))
-                    (rx/take 1))
+                    (rx/take 1)
+                    (rx/observe-on :async))
                (select-and-zoom shape-id)))
 
             redirect-to-file
