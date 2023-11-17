@@ -203,9 +203,8 @@
   (ptk/reify ::persist-synchronous-changes
     ptk/WatchEvent
     (watch [_ state _]
-      (let [features (cond-> #{}
-                       (features/active-feature? state "components/v2")
-                       (conj "components/v2"))
+      (let [features (features/get-team-enabled-features state)
+
             sid      (:session-id state)
             file     (dm/get-in state [:workspace-libraries file-id])
 
