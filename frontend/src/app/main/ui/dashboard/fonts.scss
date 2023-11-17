@@ -1,0 +1,621 @@
+@import "common/dependencies/colors";
+
+$br3: 3px;
+$fs12: 0.75rem;
+$fs14: 0.875rem;
+$fs14: 0.875rem;
+$fs18: 1.125rem;
+$fs22: 1.375rem;
+$fw400: 400;
+$fw600: 600;
+$lh-088: 0.88;
+$lh-115: 1.15; // original $title-lh-sm
+$size-1: 0.25rem;
+$size-2: 0.5rem;
+$size-4: 1rem;
+$size-5: 1.5rem;
+$size-6: 2rem;
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: $color-white;
+  height: 63px;
+  padding: $size-1 $size-4 $size-1 $size-2;
+  position: relative;
+  z-index: 10;
+  user-select: none;
+  &.team {
+    display: grid;
+    grid-template-columns: 20% 1fr 20%;
+  }
+
+  .element-name {
+    margin-right: $size-2;
+  }
+
+  .btn-secondary {
+    flex-shrink: 0;
+    z-index: 10;
+    height: 32px;
+  }
+
+  svg {
+    fill: $color-black;
+    height: 14px;
+    margin-right: $size-1;
+    width: 14px;
+  }
+
+  nav {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 1;
+
+    ul {
+      display: flex;
+      font-size: $fs14;
+      justify-content: center;
+      margin: 0;
+    }
+
+    li {
+      a {
+        display: flex;
+        align-items: center;
+        flex-basis: 140px;
+        border-bottom: 3px solid transparent;
+        color: $color-gray-30;
+        height: 40px;
+        padding: $size-1 $size-5;
+        font-weight: $fw400;
+        &:hover {
+          color: $color-black;
+          text-decoration: none;
+        }
+      }
+
+      &.active {
+        a {
+          color: $color-black;
+          border-color: $color-primary;
+        }
+      }
+    }
+  }
+
+  .dashboard-title {
+    display: flex;
+    align-items: center;
+    margin-left: 13px;
+
+    h1 {
+      color: $color-black;
+      display: flex;
+      flex-shrink: 0;
+      font-size: $fs22;
+      font-weight: $fw600;
+      z-index: 10;
+      user-select: all;
+    }
+
+    .context-menu.is-open {
+      margin-top: 10px;
+    }
+  }
+
+  .icon {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-left: $size-2;
+    z-index: 10;
+
+    svg {
+      fill: $color-gray-40;
+      width: 15px;
+      height: 15px;
+
+      &:hover {
+        fill: $color-primary-dark;
+      }
+    }
+  }
+
+  .dashboard-buttons {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .dashboard-header-actions {
+    display: flex;
+  }
+
+  .pin-icon {
+    margin: 0 $size-2 0 $size-5;
+    background-color: transparent;
+    border: none;
+    svg {
+      fill: $color-gray-20;
+    }
+
+    &.active {
+      svg {
+        fill: $color-gray-50;
+      }
+    }
+  }
+}
+
+.dashboard-header {
+  background-color: transparent;
+  .dashboard-title {
+    h1 {
+      color: $df-primary;
+      font-size: 24px;
+      font-weight: 400;
+      width: 100%;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      display: block;
+      max-width: 700px;
+    }
+  }
+  .icon {
+    svg {
+      fill: $df-secondary;
+    }
+  }
+
+  // Settings sub-menu
+  .dashboard-header-options {
+    li {
+      a {
+        font-size: 16px;
+        color: $df-secondary;
+        border-color: transparent;
+        &:hover {
+          color: $df-primary;
+        }
+      }
+      &.active {
+        a {
+          color: $df-primary;
+        }
+      }
+    }
+  }
+}
+
+.dashboard-fonts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .dashboard-installed-fonts {
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    margin-top: $size-5;
+    flex-direction: column;
+
+    h3 {
+      font-size: $fs14;
+      color: $color-gray-30;
+      margin: $size-1;
+    }
+
+    .font-item {
+      color: $color-black;
+    }
+  }
+
+  .installed-fonts-header {
+    color: $color-gray-40;
+    display: flex;
+    height: 40px;
+    font-size: $fs12;
+    background-color: $color-white;
+    align-items: center;
+    padding: 0px $size-5;
+
+    > .family {
+      min-width: 200px;
+      width: 200px;
+    }
+
+    > .variants {
+      padding-left: 12px;
+    }
+
+    .search-input {
+      display: flex;
+      flex-grow: 1;
+      justify-content: flex-end;
+
+      input {
+        font-size: $fs12;
+        border: 1px solid $color-gray-30;
+        border-radius: $br3;
+        width: 130px;
+        padding: $size-1;
+        margin: 0px;
+      }
+    }
+  }
+
+  .font-item {
+    color: $color-gray-40;
+    font-size: $fs14;
+    background-color: $color-white;
+    display: flex;
+    max-width: 1000px;
+    width: 100%;
+    min-height: 97px;
+    align-items: center;
+    padding: $size-5;
+    justify-content: space-between;
+
+    &:not(:first-child) {
+      border-top: 1px solid $color-gray-10;
+    }
+
+    input {
+      border: 1px solid $color-gray-30;
+      border-radius: $br3;
+      margin: 0px;
+      padding: $size-2;
+      font-size: $fs12;
+    }
+
+    > .family {
+      min-width: 200px;
+      width: 200px;
+    }
+
+    > .filenames {
+      min-width: 200px;
+    }
+
+    > .variants {
+      font-size: $fs14;
+      display: flex;
+      flex-wrap: wrap;
+      flex-grow: 1;
+
+      .variant {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        cursor: pointer;
+
+        .icon {
+          display: flex;
+          height: 16px;
+          width: 16px;
+          margin-left: 6px;
+          align-items: center;
+          svg {
+            fill: transparent;
+            width: 12px;
+            height: 12px;
+            transform: rotate(45deg);
+          }
+        }
+
+        &:hover {
+          .icon svg {
+            fill: $color-gray-30;
+          }
+        }
+      }
+    }
+
+    .filenames {
+      display: flex;
+      flex-direction: column;
+      font-size: $fs12;
+    }
+
+    .options {
+      display: flex;
+      justify-content: flex-end;
+      min-width: 180px;
+
+      .icon {
+        width: $size-5;
+        cursor: pointer;
+        display: flex;
+        margin-left: 10px;
+        justify-content: center;
+        align-items: center;
+        &.failure {
+          margin-right: 10px;
+          svg {
+            fill: $color-warning;
+          }
+        }
+        svg {
+          width: 16px;
+          height: 16px;
+          fill: $df-secondary;
+        }
+
+        &.close {
+          svg {
+            transform: rotate(45deg);
+            fill: $df-secondary;
+          }
+        }
+      }
+    }
+  }
+
+  .dashboard-fonts-upload {
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .upload-button {
+      width: 100px;
+    }
+
+    .btn-secondary {
+      margin-left: 10px;
+    }
+  }
+
+  .dashboard-fonts-hero {
+    font-size: $fs14;
+    padding: $size-6;
+    background-color: $color-white;
+    margin-top: $size-6;
+    display: flex;
+    justify-content: space-between;
+
+    .banner {
+      background-color: $color-info-lighter;
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      &:not(:last-child) {
+        margin-bottom: 10px;
+      }
+      .icon {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 10px;
+        background-color: $color-info;
+        svg {
+          fill: $color-white;
+          height: 20px;
+          width: 20px;
+        }
+      }
+      .content {
+        margin: 10px;
+      }
+      &.warning {
+        background-color: $color-warning-lighter;
+        .icon {
+          background-color: $color-warning;
+        }
+      }
+    }
+
+    .desc {
+      h2 {
+        margin-bottom: $size-4;
+        color: $color-black;
+      }
+      width: 80%;
+      color: $color-gray-40;
+    }
+
+    .btn-primary {
+      flex-shrink: 0;
+    }
+  }
+
+  .fonts-placeholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-width: 1000px;
+    width: 100%;
+    height: 161px;
+
+    border: 1px dashed $color-gray-20;
+    margin-top: 16px;
+
+    .icon {
+      svg {
+        fill: $color-gray-40;
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    .label {
+      color: $color-gray-40;
+      font-size: $fs14;
+    }
+  }
+}
+
+.dashboard-fonts {
+  background-color: $db-primary;
+  border-top: 1px solid $db-cuaternary;
+
+  .dashboard-fonts-hero {
+    background-color: transparent;
+    .desc {
+      width: 70%;
+      h2 {
+        color: $df-primary;
+        font-weight: 400;
+      }
+      p {
+        color: $df-secondary;
+        font-size: 14px;
+      }
+      .banner {
+        background-color: $db-primary;
+        border-radius: 8px;
+        border: 1px solid $db-cuaternary;
+        color: $df-primary;
+        font-size: 12px;
+        .content {
+          span {
+            a {
+              color: $da-primary;
+            }
+          }
+        }
+        .icon {
+          background-color: transparent;
+          svg {
+            fill: $df-secondary;
+          }
+        }
+        &.warning {
+          background-color: $db-cuaternary;
+        }
+      }
+    }
+  }
+
+  .installed-fonts-header {
+    background-color: transparent;
+    text-transform: uppercase;
+    color: $df-secondary;
+  }
+
+  .fonts-placeholder {
+    border: 1px solid $db-cuaternary;
+    border-radius: 8px;
+    .icon {
+      svg {
+        fill: $df-secondary;
+      }
+    }
+    .label {
+      color: $df-secondary;
+    }
+  }
+
+  .font-item {
+    background-color: $db-tertiary;
+    border-radius: 8px;
+    color: $df-secondary;
+    padding: 0.8rem 1.5rem;
+    min-height: auto;
+    margin-top: 4px;
+    &:not(:first-child) {
+      border: none;
+    }
+    .table-field {
+      color: $df-primary;
+      .variant {
+        background-color: $db-cuaternary;
+        border-radius: 8px;
+        margin-right: 4px;
+        padding-right: 4px;
+      }
+    }
+  }
+
+  .font-item {
+    input {
+      background-color: $db-tertiary;
+      border-color: transparent;
+      border-radius: 8px;
+      color: $df-primary;
+      font-size: 14px;
+      &:focus {
+        outline: 1px solid $da-primary;
+      }
+    }
+    > .variants {
+      padding-left: 1rem;
+    }
+  }
+
+  .installed-fonts-header {
+    padding-right: 0;
+    .search-input {
+      input {
+        background-color: $db-tertiary;
+        border-color: transparent;
+        border-radius: 8px;
+        color: $df-primary;
+        font-size: 14px;
+        height: 32px;
+        padding: 0 0.6rem;
+        width: 150px;
+        &:focus {
+          outline: 1px solid $da-primary;
+        }
+        &::placeholder {
+          color: $df-secondary;
+        }
+      }
+    }
+  }
+}
+
+.btn-primary {
+  background-color: $da-tertiary;
+  border-radius: 8px;
+  color: $db-primary;
+  height: 32px;
+  text-transform: uppercase;
+
+  appearance: none;
+  align-items: center;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  font-family: "worksans", sans-serif;
+  font-size: $fs12;
+  justify-content: center;
+  min-width: 25px;
+  padding: 0 1rem;
+  transition: all 0.4s;
+  text-decoration: none;
+
+  &:hover {
+    background-color: darken($da-tertiary, 10%);
+    color: $db-primary;
+  }
+}
+
+.btn-secondary {
+  background-color: $db-tertiary;
+  text-transform: uppercase;
+  border: none;
+  color: $df-primary;
+  border-radius: 8px;
+
+  font-size: 0.75rem;
+  padding: 0 1rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &:hover {
+    background-color: $db-cuaternary;
+    color: $da-primary;
+    svg {
+      fill: $da-primary;
+    }
+  }
+}

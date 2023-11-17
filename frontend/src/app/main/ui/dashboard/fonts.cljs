@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.fonts
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.media :as cm]
    [app.main.data.fonts :as df]
@@ -14,6 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -38,29 +40,17 @@
 (mf/defc header
   {::mf/wrap [mf/memo]}
   [{:keys [section team] :as props}]
-  ;; (let [go-fonts
-  ;;       (mf/use-callback
-  ;;        (mf/deps team)
-  ;;        #(st/emit! (rt/nav :dashboard-fonts {:team-id (:id team)})))
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (use-set-page-title team section)
+    (if new-css-system
+      [:header {:class (stl/css :dashboard-header)}
+       [:div#dashboard-fonts-title {:class (stl/css :dashboard-title)}
+        [:h1 (tr "labels.fonts")]]]
 
-  ;;       go-providers
-  ;;       (mf/use-callback
-  ;;        (mf/deps team)
-  ;;        #(st/emit! (rt/nav :dashboard-font-providers {:team-id (:id team)})))]
-
-  (use-set-page-title team section)
-
-  [:header.dashboard-header
-   [:div.dashboard-title#dashboard-fonts-title
-    [:h1 (tr "labels.fonts")]]
-   [:nav
-    #_[:ul
-       [:li {:class (when (= section :fonts) "active")}
-        [:a {:on-click go-fonts} (tr "labels.custom-fonts")]]
-       [:li {:class (when (= section :providers) "active")}
-        [:a {:on-click go-providers} (tr "labels.font-providers")]]]]
-
-   [:div]])
+      ;; OLD
+      [:header.dashboard-header
+       [:div.dashboard-title#dashboard-fonts-title
+        [:h1 (tr "labels.fonts")]]])))
 
 (mf/defc font-variant-display-name
   [{:keys [variant]}]
@@ -71,7 +61,8 @@
 
 (mf/defc fonts-upload
   [{:keys [team installed-fonts] :as props}]
-  (let [fonts    (mf/use-state {})
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        fonts    (mf/use-state {})
         input-ref (mf/use-ref)
 
         uploading (mf/use-state #{})
@@ -124,76 +115,151 @@
 
         problematic-fonts? (some :height-warning? (vals @fonts))]
 
-    [:div.dashboard-fonts-upload
-     [:div.dashboard-fonts-hero
-      [:div.desc
-       [:h2 (tr "labels.upload-custom-fonts")]
-       [:& i18n/tr-html {:label "dashboard.fonts.hero-text1"}]
+    (if new-css-system
+      [:div {:class (stl/css :dashboard-fonts-upload)}
+       [:div {:class (stl/css :dashboard-fonts-hero)}
+        [:div {:class (stl/css :desc)}
+         [:h2 (tr "labels.upload-custom-fonts")]
+         [:& i18n/tr-html {:label "dashboard.fonts.hero-text1"}]
 
-       [:div.banner
-        [:div.icon i/msg-info]
-        [:div.content
-         [:& i18n/tr-html {:tag-name "span"
-                           :label "dashboard.fonts.hero-text2"}]]]
+         [:div {:class (stl/css :banner)}
+          [:div {:class (stl/css :icon)} i/msg-info]
+          [:div {:class (stl/css :content)}
+           [:& i18n/tr-html {:tag-name "span"
+                             :label "dashboard.fonts.hero-text2"}]]]
 
-       (when problematic-fonts?
-         [:div.banner.warning
-          [:div.icon i/msg-warning]
+         (when problematic-fonts?
+           [:div {:class (stl/css :banner :warning)}
+            [:div {:class (stl/css :icon)} i/msg-warning]
+            [:div {:class (stl/css :content)}
+             [:& i18n/tr-html {:tag-name "span"
+                               :label "dashboard.fonts.warning-text"}]]])]
+
+        [:button
+         {:class (stl/css :btn-primary)
+          :on-click on-click
+          :tab-index "0"}
+         [:span (tr "labels.add-custom-font")]
+         [:& file-uploader {:input-id "font-upload"
+                            :accept cm/str-font-types
+                            :multi true
+                            :ref input-ref
+                            :on-selected on-selected}]]]
+
+       [:*
+        (when (some? (vals @fonts))
+          [:div {:class (stl/css :font-item :table-row)}
+           [:span (tr "dashboard.fonts.fonts-added" (i18n/c (count (vals @fonts))))]
+           [:div {:class (stl/css :table-field :options)}
+            [:div {:class (stl/css :btn-primary)
+                   :on-click #(on-upload-all (vals @fonts)) :data-test "upload-all"}
+             [:span (tr "dashboard.fonts.upload-all")]]
+            [:div {:class (stl/css :btn-secondary)
+                   :on-click #(on-dismiss-all (vals @fonts)) :data-test "dismiss-all"}
+             [:span (tr "dashboard.fonts.dismiss-all")]]]])
+
+        (for [item (sort-by :font-family (vals @fonts))]
+          (let [uploading? (contains? @uploading (:id item))]
+            [:div {:class (stl/css :font-item :table-row) :key (:id item)}
+             [:div {:class (stl/css :table-field :family)}
+              [:input {:type "text"
+                       :on-blur #(on-blur-name (:id item) %)
+                       :default-value (:font-family item)}]]
+             [:div {:class (stl/css :table-field :variants)}
+              [:span {:class (stl/css :label)}
+               [:& font-variant-display-name {:variant item}]]]
+
+             [:div {:class (stl/css :table-field :filenames)}
+              (for [item (:names item)]
+                [:span item])]
+
+             [:div {:class (stl/css :table-field :options)}
+              (when (:height-warning? item)
+                [:span {:class (stl/css :icon :failure)} i/msg-warning])
+
+              [:button
+               {:on-click #(on-upload item)
+                :class (stl/css-case :btn-primary true
+                                     :upload-button true
+                                     :disabled uploading?)
+                :disabled uploading?}
+               (if uploading?
+                 (tr "labels.uploading")
+                 (tr "labels.upload"))]
+              [:span {:class (stl/css :icon :close)
+                      :on-click #(on-delete item)} i/close]]]))]]
+      ;; OLD
+      [:div.dashboard-fonts-upload
+       [:div.dashboard-fonts-hero
+        [:div.desc
+         [:h2 (tr "labels.upload-custom-fonts")]
+         [:& i18n/tr-html {:label "dashboard.fonts.hero-text1"}]
+
+         [:div.banner
+          [:div.icon i/msg-info]
           [:div.content
            [:& i18n/tr-html {:tag-name "span"
-                             :label "dashboard.fonts.warning-text"}]]])]
+                             :label "dashboard.fonts.hero-text2"}]]]
 
-      [:button.btn-primary
-       {:on-click on-click
-        :tab-index "0"}
-       [:span (tr "labels.add-custom-font")]
-       [:& file-uploader {:input-id "font-upload"
-                          :accept cm/str-font-types
-                          :multi true
-                          :ref input-ref
-                          :on-selected on-selected}]]]
+         (when problematic-fonts?
+           [:div.banner.warning
+            [:div.icon i/msg-warning]
+            [:div.content
+             [:& i18n/tr-html {:tag-name "span"
+                               :label "dashboard.fonts.warning-text"}]]])]
 
-     [:*
-      (when (some? (vals @fonts))
-        [:div.font-item.table-row
-         [:span (tr "dashboard.fonts.fonts-added" (i18n/c (count (vals @fonts))))]
-         [:div.table-field.options
-          [:div.btn-primary
-           {:on-click #(on-upload-all (vals @fonts)) :data-test "upload-all"}
-           [:span (tr "dashboard.fonts.upload-all")]]
-          [:div.btn-secondary
-           {:on-click #(on-dismiss-all (vals @fonts)) :data-test "dismiss-all"}
-           [:span (tr "dashboard.fonts.dismiss-all")]]]])
+        [:button.btn-primary
+         {:on-click on-click
+          :tab-index "0"}
+         [:span (tr "labels.add-custom-font")]
+         [:& file-uploader {:input-id "font-upload"
+                            :accept cm/str-font-types
+                            :multi true
+                            :ref input-ref
+                            :on-selected on-selected}]]]
 
-      (for [item (sort-by :font-family (vals @fonts))]
-        (let [uploading? (contains? @uploading (:id item))]
-          [:div.font-item.table-row {:key (:id item)}
-           [:div.table-field.family
-            [:input {:type "text"
-                     :on-blur #(on-blur-name (:id item) %)
-                     :default-value (:font-family item)}]]
-           [:div.table-field.variants
-            [:span.label
-             [:& font-variant-display-name {:variant item}]]]
-           [:div.table-field.filenames
-            (for [item (:names item)]
-              [:span item])]
-
+       [:*
+        (when (some? (vals @fonts))
+          [:div.font-item.table-row
+           [:span (tr "dashboard.fonts.fonts-added" (i18n/c (count (vals @fonts))))]
            [:div.table-field.options
-            (when (:height-warning? item)
-              [:span.icon.failure i/msg-warning])
-            [:button.btn-primary.upload-button
-             {:on-click #(on-upload item)
-              :class (dom/classnames :disabled uploading?)
-              :disabled uploading?}
-             (if uploading?
-               (tr "labels.uploading")
-               (tr "labels.upload"))]
-            [:span.icon.close {:on-click #(on-delete item)} i/close]]]))]]))
+            [:div.btn-primary
+             {:on-click #(on-upload-all (vals @fonts)) :data-test "upload-all"}
+             [:span (tr "dashboard.fonts.upload-all")]]
+            [:div.btn-secondary
+             {:on-click #(on-dismiss-all (vals @fonts)) :data-test "dismiss-all"}
+             [:span (tr "dashboard.fonts.dismiss-all")]]]])
+
+        (for [item (sort-by :font-family (vals @fonts))]
+          (let [uploading? (contains? @uploading (:id item))]
+            [:div.font-item.table-row {:key (:id item)}
+             [:div.table-field.family
+              [:input {:type "text"
+                       :on-blur #(on-blur-name (:id item) %)
+                       :default-value (:font-family item)}]]
+             [:div.table-field.variants
+              [:span.label
+               [:& font-variant-display-name {:variant item}]]]
+             [:div.table-field.filenames
+              (for [item (:names item)]
+                [:span item])]
+
+             [:div.table-field.options
+              (when (:height-warning? item)
+                [:span.icon.failure i/msg-warning])
+              [:button.btn-primary.upload-button
+               {:on-click #(on-upload item)
+                :class (dom/classnames :disabled uploading?)
+                :disabled uploading?}
+               (if uploading?
+                 (tr "labels.uploading")
+                 (tr "labels.upload"))]
+              [:span.icon.close {:on-click #(on-delete item)} i/close]]]))]])))
 
 (mf/defc installed-font
   [{:keys [font-id variants] :as props}]
-  (let [font       (first variants)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        font       (first variants)
 
         variants   (sort-by (fn [item]
                               [(:font-weight item)
@@ -252,50 +318,97 @@
                       :on-accept (fn [_props]
                                    (delete-variant-fn id))})))]
 
-    [:div.font-item.table-row
-     [:div.table-field.family
-      (if @edit?
-        [:input {:type "text"
-                 :default-value @state
-                 :on-key-down on-key-down
-                 :on-change on-change}]
-        [:span (:font-family font)])]
+    (if new-css-system
+      [:div {:class (stl/css :font-item :table-row)}
+       [:div {:class (stl/css :table-field :family)}
+        (if @edit?
+          [:input {:type "text"
+                   :default-value @state
+                   :on-key-down on-key-down
+                   :on-change on-change}]
+          [:span (:font-family font)])]
 
-     [:div.table-field.variants
-      (for [item variants]
-        [:div.variant
-         [:span.label
-          [:& font-variant-display-name {:variant item}]]
-         [:span.icon.close
-          {:on-click #(on-delete-variant (:id item))}
-          i/plus]])]
+       [:div {:class (stl/css :table-field :variants)}
+        (for [item variants]
+          [:div {:class (stl/css :variant)}
+           [:span {:class (stl/css :label)}
+            [:& font-variant-display-name {:variant item}]]
+           [:span
+            {:class (stl/css :icon :close)
+             :on-click #(on-delete-variant (:id item))}
+            i/plus]])]
 
-     [:div]
+       [:div]
 
-     (if @edit?
-       [:div.table-field.options
-        [:button.btn-primary
-         {:disabled (str/blank? @state)
-          :on-click on-save
-          :class (dom/classnames :btn-disabled (str/blank? @state))}
-         (tr "labels.save")]
-        [:span.icon.close {:on-click on-cancel} i/close]]
+       (if @edit?
+         [:div {:class (stl/css :table-field :options)}
+          [:button
+           {
+            :disabled (str/blank? @state)
+            :on-click on-save
+            :class (stl/css-case :btn-primary true
+                                 :btn-disabled (str/blank? @state))}
+           (tr "labels.save")]
+          [:span {:class (stl/css :icon :close)
+                  :on-click on-cancel} i/close]]
 
-       [:div.table-field.options
-        [:span.icon {:on-click #(reset! open-menu? true)} i/actions]
-        [:& context-menu
-         {:on-close #(reset! open-menu? false)
-          :show @open-menu?
-          :fixed? false
-          :top -15
-          :left -115
-          :options [[(tr "labels.edit") #(reset! edit? true) nil "font-edit"]
-                    [(tr "labels.delete") on-delete nil "font-delete"]]}]])]))
+         [:div {:class (stl/css :table-field :options)}
+          [:span {:class (stl/css :icon)
+                  :on-click #(reset! open-menu? true)} i/actions]
+          [:& context-menu
+           {:on-close #(reset! open-menu? false)
+            :show @open-menu?
+            :fixed? false
+            :top -15
+            :left -115
+            :options [[(tr "labels.edit") #(reset! edit? true) nil "font-edit"]
+                      [(tr "labels.delete") on-delete nil "font-delete"]]}]])]
+      ;;OLD
+      [:div.font-item.table-row
+       [:div.table-field.family
+        (if @edit?
+          [:input {:type "text"
+                   :default-value @state
+                   :on-key-down on-key-down
+                   :on-change on-change}]
+          [:span (:font-family font)])]
+
+       [:div.table-field.variants
+        (for [item variants]
+          [:div.variant
+           [:span.label
+            [:& font-variant-display-name {:variant item}]]
+           [:span.icon.close
+            {:on-click #(on-delete-variant (:id item))}
+            i/plus]])]
+
+       [:div]
+
+       (if @edit?
+         [:div.table-field.options
+          [:button.btn-primary
+           {:disabled (str/blank? @state)
+            :on-click on-save
+            :class (dom/classnames :btn-disabled (str/blank? @state))}
+           (tr "labels.save")]
+          [:span.icon.close {:on-click on-cancel} i/close]]
+
+         [:div.table-field.options
+          [:span.icon {:on-click #(reset! open-menu? true)} i/actions]
+          [:& context-menu
+           {:on-close #(reset! open-menu? false)
+            :show @open-menu?
+            :fixed? false
+            :top -15
+            :left -115
+            :options [[(tr "labels.edit") #(reset! edit? true) nil "font-edit"]
+                      [(tr "labels.delete") on-delete nil "font-delete"]]}]])])))
 
 
 (mf/defc installed-fonts
   [{:keys [fonts] :as props}]
-  (let [sterm (mf/use-state "")
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        sterm (mf/use-state "")
 
         matches?
         #(str/includes? (str/lower (:font-family %)) @sterm)
@@ -306,48 +419,99 @@
            (let [val (dom/get-target-val event)]
              (reset! sterm (str/lower val)))))]
 
-    [:div.dashboard-installed-fonts
-     [:h3 (tr "labels.installed-fonts")]
-     [:div.installed-fonts-header
-      [:div.table-field.family (tr "labels.font-family")]
-      [:div.table-field.variants (tr "labels.font-variants")]
-      [:div]
-      [:div.table-field.search-input
-       [:input {:placeholder (tr "labels.search-font")
-                :default-value ""
-                :on-change on-change}]]]
+    (if new-css-system
+      [:div {:class (stl/css :dashboard-installed-fonts)}
+       [:h3 (tr "labels.installed-fonts")]
+       [:div {:class (stl/css :installed-fonts-header)}
+        [:div {:class (stl/css :table-field :family)} (tr "labels.font-family")]
+        [:div {:class (stl/css :table-field :variants)} (tr "labels.font-variants")]
+        [:div]
+        [:div {:class (stl/css :table-field :search-input)}
+         [:input {:placeholder (tr "labels.search-font")
+                  :default-value ""
+                  :on-change on-change}]]]
 
-     (cond
-       (seq fonts)
-       (for [[font-id variants] (->> (vals fonts)
-                                     (filter matches?)
-                                     (group-by :font-id))]
-         [:& installed-font {:key (str font-id)
-                             :font-id font-id
-                             :variants variants}])
+       (cond
+         (seq fonts)
+         (for [[font-id variants] (->> (vals fonts)
+                                       (filter matches?)
+                                       (group-by :font-id))]
+           [:& installed-font {:key (str font-id)
+                               :font-id font-id
+                               :variants variants}])
 
-       (nil? fonts)
-       [:div.fonts-placeholder
-        [:div.icon i/loader]
-        [:div.label (tr "dashboard.loading-fonts")]]
+         (nil? fonts)
+         [:div {:class (stl/css :fonts-placeholder)}
+          [:div {:class (stl/css :icon)} i/loader]
+          [:div {:class (stl/css :label)} (tr "dashboard.loading-fonts")]]
 
-       :else
-       [:div.fonts-placeholder
-        [:div.icon i/text]
-        [:div.label (tr "dashboard.fonts.empty-placeholder")]])]))
+         :else
+         [:div {:class (stl/css :fonts-placeholder)}
+          [:div {:class (stl/css :icon)} i/text]
+          [:div {:class (stl/css :label)} (tr "dashboard.fonts.empty-placeholder")]])]
+
+      ;; OLD
+      [:div.dashboard-installed-fonts
+       [:h3 (tr "labels.installed-fonts")]
+       [:div.installed-fonts-header
+        [:div.table-field.family (tr "labels.font-family")]
+        [:div.table-field.variants (tr "labels.font-variants")]
+        [:div]
+        [:div.table-field.search-input
+         [:input {:placeholder (tr "labels.search-font")
+                  :default-value ""
+                  :on-change on-change}]]]
+
+       (cond
+         (seq fonts)
+         (for [[font-id variants] (->> (vals fonts)
+                                       (filter matches?)
+                                       (group-by :font-id))]
+           [:& installed-font {:key (str font-id)
+                               :font-id font-id
+                               :variants variants}])
+
+         (nil? fonts)
+         [:div.fonts-placeholder
+          [:div.icon i/loader]
+          [:div.label (tr "dashboard.loading-fonts")]]
+
+         :else
+         [:div.fonts-placeholder
+          [:div.icon i/text]
+          [:div.label (tr "dashboard.fonts.empty-placeholder")]])])))
 
 (mf/defc fonts-page
   [{:keys [team] :as props}]
-  (let [fonts (mf/deref refs/dashboard-fonts)]
-    [:*
-     [:& header {:team team :section :fonts}]
-     [:section.dashboard-container.dashboard-fonts
-      [:& fonts-upload {:team team :installed-fonts fonts}]
-      [:& installed-fonts {:team team :fonts fonts}]]]))
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        fonts (mf/deref refs/dashboard-fonts)]
+    (if new-css-system
+      [:*
+       [:& header {:team team :section :fonts}]
+       [:section {:class (stl/css :dashboard-container :dashboard-fonts)}
+        [:& fonts-upload {:team team :installed-fonts fonts}]
+        [:& installed-fonts {:team team :fonts fonts}]]]
+
+      ;; OLD
+      [:*
+       [:& header {:team team :section :fonts}]
+       [:section.dashboard-container.dashboard-fonts
+        [:& fonts-upload {:team team :installed-fonts fonts}]
+        [:& installed-fonts {:team team :fonts fonts}]]])))
 
 (mf/defc font-providers-page
   [{:keys [team] :as props}]
-  [:*
-   [:& header {:team team :section :providers}]
-   [:section.dashboard-container
-    [:span "font providers"]]])
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:*
+       [:& header {:team team :section :providers}]
+       [:section {:class (stl/css :dashboard-container)}
+        [:span "font providers"]]]
+
+      ;; OLD
+      [:*
+       [:& header {:team team :section :providers}]
+       [:section.dashboard-container
+        [:span "font providers"]]])))
+
+

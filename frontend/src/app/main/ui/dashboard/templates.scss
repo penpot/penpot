@@ -1,0 +1,246 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "common/dependencies/colors";
+
+$br10: 10px;
+$lh-normal: normal;
+$fs18: 1.125rem;
+$fw600: 600;
+$fs16: 1rem;
+$br5: 5px;
+$fw500: 500;
+$fs14: 0.875rem;
+$fs12: 0.75rem;
+$size-2: 0.5rem;
+
+.dashboard-templates-section {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  bottom: 0;
+  width: 100%;
+  height: 228px;
+  transition: bottom 300ms;
+  pointer-events: none;
+  &.collapsed {
+    bottom: -228px;
+    transition: bottom 300ms;
+  }
+
+  .title {
+    pointer-events: all;
+    width: fit-content;
+    top: -56px;
+    right: -28px;
+    text-align: right;
+    height: 56px;
+    position: absolute;
+    button {
+      border: none;
+      cursor: pointer;
+      height: 58px;
+      display: inline-flex;
+      align-items: center;
+      border-top: 2px solid #e4e4e4;
+      border-left: 2px solid #e4e4e4;
+      border-right: 2px solid #e4e4e4;
+      border-top-left-radius: $br10;
+      border-top-right-radius: $br10;
+      margin-right: 30px;
+      background-color: $color-white;
+      position: relative;
+      z-index: 1;
+      span {
+        display: inline-block;
+        vertical-align: middle;
+        line-height: $lh-normal;
+        font-size: $fs18;
+        font-weight: $fw600;
+        color: $color-black;
+        margin-left: 18px;
+        margin-right: 10px;
+        &.icon {
+          margin-left: 10px;
+          margin-right: 16px;
+        }
+      }
+      svg {
+        width: 12px;
+        height: 12px;
+        fill: $df-secondary;
+      }
+    }
+  }
+
+  .button {
+    position: absolute;
+    top: 133px;
+    border: 2px solid #e0e4e9;
+    border-radius: 50%;
+    text-align: center;
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
+    background-color: $color-white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+    svg {
+      width: 12px;
+      height: 12px;
+      fill: $df-secondary;
+    }
+
+    &.left {
+      left: 0;
+      margin-left: 43px;
+    }
+
+    &.right {
+      right: 0;
+      margin-right: 43px;
+    }
+
+    &:hover {
+      border: 2px solid $color-primary;
+    }
+  }
+
+  .content {
+    pointer-events: all;
+    background-color: $color-white;
+    width: 200%;
+    height: 229px;
+    border-top: 2px solid #e4e4e4;
+    border-left: 2px solid #e4e4e4;
+    margin-left: 5px;
+    position: absolute;
+
+    .card-container {
+      width: 275px;
+      margin-top: 20px;
+      display: inline-block;
+      text-align: center;
+      vertical-align: top;
+      background-color: transparent;
+      border: none;
+      padding: 0;
+    }
+
+    .template-card {
+      display: inline-block;
+      width: 255px;
+      font-size: $fs16;
+      color: #181a22;
+      cursor: pointer;
+      .img-container {
+        width: 100%;
+        height: 135px;
+        margin-bottom: 15px;
+        border-radius: $br5;
+        border: 2px solid #e0e4e9;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+      }
+
+      .card-name {
+        padding: 0 5px;
+        display: flex;
+        justify-content: space-between;
+        height: 23px;
+        svg {
+          width: 16px;
+          height: 16px;
+          fill: $df-secondary;
+        }
+        span {
+          font-weight: $fw500;
+          font-size: $fs14;
+        }
+      }
+
+      .template-link {
+        border: 2px solid transparent;
+        margin: 30px;
+        padding: 32px 0;
+      }
+
+      .template-link-title {
+        font-size: $fs14;
+        font-weight: $fw600;
+        color: $color-gray-60;
+      }
+
+      .template-link-text {
+        font-size: $fs12;
+        margin-top: $size-2;
+        color: $color-gray-50;
+      }
+
+      &:hover {
+        .img-container {
+          border: 2px solid $color-primary;
+        }
+      }
+    }
+  }
+}
+
+.dashboard-templates-section {
+  .title {
+    right: -24px;
+    button {
+      background-color: $db-cuaternary;
+      border: none;
+      span {
+        color: $df-primary;
+        font-weight: 400;
+      }
+    }
+  }
+  .content {
+    border-top-left-radius: 8px;
+    border: none;
+    background-color: $db-cuaternary;
+
+    .template-card {
+      color: $df-primary;
+      padding: 0.2rem 0.3rem 1rem 0.3rem;
+      border-radius: 8px;
+      .img-container {
+        border: none;
+        img {
+          border-radius: 4px;
+        }
+      }
+      .card-name {
+        span {
+          font-size: 16px;
+        }
+      }
+      .template-link {
+        .template-link-title {
+          color: $df-primary;
+          font-weight: 400;
+        }
+        .template-link-text {
+          color: $df-secondary;
+        }
+      }
+
+      &:hover {
+        background-color: $db-tertiary;
+        .img-container {
+          border: none;
+        }
+      }
+    }
+  }
+}

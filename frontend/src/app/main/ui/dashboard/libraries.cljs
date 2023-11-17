@@ -5,12 +5,14 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.libraries
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.main.data.dashboard :as dd]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
@@ -19,7 +21,8 @@
 
 (mf/defc libraries-page
   [{:keys [team] :as props}]
-  (let [files-map       (mf/deref refs/dashboard-shared-files)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        files-map       (mf/deref refs/dashboard-shared-files)
         projects        (mf/deref refs/dashboard-projects)
 
         default-project (->> projects vals (d/seek :is-default))
@@ -46,14 +49,27 @@
       (st/emit! (dd/fetch-shared-files)
                 (dd/clear-selected-files)))
 
-    [:*
-     [:header.dashboard-header {:ref rowref}
-      [:div.dashboard-title#dashboard-libraries-title
-       [:h1 (tr "dashboard.libraries-title")]]]
-     [:section.dashboard-container.no-bg.dashboard-shared
-      [:& grid {:files files
-                :project default-project
-                :origin :libraries
-                :limit limit
-                :library-view? components-v2}]]]))
+    (if new-css-system
+      [:*
+       [:header {:class (stl/css :dashboard-header) :ref rowref}
+        [:div#dashboard-libraries-title {:class (stl/css :dashboard-title)}
+         [:h1 (tr "dashboard.libraries-title")]]]
+       [:section {:class (stl/css :dashboard-container :no-bg :dashboard-shared)}
+        [:& grid {:files files
+                  :project default-project
+                  :origin :libraries
+                  :limit limit
+                  :library-view? components-v2}]]]
+
+      ;; OLD
+      [:*
+       [:header.dashboard-header {:ref rowref}
+        [:div.dashboard-title#dashboard-libraries-title
+         [:h1 (tr "dashboard.libraries-title")]]]
+       [:section.dashboard-container.no-bg.dashboard-shared
+        [:& grid {:files files
+                  :project default-project
+                  :origin :libraries
+                  :limit limit
+                  :library-view? components-v2}]]])))
 

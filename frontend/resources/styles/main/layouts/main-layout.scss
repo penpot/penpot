@@ -53,7 +53,7 @@
 
 // NEW DASHBOARD CSS
 
-.dashboard-layout-refactor {
+.delete-me-dashboard-layout-refactor {
   background-color: $db-primary;
   display: grid;
   grid-template-rows: 50px 1fr;
@@ -828,7 +828,7 @@
   // Dashboard content
   .dashboard-project-row .project {
     background-color: transparent;
-
+  
     h2 {
       color: $df-primary;
       font-weight: 400;
@@ -852,7 +852,7 @@
     border-color: transparent;
     margin: 0.8rem 15px;
   }
-
+  
   .icon {
     svg {
       fill: $df-secondary;
@@ -871,21 +871,21 @@
     }
   }
 
-  .btn-secondary {
-    background-color: $db-tertiary;
-    text-transform: uppercase;
-    border: none;
-    color: $df-primary;
-    border-radius: 8px;
-
-    &:hover {
-      background-color: $db-cuaternary;
-      color: $da-primary;
-      svg {
-        fill: $da-primary;
-      }
-    }
-  }
+   .btn-secondary {
+     background-color: $db-tertiary;
+     text-transform: uppercase;
+     border: none;
+     color: $df-primary;
+     border-radius: 8px;
+   
+     &:hover {
+       background-color: $db-cuaternary;
+       color: $da-primary;
+       svg {
+         fill: $da-primary;
+       }
+     }
+   }
 
   // File cards
   .dashboard-grid {

@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.comments
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.comments :as dcm]
    [app.main.data.events :as ev]
@@ -13,6 +14,7 @@
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -22,7 +24,8 @@
 
 (mf/defc comments-section
   [{:keys [profile team]}]
-  (let [show-dropdown? (mf/use-state false)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        show-dropdown? (mf/use-state false)
         show-dropdown  (mf/use-fn #(reset! show-dropdown? true))
         hide-dropdown  (mf/use-fn #(reset! show-dropdown? false))
         threads-map    (mf/deref refs/comment-threads)
@@ -53,50 +56,102 @@
          (st/emit! (ptk/event ::ev/event {::ev/name "open-comment-notifications"
                                           ::ev/origin "dashboard"})))))
 
-    [:div.dashboard-comments-section
-     [:div.button
-      {:tab-index "0"
-       :on-click show-dropdown
-       :on-key-down (fn [event]
-                      (when (kbd/enter? event)
-                        (show-dropdown event)))
-       :data-test "open-comments"
-       :class (dom/classnames :open @show-dropdown?
+    (if new-css-system
+      [:div {:class (stl/css :dashboard-comments-section)}
+       [:div
+        {:tab-index "0"
+         :on-click show-dropdown
+         :on-key-down (fn [event]
+                        (when (kbd/enter? event)
+                          (show-dropdown event)))
+         :data-test "open-comments"
+         :class (stl/css-case :button true
+                              :open @show-dropdown?
                               :unread (boolean (seq tgroups)))}
-      i/chat]
+        i/chat]
 
-     [:& dropdown {:show @show-dropdown? :on-close hide-dropdown}
-      [:div.dropdown.comments-section.comment-threads-section.
-       [:div.header
-        [:h3 (tr "labels.comments")]
-        [:span.close {:tab-index (if @show-dropdown?
-                                  "0"
-                                  "-1")
-                      :on-click hide-dropdown
-                      :on-key-down (fn [event]
-                                     (when (kbd/enter? event)
-                                       (hide-dropdown event)))} i/close]]
+       [:& dropdown {:show @show-dropdown? :on-close hide-dropdown}
+        [:div {:class (stl/css :dropdown :comments-section :comment-threads-section)}
+         [:div {:class (stl/css :header)}
+          [:h3 (tr "labels.comments")]
+          [:span {:class (stl/css :close)
+                  :tab-index (if @show-dropdown?
+                               "0"
+                               "-1")
+                  :on-click hide-dropdown
+                  :on-key-down (fn [event]
+                                 (when (kbd/enter? event)
+                                   (hide-dropdown event)))} i/close]]
 
-       [:hr]
+         [:hr]
 
-       (if (seq tgroups)
-         [:div.thread-groups
-          [:& cmt/comment-thread-group
-           {:group (first tgroups)
-            :on-thread-click on-navigate
-            :show-file-name true
-            :users users}]
-          (for [tgroup (rest tgroups)]
-            [:*
-             [:hr]
+         (if (seq tgroups)
+           [:div {:class (stl/css :thread-groups)}
+            [:& cmt/comment-thread-group
+             {:group (first tgroups)
+              :on-thread-click on-navigate
+              :show-file-name true
+              :users users}]
+            (for [tgroup (rest tgroups)]
+              [:*
+               [:hr]
 
-             [:& cmt/comment-thread-group
-              {:group tgroup
-               :on-thread-click on-navigate
-               :show-file-name true
-               :users users
-               :key (:page-id tgroup)}]])]
+               [:& cmt/comment-thread-group
+                {:group tgroup
+                 :on-thread-click on-navigate
+                 :show-file-name true
+                 :users users
+                 :key (:page-id tgroup)}]])]
 
-         [:div.thread-groups-placeholder
-          i/chat
-          (tr "labels.no-comments-available")])]]]))
+           [:div {:class (stl/css :thread-groups-placeholder)}
+            i/chat
+            (tr "labels.no-comments-available")])]]]
+
+      ;; OLD
+      [:div.dashboard-comments-section
+       [:div.button
+        {:tab-index "0"
+         :on-click show-dropdown
+         :on-key-down (fn [event]
+                        (when (kbd/enter? event)
+                          (show-dropdown event)))
+         :data-test "open-comments"
+         :class (dom/classnames :open @show-dropdown?
+                                :unread (boolean (seq tgroups)))}
+        i/chat]
+
+       [:& dropdown {:show @show-dropdown? :on-close hide-dropdown}
+        [:div.dropdown.comments-section.comment-threads-section.
+         [:div.header
+          [:h3 (tr "labels.comments")]
+          [:span.close {:tab-index (if @show-dropdown?
+                                     "0"
+                                     "-1")
+                        :on-click hide-dropdown
+                        :on-key-down (fn [event]
+                                       (when (kbd/enter? event)
+                                         (hide-dropdown event)))} i/close]]
+
+         [:hr]
+
+         (if (seq tgroups)
+           [:div.thread-groups
+            [:& cmt/comment-thread-group
+             {:group (first tgroups)
+              :on-thread-click on-navigate
+              :show-file-name true
+              :users users}]
+            (for [tgroup (rest tgroups)]
+              [:*
+               [:hr]
+
+               [:& cmt/comment-thread-group
+                {:group tgroup
+                 :on-thread-click on-navigate
+                 :show-file-name true
+                 :users users
+                 :key (:page-id tgroup)}]])]
+
+           [:div.thread-groups-placeholder
+            i/chat
+            (tr "labels.no-comments-available")])]]])))

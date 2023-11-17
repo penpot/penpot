@@ -1,0 +1,515 @@
+@import "common/dependencies/colors";
+$fs14: 0.875rem;
+$fs12: 0.75rem;
+$fw400: 400;
+$size-2: 0.5rem;
+$size-3: 0.75rem;
+$size-4: 1rem;
+$br3: 3px;
+
+.dashboard-sidebar {
+  grid-row: 1 / span 2;
+  grid-column: 1 / span 2;
+
+  background-color: $db-primary;
+  border-right: 1px solid $db-cuaternary;
+  margin: 0 1rem 0 0;
+  padding: 1rem 0 0 0;
+
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 0;
+
+  hr {
+    border-color: transparent;
+    margin: 0.8rem 15px;
+  }
+
+  .back-to-dashboard {
+    .icon svg {
+      fill: $df-secondary;
+    }
+    .text {
+      color: $df-primary;
+    }
+  }
+}
+
+.sidebar-team-switch {
+  position: relative;
+  display: flex;
+  margin: 5px 15px;
+
+  .switch-content {
+    background-color: $db-tertiary;
+    border-radius: 8px;
+    height: 48px;
+    display: flex;
+    width: 100%;
+    border: 1px solid transparent;
+    align-items: center;
+
+    svg {
+      fill: #8f9da3;
+    }
+  }
+
+  .switch-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      fill: $df-secondary;
+      width: 10px;
+      height: 10px;
+    }
+  }
+
+  .current-team {
+    height: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    font-size: 0.875rem;
+    padding: 0px 10px;
+    background-color: transparent;
+    border: none;
+    border-right: 1px solid $db-primary;
+  }
+
+  .team-name {
+    flex-grow: 1;
+    display: flex;
+    height: 40px;
+    align-items: center;
+  }
+
+  .team-text {
+    color: $df-primary;
+    width: 145px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: left;
+  }
+
+  .team-icon {
+    display: flex;
+    align-items: center;
+    padding-right: 10px;
+
+    img {
+      border-radius: 50%;
+      flex-shrink: 0;
+      height: 23px;
+      width: 23px;
+    }
+
+    svg {
+      width: 23px;
+      height: 23px;
+    }
+  }
+
+  .switch-options {
+    display: flex;
+    max-width: 22px;
+    min-width: 28px;
+    border-left: 1px solid #e3e3e3;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+
+    svg {
+      fill: $df-secondary;
+      width: 15px;
+      height: 13px;
+    }
+  }
+
+  .dropdown {
+    right: 2px;
+    top: 50px;
+    min-width: 162px;
+    max-height: 30rem;
+  }
+}
+
+.dropdown {
+  position: absolute;
+  z-index: 12;
+  background-color: $db-tertiary;
+  border: 1px solid $db-cuaternary;
+  border-radius: 8px;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+
+  .separator {
+    border-color: transparent;
+    margin-top: 10px;
+  }
+
+  li {
+    border-radius: 8px;
+    height: 40px;
+    margin: 5px;
+
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.875rem;
+    padding: 5px 16px;
+
+    .warning {
+      color: #e65244;
+    }
+
+    &:hover {
+      background-color: $db-cuaternary;
+    }
+    svg {
+      height: 12px;
+      width: 12px;
+    }
+  }
+
+  hr {
+    border-color: transparent;
+    margin: 0;
+  }
+
+  &.options-dropdown {
+    li {
+      color: $df-primary;
+      &.warning {
+        color: $color-danger;
+      }
+    }
+  }
+}
+
+.teams-dropdown {
+  background-color: $db-tertiary;
+  border-radius: 8px;
+  border: 1px solid $db-cuaternary;
+  min-width: 248px;
+
+  left: 0;
+  top: 50px;
+  z-index: 12;
+  max-height: 30rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  li {
+    border-radius: 8px;
+    height: 42px;
+    padding: 0 5px;
+    margin: 5px;
+
+    svg {
+      fill: $df-secondary;
+    }
+
+    &:hover {
+      background-color: $db-cuaternary;
+      .team-icon {
+        &.new-team {
+          background-color: $da-primary;
+          svg {
+            fill: $db-secondary;
+          }
+        }
+      }
+    }
+    .team-icon {
+      display: flex;
+      align-items: center;
+    }
+    .team-text {
+      color: $df-primary;
+      width: 165px;
+    }
+
+    .new-team {
+      background-color: $db-cuaternary;
+    }
+
+    &.action {
+      .team-icon {
+        background-color: #2e3434;
+        border-radius: 50%;
+        height: 24px;
+        margin-right: 10px;
+        padding: 6px;
+        width: 24px;
+
+        svg {
+          height: 12px;
+          width: 12px;
+        }
+      }
+    }
+  }
+}
+
+.sidebar-empty-placeholder {
+  padding: 10px 12px;
+  color: $df-secondary;
+  display: flex;
+  align-items: flex-start;
+
+  .icon {
+    padding: 0px 10px;
+    svg {
+      fill: $color-gray-30;
+      width: 12px;
+      height: 12px;
+    }
+  }
+  .text {
+    font-size: $fs12;
+  }
+}
+
+.sidebar-search {
+  align-items: center;
+  border: 1px solid transparent;
+  display: flex;
+  margin: 5px 15px;
+
+  background-color: $db-tertiary;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  margin-top: 0;
+  position: relative;
+
+  .input-text {
+    background: transparent;
+    border: 0;
+    font-size: 0.875rem;
+    margin: 0;
+    width: 100%;
+    height: 40px;
+
+    border-radius: 8px;
+    color: $df-primary;
+    max-width: 100%;
+    padding: 6px 10px;
+
+    &:focus,
+    &:focus-within {
+      border: 1px solid $da-primary;
+    }
+  }
+  ::placeholder {
+    color: $df-secondary;
+  }
+
+  .search,
+  .clear-search {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    height: 22px;
+    margin-left: auto;
+    padding: 0 0.5rem;
+    width: 32px;
+
+    position: absolute;
+    top: 10px;
+    right: 2px;
+
+    svg {
+      fill: $color-gray-30;
+      height: 15px;
+      width: 15px;
+    }
+  }
+
+  .clear-search svg {
+    transform: rotate(45deg);
+
+    &:hover {
+      fill: $color-danger;
+    }
+  }
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  margin: 0;
+  user-select: none;
+
+  &.no-overflow {
+    overflow: unset;
+  }
+
+  & > li {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    flex-shrink: 0;
+    padding: 0.6rem 0.6rem 0.6rem 1.4rem;
+    a {
+      font-weight: $fw400;
+      width: 100%;
+      &:hover {
+        text-decoration: none;
+      }
+    }
+
+    svg {
+      fill: $color-black;
+      margin-right: 8px;
+      height: $size-3;
+      width: $size-3;
+    }
+
+    .element-title {
+      color: $df-secondary;
+      font-size: $fs14;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &.recent-projects {
+      svg {
+        fill: $color-white;
+      }
+    }
+
+    & .edit-wrapper {
+      border: 1px solid $color-gray-10;
+      border-radius: $br3;
+      display: flex;
+      width: 100%;
+    }
+
+    input.element-title {
+      border: 0;
+      height: 30px;
+      padding: 5px;
+      margin: 0;
+      width: 100%;
+      background-color: $color-white;
+    }
+
+    .close {
+      background-color: $color-white;
+      cursor: pointer;
+      padding-left: 5px;
+
+      svg {
+        fill: $color-gray-30;
+        height: 15px;
+        transform: rotate(45deg) translateY(7px);
+        width: 15px;
+        margin: 0;
+      }
+    }
+
+    .element-subtitle {
+      color: $color-gray-20;
+      font-style: italic;
+    }
+
+    &:hover {
+      background-color: $db-cuaternary;
+    }
+
+    &.current {
+      background-color: $db-cuaternary;
+      .element-title {
+        color: $da-primary;
+      }
+    }
+  }
+}
+
+.profile-section {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  padding: 10px 15px;
+  position: relative;
+
+  background-color: $db-tertiary;
+  border-top: 1px solid $db-cuaternary;
+
+  .profile {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    flex-grow: 1;
+
+    span {
+      // @include text-ellipsis;
+      color: $df-primary;
+      margin: 10px;
+      font-size: $fs14;
+      max-width: 160px;
+    }
+
+    img {
+      border-radius: 50%;
+      flex-shrink: 0;
+      height: 25px;
+      width: 25px;
+    }
+    svg {
+      height: 10px;
+      margin-left: auto;
+      margin-right: $size-2;
+      width: 10px;
+    }
+  }
+
+  .dropdown {
+    left: 15px;
+    bottom: 45px;
+
+    background-color: #212426;
+    border: 1px solid #2e3434;
+    border-radius: 8px;
+    min-width: 252px;
+
+    // @include animation(0, 0.2s, fadeInUp);
+
+    li {
+      font-size: $fs14;
+      padding: $size-2 $size-4;
+
+      svg {
+        fill: $color-gray-20;
+        margin-right: $size-2;
+
+        height: 12px;
+        width: 12px;
+      }
+
+      .text {
+        color: #ffffff;
+      }
+
+      &.separator {
+        border-top: 1px solid transparent;
+      }
+    }
+  }
+}

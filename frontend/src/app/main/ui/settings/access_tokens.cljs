@@ -247,20 +247,35 @@
 
 (mf/defc access-tokens-hero
   []
-  (let [on-click (mf/use-fn #(st/emit! (modal/show :access-token {})))]
-    [:div.access-tokens-hero-container
-     [:div.access-tokens-hero
-      [:div.desc
-       [:h2 (tr "dashboard.access-tokens.personal")]
-       [:p (tr "dashboard.access-tokens.personal.description")]]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        on-click (mf/use-fn #(st/emit! (modal/show :access-token {})))]
+    (if new-css-system
+      [:div {:class (stl/css :access-tokens-hero-container)}
+       [:div {:class (stl/css :access-tokens-hero)}
+        [:div {:class (stl/css :desc)}
+         [:h2 (tr "dashboard.access-tokens.personal")]
+         [:p (tr "dashboard.access-tokens.personal.description")]]
 
-      [:button.btn-primary
-       {:on-click on-click}
-       [:span (tr "dashboard.access-tokens.create")]]]]))
+        [:button
+         {:class (stl/css :btn-primary)
+          :on-click on-click}
+         [:span (tr "dashboard.access-tokens.create")]]]]
+
+      ;; OLD
+      [:div.access-tokens-hero-container
+       [:div.access-tokens-hero
+        [:div.desc
+         [:h2 (tr "dashboard.access-tokens.personal")]
+         [:p (tr "dashboard.access-tokens.personal.description")]]
+
+        [:button.btn-primary
+         {:on-click on-click}
+         [:span (tr "dashboard.access-tokens.create")]]]])))
 
 (mf/defc access-token-actions
   [{:keys [on-delete]}]
-  (let [local    (mf/use-state {:menu-open false})
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        local    (mf/use-state {:menu-open false})
         show?    (:menu-open @local)
         options  (mf/with-memo [on-delete]
                    [{:option-name    (tr "labels.delete")
@@ -278,28 +293,50 @@
            (dom/prevent-default event)
            (swap! local assoc :menu-open true)))]
 
-    [:div.icon
-     {:tab-index "0"
-      :ref menu-ref
-      :on-click on-menu-click
-      :on-key-down (fn [event]
-                     (when (kbd/enter? event)
-                       (dom/stop-propagation event)
-                       (on-menu-click event)))}
-     i/actions
-     [:& context-menu-a11y
-      {:on-close on-menu-close
-       :show show?
-       :fixed? true
-       :min-width? true
-       :top "auto"
-       :left "auto"
-       :options options}]]))
+    (if new-css-system
+      [:div
+       {:class (stl/css :icon)
+        :tab-index "0"
+        :ref menu-ref
+        :on-click on-menu-click
+        :on-key-down (fn [event]
+                       (when (kbd/enter? event)
+                         (dom/stop-propagation event)
+                         (on-menu-click event)))}
+       i/actions
+       [:& context-menu-a11y
+        {:on-close on-menu-close
+         :show show?
+         :fixed? true
+         :min-width? true
+         :top "auto"
+         :left "auto"
+         :options options}]]
+
+      ;; OLD
+      [:div.icon
+       {:tab-index "0"
+        :ref menu-ref
+        :on-click on-menu-click
+        :on-key-down (fn [event]
+                       (when (kbd/enter? event)
+                         (dom/stop-propagation event)
+                         (on-menu-click event)))}
+       i/actions
+       [:& context-menu-a11y
+        {:on-close on-menu-close
+         :show show?
+         :fixed? true
+         :min-width? true
+         :top "auto"
+         :left "auto"
+         :options options}]])))
 
 (mf/defc access-token-item
   {::mf/wrap [mf/memo]}
   [{:keys [token] :as props}]
-  (let [locale      (mf/deref i18n/locale)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        locale      (mf/deref i18n/locale)
         expires-at  (:expires-at token)
         expires-txt (some-> expires-at (dt/format-date-locale {:locale locale}))
         expired?    (and (some? expires-at) (> (dt/now) expires-at))
@@ -323,36 +360,67 @@
                        :accept-label (tr "modals.delete-acces-token.accept")
                        :on-accept delete-fn}))))]
 
-    [:div.table-row
-     [:div.table-field.name
-      (str (:name token))]
-     [:div.table-field.expiration-date
-      [:span.content {:class (when expired? "expired")}
-       (cond
-         (nil? expires-at) (tr "dashboard.access-tokens.no-expiration")
-         expired? (tr "dashboard.access-tokens.expired-on" expires-txt)
-         :else (tr "dashboard.access-tokens.expires-on" expires-txt))]]
-     [:div.table-field.actions
-      [:& access-token-actions
-       {:on-delete on-delete}]]]))
+    (if new-css-system
+      [:div {:class (stl/css :table-row)}
+       [:div {:class (stl/css :table-field :name)}
+        (str (:name token))]
+
+       [:div {:class (stl/css :table-field :expiration-date)}
+        [:span {:class (stl/css-case :expired expired? :content true)} 
+         (cond
+           (nil? expires-at) (tr "dashboard.access-tokens.no-expiration")
+           expired? (tr "dashboard.access-tokens.expired-on" expires-txt)
+           :else (tr "dashboard.access-tokens.expires-on" expires-txt))]]
+       [:div {:class (stl/css :table-field :actions)}
+        [:& access-token-actions
+         {:on-delete on-delete}]]]
+
+      ;; OLD
+      [:div.table-row
+       [:div.table-field.name
+        (str (:name token))]
+       [:div.table-field.expiration-date
+        [:span.content {:class (when expired? "expired")}
+         (cond
+           (nil? expires-at) (tr "dashboard.access-tokens.no-expiration")
+           expired? (tr "dashboard.access-tokens.expired-on" expires-txt)
+           :else (tr "dashboard.access-tokens.expires-on" expires-txt))]]
+       [:div.table-field.actions
+        [:& access-token-actions
+         {:on-delete on-delete}]]])))
 
 (mf/defc access-tokens-page
   []
-  (mf/with-effect []
-    (dom/set-html-title (tr "title.settings.access-tokens"))
-    (st/emit! (du/fetch-access-tokens)))
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        tokens (mf/deref tokens-ref)]
+    (mf/with-effect []
+      (dom/set-html-title (tr "title.settings.access-tokens"))
+      (st/emit! (du/fetch-access-tokens)))
 
-  (let [tokens (mf/deref tokens-ref)]
-    [:div.dashboard-access-tokens
-     [:div
-      [:& access-tokens-hero]
-      (if (empty? tokens)
-        [:div.access-tokens-empty
-         [:div (tr "dashboard.access-tokens.empty.no-access-tokens")]
-         [:div (tr "dashboard.access-tokens.empty.add-one")]]
-        [:div.dashboard-table
-         [:div.table-rows
-          (for [token tokens]
-            [:& access-token-item {:token token :key (:id token)}])]])]]))
+    (if new-css-system
+      [:div {:class (stl/css :dashboard-access-tokens)}
+       [:div
+        [:& access-tokens-hero]
+        (if (empty? tokens)
+          [:div {:class (stl/css :access-tokens-empty)}
+           [:div (tr "dashboard.access-tokens.empty.no-access-tokens")]
+           [:div (tr "dashboard.access-tokens.empty.add-one")]]
+          [:div {:class (stl/css :dashboard-table)}
+           [:div {:class (stl/css :table-rows)}
+            (for [token tokens]
+              [:& access-token-item {:token token :key (:id token)}])]])]]
+
+      ;; OLD
+      [:div.dashboard-access-tokens
+       [:div
+        [:& access-tokens-hero]
+        (if (empty? tokens)
+          [:div.access-tokens-empty
+           [:div (tr "dashboard.access-tokens.empty.no-access-tokens")]
+           [:div (tr "dashboard.access-tokens.empty.add-one")]]
+          [:div.dashboard-table
+           [:div.table-rows
+            (for [token tokens]
+              [:& access-token-item {:token token :key (:id token)}])]])]])))
 
 

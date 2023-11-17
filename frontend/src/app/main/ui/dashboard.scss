@@ -1,0 +1,17 @@
+@import "common/dependencies/colors";
+
+.dashboard {
+  background-color: $db-primary;
+  display: grid;
+  grid-template-rows: 50px 1fr;
+  grid-template-columns: 40px 256px 1fr;
+  height: 100vh;
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  grid-row: 1 / span 2;
+  padding: 1rem 1rem 0 0;
+}
