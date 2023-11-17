@@ -408,11 +408,11 @@
   [_ {:keys [shape] :as error} file-data _]
   (let [repair-component
         (fn [component]
-          ; Remove the objects key, or set it to [] if the component is deleted
+          ; Remove the objects key, or set it to {} if the component is deleted
           (if (:deleted component)
             (do
-              (log/debug :hint "  -> Set :objects []")
-              (assoc component :objects []))
+              (log/debug :hint "  -> Set :objects {}")
+              (assoc component :objects {}))
             (do
               (log/debug :hint "  -> Remove :objects")
               (dissoc component :objects))))]
