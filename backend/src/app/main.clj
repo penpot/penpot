@@ -327,6 +327,7 @@
     ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::mbus/msgbus        (ig/ref ::mbus/msgbus)
     ::rds/redis          (ig/ref ::rds/redis)
+    ::csvg/optimizer     (ig/ref ::csvg/optimizer)
 
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
