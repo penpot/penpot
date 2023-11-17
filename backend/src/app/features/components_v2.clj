@@ -271,11 +271,24 @@
                         (let [nearest-frame (cph/get-frame objects (:parent-id shape))
                               frame-id      (or (:id nearest-frame) uuid/zero)]
                           (update objects (:id shape) assoc :frame-id frame-id))
-                          objects)))]
+                        objects)))]
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))]
+                (update :components update-vals fix-container))))
+
+        fix-component-nil-objects
+        (fn [file-data]
+          ;; Ensure that objects of all components is not null
+          (letfn [(fix-component
+                   [component]
+                   (if (and (contains? component :objects) (nil? (:objects component)))
+                     (if (:deleted component)
+                       (assoc component :objects [])
+                       (dissoc component :objects))
+                     component))]
+            (-> file-data
+                (update :components update-vals fix-component))))]
 
     (-> file-data
         (fix-orphan-shapes)
@@ -286,7 +299,8 @@
         (fix-copies-of-detached)
         (transform-to-frames)
         (remap-frame-ids)
-        (fix-frame-ids))))
+        (fix-frame-ids)
+        (fix-component-nil-objects))))
 
 (defn- migrate-components
   "If there is any component in the file library, add a new 'Library
