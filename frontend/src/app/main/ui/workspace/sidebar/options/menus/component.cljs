@@ -389,7 +389,8 @@
   (let [do-action
         (fn [action event]
           (dom/stop-propagation event)
-          (action))]
+          (action)
+          (on-close))]
   [:& dropdown {:show show :on-close on-close}
    [:ul {:class (stl/css :custom-select-dropdown)}
     (for [entry menu-entries :when (not (nil? entry))]
