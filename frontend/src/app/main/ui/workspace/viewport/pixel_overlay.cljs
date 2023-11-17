@@ -32,16 +32,18 @@
   [svg-node]
   (let [image-nodes (dom/query-all svg-node "image:not([href^=data])")
         noop-fn     (constantly nil)]
-    (->> (rx/from image-nodes)
-         (rx/mapcat
-          (fn [image]
-            (let [href (dom/get-attribute image "href")]
-              (->> (http/fetch {:method :get :uri href})
-                   (rx/mapcat (fn [response] (.blob ^js response)))
-                   (rx/mapcat wapi/read-file-as-data-url)
-                   (rx/tap (fn [data]
-                             (dom/set-attribute! image "href" data)))
-                   (rx/reduce noop-fn))))))))
+    (if (empty? image-nodes)
+      (rx/of nil)
+      (->> (rx/from image-nodes)
+           (rx/mapcat
+            (fn [image]
+              (let [href (dom/get-attribute image "href")]
+                (->> (http/fetch {:method :get :uri href})
+                     (rx/mapcat (fn [response] (.blob ^js response)))
+                     (rx/mapcat wapi/read-file-as-data-url)
+                     (rx/tap (fn [data]
+                               (dom/set-attribute! image "href" data)))
+                     (rx/reduce noop-fn)))))))))
 
 (defn- svg-as-data-url
   "Transforms SVG as data-url resolving any blob, http or https url to
@@ -95,7 +97,7 @@
         canvas-ref    (mf/use-ref nil)
         img-ref       (mf/use-ref nil)
 
-        update-str (rx/subject)
+        update-str    (rx/subject)
 
         handle-keydown
         (mf/use-callback
