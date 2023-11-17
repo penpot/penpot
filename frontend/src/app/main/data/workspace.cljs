@@ -283,29 +283,39 @@
              (rx/take-until
               (rx/filter (ptk/type? ::fetch-bundle) stream)))))))
 
+(declare go-to-component)
+
 (defn- fetch-bundle
   "Multi-stage file bundle fetch coordinator"
   [project-id file-id]
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
-    (watch [_ _ stream]
-      (->> (rx/merge
-            (rx/of (fetch-bundle-stage-1 project-id file-id))
+    (watch [_ state stream]
+      (let [component-id (get-in state [:route :query-params :component-id])]
+        (->> (rx/merge
+              (rx/of (fetch-bundle-stage-1 project-id file-id))
 
-            (->> stream
-                 (rx/filter (ptk/type? ::bundle-stage-1))
-                 (rx/observe-on :async)
-                 (rx/map deref)
-                 (rx/map fetch-bundle-stage-2))
+              (->> stream
+                   (rx/filter (ptk/type? ::bundle-stage-1))
+                   (rx/observe-on :async)
+                   (rx/map deref)
+                   (rx/map fetch-bundle-stage-2))
 
-            (->> stream
-                 (rx/filter (ptk/type? ::bundle-stage-2))
-                 (rx/observe-on :async)
-                 (rx/map deref)
-                 (rx/map bundle-fetched)))
+              (->> stream
+                   (rx/filter (ptk/type? ::bundle-stage-2))
+                   (rx/observe-on :async)
+                   (rx/map deref)
+                   (rx/map bundle-fetched))
 
-           (rx/take-until
-            (rx/filter (ptk/type? ::fetch-bundle) stream))))))
+              (when component-id
+                (->> stream
+                     (rx/filter (ptk/type? ::workspace-initialized))
+                     (rx/observe-on :async)
+                     (rx/take 1)
+                     (rx/map #(go-to-component (uuid/uuid component-id))))))
+
+             (rx/take-until
+              (rx/filter (ptk/type? ::fetch-bundle) stream)))))))
 
 (defn initialize-file
   [project-id file-id]

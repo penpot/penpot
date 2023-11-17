@@ -353,17 +353,6 @@
         do-reset-component
         #(st/emit! (dwl/reset-components (map :id touched-not-dangling)))
 
-        do-restore-component
-        #(let [;; Extract a map of component-id -> component-file in order to avoid duplicates
-               comps-to-restore (reduce (fn [id-file-map {:keys [component-id component-file]}]
-                                          (assoc id-file-map component-id component-file))
-                                        {}
-                                        restorable-copies)]
-
-           (st/emit! (dwl/restore-components comps-to-restore)
-                     (when (= 1 (count comps-to-restore))
-                       (dw/go-to-main-instance (val (first comps-to-restore)) (key (first comps-to-restore))))))
-
         do-update-component-sync
         #(st/emit! (dwl/update-component-sync id library-id))
 
@@ -384,23 +373,35 @@
            (do-update-component-sync)
            (do-update-remote-component))
 
-        do-show-local-component
-        #(st/emit! (dw/go-to-component component-id))
-
         do-show-in-assets
         #(st/emit! (if components-v2
                      (dw/show-component-in-assets component-id)
                      (dw/go-to-component component-id)))
+
         do-create-annotation
         #(st/emit! (dw/set-annotations-id-for-create id))
 
-        do-navigate-component-file
-        #(st/emit! (dw/go-to-main-instance library-id component-id))
+        do-show-local-component
+        #(st/emit! (dw/go-to-component component-id))
+
+        do-show-remote-component
+        #(st/emit! (dwl/nav-to-component-file library-id component))
 
         do-show-component
         #(if local-component?
            (do-show-local-component)
-           (do-navigate-component-file))
+           (do-show-remote-component))
+
+        do-restore-component
+        #(let [;; Extract a map of component-id -> component-file in order to avoid duplicates
+               comps-to-restore (reduce (fn [id-file-map {:keys [component-id component-file]}]
+                                          (assoc id-file-map component-id component-file))
+                                        {}
+                                        restorable-copies)]
+
+           (st/emit! (dwl/restore-components comps-to-restore))
+           (when (= 1 (count comps-to-restore))
+             do-show-component))
 
         menu-entries [(when (and (not multi) main-instance?)
                         {:msg "workspace.shape.menu.show-in-assets"
