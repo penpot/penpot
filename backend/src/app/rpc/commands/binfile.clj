@@ -840,7 +840,7 @@
                     :code :inconsistent-penpot-file
                     :hint "the penpot file seems corrupt, found unexpected uuid (storage-object-id)"))
 
-        (l/dbg :hint "readed storage object" :id id ::l/sync? true)
+        (l/dbg :hint "readed storage object" :id (str id) ::l/sync? true)
 
         (let [[size resource] (read-stream! input)
               hash            (sto/calculate-hash resource)
@@ -854,18 +854,21 @@
 
               sobject         (sto/put-object! storage params)]
 
-          (l/dbg :hint "persisted storage object" :id id :new-id (:id sobject) ::l/sync? true)
+          (l/dbg :hint "persisted storage object"
+                 :id (str id)
+                 :new-id (str (:id sobject))
+                 ::l/sync? true)
           (vswap! *state* update :index assoc id (:id sobject)))))
 
     (doseq [item (:media @*state*)]
       (l/dbg :hint "inserting file media object"
-             :id (:id item)
-             :file-id (:file-id item)
+             :id (str (:id item))
+             :file-id (str (:file-id item))
              ::l/sync? true)
 
       (let [file-id (lookup-index (:file-id item))]
         (if (= file-id (:file-id item))
-          (l/warn :hint "ignoring file media object" :file-id (:file-id item) ::l/sync? true)
+          (l/warn :hint "ignoring file media object" :file-id (str (:file-id item)) ::l/sync? true)
           (db/insert! conn :file-media-object
                       (-> item
                           (assoc :file-id file-id)
