@@ -447,8 +447,8 @@
                        :mtype "application/zip"
                        :description "Penpot export (*.zip)"
                        :uri (wapi/create-uri export-blob)}))))
-               (rx/catch
-                   (fn [err]
-                     (rx/of {:type :error
+               (rx/catch (fn [err]
+                           (js/console.error err)
+                           (rx/of {:type :error
                              :error (str err)
                              :file-id (:id file)}))))))))
