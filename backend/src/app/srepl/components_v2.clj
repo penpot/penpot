@@ -238,7 +238,7 @@
           (migrate-team [team-id]
             (try
               (-> (assoc system ::db/rollback rollback?)
-                  (feat/migrate-team! team-id :validate? validate?))
+                  (feat/migrate-team! team-id :validate? validate? :throw-on-validate? (not skip-on-error)))
               (catch Throwable cause
                 (l/err :hint "unexpected error on processing team" :team-id (dm/str team-id) :cause cause))))
 

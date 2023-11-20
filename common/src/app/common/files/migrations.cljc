@@ -651,3 +651,15 @@
       (migrate)
       (assoc :version 35)))
 
+
+(defmethod migrate 36
+  [data]
+  (letfn [(update-container [container]
+            (d/update-when container :objects (fn [objects]
+                                                (if (contains? objects nil)
+                                                  (dissoc objects nil)
+                                                  objects))))]
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+

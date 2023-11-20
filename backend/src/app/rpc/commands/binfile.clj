@@ -630,10 +630,12 @@
   (pu/with-open [input (zstd-input-stream input)
                  input (io/data-input-stream input)]
     (binding [*state* (volatile! {:media [] :index {}})]
-      (let [team     (teams/get-team options
+      (let [team      (teams/get-team options
                                      :profile-id profile-id
                                      :project-id project-id)
-            features (cfeat/get-team-enabled-features cf/flags team)]
+
+            validate? (contains? cf/flags :file-validation)
+            features  (cfeat/get-team-enabled-features cf/flags team)]
 
         ;; Process all sections
         (run! (fn [section]
@@ -651,13 +653,13 @@
         (doseq [[feature file-id] (-> *state* deref :pending-to-migrate)]
           (case feature
             "components/v2"
-            (features.components-v2/migrate-file! options file-id)
+            (features.components-v2/migrate-file! options file-id
+                                                  :validate? validate?
+                                                  :throw-on-validate? true)
 
             "fdata/shape-data-type"
             nil
 
-            ;; "fdata/shape-data-type"
-            ;; (features.fdata/enable-objects-map
             (ex/raise :type :internal
                       :code :no-migration-defined
                       :hint (str/ffmt "no migation for feature '%' on file importation" feature)
@@ -774,17 +776,16 @@
                                              ;; environments messed up with the version
                                              ;; numbers When this problem is fixed delete
                                              ;; the following line
-                                             (assoc :version 0)
+                                             (assoc :version 22)
                                              (update :pages-index relink-shapes)
                                              (update :components relink-shapes)
                                              (update :media relink-media)
                                              (pmg/migrate-data)
                                              (d/without-nils))))
 
-                         ;; Without providing all libs, here we just
-                         ;; peform a structural file data validation,
-                         ;; full referential check is omited.
-                         (fval/validate-file!)
+                         (cond-> (contains? cf/flags :file-validation)
+                           (fval/validate-file-schema!))
+
                          (postprocess-file)
                          (update :features #(db/create-array conn "text" %))
                          (update :data blob/encode))]

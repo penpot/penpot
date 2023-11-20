@@ -442,44 +442,40 @@
   "Get schema explain data for file data"
   (sm/lazy-explainer ::ctf/data))
 
-(defn validate-file!
-  "Validate file data structure.
+(defn validate-file-schema!
+  [{:keys [id data] :as file}]
+  (when-not (valid-fdata? data)
+    (if (some? *errors*)
+      (vswap! *errors* conj
+              {:code :invalid-file-data-structure
+               :hint (str/ffmt "invalid file data structure found on file '%'" id)
+               :file-id id})
+      (ex/raise :type :validation
+                :code :data-validation
+                :hint (str/ffmt "invalid file data structure found on file '%'" id)
+                :file-id id
+                ::sm/explain (get-fdata-explain data))))
+  file)
 
-  If libraries are provided, then a full referential integrity and
-  semantic coherence check will be performed on all content of the
-  file.
+(defn validate-file!
+  "Validate full referential integrity and semantic coherence on file data.
 
   Raises a validation exception on first error found."
+  [{:keys [data] :as file} libraries]
 
-  ([file] (validate-file! file nil))
-  ([{:keys [data] :as file} libraries]
-   ;; (when-not (valid-fdata? data)
-   ;;   (if (some? *errors*)
-   ;;     (vswap! *errors* conj
-   ;;             {:code :invalid-file-data-structure
-   ;;              :hint (str/ffmt "invalid file data structure found on file '%'" id)
-   ;;              :file-id id})
-   ;;     (ex/raise :type :validation
-   ;;               :code :data-validation
-   ;;               :hint (str/ffmt "invalid file data found on file '%'" id)
-   ;;               :file-id id
-   ;;               ::sm/explain (get-fdata-explain data))))
+  (doseq [page (filter :id (ctpl/pages-seq data))]
+    (validate-shape! uuid/zero file page libraries))
 
-   ;; If `libraries` is provided, this means the full file
-   ;; validation is activated so we proceed to execute the
-   ;; validation
-   (when (some? libraries)
-     (doseq [page (filter :id (ctpl/pages-seq data))]
-       (validate-shape! uuid/zero file page libraries))
-     (doseq [component (vals (:components data))]
-       (validate-component! component file)))
+  (doseq [component (vals (:components data))]
+    (validate-component! component file))
 
-   file))
+   file)
 
 (defn validate-file
-  "Validate referencial integrity and semantic coherence of
+  "Validate structure, referencial integrity and semantic coherence of
   all contents of a file. Returns a list of errors."
   [file libraries]
   (binding [*errors* (volatile! [])]
+    (validate-file-schema! file)
     (validate-file! file libraries)
     (deref *errors*)))

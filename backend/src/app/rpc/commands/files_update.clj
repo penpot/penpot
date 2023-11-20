@@ -266,6 +266,7 @@
       ;; Retrieve and return lagged data
       (get-lagged-changes conn params))))
 
+
 (defn- update-file-data
   [conn file changes skip-validate]
   (let [file (update file :data (fn [data]
@@ -278,7 +279,6 @@
         ;; some other way to do general validation
         libs (when (and (contains? cf/flags :file-validation)
                         (not skip-validate))
-               ;; FIXME: we need properly handle pointer-map here ????
                (->> (files/get-file-libraries conn (:id file))
                     (into [file] (map (fn [{:keys [id]}]
                                         (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
@@ -293,7 +293,10 @@
         (update :data cpc/process-changes changes)
 
         ;; If `libs` is defined, then full validation is performed
-        (val/validate-file! libs)
+        (cond-> (and (contains? cf/flags :file-validation)
+                     (not skip-validate))
+          (-> (val/validate-file! libs)
+              (val/validate-file-schema!)))
 
         (cond-> (and (contains? cfeat/*current* "fdata/objects-map")
                      (not (contains? cfeat/*previous* "fdata/objects-map")))
