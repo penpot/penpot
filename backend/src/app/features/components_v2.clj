@@ -642,7 +642,8 @@
                       (px/submit! executor (partial process mobj position))))
                (reduce (fn [fdata promise]
                          (if-let [changes (deref promise)]
-                           (cp/process-changes fdata changes false)
+                           (-> (assoc-in fdata [:options :components-v2] true)
+                               (cp/process-changes changes false))
                            fdata))
                        fdata))
           (finally
