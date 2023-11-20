@@ -26,6 +26,7 @@ export PENPOT_FLAGS="\
        enable-soft-rpc-rlimit \
        enable-webhooks \
        enable-access-tokens \
+       disable-feature-components-v2 \
        disable-file-validation \
        disable-file-schema-validation \
        enable-soft-file-schema-validation \
