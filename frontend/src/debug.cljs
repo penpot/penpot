@@ -394,6 +394,15 @@
        (catch :default cause
          (errors/print-error! cause))))))
 
+(defn ^:export validate-schema
+  []
+  (try
+    (-> (get @st/state :workspace-file)
+        (assoc :data (get @st/state :workspace-data))
+        (cfv/validate-file-schema!))
+    (catch :default cause
+      (errors/print-error! cause))))
+
 (defn ^:export repair
   []
   (let [file      (assoc (get @st/state :workspace-file)
