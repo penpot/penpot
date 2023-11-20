@@ -148,6 +148,7 @@
 
   ([changes objects file-id component-id position page libraries old-id parent-id]
    (let [component     (ctf/get-component libraries file-id component-id)
+         parent        (when parent-id (get objects parent-id))
          library       (get libraries file-id)
 
          components-v2 (dm/get-in library [:data :options :components-v2])
@@ -161,7 +162,13 @@
 
          first-shape (cond-> (first new-shapes)
                        (not (nil? parent-id))
-                       (assoc :parent-id parent-id))
+                       (assoc :parent-id parent-id)
+                       (and (not (nil? parent)) (= :frame (:type parent)))
+                       (assoc :frame-id (:id parent))
+                       (and (not (nil? parent)) (not= :frame (:type parent)))
+                       (assoc :frame-id (:frame-id parent))
+                       (and (not (nil? parent)) (ctn/in-any-component? objects parent))
+                       (dissoc :component-root))
 
          ;; on copy/paste old id is used later to reorder the paster layers
          changes (cond-> (pcb/add-object changes first-shape {:ignore-touched true})

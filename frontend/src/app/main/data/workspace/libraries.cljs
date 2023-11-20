@@ -817,7 +817,10 @@
                                                  id-new-component
                                                  position
                                                  page
-                                                 libraries)
+                                                 libraries
+                                                 nil
+                                                 (:parent-id shape))
+            ;; We need to set the same index as the original shape
             changes (pcb/change-parent changes (:parent-id shape) [new-shape] index {:component-swap true})]
         (rx/of (dch/commit-changes changes)
                (ptk/data-event :layout/update [(:id new-shape)])
