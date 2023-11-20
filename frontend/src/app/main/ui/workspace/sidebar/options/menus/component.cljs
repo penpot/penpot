@@ -197,10 +197,10 @@
   (let [single?             (= 1 (count shapes))
         shape               (first shapes)
         current-file-id     (mf/use-ctx ctx/current-file-id)
-        workspace-file      (deref refs/workspace-file)
-        workspace-data      (deref refs/workspace-data)
-        workspace-libraries (deref refs/workspace-libraries)
-        objects             (deref refs/workspace-page-objects)
+        workspace-file      (mf/deref refs/workspace-file)
+        workspace-data      (mf/deref refs/workspace-data)
+        workspace-libraries (mf/deref refs/workspace-libraries)
+        objects             (mf/deref refs/workspace-page-objects)
         libraries           (assoc workspace-libraries current-file-id (assoc workspace-file :data workspace-data))
         every-same-file?    (every? #(= (:component-file shape) (:component-file %)) shapes)
         current-comp-id     (when (every? #(= (:component-id shape) (:component-id %)) shapes)
@@ -235,8 +235,15 @@
 
         filters             (deref filters*)
         is-search?          (not (str/blank? (:term filters)))
+        current-library-id    (if (contains? libraries (:file-id filters))
+                                (:file-id filters)
+                                current-file-id)
 
-        components          (->> (get-in libraries [(:file-id filters) :data :components])
+        current-library-name  (if (= current-library-id current-file-id)
+                                (str/upper (tr "workspace.assets.local-library"))
+                                (get-in libraries [current-library-id :name]))
+
+        components          (->> (get-in libraries [current-library-id :data :components])
                                  vals
                                  (remove #(true? (:deleted %)))
                                  (map #(assoc % :full-name (cfh/merge-path-item (:path %) (:name %)))))
@@ -257,7 +264,7 @@
 
         groups              (when-not is-search?
                               (->> (sort (sequence xform components))
-                                  (map #(assoc {} :name %))))
+                                   (map #(assoc {} :name %))))
 
         components          (if is-search?
                               (filter #(str/includes? (str/lower (:full-name %)) (str/lower (:term filters))) components)
@@ -285,11 +292,6 @@
 
         libraries-options  (map (fn [library] {:value (:id library) :label (:name library)}) (vals libraries))
 
-        current-library-id    (:file-id filters)
-        current-library-name  (if (= current-library-id current-file-id)
-                                (str/upper (tr "workspace.assets.local-library"))
-                                (get-in libraries [current-library-id :name]))
-
         on-library-change
         (mf/use-fn
          (fn [id]
@@ -298,7 +300,7 @@
         on-search-term-change
         (mf/use-fn
          (fn [term]
-             (swap! filters* assoc :term term)))
+           (swap! filters* assoc :term term)))
 
 
         on-search-clear-click
@@ -325,13 +327,13 @@
           [:& search-bar {:on-change on-search-term-change
                           :clear-action on-search-clear-click
                           :value (:term filters)
-                          :placeholder (str (tr "labels.search") " " (get-in libraries [(:file-id filters) :name]))
+                          :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
                           :icon (mf/html [:span {:class (stl/css :search-icon)} i/search-refactor])}]]
 
          [:div {:class (stl/css :select-field)}
           [:& select
            {:class (stl/css :select-library)
-            :default-value (:file-id filters)
+            :default-value current-library-id
             :options libraries-options
             :on-change on-library-change}]]
 
@@ -367,7 +369,7 @@
                                      :component-list (not (:listing-thumbs? filters)))}
           (for [item items]
             (if (:id item)
-              (let [data       (get-in libraries [(:file-id filters) :data])
+              (let [data       (get-in libraries [current-library-id :data])
                     container  (ctf/get-component-page data item)
                     root-shape (ctf/get-component-root data item)
                     loop?      (or (contains? parent-components (:main-instance-id item))
@@ -375,7 +377,7 @@
                 [:& component-swap-item {:item item
                                          :loop loop?
                                          :shapes shapes
-                                         :file-id (:file-id filters)
+                                         :file-id current-library-id
                                          :root-shape root-shape
                                          :container container
                                          :component-id current-comp-id
