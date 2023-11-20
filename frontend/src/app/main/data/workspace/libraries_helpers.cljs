@@ -144,9 +144,9 @@
 (defn generate-instantiate-component
   "Generate changes to create a new instance from a component."
   ([changes objects file-id component-id position page libraries]
-   (generate-instantiate-component changes objects file-id component-id position page libraries nil nil))
+   (generate-instantiate-component changes objects file-id component-id position page libraries nil nil nil))
 
-  ([changes objects file-id component-id position page libraries old-id parent-id]
+  ([changes objects file-id component-id position page libraries old-id parent-id frame-id]
    (let [component     (ctf/get-component libraries file-id component-id)
          parent        (when parent-id (get objects parent-id))
          library       (get libraries file-id)
@@ -168,7 +168,9 @@
                        (and (not (nil? parent)) (not= :frame (:type parent)))
                        (assoc :frame-id (:frame-id parent))
                        (and (not (nil? parent)) (ctn/in-any-component? objects parent))
-                       (dissoc :component-root))
+                       (dissoc :component-root)
+                       (and (nil? parent) (not (nil? frame-id)))
+                       (assoc :frame-id frame-id))
 
          ;; on copy/paste old id is used later to reorder the paster layers
          changes (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
