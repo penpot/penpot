@@ -781,11 +781,19 @@
                                              (update :components relink-shapes)
                                              (update :media relink-media)
                                              (pmg/migrate-data)
-                                             (d/without-nils))))
+                                             (d/without-nils)))))
 
-                         (cond-> (contains? cf/flags :file-validation)
-                           (fval/validate-file-schema!))
+              params (if (contains? cf/flags :file-schema-validation)
+                       (fval/validate-file-schema! params)
+                       params)
 
+              _      (when (contains? cf/flags :soft-file-schema-validation)
+                       (try
+                         (fval/validate-file-schema! params)
+                         (catch Throwable cause
+                           (l/error :hint "file schema validation error" :cause cause))))
+
+              params (-> params
                          (postprocess-file)
                          (update :features #(db/create-array conn "text" %))
                          (update :data blob/encode))]
@@ -878,7 +886,7 @@
                       {:on-conflict-do-nothing overwrite?}))))
 
     (doseq [item (:thumbnails @*state*)]
-      (l/dbg :hint "inserting file tagged object thumbnail"
+      (l/dbg :hint "inserting file object thumbnail"
              :file-id (:file-id item)
              :object-id (:object-id item)
              ::l/sync? true)
