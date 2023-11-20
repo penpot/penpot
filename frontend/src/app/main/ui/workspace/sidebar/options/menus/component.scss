@@ -230,6 +230,11 @@
         background-color: var(--assets-item-background-color);
         color: var(--assets-item-name-foreground-color);
 
+        .component-name {
+          @include textEllipsis;
+          width: 80%;
+        }
+
         svg,
         img {
           background-color: var(--assets-component-background-color);
