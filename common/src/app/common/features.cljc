@@ -141,7 +141,7 @@
                   :hint (str/ffmt "client declares no support for '%' features"
                                   (str/join "," not-supported)))))
 
-    (let [not-supported (set/difference client-features enabled-features)]
+    (let [not-supported (set/difference client-features supported-features)]
       (when (seq not-supported)
         (ex/raise :type :restriction
                   :code :feature-not-supported
