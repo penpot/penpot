@@ -1178,7 +1178,7 @@
 
         set-direction-refactor
         (mf/use-fn
-         (mf/deps [layout-type ids])
+         (mf/deps new-css-system layout-type ids)
          (fn [dir]
            (let [dir (if new-css-system (keyword dir) dir)]
              (if (= :flex layout-type)
@@ -1563,7 +1563,8 @@
 
         set-direction
         (fn [dir]
-          (st/emit! (dwsl/update-layout ids {:layout-grid-dir dir})))
+          (let [dir (if new-css-system (keyword dir) dir)]
+            (st/emit! (dwsl/update-layout ids {:layout-grid-dir dir}))))
 
         set-gap
         (fn [gap-multiple? type val]
