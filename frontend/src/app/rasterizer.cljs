@@ -192,8 +192,8 @@
          (rx/map wapi/create-uri)
          (rx/mapcat (fn [uri]
                       (->> (create-image uri)
-                           (rx/mapcat #(wapi/create-image-bitmap % #js {:resizeWidth width
-                                                                        :resizeQuality quality}))
+                           (rx/mapcat #(wapi/create-image-bitmap-with-workaround % #js {:resizeWidth width
+                                                                                        :resizeQuality quality}))
                            (rx/tap #(wapi/revoke-uri uri))))))))
 
 (defn- render-blob

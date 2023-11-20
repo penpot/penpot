@@ -10,9 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as log]
-   [app.config :as cf]
    [app.util.object :as obj]
-   [app.util.thumbnails :as th]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]))
@@ -56,6 +54,14 @@
    (create-blob content "application/octet-stream"))
   ([content mtype]
    (js/Blob. #js [content] #js {:type mtype})))
+
+(defn create-blob-from-canvas
+  ([canvas]
+   (create-blob-from-canvas canvas nil))
+  ([canvas options]
+   (if (obj/in? canvas "convertToBlob")
+     (.convertToBlob canvas options)
+     (p/create (fn [resolve _] (.toBlob #(resolve %) canvas options))))))
 
 (defn revoke-uri
   [url]
@@ -154,15 +160,19 @@
    (js/createImageBitmap image options)))
 
 (defn create-image
-  [src width height]
-  (p/create
-   (fn [resolve reject]
-     (let [img (.createElement js/document "img")]
-       (obj/set! img "width" width)
-       (obj/set! img "height" height)
-       (obj/set! img "src" src)
-       (obj/set! img "onload" #(resolve img))
-       (obj/set! img "onerror" reject)))))
+  ([src]
+   (create-image src nil nil))
+  ([src width height]
+   (p/create
+    (fn [resolve reject]
+      (let [img (.createElement js/document "img")]
+        (when-not (nil? width)
+          (obj/set! img "width" width))
+        (when-not (nil? height)
+          (obj/set! img "height" height))
+        (obj/set! img "src" src)
+        (obj/set! img "onload" #(resolve img))
+        (obj/set! img "onerror" reject))))))
 
 ;; Why this? Because as described in https://bugs.chromium.org/p/chromium/issues/detail?id=1463435
 ;; the createImageBitmap seems to apply premultiplied alpha multiples times on the same image
@@ -171,23 +181,10 @@
   ([image]
    (create-image-bitmap-with-workaround image nil))
   ([^js image options]
-   (let [width (.-value (.-baseVal (.-width image)))
-         height (.-value (.-baseVal (.-height image)))
-         [width height] (th/get-proportional-size width height)
-
-         image-source
-         (if (cf/check-browser? :safari)
-           (let [src (.-baseVal (.-href image))]
-             (create-image src width height))
-           (p/resolved image))]
-
-     (-> image-source
-         (p/then
-          (fn [html-img]
-            (let [offscreen-canvas (create-offscreen-canvas width height)
-                  offscreen-context (.getContext offscreen-canvas "2d")]
-              (.drawImage offscreen-context html-img 0 0)
-              (create-image-bitmap offscreen-canvas options))))))))
+   (let [offscreen-canvas (create-offscreen-canvas (.-width image) (.-height image))
+         offscreen-context (.getContext offscreen-canvas "2d")]
+     (.drawImage offscreen-context image 0 0)
+     (create-image-bitmap offscreen-canvas options))))
 
 (defn request-fullscreen
   [el]
