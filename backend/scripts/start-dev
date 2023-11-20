@@ -17,6 +17,7 @@ export PENPOT_FLAGS="\
        disable-secure-session-cookies \
        enable-smtp \
        enable-access-tokens \
+       disable-feature-components-v2 \
        disable-file-validation \
        disable-file-schema-validation \
        enable-soft-file-schema-validation \
