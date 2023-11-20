@@ -266,6 +266,14 @@
       ;; Retrieve and return lagged data
       (get-lagged-changes conn params))))
 
+(defn- soft-validate-file-schema!
+  [file]
+  (try
+    (val/validate-file-schema! file)
+    (catch Throwable cause
+      (l/error :hint "file schema validation error" :cause cause)))
+
+  file)
 
 (defn- update-file-data
   [conn file changes skip-validate]
@@ -295,8 +303,14 @@
         ;; If `libs` is defined, then full validation is performed
         (cond-> (and (contains? cf/flags :file-validation)
                      (not skip-validate))
-          (-> (val/validate-file! libs)
-              (val/validate-file-schema!)))
+          (val/validate-file! libs))
+
+        (cond-> (and (contains? cf/flags :file-schema-validation)
+                     (not skip-validate))
+          (val/validate-file-schema!))
+
+        (cond-> (contains? cf/flags :soft-file-schema-validation)
+          (soft-validate-file-schema!))
 
         (cond-> (and (contains? cfeat/*current* "fdata/objects-map")
                      (not (contains? cfeat/*previous* "fdata/objects-map")))

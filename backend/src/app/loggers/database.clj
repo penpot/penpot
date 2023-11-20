@@ -39,7 +39,6 @@
 (defn record->report
   [{:keys [::l/context ::l/message ::l/props ::l/logger ::l/level ::l/cause] :as record}]
   (us/assert! ::l/record record)
-
   (if (or (instance? java.util.concurrent.CompletionException cause)
           (instance? java.util.concurrent.ExecutionException cause))
     (-> record
