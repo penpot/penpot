@@ -275,6 +275,15 @@
 
   file)
 
+(defn- soft-validate-file!
+  [file libs]
+  (try
+    (val/validate-file! file libs)
+    (catch Throwable cause
+      (l/error :hint "file validation error"
+               :cause cause)))
+  file)
+
 (defn- update-file-data
   [conn file changes skip-validate]
   (let [file (update file :data (fn [data]
@@ -308,6 +317,9 @@
         (cond-> (and (contains? cf/flags :file-schema-validation)
                      (not skip-validate))
           (val/validate-file-schema!))
+
+        (cond-> (contains? cf/flags :soft-file-validation)
+          (soft-validate-file! libs))
 
         (cond-> (contains? cf/flags :soft-file-schema-validation)
           (soft-validate-file-schema!))

@@ -28,7 +28,8 @@ export PENPOT_FLAGS="\
        enable-access-tokens \
        disable-file-validation \
        disable-file-schema-validation \
-       enable-soft-file-schema-validation";
+       enable-soft-file-schema-validation \
+       enable-soft-file-validation";
 
 # export PENPOT_DATABASE_URI="postgresql://172.17.0.1:5432/penpot"
 # export PENPOT_DATABASE_USERNAME="penpot"

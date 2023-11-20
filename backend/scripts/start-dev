@@ -19,7 +19,8 @@ export PENPOT_FLAGS="\
        enable-access-tokens \
        disable-file-validation \
        disable-file-schema-validation \
-       enable-soft-file-schema-validation";
+       enable-soft-file-schema-validation \
+       enable-soft-file-validation";
 
 # Initialize MINIO config
 mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin
