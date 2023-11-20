@@ -161,6 +161,7 @@
         visible?       (h/use-visible item-ref :once? true)]
     [:div
      {:ref item-ref
+      :title (if is-search (:full-name item) (:name item))
       :class (stl/css-case :component-item (not listing-thumbs)
                            :grid-cell listing-thumbs
                            :selected (= (:id item) component-id)
@@ -182,7 +183,8 @@
         path (cfh/butlast-path group-name)
         on-group-click #(on-enter-group group-name)]
     [:div {:class (stl/css :component-group)
-           :key (uuid/next) :on-click on-group-click}
+           :key (uuid/next) :on-click on-group-click
+           :title group-name}
      [:div
       (when-not (str/blank? path)
         [:span {:class (stl/css :component-group-path)} (str "\u00A0/\u00A0" path)])
@@ -351,7 +353,8 @@
          (if (or is-search? (str/empty? (:path filters)))
            [:div {:class (stl/css :component-path-empty)}]
            [:button {:class (stl/css :component-path)
-                     :on-click on-go-back}
+                     :on-click on-go-back
+                     :title (:path filters)}
             [:span i/arrow-slide]
             [:span (:path filters)]])
 
