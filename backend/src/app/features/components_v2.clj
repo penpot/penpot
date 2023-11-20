@@ -553,6 +553,10 @@
           (create-shapes-for-svg mobj file-id (:objects page) position)
           (create-shapes-for-bitmap mobj position))
 
+        shape (assoc shape :name (-> "Graphics"
+                                     (cph/merge-path-item (:path mobj))
+                                     (cph/merge-path-item (:name mobj))))
+
         changes
         (-> (fcb/empty-changes nil)
             (fcb/set-save-undo? false)
