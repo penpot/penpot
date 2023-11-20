@@ -64,7 +64,7 @@
 (def ^:dynamic *errors* nil)
 
 (defn report-error!
-  [code hint shape file page & args]
+  [code hint shape file page & {:as args}]
   (if (some? *errors*)
     (vswap! *errors* conj {:code code
                            :hint hint
@@ -122,11 +122,12 @@
                            shape file page)))
 
         (doseq [child-id (:shapes shape)]
-          (when (nil? (ctst/get-shape page child-id))
-            (report-error! :child-not-found
-                           (str/ffmt "Child % not found" child-id)
-                           shape file page
-                           :child-id child-id)))))))
+          (let [child (ctst/get-shape page child-id)]
+            (when (or (nil? child) (not= (:parent-id child) (:id shape)))
+              (report-error! :child-not-found
+                (str/ffmt "Child % not found" child-id)
+                shape file page
+                :child-id child-id))))))))
 
 (defn validate-frame!
   "Validate that the frame-id shape exists and is indeed a frame. Also

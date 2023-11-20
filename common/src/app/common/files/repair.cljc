@@ -72,7 +72,7 @@
         (fn [parent-shape]
           ; Remove child shape from children list
           (log/debug :hint "  -> Remove child " :child-id (:child-id args))
-          (update parent-shape :shapes d/removev #(= % (:child-id args))))]
+          (update parent-shape :shapes (partial d/removev #(= % (:child-id args)))))]
 
     (log/info :hint "Repairing shape :child-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
