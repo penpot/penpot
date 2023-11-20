@@ -1191,7 +1191,7 @@
 
         toggle-wrap-refactor
         (mf/use-fn
-         (mf/deps [wrap-type ids])
+         (mf/deps wrap-type ids)
          (fn []
            (let [type (if (= wrap-type :wrap)
                         :nowrap
@@ -1308,7 +1308,7 @@
 
         set-direction
         (mf/use-fn
-         (mf/deps [layout-type ids new-css-system])
+         (mf/deps layout-type ids new-css-system)
          (fn [dir]
            (let [dir (cond-> dir new-css-system keyword)]
              (if (= :flex layout-type)
