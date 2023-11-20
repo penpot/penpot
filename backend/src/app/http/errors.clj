@@ -121,15 +121,14 @@
           cause (or parent-cause error)]
       (cond
         (= code :data-validation)
-        (let [explain (::sm/explain data)
-              explain (sm/humanize-data explain)]
+        (let [explain (ex/explain data)]
           (l/error :hint "data assertion error" :cause cause)
           {::yrs/status 500
            ::yrs/body   {:type :server-error
                          :code :assertion
                          :data (-> data
                                    (dissoc ::sm/explain)
-                                   (assoc :explain explain))}})
+                                   (cond-> explain (assoc :explain explain)))}})
 
         (= code :spec-validation)
         (let [explain (ex/explain data)]
@@ -231,7 +230,7 @@
 (defmethod handle-exception java.util.concurrent.CompletionException
   [cause request _]
   (let [cause' (ex-cause cause)]
-    (if (ex/error? cause)
+    (if (ex/error? cause')
       (handle-error cause' request cause)
       (handle-exception cause' request cause))))
 
