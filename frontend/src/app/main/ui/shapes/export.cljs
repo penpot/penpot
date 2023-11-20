@@ -19,7 +19,10 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(def include-metadata-ctx (mf/create-context false))
+(def ^:private internal-counter (atom 0))
+
+(def include-metadata-ctx
+  (mf/create-context false))
 
 (mf/defc render-xml
   [{{:keys [tag attrs content] :as node} :xml}]
@@ -28,7 +31,7 @@
     (map? node)
     [:> (d/name tag) (clj->js (csvg/clean-attrs attrs))
      (for [child content]
-       [:& render-xml {:xml child}])]
+       [:& render-xml {:xml child :key (swap! internal-counter inc)}])]
 
     (string? node)
     node
@@ -201,6 +204,7 @@
    (for [{:keys [style hidden color offset-x offset-y blur spread]} shadow]
      [:> "penpot:shadow"
       #js {:penpot:shadow-type (d/name style)
+           :key (swap! internal-counter inc)
            :penpot:hidden (str hidden)
            :penpot:color (str (:color color))
            :penpot:opacity (str (:opacity color))
@@ -222,6 +226,7 @@
    (for [{:keys [scale suffix type]} exports]
      [:> "penpot:export"
       #js {:penpot:type   (d/name type)
+           :key (swap! internal-counter inc)
            :penpot:suffix suffix
            :penpot:scale  (str scale)}])))
 
@@ -263,7 +268,8 @@
               :penpot:svg-viewbox-width  (get-in shape [:svg-viewbox :width])
               :penpot:svg-viewbox-height (get-in shape [:svg-viewbox :height])}
          (for [[def-id def-xml] (:svg-defs shape)]
-           [:> "penpot:svg-def" #js {:def-id def-id}
+           [:> "penpot:svg-def" #js {:def-id def-id
+                                     :key (swap! internal-counter inc)}
             [:& render-xml {:xml def-xml}]])]))
 
     (when (= (:type shape) :svg-raw)
@@ -279,7 +285,7 @@
                                 (clj->js))))]
         [:> "penpot:svg-content" props
          (for [leaf (->> shape :content :content (filter string?))]
-           [:> "penpot:svg-child" {} leaf])]))]))
+           [:> "penpot:svg-child" {:key (swap! internal-counter inc)} leaf])]))]))
 
 
 (defn- export-fills-data [{:keys [fills]}]
@@ -296,6 +302,8 @@
 
                                                  :else
                                                  (d/name (:fill-color fill)))
+                   :key                        (swap! internal-counter inc)
+
                    :penpot:fill-image-id       (when (:fill-image fill) fill-image-id)
                    :penpot:fill-color-ref-file (d/name (:fill-color-ref-file fill))
                    :penpot:fill-color-ref-id   (d/name (:fill-color-ref-id fill))
@@ -315,6 +323,7 @@
 
                                                    :else
                                                    (d/name (:stroke-color stroke)))
+                   :key                          (swap! internal-counter inc)
                    :penpot:stroke-image-id       (when (:stroke-image stroke) stroke-image-id)
                    :penpot:stroke-color-ref-file (d/name (:stroke-color-ref-file stroke))
                    :penpot:stroke-color-ref-id   (d/name (:stroke-color-ref-id stroke))
@@ -339,6 +348,7 @@
               :penpot:overlay-position-x ((d/nilf get-in) interaction [:overlay-position :x])
               :penpot:overlay-position-y ((d/nilf get-in) interaction [:overlay-position :y])
               :penpot:url (:url interaction)
+              :key (swap! internal-counter inc)
               :penpot:close-click-outside ((d/nilf str) (:close-click-outside interaction))
               :penpot:background-overlay ((d/nilf str) (:background-overlay interaction))
               :penpot:preserve-scroll ((d/nilf str) (:preserve-scroll interaction))}])])))
@@ -385,6 +395,7 @@
        (for [[idx {:keys [type value]}] (d/enumerate layout-grid-rows)]
          [:> "penpot:grid-track"
           #js {:penpot:index idx
+               :key (swap! internal-counter inc)
                :penpot:type (d/name type)
                :penpot:value value}])]
 
@@ -392,6 +403,7 @@
        (for [[idx {:keys [type value]}] (d/enumerate layout-grid-columns)]
          [:> "penpot:grid-track"
           #js {:penpot:index idx
+               :key (swap! internal-counter inc)
                :penpot:type (d/name type)
                :penpot:value value}])]
 
@@ -408,6 +420,7 @@
                         shapes]}] layout-grid-cells]
          [:> "penpot:grid-cell"
           #js {:penpot:id id
+               :key (swap! internal-counter inc)
                :penpot:area-name area-name
                :penpot:row row
                :penpot:row-span row-span
