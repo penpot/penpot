@@ -66,7 +66,7 @@
 
 (defn explain
   ([data] (explain data nil))
-  ([data {:keys [level length] :or {level 8 length 12} :as opts}]
+  ([data opts]
    (cond
      ;; NOTE: a special case for spec validation errors on integrant
      (and (= (:reason data) :integrant.core/build-failed-spec)
@@ -78,10 +78,10 @@
           (contains? data ::s/spec))
      (binding [s/*explain-out* expound/printer]
        (with-out-str
-         (s/explain-out (update data ::s/problems #(take length %)))))
+         (s/explain-out (update data ::s/problems #(take (:length opts 10) %)))))
 
      (contains? data ::sm/explain)
-     (sm/humanize-data (::sm/explain data) :level level :length length))))
+     (sm/humanize-data (::sm/explain data) opts))))
 
 #?(:clj
 (defn format-throwable
@@ -93,7 +93,7 @@
                             explain? true
                             chain? true
                             data-length 10
-                            data-level 8}}]
+                            data-level 5}}]
 
   (letfn [(print-trace-element [^StackTraceElement e]
             (let [class (.getClassName e)
@@ -123,7 +123,11 @@
 
           (print-trace-title [^Throwable cause]
             (print   " →  ")
-            (printf "%s: %s" (.getName (class cause)) (first (str/lines (ex-message cause))))
+            (printf "%s: %s" (.getName (class cause))
+                    (-> (ex-message cause)
+                        (str/lines)
+                        (first)
+                        (str/prune 100)))
 
             (when-let [^StackTraceElement e (first (.getStackTrace ^Throwable cause))]
               (printf " (%s:%d)" (or (.getFileName e) "") (.getLineNumber e)))

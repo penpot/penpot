@@ -40,32 +40,40 @@
   [{:keys [::l/context ::l/message ::l/props ::l/logger ::l/level ::l/cause] :as record}]
   (us/assert! ::l/record record)
 
-  (let [data (ex-data cause)
-        ctx  (-> context
-                 (assoc :tenant (cf/get :tenant))
-                 (assoc :host (cf/get :host))
-                 (assoc :public-uri (cf/get :public-uri))
-                 (assoc :logger/name logger)
-                 (assoc :logger/level level)
-                 (dissoc :request/params :value :params :data))]
-    (merge
-     {:context (-> (into (sorted-map) ctx)
-                   (pp/pprint-str :width 200 :length 50 :level 10))
-      :props   (pp/pprint-str props :width 200 :length 50)
-      :hint    (or (ex-message cause) @message)
-      :trace   (ex/format-throwable cause :data? false :explain? false :header? false :summary? false)}
+  (if (or (instance? java.util.concurrent.CompletionException cause)
+          (instance? java.util.concurrent.ExecutionException cause))
+    (-> record
+        (assoc ::trace (ex/format-throwable cause :data? false :explain? false :header? false :summary? false))
+        (assoc ::l/cause (ex-cause cause))
+        (record->report))
 
-     (when-let [params (or (:request/params context) (:params context))]
-       {:params (pp/pprint-str params :width 200 :length 50 :level 10)})
+    (let [data (ex-data cause)
+          ctx  (-> context
+                   (assoc :tenant (cf/get :tenant))
+                   (assoc :host (cf/get :host))
+                   (assoc :public-uri (cf/get :public-uri))
+                   (assoc :logger/name logger)
+                   (assoc :logger/level level)
+                   (dissoc :request/params :value :params :data))]
+      (merge
+       {:context (-> (into (sorted-map) ctx)
+                     (pp/pprint-str :width 200 :length 50 :level 10))
+        :props   (pp/pprint-str props :width 200 :length 50)
+        :hint    (or (ex-message cause) @message)
+        :trace   (or (::trace record)
+                     (ex/format-throwable cause :data? false :explain? false :header? false :summary? false))}
 
-     (when-let [value (:value context)]
-       {:value (pp/pprint-str value :width 200 :length 50 :level 10)})
+       (when-let [params (or (:request/params context) (:params context))]
+         {:params (pp/pprint-str params :width 200 :length 50 :level 10)})
 
-     (when-let [data (some-> data (dissoc ::s/problems ::s/value ::s/spec ::sm/explain :hint))]
-       {:data (pp/pprint-str data :width 200)})
+       (when-let [value (:value context)]
+         {:value (pp/pprint-str value :width 200 :length 50 :level 10)})
 
-     (when-let [explain (ex/explain data {:level 10 :length 50})]
-       {:explain explain}))))
+       (when-let [data (some-> data (dissoc ::s/problems ::s/value ::s/spec ::sm/explain :hint))]
+         {:data (pp/pprint-str data :width 200)})
+
+       (when-let [explain (ex/explain data {:level 10 :length 50})]
+         {:explain explain})))))
 
 (defn error-record?
   [{:keys [::l/level ::l/cause]}]
