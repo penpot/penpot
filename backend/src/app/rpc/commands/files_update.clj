@@ -18,6 +18,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :refer [enable-pointer-map enable-objects-map]]
+   [app.http.errors :as errors]
    [app.loggers.audit :as audit]
    [app.loggers.webhooks :as webhooks]
    [app.metrics :as mtx]
@@ -172,9 +173,12 @@
                                       {:features features}
                                       {:id (:id team)})))
 
-                      (-> (update-file cfg params)
-                          (rph/with-defer #(let [elapsed (tpoint)]
-                                             (l/trace :hint "update-file" :time (dt/format-duration elapsed)))))))))
+                      (binding [l/*context* (some-> (meta params)
+                                                    (get :app.http/request)
+                                                    (errors/request->context))]
+                        (-> (update-file cfg params)
+                            (rph/with-defer #(let [elapsed (tpoint)]
+                                               (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))))
 
 (defn update-file
   [{:keys [::db/conn ::mtx/metrics] :as cfg}
