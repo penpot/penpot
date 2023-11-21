@@ -71,7 +71,7 @@
        (when-let [data (some-> data (dissoc ::s/problems ::s/value ::s/spec ::sm/explain :hint))]
          {:data (pp/pprint-str data :width 200)})
 
-       (when-let [explain (ex/explain data {:level 10 :length 50})]
+       (when-let [explain (ex/explain data {:level 8 :length 20})]
          {:explain explain})))))
 
 (defn error-record?
