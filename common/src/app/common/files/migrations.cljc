@@ -651,7 +651,6 @@
       (migrate)
       (assoc :version 35)))
 
-
 (defmethod migrate 36
   [data]
   (letfn [(update-container [container]
@@ -663,3 +662,6 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
+(defmethod migrate 37
+  [data]
+  (d/without-nils data))

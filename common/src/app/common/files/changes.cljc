@@ -618,7 +618,7 @@
 
 (defmethod process-change :del-media
   [data {:keys [id]}]
-  (update data :media dissoc id))
+  (d/update-when data :media dissoc id))
 
 ;; -- Components
 
