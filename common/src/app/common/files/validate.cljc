@@ -461,15 +461,16 @@
   "Validate full referential integrity and semantic coherence on file data.
 
   Raises a validation exception on first error found."
-  [{:keys [data] :as file} libraries]
+  [{:keys [data features] :as file} libraries]
+  (when (contains? features "components/v2")
 
-  (doseq [page (filter :id (ctpl/pages-seq data))]
-    (validate-shape! uuid/zero file page libraries))
+    (doseq [page (filter :id (ctpl/pages-seq data))]
+      (validate-shape! uuid/zero file page libraries))
 
-  (doseq [component (vals (:components data))]
-    (validate-component! component file))
+    (doseq [component (vals (:components data))]
+      (validate-component! component file)))
 
-   file)
+  file)
 
 (defn validate-file
   "Validate structure, referencial integrity and semantic coherence of
