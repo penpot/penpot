@@ -10,7 +10,7 @@ export PENPOT_FLAGS="\
        enable-login-with-google \
        enable-login-with-github \
        enable-login-with-gitlab \
-       disable-backend-worker \
+       enable-backend-worker \
        enable-backend-asserts \
        enable-feature-fdata-pointer-map \
        enable-feature-fdata-objects-map \
