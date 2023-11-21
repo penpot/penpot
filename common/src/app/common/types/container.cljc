@@ -338,7 +338,7 @@
 
          [new-shape new-shapes _]
          (ctst/clone-object component-shape
-                            uuid/zero
+                            frame-id
                             (if components-v2 (:objects component-page) (:objects component))
                             update-new-shape
                             (fn [object _] object)
