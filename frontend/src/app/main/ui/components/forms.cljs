@@ -347,6 +347,7 @@
                checked? (= value current-value)
                key      (str/ffmt "%-%" name value')]
            [:label {:for key
+                    :key key
                     :style {:background-image (when image? (str/ffmt "url(%)" image))}
                     :class (stl/css-case :radio-label true
                                          :global/checked checked?

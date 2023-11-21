@@ -401,7 +401,6 @@
         (->> (rp/cmd! :update-profile-props {:props props})
              (rx/map (constantly (fetch-profile))))))))
 
-
 ;; --- Update Photo
 
 (defn update-photo

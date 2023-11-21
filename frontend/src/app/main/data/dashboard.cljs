@@ -40,7 +40,7 @@
 (declare fetch-team-members)
 
 (defn initialize
-  [{:keys [id] :as params}]
+  [{:keys [id]}]
   (dm/assert! (uuid? id))
   (ptk/reify ::initialize
     ptk/UpdateEvent

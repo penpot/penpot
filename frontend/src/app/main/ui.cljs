@@ -87,30 +87,34 @@
         :dashboard-team-settings)
 
        [:*
-        #_[:div.modal-wrapper
-           #_[:& app.main.ui.releases/release-notes-modal {:version "1.19"}]
-           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
-           #_[:& app.main.ui.onboarding/onboarding-modal]
-           #_[:& app.main.ui.onboarding/onboarding-team-modal]]
-        (when-let [props (some-> profile (get :props {}))]
+        #_[:& app.main.ui.releases/release-notes-modal {:version "1.19"}]
+        #_[:& app.main.ui.onboarding/onboarding-templates-modal]
+        #_[:& app.main.ui.onboarding/onboarding-modal]
+        #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]
+        (when-let [props (get profile :props)]
           (cond
-            (and (not (:onboarding-questions-answered props false))
+            (and (contains? cf/flags :onboarding-questions)
+                 (not (:onboarding-questions-answered props false))
                  (not (:onboarding-viewed props false)))
             [:& app.main.ui.onboarding.questions/questions]
 
-            (not (:onboarding-viewed props))
+            (and (not (:onboarding-viewed props))
+                 (contains? cf/flags :onboarding))
             [:& app.main.ui.onboarding/onboarding-modal {}]
 
-            (and (:onboarding-viewed props)
+            (and (contains? cf/flags :onboarding)
+                 (:onboarding-viewed props)
                  (not= (:release-notes-viewed props) (:main cf/version))
                  (not= "0.0" (:main cf/version)))
             [:& app.main.ui.releases/release-notes-modal {:version (:main cf/version)}]))
 
-        [:& dashboard {:route route :profile profile}]]
+        (when profile
+          [:& dashboard {:route route :profile profile}])]
 
        :viewer
        (let [{:keys [query-params path-params]} route
-             {:keys [index share-id section page-id interactions-mode frame-id] :or {section :interactions interactions-mode :show-on-click}} query-params
+             {:keys [index share-id section page-id interactions-mode frame-id]
+              :or {section :interactions interactions-mode :show-on-click}} query-params
              {:keys [file-id]} path-params]
          (if (:token query-params)
            [:& viewer/breaking-change-notice]
