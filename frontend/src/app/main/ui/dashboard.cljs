@@ -154,7 +154,7 @@
 
     (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
-    (mf/with-effect [profile team-id]
+    (mf/with-effect [team-id]
       (st/emit! (dd/initialize {:id team-id}))
       (fn []
         (st/emit! (dd/finalize {:id team-id}))))
