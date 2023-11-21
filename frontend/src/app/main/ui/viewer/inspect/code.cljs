@@ -27,6 +27,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.shapes.text.fontfaces :refer [shapes->fonts]]
    [app.util.code-gen :as cg]
+   [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
@@ -114,6 +115,10 @@
         markup-type*   (mf/use-state "html")
         fontfaces-css* (mf/use-state nil)
         images-data*   (mf/use-state nil)
+
+        collapsed*     (mf/use-state #{})
+        collapsed-css? (contains? @collapsed* :css)
+        collapsed-markup? (contains? @collapsed* :markup)
 
         style-type    (deref style-type*)
         markup-type   (deref markup-type*)
@@ -205,7 +210,16 @@
         ;;(mf/use-callback
         ;; (fn []
         ;;   (st/emit! (dp/open-preview-selected))))
-        ]
+
+        handle-collapse
+        (mf/use-callback
+         (fn [e]
+           (let [panel-type (keyword (dom/get-data (dom/get-current-target e) "type"))]
+             (swap! collapsed*
+                    (fn [collapsed]
+                      (if (contains? collapsed panel-type)
+                        (disj collapsed panel-type)
+                        (conj collapsed panel-type)))))))]
 
     (mf/use-effect
      (mf/deps fonts)
@@ -242,12 +256,15 @@
 
        [:div {:class (stl/css :code-block)}
         [:div {:class (stl/css :code-row-lang)}
+         [:button {:class (stl/css :toggle-btn)
+                   :data-type "css"
+                   :on-click handle-collapse}
+          [:span {:class (stl/css-case
+                          :collapsabled-icon true
+                          :rotated collapsed-css?)}
+           i/arrow-refactor]]
          [:span {:class (stl/css :code-lang)} "CSS"]
-        ;;   Active select when we have more than one option
-        ;;  [:& select {:default-value style-type
-        ;;              :class (stl/css :code-lang-select)
-        ;;              :options [{:label "CSS" :value "css"}]
-        ;;              :on-change set-style}]
+
          [:div {:class (stl/css :action-btns)}
           [:button {:class (stl/css :expand-button)
                     :on-click on-expand}
@@ -256,10 +273,11 @@
           [:& copy-button {:data style-code
                            :on-copied on-style-copied}]]]
 
-        [:div {:class (stl/css :code-row-display)
-               :style #js {"--code-height" (str (or style-size 400) "px")}}
-         [:& code-block {:type style-type
-                         :code style-code}]]
+        (when-not collapsed-css?
+          [:div {:class (stl/css :code-row-display)
+                 :style #js {"--code-height" (str (or style-size 400) "px")}}
+           [:& code-block {:type style-type
+                           :code style-code}]])
 
         [:div {:class (stl/css :resize-area)
                :on-pointer-down on-style-pointer-down
@@ -268,6 +286,13 @@
 
        [:div {:class (stl/css :code-block)}
         [:div {:class (stl/css :code-row-lang)}
+         [:button {:class (stl/css :toggle-btn)
+                   :data-type "markup"
+                   :on-click handle-collapse}
+          [:span {:class (stl/css-case
+                          :collapsabled-icon true
+                          :rotated collapsed-markup?)}
+           i/arrow-refactor]]
          [:& select {:default-value markup-type
                      :class (stl/css :code-lang-select)
                      :options [{:label "HTML" :value "html"}
@@ -282,10 +307,11 @@
           [:& copy-button {:data #(replace-map markup-code images-data)
                            :on-copied on-markup-copied}]]]
 
-        [:div {:class (stl/css :code-row-display)
-               :style #js {"--code-height" (str (or markup-size 400) "px")}}
-         [:& code-block {:type markup-type
-                         :code markup-code}]]
+        (when-not collapsed-markup?
+          [:div {:class (stl/css :code-row-display)
+                 :style #js {"--code-height" (str (or markup-size 400) "px")}}
+           [:& code-block {:type markup-type
+                           :code markup-code}]])
 
         [:div {:class (stl/css :resize-area)
                :on-pointer-down on-markup-pointer-down
