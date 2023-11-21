@@ -31,6 +31,8 @@
       .action-btns {
         display: flex;
         gap: $s-4;
+        flex: 1;
+        justify-content: end;
         .expand-button {
           @extend .button-tertiary;
           height: $s-32;
@@ -53,6 +55,39 @@
 
     .code-row-display {
       margin-bottom: $s-8;
+    }
+  }
+}
+
+.toggle-btn {
+  @include buttonStyle;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  color: var(--title-foreground-color);
+  stroke: var(--title-foreground-color);
+  .collapsabled-icon {
+    @include flexCenter;
+    height: $s-24;
+    border-radius: $br-8;
+    svg {
+      @extend .button-icon-small;
+      transform: rotate(90deg);
+      stroke: var(--icon-foreground);
+    }
+    &.rotated svg {
+      transform: rotate(0deg);
+    }
+  }
+  &:hover {
+    color: var(--title-foreground-color-hover);
+    stroke: var(--title-foreground-color-hover);
+    .title {
+      color: var(--title-foreground-color-hover);
+      stroke: var(--title-foreground-color-hover);
+    }
+    .collapsabled-icon svg {
+      stroke: var(--title-foreground-color-hover);
     }
   }
 }
