@@ -84,4 +84,3 @@
                               :on-blur on-blur}]
        [:span.close {:on-click on-cancel} i/close]])))
 
-

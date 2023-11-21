@@ -21,7 +21,7 @@
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.components.link :refer [link]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.dashboard.comments :refer [comments-section]]
+   [app.main.ui.dashboard.comments :refer [comments-icon comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.dashboard.team-form]
@@ -909,112 +909,135 @@
              (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
              (if (and (kbd/alt? event) (kbd/mod? event))
                (st/emit! (modal/show {:type :onboarding}))
-               (st/emit! (modal/show {:type :release-notes :version version}))))))]
+               (st/emit! (modal/show {:type :release-notes :version version}))))))
 
+        show-comments* (mf/use-state false)
+        show-comments? @show-comments*
+
+        handle-hide-comments
+        (mf/use-callback
+         (fn []
+           (reset! show-comments* false)))
+
+        handle-show-comments
+        (mf/use-callback
+         (fn []
+           (reset! show-comments* true)))]
     (if new-css-system
-      [:div {:class (stl/css :profile-section)}
-       [:div {:class (stl/css :profile)
-              :tab-index "0"
-              :on-click (fn [event]
-                          (dom/stop-propagation event)
-                          (reset! show true))
-              :on-key-down (fn [event]
-                             (when (kbd/enter? event)
-                               (reset! show true)))
-              :data-test "profile-btn"}
-        [:img {:src photo
-               :alt (:fullname profile)}]
-        [:span (:fullname profile)]]
-
-       [:& dropdown-menu {:on-close (fn [event]
-                                      (dom/stop-propagation event)
-                                      (reset! show false))
-                          :show @show}
-        [:ul {:class (stl/css :dropdown)}
-         [:li {:tab-index (if show "0" "-1")
-               :on-click (partial on-click :settings-profile)
-               :on-key-down (fn [event]
-                              (when (kbd/enter? event)
-                                (on-click :settings-profile event)))
-               :data-test "profile-profile-opt"}
-          [:span {:class (stl/css :text)} (tr "labels.your-account")]]
-
-         [:li {:class (stl/css :separator)
-               :tab-index (if show "0" "-1")
-               :on-click #(dom/open-new-window "https://help.penpot.app")
-               :on-key-down (fn [event]
-                              (when (kbd/enter? event)
-                                (dom/open-new-window "https://help.penpot.app")))
-               :data-test "help-center-profile-opt"}
-          [:span {:class (stl/css :text)} (tr "labels.help-center")]]
-
-         [:li {:tab-index (if show "0" "-1")
-               :on-click #(dom/open-new-window "https://community.penpot.app")
-               :on-key-down (fn [event]
-                              (when (kbd/enter? event)
-                                (dom/open-new-window "https://community.penpot.app")))}
-          [:span {:class (stl/css :text)} (tr "labels.community")]]
-
-         [:li {:tab-index (if show "0" "-1")
-               :on-click #(dom/open-new-window "https://www.youtube.com/c/Penpot")
-               :on-key-down (fn [event]
-                              (when (kbd/enter? event)
-                                (dom/open-new-window "https://www.youtube.com/c/Penpot")))}
-          [:span {:class (stl/css :text)} (tr "labels.tutorials")]]
-
-         [:li {:tab-index (if show "0" "-1")
-               :on-click show-release-notes
-               :on-key-down (fn [event]
-                              (when (kbd/enter? event)
-                                (show-release-notes)))}
-          [:span {:class (stl/css :text)} (tr "labels.release-notes")]]
-
-         [:li {:class (stl/css :separator)
-               :tab-index (if show "0" "-1")
-               :on-click #(dom/open-new-window "https://penpot.app/libraries-templates")
-               :on-key-down (fn [event]
-                              (when (kbd/enter? event)
-                                (dom/open-new-window "https://penpot.app/libraries-templates")))
-               :data-test "libraries-templates-profile-opt"}
-          [:span {:class (stl/css :text)} (tr "labels.libraries-and-templates")]]
-
-         [:li {:tab-index (if show "0" "-1")
-               :on-click #(dom/open-new-window "https://github.com/penpot/penpot")
-               :on-key-down (fn [event]
-                              (when (kbd/enter? event)
-                                (dom/open-new-window "https://github.com/penpot/penpot")))}
-          [:span {:class (stl/css :text)} (tr "labels.github-repo")]]
-
-         [:li {:tab-index (if show "0" "-1")
-               :on-click #(dom/open-new-window "https://penpot.app/terms")
-               :on-key-down (fn [event]
-                              (when (kbd/enter? event)
-                                (dom/open-new-window "https://penpot.app/terms")))}
-          [:span {:class (stl/css :text)} (tr "auth.terms-of-service")]]
-
-         (when (contains? cf/flags :user-feedback)
-           [:li {:class (stl/css :separator)
-                 :tab-index (if show "0" "-1")
-                 :on-click (partial on-click :settings-feedback)
-                 :on-key-down (fn [event]
-                                (when (kbd/enter? event)
-                                  (on-click :settings-feedback event)))
-                 :data-test "feedback-profile-opt"}
-            [:span {:class (stl/css :text)} (tr "labels.give-feedback")]])
-
-         [:li {:class (stl/css :separator)
-               :tab-index (if show "0" "-1")
-               :on-click #(on-click (du/logout) %)
-               :on-key-down (fn [event]
-                              (when (kbd/enter? event)
-                                (on-click (du/logout) event)))
-               :data-test "logout-profile-opt"}
-          [:span {:class (stl/css :icon)} i/exit]
-          [:span {:class (stl/css :text)} (tr "labels.logout")]]]]
-
+      [:*
        (when (and team profile)
-         [:& comments-section {:profile profile
-                               :team team}])]
+         [:& comments-section
+          {:profile profile
+           :team team
+           :show? show-comments?
+           :on-show-comments handle-show-comments
+           :on-hide-comments handle-hide-comments}])
+
+       [:div {:class (stl/css :profile-section)}
+        [:div {:class (stl/css :profile)
+               :tab-index "0"
+               :on-click (fn [event]
+                           (dom/stop-propagation event)
+                           (reset! show true))
+               :on-key-down (fn [event]
+                              (when (kbd/enter? event)
+                                (reset! show true)))
+               :data-test "profile-btn"}
+         [:img {:src photo
+                :alt (:fullname profile)}]
+         [:span (:fullname profile)]]
+
+        [:& dropdown-menu {:on-close (fn [event]
+                                       (dom/stop-propagation event)
+                                       (reset! show false))
+                           :show @show}
+         [:ul {:class (stl/css :dropdown)}
+          [:li {:tab-index (if show "0" "-1")
+                :on-click (partial on-click :settings-profile)
+                :on-key-down (fn [event]
+                               (when (kbd/enter? event)
+                                 (on-click :settings-profile event)))
+                :data-test "profile-profile-opt"}
+           [:span {:class (stl/css :text)} (tr "labels.your-account")]]
+
+          [:li {:class (stl/css :separator)
+                :tab-index (if show "0" "-1")
+                :on-click #(dom/open-new-window "https://help.penpot.app")
+                :on-key-down (fn [event]
+                               (when (kbd/enter? event)
+                                 (dom/open-new-window "https://help.penpot.app")))
+                :data-test "help-center-profile-opt"}
+           [:span {:class (stl/css :text)} (tr "labels.help-center")]]
+
+          [:li {:tab-index (if show "0" "-1")
+                :on-click #(dom/open-new-window "https://community.penpot.app")
+                :on-key-down (fn [event]
+                               (when (kbd/enter? event)
+                                 (dom/open-new-window "https://community.penpot.app")))}
+           [:span {:class (stl/css :text)} (tr "labels.community")]]
+
+          [:li {:tab-index (if show "0" "-1")
+                :on-click #(dom/open-new-window "https://www.youtube.com/c/Penpot")
+                :on-key-down (fn [event]
+                               (when (kbd/enter? event)
+                                 (dom/open-new-window "https://www.youtube.com/c/Penpot")))}
+           [:span {:class (stl/css :text)} (tr "labels.tutorials")]]
+
+          [:li {:tab-index (if show "0" "-1")
+                :on-click show-release-notes
+                :on-key-down (fn [event]
+                               (when (kbd/enter? event)
+                                 (show-release-notes)))}
+           [:span {:class (stl/css :text)} (tr "labels.release-notes")]]
+
+          [:li {:class (stl/css :separator)
+                :tab-index (if show "0" "-1")
+                :on-click #(dom/open-new-window "https://penpot.app/libraries-templates")
+                :on-key-down (fn [event]
+                               (when (kbd/enter? event)
+                                 (dom/open-new-window "https://penpot.app/libraries-templates")))
+                :data-test "libraries-templates-profile-opt"}
+           [:span {:class (stl/css :text)} (tr "labels.libraries-and-templates")]]
+
+          [:li {:tab-index (if show "0" "-1")
+                :on-click #(dom/open-new-window "https://github.com/penpot/penpot")
+                :on-key-down (fn [event]
+                               (when (kbd/enter? event)
+                                 (dom/open-new-window "https://github.com/penpot/penpot")))}
+           [:span {:class (stl/css :text)} (tr "labels.github-repo")]]
+
+          [:li {:tab-index (if show "0" "-1")
+                :on-click #(dom/open-new-window "https://penpot.app/terms")
+                :on-key-down (fn [event]
+                               (when (kbd/enter? event)
+                                 (dom/open-new-window "https://penpot.app/terms")))}
+           [:span {:class (stl/css :text)} (tr "auth.terms-of-service")]]
+
+          (when (contains? cf/flags :user-feedback)
+            [:li {:class (stl/css :separator)
+                  :tab-index (if show "0" "-1")
+                  :on-click (partial on-click :settings-feedback)
+                  :on-key-down (fn [event]
+                                 (when (kbd/enter? event)
+                                   (on-click :settings-feedback event)))
+                  :data-test "feedback-profile-opt"}
+             [:span {:class (stl/css :text)} (tr "labels.give-feedback")]])
+
+          [:li {:class (stl/css :separator)
+                :tab-index (if show "0" "-1")
+                :on-click #(on-click (du/logout) %)
+                :on-key-down (fn [event]
+                               (when (kbd/enter? event)
+                                 (on-click (du/logout) event)))
+                :data-test "logout-profile-opt"}
+           [:span {:class (stl/css :icon)} i/exit]
+           [:span {:class (stl/css :text)} (tr "labels.logout")]]]]
+
+        (when (and team profile)
+          [:& comments-icon
+           {:profile profile
+            :show? show-comments?
+            :on-show-comments handle-show-comments}])]]
 
       ;; OLD
       [:div.profile-section
@@ -1127,8 +1150,12 @@
           [:span.text (tr "labels.logout")]]]]
 
        (when (and team profile)
-         [:& comments-section {:profile profile
-                               :team team}])])))
+         [:& comments-section
+          {:profile profile
+           :team team
+           :show? show-comments?
+           :on-show-comments handle-show-comments
+           :on-hide-comments handle-hide-comments}])])))
 
 (mf/defc sidebar
   {::mf/wrap-props false

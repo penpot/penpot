@@ -82,31 +82,26 @@
         [:ul {:class (stl/css :sidebar-nav :no-overflow)}
          [:li {:class (when profile? (stl/css :current))
                :on-click go-settings-profile}
-          i/user
           [:span {:class (stl/css :element-title)} (tr "labels.profile")]]
 
          [:li {:class (when password? (stl/css :current))
                :on-click go-settings-password}
-          i/lock
           [:span {:class (stl/css :element-title)} (tr "labels.password")]]
 
          [:li {:class (when options? (stl/css :current))
                :on-click go-settings-options
                :data-test "settings-profile"}
-          i/tree
           [:span {:class (stl/css :element-title)} (tr "labels.settings")]]
 
          (when (contains? cf/flags :access-tokens)
            [:li {:class (when access-tokens? (stl/css :current))
                  :on-click go-settings-access-tokens
                  :data-test "settings-access-tokens"}
-            i/icon-key
             [:span {:class (stl/css :element-title)} (tr "labels.access-tokens")]])
 
          [:hr]
 
          [:li {:on-click show-release-notes :data-test "release-notes"}
-          i/pencil
           [:span {:class (stl/css :element-title)} (tr "labels.release-notes")]]
 
          (when (contains? cf/flags :user-feedback)

@@ -1,517 +1,375 @@
-@import "common/dependencies/colors";
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
 
-$size-1: 0.25rem;
-$size-2: 0.5rem;
-$size-3: 0.75rem;
-$size-4: 1rem;
-$size-6: 2rem;
-$fs12: 0.75rem;
-$fs14: 0.875rem;
-$fs18: 1.125rem;
-$fw400: 400;
-$fw500: 500;
-$bp-max-1366: "(max-width: 1366px)";
-$br2: 2px;
-$br3: 3px;
-$br4: 4px;
-$br5: 5px;
-$lh-192: 1.92;
+@import "refactor/common-refactor.scss";
 
 .dashboard-grid {
-  font-size: $fs14;
+  font-size: $fs-14;
   height: 100%;
-  overflow: hidden;
   overflow-y: auto;
-  margin-bottom: 0;
+  overflow: hidden;
+}
 
-  .grid-row {
-    display: grid;
-    width: 99%;
-    margin-left: 13px;
+.grid-row {
+  display: grid;
+  width: 100%;
+  padding: 0 $s-12;
+}
+
+.grid-item {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 $s-260;
+  height: $s-232;
+  margin: $s-12 $s-16 $s-16 $s-8;
+  position: relative;
+  text-align: center;
+
+  a,
+  button {
+    width: 100%;
+    font-weight: $fw400;
+  }
+  button {
+    background-color: transparent;
+    border: none;
   }
 
-  .grid-item {
-    align-items: center;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    flex: 1 0 260px;
-    height: 230px;
-    margin: $size-3 $size-4 $size-4 $size-2;
-    position: relative;
-    text-align: center;
-    a,
-    button {
-      width: 100%;
-      font-weight: $fw400;
-    }
-    button {
-      background-color: transparent;
-      border: none;
-    }
-    @media #{$bp-max-1366} {
-      height: 200px;
-      flex: 1 0 230px;
-    }
-
-    &:hover {
-      .grid-item-th {
-        border: 2px solid $color-primary;
-      }
-    }
-
-    .grid-item-th {
-      border-radius: $br3;
-      border: 2px solid lighten($color-gray-20, 15%);
-      text-align: initial;
-
-      img {
-        object-fit: contain;
-      }
-    }
-
-    &.dragged {
-      border-radius: $br3;
-      border: 2px solid lighten($color-gray-20, 15%);
-      text-align: initial;
-      max-height: 160px;
-    }
-
-    &.placeholder {
-      min-width: 115px;
-      max-width: 115px;
-
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-
-      .placeholder-icon {
-        svg {
-          transform: rotate(-90deg);
-          width: 20px;
-          height: 20px;
-          fill: $color-gray-30;
-        }
-      }
-
-      .placeholder-label {
-        font-size: $fs14;
-      }
-    }
-
-    &.overlay {
-      border-radius: $br4;
-      border: 2px solid $color-primary;
-      height: 100%;
-      opacity: 0;
-      pointer-events: none;
-      position: absolute;
-      width: 100%;
-      z-index: 1;
-    }
-
-    &:hover .overlay {
-      display: block;
-      opacity: 1;
-    }
-
-    &.small-item {
-      max-width: 12%;
-      min-width: 190px;
-      padding: $size-4;
-      justify-content: center;
-    }
-
-    .grid-item-icon {
-      width: 90px;
-      height: 90px;
-    }
-    .info-wrapper {
-      display: grid;
-      grid-template-columns: 1fr auto;
-    }
-
-    .item-info {
-      display: grid;
-      padding: $size-2;
-      text-align: left;
-      width: 100%;
-      font-size: $fs12;
-
-      h3 {
-        border: 1px solid transparent;
-        color: $color-gray-60;
-        font-size: $fs14;
-        font-weight: $fw500;
-        overflow: hidden;
-        padding: 0;
-        height: 27px;
-        padding-right: $size-2;
-        text-overflow: ellipsis;
-        width: 100%;
-        white-space: nowrap;
-        line-height: $lh-192; // Original value was 27px; 27px/14px = 192.857142857% => $lh-192 (rounded)
-        max-width: 260px;
-        @media #{$bp-max-1366} {
-          max-width: 230px;
-        }
-      }
-
-      span.date {
-        color: $color-gray-30;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        width: 100%;
-        white-space: nowrap;
-        max-width: 260px;
-        &::first-letter {
-          text-transform: capitalize;
-        }
-        @media #{$bp-max-1366} {
-          max-width: 230px;
-        }
-      }
-
-      .edit-wrapper {
-        .element-title {
-          padding: 0px;
-          height: 25px;
-          color: $color-gray-60;
-          font-size: $fs14;
-          font-weight: $fw400;
-        }
-      }
-    }
-
-    .item-badge {
-      background-color: $color-white;
-      border: 1px solid $color-gray-20;
-      border-radius: $br2;
-      position: absolute;
-      top: $size-2;
-      right: $size-2;
-      height: 32px;
-      width: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      svg {
-        fill: $color-gray-30;
-        height: 16px;
-        width: 16px;
-      }
-    }
-
-    &.add-file {
-      border: 1px dashed $color-gray-20;
-      justify-content: center;
-      box-shadow: none;
-
-      span {
-        color: $color-gray-60;
-        font-size: $fs14;
-      }
-
-      &:hover {
-        background-color: $color-white;
-        border: 2px solid $color-primary;
-      }
-    }
-
-    // PROJECTS, ELEMENTS & ICONS GRID
-    &.project-th {
-      background-color: $color-white;
-
-      &:hover,
-      &:focus,
-      &:focus-within {
-        .project-th-actions {
-          opacity: 1;
-        }
-        a {
-          text-decoration: none;
-        }
-      }
-
-      .selected {
-        .grid-item-th {
-          border: 2px solid $color-primary;
-        }
-      }
-
-      .project-th-actions {
-        align-items: center;
-        opacity: 0;
-        display: flex;
-        right: 5px;
-        justify-content: center;
-        width: 30px;
-        height: 100%;
-
-        span {
-          color: $color-black;
-        }
-
-        .project-th-icon {
-          align-items: center;
-          display: flex;
-          margin-right: $size-2;
-
-          &.menu {
-            margin-right: 0;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            flex-direction: column;
-            width: 100%;
-            height: 30px;
-            margin-top: 20px;
-
-            > svg {
-              fill: $color-gray-60;
-              margin-right: 0;
-              height: 18px;
-              width: 18px;
-            }
-
-            &:hover,
-            &:focus {
-              > svg {
-                fill: $color-primary-dark;
-              }
-            }
-          }
-        }
-      }
-
-      .project-th-actions.force-display {
-        opacity: 1;
-      }
-    }
-
-    // IMAGES SECTION
-    &.images-th {
-      border: 1px dashed $color-gray-20;
-      border-bottom: 2px solid lighten($color-gray-20, 12%);
-
-      &:hover {
-        border-color: $color-primary;
-      }
-    }
-
-    .grid-item-image {
-      svg {
-        max-height: 100px;
-        max-width: 100px;
-        min-height: 40px;
-        min-width: 40px;
-        width: 8vw;
-      }
-    }
-
-    .color-swatch {
-      border-top-left-radius: $br5;
-      border-top-right-radius: $br5;
-      height: 25%;
-      left: 0;
-      position: absolute;
-      top: 0;
-      width: 100%;
-    }
-
-    .color-data {
-      color: $color-gray-30;
-      margin-top: 15px;
-    }
-
-    .drag-counter {
-      position: absolute;
-      top: 5px;
-      left: 4px;
-      width: 32px;
-      height: 32px;
-      background-color: $color-primary;
-      border-radius: 50%;
-      color: $color-black;
-      font-size: $fs18;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+  @media #{$bp-max-1366} {
+    height: $s-200;
+    flex: 1 0 $s-232;
   }
 
   .grid-item-th {
-    background-position: center;
-    background-size: auto 80%;
-    background-repeat: no-repeat;
-    border-top-left-radius: $br3;
-    border-top-right-radius: $br3;
-    height: 230px;
-    max-height: 160px;
-    overflow: hidden;
-    position: relative;
-    width: 100%;
+    border-radius: $br-4;
+    text-align: initial;
 
-    background-color: $color-canvas;
-    display: flex;
-    justify-content: center;
-    flex-direction: row;
-
-    .img-th {
-      height: auto;
-      width: 100%;
-    }
-
-    svg {
-      height: 100%;
-      width: 100%;
-    }
-
-    svg#loader-pencil {
-      fill: $color-gray-20;
+    img {
+      object-fit: contain;
     }
   }
 
-  // LIBRARY VIEW
-  .grid-item {
-    .library {
-      height: 580px;
+  &.dragged {
+    border-radius: $br-4;
+    border: $br-2 solid $da-primary;
+    text-align: initial;
+    max-height: $s-160;
+  }
+
+  &.overlay {
+    border-radius: $br-4;
+    border: $s-2 solid $da-tertiary;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    width: 100%;
+    z-index: $z-index-1;
+  }
+
+  &:hover .overlay {
+    display: block;
+    opacity: 1;
+  }
+
+  .info-wrapper {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    cursor: pointer;
+  }
+
+  .item-info {
+    display: grid;
+    padding: $s-8;
+    text-align: left;
+    width: 100%;
+    font-size: $fs-12;
+
+    h3 {
+      border: $s-1 solid transparent;
+      color: $df-primary;
+      font-size: $fs-16;
+      font-weight: $fw400;
+      height: $s-28;
+      line-height: 1.92;
+      max-width: $s-260;
+      overflow: hidden;
+      padding-right: $s-8;
+      padding: 0;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
+
+      @media #{$bp-max-1366} {
+        max-width: $s-232;
+      }
     }
 
-    &.project-th.library {
-      height: 610px;
-      width: 300px;
+    .date {
+      color: $df-secondary;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+      white-space: nowrap;
+      max-width: $s-260;
+      &::first-letter {
+        text-transform: capitalize;
+      }
+      @media #{$bp-max-1366} {
+        max-width: $s-232;
+      }
+    }
+  }
+
+  .item-badge {
+    background-color: $da-primary;
+    border: none;
+    border-radius: $br-4;
+    position: absolute;
+    top: $s-8;
+    right: $s-8;
+    height: $s-32;
+    width: $s-32;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      fill: $db-secondary;
+      height: $s-16;
+      width: $s-16;
+    }
+  }
+
+  &.add-file {
+    border: $s-1 dashed $df-secondary;
+    justify-content: center;
+    box-shadow: none;
+
+    span {
+      color: $db-primary;
+      font-size: $fs-14;
     }
 
-    .grid-item-th.library {
-      background-color: $color-gray-50;
+    &:hover {
+      background-color: $df-primary;
+      border: $s-2 solid $da-tertiary;
+    }
+  }
+}
+
+.drag-counter {
+  position: absolute;
+  top: $s-4;
+  left: $s-4;
+  width: $s-32;
+  height: $s-32;
+  background-color: $da-tertiary;
+  border-radius: 50%;
+  color: $db-secondary;
+  font-size: $fs-16;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// PROJECTS, ELEMENTS & ICONS GRID
+.project-th {
+  background-color: transparent;
+  border-radius: $br-8;
+  padding-top: $s-6;
+
+  &:hover,
+  &:focus,
+  &:focus-within {
+    background-color: $db-tertiary;
+    .project-th-actions {
+      opacity: 1;
+    }
+    a {
+      text-decoration: none;
+    }
+  }
+
+  .selected {
+    .grid-item-th {
+      border: 2px solid $da-tertiary;
+    }
+  }
+}
+
+.project-th-actions {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  opacity: 0;
+  right: $s-6;
+  width: $s-32;
+
+  span {
+    color: $db-secondary;
+  }
+
+  .project-th-icon {
+    align-items: center;
+    display: flex;
+    margin-right: $s-8;
+    margin-top: 0;
+
+    &.menu {
+      align-items: flex-end;
+      display: flex;
       flex-direction: column;
-      height: 90%;
-      justify-content: flex-start;
-      max-height: 550px;
-      padding: $size-6;
+      height: $s-32;
+      justify-content: center;
+      margin-right: 0;
+      margin-top: $s-20;
+      width: 100%;
 
-      .asset-section {
-        font-size: $fs12;
-        color: $color-gray-20;
-
-        &:not(:first-child) {
-          margin-top: $size-4;
-        }
+      > svg {
+        fill: $df-secondary;
+        margin-right: 0;
+        height: $s-16;
+        width: $s-16;
       }
 
-      .asset-title {
-        display: flex;
-        font-size: $fs12;
-        text-transform: uppercase;
-
-        & .num-assets {
-          color: $color-gray-30;
-        }
-      }
-
-      .asset-list-item {
-        display: flex;
-        align-items: center;
-        border: 1px solid transparent;
-        border-radius: $br3;
-        margin-top: $size-1;
-        padding: 2px;
-        font-size: $fs12;
-        color: $color-white;
-        position: relative;
-
-        & .name-block {
-          color: $color-gray-20;
-          width: calc(100% - 24px - #{$size-2});
-        }
-
-        & .item-name {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          display: block;
-        }
-
-        & svg {
-          background-color: $color-canvas;
-          border-radius: $br4;
-          border: 2px solid transparent;
-          height: 24px;
-          width: 24px;
-          margin-right: $size-2;
-        }
-
-        & .color-name {
-          color: $color-white;
-        }
-
-        & .color-value {
-          margin-left: $size-1;
-          color: $color-gray-30;
-          text-transform: uppercase;
-        }
-
-        & .typography-sample {
-          height: 20px;
-          margin-right: $size-1;
-          width: 20px;
+      &:hover,
+      &:focus {
+        > svg {
+          fill: $da-tertiary;
         }
       }
     }
   }
 }
 
-.dashboard-grid {
-  .grid-item {
-    &.project-th {
-      background-color: transparent;
-      border-radius: 8px;
-      padding-top: 0.3rem;
-      .info-wrapper {
-        cursor: pointer;
-        .item-info {
-          h3 {
-            color: $df-primary;
-            font-size: 16px;
-            font-weight: 400;
-          }
-        }
-        .date {
-          color: $df-secondary;
-        }
-        .project-th-actions {
-          .project-th-icon {
-            margin-top: 0;
-            .icon-actions {
-              fill: $df-secondary;
-            }
-          }
-        }
-      }
+.project-th-actions.force-display {
+  opacity: 1;
+}
 
-      &:hover {
-        background-color: $db-tertiary;
-        .grid-item-th {
-          border: none;
-        }
-      }
+.grid-item-th {
+  border-radius: $br-4;
+  cursor: pointer;
+
+  background-position: center;
+  background-size: auto 80%;
+  background-repeat: no-repeat;
+
+  height: $s-232;
+  max-height: $s-160;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+
+  background-color: var(--canvas-color);
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+
+  .img-th {
+    height: auto;
+    width: 100%;
+  }
+
+  svg {
+    height: 100%;
+    width: 100%;
+  }
+
+  svg#loader-pencil {
+    fill: $db-cuaternary;
+  }
+}
+
+// LIBRARY VIEW
+.library {
+  height: $s-580;
+}
+
+.grid-item.project-th.library {
+  height: $s-612;
+  width: $s-300;
+}
+
+.grid-item-th.library {
+  background-color: $db-tertiary;
+  flex-direction: column;
+  height: 90%;
+  justify-content: flex-start;
+  max-height: 550px;
+  padding: $s-32;
+
+  .asset-section {
+    font-size: $fs-12;
+    color: $df-secondary;
+
+    &:not(:first-child) {
+      margin-top: $s-16;
+    }
+  }
+
+  .asset-title {
+    display: flex;
+    font-size: $fs-12;
+    text-transform: uppercase;
+
+    .num-assets {
+      color: $df-secondary;
+    }
+  }
+
+  .asset-list-item {
+    align-items: center;
+    border-radius: $br-4;
+    border: $s-1 solid transparent;
+    color: $df-primary;
+    display: flex;
+    font-size: $fs-12;
+    margin-top: $s-4;
+    padding: $s-2;
+    position: relative;
+
+    .name-block {
+      color: $df-secondary;
+      width: calc(100% - $s-24 - $s-8);
     }
 
-    .grid-item-th {
-      border-radius: 4px;
-      border: none;
-      cursor: pointer;
+    .item-name {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .item-badge {
-      background-color: $da-primary;
-      border: none;
-      border-radius: 4px;
-      svg {
-        fill: $db-secondary;
-      }
+    svg {
+      background-color: var(--canvas-color);
+      border-radius: $br-4;
+      border: $s-2 solid transparent;
+      height: $s-24;
+      margin-right: $s-8;
+      width: $s-24;
+    }
+
+    .color-name {
+      color: $df-primary;
+    }
+
+    .color-value {
+      color: $df-secondary;
+      margin-left: $s-4;
+      text-transform: uppercase;
+    }
+
+    .typography-sample {
+      height: $s-20;
+      margin-right: $s-4;
+      width: $s-20;
     }
   }
 }

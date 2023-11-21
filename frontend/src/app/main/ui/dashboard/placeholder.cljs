@@ -26,7 +26,7 @@
         [:ul
          {:class (stl/css :grid-row :no-wrap)
           :style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
-         [:li {:class (stl/css :grid-item)}]]
+         [:li {:class (stl/css :grid-item :grid-empty-placeholder :dragged)}]]
 
         (= :libraries origin)
         [:div {:class (stl/css :grid-empty-placeholder :libs)
@@ -39,7 +39,8 @@
          {:class (stl/css :grid-empty-placeholder)
           :style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
          [:button {:class (stl/css :create-new)
-                   :on-click on-click} (tr "dashboard.new-file")]])
+                   :on-click on-click}
+          i/add-refactor]])
 
       ;; OLD
       (cond
@@ -69,4 +70,3 @@
       [:div.grid-empty-placeholder.loader
        [:div.icon i/loader]
        [:div.text (tr "dashboard.loading-files")]])))
-

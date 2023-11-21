@@ -79,17 +79,20 @@
 
     (if new-css-system
       [:div {:class (stl/css :team-hero)}
-       [:img {:src "images/deco-team-banner.png" :border "0"
-              :role "presentation"}]
+       [:div {:class (stl/css :img-wrapper)}
+        [:img {:src "images/deco-team-banner.png"
+               :border "0"
+               :role "presentation"}]]
        [:div {:class (stl/css :text)}
         [:div {:class (stl/css :title)} (tr "dasboard.team-hero.title")]
         [:div {:class (stl/css :info)}
          [:span (tr "dasboard.team-hero.text")]
-         [:a {:on-click on-nav-members-click} (tr "dasboard.team-hero.management")]]]
-       [:button
-        {:class (stl/css :btn-primary :invite)
-         :on-click on-invite-click}
-        (tr "onboarding.choice.team-up.invite-members")]
+         [:a {:on-click on-nav-members-click} (tr "dasboard.team-hero.management")]]
+        [:button
+         {:class (stl/css :btn-primary :invite)
+          :on-click on-invite-click}
+         (tr "onboarding.choice.team-up.invite-members")]]
+
        [:button
         {:class (stl/css :close)
          :on-click on-close-click
@@ -154,7 +157,7 @@
        [:div {:class (stl/css :thumbnail)}]
        [:div {:class (stl/css :text)}
         [:h2 {:class (stl/css :title)} (tr "dasboard.tutorial-hero.title")]
-        [:p {:clas (stl/css :info)} (tr "dasboard.tutorial-hero.info")]
+        [:p {:class (stl/css :info)} (tr "dasboard.tutorial-hero.info")]
         [:button {:class (stl/css :btn-primary :action)
                   :on-click download-tutorial}
          (case (:status @state)

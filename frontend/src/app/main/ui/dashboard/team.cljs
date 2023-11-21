@@ -678,7 +678,7 @@
           [:span {:class (stl/css :rol-label)} label]])
 
        [:& dropdown {:show @show? :on-close on-hide}
-        [:ul.dropdown.options-dropdown
+        [:ul {:class (stl/css :dropdown :options-dropdown)}
          [:li {:data-role "admin" :on-click on-change'} (tr "labels.admin")]
          [:li {:data-role "editor" :on-click on-change'} (tr "labels.editor")]]]]
 
@@ -1148,12 +1148,6 @@
 (mf/defc webhooks-hero
   {::mf/wrap-props false}
   []
-  #_[:div.banner
-   [:div.title (tr "labels.webhooks")
-    [:div.description (tr "dashboard.webhooks.description")]]
-   [:div.create-container
-    [:div.create (tr "dashboard.webhooks.create")]]]
-
   (let [new-css-system (mf/use-ctx ctx/new-css-system)]
     (if new-css-system
       [:div {:class (stl/css :webhooks-hero-container)}
@@ -1477,5 +1471,4 @@
            [:div.files
             [:span.icon i/file-html]
             [:span.text (tr "labels.num-of-files" (i18n/c (:files stats)))]]]]]]])))
-
 

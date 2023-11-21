@@ -9,6 +9,10 @@
 // Comment-thread-group
 .thread-group {
   padding: 0 $s-12;
+  cursor: pointer;
+  border-radius: $br-8;
+  padding: $s-8 $s-16;
+
   .section-title {
     @include titleTipography;
     height: $s-32;
@@ -38,6 +42,10 @@
     display: flex;
     flex-direction: column;
     gap: $s-24;
+  }
+
+  &:hover {
+    background: $db-primary;
   }
 }
 

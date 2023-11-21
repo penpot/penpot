@@ -4,18 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "common/dependencies/colors";
-
-$br10: 10px;
-$lh-normal: normal;
-$fs18: 1.125rem;
-$fw600: 600;
-$fs16: 1rem;
-$br5: 5px;
-$fw500: 500;
-$fs14: 0.875rem;
-$fs12: 0.75rem;
-$size-2: 0.5rem;
+@use "common/refactor/common-refactor.scss" as *;
 
 .dashboard-templates-section {
   position: absolute;
@@ -24,54 +13,53 @@ $size-2: 0.5rem;
   justify-content: flex-end;
   bottom: 0;
   width: 100%;
-  height: 228px;
+  height: $s-228;
   transition: bottom 300ms;
   pointer-events: none;
   &.collapsed {
-    bottom: -228px;
+    bottom: calc(-1 * $s-228);
     transition: bottom 300ms;
   }
 
   .title {
     pointer-events: all;
     width: fit-content;
-    top: -56px;
-    right: -28px;
+    top: calc(-1 * $s-56);
     text-align: right;
-    height: 56px;
+    height: $s-56;
     position: absolute;
+    right: calc(-1 * $s-24);
+
     button {
       border: none;
       cursor: pointer;
-      height: 58px;
+      height: $s-56;
       display: inline-flex;
       align-items: center;
-      border-top: 2px solid #e4e4e4;
-      border-left: 2px solid #e4e4e4;
-      border-right: 2px solid #e4e4e4;
-      border-top-left-radius: $br10;
-      border-top-right-radius: $br10;
-      margin-right: 30px;
-      background-color: $color-white;
+      border-top-left-radius: $br-10;
+      border-top-right-radius: $br-10;
+      margin-right: $s-32;
       position: relative;
       z-index: 1;
+      background-color: $db-cuaternary;
+
       span {
         display: inline-block;
         vertical-align: middle;
-        line-height: $lh-normal;
-        font-size: $fs18;
-        font-weight: $fw600;
-        color: $color-black;
-        margin-left: 18px;
-        margin-right: 10px;
+        line-height: 1.2;
+        font-size: $fs-16;
+        margin-left: $s-16;
+        margin-right: $s-8;
+        color: $df-primary;
+        font-weight: $fw400;
         &.icon {
-          margin-left: 10px;
-          margin-right: 16px;
+          margin-left: $s-16;
+          margin-right: $s-16;
         }
       }
       svg {
-        width: 12px;
-        height: 12px;
+        width: $s-12;
+        height: $s-12;
         fill: $df-secondary;
       }
     }
@@ -79,52 +67,51 @@ $size-2: 0.5rem;
 
   .button {
     position: absolute;
-    top: 133px;
-    border: 2px solid #e0e4e9;
+    top: $s-136;
+    border: $s-2 solid $df-secondary;
     border-radius: 50%;
     text-align: center;
-    width: 35px;
-    height: 35px;
+    width: $s-36;
+    height: $s-36;
     cursor: pointer;
-    background-color: $color-white;
+    background-color: $df-primary;
     display: flex;
     align-items: center;
     justify-content: center;
     pointer-events: all;
     svg {
-      width: 12px;
-      height: 12px;
+      width: $s-12;
+      height: $s-12;
       fill: $df-secondary;
     }
 
     &.left {
       left: 0;
-      margin-left: 43px;
+      margin-left: $s-44;
     }
 
     &.right {
       right: 0;
-      margin-right: 43px;
+      margin-right: $s-44;
     }
 
     &:hover {
-      border: 2px solid $color-primary;
+      border: $s-2 solid $da-tertiary;
     }
   }
 
   .content {
     pointer-events: all;
-    background-color: $color-white;
     width: 200%;
-    height: 229px;
-    border-top: 2px solid #e4e4e4;
-    border-left: 2px solid #e4e4e4;
-    margin-left: 5px;
+    height: $s-228;
+    margin-left: $s-6;
     position: absolute;
+    border-top-left-radius: $s-8;
+    background-color: $db-cuaternary;
 
     .card-container {
-      width: 275px;
-      margin-top: 20px;
+      width: $s-276;
+      margin-top: $s-20;
       display: inline-block;
       text-align: center;
       vertical-align: top;
@@ -135,111 +122,69 @@ $size-2: 0.5rem;
 
     .template-card {
       display: inline-block;
-      width: 255px;
-      font-size: $fs16;
-      color: #181a22;
+      width: $s-256;
+      font-size: $fs-16;
       cursor: pointer;
+      color: $df-primary;
+      padding: $s-3 $s-6 $s-16 $s-6;
+      border-radius: $br-8;
+
       .img-container {
         width: 100%;
-        height: 135px;
-        margin-bottom: 15px;
-        border-radius: $br5;
-        border: 2px solid #e0e4e9;
+        height: $s-136;
+        margin-bottom: $s-16;
+        border-radius: $br-5;
         display: flex;
         justify-content: center;
         flex-direction: column;
+
+        img {
+          border-radius: $br-4;
+        }
       }
 
       .card-name {
-        padding: 0 5px;
+        padding: 0 $s-6;
         display: flex;
         justify-content: space-between;
-        height: 23px;
+        height: $s-24;
+        align-items: center;
+
+        .icon {
+          width: $s-16;
+          height: $s-16;
+        }
         svg {
-          width: 16px;
-          height: 16px;
+          width: $s-16;
+          height: $s-16;
           fill: $df-secondary;
         }
         span {
           font-weight: $fw500;
-          font-size: $fs14;
+          font-size: $fs-16;
         }
       }
 
       .template-link {
-        border: 2px solid transparent;
-        margin: 30px;
-        padding: 32px 0;
+        border: $s-2 solid transparent;
+        margin: $s-32;
+        padding: $s-32 0;
       }
 
       .template-link-title {
-        font-size: $fs14;
-        font-weight: $fw600;
-        color: $color-gray-60;
+        font-size: $fs-14;
+        color: $df-primary;
+        font-weight: $fw400;
       }
 
       .template-link-text {
-        font-size: $fs12;
-        margin-top: $size-2;
-        color: $color-gray-50;
-      }
-
-      &:hover {
-        .img-container {
-          border: 2px solid $color-primary;
-        }
-      }
-    }
-  }
-}
-
-.dashboard-templates-section {
-  .title {
-    right: -24px;
-    button {
-      background-color: $db-cuaternary;
-      border: none;
-      span {
-        color: $df-primary;
-        font-weight: 400;
-      }
-    }
-  }
-  .content {
-    border-top-left-radius: 8px;
-    border: none;
-    background-color: $db-cuaternary;
-
-    .template-card {
-      color: $df-primary;
-      padding: 0.2rem 0.3rem 1rem 0.3rem;
-      border-radius: 8px;
-      .img-container {
-        border: none;
-        img {
-          border-radius: 4px;
-        }
-      }
-      .card-name {
-        span {
-          font-size: 16px;
-        }
-      }
-      .template-link {
-        .template-link-title {
-          color: $df-primary;
-          font-weight: 400;
-        }
-        .template-link-text {
-          color: $df-secondary;
-        }
+        font-size: $fs-12;
+        margin-top: $s-8;
+        color: $df-secondary;
       }
 
       &:hover {
         background-color: $db-tertiary;
-        .img-container {
-          border: none;
-        }
       }
     }
   }

@@ -1,11 +1,22 @@
-@import "common/dependencies/colors";
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "refactor/common-refactor.scss" as *;
 
 .dashboard {
   background-color: $db-primary;
   display: grid;
-  grid-template-rows: 50px 1fr;
-  grid-template-columns: 40px 256px 1fr;
+  grid-template-columns: $s-40 $s-256 1fr;
+  grid-template-rows: $s-52 1fr;
   height: 100vh;
+
+  :global(svg#loader-pencil) {
+    fill: $df-secondary;
+    width: $s-32;
+  }
 }
 
 .dashboard-content {
@@ -13,5 +24,5 @@
   flex-direction: column;
   position: relative;
   grid-row: 1 / span 2;
-  padding: 1rem 1rem 0 0;
+  padding: $s-16 $s-16 0 0;
 }

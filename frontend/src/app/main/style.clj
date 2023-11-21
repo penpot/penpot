@@ -24,7 +24,7 @@
              (case kns
                "global"  knm
                "old-css" (if (nil? *css-data*) knm "")
-               (or (get *css-data* (keyword knm)) knm)))
+               (or (get *css-data* (keyword knm)) (str "_not_found_" knm))))
 
            (string? k)
            k))))

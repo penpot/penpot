@@ -122,6 +122,17 @@
          [:h2 (tr "labels.upload-custom-fonts")]
          [:& i18n/tr-html {:label "dashboard.fonts.hero-text1"}]
 
+         [:button
+          {:class (stl/css :btn-primary)
+           :on-click on-click
+           :tab-index "0"}
+          [:span (tr "labels.add-custom-font")]
+          [:& file-uploader {:input-id "font-upload"
+                             :accept cm/str-font-types
+                             :multi true
+                             :ref input-ref
+                             :on-selected on-selected}]]
+
          [:div {:class (stl/css :banner)}
           [:div {:class (stl/css :icon)} i/msg-info]
           [:div {:class (stl/css :content)}
@@ -135,16 +146,7 @@
              [:& i18n/tr-html {:tag-name "span"
                                :label "dashboard.fonts.warning-text"}]]])]
 
-        [:button
-         {:class (stl/css :btn-primary)
-          :on-click on-click
-          :tab-index "0"}
-         [:span (tr "labels.add-custom-font")]
-         [:& file-uploader {:input-id "font-upload"
-                            :accept cm/str-font-types
-                            :multi true
-                            :ref input-ref
-                            :on-selected on-selected}]]]
+        ]
 
        [:*
         (when (some? (vals @fonts))

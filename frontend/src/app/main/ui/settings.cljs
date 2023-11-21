@@ -7,9 +7,11 @@
 (ns app.main.ui.settings
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.data.dashboard.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.settings.access-tokens :refer [access-tokens-page]]
    [app.main.ui.settings.change-email]
    [app.main.ui.settings.delete-account]
@@ -43,6 +45,8 @@
         section (get-in route [:data :name])
         profile (mf/deref refs/profile)
         locale  (mf/deref i18n/locale)]
+
+    (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
     (mf/use-effect
      #(when (nil? profile)

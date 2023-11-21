@@ -313,11 +313,17 @@
       [:span.date time])))
 
 (defn create-counter-element
-  [_element file-count]
-  (let [counter-el (dom/create-element "div")]
-    (dom/set-property! counter-el "class" "drag-counter")
-    (dom/set-text! counter-el (str file-count))
-    counter-el))
+  [_element file-count new-css-system]
+  (if new-css-system
+    (let [counter-el (dom/create-element "div")]
+      (dom/set-property! counter-el "class" (stl/css :drag-counter))
+      (dom/set-text! counter-el (str file-count))
+      counter-el)
+
+    (let [counter-el (dom/create-element "div")]
+      (dom/set-property! counter-el "class" "drag-counter")
+      (dom/set-text! counter-el (str file-count))
+      counter-el)))
 
 (mf/defc grid-item
   {:wrap [mf/memo]}
@@ -366,10 +372,12 @@
                  select-current? (not (contains? selected-files (:id file)))
 
                  item-el         (mf/ref-val node-ref)
-                 counter-el      (create-counter-element item-el
-                                                         (if select-current?
-                                                           1
-                                                           (count selected-files)))]
+                 counter-el      (create-counter-element
+                                  item-el
+                                  (if select-current?
+                                    1
+                                    (count selected-files))
+                                  new-css-system)]
              (when select-current?
                (st/emit! (dd/clear-selected-files))
                (st/emit! (dd/toggle-file-select file)))
@@ -829,5 +837,3 @@
           {:dragging? @dragging?
            :limit limit
            :create-fn create-fn}])])))
-
-

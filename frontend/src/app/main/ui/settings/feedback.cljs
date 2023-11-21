@@ -63,7 +63,7 @@
                   (rx/subs on-succes on-error)))))]
 
     (if new-css-system
-      [:& fm/form {:class "feedback-form"
+      [:& fm/form {:class (stl/css :feedback-form)
                    :on-submit on-submit
                    :form form}
 
@@ -159,4 +159,3 @@
       [:div.dashboard-settings
        [:div.form-container
         [:& feedback-form]]])))
-

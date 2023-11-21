@@ -239,7 +239,7 @@
         ;; components on team change. Many components assumes that the
         ;; team is already set so don't put the team into mf/deps.
         (when team
-          [:main {:class (stl/css :dashboard-layout-refactor :dashboard)
+          [:main {:class (stl/css :dashboard)
                   :key (:id team)}
            [:& sidebar
             {:team team

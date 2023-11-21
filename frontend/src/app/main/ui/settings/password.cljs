@@ -83,7 +83,7 @@
       [:& fm/form {:class (stl/css :password-form)
                    :on-submit on-submit
                    :form form}
-       [:h2 (t locale "dashboard.password-change")]
+
        [:div {:class (stl/css :fields-row)}
         [:& fm/input
          {:type "password"
@@ -144,8 +144,9 @@
      #(dom/set-html-title (tr "title.settings.password")))
 
     (if new-css-system
-      [:section {:class (stl/css :dashboard-settings :form-container)}
+      [:section {:class (stl/css :dashboard-settings)}
        [:div {:class (stl/css :form-container)}
+        [:h2 (t locale "dashboard.password-change")]
         [:& password-form {:locale locale}]]]
 
       ;; old

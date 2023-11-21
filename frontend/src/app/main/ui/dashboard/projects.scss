@@ -1,634 +1,104 @@
-@import "common/dependencies/colors";
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
 
-$br3: 3px;
-$br8: 8px;
-$br6: 6px;
-$fs14: 0.875rem;
-$fs18: 1.125rem;
-$fs22: 1.375rem;
-$fs24: 1.5rem;
-$fw400: 400;
-$fw600: 600;
-$fw700: 700;
-$lh-088: 0.88;
-$lh-115: 1.15; // original $title-lh-sm
-$size-1: 0.25rem;
-$size-2: 0.5rem;
-$size-4: 1rem;
-$size-5: 1.5rem;
-$size-6: 2rem;
-
-.dashboard-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: $color-white;
-  height: 63px;
-  padding: $size-1 $size-4 $size-1 $size-2;
-  position: relative;
-  z-index: 10;
-  user-select: none;
-  &.team {
-    display: grid;
-    grid-template-columns: 20% 1fr 20%;
-  }
-
-  .element-name {
-    margin-right: $size-2;
-  }
-
-  .btn-secondary {
-    flex-shrink: 0;
-    z-index: 10;
-    height: 32px;
-    svg {
-      height: 16px;
-      width: 16px;
-    }
-  }
-
-  svg {
-    fill: $color-black;
-    height: 14px;
-    margin-right: $size-1;
-    width: 14px;
-  }
-
-  nav {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    z-index: 1;
-
-    ul {
-      display: flex;
-      font-size: $fs14;
-      justify-content: center;
-      margin: 0;
-    }
-
-    li {
-      a {
-        display: flex;
-        align-items: center;
-        flex-basis: 140px;
-        border-bottom: 3px solid transparent;
-        color: $color-gray-30;
-        height: 40px;
-        padding: $size-1 $size-5;
-        font-weight: $fw400;
-        &:hover {
-          color: $color-black;
-          text-decoration: none;
-        }
-      }
-
-      &.active {
-        a {
-          color: $color-black;
-          border-color: $color-primary;
-        }
-      }
-    }
-  }
-
-  .dashboard-title {
-    display: flex;
-    align-items: center;
-    margin-left: 13px;
-
-    h1 {
-      color: $color-black;
-      display: flex;
-      flex-shrink: 0;
-      font-size: $fs22;
-      font-weight: $fw600;
-      z-index: 10;
-      user-select: all;
-    }
-
-    .context-menu.is-open {
-      margin-top: 10px;
-    }
-  }
-
-  .icon {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    margin-left: $size-2;
-    z-index: 10;
-
-    svg {
-      fill: $color-gray-40;
-      width: 15px;
-      height: 15px;
-
-      &:hover {
-        fill: $color-primary-dark;
-      }
-    }
-  }
-
-  .dashboard-buttons {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-  }
-
-  .dashboard-header-actions {
-    display: flex;
-  }
-
-  .pin-icon {
-    margin: 0 $size-2 0 $size-5;
-    background-color: transparent;
-    border: none;
-    svg {
-      fill: $color-gray-20;
-    }
-
-    &.active {
-      svg {
-        fill: $color-gray-50;
-      }
-    }
-  }
-}
-
-.dashboard-header {
-  background-color: transparent;
-  .dashboard-title {
-    h1 {
-      color: $df-primary;
-      font-size: 24px;
-      font-weight: 400;
-      width: 100%;
-      text-overflow: ellipsis;
-      overflow: hidden;
-      white-space: nowrap;
-      display: block;
-      max-width: 700px;
-    }
-  }
-  .icon {
-    svg {
-      fill: $df-secondary;
-    }
-  }
-
-  // Settings sub-menu
-  .dashboard-header-options {
-    li {
-      a {
-        font-size: 16px;
-        color: $df-secondary;
-        border-color: transparent;
-        &:hover {
-          color: $df-primary;
-        }
-      }
-      &.active {
-        a {
-          color: $df-primary;
-        }
-      }
-    }
-  }
-}
+@use "common/refactor/common-refactor.scss" as *;
+@use "common/refactor/common-dashboard";
 
 .dashboard-container {
-  background-color: $color-dashboard;
   flex: 1 0 0;
-  margin-right: $size-4;
+  margin-right: $s-16;
   overflow-y: auto;
   width: 100%;
+  border-top: $s-1 solid $db-cuaternary;
+
   &.dashboard-projects {
     user-select: none;
   }
-  &.no-bg {
-    background-color: transparent;
-  }
   &.dashboard-shared {
-    width: calc(100vw - 320px);
-    margin-right: 50px;
+    width: calc(100vw - $s-320);
+    margin-right: $s-52;
   }
 
   &.search {
-    margin-top: 10px;
-  }
-}
-
-.dashboard-container {
-  background-color: transparent;
-  border-top: 1px solid $db-cuaternary;
-
-  .dashboard-settings {
-    a {
-      color: $df-secondary;
-    }
-    .form-container {
-      width: 800px;
-      margin: 80px auto auto 120px;
-      form {
-        width: 468px;
-        .fields-row {
-          .custom-input,
-          .custom-select {
-            flex-direction: column-reverse;
-            label {
-              position: relative;
-              text-transform: uppercase;
-              color: $df-primary;
-              font-size: 11px;
-              margin-bottom: 12px;
-              margin-left: -4px;
-            }
-            input,
-            select {
-              background-color: $db-tertiary;
-              border-radius: 8px;
-              border-color: transparent;
-              color: $df-primary;
-              padding: 0 15px;
-              &:focus {
-                outline: 1px solid $da-primary;
-              }
-              ::placeholder {
-                color: $df-secondary;
-              }
-            }
-            .help-icon {
-              bottom: 12px;
-              top: auto;
-              svg {
-                fill: $df-secondary;
-              }
-            }
-            &.disabled {
-              input {
-                background-color: $db-primary;
-                border-color: $db-cuaternary;
-                color: $df-secondary;
-              }
-            }
-            .input-container {
-              background-color: $db-tertiary;
-              border-radius: 8px;
-              border-color: transparent;
-              margin-top: 22px;
-              .main-content {
-                label {
-                  position: absolute;
-                  top: -24px;
-                }
-                span {
-                  color: $df-primary;
-                }
-              }
-              &:focus {
-                border: 1px solid $da-primary;
-              }
-            }
-            textarea {
-              border-radius: 8px;
-              padding: 12px 14px;
-              background-color: $db-tertiary;
-              color: $df-primary;
-              border: none;
-              &:focus {
-                outline: 1px solid $da-primary;
-              }
-            }
-          }
-        }
-        .field-title {
-          color: $df-primary;
-        }
-        .field-title:not(:first-child) {
-          margin-top: 64px;
-        }
-
-        .field-text {
-          color: $df-secondary;
-        }
-        button,
-        .btn-secondary {
-          width: 100%;
-          font-size: 11px;
-          text-transform: uppercase;
-          background-color: $db-tertiary;
-          color: $df-primary;
-          &:hover {
-            color: $da-primary;
-            background-color: $db-cuaternary;
-          }
-        }
-        hr {
-          display: none;
-        }
-      }
-      .links {
-        margin-top: 12px;
-      }
-    }
-  }
-
-  //Access tokens
-  .dashboard-access-tokens {
-    width: 800px;
-    margin-left: 120px;
-    margin-top: 80px;
-    .access-tokens-hero-container {
-      background-color: transparent;
-      .access-tokens-hero {
-        width: 468px;
-        flex-direction: column;
-        gap: 32px;
-        background-color: transparent;
-        margin: 0;
-        padding: 0;
-        .desc {
-          background-color: transparent;
-          width: 100%;
-          h2 {
-            color: $df-primary;
-            font-size: 24px;
-            font-weight: regular;
-            margin-bottom: 32px;
-          }
-          p {
-            color: $df-secondary;
-            margin-bottom: 0;
-            font-size: 14px;
-          }
-        }
-        button {
-          width: 100%;
-          font-size: 11px;
-          text-transform: uppercase;
-          background-color: $db-tertiary;
-          color: $df-primary;
-          &:hover {
-            color: $da-primary;
-            background-color: $db-cuaternary;
-          }
-        }
-      }
-    }
-    .dashboard-table {
-      width: 800px;
-      .table-rows {
-        padding-top: 0;
-        .table-row {
-          font-size: 14px;
-          min-height: 40px;
-          height: fit-content;
-          .name {
-            color: $df-primary;
-            max-width: 480px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-          }
-          .expiration-date {
-            color: $df-secondary;
-          }
-        }
-      }
-    }
-    .access-tokens-empty {
-      width: 468px;
-      border: 1px solid $db-cuaternary;
-      border-radius: 8px;
-      margin-top: 32px;
-      font-size: 14px;
-      background-color: transparent;
-      color: $df-secondary;
-    }
-  }
-
-  // Team webhooks
-  &.dashboard-team-webhooks {
-    width: 800px;
-    margin-left: 120px;
-    margin-top: 80px;
-    border: none;
-    align-items: flex-start;
-    .webhooks-hero-container {
-      width: 468px;
-      background-color: transparent;
-      .webhooks-hero {
-        width: 468px;
-        flex-direction: column;
-        gap: 32px;
-        background-color: transparent;
-        margin: 0;
-        padding: 0;
-        .desc {
-          background-color: transparent;
-          width: 100%;
-          h2 {
-            color: $df-primary;
-            font-size: 24px;
-            font-weight: regular;
-            margin-bottom: 32px;
-          }
-          p {
-            color: $df-secondary;
-            margin-bottom: 0;
-            font-size: 14px;
-          }
-        }
-        .btn-primary {
-          width: 100%;
-          font-size: 11px;
-          text-transform: uppercase;
-          background-color: $db-tertiary;
-          color: $df-primary;
-          &:hover {
-            color: $da-primary;
-            background-color: $db-cuaternary;
-          }
-        }
-      }
-    }
-    .dashboard-table {
-      width: 800px;
-      .table-rows {
-        padding-top: 0;
-        .table-row {
-          font-size: 14px;
-          min-height: 40px;
-          height: fit-content;
-          .name {
-            color: $df-primary;
-            max-width: 480px;
-          }
-          .expiration-date {
-            color: $df-secondary;
-          }
-        }
-      }
-    }
-    .webhooks-empty {
-      width: 468px;
-      border: 1px solid $db-cuaternary;
-      border-radius: 8px;
-      margin-top: 32px;
-      font-size: 14px;
-      background-color: transparent;
-      color: $df-secondary;
-    }
-  }
-
-  // Members section
-  .dashboard-table {
-    .table-header {
-      background-color: transparent;
-      color: $df-secondary;
-      font-size: 12px;
-      text-transform: uppercase;
-    }
-    .table-rows {
-      .table-row {
-        background-color: $db-tertiary;
-        border-radius: 8px;
-        color: $df-primary;
-        .rol-selector {
-          background-color: $db-cuaternary;
-          border-color: transparent;
-          border-radius: 8px;
-        }
-      }
-    }
-    .member-info {
-      .member-name .you,
-      .member-email {
-        color: $df-secondary;
-      }
-    }
-    .status-badge {
-      border-radius: 8px;
-      color: $db-primary;
-      text-transform: uppercase;
-    }
-    .empty-invitations {
-      border: 1px solid $db-cuaternary;
-      border-radius: 8px;
-      color: $df-secondary;
-    }
-  }
-  .actions-dropdown,
-  .options-dropdown {
-    background-color: $db-tertiary;
-    border: 1px solid $db-cuaternary;
-    border-radius: 8px;
-    min-width: 252px;
-
-    .separator {
-      border-color: transparent;
-      margin-top: 10px;
-    }
-
-    li {
-      border-radius: 8px;
-      height: 40px;
-      margin: 5px;
-      color: $df-primary;
-
-      &:hover {
-        background-color: $db-cuaternary;
-      }
-    }
-
-    &.options-dropdown {
-      li {
-        color: $df-primary;
-        &.warning {
-          color: $color-danger;
-        }
-      }
-    }
+    margin-top: $s-12;
   }
 }
 
 .dashboard-project-row {
-  margin-bottom: $size-5;
+  margin-bottom: $s-24;
   position: relative;
 
   .project {
     align-items: center;
-    background: $color-white;
-    border-radius: $br3;
+    background: $df-primary;
+    border-radius: $br-4;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    margin-top: $size-4;
-    padding: $size-2 $size-2 $size-2 $size-4;
+    margin-top: $s-16;
+    padding: $s-8 $s-8 $s-8 $s-16;
     width: 99%;
-    max-height: 40px;
-    gap: $size-2;
+    max-height: $s-40;
+    gap: $s-8;
+
     .project-name-wrapper {
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      min-height: 32px;
-      margin-left: $size-2;
+      min-height: $s-32;
+      margin-left: $s-8;
     }
     .show-more {
       align-items: center;
-      color: $color-gray-30;
+      color: $df-secondary;
       display: flex;
-      font-size: $fs14;
+      font-size: $fs-14;
       justify-content: space-between;
       cursor: pointer;
       background-color: transparent;
       border: none;
       .placeholder-icon {
         transform: rotate(-90deg);
-        margin-left: 10px;
+        margin-left: $s-12;
         svg {
-          height: 14px;
-          width: 14px;
-          fill: $color-gray-30;
+          height: $s-16;
+          width: $s-16;
+          fill: $df-secondary;
         }
       }
       &:hover {
-        color: $color-primary-dark;
+        color: $da-tertiary;
         svg {
-          fill: $color-primary-dark;
+          fill: $da-tertiary;
         }
       }
     }
 
     .btn-secondary {
       border: none;
-      padding: $size-2;
+      padding: $s-8;
     }
 
     h2 {
       cursor: pointer;
-      font-size: $fs18;
-      line-height: $lh-088; // Original value was 1rem = 16px; 16px/18px = 88.88888% => $lh-088
-      font-weight: $fw600;
-      color: $color-black;
-      margin-right: $size-1;
+      font-size: $fs-16;
+      line-height: 0.8;
+      font-weight: $fw700;
+      color: $db-secondary;
+      margin-right: $s-4;
+      margin-right: $s-12;
     }
 
-    .edit-wrapper {
-      margin-right: $size-4;
-    }
-
-    .info {
-      font-size: $fs14;
-      line-height: $lh-115; // Original value was 1rem = 16px; 16px/14px = 114.285714286% => $lh-115 (rounded)
+    .info,
+    .recent-files-row-title-info {
+      font-size: $fs-14;
+      line-height: 1.15;
       font-weight: $fw400;
-      color: $color-gray-60;
-      margin-left: 0.75rem;
+      color: $db-primary;
       @media (max-width: 760px) {
         display: none;
       }
@@ -637,15 +107,19 @@ $size-6: 2rem;
     .project-actions {
       display: flex;
       opacity: 1;
-      margin-left: $size-6;
+      margin-left: $s-32;
 
       .btn-small {
-        height: 32px;
-        margin: 0 $size-2;
-        width: 32px;
+        height: $s-32;
+        margin: 0 $s-8;
+        width: $s-32;
+
+        &:not(:hover) {
+          background: transparent;
+        }
         svg {
-          height: 16px;
-          width: 16px;
+          height: $s-16;
+          width: $s-16;
         }
       }
     }
@@ -654,18 +128,18 @@ $size-6: 2rem;
       cursor: pointer;
       display: flex;
       align-items: center;
-      margin-right: 14px;
+      margin-right: $s-16;
       background-color: transparent;
       border: none;
       svg {
-        width: 15px;
-        height: 15px;
-        fill: $color-gray-20;
+        width: $s-16;
+        height: $s-16;
+        fill: $df-secondary;
       }
 
       &.active {
         svg {
-          fill: $color-gray-50;
+          fill: $db-tertiary;
         }
       }
     }
@@ -681,29 +155,29 @@ $size-6: 2rem;
 
   .show-more {
     align-items: center;
-    color: $color-gray-30;
+    color: $df-secondary;
     display: flex;
-    font-size: $fs14;
+    font-size: $fs-14;
     justify-content: space-between;
     cursor: pointer;
     background-color: transparent;
     border: none;
     position: absolute;
-    top: 9px;
-    right: 53px;
+    top: $s-8;
+    right: $s-52;
     .placeholder-icon {
       transform: rotate(-90deg);
-      margin-left: 10px;
+      margin-left: $s-8;
       svg {
-        height: 14px;
-        width: 14px;
-        fill: $color-gray-30;
+        height: $s-16;
+        width: $s-16;
+        fill: $df-secondary;
       }
     }
     &:hover {
-      color: $color-primary-dark;
+      color: $da-tertiary;
       svg {
-        fill: $color-primary-dark;
+        fill: $da-tertiary;
       }
     }
   }
@@ -717,7 +191,8 @@ $size-6: 2rem;
     font-weight: 400;
   }
   span,
-  .info {
+  .info,
+  .recent-files-row-title-info {
     color: $df-secondary;
   }
   .project-actions {
@@ -731,133 +206,163 @@ $size-6: 2rem;
 }
 
 .team-hero {
+  background-color: $db-tertiary;
+  border-radius: $br-8;
+  border: none;
   display: flex;
+  margin: $s-16;
+  padding: $s-8;
   position: relative;
-  border: 2px solid $color-gray-10;
-  border-radius: $br8;
-  padding: 20px;
-  margin: 0 1rem 0 21px;
-  height: 154px;
 
   .text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
     flex-grow: 1;
-    padding-left: 20px;
-    .title {
-      font-size: $fs24;
-      font-weight: $fw700;
-      color: $color-black;
+    padding: $s-20 $s-20;
+  }
+  .title {
+    font-size: $fs-24;
+    color: $df-primary;
+    font-weight: $fw400;
+  }
+  .info {
+    flex: 1;
+    font-size: $fs-16;
+    span {
+      color: $df-secondary;
+      display: block;
     }
-    .info {
-      span {
-        color: $color-gray-30;
-        display: block;
-      }
-      padding-top: 10px;
+    a {
+      color: $da-primary;
     }
+    padding-top: $s-8;
   }
   .close {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: $s-20;
+    right: $s-20;
     background-color: transparent;
     border: none;
     cursor: pointer;
     svg {
       transform: rotate(45deg);
-      width: 16px;
-      height: 16px;
+      width: $s-16;
+      height: $s-16;
     }
   }
   .invite {
-    align-self: flex-end;
-    height: 40px;
-    font-family: "worksans", sans-serif;
-    width: 180px;
+    height: $s-32;
+    width: $s-180;
   }
+  .img-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: $s-200;
+    height: $s-200;
+    overflow: hidden;
+    border-radius: $br-4;
+  }
+
   img {
-    width: 274px;
-    margin-bottom: -19px;
+    border-radius: $br-4;
+    height: $s-200;
+    width: auto;
+
     @media (max-width: 1200px) {
       display: none;
       width: 0;
     }
+  }
+  svg {
+    fill: $df-secondary;
   }
 }
 
 .hero-projects {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-gap: 30px;
-  margin: 0 1rem 1rem 1.2rem;
+  grid-gap: $s-32;
+  margin: 0 $s-16 $s-16 $s-20;
+
+  @media (max-width: 1366px) {
+    grid-template-columns: 1fr;
+  }
+
   .tutorial,
   .walkthrough {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: auto 1fr;
     position: relative;
-    border: 2px solid $color-gray-10;
-    border-radius: $br8;
-    min-height: 211px;
+    border-radius: $br-8;
+    min-height: $s-216;
+    background-color: $db-tertiary;
+    padding: $s-8;
 
     .thumbnail {
-      border-top-left-radius: $br6;
-      border-bottom-left-radius: $br6;
-      padding: 30px;
+      width: $s-200;
+      height: $s-200;
+      border-radius: $br-6;
+      padding: $s-32;
       display: block;
-      background-color: #e0e4e9;
+      background-color: var(--color-canvas);
+    }
+
+    img {
+      border-radius: $br-4;
+      margin-bottom: 0;
+      width: $s-232;
     }
 
     .text {
-      padding: 30px;
-      .title {
-        color: $color-black;
-        font-size: $fs24;
-        font-weight: $fw700;
-        margin-bottom: 8px;
-      }
-      .info {
-        color: $color-gray-50;
-        margin-bottom: 20px;
-        font-size: $fs14;
-      }
+      padding: $s-32;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title {
+      color: $df-primary;
+      font-size: $fs-24;
+      font-weight: $fw400;
+      margin-bottom: $s-8;
+    }
+    .info {
+      flex: 1;
+      color: $df-secondary;
+      margin-bottom: $s-20;
+      font-size: $fs-16;
+    }
+    .invite {
+      height: $s-32;
     }
     .action {
-      font-family: "worksans", sans-serif;
-      width: 180px;
-      height: 40px;
+      width: $s-180;
+      height: $s-40;
     }
     .close {
       position: absolute;
       top: 0;
       right: 0;
-      width: $size-5;
+      width: $s-24;
       cursor: pointer;
       display: flex;
-      margin: 20px;
+      margin: $s-20;
       justify-content: center;
       align-items: center;
       background-color: transparent;
       border: none;
       .icon {
         svg {
-          fill: $color-gray-30;
-          height: 16px;
-          width: 16px;
+          fill: $df-secondary;
+          height: $s-16;
+          width: $s-16;
           transform: rotate(45deg);
           &:hover {
-            fill: $color-primary;
+            fill: $da-tertiary;
           }
         }
-      }
-    }
-
-    @media (max-width: 1846px) {
-      grid-template-columns: 190px 1fr;
-    }
-    @media (max-width: 1526px) {
-      grid-template-columns: 1fr;
-      .img {
-        display: none;
-        width: 0;
       }
     }
   }
@@ -879,31 +384,8 @@ $size-6: 2rem;
     .loader {
       display: flex;
       svg#loader-pencil {
-        width: 31px;
+        width: $s-32;
       }
-    }
-  }
-}
-
-.btn-secondary {
-  background-color: $db-tertiary;
-  text-transform: uppercase;
-  border: none;
-  color: $df-primary;
-  border-radius: 8px;
-
-  font-size: 0.75rem;
-  padding: 0 1rem;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  &:hover {
-    background-color: $db-cuaternary;
-    color: $da-primary;
-    svg {
-      fill: $da-primary;
     }
   }
 }

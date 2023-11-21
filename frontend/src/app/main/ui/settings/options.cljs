@@ -50,7 +50,7 @@
                    :on-submit on-submit
                    :form form}
 
-       [:h2 (tr "labels.language")]
+       [:h3 (tr "labels.language")]
 
        [:div {:class (stl/css :fields-row)}
         [:& fm/select {:options (into [{:label "Auto (browser)" :value ""}]
@@ -60,7 +60,7 @@
                        :name :lang
                        :data-test "setting-lang"}]]
 
-       [:h2 (tr "dashboard.theme-change")]
+       [:h3 (tr "dashboard.theme-change")]
        [:div {:class (stl/css :fields-row)}
         [:& fm/select {:label (tr "dashboard.select-ui-theme")
                        :name :theme
@@ -71,7 +71,8 @@
 
        [:> fm/submit-button*
         {:label (tr "dashboard.update-settings")
-         :data-test "submit-lang-change"}]]
+         :data-test "submit-lang-change"
+         :class (stl/css :btn-primary)}]]
 
       ;; OLD
       [:& fm/form {:class "options-form"
@@ -102,9 +103,8 @@
 
     (if new-css-system
       [:div {:class (stl/css :dashboard-settings)}
-       [:div
-        {:class (stl/css :form-container)
-         :data-test "settings-form"}
+       [:div {:class (stl/css :form-container) :data-test "settings-form"}
+        [:h2 (tr "labels.settings")]
         [:& options-form {}]]]
       
       ;; OLD

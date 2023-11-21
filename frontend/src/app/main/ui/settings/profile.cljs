@@ -61,7 +61,8 @@
           :name :fullname
           :label (tr "dashboard.your-name")}]]
 
-       [:div {:class (stl/css :fields-row)}
+       [:div {:class (stl/css :fields-row)
+              :on-click #(modal/show! :change-email {})}
         [:& fm/input
          {:type "email"
           :name :email
@@ -76,7 +77,8 @@
 
        [:> fm/submit-button*
         {:label (tr "dashboard.save-settings")
-         :disabled (empty? (:touched @form))}]
+         :disabled (empty? (:touched @form))
+         :className (stl/css :btn-primary)}]
 
        [:div {:class (stl/css :links)}
         [:div {:class (stl/css :link-item)}
@@ -160,7 +162,8 @@
       (dom/set-html-title (tr "title.settings.profile")))
     (if new-css-system
       [:div {:class (stl/css :dashboard-settings)}
-       [:div {:class (stl/css :form-container :two-columns)}
+       [:div {:class (stl/css :form-container)}
+        [:h2 (tr "labels.profile")]
         [:& profile-photo-form]
         [:& profile-form]]]
       
@@ -169,5 +172,4 @@
        [:div.form-container.two-columns
         [:& profile-photo-form]
         [:& profile-form]]])))
-
 
