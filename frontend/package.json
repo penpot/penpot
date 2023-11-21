@@ -27,9 +27,21 @@
     "build:clean": "gulp clean:output && gulp clean:dist",
     "build:styles": "gulp build:styles",
     "build:assets": "gulp build:assets",
-    "build:copy": "gulp build:copy"
+    "build:copy": "gulp build:copy",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.23.3",
+    "@babel/preset-react": "^7.23.3",
+    "@storybook/addon-essentials": "^7.5.3",
+    "@storybook/addon-interactions": "^7.5.3",
+    "@storybook/addon-links": "^7.5.3",
+    "@storybook/addon-onboarding": "^1.0.8",
+    "@storybook/blocks": "^7.5.3",
+    "@storybook/react": "^7.5.3",
+    "@storybook/react-webpack5": "^7.5.3",
+    "@storybook/testing-library": "^0.2.2",
     "autoprefixer": "^10.4.15",
     "cypress": "^10.3.0",
     "cypress-file-upload": "^5.0.8",
@@ -52,9 +64,11 @@
     "postcss": "^8.4.29",
     "postcss-clean": "^1.2.2",
     "prettier": "^3.0.3",
+    "prop-types": "^15.8.1",
     "rimraf": "^5.0.1",
     "sass": "^1.66.1",
-    "shadow-cljs": "2.25.10"
+    "shadow-cljs": "2.25.10",
+    "storybook": "^7.5.3"
   },
   "dependencies": {
     "@sentry/browser": "^6.17.4",

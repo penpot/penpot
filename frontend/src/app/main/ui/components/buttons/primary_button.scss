@@ -1,0 +1,49 @@
+@import "refactor/common-refactor.scss";
+
+.button {
+  @include buttonStyle;
+  @include flexCenter;
+  column-gap: $s-8;
+  height: $s-32;
+
+  --bg-color: var(--button-primary-background-color-rest);
+  --border-color: var(--button-primary-border-color-rest);
+  --fg-color: var(--button-primary-foreground-color-rest);
+
+  background-color: var(--bg-color);
+  border: $s-1 solid var(--border-color);
+  color: var(--fg-color);
+  border-radius: $br-8;
+
+  svg,
+  span svg {
+    stroke: currentColor;
+    width: $s-16;
+    height: $s-16;
+  }
+
+  &:hover {
+    --bg-color: var(--button-primary-background-color-hover);
+    --border-color: var(--button-primary-border-color-hover);
+    --fg-color: var(--button-primary-foreground-color-hover);
+  }
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    --bg-color: var(--button-primary-background-color-focus);
+    --border-color: var(--button-primary-border-color-focus);
+    --fg-color: var(--button-primary-foreground-color-focus);
+  }
+  &:active {
+    --bg-color: var(--button-primary-background-color-active);
+    --border-color: var(--button-primary-border-color-active);
+    --fg-color: var(--button-primary-foreground-color-active);
+    outline: none;
+  }
+  &:disabled {
+    --bg-color: var(--button-background-color-disabled);
+    --border-color: var(--button-border-color-disabled);
+    --fg-color: var(--button-foreground-color-disabled);
+    cursor: unset;
+  }
+}

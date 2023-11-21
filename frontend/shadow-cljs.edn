@@ -74,6 +74,17 @@
      :anon-fn-naming-policy :off
      :source-map-detail-level :all}}}
 
+  :storybook
+  {:target :esm
+   :output-dir "target/storybook/"
+   :modules
+   {:primary-button-story {:exports {default app.main.ui.components.buttons.primary-button-stories/default} }}
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}}
+
   :bench
   {:target :node-script
    :output-to "target/bench.js"
@@ -105,6 +116,5 @@
     :source-map-include-sources-content true
     :source-map-detail-level :all
     :warnings {:fn-deprecated false}}}
-
   }}
 
