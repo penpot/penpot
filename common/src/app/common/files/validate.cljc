@@ -126,8 +126,8 @@
             (when (or (nil? child) (not= (:parent-id child) (:id shape)))
               (report-error! :child-not-found
                 (str/ffmt "Child % not found" child-id)
-                shape file page
-                :child-id child-id))))))))
+                child file page
+                :parent-id (:id shape)))))))))
 
 (defn validate-frame!
   "Validate that the frame-id shape exists and is indeed a frame. Also
