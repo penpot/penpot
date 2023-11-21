@@ -21,8 +21,8 @@
   [{:keys [session profile index] :as props}]
   (let [profile (assoc profile :color (:color session))]
     [:li {:class (stl/css :session-icon)
-          :style #js {"zIndex" (str (or (+ 1 (* -1 index)) 0)),
-                      "background-color" (:color session)}
+          :style {:z-index (str (or (+ 1 (* -1 index)) 0))
+                  :background-color (:color session)}
           :title (:fullname profile)}
      [:img {:alt (:fullname profile)
             :style {:background-color (:color session)}

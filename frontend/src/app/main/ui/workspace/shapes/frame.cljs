@@ -11,6 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.thumbnails :as thc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
@@ -23,6 +24,7 @@
    [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as fdm]
    [app.util.debug :as dbg]
+   [app.util.dom :as dom]
    [app.util.timers :as tm]
    [rumext.v2 :as mf]))
 
@@ -113,13 +115,29 @@
             thumbnail-uri* (mf/with-memo [file-id page-id frame-id]
                              (let [object-id (thc/fmt-object-id file-id page-id frame-id "frame")]
                                (refs/workspace-thumbnail-by-id object-id)))
-            thumbnail-uri (mf/deref thumbnail-uri*)
+            thumbnail-uri  (mf/deref thumbnail-uri*)
 
             modifiers-ref  (mf/with-memo [frame-id]
                              (refs/workspace-modifiers-by-frame-id frame-id))
             modifiers      (mf/deref modifiers-ref)
 
-            hidden?        (true? (:hidden shape))]
+            hidden?        (true? (:hidden shape))
+
+            tries-ref      (mf/use-ref 0)
+            imposter-ref   (mf/use-ref nil)
+
+            on-load        (mf/use-fn #(mf/set-ref-val! tries-ref 0))
+            on-error       (mf/use-fn
+                            (fn []
+                              (let [current-tries (mf/ref-val tries-ref)
+                                    new-tries     (mf/set-ref-val! tries-ref (inc current-tries))
+                                    delay-in-ms   (* (mth/pow 2 new-tries) 1000)
+                                    retry-fn      (fn []
+                                                    (let [imposter (mf/ref-val imposter-ref)]
+                                                      (when-not (nil? imposter)
+                                                        (dom/set-attribute! imposter "href" thumbnail-uri))))]
+                                (when (< new-tries 8)
+                                  (tm/schedule delay-in-ms retry-fn)))))]
 
         ;; NOTE: we don't add deps because we want this to be executed
         ;; once on mount with only referenced the initial data
@@ -140,9 +158,12 @@
            [:image.thumbnail-bitmap
             {:x x
              :y y
+             :ref imposter-ref
              :width width
              :height height
              :href thumbnail-uri
+             :on-load on-load
+             :on-error on-error
              :style {:display (when-not ^boolean thumbnail? "none")}}]
 
            ;; Render border around image when we are debugging
