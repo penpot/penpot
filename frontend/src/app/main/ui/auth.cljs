@@ -11,6 +11,7 @@
    [app.main.ui.auth.recovery :refer [recovery-page]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
    [app.main.ui.auth.register :refer [register-page register-success-page register-validate-page]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -41,32 +42,34 @@
     (mf/use-effect
      #(dom/set-html-title (tr "title.default")))
 
-    [:main.auth
-     [:section.auth-sidebar
-      [:a.logo {:href "#/"}
-       [:span {:aria-hidden true} i/logo]
-       [:span.hidden-name "Home"]]
-      [:span.tagline (tr "auth.sidebar-tagline")]]
+    ;; FIXME: Temporary disabled new css system until we redesign the login with the new styles
+    [:& (mf/provider ctx/new-css-system) {:value false}
+     [:main.auth
+      [:section.auth-sidebar
+       [:a.logo {:href "#/"}
+        [:span {:aria-hidden true} i/logo]
+        [:span.hidden-name "Home"]]
+       [:span.tagline (tr "auth.sidebar-tagline")]]
 
-     [:section.auth-content
-      (case section
-        :auth-register
-        [:& register-page {:params params}]
+      [:section.auth-content
+       (case section
+         :auth-register
+         [:& register-page {:params params}]
 
-        :auth-register-validate
-        [:& register-validate-page {:params params}]
+         :auth-register-validate
+         [:& register-validate-page {:params params}]
 
-        :auth-register-success
-        [:& register-success-page {:params params}]
+         :auth-register-success
+         [:& register-success-page {:params params}]
 
-        :auth-login
-        [:& login-page {:params params}]
+         :auth-login
+         [:& login-page {:params params}]
 
-        :auth-recovery-request
-        [:& recovery-request-page]
+         :auth-recovery-request
+         [:& recovery-request-page]
 
-        :auth-recovery
-        [:& recovery-page {:params params}])
+         :auth-recovery
+         [:& recovery-page {:params params}])
 
-      [:& terms-login {}]]]))
+       [:& terms-login {}]]]]))
 
