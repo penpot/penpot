@@ -93,7 +93,7 @@
                             explain? true
                             chain? true
                             data-length 10
-                            data-level 5}}]
+                            data-level 4}}]
 
   (letfn [(print-trace-element [^StackTraceElement e]
             (let [class (.getClassName e)
@@ -127,7 +127,7 @@
                     (-> (ex-message cause)
                         (str/lines)
                         (first)
-                        (str/prune 100)))
+                        (str/prune 130)))
 
             (when-let [^StackTraceElement e (first (.getStackTrace ^Throwable cause))]
               (printf " (%s:%d)" (or (.getFileName e) "") (.getLineNumber e)))
