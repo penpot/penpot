@@ -290,7 +290,8 @@
                                   (-> data
                                       (blob/decode)
                                       (assoc :id (:id file))
-                                      (pmg/migrate-data))))
+                                      (pmg/migrate-data)
+                                      (d/without-nils))))
 
         ;; WARNING: this ruins performance; maybe we need to find
         ;; some other way to do general validation
