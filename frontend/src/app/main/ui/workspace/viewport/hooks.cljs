@@ -17,6 +17,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.grid-layout.shortcuts :as gsc]
    [app.main.data.workspace.path.shortcuts :as psc]
    [app.main.data.workspace.shortcuts :as wsc]
    [app.main.data.workspace.text.shortcuts :as tsc]
@@ -359,15 +360,19 @@
 ;; this shortcuts outside the viewport?
 
 (defn setup-shortcuts
-  [path-editing? drawing-path? text-editing?]
+  [path-editing? drawing-path? text-editing? grid-editing?]
   (hooks/use-shortcuts ::workspace wsc/shortcuts)
   (mf/use-effect
-   (mf/deps path-editing? drawing-path?)
+   (mf/deps path-editing? drawing-path? grid-editing?)
    (fn []
      (cond
+       grid-editing?
+       (do (st/emit! (dsc/push-shortcuts ::grid gsc/shortcuts))
+           #(st/emit! (dsc/pop-shortcuts ::grid)))
        (or drawing-path? path-editing?)
        (do (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
            #(st/emit! (dsc/pop-shortcuts ::path)))
        text-editing?
        (do (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
            #(st/emit! (dsc/pop-shortcuts ::text)))))))
+
