@@ -553,13 +553,15 @@
           [fixed-width
            fixed-height] (th/get-relative-size width height)
 
-          data           (rds/renderToStaticMarkup
-                          (mf/element frame-imposter
-                                      #js {:objects objects
-                                           :frame shape
-                                           :vbox viewbox
-                                           :width width
-                                           :height height}))]
+
+          data           (with-redefs [cfg/public-uri cfg/rasterizer-uri]
+                           (rds/renderToStaticMarkup
+                            (mf/element frame-imposter
+                                        #js {:objects objects
+                                             :frame shape
+                                             :vbox viewbox
+                                             :width width
+                                             :height height})))]
 
       (->> (fonts/render-font-styles-cached fonts)
            (rx/catch (fn [cause]
@@ -567,11 +569,11 @@
                               :cause cause)
                        (rx/empty)))
            (rx/map (fn [styles]
-                     {:id object-id
-                      :data data
-                      :viewbox viewbox
-                      :width fixed-width
-                      :height fixed-height
-                      :styles styles}))))
+                        {:id object-id
+                         :data data
+                         :viewbox viewbox
+                         :width fixed-width
+                         :height fixed-height
+                         :styles styles}))))
     (do (l/warn :msg "imposter shape is nil")
         (rx/empty))))

@@ -61,10 +61,19 @@
   [message]
   (.push ^js queue message))
 
+(defn- replace-uris
+  "Replaces URIs for rasterizer ones in styles"
+  [styles]
+  (let [public-uri (str cf/public-uri)
+        rasterizer-uri (str cf/rasterizer-uri)]
+    (if-not (= public-uri rasterizer-uri)
+      (str/replace styles public-uri rasterizer-uri)
+      styles)))
+
 (defn render
   "Renders an SVG"
   [{:keys [data styles width result] :as params}]
-  (let [styles  (d/nilv styles "")
+  (let [styles  (replace-uris (d/nilv styles ""))
         result  (d/nilv result "blob")
         id      (dm/str (uuid/next))
         payload #js {:data data :styles styles :width width :result result}
