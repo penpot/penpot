@@ -212,11 +212,15 @@
 
         skip
         (mf/use-fn
-         #(st/emit! (modal/hide)
-                    (if (contains? cf/flags :newsletter-subscription)
-                      (modal/show {:type :onboarding-newsletter-modal})
-                      (modal/show {:type :onboarding-team}))
-                    (du/mark-onboarding-as-viewed)))]
+         (fn []
+           (st/emit! (modal/hide)
+                     (du/mark-onboarding-as-viewed))
+           (cond
+             (contains? cf/flags :onboarding-newsletter)
+             (modal/show! {:type :onboarding-newsletter-modal})
+
+             (contains? cf/flags :onboarding-team)
+             (modal/show! {:type :onboarding-team}))))]
 
     (mf/with-effect [@slide]
       (when (not= :start @slide)
@@ -225,14 +229,13 @@
         (fn []
           (reset! klass nil)
           (tm/dispose! sem))))
+
     (if new-css-system
       [:div {:class (stl/css :modal-overlay)}
        [:div.animated {:class(dm/str @klass " " (stl/css :animated))}
         (case @slide
           :start      [:& onboarding-welcome {:next #(navigate :opensource)}]
           :opensource [:& onboarding-before-start {:next skip}])]]
-
-
 
       [:div.modal-overlay
        [:div.animated {:class @klass}

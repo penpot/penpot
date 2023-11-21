@@ -59,7 +59,10 @@
     :webworker))
 
 (def default-flags
-  [:enable-newsletter-subscription
+  [:enable-onboarding
+   :enable-onboarding-team
+   :enable-onboarding-questions
+   :enable-onboarding-newsletter
    :enable-dashboard-templates-section
    :enable-google-fonts-provider])
 
