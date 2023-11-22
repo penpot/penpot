@@ -74,6 +74,18 @@
      :anon-fn-naming-policy :off
      :source-map-detail-level :all}}}
 
+  :cosmos
+  {:target :esm
+   :output-dir "target/cosmos"
+   :modules
+   {:design-system {:exports {default app.main.ui.components.design-system/default}}}
+
+   :compiler-options
+      {:output-feature-set :es2020
+      :output-wrapper false
+      :warnings {:fn-deprecated false}}
+   }
+
   :bench
   {:target :node-script
    :output-to "target/bench.js"
