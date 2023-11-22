@@ -840,6 +840,9 @@
                 ;; Remove layout-item properties when moving a shape outside a layout
                 (cond-> (not (ctl/any-layout? objects frame-id))
                   (pcb/update-shapes moving-shapes-ids ctl/remove-layout-item-data))
+                ;; Remove componnet-root property when moving a shape inside a component
+                (cond-> (ctn/get-instance-root objects frame)
+                  (pcb/update-shapes moving-shapes-ids #(dissoc % :component-root)))
                 (pcb/update-shapes moving-shapes-ids #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true)))
                 (pcb/update-shapes shape-ids-to-detach ctk/detach-shape)
                 (pcb/change-parent frame-id moving-shapes drop-index)

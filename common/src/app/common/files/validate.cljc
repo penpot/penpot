@@ -187,7 +187,7 @@
   exists and its main-instance does not point to this
   shape."
   [shape file page libraries]
-  (when (some? (:main-instance shape))
+  (when (true? (:main-instance shape))
     (report-error! :component-not-main
                    "Shape not expected to be main instance"
                    shape file page))
@@ -210,7 +210,7 @@
 (defn validate-component-not-main-not-head!
   "Validate that this shape is not main instance and not head."
   [shape file page]
-  (when (some? (:main-instance shape))
+  (when (true? (:main-instance shape))
     (report-error! :component-main
                    "Shape not expected to be main instance"
                    shape file page))
@@ -231,7 +231,7 @@
 (defn validate-component-not-root!
   "Validate that this shape is not an instance root."
   [shape file page]
-  (when (some? (:component-root shape))
+  (when (true? (:component-root shape))
     (report-error! :should-not-be-component-root
                    "Shape should not be component root"
                    shape file page)))
