@@ -18,10 +18,11 @@
    [cuerdas.core :as str]))
 
 (defn fill->color
-  [{:keys [fill-color fill-opacity fill-color-gradient]}]
+  [{:keys [fill-color fill-opacity fill-color-gradient fill-image]}]
   {:color fill-color
    :opacity fill-opacity
-   :gradient fill-color-gradient})
+   :gradient fill-color-gradient
+   :image fill-image})
 
 (defmulti get-value
   (fn [property _shape _objects] property))
@@ -145,25 +146,8 @@
 
 (defmethod get-value :background
   [_ {:keys [fills] :as shape} _]
-  (let [single-fill? (= (count fills) 1)
-        ffill (first fills)
-        gradient? (some? (:fill-color-gradient ffill))]
-    (when (and (not (cgc/svg-markup? shape)) (not (cfh/group-shape? shape)) single-fill? gradient?)
-      (fill->color ffill))))
-
-(defmethod get-value :background-color
-  [_ {:keys [fills] :as shape} _]
-  (let [single-fill? (= (count fills) 1)
-        ffill (first fills)
-        gradient? (some? (:fill-color-gradient ffill))]
-    (when (and (not (cgc/svg-markup? shape)) (not (cfh/group-shape? shape)) single-fill? (not gradient?))
-      (fill->color ffill))))
-
-(defmethod get-value :background-image
-  [_ {:keys [fills] :as shape} _]
-  (when (and (not (cgc/svg-markup? shape)) (not (cfh/group-shape? shape)) (> (count fills) 1))
-    (->> fills
-         (map fill->color))))
+  (when (and (not (cgc/svg-markup? shape)) (not (cfh/group-shape? shape)))
+    (fill->color (first fills))))
 
 (defn get-stroke-data
   [stroke]

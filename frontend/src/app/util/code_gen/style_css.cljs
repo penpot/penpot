@@ -71,8 +71,6 @@ body {
    :height
    :transform
    :background
-   :background-color
-   :background-image
    :border
    :border-radius
    :box-shadow
