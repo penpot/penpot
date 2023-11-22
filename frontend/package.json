@@ -32,7 +32,6 @@
     "build-storybook": "storybook build"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.23.3",
     "@babel/preset-react": "^7.23.3",
     "@storybook/addon-essentials": "^7.5.3",
     "@storybook/addon-interactions": "^7.5.3",
@@ -40,7 +39,7 @@
     "@storybook/addon-onboarding": "^1.0.8",
     "@storybook/blocks": "^7.5.3",
     "@storybook/react": "^7.5.3",
-    "@storybook/react-webpack5": "^7.5.3",
+    "@storybook/react-vite": "^7.5.3",
     "@storybook/testing-library": "^0.2.2",
     "autoprefixer": "^10.4.15",
     "cypress": "^10.3.0",
@@ -68,7 +67,8 @@
     "rimraf": "^5.0.1",
     "sass": "^1.66.1",
     "shadow-cljs": "2.25.10",
-    "storybook": "^7.5.3"
+    "storybook": "^7.5.3",
+    "vite": "^5.0.1"
   },
   "dependencies": {
     "@sentry/browser": "^6.17.4",

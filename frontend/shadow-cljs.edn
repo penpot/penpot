@@ -78,7 +78,7 @@
   {:target :esm
    :output-dir "target/storybook/"
    :modules
-   {:primary-button-story {:exports {default app.main.ui.components.buttons.primary-button-stories/default} }}
+   {:primary-button-stories {:exports {default app.main.ui.components.buttons.primary-button-stories/default} }}
 
    :compiler-options
    {:output-feature-set :es2020

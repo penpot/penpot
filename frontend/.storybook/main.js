@@ -1,14 +1,17 @@
-/** @type { import('@storybook/react-webpack5').StorybookConfig } */
+/** @type { import('@storybook/react-vite').StorybookConfig } */
 const config = {
-  stories: ["../target/storybook/**/*_stories.js"],
+  stories: ["../target/storybook/*-stories.js"],
   addons: [
     "@storybook/addon-links",
     "@storybook/addon-essentials",
     "@storybook/addon-onboarding",
     "@storybook/addon-interactions",
   ],
+  features: {
+    storyStoreV7: false,
+  },
   framework: {
-    name: "@storybook/react-webpack5",
+    name: "@storybook/react-vite",
     options: {},
   },
   docs: {
