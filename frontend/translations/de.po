@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-07 12:12+0000\n"
+"PO-Revision-Date: 2023-11-23 11:04+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.1-dev\n"
+"X-Generator: Weblate 5.2.1-rc\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -5102,3 +5102,23 @@ msgstr "11-30"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.interface-design-visual-assets-design-systems"
 msgstr "... Interface-Design, visuelle Assets, Designsysteme usw."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-in-concept-ideas"
+msgstr "Arbeiten an Konzeptideen"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.your-feedback-will-help-us"
+msgstr ""
+"Ihr Feedback wird uns helfen, Ihre Gewohnheiten und Vorlieben zu verstehen, "
+"damit wir Penpot weiterhin zu einem nützlichen und angenehmen Werkzeug "
+"machen können."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.describe-your-experience-working-on"
+msgstr ""
+"Wie würden Sie Ihre Erfahrungen bei der Arbeit an … am besten beschreiben?"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared-library"
+msgstr "Geteilte Bibliothek"
