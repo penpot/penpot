@@ -843,6 +843,12 @@
                 ;; Remove component-root property when moving a shape inside a component
                 (cond-> (ctn/get-instance-root objects frame)
                   (pcb/update-shapes moving-shapes-ids #(dissoc % :component-root)))
+                ;; Add component-root property when moving a component outside a component
+                (cond-> (not (ctn/get-instance-root objects frame))
+                  (pcb/update-shapes moving-shapes-ids (fn [shape]
+                                                         (if (ctk/instance-head? shape)
+                                                           (assoc shape :component-root true)
+                                                           shape))))
                 (pcb/update-shapes moving-shapes-ids #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true)))
                 (pcb/update-shapes shape-ids-to-detach ctk/detach-shape)
                 (pcb/change-parent frame-id moving-shapes drop-index)
