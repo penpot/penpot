@@ -196,19 +196,21 @@
    Also remove component-root of all children. Return the same structure
    as make-component-shape."
   [root objects file-id]
-  (let [new-id       (uuid/next)
-        new-root     (assoc root
-                            :component-id new-id
-                            :component-file file-id
-                            :component-root true
-                            :main-instance true)
-        new-children (->> (cfh/get-children objects (:id root))
-                          (map #(dissoc % :component-root)))]
+  (let [new-id            (uuid/next)
+        inside-component? (some? (get-instance-root objects root))
+        new-root          (cond-> (assoc root
+                                         :component-id new-id
+                                         :component-file file-id
+                                         :main-instance true)
+                            (not inside-component?)
+                            (assoc :component-root true))
+        new-children       (->> (cfh/get-children objects (:id root))
+                                (map #(dissoc % :component-root)))]
     [(assoc new-root :id new-id)
      nil
      (into [new-root] new-children)]))
 
-(defn make-component-shape
+(defn make-component-shape ;; Only used for components v1
   "Clone the shape and all children. Generate new ids and detach
   from parent and frame. Update the original shapes to have links
   to the new ones."
@@ -280,7 +282,7 @@
 
          component-shape (if components-v2
                            (-> (get-shape component-page (:main-instance-id component))
-                               (assoc :parent-id nil)
+                               (assoc :parent-id nil) ;; On v2 we force parent-id to nil in order to behave like v1
                                (assoc :frame-id uuid/zero))
                            (get-shape component (:id component)))
 
@@ -333,7 +335,7 @@
                       :component-root true
                       :name new-name)
 
-               (some? (:parent-id original-shape))
+               (some? (:parent-id original-shape)) ;; On v2 we have removed the parent-id for component roots (see above)
                (dissoc :component-root))))
 
          [new-shape new-shapes _]

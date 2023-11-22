@@ -97,7 +97,7 @@
 (defn instance-root?
   "Check if this shape is the head of a top instance."
   [shape]
-  (some? (:component-root shape)))
+  (true? (:component-root shape)))
 
 (defn instance-head?
   "Check if this shape is the head of a top instance or a subinstance."
@@ -127,7 +127,7 @@
   "Check if this shape is the root of the main instance of some
   component."
   [shape]
-  (some? (:main-instance shape)))
+  (true? (:main-instance shape)))
 
 (defn in-component-copy?
   "Check if the shape is inside a component non-main instance."
@@ -156,7 +156,7 @@
 
 (defn get-component-root
   [component]
-  (if (some? (:main-instance-id component))
+  (if (true? (:main-instance-id component))
     (get-in component [:objects (:main-instance-id component)])
     (get-in component [:objects (:id component)])))
 
