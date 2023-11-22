@@ -838,7 +838,8 @@
 (defmethod read-section :v1/sobjects
   [{:keys [::sto/storage ::db/conn ::input ::overwrite?]}]
   (let [storage (media/configure-assets-storage storage)
-        ids     (read-obj! input)]
+        ids     (read-obj! input)
+        thumb?  (into #{} (map :media-id) (:thumbnails @*state*))]
 
     (doseq [expected-storage-id ids]
       (let [id    (read-uuid! input)
@@ -855,11 +856,17 @@
               hash            (sto/calculate-hash resource)
               content         (-> (sto/content resource size)
                                   (sto/wrap-with-hash hash))
-              params          (-> mdata
-                                  (assoc ::sto/deduplicate? true)
-                                  (assoc ::sto/content content)
-                                  (assoc ::sto/touched-at (dt/now))
-                                  (assoc :bucket "file-media-object"))
+
+              params          (assoc mdata ::sto/content content)
+
+              params          (if (thumb? id)
+                                (-> params
+                                    (assoc ::sto/deduplicate? true)
+                                    (assoc ::sto/touched-at (dt/now))
+                                    (assoc :bucket "file-media-object"))
+                                (-> params
+                                    (assoc ::sto/deduplicate? false)
+                                    (assoc :bucket "file-object-thumbnail")))
 
               sobject         (sto/put-object! storage params)]
 
