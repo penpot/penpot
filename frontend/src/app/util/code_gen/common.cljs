@@ -49,6 +49,9 @@
         (or (d/not-empty? (:shadow shape))
             (d/not-empty? (:strokes shape))))
 
+   ;; When a shape has several fills
+   (> (count (:fills shape)) 1)
+
    ;; When a shape has several strokes or the stroke is not a "border"
    (or (> (count (:strokes shape)) 1)
        (and (= (count (:strokes shape)) 1)
