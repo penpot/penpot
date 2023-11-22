@@ -114,17 +114,29 @@
 ;; the user perspective a error flash message should be visualized but
 ;; user can continue operate on the application. Can happen in backend
 ;; and frontend.
+
 (defmethod ptk/handle-error :validation
-  [error]
-  (ts/schedule
-   #(st/emit! (msg/show {:content "Validation error"
-                         :type :error
-                         :timeout 3000})))
+  [{:keys [code] :as error}]
 
   (print-group! "Validation Error"
                 (fn []
                   (print-data! error)
-                  (print-explain! error))))
+                  (print-explain! error)))
+  (cond
+    (= code :invalid-paste-data)
+    (let [message (tr "errors.paste-data-validation")]
+      (st/async-emit!
+       (msg/show {:content message
+                  :type :error
+                  :timeout 3000})))
+
+    :else
+    (let [message (tr "errors.generic-validation")]
+      (st/async-emit!
+       (msg/show {:content message
+                  :type :error
+                  :timeout 3000})))))
+
 
 
 ;; This is a pure frontend error that can be caused by an active
@@ -230,6 +242,12 @@
 
     (= :max-quote-reached code)
     (let [message (tr "errors.max-quote-reached" (:target error))]
+      (st/emit! (modal/show {:type :alert :message message})))
+
+    (or (= :paste-feature-not-enabled code)
+        (= :missing-features-in-paste-content code)
+        (= :paste-feature-not-supported code))
+    (let [message (tr "errors.feature-not-supported" (:feature error))]
       (st/emit! (modal/show {:type :alert :message message})))
 
     :else

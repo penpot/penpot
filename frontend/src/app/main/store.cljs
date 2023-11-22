@@ -8,6 +8,7 @@
   (:require
    [app.common.logging :as log]
    [app.util.object :as obj]
+   [app.util.timers :as tm]
    [beicon.core :as rx]
    [okulary.core :as l]
    [potok.core :as ptk]))
@@ -85,6 +86,10 @@
   ([event & events]
    (apply ptk/emit! state (cons event events))
    nil))
+
+(defn async-emit!
+  [& params]
+  (tm/schedule #(apply emit! params)))
 
 (defonce ongoing-tasks (l/atom #{}))
 

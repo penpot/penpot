@@ -427,7 +427,7 @@
 
                     shape))]
 
-          (let [ids (->> (keys props) (filter changed-text?))]
+          (let [ids (into #{} (filter changed-text?) (keys props))]
             (rx/of (dwu/start-undo-transaction undo-id)
                    (dch/update-shapes ids update-fn {:reg-objects? true
                                                      :stack-undo? true

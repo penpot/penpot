@@ -55,8 +55,8 @@
                    :or {reg-objects? false save-undo? true stack-undo? false ignore-remote? false ignore-touched false}}]
 
    (dm/assert!
-    "expected a valid set of uuid's"
-    (sm/check-set-of-uuid! ids))
+    "expected a valid coll of uuid's"
+    (sm/check-coll-of-uuid! ids))
 
    (dm/assert! (fn? update-fn))
 
