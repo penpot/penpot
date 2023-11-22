@@ -492,7 +492,7 @@
               [:div {:class (stl/css :component-parent-name)}
                (cfh/merge-path-item (:path component) (:name component))])]]
           (when swap-opened?
-            [:& component-swap {:shapes shapes}])
+            [:& component-swap {:shapes copies}])
 
           (when (and (not swap-opened?) (not multi) components-v2)
             [:& component-annotation {:id id :shape shape :component component}])])])))
