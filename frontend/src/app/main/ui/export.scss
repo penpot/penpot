@@ -201,6 +201,7 @@
             img,
             svg {
               object-fit: contain;
+              max-height: $s-40;
             }
           }
         }
