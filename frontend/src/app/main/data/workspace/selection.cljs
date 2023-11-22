@@ -27,6 +27,7 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.libraries-helpers :as dwlh]
+   [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
@@ -124,14 +125,15 @@
      (update [_ state]
        (-> state
            (update-in [:workspace-local :selected] d/toggle-selection id toggle?)
-           (assoc-in [:workspace-local :last-selected] id)
-           (dissoc :specialized-panel)))
+           (assoc-in [:workspace-local :last-selected] id)))
 
      ptk/WatchEvent
      (watch [_ state _]
        (let [page-id (:current-page-id state)
              objects (wsh/lookup-page-objects state page-id)]
-         (rx/of (dwc/expand-all-parents [id] objects)))))))
+         (rx/of
+          (dwc/expand-all-parents [id] objects)
+          ::dwsp/interrupt))))))
 
 (defn select-prev-shape
   ([]
@@ -186,12 +188,14 @@
   [id]
   (dm/assert! (uuid? id))
   (ptk/reify ::deselect-shape
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of ::dwsp/interrupt))
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (update-in [:workspace-local :selected] disj id)
-          (update :workspace-local dissoc :last-selected)
-          (dissoc :specialized-panel)))))
+          (update :workspace-local dissoc :last-selected)))))
 
 (defn shift-select-shapes
   ([id]
@@ -199,6 +203,9 @@
 
   ([id objects]
    (ptk/reify ::shift-select-shapes
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (rx/of ::dwsp/interrupt))
      ptk/UpdateEvent
      (update [_ state]
        (let [objects (or objects (wsh/lookup-page-objects state))
@@ -208,9 +215,8 @@
                            (conj id))]
          (-> state
              (assoc-in [:workspace-local :selected]
-               (set/union selection append-to-selection))
-             (update :workspace-local assoc :last-selected id)
-             (dissoc :specialized-panel)))))))
+                       (set/union selection append-to-selection))
+             (update :workspace-local assoc :last-selected id)))))))
 
 (defn select-shapes
   [ids]
@@ -227,14 +233,14 @@
             ids (if (d/not-empty? focus)
                   (cpf/filter-not-focus objects focus ids)
                   ids)]
-        (-> state
-            (assoc-in  [:workspace-local :selected] ids)
-            (dissoc :specialized-panel))))
+        (assoc-in state [:workspace-local :selected] ids)))
 
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)]
-        (rx/of (dwc/expand-all-parents ids objects))))))
+        (rx/of
+         (dwc/expand-all-parents ids objects)
+         ::dwsp/interrupt)))))
 
 (defn select-all
   []
@@ -273,6 +279,9 @@
 
   ([check-modal]
    (ptk/reify ::deselect-all
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (rx/of ::dwsp/interrupt))
      ptk/UpdateEvent
      (update [_ state]
 
@@ -283,9 +292,7 @@
          (update :workspace-local
                  #(-> %
                       (assoc :selected (d/ordered-set))
-                      (dissoc :selected-frame)))
-         :allways
-         (dissoc :specialized-panel))))))
+                      (dissoc :selected-frame))))))))
 
 ;; --- Select Shapes (By selrect)
 

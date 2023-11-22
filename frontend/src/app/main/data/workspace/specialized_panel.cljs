@@ -7,38 +7,35 @@
 (ns app.main.data.workspace.specialized-panel
   (:require
    [app.common.data :as d]
+   [app.main.data.workspace.common :as-alias dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-(defn interrupt? [e] (= e :interrupt))
+(defn interrupt? [e] (or (= e :interrupt) (= e ::interrupt)))
 
-(def clear-specialized-panel
+(defn clear-specialized-panel
+  []
   (ptk/reify ::clear-specialized-panel
     ptk/UpdateEvent
     (update [_ state]
       (dissoc state :specialized-panel))))
 
+
 (defn open-specialized-panel
-  ([type]
-   (ptk/reify ::open-specialized-panel-1
-     ptk/WatchEvent
-     (watch [_ state _]
+  [type]
+   (ptk/reify ::open-specialized-panel
+     ptk/UpdateEvent
+     (update [_ state]
        (let [page-id         (:current-page-id state)
              objects         (wsh/lookup-page-objects state page-id)
              selected-ids    (wsh/lookup-selected state)
              selected-shapes (map (d/getf objects) selected-ids)]
-
-         (rx/of (open-specialized-panel type selected-shapes))))))
-
-  ([type shapes]
-   (ptk/reify ::open-specialized-panel-2
-     ptk/UpdateEvent
-     (update [_ state]
-       (assoc state :specialized-panel {:type type :shapes shapes}))
+         (assoc state :specialized-panel {:type type :shapes selected-shapes})))
      ptk/WatchEvent
      (watch [_ _ stream]
-       (->> stream
-            (rx/filter interrupt?)
+       (->> (rx/merge
+             (rx/filter interrupt? stream)
+             (rx/filter (ptk/type? ::dwc/undo) stream))
             (rx/take 1)
-            (rx/map (constantly clear-specialized-panel)))))))
+            (rx/map clear-specialized-panel)))))
