@@ -17,7 +17,6 @@
    [app.main.data.workspace.specialized-panel :as dwsp]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.search-bar :refer [search-bar]]
@@ -161,6 +160,7 @@
         visible?       (h/use-visible item-ref :once? true)]
     [:div
      {:ref item-ref
+      :title (if is-search (:full-name item) (:name item))
       :class (stl/css-case :component-item (not listing-thumbs)
                            :grid-cell listing-thumbs
                            :selected (= (:id item) component-id)
@@ -182,7 +182,8 @@
         path (cfh/butlast-path group-name)
         on-group-click #(on-enter-group group-name)]
     [:div {:class (stl/css :component-group)
-           :key (uuid/next) :on-click on-group-click}
+           :key (uuid/next) :on-click on-group-click
+           :title group-name}
      [:div
       (when-not (str/blank? path)
         [:span {:class (stl/css :component-group-path)} (str "\u00A0/\u00A0" path)])
@@ -195,10 +196,10 @@
   (let [single?             (= 1 (count shapes))
         shape               (first shapes)
         current-file-id     (mf/use-ctx ctx/current-file-id)
-        workspace-file      (deref refs/workspace-file)
-        workspace-data      (deref refs/workspace-data)
-        workspace-libraries (deref refs/workspace-libraries)
-        objects             (deref refs/workspace-page-objects)
+        workspace-file      (mf/deref refs/workspace-file)
+        workspace-data      (mf/deref refs/workspace-data)
+        workspace-libraries (mf/deref refs/workspace-libraries)
+        objects             (mf/deref refs/workspace-page-objects)
         libraries           (assoc workspace-libraries current-file-id (assoc workspace-file :data workspace-data))
         every-same-file?    (every? #(= (:component-file shape) (:component-file %)) shapes)
         current-comp-id     (when (every? #(= (:component-id shape) (:component-id %)) shapes)
@@ -233,8 +234,15 @@
 
         filters             (deref filters*)
         is-search?          (not (str/blank? (:term filters)))
+        current-library-id    (if (contains? libraries (:file-id filters))
+                                (:file-id filters)
+                                current-file-id)
 
-        components          (->> (get-in libraries [(:file-id filters) :data :components])
+        current-library-name  (if (= current-library-id current-file-id)
+                                (str/upper (tr "workspace.assets.local-library"))
+                                (get-in libraries [current-library-id :name]))
+
+        components          (->> (get-in libraries [current-library-id :data :components])
                                  vals
                                  (remove #(true? (:deleted %)))
                                  (map #(assoc % :full-name (cfh/merge-path-item (:path %) (:name %)))))
@@ -255,7 +263,7 @@
 
         groups              (when-not is-search?
                               (->> (sort (sequence xform components))
-                                  (map #(assoc {} :name %))))
+                                   (map #(assoc {} :name %))))
 
         components          (if is-search?
                               (filter #(str/includes? (str/lower (:full-name %)) (str/lower (:term filters))) components)
@@ -283,11 +291,6 @@
 
         libraries-options  (map (fn [library] {:value (:id library) :label (:name library)}) (vals libraries))
 
-        current-library-id    (:file-id filters)
-        current-library-name  (if (= current-library-id current-file-id)
-                                (str/upper (tr "workspace.assets.local-library"))
-                                (get-in libraries [current-library-id :name]))
-
         on-library-change
         (mf/use-fn
          (fn [id]
@@ -296,7 +299,7 @@
         on-search-term-change
         (mf/use-fn
          (fn [term]
-             (swap! filters* assoc :term term)))
+           (swap! filters* assoc :term term)))
 
 
         on-search-clear-click
@@ -323,13 +326,13 @@
           [:& search-bar {:on-change on-search-term-change
                           :clear-action on-search-clear-click
                           :value (:term filters)
-                          :placeholder (str (tr "labels.search") " " (get-in libraries [(:file-id filters) :name]))
+                          :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
                           :icon (mf/html [:span {:class (stl/css :search-icon)} i/search-refactor])}]]
 
          [:div {:class (stl/css :select-field)}
           [:& select
            {:class (stl/css :select-library)
-            :default-value (:file-id filters)
+            :default-value current-library-id
             :options libraries-options
             :on-change on-library-change}]]
 
@@ -351,7 +354,8 @@
          (if (or is-search? (str/empty? (:path filters)))
            [:div {:class (stl/css :component-path-empty)}]
            [:button {:class (stl/css :component-path)
-                     :on-click on-go-back}
+                     :on-click on-go-back
+                     :title (:path filters)}
             [:span i/arrow-slide]
             [:span (:path filters)]])
 
@@ -364,7 +368,7 @@
                                      :component-list (not (:listing-thumbs? filters)))}
           (for [item items]
             (if (:id item)
-              (let [data       (get-in libraries [(:file-id filters) :data])
+              (let [data       (get-in libraries [current-library-id :data])
                     container  (ctf/get-component-page data item)
                     root-shape (ctf/get-component-root data item)
                     loop?      (or (contains? parent-components (:main-instance-id item))
@@ -372,7 +376,7 @@
                 [:& component-swap-item {:item item
                                          :loop loop?
                                          :shapes shapes
-                                         :file-id (:file-id filters)
+                                         :file-id current-library-id
                                          :root-shape root-shape
                                          :container container
                                          :component-id current-comp-id
@@ -381,23 +385,20 @@
               [:& component-group-item {:item item :on-enter-group on-enter-group}]))]]]))
 
 (mf/defc component-ctx-menu
-  [{:keys [menu-entries on-close show type] :as props}]
-  (case type
-    :context-menu
-    [:& context-menu {:on-close on-close
-                      :show show
-                      :options
-                      (vec (for [entry menu-entries :when (not (nil? entry))]
-                             [(tr (:msg entry)) (:action entry)]))}]
-    :dropdown
-    [:& dropdown {:show show :on-close on-close}
-     [:ul {:class (stl/css :custom-select-dropdown)}
-      (for [entry menu-entries :when (not (nil? entry))]
-        [:li {:key (uuid/next)
-              :class (stl/css :dropdown-element)
-              :on-click (:action entry)}
-         [:span {:class (stl/css :dropdown-label)}
-          (tr (:msg  entry))]])]]))
+  [{:keys [menu-entries on-close show] :as props}]
+  (let [do-action
+        (fn [action event]
+          (dom/stop-propagation event)
+          (action)
+          (on-close))]
+  [:& dropdown {:show show :on-close on-close}
+   [:ul {:class (stl/css :custom-select-dropdown)}
+    (for [entry menu-entries :when (not (nil? entry))]
+      [:li {:key (uuid/next)
+            :class (stl/css :dropdown-element)
+            :on-click (partial do-action (:action entry))}
+       [:span {:class (stl/css :dropdown-label)}
+        (tr (:msg  entry))]])]]))
 
 
 (mf/defc component-menu
@@ -486,8 +487,7 @@
 
                [:& component-ctx-menu {:show menu-open?
                                        :on-close on-menu-close
-                                       :menu-entries menu-entries
-                                       :type :dropdown}]])
+                                       :menu-entries menu-entries}]])
             (when (and can-swap? (not multi))
               [:div {:class (stl/css :component-parent-name)}
                (cfh/merge-path-item (:path component) (:name component))])]]

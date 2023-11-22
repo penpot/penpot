@@ -68,16 +68,10 @@
 
 (defmethod repair-error :child-not-found
   [_ {:keys [shape page-id args] :as error} file-data _]
-  (let [repair-shape
-        (fn [parent-shape]
-          ; Remove child shape from children list
-          (log/debug :hint "  -> Remove child " :child-id (:child-id args))
-          (update parent-shape :shapes d/removev #(= % (:child-id args))))]
-
-    (log/info :hint "Repairing shape :child-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
-    (-> (pcb/empty-changes nil page-id)
-        (pcb/with-file-data file-data)
-        (pcb/update-shapes [(:id shape)] repair-shape))))
+  (log/info :hint "Repairing shape :child-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
+  (-> (pcb/empty-changes nil page-id)
+      (pcb/with-file-data file-data)
+      (pcb/change-parent (:parent-id args) [shape] nil {:component-swap true})))
 
 (defmethod repair-error :frame-not-found
   [_ {:keys [shape page-id] :as error} file-data _]
