@@ -315,6 +315,12 @@
         (update :data cpc/process-changes changes)
 
         ;; If `libs` is defined, then full validation is performed
+        (cond-> (contains? cf/flags :soft-file-validation)
+          (soft-validate-file! libs))
+
+        (cond-> (contains? cf/flags :soft-file-schema-validation)
+          (soft-validate-file-schema!))
+
         (cond-> (and (contains? cf/flags :file-validation)
                      (not skip-validate))
           (val/validate-file! libs))
@@ -322,12 +328,6 @@
         (cond-> (and (contains? cf/flags :file-schema-validation)
                      (not skip-validate))
           (val/validate-file-schema!))
-
-        (cond-> (contains? cf/flags :soft-file-validation)
-          (soft-validate-file! libs))
-
-        (cond-> (contains? cf/flags :soft-file-schema-validation)
-          (soft-validate-file-schema!))
 
         (cond-> (and (contains? cfeat/*current* "fdata/objects-map")
                      (not (contains? cfeat/*previous* "fdata/objects-map")))
