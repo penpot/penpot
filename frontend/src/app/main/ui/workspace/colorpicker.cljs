@@ -172,7 +172,12 @@
                                                            (cond-> (= index 0) (assoc  :stops [(clean-stop old-stops 0 color) (nth old-stops 1)]))
                                                            (cond-> (= index 1) (assoc  :stops [(nth old-stops 0) (clean-stop old-stops 1 color)]))
                                                            (dissoc :shape-id))]
-                                      (change-to {:gradient new-gradient})))]
+                                      (change-to {:gradient new-gradient})))
+                 new-mode (cond
+                            (:image color) :image
+                            (:color color) :color
+                            (= :linear (get-in color [:gradient :type])) :linear-gradient
+                            (= :radial (get-in color [:gradient :type])) :radial-gradient)]
              ;; If we have any kind of gradient and:
              ;; Click on a solid color -> This color is applied to the selected offset
              ;; Click on a color with transparency -> The same to solid color will happend
@@ -183,7 +188,8 @@
                (if is-gradient?
                  (change-to color)
                  (set-new-gradient state color editig-stop-origin))
-               (change-to color)))))
+               (change-to color))
+             (handle-change-mode new-mode))))
 
         on-add-library-color
         (mf/use-fn
