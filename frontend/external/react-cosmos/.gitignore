@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+yarn-error.log
+
+packages/*/dist
+__testFs__
+
+coverage
+cypress/screenshots
+cypress/videos

@@ -14,6 +14,10 @@
               :reload-strategy :full}
    :build-options {:manifest-name "manifest.json"}
 
+   :js-options
+   {:js-package-dirs ["external/react-cosmos/packages"
+                      "node_modules"]}
+
    :modules
    {:shared {:entries []}
 

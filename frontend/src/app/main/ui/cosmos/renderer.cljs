@@ -23,28 +23,24 @@
 ;;   decorators
 ;; };
 
-(def fixture0 #js {
-  "Default": (mf/html [:button "Simple HTMLbutton"])
-})
+(def fixture0
+  #js {"Default" (mf/html [:button "Simple HTMLbutton"])})
 
-(def fixtures #js {
-  "src/app/main/ui/components/buttons/primary_button.fixture.js": #js {:module fixture0}
-})
+(def fixtures
+  #js {"src/app/main/ui/components/buttons/primary_button.fixture.js" #js {:module fixture0}})
 
-(def module-wrappers #js {
-  :lazy false,
-  :fixtures fixtures,
-  :decorators #js {}
-})
+(def module-wrappers
+  #js {:lazy false
+       :fixtures fixtures
+       :decorators #js {}})
 
-(def renderer-config #js {
-  "playgroundUrl": "http://localhost:5050",
-  "rendererUrl": "http://localhost:3449/#/cosmos"
-})
-
+(def renderer-config
+  #js {:playgroundUrl "http://localhost:5050",
+       :rendererUrl "http://localhost:3449/#/cosmos"})
 
 (mf/defc renderer
-   {::mf/wrap-props false} [] (do
-    (mf/with-effect (fn []
-      (rdc/mountDomRenderer js# {:renderer-config renderer-config :module-wrappers module-wrappers})))
-    []))
+  {::mf/wrap-props false}
+  []
+  (mf/with-effect []
+    (rdc/mountDomRenderer #js {:renderer-config renderer-config :module-wrappers module-wrappers}))
+  [:span ""])

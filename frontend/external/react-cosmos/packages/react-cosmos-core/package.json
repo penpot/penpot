@@ -1,0 +1,15 @@
+{
+  "name": "react-cosmos-core",
+  "version": "6.0.0-beta.5",
+  "description": "React Cosmos Core",
+  "repository": "https://github.com/react-cosmos/react-cosmos/tree/main/packages/react-cosmos-core",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "dependencies": {
+    "js-base64": "^3.7.5",
+    "lodash-es": "^4.17.21",
+    "react-is": "^18.2.0"
+  }
+}
