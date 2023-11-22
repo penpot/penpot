@@ -88,7 +88,7 @@
   (->> shapes
        (keep
         (fn [shape]
-          (when-let [data (or (:metadata shape) (:fill-image shape))]
+          (when-let [data (or (:metadata shape) (:fill-image shape) (-> shape :fills first :fill-image))]
             [(:id shape) (cfg/resolve-file-media data)])))))
 
 (defn replace-map
@@ -104,8 +104,7 @@
                       embed-images? (replace-map images-data))
 
         style-code (cond-> style-code
-                     remove-localhost?
-                     (str/replace "http://localhost:3449" ""))]
+                     embed-images? (replace-map images-data))]
     (str/format page-template style-code markup-code)))
 
 (mf/defc code
@@ -145,7 +144,6 @@
 
         images-urls (-> (shapes->images all-children)
                         (hooks/use-equal-memo))
-
         style-code
         (mf/use-memo
          (mf/deps fontfaces-css style-type all-children cg/generate-style-code)
@@ -270,7 +268,7 @@
                     :on-click on-expand}
            i/code-refactor]
 
-          [:& copy-button {:data style-code
+          [:& copy-button {:data #(replace-map style-code images-data)
                            :on-copied on-style-copied}]]]
 
         (when-not collapsed-css?
@@ -339,7 +337,7 @@
           {:on-click on-expand}
           i/full-screen]
 
-         [:& copy-button {:data style-code
+         [:& copy-button {:data #(replace-map style-code images-data)
                           :on-copied on-style-copied}]]
 
         [:div.code-row-display {:style #js {"--code-height" (str (or style-size 400) "px")}}
