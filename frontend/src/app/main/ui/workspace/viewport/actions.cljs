@@ -18,7 +18,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.path :as dwdp]
-   [app.main.data.workspace.specialized-panel :as dwsp]
+   [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -86,7 +86,7 @@
              left-click?
              (do
                (st/emit! (ms/->MouseEvent :down ctrl? shift? alt? meta?)
-                         dwsp/clear-specialized-panel)
+                         ::dwsp/interrupt)
 
                (when (and (not= edition id) (or text-editing? grid-editing?))
                  (st/emit! dw/clear-edition-mode))

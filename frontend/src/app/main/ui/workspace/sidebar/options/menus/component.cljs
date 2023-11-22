@@ -442,12 +442,12 @@
 
         on-component-back
         (mf/use-fn
-         #(st/emit! :interrupt))
+         #(st/emit! ::dwsp/interrupt))
 
         open-component-panel
         (mf/use-fn
          (mf/deps can-swap? shapes)
-         #(when can-swap? (st/emit! (dwsp/open-specialized-panel :component-swap shapes))))
+         #(when can-swap? (st/emit! (dwsp/open-specialized-panel :component-swap))))
 
         menu-entries         (cmm/generate-components-menu-entries shapes components-v2)
         show-menu?           (seq menu-entries)]
