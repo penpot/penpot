@@ -60,6 +60,7 @@
    (when *assert*
      ["/debug/icons-preview" :debug-icons-preview])
 
+   ["/cosmos", :cosmos],
    ["/debug/components-preview" :debug-components-preview]
 
    ;; Used for export

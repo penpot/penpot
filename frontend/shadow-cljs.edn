@@ -76,9 +76,12 @@
 
   :cosmos
   {:target :esm
-   :output-dir "target/cosmos"
+   :output-dir "src/cosmos"
    :modules
    {:design-system {:exports {default app.main.ui.components.design-system/default}}}
+
+   :js-options
+   {:js-provider :import }
 
    :compiler-options
       {:output-feature-set :es2020

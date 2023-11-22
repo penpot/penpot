@@ -27,7 +27,8 @@
     "build:clean": "gulp clean:output && gulp clean:dist",
     "build:styles": "gulp build:styles",
     "build:assets": "gulp build:assets",
-    "build:copy": "gulp build:copy"
+    "build:copy": "gulp build:copy",
+    "cosmos": "cosmos --expose-imports ./src/cosmos.imports.js"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.15",
@@ -52,6 +53,8 @@
     "postcss": "^8.4.29",
     "postcss-clean": "^1.2.2",
     "prettier": "^3.0.3",
+    "react-cosmos": "^6.0.0-beta.6",
+    "react-cosmos-dom": "^6.0.0-beta.6",
     "rimraf": "^5.0.1",
     "sass": "^1.66.1",
     "shadow-cljs": "2.25.10"

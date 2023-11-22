@@ -22,6 +22,7 @@
                  :git/sha "05590ecb5f6fa670856f3d1ab400aa4961047480"}
   }
 
+
  :aliases
  {:outdated
   {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}

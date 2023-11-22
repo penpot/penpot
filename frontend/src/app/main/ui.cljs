@@ -13,6 +13,7 @@
    [app.main.ui.auth :refer [auth]]
    [app.main.ui.auth.verify-token :refer [verify-token]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.cosmos.renderer :as cosmos]
    [app.main.ui.cursors :as c]
    [app.main.ui.dashboard :refer [dashboard]]
    [app.main.ui.debug.components-preview :as cm]
@@ -74,6 +75,9 @@
        [:div.debug-preview
         [:h1 "Components preview"]
         [:& cm/components-preview]]
+
+       :cosmos
+       [:& cosmos/renderer]
 
        (:dashboard-search
         :dashboard-projects

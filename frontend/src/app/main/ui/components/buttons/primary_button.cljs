@@ -7,9 +7,10 @@
 
 (mf/defc primary-button
   {::mf/wrap-props false}
-  [{:keys [on-click children]}]
+  [{:keys [on-click children disabled?]}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)]
     [:button
       {:class (dm/str (stl/css new-css-system :primary-button))
-       :on-click on-click}
+       :on-click on-click
+       :disabled disabled?}
       children]))
