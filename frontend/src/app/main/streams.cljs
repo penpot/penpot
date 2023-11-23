@@ -15,7 +15,7 @@
 
 ;; --- User Events
 
-(defrecord KeyboardEvent [type key shift ctrl alt meta editing])
+(defrecord KeyboardEvent [type key shift ctrl alt meta editing event])
 
 (defn keyboard-event?
   [v]
@@ -183,6 +183,28 @@
   (if (cfg/check-platform? :macos)
     keyboard-meta
     keyboard-ctrl))
+
+(defonce keyboard-minus-or-underscore
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter keyboard-event?)
+                 (rx/filter key-down?)
+                 (rx/filter #(kbd/mod? (:event %)))
+                 (rx/filter #(or (kbd/minus? %) (kbd/underscore? %)))
+                 (rx/dedupe))]
+    (rx/subscribe-with ob sub)
+    sub))
+
+(defonce keyboard-=-or-+
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter keyboard-event?)
+                 (rx/filter key-down?)
+                 (rx/filter #(kbd/mod? (:event %)))
+                 (rx/filter #(or (kbd/equals? %) (kbd/plus? %)))
+                 (rx/dedupe))]
+    (rx/subscribe-with ob sub)
+    sub))
 
 (defonce keyboard-space
   (let [sub (rx/behavior-subject nil)

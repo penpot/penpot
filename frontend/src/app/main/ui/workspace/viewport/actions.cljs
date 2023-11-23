@@ -321,7 +321,7 @@
                         (= "TEXTAREA" (obj/get target "tagName")))]
 
        (when-not (.-repeat bevent)
-         (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta? editing?)))))))
+         (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta? editing? event)))))))
 
 (defn on-key-up []
   (mf/use-callback
@@ -336,7 +336,7 @@
                         (= "rich-text" (obj/get target "className"))
                         (= "INPUT" (obj/get target "tagName"))
                         (= "TEXTAREA" (obj/get target "tagName")))]
-       (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta? editing?))))))
+       (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta? editing? event))))))
 
 (defn on-pointer-move [move-stream]
   (let [last-position (mf/use-var nil)]
