@@ -238,7 +238,9 @@
                      :scope "penpot/rasterizer"
                      :payload payload}]
     (when-not (identical? js/window js/parent)
-      (.postMessage js/parent message parent-origin))))
+      (if (instance? js/ImageBitmap payload)
+        (.postMessage js/parent message parent-origin #js [payload])
+        (.postMessage js/parent message parent-origin)))))
 
 (defn- send-success!
   "Sends a success message."

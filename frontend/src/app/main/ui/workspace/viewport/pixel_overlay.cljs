@@ -10,6 +10,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.fonts :as fonts]
    [app.main.rasterizer :as thr]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -133,11 +134,15 @@
         handle-draw-picker-canvas
         (mf/use-callback
          (fn []
-           (let [svg-node (dom/get-element "render")]
-             (->> (rx/of {:node svg-node
-                          :width (:width vport)
-                          :result "image-bitmap"})
-                  (rx/tap #(js/console.log "render-node" %))
+           (let [svg-node (dom/get-element "render")
+                 fonts    (fonts/get-node-fonts svg-node)
+                 result {:node svg-node
+                         :width (:width vport)
+                         :result "image-bitmap"}]
+             (->> (fonts/render-font-styles-cached fonts)
+                  (rx/map (fn [styles]
+                            (assoc result
+                                   :styles styles)))
                   (rx/mapcat thr/render-node)
                   (rx/subs (fn [image-bitmap]
                              (.drawImage canvas-context image-bitmap 0 0)

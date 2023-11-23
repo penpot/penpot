@@ -248,6 +248,28 @@
       (get-default-variant font)))
 
 ;; Font embedding functions
+(defn get-node-fonts
+  "Extracts the fonts used by some node"
+  [node]
+  (let [nodes  (.from js/Array (dom/query-all node "[style*=font]"))
+        result (.reduce nodes (fn [obj node]
+                         (let [style (.-style node)
+                               font-family (.-fontFamily style)
+                               [_ font] (first
+                                         (filter (fn [[_ {:keys [id family]}]]
+                                                   (or (= family font-family)
+                                                       (= id font-family)))
+                                                 @fontsdb))
+                               font-id (:id font)
+                               font-variant (get-variant font (.-fontVariant style))
+                               font-variant-id (:id font-variant)]
+                           (obj/set!
+                            obj
+                            (dm/str font-id ":" font-variant-id)
+                            {:font-id font-id
+                             :font-variant-id font-variant-id})))
+                       #js {})]
+    (.values js/Object result)))
 
 (defn get-content-fonts
   "Extracts the fonts used by the content of a text shape"
