@@ -17,6 +17,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.record :as cr]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.shape.interactions :as ctsi]
@@ -428,14 +429,18 @@
            bool?       (cfh/bool-shape? obj)
            new-id      (ids-map (:id obj))
            parent-id   (or parent-id frame-id)
+           parent      (get objects parent-id)
            name        (:name obj)
 
-           is-component-root? (or (:saved-component-root obj)
-                                  ;; Backward compatibility
-                                  (:saved-component-root? obj)
-                                  (ctk/instance-root? obj))
+           is-component-root?     (or (:saved-component-root obj)
+                                      ;; Backward compatibility
+                                      (:saved-component-root? obj)
+                                      (ctk/instance-root? obj))
            duplicating-component? (or duplicating-component? (ctk/instance-head? obj))
-           is-component-main? (ctk/main-instance? obj)
+           is-component-main?     (ctk/main-instance? obj)
+           into-component?        (and duplicating-component?
+                                       (ctn/in-any-component? objects parent))
+
            regenerate-component
            (fn [changes shape]
              (let [components-v2 (dm/get-in library-data [:options :components-v2])
@@ -453,8 +458,10 @@
                        :main-instance
                        :use-for-thumbnail)
 
-               (cond->
-                   (or frame? group? bool?)
+               (cond-> into-component?
+                 (dissoc :component-root))
+
+               (cond-> (or frame? group? bool?)
                  (assoc :shapes []))
 
                (gsh/move delta)
