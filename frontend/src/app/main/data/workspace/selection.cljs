@@ -468,6 +468,10 @@
                (cond-> into-component?
                  (dissoc :component-root))
 
+               (cond-> (and (ctk/instance-head? obj)
+                            (not into-component?))
+                 (assoc :component-root true))
+
                (cond-> (or frame? group? bool?)
                  (assoc :shapes []))
 
