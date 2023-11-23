@@ -345,13 +345,10 @@
                             force-id
                             keep-ids?)
 
-         ;; If frame-id points to a shape inside the component, remap it to the
-         ;; corresponding new frame shape. If not, set it to the destination frame.
-         ;; Also fix empty parent-id.
+         ;; Fix empty parent-id and remap all grid cells to the new ids.
          remap-ids
          (fn [shape]
            (as-> shape $
-             (update $ :frame-id #(get @ids-map % frame-id))
              (update $ :parent-id #(or % (:frame-id $)))
              (cond-> $
                (ctl/grid-layout? shape)

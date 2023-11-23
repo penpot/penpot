@@ -904,7 +904,7 @@
                                                              root-main
                                                              root-instance)]
                              (cond-> new-shape
-                               :always
+                               (= (:id original-shape) (:id component-shape))
                                (assoc :frame-id (if (= (:type parent-shape) :frame)
                                                   (:id parent-shape)
                                                   (:frame-id parent-shape)))
