@@ -31,25 +31,27 @@
 ;; SCHEMAS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/def! ::operation
-  [:multi {:dispatch :type :title "Operation" ::smd/simplified true}
-   [:set
-    [:map {:title "SetOperation"}
-     [:type [:= :set]]
-     [:attr :keyword]
-     [:val :any]
-     [:ignore-touched {:optional true} :boolean]
-     [:ignore-geometry {:optional true} :boolean]]]
-   [:set-touched
-    [:map {:title "SetTouchedOperation"}
-     [:type [:= :set-touched]]
-     [:touched [:maybe [:set :keyword]]]]]
-   [:set-remote-synced
-    [:map {:title "SetRemoteSyncedOperation"}
-     [:type [:= :set-remote-synced]]
-     [:remote-synced {:optional true} [:maybe :boolean]]]]])
+(def ^:private
+  schema:operation
+  (sm/define
+    [:multi {:dispatch :type :title "Operation" ::smd/simplified true}
+     [:set
+      [:map {:title "SetOperation"}
+       [:type [:= :set]]
+       [:attr :keyword]
+       [:val :any]
+       [:ignore-touched {:optional true} :boolean]
+       [:ignore-geometry {:optional true} :boolean]]]
+     [:set-touched
+      [:map {:title "SetTouchedOperation"}
+       [:type [:= :set-touched]]
+       [:touched [:maybe [:set :keyword]]]]]
+     [:set-remote-synced
+      [:map {:title "SetRemoteSyncedOperation"}
+       [:type [:= :set-remote-synced]]
+       [:remote-synced {:optional true} [:maybe :boolean]]]]]))
 
-(sm/def! ::change
+(sm/define! ::change
   [:schema
    [:multi {:dispatch :type :title "Change" ::smd/simplified true}
     [:set-option
@@ -79,7 +81,7 @@
       [:id ::sm/uuid]
       [:page-id {:optional true} ::sm/uuid]
       [:component-id {:optional true} ::sm/uuid]
-      [:operations [:vector {:gen/max 5} ::operation]]]]
+      [:operations [:vector {:gen/max 5} schema:operation]]]]
 
     [:del-obj
      [:map {:title "DelObjChange"}
@@ -230,14 +232,14 @@
       [:type [:= :del-typography]]
       [:id ::sm/uuid]]]]])
 
-(sm/def! ::changes
+(sm/define! ::changes
   [:sequential {:gen/max 2} ::change])
 
-(def valid-change?
-  (sm/pred-fn ::change))
+(def check-change!
+  (sm/check-fn ::change))
 
-(def valid-changes?
-  (sm/pred-fn [:sequential ::change]))
+(def check-changes!
+  (sm/check-fn ::changes))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specific helpers
@@ -263,8 +265,10 @@
               ;; If object has changed or is new verify is correct
               (when (and (some? shape-new)
                          (not= shape-old shape-new))
-                (dm/verify! (and (cts/shape? shape-new)
-                                 (cts/valid-shape? shape-new))))))]
+                (dm/verify!
+                 "expected valid shape"
+                 (and (cts/check-shape! shape-new)
+                      (cts/shape? shape-new))))))]
 
     (->> (into #{} (map :page-id) items)
          (mapcat (fn [page-id]
@@ -289,7 +293,9 @@
    ;; When verify? false we spec the schema validation. Currently used to make just
    ;; 1 validation even if the changes are applied twice
    (when verify?
-     (dm/verify! (valid-changes? items)))
+     (dm/verify!
+      "expected valid changes"
+      (check-changes! items)))
 
    (let [result (reduce #(or (process-change %1 %2) %1) data items)]
      ;; Validate result shapes (only on the backend)

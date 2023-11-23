@@ -669,8 +669,11 @@
 
 (defn update-shape
   [id attrs]
-  (dm/assert! (uuid? id))
-  (dm/assert! (cts/valid-shape-attrs? attrs))
+  (dm/assert!
+   "expected valid parameters"
+   (and (cts/check-shape-attrs! attrs)
+        (uuid? id)))
+
   (ptk/reify ::update-shape
     ptk/WatchEvent
     (watch [_ _ _]
@@ -712,7 +715,10 @@
 
 (defn update-selected-shapes
   [attrs]
-  (dm/assert! (cts/valid-shape-attrs? attrs))
+  (dm/assert!
+   "expected valid shape attrs"
+   (cts/check-shape-attrs! attrs))
+
   (ptk/reify ::update-selected-shapes
     ptk/WatchEvent
     (watch [_ state _]

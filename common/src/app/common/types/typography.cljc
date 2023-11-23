@@ -29,8 +29,8 @@
    [:modified-at {:optional true} ::sm/inst]
    [:path {:optional true} [:maybe :string]]])
 
-(def typography?
-  (sm/pred-fn ::typography))
+(def check-typography!
+  (sm/check-fn ::typography))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS

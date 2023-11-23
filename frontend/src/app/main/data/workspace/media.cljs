@@ -163,15 +163,6 @@
           (rx/merge-map svg->clj)
           (rx/do on-svg)))))
 
-(def schema:process-media-objects
-  [:map
-   [:file-id ::sm/uuid]
-   [:local? :boolean]
-   [:name {:optional true} :string]
-   [:data {:optional true} :any] ; FIXME
-   [:uris {:optional true} [:sequential :string]]
-   [:mtype {:optional true} :string]])
-
 (defn handle-media-error [error on-error]
   (if (ex/ex-info? error)
     (handle-media-error (ex-data error) on-error)
@@ -205,10 +196,22 @@
         (.error js/console "ERROR" error)
         (rx/of (msg/error (tr "errors.cannot-upload")))))))
 
+
+(def ^:private
+  schema:process-media-objects
+  (sm/define
+    [:map {:title "process-media-objects"}
+     [:file-id ::sm/uuid]
+     [:local? :boolean]
+     [:name {:optional true} :string]
+     [:data {:optional true} :any] ; FIXME
+     [:uris {:optional true} [:sequential :string]]
+     [:mtype {:optional true} :string]]))
+
 (defn- process-media-objects
   [{:keys [uris on-error] :as params}]
   (dm/assert!
-    (and (sm/valid? schema:process-media-objects params)
+    (and (sm/check! schema:process-media-objects params)
          (or (contains? params :blobs)
              (contains? params :uris))))
 
@@ -392,14 +395,18 @@
                       :on-svg #(st/emit! (process-svg-component %)))]
     (process-media-objects params)))
 
-(def schema:clone-media-object
-  [:map
-   [:file-id ::sm/uuid]
-   [:object-id ::sm/uuid]])
+(def ^:private
+  schema:clone-media-object
+  (sm/define
+    [:map {:title "clone-media-object"}
+     [:file-id ::sm/uuid]
+     [:object-id ::sm/uuid]]))
 
 (defn clone-media-object
   [{:keys [file-id object-id] :as params}]
-  (dm/assert! (sm/valid? schema:clone-media-object params))
+  (dm/assert!
+   (sm/check! schema:clone-media-object params))
+
   (ptk/reify ::clone-media-objects
     ptk/WatchEvent
     (watch [_ _ _]

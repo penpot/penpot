@@ -34,7 +34,7 @@
             (.. g (toString 16) (padStart 2 "0"))
             (.. b (toString 16) (padStart 2 "0"))))))
 
-(sm/def! ::rgb-color
+(sm/define! ::rgb-color
   {:type ::rgb-color
    :pred #(and (string? %) (some? (re-matches rgb-color-re %)))
    :type-properties
@@ -46,7 +46,7 @@
     ::oapi/type "integer"
     ::oapi/format "int64"}})
 
-(sm/def! ::image-color
+(sm/define! ::image-color
   [:map {:title "ImageColor"}
    [:name {:optional true} :string]
    [:width :int]
@@ -54,7 +54,7 @@
    [:mtype {:optional true} [:maybe :string]]
    [:id ::sm/uuid]])
 
-(sm/def! ::gradient
+(sm/define! ::gradient
   [:map {:title "Gradient"}
    [:type [::sm/one-of #{:linear :radial "linear" "radial"}]]
    [:start-x ::sm/safe-number]
@@ -69,7 +69,7 @@
       [:opacity {:optional true} [:maybe ::sm/safe-number]]
       [:offset ::sm/safe-number]]]]])
 
-(sm/def! ::color
+(sm/define! ::color
   [:map {:title "Color"}
    [:id {:optional true} ::sm/uuid]
    [:name {:optional true} :string]
@@ -83,7 +83,7 @@
    [:gradient {:optional true} [:maybe ::gradient]]
    [:image {:optional true} [:maybe ::image-color]]])
 
-(sm/def! ::recent-color
+(sm/define! ::recent-color
   [:and
    [:map {:title "RecentColor"}
     [:opacity {:optional true} [:maybe ::sm/safe-number]]
@@ -92,11 +92,11 @@
     [:image {:optional true} [:maybe ::image-color]]]
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
-(def valid-color?
-  (sm/pred-fn ::color))
+(def check-color!
+  (sm/check-fn ::color))
 
-(def valid-recent-color?
-  (sm/pred-fn ::recent-color))
+(def check-recent-color!
+  (sm/check-fn ::recent-color))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS

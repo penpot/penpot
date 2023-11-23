@@ -238,7 +238,7 @@
   [file-id {:keys [revn changes]}]
   (dm/assert! (uuid? file-id))
   (dm/assert! (int? revn))
-  (dm/assert! (cpc/valid-changes? changes))
+  (dm/assert! (cpc/check-changes! changes))
 
   (ptk/reify ::shapes-changes-persisted
     ptk/UpdateEvent

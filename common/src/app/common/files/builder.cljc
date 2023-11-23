@@ -46,7 +46,7 @@
                         (and add-container? (nil? component-id))
                         (assoc :page-id  (:current-page-id file)
                                :frame-id (:current-frame-id file)))
-         valid? (ch/valid-change? change)]
+         valid? (ch/check-change! change)]
 
      (when-not valid?
        (let [explain (sm/explain ::ch/change change)]

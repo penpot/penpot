@@ -20,7 +20,7 @@
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
-   [app.main.data.workspace.path.common :as common :refer [content?]]
+   [app.main.data.workspace.path.common :as common :refer [check-path-content!]]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.streams :as streams]
@@ -262,7 +262,11 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [content (get-in state [:workspace-drawing :object :content] [])]
-        (dm/assert! (content? content))
+
+        (dm/assert!
+         "expected valid path content"
+         (check-path-content! content))
+
         (if (> (count content) 1)
           (assoc-in state [:workspace-drawing :object :initialized?] true)
           state)))

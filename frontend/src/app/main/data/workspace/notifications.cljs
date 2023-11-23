@@ -184,18 +184,23 @@
                           :updated-at (dt/now)
                           :page-id page-id))))))
 
-(def schema:handle-file-change
-  [:map
-   [:type :keyword]
-   [:profile-id ::sm/uuid]
-   [:file-id ::sm/uuid]
-   [:session-id ::sm/uuid]
-   [:revn :int]
-   [:changes ::cpc/changes]])
+(def ^:private
+  schema:handle-file-change
+  (sm/define
+    [:map {:title "handle-file-change"}
+     [:type :keyword]
+     [:profile-id ::sm/uuid]
+     [:file-id ::sm/uuid]
+     [:session-id ::sm/uuid]
+     [:revn :int]
+     [:changes ::cpc/changes]]))
 
 (defn handle-file-change
   [{:keys [file-id changes] :as msg}]
-  (dm/assert! (sm/valid? schema:handle-file-change msg))
+  (dm/assert!
+   "expected valid arguments"
+   (sm/check! schema:handle-file-change msg))
+
   (ptk/reify ::handle-file-change
     IDeref
     (-deref [_] {:changes changes})
@@ -241,19 +246,24 @@
          (when-not (empty? changes-by-pages)
            (rx/from (map process-page-changes changes-by-pages))))))))
 
-(def schema:handle-library-change
-  [:map
-   [:type :keyword]
-   [:profile-id ::sm/uuid]
-   [:file-id ::sm/uuid]
-   [:session-id ::sm/uuid]
-   [:revn :int]
-   [:modified-at ::sm/inst]
-   [:changes ::cpc/changes]])
+(def ^:private
+  schema:handle-library-change
+  (sm/define
+    [:map {:title "handle-library-change"}
+     [:type :keyword]
+     [:profile-id ::sm/uuid]
+     [:file-id ::sm/uuid]
+     [:session-id ::sm/uuid]
+     [:revn :int]
+     [:modified-at ::sm/inst]
+     [:changes ::cpc/changes]]))
 
 (defn handle-library-change
   [{:keys [file-id modified-at changes revn] :as msg}]
-  (dm/assert! (sm/valid? schema:handle-library-change msg))
+  (dm/assert!
+   "expected valid arguments"
+   (sm/check! schema:handle-library-change msg))
+
   (ptk/reify ::handle-library-change
     ptk/WatchEvent
     (watch [_ state _]

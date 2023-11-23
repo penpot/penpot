@@ -417,7 +417,7 @@
   [used basename]
   (dm/assert!
    "expected a set of strings"
-   (sm/set-of-strings? used))
+   (sm/check-set-of-strings! used))
 
   (dm/assert!
    "expected a string for `basename`."

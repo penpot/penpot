@@ -77,7 +77,7 @@
 (def text-align-types
   #{"left" "right" "center" "justify"})
 
-(sm/def! ::selrect
+(sm/define! ::selrect
   [:and
    {:title "Selrect"
     :gen/gen (->> (sg/tuple (sg/small-double)
@@ -96,10 +96,10 @@
     [:width ::sm/safe-number]
     [:height ::sm/safe-number]]])
 
-(sm/def! ::points
+(sm/define! ::points
   [:vector {:gen/max 4 :gen/min 4} ::gpt/point])
 
-(sm/def! ::fill
+(sm/define! ::fill
   [:map {:title "Fill"}
    [:fill-color {:optional true} ::ctc/rgb-color]
    [:fill-opacity {:optional true} ::sm/safe-number]
@@ -108,7 +108,7 @@
    [:fill-color-ref-id {:optional true} [:maybe ::sm/uuid]]
    [:fill-image {:optional true} ::ctc/image-color]])
 
-(sm/def! ::stroke
+(sm/define! ::stroke
   [:map {:title "Stroke"}
    [:stroke-color {:optional true} :string]
    [:stroke-color-ref-file {:optional true} ::sm/uuid]
@@ -126,7 +126,7 @@
    [:stroke-color-gradient {:optional true} ::ctc/gradient]
    [:stroke-image {:optional true} ::ctc/image-color]])
 
-(sm/def! ::minimal-shape-attrs
+(sm/define! ::minimal-shape-attrs
   [:map {:title "ShapeMinimalRecord"}
    [:id {:optional false} ::sm/uuid]
    [:name {:optional false} :string]
@@ -142,7 +142,7 @@
    [:parent-id {:optional false} ::sm/uuid]
    [:frame-id {:optional false} ::sm/uuid]])
 
-(sm/def! ::shape-attrs
+(sm/define! ::shape-attrs
   [:map {:title "ShapeAttrs"}
    [:name {:optional true} :string]
    [:component-id {:optional true}  ::sm/uuid]
@@ -197,15 +197,12 @@
     [::sm/one-of #{:auto-width :auto-height :fixed}]]
    ])
 
-(def valid-shape-attrs?
-  (sm/pred-fn ::shape-attrs))
-
-(sm/def! ::group-attrs
+(sm/define! ::group-attrs
   [:map {:title "GroupAttrs"}
    [:type [:= :group]]
    [:shapes {:optional true} [:maybe [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]]])
 
-(sm/def! ::frame-attrs
+(sm/define! ::frame-attrs
   [:map {:title "FrameAttrs"}
    [:type [:= :frame]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
@@ -213,7 +210,7 @@
    [:show-content {:optional true} :boolean]
    [:hide-in-viewer {:optional true} :boolean]])
 
-(sm/def! ::bool-attrs
+(sm/define! ::bool-attrs
   [:map {:title "BoolAttrs"}
    [:type [:= :bool]]
    [:shapes {:optional true} [:maybe [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]]
@@ -231,19 +228,19 @@
        [:maybe
         [:map-of {:gen/max 5} :keyword ::sm/safe-number]]]]]]])
 
-(sm/def! ::rect-attrs
+(sm/define! ::rect-attrs
   [:map {:title "RectAttrs"}
    [:type [:= :rect]]])
 
-(sm/def! ::circle-attrs
+(sm/define! ::circle-attrs
   [:map {:title "CircleAttrs"}
    [:type [:= :circle]]])
 
-(sm/def! ::svg-raw-attrs
+(sm/define! ::svg-raw-attrs
   [:map {:title "SvgRawAttrs"}
    [:type [:= :svg-raw]]])
 
-(sm/def! ::image-attrs
+(sm/define! ::image-attrs
   [:map {:title "ImageAttrs"}
    [:type [:= :image]]
    [:metadata
@@ -253,7 +250,7 @@
      [:mtype {:optional true} [:maybe :string]]
      [:id ::sm/uuid]]]])
 
-(sm/def! ::path-attrs
+(sm/define! ::path-attrs
   [:map {:title "PathAttrs"}
    [:type [:= :path]]
    [:x {:optional true} [:maybe ::sm/safe-number]]
@@ -267,12 +264,12 @@
       [:command :keyword]
       [:params {:optional true} [:maybe :map]]]]]])
 
-(sm/def! ::text-attrs
+(sm/define! ::text-attrs
   [:map {:title "TextAttrs"}
    [:type [:= :text]]
    [:content {:optional true} [:maybe ::ctsx/content]]])
 
-(sm/def! ::shape-map
+(sm/define! ::shape-map
   [:multi {:dispatch :type :title "Shape"}
    [:group
     [:merge {:title "GroupShape"}
@@ -337,7 +334,7 @@
      ::text-attrs
      ::ctsl/layout-child-attrs]]])
 
-(sm/def! ::shape
+(sm/define! ::shape
   [:and
    {:title "Shape"
     :gen/gen (->> (sg/generator ::shape-map)
@@ -345,13 +342,15 @@
    ::shape-map
    [:fn shape?]])
 
-(def valid-shape?
-  (sm/pred-fn ::shape))
+(def check-shape-attrs!
+  (sm/check-fn ::shape-attrs))
 
+(def check-shape!
+  (sm/check-fn ::shape))
 
 (defn has-images?
   [{:keys [fills strokes]}]
-  (or 
+  (or
     (some :fill-image fills)
     (some :stroke-image strokes)))
 

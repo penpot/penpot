@@ -278,7 +278,10 @@
 
 (defn add-shadow
   [ids shadow]
-  (dm/assert! (sm/coll-of-uuid? ids))
+  (dm/assert!
+   "expected a valid coll of uuid's"
+   (sm/check-coll-of-uuid! ids))
+
   (ptk/reify ::add-shadow
     ptk/WatchEvent
     (watch [_ _ _]

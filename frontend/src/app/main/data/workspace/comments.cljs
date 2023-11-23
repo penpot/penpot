@@ -81,7 +81,10 @@
 
 (defn center-to-comment-thread
   [{:keys [position] :as thread}]
-  (dm/assert! (dcm/comment-thread? thread))
+  (dm/assert!
+   "expected valid comment thread"
+   (dcm/check-comment-thread! thread))
+
   (ptk/reify ::center-to-comment-thread
     ptk/UpdateEvent
     (update [_ state]
@@ -97,7 +100,9 @@
 
 (defn navigate
   [thread]
-  (dm/assert! (dcm/comment-thread? thread))
+  (dm/assert!
+   "expected valid comment thread"
+   (dcm/check-comment-thread! thread))
   (ptk/reify ::open-comment-thread
     ptk/WatchEvent
     (watch [_ _ stream]
@@ -118,36 +123,41 @@
    (update-comment-thread-position thread  [new-x new-y] nil))
 
   ([thread  [new-x new-y] frame-id]
-  (dm/assert! (dcm/comment-thread? thread))
-  (ptk/reify ::update-comment-thread-position
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [thread-id (:id thread)
-            page (wsh/lookup-page state)
-            page-id (:id page)
-            objects (wsh/lookup-page-objects state page-id)
-            new-frame-id (if (nil? frame-id)
-                           (ctst/get-frame-id-by-position objects (gpt/point new-x new-y))
-                           (:frame-id thread))
-            thread (assoc thread
-                          :position (gpt/point new-x new-y)
-                          :frame-id new-frame-id)
+   (dm/assert!
+    "expected valid comment thread"
+    (dcm/check-comment-thread! thread))
+   (ptk/reify ::update-comment-thread-position
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [thread-id (:id thread)
+             page (wsh/lookup-page state)
+             page-id (:id page)
+             objects (wsh/lookup-page-objects state page-id)
+             new-frame-id (if (nil? frame-id)
+                            (ctst/get-frame-id-by-position objects (gpt/point new-x new-y))
+                            (:frame-id thread))
+             thread (assoc thread
+                           :position (gpt/point new-x new-y)
+                           :frame-id new-frame-id)
 
-            changes
-            (-> (pcb/empty-changes it)
-                (pcb/with-page page)
-                (pcb/update-page-option :comment-threads-position assoc thread-id (select-keys thread [:position :frame-id])))]
+             changes
+             (-> (pcb/empty-changes it)
+                 (pcb/with-page page)
+                 (pcb/update-page-option :comment-threads-position assoc thread-id (select-keys thread [:position :frame-id])))]
 
-        (rx/merge
-         (rx/of (dwc/commit-changes changes))
-         (->> (rp/cmd! :update-comment-thread-position thread)
-              (rx/catch #(rx/throw {:type :update-comment-thread-position}))
-              (rx/ignore))))))))
+         (rx/merge
+          (rx/of (dwc/commit-changes changes))
+          (->> (rp/cmd! :update-comment-thread-position thread)
+               (rx/catch #(rx/throw {:type :update-comment-thread-position}))
+               (rx/ignore))))))))
 
 ;; Move comment threads that are inside a frame when that frame is moved"
 (defmethod ptk/resolve ::move-frame-comment-threads
   [_ ids]
-  (dm/assert! (sm/coll-of-uuid? ids))
+  (dm/assert!
+   "expected a valid coll of uuid's"
+   (sm/check-coll-of-uuid! ids))
+
   (ptk/reify ::move-frame-comment-threads
     ptk/WatchEvent
     (watch [_ state _]

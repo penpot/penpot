@@ -24,8 +24,8 @@
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
-(def schema:changes
-  [:map
+(sm/define! ::changes
+  [:map {:title "changes"}
    [:redo-changes vector?]
    [:undo-changes seq?]
    [:origin {:optional true} any?]
@@ -33,8 +33,8 @@
    [:stack-undo? {:optional true} boolean?]
    [:undo-group {:optional true} any?]])
 
-(def valid-changes?
-  (sm/pred-fn schema:changes))
+(def check-changes!
+  (sm/check-fn ::changes))
 
 (defn empty-changes
   ([origin page-id]
@@ -158,7 +158,7 @@
   [changes]
   (dm/assert!
    "expected valid changes"
-   (valid-changes? changes))
+   (check-changes! changes))
 
   (if-let [file-data (::file-data (meta changes))]
     (let [index         (::applied-changes-count (meta changes))

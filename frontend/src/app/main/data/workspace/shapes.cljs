@@ -27,9 +27,6 @@
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-(def valid-shape-map?
-  (sm/pred-fn ::cts/shape))
-
 (defn add-shape
   ([shape]
    (add-shape shape {}))
@@ -37,7 +34,7 @@
 
    (dm/verify!
     "expected a valid shape"
-    (cts/valid-shape? shape))
+    (cts/check-shape! shape))
 
    (ptk/reify ::add-shape
      ptk/WatchEvent
@@ -94,7 +91,10 @@
   ([ids] (delete-shapes nil ids {}))
   ([page-id ids] (delete-shapes page-id ids {}))
   ([page-id ids options]
-   (dm/assert! (sm/set-of-uuid? ids))
+   (dm/assert!
+    "expected a valid set of uuid's"
+    (sm/check-set-of-uuid! ids))
+
    (ptk/reify ::delete-shapes
      ptk/WatchEvent
      (watch [it state _]
@@ -376,7 +376,7 @@
 
   (dm/assert!
    "expected valid shape-attrs value for `flags`"
-   (cts/valid-shape-attrs? flags))
+   (cts/check-shape-attrs! flags))
 
   (ptk/reify ::update-shape-flags
     ptk/WatchEvent
