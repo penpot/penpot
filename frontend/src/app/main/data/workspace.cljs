@@ -951,12 +951,13 @@
                             parent                 (get objects parent-id)
                             component-shape        (ctn/get-component-shape objects shape)
                             component-shape-parent (ctn/get-component-shape objects parent)
+                            root-parent            (ctn/get-instance-root objects parent)
 
                             detach? (and (ctk/in-component-copy-not-head? shape)
                                          (not= (:id component-shape)
                                                (:id component-shape-parent)))
                             deroot? (and (ctk/instance-root? shape)
-                                         component-shape-parent)
+                                         root-parent)
                             reroot? (and (ctk/subinstance-head? shape)
                                          (not component-shape-parent))
 
