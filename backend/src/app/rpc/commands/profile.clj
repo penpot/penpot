@@ -26,6 +26,7 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [cuerdas.core :as str]))
 
 (declare check-profile-existence!)
@@ -230,9 +231,9 @@
      :content-type (:mtype thumb)}))
 
 (defn upload-photo
-  [{:keys [::sto/storage] :as cfg} {:keys [file]}]
-  (let [params (-> (climit/configure cfg :process-image)
-                   (climit/submit! (partial generate-thumbnail! file)))]
+  [{:keys [::sto/storage ::wrk/executor] :as cfg} {:keys [file]}]
+  (let [params (-> (climit/configure cfg :process-image/global)
+                   (climit/run! (partial generate-thumbnail! file) executor))]
     (sto/put-object! storage params)))
 
 
@@ -426,13 +427,15 @@
 (defn derive-password
   [cfg password]
   (when password
-    (-> (climit/configure cfg :derive-password)
-        (climit/submit! (partial auth/derive-password password)))))
+    (-> (climit/configure cfg :derive-password/global)
+        (climit/run! (partial auth/derive-password password)
+                     (::wrk/executor cfg)))))
 
 (defn verify-password
   [cfg password password-data]
-  (-> (climit/configure cfg :derive-password)
-      (climit/submit! (partial auth/verify-password password password-data))))
+  (-> (climit/configure cfg :derive-password/global)
+      (climit/run! (partial auth/verify-password password password-data)
+                   (::wrk/executor cfg))))
 
 (defn decode-row
   [{:keys [props] :as row}]

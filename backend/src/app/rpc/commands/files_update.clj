@@ -34,6 +34,7 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [clojure.set :as set]))
 
 ;; --- SCHEMA
@@ -133,8 +134,8 @@
 ;; database.
 
 (sv/defmethod ::update-file
-  {::climit/id :update-file-by-id
-   ::climit/key-fn :id
+  {::climit/id :update-file/by-profile
+   ::climit/key-fn ::rpc/profile-id
    ::webhooks/event? true
    ::webhooks/batch-timeout (dt/duration "2m")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
@@ -231,13 +232,15 @@
                         :team-id    (:team-id file)}))))))
 
 (defn- update-file*
-  [{:keys [::db/conn] :as cfg}
+  [{:keys [::db/conn ::wrk/executor] :as cfg}
    {:keys [profile-id file changes session-id ::created-at skip-validate] :as params}]
   (let [;; Process the file data in the CLIMIT context; scheduling it
         ;; to be executed on a separated executor for avoid to do the
         ;; CPU intensive operation on vthread.
-        file (-> (climit/configure cfg :update-file)
-                 (climit/submit! (partial update-file-data conn file changes skip-validate)))]
+
+        update-fdata-fn (partial update-file-data conn file changes skip-validate)
+        file            (-> (climit/configure cfg :update-file/global)
+                            (climit/run! update-fdata-fn executor))]
 
     (db/insert! conn :file-change
                 {:id (uuid/next)

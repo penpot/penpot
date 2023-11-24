@@ -310,8 +310,7 @@
     ::wrk/executor (ig/ref ::wrk/executor)}
 
    :app.rpc/climit
-   {::mtx/metrics  (ig/ref ::mtx/metrics)
-    ::wrk/executor (ig/ref ::wrk/executor)}
+   {::mtx/metrics  (ig/ref ::mtx/metrics)}
 
    :app.rpc/rlimit
    {::wrk/executor (ig/ref ::wrk/executor)}
