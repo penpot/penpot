@@ -114,7 +114,10 @@
 
 (defn add-recent-color
   [color]
-  (dm/assert! (ctc/valid-recent-color? color))
+  (dm/assert!
+   "expected valid recent color map"
+   (ctc/check-recent-color! color))
+
   (ptk/reify ::add-recent-color
     ptk/WatchEvent
     (watch [it _ _]
@@ -144,8 +147,11 @@
 
 (defn update-color
   [color file-id]
-  (dm/assert! (ctc/valid-color? color))
-  (dm/assert! (uuid? file-id))
+
+  (dm/assert!
+   "expected valid parameters"
+   (and (ctc/check-color! color)
+        (uuid? file-id)))
 
   (ptk/reify ::update-color
     ptk/WatchEvent
@@ -183,7 +189,10 @@
 
 (defn add-media
   [media]
-  (dm/assert! (ctf/valid-media-object? media))
+  (dm/assert!
+   "expected valid media object"
+   (ctf/check-media-object! media))
+
   (ptk/reify ::add-media
     ptk/WatchEvent
     (watch [it _ _]
@@ -227,7 +236,10 @@
   ([typography] (add-typography typography true))
   ([typography edit?]
    (let [typography (update typography :id #(or % (uuid/next)))]
-     (dm/assert! (ctt/typography? typography))
+     (dm/assert!
+      "expected valid typography"
+      (ctt/check-typography! typography))
+
      (ptk/reify ::add-typography
        IDeref
        (-deref [_] typography)
@@ -256,8 +268,11 @@
 
 (defn update-typography
   [typography file-id]
-  (dm/assert! (ctt/typography? typography))
-  (dm/assert! (uuid? file-id))
+
+  (dm/assert!
+   "expected valid typography and file-id"
+   (and (ctt/check-typography! typography)
+        (uuid? file-id)))
 
   (ptk/reify ::update-typography
     ptk/WatchEvent
@@ -607,7 +622,7 @@
 (defn ext-library-changed
   [library-id modified-at revn changes]
   (dm/assert! (uuid? library-id))
-  (dm/assert! (ch/valid-changes? changes))
+  (dm/assert! (ch/check-changes! changes))
   (ptk/reify ::ext-library-changed
     ptk/UpdateEvent
     (update [_ state]

@@ -46,15 +46,20 @@
 (declare zoom-to-fill)
 (declare zoom-to-fit)
 
-(def schema:initialize
-  [:map
-   [:file-id ::sm/uuid]
-   [:share-id {:optional true} [:maybe ::sm/uuid]]
-   [:page-id {:optional true} ::sm/uuid]])
+(def ^:private
+  schema:initialize
+  (sm/define
+    [:map {:title "initialize"}
+     [:file-id ::sm/uuid]
+     [:share-id {:optional true} [:maybe ::sm/uuid]]
+     [:page-id {:optional true} ::sm/uuid]]))
 
 (defn initialize
   [{:keys [file-id share-id interactions-show?] :as params}]
-  (dm/assert! (sm/valid? schema:initialize params))
+  (dm/assert!
+   "expected valid params"
+   (sm/check! schema:initialize params))
+
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
@@ -92,18 +97,20 @@
 
 ;; --- Data Fetching
 
-(def schema:fetch-bundle
-  [:map
-   [:page-id ::sm/uuid]
-   [:file-id ::sm/uuid]
-   [:share-id {:optional true} ::sm/uuid]])
-
-(def ^:private valid-fetch-bundle-params?
-  (sm/pred-fn schema:fetch-bundle))
+(def ^:private
+  schema:fetch-bundle
+  (sm/define
+    [:map {:title "fetch-bundle"}
+     [:page-id ::sm/uuid]
+     [:file-id ::sm/uuid]
+     [:share-id {:optional true} ::sm/uuid]]))
 
 (defn- fetch-bundle
   [{:keys [file-id share-id] :as params}]
-  (dm/assert! (valid-fetch-bundle-params? params))
+
+  (dm/assert!
+   "expected valid params"
+   (sm/check! schema:fetch-bundle params))
 
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
@@ -486,9 +493,11 @@
    (go-to-frame frame-id nil))
 
   ([frame-id animation]
-   (dm/assert! (uuid? frame-id))
-   (dm/assert! (or (nil? animation)
-                   (ctsi/animation? animation)))
+   (dm/assert!
+    "expected valid parameters"
+    (and (uuid? frame-id)
+         (or (nil? animation)
+             (ctsi/check-animation! animation))))
 
    (ptk/reify ::go-to-frame
      ptk/UpdateEvent
@@ -587,7 +596,7 @@
   (dm/assert! (or (nil? background-overlay)
                   (boolean? background-overlay)))
   (dm/assert! (or (nil? animation)
-                  (ctsi/animation? animation)))
+                  (ctsi/check-animation! animation)))
   (ptk/reify ::open-overlay
     ptk/UpdateEvent
     (update [_ state]
@@ -617,7 +626,7 @@
   (dm/assert! (or (nil? background-overlay)
                   (boolean? background-overlay)))
   (dm/assert! (or (nil? animation)
-                  (ctsi/animation? animation)))
+                  (ctsi/check-animation! animation)))
 
   (ptk/reify ::toggle-overlay
     ptk/UpdateEvent
@@ -645,7 +654,7 @@
   ([frame-id animation]
    (dm/assert! (uuid? frame-id))
    (dm/assert! (or (nil? animation)
-                   (ctsi/animation? animation)))
+                   (ctsi/check-animation! animation)))
 
    (ptk/reify ::close-overlay
      ptk/UpdateEvent

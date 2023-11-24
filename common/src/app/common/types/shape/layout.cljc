@@ -116,7 +116,7 @@
 (def grid-cell-justify-self-types
   #{:auto :start :center :end :stretch})
 
-(sm/def! ::grid-cell
+(sm/define! ::grid-cell
   [:map {:title "GridCell"}
    [:id ::sm/uuid]
    [:area-name {:optional true} :string]
@@ -130,10 +130,13 @@
    [:shapes
     [:vector {:gen/max 1} ::sm/uuid]]])
 
-(sm/def! ::grid-track
+(sm/define! ::grid-track
   [:map {:title "GridTrack"}
    [:type [::sm/one-of grid-track-types]]
    [:value {:optional true} [:maybe ::sm/safe-number]]])
+
+(def check-grid-track!
+  (sm/check-fn ::grid-track))
 
 ;; LAYOUT CHILDREN
 
@@ -167,8 +170,6 @@
    [:layout-item-align-self {:optional true} [::sm/one-of item-align-self-types]]
    [:layout-item-absolute {:optional true} :boolean]
    [:layout-item-z-index {:optional true} ::sm/safe-number]])
-
-(def grid-track? (sm/pred-fn ::grid-track))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS
@@ -597,7 +598,7 @@
   [parent value]
   (dm/assert!
    "expected a valid grid definition for `value`"
-   (grid-track? value))
+   (check-grid-track! value))
 
   (let [rows (:layout-grid-rows parent)
         new-col-num (inc (count (:layout-grid-columns parent)))
@@ -620,7 +621,7 @@
   [parent value]
   (dm/assert!
    "expected a valid grid definition for `value`"
-   (grid-track? value))
+   (check-grid-track! value))
 
   (let [cols (:layout-grid-columns parent)
         new-row-num (inc (count (:layout-grid-rows parent)))

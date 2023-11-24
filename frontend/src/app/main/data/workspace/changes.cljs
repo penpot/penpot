@@ -53,7 +53,11 @@
   ([ids update-fn] (update-shapes ids update-fn nil))
   ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-remote? ignore-touched undo-group]
                    :or {reg-objects? false save-undo? true stack-undo? false ignore-remote? false ignore-touched false}}]
-   (dm/assert! (sm/coll-of-uuid? ids))
+
+   (dm/assert!
+    "expected a valid coll of uuid's"
+    (sm/check-coll-of-uuid! ids))
+
    (dm/assert! (fn? update-fn))
 
    (ptk/reify ::update-shapes
@@ -212,8 +216,8 @@
           (try
             (dm/assert!
              "expect valid vector of changes"
-             (and (cpc/valid-changes? redo-changes)
-                  (cpc/valid-changes? undo-changes)))
+             (and (cpc/check-changes! redo-changes)
+                  (cpc/check-changes! undo-changes)))
 
             (update-in state path (fn [file]
                                     (-> file

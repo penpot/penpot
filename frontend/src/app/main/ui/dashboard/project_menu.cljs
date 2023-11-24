@@ -6,8 +6,6 @@
 
 (ns app.main.ui.dashboard.project-menu
   (:require
-   [app.common.data.macros :as dm]
-   [app.common.schema :as sm]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
@@ -21,19 +19,8 @@
    [app.util.router :as rt]
    [rumext.v2 :as mf]))
 
-(def schema:project-menu
-  [:map {:title "UIProjectMenu"}
-   [:project some?]
-   [:show? :boolean]
-   [:on-menu-close {:optional true} ::sm/fn]
-   [:on-error {:optional true} ::sm/fn]
-   [:top {:optional true} [:maybe :double]]
-   [:left {:optional true} [:maybe :double]]
-   [:on-import {:optional true} ::sm/fn]])
-
 (mf/defc project-menu
   [{:keys [project show? on-edit on-menu-close top left on-import] :as props}]
-  (dm/assert! (sm/valid? schema:project-menu props))
   (let [top  (or top 0)
         left (or left 0)
 

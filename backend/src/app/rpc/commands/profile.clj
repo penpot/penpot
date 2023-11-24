@@ -8,7 +8,6 @@
   (:require
    [app.auth :as auth]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
@@ -37,7 +36,7 @@
 (declare strip-private-attrs)
 (declare verify-password)
 
-(def schema:profile
+(def ^:private schema:profile
   [:map {:title "Profile"}
    [:id ::sm/uuid]
    [:fullname [::sm/word-string {:max 250}]]
@@ -53,14 +52,12 @@
    [:props {:optional true}
     [:map-of {:title "ProfileProps"} :keyword :any]]])
 
-(def valid-profile?
-  (sm/pred-fn schema:profile))
-
 ;; --- QUERY: Get profile (own)
 
 (sv/defmethod ::get-profile
   {::rpc/auth false
    ::doc/added "1.18"
+   ::sm/params [:map]
    ::sm/result schema:profile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id]}]
   ;; We need to return the anonymous profile object in two cases, when
@@ -92,10 +89,6 @@
    ::sm/params schema:update-profile
    ::sm/result schema:profile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id fullname lang theme] :as params}]
-
-  (dm/assert!
-   "expected valid profile data"
-   (valid-profile? params))
 
   (db/with-atomic [conn pool]
     ;; NOTE: we need to retrieve the profile independently if we use

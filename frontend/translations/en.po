@@ -998,6 +998,13 @@ msgstr "Email or password is incorrect."
 msgid "errors.wrong-old-password"
 msgstr "Old password is incorrect"
 
+msgid "errors.validation"
+msgstr "Validation Error"
+
+msgid "errors.paste-data-validation"
+msgstr "Invalid data in clipboard"
+
+
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Description"

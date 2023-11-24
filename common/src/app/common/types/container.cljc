@@ -25,7 +25,7 @@
 (def valid-container-types
   #{:page :component})
 
-(sm/def! ::container
+(sm/define! ::container
   [:map
    [:id ::sm/uuid]
    [:type {:optional true}
@@ -36,8 +36,8 @@
    [:objects {:optional true}
     [:map-of {:gen/max 10} ::sm/uuid :map]]])
 
-(def container?
-  (sm/pred-fn ::container))
+(def check-container!
+  (sm/check-fn ::container))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
@@ -71,7 +71,7 @@
 
   (dm/assert!
    "expected valid container"
-   (container? container))
+   (check-container! container))
 
   (dm/assert!
    "expected valid uuid for `shape-id`"

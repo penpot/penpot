@@ -71,7 +71,7 @@
 (def animation-types
   #{:dissolve :slide :push})
 
-(sm/def! ::animation
+(sm/define! ::animation
   [:multi {:dispatch :animation-type :title "Animation"}
    [:dissolve
     [:map {:title "AnimationDisolve"}
@@ -93,10 +93,10 @@
      [:easing [::sm/one-of easing-types]]
      [:direction [::sm/one-of direction-types]]]]])
 
-(def animation?
-  (sm/pred-fn ::animation))
+(def check-animation!
+  (sm/check-fn ::animation))
 
-(sm/def! ::interaction
+(sm/define! ::interaction
   [:multi {:dispatch :action-type}
    [:navigate
     [:map
@@ -144,6 +144,9 @@
      [:event-type [::sm/one-of event-types]]
      [:url :string]]]])
 
+(def check-interaction!
+  (sm/check-fn ::interaction))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -157,14 +160,7 @@
 
 (def default-delay 600)
 
-
 ;; -- Helpers for interaction
-
-(def interaction?
-  (sm/pred-fn ::interaction))
-
-;; (def destination?
-;;   (sm/pred-fn [:maybe ::sm/uuid]))
 
 (declare calc-overlay-pos-initial)
 (declare allowed-animation?)
@@ -173,7 +169,7 @@
   [interaction event-type shape]
   (dm/assert!
    "Should be an interraction map"
-   ^boolean (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "Should be a valid event type"
@@ -201,7 +197,7 @@
 
   (dm/assert!
    "Should be an interraction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "Should be a valid event type"
@@ -255,11 +251,11 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected valid delay"
-   (sm/safe-int? delay))
+   (sm/check-safe-int! delay))
 
   (dm/assert!
    "expected compatible interaction event type"
@@ -286,7 +282,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected compatible interaction event type"
@@ -310,7 +306,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected boolean for `preserve-scroll`"
@@ -331,7 +327,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected a string for `url`"
@@ -352,7 +348,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected valid overlay positioning type"
@@ -373,7 +369,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected valid overlay positioning type"
@@ -397,7 +393,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected valid overlay position"
@@ -416,7 +412,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected boolean value for `close-click-outside`"
@@ -433,7 +429,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected boolean value for `background-overlay`"
@@ -450,7 +446,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected valid uuid for `position-relative-to`"
@@ -489,7 +485,7 @@
                        ;; of that frame
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected compatible interaction map"
@@ -587,7 +583,7 @@
   [interaction animation-type]
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected valid value for `animation-type`"
@@ -638,11 +634,11 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected valid duration"
-   (sm/safe-int? duration))
+   (sm/check-safe-int! duration))
 
   (dm/assert!
    "expected compatible interaction map"
@@ -659,7 +655,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected valid easing"
@@ -682,7 +678,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected valid way"
@@ -703,7 +699,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected valid direction"
@@ -720,7 +716,7 @@
   (dm/assert!
    "expected valid animation map"
    (or (nil? animation)
-       (animation? animation)))
+       (check-animation! animation)))
 
   (case (:direction animation)
     :right
@@ -745,7 +741,7 @@
 
   (dm/assert!
    "expected valid interaction map"
-   (interaction? interaction))
+   (check-interaction! interaction))
 
   (dm/assert!
    "expected valid boolean for `offset-effect`"

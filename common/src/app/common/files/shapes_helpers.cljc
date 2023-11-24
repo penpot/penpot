@@ -11,13 +11,9 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.schema :as sm]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
-
-(def valid-shape-map?
-  (sm/pred-fn ::cts/shape))
 
 (defn prepare-add-shape
   [changes shape objects _selected]

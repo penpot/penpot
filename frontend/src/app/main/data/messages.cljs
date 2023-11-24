@@ -18,38 +18,37 @@
 (def default-animation-timeout 600)
 (def default-timeout 5000)
 
-(def schema:message
-  [:map {:title "Message"}
-   [:type [::sm/one-of #{:success :error :info :warning}]]
-   [:status {:optional true}
-    [::sm/one-of #{:visible :hide}]]
-   [:position {:optional true}
-    [::sm/one-of #{:fixed :floating :inline}]]
-   [:controls {:optional true}
-    [::sm/one-of #{:none :close :inline-actions :bottom-actions}]]
-   [:tag {:optional true}
-    [:or :string :keyword]]
-   [:timeout {:optional true}
-    [:maybe :int]]
-   [:actions {:optional true}
-    [:vector
-     [:map
-      [:label :string]
-      [:callback ::sm/fn]]]]
-   [:links {:optional true}
-    [:vector
-     [:map
-      [:label :string]
-      [:callback ::sm/fn]]]]])
-
-(def message?
-  (sm/pred-fn schema:message))
+(def ^:private
+  schema:message
+  (sm/define
+    [:map {:title "Message"}
+     [:type [::sm/one-of #{:success :error :info :warning}]]
+     [:status {:optional true}
+      [::sm/one-of #{:visible :hide}]]
+     [:position {:optional true}
+      [::sm/one-of #{:fixed :floating :inline}]]
+     [:controls {:optional true}
+      [::sm/one-of #{:none :close :inline-actions :bottom-actions}]]
+     [:tag {:optional true}
+      [:or :string :keyword]]
+     [:timeout {:optional true}
+      [:maybe :int]]
+     [:actions {:optional true}
+      [:vector
+       [:map
+        [:label :string]
+        [:callback ::sm/fn]]]]
+     [:links {:optional true}
+      [:vector
+       [:map
+        [:label :string]
+        [:callback ::sm/fn]]]]]))
 
 (defn show
   [data]
   (dm/assert!
    "expected valid message map"
-   (message? data))
+   (sm/check! schema:message data))
 
   (ptk/reify ::show
     ptk/UpdateEvent

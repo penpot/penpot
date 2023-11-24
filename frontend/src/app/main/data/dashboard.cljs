@@ -468,7 +468,10 @@
   [{:keys [emails role team-id resend?] :as params}]
   (dm/assert! (keyword? role))
   (dm/assert! (uuid? team-id))
-  (dm/assert! (sm/set-of-emails? emails))
+
+  (dm/assert!
+   "expected a valid set of emails"
+   (sm/check-set-of-emails! emails))
 
   (ptk/reify ::invite-team-members
     IDeref
@@ -487,7 +490,10 @@
 
 (defn copy-invitation-link
   [{:keys [email team-id] :as params}]
-  (dm/assert! (sm/email? email))
+  (dm/assert!
+   "expected a valid email"
+   (sm/check-email! email))
+
   (dm/assert! (uuid? team-id))
 
   (ptk/reify ::copy-invitation-link
@@ -515,7 +521,10 @@
 
 (defn update-team-invitation-role
   [{:keys [email team-id role] :as params}]
-  (dm/assert! (sm/email? email))
+  (dm/assert!
+   "expected a valid email"
+   (sm/check-email! email))
+
   (dm/assert! (uuid? team-id))
   (dm/assert! (keyword? role)) ;; FIXME validate role
 
@@ -534,7 +543,7 @@
 
 (defn delete-team-invitation
   [{:keys [email team-id] :as params}]
-  (dm/assert! (sm/email? email))
+  (dm/assert! (sm/check-email! email))
   (dm/assert! (uuid? team-id))
   (ptk/reify ::delete-team-invitation
     ptk/WatchEvent
@@ -891,8 +900,11 @@
 
 (defn move-files
   [{:keys [ids project-id] :as params}]
-  (dm/assert! (sm/set-of-uuid? ids))
   (dm/assert! (uuid? project-id))
+
+  (dm/assert!
+   "expected a valid set of uuids"
+   (sm/check-set-of-uuid! ids))
 
   (ptk/reify ::move-files
     IDeref

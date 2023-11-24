@@ -24,23 +24,24 @@
 
 ;; --- Messages Handling
 
-(def schema:message
-  [:map {:title "WorkerMessage"}
-   [:sender-id ::sm/uuid]
-   [:payload
-    [:map
-     [:cmd :keyword]]]
-   [:buffer? {:optional true} :boolean]])
-
-(def message?
-  (sm/pred-fn schema:message))
+(def ^:private
+  schema:message
+  (sm/define
+    [:map {:title "WorkerMessage"}
+     [:sender-id ::sm/uuid]
+     [:payload
+      [:map
+       [:cmd :keyword]]]
+     [:buffer? {:optional true} :boolean]]))
 
 (def buffer (rx/subject))
 
 (defn- handle-message
   "Process the message and returns to the client"
   [{:keys [sender-id payload transfer] :as message}]
-  (dm/assert! (message? message))
+  (dm/assert!
+   "expected valid message"
+   (sm/check! schema:message message))
   (letfn [(post [msg]
             (let [msg (-> msg (assoc :reply-to sender-id) (wm/encode))]
               (.postMessage js/self msg)))
@@ -86,7 +87,9 @@
 (defn- drop-message
   "Sends to the client a notification that its messages have been dropped"
   [{:keys [sender-id] :as message}]
-  (dm/assert! (message? message))
+  (dm/assert!
+   "expected valid message"
+   (sm/check! schema:message message))
   (.postMessage js/self (wm/encode {:reply-to sender-id
                                     :dropped true})))
 

@@ -6,13 +6,17 @@
 
 (ns app.util.object
   "A collection of helpers for work with javascript objects."
-  (:refer-clojure :exclude [set! new get get-in merge clone contains? array?])
+  (:refer-clojure :exclude [set! new get get-in merge clone contains? array? into-array])
   (:require
    [cuerdas.core :as str]))
 
 (defn array?
   [o]
   (.isArray js/Array o))
+
+(defn into-array
+  [o]
+  (js/Array.from o))
 
 (defn create [] #js {})
 

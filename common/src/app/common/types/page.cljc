@@ -18,26 +18,20 @@
 ;; SCHEMAS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/def! ::flow
+(sm/define! ::flow
   [:map {:title "PageFlow"}
    [:id ::sm/uuid]
    [:name :string]
    [:starting-frame ::sm/uuid]])
 
-(def flow?
-  (sm/pred-fn ::flow))
-
-(sm/def! ::guide
+(sm/define! ::guide
   [:map {:title "PageGuide"}
    [:id ::sm/uuid]
    [:axis [::sm/one-of #{:x :y}]]
    [:position ::sm/safe-number]
    [:frame-id {:optional true} [:maybe ::sm/uuid]]])
 
-(def guide?
-  (sm/pred-fn ::guide))
-
-(sm/def! ::page
+(sm/define! ::page
   [:map {:title "FilePage"}
    [:id ::sm/uuid]
    [:name :string]
@@ -52,8 +46,11 @@
      [:guides {:optional true}
       [:map-of {:gen/max 2} ::sm/uuid ::guide]]]]])
 
-(def page?
-  (sm/pred-fn ::page))
+(def check-page-guide!
+  (sm/check-fn ::guide))
+
+(def check-page!
+  (sm/check-fn ::page))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INIT & HELPERS

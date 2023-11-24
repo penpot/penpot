@@ -140,7 +140,7 @@
                 :else
                 (str "expr assert: " (pr-str expr)))]
      (when *assert*
-       `(binding [*assert-context* true]
+       `(binding [*assert-context* ~hint]
           (when-not ~expr
             (let [hint#   ~hint
                   params# {:type :assertion
@@ -161,7 +161,7 @@
 
                 :else
                 (str "expr assert: " (pr-str expr)))]
-     `(binding [*assert-context* true]
+     `(binding [*assert-context* ~hint]
         (when-not ~expr
           (let [hint#   ~hint
                 params# {:type :assertion

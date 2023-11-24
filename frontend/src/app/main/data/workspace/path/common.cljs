@@ -22,23 +22,27 @@
     :elliptical-arc
     :close-path})
 
-(def schema:content
-  [:vector {:title "PathContent"}
-   [:map {:title "PathContentEntry"}
-    [:command [::sm/one-of valid-commands]]
-    ;; FIXME: remove the `?` from prop name
-    [:relative? {:optional true} :boolean]
-    [:params {:optional true}
-     [:map {:title "PathContentEntryParams"}
-      [:x :double]
-      [:y :double]
-      [:c1x {:optional true} :double]
-      [:c1y {:optional true} :double]
-      [:c2x {:optional true} :double]
-      [:c2y {:optional true} :double]]]]])
+;; FIXME: should this schema be defined on common.types ?
 
-(def content?
-  (sm/pred-fn schema:content))
+(def ^:private
+  schema:path-content
+  (sm/define
+    [:vector {:title "PathContent"}
+     [:map {:title "PathContentEntry"}
+      [:command [::sm/one-of valid-commands]]
+      ;; FIXME: remove the `?` from prop name
+      [:relative? {:optional true} :boolean]
+      [:params {:optional true}
+       [:map {:title "PathContentEntryParams"}
+        [:x :double]
+        [:y :double]
+        [:c1x {:optional true} :double]
+        [:c1y {:optional true} :double]
+        [:c2x {:optional true} :double]
+        [:c2y {:optional true} :double]]]]]))
+
+(def check-path-content!
+  (sm/check-fn schema:path-content))
 
 (defn init-path []
   (ptk/reify ::init-path))

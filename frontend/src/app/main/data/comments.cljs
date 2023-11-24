@@ -17,38 +17,40 @@
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-(def schema:comment-thread
-  [:map {:title "CommentThread"}
-   [:id ::sm/uuid]
-   [:page-id ::sm/uuid]
-   [:file-id ::sm/uuid]
-   [:project-id ::sm/uuid]
-   [:owner-id ::sm/uuid]
-   [:page-name :string]
-   [:file-name :string]
-   [:seqn :int]
-   [:content :string]
-   [:participants ::sm/set-of-uuid]
-   [:created-at ::sm/inst]
-   [:modified-at ::sm/inst]
-   [:position ::gpt/point]
-   [:count-unread-comments {:optional true} :int]
-   [:count-comments {:optional true} :int]])
+(def ^:private schema:comment-thread
+  (sm/define
+    [:map {:title "CommentThread"}
+     [:id ::sm/uuid]
+     [:page-id ::sm/uuid]
+     [:file-id ::sm/uuid]
+     [:project-id ::sm/uuid]
+     [:owner-id ::sm/uuid]
+     [:page-name :string]
+     [:file-name :string]
+     [:seqn :int]
+     [:content :string]
+     [:participants ::sm/set-of-uuid]
+     [:created-at ::sm/inst]
+     [:modified-at ::sm/inst]
+     [:position ::gpt/point]
+     [:count-unread-comments {:optional true} :int]
+     [:count-comments {:optional true} :int]]))
 
-(def schema:comment
-  [:map {:title "CommentThread"}
-   [:id ::sm/uuid]
-   [:thread-id ::sm/uuid]
-   [:owner-id ::sm/uuid]
-   [:created-at ::sm/inst]
-   [:modified-at ::sm/inst]
-   [:content :string]])
+(def ^:private schema:comment
+  (sm/define
+    [:map {:title "Comment"}
+     [:id ::sm/uuid]
+     [:thread-id ::sm/uuid]
+     [:owner-id ::sm/uuid]
+     [:created-at ::sm/inst]
+     [:modified-at ::sm/inst]
+     [:content :string]]))
 
-(def comment-thread?
-  (sm/pred-fn schema:comment-thread))
+(def check-comment-thread!
+  (sm/check-fn schema:comment-thread))
 
-(def comment?
-  (sm/pred-fn schema:comment))
+(def check-comment!
+  (sm/check-fn schema:comment))
 
 (declare create-draft-thread)
 (declare retrieve-comment-threads)
@@ -68,16 +70,20 @@
           (update-in [:comments id] assoc (:id comment) comment)))))
 
 
-(def schema:create-thread-on-workspace
-  [:map
-   [:page-id ::sm/uuid]
-   [:file-id ::sm/uuid]
-   [:position ::gpt/point]
-   [:content :string]])
+(def ^:private
+  schema:create-thread-on-workspace
+  (sm/define
+    [:map {:title "created-thread-on-workspace"}
+     [:page-id ::sm/uuid]
+     [:file-id ::sm/uuid]
+     [:position ::gpt/point]
+     [:content :string]]))
 
 (defn create-thread-on-workspace
   [params]
-  (dm/assert! (sm/valid? schema:create-thread-on-workspace params))
+  (dm/assert!
+   (sm/check! schema:create-thread-on-workspace params))
+
   (ptk/reify ::create-thread-on-workspace
     ptk/WatchEvent
     (watch [_ state _]
@@ -107,17 +113,21 @@
           (update :workspace-drawing dissoc :comment)
           (update-in [:comments id] assoc (:id comment) comment)))))
 
-(def schema:create-thread-on-viewer
-  [:map
-   [:page-id ::sm/uuid]
-   [:file-id ::sm/uuid]
-   [:frame-id ::sm/uuid]
-   [:position ::gpt/point]
-   [:content :string]])
+(def ^:private
+  schema:create-thread-on-viewer
+  (sm/define
+    [:map {:title "created-thread-on-viewer"}
+     [:page-id ::sm/uuid]
+     [:file-id ::sm/uuid]
+     [:frame-id ::sm/uuid]
+     [:position ::gpt/point]
+     [:content :string]]))
 
 (defn create-thread-on-viewer
   [params]
-  (dm/assert! (sm/valid? schema:create-thread-on-viewer params))
+  (dm/assert!
+   (sm/check! schema:create-thread-on-viewer params))
+
   (ptk/reify ::create-thread-on-viewer
     ptk/WatchEvent
     (watch [_ state _]
@@ -146,7 +156,11 @@
 
 (defn update-comment-thread
   [{:keys [id is-resolved] :as thread}]
-  (dm/assert! (comment-thread? thread))
+
+  (dm/assert!
+   "expected valid comment thread"
+   (check-comment-thread! thread))
+
   (ptk/reify ::update-comment-thread
     IDeref
     (-deref [_] {:is-resolved is-resolved})
@@ -168,8 +182,14 @@
 
 (defn add-comment
   [thread content]
-  (dm/assert! (comment-thread? thread))
-  (dm/assert! (string? content))
+
+  (dm/assert!
+   "expected valid comment thread"
+   (check-comment-thread! thread))
+
+  (dm/assert!
+   "expected valid content"
+   (string? content))
 
   (letfn [(created [comment state]
             (update-in state [:comments (:id thread)] assoc (:id comment) comment))]
@@ -189,7 +209,10 @@
 
 (defn update-comment
   [{:keys [id content thread-id] :as comment}]
-  (dm/assert! (comment? comment))
+  (dm/assert!
+   "expected valid comment"
+   (check-comment! comment))
+
   (ptk/reify ::update-comment
     ptk/UpdateEvent
     (update [_ state]
@@ -204,7 +227,9 @@
 
 (defn delete-comment-thread-on-workspace
   [{:keys [id] :as thread}]
-  (dm/assert! (comment-thread? thread))
+  (dm/assert!
+   "expected valid comment thread"
+   (check-comment-thread! thread))
   (ptk/reify ::delete-comment-thread-on-workspace
     ptk/UpdateEvent
     (update [_ state]
@@ -222,7 +247,9 @@
 
 (defn delete-comment-thread-on-viewer
   [{:keys [id] :as thread}]
-  (dm/assert! (comment-thread? thread))
+  (dm/assert!
+   "expected valid comment thread"
+   (check-comment-thread! thread))
   (ptk/reify ::delete-comment-thread-on-viewer
     ptk/UpdateEvent
     (update [_ state]
@@ -241,7 +268,9 @@
 
 (defn delete-comment
   [{:keys [id thread-id] :as comment}]
-  (dm/assert! (comment? comment))
+  (dm/assert!
+   "expected valid comment"
+   (check-comment! comment))
   (ptk/reify ::delete-comment
     ptk/UpdateEvent
     (update [_ state]
@@ -256,7 +285,9 @@
 
 (defn refresh-comment-thread
   [{:keys [id file-id] :as thread}]
-  (dm/assert! (comment-thread? thread))
+  (dm/assert!
+   "expected valid comment thread"
+   (check-comment-thread! thread))
   (letfn [(fetched [thread state]
             (assoc-in state [:comment-threads id] thread))]
     (ptk/reify ::refresh-comment-thread
@@ -338,7 +369,9 @@
 
 (defn open-thread
   [{:keys [id] :as thread}]
-  (dm/assert! (comment-thread? thread))
+  (dm/assert!
+   "expected valid comment thread"
+   (check-comment-thread! thread))
   (ptk/reify ::open-comment-thread
     ptk/UpdateEvent
     (update [_ state]
@@ -379,15 +412,18 @@
     (update [_ state]
       (update state :comments-local merge params))))
 
-(def schema:create-draft
-  [:map
-   [:page-id ::sm/uuid]
-   [:file-id ::sm/uuid]
-   [:position ::gpt/point]])
+(def ^:private
+  schema:create-draft
+  (sm/define
+    [:map {:title "create-draft"}
+     [:page-id ::sm/uuid]
+     [:file-id ::sm/uuid]
+     [:position ::gpt/point]]))
 
 (defn create-draft
   [params]
-  (dm/assert! (sm/valid? schema:create-draft params))
+  (dm/assert!
+   (sm/check! schema:create-draft params))
   (ptk/reify ::create-draft
     ptk/UpdateEvent
     (update [_ state]
@@ -452,11 +488,14 @@
       (filter #(contains? (:participants %) (:id profile))))))
 
 (defn update-comment-thread-frame
-    ([thread ]
+  ([thread]
    (update-comment-thread-frame thread uuid/zero))
 
    ([thread frame-id]
-    (dm/assert! (comment-thread? thread))
+    (dm/assert!
+     "expected valid comment thread"
+     (check-comment-thread! thread))
+
     (ptk/reify ::update-comment-thread-frame
       ptk/UpdateEvent
       (update [_ state]
@@ -473,7 +512,10 @@
 (defn detach-comment-thread
   "Detach comment threads that are inside a frame when that frame is deleted"
   [ids]
-  (dm/assert! (sm/coll-of-uuid? ids))
+  (dm/assert!
+   "expected a valid coll of uuid's"
+   (sm/check-coll-of-uuid! ids))
+
   (ptk/reify ::detach-comment-thread
     ptk/WatchEvent
     (watch [_ state _]

@@ -25,7 +25,7 @@
 (defn update-guides [guide]
   (dm/assert!
    "expected valid guide"
-   (ctp/guide? guide))
+   (ctp/check-page-guide! guide))
 
   (ptk/reify ::update-guides
     ptk/WatchEvent
@@ -40,7 +40,7 @@
 (defn remove-guide [guide]
   (dm/assert!
    "expected valid guide"
-   (ctp/guide? guide))
+   (ctp/check-page-guide! guide))
 
   (ptk/reify ::remove-guide
     ptk/UpdateEvent

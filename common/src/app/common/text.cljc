@@ -59,6 +59,19 @@
         item))
     root)))
 
+(defn xform-nodes
+  "The same as transform but instead of receiving a funcion, receives
+  a transducer."
+  [xf root]
+  (let [rf (fn [_ v] v)]
+    (walk/postwalk
+     (fn [item]
+       (let [rf (xf rf)]
+         (if (map? item)
+           (d/nilv (rf nil item) item)
+           item)))
+     root)))
+
 (defn node-seq
   ([root] (node-seq identity root))
   ([match? root]

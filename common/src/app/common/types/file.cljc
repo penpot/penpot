@@ -33,7 +33,7 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/def! ::media-object
+(sm/define! ::media-object
   [:map {:title "FileMediaObject"}
    [:id ::sm/uuid]
    [:name :string]
@@ -42,7 +42,7 @@
    [:mtype :string]
    [:path {:optional true} [:maybe :string]]])
 
-(sm/def! ::data
+(sm/define! ::data
   [:map {:title "FileData"}
    [:pages [:vector ::sm/uuid]]
    [:pages-index
@@ -58,11 +58,11 @@
    [:media {:optional true}
     [:map-of {:gen/max 5} ::sm/uuid ::media-object]]])
 
-(def valid-file-data?
-  (sm/pred-fn ::data))
+(def check-file-data!
+  (sm/check-fn ::data))
 
-(def valid-media-object?
-  (sm/pred-fn ::media-object))
+(def check-media-object!
+  (sm/check-fn ::media-object))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIALIZATION

@@ -24,13 +24,15 @@
 ;; Undo / Redo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def schema:undo-entry
-  [:map
-   [:undo-changes [:vector ::cpc/change]]
-   [:redo-changes [:vector ::cpc/change]]])
+(def ^:private
+  schema:undo-entry
+  (sm/define
+    [:map {:title "undo-entry"}
+     [:undo-changes [:vector ::cpc/change]]
+     [:redo-changes [:vector ::cpc/change]]]))
 
-(def undo-entry?
-  (sm/pred-fn schema:undo-entry))
+(def check-undo-entry!
+  (sm/check-fn schema:undo-entry))
 
 (def MAX-UNDO-SIZE 50)
 
@@ -89,8 +91,12 @@
 
 (defn append-undo
   [entry stack?]
-  (dm/assert! (boolean? stack?))
-  (dm/assert! (undo-entry? entry))
+  (dm/assert!
+   "expected valid undo entry"
+   (check-undo-entry! entry))
+
+  (dm/assert!
+   (boolean? stack?))
 
   (ptk/reify ::append-undo
     ptk/UpdateEvent

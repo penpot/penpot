@@ -28,6 +28,9 @@
 (def ^:private schema:templates
   [:vector schema:template])
 
+(def check-templates!
+  (sm/check-fn schema:templates))
+
 (defmethod ig/init-key ::setup/templates
   [_ _]
   (let [templates (-> "app/onboarding.edn" io/resource slurp edn/read-string)
@@ -35,7 +38,7 @@
 
     (dm/verify!
      "expected a valid templates file"
-     (sm/valid? schema:templates templates))
+     (check-templates! templates))
 
     (doseq [{:keys [id path] :as template} templates]
       (let [path (or path (fs/join dest id))]
