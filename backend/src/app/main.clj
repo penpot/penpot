@@ -217,7 +217,7 @@
    {::db/pool (ig/ref ::db/pool)}
 
    ::http.client/client
-   {::wrk/executor (ig/ref ::wrk/executor)}
+   {}
 
    ::session/manager
    {::db/pool (ig/ref ::db/pool)}
