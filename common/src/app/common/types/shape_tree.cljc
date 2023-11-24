@@ -417,7 +417,7 @@
                _              (dm/assert! (some? child))
                frame-id-child (if (cfh/frame-shape? object)
                                 new-id
-                                (:frame-id object))
+                                frame-id)
 
                [new-child new-child-objects updated-child-objects]
                (clone-object child new-id objects update-new-object update-original-object nil keep-ids? frame-id-child)]
