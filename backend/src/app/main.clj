@@ -439,7 +439,6 @@
 
    ::sto/storage
    {::db/pool      (ig/ref ::db/pool)
-    ::wrk/executor (ig/ref ::wrk/executor)
     ::sto/backends
     {:assets-s3 (ig/ref [::assets :app.storage.s3/backend])
      :assets-fs (ig/ref [::assets :app.storage.fs/backend])}}
