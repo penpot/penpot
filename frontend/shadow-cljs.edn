@@ -53,9 +53,23 @@
      :anon-fn-naming-policy :off
      :source-map-detail-level :all}}}
 
-  :lib-penpot
+  :storybook
   {:target :esm
-   :output-dir "resources/public/libs"
+   :output-dir "target/storybook/"
+   :modules
+   {:design-system {:exports {default app.main.ui.components.design-system/default} }}
+
+   :js-options
+   {:js-provider :import}
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}}
+
+  :lib-penpot
+   {:target :esm
+    :output-dir "resources/public/libs"
 
    :modules
    {:penpot {:exports {:renderPage app.libs.render/render-page-export

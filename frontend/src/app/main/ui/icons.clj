@@ -9,7 +9,7 @@
 
 (defmacro icon-xref
   [id]
-  (let [href (str "#icon-" (name id))
+  (let [href (str "/images/sprites/symbol/icons.svg#icon-" (name id))
         class (str "icon-" (name id))]
     `(rumext.v2/html
       [:svg {:width 500 :height 500 :class ~class}
