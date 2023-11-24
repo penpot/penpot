@@ -449,4 +449,6 @@
                           (lazy-seq
                            (cons position (get-next (inc counter))))))]
 
-      (get-next 0))))
+      (with-meta (get-next 0)
+        {:width  (* grid-size column-size)
+         :height (* grid-size row-size)}))))
