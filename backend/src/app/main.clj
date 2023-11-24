@@ -161,12 +161,7 @@
     ::mdef/help "Current number of threads with state RUNNING."
     ::mdef/labels ["name"]
     ::mdef/type :gauge}
-
-   :executors-queued-submissions
-   {::mdef/name "penpot_executors_queued_submissions"
-    ::mdef/help "Current number of queued submissions."
-    ::mdef/labels ["name"]
-    ::mdef/type :gauge}})
+   })
 
 (def system-config
   {::db/pool
@@ -180,13 +175,12 @@
 
    ;; Default thread pool for IO operations
    ::wrk/executor
-   {::wrk/parallelism (cf/get :default-executor-parallelism
-                              (+ 3 (* (px/get-available-processors) 3)))}
+   {}
 
    ::wrk/monitor
    {::mtx/metrics  (ig/ref ::mtx/metrics)
-    ::wrk/name     "default"
-    ::wrk/executor (ig/ref ::wrk/executor)}
+    ::wrk/executor (ig/ref ::wrk/executor)
+    ::wrk/name     "default"}
 
    :app.migrations/migrations
    {::db/pool (ig/ref ::db/pool)}
