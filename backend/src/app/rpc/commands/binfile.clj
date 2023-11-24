@@ -866,15 +866,14 @@
                                   (sto/wrap-with-hash hash))
 
               params          (assoc mdata ::sto/content content)
-
               params          (if (thumb? id)
+                                (-> params
+                                    (assoc ::sto/deduplicate? false)
+                                    (assoc :bucket "file-object-thumbnail"))
                                 (-> params
                                     (assoc ::sto/deduplicate? true)
                                     (assoc ::sto/touched-at (dt/now))
-                                    (assoc :bucket "file-media-object"))
-                                (-> params
-                                    (assoc ::sto/deduplicate? false)
-                                    (assoc :bucket "file-object-thumbnail")))
+                                    (assoc :bucket "file-media-object")))
 
               sobject         (sto/put-object! storage params)]
 
