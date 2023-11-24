@@ -228,8 +228,7 @@
    ::http.awsns/routes
    {::props              (ig/ref ::setup/props)
     ::db/pool            (ig/ref ::db/pool)
-    ::http.client/client (ig/ref ::http.client/client)
-    ::wrk/executor       (ig/ref ::wrk/executor)}
+    ::http.client/client (ig/ref ::http.client/client)}
 
    ::http/server
    {::http/port                    (cf/get :http-server-port)

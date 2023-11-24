@@ -31,14 +31,13 @@
 (defmethod ig/pre-init-spec ::routes [_]
   (s/keys :req [::http/client
                 ::main/props
-                ::db/pool
-                ::wrk/executor]))
+                ::db/pool]))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [::wrk/executor] :as cfg}]
+  [_ cfg]
   (letfn [(handler [request]
             (let [data (-> request rreq/body slurp)]
-              (px/run! executor #(handle-request cfg data)))
+              (px/run! :vthread (partial handle-request cfg data)))
             {::rres/status 200})]
     ["/sns" {:handler handler
              :allowed-methods #{:post}}]))
