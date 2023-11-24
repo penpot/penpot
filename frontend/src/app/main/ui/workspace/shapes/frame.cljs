@@ -125,6 +125,7 @@
 
             tries-ref      (mf/use-ref 0)
             imposter-ref   (mf/use-ref nil)
+            task-ref       (mf/use-ref nil)
 
             on-load        (mf/use-fn #(mf/set-ref-val! tries-ref 0))
             on-error       (mf/use-fn
@@ -137,14 +138,20 @@
                                                       (when-not (nil? imposter)
                                                         (dom/set-attribute! imposter "href" thumbnail-uri))))]
                                 (when (< new-tries 8)
-                                  (tm/schedule delay-in-ms retry-fn)))))]
+                                  (mf/set-ref-val! task-ref (tm/schedule delay-in-ms retry-fn))))))]
 
         ;; NOTE: we don't add deps because we want this to be executed
         ;; once on mount with only referenced the initial data
         (mf/with-effect []
           (when-not (some? thumbnail-uri)
             (tm/schedule-on-idle
-             #(st/emit! (dwt/request-thumbnail file-id page-id frame-id "frame")))))
+             #(st/emit! (dwt/request-thumbnail file-id page-id frame-id "frame"))))
+          #(when-let [task (mf/ref-val task-ref)]
+             (d/close! task)))
+
+        (mf/with-effect [thumbnail-uri]
+          (when-let [task (mf/ref-val task-ref)]
+            (d/close! task)))
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val content-ref) modifiers)
 
