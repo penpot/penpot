@@ -6,7 +6,6 @@
 
 (ns app.main.ui.dashboard.files
   (:require
-   [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.refs :as refs]
@@ -14,13 +13,12 @@
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
-   [app.util.webapi :as wapi]
-   [beicon.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -126,16 +124,8 @@
   [{:keys [project team] :as props}]
   (let [files-map  (mf/deref refs/dashboard-files)
         project-id (:id project)
-        width      (mf/use-state nil)
-        rowref     (mf/use-ref)
-        itemsize   (if (>= @width 1030)
-                     280
-                     230)
 
-        ratio     (if (some? @width) (/ @width itemsize) 0)
-        nitems    (mth/floor ratio)
-        limit     (min 10 nitems)
-        limit     (max 1 limit)
+        [rowref limit] (hooks/use-dynamic-grid-item-width)
 
         files     (mf/with-memo [project-id files-map]
                     (->> (vals files-map)
@@ -159,21 +149,6 @@
                  params {:project-id (:id project)}]
              (st/emit! (-> (dd/create-file (with-meta params mdata))
                            (with-meta {::ev/origin origin}))))))]
-
-    (mf/with-effect []
-      (let [node (mf/ref-val rowref)
-            mnt? (volatile! true)
-            sub  (->> (wapi/observe-resize node)
-                      (rx/observe-on :af)
-                      (rx/subs (fn [entries]
-                                 (let [row (first entries)
-                                       row-rect (.-contentRect ^js row)
-                                       row-width (.-width ^js row-rect)]
-                                   (when @mnt?
-                                     (reset! width row-width))))))]
-        (fn []
-          (vreset! mnt? false)
-          (rx/dispose! sub))))
 
     (mf/with-effect [project]
       (when project

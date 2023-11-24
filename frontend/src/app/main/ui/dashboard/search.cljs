@@ -6,16 +6,14 @@
 
 (ns app.main.ui.dashboard.search
   (:require
-   [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.webapi :as wapi]
-   [beicon.core :as rx]
    [rumext.v2 :as mf]))
 
 (mf/defc search-page
@@ -37,31 +35,7 @@
                (dd/clear-selected-files))))
 
   (let [result (mf/deref refs/dashboard-search-result)
-        width            (mf/use-state nil)
-        rowref           (mf/use-ref)
-        itemsize       (if (>= @width 1030)
-                         280
-                         230)
-
-        ratio          (if (some? @width) (/ @width itemsize) 0)
-        nitems         (mth/floor ratio)
-        limit          (min 10 nitems)
-        limit          (max 1 limit)]
-    (mf/use-effect
-     (fn []
-       (let [node (mf/ref-val rowref)
-             mnt? (volatile! true)
-             sub  (->> (wapi/observe-resize node)
-                       (rx/observe-on :af)
-                       (rx/subs (fn [entries]
-                                  (let [row (first entries)
-                                        row-rect (.-contentRect ^js row)
-                                        row-width (.-width ^js row-rect)]
-                                    (when @mnt?
-                                      (reset! width row-width))))))]
-         (fn []
-           (vreset! mnt? false)
-           (rx/dispose! sub)))))
+        [rowref limit] (hooks/use-dynamic-grid-item-width)]
     [:*
      [:header.dashboard-header
       [:div.dashboard-title#dashboard-search-title

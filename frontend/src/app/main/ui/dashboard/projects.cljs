@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.math :as mth]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -20,14 +19,13 @@
    [app.main.ui.dashboard.grid :refer [line-grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [app.util.time :as dt]
-   [app.util.webapi :as wapi]
-   [beicon.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
@@ -168,16 +166,7 @@
                                   :menu-pos nil
                                   :edition? (= (:id project) edit-id)})
 
-        width      (mf/use-state nil)
-        rowref     (mf/use-ref)
-        itemsize   (if (>= @width 1030)
-                     280
-                     230)
-
-        ratio      (if (some? @width) (/ @width itemsize) 0)
-        nitems     (mth/floor ratio)
-        limit      (min 10 nitems)
-        limit      (max 1 limit)
+        [rowref limit] (hooks/use-dynamic-grid-item-width)
 
         on-nav
         (mf/use-fn
@@ -257,21 +246,6 @@
                      (dd/fetch-recent-files (:id team))
                      (dd/fetch-projects (:id team))
                      (dd/clear-selected-files))))]
-
-    (mf/with-effect
-      (let [node (mf/ref-val rowref)
-            mnt? (volatile! true)
-            sub  (->> (wapi/observe-resize node)
-                      (rx/observe-on :af)
-                      (rx/subs (fn [entries]
-                                 (let [row (first entries)
-                                       row-rect (.-contentRect ^js row)
-                                       row-width (.-width ^js row-rect)]
-                                   (when @mnt?
-                                     (reset! width row-width))))))]
-        (fn []
-          (vreset! mnt? false)
-          (rx/dispose! sub))))
 
     [:article.dashboard-project-row
      {:class (when first? "first")}

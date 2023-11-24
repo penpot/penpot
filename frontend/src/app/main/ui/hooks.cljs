@@ -8,6 +8,7 @@
   "A collection of general purpose react hooks."
   (:require
    [app.common.files.focus :as cpf]
+   [app.common.math :as mth]
    [app.main.broadcast :as mbc]
    [app.main.data.shortcuts :as dsc]
    [app.main.refs :as refs]
@@ -16,6 +17,7 @@
    [app.util.dom.dnd :as dnd]
    [app.util.storage :refer [storage]]
    [app.util.timers :as ts]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [goog.functions :as f]
    [rumext.v2 :as mf]))
@@ -345,3 +347,38 @@
 
     state))
 
+(defn use-dynamic-grid-item-width
+  ([]
+   (use-dynamic-grid-item-width nil))
+
+  ([itemsize]
+   (let [width      (mf/use-state (:items-width @storage))
+         rowref     (mf/use-ref)
+
+         itemsize   (cond
+                      (some? itemsize) itemsize
+                      (>= @width 1030) 280
+                      :else            230)
+
+         ratio      (if (some? @width) (/ @width itemsize) 0)
+         nitems     (mth/floor ratio)
+         limit      (min 10 nitems)
+         limit      (max 1 limit)]
+
+     (mf/with-effect
+       (let [node (mf/ref-val rowref)
+             mnt? (volatile! true)
+             sub  (->> (wapi/observe-resize node)
+                       (rx/observe-on :af)
+                       (rx/subs (fn [entries]
+                                  (let [row (first entries)
+                                        row-rect (.-contentRect ^js row)
+                                        row-width (.-width ^js row-rect)]
+                                    (when @mnt?
+                                      (reset! width row-width)
+                                      (swap! storage assoc :items-width row-width))))))]
+         (fn []
+           (vreset! mnt? false)
+           (rx/dispose! sub))))
+
+     [rowref limit])))
