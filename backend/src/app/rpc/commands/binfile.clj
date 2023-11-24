@@ -518,30 +518,34 @@
   (vswap! *state* assoc :sids [])
 
   (doseq [file-id (-> *state* deref :files)]
-    (let [detach? (and (not embed-assets?) (not include-libraries?))
+    (let [detach?    (and (not embed-assets?) (not include-libraries?))
           thumbnails (get-file-thumbnails cfg file-id)
-          file  (cond-> (get-file cfg file-id)
-                  detach?
-                  (-> (ctf/detach-external-references file-id)
-                      (dissoc :libraries))
+          file       (cond-> (get-file cfg file-id)
+                       detach?
+                       (-> (ctf/detach-external-references file-id)
+                           (dissoc :libraries))
 
-                  embed-assets?
-                  (update :data embed-file-assets cfg file-id)
+                       embed-assets?
+                       (update :data embed-file-assets cfg file-id)
 
-                  :always
-                  (assoc :thumbnails thumbnails))
+                       :always
+                       (assoc :thumbnails thumbnails))
 
-          media (get-file-media cfg file)]
+          media      (get-file-media cfg file)]
 
       (l/dbg :hint "write penpot file"
-             :id file-id
+             :id (str file-id)
              :name (:name file)
+             :thumbnails (count thumbnails)
              :features (:features file)
              :media (count media)
              ::l/sync? true)
 
       (doseq [item media]
         (l/dbg :hint "write penpot file media object" :id (:id item) ::l/sync? true))
+
+      (doseq [item thumbnails]
+        (l/dbg :hint "write penpot file object thumbnail" :media-id (str (:media-id item)) ::l/sync? true))
 
       (doto output
         (write-obj! file)
@@ -572,7 +576,8 @@
 
     (doseq [id sids]
       (let [{:keys [size] :as obj} (sto/get-object storage id)]
-        (l/dbg :hint "write sobject" :id id ::l/sync? true)
+        (l/dbg :hint "write sobject" :id (str id) ::l/sync? true)
+
         (doto output
           (write-uuid! id)
           (write-obj! (meta obj)))
@@ -677,7 +682,10 @@
 (defmethod read-section :v1/metadata
   [{:keys [::input]}]
   (let [{:keys [version files]} (read-obj! input)]
-    (l/dbg :hint "metadata readed" :version (:full version) :files files ::l/sync? true)
+    (l/dbg :hint "metadata readed"
+           :version (:full version)
+           :files (mapv str files)
+           ::l/sync? true)
     (vswap! *state* update :index update-index files)
     (vswap! *state* assoc :version version :files files)))
 
@@ -692,33 +700,29 @@
          (not (contains? cfeat/*previous* "fdata/pointer-map")))
     (features.fdata/enable-pointer-map)))
 
-(defn- update-thumbnail
-  [thumbnail file-id]
-  (let [thumbnail     (assoc thumbnail :file-id file-id)
-        object-id     (:object-id thumbnail)
-        object-id     (str/replace-first object-id #"^(.*?)/" (str file-id "/"))
-        thumbnail     (assoc thumbnail :object-id object-id)]
-
-    thumbnail))
-
-(defn- update-file-thumbnails
-  [file file-id]
-  (let [thumbnails (:thumbnails file)]
-    (mapv #(update-thumbnail % file-id) thumbnails)))
+(defn- get-remaped-thumbnails
+  [thumbnails file-id]
+  (mapv (fn [thumbnail]
+          (-> thumbnail
+              (assoc :file-id file-id)
+              (update :object-id #(str/replace-first % #"^(.*?)/" (str file-id "/")))))
+        thumbnails))
 
 (defmethod read-section :v1/files
   [{:keys [::db/conn ::input ::project-id ::enabled-features ::timestamp ::overwrite?]}]
 
   (doseq [expected-file-id (-> *state* deref :files)]
-    (let [file      (read-obj! input)
-          media'    (read-obj! input)
+    (let [file       (read-obj! input)
+          media      (read-obj! input)
 
-          file-id   (:id file)
-          file-id'  (lookup-index file-id)
+          file-id    (:id file)
+          file-id'   (lookup-index file-id)
 
-          features  (-> enabled-features
-                        (set/difference cfeat/frontend-only-features)
-                        (set/union (cfeat/check-supported-features! (:features file))))]
+          thumbnails (:thumbnails file)
+
+          features   (-> enabled-features
+                         (set/difference cfeat/frontend-only-features)
+                         (set/union (cfeat/check-supported-features! (:features file))))]
 
       ;; All features that are enabled and requires explicit migration
       ;; are added to the state for a posterior migration step
@@ -734,28 +738,32 @@
                   :expected-id expected-file-id
                   :hint "the penpot file seems corrupt, found unexpected uuid (file-id)"))
 
-      (when (contains? file :thumbnails)
-        (let [updated-thumbnails (update-file-thumbnails file file-id')]
-          (vswap! *state* update :thumbnails (fnil into []) updated-thumbnails)
-          (l/dbg :hint "thumbnails updated" :thumbnails (count updated-thumbnails) ::l/sync? true)))
+      (l/dbg :hint "processing file"
+             :id (str file-id)
+             :features (:features file)
+             :version (-> file :data :version)
+             :media (count media)
+             :thumbnails (count thumbnails)
+             ::l/sync? true)
 
-      ;; Update index using with media
-      (l/dbg :hint "update index with media" ::l/sync? true)
-      (vswap! *state* update :index update-index (map :id media'))
+      (when (seq thumbnails)
+        (let [thumbnails (get-remaped-thumbnails thumbnails file-id')]
+          (l/dbg :hint "updated index with thumbnails" :total (count thumbnails) ::l/sync? true)
+          (vswap! *state* update :thumbnails (fnil into []) thumbnails)))
 
-      ;; Store file media for later insertion
-      (l/dbg :hint "update media references" ::l/sync? true)
-      (vswap! *state* update :media into (map #(update % :id lookup-index)) media')
+      (when (seq media)
+        ;; Update index with media
+        (l/dbg :hint "update index with media" :total (count media) ::l/sync? true)
+        (vswap! *state* update :index update-index (map :id media))
+
+        ;; Store file media for later insertion
+        (l/dbg :hint "update media references" ::l/sync? true)
+        (vswap! *state* update :media into (map #(update % :id lookup-index)) media))
 
       (binding [cfeat/*current* features
                 cfeat/*previous* (:features file)
                 pmap/*tracked* (atom {})]
 
-        (l/dbg :hint "processing file"
-               :id file-id
-               :features (:features file)
-               :version (-> file :data :version)
-               ::l/sync? true)
 
         (let [params (-> file
                          (assoc :id file-id')
@@ -798,7 +806,7 @@
                          (update :features #(db/create-array conn "text" %))
                          (update :data blob/encode))]
 
-          (l/dbg :hint "create file" :id file-id' ::l/sync? true)
+          (l/dbg :hint "create file" :id (str file-id') ::l/sync? true)
 
           (if overwrite?
             (create-or-update-file! conn params)
@@ -838,7 +846,8 @@
 (defmethod read-section :v1/sobjects
   [{:keys [::sto/storage ::db/conn ::input ::overwrite?]}]
   (let [storage (media/configure-assets-storage storage)
-        ids     (read-obj! input)]
+        ids     (read-obj! input)
+        thumb?  (into #{} (map :media-id) (:thumbnails @*state*))]
 
     (doseq [expected-storage-id ids]
       (let [id    (read-uuid! input)
@@ -855,18 +864,26 @@
               hash            (sto/calculate-hash resource)
               content         (-> (sto/content resource size)
                                   (sto/wrap-with-hash hash))
-              params          (-> mdata
-                                  (assoc ::sto/deduplicate? true)
-                                  (assoc ::sto/content content)
-                                  (assoc ::sto/touched-at (dt/now))
-                                  (assoc :bucket "file-media-object"))
+
+              params          (assoc mdata ::sto/content content)
+
+              params          (if (thumb? id)
+                                (-> params
+                                    (assoc ::sto/deduplicate? true)
+                                    (assoc ::sto/touched-at (dt/now))
+                                    (assoc :bucket "file-media-object"))
+                                (-> params
+                                    (assoc ::sto/deduplicate? false)
+                                    (assoc :bucket "file-object-thumbnail")))
 
               sobject         (sto/put-object! storage params)]
 
           (l/dbg :hint "persisted storage object"
-                 :id (str id)
+                 :old-id (str id)
                  :new-id (str (:id sobject))
+                 :is-thumbnail (boolean (thumb? id))
                  ::l/sync? true)
+
           (vswap! *state* update :index assoc id (:id sobject)))))
 
     (doseq [item (:media @*state*)]
@@ -886,13 +903,15 @@
                       {:on-conflict-do-nothing overwrite?}))))
 
     (doseq [item (:thumbnails @*state*)]
-      (l/dbg :hint "inserting file object thumbnail"
-             :file-id (:file-id item)
-             :object-id (:object-id item)
-             ::l/sync? true)
-      (db/insert! conn :file-tagged-object-thumbnail
-                  (update item :media-id lookup-index)
-                  {:on-conflict-do-nothing overwrite?}))))
+      (let [item (update item :media-id lookup-index)]
+        (l/dbg :hint "inserting file object thumbnail"
+               :file-id (str (:file-id item))
+               :media-id (str (:media-id item))
+               :object-id (:object-id item)
+               ::l/sync? true)
+        (db/insert! conn :file-tagged-object-thumbnail
+                    (update item :media-id lookup-index)
+                    {:on-conflict-do-nothing overwrite?})))))
 
 (defn- lookup-index
   [id]
@@ -987,7 +1006,7 @@
         ab (volatile! false)
         cs (volatile! nil)]
     (try
-      (l/info :hint "start exportation" :export-id id)
+      (l/info :hint "start exportation" :export-id (str id))
       (pu/with-open [output (io/output-stream output)]
         (binding [*position* (atom 0)]
           (write-export! (assoc cfg ::output output))))
@@ -1003,7 +1022,7 @@
         (throw cause))
 
       (finally
-        (l/info :hint "exportation finished" :export-id id
+        (l/info :hint "exportation finished" :export-id (str id)
                 :elapsed (str (inst-ms (tp)) "ms")
                 :aborted @ab
                 :cause @cs)))))
@@ -1020,7 +1039,7 @@
   (let [id (uuid/next)
         tp (dt/tpoint)
         cs (volatile! nil)]
-    (l/info :hint "import: started" :import-id id)
+    (l/info :hint "import: started" :id (str id))
     (try
       (binding [*position* (atom 0)]
         (pu/with-open [input (io/input-stream input)]
@@ -1032,7 +1051,7 @@
 
       (finally
         (l/info :hint "import: terminated"
-                :import-id id
+                :id (str id)
                 :elapsed (dt/format-duration (tp))
                 :error? (some? @cs))))))
 
