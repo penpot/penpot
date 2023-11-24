@@ -112,6 +112,4 @@
       (when-not (.find ^js items f)
         (enqueue-first queue item))
       (when-not (.findLast ^js items f)
-        (enqueue-last queue item)))
-    (when-not (has-requested-process? queue)
-      (request-process queue (next-process-time queue)))))
+        (enqueue-last queue item)))))
