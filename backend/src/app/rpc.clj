@@ -30,7 +30,6 @@
    [app.storage :as-alias sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.core :as p]
@@ -239,8 +238,7 @@
                 ::ldap/provider
                 ::sto/storage
                 ::mtx/metrics
-                ::main/props
-                ::wrk/executor]
+                ::main/props]
           :opt [::climit
                 ::rlimit]
           :req-un [::db/pool]))
@@ -259,7 +257,6 @@
   (s/keys :req [::methods
                 ::db/pool
                 ::main/props
-                ::wrk/executor
                 ::session/manager]))
 
 (defmethod ig/init-key ::routes

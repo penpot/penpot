@@ -337,7 +337,6 @@
    :app.rpc/routes
    {::rpc/methods     (ig/ref :app.rpc/methods)
     ::db/pool         (ig/ref ::db/pool)
-    ::wrk/executor    (ig/ref ::wrk/executor)
     ::session/manager (ig/ref ::session/manager)
     ::props           (ig/ref ::setup/props)}
 
