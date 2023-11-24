@@ -236,7 +236,8 @@
   "insert into file_tagged_object_thumbnail(file_id, object_id, media_id, tag)
    values (?, ?, ?, ?)
        on conflict(file_id, tag, object_id) do
-          update set media_id = ?;")
+          update set media_id = ?
+   returning *;")
 
 (defn- create-file-object-thumbnail!
   [{:keys [::db/conn ::sto/storage]} file-id object-id media tag]
@@ -280,8 +281,7 @@
       (-> cfg
           (update ::sto/storage media/configure-assets-storage)
           (assoc ::db/conn conn)
-          (create-file-object-thumbnail! file-id object-id media (or tag "frame")))
-      nil)))
+          (create-file-object-thumbnail! file-id object-id media (or tag "frame"))))))
 
 ;; --- MUTATION COMMAND: delete-file-object-thumbnail
 
@@ -318,41 +318,6 @@
           (update ::sto/storage media/configure-assets-storage)
           (assoc ::db/conn conn)
           (delete-file-object-thumbnail! file-id object-id))
-      nil)))
-
-;; --- MUTATION COMMAND: upsert-file-object-thumbnail
-
-(def ^:private schema:upsert-file-object-thumbnail
-  [:map {:title "upsert-file-object-thumbnail"}
-   [:file-id ::sm/uuid]
-   [:object-id :string]
-   [:media ::media/upload]
-   [:tag {:optional true} :string]])
-
-(defn- upsert-file-object-thumbnail!
-  [cfg file-id object-id media tag]
-  (delete-file-object-thumbnail! cfg file-id object-id)
-  (create-file-object-thumbnail! cfg file-id object-id media (or tag "frame")))
-
-(sv/defmethod ::upsert-file-object-thumbnail
-  {::doc/added "1.20"
-   ::doc/module :files
-   ::climit/id :file-thumbnail-ops
-   ::climit/key-fn ::rpc/profile-id
-   ::audit/skip true
-   ::sm/params schema:upsert-file-object-thumbnail}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id object-id media tag]}]
-
-  (db/with-atomic [conn pool]
-    (files/check-edition-permissions! conn profile-id file-id)
-    (media/validate-media-type! media)
-    (media/validate-media-size! media)
-
-    (when-not (db/read-only? conn)
-      (-> cfg
-          (update ::sto/storage media/configure-assets-storage)
-          (assoc ::db/conn conn)
-          (upsert-file-object-thumbnail! file-id object-id media tag))
       nil)))
 
 ;; --- MUTATION COMMAND: create-file-thumbnail
