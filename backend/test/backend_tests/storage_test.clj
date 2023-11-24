@@ -309,7 +309,7 @@
       (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where deleted_at is null"])]
         (t/is (= 2 (:count res)))))
 
-    ;; now we proceed to manually delete all team_font_variant
+    ;; now we proceed to manually delete all file_media_object
     (db/exec-one! th/*pool* ["delete from file_media_object"])
 
     ;; run the touched gc task

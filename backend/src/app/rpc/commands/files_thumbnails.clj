@@ -249,7 +249,8 @@
                   (sto/wrap-with-hash hash))
         media (sto/put-object! storage
                                {::sto/content data
-                                ::sto/deduplicate? false
+                                ::sto/deduplicate? true
+                                ::sto/touched-at (dt/now)
                                 :content-type mtype
                                 :bucket "file-object-thumbnail"})]
 
@@ -292,7 +293,7 @@
                                           :object-id object-id}
                                          {::db/for-update? true})]
 
-    (sto/del-object! storage media-id)
+    (sto/touch-object! storage media-id)
     (db/delete! conn :file-tagged-object-thumbnail
                 {:file-id file-id
                  :object-id object-id})
