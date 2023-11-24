@@ -303,8 +303,7 @@
    {::http.assets/path  (cf/get :assets-path)
     ::http.assets/cache-max-age (dt/duration {:hours 24})
     ::http.assets/cache-max-agesignature-max-age (dt/duration {:hours 24 :minutes 5})
-    ::sto/storage  (ig/ref ::sto/storage)
-    ::wrk/executor (ig/ref ::wrk/executor)}
+    ::sto/storage  (ig/ref ::sto/storage)}
 
    :app.rpc/climit
    {::mtx/metrics  (ig/ref ::mtx/metrics)}
