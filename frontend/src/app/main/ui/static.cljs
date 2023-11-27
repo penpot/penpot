@@ -5,8 +5,11 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.static
+  (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.features :as features]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.globals :as globals]
    [app.util.i18n :refer [tr]]
@@ -17,66 +20,115 @@
 (mf/defc static-header
   {::mf/wrap-props false}
   [props]
-  (let [children (obj/get props "children")
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        children (obj/get props "children")
         on-click (mf/use-callback #(set! (.-href globals/location) "/"))]
-    [:section.exception-layout
-     [:div.exception-header
-      {:on-click on-click}
-      i/logo]
-     [:div.exception-content
-      [:div.container children]]]))
+    (if new-css-system
+      [:section {:class (stl/css :exception-layout)}
+       [:div
+        {:class (stl/css :exception-header)
+         :on-click on-click}
+        i/logo-icon]
+       [:div {:class (stl/css :deco-before)} i/logo-error-screen]
+
+       [:div {:class (stl/css :exception-content)}
+        [:div {:class (stl/css :container)} children]]
+
+       [:div {:class (stl/css :deco-after)} i/logo-error-screen]]
+      [:section.exception-layout
+       [:div.exception-header
+        {:on-click on-click}
+        i/logo]
+       [:div.exception-content
+        [:div.container children]]])))
 
 (mf/defc not-found
   []
-  [:> static-header {}
-   [:div.image i/icon-empty]
-   [:div.main-message (tr "labels.not-found.main-message")]
-   [:div.desc-message (tr "labels.not-found.desc-message")]])
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:> static-header {}
+       [:div {:class (stl/css :main-message)} (tr "labels.not-found.main-message")]
+       [:div {:class (stl/css :desc-message)} (tr "labels.not-found.desc-message")]]
+
+      [:> static-header {}
+       [:div.image i/icon-empty]
+       [:div.main-message (tr "labels.not-found.main-message")]
+       [:div.desc-message (tr "labels.not-found.desc-message")]])))
 
 (mf/defc bad-gateway
   []
-  [:> static-header {}
-   [:div.image i/icon-empty]
-   [:div.main-message (tr "labels.bad-gateway.main-message")]
-   [:div.desc-message (tr "labels.bad-gateway.desc-message")]
-   [:div.sign-info
-    [:a.btn-primary.btn-small
-     {:on-click (fn [] (st/emit! #(dissoc % :exception)))}
-     (tr "labels.retry")]]])
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:> static-header {}
+       [:div {:class (stl/css :main-message)} (tr "labels.bad-gateway.main-message")]
+       [:div {:class (stl/css :desc-message)} (tr "labels.bad-gateway.desc-message")]
+       [:div {:class (stl/css :sign-info)}
+        [:button
+         {:on-click (fn [] (st/emit! (rt/assign-exception nil)))}
+         (tr "labels.retry")]]]
+
+      [:> static-header {}
+       [:div.image i/icon-empty]
+       [:div.main-message (tr "labels.bad-gateway.main-message")]
+       [:div.desc-message (tr "labels.bad-gateway.desc-message")]
+       [:div.sign-info
+        [:a.btn-primary.btn-small
+         {:on-click (fn [] (st/emit! #(dissoc % :exception)))}
+         (tr "labels.retry")]]])))
 
 (mf/defc service-unavailable
   []
-  [:> static-header {}
-   [:div.image i/icon-empty]
-   [:div.main-message (tr "labels.service-unavailable.main-message")]
-   [:div.desc-message (tr "labels.service-unavailable.desc-message")]
-   [:div.sign-info
-    [:a.btn-primary.btn-small
-     {:on-click (fn [] (st/emit! #(dissoc % :exception)))}
-     (tr "labels.retry")]]])
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:> static-header {}
+       [:div {:class (stl/css :main-message)} (tr "labels.service-unavailable.main-message")]
+       [:div {:class (stl/css :desc-message)} (tr "labels.service-unavailable.desc-message")]
+       [:div {:class (stl/css :sign-info)}
+        [:button
+         {:on-click (fn [] (st/emit! (rt/assign-exception nil)))}
+         (tr "labels.retry")]]]
+
+      [:> static-header {}
+       [:div.main-message (tr "labels.service-unavailable.main-message")]
+       [:div.desc-message (tr "labels.service-unavailable.desc-message")]
+       [:div.sign-info
+        [:a.btn-primary.btn-small
+         {:on-click (fn [] (st/emit! #(dissoc % :exception)))}
+         (tr "labels.retry")]]])))
 
 (mf/defc internal-error
   []
-  [:> static-header {}
-   [:div.image i/icon-empty]
-   [:div.main-message (tr "labels.internal-error.main-message")]
-   [:div.desc-message (tr "labels.internal-error.desc-message")]
-   [:div.sign-info
-    [:a.btn-primary.btn-small
-     {:on-click (fn [] (st/emit! (rt/assign-exception nil)))}
-     (tr "labels.retry")]]])
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:> static-header {}
+       [:div {:class (stl/css :main-message)} (tr "labels.internal-error.main-message")]
+       [:div {:class (stl/css :desc-message)} (tr "labels.internal-error.desc-message")]
+       [:div {:class (stl/css :sign-info)}
+        [:button
+         {:on-click (fn [] (st/emit! (rt/assign-exception nil)))}
+         (tr "labels.retry")]]]
+
+      [:> static-header {}
+       [:div.image i/icon-empty]
+       [:div.main-message (tr "labels.internal-error.main-message")]
+       [:div.desc-message (tr "labels.internal-error.desc-message")]
+       [:div.sign-info
+        [:a.btn-primary.btn-small
+         {:on-click (fn [] (st/emit! (rt/assign-exception nil)))}
+         (tr "labels.retry")]]])))
 
 (mf/defc exception-page
   [{:keys [data] :as props}]
-  (case (:type data)
-    :not-found
-    [:& not-found]
+  (let [new-css-system   (features/use-feature "styles/v2")]
+    [:& (mf/provider ctx/new-css-system) {:value new-css-system}
+     (case (:type data)
+       :not-found
+       [:& not-found]
 
-    :bad-gateway
-    [:& bad-gateway]
+       :bad-gateway
+       [:& bad-gateway]
 
-    :service-unavailable
-    [:& service-unavailable]
+       :service-unavailable
+       [:& service-unavailable]
 
-    [:& internal-error]))
-
+       [:& internal-error])]))

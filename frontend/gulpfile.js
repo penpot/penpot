@@ -29,7 +29,7 @@ paths.resources = "./resources/";
 paths.output = "./resources/public/";
 paths.dist = "./target/dist/";
 
-const touchSourceOnStyleChange = true;
+const touchSourceOnStyleChange = false;
 
 /***********************************************
  * Marked Extensions

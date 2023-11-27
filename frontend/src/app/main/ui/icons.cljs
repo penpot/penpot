@@ -170,6 +170,7 @@
 (def lock (icon-xref :lock))
 (def logo (icon-xref :penpot-logo))
 (def logo-icon (icon-xref :penpot-logo-icon))
+(def logo-error-screen (icon-xref :logo-error-screen))
 (def logout (icon-xref :logout))
 (def lowercase (icon-xref :lowercase))
 (def mail (icon-xref :mail))
