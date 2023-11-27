@@ -36,21 +36,23 @@
 (declare strip-private-attrs)
 (declare verify-password)
 
-(def ^:private schema:profile
-  [:map {:title "Profile"}
-   [:id ::sm/uuid]
-   [:fullname [::sm/word-string {:max 250}]]
-   [:email ::sm/email]
-   [:is-active {:optional true} :boolean]
-   [:is-blocked {:optional true} :boolean]
-   [:is-demo {:optional true} :boolean]
-   [:is-muted {:optional true} :boolean]
-   [:created-at {:optional true} ::sm/inst]
-   [:modified-at {:optional true} ::sm/inst]
-   [:default-project-id {:optional true} ::sm/uuid]
-   [:default-team-id {:optional true} ::sm/uuid]
-   [:props {:optional true}
-    [:map-of {:title "ProfileProps"} :keyword :any]]])
+(def ^:private
+  schema:profile
+  (sm/define
+    [:map {:title "Profile"}
+     [:id ::sm/uuid]
+     [:fullname [::sm/word-string {:max 250}]]
+     [:email ::sm/email]
+     [:is-active {:optional true} :boolean]
+     [:is-blocked {:optional true} :boolean]
+     [:is-demo {:optional true} :boolean]
+     [:is-muted {:optional true} :boolean]
+     [:created-at {:optional true} ::sm/inst]
+     [:modified-at {:optional true} ::sm/inst]
+     [:default-project-id {:optional true} ::sm/uuid]
+     [:default-team-id {:optional true} ::sm/uuid]
+     [:props {:optional true}
+      [:map-of {:title "ProfileProps"} :keyword :any]]]))
 
 ;; --- QUERY: Get profile (own)
 
@@ -78,11 +80,13 @@
 
 ;; --- MUTATION: Update Profile (own)
 
-(def schema:update-profile
-  [:map {:title "update-profile"}
-   [:fullname [::sm/word-string {:max 250}]]
-   [:lang {:optional true} [:string {:max 5}]]
-   [:theme {:optional true} [:string {:max 250}]]])
+(def ^:private
+  schema:update-profile
+  (sm/define
+    [:map {:title "update-profile"}
+     [:fullname [::sm/word-string {:max 250}]]
+     [:lang {:optional true} [:string {:max 5}]]
+     [:theme {:optional true} [:string {:max 250}]]]))
 
 (sv/defmethod ::update-profile
   {::doc/added "1.0"
@@ -123,11 +127,13 @@
 (declare update-profile-password!)
 (declare invalidate-profile-session!)
 
-(def schema:update-profile-password
-  [:map {:title "update-profile-password"}
-   [:password [::sm/word-string {:max 500}]]
-   ;; Social registered users don't have old-password
-   [:old-password {:optional true} [:maybe [::sm/word-string {:max 500}]]]])
+(def ^:private
+  schema:update-profile-password
+  (sm/define
+    [:map {:title "update-profile-password"}
+     [:password [::sm/word-string {:max 500}]]
+     ;; Social registered users don't have old-password
+     [:old-password {:optional true} [:maybe [::sm/word-string {:max 500}]]]]))
 
 (sv/defmethod ::update-profile-password
   {:doc/added "1.0"
@@ -177,9 +183,11 @@
 (declare upload-photo)
 (declare update-profile-photo)
 
-(def schema:update-profile-photo
-  [:map {:title "update-profile-photo"}
-   [:file ::media/upload]])
+(def ^:private
+  schema:update-profile-photo
+  (sm/define
+    [:map {:title "update-profile-photo"}
+     [:file ::media/upload]]))
 
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
@@ -241,9 +249,11 @@
 (declare ^:private request-email-change!)
 (declare ^:private change-email-immediately!)
 
-(def schema:request-email-change
-  [:map {:title "request-email-change"}
-   [:email ::sm/email]])
+(def ^:private
+  schema:request-email-change
+  (sm/define
+    [:map {:title "request-email-change"}
+     [:email ::sm/email]]))
 
 (sv/defmethod ::request-email-change
   {::doc/added "1.0"
@@ -308,9 +318,11 @@
 
 ;; --- MUTATION: Update Profile Props
 
-(def schema:update-profile-props
-  [:map {:title "update-profile-props"}
-   [:props [:map-of :keyword :any]]])
+(def ^:private
+  schema:update-profile-props
+  (sm/define
+    [:map {:title "update-profile-props"}
+     [:props [:map-of :keyword :any]]]))
 
 (sv/defmethod ::update-profile-props
   {::doc/added "1.0"
