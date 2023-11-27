@@ -141,14 +141,15 @@
 (defn- wrap-params-validation
   [_ f mdata]
   (if-let [schema (::sm/params mdata)]
-    (let [schema  (sm/schema schema)
-          valid?  (sm/validator schema)
-          explain (sm/explainer schema)
-          decode  (sm/decoder schema sm/default-transformer)]
-
+    (let [schema   (if (sm/lazy-schema? schema)
+                     schema
+                     (sm/define schema))
+          validate (sm/validator schema)
+          explain  (sm/explainer schema)
+          decode   (sm/decoder schema)]
       (fn [cfg params]
         (let [params (decode params)]
-          (if (valid? params)
+          (if (validate params)
             (f cfg params)
             (ex/raise :type :validation
                       :code :params-validation
@@ -159,13 +160,15 @@
   [_ f mdata]
   (if (contains? cf/flags :rpc-output-validation)
     (or (when-let [schema (::sm/result mdata)]
-          (let [schema  (sm/schema schema)
-                valid?  (sm/validator schema)
-                explain (sm/explainer schema)]
+          (let [schema   (if (sm/lazy-schema? schema)
+                           schema
+                           (sm/define schema))
+                validate (sm/validator schema)
+                explain  (sm/explainer schema)]
             (fn [cfg params]
               (let [response (f cfg params)]
                 (when (map? response)
-                  (when-not (valid? response)
+                  (when-not (validate response)
                     (ex/raise :type :validation
                               :code :data-validation
                               ::sm/explain (explain response))))
