@@ -26,7 +26,12 @@
    [malli.transform :as mt]
    [malli.util :as mu]))
 
-(defprotocol ISchemaOps
+(defprotocol ILazySchema
+  (-get-schema [_])
+  (-get-validator [_])
+  (-get-explainer [_])
+  (-get-decoder [_])
+  (-get-encoder [_])
   (-validate [_ o])
   (-explain [_ o])
   (-decode [_ o]))
@@ -34,21 +39,31 @@
 (def default-options
   {:registry sr/default-registry})
 
-(defn explain
-  [s value]
-  (m/explain s value default-options))
-
 (defn schema?
   [o]
   (m/schema? o))
 
+(defn lazy-schema?
+  [s]
+  (satisfies? ILazySchema s))
+
 (defn schema
   [s]
-  (m/schema s default-options))
+  (if (lazy-schema? s)
+    (-get-schema s)
+    (m/schema s default-options)))
 
 (defn validate
   [s value]
-  (m/validate s value default-options))
+  (if (lazy-schema? s)
+    (-validate s value)
+    (m/validate s value default-options)))
+
+(defn explain
+  [s value]
+  (if (lazy-schema? s)
+    (-explain s value)
+    (m/explain s value default-options)))
 
 (defn humanize
   [exp]
@@ -113,11 +128,15 @@
 
 (defn validator
   [s]
-  (-> s schema m/validator))
+  (if (lazy-schema? s)
+    (-get-validator s)
+    (-> s schema m/validator)))
 
 (defn explainer
   [s]
-  (-> s schema m/explainer))
+  (if (lazy-schema? s)
+    (-get-explainer s)
+    (-> s schema m/explainer)))
 
 (defn encode
   ([s val transformer]
@@ -131,9 +150,23 @@
   ([s val options transformer]
    (m/decode s val options transformer)))
 
-(defn decoder
+(defn encoder
+  ([s]
+   (if (lazy-schema? s)
+     (-get-decoder s)
+     (encoder s default-options default-transformer)))
   ([s transformer]
-   (m/decoder s  default-options transformer))
+   (m/encoder s default-options transformer))
+  ([s options transformer]
+   (m/encoder s options transformer)))
+
+(defn decoder
+  ([s]
+   (if (lazy-schema? s)
+     (-get-decoder s)
+     (decoder s default-options default-transformer)))
+  ([s transformer]
+   (m/decoder s default-options transformer))
   ([s options transformer]
    (m/decoder s options transformer)))
 
@@ -205,7 +238,7 @@
 (declare define)
 
 (defn fast-check!
-  "A fast path for checking process, assumes the ISchemaOps protocol
+  "A fast path for checking process, assumes the ILazySchema protocol
   implemented on the provided `s` schema. Sould not be used directly."
   [s value]
   (when-not ^boolean (-validate s value)
@@ -220,7 +253,7 @@
 (defn check-fn
   "Create a predefined check function"
   [s]
-  (let [schema (if (satisfies? ISchemaOps s) s (define s))]
+  (let [schema (if (lazy-schema? s) s (define s))]
     (partial fast-check! schema)))
 
 (defn check!
@@ -228,7 +261,7 @@
   schema over provided data. Raises an assertion exception, should be
   used together with `dm/assert!` or `dm/verify!`."
   [s value]
-  (if (satisfies? ISchemaOps s)
+  (if (lazy-schema? s)
     (fast-check! s value)
     (do
       (when-not ^boolean (m/validate s value default-options)
@@ -242,7 +275,7 @@
 
 
 (defn fast-validate!
-  "A fast path for validation process, assumes the ISchemaOps protocol
+  "A fast path for validation process, assumes the ILazySchema protocol
   implemented on the provided `s` schema. Sould not be used directly."
   ([s value] (fast-validate! s value nil))
   ([s value options]
@@ -258,14 +291,14 @@
 (defn validate-fn
   "Create a predefined validate function"
   [s]
-  (let [schema (if (satisfies? ISchemaOps s) s (define s))]
+  (let [schema (if (lazy-schema? s) s (define s))]
     (partial fast-validate! schema)))
 
 (defn validate!
   "A generic validation function for predefined schemas."
   ([s value] (validate! s value nil))
   ([s value options]
-   (if (satisfies? ISchemaOps s)
+   (if (lazy-schema? s)
      (fast-validate! s value options)
      (when-not ^boolean (m/validate s value default-options)
        (let [explain (explain s value)
@@ -278,7 +311,7 @@
 
 (defn conform!
   [schema value]
-  (assert (satisfies? ISchemaOps schema) "expected `schema` to satisfy ISchemaOps protocol")
+  (assert (satisfies? ILazySchema schema) "expected `schema` to satisfy ILazySchema protocol")
   (let [params (-decode schema value)]
     (fast-validate! schema params nil)
     params))
@@ -296,11 +329,13 @@
   nil)
 
 (defn define
+  "Create ans instance of ILazySchema"
   [s]
   (let [schema    (delay (schema s))
-        validator (delay (validator @schema))
-        explainer (delay (explainer @schema))
-        decoder   (delay (decoder @schema default-transformer))]
+        validator (delay (m/validator @schema))
+        explainer (delay (m/explainer @schema))
+        decoder   (delay (m/decoder @schema default-options default-transformer))
+        encoder   (delay (m/encoder @schema default-options default-transformer))]
 
     (reify
       m/AST
@@ -342,7 +377,17 @@
       (-form [_]
         (m/-form @schema))
 
-      ISchemaOps
+      ILazySchema
+      (-get-schema [_]
+        @schema)
+      (-get-validator [_]
+        @validator)
+      (-get-explainer [_]
+        @explainer)
+      (-get-encoder [_]
+        @encoder)
+      (-get-decoder [_]
+        @decoder)
       (-validate [_ o]
         (@validator o))
       (-explain [_ o]
