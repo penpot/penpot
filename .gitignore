@@ -59,3 +59,4 @@
 /web
 clj-profiler/
 node_modules
+frontend/.storybook/preview-body.html

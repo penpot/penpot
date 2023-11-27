@@ -282,6 +282,15 @@ gulp.task(
 );
 
 gulp.task(
+  "template:storybook",
+  templatePipeline({
+    name: "preview-body.html",
+    input: paths.resources + "templates/preview-body.mustache",
+    output: "./.storybook/",
+  }),
+);
+
+gulp.task(
   "template:render",
   templatePipeline({
     name: "render.html",
@@ -305,6 +314,7 @@ gulp.task(
     "svg:sprite:icons",
     "svg:sprite:cursors",
     "template:main",
+    "template:storybook",
     "template:render",
     "template:rasterizer",
   ),

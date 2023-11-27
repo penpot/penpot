@@ -7,11 +7,10 @@
 (mf/defc story-wrapper
   {::mf/wrap-props false}
   [{:keys [children]}]
-    [:.default children])
+  [:.default children])
 
-(def ^export default #js {
-  :icons #js {
-    :IconAddRefactor icons/add-refactor
-  }
-  :StoryWrapper story-wrapper
-  :SimpleButton sb/simple-button})
+(def ^export default #js
+  {:icons #js
+   {:IconAddRefactor icons/add-refactor}
+   :StoryWrapper story-wrapper
+   :SimpleButton sb/simple-button})
