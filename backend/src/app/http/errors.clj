@@ -9,7 +9,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.schema :as sm]
+   [app.common.schema :as-alias sm]
    [app.config :as cf]
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
@@ -79,28 +79,14 @@
   [err request parent-cause]
   (let [{:keys [code] :as data} (ex-data err)]
     (cond
-      (= code :spec-validation)
+      (or (= code :spec-validation)
+          (= code :params-validation)
+          (= code :data-validation))
       (let [explain (ex/explain data)]
         {::rres/status 400
          ::rres/body   (-> data
-                           (dissoc ::s/problems ::s/value ::s/spec)
+                           (dissoc ::s/problems ::s/value ::s/spec ::sm/explain)
                            (cond-> explain (assoc :explain explain)))})
-
-      (= code :params-validation)
-      (let [explain (::sm/explain data)
-            explain (sm/humanize-data explain)]
-        {::rres/status 400
-         ::rres/body   (-> data
-                           (dissoc ::sm/explain)
-                           (assoc :explain explain))})
-
-      (= code :data-validation)
-      (let [explain (::sm/explain data)
-            explain (sm/humanize-data explain)]
-        {::rres/status 400
-         ::rres/body   (-> data
-                           (dissoc ::sm/explain)
-                           (assoc :explain explain))})
 
       (= code :request-body-too-large)
       {::rres/status 413 ::rres/body data}

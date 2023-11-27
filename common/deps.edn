@@ -48,6 +48,10 @@
 
   ;; exception printing
   fipp/fipp {:mvn/version "0.6.26"}
+  io.github.eerohele/pp
+  {:git/tag "2023-11-25.47"
+   :git/sha "15d572c"}
+
   io.aviso/pretty {:mvn/version "1.4.4"}
   environ/environ {:mvn/version "1.2.0"}}
  :paths ["src" "vendor" "target/classes"]

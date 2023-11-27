@@ -65,23 +65,22 @@
      (instance? RuntimeException v)))
 
 (defn explain
-  ([data] (explain data nil))
-  ([data opts]
-   (cond
-     ;; NOTE: a special case for spec validation errors on integrant
-     (and (= (:reason data) :integrant.core/build-failed-spec)
-          (contains? data :explain))
-     (explain (:explain data) opts)
+  [data & {:as opts}]
+  (cond
+    ;; NOTE: a special case for spec validation errors on integrant
+    (and (= (:reason data) :integrant.core/build-failed-spec)
+         (contains? data :explain))
+    (explain (:explain data) opts)
 
-     (and (contains? data ::s/problems)
-          (contains? data ::s/value)
-          (contains? data ::s/spec))
-     (binding [s/*explain-out* expound/printer]
-       (with-out-str
-         (s/explain-out (update data ::s/problems #(take (:length opts 10) %)))))
+    (and (contains? data ::s/problems)
+         (contains? data ::s/value)
+         (contains? data ::s/spec))
+    (binding [s/*explain-out* expound/printer]
+      (with-out-str
+        (s/explain-out (update data ::s/problems #(take (:length opts 10) %)))))
 
-     (contains? data ::sm/explain)
-     (sm/humanize-data (::sm/explain data) opts))))
+    (contains? data ::sm/explain)
+    (sm/humanize-explain (::sm/explain data) opts)))
 
 #?(:clj
 (defn format-throwable
@@ -92,8 +91,8 @@
                             data? true
                             explain? true
                             chain? true
-                            data-length 10
-                            data-level 4}}]
+                            data-length 8
+                            data-level 5}}]
 
   (letfn [(print-trace-element [^StackTraceElement e]
             (let [class (.getClassName e)
@@ -115,7 +114,7 @@
           (print-data [data]
             (when (seq data)
               (print "    dt: ")
-              (let [[line & lines] (str/lines (pp/pprint-str data :level data-level :length data-length ))]
+              (let [[line & lines] (str/lines (pp/pprint-str data :level data-level :length data-length))]
                 (print line)
                 (newline)
                 (doseq [line lines]

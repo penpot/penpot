@@ -56,22 +56,22 @@
                    (dissoc :request/params :value :params :data))]
       (merge
        {:context (-> (into (sorted-map) ctx)
-                     (pp/pprint-str :width 200 :length 50 :level 10))
-        :props   (pp/pprint-str props :width 200 :length 50)
+                     (pp/pprint-str :length 50))
+        :props   (pp/pprint-str props :length 50)
         :hint    (or (ex-message cause) @message)
         :trace   (or (::trace record)
                      (ex/format-throwable cause :data? false :explain? false :header? false :summary? false))}
 
        (when-let [params (or (:request/params context) (:params context))]
-         {:params (pp/pprint-str params :width 200 :length 50 :level 10)})
+         {:params (pp/pprint-str params :length 30 :level 12)})
 
        (when-let [value (:value context)]
-         {:value (pp/pprint-str value :width 200 :length 50 :level 10)})
+         {:value (pp/pprint-str value :length 30 :level 12)})
 
        (when-let [data (some-> data (dissoc ::s/problems ::s/value ::s/spec ::sm/explain :hint))]
-         {:data (pp/pprint-str data :width 200)})
+         {:data (pp/pprint-str data :length 30 :level 12)})
 
-       (when-let [explain (ex/explain data {:level 8 :length 20})]
+       (when-let [explain (ex/explain data :length 30 :level 12)]
          {:explain explain})))))
 
 (defn error-record?
@@ -96,11 +96,11 @@
 
 (defmethod ig/init-key ::reporter
   [_ cfg]
-  (let [input (sp/chan :buf (sp/sliding-buffer 32)
+  (let [input (sp/chan :buf (sp/sliding-buffer 64)
                        :xf  (filter error-record?))]
     (add-watch l/log-record ::reporter #(sp/put! input %4))
 
-    (px/thread {:name "penpot/database-reporter" :virtual true}
+    (px/thread {:name "penpot/database-reporter"}
       (l/info :hint "initializing database error persistence")
       (try
         (loop []
