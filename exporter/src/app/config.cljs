@@ -10,9 +10,7 @@
    ["process" :as process]
    [app.common.data :as d]
    [app.common.flags :as flags]
-   [app.common.pprint :as pp]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.common.version :as v]
    [cljs.core :as c]
    [cuerdas.core :as str]))
@@ -64,8 +62,7 @@
         data (sm/decode schema:config data sm/default-transformer)]
 
     (when-not (sm/validate schema:config data)
-      (pp/pprint (-> (sm/explain-data schema:config data)
-                     (sm/humanize)))
+      (println (sm/humanize-data schema:config data))
       (process/exit -1))
 
     data))
