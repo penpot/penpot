@@ -28,8 +28,9 @@
     "build:styles": "gulp build:styles",
     "build:assets": "gulp build:assets",
     "build:copy": "gulp build:copy",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "storybook:compile": "gulp template:storybook && clojure -M:dev:shadow-cljs compile storybook",
+    "storybook:watch": "npm run storybook:compile && concurrently \"clojure -M:dev:shadow-cljs watch storybook\" \"storybook dev -p 6006\"",
+    "storybook:build": "npm run storybook:compile && storybook build"
   },
   "devDependencies": {
     "@storybook/addon-essentials": "^7.5.3",
@@ -41,6 +42,7 @@
     "@storybook/react-vite": "^7.5.3",
     "@storybook/testing-library": "^0.2.2",
     "autoprefixer": "^10.4.15",
+    "concurrently": "^8.2.2",
     "cypress": "^10.3.0",
     "cypress-file-upload": "^5.0.8",
     "gettext-parser": "^7.0.1",
