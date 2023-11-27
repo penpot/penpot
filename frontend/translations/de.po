@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-11-23 11:04+0000\n"
+"PO-Revision-Date: 2023-11-28 09:04+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.2.1-rc\n"
+"X-Generator: Weblate 5.3-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -5122,3 +5122,27 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.shared-library"
 msgstr "Geteilte Bibliothek"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.try-out-before-using-penpot-on-premise"
+msgstr "Testen Sie Penpot, bevor Sie es auf einem eigenen Server verwenden"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "Code aus meinem Teamprojekt erhalten "
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Assets, die bereits in dieser Datei verwendet wurden, bleiben dort erhalten ("
+"das Design bleibt erhalten)."
+msgstr[1] ""
+"Assets, die bereits in diesen Dateien verwendet wurden, bleiben dort "
+"erhalten (das Design bleibt erhalten)."
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Ihre Bibliothek ist leer. Sobald es als Geteilte Bibliothek hinzugefügt "
+"wurde, können die von Ihnen erstellten Assets in den übrigen Dateien "
+"verwendet werden. Sind Sie sicher, dass Sie es veröffentlichen möchten?"
