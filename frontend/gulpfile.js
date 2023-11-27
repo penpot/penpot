@@ -234,7 +234,11 @@ gulp.task("scss:modules", function () {
 gulp.task("scss:main", function () {
   return gulp
     .src(paths.resources + "styles/main-default.scss")
-    .pipe(gulpSass.sync().on("error", gulpSass.logError))
+    .pipe(gulpSass.sync({
+      includePaths: [
+        "./node_modules/animate.css"
+      ]
+    }))
     .pipe(gulpPostcss([autoprefixer]))
     .pipe(gulp.dest(paths.output + "css/"));
 });
