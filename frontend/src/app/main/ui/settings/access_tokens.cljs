@@ -291,7 +291,15 @@
         (mf/use-fn
          (fn [event]
            (dom/prevent-default event)
-           (swap! local assoc :menu-open true)))]
+           (swap! local assoc :menu-open true)))
+
+        on-keydown
+        (mf/use-callback
+         (mf/deps on-menu-click)
+         (fn [event]
+           (when (kbd/enter? event)
+             (dom/stop-propagation event)
+             (on-menu-click event))))]
 
     (if new-css-system
       [:div
@@ -299,10 +307,7 @@
         :tab-index "0"
         :ref menu-ref
         :on-click on-menu-click
-        :on-key-down (fn [event]
-                       (when (kbd/enter? event)
-                         (dom/stop-propagation event)
-                         (on-menu-click event)))}
+        :on-key-down on-keydown}
        i/actions
        [:& context-menu-a11y
         {:on-close on-menu-close

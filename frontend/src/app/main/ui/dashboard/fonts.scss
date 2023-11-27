@@ -14,6 +14,10 @@
   padding-left: $s-120;
   overflow-y: auto;
   padding-bottom: $s-120;
+
+  .btn-primary {
+    font-size: $fs-11;
+  }
 }
 
 .dashboard-installed-fonts {
@@ -193,6 +197,8 @@
       }
 
       &.close {
+        background: none;
+        border: none;
         svg {
           transform: rotate(45deg);
           fill: $df-secondary;

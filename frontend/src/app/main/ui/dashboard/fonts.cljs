@@ -113,7 +113,13 @@
         (fn [items]
           (run! on-delete items))
 
-        problematic-fonts? (some :height-warning? (vals @fonts))]
+        problematic-fonts? (some :height-warning? (vals @fonts))
+
+        handle-upload-all
+        (mf/use-callback (mf/deps @fonts) #(on-upload-all (vals @fonts)))
+
+        handle-dismiss-all
+        (mf/use-callback (mf/deps @fonts) #(on-dismiss-all (vals @fonts)))]
 
     (if new-css-system
       [:div {:class (stl/css :dashboard-fonts-upload)}
@@ -144,20 +150,18 @@
             [:div {:class (stl/css :icon)} i/msg-warning]
             [:div {:class (stl/css :content)}
              [:& i18n/tr-html {:tag-name "span"
-                               :label "dashboard.fonts.warning-text"}]]])]
-
-        ]
+                               :label "dashboard.fonts.warning-text"}]]])]]
 
        [:*
         (when (some? (vals @fonts))
           [:div {:class (stl/css :font-item :table-row)}
            [:span (tr "dashboard.fonts.fonts-added" (i18n/c (count (vals @fonts))))]
            [:div {:class (stl/css :table-field :options)}
-            [:div {:class (stl/css :btn-primary)
-                   :on-click #(on-upload-all (vals @fonts)) :data-test "upload-all"}
+            [:button {:class (stl/css :btn-primary)
+                      :on-click handle-upload-all :data-test "upload-all"}
              [:span (tr "dashboard.fonts.upload-all")]]
-            [:div {:class (stl/css :btn-secondary)
-                   :on-click #(on-dismiss-all (vals @fonts)) :data-test "dismiss-all"}
+            [:button {:class (stl/css :btn-secondary)
+                      :on-click handle-dismiss-all :data-test "dismiss-all"}
              [:span (tr "dashboard.fonts.dismiss-all")]]]])
 
         (for [item (sort-by :font-family (vals @fonts))]
@@ -340,19 +344,16 @@
              :on-click #(on-delete-variant (:id item))}
             i/plus]])]
 
-       [:div]
-
        (if @edit?
          [:div {:class (stl/css :table-field :options)}
           [:button
-           {
-            :disabled (str/blank? @state)
+           {:disabled (str/blank? @state)
             :on-click on-save
             :class (stl/css-case :btn-primary true
                                  :btn-disabled (str/blank? @state))}
            (tr "labels.save")]
-          [:span {:class (stl/css :icon :close)
-                  :on-click on-cancel} i/close]]
+          [:button {:class (stl/css :icon :close)
+                    :on-click on-cancel} i/close]]
 
          [:div {:class (stl/css :table-field :options)}
           [:span {:class (stl/css :icon)
@@ -427,7 +428,6 @@
        [:div {:class (stl/css :installed-fonts-header)}
         [:div {:class (stl/css :table-field :family)} (tr "labels.font-family")]
         [:div {:class (stl/css :table-field :variants)} (tr "labels.font-variants")]
-        [:div]
         [:div {:class (stl/css :table-field :search-input)}
          [:input {:placeholder (tr "labels.search-font")
                   :default-value ""

@@ -49,7 +49,15 @@
         form    (fm/use-form :spec ::profile-form
                              :initial profile
                              :validators [(fm/validate-length :fullname fm/max-length-allowed (tr "auth.name.too-long"))
-                                          (fm/validate-not-empty :fullname (tr "auth.name.not-all-space"))])]
+                                          (fm/validate-not-empty :fullname (tr "auth.name.not-all-space"))])
+
+        handle-show-change-email
+        (mf/use-callback
+         #(modal/show! :change-email {}))
+
+        handle-show-delete-account
+        (mf/use-callback
+         #(modal/show! :delete-account {}))]
 
     (if new-css-system
       [:& fm/form {:on-submit on-submit
@@ -62,7 +70,7 @@
           :label (tr "dashboard.your-name")}]]
 
        [:div {:class (stl/css :fields-row)
-              :on-click #(modal/show! :change-email {})}
+              :on-click handle-show-change-email}
         [:& fm/input
          {:type "email"
           :name :email
@@ -72,7 +80,7 @@
 
         [:div {:class (stl/css :options)}
          [:div.change-email
-          [:a {:on-click #(modal/show! :change-email {})}
+          [:a {:on-click handle-show-change-email}
            (tr "dashboard.change-email")]]]]
 
        [:> fm/submit-button*
@@ -82,7 +90,7 @@
 
        [:div {:class (stl/css :links)}
         [:div {:class (stl/css :link-item)}
-         [:a {:on-click #(modal/show! :delete-account {})
+         [:a {:on-click handle-show-delete-account
               :data-test "remove-acount-btn"}
           (tr "dashboard.remove-account")]]]]
 

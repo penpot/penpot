@@ -266,7 +266,7 @@ form.avatar-form {
     line-height: 6;
     text-align: center;
     background: $da-tertiary;
-    z-index: 14;
+    z-index: $z-index-modal;
   }
 
   input[type="file"] {
@@ -276,7 +276,7 @@ form.avatar-form {
     opacity: 0;
     cursor: pointer;
     top: 0;
-    z-index: 15;
+    z-index: $z-index-modal;
   }
 
   &:hover {

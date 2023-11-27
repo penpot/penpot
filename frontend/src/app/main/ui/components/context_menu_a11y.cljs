@@ -217,9 +217,9 @@
                     :tab-index "0"
                     :on-key-down (fn [event]
                                    (dom/prevent-default event))}
-                   [:div {:class (stl/css :context-menu-action :submenu-back)
-                          :data-no-close true
-                          :on-click exit-submenu}
+                   [:button {:class (stl/css :context-menu-action :submenu-back)
+                             :data-no-close true
+                             :on-click exit-submenu}
                     [:span {:class (stl/css :submenu-icon-back)} i/arrow-refactor]
                     parent-option]]
 

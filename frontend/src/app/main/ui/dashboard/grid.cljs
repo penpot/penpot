@@ -431,7 +431,19 @@
            (dom/stop-propagation event)
            (swap! local assoc
                   :edition true
-                  :menu-open false)))]
+                  :menu-open false)))
+
+        handle-key-down
+        (mf/use-callback
+         (mf/deps on-navigate on-select)
+         (fn [event]
+           (dom/stop-propagation event)
+           (when (kbd/enter? event)
+             (on-navigate event))
+           (when (kbd/shift? event)
+             (when (or (kbd/down-arrow? event) (kbd/left-arrow? event) (kbd/up-arrow? event) (kbd/right-arrow? event))
+               (on-select event)) ;; TODO Fix this
+             )))]
 
     (mf/with-effect [selected? local]
       (when (and (not selected?) (:menu-open @local))
@@ -441,19 +453,11 @@
       [:li
        {:class (stl/css-case :grid-item true :project-th true :library library-view?)}
        [:button
-        {:tab-index "0"
-         :class (stl/css-case :selected selected? :library library-view?)
+        {:class (stl/css-case :selected selected? :library library-view?)
          :ref node-ref
          :draggable true
          :on-click on-select
-         :on-key-down (fn [event]
-                        (dom/stop-propagation event)
-                        (when (kbd/enter? event)
-                          (on-navigate event))
-                        (when (kbd/shift? event)
-                          (when (or (kbd/down-arrow? event) (kbd/left-arrow? event) (kbd/up-arrow? event) (kbd/right-arrow? event))
-                            (on-select event)) ;; TODO Fix this
-                          ))
+         :on-key-down handle-key-down
          :on-double-click on-navigate
          :on-drag-start on-drag-start
          :on-context-menu on-menu-click}

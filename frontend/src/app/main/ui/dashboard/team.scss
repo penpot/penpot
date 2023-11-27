@@ -102,16 +102,8 @@
     }
   }
   .btn-primary {
-    flex-shrink: 0;
-    width: 100%;
-    font-size: $fs-12;
-    text-transform: uppercase;
-    background-color: $db-tertiary;
-    color: $df-primary;
-    &:hover {
-      color: $da-primary;
-      background-color: $db-cuaternary;
-    }
+    @extends .button-primary;
+    height: $s-32;
   }
 }
 
@@ -127,7 +119,7 @@
   position: absolute;
   top: $s-32;
   width: $s-152;
-  z-index: 12;
+  z-index: $z-index-4;
 
   hr {
     margin: 0;
@@ -511,7 +503,7 @@
         align-items: center;
         border-radius: 50%;
         color: $df-primary;
-        z-index: 14;
+        z-index: $z-index-modal;
 
         background-color: $da-primary;
         height: $s-120;

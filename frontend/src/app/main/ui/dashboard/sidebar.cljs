@@ -47,12 +47,13 @@
         selected-project (:selected-project dstate)
         edit-id          (:project-for-edit dstate)
 
-        local            (mf/use-state
+        local*           (mf/use-state
                           {:menu-open false
                            :menu-pos nil
                            :edition? (= (:id item) edit-id)
                            :dragging? false})
 
+        local             @local*
         on-click
         (mf/use-callback
          (mf/deps item)
@@ -78,15 +79,15 @@
          (fn [event]
            (let [position (dom/get-client-position event)]
              (dom/prevent-default event)
-             (swap! local assoc
+             (swap! local* assoc
                     :menu-open true
                     :menu-pos position))))
 
         on-menu-close
-        (mf/use-callback #(swap! local assoc :menu-open false))
+        (mf/use-callback #(swap! local* assoc :menu-open false))
 
         on-edit-open
-        (mf/use-callback #(swap! local assoc :edition? true))
+        (mf/use-callback #(swap! local* assoc :edition? true))
 
         on-edit
         (mf/use-callback
@@ -94,7 +95,7 @@
          (fn [name]
            (st/emit! (-> (dd/rename-project (assoc item :name name))
                          (with-meta {::ev/origin "dashboard:sidebar"})))
-           (swap! local assoc :edition? false)))
+           (swap! local* assoc :edition? false)))
 
         on-drag-enter
         (mf/use-callback
@@ -104,7 +105,7 @@
              (dom/prevent-default e)
              (when-not (dnd/from-child? e)
                (when (not= selected-project (:id item))
-                 (swap! local assoc :dragging? true))))))
+                 (swap! local* assoc :dragging? true))))))
 
         on-drag-over
         (mf/use-callback
@@ -116,7 +117,7 @@
         (mf/use-callback
          (fn [e]
            (when-not (dnd/from-child? e)
-             (swap! local assoc :dragging? false))))
+             (swap! local* assoc :dragging? false))))
 
         on-drop-success
         (mf/use-callback
@@ -128,7 +129,7 @@
         (mf/use-callback
          (mf/deps item selected-files)
          (fn [_]
-           (swap! local assoc :dragging? false)
+           (swap! local* assoc :dragging? false)
            (when (not= selected-project (:id item))
              (let [data  {:ids selected-files
                           :project-id (:id item)}
@@ -139,7 +140,7 @@
       [:*
        [:li {:tab-index "0"
              :class (if selected? (stl/css :current)
-                        (when (:dragging? @local) (stl/css :dragging)))
+                        (when (:dragging? local) (stl/css :dragging)))
              :on-click on-click
              :on-key-down on-key-down
              :on-double-click on-edit-open
@@ -148,14 +149,14 @@
              :on-drag-over on-drag-over
              :on-drag-leave on-drag-leave
              :on-drop on-drop}
-        (if (:edition? @local)
+        (if (:edition? local)
           [:& inline-edition {:content (:name item)
                               :on-end on-edit}]
           [:span {:class (stl/css :element-title)} (:name item)])]
        [:& project-menu {:project item
-                         :show? (:menu-open @local)
-                         :left (:x (:menu-pos @local))
-                         :top (:y (:menu-pos @local))
+                         :show? (:menu-open local)
+                         :left (:x (:menu-pos local))
+                         :top (:y (:menu-pos local))
                          :on-edit on-edit-open
                          :on-menu-close on-menu-close}]]
 
@@ -163,7 +164,7 @@
       [:*
        [:li {:tab-index "0"
              :class (if selected? "current"
-                        (when (:dragging? @local) "dragging"))
+                        (when (:dragging? local) "dragging"))
              :on-click on-click
              :on-key-down on-key-down
              :on-double-click on-edit-open
@@ -172,14 +173,14 @@
              :on-drag-over on-drag-over
              :on-drag-leave on-drag-leave
              :on-drop on-drop}
-        (if (:edition? @local)
+        (if (:edition? local)
           [:& inline-edition {:content (:name item)
                               :on-end on-edit}]
           [:span.element-title (:name item)])]
        [:& project-menu {:project item
-                         :show? (:menu-open @local)
-                         :left (:x (:menu-pos @local))
-                         :top (:y (:menu-pos @local))
+                         :show? (:menu-open local)
+                         :left (:x (:menu-pos local))
+                         :top (:y (:menu-pos local))
                          :on-edit on-edit-open
                          :on-menu-close on-menu-close}]])))
 
@@ -225,7 +226,14 @@
                     (dom/focus! search-title)
                     (dom/set-attribute! search-title "tabindex" "-1")))))
              (dom/prevent-default e)
-             (dom/stop-propagation e))))]
+             (dom/stop-propagation e))))
+
+        handle-clear-search
+        (mf/use-callback
+         (mf/deps on-clear-click)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-clear-click event))))]
 
     (if new-css-system
       [:form {:class (stl/css :sidebar-search)}
@@ -249,9 +257,7 @@
           {:class (stl/css :clear-search)
            :tab-index "0"
            :on-click on-clear-click
-           :on-key-down (fn [event]
-                          (when (kbd/enter? event)
-                            (on-clear-click event)))}
+           :on-key-down handle-clear-search}
           i/close]
 
          [:div
@@ -299,14 +305,22 @@
         team-selected
         (mf/use-callback
          (fn [team-id]
-           (st/emit! (dd/go-to-projects team-id))))]
+           (st/emit! (dd/go-to-projects team-id))))
+
+        handle-select-default
+        (fn [event]
+          (when (kbd/enter? event)
+            (team-selected (:default-team-id profile) event)))
+
+        handle-select-team
+        (fn [id event]
+          (when (kbd/enter? event)
+            (team-selected id event)))]
 
     (if new-css-system
       [:*
        [:> dropdown-menu-item* {:on-click    (partial team-selected (:default-team-id profile))
-                                :on-key-down (fn [event]
-                                               (when (kbd/enter? event)
-                                                 (team-selected (:default-team-id profile) event)))
+                                :on-key-down handle-select-default
                                 :id          "teams-selector-default-team"
                                 :class       (stl/css :team-name)}
         [:span {:class (stl/css :team-icon)} i/logo-icon]
@@ -316,9 +330,7 @@
 
        (for [team-item (remove :is-default (vals teams))]
          [:> dropdown-menu-item* {:on-click    (partial team-selected (:id team-item))
-                                  :on-key-down (fn [event]
-                                                 (when (kbd/enter? event)
-                                                   (team-selected (:id team-item) event)))
+                                  :on-key-down (partial handle-select-team (:id team-item))
                                   :id          (str "teams-selector-" (:id team-item))
                                   :class       (stl/css :team-name)
                                   :key         (str "teams-selector-" (:id team-item))}
@@ -560,7 +572,47 @@
                                  "teams-options-rename")
                                "teams-options-leave-team"
                                (when (get-in team [:permissions :is-owner])
-                                 "teams-options-delete-team")]]
+                                 "teams-options-delete-team")]
+
+        handle-show-team-click
+        (fn [event]
+          (dom/stop-propagation event)
+          (swap! show-teams-ddwn? not)
+          (reset! show-team-opts-ddwn? false))
+
+        handle-show-team-keydown
+        (fn [event]
+          (when (or (kbd/space? event) (kbd/enter? event))
+            (dom/prevent-default event)
+            (reset! show-teams-ddwn? true)
+            (reset! show-team-opts-ddwn? false)
+            (ts/schedule-on-idle
+             (fn []
+               (let [first-element (dom/get-element (first ids))]
+                 (when first-element
+                   (dom/focus! first-element)))))))
+
+        handle-show-opts-click
+        (fn [event]
+          (dom/stop-propagation event)
+          (swap! show-team-opts-ddwn? not)
+          (reset! show-teams-ddwn? false))
+
+        handle-show-opts-keydown
+        (fn [event]
+          (when (or (kbd/space? event) (kbd/enter? event))
+            (dom/prevent-default event)
+            (reset! show-team-opts-ddwn? true)
+            (reset! show-teams-ddwn? false)
+            (ts/schedule-on-idle
+             (fn []
+               (let [first-element (dom/get-element (first options-ids))]
+                 (when first-element
+                   (dom/focus! first-element)))))))
+
+        handle-close-team
+        (fn []
+          (reset! show-teams-ddwn? false))]
 
     (if new-css-system
       [:div {:class (stl/css :sidebar-team-switch)}
@@ -568,21 +620,9 @@
         [:button
          {:class (stl/css :current-team)
           :tab-index "0"
-          :on-click
-          (fn [event]
-            (dom/stop-propagation event)
-            (reset! show-teams-ddwn? true))
+          :on-click handle-show-team-click
+          :on-key-down handle-show-team-keydown}
 
-          :on-key-down
-          (fn [event]
-            (when (or (kbd/space? event) (kbd/enter? event))
-              (dom/prevent-default event)
-              (reset! show-teams-ddwn? true)
-              (ts/schedule-on-idle
-               (fn []
-                 (let [first-element (dom/get-element (first ids))]
-                   (when first-element
-                     (dom/focus! first-element)))))))}
 
          (if (:is-default team)
            [:div {:class (stl/css :team-name)}
@@ -599,24 +639,14 @@
         (when-not (:is-default team)
           [:button
            {:class (stl/css :switch-options)
-            :on-click (fn [event]
-                        (dom/stop-propagation event)
-                        (reset! show-team-opts-ddwn? true))
+            :on-click handle-show-opts-click
             :tab-index "0"
-            :on-key-down (fn [event]
-                           (when (or (kbd/space? event) (kbd/enter? event))
-                             (dom/prevent-default event)
-                             (reset! show-team-opts-ddwn? true)
-                             (ts/schedule-on-idle
-                              (fn []
-                                (let [first-element (dom/get-element (first options-ids))]
-                                  (when first-element
-                                    (dom/focus! first-element)))))))}
+            :on-key-down handle-show-opts-keydown}
            i/actions])]
 
        ;; Teams Dropdown
        [:& dropdown-menu {:show @show-teams-ddwn?
-                          :on-close #(reset! show-teams-ddwn? false)
+                          :on-close handle-close-team
                           :ids ids
                           :list-class (stl/css :dropdown :teams-dropdown)}
         [:& teams-selector-dropdown-items {:ids ids
@@ -922,7 +952,77 @@
         handle-show-comments
         (mf/use-callback
          (fn []
-           (reset! show-comments* true)))]
+           (reset! show-comments* true)))
+
+        handle-click
+        (mf/use-callback
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! show not)))
+
+        handle-key-down
+        (mf/use-callback
+         (fn [event]
+           (when (kbd/enter? event)
+             (reset! show true))))
+
+        handle-close
+        (fn [event]
+          (dom/stop-propagation event)
+          (reset! show false))
+
+        handle-key-down-profile
+        (mf/use-callback
+         (mf/deps on-click)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-click :settings-profile event))))
+
+        handle-click-url
+        (mf/use-callback
+         (fn [event]
+           (let [url (-> (dom/get-current-target event)
+                         (dom/get-data "url"))]
+             (dom/open-new-window url))))
+
+        handle-keydown-url
+        (mf/use-callback
+         (fn [event]
+           (let [url (-> (dom/get-current-target event)
+                         (dom/get-data "url"))]
+             (when (kbd/enter? event)
+               (dom/open-new-window url)))))
+
+        handle-show-release-notes
+        (mf/use-callback
+         (mf/deps show-release-notes)
+         (fn [event]
+           (when (kbd/enter? event)
+             (show-release-notes))))
+
+        handle-feedback-click
+        (mf/use-callback
+         (mf/deps on-click)
+         #(on-click :settings-feedback %))
+
+        handle-feedback-keydown
+        (mf/use-callback
+         (mf/deps on-click)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-click :settings-feedback event))))
+
+        handle-logout-click
+        (mf/use-callback
+         (mf/deps on-click)
+         #(on-click (du/logout) %))
+
+        handle-logout-keydown
+        (mf/use-callback
+         (mf/deps on-click)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-click (du/logout) event))))]
     (if new-css-system
       [:*
        (when (and team profile)
@@ -936,99 +1036,78 @@
        [:div {:class (stl/css :profile-section)}
         [:div {:class (stl/css :profile)
                :tab-index "0"
-               :on-click (fn [event]
-                           (dom/stop-propagation event)
-                           (reset! show true))
-               :on-key-down (fn [event]
-                              (when (kbd/enter? event)
-                                (reset! show true)))
+               :on-click handle-click
+               :on-key-down handle-key-down
                :data-test "profile-btn"}
          [:img {:src photo
                 :alt (:fullname profile)}]
          [:span (:fullname profile)]]
 
-        [:& dropdown-menu {:on-close (fn [event]
-                                       (dom/stop-propagation event)
-                                       (reset! show false))
-                           :show @show}
+        [:& dropdown-menu {:on-close handle-close :show @show}
          [:ul {:class (stl/css :dropdown)}
-          [:li {:tab-index (if show "0" "-1")
+          [:li {:tab-index (if @show "0" "-1")
                 :on-click (partial on-click :settings-profile)
-                :on-key-down (fn [event]
-                               (when (kbd/enter? event)
-                                 (on-click :settings-profile event)))
+                :on-key-down handle-key-down-profile
                 :data-test "profile-profile-opt"}
            [:span {:class (stl/css :text)} (tr "labels.your-account")]]
 
           [:li {:class (stl/css :separator)
-                :tab-index (if show "0" "-1")
-                :on-click #(dom/open-new-window "https://help.penpot.app")
-                :on-key-down (fn [event]
-                               (when (kbd/enter? event)
-                                 (dom/open-new-window "https://help.penpot.app")))
+                :tab-index (if @show "0" "-1")
+                :data-url "https://help.penpot.app"
+                :on-click handle-click-url
+                :on-key-down handle-keydown-url
                 :data-test "help-center-profile-opt"}
            [:span {:class (stl/css :text)} (tr "labels.help-center")]]
 
-          [:li {:tab-index (if show "0" "-1")
-                :on-click #(dom/open-new-window "https://community.penpot.app")
-                :on-key-down (fn [event]
-                               (when (kbd/enter? event)
-                                 (dom/open-new-window "https://community.penpot.app")))}
+          [:li {:tab-index (if @show "0" "-1")
+                :data-url "https://community.penpot.app"
+                :on-click handle-click-url
+                :on-key-down handle-keydown-url}
            [:span {:class (stl/css :text)} (tr "labels.community")]]
 
-          [:li {:tab-index (if show "0" "-1")
-                :on-click #(dom/open-new-window "https://www.youtube.com/c/Penpot")
-                :on-key-down (fn [event]
-                               (when (kbd/enter? event)
-                                 (dom/open-new-window "https://www.youtube.com/c/Penpot")))}
+          [:li {:tab-index (if @show "0" "-1")
+                :data-url "https://www.youtube.com/c/Penpot"
+                :on-click handle-click-url
+                :on-key-down handle-keydown-url}
            [:span {:class (stl/css :text)} (tr "labels.tutorials")]]
 
-          [:li {:tab-index (if show "0" "-1")
+          [:li {:tab-index (if @show "0" "-1")
                 :on-click show-release-notes
-                :on-key-down (fn [event]
-                               (when (kbd/enter? event)
-                                 (show-release-notes)))}
+                :on-key-down handle-show-release-notes}
            [:span {:class (stl/css :text)} (tr "labels.release-notes")]]
 
           [:li {:class (stl/css :separator)
-                :tab-index (if show "0" "-1")
-                :on-click #(dom/open-new-window "https://penpot.app/libraries-templates")
-                :on-key-down (fn [event]
-                               (when (kbd/enter? event)
-                                 (dom/open-new-window "https://penpot.app/libraries-templates")))
+                :tab-index (if @show "0" "-1")
+                :data-url "https://penpot.app/libraries-templates"
+                :on-click handle-click-url
+                :on-key-down handle-keydown-url
                 :data-test "libraries-templates-profile-opt"}
            [:span {:class (stl/css :text)} (tr "labels.libraries-and-templates")]]
 
-          [:li {:tab-index (if show "0" "-1")
-                :on-click #(dom/open-new-window "https://github.com/penpot/penpot")
-                :on-key-down (fn [event]
-                               (when (kbd/enter? event)
-                                 (dom/open-new-window "https://github.com/penpot/penpot")))}
+          [:li {:tab-index (if @show "0" "-1")
+                :data-url "https://github.com/penpot/penpot"
+                :on-click handle-click-url
+                :on-key-down handle-keydown-url}
            [:span {:class (stl/css :text)} (tr "labels.github-repo")]]
 
-          [:li {:tab-index (if show "0" "-1")
-                :on-click #(dom/open-new-window "https://penpot.app/terms")
-                :on-key-down (fn [event]
-                               (when (kbd/enter? event)
-                                 (dom/open-new-window "https://penpot.app/terms")))}
+          [:li {:tab-index (if @show "0" "-1")
+                :data-url "https://penpot.app/terms"
+                :on-click handle-click-url
+                :on-key-down handle-keydown-url}
            [:span {:class (stl/css :text)} (tr "auth.terms-of-service")]]
 
           (when (contains? cf/flags :user-feedback)
             [:li {:class (stl/css :separator)
-                  :tab-index (if show "0" "-1")
-                  :on-click (partial on-click :settings-feedback)
-                  :on-key-down (fn [event]
-                                 (when (kbd/enter? event)
-                                   (on-click :settings-feedback event)))
+                  :tab-index (if @show "0" "-1")
+                  :on-click handle-feedback-click
+                  :on-key-down handle-feedback-keydown
                   :data-test "feedback-profile-opt"}
              [:span {:class (stl/css :text)} (tr "labels.give-feedback")]])
 
           [:li {:class (stl/css :separator)
-                :tab-index (if show "0" "-1")
-                :on-click #(on-click (du/logout) %)
-                :on-key-down (fn [event]
-                               (when (kbd/enter? event)
-                                 (on-click (du/logout) event)))
+                :tab-index (if @show "0" "-1")
+                :on-click handle-logout-click
+                :on-key-down handle-logout-keydown
                 :data-test "logout-profile-opt"}
            [:span {:class (stl/css :icon)} i/exit]
            [:span {:class (stl/css :text)} (tr "labels.logout")]]]]
@@ -1176,4 +1255,3 @@
        [:& profile-section
         {:profile profile
          :team team}]])))
-

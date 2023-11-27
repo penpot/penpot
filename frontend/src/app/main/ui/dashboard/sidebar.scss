@@ -16,7 +16,7 @@
   margin: 0 $s-16 0 0;
   padding: $s-16 0 0 0;
 
-  z-index: 1;
+  z-index: $z-index-1;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -123,6 +123,7 @@
     cursor: pointer;
     background-color: transparent;
     border: none;
+    height: 100%;
 
     svg {
       fill: $df-secondary;
@@ -140,12 +141,12 @@
 }
 
 .dropdown {
+  @include menuShadow;
   position: absolute;
-  z-index: 12;
+  z-index: $z-index-4;
   background-color: $db-tertiary;
   border: $s-1 solid $db-cuaternary;
   border-radius: $br-8;
-  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
 
   .separator {
     border-color: transparent;
@@ -199,7 +200,7 @@
 
   left: 0;
   top: $s-52;
-  z-index: 12;
+
   max-height: $s-480;
   overflow-x: hidden;
   overflow-y: auto;

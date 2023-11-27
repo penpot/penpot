@@ -57,65 +57,62 @@
 
 (mf/defc bad-gateway
   []
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        handle-retry
+        (mf/use-callback
+         (fn [] (st/emit! (rt/assign-exception nil))))]
     (if new-css-system
       [:> static-header {}
        [:div {:class (stl/css :main-message)} (tr "labels.bad-gateway.main-message")]
        [:div {:class (stl/css :desc-message)} (tr "labels.bad-gateway.desc-message")]
        [:div {:class (stl/css :sign-info)}
-        [:button
-         {:on-click (fn [] (st/emit! (rt/assign-exception nil)))}
-         (tr "labels.retry")]]]
+        [:button {:on-click handle-retry} (tr "labels.retry")]]]
 
       [:> static-header {}
        [:div.image i/icon-empty]
        [:div.main-message (tr "labels.bad-gateway.main-message")]
        [:div.desc-message (tr "labels.bad-gateway.desc-message")]
        [:div.sign-info
-        [:a.btn-primary.btn-small
-         {:on-click (fn [] (st/emit! #(dissoc % :exception)))}
-         (tr "labels.retry")]]])))
+        [:a.btn-primary.btn-small {:on-click handle-retry} (tr "labels.retry")]]])))
 
 (mf/defc service-unavailable
   []
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        handle-retry
+        (mf/use-callback
+         (fn [] (st/emit! (rt/assign-exception nil))))]
     (if new-css-system
       [:> static-header {}
        [:div {:class (stl/css :main-message)} (tr "labels.service-unavailable.main-message")]
        [:div {:class (stl/css :desc-message)} (tr "labels.service-unavailable.desc-message")]
        [:div {:class (stl/css :sign-info)}
-        [:button
-         {:on-click (fn [] (st/emit! (rt/assign-exception nil)))}
-         (tr "labels.retry")]]]
+        [:button {:on-click handle-retry} (tr "labels.retry")]]]
 
       [:> static-header {}
        [:div.main-message (tr "labels.service-unavailable.main-message")]
        [:div.desc-message (tr "labels.service-unavailable.desc-message")]
        [:div.sign-info
-        [:a.btn-primary.btn-small
-         {:on-click (fn [] (st/emit! #(dissoc % :exception)))}
-         (tr "labels.retry")]]])))
+        [:a.btn-primary.btn-small {:on-click handle-retry} (tr "labels.retry")]]])))
 
 (mf/defc internal-error
   []
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        handle-retry
+        (mf/use-callback
+         (fn [] (st/emit! (rt/assign-exception nil))))]
     (if new-css-system
       [:> static-header {}
        [:div {:class (stl/css :main-message)} (tr "labels.internal-error.main-message")]
        [:div {:class (stl/css :desc-message)} (tr "labels.internal-error.desc-message")]
        [:div {:class (stl/css :sign-info)}
-        [:button
-         {:on-click (fn [] (st/emit! (rt/assign-exception nil)))}
-         (tr "labels.retry")]]]
+        [:button {:on-click handle-retry} (tr "labels.retry")]]]
 
       [:> static-header {}
        [:div.image i/icon-empty]
        [:div.main-message (tr "labels.internal-error.main-message")]
        [:div.desc-message (tr "labels.internal-error.desc-message")]
        [:div.sign-info
-        [:a.btn-primary.btn-small
-         {:on-click (fn [] (st/emit! (rt/assign-exception nil)))}
-         (tr "labels.retry")]]])))
+        [:a.btn-primary.btn-small {:on-click handle-retry} (tr "labels.retry")]]])))
 
 (mf/defc exception-page
   [{:keys [data] :as props}]

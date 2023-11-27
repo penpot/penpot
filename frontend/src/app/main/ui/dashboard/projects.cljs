@@ -257,9 +257,9 @@
         toggle-pin
         (mf/use-fn
          (mf/deps project)
-          (fn [event]
-            (dom/stop-propagation event)
-            (st/emit! (dd/toggle-project-pin project))))
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (dd/toggle-project-pin project))))
 
         on-menu-click
         (mf/use-fn
@@ -324,7 +324,23 @@
            (st/emit! (dd/fetch-files {:project-id project-id})
                      (dd/fetch-recent-files (:id team))
                      (dd/fetch-projects (:id team))
-                     (dd/clear-selected-files))))]
+                     (dd/clear-selected-files))))
+
+        handle-create-click
+        (mf/use-callback
+         (mf/deps on-create-click)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-create-click event))))
+
+
+        handle-menu-click
+        (mf/use-callback
+         (mf/deps on-menu-click)
+         (fn [event]
+           (when (kbd/enter? event)
+             (dom/stop-propagation event)
+             (on-menu-click event))))]
 
     (if new-css-system
       [:article {:class (stl/css-case :dashboard-project-row true :first first?)}
@@ -375,10 +391,7 @@
             :alt (tr "dashboard.new-file")
             :aria-label (tr "dashboard.new-file")
             :data-test "project-new-file"
-            :tab-index "0"
-            :on-key-down (fn [event]
-                           (when (kbd/enter? event)
-                             (on-create-click event)))}
+            :on-key-down handle-create-click}
            i/close]
 
           [:button
@@ -387,11 +400,7 @@
             :alt (tr "dashboard.options")
             :aria-label  (tr "dashboard.options")
             :data-test "project-options"
-            :tab-index "0"
-            :on-key-down (fn [event]
-                           (when (kbd/enter? event)
-                             (dom/stop-propagation event)
-                             (on-menu-click event)))}
+            :on-key-down handle-menu-click}
            i/actions]]]]
 
        [:& line-grid
