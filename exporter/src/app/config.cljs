@@ -24,16 +24,18 @@
    :tempdir "/tmp/penpot-exporter"
    :redis-uri "redis://redis/0"})
 
-(def ^:private schema:config
-  [:map {:title "config"}
-   [:public-uri {:optional true} ::sm/uri]
-   [:host {:optional true} :string]
-   [:tenant {:optional true} :string]
-   [:flags {:optional true} ::sm/set-of-keywords]
-   [:redis-uri {:optional true} :string]
-   [:tempdir {:optional true} :string]
-   [:browser-pool-max {:optional true} :int]
-   [:browser-pool-min {:optional true} :int]])
+(def ^:private
+  schema:config
+  (sm/define
+    [:map {:title "config"}
+     [:public-uri {:optional true} ::sm/uri]
+     [:host {:optional true} :string]
+     [:tenant {:optional true} :string]
+     [:flags {:optional true} ::sm/set-of-keywords]
+     [:redis-uri {:optional true} :string]
+     [:tempdir {:optional true} :string]
+     [:browser-pool-max {:optional true} :int]
+     [:browser-pool-min {:optional true} :int]]))
 
 (defn- parse-flags
   [config]
@@ -58,14 +60,15 @@
   []
   (let [env  (read-env "penpot")
         env  (d/without-nils env)
-        data (merge defaults env)
-        data (sm/decode schema:config data sm/default-transformer)]
+        data (merge defaults env)]
 
-    (when-not (sm/validate schema:config data)
-      (println (sm/humanize-data schema:config data))
-      (process/exit -1))
-
-    data))
+    (try
+      (sm/conform! schema:config data)
+      (catch :default cause
+        (if-let [explain (some->> cause ex-data ::sm/explain)]
+          (println (sm/humanize-explain explain))
+          (js/console.error cause))
+        (process/exit -1)))))
 
 (def config
   (prepare-config))
