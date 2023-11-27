@@ -28,38 +28,28 @@ jobs:
            - v1-dependencies-
 
       - run: cd .clj-kondo && cat config.edn
+      - run: cat .cljfmt.edn
+
+      # - run:
+      #     name: "fmt check [clj]"
+      #     command: |
+      #       yarn run fmt:clj:check
 
       - run:
-          name: frontend styles prettier
+          name: "lint [clj]"
+          command: |
+            yarn run lint:clj
+
+      - run:
+          name: "lint [scss]"
           working_directory: "./frontend"
           command: |
             yarn install
             yarn run lint:scss
 
       - run:
-          name: common lint
+          name: "tests [common]"
           working_directory: "./common"
-          command: |
-            clj-kondo --version
-            clj-kondo --parallel --lint src/
-
-      - run:
-          name: frontend lint
-          working_directory: "./frontend"
-          command: |
-            clj-kondo --version
-            clj-kondo --parallel --lint src/
-
-      - run:
-          name: backend lint
-          working_directory: "./backend"
-          command: |
-            clj-kondo --version
-            clj-kondo --parallel --lint src/
-
-      - run:
-          working_directory: "./common"
-          name: common tests
           command: |
             yarn install
             yarn test
@@ -71,7 +61,7 @@ jobs:
             NODE_OPTIONS: --max-old-space-size=4096
 
       - run:
-          name: backend test
+          name: "tests [backend]"
           working_directory: "./backend"
           command: |
             clojure -X:dev:test :patterns '["backend-tests.*-test"]'
@@ -84,7 +74,7 @@ jobs:
             JVM_OPTS: -Xmx4g
 
       - run:
-          name: frontend tests
+          name: "tests [frontend]"
           working_directory: "./frontend"
           command: |
             yarn install

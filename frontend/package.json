@@ -2,15 +2,23 @@
   "name": "frontend",
   "version": "1.0.0",
   "license": "MPL-2.0",
+  "author": "Kaleidos INC",
+  "private": true,
+  "packageManager": "yarn@4.0.2",
   "browserslist": [
     "defaults"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/penpot/penpot"
+  },
   "resolutions": {
     "@vitejs/plugin-react": "^4.2.0"
   },
   "scripts": {
+    "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
+    "fmt:clj": "cljfmt fix --parallel=true src/ test/",
     "test:compile": "clojure -M:dev:shadow-cljs compile test --config-merge '{:autorun false}'",
-    "lint:clj": "clj-kondo --parallel --lint src/",
     "lint:scss": "yarn run prettier -c resources/styles -c src/**/*.scss",
     "lint:fix": "yarn run prettier -c resources/styles -c src/**/*.scss -w",
     "test:run": "node target/tests.js",
@@ -86,6 +94,5 @@
     "tdigest": "^0.1.2",
     "ua-parser-js": "^1.0.32",
     "xregexp": "^5.1.1"
-  },
-  "packageManager": "yarn@4.0.2"
+  }
 }
