@@ -7,6 +7,7 @@ ENV NODE_VERSION=v20.10.0 \
     CLOJURE_VERSION=1.11.1.1347 \
     CLJKONDO_VERSION=2023.09.07 \
     BABASHKA_VERSION=1.3.184 \
+    CLJFMT_VERSION=0.11.2 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -199,6 +200,26 @@ RUN set -ex; \
     cd /usr/local/bin; \
     tar -xf /tmp/babashka.tar.gz; \
     rm -rf /tmp/babashka.tar.gz;
+
+RUN set -ex; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/weavejester/cljfmt/releases/download/${CLJFMT_VERSION}/cljfmt-${CLJFMT_VERSION}-linux-aarch64.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/weavejester/cljfmt/releases/download/${CLJFMT_VERSION}/cljfmt-${CLJFMT_VERSION}-linux-amd64.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    cd /tmp; \
+    curl -LfsSo /tmp/cljfmt.tar.gz ${BINARY_URL}; \
+    cd /usr/local/bin; \
+    tar -xf /tmp/cljfmt.tar.gz; \
+    rm -rf /tmp/cljfmt.tar.gz;
 
 # Install minio client
 RUN set -ex; \
