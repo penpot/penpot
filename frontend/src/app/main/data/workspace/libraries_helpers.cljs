@@ -227,12 +227,23 @@
 
   ([changes library-data component-id it page delta old-id parent-id]
    (let [component    (ctkl/get-deleted-component library-data component-id)
+         parent       (get-in page [:objects parent-id])
+         inside-component? (some? (ctn/get-instance-root (:objects page) parent))
 
          shapes       (cfh/get-children-with-self (:objects component) (:main-instance-id component))
          shapes       (map #(gsh/move % delta) shapes)
          first-shape  (cond-> (first shapes)
                         (not (nil? parent-id))
-                        (assoc :parent-id parent-id))
+                        (assoc :parent-id parent-id)
+                        (and parent (= :frame (:type parent)))
+                        (assoc :frame-id parent-id)
+                        (and parent (not= :frame (:type parent)))
+                        (assoc :frame-id (:frame-id parent))
+                        inside-component?
+                        (dissoc :component-root)
+                        (not inside-component?)
+                        (assoc :component-root true))
+
          changes      (-> (or changes (pcb/empty-changes it))
                           (pcb/with-page page)
                           (pcb/with-objects (:objects page))
