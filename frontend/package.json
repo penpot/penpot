@@ -1,13 +1,7 @@
 {
-  "name": "app",
-  "version": "0.1.0",
-  "description": "The Open-Source prototyping tool",
-  "author": "Kaleidos Ventures SL",
-  "license": "SEE LICENSE IN <LICENSE>",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/penpot/penpot"
-  },
+  "name": "frontend",
+  "version": "1.0.0",
+  "license": "MPL-2.0",
   "browserslist": [
     "defaults"
   ],
@@ -89,5 +83,6 @@
     "tdigest": "^0.1.2",
     "ua-parser-js": "^1.0.32",
     "xregexp": "^5.1.1"
-  }
+  },
+  "packageManager": "yarn@4.0.2"
 }
