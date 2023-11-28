@@ -20,6 +20,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
+   [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -494,11 +495,20 @@
 
            changes (cond-> changes
                      (and is-component-root? is-component-main?)
-                     (regenerate-component new-obj))]
+                     (regenerate-component new-obj))
+
+           ; This is needed for the recursive call to find the new object as parent
+           page' (ctst/add-shape (:id new-obj)
+                                 new-obj
+                                 {:objects objects}
+                                 (:frame-id new-obj)
+                                 (:parent-id new-obj)
+                                 nil
+                                 true)]
 
        (reduce (fn [changes child]
                  (prepare-duplicate-shape-change changes
-                                                 objects
+                                                 (:objects page')
                                                  page
                                                  unames
                                                  update-unames!
