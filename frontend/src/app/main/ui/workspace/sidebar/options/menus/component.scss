@@ -216,6 +216,11 @@
       height: $s-16;
     }
 
+    .component-list-empty {
+      @include titleTipography;
+      margin: 0 $s-4 0 $s-8;
+    }
+
     .component-list {
       margin: 0 $s-4 0 $s-8;
       .component-item {

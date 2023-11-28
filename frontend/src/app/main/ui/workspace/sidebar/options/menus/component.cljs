@@ -360,6 +360,10 @@
             [:span i/arrow-slide]
             [:span (:path filters)]])
 
+         (when (empty? items)
+           [:div {:class (stl/css :component-list-empty)}
+            (tr "workspace.options.component.swap.empty")])
+
          (when (:listing-thumbs? filters)
            [:div {:class (stl/css :component-list)}
             (for [item groups]
