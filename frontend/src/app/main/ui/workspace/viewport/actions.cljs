@@ -314,29 +314,33 @@
            shift?   (kbd/shift? event)
            alt?     (kbd/alt? event)
            meta?    (kbd/meta? event)
+           mod?     (kbd/mod? event)
            target   (dom/get-target event)
+
            editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
                         (= "rich-text" (obj/get target "className"))
                         (= "INPUT" (obj/get target "tagName"))
                         (= "TEXTAREA" (obj/get target "tagName")))]
 
        (when-not (.-repeat bevent)
-         (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta? editing? event)))))))
+         (st/emit! (kbd/->KeyboardEvent :down key shift? ctrl? alt? meta? mod? editing? event)))))))
 
 (defn on-key-up []
   (mf/use-callback
    (fn [event]
-     (let [key    (.-key event)
-           ctrl?  (kbd/ctrl? event)
-           shift? (kbd/shift? event)
-           alt?   (kbd/alt? event)
-           meta?  (kbd/meta? event)
+     (let [key      (.-key event)
+           ctrl?    (kbd/ctrl? event)
+           shift?   (kbd/shift? event)
+           alt?     (kbd/alt? event)
+           meta?    (kbd/meta? event)
+           mod?     (kbd/mod? event)
            target   (dom/get-target event)
+
            editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
                         (= "rich-text" (obj/get target "className"))
                         (= "INPUT" (obj/get target "tagName"))
                         (= "TEXTAREA" (obj/get target "tagName")))]
-       (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta? editing? event))))))
+       (st/emit! (kbd/->KeyboardEvent :up key shift? ctrl? alt? meta? mod? editing? event))))))
 
 (defn on-pointer-move [move-stream]
   (let [last-position (mf/use-var nil)]

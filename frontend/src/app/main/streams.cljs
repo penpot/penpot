@@ -15,23 +15,9 @@
 
 ;; --- User Events
 
-(defrecord KeyboardEvent [type key shift ctrl alt meta editing event])
-
-(defn keyboard-event?
-  [v]
-  (instance? KeyboardEvent v))
-
-(defn key-up?
-  [v]
-  (and (keyboard-event? v)
-       (= :up (:type v))))
-
-(defn key-down?
-  [v]
-  (and (keyboard-event? v)
-       (= :down (:type v))))
-
 (defrecord MouseEvent [type ctrl shift alt meta])
+(defrecord PointerEvent [source pt ctrl shift alt meta])
+(defrecord ScrollEvent [point])
 
 (defn mouse-event?
   [v]
@@ -57,13 +43,9 @@
   (and (mouse-event? v)
        (= :double-click (:type v))))
 
-(defrecord PointerEvent [source pt ctrl shift alt meta])
-
 (defn pointer-event?
   [v]
   (instance? PointerEvent v))
-
-(defrecord ScrollEvent [point])
 
 (defn scroll-event?
   [v]
@@ -71,7 +53,7 @@
 
 (defn interaction-event?
   [event]
-  (or (keyboard-event? event)
+  (or (kbd/keyboard-event? event)
       (mouse-event? event)))
 
 ;; --- Derived streams
@@ -126,55 +108,54 @@
     (rx/subscribe-with ob sub)
     sub))
 
-
-(defonce window-blur
+(defonce ^:private window-blur
   (->> (rx/from-event globals/window "blur")
+       (rx/map (constantly false))
+       (rx/share)))
+
+(defonce keyboard
+  (->> st/stream
+       (rx/filter kbd/keyboard-event?)
        (rx/share)))
 
 (defonce keyboard-alt
   (let [sub (rx/behavior-subject nil)
-        ob  (->> (rx/merge
-                  (->> st/stream
-                       (rx/filter keyboard-event?)
-                       (rx/filter kbd/alt-key?)
-                       (rx/map #(= :down (:type %))))
-                  ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
-                  ;; that makes keyboard-alt stream registering the key pressed but
-                  ;; on blurring the window (unfocus) the key down is never arrived.
-                  (->> window-blur
-                       (rx/map (constantly false))))
+        ob  (->> keyboard
+                 (rx/filter kbd/alt-key?)
+                 (rx/map kbd/key-down-event?)
+                 ;; Fix a situation caused by using `ctrl+alt` kind of
+                 ;; shortcuts, that makes keyboard-alt stream
+                 ;; registering the key pressed but on blurring the
+                 ;; window (unfocus) the key down is never arrived.
+                 (rx/merge window-blur)
                  (rx/dedupe))]
     (rx/subscribe-with ob sub)
     sub))
 
 (defonce keyboard-ctrl
   (let [sub (rx/behavior-subject nil)
-        ob  (->> (rx/merge
-                  (->> st/stream
-                       (rx/filter keyboard-event?)
-                       (rx/filter kbd/ctrl-key?)
-                       (rx/map #(= :down (:type %))))
-                  ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
-                  ;; that makes keyboard-alt stream registering the key pressed but
-                  ;; on blurring the window (unfocus) the key down is never arrived.
-                  (->> window-blur
-                       (rx/map (constantly false))))
+        ob  (->> keyboard
+                 (rx/filter kbd/ctrl-key?)
+                 (rx/map kbd/key-down-event?)
+                 ;; Fix a situation caused by using `ctrl+alt` kind of
+                 ;; shortcuts, that makes keyboard-alt stream
+                 ;; registering the key pressed but on blurring the
+                 ;; window (unfocus) the key down is never arrived.
+                 (rx/merge window-blur)
                  (rx/dedupe))]
     (rx/subscribe-with ob sub)
     sub))
 
 (defonce keyboard-meta
   (let [sub (rx/behavior-subject nil)
-        ob  (->> (rx/merge
-                  (->> st/stream
-                       (rx/filter keyboard-event?)
-                       (rx/filter kbd/meta-key?)
-                       (rx/map #(= :down (:type %))))
-                  ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
-                  ;; that makes keyboard-alt stream registering the key pressed but
-                  ;; on blurring the window (unfocus) the key down is never arrived.
-                  (->> window-blur
-                       (rx/map (constantly false))))
+        ob  (->> keyboard
+                 (rx/filter kbd/meta-key?)
+                 (rx/map kbd/key-down-event?)
+                 ;; Fix a situation caused by using `ctrl+alt` kind of
+                 ;; shortcuts, that makes keyboard-alt stream
+                 ;; registering the key pressed but on blurring the
+                 ;; window (unfocus) the key down is never arrived.
+                 (rx/merge window-blur)
                  (rx/dedupe))]
     (rx/subscribe-with ob sub)
     sub))
@@ -184,57 +165,12 @@
     keyboard-meta
     keyboard-ctrl))
 
-(defonce keyboard-minus-or-underscore
-  (let [sub (rx/behavior-subject nil)
-        ob  (->> st/stream
-                 (rx/filter keyboard-event?)
-                 (rx/filter key-down?)
-                 (rx/filter #(kbd/mod? (:event %)))
-                 (rx/filter #(or (kbd/minus? %) (kbd/underscore? %)))
-                 (rx/dedupe))]
-    (rx/subscribe-with ob sub)
-    sub))
-
-(defonce keyboard-=-or-+
-  (let [sub (rx/behavior-subject nil)
-        ob  (->> st/stream
-                 (rx/filter keyboard-event?)
-                 (rx/filter key-down?)
-                 (rx/filter #(kbd/mod? (:event %)))
-                 (rx/filter #(or (kbd/equals? %) (kbd/plus? %)))
-                 (rx/dedupe))]
-    (rx/subscribe-with ob sub)
-    sub))
-
 (defonce keyboard-space
   (let [sub (rx/behavior-subject nil)
-        ob  (->> st/stream
-                 (rx/filter keyboard-event?)
+        ob  (->> keyboard
                  (rx/filter kbd/space?)
-                 (rx/filter (comp not kbd/editing?))
-                 (rx/map #(= :down (:type %)))
-                 (rx/dedupe))]
-    (rx/subscribe-with ob sub)
-    sub))
-
-(defonce keyboard-z
-  (let [sub (rx/behavior-subject nil)
-        ob  (->> st/stream
-                 (rx/filter keyboard-event?)
-                 (rx/filter kbd/z?)
-                 (rx/filter (comp not kbd/editing?))
-                 (rx/map #(= :down (:type %)))
-                 (rx/dedupe))]
-    (rx/subscribe-with ob sub)
-    sub))
-
-(defonce keyboard-shift
-  (let [sub (rx/behavior-subject nil)
-        ob  (->> st/stream
-                 (rx/filter keyboard-event?)
-                 (rx/filter kbd/shift-key?)
-                 (rx/filter (comp not kbd/editing?))
-                 (rx/map #(= :down (:type %)))
+                 (rx/filter (complement kbd/editing-event?))
+                 (rx/map kbd/key-down-event?)
                  (rx/dedupe))]
     (rx/subscribe-with ob sub)
     sub))

@@ -33,6 +33,7 @@
    [app.main.snap :as snap]
    [app.main.streams :as ms]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -673,7 +674,8 @@
                      (rx/switch-map #(rx/merge
                                       (rx/timer 1000)
                                       (->> stream
-                                           (rx/filter ms/key-up?)
+                                           (rx/filter kbd/keyboard-event?)
+                                           (rx/filter kbd/key-up-event?)
                                            (rx/delay 250))))
                      (rx/take 1))
 
