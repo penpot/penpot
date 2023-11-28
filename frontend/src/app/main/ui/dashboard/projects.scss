@@ -1,0 +1,391 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+@use "common/refactor/common-dashboard";
+
+.dashboard-container {
+  flex: 1 0 0;
+  margin-right: $s-16;
+  overflow-y: auto;
+  width: 100%;
+  border-top: $s-1 solid $db-cuaternary;
+
+  &.dashboard-projects {
+    user-select: none;
+  }
+  &.dashboard-shared {
+    width: calc(100vw - $s-320);
+    margin-right: $s-52;
+  }
+
+  &.search {
+    margin-top: $s-12;
+  }
+}
+
+.dashboard-project-row {
+  margin-bottom: $s-24;
+  position: relative;
+
+  .project {
+    align-items: center;
+    background: $df-primary;
+    border-radius: $br-4;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: $s-16;
+    padding: $s-8 $s-8 $s-8 $s-16;
+    width: 99%;
+    max-height: $s-40;
+    gap: $s-8;
+
+    .project-name-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: $s-32;
+      margin-left: $s-8;
+    }
+    .show-more {
+      align-items: center;
+      color: $df-secondary;
+      display: flex;
+      font-size: $fs-14;
+      justify-content: space-between;
+      cursor: pointer;
+      background-color: transparent;
+      border: none;
+      .placeholder-icon {
+        transform: rotate(-90deg);
+        margin-left: $s-12;
+        svg {
+          height: $s-16;
+          width: $s-16;
+          fill: $df-secondary;
+        }
+      }
+      &:hover {
+        color: $da-tertiary;
+        svg {
+          fill: $da-tertiary;
+        }
+      }
+    }
+
+    .btn-secondary {
+      border: none;
+      padding: $s-8;
+    }
+
+    h2 {
+      cursor: pointer;
+      font-size: $fs-16;
+      line-height: 0.8;
+      font-weight: $fw700;
+      color: $db-secondary;
+      margin-right: $s-4;
+      margin-right: $s-12;
+    }
+
+    .info,
+    .recent-files-row-title-info {
+      font-size: $fs-14;
+      line-height: 1.15;
+      font-weight: $fw400;
+      color: $db-primary;
+      @media (max-width: 760px) {
+        display: none;
+      }
+    }
+
+    .project-actions {
+      display: flex;
+      opacity: 1;
+      margin-left: $s-32;
+
+      .btn-small {
+        height: $s-32;
+        margin: 0 $s-8;
+        width: $s-32;
+
+        &:not(:hover) {
+          background: transparent;
+        }
+        svg {
+          height: $s-16;
+          width: $s-16;
+        }
+      }
+    }
+
+    .pin-icon {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      margin-right: $s-16;
+      background-color: transparent;
+      border: none;
+      svg {
+        width: $s-16;
+        height: $s-16;
+        fill: $df-secondary;
+      }
+
+      &.active {
+        svg {
+          fill: $db-tertiary;
+        }
+      }
+    }
+  }
+
+  &:hover,
+  &:focus,
+  &:focus-within {
+    .project-actions {
+      opacity: 1;
+    }
+  }
+
+  .show-more {
+    align-items: center;
+    color: $df-secondary;
+    display: flex;
+    font-size: $fs-14;
+    justify-content: space-between;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    position: absolute;
+    top: $s-8;
+    right: $s-52;
+    .placeholder-icon {
+      transform: rotate(-90deg);
+      margin-left: $s-8;
+      svg {
+        height: $s-16;
+        width: $s-16;
+        fill: $df-secondary;
+      }
+    }
+    &:hover {
+      color: $da-tertiary;
+      svg {
+        fill: $da-tertiary;
+      }
+    }
+  }
+}
+
+.dashboard-project-row .project {
+  background-color: transparent;
+
+  h2 {
+    color: $df-primary;
+    font-weight: 400;
+  }
+  span,
+  .info,
+  .recent-files-row-title-info {
+    color: $df-secondary;
+  }
+  .project-actions {
+    svg {
+      fill: $df-primary;
+    }
+    .pin-icon svg {
+      fill: $df-secondary;
+    }
+  }
+}
+
+.team-hero {
+  background-color: $db-tertiary;
+  border-radius: $br-8;
+  border: none;
+  display: flex;
+  margin: $s-16;
+  padding: $s-8;
+  position: relative;
+
+  .text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    flex-grow: 1;
+    padding: $s-20 $s-20;
+  }
+  .title {
+    font-size: $fs-24;
+    color: $df-primary;
+    font-weight: $fw400;
+  }
+  .info {
+    flex: 1;
+    font-size: $fs-16;
+    span {
+      color: $df-secondary;
+      display: block;
+    }
+    a {
+      color: $da-primary;
+    }
+    padding-top: $s-8;
+  }
+  .close {
+    position: absolute;
+    top: $s-20;
+    right: $s-20;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    svg {
+      transform: rotate(45deg);
+      width: $s-16;
+      height: $s-16;
+    }
+  }
+  .invite {
+    height: $s-32;
+    width: $s-180;
+  }
+  .img-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: $s-200;
+    height: $s-200;
+    overflow: hidden;
+    border-radius: $br-4;
+  }
+
+  img {
+    border-radius: $br-4;
+    height: $s-200;
+    width: auto;
+
+    @media (max-width: 1200px) {
+      display: none;
+      width: 0;
+    }
+  }
+  svg {
+    fill: $df-secondary;
+  }
+}
+
+.hero-projects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: $s-32;
+  margin: 0 $s-16 $s-16 $s-20;
+
+  @media (max-width: 1366px) {
+    grid-template-columns: 1fr;
+  }
+
+  .tutorial,
+  .walkthrough {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    position: relative;
+    border-radius: $br-8;
+    min-height: $s-216;
+    background-color: $db-tertiary;
+    padding: $s-8;
+
+    .thumbnail {
+      width: $s-200;
+      height: $s-200;
+      border-radius: $br-6;
+      padding: $s-32;
+      display: block;
+      background-color: var(--color-canvas);
+    }
+
+    img {
+      border-radius: $br-4;
+      margin-bottom: 0;
+      width: $s-232;
+    }
+
+    .text {
+      padding: $s-32;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title {
+      color: $df-primary;
+      font-size: $fs-24;
+      font-weight: $fw400;
+      margin-bottom: $s-8;
+    }
+    .info {
+      flex: 1;
+      color: $df-secondary;
+      margin-bottom: $s-20;
+      font-size: $fs-16;
+    }
+    .invite {
+      height: $s-32;
+    }
+    .action {
+      width: $s-180;
+      height: $s-40;
+    }
+    .close {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: $s-24;
+      cursor: pointer;
+      display: flex;
+      margin: $s-20;
+      justify-content: center;
+      align-items: center;
+      background-color: transparent;
+      border: none;
+      .icon {
+        svg {
+          fill: $df-secondary;
+          height: $s-16;
+          width: $s-16;
+          transform: rotate(45deg);
+          &:hover {
+            fill: $da-tertiary;
+          }
+        }
+      }
+    }
+  }
+  .walkthrough {
+    .thumbnail {
+      background-image: url("/images/walkthrough-cover.png");
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+  }
+  .tutorial {
+    .thumbnail {
+      background-image: url("/images/hands-on-tutorial.png");
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+    .loader {
+      display: flex;
+      svg#loader-pencil {
+        width: $s-32;
+      }
+    }
+  }
+}

@@ -5,7 +5,9 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.inline-edition
+  (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -13,7 +15,8 @@
 
 (mf/defc inline-edition
   [{:keys [content on-end] :as props}]
-  (let [name      (mf/use-state content)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        name      (mf/use-state content)
         input-ref (mf/use-ref)
 
         on-input
@@ -59,13 +62,25 @@
          (dom/focus! node)
          (dom/select-text! node))))
 
-    [:div.edit-wrapper
-     [:input.element-title {:value @name
-                            :ref input-ref
-                            :on-click on-click
-                            :on-change on-input
-                            :on-key-down on-keyup
-                            :on-blur on-blur}]
-     [:span.close {:on-click on-cancel} i/close]]))
+    (if new-css-system
+      [:div {:class (stl/css :edit-wrapper)}
+       [:input {:class (stl/css :element-title)
+                :value @name
+                :ref input-ref
+                :on-click on-click
+                :on-change on-input
+                :on-key-down on-keyup
+                :on-blur on-blur}]
+       [:span {:class (stl/css :close)
+               :on-click on-cancel} i/close]]
 
+      ;; OLD
+      [:div.edit-wrapper
+       [:input.element-title {:value @name
+                              :ref input-ref
+                              :on-click on-click
+                              :on-change on-input
+                              :on-key-down on-keyup
+                              :on-blur on-blur}]
+       [:span.close {:on-click on-cancel} i/close]])))
 

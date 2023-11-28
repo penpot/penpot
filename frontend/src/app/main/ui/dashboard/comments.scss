@@ -1,0 +1,131 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+
+.dashboard-comments-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: $br-8;
+
+  button {
+    cursor: pointer;
+    background: none;
+    border: none;
+  }
+}
+
+.thread-groups {
+  height: calc(100% - $s-32);
+  overflow-y: scroll;
+  max-height: $s-440;
+  overflow: auto;
+
+  hr {
+    background-color: $df-primary;
+    border: 0;
+    height: $s-1;
+    margin: 0;
+  }
+}
+
+.thread-group {
+  display: flex;
+  flex-direction: column;
+  font-size: $fs-12;
+}
+
+.thread-groups-placeholder {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  font-size: $fs-12;
+  padding: $s-24;
+  text-align: center;
+
+  svg {
+    fill: $df-secondary;
+    height: $s-24;
+    margin-bottom: $s-24;
+    width: $s-24;
+  }
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $br-8;
+  height: $s-32;
+  width: $s-32;
+
+  svg {
+    width: $s-16;
+    height: $s-16;
+    fill: $df-secondary;
+  }
+
+  &.unread svg,
+  &.open svg {
+    fill: $da-tertiary;
+  }
+
+  &:hover {
+    background-color: $db-cuaternary;
+
+    svg {
+      fill: $da-primary;
+    }
+  }
+}
+
+.dropdown {
+  @include menuShadow;
+  background-color: $db-tertiary;
+  border-radius: $br-8;
+  border: $s-1 solid transparent;
+  bottom: $s-4;
+  height: 40vh;
+  max-height: $s-480;
+  min-height: $s-200;
+  position: absolute;
+  width: 100%;
+  z-index: $z-index-3;
+
+  hr {
+    margin: 0;
+    border-color: $df-secondary;
+  }
+}
+
+.header {
+  display: flex;
+  height: $s-40;
+  align-items: center;
+  padding: 0 $s-12;
+
+  h3 {
+    color: $df-secondary;
+    font-size: $fs-11;
+    line-height: 1.28;
+    flex-grow: 1;
+    text-transform: uppercase;
+  }
+
+  .close {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    svg {
+      width: $s-16;
+      height: $s-16;
+      transform: rotate(45deg);
+      fill: $df-secondary;
+    }
+  }
+}

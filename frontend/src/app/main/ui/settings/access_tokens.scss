@@ -4,7 +4,170 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "common/refactor/common-refactor.scss" as *;
+
+.dashboard-table {
+  display: flex;
+  flex-direction: column;
+  font-size: $fs-16;
+  margin-top: $s-20;
+  width: $s-800;
+
+  .table-header {
+    color: $df-secondary;
+    display: grid;
+    font-size: $fs-12;
+    grid-template-columns: 43% 1fr $s-108 $s-12;
+    height: $s-40;
+    max-width: $s-1000;
+    padding: 0 $s-16;
+    text-transform: uppercase;
+    width: 100%;
+  }
+
+  .table-rows {
+    color: $db-secondary;
+    display: flex;
+    flex-direction: column;
+    margin-top: $s-16;
+    max-width: $s-1000;
+    padding-top: 0;
+    width: 100%;
+  }
+
+  .table-row {
+    align-items: center;
+    background-color: $db-tertiary;
+    border-radius: $br-8;
+    color: $df-primary;
+    display: grid;
+    font-size: $fs-14;
+    grid-template-columns: 1fr 43% $s-12;
+    height: fit-content;
+    min-height: $s-40;
+    padding: 0 $s-16;
+    width: 100%;
+
+    &:not(:first-child) {
+      margin-top: $s-8;
+    }
+  }
+
+  .table-field {
+    display: flex;
+    align-items: center;
+
+    .icon {
+      padding-left: $s-12;
+      cursor: pointer;
+    }
+
+    &.name {
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      color: $df-primary;
+      display: -webkit-box;
+      max-width: $s-480;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &.expiration-date {
+      color: $df-secondary;
+      font-size: $fs-14;
+
+      .content {
+        padding: $s-2 $s-6;
+        &.expired {
+          background-color: var(--warning-color);
+          border-radius: $br-4;
+          color: $db-secondary;
+        }
+      }
+    }
+    &.access-token-created {
+      word-break: break-all;
+    }
+
+    &.actions {
+      position: relative;
+    }
+  }
+
+  svg {
+    width: $s-12;
+    height: $s-12;
+    fill: $df-primary;
+  }
+}
+
+.dashboard-access-tokens {
+  display: flex;
+  flex-direction: column;
+  margin-left: $s-120;
+  margin-top: $s-80;
+  width: $s-800;
+}
+
+.access-tokens-hero-container {
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  max-width: $s-1000;
+  width: 100%;
+}
+
+.access-tokens-hero {
+  display: flex;
+  flex-direction: column;
+  font-size: $fs-14;
+  gap: $s-32;
+  justify-content: space-between;
+  width: $s-468;
+
+  .desc {
+    background-color: transparent;
+    color: $df-secondary;
+    width: 100%;
+
+    h2 {
+      color: $df-primary;
+      font-size: $fs-24;
+      font-weight: regular;
+      margin-bottom: $s-32;
+    }
+    p {
+      color: $df-secondary;
+      margin-bottom: 0;
+      font-size: $fs-14;
+    }
+  }
+  .btn-primary {
+    flex-shrink: 0;
+  }
+}
+
+.access-tokens-empty {
+  align-items: center;
+  border-radius: $br-8;
+  border: $s-1 solid $db-cuaternary;
+  color: $df-secondary;
+  display: flex;
+  flex-direction: column;
+  font-size: $fs-14;
+  justify-content: center;
+  margin-top: $s-32;
+  max-width: $s-1000;
+  min-height: $s-136;
+  padding: $s-32;
+  text-align: center;
+  width: $s-468;
+}
+
+.btn-primary {
+  @extend .button-primary;
+  height: $s-32;
+}
 
 .modal-overlay {
   @extend .modal-overlay-base;

@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.ui.components.select :as cs]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
@@ -252,10 +253,10 @@
         value      (or (get-in @form [:data input-name]) default)
         cvalue     (d/seek #(= value (:value %)) options)
         focus?     (mf/use-state false)
-        on-change
+
+        handle-change
         (fn [event]
-          (let [target (dom/get-target event)
-                value  (dom/get-value target)]
+          (let [value (if (string? event) event (dom/get-target-val event))]
             (fm/on-input-change form input-name value)))
 
         on-focus
@@ -267,33 +268,16 @@
           (reset! focus? false))]
 
     (if new-css-system
-      [:div {:class (stl/css :custom-select)}
-       [:select {:value value
-                 :on-change on-change
-                 :on-focus on-focus
-                 :on-blur on-blur
-                 :disabled disabled
-                 :data-test data-test}
-        (for [item options]
-          [:> :option (clj->js (cond-> {:key (:value item) :value (:value item)}
-                                 (:disabled item) (assoc :disabled "disabled")
-                                 (:hidden item) (assoc :style {:display "none"})))
-           (:label item)])]
-
-       [:div {:class (stl/css-case :input-container true
-                                   :disabled disabled
-                                   :focus @focus?)}
-        [:div {:class (stl/css :main-content)}
-         [:label {:class (stl/css :label)} label]
-         [:span {:class (stl/css :value)} (:label cvalue "")]]
-
-        [:div {:class (stl/css :icon)}
-         i/arrow-refactor]]]
+      [:div {:class (stl/css :select-wrapper)}
+       [:& cs/select
+        {:default-value value
+         :options options
+         :on-change handle-change}]]
 
 
       [:div.custom-select
        [:select {:value value
-                 :on-change on-change
+                 :on-change handle-change
                  :on-focus on-focus
                  :on-blur on-blur
                  :disabled disabled

@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.grid
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
@@ -19,6 +20,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as bc]
+   [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.file-menu :refer [file-menu]]
    [app.main.ui.dashboard.import :refer [use-import-file]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
@@ -66,7 +68,8 @@
 (mf/defc grid-item-thumbnail
   {::mf/wrap-props false}
   [{:keys [file-id revn thumbnail-uri background-color]}]
-  (let [container (mf/use-ref)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        container (mf/use-ref)
         visible?  (h/use-visible container :once? true)]
 
     (mf/with-effect [file-id revn visible? thumbnail-uri]
@@ -80,13 +83,24 @@
                                    :revn revn
                                    :message (ex-message cause)))))))
 
-    [:div.grid-item-th
-     {:style {:background-color background-color}
-      :ref container}
-     (when visible?
-       (if thumbnail-uri
-         [:img.grid-item-thumbnail-image {:src thumbnail-uri}]
-         i/loader-pencil))]))
+    (if new-css-system
+      [:div {:class (stl/css :grid-item-th)
+             :style {:background-color background-color}
+             :ref container}
+       (when visible?
+         (if thumbnail-uri
+           [:img {:class (stl/css :grid-item-thumbnail-image)
+                  :src thumbnail-uri}]
+           i/loader-pencil))]
+
+      ;; OLD
+      [:div.grid-item-th
+       {:style {:background-color background-color}
+        :ref container}
+       (when visible?
+         (if thumbnail-uri
+           [:img.grid-item-thumbnail-image {:src thumbnail-uri}]
+           i/loader-pencil))])))
 
 ;; --- Grid Item Library
 
@@ -94,120 +108,228 @@
   {::mf/wrap [mf/memo]}
   [{:keys [file] :as props}]
 
-  (mf/with-effect [file]
-    (when file
-      (let [font-ids (map :font-id (get-in file [:library-summary :typographies :sample] []))]
-        (run! fonts/ensure-loaded! font-ids))))
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (mf/with-effect [file]
+      (when file
+        (let [font-ids (map :font-id (get-in file [:library-summary :typographies :sample] []))]
+          (run! fonts/ensure-loaded! font-ids))))
 
-  [:div.grid-item-th.library
-   (if (nil? file)
-     i/loader-pencil
-     (let [summary (:library-summary file)
-           components (:components summary)
-           colors (:colors summary)
-           typographies (:typographies summary)]
-       [:*
+    (if new-css-system
+      [:div {:class (stl/css :grid-item-th :library)}
+       (if (nil? file)
+         i/loader-pencil
+         (let [summary (:library-summary file)
+               components (:components summary)
+               colors (:colors summary)
+               typographies (:typographies summary)]
+           [:*
+            (when (and (zero? (:count components)) (zero? (:count colors)) (zero? (:count typographies)))
+              [:*
+               [:div {:class (stl/css :asset-section)}
+                [:div {:class (stl/css :asset-title)}
+                 [:span (tr "workspace.assets.components")]
+                 [:span {:class (stl/css :num-assets)} (str "\u00A0(") 0 ")"]]] ;; Unicode 00A0 is non-breaking space
+               [:div {:class (stl/css :asset-section)}
+                [:div {:class (stl/css :asset-title)}
+                 [:span (tr "workspace.assets.colors")]
+                 [:span {:class (stl/css :num-assets)} (str "\u00A0(") 0 ")"]]] ;; Unicode 00A0 is non-breaking space
+               [:div {:class (stl/css :asset-section)}
+                [:div {:class (stl/css :asset-title)}
+                 [:span (tr "workspace.assets.typography")]
+                 [:span {:class (stl/css :num-assets)} (str "\u00A0(") 0 ")"]]]]) ;; Unicode 00A0 is non-breaking space
 
-        (when (and (zero? (:count components)) (zero? (:count colors)) (zero? (:count typographies)))
-          [:*
-           [:div.asset-section
-            [:div.asset-title
-             [:span (tr "workspace.assets.components")]
-             [:span.num-assets (str "\u00A0(") 0 ")"]]] ;; Unicode 00A0 is non-breaking space
-          [:div.asset-section
-           [:div.asset-title
-            [:span (tr "workspace.assets.colors")]
-            [:span.num-assets (str "\u00A0(") 0 ")"]]] ;; Unicode 00A0 is non-breaking space
-          [:div.asset-section
-           [:div.asset-title
-            [:span (tr "workspace.assets.typography")]
-            [:span.num-assets (str "\u00A0(") 0 ")"]]]]) ;; Unicode 00A0 is non-breaking space
+
+            (when (pos? (:count components))
+              [:div {:class (stl/css :asset-section)}
+               [:div {:class (stl/css :asset-title)}
+                [:span (tr "workspace.assets.components")]
+                [:span {:class (stl/css :num-assets)} (str "\u00A0(") (:count components) ")"]] ;; Unicode 00A0 is non-breaking space
+               [:div {:class (stl/css :asset-list)}
+                (for [component (:sample components)]
+                  (let [root-id (or (:main-instance-id component) (:id component))] ;; Check for components-v2 in library
+                    [:div {:class (stl/css :asset-list-item)
+                           :key (str "assets-component-" (:id component))}
+                     [:& component-svg {:root-shape (get-in component [:objects root-id])
+                                        :objects (:objects component)}] ;; Components in the summary come loaded with objects, even in v2
+                     [:div {:class (stl/css :name-block)}
+                      [:span {:class (stl/css :item-name)
+                              :title (:name component)}
+                       (:name component)]]]))
+                (when (> (:count components) (count (:sample components)))
+                  [:div {:class (stl/css :asset-list-item)}
+                   [:div {:class (stl/css :name-block)}
+                    [:span {:class (stl/css :item-name)} "(...)"]]])]])
+
+            (when (pos? (:count colors))
+              [:div {:class (stl/css :asset-section)}
+               [:div {:class (stl/css :asset-title)}
+                [:span (tr "workspace.assets.colors")]
+                [:span {:class (stl/css :num-assets)} (str "\u00A0(") (:count colors) ")"]] ;; Unicode 00A0 is non-breaking space
+               [:div {:class (stl/css :asset-list)}
+                (for [color (:sample colors)]
+                  (let [default-name (cond
+                                       (:gradient color) (uc/gradient-type->string (get-in color [:gradient :type]))
+                                       (:color color) (:color color)
+                                       :else (:value color))]
+                    [:div {:class (stl/css :asset-list-item)
+                           :key (str "assets-color-" (:id color))}
+                     [:& bc/color-bullet {:color {:color (:color color)
+                                                  :opacity (:opacity color)}}]
+                     [:div {:class (stl/css :name-block)}
+                      [:span {:class (stl/css :color-name)} (:name color)]
+                      (when-not (= (:name color) default-name)
+                        [:span {:class (stl/css :color-value)} (:color color)])]]))
+
+                (when (> (:count colors) (count (:sample colors)))
+                  [:div {:class (stl/css :asset-list-item)}
+                   [:div {:class (stl/css :name-block)}
+                    [:span {:class (stl/css :item-name)} "(...)"]]])]])
+
+            (when (pos? (:count typographies))
+              [:div {:class (stl/css :asset-section)}
+               [:div {:class (stl/css :asset-title)}
+                [:span (tr "workspace.assets.typography")]
+                [:span {:class (stl/css :num-assets)} (str "\u00A0(") (:count typographies) ")"]] ;; Unicode 00A0 is non-breaking space
+               [:div {:class (stl/css :asset-list)}
+                (for [typography (:sample typographies)]
+                  [:div {:class (stl/css :asset-list-item)
+                         :key (str "assets-typography-" (:id typography))}
+                   [:div {:class (stl/css :typography-sample)
+                          :style {:font-family (:font-family typography)
+                                  :font-weight (:font-weight typography)
+                                  :font-style (:font-style typography)}}
+                    (tr "workspace.assets.typography.sample")]
+                   [:div {:class (stl/css :name-block)}
+                    [:span {:class (stl/css :item-name)
+                            :title (:name typography)}
+                     (:name typography)]]])
+
+                (when (> (:count typographies) (count (:sample typographies)))
+                  [:div {:class (stl/css :asset-list-item)}
+                   [:div {:class (stl/css :name-block)}
+                    [:span {:class (stl/css :item-name)} "(...)"]]])]])]))]
+
+      ;; OLD
+      [:div.grid-item-th.library
+       (if (nil? file)
+         i/loader-pencil
+         (let [summary (:library-summary file)
+               components (:components summary)
+               colors (:colors summary)
+               typographies (:typographies summary)]
+           [:*
+
+            (when (and (zero? (:count components)) (zero? (:count colors)) (zero? (:count typographies)))
+              [:*
+               [:div.asset-section
+                [:div.asset-title
+                 [:span (tr "workspace.assets.components")]
+                 [:span.num-assets (str "\u00A0(") 0 ")"]]] ;; Unicode 00A0 is non-breaking space
+               [:div.asset-section
+                [:div.asset-title
+                 [:span (tr "workspace.assets.colors")]
+                 [:span.num-assets (str "\u00A0(") 0 ")"]]] ;; Unicode 00A0 is non-breaking space
+               [:div.asset-section
+                [:div.asset-title
+                 [:span (tr "workspace.assets.typography")]
+                 [:span.num-assets (str "\u00A0(") 0 ")"]]]]) ;; Unicode 00A0 is non-breaking space
 
 
-        (when (pos? (:count components))
-          [:div.asset-section
-           [:div.asset-title
-            [:span (tr "workspace.assets.components")]
-            [:span.num-assets (str "\u00A0(") (:count components) ")"]] ;; Unicode 00A0 is non-breaking space
-           [:div.asset-list
-            (for [component (:sample components)]
-              (let [root-id (or (:main-instance-id component) (:id component))] ;; Check for components-v2 in library
-                [:div.asset-list-item {:key (str "assets-component-" (:id component))}
-                 [:& component-svg {:root-shape (get-in component [:objects root-id])
-                                    :objects (:objects component)}] ;; Components in the summary come loaded with objects, even in v2
-                 [:div.name-block
-                  [:span.item-name {:title (:name component)}
-                   (:name component)]]]))
-            (when (> (:count components) (count (:sample components)))
-              [:div.asset-list-item
-               [:div.name-block
-                [:span.item-name "(...)"]]])]])
+            (when (pos? (:count components))
+              [:div.asset-section
+               [:div.asset-title
+                [:span (tr "workspace.assets.components")]
+                [:span.num-assets (str "\u00A0(") (:count components) ")"]] ;; Unicode 00A0 is non-breaking space
+               [:div.asset-list
+                (for [component (:sample components)]
+                  (let [root-id (or (:main-instance-id component) (:id component))] ;; Check for components-v2 in library
+                    [:div.asset-list-item {:key (str "assets-component-" (:id component))}
+                     [:& component-svg {:root-shape (get-in component [:objects root-id])
+                                        :objects (:objects component)}] ;; Components in the summary come loaded with objects, even in v2
+                     [:div.name-block
+                      [:span.item-name {:title (:name component)}
+                       (:name component)]]]))
+                (when (> (:count components) (count (:sample components)))
+                  [:div.asset-list-item
+                   [:div.name-block
+                    [:span.item-name "(...)"]]])]])
 
-        (when (pos? (:count colors))
-          [:div.asset-section
-           [:div.asset-title
-            [:span (tr "workspace.assets.colors")]
-            [:span.num-assets (str "\u00A0(") (:count colors) ")"]] ;; Unicode 00A0 is non-breaking space
-           [:div.asset-list
-            (for [color (:sample colors)]
-              (let [default-name (cond
-                                   (:gradient color) (uc/gradient-type->string (get-in color [:gradient :type]))
-                                   (:color color) (:color color)
-                                   :else (:value color))]
-                [:div.asset-list-item {:key (str "assets-color-" (:id color))}
-                 [:& bc/color-bullet {:color {:color (:color color)
-                                              :opacity (:opacity color)}}]
-                 [:div.name-block
-                  [:span.color-name (:name color)]
-                  (when-not (= (:name color) default-name)
-                    [:span.color-value (:color color)])]]))
-            (when (> (:count colors) (count (:sample colors)))
-              [:div.asset-list-item
-               [:div.name-block
-                [:span.item-name "(...)"]]])]])
+            (when (pos? (:count colors))
+              [:div.asset-section
+               [:div.asset-title
+                [:span (tr "workspace.assets.colors")]
+                [:span.num-assets (str "\u00A0(") (:count colors) ")"]] ;; Unicode 00A0 is non-breaking space
+               [:div.asset-list
+                (for [color (:sample colors)]
+                  (let [default-name (cond
+                                       (:gradient color) (uc/gradient-type->string (get-in color [:gradient :type]))
+                                       (:color color) (:color color)
+                                       :else (:value color))]
+                    [:div.asset-list-item {:key (str "assets-color-" (:id color))}
+                     [:& bc/color-bullet {:color {:color (:color color)
+                                                  :opacity (:opacity color)}}]
+                     [:div.name-block
+                      [:span.color-name (:name color)]
+                      (when-not (= (:name color) default-name)
+                        [:span.color-value (:color color)])]]))
+                (when (> (:count colors) (count (:sample colors)))
+                  [:div.asset-list-item
+                   [:div.name-block
+                    [:span.item-name "(...)"]]])]])
 
-        (when (pos? (:count typographies))
-          [:div.asset-section
-           [:div.asset-title
-            [:span (tr "workspace.assets.typography")]
-            [:span.num-assets (str "\u00A0(") (:count typographies) ")"]] ;; Unicode 00A0 is non-breaking space
-           [:div.asset-list
-            (for [typography (:sample typographies)]
-              [:div.asset-list-item {:key (str "assets-typography-" (:id typography))}
-               [:div.typography-sample
-                {:style {:font-family (:font-family typography)
-                         :font-weight (:font-weight typography)
-                         :font-style (:font-style typography)}}
-                (tr "workspace.assets.typography.sample")]
-               [:div.name-block
-                [:span.item-name {:title (:name typography)}
-                 (:name typography)]]])
-            (when (> (:count typographies) (count (:sample typographies)))
-              [:div.asset-list-item
-               [:div.name-block
-                [:span.item-name "(...)"]]])]])]))])
+            (when (pos? (:count typographies))
+              [:div.asset-section
+               [:div.asset-title
+                [:span (tr "workspace.assets.typography")]
+                [:span.num-assets (str "\u00A0(") (:count typographies) ")"]] ;; Unicode 00A0 is non-breaking space
+               [:div.asset-list
+                (for [typography (:sample typographies)]
+                  [:div.asset-list-item {:key (str "assets-typography-" (:id typography))}
+                   [:div.typography-sample
+                    {:style {:font-family (:font-family typography)
+                             :font-weight (:font-weight typography)
+                             :font-style (:font-style typography)}}
+                    (tr "workspace.assets.typography.sample")]
+                   [:div.name-block
+                    [:span.item-name {:title (:name typography)}
+                     (:name typography)]]])
+                (when (> (:count typographies) (count (:sample typographies)))
+                  [:div.asset-list-item
+                   [:div.name-block
+                    [:span.item-name "(...)"]]])]])]))])))
 
 ;; --- Grid Item
 
 (mf/defc grid-item-metadata
   [{:keys [modified-at]}]
 
-  (let [locale (mf/deref i18n/locale)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        locale (mf/deref i18n/locale)
         time   (dt/timeago modified-at {:locale locale})]
-    [:span.date
-     time]))
+    (if new-css-system
+      [:span {:class (stl/css :date)} time]
+
+      ;; OLD
+      [:span.date time])))
 
 (defn create-counter-element
-  [_element file-count]
-  (let [counter-el (dom/create-element "div")]
-    (dom/set-property! counter-el "class" "drag-counter")
-    (dom/set-text! counter-el (str file-count))
-    counter-el))
+  [_element file-count new-css-system]
+  (if new-css-system
+    (let [counter-el (dom/create-element "div")]
+      (dom/set-property! counter-el "class" (stl/css :drag-counter))
+      (dom/set-text! counter-el (str file-count))
+      counter-el)
+
+    (let [counter-el (dom/create-element "div")]
+      (dom/set-property! counter-el "class" "drag-counter")
+      (dom/set-text! counter-el (str file-count))
+      counter-el)))
 
 (mf/defc grid-item
   {:wrap [mf/memo]}
   [{:keys [file navigate? origin library-view?] :as props}]
-  (let [file-id         (:id file)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        file-id         (:id file)
         local           (mf/use-state {:menu-open false
                                        :menu-pos nil
                                        :edition false})
@@ -250,10 +372,12 @@
                  select-current? (not (contains? selected-files (:id file)))
 
                  item-el         (mf/ref-val node-ref)
-                 counter-el      (create-counter-element item-el
-                                                         (if select-current?
-                                                           1
-                                                           (count selected-files)))]
+                 counter-el      (create-counter-element
+                                  item-el
+                                  (if select-current?
+                                    1
+                                    (count selected-files))
+                                  new-css-system)]
              (when select-current?
                (st/emit! (dd/clear-selected-files))
                (st/emit! (dd/toggle-file-select file)))
@@ -307,77 +431,149 @@
            (dom/stop-propagation event)
            (swap! local assoc
                   :edition true
-                  :menu-open false)))]
+                  :menu-open false)))
+
+        handle-key-down
+        (mf/use-callback
+         (mf/deps on-navigate on-select)
+         (fn [event]
+           (dom/stop-propagation event)
+           (when (kbd/enter? event)
+             (on-navigate event))
+           (when (kbd/shift? event)
+             (when (or (kbd/down-arrow? event) (kbd/left-arrow? event) (kbd/up-arrow? event) (kbd/right-arrow? event))
+               (on-select event)) ;; TODO Fix this
+             )))]
 
     (mf/with-effect [selected? local]
       (when (and (not selected?) (:menu-open @local))
         (swap! local assoc :menu-open false)))
 
-    [:li.grid-item.project-th {:class (dom/classnames :library library-view?)}
-     [:button
-      {:tab-index "0"
-       :class (dom/classnames :selected selected?
-                              :library library-view?)
-       :ref node-ref
-       :draggable true
-       :on-click on-select
-       :on-key-down (fn [event]
-                      (dom/stop-propagation event)
-                      (when (kbd/enter? event)
-                        (on-navigate event))
-                      (when (kbd/shift? event)
-                        (when (or (kbd/down-arrow? event) (kbd/left-arrow? event) (kbd/up-arrow? event) (kbd/right-arrow? event))
-                          (on-select event)) ;; TODO Fix this
-                        ))
-       :on-double-click on-navigate
-       :on-drag-start on-drag-start
-       :on-context-menu on-menu-click}
+    (if new-css-system
+      [:li
+       {:class (stl/css-case :grid-item true :project-th true :library library-view?)}
+       [:button
+        {:class (stl/css-case :selected selected? :library library-view?)
+         :ref node-ref
+         :draggable true
+         :on-click on-select
+         :on-key-down handle-key-down
+         :on-double-click on-navigate
+         :on-drag-start on-drag-start
+         :on-context-menu on-menu-click}
 
-      [:div.overlay]
-      (if library-view?
-        [:& grid-item-library {:file file}]
-        [:& grid-item-thumbnail
-         {:file-id (:id file)
-          :revn (:revn file)
-          :thumbnail-uri (:thumbnail-uri file)
-          :background-color (dm/get-in file [:data :options :background])}])
+        [:div {:class (stl/css :overlay)}]
 
-      (when (and (:is-shared file) (not library-view?))
-        [:div.item-badge i/library])
-      [:div.info-wrapper
-       [:div.item-info
-        (if (:edition @local)
-          [:& inline-edition {:content (:name file)
-                              :on-end edit}]
-          [:h3 (:name file)])
-        [:& grid-item-metadata {:modified-at (:modified-at file)}]]
-       [:div.project-th-actions {:class (dom/classnames
-                                         :force-display (:menu-open @local))}
-        [:div.project-th-icon.menu
-         {:tab-index "0"
-          :ref menu-ref
-          :id (str file-id "-action-menu")
-          :on-click on-menu-click
-          :on-key-down (fn [event]
-                         (when (kbd/enter? event)
-                           (dom/stop-propagation event)
-                           (on-menu-click event)))}
-         i/actions
-         (when selected?
-           [:& file-menu {:files (vals selected-files)
-                          :show? (:menu-open @local)
-                          :left (+ 24 (:x (:menu-pos @local)))
-                          :top (:y (:menu-pos @local))
-                          :navigate? navigate?
-                          :on-edit on-edit
-                          :on-menu-close on-menu-close
-                          :origin origin
-                          :dashboard-local dashboard-local
-                          :parent-id (str file-id "-action-menu")}])]]]]]))
+        (if library-view?
+          [:& grid-item-library {:file file}]
+          [:& grid-item-thumbnail
+           {:file-id (:id file)
+            :revn (:revn file)
+            :thumbnail-uri (:thumbnail-uri file)
+            :background-color (dm/get-in file [:data :options :background])}])
+
+        (when (and (:is-shared file) (not library-view?))
+          [:div {:class (stl/css :item-badge)} i/library])
+        
+        [:div {:class (stl/css :info-wrapper)}
+         [:div {:class (stl/css :item-info)}
+          (if (:edition @local)
+            [:& inline-edition {:content (:name file)
+                                :on-end edit}]
+            [:h3 (:name file)])
+          [:& grid-item-metadata {:modified-at (:modified-at file)}]]
+
+         [:div {:class (stl/css-case :project-th-actions true :force-display (:menu-open @local))}
+          [:div
+           {:class (stl/css :project-th-icon :menu)
+            :tab-index "0"
+            :ref menu-ref
+            :id (str file-id "-action-menu")
+            :on-click on-menu-click
+            :on-key-down (fn [event]
+                           (when (kbd/enter? event)
+                             (dom/stop-propagation event)
+                             (on-menu-click event)))}
+           i/actions
+           (when selected?
+             [:& file-menu {:files (vals selected-files)
+                            :show? (:menu-open @local)
+                            :left (+ 24 (:x (:menu-pos @local)))
+                            :top (:y (:menu-pos @local))
+                            :navigate? navigate?
+                            :on-edit on-edit
+                            :on-menu-close on-menu-close
+                            :origin origin
+                            :dashboard-local dashboard-local
+                            :parent-id (str file-id "-action-menu")}])]]]]]
+
+      ;; OLD
+      [:li.grid-item.project-th {:class (dom/classnames :library library-view?)}
+       [:button
+        {:tab-index "0"
+         :class (dom/classnames :selected selected?
+                                :library library-view?)
+         :ref node-ref
+         :draggable true
+         :on-click on-select
+         :on-key-down (fn [event]
+                        (dom/stop-propagation event)
+                        (when (kbd/enter? event)
+                          (on-navigate event))
+                        (when (kbd/shift? event)
+                          (when (or (kbd/down-arrow? event) (kbd/left-arrow? event) (kbd/up-arrow? event) (kbd/right-arrow? event))
+                            (on-select event)) ;; TODO Fix this
+                          ))
+         :on-double-click on-navigate
+         :on-drag-start on-drag-start
+         :on-context-menu on-menu-click}
+
+        [:div.overlay]
+        (if library-view?
+          [:& grid-item-library {:file file}]
+          [:& grid-item-thumbnail
+           {:file-id (:id file)
+            :revn (:revn file)
+            :thumbnail-uri (:thumbnail-uri file)
+            :background-color (dm/get-in file [:data :options :background])}])
+
+        (when (and (:is-shared file) (not library-view?))
+          [:div.item-badge i/library])
+        [:div.info-wrapper
+         [:div.item-info
+          (if (:edition @local)
+            [:& inline-edition {:content (:name file)
+                                :on-end edit}]
+            [:h3 (:name file)])
+          [:& grid-item-metadata {:modified-at (:modified-at file)}]]
+         [:div.project-th-actions {:class (dom/classnames
+                                           :force-display (:menu-open @local))}
+          [:div.project-th-icon.menu
+           {:tab-index "0"
+            :ref menu-ref
+            :id (str file-id "-action-menu")
+            :on-click on-menu-click
+            :on-key-down (fn [event]
+                           (when (kbd/enter? event)
+                             (dom/stop-propagation event)
+                             (on-menu-click event)))}
+           i/actions
+           (when selected?
+             [:& file-menu {:files (vals selected-files)
+                            :show? (:menu-open @local)
+                            :left (+ 24 (:x (:menu-pos @local)))
+                            :top (:y (:menu-pos @local))
+                            :navigate? navigate?
+                            :on-edit on-edit
+                            :on-menu-close on-menu-close
+                            :origin origin
+                            :dashboard-local dashboard-local
+                            :parent-id (str file-id "-action-menu")}])]]]]])))
 
 (mf/defc grid
   [{:keys [files project origin limit library-view? create-fn] :as props}]
-  (let [dragging?  (mf/use-state false)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        dragging?  (mf/use-state false)
         project-id (:id project)
         node-ref   (mf/use-var nil)
 
@@ -420,57 +616,112 @@
              (reset! dragging? false)
              (import-files (.-files (.-dataTransfer e))))))]
 
-    [:div.dashboard-grid
-     {:on-drag-enter on-drag-enter
-      :on-drag-over on-drag-over
-      :on-drag-leave on-drag-leave
-      :on-drop on-drop
-      :ref node-ref}
-     (cond
-       (nil? files)
-       [:& loading-placeholder]
+    (if new-css-system
+      [:div
+       {:class (stl/css :dashboard-grid)
+        :on-drag-enter on-drag-enter
+        :on-drag-over on-drag-over
+        :on-drag-leave on-drag-leave
+        :on-drop on-drop
+        :ref node-ref}
 
-       (seq files)
-       [:ul.grid-row
-        {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
+       (cond
+         (nil? files)
+         [:& loading-placeholder]
 
-        (when @dragging?
-          [:li.grid-item])
+         (seq files)
+         [:ul
+          {:class (stl/css :grid-row)
+           :style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
 
-        (for [item files]
-          [:& grid-item
-           {:file item
-            :key (:id item)
-            :navigate? true
-            :origin origin
-            :library-view? library-view?}])]
+          (when @dragging?
+            [:li {:class (stl/css :grid-item)}])
 
-       :else
-       [:& empty-placeholder
-        {:limit limit
-         :create-fn create-fn
-         :origin origin}])]))
+          (for [item files]
+            [:& grid-item
+             {:file item
+              :key (:id item)
+              :navigate? true
+              :origin origin
+              :library-view? library-view?}])]
+
+         :else
+         [:& empty-placeholder
+          {:limit limit
+           :create-fn create-fn
+           :origin origin}])]
+
+      ;; OLD
+      [:div.dashboard-grid
+       {:on-drag-enter on-drag-enter
+        :on-drag-over on-drag-over
+        :on-drag-leave on-drag-leave
+        :on-drop on-drop
+        :ref node-ref}
+       (cond
+         (nil? files)
+         [:& loading-placeholder]
+
+         (seq files)
+         [:ul.grid-row
+          {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
+
+          (when @dragging?
+            [:li.grid-item])
+
+          (for [item files]
+            [:& grid-item
+             {:file item
+              :key (:id item)
+              :navigate? true
+              :origin origin
+              :library-view? library-view?}])]
+
+         :else
+         [:& empty-placeholder
+          {:limit limit
+           :create-fn create-fn
+           :origin origin}])])))
 
 (mf/defc line-grid-row
   [{:keys [files selected-files dragging? limit] :as props}]
-  (let [elements limit
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        elements limit
         limit (if dragging? (dec limit) limit)]
-    [:ul.grid-row.no-wrap
-     {:style {:grid-template-columns (dm/str "repeat(" elements ", 1fr)")}}
+    (if new-css-system
+      [:ul
+       {:class (stl/css :grid-row :no-wrap)
+        :style {:grid-template-columns (dm/str "repeat(" elements ", 1fr)")}}
 
-     (when dragging?
-       [:li.grid-item.dragged])
-     (for [item (take limit files)]
-       [:& grid-item
-        {:id (:id item)
-         :file item
-         :selected-files selected-files
-         :key (:id item)
-         :navigate? false}])]))
+       (when dragging?
+         [:li {:class (stl/css :grid-item :dragged)}])
+
+       (for [item (take limit files)]
+         [:& grid-item
+          {:id (:id item)
+           :file item
+           :selected-files selected-files
+           :key (:id item)
+           :navigate? false}])]
+
+      ;; OLD
+      [:ul.grid-row.no-wrap
+       {:style {:grid-template-columns (dm/str "repeat(" elements ", 1fr)")}}
+
+       (when dragging?
+         [:li.grid-item.dragged])
+       (for [item (take limit files)]
+         [:& grid-item
+          {:id (:id item)
+           :file item
+           :selected-files selected-files
+           :key (:id item)
+           :navigate? false}])])))
 
 (mf/defc line-grid
   [{:keys [project team files limit create-fn] :as props}]
-  (let [dragging?        (mf/use-state false)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        dragging?        (mf/use-state false)
         project-id       (:id project)
         team-id          (:id team)
 
@@ -546,24 +797,47 @@
                (reset! dragging? false)
                (import-files (.-files (.-dataTransfer e)))))))]
 
-    [:div.dashboard-grid {:on-drag-enter on-drag-enter
-                          :on-drag-over on-drag-over
-                          :on-drag-leave on-drag-leave
-                          :on-drop on-drop}
-     (cond
-       (nil? files)
-       [:& loading-placeholder]
+    (if new-css-system
+      [:div {:class (stl/css :dashboard-grid)
+             :on-drag-enter on-drag-enter
+             :on-drag-over on-drag-over
+             :on-drag-leave on-drag-leave
+             :on-drop on-drop}
+       (cond
+         (nil? files)
+         [:& loading-placeholder]
 
-       (seq files)
-       [:& line-grid-row {:files files
-                          :team-id team-id
-                          :selected-files selected-files
-                          :dragging? @dragging?
-                          :limit limit}]
+         (seq files)
+         [:& line-grid-row {:files files
+                            :team-id team-id
+                            :selected-files selected-files
+                            :dragging? @dragging?
+                            :limit limit}]
 
-       :else
-       [:& empty-placeholder
-        {:dragging? @dragging?
-         :limit limit
-         :create-fn create-fn}])]))
+         :else
+         [:& empty-placeholder
+          {:dragging? @dragging?
+           :limit limit
+           :create-fn create-fn}])]
 
+      ;; OLD
+      [:div.dashboard-grid {:on-drag-enter on-drag-enter
+                            :on-drag-over on-drag-over
+                            :on-drag-leave on-drag-leave
+                            :on-drop on-drop}
+       (cond
+         (nil? files)
+         [:& loading-placeholder]
+
+         (seq files)
+         [:& line-grid-row {:files files
+                            :team-id team-id
+                            :selected-files selected-files
+                            :dragging? @dragging?
+                            :limit limit}]
+
+         :else
+         [:& empty-placeholder
+          {:dragging? @dragging?
+           :limit limit
+           :create-fn create-fn}])])))

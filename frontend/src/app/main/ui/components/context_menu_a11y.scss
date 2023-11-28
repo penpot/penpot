@@ -72,6 +72,9 @@
           display: flex;
           align-items: center;
           font-weight: $fw700;
+          background: none;
+          border: none;
+          cursor: pointer;
           .submenu-icon-back svg {
             @extend .button-icon-small;
             stroke: var(--menu-foreground-color);

@@ -1,0 +1,159 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+
+.dashboard-sidebar {
+  background-color: $db-primary;
+  border-right: $s-1 solid $db-cuaternary;
+  display: flex;
+  flex-direction: column;
+  grid-column: 1 / span 2;
+  grid-row: 1 / span 2;
+  height: 100%;
+  margin: 0 $s-16 0 0;
+  padding: $s-16 0 0 0;
+  z-index: $z-index-1;
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 0;
+
+  hr {
+    border-color: transparent;
+    margin: $s-12 $s-16;
+  }
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  overflow-y: auto;
+  user-select: none;
+
+  &.no-overflow {
+    overflow: unset;
+  }
+
+  li {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    flex-shrink: 0;
+    padding: $s-8 $s-8 $s-8 $s-24;
+
+    a {
+      font-weight: $fw400;
+      width: 100%;
+      &:hover {
+        text-decoration: none;
+      }
+    }
+
+    svg {
+      fill: $db-secondary;
+      margin-right: $s-8;
+      height: $s-12;
+      width: $s-12;
+    }
+
+    span {
+      color: $df-secondary;
+      font-size: $fs-14;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &::before {
+      display: none;
+      background-color: transparent;
+      border-radius: $br-4;
+      content: "";
+      height: $s-24;
+      margin-right: $s-8;
+      width: $s-4;
+    }
+
+    &.recent-projects {
+      svg {
+        fill: $df-primary;
+      }
+    }
+
+    & .edit-wrapper {
+      border: $s-1 solid $df-primary;
+      border-radius: $br-4;
+      display: flex;
+      width: 100%;
+    }
+
+    input.element-title {
+      border: 0;
+      height: $s-32;
+      padding: $s-6;
+      margin: 0;
+      width: 100%;
+      background-color: $df-primary;
+    }
+
+    .element-subtitle {
+      color: $df-secondary;
+      font-style: italic;
+    }
+
+    &:hover {
+      background-color: $db-cuaternary;
+      &::before {
+        background-color: $df-primary;
+      }
+    }
+
+    &.current {
+      background-color: $db-cuaternary;
+      a {
+        font-weight: $fw400;
+        color: $da-primary;
+      }
+      span {
+        color: $da-primary;
+      }
+
+      &::before {
+        background-color: $da-tertiary;
+      }
+    }
+  }
+}
+
+.back-to-dashboard {
+  padding: $s-12 $s-16;
+  font-size: $fs-14;
+  cursor: pointer;
+  display: flex;
+
+  .icon {
+    display: flex;
+    align-items: center;
+    margin-right: $s-12;
+  }
+
+  .text {
+    color: $df-primary;
+  }
+
+  svg {
+    fill: $df-secondary;
+    transform: rotate(90deg);
+    width: $s-12;
+    height: $s-12;
+  }
+}

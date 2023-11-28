@@ -4,7 +4,582 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "common/refactor/common-refactor.scss" as *;
+@use "common/refactor/common-dashboard";
+
+.dashboard-container {
+  flex: 1 0 0;
+  margin-right: $s-16;
+  overflow-y: auto;
+  width: 100%;
+  border-top: $s-1 solid $db-cuaternary;
+
+  &.dashboard-projects {
+    user-select: none;
+  }
+  &.dashboard-shared {
+    width: calc(100vw - $s-320);
+    margin-right: $s-52;
+  }
+
+  &.search {
+    margin-top: $s-12;
+  }
+}
+
+.dashboard-team-webhooks {
+  display: flex;
+  flex-direction: column;
+  width: $s-800;
+  margin-left: $s-120;
+  margin-top: $s-80;
+  border: none;
+  align-items: flex-start;
+}
+
+.webhooks-empty {
+  align-items: center;
+  background-color: transparent;
+  border-radius: $br-8;
+  border: $s-1 solid $db-cuaternary;
+  color: $df-secondary;
+  display: flex;
+  flex-direction: column;
+  font-size: $fs-12;
+  justify-content: center;
+  margin-top: $s-32;
+  max-width: $s-1000;
+  min-height: $s-136;
+  padding: $s-32;
+  text-align: center;
+  width: $s-468;
+}
+
+.webhooks-hero-container {
+  max-width: $s-1000;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+
+  width: $s-468;
+  background-color: transparent;
+
+  .upload-button {
+    width: $s-100;
+  }
+
+  .btn-secondary {
+    margin-left: $s-12;
+  }
+}
+
+.webhooks-hero {
+  font-size: $fs-14;
+  display: flex;
+  flex-direction: column;
+  gap: $s-32;
+  justify-content: space-between;
+  margin-top: $s-32;
+  margin: 0;
+  padding: $s-32;
+  padding: 0;
+  width: $s-468;
+
+  .desc {
+    color: $df-secondary;
+    width: 100%;
+
+    h2 {
+      color: $df-primary;
+      font-size: $fs-24;
+      font-weight: regular;
+      margin-bottom: $s-32;
+    }
+    p {
+      color: $df-secondary;
+      margin-bottom: 0;
+      font-size: $fs-16;
+    }
+  }
+  .btn-primary {
+    @extends .button-primary;
+    height: $s-32;
+  }
+}
+
+.dropdown {
+  background-color: $db-tertiary;
+  border-radius: $br-8;
+  border: $s-1 solid $db-cuaternary;
+  box-shadow: 0 $s-2 $s-8 rgba(0, 0, 0, 0.25);
+  left: calc(-1 * $s-144);
+  max-height: $s-480;
+  min-width: $s-252;
+  overflow-y: auto;
+  position: absolute;
+  top: $s-32;
+  width: $s-152;
+  z-index: $z-index-4;
+
+  hr {
+    margin: 0;
+    border-color: $df-secondary;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: $fs-14;
+    padding: $s-4 $s-16;
+    border-radius: $br-8;
+    height: $s-40;
+    margin: $s-6;
+    color: $df-primary;
+
+    &:hover {
+      background-color: $db-cuaternary;
+    }
+
+    &.title {
+      font-weight: $fw700;
+      cursor: default;
+    }
+  }
+
+  .separator {
+    border-color: transparent;
+    margin-top: $s-8;
+  }
+
+  &.options-dropdown {
+    li {
+      color: $df-primary;
+      &.warning {
+        color: var(--warning-color);
+      }
+    }
+  }
+}
+
+.dashboard-table {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: $s-20;
+  font-size: $fs-16;
+
+  .table-header {
+    color: $df-secondary;
+    display: grid;
+    font-size: $fs-12;
+    grid-template-columns: 43% 1fr $s-108 $s-12;
+    height: $s-40;
+    max-width: $s-1000;
+    padding: 0 $s-16;
+    text-transform: uppercase;
+    user-select: none;
+    width: 100%;
+  }
+  .table-rows {
+    display: flex;
+    flex-direction: column;
+    max-width: $s-1000;
+    width: 100%;
+    margin-top: $s-16;
+    color: $db-secondary;
+  }
+
+  .table-row {
+    align-items: center;
+    background-color: $db-tertiary;
+    border-radius: $br-8;
+    color: $df-primary;
+    display: flex;
+    height: $s-64;
+    padding: 0 $s-16;
+    width: 100%;
+
+    &:not(:first-child) {
+      margin-top: $s-16;
+    }
+  }
+
+  .table-field {
+    display: flex;
+    align-items: center;
+
+    .icon {
+      padding-left: $s-12;
+      cursor: pointer;
+    }
+
+    &.name {
+      width: 43%;
+      min-width: $s-300;
+      display: flex;
+    }
+    &.roles {
+      flex-grow: 1;
+      cursor: default;
+      position: relative;
+      .rol-label {
+        user-select: none;
+      }
+      .rol-selector {
+        &.has-priv {
+          cursor: pointer;
+        }
+        min-width: $s-160;
+        height: $s-32;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: $s-4 $s-8;
+        font-size: $fs-14;
+        background-color: $db-cuaternary;
+        border-color: transparent;
+        border-radius: $br-8;
+      }
+
+      .dropdown {
+        left: 0;
+      }
+    }
+
+    &.actions {
+      position: relative;
+      .actions-dropdown {
+        max-height: $s-480;
+        min-width: $s-180;
+      }
+
+      svg {
+        fill: $df-secondary;
+      }
+    }
+
+    &.status {
+      .status-badge {
+        min-width: $s-76;
+        height: $s-24;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: $br-8;
+        color: $db-primary;
+        text-transform: uppercase;
+
+        &.pending {
+          background-color: var(--warning-color);
+        }
+
+        &.expired {
+          background-color: $df-secondary;
+        }
+
+        .status-label {
+          font-size: $fs-12;
+        }
+      }
+    }
+
+    &.uri {
+      flex-grow: 1;
+    }
+
+    &.active {
+      min-width: $s-100;
+    }
+
+    &.last-delivery {
+      display: flex;
+      justify-content: center;
+      width: $s-52;
+      position: relative;
+      .success svg {
+        fill: $da-tertiary;
+        width: $s-16;
+        height: $s-16;
+      }
+      .failure svg {
+        fill: var(--warning-color);
+        width: $s-16;
+        height: $s-16;
+      }
+
+      .icon-container {
+        width: $s-16;
+        height: $s-16;
+        overflow-x: visible;
+      }
+
+      .icon {
+        padding: 0;
+      }
+    }
+
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: calc(-1 * $s-56);
+      left: 50%;
+      transform: translate(-50%, 0);
+      text-align: center;
+
+      .label {
+        border-radius: $br-4;
+        color: $df-primary;
+        background-color: $db-secondary;
+        white-space: nowrap;
+        padding: $s-12 $s-20;
+      }
+
+      .arrow-down {
+        margin: 0 auto;
+        width: 0;
+        height: 0;
+        border-left: $s-8 solid transparent;
+        border-right: $s-8 solid transparent;
+        border-top: $s-8 solid $db-secondary;
+      }
+    }
+
+    .last-delivery-icon:hover {
+      .tooltip {
+        display: block;
+      }
+    }
+  }
+
+  .member-info {
+    display: flex;
+    flex-direction: column;
+    margin-left: $s-16;
+  }
+  .member-name {
+    font-size: $fs-16;
+  }
+  .you {
+    color: $df-secondary;
+    margin-left: $s-6;
+  }
+  .member-email {
+    color: $df-secondary;
+    font-size: $fs-12;
+  }
+  .member-image {
+    height: $s-32;
+    width: $s-32;
+    img {
+      border-radius: 50%;
+    }
+  }
+
+  .dashboard-team-webhooks & {
+    width: $s-800;
+    .table-rows {
+      padding-top: 0;
+      .table-row {
+        font-size: $fs-16;
+        min-height: $s-40;
+        height: fit-content;
+        .name {
+          color: $df-primary;
+          max-width: $s-480;
+        }
+        .expiration-date {
+          color: $df-secondary;
+        }
+      }
+    }
+  }
+
+  &.team-members {
+    margin-bottom: $s-52;
+  }
+
+  &.invitations {
+    .table-row {
+      display: grid;
+      grid-template-columns: 43% 1fr $s-108 $s-12;
+    }
+  }
+
+  svg {
+    width: $s-12;
+    height: $s-12;
+    fill: $df-secondary;
+  }
+}
+
+.empty-invitations {
+  height: $s-156;
+  max-width: $s-1000;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  margin-top: $s-16;
+  border: $s-1 solid $db-cuaternary;
+  border-radius: $br-8;
+  color: $df-secondary;
+}
+
+.team-settings {
+  display: flex;
+  justify-content: center;
+  margin-top: $s-16;
+
+  svg {
+    width: $s-20;
+    height: $s-20;
+  }
+
+  .horizontal-blocks {
+    display: flex;
+    max-width: $s-1000;
+    justify-content: space-between;
+    width: 100%;
+    flex-direction: column;
+    gap: $s-24;
+  }
+
+  .block {
+    display: flex;
+    max-width: $s-324;
+    width: $s-324;
+    flex-direction: column;
+    padding: $s-12;
+
+    .label {
+      color: $df-secondary;
+      font-size: $fs-12;
+      text-transform: uppercase;
+    }
+    .icon svg {
+      fill: $df-secondary;
+    }
+    .name,
+    .text {
+      color: $df-primary;
+    }
+  }
+
+  .info-block {
+    position: relative;
+    padding-top: $s-180;
+
+    .name {
+      margin-top: $s-12;
+      font-size: $fs-24;
+      color: $df-primary;
+      @include text-ellipsis;
+      margin-right: $s-88;
+    }
+
+    .icon {
+      position: absolute;
+      padding: $s-16;
+      right: 0;
+      top: 0;
+      left: 0;
+      height: $s-120;
+      width: $s-120;
+
+      img {
+        border-radius: 50%;
+        width: $s-120;
+        height: $s-120;
+      }
+
+      .update-overlay {
+        opacity: 0;
+        cursor: pointer;
+        position: absolute;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        color: $df-primary;
+        z-index: $z-index-modal;
+
+        background-color: $da-primary;
+        height: $s-120;
+        width: $s-120;
+
+        svg {
+          fill: $db-primary;
+        }
+      }
+
+      &:hover {
+        .update-overlay {
+          opacity: 1;
+          width: $s-72;
+          height: $s-72;
+          top: $s-16;
+          left: $s-16;
+        }
+      }
+    }
+  }
+
+  .owner-block {
+    img {
+      width: $s-32;
+      height: $s-32;
+      border-radius: 50%;
+    }
+
+    svg {
+      width: $s-12;
+      height: $s-12;
+      fill: $db-secondary;
+    }
+
+    .owner {
+      margin-top: $s-6;
+      display: flex;
+      align-items: center;
+      color: $db-secondary;
+      .icon {
+        margin-right: $s-12;
+      }
+    }
+
+    .summary {
+      margin-top: $s-6;
+      color: $db-secondary;
+      .icon {
+        padding: 0 $s-12;
+        margin-right: $s-12;
+      }
+    }
+  }
+
+  .stats-block {
+    svg {
+      fill: $db-secondary;
+    }
+
+    .projects,
+    .files {
+      margin-top: $s-8;
+      display: flex;
+      align-items: center;
+      color: $db-secondary;
+
+      .icon {
+        display: flex;
+        align-items: center;
+        padding: 0 $s-2;
+        margin-right: $s-12;
+      }
+    }
+  }
+}
 
 .modal-team-container {
   @extend .modal-container-base;

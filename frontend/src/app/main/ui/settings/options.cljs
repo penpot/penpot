@@ -5,14 +5,15 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.settings.options
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.spec :as us]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cljs.spec.alpha :as s]
@@ -37,48 +38,78 @@
 (mf/defc options-form
   {::mf/wrap-props false}
   []
-  (let [profile (mf/deref refs/profile)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        profile (mf/deref refs/profile)
         initial (mf/with-memo [profile]
                   (update profile :lang #(or % "")))
         form    (fm/use-form :spec ::options-form
-                             :initial initial)
-        new-css-system (features/use-feature "styles/v2")]
+                             :initial initial)]
 
-    [:& fm/form {:class "options-form"
-                 :on-submit on-submit
-                 :form form}
+    (if new-css-system
+      [:& fm/form {:class (stl/css :options-form)
+                   :on-submit on-submit
+                   :form form}
 
-     [:h2 (tr "labels.language")]
+       [:h3 (tr "labels.language")]
 
-     [:div.fields-row
-      [:& fm/select {:options (into [{:label "Auto (browser)" :value ""}]
-                                    i18n/supported-locales)
-                     :label (tr "dashboard.select-ui-language")
-                     :default ""
-                     :name :lang
-                     :data-test "setting-lang"}]]
+       [:div {:class (stl/css :fields-row)}
+        [:& fm/select {:options (into [{:label "Auto (browser)" :value ""}]
+                                      i18n/supported-locales)
+                       :label (tr "dashboard.select-ui-language")
+                       :default ""
+                       :name :lang
+                       :data-test "setting-lang"}]]
 
-     (when new-css-system
-       [:h2 (tr "dashboard.theme-change")]
-       [:div.fields-row
+       [:h3 (tr "dashboard.theme-change")]
+       [:div {:class (stl/css :fields-row)}
         [:& fm/select {:label (tr "dashboard.select-ui-theme")
                        :name :theme
                        :default "default"
                        :options [{:label "Penpot Dark (default)" :value "default"}
                                  {:label "Penpot Light" :value "light"}]
-                       :data-test "setting-theme"}]])
-     [:> fm/submit-button*
-      {:label (tr "dashboard.update-settings")
-       :data-test "submit-lang-change"}]]))
+                       :data-test "setting-theme"}]]
+
+       [:> fm/submit-button*
+        {:label (tr "dashboard.update-settings")
+         :data-test "submit-lang-change"
+         :class (stl/css :btn-primary)}]]
+
+      ;; OLD
+      [:& fm/form {:class "options-form"
+                   :on-submit on-submit
+                   :form form}
+
+       [:h2 (tr "labels.language")]
+
+       [:div.fields-row
+        [:& fm/select {:options (into [{:label "Auto (browser)" :value ""}]
+                                      i18n/supported-locales)
+                       :label (tr "dashboard.select-ui-language")
+                       :default ""
+                       :name :lang
+                       :data-test "setting-lang"}]]
+       
+       [:> fm/submit-button*
+        {:label (tr "dashboard.update-settings")
+         :data-test "submit-lang-change"}]])))
 
 ;; --- Password Page
 
 (mf/defc options-page
   []
-  (mf/use-effect
-   #(dom/set-html-title (tr "title.settings.options")))
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (mf/use-effect
+     #(dom/set-html-title (tr "title.settings.options")))
 
-  [:div.dashboard-settings
-   [:div.form-container
-    {:data-test "settings-form"}
-    [:& options-form {}]]])
+    (if new-css-system
+      [:div {:class (stl/css :dashboard-settings)}
+       [:div {:class (stl/css :form-container) :data-test "settings-form"}
+        [:h2 (tr "labels.settings")]
+        [:& options-form {}]]]
+      
+      ;; OLD
+      [:div.dashboard-settings
+       [:div.form-container
+        {:data-test "settings-form"}
+        [:& options-form {}]]])))
+

@@ -1,0 +1,375 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.dashboard-grid {
+  font-size: $fs-14;
+  height: 100%;
+  overflow-y: auto;
+  overflow: hidden;
+}
+
+.grid-row {
+  display: grid;
+  width: 100%;
+  padding: 0 $s-12;
+}
+
+.grid-item {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 $s-260;
+  height: $s-232;
+  margin: $s-12 $s-16 $s-16 $s-8;
+  position: relative;
+  text-align: center;
+
+  a,
+  button {
+    width: 100%;
+    font-weight: $fw400;
+  }
+  button {
+    background-color: transparent;
+    border: none;
+  }
+
+  @media #{$bp-max-1366} {
+    height: $s-200;
+    flex: 1 0 $s-232;
+  }
+
+  .grid-item-th {
+    border-radius: $br-4;
+    text-align: initial;
+
+    img {
+      object-fit: contain;
+    }
+  }
+
+  &.dragged {
+    border-radius: $br-4;
+    border: $br-2 solid $da-primary;
+    text-align: initial;
+    max-height: $s-160;
+  }
+
+  &.overlay {
+    border-radius: $br-4;
+    border: $s-2 solid $da-tertiary;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    width: 100%;
+    z-index: $z-index-1;
+  }
+
+  &:hover .overlay {
+    display: block;
+    opacity: 1;
+  }
+
+  .info-wrapper {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    cursor: pointer;
+  }
+
+  .item-info {
+    display: grid;
+    padding: $s-8;
+    text-align: left;
+    width: 100%;
+    font-size: $fs-12;
+
+    h3 {
+      border: $s-1 solid transparent;
+      color: $df-primary;
+      font-size: $fs-16;
+      font-weight: $fw400;
+      height: $s-28;
+      line-height: 1.92;
+      max-width: $s-260;
+      overflow: hidden;
+      padding-right: $s-8;
+      padding: 0;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
+
+      @media #{$bp-max-1366} {
+        max-width: $s-232;
+      }
+    }
+
+    .date {
+      color: $df-secondary;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+      white-space: nowrap;
+      max-width: $s-260;
+      &::first-letter {
+        text-transform: capitalize;
+      }
+      @media #{$bp-max-1366} {
+        max-width: $s-232;
+      }
+    }
+  }
+
+  .item-badge {
+    background-color: $da-primary;
+    border: none;
+    border-radius: $br-4;
+    position: absolute;
+    top: $s-8;
+    right: $s-8;
+    height: $s-32;
+    width: $s-32;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      fill: $db-secondary;
+      height: $s-16;
+      width: $s-16;
+    }
+  }
+
+  &.add-file {
+    border: $s-1 dashed $df-secondary;
+    justify-content: center;
+    box-shadow: none;
+
+    span {
+      color: $db-primary;
+      font-size: $fs-14;
+    }
+
+    &:hover {
+      background-color: $df-primary;
+      border: $s-2 solid $da-tertiary;
+    }
+  }
+}
+
+.drag-counter {
+  position: absolute;
+  top: $s-4;
+  left: $s-4;
+  width: $s-32;
+  height: $s-32;
+  background-color: $da-tertiary;
+  border-radius: $br-circle;
+  color: $db-secondary;
+  font-size: $fs-16;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// PROJECTS, ELEMENTS & ICONS GRID
+.project-th {
+  background-color: transparent;
+  border-radius: $br-8;
+  padding-top: $s-6;
+
+  &:hover,
+  &:focus,
+  &:focus-within {
+    background-color: $db-tertiary;
+    .project-th-actions {
+      opacity: 1;
+    }
+    a {
+      text-decoration: none;
+    }
+  }
+
+  .selected {
+    .grid-item-th {
+      border: 2px solid $da-tertiary;
+    }
+  }
+}
+
+.project-th-actions {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  opacity: 0;
+  right: $s-6;
+  width: $s-32;
+
+  span {
+    color: $db-secondary;
+  }
+
+  .project-th-icon {
+    align-items: center;
+    display: flex;
+    margin-right: $s-8;
+    margin-top: 0;
+
+    &.menu {
+      align-items: flex-end;
+      display: flex;
+      flex-direction: column;
+      height: $s-32;
+      justify-content: center;
+      margin-right: 0;
+      margin-top: $s-20;
+      width: 100%;
+
+      > svg {
+        fill: $df-secondary;
+        margin-right: 0;
+        height: $s-16;
+        width: $s-16;
+      }
+
+      &:hover,
+      &:focus {
+        > svg {
+          fill: $da-tertiary;
+        }
+      }
+    }
+  }
+}
+
+.project-th-actions.force-display {
+  opacity: 1;
+}
+
+.grid-item-th {
+  border-radius: $br-4;
+  cursor: pointer;
+
+  background-position: center;
+  background-size: auto 80%;
+  background-repeat: no-repeat;
+
+  height: $s-232;
+  max-height: $s-160;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+
+  background-color: var(--canvas-color);
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+
+  .img-th {
+    height: auto;
+    width: 100%;
+  }
+
+  svg {
+    height: 100%;
+    width: 100%;
+  }
+
+  svg#loader-pencil {
+    fill: $db-cuaternary;
+  }
+}
+
+// LIBRARY VIEW
+.library {
+  height: $s-580;
+}
+
+.grid-item.project-th.library {
+  height: $s-612;
+  width: $s-300;
+}
+
+.grid-item-th.library {
+  background-color: $db-tertiary;
+  flex-direction: column;
+  height: 90%;
+  justify-content: flex-start;
+  max-height: 550px;
+  padding: $s-32;
+
+  .asset-section {
+    font-size: $fs-12;
+    color: $df-secondary;
+
+    &:not(:first-child) {
+      margin-top: $s-16;
+    }
+  }
+
+  .asset-title {
+    display: flex;
+    font-size: $fs-12;
+    text-transform: uppercase;
+
+    .num-assets {
+      color: $df-secondary;
+    }
+  }
+
+  .asset-list-item {
+    align-items: center;
+    border-radius: $br-4;
+    border: $s-1 solid transparent;
+    color: $df-primary;
+    display: flex;
+    font-size: $fs-12;
+    margin-top: $s-4;
+    padding: $s-2;
+    position: relative;
+
+    .name-block {
+      color: $df-secondary;
+      width: calc(100% - $s-24 - $s-8);
+    }
+
+    .item-name {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    svg {
+      background-color: var(--canvas-color);
+      border-radius: $br-4;
+      border: $s-2 solid transparent;
+      height: $s-24;
+      margin-right: $s-8;
+      width: $s-24;
+    }
+
+    .color-name {
+      color: $df-primary;
+    }
+
+    .color-value {
+      color: $df-secondary;
+      margin-left: $s-4;
+      text-transform: uppercase;
+    }
+
+    .typography-sample {
+      height: $s-20;
+      margin-right: $s-4;
+      width: $s-20;
+    }
+  }
+}

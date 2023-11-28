@@ -5,12 +5,14 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.settings.sidebar
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.sidebar :refer [profile-section]]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
@@ -21,7 +23,8 @@
 
 (mf/defc sidebar-content
   [{:keys [profile section] :as props}]
-  (let [profile?       (= section :settings-profile)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        profile?       (= section :settings-profile)
         password?      (= section :settings-password)
         options?       (= section :settings-options)
         feedback?      (= section :settings-feedback)
@@ -66,55 +69,107 @@
                 (st/emit! (modal/show {:type :onboarding}))
                 (st/emit! (modal/show {:type :release-notes :version version}))))))]
 
-    [:div.sidebar-content
-     [:div.sidebar-content-section
-      [:div.back-to-dashboard {:on-click go-dashboard}
-       [:span.icon i/arrow-down]
-       [:span.text (tr "labels.dashboard")]]]
-     [:hr]
-
-     [:div.sidebar-content-section
-      [:ul.sidebar-nav.no-overflow
-       [:li {:class (when profile? "current")
-             :on-click go-settings-profile}
-        i/user
-        [:span.element-title (tr "labels.profile")]]
-
-       [:li {:class (when password? "current")
-             :on-click go-settings-password}
-        i/lock
-        [:span.element-title (tr "labels.password")]]
-
-       [:li {:class (when options? "current")
-             :on-click go-settings-options
-             :data-test "settings-profile"}
-        i/tree
-        [:span.element-title (tr "labels.settings")]]
-
-       (when (contains? cf/flags :access-tokens)
-         [:li {:class (when access-tokens? "current")
-               :on-click go-settings-access-tokens
-               :data-test "settings-access-tokens"}
-          i/icon-key
-          [:span.element-title (tr "labels.access-tokens")]])
-
+    (if new-css-system
+      [:div {:class (stl/css :sidebar-content)}
+       [:div {:class (stl/css :sidebar-content-section)}
+        [:div {:class (stl/css :back-to-dashboard)
+               :on-click go-dashboard}
+         [:span {:class (stl/css :icon)} i/arrow-down]
+         [:span {:class (stl/css :text)} (tr "labels.dashboard")]]]
        [:hr]
 
-       [:li {:on-click show-release-notes :data-test "release-notes"}
-        i/pencil
-        [:span.element-title (tr "labels.release-notes")]]
+       [:div {:class (stl/css :sidebar-content-section)}
+        [:ul {:class (stl/css :sidebar-nav :no-overflow)}
+         [:li {:class (when profile? (stl/css :current))
+               :on-click go-settings-profile}
+          [:span {:class (stl/css :element-title)} (tr "labels.profile")]]
 
-       (when (contains? cf/flags :user-feedback)
-         [:li {:class (when feedback? "current")
-               :on-click go-settings-feedback}
-          i/msg-info
-          [:span.element-title (tr "labels.give-feedback")]])]]]))
+         [:li {:class (when password? (stl/css :current))
+               :on-click go-settings-password}
+          [:span {:class (stl/css :element-title)} (tr "labels.password")]]
+
+         [:li {:class (when options? (stl/css :current))
+               :on-click go-settings-options
+               :data-test "settings-profile"}
+          [:span {:class (stl/css :element-title)} (tr "labels.settings")]]
+
+         (when (contains? cf/flags :access-tokens)
+           [:li {:class (when access-tokens? (stl/css :current))
+                 :on-click go-settings-access-tokens
+                 :data-test "settings-access-tokens"}
+            [:span {:class (stl/css :element-title)} (tr "labels.access-tokens")]])
+
+         [:hr]
+
+         [:li {:on-click show-release-notes :data-test "release-notes"}
+          [:span {:class (stl/css :element-title)} (tr "labels.release-notes")]]
+
+         (when (contains? cf/flags :user-feedback)
+           [:li {:class (when feedback? (stl/css :current))
+                 :on-click go-settings-feedback}
+            i/msg-info
+            [:span {:class (stl/css :element-title)} (tr "labels.give-feedback")]])]]]
+
+      ;; OLD
+      [:div.sidebar-content
+       [:div.sidebar-content-section
+        [:div.back-to-dashboard {:on-click go-dashboard}
+         [:span.icon i/arrow-down]
+         [:span.text (tr "labels.dashboard")]]]
+       [:hr]
+
+       [:div.sidebar-content-section
+        [:ul.sidebar-nav.no-overflow
+         [:li {:class (when profile? "current")
+               :on-click go-settings-profile}
+          i/user
+          [:span.element-title (tr "labels.profile")]]
+
+         [:li {:class (when password? "current")
+               :on-click go-settings-password}
+          i/lock
+          [:span.element-title (tr "labels.password")]]
+
+         [:li {:class (when options? "current")
+               :on-click go-settings-options
+               :data-test "settings-profile"}
+          i/tree
+          [:span.element-title (tr "labels.settings")]]
+
+         (when (contains? cf/flags :access-tokens)
+           [:li {:class (when access-tokens? "current")
+                 :on-click go-settings-access-tokens
+                 :data-test "settings-access-tokens"}
+            i/icon-key
+            [:span.element-title (tr "labels.access-tokens")]])
+
+         [:hr]
+
+         [:li {:on-click show-release-notes :data-test "release-notes"}
+          i/pencil
+          [:span.element-title (tr "labels.release-notes")]]
+
+         (when (contains? cf/flags :user-feedback)
+           [:li {:class (when feedback? "current")
+                 :on-click go-settings-feedback}
+            i/msg-info
+            [:span.element-title (tr "labels.give-feedback")]])]]])))
 
 (mf/defc sidebar
   {::mf/wrap [mf/memo]}
   [{:keys [profile locale section]}]
-  [:div.dashboard-sidebar.settings
-   [:& sidebar-content {:profile profile
-                        :section section}]
-   [:& profile-section {:profile profile
-                        :locale locale}]])
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:div {:class (stl/css :dashboard-sidebar :settings)}
+       [:& sidebar-content {:profile profile
+                            :section section}]
+       [:& profile-section {:profile profile
+                            :locale locale}]]
+
+      ;; OLD
+      [:div.dashboard-sidebar.settings
+       [:& sidebar-content {:profile profile
+                            :section section}]
+       [:& profile-section {:profile profile
+                            :locale locale}]])))
+

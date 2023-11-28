@@ -23,12 +23,18 @@
     padding: 0;
     cursor: pointer;
     color: var(--modal-title-foreground-color);
-    text-transform: none;
+    text-transform: uppercase;
     input {
       @extend .input-element;
       color: var(--input-foreground-color-active);
       width: calc(100% - $s-1);
       margin-top: 0;
+
+      &:focus {
+        outline: none;
+        border: $s-1 solid var(--input-border-color-focus);
+        border-radius: $br-8;
+      }
     }
     // Input autofill
     input:-webkit-autofill,
@@ -38,11 +44,6 @@
       -webkit-text-fill-color: var(--input-foreground-color-active) !important;
       -webkit-box-shadow: 0 0 0 28px var(--input-background-color) inset !important;
       border: $s-1 solid var(--input-background-color);
-    }
-    &:focus {
-      outline: none;
-      border: $s-1 solid var(--input-border-color-focus);
-      border-radius: $br-8;
     }
   }
   &:global(.invalid) {

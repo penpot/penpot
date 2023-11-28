@@ -5,23 +5,24 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.libraries
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.grid :refer [grid]]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.webapi :as wapi]
-   [beicon.core :as rx]
    [rumext.v2 :as mf]))
 
 (mf/defc libraries-page
   [{:keys [team] :as props}]
-  (let [files-map       (mf/deref refs/dashboard-shared-files)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        files-map       (mf/deref refs/dashboard-shared-files)
         projects        (mf/deref refs/dashboard-projects)
 
         default-project (->> projects vals (d/seek :is-default))
@@ -35,16 +36,7 @@
 
         components-v2   (features/use-feature "components/v2")
 
-        width           (mf/use-state nil)
-        rowref          (mf/use-ref)
-
-        itemsize        (if components-v2
-                          350
-                          (if (>= @width 1030) 280 230))
-        ratio           (if (some? @width) (/ @width itemsize) 0)
-        nitems          (mth/floor ratio)
-        limit           (min 10 nitems)
-        limit           (max 1 limit)]
+        [rowref limit] (hooks/use-dynamic-grid-item-width 350)]
 
     (mf/with-effect [team]
       (when team
@@ -57,29 +49,27 @@
       (st/emit! (dd/fetch-shared-files)
                 (dd/clear-selected-files)))
 
-    (mf/with-effect []
-      (let [node (mf/ref-val rowref)
-            mnt? (volatile! true)
-            sub  (->> (wapi/observe-resize node)
-                      (rx/observe-on :af)
-                      (rx/subs (fn [entries]
-                                 (let [row (first entries)
-                                       row-rect (.-contentRect ^js row)
-                                       row-width (.-width ^js row-rect)]
-                                   (when @mnt?
-                                     (reset! width row-width))))))]
-        (fn []
-          (vreset! mnt? false)
-          (rx/dispose! sub))))
+    (if new-css-system
+      [:*
+       [:header {:class (stl/css :dashboard-header) :ref rowref}
+        [:div#dashboard-libraries-title {:class (stl/css :dashboard-title)}
+         [:h1 (tr "dashboard.libraries-title")]]]
+       [:section {:class (stl/css :dashboard-container :no-bg :dashboard-shared)}
+        [:& grid {:files files
+                  :project default-project
+                  :origin :libraries
+                  :limit limit
+                  :library-view? components-v2}]]]
 
-    [:*
-     [:header.dashboard-header {:ref rowref}
-      [:div.dashboard-title#dashboard-libraries-title
-       [:h1 (tr "dashboard.libraries-title")]]]
-     [:section.dashboard-container.no-bg.dashboard-shared
-      [:& grid {:files files
-                :project default-project
-                :origin :libraries
-                :limit limit
-                :library-view? components-v2}]]]))
+      ;; OLD
+      [:*
+       [:header.dashboard-header {:ref rowref}
+        [:div.dashboard-title#dashboard-libraries-title
+         [:h1 (tr "dashboard.libraries-title")]]]
+       [:section.dashboard-container.no-bg.dashboard-shared
+        [:& grid {:files files
+                  :project default-project
+                  :origin :libraries
+                  :limit limit
+                  :library-view? components-v2}]]])))
 
