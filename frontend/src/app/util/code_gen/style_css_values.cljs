@@ -146,8 +146,9 @@
 
 (defmethod get-value :background
   [_ {:keys [fills] :as shape} _]
-  (when (and (not (cgc/svg-markup? shape)) (not (cfh/group-shape? shape)))
-    (fill->color (first fills))))
+  (let [single-fill? (= (count fills) 1)]
+    (when (and (not (cgc/svg-markup? shape)) (not (cfh/group-shape? shape)) single-fill?)
+      (fill->color (first fills)))))
 
 (defn get-stroke-data
   [stroke]
