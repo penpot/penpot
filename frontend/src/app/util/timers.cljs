@@ -6,6 +6,7 @@
 
 (ns app.util.timers
   (:require
+   [app.common.data :as d]
    [beicon.core :as rx]
    [promesa.core :as p]))
 
@@ -14,7 +15,12 @@
    (schedule 0 func))
   ([ms func]
    (let [sem (js/setTimeout #(func) ms)]
-     (reify rx/IDisposable
+     (reify
+       d/ICloseable
+       (close! [_]
+         (js/clearTimeout sem))
+
+       rx/IDisposable
        (-dispose [_]
          (js/clearTimeout sem))))))
 
