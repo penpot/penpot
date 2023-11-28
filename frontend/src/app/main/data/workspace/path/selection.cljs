@@ -13,6 +13,7 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.path.state :as st]
    [app.main.streams :as ms]
+   [app.util.mouse :as mse]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -118,16 +119,21 @@
     (ptk/reify ::handle-area-selection
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [zoom (get-in state [:workspace-local :zoom] 1)
-              stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
-              stoper (->> stream (rx/filter stop?))
+        (let [zoom   (get-in state [:workspace-local :zoom] 1)
+              stoper (rx/merge
+                      (->> stream
+                           (rx/filter mse/mouse-event?)
+                           (rx/filter mse/mouse-up-event?))
+                      (->> stream
+                           (rx/filter dwc/interrupt?)))
+
               from-p @ms/mouse-position]
           (rx/concat
            (->> ms/mouse-position
-                (rx/take-until stoper)
                 (rx/map #(grc/points->rect [from-p %]))
                 (rx/filter (partial valid-rect? zoom))
-                (rx/map update-area-selection))
+                (rx/map update-area-selection)
+                (rx/take-until stoper))
 
            (rx/of (select-node-area shift?)
                   (clear-area-selection))))))))

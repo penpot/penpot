@@ -20,6 +20,7 @@
    [app.main.data.workspace.viewport :as dwv]
    [app.main.repo :as rp]
    [app.main.streams :as ms]
+   [app.util.mouse :as mse]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -37,7 +38,8 @@
         (rx/merge
          (rx/of (dcm/retrieve-comment-threads file-id))
          (->> stream
-              (rx/filter ms/mouse-click?)
+              (rx/filter mse/mouse-event?)
+              (rx/filter mse/mouse-click-event?)
               (rx/switch-map #(rx/take 1 ms/mouse-position))
               (rx/with-latest-from ms/keyboard-space)
               (rx/filter (fn [[_ space]] (not space)) )

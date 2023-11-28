@@ -26,7 +26,7 @@
    [app.main.data.workspace.path.streams :as streams]
    [app.main.data.workspace.path.undo :as undo]
    [app.main.data.workspace.state-helpers :as wsh]
-   [app.main.streams :as ms]
+   [app.util.mouse :as mse]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -122,16 +122,12 @@
 
 (declare close-path-drag-end)
 
-(defn close-path-drag-start [position]
+(defn close-path-drag-start
+  [position]
   (ptk/reify ::close-path-drag-start
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stop-stream
-            (->> stream (rx/filter #(or (helpers/end-path-event? %)
-                                        (ms/mouse-up? %))))
-
-            content (st/get-path state :content)
-
+      (let [content  (st/get-path state :content)
             handlers (-> (upc/content->handlers content)
                          (get position))
 
@@ -140,8 +136,14 @@
 
             drag-events-stream
             (->> (streams/position-stream)
-                 (rx/take-until stop-stream)
-                 (rx/map #(drag-handler position idx prefix %)))]
+                 (rx/map #(drag-handler position idx prefix %))
+                 (rx/take-until
+                  (rx/merge
+                   (->> stream
+                        (rx/filter mse/mouse-event?)
+                        (rx/filter mse/mouse-up-event?))
+                   (->> stream
+                        (rx/filter helpers/end-path-event?)))))]
 
         (rx/concat
          (rx/of (add-node position))
@@ -163,12 +165,16 @@
   (ptk/reify ::start-path-from-point
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
-                                                    (ms/mouse-up? %))))
-            drag-events (->> (streams/position-stream)
-                             (rx/take-until mouse-up)
-                             (rx/map #(drag-handler %)))]
+      (let [stoper (rx/merge
+                    (->> stream
+                         (rx/filter mse/mouse-event?)
+                         (rx/filter mse/mouse-up-event?))
+                    (->> stream
+                         (rx/filter helpers/end-path-event?)))
 
+            drag-events (->> (streams/position-stream)
+                             (rx/map #(drag-handler %))
+                             (rx/take-until stoper))]
         (rx/concat
          (rx/of (add-node position))
          (streams/drag-stream
@@ -185,13 +191,16 @@
 
 (defn make-drag-stream
   [stream down-event]
-  (let [mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
-                                                (ms/mouse-up? %))))
+  (let [stoper (rx/merge
+                (->> stream
+                     (rx/filter mse/mouse-event?)
+                     (rx/filter mse/mouse-up-event?))
+                (->> stream
+                     (rx/filter helpers/end-path-event?)))
 
         drag-events (->> (streams/position-stream)
-                         (rx/take-until mouse-up)
-                         (rx/map #(drag-handler %)))]
-
+                         (rx/map #(drag-handler %))
+                         (rx/take-until stoper))]
     (rx/concat
      (rx/of (add-node down-event))
      (streams/drag-stream
@@ -209,8 +218,11 @@
 
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [mouse-down      (->> stream (rx/filter ms/mouse-down?))
-            end-path-events (->> stream (rx/filter helpers/end-path-event?))
+      (let [mouse-down      (->> stream
+                                 (rx/filter mse/mouse-event?)
+                                 (rx/filter mse/mouse-down-event?))
+            end-path-events (->> stream
+                                 (rx/filter helpers/end-path-event?))
 
             ;; Mouse move preview
             mousemove-events

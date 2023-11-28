@@ -11,76 +11,43 @@
    [app.main.store :as st]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
+   [app.util.mouse :as mse]
    [beicon.core :as rx]))
 
 ;; --- User Events
 
-(defrecord MouseEvent [type ctrl shift alt meta])
-(defrecord PointerEvent [source pt ctrl shift alt meta])
-(defrecord ScrollEvent [point])
-
-(defn mouse-event?
-  [v]
-  (instance? MouseEvent v))
-
-(defn mouse-down?
-  [v]
-  (and (mouse-event? v)
-       (= :down (:type v))))
-
-(defn mouse-up?
-  [v]
-  (and (mouse-event? v)
-       (= :up (:type v))))
-
-(defn mouse-click?
-  [v]
-  (and (mouse-event? v)
-       (= :click (:type v))))
-
-(defn mouse-double-click?
-  [v]
-  (and (mouse-event? v)
-       (= :double-click (:type v))))
-
-(defn pointer-event?
-  [v]
-  (instance? PointerEvent v))
-
-(defn scroll-event?
-  [v]
-  (instance? ScrollEvent v))
-
 (defn interaction-event?
   [event]
-  (or (kbd/keyboard-event? event)
-      (mouse-event? event)))
+  (or ^boolean (kbd/keyboard-event? event)
+      ^boolean (mse/mouse-event? event)))
 
 ;; --- Derived streams
 
+(defonce ^:private pointer
+  (->> st/stream
+       (rx/filter mse/pointer-event?)
+       (rx/share)))
+
 (defonce mouse-position
   (let [sub (rx/behavior-subject nil)
-        ob  (->> st/stream
-                 (rx/filter pointer-event?)
-                 (rx/filter #(= :viewport (:source %)))
-                 (rx/map :pt))]
+        ob  (->> pointer
+                 (rx/filter #(= :viewport (mse/get-pointer-source %)))
+                 (rx/map mse/get-pointer-position))]
     (rx/subscribe-with ob sub)
     sub))
 
 (defonce mouse-position-ctrl
   (let [sub (rx/behavior-subject nil)
-        ob  (->> st/stream
-                 (rx/filter pointer-event?)
-                 (rx/map :ctrl)
+        ob  (->> pointer
+                 (rx/map mse/get-pointer-ctrl-mod)
                  (rx/dedupe))]
     (rx/subscribe-with ob sub)
     sub))
 
 (defonce mouse-position-meta
   (let [sub (rx/behavior-subject nil)
-        ob  (->> st/stream
-                 (rx/filter pointer-event?)
-                 (rx/map :meta)
+        ob  (->> pointer
+                 (rx/map mse/get-pointer-meta-mod)
                  (rx/dedupe))]
     (rx/subscribe-with ob sub)
     sub))
@@ -92,18 +59,16 @@
 
 (defonce mouse-position-shift
   (let [sub (rx/behavior-subject nil)
-        ob  (->> st/stream
-                 (rx/filter pointer-event?)
-                 (rx/map :shift)
+        ob  (->> pointer
+                 (rx/map mse/get-pointer-shift-mod)
                  (rx/dedupe))]
     (rx/subscribe-with ob sub)
     sub))
 
 (defonce mouse-position-alt
   (let [sub (rx/behavior-subject nil)
-        ob  (->> st/stream
-                 (rx/filter pointer-event?)
-                 (rx/map :alt)
+        ob  (->> pointer
+                 (rx/map mse/get-pointer-alt-mod)
                  (rx/dedupe))]
     (rx/subscribe-with ob sub)
     sub))

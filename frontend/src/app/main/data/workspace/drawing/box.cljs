@@ -24,6 +24,7 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
+   [app.util.mouse :as mse]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -76,7 +77,13 @@
   (ptk/reify ::handle-drawing
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper       (rx/filter #(or (ms/mouse-up? %) (= % :interrupt))  stream)
+      (let [stoper       (rx/merge
+                          (->> stream
+                               (rx/filter mse/mouse-event?)
+                               (rx/filter mse/mouse-up-event?))
+                          (->> stream
+                               (rx/filter #(= % :interrupt))))
+
             layout       (get state :workspace-layout)
             zoom         (dm/get-in state [:workspace-local :zoom] 1)
 

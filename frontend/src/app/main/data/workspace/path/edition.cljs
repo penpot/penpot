@@ -26,6 +26,7 @@
    [app.main.data.workspace.path.undo :as undo]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
+   [app.util.mouse :as mse]
    [app.util.path.tools :as upt]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -150,7 +151,10 @@
   (ptk/reify ::drag-selected-points
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper (->> stream (rx/filter ms/mouse-up?))
+      (let [stopper (->> stream
+                         (rx/filter mse/mouse-event?)
+                         (rx/filter mse/mouse-up-event?))
+
             id (dm/get-in state [:workspace-local :edition])
 
             selected-points (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
@@ -263,8 +267,6 @@
          (rx/concat
           (rx/of (dch/update-shapes [id] upsp/convert-to-path))
           (->> (streams/move-handler-stream handler point handler opposite points)
-               (rx/take-until (->> stream (rx/filter #(or (ms/mouse-up? %)
-                                                          (streams/finish-edition? %)))))
                (rx/map
                 (fn [{:keys [x y alt? shift?]}]
                   (let [pos (cond-> (gpt/point x y)
@@ -275,7 +277,15 @@
                      prefix
                      (+ start-delta-x (- (:x pos) (:x handler)))
                      (+ start-delta-y (- (:y pos) (:y handler)))
-                     (not alt?))))))
+                     (not alt?)))))
+               (rx/take-until
+                (rx/merge
+                 (->> stream
+                      (rx/filter mse/mouse-event?)
+                      (rx/filter mse/mouse-up-event?))
+                 (->> stream
+                      (rx/filter streams/finish-edition?)))))
+
           (rx/concat (rx/of (apply-content-modifiers)))))))))
 
 (declare stop-path-edit)

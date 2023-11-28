@@ -21,6 +21,7 @@
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
+   [app.util.mouse :as mse]
    [app.util.path.simplify-curve :as ups]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -29,7 +30,8 @@
 
 (defn stoper-event?
   [{:keys [type] :as event}]
-  (ms/mouse-event? event) (= type :up))
+  (and (mse/mouse-event? event)
+       (= type :up)))
 
 (defn- insert-point
   [point]

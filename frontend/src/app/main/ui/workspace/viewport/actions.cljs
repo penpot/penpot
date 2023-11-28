@@ -21,12 +21,12 @@
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.streams :as ms]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.dom.normalize-wheel :as nw]
    [app.util.keyboard :as kbd]
+   [app.util.mouse :as mse]
    [app.util.object :as obj]
    [app.util.timers :as timers]
    [app.util.webapi :as wapi]
@@ -85,7 +85,7 @@
 
              left-click?
              (do
-               (st/emit! (ms/->MouseEvent :down ctrl? shift? alt? meta?)
+               (st/emit! (mse/->MouseEvent :down ctrl? shift? alt? meta?)
                          ::dwsp/interrupt)
 
                (when (and (not= edition id) (or text-editing? grid-editing?))
@@ -173,7 +173,7 @@
              hovering? (some? @hover)
              raw-pt (dom/get-client-position event)
              pt     (uwvv/point->viewport raw-pt)]
-         (st/emit! (ms/->MouseEvent :click ctrl? shift? alt? meta?))
+         (st/emit! (mse/->MouseEvent :click ctrl? shift? alt? meta?))
 
          (when (and hovering?
                     (not @space?)
@@ -213,7 +213,7 @@
 
              grid-layout-id (->> @hover-ids reverse (d/seek (partial ctl/grid-layout? objects)))]
 
-         (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt? meta?))
+         (st/emit! (mse/->MouseEvent :double-click ctrl? shift? alt? meta?))
 
          ;; Emit asynchronously so the double click to exit shapes won't break
          (timers/schedule
@@ -283,7 +283,7 @@
            middle-click? (= 2 (.-which event))]
 
        (when left-click?
-         (st/emit! (ms/->MouseEvent :up ctrl? shift? alt? meta?)))
+         (st/emit! (mse/->MouseEvent :up ctrl? shift? alt? meta?)))
 
        (when middle-click?
          (dom/prevent-default event)
@@ -357,16 +357,16 @@
 
          (rx/push! move-stream pt)
          (reset! last-position raw-pt)
-         (st/emit! (ms/->PointerEvent :delta delta
-                                      (kbd/ctrl? event)
-                                      (kbd/shift? event)
-                                      (kbd/alt? event)
-                                      (kbd/meta? event)))
-         (st/emit! (ms/->PointerEvent :viewport pt
-                                      (kbd/ctrl? event)
-                                      (kbd/shift? event)
-                                      (kbd/alt? event)
-                                      (kbd/meta? event))))))))
+         (st/emit! (mse/->PointerEvent :delta delta
+                                       (kbd/ctrl? event)
+                                       (kbd/shift? event)
+                                       (kbd/alt? event)
+                                       (kbd/meta? event)))
+         (st/emit! (mse/->PointerEvent :viewport pt
+                                       (kbd/ctrl? event)
+                                       (kbd/shift? event)
+                                       (kbd/alt? event)
+                                       (kbd/meta? event))))))))
 
 (defn on-mouse-wheel [zoom]
   (mf/use-callback

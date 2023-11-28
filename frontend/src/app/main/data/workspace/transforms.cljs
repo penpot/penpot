@@ -34,6 +34,7 @@
    [app.main.streams :as ms]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
+   [app.util.mouse :as mse]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -215,7 +216,9 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [initial-position @ms/mouse-position
-              stopper (rx/filter ms/mouse-up? stream)
+              stopper (->> stream
+                           (rx/filter mse/mouse-event?)
+                           (rx/filter mse/mouse-up-event?))
               layout  (:workspace-layout state)
               page-id (:current-page-id state)
               focus   (:workspace-focus-selected state)
@@ -306,7 +309,10 @@
 
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stoper          (rx/filter ms/mouse-up? stream)
+      (let [stoper          (->> stream
+                                 (rx/filter mse/mouse-event?)
+                                 (rx/filter mse/mouse-up-event?))
+
             group           (gsh/shapes->rect shapes)
             group-center    (grc/rect->center group)
             initial-angle   (gpt/angle @ms/mouse-position group-center)
@@ -370,7 +376,10 @@
      (watch [_ state stream]
        (let [initial  (deref ms/mouse-position)
 
-             stopper  (rx/filter ms/mouse-up? stream)
+             stopper  (->> stream
+                           (rx/filter mse/mouse-event?)
+                           (rx/filter mse/mouse-up-event?))
+
              zoom    (get-in state [:workspace-local :zoom] 1)
 
              ;; We toggle the selection so we don't have to wait for the event
@@ -444,7 +453,11 @@
              ids     (if (nil? ids) selected ids)
              shapes  (mapv #(get objects %) ids)
              duplicate-move-started? (get-in state [:workspace-local :duplicate-move-started?] false)
-             stopper (rx/filter ms/mouse-up? stream)
+
+             stopper (->> stream
+                          (rx/filter mse/mouse-event?)
+                          (rx/filter mse/mouse-up-event?))
+
              layout  (get state :workspace-layout)
              zoom    (get-in state [:workspace-local :zoom] 1)
              focus   (:workspace-focus-selected state)

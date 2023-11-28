@@ -14,6 +14,7 @@
    [app.main.snap :as snap]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.util.mouse :as mse]
    [beicon.core :as rx]
    [okulary.core :as l]
    [potok.core :as ptk]))
@@ -50,16 +51,20 @@
    (let [zoom  (get-in @st/state [:workspace-local :zoom] 1)
 
          start (-> @ms/mouse-position to-pixel-snap)
-         mouse-up (->> st/stream
-                       (rx/filter #(or (finish-edition? %)
-                                       (ms/mouse-up? %))))
+
+         stoper (rx/merge
+                    (->> st/stream
+                         (rx/filter mse/mouse-event?)
+                         (rx/filter mse/mouse-up-event?))
+                    (->> st/stream
+                         (rx/filter finish-edition?)))
 
          position-stream
          (->> ms/mouse-position
-              (rx/take-until mouse-up)
               (rx/map to-pixel-snap)
               (rx/filter (dragging? start zoom))
-              (rx/take 1))]
+              (rx/take 1)
+              (rx/take-until stoper))]
 
      (rx/merge
       (->> position-stream
