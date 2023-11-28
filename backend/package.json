@@ -1,13 +1,11 @@
 {
-  "name": "penpot-backend",
+  "name": "backend",
   "version": "1.0.0",
-  "main": "index.js",
   "license": "MPL-2.0",
   "dependencies": {
     "luxon": "^3.4.2",
     "sax": "^1.2.4"
   },
-  "scripts": {},
   "devDependencies": {
     "nodemon": "^3.0.1",
     "source-map-support": "^0.5.21",

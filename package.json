@@ -1,0 +1,21 @@
+{
+  "name": "penpot",
+  "version": "1.220.0",
+  "license": "MPL-2.0",
+  "packageManager": "yarn@4.0.2",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/penpot/penpot"
+  },
+  "author": "Kaleidos INC",
+  "resolutions": {
+    "@vitejs/plugin-react": "^4.2.0"
+  },
+  "workspaces": [
+    "common",
+    "frontend",
+    "exporter",
+    "backend"
+  ]
+}

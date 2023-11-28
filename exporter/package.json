@@ -1,13 +1,7 @@
 {
-  "name": "uxbox-exporter",
+  "name": "exporter",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "UXBOX LABS SL",
-  "license": "SEE LICENSE IN <LICENSE>",
+  "license": "MPL-2.0",
   "dependencies": {
     "archiver": "^6.0.0",
     "cookies": "^0.8.0",
@@ -23,5 +17,6 @@
   "devDependencies": {
     "shadow-cljs": "^2.25.10",
     "source-map-support": "^0.5.21"
-  }
+  },
+  "packageManager": "yarn@4.0.2"
 }
