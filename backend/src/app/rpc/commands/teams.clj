@@ -82,9 +82,8 @@
 
 (defn decode-row
   [{:keys [features] :as row}]
-  (when row
-    (cond-> row
-      features (assoc :features (db/decode-pgarray features #{})))))
+  (cond-> row
+    (some? features) (assoc :features (db/decode-pgarray features #{}))))
 
 ;; --- Query: Teams
 
@@ -187,7 +186,6 @@
     (when-not result
       (ex/raise :type :not-found
                 :code :team-does-not-exist))
-
     (-> result
         (decode-row)
         (process-permissions))))
