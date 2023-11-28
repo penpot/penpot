@@ -36,7 +36,7 @@
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
-(def drag-data* (atom false))
+(def drag-data* (atom {:local? false}))
 
 (defn set-drag-data! [data]
   (reset! drag-data* data))
@@ -102,10 +102,12 @@
 
         on-component-double-click
         (mf/use-fn
-         (mf/deps file-id component-id)
+         (mf/deps file-id component local)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (dw/go-to-main-instance file-id component-id))))
+           (if local
+             (st/emit! (dw/go-to-component component-id))
+             (st/emit! (dwl/nav-to-component-file file-id component)))))
 
         on-drop
         (mf/use-fn
@@ -519,7 +521,8 @@
          (fn [component-id event]
            (dom/prevent-default event)
            (let [pos (dom/get-client-position event)]
-             (when (and local? (not read-only?))
+
+             (when (not read-only?)
                (when-not (contains? selected component-id)
                  (on-clear-selection))
 
@@ -601,10 +604,13 @@
 
         on-show-main
         (mf/use-fn
-         (mf/deps current-component-id file-id)
+         (mf/deps current-component-id file-id local?)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (dw/go-to-main-instance file-id current-component-id))))
+           (if local?
+             (st/emit! (dw/go-to-component current-component-id))
+             (let [component (d/seek #(= (:id %) current-component-id) components)]
+               (st/emit! (dwl/nav-to-component-file file-id component))))))
 
         on-asset-click
         (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
@@ -667,44 +673,46 @@
                               :on-context-menu on-context-menu
                               :selected-full selected-full
                               :local ^boolean local?}])
-      (when ^boolean local?
-        [:& cmm/assets-context-menu
-         {:on-close on-close-menu
-          :state @menu-state
-          :options (if new-css-system
-                     [(when-not  (or multi-components? multi-assets?)
-                        {:option-name    (tr "workspace.assets.rename")
-                         :id             "assets-rename-component"
-                         :option-handler on-rename})
-                      (when-not multi-assets?
-                        {:option-name    (if components-v2
-                                           (tr "workspace.assets.duplicate-main")
-                                           (tr "workspace.assets.duplicate"))
-                         :id             "assets-duplicate-component"
-                         :option-handler on-duplicate})
 
+      [:& cmm/assets-context-menu
+       {:on-close on-close-menu
+        :state @menu-state
+        :options (if new-css-system
+                   [(when (and local? (not (or multi-components? multi-assets? read-only?)))
+                      {:option-name    (tr "workspace.assets.rename")
+                       :id             "assets-rename-component"
+                       :option-handler on-rename})
+                    (when (and local? (not (or multi-assets? read-only?)))
+                      {:option-name    (if components-v2
+                                         (tr "workspace.assets.duplicate-main")
+                                         (tr "workspace.assets.duplicate"))
+                       :id             "assets-duplicate-component"
+                       :option-handler on-duplicate})
+
+                    (when (and local? (not read-only?))
                       {:option-name    (tr "workspace.assets.delete")
                        :id             "assets-delete-component"
-                       :option-handler on-delete}
-                      (when-not multi-assets?
-                        {:option-name   (tr "workspace.assets.group")
-                         :id             "assets-group-component"
-                         :option-handler on-group})
+                       :option-handler on-delete})
+                    (when (and local? (not (or multi-assets? read-only?)))
+                      {:option-name   (tr "workspace.assets.group")
+                       :id             "assets-group-component"
+                       :option-handler on-group})
 
-                      (when (and components-v2 (not multi-assets?))
-                        {:option-name   (tr "workspace.shape.menu.show-main")
-                         :id             "assets-show-main-component"
-                         :option-handler on-show-main})]
+                    (when (and components-v2 (not multi-assets?))
+                      {:option-name   (tr "workspace.shape.menu.show-main")
+                       :id             "assets-show-main-component"
+                       :option-handler on-show-main})]
 
-                     [(when-not (or multi-components? multi-assets?)
-                        [(tr "workspace.assets.rename") on-rename])
-                      (when-not multi-assets?
-                        [(if components-v2
-                           (tr "workspace.assets.duplicate-main")
-                           (tr "workspace.assets.duplicate")) on-duplicate])
-                      [(tr "workspace.assets.delete") on-delete]
-                      (when-not multi-assets?
-                        [(tr "workspace.assets.group") on-group])
-                      (when (and components-v2 (not multi-assets?))
-                        [(tr "workspace.shape.menu.show-main") on-show-main])])}])]]))
+                   [(when (and local? (not (or multi-components? multi-assets? read-only?)))
+                      [(tr "workspace.assets.rename") on-rename])
+                    (when (and local? (not (or multi-assets? read-only?)))
+                      [(if components-v2
+                         (tr "workspace.assets.duplicate-main")
+                         (tr "workspace.assets.duplicate")) on-duplicate])
+                    (when (and local? (not read-only?))
+                      [(tr "workspace.assets.delete") on-delete])
+                    (when (and local? (not (or multi-assets? read-only?)))
+                      [(tr "workspace.assets.group") on-group])
+                    (when (and components-v2 (not multi-assets?))
+                      [(tr "workspace.shape.menu.show-main") on-show-main])])}]]]))
 
