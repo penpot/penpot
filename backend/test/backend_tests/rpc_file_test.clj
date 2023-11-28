@@ -8,6 +8,7 @@
   (:require
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
+   [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -228,7 +229,6 @@
         (t/is (= 2 (count rows))))
 
       )))
-
 
 (t/deftest file-gc-task-with-thumbnails
   (letfn [(add-file-media-object [& {:keys [profile-id file-id]}]
@@ -518,6 +518,195 @@
       (t/is (nil? (sto/get-object storage (:media-id fmo3))))
       (t/is (nil? (sto/get-object storage (:media-id fmo2))))
       (t/is (nil? (sto/get-object storage (:media-id fmo1)))))))
+
+
+(t/deftest file-gc-task-with-object-thumbnails
+  (letfn [(insert-file-object-thumbnail! [& {:keys [profile-id file-id page-id frame-id]}]
+            (let [object-id (thc/fmt-object-id file-id page-id frame-id "frame")
+                  mfile     {:filename "sample.jpg"
+                             :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                             :mtype "image/jpeg"
+                             :size 312043}
+
+                  params    {::th/type :create-file-object-thumbnail
+                             ::rpc/profile-id profile-id
+                             :file-id file-id
+                             :object-id object-id
+                             :tag "frame"
+                             :media mfile}
+                  out       (th/command! params)]
+
+              ;; (th/print-result! out)
+              (t/is (nil? (:error out)))
+              (:result out)))
+
+          (update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
+            (let [params {::th/type :update-file
+                          ::rpc/profile-id profile-id
+                          :id file-id
+                          :session-id (uuid/random)
+                          :revn revn
+                          :features cfeat/supported-features
+                          :changes changes}
+                  out    (th/command! params)]
+              ;; (th/print-result! out)
+              (t/is (nil? (:error out)))
+              (:result out)))]
+
+    (let [storage  (:app.storage/storage th/*system*)
+          profile  (th/create-profile* 1)
+          file     (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id (:default-project-id profile)
+                                       :is-shared false})
+
+          file-id  (get file :id)
+          page-id  (first (get-in file [:data :pages]))
+
+          frame-id-1 (uuid/random)
+          frame-id-2 (uuid/random)
+
+          fot-1      (insert-file-object-thumbnail! :profile-id (:id profile)
+                                                    :file-id file-id
+                                                    :page-id page-id
+                                                    :frame-id frame-id-1)
+          fot-2      (insert-file-object-thumbnail! :profile-id (:id profile)
+                                                    :page-id page-id
+                                                    :file-id file-id
+                                                    :frame-id frame-id-2)
+          ]
+
+      ;; Add a two frames
+
+      (update-file!
+       :file-id (:id file)
+       :profile-id (:id profile)
+       :revn 0
+       :changes
+       [{:type :add-obj
+         :page-id page-id
+         :id frame-id-1
+         :parent-id uuid/zero
+         :frame-id uuid/zero
+         :obj (cts/setup-shape
+               {:id frame-id-2
+                :name "Board"
+                :frame-id uuid/zero
+                :parent-id uuid/zero
+                :type :frame})}
+
+        {:type :add-obj
+         :page-id page-id
+         :id frame-id-2
+         :parent-id uuid/zero
+         :frame-id uuid/zero
+         :obj (cts/setup-shape
+               {:id frame-id-2
+                :name "Board"
+                :frame-id uuid/zero
+                :parent-id uuid/zero
+                :type :frame})}])
+
+      ;; Check that reference storage objects are the same because of
+      ;; deduplication feature.
+      (t/is (= (:media-id fot-1) (:media-id fot-2)))
+
+      ;; If we launch gc-touched-task, we should have 1 item to freeze
+      ;; because of the deduplication (we have uploaded 2 times the
+      ;; same files).
+
+      (let [res (th/run-task! "storage-gc-touched" {:min-age (dt/duration 0)})]
+        (t/is (= 1 (:freeze res)))
+        (t/is (= 0 (:delete res))))
+
+      ;; run the file-gc task immediately without forced min-age
+      (let [res (th/run-task! "file-gc")]
+        (t/is (= 0 (:processed res))))
+
+      ;; run the task again
+      (let [res (th/run-task! "file-gc" {:min-age 0})]
+        (t/is (= 1 (:processed res))))
+
+      ;; retrieve file and check trimmed attribute
+      (let [row (th/db-get :file {:id (:id file)})]
+        (t/is (true? (:has-media-trimmed row))))
+
+      ;; check file media objects
+      (let [rows (th/db-exec! ["select * from file_tagged_object_thumbnail where file_id = ?" file-id])]
+        ;; (pp/pprint rows)
+        (t/is (= 2 (count rows))))
+
+      ;; check file media objects
+      (let [rows (th/db-exec! ["select * from storage_object where deleted_at is null"])]
+        ;; (pp/pprint rows)
+        (t/is (= 1 (count rows))))
+
+      ;; The underlying storage objects are available.
+      (t/is (some? (sto/get-object storage (:media-id fot-1))))
+      (t/is (some? (sto/get-object storage (:media-id fot-2))))
+
+      ;; proceed to remove one frame
+      (update-file!
+       :file-id file-id
+       :profile-id (:id profile)
+       :revn 0
+       :changes [{:type :del-obj
+                  :page-id page-id
+                  :id frame-id-2}])
+
+      (let [res (th/run-task! "file-gc" {:min-age (dt/duration 0)})]
+        (t/is (= 1 (:processed res))))
+
+      (let [rows (th/db-exec! ["select * from file_tagged_object_thumbnail where file_id = ?" file-id])]
+        ;; (pp/pprint rows)
+        (t/is (= 1 (count rows)))
+        (t/is (= (thc/fmt-object-id file-id page-id frame-id-1 "frame")
+                 (-> rows first :object-id))))
+
+      ;; Now that file-gc have deleted the object thumbnail lets
+      ;; execute the touched-gc task
+      (let [res (th/run-task! "storage-gc-touched" {:min-age (dt/duration 0)})]
+        (t/is (= 1 (:freeze res))))
+
+      ;; check file media objects
+      (let [rows (th/db-exec! ["select * from storage_object where deleted_at is null"])]
+        ;; (pp/pprint rows)
+        (t/is (= 1 (count rows))))
+
+      ;; proceed to remove one frame
+      (update-file!
+       :file-id file-id
+       :profile-id (:id profile)
+       :revn 0
+       :changes [{:type :del-obj
+                  :page-id page-id
+                  :id frame-id-1}])
+
+      (let [res (th/run-task! "file-gc" {:min-age (dt/duration 0)})]
+        (t/is (= 1 (:processed res))))
+
+      (let [rows (th/db-exec! ["select * from file_tagged_object_thumbnail where file_id = ?" file-id])]
+        (t/is (= 0 (count rows))))
+
+      ;; We still have th storage objects in the table
+      (let [rows (th/db-exec! ["select * from storage_object where deleted_at is null"])]
+        ;; (pp/pprint rows)
+        (t/is (= 1 (count rows))))
+
+      ;; Now that file-gc have deleted the object thumbnail lets
+      ;; execute the touched-gc task
+      (let [res (th/run-task! "storage-gc-touched" {:min-age (dt/duration 0)})]
+        (t/is (= 1 (:delete res))))
+
+      ;; check file media objects
+      (let [rows (th/db-exec! ["select * from storage_object where deleted_at is null"])]
+        ;; (pp/pprint rows)
+        (t/is (= 0 (count rows))))
+
+      )))
+
+
+
+
 
 (t/deftest permissions-checks-creating-file
   (let [profile1 (th/create-profile* 1)
@@ -833,7 +1022,7 @@
                           :mtype "image/jpeg"}}
             {:keys [error result] :as out} (th/command! data)]
         (t/is (nil? error))
-        (t/is (nil? result)))
+        (t/is (map? result)))
 
       ;; Check the result
       (let [data {::th/type :get-file-data-for-thumbnail
@@ -891,12 +1080,12 @@
                           :mtype "image/jpeg"}}
             {:keys [error result] :as out} (th/command! data)]
         (t/is (nil? error))
-        (t/is (nil? result)))
+        (t/is (map? result)))
 
       ;; Wait to file be ellegible for GC
       (th/sleep 300)
 
-      ;; run the task again
+      ;; run the task
       (let [res (th/run-task! "file-gc" {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
@@ -916,7 +1105,7 @@
                           :mtype "image/jpeg"}}
             {:keys [error result] :as out} (th/command! data)]
         (t/is (nil? error))
-        (t/is (nil? result)))
+        (t/is (map? result)))
 
       ;; Mark file as modified
       (th/db-exec! ["update file set has_media_trimmed=false where id=?" (:id file)])

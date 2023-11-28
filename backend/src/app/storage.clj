@@ -322,10 +322,11 @@
 ;; and the object is still valid) or deleted (no more references to
 ;; this object so is ready to be deleted).
 
-(declare sql:retrieve-touched-objects-chunk)
 (declare sql:retrieve-file-media-object-nrefs)
-(declare sql:retrieve-team-font-variant-nrefs)
+(declare sql:retrieve-file-object-thumbnail-nrefs)
 (declare sql:retrieve-profile-nrefs)
+(declare sql:retrieve-team-font-variant-nrefs)
+(declare sql:retrieve-touched-objects-chunk)
 
 (defmethod ig/pre-init-spec ::gc-touched-task [_]
   (s/keys :req [::db/pool]))
@@ -340,6 +341,9 @@
 
           (get-profile-nrefs [conn id]
             (-> (db/exec-one! conn [sql:retrieve-profile-nrefs id id]) :nrefs))
+
+          (get-file-object-thumbnails [conn id]
+            (-> (db/exec-one! conn [sql:retrieve-file-object-thumbnail-nrefs id]) :nrefs))
 
           (mark-freeze-in-bulk [conn ids]
             (db/exec-one! conn ["update storage_object set touched_at=null where id = ANY(?)"
@@ -410,9 +414,10 @@
                groups    (retrieve-touched conn)]
           (if-let [[bucket ids] (first groups)]
             (let [[f d] (case bucket
-                          "file-media-object" (process-objects! conn get-file-media-object-nrefs ids bucket)
-                          "team-font-variant" (process-objects! conn get-team-font-variant-nrefs ids bucket)
-                          "profile"           (process-objects! conn get-profile-nrefs ids bucket)
+                          "file-media-object"     (process-objects! conn get-file-media-object-nrefs ids bucket)
+                          "team-font-variant"     (process-objects! conn get-team-font-variant-nrefs ids bucket)
+                          "file-object-thumbnail" (process-objects! conn get-file-object-thumbnails ids bucket)
+                          "profile"               (process-objects! conn get-profile-nrefs ids bucket)
                           (ex/raise :type :internal
                                     :code :unexpected-unknown-reference
                                     :hint (dm/fmt "unknown reference %" bucket)))]
@@ -434,6 +439,9 @@
 (def sql:retrieve-file-media-object-nrefs
   "select ((select count(*) from file_media_object where media_id = ?) +
            (select count(*) from file_media_object where thumbnail_id = ?)) as nrefs")
+
+(def sql:retrieve-file-object-thumbnail-nrefs
+  "select (select count(*) from file_tagged_object_thumbnail where media_id = ?) as nrefs")
 
 (def sql:retrieve-team-font-variant-nrefs
   "select ((select count(*) from team_font_variant where woff1_file_id = ?) +

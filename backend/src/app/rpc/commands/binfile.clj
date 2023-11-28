@@ -844,7 +844,7 @@
                   ::l/sync? true))))))
 
 (defmethod read-section :v1/sobjects
-  [{:keys [::sto/storage ::db/conn ::input ::overwrite?]}]
+  [{:keys [::sto/storage ::db/conn ::input ::overwrite? ::timestamp]}]
   (let [storage (media/configure-assets-storage storage)
         ids     (read-obj! input)
         thumb?  (into #{} (map :media-id) (:thumbnails @*state*))]
@@ -865,15 +865,14 @@
               content         (-> (sto/content resource size)
                                   (sto/wrap-with-hash hash))
 
-              params          (assoc mdata ::sto/content content)
+              params          (-> mdata
+                                  (assoc ::sto/content content)
+                                  (assoc ::sto/deduplicate? true)
+                                  (assoc ::sto/touched-at timestamp))
+
               params          (if (thumb? id)
-                                (-> params
-                                    (assoc ::sto/deduplicate? false)
-                                    (assoc :bucket "file-object-thumbnail"))
-                                (-> params
-                                    (assoc ::sto/deduplicate? true)
-                                    (assoc ::sto/touched-at (dt/now))
-                                    (assoc :bucket "file-media-object")))
+                                (assoc params :bucket "file-object-thumbnail")
+                                (assoc params :bucket "file-media-object"))
 
               sobject         (sto/put-object! storage params)]
 
@@ -893,7 +892,7 @@
 
       (let [file-id (lookup-index (:file-id item))]
         (if (= file-id (:file-id item))
-          (l/warn :hint "ignoring file media object" :file-id (str (:file-id item)) ::l/sync? true)
+          (l/warn :hint "ignoring file media object" :file-id (str file-id) ::l/sync? true)
           (db/insert! conn :file-media-object
                       (-> item
                           (assoc :file-id file-id)
@@ -908,8 +907,7 @@
                :media-id (str (:media-id item))
                :object-id (:object-id item)
                ::l/sync? true)
-        (db/insert! conn :file-tagged-object-thumbnail
-                    (update item :media-id lookup-index)
+        (db/insert! conn :file-tagged-object-thumbnail item
                     {:on-conflict-do-nothing overwrite?})))))
 
 (defn- lookup-index

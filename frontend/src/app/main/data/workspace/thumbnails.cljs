@@ -164,7 +164,7 @@
                                                            :object-id object-id
                                                            :media blob
                                                            :tag (or tag "frame")}]
-                                               (rp/cmd! :upsert-file-object-thumbnail params))))
+                                               (rp/cmd! :create-file-object-thumbnail params))))
                                 (rx/catch rx/empty)
                                 (rx/ignore)))))
              (rx/catch (fn [cause]

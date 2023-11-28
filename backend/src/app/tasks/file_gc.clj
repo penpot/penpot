@@ -118,15 +118,15 @@
                          ;; have fill-image attribute (which initially
                          ;; designed for :path shapes).
                          (sequence
-                           (keep :id)
-                           (concat [(:fill-image obj)
-                                    (:metadata obj)]
-                             (map :fill-image (:fills obj))
-                             (map :stroke-image (:strokes obj))
-                             (->> (:content obj)
-                                  (tree-seq map? :children)
-                                  (mapcat :fills)
-                                  (map :fill-image)))))))
+                          (keep :id)
+                          (concat [(:fill-image obj)
+                                   (:metadata obj)]
+                                  (map :fill-image (:fills obj))
+                                  (map :stroke-image (:strokes obj))
+                                  (->> (:content obj)
+                                       (tree-seq map? :children)
+                                       (mapcat :fills)
+                                       (map :fill-image)))))))
         pages (concat
                (vals (:pages-index data))
                (vals (:components data)))]
@@ -142,10 +142,10 @@
                     (remove #(contains? used (:id %))))]
 
     (doseq [mobj unused]
-      (l/debug :hint "delete file media object"
-               :id (:id mobj)
-               :media-id (:media-id mobj)
-               :thumbnail-id (:thumbnail-id mobj))
+      (l/dbg :hint "delete file media object"
+             :id (:id mobj)
+             :media-id (:media-id mobj)
+             :thumbnail-id (:thumbnail-id mobj))
 
       ;; NOTE: deleting the file-media-object in the database
       ;; automatically marks as touched the referenced storage
@@ -154,21 +154,23 @@
       ;; them.
       (db/delete! conn :file-media-object {:id (:id mobj)}))))
 
-(defn- clean-file-tagged-object-thumbnails!
+(defn- clean-file-object-thumbnails!
   [{:keys [::db/conn ::sto/storage]} file-id data]
-  (let [stored (->> (db/query conn :file_tagged_object_thumbnail
+  (let [stored (->> (db/query conn :file-tagged-object-thumbnail
                               {:file-id file-id}
                               {:columns [:object-id]})
                     (into #{} (map :object-id)))
 
         using  (into #{}
-                     (mapcat
-                      (fn [{:keys [id objects]}]
-                        (->> (ctt/get-frames objects)
-                             (mapcat
-                              #(vector
-                                (thc/fmt-object-id file-id id (:id %) "frame")
-                                (thc/fmt-object-id file-id id (:id %) "component"))))))
+                     (comp
+                      (mapcat (fn [{:keys [id objects]}]
+                                (->> (ctt/get-frames objects)
+                                     (map #(assoc % :page-id id)))))
+                      (mapcat (fn [{:keys [id page-id]}]
+                                (list
+                                 (thc/fmt-object-id file-id page-id id "frame")
+                                 (thc/fmt-object-id file-id page-id id "component")))))
+
                      (vals (:pages-index data)))
 
         unused (set/difference stored using)]
@@ -179,15 +181,15 @@
                      " returning media_id")
             res (db/exec! conn [sql file-id (db/create-array conn "text" unused)])]
 
+        (l/dbg :hint "delete file object thumbnails"
+               :file-id (str file-id)
+               :total (count res))
+
         (doseq [media-id (into #{} (keep :media-id) res)]
           ;; Mark as deleted the storage object related with the
           ;; photo-id field.
-          (l/trace :hint "mark storage object as deleted" :id media-id)
-          (sto/del-object! storage media-id))
-
-        (l/debug :hint "delete file object thumbnails"
-                 :file-id file-id
-                 :total (count res))))))
+          (l/trc :hint "touch file object thumbnail storage object" :id (str media-id))
+          (sto/touch-object! storage media-id))))))
 
 (defn- clean-file-thumbnails!
   [{:keys [::db/conn ::sto/storage]} file-id revn]
@@ -197,15 +199,15 @@
         res (db/exec! conn [sql file-id revn])]
 
     (when (seq res)
+      (l/dbg :hint "delete file thumbnails"
+             :file-id (str file-id)
+             :total (count res))
+
       (doseq [media-id (into #{} (keep :media-id) res)]
         ;; Mark as deleted the storage object related with the
         ;; media-id field.
-        (l/trace :hint "mark storage object as deleted" :id media-id)
-        (sto/del-object! storage media-id))
-
-      (l/debug :hint "delete file thumbnails"
-               :file-id file-id
-               :total (count res)))))
+        (l/trc :hint "delete file thumbnail storage object" :id (str media-id))
+        (sto/del-object! storage media-id)))))
 
 (def ^:private
   sql:get-files-for-library
@@ -250,7 +252,7 @@
                        (mapv :id))]
 
       (when (seq unused)
-        (l/debug :hint "clean deleted components" :total (count unused))
+        (l/dbg :hint "clean deleted components" :total (count unused))
 
         (let [data (reduce ctkl/delete-component data unused)]
           (db/update! conn :file
@@ -283,12 +285,12 @@
           rows (db/exec! conn [sql file-id used])]
 
       (doseq [fragment-id (map :id rows)]
-        (l/trace :hint "remove unused file data fragment" :id (str fragment-id))
+        (l/trc :hint "remove unused file data fragment" :id (str fragment-id))
         (db/delete! conn :file-data-fragment {:id fragment-id :file-id file-id})))))
 
 (defn- process-file
   [{:keys [::db/conn] :as cfg} {:keys [id data revn modified-at features] :as file}]
-  (l/debug :hint "processing file" :id id :modified-at modified-at)
+  (l/dbg :hint "processing file" :id id :modified-at modified-at)
 
   (binding [pmap/*load-fn* (partial files/load-pointer conn id)
             pmap/*tracked* (atom {})]
@@ -297,7 +299,7 @@
                    (pmg/migrate-data))]
 
       (clean-file-media! conn id data)
-      (clean-file-tagged-object-thumbnails! cfg id data)
+      (clean-file-object-thumbnails! cfg id data)
       (clean-file-thumbnails! cfg id revn)
       (clean-deleted-components! conn id data)
 

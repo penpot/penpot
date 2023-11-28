@@ -335,6 +335,10 @@
 
    {:name "0106-mod-team-table"
     :fn (mg/resource "app/migrations/sql/0106-mod-team-table.sql")}
+
+   {:name "0107-mod-file-tagged-object-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0107-mod-file-tagged-object-thumbnail-table.sql")}
+
    ])
 
 (defn apply-migrations!
