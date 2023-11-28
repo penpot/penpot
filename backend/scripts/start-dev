@@ -23,11 +23,15 @@ export PENPOT_FLAGS="\
        disable-soft-file-schema-validation \
        disable-soft-file-validation";
 
+
 # Initialize MINIO config
-mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin
-mc admin user add penpot-s3 penpot-devenv penpot-devenv
-mc admin policy attach penpot-s3 readwrite --user=penpot-devenv
-mc mb penpot-s3/penpot -p
+mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin -q
+mc admin user add penpot-s3 penpot-devenv penpot-devenv -q
+mc admin policy list penpot-s3 | grep -F -q -x "readwrite"
+if [ "$?" = "1" ]; then
+    mc admin policy attach penpot-s3 readwrite --user=penpot-devenv -q
+fi
+mc mb penpot-s3/penpot -p -q
 
 export AWS_ACCESS_KEY_ID=penpot-devenv
 export AWS_SECRET_ACCESS_KEY=penpot-devenv
