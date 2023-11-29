@@ -201,6 +201,7 @@
         workspace-libraries (mf/deref refs/workspace-libraries)
         objects             (mf/deref refs/workspace-page-objects)
         libraries           (assoc workspace-libraries current-file-id (assoc workspace-file :data workspace-data))
+        single-comp         (ctf/get-component libraries (:component-file shape) (:component-id shape))
         every-same-file?    (every? #(= (:component-file shape) (:component-file %)) shapes)
         current-comp-id     (when (every? #(= (:component-id shape) (:component-id %)) shapes)
                               (:component-id shape))
@@ -208,10 +209,10 @@
         file-id             (if every-same-file?
                               (:component-file shape)
                               current-file-id)
-        paths                (->> shapes
-                                  (map :name)
-                                  (map cfh/split-path)
-                                  (map butlast))
+        orig-components     (map #(ctf/get-component libraries (:component-file %) (:component-id %)) shapes)
+        paths                (->> orig-components
+                                  (map :path)
+                                  (map cfh/split-path))
 
         find-common-path    (fn common-path [path n]
                               (let [current (nth (first paths) n nil)]
@@ -221,7 +222,7 @@
                                   (common-path (conj path current) (inc n)))))
 
         path                (if single?
-                              (cfh/butlast-path (:name shape))
+                              (:path single-comp)
                               (cfh/join-path (if (not every-same-file?)
                                                ""
                                                (find-common-path [] 0))))
@@ -358,6 +359,10 @@
                      :title (:path filters)}
             [:span i/arrow-slide]
             [:span (:path filters)]])
+
+         (when (empty? items)
+           [:div {:class (stl/css :component-list-empty)}
+            (tr "workspace.options.component.swap.empty")])
 
          (when (:listing-thumbs? filters)
            [:div {:class (stl/css :component-list)}

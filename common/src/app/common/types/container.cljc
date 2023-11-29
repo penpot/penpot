@@ -345,7 +345,9 @@
                             update-new-shape
                             (fn [object _] object)
                             force-id
-                            keep-ids?)
+                            keep-ids?
+                            frame-id)
+
 
          ;; Fix empty parent-id and remap all grid cells to the new ids.
          remap-ids

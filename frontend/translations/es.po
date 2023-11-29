@@ -3706,9 +3706,12 @@ msgstr "Editar una nota"
 msgid "workspace.options.component.main"
 msgstr "Principal"
 
-
 msgid "workspace.options.component.swap"
 msgstr "Intercambiar componente"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "Aún no hay recursos en esta biblioteca"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
 msgstr "Restricciones"

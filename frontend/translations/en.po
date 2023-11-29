@@ -3641,9 +3641,12 @@ msgstr "Edit an annotation"
 msgid "workspace.options.component.main"
 msgstr "Main"
 
-
 msgid "workspace.options.component.swap"
 msgstr "Swap component"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "There are no assets in this library yet"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
 msgstr "Constraints"
