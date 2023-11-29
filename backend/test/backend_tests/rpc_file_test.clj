@@ -124,8 +124,7 @@
         (t/is (nil? (:error out)))
 
         (let [result (:result out)]
-          (t/is (= 0 (count result))))))
-    ))
+          (t/is (= 0 (count result))))))))
 
 (t/deftest file-gc-with-fragments
   (letfn [(update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
@@ -226,9 +225,7 @@
 
       ;; Check the number of fragments;
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
-        (t/is (= 2 (count rows))))
-
-      )))
+        (t/is (= 2 (count rows)))))))
 
 (t/deftest file-gc-task-with-thumbnails
   (letfn [(add-file-media-object [& {:keys [profile-id file-id]}]
@@ -361,8 +358,7 @@
       (t/is (nil? (sto/get-object storage (:media-id fmo2))))
       (t/is (nil? (sto/get-object storage (:thumbnail-id fmo2))))
       (t/is (nil? (sto/get-object storage (:media-id fmo1))))
-      (t/is (nil? (sto/get-object storage (:thumbnail-id fmo1))))
-      )))
+      (t/is (nil? (sto/get-object storage (:thumbnail-id fmo1)))))))
 
 (t/deftest file-gc-image-fills-and-strokes
   (letfn [(add-file-media-object [& {:keys [profile-id file-id]}]
@@ -414,51 +410,51 @@
 
       ;; Update file inserting a new image object
       (update-file!
-        :file-id (:id file)
-        :profile-id (:id profile)
-        :revn 0
-        :changes
-        [{:type :add-obj
-          :page-id page-id
-          :id s-shid
-          :parent-id uuid/zero
-          :frame-id uuid/zero
-          :components-v2 true
-          :obj (cts/setup-shape
-                 {:id s-shid
-                  :name "image"
-                  :frame-id uuid/zero
-                  :parent-id uuid/zero
-                  :type :image
-                  :metadata {:id (:id fmo1) :width 100 :height 100 :mtype "image/jpeg"}
-                  :fills [{:opacity 1 :fill-image {:id (:id fmo2) :width 100 :height 100 :mtype "image/jpeg"}}]
-                  :strokes [{:opacity 1 :stroke-image {:id (:id fmo3) :width 100 :height 100 :mtype "image/jpeg"}}]})}
-         {:type :add-obj
-          :page-id page-id
-          :id t-shid
-          :parent-id uuid/zero
-          :frame-id uuid/zero
-          :components-v2 true
-          :obj (cts/setup-shape
-                 {:id t-shid
-                  :name "text"
-                  :frame-id uuid/zero
-                  :parent-id uuid/zero
-                  :type :text
-                  :content {:type "root"
-                            :children [{:type "paragraph-set"
-                                        :children [{:type "paragraph"
-                                                    :children [{:fills [{:fill-opacity 1
-                                                                         :fill-image {:id (:id fmo4)
-                                                                                      :width 417
-                                                                                      :height 354
-                                                                                      :mtype "image/png"
-                                                                                      :name "text fill image"}}]
-                                                                :text "hi"}
-                                                               {:fills [{:fill-opacity 1
-                                                                         :fill-color "#000000"}]
-                                                                :text "bye"}]}]}]}
-                  :strokes [{:opacity 1 :stroke-image {:id (:id fmo5) :width 100 :height 100 :mtype "image/jpeg"}}]})}])
+       :file-id (:id file)
+       :profile-id (:id profile)
+       :revn 0
+       :changes
+       [{:type :add-obj
+         :page-id page-id
+         :id s-shid
+         :parent-id uuid/zero
+         :frame-id uuid/zero
+         :components-v2 true
+         :obj (cts/setup-shape
+               {:id s-shid
+                :name "image"
+                :frame-id uuid/zero
+                :parent-id uuid/zero
+                :type :image
+                :metadata {:id (:id fmo1) :width 100 :height 100 :mtype "image/jpeg"}
+                :fills [{:opacity 1 :fill-image {:id (:id fmo2) :width 100 :height 100 :mtype "image/jpeg"}}]
+                :strokes [{:opacity 1 :stroke-image {:id (:id fmo3) :width 100 :height 100 :mtype "image/jpeg"}}]})}
+        {:type :add-obj
+         :page-id page-id
+         :id t-shid
+         :parent-id uuid/zero
+         :frame-id uuid/zero
+         :components-v2 true
+         :obj (cts/setup-shape
+               {:id t-shid
+                :name "text"
+                :frame-id uuid/zero
+                :parent-id uuid/zero
+                :type :text
+                :content {:type "root"
+                          :children [{:type "paragraph-set"
+                                      :children [{:type "paragraph"
+                                                  :children [{:fills [{:fill-opacity 1
+                                                                       :fill-image {:id (:id fmo4)
+                                                                                    :width 417
+                                                                                    :height 354
+                                                                                    :mtype "image/png"
+                                                                                    :name "text fill image"}}]
+                                                              :text "hi"}
+                                                             {:fills [{:fill-opacity 1
+                                                                       :fill-color "#000000"}]
+                                                              :text "bye"}]}]}]}
+                :strokes [{:opacity 1 :stroke-image {:id (:id fmo5) :width 100 :height 100 :mtype "image/jpeg"}}]})}])
 
       ;; run the file-gc task immediately without forced min-age
       (let [res (th/run-task! "file-gc")]
@@ -485,15 +481,15 @@
 
       ;; proceed to remove usage of the file
       (update-file!
-        :file-id (:id file)
-        :profile-id (:id profile)
-        :revn 0
-        :changes [{:type :del-obj
-                   :page-id (first (get-in file [:data :pages]))
-                   :id s-shid}
-                  {:type :del-obj
-                   :page-id (first (get-in file [:data :pages]))
-                   :id t-shid}])
+       :file-id (:id file)
+       :profile-id (:id profile)
+       :revn 0
+       :changes [{:type :del-obj
+                  :page-id (first (get-in file [:data :pages]))
+                  :id s-shid}
+                 {:type :del-obj
+                  :page-id (first (get-in file [:data :pages]))
+                  :id t-shid}])
 
       ;; Now, we have deleted the usage of pointers to the
       ;; file-media-objects, if we paste file-gc, they should be marked
@@ -572,8 +568,7 @@
           fot-2      (insert-file-object-thumbnail! :profile-id (:id profile)
                                                     :page-id page-id
                                                     :file-id file-id
-                                                    :frame-id frame-id-2)
-          ]
+                                                    :frame-id frame-id-2)]
 
       ;; Add a two frames
 
@@ -700,9 +695,7 @@
       ;; check file media objects
       (let [rows (th/db-exec! ["select * from storage_object where deleted_at is null"])]
         ;; (pp/pprint rows)
-        (t/is (= 0 (count rows))))
-
-      )))
+        (t/is (= 0 (count rows)))))))
 
 
 
@@ -792,8 +785,8 @@
         error    (:error out)]
 
       ;; (th/print-result! out)
-      (t/is (th/ex-info? error))
-      (t/is (th/ex-of-type? error :not-found))))
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :not-found))))
 
 (t/deftest permissions-checks-link-to-library-2
   (let [profile1 (th/create-profile* 1)
@@ -814,8 +807,8 @@
         error    (:error out)]
 
       ;; (th/print-result! out)
-      (t/is (th/ex-info? error))
-      (t/is (th/ex-of-type? error :not-found))))
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :not-found))))
 
 (t/deftest deletion
   (let [task     (:app.tasks.objects-gc/handler th/*system*)
@@ -881,8 +874,7 @@
       (let [error (:error out)
             error-data (ex-data error)]
         (t/is (th/ex-info? error))
-        (t/is (= (:type error-data) :not-found))))
-    ))
+        (t/is (= (:type error-data) :not-found))))))
 
 
 (t/deftest object-thumbnails-ops
@@ -906,15 +898,15 @@
                            :use-for-thumbnail? true
                            :name "test-frame1"
                            :type :frame})}
-                    {:type :add-obj
-                     :page-id page-id
-                     :id shape1-id
-                     :parent-id frame1-id
-                     :frame-id frame1-id
-                     :obj (cts/setup-shape
-                           {:id shape1-id
-                            :name "test-shape1"
-                            :type :rect})}
+                   {:type :add-obj
+                    :page-id page-id
+                    :id shape1-id
+                    :parent-id frame1-id
+                    :frame-id frame1-id
+                    :obj (cts/setup-shape
+                          {:id shape1-id
+                           :name "test-shape1"
+                           :type :rect})}
                    {:type :add-obj
                     :page-id page-id
                     :id frame2-id
@@ -957,8 +949,7 @@
         (t/is (contains? (:objects result) shape1-id))
         (t/is (contains? (:objects result) frame2-id))
         (t/is (contains? (:objects result) shape2-id))
-        (t/is (contains? (:objects result) uuid/zero))
-        )
+        (t/is (contains? (:objects result) uuid/zero)))
 
       ;; Query :page RPC method with page-id
       (let [data {::th/type :get-page
@@ -1006,9 +997,7 @@
         (t/is (not (th/success? out)))
         (let [{:keys [type code]} (-> out :error ex-data)]
           (t/is (= :validation type))
-          (t/is (= :params-validation code))))
-
-      )
+          (t/is (= :params-validation code)))))
 
     (t/testing "RPC :file-data-for-thumbnail"
       ;; Insert a thumbnail data for the frame-id
@@ -1120,9 +1109,7 @@
 
       ;; check that the unknown frame thumbnail is deleted
       (let [res (th/db-exec! ["select * from file_tagged_object_thumbnail"])]
-        (t/is (= 1 (count res)))))
-
-    ))
+        (t/is (= 1 (count res)))))))
 
 
 (t/deftest file-thumbnail-ops
@@ -1163,9 +1150,7 @@
         (t/is (map? result)))
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
-        (t/is (= 2 (count rows))))
-
-      )
+        (t/is (= 2 (count rows)))))
 
     (t/testing "gc task"
       ;; make the file eligible for GC waiting 300ms (configured
@@ -1176,7 +1161,6 @@
         (t/is (= 1 (:processed res))))
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
-        (t/is (= 1 (count rows)))))
-    ))
+        (t/is (= 1 (count rows)))))))
 
 

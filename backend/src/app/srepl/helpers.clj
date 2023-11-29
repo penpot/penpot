@@ -245,8 +245,7 @@
           (start-worker [input index]
             (px/thread
               {:name (str "penpot/srepl/worker/" index)}
-              (run-worker input index)))
-          ]
+              (run-worker input index)))]
 
     (when (fn? on-init) (on-init))
 

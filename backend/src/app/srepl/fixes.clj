@@ -96,9 +96,9 @@
                    :name (:name file)))
          new-file))))
 
-   ([file state]
-    (rename-layout-attrs file)
-    (update state :total (fnil inc 0))))
+  ([file state]
+   (rename-layout-attrs file)
+   (update state :total (fnil inc 0))))
 
 (defn fix-components-shaperefs
   ([file]
@@ -369,11 +369,11 @@
                                                        (= (:shape-ref child) ref-child-id))
                                                      false))
                                         equal? (every? matches? (d/zip-all (:shapes shape) (:shapes ref-shape)))]
-                                      (when (and (not equal?) (not (cfh/touched-group? shape :shapes-group)))
-                                        (println " -> set touched " (:name shape) (:id shape) :shapes :shapes-group))
-                                      (cond-> shape
-                                        (and (not equal?) (not (cfh/touched-group? shape :shapes-group)))
-                                        (update :touched cfh/set-touched-group :shapes-group))))]
+                                    (when (and (not equal?) (not (cfh/touched-group? shape :shapes-group)))
+                                      (println " -> set touched " (:name shape) (:id shape) :shapes :shapes-group))
+                                    (cond-> shape
+                                      (and (not equal?) (not (cfh/touched-group? shape :shapes-group)))
+                                      (update :touched cfh/set-touched-group :shapes-group))))]
 
                             (as-> shape $
                               (reduce fix-touched-attr $ ctk/sync-attrs)

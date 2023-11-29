@@ -18,8 +18,8 @@
    [datoteka.io :as io]
    [integrant.core :as ig])
   (:import
-   java.nio.file.Path
-   java.nio.file.Files))
+   java.nio.file.Files
+   java.nio.file.Path))
 
 ;; --- BACKEND INIT
 

@@ -174,8 +174,7 @@
                 {"type" "element"
                  "name" "radialGradient"
                  "attributes" {"id" id "cx" "0.5" "cy" "0.5" "r" "0.5"}
-                 "elements" (get-stops data)}
-                )))
+                 "elements" (get-stops data)})))
 
           (get-gradients [id mapping]
             (->> mapping

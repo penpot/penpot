@@ -338,7 +338,7 @@
 
         (cond-> (and (contains? cfeat/*current* "fdata/pointer-map")
                      (not (contains? cfeat/*previous* "fdata/pointer-map")))
-        (enable-pointer-map))
+          (enable-pointer-map))
 
         (update :data blob/encode))))
 

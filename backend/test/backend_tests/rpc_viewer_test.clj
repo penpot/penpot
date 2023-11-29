@@ -6,10 +6,10 @@
 
 (ns backend-tests.rpc-viewer-test
   (:require
-   [backend-tests.helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc :as-alias rpc]
+   [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.core :as fs]))
 
@@ -104,6 +104,4 @@
         (t/is (nil? (:error out)))
         (let [result (:result out)]
           (t/is (contains? result :file))
-          (t/is (contains? result :project)))))
-
-    ))
+          (t/is (contains? result :project)))))))

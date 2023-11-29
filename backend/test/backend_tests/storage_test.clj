@@ -50,8 +50,7 @@
     (t/is (= "data" (:other (meta object))))
     (t/is (= "text/plain" (:content-type (meta object))))
     (t/is (= "content" (slurp (sto/get-object-data storage object))))
-    (t/is (= "content" (slurp (sto/get-object-path storage object))))
-    ))
+    (t/is (= "content" (slurp (sto/get-object-path storage object))))))
 
 (t/deftest put-and-retrieve-expired-object
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -59,8 +58,7 @@
         content (sto/content "content")
         object  (sto/put-object! storage {::sto/content content
                                           ::sto/expired-at (dt/in-future {:seconds 1})
-                                          :content-type "text/plain"
-                                          })]
+                                          :content-type "text/plain"})]
 
     (t/is (sto/object? object))
     (t/is (dt/instant? (:expired-at object)))
@@ -71,8 +69,7 @@
     (t/is (nil? (sto/get-object storage (:id object))))
     (t/is (nil? (sto/get-object-data storage object)))
     (t/is (nil? (sto/get-object-url storage object)))
-    (t/is (nil? (sto/get-object-path storage object)))
-    ))
+    (t/is (nil? (sto/get-object-path storage object)))))
 
 (t/deftest put-and-delete-object
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -92,8 +89,7 @@
 
     ;; But you can't retrieve the object again because in database is
     ;; marked as deleted/expired.
-    (t/is (nil? (sto/get-object storage (:id object))))
-    ))
+    (t/is (nil? (sto/get-object storage (:id object))))))
 
 (t/deftest test-deleted-gc-task
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -103,16 +99,13 @@
         content3 (sto/content "content3")
         object1  (sto/put-object! storage {::sto/content content1
                                            ::sto/expired-at (dt/now)
-                                           :content-type "text/plain"
-                                           })
+                                           :content-type "text/plain"})
         object2  (sto/put-object! storage {::sto/content content2
                                            ::sto/expired-at (dt/in-past {:hours 2})
-                                           :content-type "text/plain"
-                                           })
+                                           :content-type "text/plain"})
         object3  (sto/put-object! storage {::sto/content content3
                                            ::sto/expired-at (dt/in-past {:hours 1})
-                                           :content-type "text/plain"
-                                           })]
+                                           :content-type "text/plain"})]
 
 
     (th/sleep 200)
@@ -186,8 +179,7 @@
 
       ;; now check that all objects are marked to be deleted
       (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where deleted_at is not null"])]
-        (t/is (= 0 (:count res))))
-      )))
+        (t/is (= 0 (:count res)))))))
 
 
 (t/deftest test-touched-gc-task-2

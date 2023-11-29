@@ -178,7 +178,7 @@
 (defn- retrieve-enabled-auth-providers
   [conn]
   (let [sql  (str "select auth_backend as backend, count(*) as total "
-                 "  from profile group by 1")
+                  "  from profile group by 1")
         rows (db/exec! conn [sql])]
     (->> rows
          (map (fn [{:keys [backend total]}]

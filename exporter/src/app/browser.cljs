@@ -31,8 +31,8 @@
 (defn create-cookies
   [uri {:keys [name token] :or {name "auth-token"}}]
   (let [domain (str (:host uri)
-                (when (:port uri)
-                  (str ":" (:port uri))))]
+                    (when (:port uri)
+                      (str ":" (:port uri))))]
     #js [#js {:domain domain
               :path "/"
               :name name
@@ -177,8 +177,7 @@
                 (p/catch (fn [cause]
                            (p/do!
                             (ex-ignore (.destroy ^js pool browser))
-                            (p/rejected cause))))))
-          ]
+                            (p/rejected cause))))))]
 
     (when-let [pool (deref pool)]
       (-> (p/do! (.acquire ^js pool))

@@ -181,8 +181,8 @@
              (let [f (px/wrap-bindings f)]
                (p/await! (px/submit! executor f))))]
      (if (and cache id)
-      (invoke! cache metrics id nil f)
-      (f)))))
+       (invoke! cache metrics id nil f)
+       (f)))))
 
 (def noop-fn (constantly nil))
 

@@ -74,8 +74,8 @@
                :file-id file-id)
 
       (db/update! conn :file
-                    {:data (:data snapshot)}
-                    {:id file-id})
+                  {:data (:data snapshot)}
+                  {:id file-id})
 
       ;; clean object thumbnails
       (let [sql (str "delete from file_object_thumbnail "

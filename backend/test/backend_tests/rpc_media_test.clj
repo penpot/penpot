@@ -88,8 +88,7 @@
         (t/is (sto/object? mobj1))
         (t/is (sto/object? mobj2))
         (t/is (= 312043 (:size mobj1)))
-        (t/is (= 3887   (:size mobj2)))))
-    ))
+        (t/is (= 3887   (:size mobj2)))))))
 
 
 (t/deftest media-object-upload-idempotency
@@ -208,8 +207,7 @@
         (t/is (sto/object? mobj1))
         (t/is (sto/object? mobj2))
         (t/is (= 312043 (:size mobj1)))
-        (t/is (= 3887   (:size mobj2)))))
-    ))
+        (t/is (= 3887   (:size mobj2)))))))
 
 
 (t/deftest media-object-upload-idempotency-command

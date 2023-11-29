@@ -65,9 +65,7 @@
 
       ;; Refresh webhook
       (let [whk' (th/db-get :webhook {:id (:id whk)})]
-        (t/is (nil? (:error-code whk'))))
-
-      )))
+        (t/is (nil? (:error-code whk')))))))
 
 (t/deftest run-webhook-handler-2
   (with-mocks [http-mock {:target 'app.http.client/req! :return {:status 400}}]
@@ -114,6 +112,4 @@
       (let [whk' (th/db-get :webhook {:id (:id whk)})]
         (t/is (= "unexpected-status:400" (:error-code whk')))
         (t/is (= 3 (:error-count whk')))
-        (t/is (false? (:is-active whk'))))
-
-      )))
+        (t/is (false? (:is-active whk')))))))

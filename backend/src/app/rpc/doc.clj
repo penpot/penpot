@@ -88,7 +88,7 @@
             context (assoc context :param-style pstyle)]
         {::rres/status 200
          ::rres/body (-> (io/resource "app/templates/api-doc.tmpl")
-                        (tmpl/render context))}))
+                         (tmpl/render context))}))
     (fn [_]
       {::rres/status 404})))
 
@@ -141,8 +141,7 @@
 
               {:name (-> mdata ::sv/name d/name)
                :module (-> (:ns mdata) (str/split ".") last)
-               :repr {:post rpost}}))
-          ]
+               :repr {:post rpost}}))]
 
     (let [definitions (atom {})
           options {:registry sr/default-registry
@@ -158,16 +157,16 @@
                          (map (fn [doc]
                                 [(str/ffmt "/command/%" (:name doc)) (:repr doc)]))
                          (into {})))]
-    {:openapi "3.0.0"
-     :info {:version (:main cf/version)}
-     :servers [{:url (str/ffmt "%/api/rpc" (cf/get :public-uri))
+      {:openapi "3.0.0"
+       :info {:version (:main cf/version)}
+       :servers [{:url (str/ffmt "%/api/rpc" (cf/get :public-uri))
                 ;; :description "penpot backend"
-                }]
-     :security
-     {:api_key []}
+                  }]
+       :security
+       {:api_key []}
 
-     :paths paths
-     :components {:schemas @definitions}})))
+       :paths paths
+       :components {:schemas @definitions}})))
 
 (defn openapi-json-handler
   [context]
@@ -192,7 +191,7 @@
         {::rres/status 200
          ::rres/headers {"content-type" "text/html"}
          ::rres/body (-> (io/resource "app/templates/openapi.tmpl")
-                        (tmpl/render context))}))
+                         (tmpl/render context))}))
     (fn [_]
       {::rres/status 404})))
 

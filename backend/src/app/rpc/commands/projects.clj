@@ -50,11 +50,11 @@
         is-owner (boolean (some :is-owner rows))
         is-admin (boolean (some :is-admin rows))
         can-edit (boolean (some :can-edit rows))]
-     (when (seq rows)
-       {:is-owner is-owner
-        :is-admin (or is-owner is-admin)
-        :can-edit (or is-owner is-admin can-edit)
-        :can-read true})))
+    (when (seq rows)
+      {:is-owner is-owner
+       :is-admin (or is-owner is-admin)
+       :can-edit (or is-owner is-admin can-edit)
+       :can-read true})))
 
 (def has-edit-permissions?
   (perms/make-edition-predicate-fn get-permissions))

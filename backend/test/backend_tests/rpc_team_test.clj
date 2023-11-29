@@ -100,9 +100,7 @@
 
         (let [edata (-> out :error ex-data)]
           (t/is (= :validation (:type edata)))
-          (t/is (= :member-is-muted (:code edata)))))
-
-      )))
+          (t/is (= :member-is-muted (:code edata))))))))
 
 
 (t/deftest invitation-tokens
@@ -159,9 +157,7 @@
           (t/is (= :editor (:role claims)))
           (t/is (= (:id team) (:team-id claims)))
           (t/is (= (first (:emails data)) (:member-email claims)))
-          (t/is (= (:id profile2) (:member-id claims)))))
-
-      )))
+          (t/is (= (:id profile2) (:member-id claims))))))))
 
 
 (t/deftest accept-invitation-tokens
@@ -243,9 +239,7 @@
           (t/is (not (th/success? out)))
           (let [edata (-> out :error ex-data)]
             (t/is (= :validation (:type edata)))
-            (t/is (= :invalid-token (:code edata))))))
-
-      )))
+            (t/is (= :invalid-token (:code edata)))))))))
 
 (t/deftest create-team-invitations-with-email-verification-disabled
   (with-mocks [mock {:target 'app.email/send! :return nil}]
@@ -343,8 +337,7 @@
 
       (t/is (not (th/success? out)))
       (let [edata (-> out :error ex-data)]
-        (t/is (= :not-found (:type edata)))))
-    ))
+        (t/is (= :not-found (:type edata)))))))
 
 (t/deftest query-team-invitations
   (let [prof (th/create-profile* 1 {:is-active true})

@@ -6,9 +6,9 @@
 
 (ns backend-tests.tasks-telemetry-test
   (:require
-   [backend-tests.helpers :as th]
    [app.db :as db]
    [app.util.time :as dt]
+   [backend-tests.helpers :as th]
    [clojure.pprint :refer [pprint]]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]))

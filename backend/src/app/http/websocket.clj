@@ -117,21 +117,21 @@
               :profile-id profile-id
               :session-id session-id}]
 
-      ;; Close profile subscription if exists
-      (when-let [ch (:channel psub)]
-        (sp/close! ch)
-        (mbus/purge! msgbus [ch]))
+    ;; Close profile subscription if exists
+    (when-let [ch (:channel psub)]
+      (sp/close! ch)
+      (mbus/purge! msgbus [ch]))
 
-      ;; Close team subscription if exists
-      (when-let [ch (:channel tsub)]
-        (sp/close! ch)
-        (mbus/purge! msgbus [ch]))
+    ;; Close team subscription if exists
+    (when-let [ch (:channel tsub)]
+      (sp/close! ch)
+      (mbus/purge! msgbus [ch]))
 
-      ;; Close file subscription if exists
-      (when-let [{:keys [topic channel]} fsub]
-        (sp/close! channel)
-        (mbus/purge! msgbus [channel])
-        (mbus/pub! msgbus :topic topic :message msg))))
+    ;; Close file subscription if exists
+    (when-let [{:keys [topic channel]} fsub]
+      (sp/close! channel)
+      (mbus/purge! msgbus [channel])
+      (mbus/pub! msgbus :topic topic :message msg))))
 
 (defmethod handle-message :subscribe-team
   [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id]} {:keys [team-id] :as params}]
@@ -179,7 +179,7 @@
           (let [message {:type :presence
                          :file-id file-id
                          :session-id session-id
-                           :profile-id profile-id}]
+                         :profile-id profile-id}]
             (mbus/pub! msgbus
                        :topic file-id
                        :message message)))

@@ -19,8 +19,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.main :as main]
-   [app.media :as-alias mtx]
    [app.media]
+   [app.media :as-alias mtx]
    [app.migrations]
    [app.msgbus :as-alias mbus]
    [app.rpc :as-alias rpc]
@@ -110,8 +110,7 @@
    "alter table storage_object set unlogged;\n"
    "alter table server_error_report set unlogged;\n"
    "alter table server_prop set unlogged;\n"
-   "alter table global_complaint_report set unlogged;\n"
-])
+   "alter table global_complaint_report set unlogged;\n"])
 
 (defn state-init
   [next]
@@ -272,7 +271,7 @@
 (defn create-file-media-object*
   ([params] (create-file-media-object* *system* params))
   ([system {:keys [name width height mtype file-id is-local media-id]
-          :or {name "sample" width 100 height 100 mtype "image/svg+xml" is-local true}}]
+            :or {name "sample" width 100 height 100 mtype "image/svg+xml" is-local true}}]
 
    (dm/with-open [conn (db/open system)]
      (db/insert! conn :file-media-object
@@ -322,8 +321,8 @@
   ([system {:keys [project-id profile-id role] :or {role :owner}}]
    (dm/with-open [conn (db/open system)]
      (#'teams/create-project-role conn {:project-id project-id
-                                           :profile-id profile-id
-                                           :role role}))))
+                                        :profile-id profile-id
+                                        :role role}))))
 
 (defn create-file-role*
   ([params] (create-file-role* *system* params))
@@ -336,7 +335,7 @@
 (defn update-file*
   ([params] (update-file* *system* params))
   ([system {:keys [file-id changes session-id profile-id revn]
-          :or {session-id (uuid/next) revn 0}}]
+            :or {session-id (uuid/next) revn 0}}]
    (db/tx-run! system (fn [{:keys [::db/conn] :as system}]
                         (let [file (files.update/get-file conn file-id)]
                           (files.update/update-file system

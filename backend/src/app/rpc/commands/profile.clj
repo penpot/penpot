@@ -106,8 +106,7 @@
           profile (-> profile
                       (assoc :fullname fullname)
                       (assoc :lang lang)
-                      (assoc :theme theme))
-          ]
+                      (assoc :theme theme))]
 
       (db/update! conn :profile
                   {:fullname fullname

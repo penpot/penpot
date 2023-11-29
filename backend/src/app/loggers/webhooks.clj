@@ -182,5 +182,4 @@
     "invalid-uri"
 
     (instance? java.net.http.HttpConnectTimeoutException cause)
-    "timeout"
-    ))
+    "timeout"))

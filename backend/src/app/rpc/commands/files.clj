@@ -361,7 +361,7 @@
   {::doc/added "1.17"
    ::sm/params schema:get-file-fragment
    ::sm/result schema:file-fragment}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id fragment-id share-id] }]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id fragment-id share-id]}]
   (dm/with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id file-id share-id)]
       (check-read-permissions! perms)
@@ -491,7 +491,7 @@
                      page    (dm/get-in file [:data :pages-index page-id])]
                  (if (pmap/pointer-map? page)
                    (deref page)
-                     page)))]
+                   page)))]
 
     (cond-> (prune-thumbnails page)
       (some? object-id)
@@ -549,10 +549,10 @@
 (defn get-team-shared-files
   [conn team-id]
   (letfn [(assets-sample [assets limit]
-           (let [sorted-assets (->> (vals assets)
-                                    (sort-by #(str/lower (:name %))))]
-             {:count (count sorted-assets)
-              :sample (into [] (take limit sorted-assets))}))
+            (let [sorted-assets (->> (vals assets)
+                                     (sort-by #(str/lower (:name %))))]
+              {:count (count sorted-assets)
+               :sample (into [] (take limit sorted-assets))}))
 
           (library-summary [{:keys [id data] :as file}]
             (binding [pmap/*load-fn* (partial load-pointer conn id)]

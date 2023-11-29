@@ -81,8 +81,8 @@
             perms   (files/get-permissions conn profile-id file-id share-id)]
         (files/check-read-permissions! perms)
         (db/query conn :team-font-variant
-          {:team-id (:team-id project)
-           :deleted-at nil})))))
+                  {:team-id (:team-id project)
+                   :deleted-at nil})))))
 
 
 (declare create-font-variant)
@@ -157,8 +157,7 @@
                          :woff1-file-id (:id woff1)
                          :woff2-file-id (:id woff2)
                          :otf-file-id (:id otf)
-                         :ttf-file-id (:id ttf)}))
-          ]
+                         :ttf-file-id (:id ttf)}))]
 
     (let [data   (-> (climit/configure cfg :process-font/global)
                      (climit/run! (partial generate-missing! data)

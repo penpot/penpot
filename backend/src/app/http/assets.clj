@@ -39,9 +39,9 @@
   (let [{:keys [host port] :as url} (sto/get-object-url storage obj {:max-age signature-max-age})]
     {::rres/status  307
      ::rres/headers {"location" (str url)
-                    "x-host"   (cond-> host port (str ":" port))
-                    "x-mtype"  (-> obj meta :content-type)
-                    "cache-control" (str "max-age=" (inst-ms cache-max-age))}}))
+                     "x-host"   (cond-> host port (str ":" port))
+                     "x-mtype"  (-> obj meta :content-type)
+                     "cache-control" (str "max-age=" (inst-ms cache-max-age))}}))
 
 (defn- serve-object-from-fs
   [{:keys [::path]} obj]

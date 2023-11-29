@@ -29,8 +29,7 @@
         params  {::th/type :get-file
                  :id (:id file1)
                  ::rpc/profile-id (:id profile)
-                 :features cfeat/supported-features
-                 }]
+                 :features cfeat/supported-features}]
 
     (binding [cond/*enabled* true]
       (let [{:keys [error result] :as out} (th/command! params)]
@@ -46,6 +45,5 @@
               {:keys [error result]} (th/command! (assoc params ::cond/key etag))]
           (t/is (nil? error))
           (t/is (fn? result))
-          (t/is (= 304 (-> (result nil) :ring.response/status))))
-        ))))
+          (t/is (= 304 (-> (result nil) :ring.response/status))))))))
 

@@ -636,8 +636,8 @@
                  input (io/data-input-stream input)]
     (binding [*state* (volatile! {:media [] :index {}})]
       (let [team      (teams/get-team options
-                                     :profile-id profile-id
-                                     :project-id project-id)
+                                      :profile-id profile-id
+                                      :project-id project-id)
 
             validate? (contains? cf/flags :file-validation)
             features  (cfeat/get-team-enabled-features cf/flags team)]

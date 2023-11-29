@@ -6,11 +6,11 @@
 
 (ns backend-tests.rpc-profile-test
   (:require
+   [app.auth :as auth]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
-   [app.auth :as auth]
    [app.tokens :as tokens]
    [app.util.time :as dt]
    [backend-tests.helpers :as th]
@@ -115,8 +115,7 @@
             out  (th/command! data)]
 
         ;; (th/print-result! out)
-        (t/is (nil? (:error out)))))
-    ))
+        (t/is (nil? (:error out)))))))
 
 (t/deftest profile-deletion-simple
   (let [prof (th/create-profile* 1)
@@ -219,9 +218,7 @@
     (let [rows (th/db-query :team-profile-rel {:team-id (:id team)})]
       (t/is (= 1 (count rows)))
       (t/is (= (:id prof2) (get-in rows [0 :profile-id])))
-      (t/is (= false (get-in rows [0 :is-owner]))))
-
-    ))
+      (t/is (= false (get-in rows [0 :is-owner]))))))
 
 (t/deftest registration-domain-whitelist
   (let [whitelist #{"gmail.com" "hey.com" "ya.ru"}]
@@ -258,8 +255,7 @@
                  :accept-terms-and-privacy true
                  :accept-newsletter-subscription true}]
       (let [{:keys [result error]} (th/command! data)]
-        (t/is (nil? error))))
-    ))
+        (t/is (nil? error))))))
 
 (t/deftest prepare-register-and-register-profile-1
   (let [data  {::th/type :prepare-register-profile
@@ -288,8 +284,7 @@
                  :accept-newsletter-subscription true}]
       (let [{:keys [result error] :as out} (th/command! data)]
         ;; (th/print-result! out)
-        (t/is (nil? error))))
-    ))
+        (t/is (nil? error))))))
 
 (t/deftest prepare-register-and-register-profile-2
   (with-redefs [app.rpc.commands.auth/register-retry-threshold (dt/duration 500)]
@@ -350,10 +345,7 @@
                      :accept-newsletter-subscription true}
               out   (th/command! data)]
           (t/is (th/success? out))
-          (t/is (= 1 (:call-count @mock))))
-
-        ))
-    ))
+          (t/is (= 1 (:call-count @mock))))))))
 
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-registration-1
@@ -405,8 +397,7 @@
       (t/is (not (th/success? out)))
       (let [edata (-> out :error ex-data)]
         (t/is (= :restriction (:type edata)))
-        (t/is (= :email-does-not-match-invitation (:code edata))))
-      )))
+        (t/is (= :email-does-not-match-invitation (:code edata)))))))
 
 (t/deftest prepare-register-with-registration-disabled
   (with-redefs [app.config/flags #{}]
@@ -427,10 +418,10 @@
                  :password "foobar"}
         out     (th/command! data)]
 
-      (t/is (not (th/success? out)))
-      (let [edata (-> out :error ex-data)]
-        (t/is (= :validation (:type edata)))
-        (t/is (= :email-already-exists (:code edata))))))
+    (t/is (not (th/success? out)))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :validation (:type edata)))
+      (t/is (= :email-already-exists (:code edata))))))
 
 (t/deftest register-profile-with-bounced-email
   (let [pool  (:app.db/pool th/*system*)
@@ -566,9 +557,7 @@
         (t/is (= 2 (:call-count @mock)))
         (t/is (th/ex-info? error))
         (t/is (th/ex-of-type? error :validation))
-        (t/is (th/ex-of-code? error :email-has-permanent-bounces)))
-
-      )))
+        (t/is (th/ex-of-code? error :email-has-permanent-bounces))))))
 
 
 (t/deftest update-profile-password
@@ -579,8 +568,7 @@
                :password "foobarfoobar"}
         out   (th/command! data)]
     (t/is (nil? (:error out)))
-    (t/is (nil? (:result out)))
-  ))
+    (t/is (nil? (:result out)))))
 
 
 (t/deftest update-profile-password-bad-old-password

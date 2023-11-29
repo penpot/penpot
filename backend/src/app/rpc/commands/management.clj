@@ -234,9 +234,9 @@
                     (assoc :is-pinned false))
 
         files   (db/query conn :file
-                  {:project-id (:id project)
-                   :deleted-at nil}
-                  {:columns [:id]})
+                          {:project-id (:id project)
+                           :deleted-at nil}
+                          {:columns [:id]})
 
         project (cond-> project
                   (string? name)

@@ -91,9 +91,7 @@
 
         ;; Check the total number of files
         (let [rows (db/query th/*pool* :file {:project-id (:id project)})]
-          (t/is (= 3 (count rows))))
-
-        ))))
+          (t/is (= 3 (count rows))))))))
 
 (t/deftest duplicate-file-with-deleted-relations
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -149,9 +147,7 @@
 
         ;; Check the total number of files
         (let [rows (db/query th/*pool* :file {:project-id (:id project)})]
-          (t/is (= 3 (count rows))))
-
-        ))))
+          (t/is (= 3 (count rows))))))))
 
 (t/deftest duplicate-project
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -223,9 +219,7 @@
 
             (when (= (:id fa) (:id file2))
               (t/is (false? (b/equals? (:data fa)
-                                       (:data fb))))))
-
-          )))))
+                                       (:data fb)))))))))))
 
 (t/deftest duplicate-project-with-deleted-files
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -289,9 +283,7 @@
 
             (when (= (:id fa) (:id file2))
               (t/is (false? (b/equals? (:data fa)
-                                       (:data fb))))))
-
-          )))))
+                                       (:data fb)))))))))))
 
 (t/deftest move-file-on-same-team
   (let [profile  (th/create-profile* 1 {:is-active true})
@@ -359,8 +351,7 @@
 
       ;; should be no libraries on file2
       (let [rows (db/query th/*pool* :file-library-rel {:file-id (:id file2)})]
-        (t/is (= 0 (count rows))))
-      )))
+        (t/is (= 0 (count rows)))))))
 
 
 ;; TODO: move a library to other team
@@ -445,8 +436,7 @@
       (let [[item :as rows] (db/query th/*pool* :file-library-rel {:file-id (:id file2)})]
         (t/is (= 1 (count rows)))
         (t/is (= (:file-id item) (:id file2)))
-        (t/is (= (:library-file-id item) (:id file3))))
-      )))
+        (t/is (= (:library-file-id item) (:id file3)))))))
 
 
 (t/deftest move-library-to-other-team
@@ -515,9 +505,7 @@
 
       ;; the file2 should not have any link to libraries
       (let [rows (db/query th/*pool* :file-library-rel {:file-id (:id file2)})]
-        (t/is (zero? (count rows))))
-
-      )))
+        (t/is (zero? (count rows)))))))
 
 (t/deftest move-project
   (let [profile  (th/create-profile* 1 {:is-active true})
@@ -602,9 +590,7 @@
                                        {:order-by [:created-at]})]
         (t/is (= 1 (count rows)))
         (t/is (= (:file-id item1) (:id file1)))
-        (t/is (= (:library-file-id item1) (:id file2))))
-
-      )))
+        (t/is (= (:library-file-id item1) (:id file2)))))))
 
 (t/deftest clone-template
   (let [prof    (th/create-profile* 1 {:is-active true})
