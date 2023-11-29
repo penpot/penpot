@@ -701,19 +701,23 @@
      (watch [_ state _]
        (when-let [shape-id (dm/get-in state [:workspace-local :shape-for-rename])]
          (let [shape (wsh/lookup-shape state shape-id)
-               name  (cfh/clean-path name)]
+               name        (str/trim name)
+               clean-name  (cfh/clean-path name)
+               valid?      (and (not (str/ends-with? name "/"))
+                                (string? clean-name)
+                                (not (str/blank? clean-name)))]
            (rx/concat
             ;; Remove rename state from workspace local state
             (rx/of #(update % :workspace-local dissoc :shape-for-rename))
 
             ;; Rename the shape if string is not empty/blank
-            (when (and (string? name) (not (str/blank? name)))
-              (rx/of (update-shape shape-id {:name name})))
+            (when valid?
+              (rx/of (update-shape shape-id {:name clean-name})))
 
             ;; Update the component in case if shape is a main instance
-            (when (and (string? name) (not (str/blank? name)) (:main-instance shape))
+            (when (and valid? (:main-instance shape))
               (when-let [component-id (:component-id shape)]
-                (rx/of (dwl/rename-component component-id name)))))))))))
+                (rx/of (dwl/rename-component component-id clean-name)))))))))))
 
 ;; --- Update Selected Shapes attrs
 

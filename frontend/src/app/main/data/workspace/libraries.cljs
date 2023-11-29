@@ -404,16 +404,21 @@
   (ptk/reify ::rename-component-and-main-instance
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [component (dm/get-in state [:workspace-data :components component-id])]
-        (let [name     (cfh/clean-path name)
-              shape-id (:main-instance-id component)
-              page-id  (:main-instance-page component)]
-          (rx/concat
-           (rx/of (rename-component component-id name))
+      (let [name        (str/trim name)
+            clean-name  (cfh/clean-path name)
+            valid?      (and (not (str/ends-with? name "/"))
+                             (string? clean-name)
+                             (not (str/blank? clean-name)))
+            component (dm/get-in state [:workspace-data :components component-id])]
+        (when (and valid? component)
+          (let [shape-id (:main-instance-id component)
+                page-id  (:main-instance-page component)]
+            (rx/concat
+             (rx/of (rename-component component-id clean-name))
 
            ;; NOTE: only when components-v2 is enabled
-           (when (and shape-id page-id)
-             (rx/of (dch/update-shapes [shape-id] #(assoc % :name name) {:page-id page-id :stack-undo? true})))))))))
+             (when (and shape-id page-id)
+               (rx/of (dch/update-shapes [shape-id] #(assoc % :name clean-name) {:page-id page-id :stack-undo? true}))))))))))
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
