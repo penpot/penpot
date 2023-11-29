@@ -22,6 +22,7 @@
   "scripts": {
     "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
+    "lint:clj": "clj-kondo --parallel --lint src/",
     "test:watch": "clojure -M:dev:shadow-cljs watch test",
     "test:compile": "clojure -M:dev:shadow-cljs compile test --config-merge '{:autorun false}'",
     "test:run": "node target/test.js",

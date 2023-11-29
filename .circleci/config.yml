@@ -29,6 +29,7 @@ jobs:
 
       - run: cd .clj-kondo && cat config.edn
       - run: cat .cljfmt.edn
+      - run: clj-kondo --version
 
       # - run:
       #     name: "fmt check [clj]"
@@ -36,22 +37,38 @@ jobs:
       #       yarn run fmt:clj:check
 
       - run:
-          name: "lint [clj]"
+          name: common lint
+          working_directory: "./common"
           command: |
+            yarn install
             yarn run lint:clj
 
       - run:
-          name: "lint [scss]"
+          name: frontend lint
           working_directory: "./frontend"
           command: |
             yarn install
             yarn run lint:scss
+            yarn run lint:clj
 
       - run:
-          name: "tests [common]"
-          working_directory: "./common"
+          name: backend lint
+          working_directory: "./backend"
           command: |
             yarn install
+            yarn run lint:clj
+
+      - run:
+          name: exporter lint
+          working_directory: "./exporter"
+          command: |
+            yarn install
+            yarn run lint:clj
+
+      - run:
+          name: "common tests"
+          working_directory: "./common"
+          command: |
             yarn test
             clojure -X:dev:test :patterns '["common-tests.*-test"]'
 
@@ -61,7 +78,18 @@ jobs:
             NODE_OPTIONS: --max-old-space-size=4096
 
       - run:
-          name: "tests [backend]"
+          name: "frontend tests"
+          working_directory: "./frontend"
+          command: |
+            yarn install
+            yarn test
+
+          environment:
+            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
+            NODE_OPTIONS: --max-old-space-size=4096
+
+      - run:
+          name: "backend tests"
           working_directory: "./backend"
           command: |
             clojure -X:dev:test :patterns '["backend-tests.*-test"]'
@@ -72,17 +100,6 @@ jobs:
             PENPOT_TEST_DATABASE_PASSWORD: penpot_test
             PENPOT_TEST_REDIS_URI: "redis://localhost/1"
             JVM_OPTS: -Xmx4g
-
-      - run:
-          name: "tests [frontend]"
-          working_directory: "./frontend"
-          command: |
-            yarn install
-            yarn test
-
-          environment:
-            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
-            NODE_OPTIONS: --max-old-space-size=4096
 
       - save_cache:
          paths:
