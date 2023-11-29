@@ -190,16 +190,20 @@
           :always
           (update :objects assoc-thumbnails page-id thumbs))))))
 
-(def ^:private schema:get-file-data-for-thumbnail
-  [:map {:title "get-file-data-for-thumbnail"}
-   [:file-id ::sm/uuid]
-   [:features {:optional true} ::cfeat/features]])
+(def ^:private
+  schema:get-file-data-for-thumbnail
+  (sm/define
+    [:map {:title "get-file-data-for-thumbnail"}
+     [:file-id ::sm/uuid]
+     [:features {:optional true} ::cfeat/features]]))
 
-(def ^:private schema:partial-file
-  [:map {:title "PartialFile"}
-   [:id ::sm/uuid]
-   [:revn {:min 0} :int]
-   [:page :any]])
+(def ^:private
+  schema:partial-file
+  (sm/define
+    [:map {:title "PartialFile"}
+     [:id ::sm/uuid]
+     [:revn {:min 0} :int]
+     [:page :any]]))
 
 (sv/defmethod ::get-file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used

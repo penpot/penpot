@@ -232,33 +232,38 @@
 ;; --- COMMAND QUERY: get-file (by id)
 
 (def schema:file
-  [:map {:title "File"}
-   [:id ::sm/uuid]
-   [:features ::cfeat/features]
-   [:has-media-trimmed :boolean]
-   [:comment-thread-seqn {:min 0} :int]
-   [:name :string]
-   [:revn {:min 0} :int]
-   [:modified-at ::dt/instant]
-   [:is-shared :boolean]
-   [:project-id ::sm/uuid]
-   [:created-at ::dt/instant]
-   [:data {:optional true} :any]])
+  (sm/define
+    [:map {:title "File"}
+     [:id ::sm/uuid]
+     [:features ::cfeat/features]
+     [:has-media-trimmed :boolean]
+     [:comment-thread-seqn {:min 0} :int]
+     [:name :string]
+     [:revn {:min 0} :int]
+     [:modified-at ::dt/instant]
+     [:is-shared :boolean]
+     [:project-id ::sm/uuid]
+     [:created-at ::dt/instant]
+     [:data {:optional true} :any]]))
 
 (def schema:permissions-mixin
-  [:map {:title "PermissionsMixin"}
-   [:permissions ::perms/permissions]])
+  (sm/define
+    [:map {:title "PermissionsMixin"}
+     [:permissions ::perms/permissions]]))
 
 (def schema:file-with-permissions
-  [:merge {:title "FileWithPermissions"}
-   schema:file
-   schema:permissions-mixin])
+  (sm/define
+    [:merge {:title "FileWithPermissions"}
+     schema:file
+     schema:permissions-mixin]))
 
-(def schema:get-file
-  [:map {:title "get-file"}
-   [:features {:optional true} ::cfeat/features]
-   [:id ::sm/uuid]
-   [:project-id {:optional true} ::sm/uuid]])
+(def ^:private
+  schema:get-file
+  (sm/define
+    [:map {:title "get-file"}
+     [:features {:optional true} ::cfeat/features]
+     [:id ::sm/uuid]
+     [:project-id {:optional true} ::sm/uuid]]))
 
 (defn get-file
   ([conn id] (get-file conn id nil))
