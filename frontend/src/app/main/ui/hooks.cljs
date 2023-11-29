@@ -348,34 +348,36 @@
     state))
 
 (defn use-dynamic-grid-item-width
-  ([]
-   (use-dynamic-grid-item-width nil))
-
+  ([] (use-dynamic-grid-item-width nil))
   ([itemsize]
-   (let [width      (mf/use-state (:items-width @storage))
-         rowref     (mf/use-ref)
+   (let [;; NOTE: we pass a function to use-state for avoid repeatedly
+         ;; lookup `:items-width` on storage on each render
+         width*   (mf/use-state #(:items-width @storage))
+         width    (deref width*)
 
-         itemsize   (cond
-                      (some? itemsize) itemsize
-                      (>= @width 1030) 280
-                      :else            230)
+         rowref   (mf/use-ref)
 
-         ratio      (if (some? @width) (/ @width itemsize) 0)
-         nitems     (mth/floor ratio)
-         limit      (min 10 nitems)
-         limit      (max 1 limit)]
+         itemsize (cond
+                    (some? itemsize) itemsize
+                    (>= width 1030)  280
+                    :else            230)
 
-     (mf/with-effect
+         ratio    (if (some? width) (/ width itemsize) 0)
+         nitems   (mth/floor ratio)
+         limit    (mth/min 10 nitems)
+         limit    (mth/max 1 limit)]
+
+     (mf/with-effect []
        (let [node (mf/ref-val rowref)
              mnt? (volatile! true)
              sub  (->> (wapi/observe-resize node)
                        (rx/observe-on :af)
                        (rx/subs (fn [entries]
-                                  (let [row (first entries)
-                                        row-rect (.-contentRect ^js row)
+                                  (let [row       (first entries)
+                                        row-rect  (.-contentRect ^js row)
                                         row-width (.-width ^js row-rect)]
                                     (when @mnt?
-                                      (reset! width row-width)
+                                      (reset! width* row-width)
                                       (swap! storage assoc :items-width row-width))))))]
          (fn []
            (vreset! mnt? false)

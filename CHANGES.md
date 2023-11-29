@@ -7,6 +7,7 @@
 ### :sparkles: New features
 
 - Select through stroke only rectangle [Taiga #5484](https://tree.taiga.io/project/penpot/issue/5484)
+- Override browser Ctrl+ and Ctrl- zoom with Penpot Zoom [Taiga #3200](https://tree.taiga.io/project/penpot/us/3200)
 
 ### :bug: Bugs fixed
 

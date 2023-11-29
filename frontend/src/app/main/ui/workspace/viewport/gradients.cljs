@@ -15,8 +15,8 @@
    [app.main.data.workspace.colors :as dc]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.streams :as ms]
    [app.util.dom :as dom]
+   [app.util.mouse :as mse]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -154,14 +154,14 @@
      (mf/deps @moving-point from-p to-p width-p)
      (fn []
        (let [subs (->> st/stream
-                       (rx/filter ms/pointer-event?)
-                       (rx/filter #(= :viewport (:source %)))
-                       (rx/map :pt)
+                       (rx/filter mse/pointer-event?)
+                       (rx/filter #(= :viewport (mse/get-pointer-source %)))
+                       (rx/map mse/get-pointer-position)
                        (rx/subs
                         (fn [pt]
                           (case @moving-point
-                            :from-p (when on-change-start (on-change-start pt))
-                            :to-p (when on-change-finish (on-change-finish pt))
+                            :from-p  (when on-change-start (on-change-start pt))
+                            :to-p    (when on-change-finish (on-change-finish pt))
                             :width-p (when on-change-width
                                        (let [width-v (gpt/unit (gpt/to-vec from-p width-p))
                                              distance (gpt/point-line-distance pt from-p to-p)

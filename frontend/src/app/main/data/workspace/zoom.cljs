@@ -14,6 +14,7 @@
    [app.common.geom.shapes :as gsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
+   [app.util.mouse :as mse]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -118,7 +119,7 @@
           (rx/concat
            (rx/of #(-> % (assoc-in [:workspace-local :zooming] true)))
            (->> stream
-                (rx/filter ms/pointer-event?)
+                (rx/filter mse/pointer-event?)
                 (rx/filter #(= :delta (:source %)))
                 (rx/map :pt)
                 (rx/take-until stopper)

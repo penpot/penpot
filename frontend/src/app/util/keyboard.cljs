@@ -9,15 +9,44 @@
    [app.config :as cfg]
    [cuerdas.core :as str]))
 
+(defrecord KeyboardEvent [type key shift ctrl alt meta mod editing native-event]
+  Object
+  (preventDefault [_]
+    (.preventDefault native-event))
+
+  (stopPropagation [_]
+    (.stopPropagation native-event)))
+
+(defn keyboard-event?
+  [o]
+  (instance? KeyboardEvent o))
+
+(defn key-up-event?
+  [^KeyboardEvent event]
+  (= :up (.-type event)))
+
+(defn key-down-event?
+  [^KeyboardEvent event]
+  (= :down (.-type event)))
+
+(defn mod-event?
+  [^KeyboardEvent event]
+  (true? (.-mod event)))
+
+(defn editing-event?
+  [^KeyboardEvent event]
+  (true? (.-editing event)))
+
 (defn is-key?
   [^string key]
-  (fn [^js e]
+  (fn [^KeyboardEvent e]
     (= (.-key e) key)))
 
 (defn is-key-ignore-case?
   [^string key]
-  (fn [^js e]
-    (= (str/upper (.-key e)) (str/upper key))))
+  (let [key (str/upper key)]
+    (fn [^KeyboardEvent e]
+      (= (str/upper (.-key e)) key))))
 
 (defn ^boolean alt?
   [^js event]
@@ -45,6 +74,10 @@
 (def enter? (is-key? "Enter"))
 (def space? (is-key? " "))
 (def z? (is-key-ignore-case? "z"))
+(def equals? (is-key? "="))
+(def plus? (is-key? "+"))
+(def minus? (is-key? "-"))
+(def underscore? (is-key? "_"))
 (def up-arrow? (is-key? "ArrowUp"))
 (def down-arrow? (is-key? "ArrowDown"))
 (def left-arrow? (is-key? "ArrowLeft"))
@@ -57,7 +90,4 @@
 (def backspace? (is-key? "Backspace"))
 (def home? (is-key? "Home"))
 (def tab? (is-key? "Tab"))
-
-(defn editing? [e]
-  (.-editing ^js e))
 

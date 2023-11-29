@@ -19,6 +19,7 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.streams :as ms]
+   [app.util.mouse :as mse]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -187,7 +188,9 @@
     (watch [_ state stream]
       (let [initial-pos @ms/mouse-position
             selected (wsh/lookup-selected state)
-            stopper (rx/filter ms/mouse-up? stream)]
+            stopper  (->> stream
+                           (rx/filter mse/mouse-event?)
+                           (rx/filter mse/mouse-up-event?))]
         (when (= 1 (count selected))
           (rx/concat
             (->> ms/mouse-position
@@ -295,7 +298,9 @@
     (watch [_ state stream]
       (let [initial-pos @ms/mouse-position
             selected (wsh/lookup-selected state)
-            stopper (rx/filter ms/mouse-up? stream)]
+            stopper  (->> stream
+                           (rx/filter mse/mouse-event?)
+                           (rx/filter mse/mouse-up-event?))]
         (when (= 1 (count selected))
           (let [page-id     (:current-page-id state)
                 objects     (wsh/lookup-page-objects state page-id)

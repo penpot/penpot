@@ -31,6 +31,7 @@
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
+   [app.util.keyboard :as kbd]
    [beicon.core :as rx]
    [goog.events :as events]
    [rumext.v2 :as mf])
@@ -99,14 +100,57 @@
        (when (not= @cursor new-cursor)
          (reset! cursor new-cursor))))))
 
-(defn setup-keyboard [alt? mod? space? z? shift?]
-  (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
-  (hooks/use-stream ms/keyboard-mod #(do
-                                       (reset! mod? %)
-                                       (when-not % (reset! z? false)))) ;; In mac after command+z there is no event for the release of the z key
-  (hooks/use-stream ms/keyboard-space #(reset! space? %))
-  (hooks/use-stream ms/keyboard-z #(reset! z? %))
-  (hooks/use-stream ms/keyboard-shift #(reset! shift? %)))
+(defn setup-keyboard
+  [alt* mod* space* z* shift*]
+  (let [kbd-zoom-s
+        (mf/with-memo []
+          (->> ms/keyboard
+               (rx/filter kbd/key-down-event?)
+               (rx/filter kbd/mod-event?)
+               (rx/filter (fn [kevent]
+                            (or ^boolean (kbd/minus? kevent)
+                                ^boolean (kbd/underscore? kevent)
+                                ^boolean (kbd/equals? kevent)
+                                ^boolean (kbd/plus? kevent))))
+               (rx/dedupe)))
+
+        kbd-shift-s
+        (mf/with-memo []
+          (->> ms/keyboard
+               (rx/filter kbd/shift-key?)
+               (rx/filter (complement kbd/editing-event?))
+               (rx/map kbd/key-down-event?)
+               (rx/dedupe)))
+
+        kbd-z-s
+        (mf/with-memo []
+          (->> ms/keyboard
+               (rx/filter kbd/z?)
+               (rx/filter (complement kbd/editing-event?))
+               (rx/map kbd/key-down-event?)
+               (rx/dedupe)))]
+
+    (hooks/use-stream ms/keyboard-alt (partial reset! alt*))
+    (hooks/use-stream ms/keyboard-space (partial reset! space*))
+    (hooks/use-stream kbd-z-s (partial reset! z*))
+    (hooks/use-stream kbd-shift-s (partial reset! shift*))
+    (hooks/use-stream ms/keyboard-mod
+                      (fn [value]
+                        (reset! mod* value)
+                        ;; In mac after command+z there is no event
+                        ;; for the release of the z key
+                        (when-not ^boolean value
+                          (reset! z* false))))
+
+    (hooks/use-stream kbd-zoom-s
+                      (fn [kevent]
+                        (dom/prevent-default kevent)
+                        (st/emit!
+                         (if (or ^boolean (kbd/minus? kevent)
+                                 ^boolean (kbd/underscore? kevent))
+                           (dw/decrease-zoom)
+                           (dw/increase-zoom)))))))
+
 
 (defn group-empty-space?
   "Given a group `group-id` check if `hover-ids` contains any of its children. If it doesn't means

@@ -35,12 +35,15 @@
    [app.main.refs :as refs]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
+   [app.util.mouse :as mse]
    [beicon.core :as rx]
    [clojure.set :as set]
    [linked.set :as lks]
    [potok.core :as ptk]))
 
-(defn interrupt? [e] (= e :interrupt))
+(defn interrupt?
+  [e]
+  (= e :interrupt))
 
 ;; --- Selection Rect
 
@@ -60,8 +63,12 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [zoom   (dm/get-in state [:workspace-local :zoom] 1)
-            stop?  (fn [event] (or (interrupt? event) (ms/mouse-up? event)))
-            stoper (rx/filter stop? stream)
+            stoper (rx/merge
+                    (->> stream
+                         (rx/filter mse/mouse-event?)
+                         (rx/filter mse/mouse-up-event?))
+                    (->> stream
+                         (rx/filter interrupt?)))
 
             init-position @ms/mouse-position
 

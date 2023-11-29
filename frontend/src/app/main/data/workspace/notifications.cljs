@@ -16,8 +16,8 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.persistence :as dwp]
-   [app.main.streams :as ms]
    [app.util.globals :refer [global]]
+   [app.util.mouse :as mse]
    [app.util.object :as obj]
    [app.util.time :as dt]
    [beicon.core :as rx]
@@ -81,7 +81,7 @@
                              ;; Emit to all other connected users the current pointer
                              ;; position changes.
                              (->> stream
-                                  (rx/filter ms/pointer-event?)
+                                  (rx/filter mse/pointer-event?)
                                   (rx/sample 50)
                                   (rx/map #(handle-pointer-send file-id (:pt %)))))
 
