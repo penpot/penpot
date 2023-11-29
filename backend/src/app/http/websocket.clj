@@ -10,7 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http.session :as session]
@@ -21,6 +21,7 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.exec.csp :as sp]
+   [ring.websocket :as rws]
    [yetti.websocket :as yws]))
 
 (def recv-labels
@@ -277,19 +278,23 @@
             :inc 1)
   message)
 
-
-(s/def ::session-id ::us/uuid)
-(s/def ::handler-params
-  (s/keys :req-un [::session-id]))
+(def ^:private schema:params
+  (sm/define
+    [:map {:title "params"}
+     [:session-id ::sm/uuid]]))
 
 (defn- http-handler
   [cfg {:keys [params ::session/profile-id] :as request}]
-  (let [{:keys [session-id]} (us/conform ::handler-params params)]
+  (let [{:keys [session-id]} (sm/conform! schema:params params)]
     (cond
       (not profile-id)
       (ex/raise :type :authentication
                 :hint "Authentication required.")
 
+      ;; WORKAROUND: we use the adapter specific predicate for
+      ;; performance reasons; for now, the ring default impl for
+      ;; `upgrade-request?` parses all requests headers before perform
+      ;; any checking.
       (not (yws/upgrade-request? request))
       (ex/raise :type :validation
                 :code :websocket-request-expected
@@ -298,14 +303,13 @@
       :else
       (do
         (l/trace :hint "websocket request" :profile-id profile-id :session-id session-id)
-        (->> (ws/handler
-              ::ws/on-rcv-message (partial on-rcv-message cfg)
-              ::ws/on-snd-message (partial on-snd-message cfg)
-              ::ws/on-connect (partial on-connect cfg)
-              ::ws/handler (partial handle-message cfg)
-              ::profile-id profile-id
-              ::session-id session-id)
-             (yws/upgrade request))))))
+        {::rws/listener (ws/listener request
+                                     ::ws/on-rcv-message (partial on-rcv-message cfg)
+                                     ::ws/on-snd-message (partial on-snd-message cfg)
+                                     ::ws/on-connect (partial on-connect cfg)
+                                     ::ws/handler (partial handle-message cfg)
+                                     ::profile-id profile-id
+                                     ::session-id session-id)}))))
 
 (defmethod ig/pre-init-spec ::routes [_]
   (s/keys :req [::mbus/msgbus
@@ -318,5 +322,4 @@
 (defmethod ig/init-key ::routes
   [_ cfg]
   ["/ws/notifications" {:middleware [[session/authz cfg]]
-                        :handler (partial http-handler cfg)
-                        :allowed-methods #{:get}}])
+                        :handler (partial http-handler cfg)}])

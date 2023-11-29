@@ -9,7 +9,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
-   [app.common.schema :as sm]
+   [app.common.schema :as-alias sm]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
@@ -33,9 +33,8 @@
 
 (defn- print-explain!
   [data]
-  (when-let [explain (::sm/explain data)]
-    (js/console.log (sm/humanize-data explain)))
-  (when-let [explain (:explain data)]
+  (when-let [explain (or (ex/explain data)
+                         (:explain data))]
     (js/console.log explain)))
 
 (defn- print-trace!

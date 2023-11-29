@@ -46,6 +46,6 @@
               {:keys [error result]} (th/command! (assoc params ::cond/key etag))]
           (t/is (nil? error))
           (t/is (fn? result))
-          (t/is (= 304 (-> (result nil) :yetti.response/status))))
+          (t/is (= 304 (-> (result nil) :ring.response/status))))
         ))))
 

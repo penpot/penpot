@@ -50,7 +50,7 @@
 
      (when-not valid?
        (let [explain (sm/explain ::ch/change change)]
-         (pp/pprint (sm/humanize-data explain))
+         (pp/pprint (sm/humanize-explain explain))
          (when fail-on-spec?
            (ex/raise :type :assertion
                      :code :data-validation

@@ -429,11 +429,11 @@
 
       (= :params-validation (:code data))
       (app.common.pprint/pprint
-       (sm/humanize-data (::sm/explain data)))
+       (sm/humanize-explain (::sm/explain data)))
 
       (= :data-validation (:code data))
       (app.common.pprint/pprint
-       (sm/humanize-data (::sm/explain data)))
+       (sm/humanize-explain (::sm/explain data)))
 
       (= :service-error (:type data))
       (print-error! (.getCause ^Throwable error))

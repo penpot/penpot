@@ -30,12 +30,11 @@
    [app.storage :as-alias sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [yetti.request :as yrq]
-   [yetti.response :as yrs]))
+   [ring.request :as rreq]
+   [ring.response :as rres]))
 
 (s/def ::profile-id ::us/uuid)
 
@@ -61,9 +60,9 @@
   (if (fn? result)
     (result request)
     (let [mdata (meta result)]
-      (-> {::yrs/status  (::http/status mdata 200)
-           ::yrs/headers (::http/headers mdata {})
-           ::yrs/body    (rph/unwrap result)}
+      (-> {::rres/status  (::http/status mdata 200)
+           ::rres/headers (::http/headers mdata {})
+           ::rres/body    (rph/unwrap result)}
           (handle-response-transformation request mdata)
           (handle-before-comple-hook mdata)))))
 
@@ -72,7 +71,7 @@
   internal async flow into ring async flow."
   [methods {:keys [params path-params] :as request}]
   (let [type       (keyword (:type path-params))
-        etag       (yrq/get-header request "if-none-match")
+        etag       (rreq/get-header request "if-none-match")
         profile-id (or (::session/profile-id request)
                        (::actoken/profile-id request))
 
@@ -138,17 +137,20 @@
         (f cfg (us/conform spec params)))
       f)))
 
+;; TODO: integrate with sm/define
+
 (defn- wrap-params-validation
   [_ f mdata]
   (if-let [schema (::sm/params mdata)]
-    (let [schema  (sm/schema schema)
-          valid?  (sm/validator schema)
-          explain (sm/explainer schema)
-          decode  (sm/decoder schema sm/default-transformer)]
-
+    (let [schema   (if (sm/lazy-schema? schema)
+                     schema
+                     (sm/define schema))
+          validate (sm/validator schema)
+          explain  (sm/explainer schema)
+          decode   (sm/decoder schema)]
       (fn [cfg params]
         (let [params (decode params)]
-          (if (valid? params)
+          (if (validate params)
             (f cfg params)
             (ex/raise :type :validation
                       :code :params-validation
@@ -159,13 +161,15 @@
   [_ f mdata]
   (if (contains? cf/flags :rpc-output-validation)
     (or (when-let [schema (::sm/result mdata)]
-          (let [schema  (sm/schema schema)
-                valid?  (sm/validator schema)
-                explain (sm/explainer schema)]
+          (let [schema   (if (sm/lazy-schema? schema)
+                           schema
+                           (sm/define schema))
+                validate (sm/validator schema)
+                explain  (sm/explainer schema)]
             (fn [cfg params]
               (let [response (f cfg params)]
                 (when (map? response)
-                  (when-not (valid? response)
+                  (when-not (validate response)
                     (ex/raise :type :validation
                               :code :data-validation
                               ::sm/explain (explain response))))
@@ -237,8 +241,7 @@
                 ::ldap/provider
                 ::sto/storage
                 ::mtx/metrics
-                ::main/props
-                ::wrk/executor]
+                ::main/props]
           :opt [::climit
                 ::rlimit]
           :req-un [::db/pool]))
@@ -257,7 +260,6 @@
   (s/keys :req [::methods
                 ::db/pool
                 ::main/props
-                ::wrk/executor
                 ::session/manager]))
 
 (defmethod ig/init-key ::routes

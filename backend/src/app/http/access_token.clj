@@ -11,13 +11,13 @@
    [app.db :as db]
    [app.main :as-alias main]
    [app.tokens :as tokens]
-   [yetti.request :as yrq]))
+   [ring.request :as rreq]))
 
 (def header-re #"^Token\s+(.*)")
 
 (defn- get-token
   [request]
-  (some->> (yrq/get-header request "authorization")
+  (some->> (rreq/get-header request "authorization")
            (re-matches header-re)
            (second)))
 
@@ -30,7 +30,7 @@
   "SELECT perms, profile_id, expires_at
      FROM access_token
     WHERE id = ?
-      AND (expires_at IS NULL 
+      AND (expires_at IS NULL
            OR (expires_at > now()));")
 
 (defn- get-token-data
@@ -54,9 +54,8 @@
                 (l/trace :hint "exception on decoding malformed token" :cause cause)
                 request)))]
 
-    (fn [request respond raise]
-      (let [request (handle-request request)]
-        (handler request respond raise)))))
+    (fn [request]
+      (handler (handle-request request)))))
 
 (defn- wrap-authz
   "Authorization middleware, will be executed synchronously on vthread."

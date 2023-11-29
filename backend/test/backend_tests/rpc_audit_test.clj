@@ -25,7 +25,7 @@
 
 (def http-request
   (reify
-    yetti.request/Request
+    ring.request/Request
     (get-header [_ name]
       (case name
         "x-forwarded-for" "127.0.0.44"))))

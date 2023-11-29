@@ -32,8 +32,8 @@
    [integrant.core :as ig]
    [markdown.core :as md]
    [markdown.transformers :as mdt]
-   [yetti.request :as yrq]
-   [yetti.response :as yrs]))
+   [ring.request :as rreq]
+   [ring.response :as rres]))
 
 ;; (selmer.parser/cache-off!)
 
@@ -43,10 +43,10 @@
 
 (defn index-handler
   [_cfg _request]
-  {::yrs/status  200
-   ::yrs/headers {"content-type" "text/html"}
-   ::yrs/body    (-> (io/resource "app/templates/debug.tmpl")
-                     (tmpl/render {}))})
+  {::rres/status  200
+   ::rres/headers {"content-type" "text/html"}
+   ::rres/body    (-> (io/resource "app/templates/debug.tmpl")
+                      (tmpl/render {}))})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FILE CHANGES
@@ -55,17 +55,17 @@
 (defn prepare-response
   [body]
   (let [headers {"content-type" "application/transit+json"}]
-    {::yrs/status 200
-     ::yrs/body body
-     ::yrs/headers headers}))
+    {::rres/status 200
+     ::rres/body body
+     ::rres/headers headers}))
 
 (defn prepare-download-response
   [body filename]
   (let [headers {"content-disposition" (str "attachment; filename=" filename)
                  "content-type" "application/octet-stream"}]
-    {::yrs/status 200
-     ::yrs/body body
-     ::yrs/headers headers}))
+    {::rres/status 200
+     ::rres/body body
+     ::rres/headers headers}))
 
 (def sql:retrieve-range-of-changes
   "select revn, changes from file_change where file_id=? and revn >= ? and revn <= ? order by revn")
@@ -107,8 +107,8 @@
                           (db/update! conn :file
                                       {:data data}
                                       {:id file-id})
-                          {::yrs/status 201
-                           ::yrs/body "OK CREATED"})))
+                          {::rres/status 201
+                           ::rres/body "OK CREATED"})))
 
         :else
         (prepare-response (blob/decode data))))))
@@ -137,8 +137,8 @@
                         {:data data
                          :deleted-at nil}
                         {:id file-id})
-            {::yrs/status 200
-             ::yrs/body "OK UPDATED"})
+            {::rres/status 200
+             ::rres/body "OK UPDATED"})
 
           (db/run! pool (fn [{:keys [::db/conn]}]
                           (create-file conn {:id file-id
@@ -148,15 +148,15 @@
                           (db/update! conn :file
                                       {:data data}
                                       {:id file-id})
-                          {::yrs/status 201
-                           ::yrs/body "OK CREATED"}))))
+                          {::rres/status 201
+                           ::rres/body "OK CREATED"}))))
 
-      {::yrs/status 500
-       ::yrs/body "ERROR"})))
+      {::rres/status 500
+       ::rres/body "ERROR"})))
 
 (defn file-data-handler
   [cfg request]
-  (case (yrq/method request)
+  (case (rreq/method request)
     :get (retrieve-file-data cfg request)
     :post (upload-file-data cfg request)
     (ex/raise :type :http
@@ -238,12 +238,12 @@
                      1 (render-template-v1 report)
                      2 (render-template-v2 report)
                      3 (render-template-v3 report))]
-        {::yrs/status 200
-         ::yrs/body result
-         ::yrs/headers {"content-type" "text/html; charset=utf-8"
-                        "x-robots-tag" "noindex"}})
-      {::yrs/status 404
-       ::yrs/body "not found"})))
+        {::rres/status 200
+         ::rres/body result
+         ::rres/headers {"content-type" "text/html; charset=utf-8"
+                         "x-robots-tag" "noindex"}})
+      {::rres/status 404
+       ::rres/body "not found"})))
 
 (def sql:error-reports
   "SELECT id, created_at,
@@ -256,11 +256,11 @@
   [{:keys [::db/pool]} _request]
   (let [items (->> (db/exec! pool [sql:error-reports])
                    (map #(update % :created-at dt/format-instant :rfc1123)))]
-    {::yrs/status 200
-     ::yrs/body (-> (io/resource "app/templates/error-list.tmpl")
-                    (tmpl/render {:items items}))
-     ::yrs/headers {"content-type" "text/html; charset=utf-8"
-                    "x-robots-tag" "noindex"}}))
+    {::rres/status 200
+     ::rres/body (-> (io/resource "app/templates/error-list.tmpl")
+                     (tmpl/render {:items items}))
+     ::rres/headers {"content-type" "text/html; charset=utf-8"
+                     "x-robots-tag" "noindex"}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; EXPORT/IMPORT
@@ -296,14 +296,14 @@
                   ::binf/profile-id profile-id
                   ::binf/project-id project-id))
 
-          {::yrs/status  200
-           ::yrs/headers {"content-type" "text/plain"}
-           ::yrs/body    "OK CLONED"})
+          {::rres/status  200
+           ::rres/headers {"content-type" "text/plain"}
+           ::rres/body    "OK CLONED"})
 
-        {::yrs/status  200
-         ::yrs/body    (io/input-stream path)
-         ::yrs/headers {"content-type" "application/octet-stream"
-                        "content-disposition" (str "attachmen; filename=" (first file-ids) ".penpot")}}))))
+        {::rres/status  200
+         ::rres/body    (io/input-stream path)
+         ::rres/headers {"content-type" "application/octet-stream"
+                         "content-disposition" (str "attachmen; filename=" (first file-ids) ".penpot")}}))))
 
 
 
@@ -334,9 +334,9 @@
             ::binf/profile-id profile-id
             ::binf/project-id project-id))
 
-    {::yrs/status  200
-     ::yrs/headers {"content-type" "text/plain"}
-     ::yrs/body    "OK"}))
+    {::rres/status  200
+     ::rres/headers {"content-type" "text/plain"}
+     ::rres/body    "OK"}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ACTIONS
@@ -363,34 +363,34 @@
         (db/update! pool :profile {:is-blocked true} {:id (:id profile)})
         (db/delete! pool :http-session {:profile-id (:id profile)})
 
-        {::yrs/status  200
-         ::yrs/headers {"content-type" "text/plain"}
-         ::yrs/body    (str/ffmt "PROFILE '%' BLOCKED" (:email profile))})
+        {::rres/status  200
+         ::rres/headers {"content-type" "text/plain"}
+         ::rres/body    (str/ffmt "PROFILE '%' BLOCKED" (:email profile))})
 
       (contains? params :unblock)
       (do
         (db/update! pool :profile {:is-blocked false} {:id (:id profile)})
-        {::yrs/status  200
-         ::yrs/headers {"content-type" "text/plain"}
-         ::yrs/body    (str/ffmt "PROFILE '%' UNBLOCKED" (:email profile))})
+        {::rres/status  200
+         ::rres/headers {"content-type" "text/plain"}
+         ::rres/body    (str/ffmt "PROFILE '%' UNBLOCKED" (:email profile))})
 
       (contains? params :resend)
       (if (:is-blocked profile)
-        {::yrs/status  200
-         ::yrs/headers {"content-type" "text/plain"}
-         ::yrs/body    "PROFILE ALREADY BLOCKED"}
+        {::rres/status  200
+         ::rres/headers {"content-type" "text/plain"}
+         ::rres/body    "PROFILE ALREADY BLOCKED"}
         (do
           (auth/send-email-verification! pool props profile)
-          {::yrs/status  200
-           ::yrs/headers {"content-type" "text/plain"}
-           ::yrs/body    (str/ffmt "RESENDED FOR '%'" (:email profile))}))
+          {::rres/status  200
+           ::rres/headers {"content-type" "text/plain"}
+           ::rres/body    (str/ffmt "RESENDED FOR '%'" (:email profile))}))
 
       :else
       (do
         (db/update! pool :profile {:is-active true} {:id (:id profile)})
-        {::yrs/status  200
-         ::yrs/headers {"content-type" "text/plain"}
-         ::yrs/body    (str/ffmt "PROFILE '%' ACTIVATED" (:email profile))}))))
+        {::rres/status  200
+         ::rres/headers {"content-type" "text/plain"}
+         ::rres/body    (str/ffmt "PROFILE '%' ACTIVATED" (:email profile))}))))
 
 
 (defn- reset-file-data-version
@@ -420,9 +420,9 @@
                         :migrate? false
                         :inc-revn? false
                         :save? true)
-    {::yrs/status  200
-     ::yrs/headers {"content-type" "text/plain"}
-     ::yrs/body    "OK"}))
+    {::rres/status  200
+     ::rres/headers {"content-type" "text/plain"}
+     ::rres/body    "OK"}))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -434,13 +434,13 @@
   [{:keys [::db/pool]} _]
   (try
     (db/exec-one! pool ["select count(*) as count from server_prop;"])
-    {::yrs/status 200
-     ::yrs/body "OK"}
+    {::rres/status 200
+     ::rres/body "OK"}
     (catch Throwable cause
       (l/warn :hint "unable to execute query on health handler"
               :cause cause)
-      {::yrs/status 503
-       ::yrs/body "KO"})))
+      {::rres/status 503
+       ::rres/body "KO"})))
 
 (defn changelog-handler
   [_ _]
@@ -449,11 +449,11 @@
           (md->html [text]
             (md/md-to-html-string text :replacement-transformers (into [transform-emoji] mdt/transformer-vector)))]
     (if-let [clog (io/resource "changelog.md")]
-      {::yrs/status 200
-       ::yrs/headers {"content-type" "text/html; charset=utf-8"}
-       ::yrs/body (-> clog slurp md->html)}
-      {::yrs/status 404
-       ::yrs/body "NOT FOUND"})))
+      {::rres/status 200
+       ::rres/headers {"content-type" "text/html; charset=utf-8"}
+       ::rres/body (-> clog slurp md->html)}
+      {::rres/status 404
+       ::rres/body "NOT FOUND"})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INIT

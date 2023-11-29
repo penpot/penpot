@@ -23,6 +23,7 @@
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.services :as sv]
+   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.io :as io]))
@@ -142,11 +143,11 @@
       (assoc ::image (process-main-image info)))))
 
 (defn create-file-media-object
-  [{:keys [::sto/storage ::db/conn] :as cfg}
+  [{:keys [::sto/storage ::db/conn ::wrk/executor] :as cfg}
    {:keys [id file-id is-local name content]}]
 
-  (let [result (-> (climit/configure cfg :process-image)
-                   (climit/submit! (partial process-image content)))
+  (let [result (-> (climit/configure cfg :process-image/global)
+                   (climit/run! (partial process-image content) executor))
 
         image  (sto/put-object! storage (::image result))
         thumb  (when-let [params (::thumb result)]

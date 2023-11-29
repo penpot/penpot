@@ -33,7 +33,7 @@
    [integrant.core :as ig]
    [lambdaisland.uri :as u]
    [promesa.exec :as px]
-   [yetti.request :as yrq]))
+   [ring.request :as rreq]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
@@ -41,9 +41,9 @@
 
 (defn parse-client-ip
   [request]
-  (or (some-> (yrq/get-header request "x-forwarded-for") (str/split ",") first)
-      (yrq/get-header request "x-real-ip")
-      (some-> (yrq/remote-addr request) str)))
+  (or (some-> (rreq/get-header request "x-forwarded-for") (str/split ",") first)
+      (rreq/get-header request "x-real-ip")
+      (some-> (rreq/remote-addr request) str)))
 
 (defn extract-utm-params
   "Extracts additional data from params and namespace them under

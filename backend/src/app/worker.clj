@@ -25,43 +25,45 @@
    [promesa.core :as p]
    [promesa.exec :as px])
   (:import
-   java.util.concurrent.ExecutorService
-   java.util.concurrent.ForkJoinPool
+   java.util.concurrent.ThreadPoolExecutor
+   java.util.concurrent.Executor
    java.util.concurrent.Future))
 
 (set! *warn-on-reflection* true)
 
-(s/def ::executor #(instance? ExecutorService %))
+(s/def ::executor #(instance? Executor %))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Executor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::parallelism ::us/integer)
-
 (defmethod ig/pre-init-spec ::executor [_]
-  (s/keys :req [::parallelism]))
+  (s/keys :req []))
 
 (defmethod ig/init-key ::executor
-  [skey {:keys [::parallelism]}]
-  (let [prefix  (if (vector? skey) (-> skey first name) "default")
-        tname   (str "penpot/" prefix "/%s")
-        ttype   (cf/get :worker-executor-type :fjoin)]
-    (case ttype
-      :fjoin
-      (let [factory (px/forkjoin-thread-factory :name tname)]
-        (px/forkjoin-executor {:factory factory
-                               :core-size (px/get-available-processors)
-                               :parallelism parallelism
-                               :async true}))
+  [_ _]
+  (let [factory (px/thread-factory :prefix  "penpot/default/")
+        executor (px/cached-executor :factory factory :keepalive 30000)]
+    (l/inf :hint "starting executor")
+    (reify
+      java.lang.AutoCloseable
+      (close [_]
+        (l/inf :hint "stoping executor")
+        (px/shutdown! executor))
 
-      :cached
-      (let [factory (px/thread-factory :name tname)]
-        (px/cached-executor :factory factory)))))
+      clojure.lang.IDeref
+      (deref [_]
+        {:active (.getPoolSize ^ThreadPoolExecutor executor)
+         :running (.getActiveCount ^ThreadPoolExecutor executor)
+         :completed (.getCompletedTaskCount ^ThreadPoolExecutor executor)})
+
+      Executor
+      (execute [_ runnable]
+        (.execute ^Executor executor ^Runnable runnable)))))
 
 (defmethod ig/halt-key! ::executor
   [_ instance]
-  (px/shutdown! instance))
+  (.close ^java.lang.AutoCloseable instance))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TASKS REGISTRY
@@ -111,42 +113,38 @@
 
 (defmethod ig/init-key ::monitor
   [_ {:keys [::executor ::mtx/metrics ::interval ::name]}]
-  (letfn [(monitor! [^ForkJoinPool executor prev-steals]
-            (let [running   (.getRunningThreadCount executor)
-                  queued    (.getQueuedSubmissionCount executor)
-                  active    (.getPoolSize executor)
-                  steals    (.getStealCount executor)
-                  labels    (into-array String [(d/name name)])
+  (letfn [(monitor! [executor prev-completed]
+            (let [labels        (into-array String [(d/name name)])
+                  stats         (deref executor)
 
-                  steals-inc (- steals prev-steals)
-                  steals-inc (if (neg? steals-inc) 0 steals-inc)]
+                  completed     (:completed stats)
+                  completed-inc (- completed prev-completed)
+                  completed-inc (if (neg? completed-inc) 0 completed-inc)]
 
               (mtx/run! metrics
                         :id :executor-active-threads
                         :labels labels
-                        :val active)
+                        :val (:active stats))
+
               (mtx/run! metrics
                         :id :executor-running-threads
-                        :labels labels :val running)
-              (mtx/run! metrics
-                        :id :executors-queued-submissions
                         :labels labels
-                        :val queued)
+                        :val (:running stats))
+
               (mtx/run! metrics
                         :id :executors-completed-tasks
                         :labels labels
-                        :inc steals-inc)
+                        :inc completed-inc)
 
-              steals))]
+              completed-inc))]
 
     (px/thread
       {:name "penpot/executors-monitor" :virtual true}
       (l/inf :hint "monitor: started" :name name)
       (try
-        (loop [steals 0]
-          (when-not (px/shutdown? executor)
-            (px/sleep interval)
-            (recur (long (monitor! executor steals)))))
+        (loop [completed 0]
+          (px/sleep interval)
+          (recur (long (monitor! executor completed))))
         (catch InterruptedException _cause
           (l/trc :hint "monitor: interrupted" :name name))
         (catch Throwable cause
