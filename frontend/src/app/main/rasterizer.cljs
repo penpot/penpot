@@ -131,7 +131,10 @@
 
                       (let [new-origin (dm/str (assoc cf/public-uri :path "/rasterizer.html"))]
                         (log/warn :hint "fallback to main domain" :origin new-origin)
-                        (set! origin new-origin)
+
                         (dom/set-attribute! iframe "src" new-origin)
                         (dom/append-child! js/document.body iframe)
+
+                        (set! origin new-origin)
+                        (set! cf/rasterizer-uri cf/public-uri)
                         (set! instance iframe))))))))
