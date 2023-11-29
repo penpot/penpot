@@ -5,6 +5,9 @@
   "browserslist": [
     "defaults"
   ],
+  "resolutions": {
+    "@vitejs/plugin-react": "^4.2.0"
+  },
   "scripts": {
     "test:compile": "clojure -M:dev:shadow-cljs compile test --config-merge '{:autorun false}'",
     "lint:clj": "clj-kondo --parallel --lint src/",
