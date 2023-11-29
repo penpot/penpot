@@ -700,6 +700,25 @@
                         moved
                         false))))
 
+
+(defn- generate-rename-component
+  [changes id new-name library-data components-v2]
+  (let [[path name]   (cfh/parse-path-name new-name)
+        update-fn
+        (fn [component]
+          (cond-> component
+            :always
+            (assoc :path path
+                   :name name)
+
+            (not components-v2)
+            (update :objects
+           ;; Give the same name to the root shape
+                    #(assoc-in % [id :name] name))))]
+    (-> changes
+        (pcb/with-library-data library-data)
+        (pcb/update-component id update-fn))))
+
 (defn generate-sync-shape-inverse
   "Generate changes to update the component a shape is linked to, from
   the values in the shape and all its children."
@@ -722,7 +741,11 @@
         initial-root?  (:component-root shape-inst)
 
         root-inst      shape-inst
-        root-main      (ctf/get-component-root library component)]
+        root-main      (ctf/get-component-root library component)
+
+        changes        (cond-> changes
+                         (and component (contains? (:touched shape-inst) :name-group))
+                         (generate-rename-component (:component-id shape-inst) (:name shape-inst) library components-v2))]
 
     (if component
       (generate-sync-shape-inverse-recursive changes
