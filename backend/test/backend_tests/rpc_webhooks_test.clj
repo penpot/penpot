@@ -140,9 +140,7 @@
                 error-data (ex-data error)]
             (t/is (th/ex-info? error))
             (t/is (= (:type error-data) :not-found))
-            (t/is (= (:code error-data) :object-not-found)))))
-
-      )))
+            (t/is (= (:code error-data) :object-not-found))))))))
 
 (t/deftest webhooks-quotes
   (with-mocks [http-mock {:target 'app.http.client/req!

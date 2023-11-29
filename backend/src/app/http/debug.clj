@@ -230,8 +230,7 @@
             (-> (io/resource "app/templates/error-report.v3.tmpl")
                 (tmpl/render (-> content
                                  (assoc :id id)
-                                 (assoc :created-at (dt/format-instant created-at :rfc1123))))))
-          ]
+                                 (assoc :created-at (dt/format-instant created-at :rfc1123))))))]
 
     (if-let [report (get-report request)]
       (let [result (case (:version report)

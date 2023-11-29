@@ -28,7 +28,7 @@
 (defn bounce-report
   [{:keys [token email] :or {email "user@example.com"}}]
   {"notificationType" "Bounce",
-   "bounce" {"feedbackId""010701776d7dd251-c08d280d-9f47-41aa-b959-0094fec779d9-000000",
+   "bounce" {"feedbackId" "010701776d7dd251-c08d280d-9f47-41aa-b959-0094fec779d9-000000",
              "bounceType" "Permanent",
              "bounceSubType" "General",
              "bouncedRecipients" [{"emailAddress" email,
@@ -113,8 +113,7 @@
     (t/is (= "permanent" (:kind result)))
     (t/is (= "general" (:category result)))
     (t/is (= ["user@example.com"] (mapv :email (:recipients result))))
-    (t/is (= (:id profile) (:profile-id result)))
-    ))
+    (t/is (= (:id profile) (:profile-id result)))))
 
 (t/deftest test-parse-complaint-report
   (let [profile (th/create-profile* 1)
@@ -129,8 +128,7 @@
     (t/is (= "abuse" (:kind result)))
     (t/is (= nil (:category result)))
     (t/is (= ["user@example.com"] (into [] (:recipients result))))
-    (t/is (= (:id profile) (:profile-id result)))
-    ))
+    (t/is (= (:id profile) (:profile-id result)))))
 
 (t/deftest test-parse-complaint-report-without-token
   (let [props   (:app.setup/props th/*system*)
@@ -141,8 +139,7 @@
     (t/is (= "abuse" (:kind result)))
     (t/is (= nil (:category result)))
     (t/is (= ["user@example.com"] (into [] (:recipients result))))
-    (t/is (= nil (:profile-id result)))
-    ))
+    (t/is (= nil (:profile-id result)))))
 
 (t/deftest test-process-bounce-report
   (let [profile (th/create-profile* 1)
@@ -169,9 +166,7 @@
       (t/is (= "user@example.com" (get-in rows [0 :email]))))
 
     (let [prof (db/get-by-id pool :profile (:id profile))]
-      (t/is (false? (:is-muted prof))))
-
-    ))
+      (t/is (false? (:is-muted prof))))))
 
 (t/deftest test-process-complaint-report
   (let [profile (th/create-profile* 1)
@@ -201,9 +196,7 @@
 
 
     (let [prof (db/get-by-id pool :profile (:id profile))]
-      (t/is (false? (:is-muted prof))))
-
-    ))
+      (t/is (false? (:is-muted prof))))))
 
 (t/deftest test-process-bounce-report-to-self
   (let [profile (th/create-profile* 1)

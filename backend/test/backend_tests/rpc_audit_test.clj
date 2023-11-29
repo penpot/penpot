@@ -9,8 +9,8 @@
    [app.common.pprint :as pp]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.util.time :as dt]
    [app.rpc :as-alias rpc]
+   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -91,8 +91,6 @@
         (t/is (= 1 (count rows)))
         (t/is (= (:id prof) (:profile-id row)))
         (t/is (= "navigate" (:name row)))
-        (t/is (= "frontend" (:source row))))
-
-      )))
+        (t/is (= "frontend" (:source row)))))))
 
 

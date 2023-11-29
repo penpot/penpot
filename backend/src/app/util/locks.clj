@@ -8,8 +8,8 @@
   "A syntactic helpers for using locks."
   (:refer-clojure :exclude [locking])
   (:import
-   java.util.concurrent.locks.ReentrantLock
-   java.util.concurrent.locks.Lock))
+   java.util.concurrent.locks.Lock
+   java.util.concurrent.locks.ReentrantLock))
 
 (defn create
   []

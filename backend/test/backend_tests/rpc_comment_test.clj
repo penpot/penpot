@@ -285,6 +285,4 @@
           (t/is (th/success? out))
 
           (let [threads (th/db-query :comment-thread {:file-id (:id file-1)})]
-            (t/is (= 0 (count threads))))))
-
-      )))
+            (t/is (= 0 (count threads)))))))))

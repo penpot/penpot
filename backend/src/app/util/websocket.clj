@@ -89,17 +89,17 @@
         state      (atom {})
         beats      (atom #{})
         options    (-> options
-                         (update ::handler wrap-handler)
-                         (assoc ::id id)
-                         (assoc ::state state)
-                         (assoc ::beats beats)
-                         (assoc ::created-at (dt/now))
-                         (assoc ::input-ch input-ch)
-                         (assoc ::heartbeat-ch hbeat-ch)
-                         (assoc ::output-ch output-ch)
-                         (assoc ::close-ch close-ch)
-                         (assoc ::remote-addr ip-addr)
-                         (assoc ::user-agent uagent))]
+                       (update ::handler wrap-handler)
+                       (assoc ::id id)
+                       (assoc ::state state)
+                       (assoc ::beats beats)
+                       (assoc ::created-at (dt/now))
+                       (assoc ::input-ch input-ch)
+                       (assoc ::heartbeat-ch hbeat-ch)
+                       (assoc ::output-ch output-ch)
+                       (assoc ::close-ch close-ch)
+                       (assoc ::remote-addr ip-addr)
+                       (assoc ::user-agent uagent))]
 
     {:on-open
      (fn on-open [channel]
@@ -115,9 +115,9 @@
      :on-close
      (fn on-close [_channel code reason]
        (l/info :fn "on-ws-terminate"
-                :conn-id id
-                :code code
-                :reason reason)
+               :conn-id id
+               :code code
+               :reason reason)
        (sp/close! close-ch))
 
      :on-error

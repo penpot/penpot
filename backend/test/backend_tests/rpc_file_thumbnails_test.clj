@@ -149,9 +149,7 @@
 
       ;; check that storage object is still exists but is marked as deleted
       (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted? false})]
-        (t/is (nil? row)))
-
-      )))
+        (t/is (nil? row))))))
 
 (t/deftest create-file-thumbnail
   (let [storage (::sto/storage th/*system*)
@@ -241,10 +239,7 @@
       (let [result (th/run-task! :storage-gc-deleted {:min-age (dt/duration 0)})]
         (t/is (= 1 (:deleted result))))
 
-      (t/is (some? (sto/get-object storage (:media-id row2)))))
-
-
-    ))
+      (t/is (some? (sto/get-object storage (:media-id row2)))))))
 
 (t/deftest get-file-object-thumbnail
   (let [storage (::sto/storage th/*system*)
@@ -254,21 +249,21 @@
                                     :is-shared false})
 
         data   {::th/type :create-file-object-thumbnail
-                 ::rpc/profile-id (:id profile)
-                 :file-id (:id file)
-                 :object-id "test-key-2"
-                 :media {:filename "sample.jpg"
-                         :size 7923
-                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
-                         :mtype "image/jpeg"}}]
+                ::rpc/profile-id (:id profile)
+                :file-id (:id file)
+                :object-id "test-key-2"
+                :media {:filename "sample.jpg"
+                        :size 7923
+                        :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                        :mtype "image/jpeg"}}]
 
     (let [out (th/command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
     (let [[row :as rows] (th/db-query :file-tagged-object-thumbnail
-                                            {:file-id (:id file)}
-                                            {:order-by [[:created-at :asc]]})]
+                                      {:file-id (:id file)}
+                                      {:order-by [[:created-at :asc]]})]
       (t/is (= 1 (count rows)))
 
       (t/is (= (:file-id data) (:file-id row)))

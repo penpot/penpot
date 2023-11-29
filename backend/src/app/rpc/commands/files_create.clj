@@ -78,8 +78,8 @@
          (create-file-role! conn))
 
     (db/update! conn :project
-      {:modified-at (dt/now)}
-      {:id project-id})
+                {:modified-at (dt/now)}
+                {:id project-id})
 
     (files/decode-row file)))
 

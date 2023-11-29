@@ -403,8 +403,7 @@
                 (do
                   (some->> (seq to-freeze) (mark-freeze-in-bulk conn))
                   (some->> (seq to-delete) (mark-delete-in-bulk conn))
-                  [(count to-freeze) (count to-delete)]))))
-          ]
+                  [(count to-freeze) (count to-delete)]))))]
 
     (fn [_]
       (db/with-atomic [conn pool]

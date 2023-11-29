@@ -97,7 +97,7 @@
             :with-credentials (and (contains? cfg ::username)
                                    (contains? cfg ::password))
             :min-size (::min-size cfg)
-          :max-size (::max-size cfg))
+            :max-size (::max-size cfg))
     (create-pool cfg)))
 
 (defmethod ig/halt-key! ::pool
@@ -412,7 +412,7 @@
    (.setSavepoint conn (name label))))
 
 (defn release!
-  [^Connection conn ^Savepoint sp ]
+  [^Connection conn ^Savepoint sp]
   (.releaseSavepoint conn sp))
 
 (defn rollback!

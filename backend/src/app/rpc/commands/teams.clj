@@ -56,11 +56,11 @@
         is-owner (boolean (some :is-owner rows))
         is-admin (boolean (some :is-admin rows))
         can-edit (boolean (some :can-edit rows))]
-     (when (seq rows)
-       {:is-owner is-owner
-        :is-admin (or is-owner is-admin)
-        :can-edit (or is-owner is-admin can-edit)
-        :can-read true})))
+    (when (seq rows)
+      {:is-owner is-owner
+       :is-admin (or is-owner is-admin)
+       :can-edit (or is-owner is-admin can-edit)
+       :can-read true})))
 
 (def has-admin-permissions?
   (perms/make-admin-predicate-fn get-permissions))
@@ -368,8 +368,8 @@
   (let [conn    (db/get-connection cfg-or-conn)
         team    (create-team* conn params)
         params  (assoc params
-                        :team-id (:id team)
-                        :role :owner)
+                       :team-id (:id team)
+                       :role :owner)
         project (create-team-default-project conn params)]
     (create-team-role conn params)
     (assoc team :default-project-id (:id project))))
@@ -667,8 +667,8 @@
 
       ;; Save new photo
       (db/update! pool :team
-        {:photo-id (:id photo)}
-        {:id team-id})
+                  {:photo-id (:id photo)}
+                  {:id team-id})
 
       (assoc team :photo-id (:id photo)))))
 

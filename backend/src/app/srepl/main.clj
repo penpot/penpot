@@ -313,8 +313,7 @@
                   (= op :profile-id)
                   (if (coll? param)
                     (sequence (keep parse-uuid) param)
-                    (resolve-dest param))))))
-          ]
+                    (resolve-dest param))))))]
 
     (->> (resolve-dest dest)
          (filter some?)

@@ -151,7 +151,7 @@
                                      {::db/return-keys? false})
                   count  (db/get-update-count result)]
               (when (pos? count)
-                (l/debug :hint "mark team for deletion" :id (str id) ))
+                (l/debug :hint "mark team for deletion" :id (str id)))
 
               (+ total count)))]
 

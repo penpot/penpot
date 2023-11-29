@@ -353,8 +353,7 @@
           (get-name [props]
             (let [attr-kw (cf/get :oidc-name-attr "name")
                   attr-ph (parse-attr-path provider attr-kw)]
-              (get-in props attr-ph)))
-          ]
+              (get-in props attr-ph)))]
 
     (let [props (qualify-props provider info)
           email (get-email props)]

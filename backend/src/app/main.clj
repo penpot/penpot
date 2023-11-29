@@ -160,8 +160,7 @@
    {::mdef/name "penpot_executors_running_threads"
     ::mdef/help "Current number of threads with state RUNNING."
     ::mdef/labels ["name"]
-    ::mdef/type :gauge}
-   })
+    ::mdef/type :gauge}})
 
 (def system-config
   {::db/pool
@@ -322,8 +321,7 @@
     ::setup/templates    (ig/ref ::setup/templates)
     ::props              (ig/ref ::setup/props)
 
-    :pool                (ig/ref ::db/pool)
-    }
+    :pool                (ig/ref ::db/pool)}
 
    :app.rpc.doc/routes
    {:methods (ig/ref :app.rpc/methods)}
@@ -443,8 +441,7 @@
     ::sto.s3/io-threads (cf/get :storage-assets-s3-io-threads)}
 
    [::assets :app.storage.fs/backend]
-   {::sto.fs/directory (cf/get :storage-assets-fs-directory)}
-   })
+   {::sto.fs/directory (cf/get :storage-assets-fs-directory)}})
 
 
 (def worker-config

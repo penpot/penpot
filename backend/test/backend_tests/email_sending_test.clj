@@ -6,9 +6,9 @@
 
 (ns backend-tests.email-sending-test
   (:require
-   [backend-tests.helpers :as th]
    [app.db :as db]
    [app.email :as emails]
+   [backend-tests.helpers :as th]
    [clojure.test :as t]
    [promesa.core :as p]))
 

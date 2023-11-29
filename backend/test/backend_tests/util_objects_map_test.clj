@@ -60,9 +60,7 @@
 
   (t/testing "error on non-uuid keys"
     (let [obj (omap/wrap {})]
-      (t/is (thrown? IllegalArgumentException (assoc obj :foo "bar")))))
-
-  )
+      (t/is (thrown? IllegalArgumentException (assoc obj :foo "bar"))))))
 
 (t/deftest internal-operation
   (t/testing "modified & compact"
@@ -83,8 +81,7 @@
       (t/is (= (get obj1 id1) (get obj2 id1)))
       (t/is (= (get obj1 id2) (get obj2 id2)))
       (t/is (= (count obj1) (count obj2)))
-      (t/is (= (hash obj1) (hash obj2)))))
-  )
+      (t/is (= (hash obj1) (hash obj2))))))
 
 (t/deftest internal-encode-decode
   (sg/check!
@@ -95,11 +92,11 @@
            obj3 (assoc obj2 uuid/zero 1)
            obj4 (omap/create (deref obj3))]
        ;; (app.common.pprint/pprint data)
-     (t/is (= (hash obj1) (hash obj2)))
-     (t/is (not= (hash obj2) (hash obj3)))
-     (t/is (bytes? (deref obj3)))
-     (t/is (pos? (alength (deref obj3))))
-     (t/is (= (hash obj3) (hash obj4)))))))
+       (t/is (= (hash obj1) (hash obj2)))
+       (t/is (not= (hash obj2) (hash obj3)))
+       (t/is (bytes? (deref obj3)))
+       (t/is (pos? (alength (deref obj3))))
+       (t/is (= (hash obj3) (hash obj4)))))))
 
 (t/deftest fressian-encode-decode
   (sg/check!

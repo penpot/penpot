@@ -158,15 +158,15 @@
 
             (p/await! scope))
 
-        (-> (deref feat/*stats*)
-            (assoc :elapsed (dt/format-duration (tpoint))))
+          (-> (deref feat/*stats*)
+              (assoc :elapsed (dt/format-duration (tpoint))))
 
-        (catch Throwable cause
-          (l/dbg :hint "migrate:error" :cause cause))
+          (catch Throwable cause
+            (l/dbg :hint "migrate:error" :cause cause))
 
-        (finally
-          (let [elapsed (dt/format-duration (tpoint))]
-            (l/dbg :hint "migrate:end" :elapsed elapsed))))))))
+          (finally
+            (let [elapsed (dt/format-duration (tpoint))]
+              (l/dbg :hint "migrate:end" :elapsed elapsed))))))))
 
 (defn migrate-team!
   [{:keys [::db/pool] :as system} team-id

@@ -6,12 +6,12 @@
 
 (ns backend-tests.rpc-project-test
   (:require
-   [backend-tests.helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.rpc :as-alias rpc]
    [app.http :as http]
+   [app.rpc :as-alias rpc]
    [app.util.time :as dt]
+   [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
@@ -104,8 +104,7 @@
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
-        (t/is (= 1 (count result)))))
-  ))
+        (t/is (= 1 (count result)))))))
 
 (t/deftest permissions-checks-create-project
   (let [profile1 (th/create-profile* 1)
@@ -237,5 +236,4 @@
       (let [error (:error out)
             error-data (ex-data error)]
         (t/is (th/ex-info? error))
-        (t/is (= (:type error-data) :not-found))))
-    ))
+        (t/is (= (:type error-data) :not-found))))))

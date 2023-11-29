@@ -371,8 +371,7 @@
     ::sm/decode instant
     :gen/gen (tgen/fmap (fn [i] (in-past i))  tgen/pos-int)
     ::oapi/type "string"
-    ::oapi/format "iso"
-    }})
+    ::oapi/format "iso"}})
 
 (sm/def! ::duration
   {:type :durations
@@ -383,5 +382,4 @@
     :title "duration"
     ::sm/decode duration
     ::oapi/type "string"
-    ::oapi/format "duration"
-    }})
+    ::oapi/format "duration"}})

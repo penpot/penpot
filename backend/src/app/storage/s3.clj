@@ -194,9 +194,7 @@
                       builder (cond-> ^S3AsyncClientBuilder builder
                                 (some? endpoint)
                                 (.endpointOverride (URI. endpoint)))]
-                  (.build ^S3AsyncClientBuilder builder))
-
-        ]
+                  (.build ^S3AsyncClientBuilder builder))]
 
     (reify
       clojure.lang.IDeref
@@ -265,15 +263,15 @@
       (Optional/of (long (impl/get-size content))))
 
     (^void subscribe [_ ^Subscriber subscriber]
-     (let [sem (Semaphore. 0)
-           thr (upload-thread id subscriber sem content)]
-       (.onSubscribe subscriber
-                     (reify Subscription
-                       (cancel [_]
-                         (px/interrupt! thr)
-                         (.release sem 1))
-                       (request [_ n]
-                         (.release sem (int n)))))))))
+      (let [sem (Semaphore. 0)
+            thr (upload-thread id subscriber sem content)]
+        (.onSubscribe subscriber
+                      (reify Subscription
+                        (cancel [_]
+                          (px/interrupt! thr)
+                          (.release sem 1))
+                        (request [_ n]
+                          (.release sem (int n)))))))))
 
 
 (defn- put-object

@@ -361,8 +361,7 @@
    ::sm/params [:map {:title "create-file-thumbnail"}
                 [:file-id ::sm/uuid]
                 [:revn :int]
-                [:media ::media/upload]]
-   }
+                [:media ::media/upload]]}
 
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]

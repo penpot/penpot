@@ -25,9 +25,9 @@
    [promesa.core :as p]
    [promesa.exec :as px])
   (:import
-   java.util.concurrent.ThreadPoolExecutor
    java.util.concurrent.Executor
-   java.util.concurrent.Future))
+   java.util.concurrent.Future
+   java.util.concurrent.ThreadPoolExecutor))
 
 (set! *warn-on-reflection* true)
 
