@@ -19,17 +19,18 @@
    [datoteka.fs :as fs]
    [integrant.core :as ig]))
 
-(def ^:private schema:template
-  [:map {:title "Template"}
-   [:id ::sm/word-string]
-   [:name ::sm/word-string]
-   [:file-uri ::sm/word-string]])
+(def ^:private
+  schema:template
+  (sm/define
+    [:map {:title "Template"}
+     [:id ::sm/word-string]
+     [:name ::sm/word-string]
+     [:file-uri ::sm/word-string]]))
 
-(def ^:private schema:templates
-  [:vector schema:template])
-
-(def check-templates!
-  (sm/check-fn schema:templates))
+(def ^:private
+  schema:templates
+  (sm/define
+    [:vector schema:template]))
 
 (defmethod ig/init-key ::setup/templates
   [_ _]
@@ -38,13 +39,13 @@
 
     (dm/verify!
      "expected a valid templates file"
-     (check-templates! templates))
+     (sm/check! schema:templates templates))
 
     (doseq [{:keys [id path] :as template} templates]
       (let [path (or path (fs/join dest id))]
         (if (fs/exists? path)
-          (l/debug :hint "template file" :id id :state "present" :path (dm/str path))
-          (l/debug :hint "template file" :id id :state "absent"))))
+          (l/dbg :hint "template file" :id id :state "present" :path (dm/str path))
+          (l/dbg :hint "template file" :id id :state "absent"))))
 
     templates))
 
