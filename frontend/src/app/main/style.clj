@@ -11,9 +11,25 @@
    [clojure.core :as c]
    [clojure.data.json :as json]
    [clojure.java.io :as io]
+   [cuerdas.core :as str]
    [rumext.v2.util :as mfu]))
 
-(def ^:dynamic *css-data* nil)
+;; Should coincide with the `ROOT_NAME` constant in gulpfile.js
+(def ROOT-NAME "app")
+
+(def ^:dynamic *css-prefix* nil)
+
+(defn get-prefix
+  ;; Calculates the css-modules prefix given the filename
+  ;; should be the same as the calculation inside the `gulpfile.js`
+  [fname]
+  (let [file (io/file fname)
+        parts
+        (->> (str/split (.getParent file) #"/")
+             (drop-while #(not= % ROOT-NAME))
+             (rest)
+             (str/join "_"))]
+    (str parts "_" (subs (.getName file) 0 (- (count (.getName file)) 5)) "__")))
 
 (def ^:private xform-css
   (keep (fn [k]
@@ -22,9 +38,8 @@
            (let [knm (name k)
                  kns (namespace k)]
              (case kns
-               "global"  knm
-               "old-css" (if (nil? *css-data*) knm "")
-               (or (get *css-data* (keyword knm)) (str "_not_found_" knm))))
+               "global" knm
+               (str *css-prefix* knm)))
 
            (string? k)
            k))))
@@ -49,14 +64,13 @@
   all classes with space in the same way as `css*`."
   [& selectors]
   (let [fname (-> *ns* meta :file)
-        path  (str (subs fname 0 (- (count fname) 4)) "css.json")
-        data  (read-json-file path)]
+        prefix (get-prefix fname)]
     (if (symbol? (first selectors))
       `(if ~(with-meta (first selectors) {:tag 'boolean})
-         (css* ~@(binding [*css-data* data]
+         (css* ~@(binding [*css-prefix* prefix]
                    (into [] xform-css (rest selectors))))
          (css* ~@(rest selectors)))
-      `(css* ~@(binding [*css-data* data]
+      `(css* ~@(binding [*css-prefix* prefix]
                  (into [] xform-css selectors))))))
 
 (defmacro styles
@@ -76,8 +90,7 @@
                              kns (namespace k)]
                          (case kns
                            "global"  knm
-                           "old-css" (if (nil? *css-data*) knm "")
-                           (or (get *css-data* (keyword knm)) knm)))
+                           (str *css-prefix* knm)))
 
                        (string? k)
                        k)]
@@ -95,7 +108,6 @@
 ;;
 ;;  (stl/css-case new-css-system
 ;;                :left-settings-bar    true
-;;                :old-css/settings-bar true
 ;;                :global/two-row       (<= size 300))
 ;;
 ;; The first argument to the `css-case` macro is optional an if you don't
@@ -118,17 +130,16 @@
 (defmacro css-case
   [& params]
   (let [fname (-> *ns* meta :file)
-        path  (str (subs fname 0 (- (count fname) 4)) "css.json")
-        data  (read-json-file path)]
+        prefix (get-prefix fname)]
 
     (if (symbol? (first params))
       `(if ~(with-meta (first params) {:tag 'boolean})
-         ~(binding [*css-data* data]
+         ~(binding [*css-prefix* prefix]
             (-> (into [] xform-css-case (rest params))
                 (mfu/compile-concat :safe? false)))
          ~(-> (into [] xform-css-case (rest params))
               (mfu/compile-concat :safe? false)))
-      `~(binding [*css-data* data]
+      `~(binding [*css-prefix* prefix]
           (-> (into [] xform-css-case params)
               (mfu/compile-concat  :safe? false))))))
 
