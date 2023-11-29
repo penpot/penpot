@@ -25,9 +25,9 @@
  :output
  {:exclude-files
   ["data_readers.clj"
-   "frontend/src/app/util/perf.cljs"
-   "common/src/app/common/logging.cljc"
-   "common/src/app/common/exceptions.cljc"
+   "src/app/util/perf.cljs"
+   "src/app/common/logging.cljc"
+   "src/app/common/exceptions.cljc"
    "^(?:backend|frontend|exporter|common)/build.clj"
    "^(?:backend|frontend|exporter|common)/deps.edn"
    "^(?:backend|frontend|exporter|common)/scripts/"

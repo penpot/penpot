@@ -20,6 +20,7 @@
   },
   "scripts": {
     "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
-    "fmt:clj": "cljfmt fix --parallel=true src/ test/"
+    "fmt:clj": "cljfmt fix --parallel=true src/ test/",
+    "lint:clj": "clj-kondo --parallel --lint src/"
   }
 }
