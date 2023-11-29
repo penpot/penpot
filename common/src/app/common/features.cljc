@@ -177,7 +177,7 @@
   (let [not-supported (set/difference enabled-features supported-features)]
     (when (seq not-supported)
       (ex/raise :type :restriction
-                :code :features-mismatch
+                :code :feature-not-supported
                 :feature (first not-supported)
                 :hint (str/ffmt "features '%' not supported"
                                 (str/join "," not-supported)))))
@@ -220,7 +220,7 @@
 
        (when (seq not-supported)
          (ex/raise :type :restriction
-                   :code :feature-mismatch
+                   :code :file-feature-mismatch
                    :feature (first not-supported)
                    :hint (str/ffmt "file features '%' not enabled"
                                    (str/join "," not-supported))))))
