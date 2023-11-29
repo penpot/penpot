@@ -242,6 +242,7 @@
   (let [not-supported (-> (or source-features #{})
                           (set/difference destination-features)
                           (set/difference no-migration-features)
+                          (set/difference default-enabled-features)
                           (seq))]
     (when not-supported
       (ex/raise :type :restriction
@@ -253,6 +254,7 @@
   (let [not-supported (-> (or destination-features #{})
                           (set/difference source-features)
                           (set/difference no-migration-features)
+                          (set/difference default-enabled-features)
                           (seq))]
     (when not-supported
       (ex/raise :type :restriction
