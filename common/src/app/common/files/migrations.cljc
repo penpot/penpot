@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.files.changes :as cpc]
-   [app.common.files.defaults :refer [version]]
+   [app.common.files.defaults :as cfd]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.rect :as grc]
@@ -26,6 +26,8 @@
    [cuerdas.core :as str]))
 
 #?(:cljs (l/set-level! :info))
+
+(def version cfd/version)
 
 (defmulti migrate :version)
 

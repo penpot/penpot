@@ -884,6 +884,11 @@ msgstr ""
 "the current penpot version does not supports it or has it disabled."
 
 #: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr ""
+"File has an incompatible version number"
+
+#: src/app/main/errors.cljs
 msgid "errors.file-feature-mismatch"
 msgstr ""
 "It seems that there is a mismatch between the enabled features and the "
