@@ -34,10 +34,12 @@
 
 (declare duplicate-file)
 
-(def ^:private schema:duplicate-file
-  [:map {:title "duplicate-file"}
-   [:file-id ::sm/uuid]
-   [:name {:optional true} :string]])
+(def ^:private
+  schema:duplicate-file
+  (sm/define
+    [:map {:title "duplicate-file"}
+     [:file-id ::sm/uuid]
+     [:name {:optional true} :string]]))
 
 (sv/defmethod ::duplicate-file
   "Duplicate a single file in the same team."
@@ -210,10 +212,12 @@
 
 (declare duplicate-project)
 
-(def ^:private schema:duplicate-project
-  [:map {:title "duplicate-project"}
-   [:project-id ::sm/uuid]
-   [:name {:optional true} :string]])
+(def ^:private
+  schema:duplicate-project
+  (sm/define
+    [:map {:title "duplicate-project"}
+     [:project-id ::sm/uuid]
+     [:name {:optional true} :string]]))
 
 (sv/defmethod ::duplicate-project
   "Duplicate an entire project with all the files"
@@ -337,10 +341,12 @@
 
     nil))
 
-(def ^:private schema:move-files
-  [:map {:title "move-files"}
-   [:ids ::sm/set-of-uuid]
-   [:project-id ::sm/uuid]])
+(def ^:private
+  schema:move-files
+  (sm/define
+    [:map {:title "move-files"}
+     [:ids ::sm/set-of-uuid]
+     [:project-id ::sm/uuid]]))
 
 (sv/defmethod ::move-files
   "Move a set of files from one project to other."
@@ -382,10 +388,12 @@
 
     nil))
 
-(def ^:private schema:move-project
-  [:map {:title "move-project"}
-   [:team-id ::sm/uuid]
-   [:project-id ::sm/uuid]])
+(def ^:private
+  schema:move-project
+  (sm/define
+    [:map {:title "move-project"}
+     [:team-id ::sm/uuid]
+     [:project-id ::sm/uuid]]))
 
 (sv/defmethod ::move-project
   "Move projects between teams"
@@ -420,10 +428,12 @@
         (assoc ::binfile/migrate? true)
         (binfile/import!))))
 
-(def schema:clone-template
-  [:map {:title "clone-template"}
-   [:project-id ::sm/uuid]
-   [:template-id ::sm/word-string]])
+(def ^:private
+  schema:clone-template
+  (sm/define
+    [:map {:title "clone-template"}
+     [:project-id ::sm/uuid]
+     [:template-id ::sm/word-string]]))
 
 (sv/defmethod ::clone-template
   "Clone into the specified project the template by its id."
