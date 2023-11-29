@@ -2,6 +2,13 @@
   "name": "exporter",
   "version": "1.0.0",
   "license": "MPL-2.0",
+  "author": "Kaleidos INC",
+  "private": true,
+  "packageManager": "yarn@4.0.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/penpot/penpot"
+  },
   "dependencies": {
     "archiver": "^6.0.0",
     "cookies": "^0.8.0",
@@ -18,5 +25,8 @@
     "shadow-cljs": "^2.25.10",
     "source-map-support": "^0.5.21"
   },
-  "packageManager": "yarn@4.0.2"
+  "scripts": {
+    "fmt:clj:check": "cljfmt check --parallel=false src/",
+    "fmt:clj": "cljfmt fix --parallel=true src/"
+  }
 }

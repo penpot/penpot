@@ -25,9 +25,16 @@
  :output
  {:exclude-files
   ["data_readers.clj"
-   "app/util/perf.cljs"
-   "app/common/logging.cljc"
-   "app/common/exceptions.cljc"]}
+   "frontend/src/app/util/perf.cljs"
+   "common/src/app/common/logging.cljc"
+   "common/src/app/common/exceptions.cljc"
+   "^(?:backend|frontend|exporter|common)/build.clj"
+   "^(?:backend|frontend|exporter|common)/deps.edn"
+   "^(?:backend|frontend|exporter|common)/scripts/"
+   "^(?:backend|frontend|exporter|common)/dev/"
+   "^(?:backend|frontend|exporter|common)/test/"]
+
+  :linter-name true}
 
  :linters
  {:unsorted-required-namespaces

@@ -3,20 +3,28 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MPL-2.0",
+  "author": "Kaleidos INC",
+  "private": true,
+  "packageManager": "yarn@4.0.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/penpot/penpot"
+  },
   "dependencies": {
     "luxon": "^3.4.2",
     "sax": "^1.2.4"
-  },
-  "scripts": {
-    "test:watch": "clojure -M:dev:shadow-cljs watch test",
-    "test:compile": "clojure -M:dev:shadow-cljs compile test --config-merge '{:autorun false}'",
-    "test:run": "node target/test.js",
-    "test": "yarn run test:compile && yarn run test:run"
   },
   "devDependencies": {
     "shadow-cljs": "2.25.10",
     "source-map-support": "^0.5.21",
     "ws": "^8.13.0"
   },
-  "packageManager": "yarn@4.0.2"
+  "scripts": {
+    "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
+    "fmt:clj": "cljfmt fix --parallel=true src/ test/",
+    "test:watch": "clojure -M:dev:shadow-cljs watch test",
+    "test:compile": "clojure -M:dev:shadow-cljs compile test --config-merge '{:autorun false}'",
+    "test:run": "node target/test.js",
+    "test": "yarn run test:compile && yarn run test:run"
+  }
 }
