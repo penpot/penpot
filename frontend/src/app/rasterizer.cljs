@@ -25,6 +25,8 @@
 (declare send-success!)
 (declare send-failure!)
 
+(defonce data-uri-cache (js/Map.))
+
 (defonce parent-origin
   (dm/str cf/public-uri))
 
@@ -86,13 +88,18 @@
 (defn- fetch-as-data-uri
   "Fetches a URL as a Data URI."
   [uri]
-  (->> (http/send! {:uri uri
-                    :response-type :blob
-                    :method :get
-                    :mode :cors
-                    :omit-default-headers true})
-       (rx/map :body)
-       (rx/mapcat wapi/read-file-as-data-url)))
+  (if (.has data-uri-cache uri)
+    (let [blob (.get data-uri-cache uri)]
+      (rx/from (.text blob)))
+    (->> (http/send! {:uri uri
+                      :response-type :blob
+                      :method :get
+                      :mode :cors
+                      :omit-default-headers true})
+         (rx/map :body)
+         (rx/mapcat wapi/read-file-as-data-url)
+         (rx/tap (fn [data-uri]
+                   (.set data-uri-cache uri (wapi/create-blob data-uri "text/plain")))))))
 
 (defn- svg-update-image!
   "Updates an image in an SVG to a Data URI."
