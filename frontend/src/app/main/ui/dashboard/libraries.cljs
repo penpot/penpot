@@ -46,7 +46,7 @@
           (dom/set-html-title (tr "title.dashboard.shared-libraries" tname)))))
 
     (mf/with-effect []
-      (st/emit! (dd/fetch-shared-files)
+      (st/emit! (dd/fetch-shared-files (:id team))
                 (dd/clear-selected-files)))
 
     (if new-css-system

@@ -256,13 +256,14 @@
             (update :dashboard-files d/merge files))))))
 
 (defn fetch-shared-files
-  []
-  (ptk/reify ::fetch-shared-files
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
-             (rx/map shared-files-fetched))))))
+  ([] (fetch-shared-files nil))
+  ([team-id]
+   (ptk/reify ::fetch-shared-files
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [team-id (or team-id (:current-team-id state))]
+         (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
+              (rx/map shared-files-fetched)))))))
 
 ;; --- EVENT: recent-files
 
