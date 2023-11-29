@@ -80,7 +80,6 @@
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [clojure.set :as set]
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
@@ -1738,47 +1737,8 @@
    (= (:width (:selrect (first (vals paste-obj))))
       (:width (:selrect frame-obj)))))
 
-(defn- check-paste-features!
-  "Function used for check feature compability between currently
-  enabled features set on the application with the provided featured
-  set by the paste data."
-  [enabled-features paste-features]
-  (let [not-supported (-> enabled-features
-                          (set/difference paste-features)
-                          ;; NOTE: we don't want to raise a feature-mismatch
-                          ;; exception for features which don't require an
-                          ;; explicit file migration process or has no real
-                          ;; effect on file data structure
-                          (set/difference cfeat/no-migration-features))]
-
-    (when (seq not-supported)
-      (ex/raise :type :restriction
-                :code :missing-features-in-paste-content
-                :feature (first not-supported)
-                :hint (str/ffmt "expected features '%' not present in pasted content"
-                                (str/join "," not-supported)))))
-
-  (let [not-supported (set/difference enabled-features cfeat/supported-features)]
-    (when (seq not-supported)
-      (ex/raise :type :restriction
-                :code :paste-feature-not-supported
-                :feature (first not-supported)
-                :hint (str/ffmt "features '%' not supported in the application"
-                                (str/join "," not-supported)))))
-
-  (let [not-supported (-> paste-features
-                          (set/difference enabled-features)
-                          (set/difference cfeat/backend-only-features)
-                          (set/difference cfeat/frontend-only-features))]
-
-    (when (seq not-supported)
-      (ex/raise :type :restriction
-                :code :paste-feature-not-enabled
-                :feature (first not-supported)
-                :hint (str/ffmt "paste features '%' not enabled on the application"
-                                (str/join "," not-supported))))))
-
-(def ^:private schema:paste-data
+(def ^:private
+  schema:paste-data
   (sm/define
     [:map {:title "paste-data"}
      [:type [:= :copied-shapes]]
@@ -1818,7 +1778,7 @@
                         {:hint "invalid paste data"
                          :code :invalid-paste-data})
 
-          (check-paste-features! features (:features pdata))
+          (cfeat/check-paste-features! features (:features pdata))
           (if (= file-id (:file-id pdata))
             (let [pdata (assoc pdata :images [])]
               (rx/of (paste-shapes pdata)))
