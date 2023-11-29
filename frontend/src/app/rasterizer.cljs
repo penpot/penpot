@@ -228,10 +228,6 @@
             scope   (unchecked-get evdata "scope")]
         (when (and (some? payload)
                    (= scope "penpot/rasterizer"))
-          (log/dbg :hint "received message"
-                   :id id
-                   :payload payload
-                   :scope scope)
           (->> (render payload)
                (rx/subs (partial send-success! id)
                         (partial send-failure! id))))))))
