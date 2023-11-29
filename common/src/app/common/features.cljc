@@ -97,6 +97,24 @@
     :feature-fdata-pointer-map "fdata/pointer-map"
     nil))
 
+(defn migrate-legacy-features
+  "A helper that translates old feature names to new names"
+  [features]
+  (cond-> (or features #{})
+    (contains? features "storage/pointer-map")
+    (-> (conj "fdata/pointer-map")
+        (disj "storage/pointer-map"))
+
+    (contains? features "storage/objects-map")
+    (-> (conj "fdata/objects-map")
+        (disj "storage/objects-map"))
+
+    (or (contains? features "internal/geom-record")
+        (contains? features "internal/shape-record"))
+    (-> (conj "fdata/shape-data-type")
+        (disj "internal/geom-record")
+        (disj "internal/shape-record"))))
+
 (def xf-supported-features
   (filter (partial contains? supported-features)))
 

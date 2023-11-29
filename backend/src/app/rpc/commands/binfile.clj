@@ -719,6 +719,7 @@
           file-id'   (lookup-index file-id)
 
           thumbnails (:thumbnails file)
+          file       (update file :features cfeat/migrate-legacy-features)
 
           features   (-> enabled-features
                          (set/difference cfeat/frontend-only-features)
