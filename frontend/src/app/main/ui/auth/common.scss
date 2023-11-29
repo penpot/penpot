@@ -1,0 +1,148 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+
+.auth-form {
+  width: 100%;
+  padding-bottom: $s-16;
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: $s-12;
+    margin-bottom: $s-24;
+  }
+}
+
+.separator {
+  border-color: $db-cuaternary;
+  margin: $s-24 0;
+}
+
+.auth-title {
+  @include bigTitleTipography;
+  color: $df-primary;
+}
+
+.auth-subtitle {
+  margin-top: $s-24;
+  font-size: $fs-14;
+  color: $df-secondary;
+}
+
+.form-field {
+  --input-width: 100%;
+  --input-height: #{$s-40};
+  --input-min-width: 100%;
+}
+
+.buttons-stack button,
+.buttons-stack :global(.btn-primary) {
+  @extend .button-primary;
+  font-size: $fs-11;
+  height: $s-40;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.link-entry {
+  display: flex;
+  flex-direction: column;
+  gap: $s-12;
+  padding: $s-24 0;
+  border-top: $s-1 solid $db-cuaternary;
+
+  span {
+    text-align: center;
+    font-size: $fs-14;
+    color: $df-secondary;
+  }
+  a {
+    @extend .button-secondary;
+    height: $s-40;
+    text-transform: uppercase;
+    font-size: $fs-11;
+  }
+}
+
+.forgot-password {
+  display: flex;
+  justify-content: flex-end;
+  a {
+    font-size: $fs-14;
+    color: $df-secondary;
+    font-weight: $fw400;
+  }
+}
+
+.submit-btn,
+.register-btn,
+.recover-btn {
+  @extend .button-primary;
+  font-size: $fs-11;
+  height: $s-40;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.login-btn {
+  border-radius: $br-8;
+  font-size: $fs-14;
+  display: flex;
+  align-items: center;
+  gap: $s-6;
+  width: 100%;
+
+  span {
+    padding-top: $s-2;
+  }
+
+  &:hover {
+    color: var(--white);
+  }
+}
+
+.auth-buttons {
+  display: flex;
+  gap: $s-8;
+}
+
+.btn-google-auth {
+  color: var(--google-login-foreground);
+  background-color: var(--google-login-background);
+  &:hover {
+    background: var(--google-login-background-hover);
+  }
+}
+
+.btn-github-auth {
+  color: var(--github-login-foreground);
+  background: var(--github-login-background);
+  &:hover {
+    background: var(--github-login-background-hover);
+  }
+}
+
+.btn-oidc-auth {
+  color: var(--oidc-login-foreground);
+  background: var(--oidc-login-background);
+  &:hover {
+    background: var(--oidc-login-background-hover);
+  }
+}
+
+.btn-gitlab-auth {
+  color: var(--gitlab-login-foreground);
+  background: var(--gitlab-login-background);
+  &:hover {
+    background: var(--gitlab-login-background-hover);
+  }
+}
+
+.banner {
+  margin: $s-16 0;
+}

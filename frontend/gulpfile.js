@@ -1,7 +1,6 @@
 const fs = require("fs");
 const l = require("lodash");
 const path = require("path");
-const stringHash = require("string-hash");
 
 const gulp = require("gulp");
 const gulpConcat = require("gulp-concat");
@@ -12,7 +11,6 @@ const gulpRename = require("gulp-rename");
 const gulpSass = require("gulp-sass")(require("sass"));
 const svgSprite = require("gulp-svg-sprite");
 const rename = require("gulp-rename");
-
 
 const autoprefixer = require("autoprefixer");
 const modules = require("postcss-modules");

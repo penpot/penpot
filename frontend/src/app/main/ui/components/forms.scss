@@ -10,8 +10,8 @@
 .input-wrapper {
   display: flex;
   flex-direction: column;
-  gap: $s-6;
   align-items: center;
+  position: relative;
   .input-with-label {
     @include flexColumn;
     gap: $s-8;
@@ -24,11 +24,13 @@
     cursor: pointer;
     color: var(--modal-title-foreground-color);
     text-transform: uppercase;
+
     input {
       @extend .input-element;
       color: var(--input-foreground-color-active);
-      width: calc(100% - $s-1);
       margin-top: 0;
+      width: 100%;
+      height: 100%;
 
       &:focus {
         outline: none;
@@ -41,9 +43,12 @@
     input:-webkit-autofill:hover,
     input:-webkit-autofill:focus,
     input:-webkit-autofill:active {
-      -webkit-text-fill-color: var(--input-foreground-color-active) !important;
-      -webkit-box-shadow: 0 0 0 28px var(--input-background-color) inset !important;
+      -webkit-text-fill-color: var(--input-foreground-color-active);
+      -webkit-box-shadow: inset 0 0 20px 20px var(--input-background-color);
       border: $s-1 solid var(--input-background-color);
+      -webkit-background-clip: text;
+      transition: background-color 5000s ease-in-out 0s;
+      caret-color: var(--input-foreground-color-active);
     }
   }
   &:global(.invalid) {
@@ -54,15 +59,29 @@
   }
 }
 
+.input-and-icon {
+  position: relative;
+  width: var(--input-width, calc(100% - $s-1));
+  min-width: var(--input-min-width);
+  height: var(--input-height, $s-32);
+}
+
 .help-icon {
   cursor: pointer;
+  position: absolute;
+  right: $s-12;
+  top: calc(50% - $s-8);
   svg {
     @extend .button-icon-small;
-    stroke: var(--input-details-color);
+    stroke: $df-secondary;
+    width: $s-16;
+    height: $s-16;
   }
 }
 .error {
   color: var(--input-border-color-error);
+  width: 100%;
+  font-size: $fs-14;
 }
 
 .hint {
@@ -181,9 +200,6 @@
 // SUBMIT-BUTTON
 .btn-disabled {
   @extend .button-disabled;
-  height: $s-32;
-  padding: $s-8 $s-24;
-  border-radius: $br-8;
 }
 
 // MULTI INPUT

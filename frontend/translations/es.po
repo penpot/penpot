@@ -173,10 +173,14 @@ msgid "auth.terms-of-service"
 msgstr "Términos de servicio"
 
 #: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Al crear una nueva cuenta, aceptas nuestros [términos de servicio](%s) y [política de privacidad](%s)."
+
 msgid "auth.terms-privacy-agreement"
 msgstr ""
-"Al crear una nueva cuenta, aceptas nuestros términos de servicio y política "
-"de privacidad."
+"Al crear una nueva cuenta, aceptas nuestros [términos de servicio](%s) y [política de privacidad](%s)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"

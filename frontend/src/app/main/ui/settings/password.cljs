@@ -105,7 +105,8 @@
 
        [:> fm/submit-button*
         {:label (t locale "dashboard.update-settings")
-         :data-test "submit-password"}]]
+         :data-test "submit-password"
+         :class (stl/css :update-btn)}]]
 
       ;; OLD
       [:& fm/form {:class "password-form"
@@ -153,4 +154,3 @@
       [:section.dashboard-settings.form-container
        [:div.form-container
         [:& password-form {:locale locale}]]])))
-

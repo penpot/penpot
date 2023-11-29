@@ -196,8 +196,8 @@
             (obj/set! "on-expand" handle-expand))]
 
     [:aside {:class (stl/css-case new-css-system
-                                  :old-css/settings-bar true
-                                  :old-css/settings-bar-right true
+                                  :global/settings-bar true
+                                  :global/settings-bar-right true
                                   :right-settings-bar true
                                   :not-expand (not can-be-expanded?)
                                   :expanded (> size 276))

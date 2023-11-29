@@ -14,7 +14,7 @@
    [cuerdas.core :as str]
    [rumext.v2.util :as mfu]))
 
-;; Should coincide with the `ROOT_NAME` constant in gulpfile.js
+;; Should match with the `ROOT_NAME` constant in gulpfile.js
 (def ROOT-NAME "app")
 
 (def ^:dynamic *css-prefix* nil)

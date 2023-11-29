@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.auth.login
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.logging :as log]
@@ -17,6 +18,7 @@
    [app.main.ui.components.button-link :as bl]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.util.dom :as dom]
@@ -92,7 +94,8 @@
 
 (mf/defc login-form
   [{:keys [params on-success-callback] :as props}]
-  (let [initial (mf/use-memo (mf/deps params) (constantly params))
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        initial (mf/use-memo (mf/deps params) (constantly params))
 
         error   (mf/use-state false)
         form    (fm/use-form :spec ::login-form
@@ -150,137 +153,269 @@
              (login-with-ldap event (with-meta params
                                       {:on-error on-error
                                        :on-success on-success})))))]
-    [:*
-     (when-let [message @error]
-       [:& msgs/inline-banner
-        {:type :warning
-         :content message
-         :on-close #(reset! error nil)
-         :data-test "login-banner"
-         :role "alert"}])
+    (if new-css-system
+      [:*
+       (when-let [message @error]
+         [:& msgs/inline-banner
+          {:type :warning
+           :content message
+           :on-close #(reset! error nil)
+           :data-test "login-banner"
+           :role "alert"}])
 
-     [:& fm/form {:on-submit on-submit :form form}
-      [:div.fields-row
-       [:& fm/input
-        {:name :email
-         :type "email"
-         :help-icon i/at
-         :label (tr "auth.email")}]]
+       [:& fm/form {:on-submit on-submit :form form}
+        [:div {:class (stl/css :fields-row)}
+         [:& fm/input
+          {:name :email
+           :type "email"
+           :label (tr "auth.email")
+           :class (stl/css :form-field)}]]
 
-      [:div.fields-row
-       [:& fm/input
-        {:type "password"
-         :name :password
-         :help-icon i/eye
-         :label (tr "auth.password")}]]
+        [:div {:class (stl/css :fields-row)}
+         [:& fm/input
+          {:type "password"
+           :name :password
+           :label (tr "auth.password")
+           :class (stl/css :form-field)}]]
 
-      [:div.buttons-stack
-       (when (or (contains? cf/flags :login)
-                 (contains? cf/flags :login-with-password))
-         [:> fm/submit-button*
-          {:label (tr "auth.login-submit")
-           :data-test "login-submit"}])
+        (when (or (contains? cf/flags :login)
+                  (contains? cf/flags :login-with-password))
+          [:div {:class (stl/css :fields-row :forgot-password)}
+           [:& lk/link {:action #(st/emit! (rt/nav :auth-recovery-request))
+                        :data-test "forgot-password"}
+            (tr "auth.forgot-password")]])
 
-       (when (contains? cf/flags :login-with-ldap)
-         [:> fm/submit-button*
-          {:label (tr "auth.login-with-ldap-submit")
-           :on-click on-submit-ldap}])]]]))
+        [:div {:class (stl/css :buttons-stack)}
+         (when (or (contains? cf/flags :login)
+                   (contains? cf/flags :login-with-password))
+           [:> fm/submit-button*
+            {:label (tr "auth.login-submit")
+             :data-test "login-submit"
+             :class (stl/css :login-button)}])
+
+         (when (contains? cf/flags :login-with-ldap)
+           [:> fm/submit-button*
+            {:label (tr "auth.login-with-ldap-submit")
+             :on-click on-submit-ldap}])]]]
+
+      ;; OLD
+      [:*
+       (when-let [message @error]
+         [:& msgs/inline-banner
+          {:type :warning
+           :content message
+           :on-close #(reset! error nil)
+           :data-test "login-banner"
+           :role "alert"}])
+
+       [:& fm/form {:on-submit on-submit :form form}
+        [:div.fields-row
+         [:& fm/input
+          {:name :email
+           :type "email"
+           :help-icon i/at
+           :label (tr "auth.email")
+           :class (stl/css :form-field)}]]
+
+        [:div.fields-row
+         [:& fm/input
+          {:type "password"
+           :name :password
+           :help-icon i/eye
+           :label (tr "auth.password")
+           :class (stl/css :form-field)}]]
+
+        [:div.buttons-stack
+         (when (or (contains? cf/flags :login)
+                   (contains? cf/flags :login-with-password))
+           [:> fm/submit-button*
+            {:label (tr "auth.login-submit")
+             :data-test "login-submit"}])
+
+         (when (contains? cf/flags :login-with-ldap)
+           [:> fm/submit-button*
+            {:label (tr "auth.login-with-ldap-submit")
+             :on-click on-submit-ldap}])]]])))
 
 (mf/defc login-buttons
   [{:keys [params] :as props}]
-  (let [login-with-google (mf/use-fn (mf/deps params) #(login-with-oidc % :google params))
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+
+        login-with-google (mf/use-fn (mf/deps params) #(login-with-oidc % :google params))
         login-with-github (mf/use-fn (mf/deps params) #(login-with-oidc % :github params))
         login-with-gitlab (mf/use-fn (mf/deps params) #(login-with-oidc % :gitlab params))
         login-with-oidc   (mf/use-fn (mf/deps params) #(login-with-oidc % :oidc params))]
 
-    [:div.auth-buttons
-     (when (contains? cf/flags :login-with-google)
-       [:& bl/button-link {:on-click login-with-google
-                           :icon i/brand-google
-                           :label (tr "auth.login-with-google-submit")
-                           :class "btn-google-auth"}])
+    (if new-css-system
+      [:div {:class (stl/css :auth-buttons)}
+       (when (contains? cf/flags :login-with-google)
+         [:& bl/button-link {:on-click login-with-google
+                             :icon i/brand-google
+                             :label (tr "auth.login-with-google-submit")
+                             :class (stl/css :login-btn :btn-google-auth)}])
 
-     (when (contains? cf/flags :login-with-github)
-       [:& bl/button-link {:on-click login-with-github
-                           :icon i/brand-github
-                           :label (tr "auth.login-with-github-submit")
-                           :class "btn-github-auth"}])
+       (when (contains? cf/flags :login-with-github)
+         [:& bl/button-link {:on-click login-with-github
+                             :icon i/brand-github
+                             :label (tr "auth.login-with-github-submit")
+                             :class (stl/css :login-btn :btn-github-auth)}])
 
-     (when (contains? cf/flags :login-with-gitlab)
-       [:& bl/button-link {:on-click login-with-gitlab
-                           :icon i/brand-gitlab
-                           :label (tr "auth.login-with-gitlab-submit")
-                           :class "btn-gitlab-auth"}])
+       (when (contains? cf/flags :login-with-gitlab)
+         [:& bl/button-link {:on-click login-with-gitlab
+                             :icon i/brand-gitlab
+                             :label (tr "auth.login-with-gitlab-submit")
+                             :class (stl/css :login-btn :btn-gitlab-auth)}])
 
-     (when (contains? cf/flags :login-with-oidc)
-       [:& bl/button-link {:on-click login-with-oidc
-                           :icon i/brand-openid
-                           :label (tr "auth.login-with-oidc-submit")
-                           :class "btn-github-auth"}])]))
+       (when (contains? cf/flags :login-with-oidc)
+         [:& bl/button-link {:on-click login-with-oidc
+                             :icon i/brand-openid
+                             :label (tr "auth.login-with-oidc-submit")
+                             :class (stl/css :login-btn :btn-oidc-auth)}])]
+      
+      [:div.auth-buttons
+       (when (contains? cf/flags :login-with-google)
+         [:& bl/button-link {:on-click login-with-google
+                             :icon i/brand-google
+                             :label (tr "auth.login-with-google-submit")
+                             :class "btn-google-auth"}])
+
+       (when (contains? cf/flags :login-with-github)
+         [:& bl/button-link {:on-click login-with-github
+                             :icon i/brand-github
+                             :label (tr "auth.login-with-github-submit")
+                             :class "btn-github-auth"}])
+
+       (when (contains? cf/flags :login-with-gitlab)
+         [:& bl/button-link {:on-click login-with-gitlab
+                             :icon i/brand-gitlab
+                             :label (tr "auth.login-with-gitlab-submit")
+                             :class "btn-gitlab-auth"}])
+
+       (when (contains? cf/flags :login-with-oidc)
+         [:& bl/button-link {:on-click login-with-oidc
+                             :icon i/brand-openid
+                             :label (tr "auth.login-with-oidc-submit")
+                             :class "btn-github-auth"}])])))
 
 (mf/defc login-button-oidc
   [{:keys [params] :as props}]
-  (when (contains? cf/flags :login-with-oidc)
-    [:div.link-entry.link-oidc
-     [:a {:tab-index "0"
-          :on-key-down (fn [event]
-                        (when (k/enter? event)
-                          (login-with-oidc event :oidc params)))
-          :on-click #(login-with-oidc % :oidc params)}
-      (tr "auth.login-with-oidc-submit")]]))
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      (when (contains? cf/flags :login-with-oidc)
+        [:div {:class (stl/css :link-entry :link-oidc)}
+         [:a {:tab-index "0"
+              :on-key-down (fn [event]
+                             (when (k/enter? event)
+                               (login-with-oidc event :oidc params)))
+              :on-click #(login-with-oidc % :oidc params)}
+          (tr "auth.login-with-oidc-submit")]])
+      
+      (when (contains? cf/flags :login-with-oidc)
+        [:div.link-entry.link-oidc
+         [:a {:tab-index "0"
+              :on-key-down (fn [event]
+                             (when (k/enter? event)
+                               (login-with-oidc event :oidc params)))
+              :on-click #(login-with-oidc % :oidc params)}
+          (tr "auth.login-with-oidc-submit")]]))))
 
 (mf/defc login-methods
   [{:keys [params on-success-callback] :as props}]
-  [:*
-   (when show-alt-login-buttons?
-     [:*
-      [:span.separator
-       [:span.line]
-       [:span.text (tr "labels.continue-with")]
-       [:span.line]]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:*
+       (when show-alt-login-buttons?
+         [:*
+          [:& login-buttons {:params params}]
 
-      [:& login-buttons {:params params}]
+          (when (or (contains? cf/flags :login)
+                    (contains? cf/flags :login-with-password)
+                    (contains? cf/flags :login-with-ldap))
+            [:hr {:class (stl/css :separator)}])])
 
-      (when (or (contains? cf/flags :login)
-                (contains? cf/flags :login-with-password)
-                (contains? cf/flags :login-with-ldap))
-        [:span.separator
-         [:span.line]
-         [:span.text (tr "labels.or")]
-         [:span.line]])])
+       (when (or (contains? cf/flags :login)
+                 (contains? cf/flags :login-with-password)
+                 (contains? cf/flags :login-with-ldap))
+         [:& login-form {:params params :on-success-callback on-success-callback}])]
 
-   (when (or (contains? cf/flags :login)
-             (contains? cf/flags :login-with-password)
-             (contains? cf/flags :login-with-ldap))
-     [:& login-form {:params params :on-success-callback on-success-callback}])])
+      ;; OLD
+      [:*
+       (when show-alt-login-buttons?
+         [:*
+          [:span.separator
+           [:span.line]
+           [:span.text (tr "labels.continue-with")]
+           [:span.line]]
+
+          [:& login-buttons {:params params}]
+
+          (when (or (contains? cf/flags :login)
+                    (contains? cf/flags :login-with-password)
+                    (contains? cf/flags :login-with-ldap))
+            [:span.separator
+             [:span.line]
+             [:span.text (tr "labels.or")]
+             [:span.line]])])
+
+       (when (or (contains? cf/flags :login)
+                 (contains? cf/flags :login-with-password)
+                 (contains? cf/flags :login-with-ldap))
+         [:& login-form {:params params :on-success-callback on-success-callback}])])))
 
 (mf/defc login-page
   [{:keys [params] :as props}]
-  [:div.generic-form.login-form
-   [:div.form-container
-    [:h1 {:data-test "login-title"} (tr "auth.login-title")]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:div {:class (stl/css :auth-form)}
+       [:h1 {:class (stl/css :auth-title)
+             :data-test "login-title"} (tr "auth.login-title")]
 
-    [:& login-methods {:params params}]
+       [:hr {:class (stl/css :separator)}]
 
-    [:div.links
-     (when (or (contains? cf/flags :login)
-               (contains? cf/flags :login-with-password))
-       [:div.link-entry
-        [:& lk/link {:action #(st/emit! (rt/nav :auth-recovery-request))
-                     :data-test "forgot-password"}
-         (tr "auth.forgot-password")]])
+       [:& login-methods {:params params}]
 
-     (when (contains? cf/flags :registration)
-       [:div.link-entry
-        [:span (tr "auth.register") " "]
-        [:& lk/link {:action #(st/emit! (rt/nav :auth-register {} params))
-                     :data-test "register-submit"}
-         (tr "auth.register-submit")]])]
+       [:div {:class (stl/css :links)}
+        (when (contains? cf/flags :registration)
+          [:div {:class (stl/css :link-entry :register)}
+           [:span (tr "auth.register") " "]
+           [:& lk/link {:action #(st/emit! (rt/nav :auth-register {} params))
+                        :data-test "register-submit"}
+            (tr "auth.register-submit")]])]
 
-    (when (contains? cf/flags :demo-users)
-      [:div.links.demo
-       [:div.link-entry
-        [:span (tr "auth.create-demo-profile") " "]
-        [:& lk/link {:action #(st/emit! (du/create-demo-profile))
-                     :data-test "demo-account-link"}
-         (tr "auth.create-demo-account")]]])]])
+       (when (contains? cf/flags :demo-users)
+         [:div {:class (stl/css :link-entry :demo-account)}
+          [:span (tr "auth.create-demo-profile") " "]
+          [:& lk/link {:action #(st/emit! (du/create-demo-profile))
+                       :data-test "demo-account-link"}
+           (tr "auth.create-demo-account")]])]
+
+      ;; OLD
+      [:div.generic-form.login-form
+       [:div.form-container
+        [:h1 {:data-test "login-title"} (tr "auth.login-title")]
+
+        [:& login-methods {:params params}]
+
+        [:div.links
+         (when (or (contains? cf/flags :login)
+                   (contains? cf/flags :login-with-password))
+           [:div.link-entry
+            [:& lk/link {:action #(st/emit! (rt/nav :auth-recovery-request))
+                         :data-test "forgot-password"}
+             (tr "auth.forgot-password")]])
+
+         (when (contains? cf/flags :registration)
+           [:div.link-entry
+            [:span (tr "auth.register") " "]
+            [:& lk/link {:action #(st/emit! (rt/nav :auth-register {} params))
+                         :data-test "register-submit"}
+             (tr "auth.register-submit")]])]
+
+        (when (contains? cf/flags :demo-users)
+          [:div.links.demo
+           [:div.link-entry
+            [:span (tr "auth.create-demo-profile") " "]
+            [:& lk/link {:action #(st/emit! (du/create-demo-profile))
+                         :data-test "demo-account-link"}
+             (tr "auth.create-demo-account")]]])]])))
+

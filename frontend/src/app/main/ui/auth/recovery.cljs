@@ -5,12 +5,14 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.auth.recovery
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.spec :as us]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.context :as ctx]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [cljs.spec.alpha :as s]
@@ -55,38 +57,71 @@
 
 (mf/defc recovery-form
   [{:keys [params] :as props}]
-  (let [form (fm/use-form :spec ::recovery-form
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        form (fm/use-form :spec ::recovery-form
                           :validators [password-equality
                                        (fm/validate-not-empty :password-1 (tr "auth.password-not-empty"))
                                        (fm/validate-not-empty :password-2 (tr "auth.password-not-empty"))]
                           :initial params)]
-    [:& fm/form {:on-submit on-submit
-                 :form form}
-     [:div.fields-row
-      [:& fm/input {:type "password"
-                    :name :password-1
-                    :label (tr "auth.new-password")}]]
+    (if new-css-system
+      [:& fm/form {:on-submit on-submit :form form}
+       [:div {:class (stl/css :fields-row)}
+        [:& fm/input {:type "password"
+                      :name :password-1
+                      :label (tr "auth.new-password")
+                      :class (stl/css :form-field)}]]
 
-     [:div.fields-row
-      [:& fm/input {:type "password"
-                    :name :password-2
-                    :label (tr "auth.confirm-password")}]]
+       [:div {:class (stl/css :fields-row)}
+        [:& fm/input {:type "password"
+                      :name :password-2
+                      :label (tr "auth.confirm-password")
+                      :class (stl/css :form-field)}]]
 
-     [:> fm/submit-button*
-      {:label (tr "auth.recovery-submit")}]]))
+       [:> fm/submit-button*
+        {:label (tr "auth.recovery-submit")
+         :class (stl/css :submit-btn)}]]
+
+      ;; OLD
+      [:& fm/form {:on-submit on-submit
+                   :form form}
+       [:div.fields-row
+        [:& fm/input {:type "password"
+                      :name :password-1
+                      :label (tr "auth.new-password")}]]
+
+       [:div.fields-row
+        [:& fm/input {:type "password"
+                      :name :password-2
+                      :label (tr "auth.confirm-password")}]]
+
+       [:> fm/submit-button*
+        {:label (tr "auth.recovery-submit")}]])))
 
 ;; --- Recovery Request Page
 
 (mf/defc recovery-page
   [{:keys [params] :as props}]
-  [:section.generic-form
-   [:div.form-container
-    [:h1 "Forgot your password?"]
-    [:div.subtitle "Please enter your new password"]
-    [:& recovery-form {:params params}]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:div {:class (stl/css :auth-form)}
+       [:h1 {:class (stl/css :auth-title)} "Forgot your password?"]
+       [:div {:class (stl/css :auth-subtitle)} "Please enter your new password"]
+       [:hr {:class (stl/css :separator)}]
+       [:& recovery-form {:params params}]
 
-    [:div.links
-     [:div.link-entry
-      [:a {:on-click #(st/emit! (rt/nav :auth-login))}
-       (tr "profile.recovery.go-to-login")]]]]])
+       [:div {:class (stl/css :links)}
+        [:div {:class (stl/css :link-entry)}
+         [:a {:on-click #(st/emit! (rt/nav :auth-login))}
+          (tr "profile.recovery.go-to-login")]]]]
 
+      ;; TODO
+      [:section.generic-form
+       [:div.form-container
+        [:h1 "Forgot your password?"]
+        [:div.subtitle "Please enter your new password"]
+        [:& recovery-form {:params params}]
+
+        [:div.links
+         [:div.link-entry
+          [:a {:on-click #(st/emit! (rt/nav :auth-login))}
+           (tr "profile.recovery.go-to-login")]]]]])))
