@@ -199,6 +199,15 @@
   (ts/schedule
    #(st/emit! (rt/assign-exception error))))
 
+
+(defn- redirect-to-dashboard
+  []
+  (let [team-id    (:current-team-id @st/state)
+        project-id (:current-project-id @st/state)]
+    (if (and project-id team-id)
+      (st/emit! (rt/nav :dashboard-files {:team-id team-id :project-id project-id}))
+      (set! (.-href glob/location) ""))))
+
 (defmethod ptk/handle-error :restriction
   [{:keys [code] :as error}]
   (cond
@@ -213,31 +222,20 @@
       (st/emit! (modal/show {:type :alert :message message :on-accept on-accept})))
 
     (= :file-feature-mismatch code)
-    (let [message    (tr "errors.file-feature-mismatch" (:feature error))
-          team-id    (:current-team-id @st/state)
-          project-id (:current-project-id @st/state)
-          on-accept  #(if (and project-id team-id)
-                        (st/emit! (rt/nav :dashboard-files {:team-id team-id :project-id project-id}))
-                        (set! (.-href glob/location) ""))]
-      (st/emit! (modal/show {:type :alert :message message :on-accept on-accept})))
+    (let [message (tr "errors.file-feature-mismatch" (:feature error))]
+      (st/emit! (modal/show {:type :alert :message message :on-accept redirect-to-dashboard})))
 
     (= :feature-mismatch code)
-    (let [message    (tr "errors.feature-mismatch" (:feature error))
-          team-id    (:current-team-id @st/state)
-          project-id (:current-project-id @st/state)
-          on-accept  #(if (and project-id team-id)
-                        (st/emit! (rt/nav :dashboard-files {:team-id team-id :project-id project-id}))
-                        (set! (.-href glob/location) ""))]
-      (st/emit! (modal/show {:type :alert :message message :on-accept on-accept})))
+    (let [message (tr "errors.feature-mismatch" (:feature error))]
+      (st/emit! (modal/show {:type :alert :message message :on-accept redirect-to-dashboard})))
 
     (= :feature-not-supported code)
-    (let [message    (tr "errors.feature-not-supported" (:feature error))
-          team-id    (:current-team-id @st/state)
-          project-id (:current-project-id @st/state)
-          on-accept  #(if (and project-id team-id)
-                        (st/emit! (rt/nav :dashboard-files {:team-id team-id :project-id project-id}))
-                        (set! (.-href glob/location) ""))]
-      (st/emit! (modal/show {:type :alert :message message :on-accept on-accept})))
+    (let [message (tr "errors.feature-not-supported" (:feature error))]
+      (st/emit! (modal/show {:type :alert :message message :on-accept redirect-to-dashboard})))
+
+    (= :file-version-not-supported code)
+    (let [message (tr "errors.version-not-supported")]
+      (st/emit! (modal/show {:type :alert :message message :on-accept redirect-to-dashboard})))
 
     (= :max-quote-reached code)
     (let [message (tr "errors.max-quote-reached" (:target error))]
@@ -250,7 +248,7 @@
       (st/emit! (modal/show {:type :alert :message message})))
 
     :else
-    (ptk/handle-error {:type :server-error :data error})))
+    (print-cause! "Restriction Error" error)))
 
 ;; This happens when the backed server fails to process the
 ;; request. This can be caused by an internal assertion or any other

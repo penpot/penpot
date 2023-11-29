@@ -10,7 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.changes :as cpc]
-   [app.common.files.migrations :as pmg]
+   [app.common.files.migrations :as fmg]
    [app.common.files.validate :as val]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -39,34 +39,32 @@
 
 ;; --- SCHEMA
 
-(def ^:private schema:changes
-  [:vector ::cpc/change])
+(def ^:private
+  schema:update-file
+  (sm/define
+    [:map {:title "update-file"}
+     [:id ::sm/uuid]
+     [:session-id ::sm/uuid]
+     [:revn {:min 0} :int]
+     [:features {:optional true} ::cfeat/features]
+     [:changes {:optional true} [:vector ::cpc/change]]
+     [:changes-with-metadata {:optional true}
+      [:vector [:map
+                [:changes [:vector ::cpc/change]]
+                [:hint-origin {:optional true} :keyword]
+                [:hint-events {:optional true} [:vector :string]]]]]
+     [:skip-validate {:optional true} :boolean]]))
 
-(def ^:private schema:change-with-metadata
-  [:map {:title "ChangeWithMetadata"}
-   [:changes schema:changes]
-   [:hint-origin {:optional true} :keyword]
-   [:hint-events {:optional true} [:vector :string]]])
-
-(def ^:private schema:update-file
-  [:map {:title "update-file"}
-   [:id ::sm/uuid]
-   [:session-id ::sm/uuid]
-   [:revn {:min 0} :int]
-   [:features {:optional true} ::cfeat/features]
-   [:changes {:optional true} schema:changes]
-   [:changes-with-metadata {:optional true}
-    [:vector schema:change-with-metadata]]
-   [:skip-validate {:optional true} :boolean]])
-
-(def ^:private schema:update-file-result
-  [:vector {:title "update-file-result"}
-   [:map
-    [:changes schema:changes]
-    [:file-id ::sm/uuid]
-    [:id ::sm/uuid]
-    [:revn {:min 0} :int]
-    [:session-id ::sm/uuid]]])
+(def ^:private
+  schema:update-file-result
+  (sm/define
+    [:vector {:title "update-file-result"}
+     [:map
+      [:changes [:vector ::cpc/change]]
+      [:file-id ::sm/uuid]
+      [:id ::sm/uuid]
+      [:revn {:min 0} :int]
+      [:session-id ::sm/uuid]]]))
 
 ;; --- HELPERS
 
@@ -297,7 +295,7 @@
                                   (-> data
                                       (blob/decode)
                                       (assoc :id (:id file))
-                                      (pmg/migrate-data)
+                                      (fmg/migrate-data)
                                       (d/without-nils))))
 
         ;; WARNING: this ruins performance; maybe we need to find
@@ -310,10 +308,10 @@
                                           (-> (db/get conn :file {:id id})
                                               (files/decode-row)
                                               (files/process-pointers deref) ; ensure all pointers resolved
-                                              (pmg/migrate-file))))))
+                                              (fmg/migrate-file))))))
                     (d/index-by :id)))]
 
-    (-> file
+    (-> (files/check-version! file)
         (update :revn inc)
         (update :data cpc/process-changes changes)
 
