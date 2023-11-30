@@ -534,14 +534,9 @@
 (defn render-frame
   [objects shape object-id]
   (if (some? shape)
-    (let [shape-id      (dm/get-prop shape :id)
-          fonts         (ff/shape->fonts shape objects)
+    (let [fonts         (ff/shape->fonts shape objects)
 
-          bounds         (if (:show-content shape)
-                           (let [ids      (cfh/get-children-ids objects shape-id)
-                                 children (sequence (keep (d/getf objects)) ids)]
-                             (gsh/shapes->rect (cons shape children)))
-                           (-> shape :points grc/points->rect))
+          bounds         (gsb/get-object-bounds objects shape)
 
           x              (dm/get-prop bounds :x)
           y              (dm/get-prop bounds :y)

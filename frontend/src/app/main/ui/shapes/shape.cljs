@@ -79,9 +79,9 @@
 
         filter-str
         (when (and (or (cfh/group-shape? shape)
-                     (cfh/frame-shape? shape)
-                     (cfh/svg-raw-shape? shape))
-                (not disable-shadows?))
+                       (cfh/frame-shape? shape)
+                       (cfh/svg-raw-shape? shape))
+                   (not disable-shadows?))
           (filters/filter-str filter-id shape))
 
         wrapper-props
