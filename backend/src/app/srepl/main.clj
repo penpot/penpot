@@ -8,6 +8,7 @@
   "A collection of adhoc fixes scripts."
   #_:clj-kondo/ignore
   (:require
+   [app.auth :refer [derive-password]]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
@@ -18,12 +19,12 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as features.fdata]
+   [app.main :as main]
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files-snapshot :as fsnap]
    [app.rpc.commands.profile :as profile]
    [app.srepl.cli :as cli]
-   [app.srepl.fixes :as f]
    [app.srepl.helpers :as h]
    [app.storage :as sto]
    [app.util.blob :as blob]
@@ -111,6 +112,18 @@
         (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
         (db/delete! conn :http-session {:profile-id (:id profile)})
         :blocked))))
+
+(defn reset-password!
+  "Reset a password to a specific one for a concrete user or all users
+  if email is `:all` keyword."
+  [system & {:keys [email password] :or {password "123123"} :as params}]
+  (us/verify! (contains? params :email) "`email` parameter is mandatory")
+  (db/with-atomic [conn (:app.db/pool system)]
+    (let [password (derive-password password)]
+      (if (= email :all)
+        (db/exec! conn ["update profile set password=?" password])
+        (let [email (str/lower email)]
+          (db/exec! conn ["update profile set password=? where email=?" password email]))))))
 
 (defn enable-objects-map-feature-on-file!
   [system & {:keys [save? id]}]
