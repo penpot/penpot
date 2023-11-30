@@ -9,8 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.geom.rect :as grc]
-   [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.bounds :as gsb]
    [app.common.math :as mth]
    [app.common.thumbnails :as thc]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -98,12 +97,7 @@
             container-ref  (mf/use-ref nil)
             content-ref    (mf/use-ref nil)
 
-            ;; FIXME: apply specific rendering optimizations separating to a component
-            bounds         (if (:show-content shape)
-                             (let [ids      (cfh/get-children-ids objects frame-id)
-                                   children (sequence (keep (d/getf objects)) ids)]
-                               (gsh/shapes->rect (cons shape children)))
-                             (-> shape :points grc/points->rect))
+            bounds         (gsb/get-object-bounds objects shape)
 
             x              (dm/get-prop bounds :x)
             y              (dm/get-prop bounds :y)
@@ -156,7 +150,7 @@
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val content-ref) modifiers)
 
-        [:& shape-container {:shape shape}
+        [:& shape-container {:shape shape :disable-shadows? thumbnail?}
          [:g.frame-container
           {:id (dm/str "frame-container-" frame-id)
            :key "frame-container"
