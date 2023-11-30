@@ -946,16 +946,16 @@
 
                changes         (pcb/concat-changes library-changes file-changes)
 
-               find-shape      (fn [data]
-                                 (for [page-id [(:page-id data)]
-                                       id (:shapes data)]
+               extract-shapes  (fn [change]
+                                 (for [page-id [(:page-id change)]
+                                       id (:shapes change)]
                                    (-> (get-in state [:workspace-data :pages-index page-id :objects id])
                                        (assoc :page-id page-id))))
 
                updated-copies  (->> changes
                                     :redo-changes
                                     (filter #(= (:type %) :reg-objects))
-                                    (mapcat find-shape)
+                                    (mapcat extract-shapes)
                                     (filter ctk/instance-head?)
                                     distinct)]
 
