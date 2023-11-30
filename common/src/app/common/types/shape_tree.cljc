@@ -382,7 +382,7 @@
                     parent-id
 
                     (nil? frame-id)
-                    (dm/get-in objects [parent-id :frame-id])
+                    (dm/get-in objects [parent-id :frame-id] uuid/zero)
 
                     :else
                     frame-id)]
@@ -449,4 +449,6 @@
                           (lazy-seq
                            (cons position (get-next (inc counter))))))]
 
-      (get-next 0))))
+      (with-meta (get-next 0)
+        {:width  (* grid-size column-size)
+         :height (* grid-size row-size)}))))
