@@ -1141,14 +1141,16 @@
                                                   :parent-id (:parent-id shape)
                                                   :shapes [(:id shape)]
                                                   :index index-after
-                                                  :ignore-touched true}))
+                                                  :ignore-touched true
+                                                  :syncing true}))
                      (update :undo-changes conj (make-change
                                                  container
                                                  {:type :mov-objects
                                                   :parent-id (:parent-id shape)
                                                   :shapes [(:id shape)]
                                                   :index index-before
-                                                  :ignore-touched true})))]
+                                                  :ignore-touched true
+                                                  :syncing true})))]
 
     (if (and (cfh/touched-group? parent :shapes-group) omit-touched?)
       changes
