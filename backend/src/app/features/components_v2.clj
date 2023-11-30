@@ -227,11 +227,11 @@
                     [shape]
                     (if (or (nil? (:parent-id shape)) (ctk/instance-head? shape))
                       (assoc shape
-                             :type :frame           ; Old groups must be converted
-                             :fills []              ; to frames and conform to spec
-                             :hide-in-viewer true
-                             :rx 0
-                             :ry 0)
+                        :type :frame                  ; Old groups must be converted
+                        :fills (or (:fills shape) []) ; to frames and conform to spec
+                        :hide-in-viewer (or (:hide-in-viewer shape) true)
+                        :rx (or (:rx shape) 0)
+                        :ry (or (:ry shape) 0))
                       shape))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
@@ -376,12 +376,7 @@
                        :main-instance true
                        :component-root true
                        :component-file component-file
-                       :component-id component-id
-                       :type :frame           ; Old groups must be converted
-                       :fills []              ; to frames and conform to spec
-                       :hide-in-viewer true
-                       :rx 0
-                       :ry 0)
+                       :component-id component-id)
 
                 (nil? (:frame-id shape))
                 (assoc :frame-id frame-id)
