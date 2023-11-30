@@ -40,13 +40,19 @@
   --input-min-width: 100%;
 }
 
-.buttons-stack button,
-.buttons-stack :global(.btn-primary) {
-  @extend .button-primary;
-  font-size: $fs-11;
-  height: $s-40;
-  text-transform: uppercase;
-  width: 100%;
+.buttons-stack {
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+
+  button,
+  :global(.btn-primary) {
+    @extend .button-primary;
+    font-size: $fs-11;
+    height: $s-40;
+    text-transform: uppercase;
+    width: 100%;
+  }
 }
 
 .link-entry {
