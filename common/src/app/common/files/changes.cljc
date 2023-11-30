@@ -477,12 +477,16 @@
           ;; or inside its main component if it's in a copy,
           ;; or inside a copy
           (is-valid-move? [objects shape-id]
-            (let [invalid-targets (calculate-invalid-targets objects shape-id)]
-              (and (contains? objects shape-id)
+            (let [invalid-targets (calculate-invalid-targets objects shape-id)
+                  shape (get objects shape-id)
+                  _ (prn "is-valid-move?")]
+              (and shape
                    (not (invalid-targets parent-id))
                    (not (cfh/components-nesting-loop? objects shape-id parent-id))
                    (or component-swap
-                       (not (ctk/in-component-copy? (get objects parent-id))))))) ;; We don't want to change the structure of component copies
+                       (and
+                        (not (ctk/in-component-copy? (get objects (:parent-id shape)))) ;; We don't want to change the structure of component copies
+                        (not (ctk/in-component-copy? (get objects parent-id))))))))     ;; We need to check the origin and target frames
 
           (insert-items [prev-shapes index shapes]
             (let [prev-shapes (or prev-shapes [])]
