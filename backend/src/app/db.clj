@@ -268,7 +268,7 @@
        (jdbc/execute! sv default-opts)))
   ([ds sv opts]
    (-> (get-connectable ds)
-       (jdbc/execute! sv (merge default-opts opts)))))
+       (jdbc/execute! sv (into default-opts (sql/adapt-opts opts))))))
 
 (defn exec-one!
   ([ds sv]
@@ -276,33 +276,31 @@
        (jdbc/execute-one! sv default-opts)))
   ([ds sv opts]
    (-> (get-connectable ds)
-       (jdbc/execute-one! sv
-                          (-> (merge default-opts opts)
-                              (assoc :return-keys (::return-keys? opts false)))))))
+       (jdbc/execute-one! sv (into default-opts (sql/adapt-opts opts))))))
 
 (defn insert!
-  [ds table params & {:as opts}]
+  [ds table params & {:as opts :keys [::return-keys?] :or {return-keys? true}}]
   (-> (get-connectable ds)
       (exec-one! (sql/insert table params opts)
-                 (merge {::return-keys? true} opts))))
+                 (assoc opts ::return-keys? return-keys?))))
 
 (defn insert-multi!
-  [ds table cols rows & {:as opts}]
+  [ds table cols rows & {:as opts :keys [::return-keys?] :or {return-keys? true}}]
   (-> (get-connectable ds)
       (exec! (sql/insert-multi table cols rows opts)
-             (merge {::return-keys? true} opts))))
+             (assoc opts ::return-keys? return-keys?))))
 
 (defn update!
-  [ds table params where & {:as opts}]
+  [ds table params where & {:as opts :keys [::return-keys?] :or {return-keys? true}}]
   (-> (get-connectable ds)
       (exec-one! (sql/update table params where opts)
-                 (merge {::return-keys? true} opts))))
+                 (assoc opts ::return-keys? return-keys?))))
 
 (defn delete!
-  [ds table params & {:as opts}]
+  [ds table params & {:as opts :keys [::return-keys?] :or {return-keys? true}}]
   (-> (get-connectable ds)
       (exec-one! (sql/delete table params opts)
-                 (merge {::return-keys? true} opts))))
+                 (assoc opts ::return-keys? return-keys?))))
 
 (defn is-row-deleted?
   [{:keys [deleted-at]}]
@@ -416,10 +414,14 @@
   (.releaseSavepoint conn sp))
 
 (defn rollback!
-  ([^Connection conn]
-   (.rollback conn))
-  ([^Connection conn ^Savepoint sp]
-   (.rollback conn sp)))
+  ([conn]
+   (let [^Connection conn (get-connection conn)]
+     (l/trc :hint "explicit rollback requested")
+     (.rollback conn)))
+  ([conn ^Savepoint sp]
+   (let [^Connection conn (get-connection conn)]
+     (l/trc :hint "explicit rollback requested")
+     (.rollback conn sp))))
 
 (defn tx-run!
   [system f & params]
@@ -446,7 +448,6 @@
       (let [system (assoc system ::conn conn)
             result (apply f system params)]
         (when (::rollback system)
-          (l/dbg :hint "explicit rollback requested")
           (rollback! conn))
         result))
 
