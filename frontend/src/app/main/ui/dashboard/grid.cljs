@@ -90,7 +90,9 @@
        (when visible?
          (if thumbnail-uri
            [:img {:class (stl/css :grid-item-thumbnail-image)
-                  :src thumbnail-uri}]
+                  :src thumbnail-uri
+                  :loading "lazy"
+                  :decoding "async"}]
            i/loader-pencil))]
 
       ;; OLD
@@ -99,7 +101,9 @@
         :ref container}
        (when visible?
          (if thumbnail-uri
-           [:img.grid-item-thumbnail-image {:src thumbnail-uri}]
+           [:img.grid-item-thumbnail-image {:src thumbnail-uri
+                                            :loading "lazy"
+                                            :decoding "async"}]
            i/loader-pencil))])))
 
 ;; --- Grid Item Library
@@ -474,7 +478,7 @@
 
         (when (and (:is-shared file) (not library-view?))
           [:div {:class (stl/css :item-badge)} i/library])
-        
+
         [:div {:class (stl/css :info-wrapper)}
          [:div {:class (stl/css :item-info)}
           (if (:edition @local)
