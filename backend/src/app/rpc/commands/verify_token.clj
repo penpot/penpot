@@ -105,7 +105,7 @@
                           ::quotes/team-id team-id})
 
     ;; Insert the invited member to the team
-    (db/insert! conn :team-profile-rel params {:on-conflict-do-nothing true})
+    (db/insert! conn :team-profile-rel params {::db/on-conflict-do-nothing? true})
 
     ;; If profile is not yet verified, mark it as verified because
     ;; accepting an invitation link serves as verification.

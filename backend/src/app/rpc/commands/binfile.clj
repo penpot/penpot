@@ -899,7 +899,7 @@
                           (assoc :file-id file-id)
                           (d/update-when :media-id lookup-index)
                           (d/update-when :thumbnail-id lookup-index))
-                      {:on-conflict-do-nothing overwrite?}))))
+                      {::db/on-conflict-do-nothing? overwrite?}))))
 
     (doseq [item (:thumbnails @*state*)]
       (let [item (update item :media-id lookup-index)]
@@ -909,7 +909,7 @@
                :object-id (:object-id item)
                ::l/sync? true)
         (db/insert! conn :file-tagged-object-thumbnail item
-                    {:on-conflict-do-nothing overwrite?})))))
+                    {::db/on-conflict-do-nothing? overwrite?})))))
 
 (defn- lookup-index
   [id]
