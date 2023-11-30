@@ -382,7 +382,7 @@
                     parent-id
 
                     (nil? frame-id)
-                    (dm/get-in objects [parent-id :frame-id])
+                    (dm/get-in objects [parent-id :frame-id] uuid/zero)
 
                     :else
                     frame-id)]
