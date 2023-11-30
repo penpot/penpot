@@ -216,7 +216,7 @@
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                  (files/check-read-permissions! conn profile-id file-id)
 
-                 (let [team     (teams/get-team cfg
+                 (let [team     (teams/get-team conn
                                                 :profile-id profile-id
                                                 :file-id file-id)
 

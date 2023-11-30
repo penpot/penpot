@@ -46,7 +46,7 @@
   [cfg {:keys [::rpc/profile-id project-id] :as params}]
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                     (projects/check-edition-permissions! conn profile-id project-id)
-                    (let [team     (teams/get-team cfg
+                    (let [team     (teams/get-team conn
                                                    :profile-id profile-id
                                                    :project-id project-id)
 

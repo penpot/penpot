@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
    [app.common.spec :as us]
@@ -186,9 +187,14 @@
 
 (defn load-pointer
   [conn file-id id]
+
+  (dm/assert!
+   "expected valid connection"
+   (db/connection? conn))
+
   (let [{:keys [content]} (db/get conn :file-data-fragment
                                   {:id id :file-id file-id}
-                                  {:columns [:content]
+                                  {::db/columns [:content]
                                    ::db/check-deleted? false})]
     (when-not content
       (ex/raise :type :internal
@@ -198,16 +204,6 @@
                 :fragment-id id))
 
     (blob/decode content)))
-
-(defn- load-all-pointers!
-  [{:keys [data] :as file}]
-  (doseq [[_id page] (:pages-index data)]
-    (when (pmap/pointer-map? page)
-      (pmap/load! page)))
-  (doseq [[_id component] (:components data)]
-    (when (pmap/pointer-map? component)
-      (pmap/load! component)))
-  file)
 
 (defn persist-pointers!
   [conn file-id]
@@ -282,24 +278,30 @@
      [:project-id {:optional true} ::sm/uuid]]))
 
 (defn get-file
-  ([conn id] (get-file conn id nil))
-  ([conn id project-id]
+  [conn id & {:keys [project-id migrate?
+                     include-deleted?
+                     lock-for-update?]
+              :or {include-deleted? false
+                   lock-for-update? false}}]
+  (dm/assert!
+   "expected raw connection"
+   (db/connection? conn))
 
-   (dm/assert!
-    "expected raw connection"
-    (db/connection? conn))
+  (binding [pmap/*load-fn* (partial load-pointer conn id)
+            pmap/*tracked* (pmap/create-tracked)
+            cfeat/*new*    (atom #{})]
 
-   (binding [pmap/*load-fn* (partial load-pointer conn id)
-             pmap/*tracked* (atom {})
-             cfeat/*new*    (atom #{})]
+    (let [params (merge {:id id}
+                        (when (some? project-id)
+                          {:project-id project-id}))
 
-     (let [params (merge {:id id}
-                         (when (some? project-id)
-                           {:project-id project-id}))
-
-           file   (-> (db/get conn :file params)
-                      (decode-row)
-                      (fmg/migrate-file))]
+          file   (-> (db/get conn :file params
+                             {::db/check-deleted? (not include-deleted?)
+                              ::db/remove-deleted? (not include-deleted?)
+                              ::db/for-update? lock-for-update?})
+                     (decode-row)
+                     (cond-> migrate?
+                       (fmg/migrate-file)))]
 
        ;; NOTE: when file is migrated, we break the rule of no perform
        ;; mutations on get operations and update the file with all
@@ -317,7 +319,7 @@
                        {:id id})
            (persist-pointers! conn id)
            (assoc file :features features))
-         file)))))
+         file))))
 
 (defn get-minimal-file
   [{:keys [::db/pool] :as cfg} id]
@@ -338,12 +340,12 @@
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                     (let [perms (get-permissions conn profile-id id)]
                       (check-read-permissions! perms)
-                      (let [team (teams/get-team cfg
+                      (let [team (teams/get-team conn
                                                  :profile-id profile-id
                                                  :project-id project-id
                                                  :file-id id)
 
-                            file (-> (get-file conn id project-id)
+                            file (-> (get-file conn id :project-id project-id)
                                      (assoc :permissions perms)
                                      (check-version!))
 
@@ -502,7 +504,7 @@
               :code :params-validation
               :hint "page-id is required when object-id is provided"))
 
-  (let [team (teams/get-team cfg
+  (let [team (teams/get-team conn
                              :profile-id profile-id
                              :file-id file-id)
 
@@ -582,12 +584,10 @@
 
           (library-summary [{:keys [id data] :as file}]
             (binding [pmap/*load-fn* (partial load-pointer conn id)]
-              (let [load-objects (fn [component]
-                                   (binding [pmap/*load-fn* (partial load-pointer conn id)]
-                                     (ctf/load-component-objects data component)))
+              (let [load-objects      (fn [component]
+                                        (ctf/load-component-objects data component))
                     components-sample (-> (assets-sample (ctkl/components data) 4)
-                                          (update :sample
-                                                  #(map load-objects %)))]
+                                          (update :sample #(mapv load-objects %)))]
                 {:components components-sample
                  :media (assets-sample (:media data) 3)
                  :colors (assets-sample (:colors data) 3)
@@ -752,12 +752,12 @@
   (db/tx-run! cfg
               (fn [{:keys [::db/conn] :as cfg}]
                 (check-read-permissions! conn profile-id id)
-                (let [team (teams/get-team cfg
+                (let [team (teams/get-team conn
                                            :profile-id profile-id
                                            :project-id project-id
                                            :file-id id)
 
-                      file (get-file conn id project-id)]
+                      file (get-file conn id :project-id project-id)]
 
                   (-> (cfeat/get-team-enabled-features cf/flags team)
                       (cfeat/check-client-features! (:features params))
@@ -818,16 +818,6 @@
 
 ;; --- MUTATION COMMAND: set-file-shared
 
-(defn- unlink-files!
-  [conn {:keys [id]}]
-  (db/delete! conn :file-library-rel {:library-file-id id}))
-
-(defn- set-file-shared!
-  [conn {:keys [id is-shared] :as params}]
-  (db/update! conn :file
-              {:is-shared is-shared}
-              {:id id}))
-
 (def sql:get-referenced-files
   "SELECT f.id
      FROM file_library_rel AS flr
@@ -836,46 +826,97 @@
       AND (f.deleted_at IS NULL OR f.deleted_at > now())
     ORDER BY f.created_at ASC;")
 
+(defn- absorb-library-by-file!
+  [conn ldata file-id]
+  (binding [pmap/*load-fn* (partial load-pointer conn file-id)
+            pmap/*tracked* (pmap/create-tracked)]
+    (let [file (-> (get-file conn file-id
+                             :include-deleted? true
+                             :lock-for-update? true)
+                   (update :data ctf/absorb-assets ldata))]
+
+      (l/trc :hint "library absorbed"
+             :library-id (str (:id ldata))
+             :file-id (str file-id))
+
+      (db/update! conn :file
+                  {:revn (inc (:revn file))
+                   :data (blob/encode (:data file))
+                   :modified-at (dt/now)}
+                  {:id file-id})
+
+      (persist-pointers! conn file-id))))
+
 (defn- absorb-library!
   "Find all files using a shared library, and absorb all library assets
   into the file local libraries"
   [conn {:keys [id] :as library}]
   (let [ldata (binding [pmap/*load-fn* (partial load-pointer conn id)]
-                (-> library decode-row (process-pointers deref) fmg/migrate-file :data))
-        rows  (db/exec! conn [sql:get-referenced-files id])]
-    (doseq [file-id (map :id rows)]
-      (binding [pmap/*load-fn* (partial load-pointer conn file-id)
-                pmap/*tracked* (atom {})]
-        (let [file (-> (db/get-by-id conn :file file-id
-                                     ::db/check-deleted? false
-                                     ::db/remove-deleted? false)
-                       (decode-row)
-                       (load-all-pointers!)
-                       (fmg/migrate-file))
-              data (ctf/absorb-assets (:data file) ldata)]
-          (db/update! conn :file
-                      {:revn (inc (:revn file))
-                       :data (blob/encode data)
-                       :modified-at (dt/now)}
-                      {:id file-id})
-          (persist-pointers! conn file-id))))))
+                (-> library (process-pointers deref) :data))
+        ids   (->> (db/exec! conn [sql:get-referenced-files id])
+                   (map :id))]
 
-(def ^:private schema:set-file-shared
-  [:map {:title "set-file-shared"}
-   [:id ::sm/uuid]
-   [:is-shared :boolean]])
+    (l/trc :hint "absorbing library"
+           :library-id (str id)
+           :files (str/join "," (map str ids)))
+
+    (run! (partial absorb-library-by-file! conn ldata) ids)))
+
+(def ^:private
+  schema:set-file-shared
+  (sm/define
+    [:map {:title "set-file-shared"}
+     [:id ::sm/uuid]
+     [:is-shared :boolean]]))
 
 (sv/defmethod ::set-file-shared
   {::doc/added "1.17"
    ::webhooks/event? true
    ::sm/params schema:set-file-shared}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id is-shared] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
-    (let [file (set-file-shared! conn params)]
-      (when-not is-shared
-        (absorb-library! conn file)
-        (unlink-files! conn file))
+    (let [file (db/get-by-id conn id {:columns [:id :name :is-shared]})
+          file (cond
+                 (and (true? (:is-shared file))
+                      (false? (:is-shared params)))
+                 ;; When we disable shared flag on an already shared
+                 ;; file, we need to perform more complex operation,
+                 ;; so in this case we retrieve the complete file and
+                 ;; perform all required validations.
+                 (let [file (-> (get-file conn id :lock-for-update? true)
+                                (check-version!)
+                                (assoc :is-shared false))
+                       team (teams/get-team conn
+                                            :profile-id profile-id
+                                            :project-id (:project-id file))]
+
+                   (-> (cfeat/get-team-enabled-features cf/flags team)
+                       (cfeat/check-client-features! (:features params))
+                       (cfeat/check-file-features! (:features file)))
+
+                   (absorb-library! conn file)
+
+                   (db/delete! conn :file-library-rel {:library-file-id id})
+                   (db/update! conn :file
+                               {:is-shared false}
+                               {:id id})
+                   file)
+
+                 (and (false? (:is-shared file))
+                      (true? (:is-shared params)))
+                 (let [file (assoc file :is-shared true)]
+                   (db/update! conn :file
+                               {:is-shared false}
+                               {:id id})
+                   file)
+
+                 :else
+                 (ex/raise :type :validation
+                           :code :invalid-shared-state
+                           :hint "unexpected state found"
+                           :params-is-shared (:is-shared params)
+                           :file-is-shared (:is-shared file)))]
 
       (rph/with-meta
         (select-keys file [:id :name :is-shared])
@@ -886,14 +927,17 @@
 ;; --- MUTATION COMMAND: delete-file
 
 (defn- mark-file-deleted!
-  [conn {:keys [id]}]
+  [conn file-id]
   (db/update! conn :file
               {:deleted-at (dt/now)}
-              {:id id}))
+              {:id file-id}
+              {::db/columns [:id :name :is-shared :project-id :created-at :modified-at]}))
 
-(def ^:private schema:delete-file
-  [:map {:title "delete-file"}
-   [:id ::sm/uuid]])
+(def ^:private
+  schema:delete-file
+  (sm/define
+    [:map {:title "delete-file"}
+     [:id ::sm/uuid]]))
 
 (sv/defmethod ::delete-file
   {::doc/added "1.17"
@@ -902,9 +946,28 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
-    (let [file (mark-file-deleted! conn params)]
+    (let [file (mark-file-deleted! conn id)]
+
+      ;; NOTE: when a file is a shared library, then we proceed to load
+      ;; the whole file, proceed with feature checking and properly execute
+      ;; the absorb-library procedure
       (when (:is-shared file)
-        (absorb-library! conn file))
+        (let [file (-> (get-file conn id
+                                 :lock-for-update? true
+                                 :include-deleted? true)
+                       (check-version!))
+
+              team (teams/get-team conn
+                                   :profile-id profile-id
+                                   :project-id (:project-id file))]
+
+
+
+          (-> (cfeat/get-team-enabled-features cf/flags team)
+              (cfeat/check-client-features! (:features params))
+              (cfeat/check-file-features! (:features file)))
+
+          (absorb-library! conn file)))
 
       (rph/with-meta (rph/wrap)
         {::audit/props {:project-id (:project-id file)
@@ -923,10 +986,12 @@
   [conn {:keys [file-id library-id] :as params}]
   (db/exec-one! conn [sql:link-file-to-library file-id library-id]))
 
-(def ^:private schema:link-file-to-library
-  [:map {:title "link-file-to-library"}
-   [:file-id ::sm/uuid]
-   [:library-id ::sm/uuid]])
+(def ^:private
+  schema:link-file-to-library
+  (sm/define
+    [:map {:title "link-file-to-library"}
+     [:file-id ::sm/uuid]
+     [:library-id ::sm/uuid]]))
 
 (sv/defmethod ::link-file-to-library
   {::doc/added "1.17"

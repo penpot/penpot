@@ -635,7 +635,7 @@
   (pu/with-open [input (zstd-input-stream input)
                  input (io/data-input-stream input)]
     (binding [*state* (volatile! {:media [] :index {}})]
-      (let [team      (teams/get-team options
+      (let [team      (teams/get-team conn
                                       :profile-id profile-id
                                       :project-id project-id)
 

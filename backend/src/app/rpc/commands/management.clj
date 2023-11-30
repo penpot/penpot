@@ -317,8 +317,8 @@
       (proj/check-edition-permissions! conn profile-id project-id))
 
     ;; Check the team compatibility
-    (let [orig-team (teams/get-team cfg :profile-id profile-id :project-id (first source))
-          dest-team (teams/get-team cfg :profile-id profile-id :project-id project-id)]
+    (let [orig-team (teams/get-team conn :profile-id profile-id :project-id (first source))
+          dest-team (teams/get-team conn :profile-id profile-id :project-id project-id)]
       (cfeat/check-teams-compatibility! orig-team dest-team))
 
     ;; move all files to the project
@@ -374,8 +374,8 @@
     (teams/check-edition-permissions! conn profile-id team-id)
 
     ;; Check the teams compatibility
-    (let [orig-team (teams/get-team cfg :profile-id profile-id :team-id (:team-id project))
-          dest-team (teams/get-team cfg :profile-id profile-id :team-id team-id)]
+    (let [orig-team (teams/get-team conn :profile-id profile-id :team-id (:team-id project))
+          dest-team (teams/get-team conn :profile-id profile-id :team-id team-id)]
       (cfeat/check-teams-compatibility! orig-team dest-team))
 
     ;; move project to the destination team

@@ -148,7 +148,7 @@
                     (db/xact-lock! conn id)
 
                     (let [file     (get-file conn id)
-                          team     (teams/get-team cfg
+                          team     (teams/get-team conn
                                                    :profile-id profile-id
                                                    :team-id (:team-id file))
 
@@ -304,9 +304,9 @@
                         (not skip-validate))
                (->> (files/get-file-libraries conn (:id file))
                     (into [file] (map (fn [{:keys [id]}]
-                                        (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
-                                          (-> (db/get conn :file {:id id})
-                                              (files/decode-row)
+                                        (binding [pmap/*load-fn* (partial files/load-pointer conn id)
+                                                  pmap/*tracked* nil]
+                                          (-> (files/get-file conn id :migrate? false)
                                               (files/process-pointers deref) ; ensure all pointers resolved
                                               (fmg/migrate-file))))))
                     (d/index-by :id)))]

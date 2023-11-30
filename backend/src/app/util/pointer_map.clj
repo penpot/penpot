@@ -60,6 +60,10 @@
 
 (declare create)
 
+(defn create-tracked
+  []
+  (atom {}))
+
 (defprotocol IPointerMap
   (get-id [_])
   (load! [_])

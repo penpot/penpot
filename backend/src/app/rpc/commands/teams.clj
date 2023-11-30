@@ -149,11 +149,17 @@
 (sv/defmethod ::get-team
   {::doc/added "1.17"
    ::sm/params schema:get-team}
-  [cfg {:keys [::rpc/profile-id id file-id]}]
-  (db/tx-run! cfg #(get-team % :profile-id profile-id :team-id id :file-id file-id)))
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id id file-id]}]
+  (get-team pool :profile-id profile-id :team-id id :file-id file-id))
 
 (defn get-team
   [conn & {:keys [profile-id team-id project-id file-id] :as params}]
+
+  (dm/assert!
+   "connection or pool is mandatory"
+   (or (db/connection? conn)
+       (db/pool? conn)))
+
   (dm/assert!
    "profile-id is mandatory"
    (uuid? profile-id))
@@ -655,7 +661,7 @@
 
 (defn update-team-photo
   [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id team-id] :as params}]
-  (let [team  (get-team cfg :profile-id profile-id :team-id team-id)
+  (let [team  (get-team pool :profile-id profile-id :team-id team-id)
         photo (profile/upload-photo cfg params)]
 
     (db/with-atomic [conn pool]
