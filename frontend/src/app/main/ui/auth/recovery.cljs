@@ -68,12 +68,14 @@
        [:div {:class (stl/css :fields-row)}
         [:& fm/input {:type "password"
                       :name :password-1
+                      :show-success? true
                       :label (tr "auth.new-password")
                       :class (stl/css :form-field)}]]
 
        [:div {:class (stl/css :fields-row)}
         [:& fm/input {:type "password"
                       :name :password-2
+                      :show-success? true
                       :label (tr "auth.confirm-password")
                       :class (stl/css :form-field)}]]
 

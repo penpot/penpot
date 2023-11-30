@@ -122,6 +122,7 @@
                          :name :email-1
                          :label (tr "modals.change-email.new-email")
                          :trim true
+                         :show-success? true
                          :on-change-value on-email-change}]]
 
           [:div {:class (stl/css :fields-row)}
@@ -129,6 +130,7 @@
                          :name :email-2
                          :label (tr "modals.change-email.confirm-email")
                          :trim true
+                         :show-success? true
                          :on-change-value on-email-change}]]]
 
          [:div {:class (stl/css :modal-footer)}

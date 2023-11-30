@@ -95,12 +95,14 @@
         [:& fm/input
          {:type "password"
           :name :password-1
+          :show-success? true
           :label (t locale "labels.new-password")}]]
 
        [:div {:class (stl/css :fields-row)}
         [:& fm/input
          {:type "password"
           :name :password-2
+          :show-success? true
           :label (t locale "labels.confirm-password")}]]
 
        [:> fm/submit-button*

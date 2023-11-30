@@ -51,11 +51,30 @@
       caret-color: var(--input-foreground-color-active);
     }
   }
-  &:global(.invalid) {
+  &.valid {
+    input {
+      border: $s-1 solid var(--input-border-color-success);
+      @extend .disabled-input;
+      &:hover,
+      &:focus {
+        border: $s-1 solid var(--input-border-color-success);
+      }
+    }
+  }
+  &.invalid {
     input {
       border: $s-1 solid var(--input-border-color-error);
       @extend .disabled-input;
+      &:hover,
+      &:focus {
+        border: $s-1 solid var(--input-border-color-error);
+      }
     }
+  }
+
+  &.valid .help-icon,
+  &.invalid .help-icon {
+    right: $s-40;
   }
 }
 
@@ -69,7 +88,7 @@
 .help-icon {
   cursor: pointer;
   position: absolute;
-  right: $s-12;
+  right: $s-16;
   top: calc(50% - $s-8);
   svg {
     @extend .button-icon-small;
@@ -78,6 +97,43 @@
     height: $s-16;
   }
 }
+.invalid-icon {
+  width: $s-16;
+  height: $s-16;
+  background: var(--input-border-color-error);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: $s-16;
+  top: calc(50% - $s-8);
+  svg {
+    width: $s-12;
+    height: $s-12;
+    stroke: var(--input-background-color);
+  }
+}
+
+.valid-icon {
+  width: $s-16;
+  height: $s-16;
+  background: var(--input-border-color-success);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: $s-16;
+  top: calc(50% - $s-8);
+  svg {
+    width: $s-12;
+    height: $s-12;
+    fill: var(--input-border-color-success);
+    stroke: var(--input-background-color);
+  }
+}
+
 .error {
   color: var(--input-border-color-error);
   width: 100%;

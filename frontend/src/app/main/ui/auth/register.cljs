@@ -121,11 +121,13 @@
                       :name :email
                       :label (tr "auth.email")
                       :data-test "email-input"
+                      :show-success? true
                       :class (stl/css :form-field)}]]
        [:div {:class (stl/css :fields-row)}
         [:& fm/input {:name :password
                       :hint (tr "auth.password-length-hint")
                       :label (tr "auth.password")
+                      :show-success? true
                       :type "password"
                       :class (stl/css :form-field)}]]
 
@@ -310,6 +312,7 @@
         [:& fm/input {:name :fullname
                       :label (tr "auth.fullname")
                       :type "text"
+                      :show-success? true
                       :class (stl/css :form-field)}]]
 
        (when (contains? cf/flags :terms-and-privacy-checkbox)

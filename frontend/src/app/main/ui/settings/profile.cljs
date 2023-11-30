@@ -75,7 +75,6 @@
          {:type "email"
           :name :email
           :disabled true
-          :help-icon i/at
           :label (tr "dashboard.your-email")}]
 
         [:div {:class (stl/css :options)}

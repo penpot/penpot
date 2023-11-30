@@ -126,6 +126,7 @@
                          :name :name
                          :disabled @created?
                          :label (tr "modals.create-access-token.name.label")
+                         :show-success? true
                          :placeholder (tr "modals.create-access-token.name.placeholder")}]]
 
           [:div {:class (stl/css :fields-row)}
