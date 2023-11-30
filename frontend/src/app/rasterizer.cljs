@@ -20,7 +20,7 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]))
 
-(log/set-level! :trace)
+(log/set-level! :info)
 
 (declare send-success!)
 (declare send-failure!)

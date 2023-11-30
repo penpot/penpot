@@ -316,6 +316,19 @@
                :pointer-events "none"}
        :fill "none"}
 
+      [:defs
+       [:linearGradient {:id "frame-placeholder-gradient"}
+        [:animateTransform
+          {:attributeName "gradientTransform"
+           :type "translate"
+           :from "-1 0"
+           :to "1 0"
+           :dur "2s"
+           :repeatCount "indefinite"}]
+        [:stop {:offset "0%" :stop-color "#e3e3e3" :stop-opacity 1}]
+        [:stop {:offset "50%" :stop-color "#dddddd" :stop-opacity 1}]
+        [:stop {:offset "100%" :stop-color "#e3e3e3" :stop-opacity 1}]]]
+
       (when (dbg/enabled? :show-export-metadata)
         [:& use/export-page {:options options}])
 
@@ -329,9 +342,9 @@
       [:& (mf/provider ctx/current-vbox) {:value vbox'}
        [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
          ;; Render root shape
-         [:& shapes/root-shape {:key page-id
-                                :objects base-objects
-                                :active-frames @active-frames}]]]]
+        [:& shapes/root-shape {:key page-id
+                               :objects base-objects
+                               :active-frames @active-frames}]]]]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"

@@ -123,9 +123,12 @@
 
             tries-ref      (mf/use-ref 0)
             imposter-ref   (mf/use-ref nil)
+            imposter-loaded-ref (mf/use-ref false)
             task-ref       (mf/use-ref nil)
 
-            on-load        (mf/use-fn #(mf/set-ref-val! tries-ref 0))
+            on-load        (mf/use-fn (fn []
+                                        (mf/set-ref-val! tries-ref 0)
+                                        (mf/set-ref-val! imposter-loaded-ref true)))
             on-error       (mf/use-fn
                             (fn []
                               (let [current-tries (mf/ref-val tries-ref)
@@ -159,6 +162,15 @@
            :key "frame-container"
            :opacity (when ^boolean hidden? 0)}
 
+           ;; When there is no thumbnail, we generate a empty rect.
+          (when (and (not ^boolean thumbnail-uri) (not (mf/ref-val imposter-loaded-ref)))
+            [:g.frame-placeholder
+             [:rect {:x x
+                     :y y
+                     :width width
+                     :height height
+                     :fill "url(#frame-placeholder-gradient)"}]])
+
           [:g.frame-imposter
            [:image.thumbnail-bitmap
             {:x x
@@ -182,8 +194,7 @@
                      :stroke-width 2}])]
 
           ;; When thumbnail is disabled.
-          (when (or (not ^boolean thumbnail?)
-                    (not ^boolean thumbnail-uri))
+          (when (not ^boolean thumbnail?)
             [:g.frame-content
              {:id (dm/str "frame-content-" frame-id)
               :ref container-ref}
