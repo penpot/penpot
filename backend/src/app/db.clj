@@ -254,7 +254,7 @@
   (cond
     (connection? o) o
     (pool? o)       o
-    (map? o)        (get-connectable (or (:conn o) (::pool o)))
+    (map? o)        (get-connectable (or (::conn o) (::pool o)))
     :else           (ex/raise :type :internal
                               :code :unable-resolve-connectable
                               :hint "expected conn, pool or system")))
