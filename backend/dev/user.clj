@@ -22,6 +22,7 @@
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.db :as db]
    [app.main :as main]
    [app.srepl.helpers :as srepl.helpers]
    [app.srepl.main :as srepl]
@@ -54,8 +55,6 @@
 
 (repl/disable-reload! (find-ns 'integrant.core))
 (set! *warn-on-reflection* true)
-
-(defonce system nil)
 
 ;; --- Benchmarking Tools
 
@@ -137,38 +136,3 @@
     (add-tap #(locking debug-tap
                 (prn "tap debug:" %)))
     1))
-
-
-(sm/def! ::test
-  [:map {:title "Foo"}
-   [:x :int]
-   [:y {:min 0} :double]
-   [:bar
-    [:map {:title "Bar"}
-     [:z :string]
-     [:v ::sm/uuid]]]
-   [:items
-    [:vector ::dt/instant]]])
-
-(sm/def! ::test2
-  [:multi {:title "Foo" :dispatch :type}
-   [:x
-    [:map {:title "FooX"}
-     [:type [:= :x]]
-     [:x :int]]]
-   [:y
-    [:map
-     [:type [:= :x]]
-     [:y [::sm/one-of #{:a :b :c}]]]]
-   [:z
-    [:map {:title "FooZ"}
-     [:z
-      [:multi {:title "Bar" :dispatch :type}
-       [:a
-        [:map
-         [:type [:= :a]]
-         [:a :int]]]
-       [:b
-        [:map
-         [:type [:= :b]]
-         [:b :int]]]]]]]])
