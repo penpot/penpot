@@ -27,7 +27,7 @@ tmux send-keys -t penpot 'npx gulp watch' enter
 tmux new-window -t penpot:1 -n 'shadow watch'
 tmux select-window -t penpot:1
 tmux send-keys -t penpot 'cd penpot/frontend' enter C-l
-tmux send-keys -t penpot 'clojure -M:dev:shadow-cljs watch main' enter
+tmux send-keys -t penpot 'clojure -M:dev:shadow-cljs watch main storybook' enter
 
 tmux new-window -t penpot:2 -n 'exporter'
 tmux select-window -t penpot:2
@@ -43,5 +43,11 @@ tmux new-window -t penpot:3 -n 'backend'
 tmux select-window -t penpot:3
 tmux send-keys -t penpot 'cd penpot/backend' enter C-l
 tmux send-keys -t penpot './scripts/start-dev' enter
+
+tmux new-window -t penpot:4 -n 'storybook'
+tmux select-window -t penpot:4
+tmux send-keys -t penpot 'cd penpot/frontend' enter C-l
+tmux send-keys -t penpot 'npx gulp template:storybook' enter C-l
+tmux send-keys -t penpot 'npm run storybook' enter
 
 tmux -2 attach-session -t penpot
