@@ -1637,6 +1637,9 @@ msgstr "Settings"
 msgid "labels.share-prototype"
 msgstr "Share prototype"
 
+msgid "labels.share"
+msgstr "Share"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
 msgstr "Libraries"

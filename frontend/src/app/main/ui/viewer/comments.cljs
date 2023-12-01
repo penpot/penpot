@@ -5,7 +5,9 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.viewer.comments
+  (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -16,6 +18,7 @@
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.comments :as wc]
    [app.util.dom :as dom]
@@ -28,55 +31,126 @@
    ::mf/wrap-props false}
   []
   (let [{cmode :mode cshow :show show-sidebar? :show-sidebar?} (mf/deref refs/comments-local)
-
+        new-css-system  (mf/use-ctx ctx/new-css-system)
         show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
         hide-dropdown   (mf/use-fn #(reset! show-dropdown? false))
 
         update-mode
         (mf/use-callback
-         (fn [mode]
-           (st/emit! (dcm/update-filters {:mode mode}))))
+         (fn [event]
+           (let [mode (-> (dom/get-current-target event)
+                          (dom/get-data "value")
+                          (keyword))]
+           (st/emit! (dcm/update-filters {:mode mode})))))
 
         update-show
         (mf/use-callback
-         (fn [mode]
-           (st/emit! (dcm/update-filters {:show mode}))))
+         (fn [event]
+           (let [mode (-> (dom/get-current-target event)
+                          (dom/get-data "value")
+                          (d/read-string))]
+           (st/emit! (dcm/update-filters {:show mode})))))
 
         update-options
         (mf/use-callback
-         (fn [mode]
-           (st/emit! (dcm/update-options {:show-sidebar? mode}))))]
+         (fn [event]
+           (let [mode (-> (dom/get-target event)
+                          (dom/get-data "value")
+                          (boolean))]
+             (st/emit! (dcm/update-options {:show-sidebar? mode})))))]
 
-    [:div.view-options {:on-click toggle-dropdown}
-     [:span.label (tr "labels.comments")]
-     [:span.icon i/arrow-down]
-     [:& dropdown {:show @show-dropdown?
-                   :on-close hide-dropdown}
+    (if new-css-system
+      [:div {:class (stl/css :view-options)
+             :on-click toggle-dropdown}
+       [:span {:class (stl/css :dropdown-title)}
+        (tr "labels.comments")]
+       [:span {:class (stl/css :icon-dropdown)}
+        i/arrow-refactor]
+       [:& dropdown {:show @show-dropdown?
+                     :on-close hide-dropdown}
+        [:ul {:class (stl/css :dropdown)}
+         [:li {:class (stl/css-case :dropdown-element true
+                                    :selected (or (= :all cmode) (nil? cmode)))
+               :data-value :all
+               :on-click update-mode}
 
-      [:ul.dropdown.with-check
-       [:li {:class (dom/classnames :selected (or (= :all cmode) (nil? cmode)))
-             :on-click #(update-mode :all)}
-        [:span.icon i/tick]
-        [:span.label (tr "labels.show-all-comments")]]
+          [:span {:class (stl/css :label)} (tr "labels.show-all-comments")]
+          (when (or (= :all cmode) (nil? cmode))
+            [:span {:class (stl/css :icon)} i/tick-refactor])]
 
-       [:li {:class (dom/classnames :selected (= :yours cmode))
-             :on-click #(update-mode :yours)}
-        [:span.icon i/tick]
-        [:span.label (tr "labels.show-your-comments")]]
+         [:li {:class (stl/css-case :dropdown-element true
+                                    :selected (= :yours cmode))
+               :data-value :yours
+               :on-click update-mode}
 
-       [:hr]
+          [:span {:class (stl/css :label)}
+           (tr "labels.show-your-comments")]
 
-       [:li {:class (dom/classnames :selected (= :pending cshow))
-             :on-click #(update-show (if (= :pending cshow) :all :pending))}
-        [:span.icon i/tick]
-        [:span.label (tr "labels.hide-resolved-comments")]]
+          (when (= :yours cmode)
+            [:span {:class (stl/css :icon)}
+             i/tick-refactor])]
 
-       [:hr]
-       [:li {:class (dom/classnames :selected show-sidebar?)
-             :on-click #(update-options (not show-sidebar?))}
-        [:span.icon i/tick]
-        [:span.label (tr "labels.show-comments-list")]]]]]))
+         [:li {:class (stl/css :separator)}]
+
+         [:li {:class (stl/css-case :dropdown-element true
+                                    :selected (= :pending cshow))
+               :data-value (if (= :pending cshow) :all :pending)
+               :on-click update-show}
+
+          [:span {:class (stl/css :label)}
+           (tr "labels.hide-resolved-comments")]
+          (when  (= :pending cshow)
+            [:span {:class (stl/css :icon)}
+             i/tick-refactor])]
+
+         [:li {:class (stl/css :separator)}]
+
+         [:li {:class (stl/css-case :dropdown-element true
+                                    :selected show-sidebar?)
+               :data-value (not show-sidebar?)
+               :on-click update-options}
+
+          [:span {:class (stl/css :label)} (tr "labels.show-comments-list")]
+          (when show-sidebar?
+            [:span {:class (stl/css :icon)} i/tick-refactor])]]]]
+
+
+
+      ; OLD
+      [:div.view-options {:on-click toggle-dropdown}
+       [:span.label (tr "labels.comments")]
+       [:span.icon i/arrow-down]
+       [:& dropdown {:show @show-dropdown?
+                     :on-close hide-dropdown}
+
+        [:ul.dropdown.with-check
+         [:li {:class (dom/classnames :selected (or (= :all cmode) (nil? cmode)))
+               :data-value :all
+               :on-click update-mode}
+          [:span.icon i/tick]
+          [:span.label (tr "labels.show-all-comments")]]
+
+         [:li {:class (dom/classnames :selected (= :yours cmode))
+               :data-value :yours
+               :on-click update-mode}
+          [:span.icon i/tick]
+          [:span.label (tr "labels.show-your-comments")]]
+
+         [:hr]
+
+         [:li {:class (dom/classnames :selected (= :pending cshow))
+               :data-value (if (= :pending cshow) :all :pending)
+               :on-click update-show}
+          [:span.icon i/tick]
+          [:span.label (tr "labels.hide-resolved-comments")]]
+
+         [:hr]
+         [:li {:class (dom/classnames :selected show-sidebar?)
+               :data-value (not show-sidebar?)
+               :on-click update-options}
+          [:span.icon i/tick]
+          [:span.label (tr "labels.show-comments-list")]]]]])))
 
 
 (defn- update-thread-position [positions {:keys [id] :as thread}]
@@ -88,7 +162,8 @@
 
 (mf/defc comments-layer
   [{:keys [zoom file users frame page] :as props}]
-  (let [profile        (mf/deref refs/profile)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        profile        (mf/deref refs/profile)
         local          (mf/deref refs/comments-local)
 
         open-thread-id (:open local)
@@ -159,43 +234,81 @@
              (st/emit! (dcm/create-thread-on-viewer params)
                        (dcm/close-thread)))))]
 
-    [:div.comments-section {:on-click on-click}
-     [:div.viewer-comments-container
-      [:div.threads
-       (for [item threads]
-         [:& cmt/thread-bubble
-          {:thread item
-           :position-modifier modifier1
-           :zoom zoom
-           :on-click on-bubble-click
-           :open? (= (:id item) (:open local))
-           :key (:seqn item)
-           :origin :viewer}])
+    (if new-css-system
+      [:div {:class (stl/css :comments-section)
+             :on-click on-click}
+       [:div {:class (stl/css :viewer-comments-container)}
+        [:div {:class (stl/css :threads)}
+         (for [item threads]
+           [:& cmt/thread-bubble
+            {:thread item
+             :position-modifier modifier1
+             :zoom zoom
+             :on-click on-bubble-click
+             :open? (= (:id item) (:open local))
+             :key (:seqn item)
+             :origin :viewer}])
 
-       (when-let [thread (get threads-map open-thread-id)]
-         [:& cmt/thread-comments
-          {:thread thread
-           :position-modifier modifier1
-           :users users
-           :zoom zoom}])
+         (when-let [thread (get threads-map open-thread-id)]
+           [:& cmt/thread-comments
+            {:thread thread
+             :position-modifier modifier1
+             :users users
+             :zoom zoom}])
 
-       (when-let [draft (:draft local)]
-         [:& cmt/draft-thread
-          {:draft draft
-           :position-modifier modifier1
-           :on-cancel on-draft-cancel
-           :on-submit on-draft-submit
-           :zoom zoom}])]]]))
+         (when-let [draft (:draft local)]
+           [:& cmt/draft-thread
+            {:draft draft
+             :position-modifier modifier1
+             :on-cancel on-draft-cancel
+             :on-submit on-draft-submit
+             :zoom zoom}])]]]
+
+
+      [:div.comments-section {:on-click on-click}
+       [:div.viewer-comments-container
+        [:div.threads
+         (for [item threads]
+           [:& cmt/thread-bubble
+            {:thread item
+             :position-modifier modifier1
+             :zoom zoom
+             :on-click on-bubble-click
+             :open? (= (:id item) (:open local))
+             :key (:seqn item)
+             :origin :viewer}])
+
+         (when-let [thread (get threads-map open-thread-id)]
+           [:& cmt/thread-comments
+            {:thread thread
+             :position-modifier modifier1
+             :users users
+             :zoom zoom}])
+
+         (when-let [draft (:draft local)]
+           [:& cmt/draft-thread
+            {:draft draft
+             :position-modifier modifier1
+             :on-cancel on-draft-cancel
+             :on-submit on-draft-submit
+             :zoom zoom}])]]])))
 
 (mf/defc comments-sidebar
   [{:keys [users frame page]}]
-  (let [profile     (mf/deref refs/profile)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        profile     (mf/deref refs/profile)
         local      (mf/deref refs/comments-local)
         threads-map (mf/deref refs/comment-threads)
         threads     (->> (vals threads-map)
                          (dcm/apply-filters local profile)
                          (filter (fn [{:keys [position]}]
                                    (gsh/has-point? frame position))))]
-    [:aside.settings-bar.settings-bar-right.comments-right-sidebar
-     [:div.settings-bar-inside
-      [:& wc/comments-sidebar {:users users :threads threads :page-id (:id page)}]]]))
+    (if new-css-system
+      [:aside {:class (stl/css :comments-sidebar)}
+       [:div {:class (stl/css :settings-bar-inside)}
+        [:& wc/comments-sidebar {:from-viewer true :users users :threads threads :page-id (:id page)}]]]
+
+
+      [:aside.settings-bar.settings-bar-right.comments-right-sidebar
+       [:div.settings-bar-inside
+        [:& wc/comments-sidebar {:users users :threads threads :page-id (:id page)}]]])))

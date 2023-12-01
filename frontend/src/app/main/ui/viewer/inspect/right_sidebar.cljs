@@ -87,8 +87,8 @@
          (handle-change-tab :info))))
 
     (if new-css-system
-      [:aside {:class (stl/css :settings-bar-right)}
-
+      [:aside {:class (stl/css-case :settings-bar-right true
+                                    :viewer-code (= from :inspect))}
        (if (seq shapes)
          [:div {:class (stl/css :tool-windows)}
           [:div {:class (stl/css :shape-row)}

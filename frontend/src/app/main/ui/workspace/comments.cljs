@@ -86,12 +86,10 @@
        [:li {:class (dom/classnames :selected (= :pending cshow))
              :on-click update-show}
         [:span.icon i/tick]
-        [:span.label (tr "labels.hide-resolved-comments")]]])
-
-    ))
+        [:span.label (tr "labels.hide-resolved-comments")]]])))
 
 (mf/defc comments-sidebar
-  [{:keys [users threads page-id]}]
+  [{:keys [users threads page-id from-viewer]}]
   (let [new-css-system  (mf/use-ctx ctx/new-css-system)
         threads-map (mf/deref refs/threads-ref)
         profile     (mf/deref refs/profile)
@@ -111,8 +109,11 @@
 
         close-section
         (mf/use-fn
-         (mf/deps)
-         #(st/emit! :interrupt (dw/deselect-all true)))
+         (mf/deps from-viewer)
+         (fn []
+           (if from-viewer
+             (st/emit! (dcm/update-options {:show-sidebar? false}))
+             (st/emit! :interrupt (dw/deselect-all true)))))
 
         tgroups     (->> threads
                          (dcm/group-threads-by-page))
@@ -121,7 +122,6 @@
 
         toggle-mode-selector
         (mf/use-fn
-         (mf/deps)
          (fn [event]
            (dom/stop-propagation event)
            (swap! state* not)))
@@ -147,18 +147,17 @@
                   :on-click close-section}
          i/close-refactor]]
 
-       (when (seq tgroups)
-         [:button {:class (stl/css :mode-dropdown-wrapper)
-                   :on-click toggle-mode-selector}
+       [:button {:class (stl/css :mode-dropdown-wrapper)
+                 :on-click toggle-mode-selector}
 
-          [:span {:class (stl/css :mode-label)} (case (:mode local)
-                                                  (nil :all) (tr "labels.show-all-comments")
-                                                  :yours     (tr "labels.show-your-comments"))]
-          [:div {:class (stl/css :icon)} i/arrow-refactor]]
+        [:span {:class (stl/css :mode-label)} (case (:mode local)
+                                                (nil :all) (tr "labels.show-all-comments")
+                                                :yours     (tr "labels.show-your-comments"))]
+        [:div {:class (stl/css :icon)} i/arrow-refactor]]
 
-         [:& dropdown {:show options?
-                       :on-close #(reset! state* false)}
-          [:& sidebar-options {:local local}]])
+       [:& dropdown {:show options?
+                     :on-close #(reset! state* false)}
+        [:& sidebar-options {:local local}]]
 
        [:div {:class (stl/css :comments-section-content)}
 
