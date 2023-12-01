@@ -72,7 +72,7 @@
 
         detach-shape
         (fn [container shape]
-          ; Detach a shape. If it's inside a component, add it to detached-ids, for further use.
+          ;; Detach a shape. If it's inside a component, add it to detached-ids, for further use.
           (let [is-component? (let [root-shape (ctst/get-shape container (:id container))]
                                 (and (some? root-shape) (nil? (:parent-id root-shape))))]
             (when is-component?
@@ -81,8 +81,8 @@
 
         fix-orphan-shapes
         (fn [file-data]
-          ; Find shapes that are not listed in their parent's children list.
-          ; Remove them, and also their children
+          ;; Find shapes that are not listed in their parent's children list.
+          ;; Remove them, and also their children
           (letfn [(fix-container [container]
                     (reduce fix-shape container (ctn/shapes-seq container)))
 
@@ -104,7 +104,7 @@
 
         remove-nested-roots
         (fn [file-data]
-          ; Remove :component-root in head shapes that are nested.
+          ;; Remove :component-root in head shapes that are nested.
           (letfn [(fix-container [container]
                     (update container :objects update-vals (partial fix-shape container)))
 
@@ -121,7 +121,7 @@
 
         add-not-nested-roots
         (fn [file-data]
-          ; Add :component-root in head shapes that are not nested.
+          ;; Add :component-root in head shapes that are not nested.
           (letfn [(fix-container [container]
                     (update container :objects update-vals (partial fix-shape container)))
 
@@ -138,7 +138,7 @@
 
         fix-orphan-copies
         (fn [file-data]
-          ; Detach shapes that were inside a copy (have :shape-ref) but now they aren't.
+          ;; Detach shapes that were inside a copy (have :shape-ref) but now they aren't.
           (letfn [(fix-container [container]
                     (update container :objects update-vals (partial fix-shape container)))
 
@@ -156,38 +156,38 @@
 
         remap-refs
         (fn [file-data]
-          ; Remap shape-refs so that they point to the near main.
-          ; At the same time, if there are any dangling ref, detach the shape and its children.
+          ;; Remap shape-refs so that they point to the near main.
+          ;; At the same time, if there are any dangling ref, detach the shape and its children.
           (letfn [(fix-container [container]
                     (reduce fix-shape container (ctn/shapes-seq container)))
 
                   (fix-shape [container shape]
                     (if (ctk/in-component-copy? shape)
-                      ; First look for the direct shape.
+                      ;; First look for the direct shape.
                       (let [root         (ctn/get-component-shape (:objects container) shape)
                             libraries    (assoc-in libraries [(:id file-data) :data] file-data)
                             library      (get libraries (:component-file root))
                             component    (ctkl/get-component (:data library) (:component-id root) true)
                             direct-shape (ctf/get-component-shape (:data library) component (:shape-ref shape))]
                         (if (some? direct-shape)
-                          ; If it exists, there is nothing else to do.
+                          ;; If it exists, there is nothing else to do.
                           container
-                          ; If not found, find the near shape.
+                          ;; If not found, find the near shape.
                           (let [near-shape (d/seek #(= (:shape-ref %) (:shape-ref shape))
                                                    (ctf/get-component-shapes (:data library) component))]
                             (if (some? near-shape)
-                              ; If found, update the ref to point to the near shape.
+                              ;; If found, update the ref to point to the near shape.
                               (ctn/update-shape container (:id shape) #(assoc % :shape-ref (:id near-shape)))
-                              ; If not found, it may be a fostered component. Try to locate a direct shape
-                              ; in the head component.
+                              ;; If not found, it may be a fostered component. Try to locate a direct shape
+                              ;; in the head component.
                               (let [head           (ctn/get-head-shape (:objects container) shape)
                                     library-2      (get libraries (:component-file head))
                                     component-2    (ctkl/get-component (:data library-2) (:component-id head) true)
                                     direct-shape-2 (ctf/get-component-shape (:data library-2) component-2 (:shape-ref shape))]
                                 (if (some? direct-shape-2)
-                                  ; If it exists, there is nothing else to do.
+                                  ;; If it exists, there is nothing else to do.
                                   container
-                                  ; If not found, detach shape and all children (stopping if a nested instance is reached)
+                                  ;; If not found, detach shape and all children (stopping if a nested instance is reached)
                                   (let [children (ctn/get-children-in-instance (:objects container) (:id shape))]
                                     (reduce #(ctn/update-shape %1 (:id %2) (partial detach-shape %1))
                                             container
@@ -200,8 +200,8 @@
 
         fix-copies-of-detached
         (fn [file-data]
-          ; Find any copy that is referencing a detached shape inside a component, and
-          ; undo the nested copy, converting it into a direct copy.
+          ;; Find any copy that is referencing a detached shape inside a component, and
+          ;; undo the nested copy, converting it into a direct copy.
           (letfn [(fix-container [container]
                     (update container :objects update-vals fix-shape))
 
@@ -218,8 +218,8 @@
 
         transform-to-frames
         (fn [file-data]
-          ; Transform component and copy heads to frames, and set the
-          ; frame-id of its childrens
+          ;; Transform component and copy heads to frames, and set the
+          ;; frame-id of its childrens
           (letfn [(fix-container
                     [container]
                     (update container :objects update-vals fix-shape))
@@ -240,8 +240,8 @@
 
         remap-frame-ids
         (fn [file-data]
-           ; Remap the frame-ids of the primary childs of the head instances
-           ; to point to the head instance.
+          ;; Remap the frame-ids of the primary childs of the head instances
+          ;; to point to the head instance.
           (letfn [(fix-container
                     [container]
                     (update container :objects update-vals (partial fix-shape container)))
@@ -283,8 +283,7 @@
         fix-component-nil-objects
         (fn [file-data]
           ;; Ensure that objects of all components is not null
-          (letfn [(fix-component
-                    [component]
+          (letfn [(fix-component [component]
                     (if (and (contains? component :objects) (nil? (:objects component)))
                       (if (:deleted component)
                         (assoc component :objects {})
