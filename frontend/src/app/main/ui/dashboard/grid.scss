@@ -6,17 +6,21 @@
 
 @import "refactor/common-refactor.scss";
 
+$thumbnail-default-width: $s-252; // Default width
+$thumbnail-aspect-ration: #{2 / 3}; // Ratio 2:3
+
 .dashboard-grid {
   font-size: $fs-14;
   height: 100%;
   overflow-y: auto;
-  overflow: hidden;
+  overflow-x: hidden;
+  padding: 0 $s-16;
 }
 
 .grid-row {
-  display: grid;
+  display: flex;
   width: 100%;
-  padding: 0 $s-12;
+  gap: $s-24;
 }
 
 .grid-item {
@@ -24,9 +28,7 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  flex: 1 0 $s-260;
-  height: $s-232;
-  margin: $s-12 $s-16 $s-16 $s-8;
+  margin: $s-12 0;
   position: relative;
   text-align: center;
 
@@ -38,16 +40,14 @@
   button {
     background-color: transparent;
     border: none;
-  }
-
-  @media #{$bp-max-1366} {
-    height: $s-200;
-    flex: 1 0 $s-232;
+    padding: 0 $s-6;
   }
 
   .grid-item-th {
     border-radius: $br-4;
     text-align: initial;
+    width: var(--th-width, #{$thumbnail-default-width});
+    height: calc(var(--th-width, #{$thumbnail-default-width}) * #{$thumbnail-aspect-ration});
 
     img {
       object-fit: contain;
@@ -56,9 +56,10 @@
 
   &.dragged {
     border-radius: $br-4;
-    border: $br-2 solid $da-primary;
+    outline: $br-4 solid $da-primary;
     text-align: initial;
-    max-height: $s-160;
+    width: calc(var(--th-width) + $s-12);
+    height: calc(var(--th-width, #{$thumbnail-default-width}) * #{$thumbnail-aspect-ration});
   }
 
   &.overlay {
@@ -81,6 +82,7 @@
     display: grid;
     grid-template-columns: 1fr auto;
     cursor: pointer;
+    max-width: var(--th-width, $thumbnail-default-width);
   }
 
   .item-info {
@@ -198,7 +200,7 @@
 
   .selected {
     .grid-item-th {
-      border: 2px solid $da-tertiary;
+      outline: $s-4 solid $da-tertiary;
     }
   }
 }
@@ -261,8 +263,7 @@
   background-size: auto 80%;
   background-repeat: no-repeat;
 
-  height: $s-232;
-  max-height: $s-160;
+  height: 100%;
   overflow: hidden;
   position: relative;
   width: 100%;
@@ -294,7 +295,6 @@
 
 .grid-item.project-th.library {
   height: $s-612;
-  width: $s-300;
 }
 
 .grid-item-th.library {
@@ -302,7 +302,7 @@
   flex-direction: column;
   height: 90%;
   justify-content: flex-start;
-  max-height: 550px;
+  max-height: $s-580;
   padding: $s-32;
 
   .asset-section {

@@ -459,6 +459,7 @@
        [:button
         {:class (stl/css-case :selected selected? :library library-view?)
          :ref node-ref
+         :title (:name file)
          :draggable true
          :on-click on-select
          :on-key-down handle-key-down
@@ -634,20 +635,17 @@
          [:& loading-placeholder]
 
          (seq files)
-         [:ul
-          {:class (stl/css :grid-row)
-           :style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
-
-          (when @dragging?
-            [:li {:class (stl/css :grid-item)}])
-
-          (for [item files]
-            [:& grid-item
-             {:file item
-              :key (:id item)
-              :navigate? true
-              :origin origin
-              :library-view? library-view?}])]
+         (for [slice (partition-all limit files)]
+           [:ul {:class (stl/css :grid-row)}
+            (when @dragging?
+              [:li {:class (stl/css :grid-item)}])
+            (for [item slice]
+              [:& grid-item
+               {:file item
+                :key (:id item)
+                :navigate? true
+                :origin origin
+                :library-view? library-view?}])])
 
          :else
          [:& empty-placeholder

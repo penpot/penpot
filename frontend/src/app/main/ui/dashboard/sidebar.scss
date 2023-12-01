@@ -321,7 +321,7 @@
     width: $s-32;
 
     position: absolute;
-    top: $s-12;
+    top: calc(50% - $s-12);
     right: $s-2;
 
     svg {

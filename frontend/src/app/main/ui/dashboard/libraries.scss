@@ -17,10 +17,6 @@
   &.dashboard-projects {
     user-select: none;
   }
-  &.dashboard-shared {
-    width: calc(100vw - $s-320);
-    margin-right: $s-52;
-  }
 
   &.search {
     margin-top: $s-12;

@@ -5,14 +5,12 @@
 // Copyright (c) KALEIDOS INC
 
 @use "common/refactor/common-refactor.scss" as *;
-@use "./grid.scss";
+@use "./grid.scss" as g;
 
 .grid-empty-placeholder {
   border-radius: $br-12;
   display: grid;
-  padding: $s-12;
-  margin-right: $s-12;
-  height: $s-232;
+  padding: $s-12 0;
 
   &.loader {
     justify-items: center;
@@ -66,6 +64,8 @@
     margin: $s-8;
     text-transform: uppercase;
     border: $s-2 solid transparent;
+    width: var(--th-width, #{g.$thumbnail-default-width});
+    height: calc(var(--th-width, #{g.$thumbnail-default-width}) * #{g.$thumbnail-aspect-ration});
 
     svg {
       width: $s-32;

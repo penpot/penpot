@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.viewport.top-bar
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.files.helpers :as cfh]
    [app.common.types.shape.layout :as ctl]
@@ -17,6 +18,35 @@
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
+
+(mf/defc view-only-actions
+  []
+  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
+        handle-close-view-mode
+        (mf/use-callback
+         (fn []
+           (st/emit! :interrupt
+                     (dw/set-options-mode :design)
+                     (dw/set-workspace-read-only false))))]
+    (if new-css-system
+      [:div {:class (stl/css :viewport-actions)}
+       [:div {:class (stl/css :viewport-actions-container)}
+        [:div {:class (stl/css :viewport-actions-title)}
+         [:& i18n/tr-html {:tag-name "span"
+                           :label "workspace.top-bar.read-only"}]]
+        [:button {:class (stl/css :done-btn)
+                  :on-click handle-close-view-mode} (tr "workspace.top-bar.read-only.done")]
+        [:button {:class (stl/css :close-btn)
+                  :on-click handle-close-view-mode} i/close-refactor]]]
+
+      ;; OLD
+      [:div.viewport-actions
+       [:div.viewport-actions-container
+        [:div.viewport-actions-title
+         [:& i18n/tr-html {:tag-name "span"
+                           :label "workspace.top-bar.read-only"}]]
+        [:button.btn-primary {:on-click handle-close-view-mode} (tr "workspace.top-bar.read-only.done")]
+        [:button.btn-icon-basic {:on-click handle-close-view-mode} i/close]]])))
 
 (mf/defc top-bar
   {::mf/wrap [mf/memo]}
@@ -40,24 +70,11 @@
                                     (not (cfh/frame-shape? shape))))
                           draw-path?)
 
-        grid-edition? (and single? editing? (ctl/grid-layout? shape))
-
-        handle-close-view-mode
-        (mf/use-callback
-         (fn []
-           (st/emit! :interrupt
-                     (dw/set-options-mode :design)
-                     (dw/set-workspace-read-only false))))]
+        grid-edition? (and single? editing? (ctl/grid-layout? shape))]
 
     (cond
       workspace-read-only?
-      [:div.viewport-actions
-       [:div.viewport-actions-container
-        [:div.viewport-actions-title
-         [:& i18n/tr-html {:tag-name "span"
-                           :label "workspace.top-bar.read-only"}]]
-        [:button.btn-primary {:on-click handle-close-view-mode} (tr "workspace.top-bar.read-only.done")]
-        [:button.btn-icon-basic {:on-click handle-close-view-mode} i/close]]]
+      [:& view-only-actions]
 
       path-edition?
       [:div.viewport-actions
