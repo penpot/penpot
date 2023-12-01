@@ -176,7 +176,12 @@
 
 (defn add-artboard [file data]
   (let [obj (-> (cts/setup-shape (assoc data :type :frame))
-                (check-name file :frame))]
+                (check-name file :frame)
+                ;; TODO, v2?
+                (assoc :component-id (or (:shape-ref data) (:id data)))
+                )]
+    (println "add-artboard" (:name data) (:id data) (:shape-ref data))
+    ;; (println "obj" obj)
     (-> file
         (commit-shape obj)
         (assoc :current-frame-id (:id obj))
@@ -502,7 +507,7 @@
   ([file data root-type]
    ;; FIXME: data probably can be a shape instance, then we can use gsh/shape->rect
    (let [selrect (or (grc/make-rect (:x data) (:y data) (:width data) (:height data))
-                     grc/empty-rect)
+                   grc/empty-rect)
          name               (:name data)
          path               (:path data)
          main-instance-id   (:main-instance-id data)
@@ -520,18 +525,23 @@
                    (dissoc :main-instance-x)
                    (dissoc :main-instance-y))
 
+         ;; TODO: en :workspace-data :components ... aparece un :objects
          obj   (-> (cts/setup-shape attrs)
                    (check-name file root-type))]
 
+     (println "::::::::::(:id obj)" name (:id obj))
+     (println "::::::::::shapes" obj)
      (-> file
          (commit-change
            {:type :add-component
             :id (:id obj)
             :name name
             :path path
+            ;; :component-id (:id obj)
             :main-instance-id main-instance-id
             :main-instance-page main-instance-page
-            :shapes [obj]})
+            :shapes [obj]}
+           #_{:add-container? true})
 
          (assoc :last-id (:id obj))
          (update :parent-stack conjv (:id obj))
