@@ -400,10 +400,10 @@
              ;; parallel upload until we resolve resource usage issues
              ;; on backend.
              (rx/mapcat
-              (fn [node]
-                (->> (resolve-media context file-id node)
-                     (rx/map (fn [result]
-                               [node result])))))
+               (fn [node]
+                 (->> (resolve-media context file-id node)
+                      (rx/map (fn [result]
+                                [node result])))))
              (rx/reduce conj {}))]
 
     (->> pre-process-images
@@ -431,9 +431,10 @@
                                (assoc :main-instance-id main-instance-id)
                                (assoc :main-instance-page main-instance-page))
 
-        file               (-> file (fb/start-component data type))
+        file               (-> file
+                               (fb/start-component data type)
+                               (assoc :features (into #{} (:features context))))
         children           (cip/node-seq node)]
-
     (->> (rx/from children)
          (rx/filter cip/shape?)
          (rx/skip 1)       ;; Skip the outer component and the respective closint tag

@@ -67,7 +67,9 @@
 
 (defn- lookup-objects
   ([file]
-   (if (some? (:current-component-id file))
+   (if (and
+         (some? (:current-component-id file))
+         (not (contains? (:features file) "components/v2")))
      (dm/get-in file [:data :components  (:current-component-id file) :objects])
      (dm/get-in file [:data :pages-index (:current-page-id file) :objects]))))
 
@@ -523,17 +525,18 @@
 
      (-> file
          (commit-change
-          {:type :add-component
-           :id (:id obj)
-           :name name
-           :path path
-           :main-instance-id main-instance-id
-           :main-instance-page main-instance-page
-           :shapes [obj]})
+           {:type :add-component
+            :id (:id obj)
+            :name name
+            :path path
+            :main-instance-id main-instance-id
+            :main-instance-page main-instance-page
+            :shapes [obj]})
 
          (assoc :last-id (:id obj))
          (update :parent-stack conjv (:id obj))
          (assoc :current-component-id (:id obj))
+         (assoc :current-page-id main-instance-page)
          (assoc :current-frame-id (when (= (:type obj) :frame)
                                     (:id obj)))))))
 
