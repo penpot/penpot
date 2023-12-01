@@ -16,6 +16,7 @@
    [app.common.schema.openapi :as oapi]
    [app.common.schema.registry :as sr]
    [app.config :as cf]
+   [app.http.sse :as-alias sse]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.util.json :as json]
@@ -55,6 +56,7 @@
              :module (or (some-> (::module mdata) d/name)
                          (-> (:ns mdata) (str/split ".") last))
              :auth (::rpc/auth mdata true)
+             :sse (::sse/stream? mdata false)
              :webhook (::webhooks/event? mdata false)
              :docs (::sv/docstring mdata)
              :deprecated (::deprecated mdata)

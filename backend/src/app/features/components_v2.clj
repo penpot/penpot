@@ -32,6 +32,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.http.sse :as sse]
    [app.media :as media]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-snapshot :as fsnap]
@@ -362,6 +363,8 @@
   shapes from library components.  Mark the file with
   the :components-v2 option."
   [file-data libraries]
+  (sse/tap {:type :migration-progress
+            :section :components})
   (let [components (ctkl/components-seq file-data)]
     (if (empty? components)
       (assoc-in file-data [:options :components-v2] true)
@@ -435,6 +438,9 @@
             add-instance-grid
             (fn [fdata frame-id grid assets]
               (reduce (fn [result [component position]]
+                        (sse/tap {:type :migration-progress
+                                  :section :components
+                                  :name (:name component)})
                         (add-main-instance result component frame-id (gpt/add position
                                                                               (gpt/point grid-gap grid-gap))))
                       fdata
@@ -701,6 +707,9 @@
       (->> (d/zip media-group grid)
            (map (fn [[mobj position]]
                   (l/trc :hint "submit graphic processing" :file-id (str (:id fdata)) :id (str (:id mobj)))
+                  (sse/tap {:type :migration-progress
+                            :section :graphics
+                            :name (:name mobj)})
                   (px/submit! executor (partial process mobj position))))
            (reduce (fn [fdata promise]
                      (if-let [changes (deref promise)]
@@ -713,6 +722,8 @@
 
 (defn- migrate-graphics
   [fdata]
+  (sse/tap {:type :migration-progress
+            :section :graphics})
   (if (empty? (:media fdata))
     fdata
     (let [[fdata page-id start-pos]
@@ -812,7 +823,6 @@
 
 (defn migrate-file!
   [system file-id & {:keys [validate? throw-on-validate?]}]
-
   (let [tpoint  (dt/tpoint)
         file-id (if (string? file-id)
                   (parse-uuid file-id)

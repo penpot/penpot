@@ -22,6 +22,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.import.parser :as cip]
    [app.util.json :as json]
+   [app.util.sse :as sse]
    [app.util.webapi :as wapi]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
@@ -329,7 +330,7 @@
                                   (map #(assoc % :type :fill)))
           stroke-images-data (->> (cip/get-stroke-images-data node)
                                   (map #(assoc % :type :stroke)))
-          
+
           images-data        (concat
                                fill-images-data
                                stroke-images-data
@@ -709,15 +710,22 @@
                     :response-type :blob
                     :method :get})
                   (rx/map :body)
-                  (rx/mapcat #(rp/cmd! :import-binfile {:file % :project-id project-id}))
-                  (rx/map (fn [_]
-                            {:status :import-finish
-                             :file-id (:file-id data)}))
+                  (rx/mapcat (fn [file]
+                               (->> (rp/cmd! ::sse/import-binfile {:file file :project-id project-id})
+                                    (rx/tap (fn [event]
+                                              (let [payload (sse/get-payload event)
+                                                    type    (sse/get-type event)]
+                                                (if (= type "event")
+                                                  (log/dbg :hint "import-binfile: progress" :section (:section payload) :name (:name payload))
+                                                  (log/dbg :hint "import-binfile: end")))))
+                                    (rx/filter sse/end-of-stream?)
+                                    (rx/map (fn [_]
+                                              {:status :import-finish
+                                               :file-id (:file-id data)})))))
                   (rx/catch (fn [cause]
                               (log/error :hint "unexpected error on import process"
                                          :project-id project-id
                                          ::log/sync? true)
-                              ;; TODO: consider do thi son logging directly ?
 
                               (when (map? cause)
                                 (println "Error data:")

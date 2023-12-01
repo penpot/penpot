@@ -15,12 +15,13 @@
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.spec :as us]
+   [app.common.transit :as tr]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.main :as main]
-   [app.media]
    [app.media :as-alias mtx]
+   [app.media]
    [app.migrations]
    [app.msgbus :as-alias mbus]
    [app.rpc :as-alias rpc]
@@ -43,8 +44,12 @@
    [integrant.core :as ig]
    [mockery.core :as mk]
    [promesa.core :as p]
+   [promesa.exec :as px]
+   [ring.response :as rres]
    [yetti.request :as yrq])
   (:import
+   java.io.PipedInputStream
+   java.io.PipedOutputStream
    java.util.UUID
    org.postgresql.ds.PGSimpleDataSource))
 
@@ -553,3 +558,28 @@
                  (assoc :return-list [])
                  (assoc :call-args nil)
                  (assoc :call-args-list [])))))
+
+(defn- slurp'
+  [input & opts]
+  (let [sw (java.io.StringWriter.)]
+    (with-open [^java.io.Reader r (java.io.InputStreamReader. input "UTF-8")]
+      (io/copy r sw)
+      (.toString sw))))
+
+(defn consume-sse
+  [callback]
+  (let [{:keys [::rres/status ::rres/body ::rres/headers] :as response} (callback {})
+        output (PipedOutputStream.)
+        input  (PipedInputStream. output)]
+
+    (try
+      (px/exec! :virtual #(rres/-write-body-to-stream body nil output))
+      (into []
+            (map (fn [event]
+                   (let [[item1 item2] (re-seq #"(.*): (.*)\n?" event)]
+                     [(keyword (nth item1 2))
+                      (tr/decode-str (nth item2 2))])))
+            (-> (slurp' input)
+                (str/split "\n\n")))
+      (finally
+        (.close input)))))
