@@ -931,7 +931,7 @@
 
         [_ new-shapes _]
         (ctst/clone-object component-shape
-                           (:id component-parent-shape)
+                           (:id parent-shape)
                            (get component-page :objects)
                            update-new-shape
                            update-original-shape)
