@@ -93,10 +93,9 @@
                      (assoc :message (tr "errors.email-invalid"))))))
 
 (mf/defc login-form
-  [{:keys [params on-success-callback] :as props}]
+  [{:keys [params on-success-callback origin] :as props}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
         initial (mf/use-memo (mf/deps params) (constantly params))
-
         error   (mf/use-state false)
         form    (fm/use-form :spec ::login-form
                              :validators [handle-error-messages]
@@ -152,7 +151,12 @@
            (let [params (:clean-data @form)]
              (login-with-ldap event (with-meta params
                                       {:on-error on-error
-                                       :on-success on-success})))))]
+                                       :on-success on-success})))))
+
+        on-recovery-request
+        (mf/use-fn
+         #(st/emit! (rt/nav :auth-recovery-request)))]
+
     (if new-css-system
       [:*
        (when-let [message @error]
@@ -178,10 +182,11 @@
            :label (tr "auth.password")
            :class (stl/css :form-field)}]]
 
-        (when (or (contains? cf/flags :login)
-                  (contains? cf/flags :login-with-password))
+        (when (and (not= origin :viewer)
+               (or (contains? cf/flags :login)
+                  (contains? cf/flags :login-with-password)))
           [:div {:class (stl/css :fields-row :forgot-password)}
-           [:& lk/link {:action #(st/emit! (rt/nav :auth-recovery-request))
+           [:& lk/link {:action on-recovery-request
                         :data-test "forgot-password"}
             (tr "auth.forgot-password")]])
 
@@ -197,6 +202,7 @@
            [:> fm/submit-button*
             {:label (tr "auth.login-with-ldap-submit")
              :on-click on-submit-ldap}])]]]
+
 
       ;; OLD
       [:*
@@ -271,7 +277,7 @@
                              :icon i/brand-openid
                              :label (tr "auth.login-with-oidc-submit")
                              :class (stl/css :login-btn :btn-oidc-auth)}])]
-      
+
       [:div.auth-buttons
        (when (contains? cf/flags :login-with-google)
          [:& bl/button-link {:on-click login-with-google
@@ -299,28 +305,36 @@
 
 (mf/defc login-button-oidc
   [{:keys [params] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        login-oidc
+        (mf/use-fn
+         (mf/deps params)
+         (fn [event]
+           (login-with-oidc event :oidc params)))
+
+        handle-key-down
+        (mf/use-fn
+         (fn [event]
+           (when (k/enter? event)
+             (login-oidc event))))]
     (if new-css-system
       (when (contains? cf/flags :login-with-oidc)
         [:div {:class (stl/css :link-entry :link-oidc)}
          [:a {:tab-index "0"
-              :on-key-down (fn [event]
-                             (when (k/enter? event)
-                               (login-with-oidc event :oidc params)))
-              :on-click #(login-with-oidc % :oidc params)}
+              :on-key-down handle-key-down
+              :on-click login-oidc}
           (tr "auth.login-with-oidc-submit")]])
-      
+
+      ;; OLD
       (when (contains? cf/flags :login-with-oidc)
         [:div.link-entry.link-oidc
          [:a {:tab-index "0"
-              :on-key-down (fn [event]
-                             (when (k/enter? event)
-                               (login-with-oidc event :oidc params)))
-              :on-click #(login-with-oidc % :oidc params)}
+              :on-key-down handle-key-down
+              :on-click login-oidc}
           (tr "auth.login-with-oidc-submit")]]))))
 
 (mf/defc login-methods
-  [{:keys [params on-success-callback] :as props}]
+  [{:keys [params on-success-callback origin] :as props}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)]
     (if new-css-system
       [:*
@@ -336,7 +350,7 @@
        (when (or (contains? cf/flags :login)
                  (contains? cf/flags :login-with-password)
                  (contains? cf/flags :login-with-ldap))
-         [:& login-form {:params params :on-success-callback on-success-callback}])]
+         [:& login-form {:params params :on-success-callback on-success-callback :origin origin}])]
 
       ;; OLD
       [:*
@@ -364,7 +378,19 @@
 
 (mf/defc login-page
   [{:keys [params] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        go-register
+        (mf/use-fn
+         #(st/emit! (rt/nav :auth-register {} params)))
+
+        on-pass-recovery
+        (mf/use-fn
+         #(st/emit! (rt/nav :auth-recovery-request)))
+
+        on-create-demo-profile
+        (mf/use-fn
+         #(st/emit! (du/create-demo-profile)))]
+
     (if new-css-system
       [:div {:class (stl/css :auth-form)}
        [:h1 {:class (stl/css :auth-title)
@@ -375,17 +401,24 @@
        [:& login-methods {:params params}]
 
        [:div {:class (stl/css :links)}
+        (when (or (contains? cf/flags :login)
+                  (contains? cf/flags :login-with-password))
+          [:div {:class (stl/css :link-entry :register)}
+           [:& lk/link {:action on-pass-recovery
+                        :data-test "forgot-password"}
+            (tr "auth.forgot-password")]])
+
         (when (contains? cf/flags :registration)
           [:div {:class (stl/css :link-entry :register)}
            [:span (tr "auth.register") " "]
-           [:& lk/link {:action #(st/emit! (rt/nav :auth-register {} params))
+           [:& lk/link {:action go-register
                         :data-test "register-submit"}
             (tr "auth.register-submit")]])]
 
        (when (contains? cf/flags :demo-users)
          [:div {:class (stl/css :link-entry :demo-account)}
           [:span (tr "auth.create-demo-profile") " "]
-          [:& lk/link {:action #(st/emit! (du/create-demo-profile))
+          [:& lk/link {:action on-create-demo-profile
                        :data-test "demo-account-link"}
            (tr "auth.create-demo-account")]])]
 
@@ -400,14 +433,14 @@
          (when (or (contains? cf/flags :login)
                    (contains? cf/flags :login-with-password))
            [:div.link-entry
-            [:& lk/link {:action #(st/emit! (rt/nav :auth-recovery-request))
+            [:& lk/link {:action on-pass-recovery
                          :data-test "forgot-password"}
              (tr "auth.forgot-password")]])
 
          (when (contains? cf/flags :registration)
            [:div.link-entry
             [:span (tr "auth.register") " "]
-            [:& lk/link {:action #(st/emit! (rt/nav :auth-register {} params))
+            [:& lk/link {:action go-register
                          :data-test "register-submit"}
              (tr "auth.register-submit")]])]
 
@@ -415,7 +448,7 @@
           [:div.links.demo
            [:div.link-entry
             [:span (tr "auth.create-demo-profile") " "]
-            [:& lk/link {:action #(st/emit! (du/create-demo-profile))
+            [:& lk/link {:action on-create-demo-profile
                          :data-test "demo-account-link"}
              (tr "auth.create-demo-account")]]])]])))
 

@@ -297,4 +297,13 @@
   --tag-background-color: var(--color-accent-primary);
 
   --link-foreground-color: var(--color-accent-primary);
+
+  // VIEWER
+  --viewer-background-color: var(--color-background-secondary);
+  --viewer-paginator-background-color: var(--color-background-tertiary);
+  --viewer-controls-background-color: var(--color-background-primary);
+  --viewer-inspect-border-color: var(--color-background-tertiary);
+  --viewer-thumbnails-control-foreground-color: var(--color-foreground-secondary);
+  --viewer-thumbnail-border-color: var(--color-accent-primary);
+  --viewer-thumbnail-background-color-selected: var(--color-accent-primary-muted);
 }

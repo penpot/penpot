@@ -6,6 +6,7 @@
 
 (ns app.main.ui.viewer
   (:import goog.events.EventType)
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -91,29 +92,57 @@
              :vbox   (str "0 0 " width " " height)})))
 
 (mf/defc viewer-pagination
-  [{:keys [index num-frames left-bar right-bar] :as props}]
-  [:*
-   (when (pos? index)
-     [:div.viewer-go-prev {:class (when left-bar "left-bar")}
-      [:div.arrow {:on-click #(st/emit! dv/select-prev-frame)} i/go-prev]])
-   (when (< (+ index 1) num-frames)
-     [:div.viewer-go-next {:class (when right-bar "right-bar")}
-      [:div.arrow {:on-click #(st/emit! dv/select-next-frame)} i/go-next]])
-   [:div.viewer-bottom {:class (when left-bar "left-bar")}
-    [:div.reset {:on-click #(st/emit! dv/select-first-frame)} i/reset]
-    [:div.counter (str/join " / " [(+ index 1) num-frames])]
-    [:span]]])
+  [{:keys [index num-frames left-bar right-bar comment-sidebar] :as props}]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        go-prev-frame  (mf/use-fn #(st/emit! dv/select-prev-frame))
+        go-next-frame  (mf/use-fn #(st/emit! dv/select-next-frame))
+        go-first-frame (mf/use-fn #(st/emit! dv/select-first-frame))]
+    (if new-css-system
+      [:*
+       (when (pos? index)
+         [:button {:class (stl/css-case :viewer-go-prev true
+                                        :left-bar left-bar)
+                   :on-click go-prev-frame}
+          i/arrow-refactor])
+       (when (< (+ index 1) num-frames)
+         [:button {:class (stl/css-case :viewer-go-next  true
+                                        :comment-sidebar comment-sidebar
+                                        :right-bar right-bar)
+                   :on-click go-next-frame}
+          i/arrow-refactor])
+       [:div {:class (stl/css-case :viewer-bottom true
+                                   :left-bar left-bar)}
+        [:button {:on-click go-first-frame
+                  :class (stl/css :reset-button)}
+         i/reload-refactor]
+        [:span {:class (stl/css :counter)}
+         (str/join " / " [(+ index 1) num-frames])]
+        [:span]]]
+
+
+      ;; OLD
+      [:*
+       (when (pos? index)
+         [:div.viewer-go-prev {:class (when left-bar "left-bar")}
+          [:div.arrow {:on-click go-prev-frame} i/go-prev]])
+       (when (< (+ index 1) num-frames)
+         [:div.viewer-go-next {:class (when right-bar "right-bar")}
+          [:div.arrow {:on-click go-next-frame} i/go-next]])
+       [:div.viewer-bottom {:class (when left-bar "left-bar")}
+        [:div.reset {:on-click go-first-frame} i/reset]
+        [:div.counter (str/join " / " [(+ index 1) num-frames])]
+        [:span]]])))
 
 (mf/defc viewer-pagination-and-sidebar
   {::mf/wrap [mf/memo]}
   [{:keys [section index users frame page]}]
   (let [comments-local  (mf/deref refs/comments-local)
         show-sidebar?   (and (= section :comments) (:show-sidebar? comments-local))]
-    [:*
+     [:*
      [:& viewer-pagination
       {:index index
        :num-frames (count (:frames page))
-       :right-bar show-sidebar?}]
+       :comment-sidebar show-sidebar?}]
 
      (when show-sidebar?
        [:& comments-sidebar
@@ -172,78 +201,146 @@
         :page page
         :interactions-mode interactions-mode}]]]))
 
-
 (mf/defc viewer-wrapper
   {::mf/wrap-props false}
   [{:keys [wrapper-size orig-frame orig-viewport-ref orig-size page file users current-viewport-ref
            size frame interactions-mode overlays zoom section index]}]
 
-  [:*
-   [:& viewer-pagination-and-sidebar
-    {:section section
-     :index index
-     :page page
-     :users users
-     :frame frame
-     :interactions-mode interactions-mode}]
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:*
+       [:& viewer-pagination-and-sidebar
+        {:section section
+         :index index
+         :page page
+         :users users
+         :frame frame
+         :interactions-mode interactions-mode}]
 
-   [:div.viewer-wrapper
-    {:style {:width (:width wrapper-size)
-             :height (:height wrapper-size)}}
-    [:div.viewer-clipper
-     (when orig-frame
-       [:div.viewport-container
-        {:ref orig-viewport-ref
-         :style {:width (:width orig-size)
-                 :height (:height orig-size)
-                 :position "relative"}}
+       [:div {:class (stl/css :viewer-wrapper)
+              :style {:width (:width wrapper-size)
+                      :height (:height wrapper-size)}}
+        [:div {:class (stl/css :viewer-clipper)}
 
-        [:& interactions/viewport
-         {:frame orig-frame
-          :base-frame orig-frame
-          :frame-offset (gpt/point 0 0)
-          :size orig-size
-          :page page
-          :users users
-          :interactions-mode interactions-mode}]])
+         (when orig-frame
+           [:div {:class (stl/css :viewport-container)
+                  :ref orig-viewport-ref
+                  :style {:width (:width orig-size)
+                          :height (:height orig-size)
+                          :position "relative"}}
 
-     [:div.viewport-container
-      {:ref current-viewport-ref
-       :style {:width (:width size)
-               :height (:height size)
-               :position "relative"}}
+            [:& interactions/viewport
+             {:frame orig-frame
+              :base-frame orig-frame
+              :frame-offset (gpt/point 0 0)
+              :size orig-size
+              :page page
+              :users users
+              :interactions-mode interactions-mode}]])
 
-      [:& interactions/viewport
-       {:frame frame
-        :base-frame frame
-        :frame-offset (gpt/point 0 0)
-        :size size
-        :page page
-        :interactions-mode interactions-mode}]
+         [:div {:class (stl/css :viewport-container)
+                :ref current-viewport-ref
+                :style {:width (:width size)
+                        :height (:height size)
+                        :position "relative"}}
 
-      (for [overlay overlays]
-        [:& viewer-overlay
-         {:overlay overlay
-          :key (dm/str (:id overlay))
-          :page page
-          :frame frame
-          :zoom zoom
-          :wrapper-size wrapper-size
-                            :interactions-mode interactions-mode}])]]
+          [:& interactions/viewport
+           {:frame frame
+            :base-frame frame
+            :frame-offset (gpt/point 0 0)
+            :size size
+            :page page
+            :interactions-mode interactions-mode}]
+
+          (for [overlay overlays]
+            [:& viewer-overlay
+             {:overlay overlay
+              :key (dm/str (:id overlay))
+              :page page
+              :frame frame
+              :zoom zoom
+              :wrapper-size wrapper-size
+              :interactions-mode interactions-mode}])]]
 
 
-    (when (= section :comments)
-      [:& comments-layer {:file file
-                          :users users
-                          :frame frame
-                          :page page
-                          :zoom zoom}])]])
+        (when (= section :comments)
+          [:& comments-layer {:file file
+                              :users users
+                              :frame frame
+                              :page page
+                              :zoom zoom}])]]
+
+
+
+      ;; OLD
+      [:*
+       [:& viewer-pagination-and-sidebar
+        {:section section
+         :index index
+         :page page
+         :users users
+         :frame frame
+         :interactions-mode interactions-mode}]
+
+       [:div.viewer-wrapper
+        {:style {:width (:width wrapper-size)
+                 :height (:height wrapper-size)}}
+        [:div.viewer-clipper
+         (when orig-frame
+           [:div.viewport-container
+            {:ref orig-viewport-ref
+             :style {:width (:width orig-size)
+                     :height (:height orig-size)
+                     :position "relative"}}
+
+            [:& interactions/viewport
+             {:frame orig-frame
+              :base-frame orig-frame
+              :frame-offset (gpt/point 0 0)
+              :size orig-size
+              :page page
+              :users users
+              :interactions-mode interactions-mode}]])
+
+         [:div.viewport-container
+          {:ref current-viewport-ref
+           :style {:width (:width size)
+                   :height (:height size)
+                   :position "relative"}}
+
+          [:& interactions/viewport
+           {:frame frame
+            :base-frame frame
+            :frame-offset (gpt/point 0 0)
+            :size size
+            :page page
+            :interactions-mode interactions-mode}]
+
+          (for [overlay overlays]
+            [:& viewer-overlay
+             {:overlay overlay
+              :key (dm/str (:id overlay))
+              :page page
+              :frame frame
+              :zoom zoom
+              :wrapper-size wrapper-size
+              :interactions-mode interactions-mode}])]]
+
+
+        (when (= section :comments)
+          [:& comments-layer {:file file
+                              :users users
+                              :frame frame
+                              :page page
+                              :zoom zoom}])]])))
 
 (mf/defc viewer
   [{:keys [params data]}]
 
   (let [{:keys [page-id share-id section index interactions-mode]} params
         {:keys [file users project permissions]} data
+
+        new-css-system (mf/use-ctx ctx/new-css-system)
 
         allowed (or
                  (= section :interactions)
@@ -311,7 +408,7 @@
           (calculate-wrapper size orig-size zoom))
 
         click-on-screen
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (let [origin (dom/get-target event)
                  over-section? (dom/class? origin "viewer-section")
@@ -360,9 +457,13 @@
                      (if shift?
                        (dom/set-h-scroll-pos! section new-scroll-pos)
                        (dom/set-scroll-pos! section new-scroll-pos)))))))))
+        on-thumbnails-close
+        (mf/use-fn
+         #(st/emit! dv/close-thumbnails-panel))
+
 
         on-exit-fullscreen
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (when (not (dom/fullscreen?))
              (st/emit! (dv/exit-fullscreen)))))]
@@ -441,7 +542,7 @@
          nil)
         ;; Navigate animation needs to be started after navigation
         ;; is complete, and we have the next page index.
-        (let [nav-animation (d/seek #(= (:kind %) :go-to-frame) (vals current-animations))]
+       (let [nav-animation (d/seek #(= (:kind %) :go-to-frame) (vals current-animations))]
          (when nav-animation
            (let [orig-viewport    (mf/ref-val orig-viewport-ref)
                  current-viewport (mf/ref-val current-viewport-ref)]
@@ -498,76 +599,153 @@
              fonts (into #{} (keep :font-id) text-nodes)]
          (run! fonts/ensure-loaded! fonts))))
 
-    [:div#viewer-layout
-     {:class (dom/classnames
-              :force-visible (:show-thumbnails local)
-              :viewer-layout (not= section :inspect)
-              :inspect-layout (= section :inspect)
-              :fullscreen fullscreen?)}
+    (if new-css-system
+      [:div#viewer-layout
+       {:class (stl/css-case
+                :force-visible (:show-thumbnails local)
+                :viewer-layout (not= section :inspect)
+                :inspect-layout (= section :inspect)
+                :fullscreen fullscreen?)}
 
-     [:div.viewer-content
-      [:& header/header {:project project
-                         :index index
-                         :file file
-                         :page page
-                         :frame frame
-                         :permissions permissions
-                         :zoom zoom
-                         :section section
-                         :interactions-mode interactions-mode}]
-      [:div.thumbnail-close {:on-click #(st/emit! dv/close-thumbnails-panel)
-                             :class (dom/classnames :invisible (not (:show-thumbnails local false)))}]
-      [:& thumbnails-panel {:frames frames
-                            :show? (:show-thumbnails local false)
-                            :page page
-                            :index index
-                            :thumbnail-data (:thumbnails file)}]
-      [:section.viewer-section {:id "viewer-section"
-                                :ref viewer-section-ref
-                                :class (if fullscreen? "fullscreen" "")
-                                :on-click click-on-screen}
-       (cond
-         (empty? frames)
-         [:section.empty-state
-          [:span (tr "viewer.empty-state")]]
+       [:div {:class (stl/css :viewer-content)}
+        [:& header/header {:project project
+                           :index index
+                           :file file
+                           :page page
+                           :frame frame
+                           :permissions permissions
+                           :zoom zoom
+                           :section section
+                           :interactions-mode interactions-mode}]
 
-         (nil? frame)
-         [:section.empty-state
-          (when (some? index)
-            [:span (tr "viewer.frame-not-found")])]
+        [:button {:on-click on-thumbnails-close
+                  :class (stl/css-case :thumbnails-close true
+                                       :invisible (not (:show-thumbnails local false)))}]
 
-         (some? frame)
-         (if (= :inspect section)
-           [:& inspect/viewport
-            {:frame frame
-             :page page
-             :file file
-             :section section
-             :local local
-             :size size
-             :index index
-             :viewer-pagination viewer-pagination
-             :interactions-mode interactions-mode
-             :share-id share-id}]
+        [:& thumbnails-panel {:frames frames
+                              :show? (:show-thumbnails local false)
+                              :page page
+                              :index index
+                              :thumbnail-data (:thumbnails file)}]
+
+        [:section {:id "viewer-section"
+                   :ref viewer-section-ref
+                   :class (stl/css-case :viewer-section true
+                                        :fulscreen fullscreen?)
+                   :on-click click-on-screen}
+         (cond
+           (empty? frames)
+           [:section {:class (stl/css :empty-state)}
+            [:span (tr "viewer.empty-state")]]
+
+           (nil? frame)
+           [:section {:class (stl/css :empty-state)}
+            (when (some? index)
+              [:span (tr "viewer.frame-not-found")])]
+
+           (some? frame)
+           (if (= :inspect section)
+             [:& inspect/viewport
+              {:frame frame
+               :page page
+               :file file
+               :section section
+               :local local
+               :size size
+               :index index
+               :viewer-pagination viewer-pagination
+               :interactions-mode interactions-mode
+               :share-id share-id}]
+
+             [:& (mf/provider ctx/current-zoom) {:value zoom}
+              [:& viewer-wrapper
+               {:wrapper-size wrapper-size
+                :orig-frame orig-frame
+                :orig-viewport-ref orig-viewport-ref
+                :orig-size orig-size
+                :page page
+                :file file
+                :users users
+                :current-viewport-ref current-viewport-ref
+                :size size
+                :frame frame
+                :interactions-mode interactions-mode
+                :overlays overlays
+                :zoom zoom
+                :section section
+                :index index}]]))]]]
+
+      ;; OLD
+      [:div#viewer-layout
+       {:class (dom/classnames
+                :force-visible (:show-thumbnails local)
+                :viewer-layout (not= section :inspect)
+                :inspect-layout (= section :inspect)
+                :fullscreen fullscreen?)}
+
+       [:div.viewer-content
+        [:& header/header {:project project
+                           :index index
+                           :file file
+                           :page page
+                           :frame frame
+                           :permissions permissions
+                           :zoom zoom
+                           :section section
+                           :interactions-mode interactions-mode}]
+        [:div.thumbnail-close {:on-click on-thumbnails-close
+                               :class (dom/classnames :invisible (not (:show-thumbnails local false)))}]
+        [:& thumbnails-panel {:frames frames
+                              :show? (:show-thumbnails local false)
+                              :page page
+                              :index index
+                              :thumbnail-data (:thumbnails file)}]
+        [:section.viewer-section {:id "viewer-section"
+                                  :ref viewer-section-ref
+                                  :class (if fullscreen? "fullscreen" "")
+                                  :on-click click-on-screen}
+         (cond
+           (empty? frames)
+           [:section.empty-state
+            [:span (tr "viewer.empty-state")]]
+
+           (nil? frame)
+           [:section.empty-state
+            (when (some? index)
+              [:span (tr "viewer.frame-not-found")])]
+
+           (some? frame)
+           (if (= :inspect section)
+             [:& inspect/viewport
+              {:frame frame
+               :page page
+               :file file
+               :section section
+               :local local
+               :size size
+               :index index
+               :viewer-pagination viewer-pagination
+               :interactions-mode interactions-mode
+               :share-id share-id}]
 
 
-           [:& (mf/provider ctx/current-zoom) {:value zoom}
-            [:& viewer-wrapper
-             {:wrapper-size wrapper-size
-              :orig-frame orig-frame
-              :orig-viewport-ref orig-viewport-ref
-              :orig-size orig-size
-              :page page
-              :file file
-              :users users
-              :current-viewport-ref current-viewport-ref
-              :size size
-              :frame frame
-              :interactions-mode interactions-mode
-              :overlays overlays
-              :zoom zoom
-              :section section
-              :index index}]]))]]]))
+             [:& (mf/provider ctx/current-zoom) {:value zoom}
+              [:& viewer-wrapper
+               {:wrapper-size wrapper-size
+                :orig-frame orig-frame
+                :orig-viewport-ref orig-viewport-ref
+                :orig-size orig-size
+                :page page
+                :file file
+                :users users
+                :current-viewport-ref current-viewport-ref
+                :size size
+                :frame frame
+                :interactions-mode interactions-mode
+                :overlays overlays
+                :zoom zoom
+                :section section
+                :index index}]]))]]])))
 
 ;; --- Component: Viewer Page
 

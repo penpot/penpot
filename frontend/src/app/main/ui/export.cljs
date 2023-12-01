@@ -55,8 +55,12 @@
                       :cmd cmd})))
 
         on-toggle-enabled
-        (fn [index]
-          (swap! exports update-in [index :enabled] not))
+        (mf/use-fn
+         (mf/deps exports)
+         (fn [event]
+           (let [index (-> (dom/get-current-target event)
+                           (dom/get-data "value"))]
+             (swap! exports update-in [index :enabled] not))))
 
         change-all
         (fn [_]
@@ -65,9 +69,8 @@
 
     (if new-css-system
       [:div {:class (stl/css :modal-overlay)}
-       [:div.modal-container.export-multiple-dialog
-        {:class (stl/css-case :modal-container true
-                              :empty (empty? all-exports))}
+       [:div {:class (stl/css-case :modal-container true
+                                   :empty (empty? all-exports))}
 
         [:div {:class (stl/css :modal-header)}
          [:h2 {:class (stl/css :modal-title)} title]
@@ -84,55 +87,58 @@
                         :on-click change-all}
                [:span {:class (stl/css :checkbox-wrapper)}
                 (cond
-                  all-checked? [:span {:class (stl/css-case :checkbox-icon2 true
+                  all-checked? [:span {:class (stl/css-case :checkobox-tick true
                                                             :global/checked true)} i/tick-refactor]
-                  all-unchecked? [:span {:class (stl/css-case :checkbox-icon2 true
+                  all-unchecked? [:span {:class (stl/css-case :checkobox-tick true
                                                               :global/uncheked true)}]
-                  :else [:span {:class (stl/css-case :checkbox-icon2 true
+                  :else [:span {:class (stl/css-case :checkobox-tick true
                                                      :global/intermediate true)} i/remove-refactor])]]
-              [:div {:class (stl/css :selection-title)} (tr "dashboard.export-multiple.selected"
-                                                            (c (count enabled-exports))
-                                                            (c (count all-exports)))]]
+              [:div {:class (stl/css :selection-title)}
+               (tr "dashboard.export-multiple.selected"
+                   (c (count enabled-exports))
+                   (c (count all-exports)))]]
              [:div {:class (stl/css :selection-wrapper)}
               [:div {:class (stl/css-case :selection-list true
                                           :selection-shadow (> (count all-exports) 8))}
-              (for [[index {:keys [shape suffix] :as export}] (d/enumerate @exports)]
-                (let [{:keys [x y width height]} (:selrect shape)]
-                  [:div {:class (stl/css :selection-row)}
-                   [:button {:class (stl/css :selection-btn)
-                             :on-click #(on-toggle-enabled index)}
-                    [:span {:class (stl/css :checkbox-wrapper)}
-                     (if (:enabled export)
-                       [:span {:class (stl/css-case :checkbox-icon2 true
-                                                    :global/checked true)} i/tick-refactor]
-                       [:span {:class (stl/css-case :checkbox-icon2 true
-                                                    :global/uncheked true)}])]
+               (for [[index {:keys [shape suffix] :as export}] (d/enumerate @exports)]
+                 (let [{:keys [x y width height]} (:selrect shape)]
+                   [:div {:class (stl/css :selection-row)
+                          :key (:id shape)}
+                    [:button {:class (stl/css :selection-btn)
+                              :data-value index
+                              :on-click on-toggle-enabled}
+                     [:span {:class (stl/css :checkbox-wrapper)}
+                      (if (:enabled export)
+                        [:span {:class (stl/css-case :checkobox-tick true
+                                                     :global/checked true)} i/tick-refactor]
+                        [:span {:class (stl/css-case :checkobox-tick true
+                                                     :global/uncheked true)}])]
 
-                    [:div {:class (stl/css :image-wrapper)}
-                     (if (some? (:thumbnail shape))
-                       [:img {:src (:thumbnail shape)}]
-                       [:svg {:view-box (dm/str x " " y " " width " " height)
-                              :width 24
-                              :height 20
-                              :version "1.1"
-                              :xmlns "http://www.w3.org/2000/svg"
-                              :xmlnsXlink "http://www.w3.org/1999/xlink"
+                     [:div {:class (stl/css :image-wrapper)}
+                      (if (some? (:thumbnail shape))
+                        [:img {:src (:thumbnail shape)}]
+                        [:svg {:view-box (dm/str x " " y " " width " " height)
+                               :width 24
+                               :height 20
+                               :version "1.1"
+                               :xmlns "http://www.w3.org/2000/svg"
+                               :xmlnsXlink "http://www.w3.org/1999/xlink"
                                                    ;; Fix Chromium bug about color of html texts
                                                    ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
-                              :style {:-webkit-print-color-adjust :exact}
-                              :fill "none"}
+                               :style {:-webkit-print-color-adjust :exact}
+                               :fill "none"}
 
-                        [:& shape-wrapper {:shape shape}]])]
+                         [:& shape-wrapper {:shape shape}]])]
 
-                    [:div {:class (stl/css :selection-name)} (cond-> (:name shape) suffix (str suffix))]
-                    (when (:scale export)
-                      [:div {:class (stl/css :selection-scale)}
-                       (dm/str (ust/format-precision (* width (:scale export)) 2) "x"
-                               (ust/format-precision (* height (:scale export)) 2) "px ")])
+                     [:div {:class (stl/css :selection-name)} (cond-> (:name shape) suffix (str suffix))]
+                     (when (:scale export)
+                       [:div {:class (stl/css :selection-scale)}
+                        (dm/str (ust/format-precision (* width (:scale export)) 2) "px"
+                                (ust/format-precision (* height (:scale export)) 2) "px")])
 
-                    (when (:type export)
-                      [:div {:class (stl/css :selection-extension)}
-                       (-> export :type d/name str/upper)])]]))]]]
+                     (when (:type export)
+                       [:div {:class (stl/css :selection-extension)}
+                        (-> export :type d/name str/upper)])]]))]]]
 
             [:& no-selection])]
 
@@ -187,7 +193,8 @@
               (for [[index {:keys [shape suffix] :as export}] (d/enumerate @exports)]
                 (let [{:keys [x y width height]} (:selrect shape)]
                   [:div.row
-                   [:div.field.check {:on-click #(on-toggle-enabled index)}
+                   [:div.field.check {:data-value index
+                                      :on-click on-toggle-enabled}
                     (if (:enabled export)
                       [:span.checked i/checkbox-checked]
                       [:span.unchecked i/checkbox-unchecked])]
@@ -210,7 +217,7 @@
 
                    [:div.field.name (cond-> (:name shape) suffix (str suffix))]
                    (when (:scale export)
-                     [:div.field.scale (dm/str (ust/format-precision (* width (:scale export)) 2) "x"
+                     [:div.field.scale (dm/str (ust/format-precision (* width (:scale export)) 2) "px"
                                                (ust/format-precision (* height (:scale export)) 2) "px ")])
 
                    (when (:type export)
