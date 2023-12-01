@@ -366,7 +366,8 @@
          limit    (mth/min 10 nitems)
          limit    (mth/max 1 limit)
 
-         th-size (- (/ (- width (* (dec limit) 24)) limit) 12)]
+         th-size (when width
+                   (- (/ (- width 32 (* (dec limit) 24)) limit) 12))]
 
      (mf/with-effect
        [th-size]

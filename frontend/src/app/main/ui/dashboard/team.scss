@@ -623,6 +623,10 @@
     height: $s-32;
     border-radius: $br-8;
     background-color: var(--alert-background-color-warning);
+    padding: $s-24 $s-8;
+    gap: $s-8;
+    margin-bottom: $s-16;
+
     .icon {
       @include flexCenter;
       width: $s-16;

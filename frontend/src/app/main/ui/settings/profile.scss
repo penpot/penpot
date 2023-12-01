@@ -48,7 +48,7 @@
   }
 
   .fields-row {
-    --input-height: $s-40;
+    --input-height: #{$s-40};
     margin-bottom: $s-20;
     flex-direction: column;
 

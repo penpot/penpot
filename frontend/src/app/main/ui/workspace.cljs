@@ -81,7 +81,8 @@
         node-ref (use-resize-observer on-resize)]
     [:*
      (if new-css-system
-       [:& palette {:layout layout}]
+       (when (not hide-ui?)
+         [:& palette {:layout layout}])
        [:*
         (when (and colorpalette? (not hide-ui?))
           [:& colorpalette])

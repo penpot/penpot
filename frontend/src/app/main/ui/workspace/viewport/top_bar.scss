@@ -1,0 +1,47 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.viewport-actions {
+  pointer-events: none;
+  position: absolute;
+  top: $s-44;
+  left: 50%;
+
+  .viewport-actions-container {
+    @include flexRow;
+    background: var(--panel-background-color);
+    border-radius: $br-12;
+    box-shadow: 0 0 $s-12 0 var(--menu-shadow-color);
+    gap: $s-8;
+    height: $s-48;
+    margin-left: -50%;
+    padding: $s-8;
+    pointer-events: initial;
+    width: $s-512;
+  }
+
+  .viewport-actions-title {
+    flex: 1;
+    font-size: $fs-12;
+    color: var(--color-foreground-secondary);
+    padding-left: $s-8;
+  }
+
+  .done-btn {
+    @extend .button-primary;
+    text-transform: uppercase;
+    padding: $s-8 $s-20;
+    font-size: $fs-11;
+  }
+  .close-btn {
+    @extend .button-tertiary;
+    svg {
+      @extend .button-icon;
+    }
+  }
+}

@@ -36,8 +36,7 @@
 
         :else
         [:div
-         {:class (stl/css :grid-empty-placeholder)
-          :style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
+         {:class (stl/css :grid-empty-placeholder)}
          [:button {:class (stl/css :create-new)
                    :on-click on-click}
           i/add-refactor]])

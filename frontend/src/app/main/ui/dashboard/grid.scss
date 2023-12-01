@@ -14,12 +14,13 @@ $thumbnail-aspect-ration: #{2 / 3}; // Ratio 2:3
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  padding: 0 $s-16;
 }
 
 .grid-row {
   display: flex;
   width: 100%;
-  gap: 24px;
+  gap: $s-24;
 }
 
 .grid-item {
@@ -45,7 +46,6 @@ $thumbnail-aspect-ration: #{2 / 3}; // Ratio 2:3
   .grid-item-th {
     border-radius: $br-4;
     text-align: initial;
-
     width: var(--th-width, #{$thumbnail-default-width});
     height: calc(var(--th-width, #{$thumbnail-default-width}) * #{$thumbnail-aspect-ration});
 
@@ -56,7 +56,7 @@ $thumbnail-aspect-ration: #{2 / 3}; // Ratio 2:3
 
   &.dragged {
     border-radius: $br-4;
-    border: $br-2 solid $da-primary;
+    outline: $br-4 solid $da-primary;
     text-align: initial;
     width: calc(var(--th-width) + $s-12);
     height: calc(var(--th-width, #{$thumbnail-default-width}) * #{$thumbnail-aspect-ration});
@@ -200,7 +200,7 @@ $thumbnail-aspect-ration: #{2 / 3}; // Ratio 2:3
 
   .selected {
     .grid-item-th {
-      border: 2px solid $da-tertiary;
+      outline: $s-4 solid $da-tertiary;
     }
   }
 }
@@ -302,7 +302,7 @@ $thumbnail-aspect-ration: #{2 / 3}; // Ratio 2:3
   flex-direction: column;
   height: 90%;
   justify-content: flex-start;
-  max-height: 550px;
+  max-height: $s-580;
   padding: $s-32;
 
   .asset-section {
