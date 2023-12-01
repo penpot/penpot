@@ -73,7 +73,8 @@
 
        [:div {:class (stl/css :fields-row)}
         [:& fm/input {:label (tr "feedback.subject")
-                      :name :subject}]]
+                      :name :subject
+                      :show-success? true}]]
        [:div {:class (stl/css :fields-row :description)}
         [:& fm/textarea
          {:label (tr "feedback.description")

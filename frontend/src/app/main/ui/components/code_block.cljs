@@ -10,16 +10,20 @@
    ["highlight.js" :as hljs]
    [app.common.data.macros :as dm]
    [app.main.ui.context :as ctx]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (mf/defc code-block
   {::mf/wrap-props false}
   [{:keys [code type]}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        block-ref (mf/use-ref)]
+        block-ref (mf/use-ref)
+        code (str/trim code)]
     (mf/with-effect [code type]
       (when-let [node (mf/ref-val block-ref)]
         (hljs/highlightElement node)))
 
-    [:pre {:class (dm/str type " " (stl/css new-css-system :code-display)) :ref block-ref} code]))
+    (if new-css-system
+      [:pre {:class (dm/str type " " (stl/css :code-display)) :ref block-ref} code]
+      [:pre {:class (dm/str type " " "code-display") :ref block-ref} code])))
 

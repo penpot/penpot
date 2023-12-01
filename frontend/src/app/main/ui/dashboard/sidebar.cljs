@@ -139,8 +139,9 @@
     (if new-css-system
       [:*
        [:li {:tab-index "0"
-             :class (if selected? (stl/css :current)
-                        (when (:dragging? local) (stl/css :dragging)))
+             :class (stl/css-case :project-element true
+                                  :current selected?
+                                  :dragging (:dragging? local))
              :on-click on-click
              :on-key-down on-key-down
              :on-double-click on-edit-open
@@ -1255,3 +1256,4 @@
        [:& profile-section
         {:profile profile
          :team team}]])))
+

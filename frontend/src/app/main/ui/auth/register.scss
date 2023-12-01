@@ -1,0 +1,38 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+@use "./common.scss";
+
+.accept-terms-and-privacy-wrapper {
+  margin: $s-16 0;
+  :global(a) {
+    color: $df-secondary;
+    font-weight: $fw700;
+  }
+}
+
+.register-success {
+  padding-bottom: $s-32;
+}
+
+.notification-icon {
+  fill: $df-primary;
+  display: flex;
+  justify-content: center;
+  margin-bottom: $s-32;
+  svg {
+    width: $s-92;
+    height: $s-92;
+  }
+}
+
+.notification-text-email,
+.notification-text {
+  font-size: $fs-16;
+  color: $df-secondary;
+  margin-bottom: $s-16;
+}

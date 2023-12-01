@@ -1,0 +1,74 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+
+.auth-section {
+  align-items: center;
+  background: $db-primary;
+  display: grid;
+  gap: $s-32;
+  grid-template-columns: repeat(3, 1fr);
+  height: 100%;
+  padding: $s-32;
+  width: 100%;
+
+  &.no-illustration {
+    display: flex;
+    justify-content: center;
+  }
+
+  @media (max-width: 992px) {
+    display: flex;
+    justify-content: center;
+  }
+
+  .login-illustration {
+    display: flex;
+    justify-content: center;
+    grid-column: 1 / 3;
+
+    svg {
+      width: $s-688;
+      fill: $df-primary;
+      height: auto;
+    }
+
+    @media (max-width: 992px) {
+      display: none;
+    }
+  }
+
+  .auth-content {
+    align-items: center;
+    display: flex;
+    height: fit-content;
+    justify-content: center;
+    max-width: $s-412;
+    padding-bottom: $s-8;
+    position: relative;
+    width: 100%;
+  }
+}
+
+.terms-login {
+  font-size: $fs-11;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  gap: $s-4;
+  justify-content: center;
+
+  a {
+    font-weight: $fw700;
+    color: $df-secondary;
+  }
+  span {
+    border-bottom: $s-1 solid transparent;
+    color: $df-secondary;
+  }
+}

@@ -27,8 +27,9 @@
 (def use-form fm/use-form)
 
 (mf/defc input
-  [{:keys [label help-icon disabled form hint trim children data-test on-change-value placeholder] :as props}]
+  [{:keys [label help-icon disabled form hint trim children data-test on-change-value placeholder show-success?] :as props}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
+
         input-type   (get props :type "text")
         input-name   (get props :name)
         more-classes (get props :class)
@@ -54,35 +55,16 @@
         help-icon'   (cond
                        (and (= input-type "password")
                             (= @type' "password"))
-                       i/eye
+                       i/shown-refactor
 
                        (and (= input-type "password")
                             (= @type' "text"))
-                       i/eye-closed
+                       i/hide-refactor
 
                        :else
                        help-icon)
 
         on-change-value (or on-change-value (constantly nil))
-
-        klass (str more-classes " "
-                   (dom/classnames
-                    :focus          @focus?
-                    :valid          (and touched? (not error))
-                    :invalid        (and touched? error)
-                    :disabled       disabled
-                    :empty          (and is-text? (str/empty? value))
-                    :with-icon      (not (nil? help-icon'))
-                    :custom-input   is-text?
-                    :input-radio    is-radio?
-                    :input-checkbox is-checkbox?))
-
-        new-classes (dm/str more-classes " "
-                            (stl/css-case
-                             :input-wrapper true
-                             :global/invalid  (and touched? error)
-                             :checkbox        is-checkbox?
-                             :global/disabled disabled))
 
         swap-text-password
         (fn []
@@ -100,9 +82,7 @@
 
         on-blur
         (fn [_]
-          (reset! focus? false)
-          (when-not (get-in @form [:touched input-name])
-            (swap! form assoc-in [:touched input-name] true)))
+          (reset! focus? false))
 
         on-click
         (fn [_]
@@ -126,10 +106,19 @@
                   (cond-> (and value is-checkbox?) (assoc :default-checked value))
                   (cond-> (and touched? (:message error)) (assoc "aria-invalid" "true"
                                                                  "aria-describedby" (dm/str "error-" input-name)))
-                  (obj/clj->props))]
+                  (obj/clj->props))
+
+        show-valid? (and show-success? touched? (not error))
+        show-invalid? (and touched? error)]
 
     (if new-css-system
-      [:div {:class new-classes}
+      [:div {:class (dm/str more-classes " "
+                            (stl/css-case
+                             :input-wrapper true
+                             :valid         show-valid?
+                             :invalid       show-invalid?
+                             :checkbox      is-checkbox?
+                             :disabled      disabled))}
        [:*
         (cond
           (some? label)
@@ -137,23 +126,38 @@
                                         :input-label   is-text?
                                         :radio-label    is-radio?
                                         :checkbox-label is-checkbox?)
-                   :tab-index "0"
+                   :tab-index "-1"
                    :for (name input-name)} label
+
            (when is-checkbox?
              [:span {:class (stl/css-case :global/checked value)} i/status-tick-refactor])
-           [:> :input props]]
+
+           (if is-checkbox?
+             [:> :input props]
+
+             [:div {:class (stl/css :input-and-icon)}
+              [:> :input props]
+              (when help-icon'
+                [:span {:class (stl/css :help-icon)
+                        :on-click (when (= "password" input-type)
+                                    swap-text-password)}
+                 help-icon'])
+
+              (when show-valid?
+                [:span {:class (stl/css :valid-icon)}
+                 i/tick-refactor])
+
+              (when show-invalid?
+                [:span {:class (stl/css :invalid-icon)}
+                 i/close-refactor])])]
 
           (some? children)
           [:label {:for (name input-name)}
-
            [:> :input props]
            children])
 
-        (when help-icon'
-          [:span {:class (stl/css :help-icon)
-                  :on-click (when (= "password" input-type)
-                              swap-text-password)}
-           help-icon'])
+
+
         (cond
           (and touched? (:message error))
           [:div {:id (dm/str "error-" input-name)
@@ -164,9 +168,19 @@
           (string? hint)
           [:div {:class (stl/css :hint)} hint])]]
 
-
+      ;;OLD
       [:div
-       {:class klass}
+       {:class (str more-classes " "
+                    (dom/classnames
+                     :focus          @focus?
+                     :valid          (and touched? (not error))
+                     :invalid        (and touched? error)
+                     :disabled       disabled
+                     :empty          (and is-text? (str/empty? value))
+                     :with-icon      (not (nil? help-icon'))
+                     :custom-input   is-text?
+                     :input-radio    is-radio?
+                     :input-checkbox is-checkbox?))}
        [:*
         [:> :input props]
         (cond
@@ -387,7 +401,7 @@
                       (true? (unchecked-get props "disabled")))
 
         klass     (dm/str class " " (if disabled? "btn-disabled" ""))
-        new-klass (if disabled?  (stl/css :btn-disabled) class)
+        new-klass (dm/str class " " (if disabled? (stl/css :btn-disabled) ""))
 
         on-key-down
         (mf/use-fn

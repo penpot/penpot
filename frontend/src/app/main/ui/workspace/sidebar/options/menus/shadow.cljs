@@ -156,7 +156,7 @@
 
 
     [:div.shadow-option {:class (stl/css-case new-css-system
-                                              :old-css/shadow-option true
+                                              :global/shadow-option true
                                               :shadow-element true
                                               :dnd-over-top (= (:over dprops) :top)
                                               :dnd-over-bot (= (:over dprops) :bot))

@@ -4,13 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "common/refactor/common-refactor.scss" as *;
+@use "./common.scss";
 
-.code-display {
-  user-select: text;
-  border-radius: $br-8;
-  margin-top: $s-8;
-  padding: $s-12;
-  background-color: var(--menu-background-color);
-  overflow: auto;
+.submit-btn {
+  margin-top: $s-16;
 }

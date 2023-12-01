@@ -100,8 +100,8 @@
 (def browser              (parse-browser))
 (def platform             (parse-platform))
 
-(def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI" nil))
-(def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" nil))
+(def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI" "https://penpot.app/terms"))
+(def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" "https://penpot.app/privacy"))
 
 (defn- normalize-uri
   [uri-str]

@@ -29,11 +29,12 @@ paths.resources = "./resources/";
 paths.output = "./resources/public/";
 paths.dist = "./target/dist/";
 
-const touchSourceOnStyleChange = false;
-
 /***********************************************
  * Marked Extensions
  ***********************************************/
+
+// Name of Penpot's top level package
+const ROOT_NAME = "app";
 
 const renderer = {
   link(href, title, text) {
@@ -223,7 +224,18 @@ gulp.task("scss:modules", function () {
     .pipe(
       gulpPostcss([
         modules({
-          generateScopedName: "[folder]_[name]_[local]_[hash:base64:5]",
+          getJSON: function (cssFileName, json, outputFileName) {
+            // We do nothing because we don't want the generated JSON files
+		      },
+          // Calculates the whole css-module selector name.
+          // Should be the same as the one in the file `/src/app/main/style.clj`
+          generateScopedName: function (selector, filename, css) {
+            const dir = path.dirname(filename);
+            const name = path.basename(filename, ".css");
+            const parts = dir.split("/");
+            const rootIdx = parts.findIndex(s => s === ROOT_NAME);
+            return parts.slice(rootIdx + 1).join("_") + "_" + name + "__" + selector;
+		      },
         }),
         autoprefixer(),
       ]),
@@ -349,13 +361,6 @@ gulp.task("dev:dirs", async function (next) {
 
 gulp.task("watch:main", function () {
   const watchTask = gulp.watch("src/**/**.scss", gulp.series("scss"));
-
-  if (touchSourceOnStyleChange) {
-    watchTask.on("change", function (path) {
-      // Replace ".scss" for ".cljs" to refresh the file
-      gulp.src(path.replace(".scss", ".cljs")).pipe(touch());
-    });
-  }
 
   gulp.watch(paths.resources + "styles/**/**.scss", gulp.series("scss"));
   gulp.watch(paths.resources + "images/**/*", gulp.series("copy:assets:images"));

@@ -504,10 +504,9 @@
         border-radius: 50%;
         color: $df-primary;
         z-index: $z-index-modal;
-
         background-color: $da-primary;
-        height: $s-120;
-        width: $s-120;
+        height: 100%;
+        width: 100%;
 
         svg {
           fill: $db-primary;
@@ -517,8 +516,6 @@
       &:hover {
         .update-overlay {
           opacity: 1;
-          width: $s-72;
-          height: $s-72;
           top: $s-16;
           left: $s-16;
         }

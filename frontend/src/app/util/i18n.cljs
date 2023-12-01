@@ -7,6 +7,7 @@
 (ns app.util.i18n
   "A i18n foundation."
   (:require
+   [app.common.data :as d]
    [app.common.logging :as log]
    [app.config :as cfg]
    [app.util.dom :as dom]
@@ -175,8 +176,10 @@
   {::mf/wrap-props false}
   [props]
   (let [label    (obj/get props "label")
-        tag-name (obj/get props "tag-name" "p")]
-    [:> tag-name {:dangerouslySetInnerHTML #js {:__html (tr label)}}]))
+        tag-name (obj/get props "tag-name" "p")
+        params   (obj/get props "params" [])
+        html (apply tr (d/concat-vec [label] params))]
+    [:> tag-name {:dangerouslySetInnerHTML #js {:__html html}}]))
 
 ;; DEPRECATED
 (defn use-locale

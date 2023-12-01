@@ -48,6 +48,7 @@
   }
 
   .fields-row {
+    --input-height: $s-40;
     margin-bottom: $s-20;
     flex-direction: column;
 
@@ -56,10 +57,6 @@
       justify-content: flex-end;
       font-size: $fs-14;
       margin-top: $s-12;
-    }
-
-    :global(input) {
-      height: $s-40;
     }
   }
 

@@ -356,8 +356,13 @@
     cursor: pointer;
     display: flex;
     flex-shrink: 0;
-    padding: $s-8 $s-8 $s-8 $s-24;
+
+    &.project-element {
+      padding: $s-8 $s-8 $s-8 $s-24;
+    }
+
     a {
+      padding: $s-8 $s-8 $s-8 $s-24;
       font-weight: $fw400;
       width: 100%;
       &:hover {

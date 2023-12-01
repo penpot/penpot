@@ -4,6 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "sass:meta";
+
 .light {
   --color-background-primary: var(--light-gray-1);
   --color-background-secondary: var(--light-gray-2);
@@ -24,4 +26,6 @@
   --pending-color: var(--light-pending-color);
   --error-color: var(--light-error-color);
   --canvas-color: var(--color-canvas);
+
+  @include meta.load-css("hljs-light-theme");
 }

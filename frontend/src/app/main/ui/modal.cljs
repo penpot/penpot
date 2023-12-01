@@ -80,7 +80,7 @@
       [:div {:ref wrapper-ref
              :class (stl/css-case
                      :modal-wrapper  new-css-system
-                     :old-css/modal-wrapper (not  new-css-system))}
+                     :global/modal-wrapper (not new-css-system))}
        (mf/element component (:props data))])))
 
 (def modal-ref

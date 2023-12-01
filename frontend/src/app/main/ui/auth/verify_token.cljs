@@ -5,11 +5,13 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.auth.verify-token
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
@@ -60,7 +62,8 @@
 
 (mf/defc verify-token
   [{:keys [route] :as props}]
-  (let [token (get-in route [:query-params :token])
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        token (get-in route [:query-params :token])
         bad-token (mf/use-state false)]
 
     (mf/with-effect []
@@ -92,9 +95,7 @@
                   (st/emit! (rt/nav :auth-login))))))))
 
     (if @bad-token
-      [:> static/static-header {}
-       [:div.image i/unchain]
-       [:div.main-message (tr "errors.invite-invalid")]
-       [:div.desc-message (tr "errors.invite-invalid.info")]]
-      [:div.verify-token
+      [:> static/invalid-token {}]
+      [:div {:class (stl/css-case :verify-token new-css-system
+                                  :global/verify-token (not new-css-system))}
        i/loader-pencil])))

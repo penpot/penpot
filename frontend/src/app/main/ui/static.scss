@@ -44,6 +44,9 @@
 .exception-header {
   padding: $s-24 $s-32;
   position: fixed;
+  background: none;
+  border: none;
+  cursor: pointer;
   svg {
     fill: $df-primary;
     width: $s-48;
@@ -87,5 +90,11 @@
     text-transform: uppercase;
     padding: $s-8 $s-16;
     font-size: $fs-11;
+  }
+}
+
+.image {
+  svg {
+    fill: $df-primary;
   }
 }

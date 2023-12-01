@@ -25,7 +25,7 @@
         on-click (mf/use-callback #(set! (.-href globals/location) "/"))]
     (if new-css-system
       [:section {:class (stl/css :exception-layout)}
-       [:div
+       [:button
         {:class (stl/css :exception-header)
          :on-click on-click}
         i/logo-icon]
@@ -41,6 +41,19 @@
         i/logo]
        [:div.exception-content
         [:div.container children]]])))
+
+(mf/defc invalid-token
+  []
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    (if new-css-system
+      [:> static-header {}
+       [:div {:class (stl/css :main-message)} (tr "errors.invite-invalid")]
+       [:div {:class (stl/css :desc-message)} (tr "errors.invite-invalid.info")]]
+
+      [:> static-header {}
+       [:div.image i/unchain]
+       [:div.main-message (tr "errors.invite-invalid")]
+       [:div.desc-message (tr "errors.invite-invalid.info")]])))
 
 (mf/defc not-found
   []

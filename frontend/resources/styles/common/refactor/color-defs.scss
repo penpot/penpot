@@ -4,6 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "sass:color" as color;
+
 :root {
   // DARK
   --dark-gray-1: #1d1f20;
@@ -46,4 +48,21 @@
 
   //GENERIC
   --color-canvas: #e8e9ea;
+
+  // SOCIAL LOGIN BUTTONS
+  --google-login-background: #4285f4;
+  --google-login-background-hover: #{color.adjust(#4285f4, $lightness: -15%)};
+  --google-login-foreground: var(--white);
+
+  --github-login-background: #4c4c4c;
+  --github-login-background-hover: #{color.adjust(#4c4c4c, $lightness: -15%)};
+  --github-login-foreground: var(--white);
+
+  --oidc-login-background: #b3b3b3;
+  --oidc-login-background-hover: #{color.adjust(#b3b3b3, $lightness: -15%)};
+  --oidc-login-foreground: var(--white);
+
+  --gitlab-login-background: #fc6d26;
+  --gitlab-login-background-hover: #{color.adjust(#fc6d26, $lightness: -15%)};
+  --gitlab-login-foreground: var(--white);
 }
