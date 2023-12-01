@@ -51,10 +51,10 @@
 
     (if new-css-system
       [:*
-       [:header {:class (stl/css :dashboard-header) :ref rowref}
+       [:header {:class (stl/css :dashboard-header)}
         [:div#dashboard-libraries-title {:class (stl/css :dashboard-title)}
          [:h1 (tr "dashboard.libraries-title")]]]
-       [:section {:class (stl/css :dashboard-container :no-bg :dashboard-shared)}
+       [:section {:class (stl/css :dashboard-container :no-bg :dashboard-shared)  :ref rowref}
         [:& grid {:files files
                   :project default-project
                   :origin :libraries

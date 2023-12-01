@@ -25,4 +25,6 @@
   position: relative;
   grid-row: 1 / span 2;
   padding: $s-16 $s-16 0 0;
+  overflow: hidden;
+  width: 100%;
 }

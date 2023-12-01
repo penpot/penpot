@@ -145,6 +145,11 @@
     }
   }
 
+  .grid-container {
+    width: 100%;
+    padding: 0 $s-16;
+  }
+
   &:hover,
   &:focus,
   &:focus-within {

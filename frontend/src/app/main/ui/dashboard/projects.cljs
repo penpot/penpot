@@ -246,7 +246,6 @@
                                   :edition? (= (:id project) edit-id)})
 
         [rowref limit] (hooks/use-dynamic-grid-item-width)
-
         on-nav
         (mf/use-fn
          (mf/deps project-id team-id)
@@ -344,7 +343,7 @@
 
     (if new-css-system
       [:article {:class (stl/css-case :dashboard-project-row true :first first?)}
-       [:header {:class (stl/css :project) :ref rowref}
+       [:header {:class (stl/css :project)}
         [:div {:class (stl/css :project-name-wrapper)}
          (if (:edition? @local)
            [:& inline-edition {:content (:name project)
@@ -403,12 +402,13 @@
             :on-key-down handle-menu-click}
            i/actions]]]]
 
-       [:& line-grid
-        {:project project
-         :team team
-         :files files
-         :create-fn create-file
-         :limit limit}]
+       [:div {:class (stl/css :grid-container) :ref rowref}
+        [:& line-grid
+         {:project project
+          :team team
+          :files files
+          :create-fn create-file
+          :limit limit}]]
 
        (when (and (> limit 0)
                   (> file-count limit))
