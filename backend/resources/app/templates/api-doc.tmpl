@@ -56,6 +56,17 @@
         desired content-type on the <b>`Accept`</b> header, the transit encoding is used
         by default.</p>
 
+        <h3>SSE (Server-Sent Events)</h3>
+        <p>The methods marked with <b>SSE</b> returns
+        a <a href="https://html.spec.whatwg.org/multipage/server-sent-events.html"> SSE
+        formatted</a> stream on the response body, always with status 200. The events are
+        always encoded using `application/transit+json` encoding (for now no content
+        negotiation is possible on methods that return SSE streams). </p>
+        <p>On the javascript side you can use
+        the <a href="https://github.com/rexxars/eventsource-parser">eventsoure-parser</a>
+        library for propertly parsing the response body using the
+        standard <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API">Fetch
+        API</a></p>
 
         <h3>Limits</h3>
         <p>The rate limit work per user basis (this means that different api keys share

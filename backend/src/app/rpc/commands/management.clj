@@ -14,6 +14,7 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.http.sse :as sse]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.binfile :as binfile]
@@ -27,7 +28,9 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [clojure.walk :as walk]
+   [promesa.core :as p]
    [promesa.exec :as px]))
 
 ;; --- COMMAND: Duplicate File
@@ -405,29 +408,6 @@
 
 ;; --- COMMAND: Clone Template
 
-(defn- clone-template!
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id template-id project-id]}]
-  (let [template (tmpl/get-template-stream cfg template-id)
-        project  (db/get-by-id conn :project project-id {:columns [:id :team-id]})]
-
-    (when-not template
-      (ex/raise :type :not-found
-                :code :template-not-found
-                :hint "template not found"))
-
-    (teams/check-edition-permissions! conn profile-id (:team-id project))
-
-    (-> cfg
-        ;; FIXME: maybe reuse the conn instead of creating more
-        ;; connections in the import process?
-        (dissoc ::db/conn)
-        (assoc ::binfile/input template)
-        (assoc ::binfile/project-id (:id project))
-        (assoc ::binfile/profile-id profile-id)
-        (assoc ::binfile/ignore-index-errors? true)
-        (assoc ::binfile/migrate? true)
-        (binfile/import!))))
-
 (def ^:private
   schema:clone-template
   (sm/define
@@ -435,15 +415,46 @@
      [:project-id ::sm/uuid]
      [:template-id ::sm/word-string]]))
 
+(declare ^:private clone-template)
+
 (sv/defmethod ::clone-template
   "Clone into the specified project the template by its id."
   {::doc/added "1.16"
+   ::sse/stream? true
    ::webhooks/event? true
    ::sm/params schema:clone-template}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (db/with-atomic [conn pool]
-    (-> (assoc cfg ::db/conn conn)
-        (clone-template! (assoc params :profile-id profile-id)))))
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id template-id] :as params}]
+  (let [project   (db/get-by-id pool :project project-id {:columns [:id :team-id]})
+        _         (teams/check-edition-permissions! pool profile-id (:team-id project))
+        template  (tmpl/get-template-stream cfg template-id)
+        params    (-> cfg
+                      (assoc ::binfile/input template)
+                      (assoc ::binfile/project-id (:id project))
+                      (assoc ::binfile/profile-id profile-id)
+                      (assoc ::binfile/ignore-index-errors? true)
+                      (assoc ::binfile/migrate? true))]
+
+    (when-not template
+      (ex/raise :type :not-found
+                :code :template-not-found
+                :hint "template not found"))
+
+    (sse/response #(clone-template params))))
+
+(defn- clone-template
+  [{:keys [::wrk/executor ::binfile/project-id] :as params}]
+  (db/tx-run! params
+              (fn [{:keys [::db/conn] :as params}]
+                ;; NOTE: the importation process performs some operations that
+                ;; are not very friendly with virtual threads, and for avoid
+                ;; unexpected blocking of other concurrent operations we
+                ;; dispatch that operation to a dedicated executor.
+                (let [result (p/thread-call executor (partial binfile/import! params))]
+                  (db/update! conn :project
+                              {:modified-at (dt/now)}
+                              {:id project-id})
+
+                  (deref result)))))
 
 ;; --- COMMAND: Get list of builtin templates
 

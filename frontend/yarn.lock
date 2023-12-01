@@ -7028,6 +7028,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"eventsource-parser@npm:^1.1.1":
+  version: 1.1.1
+  resolution: "eventsource-parser@npm:1.1.1"
+  checksum: 6eae5e8300dc5d4dcd29d09d037a43b9954077fbcc936904065d1abf5ec503f1fa56a942ad4f796b7dcc3bf64224440917ea635ef4a75f5522e9951df4b9aadf
+  languageName: node
+  linkType: hard
+
 "evp_bytestokey@npm:^1.0.0, evp_bytestokey@npm:^1.0.3":
   version: 1.0.3
   resolution: "evp_bytestokey@npm:1.0.3"
@@ -7578,6 +7585,7 @@ __metadata:
     concurrently: "npm:^8.2.2"
     date-fns: "npm:^2.30.0"
     draft-js: "npm:^0.11.7"
+    eventsource-parser: "npm:^1.1.1"
     gettext-parser: "npm:^7.0.1"
     gulp: "npm:4.0.2"
     gulp-cached: "npm:^1.1.1"

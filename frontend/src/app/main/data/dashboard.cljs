@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
+   [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
@@ -25,12 +26,15 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
+   [app.util.sse :as sse]
    [app.util.time :as dt]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [clojure.set :as set]
    [potok.core :as ptk]))
+
+(log/set-level! :warn)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialization
@@ -949,7 +953,17 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
-        (->> (rp/cmd! :clone-template {:project-id project-id :template-id template-id})
+        (->> (rp/cmd! ::sse/clone-template {:project-id project-id
+                                            :template-id template-id})
+             (rx/tap (fn [event]
+                       (let [payload (sse/get-payload event)
+                             type    (sse/get-type event)]
+                         (if (= type "event")
+                           (log/dbg :hint "clone-template: progress" :section (:section payload) :name (:name payload))
+                           (log/dbg :hint "clone-template: end")))))
+
+             (rx/filter sse/end-of-stream?)
+             (rx/map sse/get-payload)
              (rx/tap on-success)
              (rx/catch on-error))))))
 

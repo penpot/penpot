@@ -57,14 +57,16 @@
 
 (defn- handle-response
   [request result]
-  (if (fn? result)
-    (result request)
-    (let [mdata (meta result)]
-      (-> {::rres/status  (::http/status mdata 200)
-           ::rres/headers (::http/headers mdata {})
-           ::rres/body    (rph/unwrap result)}
-          (handle-response-transformation request mdata)
-          (handle-before-comple-hook mdata)))))
+  (let [mdata    (meta result)
+        response (if (fn? result)
+                   (result request)
+                   (let [result (rph/unwrap result)]
+                     {::rres/status  (::http/status mdata 200)
+                      ::rres/headers (::http/headers mdata {})
+                      ::rres/body    result}))]
+    (-> response
+        (handle-response-transformation request mdata)
+        (handle-before-comple-hook mdata))))
 
 (defn- rpc-handler
   "Ring handler that dispatches cmd requests and convert between
