@@ -56,8 +56,8 @@
 
 (defn get-pointer-alt-mod
   [^PointerEvent ev]
-  (.-meta ev))
+  (.-alt ev))
 
 (defn get-pointer-shift-mod
   [^PointerEvent ev]
-  (.-meta ev))
+  (.-shift ev))
