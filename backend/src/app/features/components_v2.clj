@@ -47,7 +47,8 @@
    [cuerdas.core :as str]
    [datoteka.io :as io]
    [promesa.exec :as px]
-   [promesa.exec.semaphore :as ps]))
+   [promesa.exec.semaphore :as ps]
+   [promesa.util :as pu]))
 
 (def ^:dynamic *system* nil)
 (def ^:dynamic *stats* nil)
@@ -698,10 +699,7 @@
                          (l/trc :hint "graphic processed"
                                 :file-id (str (:id fdata))
                                 :media-id (str (:id mobj))
-                                :elapsed (dt/format-duration (tp1)))))))
-
-        process  (px/wrap-bindings process)]
-
+                                :elapsed (dt/format-duration (tp1)))))))]
     (try
       (->> (d/zip media-group grid)
            (map (fn [[mobj position]]
@@ -717,7 +715,7 @@
                        fdata))
                    fdata))
       (finally
-        (.close ^java.lang.AutoCloseable executor)))))
+        (pu/close! executor)))))
 
 (defn- migrate-graphics
   [fdata]
