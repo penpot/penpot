@@ -1356,6 +1356,11 @@
          (fn []
            (reset! show-layout-dropdown* false)))
 
+        handle-open-flex-help
+        (mf/use-callback
+         (fn []
+           (st/emit! (dom/open-new-window cf/flex-help-uri))))
+
         handle-open-grid-help
         (mf/use-callback
          (fn []
@@ -1413,10 +1418,13 @@
                [:& wrap-row {:wrap-type wrap-type
                              :on-click toggle-wrap-refactor}]]
 
-              [:div {:class (stl/css :second-row)}
+              [:div {:class (stl/css :second-row :help-button-wrapper)}
                [:& justify-content-row {:is-col? is-col?
                                         :justify-content justify-content
-                                        :on-change set-justify-content-refactor}]]
+                                        :on-change set-justify-content-refactor}]
+
+               [:button {:on-click handle-open-flex-help
+                         :class (stl/css :help-button)} i/help-refactor]]
               (when (= :wrap wrap-type)
                 [:div {:class (stl/css :third-row)}
                  [:& align-content-row {:is-col? is-col?

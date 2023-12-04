@@ -65,6 +65,14 @@
     .forth-row {
       @include flexColumn;
     }
+    .help-button-wrapper {
+      position: relative;
+      .help-button {
+        position: absolute;
+        top: 0;
+        right: 0;
+      }
+    }
   }
 }
 
