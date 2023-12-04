@@ -13,6 +13,7 @@
     }
 
     .title-actions {
+      position: relative;
       display: flex;
       gap: $s-4;
       height: $s-32;
@@ -307,6 +308,26 @@
       width: $s-12;
       stroke: var(--icon-foreground);
       fill: var(--icon-foreground);
+    }
+  }
+}
+
+.layout-options {
+  @extend .dropdown-wrapper;
+  @include flexColumn;
+  right: 0;
+  left: initial;
+
+  button {
+    cursor: pointer;
+    padding: $s-8;
+    color: $df-primary;
+    background: none;
+    border: none;
+    border-radius: $br-6;
+
+    &:hover {
+      background: $db-cuaternary;
     }
   }
 }
