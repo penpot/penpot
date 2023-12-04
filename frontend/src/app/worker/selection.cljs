@@ -185,8 +185,9 @@
         (fn [shape]
           (let [padding (->> (:strokes shape)
                              (map :stroke-width)
-                             (reduce d/max 0))
-                rect (grc/center->rect rect padding padding)]
+                             (reduce d/max 5))
+                center  (grc/rect->center rect)
+                rect    (grc/center->rect center  padding)]
             (gsh/overlaps-path? shape rect false)))
 
         overlaps?
