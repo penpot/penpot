@@ -5046,3 +5046,6 @@ msgstr "Gradient"
 
 msgid "media.choose-image"
 msgstr "Choose image"
+
+msgid "workspace.options.guides.title"
+msgstr "Guides"

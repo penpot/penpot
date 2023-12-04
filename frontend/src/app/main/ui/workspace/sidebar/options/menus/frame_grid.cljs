@@ -417,8 +417,8 @@
        [:& title-bar {:collapsable? has-frame-grids?
                       :collapsed?   (not open?)
                       :on-collapsed toggle-content
-                      :class (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
-                      :title        (tr "workspace.options.grid.grid-title")}
+                      :class        (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
+                      :title        (tr "workspace.options.guides.title")}
 
         [:button  {:on-click handle-create-grid
                    :class (stl/css :add-grid)}

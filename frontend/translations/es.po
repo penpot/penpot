@@ -5140,3 +5140,6 @@ msgstr "Gradiente"
 
 msgid "media.choose-image"
 msgstr "Elegir imagen"
+
+msgid "workspace.options.guides.title"
+msgstr "Guías"
