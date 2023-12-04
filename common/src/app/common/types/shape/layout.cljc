@@ -1229,9 +1229,8 @@
   (let [do-remap-cells
         (fn [cell]
           (-> cell
-              (update :shapes #(mapv ids-map %))))
+              (update :shapes #(into [] (keep ids-map) %))))
         shape
         (-> shape
-            (update :layout-grid-cells update-vals do-remap-cells)
-            (check-deassigned-cells))]
+            (update :layout-grid-cells update-vals do-remap-cells))]
     shape))
