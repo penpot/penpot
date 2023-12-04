@@ -71,7 +71,7 @@
     "prop-types": "^15.8.1",
     "rimraf": "^5.0.1",
     "sass": "^1.66.1",
-    "shadow-cljs": "2.25.10",
+    "shadow-cljs": "2.26.2",
     "storybook": "^7.5.3",
     "vite": "^5.0.2"
   },
