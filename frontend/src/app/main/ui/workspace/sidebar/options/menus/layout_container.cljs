@@ -16,6 +16,7 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.select :refer [select]]
@@ -1129,6 +1130,9 @@
         layout-type         (:layout values)
         has-layout?         (some? layout-type)
 
+        show-layout-dropdown* (mf/use-state false)
+        show-layout-dropdown? @show-layout-dropdown*
+
         state*              (mf/use-state (if layout-type
                                             true
                                             false))
@@ -1137,9 +1141,10 @@
         toggle-content (mf/use-fn #(swap! state* not))
 
         on-add-layout
-        (fn [type]
-          (st/emit! (dwsl/create-layout type))
-          (reset! state* true))
+        (mf/use-callback
+         (fn [type]
+           (st/emit! (dwsl/create-layout type))
+           (reset! state* true)))
 
         on-set-layout
         (mf/use-fn
@@ -1155,23 +1160,18 @@
           (reset! state* false))
 
         set-flex
-        (fn []
-          (st/emit! (dwsl/remove-layout ids))
-          (on-add-layout :flex))
+        (mf/use-callback
+         (mf/deps on-add-layout)
+         (fn []
+           (st/emit! (dwsl/remove-layout ids))
+           (on-add-layout :flex)))
 
         set-grid
-        (fn []
-          (st/emit! (dwsl/remove-layout ids))
-          (on-add-layout :grid))
-
-        toggle-layout-style
-        (mf/use-fn
-         (fn [value]
-           (if (= "flex" value)
-             (set-flex)
-             (set-grid))))
-
-        ;; Flex-direction
+        (mf/use-callback
+         (mf/deps on-add-layout)
+         (fn []
+           (st/emit! (dwsl/remove-layout ids))
+           (on-add-layout :grid)))
 
         saved-dir (:layout-flex-dir values)
 
@@ -1342,7 +1342,17 @@
            (let [value (cond-> value new-css-system keyword)]
              (if (= type :row)
                (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))
-               (st/emit! (dwsl/update-layout ids {:layout-align-content value}))))))]
+               (st/emit! (dwsl/update-layout ids {:layout-align-content value}))))))
+
+        handle-show-layout-dropdown
+        (mf/use-callback
+         (fn []
+           (swap! show-layout-dropdown* not)))
+
+        handle-close-layout-options
+        (mf/use-callback
+         (fn []
+           (reset! show-layout-dropdown* false)))]
 
     (if new-css-system
       [:div {:class (stl/css :element-set)}
@@ -1354,24 +1364,26 @@
                        :class        (stl/css-case :title-spacing-layout (not has-layout?))}
          (if (and (not multiple) (:layout values))
            [:div {:class (stl/css :title-actions)}
-            (when ^boolean grid-enabled?
-              [:div {:class (stl/css :layout-options)}
-               [:& radio-buttons {:selected (d/name layout-type)
-                                  :on-change toggle-layout-style
-                                  :name "layout-style"
-                                  :wide true}
-                [:& radio-button {:value "flex"
-                                  :id :flex}]
-                [:& radio-button {:value "grid"
-                                  :id :grid}]]])
             [:button {:class (stl/css :remove-layout)
                       :on-click on-remove-layout}
              i/remove-refactor]]
+
            [:div {:class (stl/css :title-actions)}
-            [:button {:class (stl/css :add-layout)
-                      :data-value :flex
-                      :on-click on-set-layout}
-             i/add-refactor]])]]
+            (if ^boolean grid-enabled?
+              [:*
+               [:button {:class (stl/css :add-layout)
+                         :on-click handle-show-layout-dropdown}
+                i/add-refactor]
+
+               [:& dropdown {:show show-layout-dropdown? :on-close handle-close-layout-options}
+                [:div {:class (stl/css :layout-options)}
+                 [:button {:class (stl/css :layout-option) :on-click set-flex} "Flex layout"]
+                 [:button {:class (stl/css :layout-option) :on-click set-grid} "Grid layout"]]]]
+
+              [:button {:class (stl/css :add-layout)
+                        :data-value :flex
+                        :on-click on-set-layout}
+               i/add-refactor])])]]
 
        (when (and open? has-layout?)
          (when (not= :multiple layout-type)
