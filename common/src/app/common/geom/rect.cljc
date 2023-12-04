@@ -261,15 +261,17 @@
         (make-rect minx miny (- maxx minx) (- maxy miny))))))
 
 (defn center->rect
-  [point w h]
-  (when (some? point)
-    (let [x (dm/get-prop point :x)
-          y (dm/get-prop point :y)]
-      (when (d/num? x y w h)
-        (make-rect (- x (/ w 2))
-                   (- y (/ h 2))
-                   w
-                   h)))))
+  ([point size]
+   (center->rect point size size))
+  ([point w h]
+   (when (some? point)
+     (let [x (dm/get-prop point :x)
+           y (dm/get-prop point :y)]
+       (when (d/num? x y w h)
+         (make-rect (- x (/ w 2))
+                    (- y (/ h 2))
+                    w
+                    h))))))
 
 (defn s=
   [a b]

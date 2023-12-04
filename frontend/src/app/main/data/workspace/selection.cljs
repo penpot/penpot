@@ -141,6 +141,7 @@
              objects (wsh/lookup-page-objects state page-id)]
          (rx/of
           (dwc/expand-all-parents [id] objects)
+          :interrupt
           ::dwsp/interrupt))))))
 
 (defn select-prev-shape
