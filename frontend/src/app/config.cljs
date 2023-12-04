@@ -102,6 +102,7 @@
 
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI" "https://penpot.app/terms"))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" "https://penpot.app/privacy"))
+(def flex-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
 (def grid-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
 
 (defn- normalize-uri
