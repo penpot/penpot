@@ -10,9 +10,6 @@
   .element-title {
     .title-spacing-layout-element {
       margin: 0 0 $s-4 0;
-      .position-options {
-        width: $s-140;
-      }
     }
     .title-spacing-empty {
       padding-left: $s-12;
@@ -20,95 +17,96 @@
   }
   .flex-element-menu {
     @include flexColumn;
-    .first-row {
-      display: flex;
-      gap: $s-4;
-      .behaviour-menu {
-        display: flex;
-        gap: $s-4;
-        .horizontal-behaviour {
-          &.one-element {
-            width: $s-28;
-          }
-          &.two-element {
-            width: $s-60;
-          }
-          &.three-element {
-            width: $s-92;
-          }
-        }
-        .vertical-behaviour {
-          .rotated {
-            transform: rotate(90deg);
-          }
-          &.one-element {
-            width: $s-28;
-          }
-          &.two-element {
-            width: $s-60;
-          }
-          &.three-element {
-            width: $s-92;
-          }
-        }
-      }
-      .z-index-wrapper {
-        @extend .input-element;
-        width: $s-124;
-      }
-    }
-    .second-row {
-      display: flex;
-      gap: $s-4;
-    }
+    gap: $s-12;
 
-    .third-row {
-      .margin-row {
-        display: flex;
-        align-items: flex-start;
-        gap: $s-4;
-        .margin-mode {
-          @extend .button-tertiary;
-          height: $s-32;
+    .behaviour-menu {
+      display: flex;
+      gap: $s-4;
+      .horizontal-behaviour {
+        &.one-element {
           width: $s-28;
+        }
+        &.two-element {
+          width: $s-60;
+        }
+        &.three-element {
+          width: $s-92;
+        }
+      }
+      .vertical-behaviour {
+        .rotated {
+          transform: rotate(90deg);
+        }
+        &.one-element {
+          width: $s-28;
+        }
+        &.two-element {
+          width: $s-60;
+        }
+        &.three-element {
+          width: $s-92;
+        }
+      }
+    }
+
+    .z-index-wrapper {
+      @extend .input-element;
+      width: $s-60;
+    }
+
+    .row {
+      display: flex;
+      gap: $s-4;
+    }
+
+    .position-options {
+      width: $s-188;
+    }
+    .margin-row {
+      display: flex;
+      align-items: flex-start;
+      gap: $s-4;
+      .margin-mode {
+        @extend .button-tertiary;
+        height: $s-32;
+        width: $s-28;
+        svg {
+          @extend .button-icon;
+        }
+        &.selected {
+          background-color: var(--button-tertiary-background-color-active);
+          color: var(--button-tertiary-foreground-color-active);
           svg {
-            @extend .button-icon;
-          }
-          &.selected {
-            background-color: var(--button-tertiary-background-color-active);
-            color: var(--button-tertiary-foreground-color-active);
-            svg {
-              stroke: var(--button-tertiary-foreground-color-active);
-            }
+            stroke: var(--button-tertiary-foreground-color-active);
           }
         }
-        .inputs-wrapper {
-          .margin-simple {
-            display: flex;
-            gap: $s-4;
-            .vertical-margin,
-            .horizontal-margin {
-              @extend .input-element;
-              width: $s-108;
-            }
+      }
+      .inputs-wrapper {
+        .margin-simple {
+          display: flex;
+          gap: $s-4;
+          .vertical-margin,
+          .horizontal-margin {
+            @extend .input-element;
+            width: $s-108;
           }
-          .margin-multiple {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: $s-4;
-            .top-margin,
-            .bottom-margin,
-            .left-margin,
-            .right-margin {
-              @extend .input-element;
-              width: $s-108;
-            }
+        }
+        .margin-multiple {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: $s-4;
+          .top-margin,
+          .bottom-margin,
+          .left-margin,
+          .right-margin {
+            @extend .input-element;
+            width: $s-108;
           }
         }
       }
     }
 
-    .forth-row .advanced-options {
+    .advanced-options {
       @include flexColumn;
       .horizontal-fill,
       .vertical-fill {
