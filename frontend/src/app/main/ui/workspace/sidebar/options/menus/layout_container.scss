@@ -151,6 +151,13 @@
     @include flexColumn;
     gap: $s-4;
     align-items: flex-start;
+    position: relative;
+
+    .locate-button {
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
   }
 
   .grid-layout-menu-title {
@@ -161,7 +168,6 @@
   .edit-mode-btn {
     @extend .button-secondary;
     @include tabTitleTipography;
-    margin-top: $s-8;
     width: 100%;
     padding: $s-8;
   }
@@ -185,6 +191,10 @@
     @include flexColumn;
     margin: $s-8 0;
     gap: $s-12;
+  }
+
+  .edit-grid-wrapper {
+    @include flexRow;
   }
 }
 
@@ -312,6 +322,17 @@
   }
 }
 
+.locate-button,
+.help-button {
+  @extend .button-tertiary;
+  padding: $s-8;
+  svg {
+    fill: none;
+    width: $s-16;
+    height: $s-16;
+  }
+}
+
 .layout-options {
   @extend .dropdown-wrapper;
   @include flexColumn;
@@ -319,11 +340,9 @@
   left: initial;
 
   button {
-    cursor: pointer;
+    @include buttonStyle;
     padding: $s-8;
     color: $df-primary;
-    background: none;
-    border: none;
     border-radius: $br-6;
 
     &:hover {

@@ -11,7 +11,9 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
+   [app.config :as cf]
    [app.main.data.workspace :as udw]
+   [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -1352,7 +1354,17 @@
         handle-close-layout-options
         (mf/use-callback
          (fn []
-           (reset! show-layout-dropdown* false)))]
+           (reset! show-layout-dropdown* false)))
+
+        handle-open-grid-help
+        (mf/use-callback
+         (fn []
+           (st/emit! (dom/open-new-window cf/grid-help-uri))))
+
+        handle-locate-grid
+        (mf/use-callback
+         (fn []
+           (st/emit! (dwge/locate-board (first ids)))))]
 
     (if new-css-system
       [:div {:class (stl/css :element-set)}
@@ -1424,6 +1436,11 @@
 
              :grid
              [:div {:class (stl/css :grid-layout-menu)}
+              (when (= 1 (count ids))
+                [:div {:class (stl/css :edit-grid-wrapper)}
+                 [:& grid-edit-mode {:id (first ids)}]
+                 [:button {:on-click handle-open-grid-help
+                           :class (stl/css :help-button)} i/help-refactor]])
               [:div {:class (stl/css :row :first-row)}
                [:div {:class (stl/css :direction-edit)}
                 [:div {:class (stl/css :direction)}
@@ -1444,9 +1461,11 @@
                                      :set-justify set-justify-grid}]
                [:& justify-grid-row {:is-col? false
                                      :justify-items grid-justify-content-row
-                                     :set-justify set-justify-grid}]]
-              (when (= 1 (count ids))
-                [:& grid-edit-mode {:id (first ids)}])]
+                                     :set-justify set-justify-grid}]
+
+               [:button {:on-click handle-locate-grid
+                         :class (stl/css :locate-button)}
+                i/locate-refactor]]]
              nil)))]
 
       [:div.element-set
@@ -1684,12 +1703,23 @@
                          :percent 20
                          :fixed 100)]
              (st/emit! (dwsl/change-layout-track ids type index {:value value
-                                                                 :type track-type})))))]
+                                                                 :type track-type})))))
+        handle-open-grid-help
+        (mf/use-callback
+         (fn []
+           (st/emit! (dom/open-new-window cf/grid-help-uri))))
+
+        handle-locate-grid
+        (mf/use-callback
+         (fn []
+           (st/emit! (dwge/locate-board (first ids)))))        ]
 
     (if new-css-system
       [:div {:class (stl/css :grid-layout-menu)}
        [:div {:class (stl/css :row)}
         [:div {:class (stl/css :grid-layout-menu-title)} "GRID LAYOUT"]
+        [:button {:on-click handle-open-grid-help
+                  :class (stl/css :help-button)} i/help-refactor]
         [:button {:class (stl/css :exit-btn)
                   :on-click #(st/emit! udw/clear-edition-mode)}
          (tr "workspace.layout_grid.editor.options.exit")]]
@@ -1714,7 +1744,11 @@
                               :set-justify set-justify-grid}]
         [:& justify-grid-row {:is-col? false
                               :justify-items grid-justify-content-row
-                              :set-justify set-justify-grid}]]
+                              :set-justify set-justify-grid}]
+
+        [:button {:on-click handle-locate-grid
+                  :class (stl/css :locate-button)}
+         i/locate-refactor]]
        [:div {:class (stl/css :row :grid-tracks-row)}
         [:& grid-columns-row {:is-col? true
                               :expanded? @grid-columns-open?
