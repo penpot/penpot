@@ -47,7 +47,7 @@ export PENPOT_FLAGS="\
 # Initialize MINIO config
 mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin -q
 mc admin user add penpot-s3 penpot-devenv penpot-devenv -q
-mc admin policy list penpot-s3 | grep -F -q -x "readwrite"
+mc admin user info penpot-s3 penpot-devenv |grep -F -q "readwrite"
 if [ "$?" = "1" ]; then
     mc admin policy attach penpot-s3 readwrite --user=penpot-devenv -q
 fi
