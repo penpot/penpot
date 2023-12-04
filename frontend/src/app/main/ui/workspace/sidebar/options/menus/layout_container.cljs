@@ -1003,6 +1003,7 @@
                              :value (:value column)
                              :on-change #(set-column-value type index %)
                              :placeholder "--"
+                             :min 0
                              :disabled (= :auto (:type column))}]]
 
         [:div {:class (stl/css :track-info-unit)}

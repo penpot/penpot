@@ -417,12 +417,15 @@
                  precision (if snap-pixel? mth/round identity)
                  delta (/ (get position axis) zoom)
 
+                 new-size-before (max 0 (precision (+ @start-size-before delta)))
+                 new-size-after  (max 0 (precision (- @start-size-after delta)))
+
                  shape
                  (-> shape
                      (cond-> (some? track-before)
-                       (update-in [tracks-prop (dec index)] merge {:type :fixed :value (precision (+ @start-size-before delta))}))
+                       (update-in [tracks-prop (dec index)] merge {:type :fixed :value new-size-before}))
                      (cond-> (some? track-after)
-                       (update-in [tracks-prop index] merge {:type :fixed :value (precision (- @start-size-after delta))})))
+                       (update-in [tracks-prop index] merge {:type :fixed :value new-size-after})))
 
                  modifiers
                  (-> (ctm/empty)
