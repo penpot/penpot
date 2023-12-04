@@ -381,6 +381,7 @@
 (def justify-content-row-around-refactor (icon-xref :justify-content-row-around-refactor))
 (def justify-content-row-evenly-refactor (icon-xref :justify-content-row-evenly-refactor))
 (def layers-refactor (icon-xref :layers-refactor))
+(def locate-refactor (icon-xref :locate-refactor))
 (def lock-refactor (icon-xref :lock-refactor))
 (def library-refactor (icon-xref :library-refactor))
 (def margin-bottom-refactor (icon-xref :margin-bottom-refactor))
