@@ -152,7 +152,7 @@
       (watch [_ state stream]
         (l/dbg :hint "update thumbnail" :object-id object-id :tag tag)
         ;; Send the update to the back-end
-        (->> (get-thumbnail state file-id page-id frame-id {:object-id object-id})
+        (->> (get-thumbnail state file-id page-id frame-id tag)
              (rx/mapcat (fn [uri]
                           (rx/merge
                            (rx/of (assoc-thumbnail object-id uri))

@@ -233,7 +233,7 @@
 
 (mf/defc frame-imposter
   {::mf/wrap-props false}
-  [{:keys [objects frame vbox width height]}]
+  [{:keys [objects frame vbox x y width height background]}]
   (let [shape-wrapper (shape-wrapper-factory objects)]
     [:& (mf/provider muc/render-thumbnails) {:value false}
      [:svg {:view-box vbox
@@ -243,6 +243,8 @@
             :xmlns "http://www.w3.org/2000/svg"
             :xmlnsXlink "http://www.w3.org/1999/xlink"
             :fill "none"}
+      (when (some? background)
+        [:rect {:x x :y y :width width :height height :fill background}])
       [:& shape-wrapper {:shape frame}]]]))
 
 ;; Component that serves for render frame thumbnails, mainly used in
@@ -527,48 +529,59 @@
           (rx/map
            (fn [data]
              (let [elem (mf/element components-svg
-                                    #js {:data data :embed true :include-metadata true
+                                    #js {:data data
+                                         :embed true
+                                         :include-metadata true
                                          :source (name source)})]
                (rds/renderToStaticMarkup elem))))))))
 
 (defn render-frame
-  [objects shape object-id]
-  (if (some? shape)
-    (let [fonts         (ff/shape->fonts shape objects)
+  ([objects shape object-id]
+   (render-frame objects shape object-id nil))
+  ([objects shape object-id options]
+   (if (some? shape)
+     (let [fonts         (ff/shape->fonts shape objects)
 
-          bounds         (gsb/get-object-bounds objects shape)
+           bounds         (gsb/get-object-bounds objects shape)
 
-          x              (dm/get-prop bounds :x)
-          y              (dm/get-prop bounds :y)
-          width          (dm/get-prop bounds :width)
-          height         (dm/get-prop bounds :height)
+           background     (when (str/ends-with? object-id "component")
+                            (or (:background options) "#aab5ba"))
 
-          viewbox        (str/ffmt "% % % %" x y width height)
+           x              (dm/get-prop bounds :x)
+           y              (dm/get-prop bounds :y)
+           width          (dm/get-prop bounds :width)
+           height         (dm/get-prop bounds :height)
 
-          [fixed-width
-           fixed-height] (th/get-relative-size width height)
+           viewbox        (str/ffmt "% % % %" x y width height)
 
+           [fixed-width
+            fixed-height] (th/get-relative-size width height)
 
-          data           (with-redefs [cfg/public-uri cfg/rasterizer-uri]
-                           (rds/renderToStaticMarkup
-                            (mf/element frame-imposter
-                                        #js {:objects objects
-                                             :frame shape
-                                             :vbox viewbox
-                                             :width width
-                                             :height height})))]
+           data           (with-redefs [cfg/public-uri cfg/rasterizer-uri]
+                            (rds/renderToStaticMarkup
+                             (mf/element frame-imposter
+                                         #js {:objects objects
+                                              :frame shape
+                                              :vbox viewbox
+                                              :background background
+                                              :x x
+                                              :y y
+                                              :width width
+                                              :height height})))]
 
-      (->> (fonts/render-font-styles-cached fonts)
-           (rx/catch (fn [cause]
-                       (l/err :hint "unexpected error on rendering imposter"
-                              :cause cause)
-                       (rx/empty)))
-           (rx/map (fn [styles]
-                        {:id object-id
-                         :data data
-                         :viewbox viewbox
-                         :width fixed-width
-                         :height fixed-height
-                         :styles styles}))))
-    (do (l/warn :msg "imposter shape is nil")
-        (rx/empty))))
+       (->> (fonts/render-font-styles-cached fonts)
+            (rx/catch (fn [cause]
+                        (l/err :hint "unexpected error on rendering imposter"
+                               :cause cause)
+                        (rx/empty)))
+            (rx/map (fn [styles]
+                      {:id object-id
+                       :data data
+                       :viewbox viewbox
+                       :width fixed-width
+                       :height fixed-height
+                       :styles styles}))))
+
+     (do
+       (l/warn :msg "imposter shape is nil")
+       (rx/empty)))))
