@@ -14,7 +14,7 @@
                                       (try
                                         (js/console.log "EE" (.-stack cause))
                                         (when-let [data (some-> cause ex-data ::sm/explain)]
-                                          (pp/pprint (sm/humanize-data data)))
+                                          (pp/pprint (sm/humanize-explain data)))
                                         (finally
                                           (js/console.log "EXIT")
                                           (.exit js/process -1)))))
