@@ -260,10 +260,18 @@
     flex-grow: 1;
     padding: $s-8;
     gap: 0;
+    overflow: hidden;
   }
 
   .track-name {
     color: var(--color-foreground-secondary);
+  }
+
+  .track-detail {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    width: 100%;
   }
 
   .expand-icon {
