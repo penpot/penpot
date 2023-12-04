@@ -75,7 +75,7 @@ export OPTIONS="
 export OPTIONS="$OPTIONS -J--enable-preview"
 
 # Setup HEAP
-export OPTIONS="$OPTIONS -J-Xms50m -J-Xmx1024m"
+# export OPTIONS="$OPTIONS -J-Xms50m -J-Xmx1024m"
 # export OPTIONS="$OPTIONS -J-Xms1100m -J-Xmx1100m -J-XX:+AlwaysPreTouch"
 
 # Increase virtual thread pool size
@@ -88,7 +88,7 @@ export OPTIONS="$OPTIONS -J-Xms50m -J-Xmx1024m"
 # export OPTIONS="$OPTIONS -J-Xint"
 
 # Setup GC
-export OPTIONS="$OPTIONS -J-XX:+UseG1GC"
+# export OPTIONS="$OPTIONS -J-XX:+UseG1GC"
 
 # Setup GC
 # export OPTIONS="$OPTIONS -J-XX:+UseZGC"
