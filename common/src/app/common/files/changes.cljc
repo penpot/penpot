@@ -804,3 +804,56 @@
   [_ _]
   nil)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Copies changes detection
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Analyze one change and checks if if modifies any shape belonging to
+;; a main or a copy. Return the ids of the mains or copies affected
+
+(defn- find-all-heads
+  "Go trough the parents and get all of them that are a head of a component."
+  [id objects]
+    (->> (cfh/get-parents-with-self objects id)
+         (filter ctk/instance-head?)))
+
+(defmulti heads-changed (fn [_ change] (:type change)))
+
+(defmethod heads-changed :mod-obj
+  [file-data {:keys [id page-id _component-id operations]}]
+  (when page-id
+    (let [page       (ctpl/get-page file-data page-id)
+          need-sync? (fn [operation]
+                       ; Check if the shape has changed any
+                       ; attribute that participates in components synchronization.
+                       (and (= (:type operation) :set)
+                            (get ctk/sync-attrs (:attr operation))))
+          any-sync? (some need-sync? operations)]
+      (when any-sync?
+        (find-all-heads id (:objects page))))))
+
+(defmethod heads-changed :mov-objects
+  [file-data {:keys [page-id _component-id parent-id shapes] :as change}]
+  (when page-id
+    (let [page  (ctpl/get-page file-data page-id)]
+      (concat
+       (find-all-heads parent-id (:objects page))
+       (mapcat #(find-all-heads (:parent-id %) (:objects page)) shapes)))))
+
+(defmethod heads-changed :add-obj
+  [file-data {:keys [parent-id page-id _component-id] :as change}]
+  (when page-id
+    (let [page (ctpl/get-page file-data page-id)]
+      (find-all-heads parent-id (:objects page)))))
+
+(defmethod heads-changed :del-obj
+  [file-data {:keys [id page-id _component-id] :as change}]
+  (when page-id
+    (let [page (ctpl/get-page file-data page-id)]
+      (find-all-heads id (:objects page)))))
+
+(defmethod heads-changed :default
+  [_ _]
+  nil)
+
+
