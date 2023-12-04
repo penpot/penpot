@@ -1,8 +1,4 @@
 {:deps {:aliases [:dev]}
- ;; :http {:port 3448}
- ;; :nrepl {:port 3447}
- :jvm-opts ["-Xmx700m" "-Xms100m" "-XX:+UseSerialGC" "-XX:-OmitStackTraceInFastThrow"]
-
  :builds
  {:test
   {:target :node-test
