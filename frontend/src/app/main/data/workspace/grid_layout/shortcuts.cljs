@@ -8,7 +8,7 @@
   (:require
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.path :as drp]
+   [app.main.data.workspace.common :as dwc]
    [app.main.store :as st]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -32,19 +32,17 @@
           (rx/empty))))))
 
 (def shortcuts
-  {
-
-   :escape          {:tooltip (ds/esc)
+  {:escape          {:tooltip (ds/esc)
                      :command ["escape" "enter" "v"]
                      :fn #(st/emit! (esc-pressed))}
 
    :undo            {:tooltip (ds/meta "Z")
                      :command (ds/c-mod "z")
-                     :fn #(st/emit! (drp/undo-path))}
+                     :fn #(st/emit! dwc/undo)}
 
    :redo            {:tooltip (ds/meta "Y")
                      :command [(ds/c-mod "shift+z") (ds/c-mod "y")]
-                     :fn #(st/emit! (drp/redo-path))}
+                     :fn #(st/emit! dwc/redo)}
 
    ;; ZOOM
 
