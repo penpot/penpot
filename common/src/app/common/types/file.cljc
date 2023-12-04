@@ -180,7 +180,7 @@
   "Locate the near component in the local file or libraries, and retrieve the shape
    referenced by the instance shape."
   [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
-  (let [root-shape     (ctn/get-component-shape (:objects page) shape)
+  (let [root-shape     (ctn/get-copy-root (:objects page) shape)
         component-file (when root-shape
                          (if (= (:component-file root-shape) (:id file))
                            file
