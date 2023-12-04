@@ -1231,5 +1231,6 @@
               (update :shapes #(mapv ids-map %))))
         shape
         (-> shape
-            (update :layout-grid-cells update-vals do-remap-cells))]
+            (update :layout-grid-cells update-vals do-remap-cells)
+            (check-deassigned-cells))]
     shape))
