@@ -735,7 +735,7 @@ __metadata:
     luxon: "npm:^3.4.2"
     playwright: "npm:^1.37.1"
     raw-body: "npm:^2.5.2"
-    shadow-cljs: "npm:^2.25.10"
+    shadow-cljs: "npm:2.26.2"
     source-map-support: "npm:^0.5.21"
     xml-js: "npm:^1.6.11"
     xregexp: "npm:^5.1.1"
@@ -1842,7 +1842,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"shadow-cljs@npm:^2.25.10":
+"shadow-cljs@npm:2.26.2":
   version: 2.26.2
   resolution: "shadow-cljs@npm:2.26.2"
   dependencies:

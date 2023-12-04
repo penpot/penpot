@@ -15,7 +15,7 @@
 
   :dev
   {:extra-deps
-   {thheller/shadow-cljs {:mvn/version "2.25.10"}}}
+   {thheller/shadow-cljs {:mvn/version "2.26.2"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]}
