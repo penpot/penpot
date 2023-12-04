@@ -11,11 +11,11 @@ jobs:
       - image: cimg/redis:7.0.5
 
     working_directory: ~/repo
-    resource_class: large
+    resource_class: medium+
 
     environment:
-      # Customize the JVM maximum heap limit
-      JVM_OPTS: -Xmx4g
+      JAVA_OPTS: -Xmx4g -Xms100m -XX:+UseSerialGC
+      NODE_OPTIONS: --max-old-space-size=4096
 
     steps:
       - checkout
@@ -72,21 +72,12 @@ jobs:
             yarn test
             clojure -X:dev:test :patterns '["common-tests.*-test"]'
 
-          environment:
-            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
-            JVM_OPTS: -Xmx4g
-            NODE_OPTIONS: --max-old-space-size=4096
-
       - run:
           name: "frontend tests"
           working_directory: "./frontend"
           command: |
             yarn install
             yarn test
-
-          environment:
-            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
-            NODE_OPTIONS: --max-old-space-size=4096
 
       - run:
           name: "backend tests"
@@ -99,7 +90,6 @@ jobs:
             PENPOT_TEST_DATABASE_USERNAME: penpot_test
             PENPOT_TEST_DATABASE_PASSWORD: penpot_test
             PENPOT_TEST_REDIS_URI: "redis://localhost/1"
-            JVM_OPTS: -Xmx4g
 
       - save_cache:
          paths:
