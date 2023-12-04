@@ -177,9 +177,7 @@
      (f)))
 
   ([{:keys [::id ::cache ::mtx/metrics]} f executor]
-   (let [f (fn []
-             (let [f (px/wrap-bindings f)]
-               (p/await! (px/submit! executor f))))]
+   (let [f #(p/await! (px/submit! executor f))]
      (if (and cache id)
        (invoke! cache metrics id nil f)
        (f)))))
