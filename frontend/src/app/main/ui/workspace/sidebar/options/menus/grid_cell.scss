@@ -49,7 +49,6 @@
   .icon svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
-    fill: var(--icon-foreground);
   }
   .coord-input {
     @extend .input-element;

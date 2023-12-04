@@ -216,19 +216,21 @@
           (when (and (not multiple?) (= :auto cell-mode))
             [:div {:class (stl/css :row)}
              [:div {:class (stl/css :grid-coord-group)}
-              [:span {:class (stl/css :icon)} i/layout-rows]
+              [:span {:class (stl/css :icon)} i/flex-vertical-refactor]
               [:div {:class (stl/css :coord-input)}
                [:> numeric-input*
                 {:placeholder "--"
+                 :title "Column"
                  :on-click #(dom/select-target %)
                  :on-change (partial on-grid-coordinates :all :column)
                  :value column}]]]
 
              [:div {:class (stl/css :grid-coord-group)}
-              [:span {:class (stl/css :icon)} i/layout-columns]
+              [:span {:class (stl/css :icon)} i/flex-horizontal-refactor]
               [:div {:class (stl/css :coord-input)}
                [:> numeric-input*
                 {:placeholder "--"
+                 :title "Row"
                  :on-click #(dom/select-target %)
                  :on-change (partial on-grid-coordinates :all :row)
                  :value row}]]]])
