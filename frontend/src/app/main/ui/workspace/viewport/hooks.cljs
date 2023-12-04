@@ -183,7 +183,7 @@
          (mf/deps page-id)
          (fn [point]
            (let [zoom (mf/ref-val zoom-ref)
-                 rect (grc/center->rect point (/ 5 zoom) (/ 5 zoom))]
+                 rect (grc/center->rect point (/ 5 zoom))]
 
              (if (mf/ref-val hover-disabled-ref)
                (rx/of nil)
