@@ -393,6 +393,20 @@
 
         align-self         (:layout-item-align-self values)
 
+        title
+        (cond
+          (and is-layout-container? (not is-layout-child?))
+          "Flex board"
+
+          is-flex-parent?
+          "Flex element"
+
+          is-grid-parent?
+          "Grid element"
+
+          :else
+          "Layout element")
+
         set-align-self
         (mf/use-fn
          (mf/deps ids align-self)
@@ -490,43 +504,23 @@
         [:& title-bar {:collapsable? has-content?
                        :collapsed?   (not open?)
                        :on-collapsed toggle-content
-                       :title        (cond
-                                       (and is-layout-container? (not is-layout-child?))
-                                       "Flex board"
-
-                                       is-flex-parent?
-                                       "Flex element"
-
-                                       is-grid-parent?
-                                       "Grid element"
-
-                                       :else
-                                       "Layout element")
+                       :title        title
                        :class        (stl/css-case :title-spacing-layout-element true
-                                                   :title-spacing-empty (not has-content?))}
-
-         (when is-flex-parent?
-           [:div {:class (stl/css :position-options)}
-            [:& radio-buttons {:selected (if is-absolute?
-                                           "absolute"
-                                           "static")
-                               :on-change on-change-position
-                               :name "layout-style"
-                               :wide true}
-             [:& radio-button {:value "static"
-                               :id :static-position}]
-             [:& radio-button {:value "absolute"
-                               :id :absolute-position}]]])]]
+                                                   :title-spacing-empty (not has-content?))}]]
        (when open?
          [:div {:class (stl/css :flex-element-menu)}
-          [:div {:class (stl/css :first-row)}
-           [:& element-behaviour {:fill? is-layout-child?
-                                  :auto? is-layout-container?
-                                  :layout-item-v-sizing (or (:layout-item-v-sizing values) :fix)
-                                  :layout-item-h-sizing (or (:layout-item-h-sizing values) :fix)
-                                  :on-change-behaviour-h-refactor on-change-behaviour-h
-                                  :on-change-behaviour-v-refactor on-change-behaviour-v
-                                  :on-change on-change-behaviour}]
+          [:div {:class (stl/css :row)}
+           (when is-flex-parent?
+             [:div {:class (stl/css :position-options)}
+              [:& radio-buttons {:selected (if is-absolute? "absolute" "static")
+                                 :on-change on-change-position
+                                 :name "layout-style"
+                                 :wide true}
+               [:& radio-button {:value "static"
+                                 :id :static-position}]
+               [:& radio-button {:value "absolute"
+                                 :id :absolute-position}]]])
+
            (when is-absolute?
              [:div {:class (stl/css :z-index-wrapper)
                     :title "z-index"}
@@ -541,19 +535,28 @@
                 :nillable true
                 :value (:layout-item-z-index values)}]])]
 
+          [:div {:class (stl/css :row)}
+           [:& element-behaviour {:fill? is-layout-child?
+                                  :auto? is-layout-container?
+                                  :layout-item-v-sizing (or (:layout-item-v-sizing values) :fix)
+                                  :layout-item-h-sizing (or (:layout-item-h-sizing values) :fix)
+                                  :on-change-behaviour-h-refactor on-change-behaviour-h
+                                  :on-change-behaviour-v-refactor on-change-behaviour-v
+                                  :on-change on-change-behaviour}]]
+
           (when (and is-layout-child? is-flex-parent?)
-            [:div {:class (stl/css :second-row)}
+            [:div {:class (stl/css :row)}
              [:& align-self-row {:is-col? is-col?
                                  :align-self align-self
                                  :on-changer set-align-self-refactor}]])
 
           (when is-layout-child?
-            [:div {:class (stl/css :third-row)}
+            [:div {:class (stl/css :row)}
              [:& margin-section {:values values
                                  :change-margin-style change-margin-style
                                  :on-margin-change on-margin-change}]])
 
-          [:div {:class (stl/css :forth-row)}
+          [:div {:class (stl/css :row)}
            [:div {:class (stl/css :advanced-options)}
             (when (= (:layout-item-h-sizing values) :fill)
               [:div {:class (stl/css :horizontal-fill)}
