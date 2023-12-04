@@ -169,7 +169,7 @@
              :href thumbnail-uri
              :on-load on-load
              :on-error on-error
-             :style {:display (when-not ^boolean thumbnail? "none")}}]
+             :style {:display (when-not (and ^boolean thumbnail? ^boolean thumbnail-uri) "none")}}]
 
            ;; Render border around image when we are debugging
            ;; thumbnails.
