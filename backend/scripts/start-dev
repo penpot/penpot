@@ -23,6 +23,39 @@ export PENPOT_FLAGS="\
        disable-soft-file-schema-validation \
        disable-soft-file-validation";
 
+export OPTIONS="
+       -A:jmx-remote -A:dev \
+       -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
+       -J-Djdk.attach.allowAttachSelf \
+       -J-Dpolyglot.engine.WarnInterpreterOnly=false \
+       -J-Dlog4j2.configurationFile=log4j2.xml \
+       -J-XX:+EnableDynamicAgentLoading \
+       -J-XX:-OmitStackTraceInFastThrow \
+       -J-XX:+UnlockDiagnosticVMOptions \
+       -J-XX:+DebugNonSafepoints"
+
+# Setup HEAP
+# export OPTIONS="$OPTIONS -J-Xms50m -J-Xmx1024m"
+# export OPTIONS="$OPTIONS -J-Xms1100m -J-Xmx1100m -J-XX:+AlwaysPreTouch"
+
+# Increase virtual thread pool size
+# export OPTIONS="$OPTIONS -J-Djdk.virtualThreadScheduler.parallelism=16"
+
+# Disable C2 Compiler
+# export OPTIONS="$OPTIONS -J-XX:TieredStopAtLevel=1"
+
+# Disable all compilers
+# export OPTIONS="$OPTIONS -J-Xint"
+
+# Setup GC
+# export OPTIONS="$OPTIONS -J-XX:+UseG1GC"
+
+# Setup GC
+# export OPTIONS="$OPTIONS -J-XX:+UseZGC"
+
+# Enable ImageMagick v7.x support
+# export OPTIONS="-J-Dim4java.useV7=true $OPTIONS";
+
 
 # Initialize MINIO config
 mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin -q
@@ -45,7 +78,7 @@ if [ "$1" = "--watch" ]; then
 
     echo "Start Watch..."
 
-    clojure -A:dev -M -m app.main &
+    clojure $OPTIONS -A:dev -M -m app.main &
 
     npx nodemon \
         --watch src \
@@ -57,5 +90,6 @@ if [ "$1" = "--watch" ]; then
     wait;
 
 else
-    clojure -A:dev -M -m app.main;
+    set -x
+    clojure $OPTIONS -A:dev -M -m app.main;
 fi
