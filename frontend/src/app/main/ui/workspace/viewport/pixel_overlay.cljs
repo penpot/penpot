@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
@@ -33,7 +34,7 @@
   (let [image-nodes (dom/query-all svg-node "image:not([href^=data])")
         noop-fn     (constantly nil)]
     (if (empty? image-nodes)
-      (rx/of nil)
+      (rx/of svg-node)
       (->> (rx/from image-nodes)
            (rx/mapcat
             (fn [image]
@@ -43,7 +44,8 @@
                      (rx/mapcat wapi/read-file-as-data-url)
                      (rx/tap (fn [data]
                                (dom/set-attribute! image "href" data)))
-                     (rx/reduce noop-fn)))))))))
+                     (rx/reduce noop-fn)))))
+           (rx/map (fn [_] svg-node))))))
 
 (defn- svg-as-data-url
   "Transforms SVG as data-url resolving any blob, http or https url to
@@ -51,7 +53,11 @@
   [svg]
   (let [svg-clone (.cloneNode svg true)]
     (->> (resolve-svg-images! svg-clone)
-         (rx/map (fn [_] (dom/svg-node->data-uri svg-clone))))))
+         (rx/mapcat (fn [svg-node]
+                      (let [xml    (js/XMLSerializer.)
+                            xmlstr (.serializeToString xml svg-node)]
+                        (->> (rx/of xmlstr)
+                             (rx/map #(dm/str "data:image/svg+xml;charset=utf-8," (js/encodeURIComponent %))))))))))
 
 (defn format-viewbox [vbox]
   (str/join " " [(:x vbox 0)
