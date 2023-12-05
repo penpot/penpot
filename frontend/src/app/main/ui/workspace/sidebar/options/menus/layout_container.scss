@@ -222,14 +222,17 @@
   }
 
   .track-info-dir-icon {
+    cursor: pointer;
     border-radius: $br-8 0 0 $br-8;
     background-color: var(--input-background-color);
     padding: 0 $s-8;
-
     svg {
       @extend .button-icon;
       stroke: var(--icon-foreground);
       height: 100%;
+    }
+    &:hover svg {
+      stroke: var(--icon-foreground-hover);
     }
   }
 

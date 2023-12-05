@@ -957,7 +957,7 @@
     value))
 
 (mf/defc grid-track-info
-  [{:keys [is-col? type index column set-column-value set-column-type remove-element reorder-track hover-track]}]
+  [{:keys [is-col? type index column set-column-value set-column-type remove-element reorder-track hover-track on-select-track]}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
 
         drop-track
@@ -977,6 +977,13 @@
          (mf/deps type hover-track index)
          (fn []
            (hover-track type index false)))
+
+        handle-select-track
+        (mf/use-fn
+         (mf/deps on-select-track type index)
+         (fn []
+           (when on-select-track
+             (on-select-track type index))))
 
         [dprops dref]
         (h/use-sortable
@@ -998,7 +1005,8 @@
              :on-pointer-leave pointer-leave}
 
        [:div {:class (stl/css :track-info-container)}
-        [:div {:class (stl/css :track-info-dir-icon)}
+        [:div {:class (stl/css :track-info-dir-icon)
+               :on-click handle-select-track}
          (if is-col? i/flex-vertical-refactor i/flex-horizontal-refactor)]
 
         [:div {:class (stl/css :track-info-value)}
@@ -1057,7 +1065,8 @@
         i/minus]])))
 
 (mf/defc grid-columns-row
-  [{:keys [is-col? expanded? column-values toggle add-new-element set-column-value set-column-type remove-element reorder-track hover-track] :as props}]
+  [{:keys [is-col? expanded? column-values toggle add-new-element set-column-value set-column-type
+           remove-element reorder-track hover-track on-select-track] :as props}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
 
         column-num (count column-values)
@@ -1098,7 +1107,8 @@
                                   :set-column-type set-column-type
                                   :remove-element remove-element
                                   :reorder-track reorder-track
-                                  :hover-track hover-track}])]])]
+                                  :hover-track hover-track
+                                  :on-select-track on-select-track}])]])]
 
       [:div.grid-columns
        [:div.grid-columns-header
@@ -1119,7 +1129,8 @@
                                   :set-column-type set-column-type
                                   :remove-element remove-element
                                   :reorder-track reorder-track
-                                  :hover-track hover-track}])]])])))
+                                  :hover-track hover-track
+                                  :on-select-track on-select-track}])]])])))
 
 ;; LAYOUT COMPONENT
 
@@ -1695,6 +1706,12 @@
          (fn [type index hover?]
            (st/emit! (dwsl/hover-layout-track ids type index hover?))))
 
+        handle-select-track
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [type index]
+           (st/emit! (dwge/select-track-cells (first ids) type index))))
+
         set-column-value
         (mf/use-fn
          (mf/deps ids)
@@ -1720,7 +1737,7 @@
         handle-locate-grid
         (mf/use-callback
          (fn []
-           (st/emit! (dwge/locate-board (first ids)))))        ]
+           (st/emit! (dwge/locate-board (first ids)))))]
 
     (if new-css-system
       [:div {:class (stl/css :grid-layout-menu)}
@@ -1767,7 +1784,8 @@
                               :set-column-type set-column-type
                               :remove-element remove-element
                               :reorder-track reorder-track
-                              :hover-track hover-track}]
+                              :hover-track hover-track
+                              :on-select-track handle-select-track}]
 
         [:& grid-columns-row {:is-col? false
                               :expanded? @grid-rows-open?
@@ -1778,7 +1796,8 @@
                               :set-column-type set-column-type
                               :remove-element remove-element
                               :reorder-track reorder-track
-                              :hover-track hover-track}]]
+                              :hover-track hover-track
+                              :on-select-track handle-select-track}]]
        [:div {:class (stl/css :row)}
         [:& gap-section {:gap-selected? gap-selected?
                          :on-change set-gap
