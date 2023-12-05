@@ -947,15 +947,15 @@
                changes         (pcb/concat-changes library-changes file-changes)
 
 
-               find-heads (fn [change]
-                            (->> (ch/heads-changed file change)
+               find-frames (fn [change]
+                            (->> (ch/frames-changed file change)
                                  (map #(assoc %1 :page-id (:page-id change)))))
 
 
 
-               updated-copies (->> changes
+               updated-frames (->> changes
                                     :redo-changes
-                                    (mapcat find-heads)
+                                    (mapcat find-frames)
                                     distinct)]
 
            (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
@@ -967,8 +967,8 @@
             (when (seq (:redo-changes changes))
               (rx/of (dch/commit-changes (assoc changes ;; TODO a ver qué pasa con esto
                                                 :file-id file-id))))
-            (when-not (empty? updated-copies)
-              (->> (rx/from updated-copies)
+            (when-not (empty? updated-frames)
+              (->> (rx/from updated-frames)
                    (rx/mapcat (fn [shape]
                                 (rx/of
                                  (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")

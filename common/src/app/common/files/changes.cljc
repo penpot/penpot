@@ -809,17 +809,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Analyze one change and checks if if modifies any shape belonging to
-;; a main or a copy. Return the ids of the mains or copies affected
+;; frames. Return the ids of the frames affected
 
-(defn- find-all-heads
-  "Go trough the parents and get all of them that are a head of a component."
+(defn- parents-frames
+  "Go trough the parents and get all of them that are a frame."
   [id objects]
     (->> (cfh/get-parents-with-self objects id)
-         (filter ctk/instance-head?)))
+         (filter cfh/frame-shape?)))
 
-(defmulti heads-changed (fn [_ change] (:type change)))
+(defmulti frames-changed (fn [_ change] (:type change)))
 
-(defmethod heads-changed :mod-obj
+(defmethod frames-changed :mod-obj
   [file-data {:keys [id page-id _component-id operations]}]
   (when page-id
     (let [page       (ctpl/get-page file-data page-id)
@@ -830,29 +830,29 @@
                             (get ctk/sync-attrs (:attr operation))))
           any-sync? (some need-sync? operations)]
       (when any-sync?
-        (find-all-heads id (:objects page))))))
+        (parents-frames id (:objects page))))))
 
-(defmethod heads-changed :mov-objects
+(defmethod frames-changed :mov-objects
   [file-data {:keys [page-id _component-id parent-id shapes] :as change}]
   (when page-id
     (let [page  (ctpl/get-page file-data page-id)]
       (concat
-       (find-all-heads parent-id (:objects page))
-       (mapcat #(find-all-heads (:parent-id %) (:objects page)) shapes)))))
+       (parents-frames parent-id (:objects page))
+       (mapcat #(parents-frames (:parent-id %) (:objects page)) shapes)))))
 
-(defmethod heads-changed :add-obj
+(defmethod frames-changed :add-obj
   [file-data {:keys [parent-id page-id _component-id] :as change}]
   (when page-id
     (let [page (ctpl/get-page file-data page-id)]
-      (find-all-heads parent-id (:objects page)))))
+      (parents-frames parent-id (:objects page)))))
 
-(defmethod heads-changed :del-obj
+(defmethod frames-changed :del-obj
   [file-data {:keys [id page-id _component-id] :as change}]
   (when page-id
     (let [page (ctpl/get-page file-data page-id)]
-      (find-all-heads id (:objects page)))))
+      (parents-frames id (:objects page)))))
 
-(defmethod heads-changed :default
+(defmethod frames-changed :default
   [_ _]
   nil)
 
