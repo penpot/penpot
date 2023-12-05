@@ -201,18 +201,23 @@
   "Generate changes to remove the links between a shape and all its children
   with a component."
   [changes container shape-id]
-  (log/debug :msg "Detach instance" :shape-id shape-id :container (:id container))
-  (generate-detach-recursive changes container shape-id true))
+  (let [shape (ctn/get-shape container shape-id)]
+    (log/debug :msg "Detach instance" :shape-id shape-id :container (:id container))
+    (generate-detach-recursive changes container shape-id true (true? (:component-root shape)))))
 
 (defn- generate-detach-recursive
-  [changes container shape-id first]
+  [changes container shape-id first component-root?]
   (let [shape (ctn/get-shape container shape-id)]
     (if (and (ctk/instance-head? shape) (not first))
-      ;; Subinstances are not detached, but converted in top instances
-      (pcb/update-shapes changes [(:id shape)] #(assoc % :component-root true))
+      ;; Subinstances are not detached
+      (if component-root?
+        ;; if the original shape was component-root, the subinstances are converted in top instances
+        (pcb/update-shapes changes [(:id shape)] #(assoc % :component-root true))
+        changes)
+
       ;; Otherwise, detach the shape and all children
       (let [children-ids (:shapes shape)]
-        (reduce #(generate-detach-recursive %1 container %2 false)
+        (reduce #(generate-detach-recursive %1 container %2 false component-root?)
                 (pcb/update-shapes changes [(:id shape)] ctk/detach-shape)
                 children-ids)))))
 
