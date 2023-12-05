@@ -1070,13 +1070,18 @@
                                  (= ::watch-component-changes (ptk/type %)))))
 
             workspace-data-s
+            (->> (rx/from-atom refs/workspace-data {:emit-current-value? true})
+                 (rx/share))
+
+            workspace-buffer-s
             (->> (rx/concat
-                  (rx/of nil)
-                  (rx/from-atom refs/workspace-data {:emit-current-value? true}))
-                 ;; Need to get the file data before the change, so deleted shapes
-                 ;; still exist, for example
-                 (rx/buffer 3 1)
-                 (rx/filter (fn [[old-data]] (some? old-data))))
+                  (rx/take 1 workspace-data-s)
+                  (rx/take 1 workspace-data-s)
+                  workspace-data-s)
+                  ;; Need to get the file data before the change, so deleted shapes
+                  ;; still exist, for example. We initialize the buffer with three
+                  ;; copies of the initial state
+                 (rx/buffer 3 1))
 
             changes-s
             (->> stream
@@ -1106,7 +1111,7 @@
 
             changes-s
             (->> changes-s
-                 (rx/with-latest-from workspace-data-s)
+                 (rx/with-latest-from workspace-buffer-s)
                  (rx/mapcat check-changes)
                  (rx/share))
 
