@@ -174,7 +174,6 @@
 (defn adapt-objects-for-shape
   [objects object-id]
   (let [object   (get objects object-id)
-        _ (println "adapt-objects-for-shape" (get objects object-id))
         object   (cond->> object
                    (cfh/root? object)
                    (adapt-root-frame objects))
@@ -399,15 +398,11 @@
   [{:keys [component] :as props}]
   (let [name       (:name component)
         path       (:path component)
-        _ (println "component-symbol" (:main-instance-id component) (:id component))
         root-id    (or (:main-instance-id component)
-                     (:id component))
+                       (:id component))
         objects    (adapt-objects-for-shape (:objects component)
-                     root-id)
-        _ (println "(:objects component)" (:objects component))
+                                            root-id)
         root-shape (get objects root-id)
-        ;; TODO root-shape es nil?
-        _ (println "root-shape" root-shape)
         selrect    (:selrect root-shape)
 
         main-instance-id   (:main-instance-id component)
@@ -417,18 +412,18 @@
 
         vbox
         (format-viewbox
-          {:width (:width selrect)
-           :height (:height selrect)})
+         {:width (:width selrect)
+          :height (:height selrect)})
 
         group-wrapper
         (mf/use-memo
-          (mf/deps objects)
-          (fn [] (group-wrapper-factory objects)))
+         (mf/deps objects)
+         (fn [] (group-wrapper-factory objects)))
 
         frame-wrapper
         (mf/use-memo
-          (mf/deps objects)
-          (fn [] (frame-wrapper-factory objects)))]
+         (mf/deps objects)
+         (fn [] (frame-wrapper-factory objects)))]
 
     [:> "symbol" #js {:id (str root-id)
                       :viewBox vbox

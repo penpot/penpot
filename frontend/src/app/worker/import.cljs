@@ -116,10 +116,9 @@
         set-id
         (fn [id-mapping id]
           (assert (uuid? id) (str id))
-          (let [kk (uuid/next)]
-            (cond-> id-mapping
-              (nil? (resolve id-mapping id))
-              (assoc id kk))))]
+          (cond-> id-mapping
+            (nil? (resolve id-mapping id))
+            (assoc id (uuid/next))))]
 
     (fn [id]
       (when (some? id)
