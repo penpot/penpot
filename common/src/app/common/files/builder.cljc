@@ -67,7 +67,6 @@
 
 (defn- lookup-objects
   ([file]
-   (println "def lookup-objects" (:current-component-id file) (dm/get-in file [:data :components  (:current-component-id file) :objects]))
    (if (and
          (some? (:current-component-id file))
          #_(not (contains? (:features file) "components/v2")))
@@ -75,7 +74,6 @@
      (dm/get-in file [:data :pages-index (:current-page-id file) :objects]))))
 
 (defn lookup-shape [file shape-id]
-  (println "lookup-shape" shape-id)
   (-> (lookup-objects file)
       (get shape-id)))
 
@@ -182,12 +180,6 @@
                 ;; TODO, v2?
                 #_(assoc :component-id (or (:shape-ref data) (:id data)))
                 )]
-    (println "add-artboard" (:name data) (:id data) (:shape-ref data) (:id obj))
-    ;; (println "data" data)
-    ;; (println "(:component-root data)" (:component-root data))
-    ;; (println "(:component-id data)" (:component-id data))
-    
-    ;; (println "obj" obj)
     (-> file
         (commit-shape obj)
         (assoc :current-frame-id (:id obj))
@@ -535,17 +527,9 @@
 
          ;; TODO: en :workspace-data :components ... aparece un :objects
          obj   (-> (cts/setup-shape attrs)
-                   (check-name file root-type))
-         
-         ;; TODO: V2 los ids de componente no tienen porqué coincidir
-         kk (:id data) #_(:id data)
-         
-        ;;  _ (println "kk" kk)
-         ]
+                   (check-name file root-type))]
 
-      (println "::::::::::(:id obj)" name (:id obj) (:id data))
-    ;;  (println "::::::::::shapes" obj)
-     (println "start-component  id" kk "main-instance-id" main-instance-id)
+      
      (-> file
          (commit-change
            {:type :add-component
@@ -570,8 +554,6 @@
   (let [component-id (:current-component-id file)
         component    (lookup-shape file component-id)
         children     (->> component :shapes (mapv #(lookup-shape file %)))
-
-        _ (println "finish-component " component-id component)
 
         file
         (cond
