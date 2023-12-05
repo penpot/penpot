@@ -67,9 +67,7 @@
 
 (defn- lookup-objects
   ([file]
-   (if (and
-         (some? (:current-component-id file))
-         #_(not (contains? (:features file) "components/v2")))
+   (if (some? (:current-component-id file))
      (dm/get-in file [:data :components  (:current-component-id file) :objects])
      (dm/get-in file [:data :pages-index (:current-page-id file) :objects]))))
 
@@ -505,7 +503,7 @@
   ([file data root-type]
    ;; FIXME: data probably can be a shape instance, then we can use gsh/shape->rect
    (let [selrect (or (grc/make-rect (:x data) (:y data) (:width data) (:height data))
-                   grc/empty-rect)
+                     grc/empty-rect)
          name               (:name data)
          path               (:path data)
          component-id       (:component-id data)
@@ -532,19 +530,18 @@
       
      (-> file
          (commit-change
-           {:type :add-component
-            :id component-id #_(:id obj)
-            :name name
-            :path path
-            :component-id component-id
-            :main-instance-id main-instance-id
-            :main-instance-page main-instance-page
-            :shapes [obj]}
-           #_{:add-container? true})
+            {:type :add-component
+             :id component-id #_(:id obj)
+             :name name
+             :path path
+             :component-id component-id
+             :main-instance-id main-instance-id
+             :main-instance-page main-instance-page
+             :shapes [obj]})
 
          (assoc :last-id (:id obj))
          (update :parent-stack conjv (:id obj))
-         (assoc :current-component-id component-id #_(:id obj))
+         (assoc :current-component-id component-id)
          (assoc :current-page-id main-instance-page)
          (assoc :current-frame-id (when (= (:type obj) :frame)
                                     (:id obj)))))))
@@ -559,43 +556,43 @@
         (cond
           (empty? children)
           (commit-change
-            file
-            {:type :del-component
-             :id component-id
-             :skip-undelete? true})
+           file
+           {:type :del-component
+            :id component-id
+            :skip-undelete? true})
 
           (:masked-group component)
           (let [mask (first children)]
             (commit-change
-              file
-              {:type :mod-obj
-               :id component-id
-               :operations
-               [{:type :set :attr :x :val (-> mask :selrect :x) :ignore-touched true}
-                {:type :set :attr :y :val (-> mask :selrect :y) :ignore-touched true}
-                {:type :set :attr :width :val (-> mask :selrect :width) :ignore-touched true}
-                {:type :set :attr :height :val (-> mask :selrect :height) :ignore-touched true}
-                {:type :set :attr :flip-x :val (-> mask :flip-x) :ignore-touched true}
-                {:type :set :attr :flip-y :val (-> mask :flip-y) :ignore-touched true}
-                {:type :set :attr :selrect :val (-> mask :selrect) :ignore-touched true}
-                {:type :set :attr :points :val (-> mask :points) :ignore-touched true}]}
+             file
+             {:type :mod-obj
+              :id component-id
+              :operations
+              [{:type :set :attr :x :val (-> mask :selrect :x) :ignore-touched true}
+               {:type :set :attr :y :val (-> mask :selrect :y) :ignore-touched true}
+               {:type :set :attr :width :val (-> mask :selrect :width) :ignore-touched true}
+               {:type :set :attr :height :val (-> mask :selrect :height) :ignore-touched true}
+               {:type :set :attr :flip-x :val (-> mask :flip-x) :ignore-touched true}
+               {:type :set :attr :flip-y :val (-> mask :flip-y) :ignore-touched true}
+               {:type :set :attr :selrect :val (-> mask :selrect) :ignore-touched true}
+               {:type :set :attr :points :val (-> mask :points) :ignore-touched true}]}
 
-              {:add-container? true}))
+             {:add-container? true}))
 
           (= (:type component) :group)
           (let [component' (gsh/update-group-selrect component children)]
             (commit-change
-              file
-              {:type :mod-obj
-               :id component-id
-               :operations
-               [{:type :set :attr :selrect :val (:selrect component') :ignore-touched true}
-                {:type :set :attr :points  :val (:points component') :ignore-touched true}
-                {:type :set :attr :x      :val (-> component' :selrect :x) :ignore-touched true}
-                {:type :set :attr :y      :val (-> component' :selrect :y) :ignore-touched true}
-                {:type :set :attr :width  :val (-> component' :selrect :width) :ignore-touched true}
-                {:type :set :attr :height :val (-> component' :selrect :height) :ignore-touched true}]}
-              {:add-container? true}))
+             file
+             {:type :mod-obj
+              :id component-id
+              :operations
+              [{:type :set :attr :selrect :val (:selrect component') :ignore-touched true}
+               {:type :set :attr :points  :val (:points component') :ignore-touched true}
+               {:type :set :attr :x      :val (-> component' :selrect :x) :ignore-touched true}
+               {:type :set :attr :y      :val (-> component' :selrect :y) :ignore-touched true}
+               {:type :set :attr :width  :val (-> component' :selrect :width) :ignore-touched true}
+               {:type :set :attr :height :val (-> component' :selrect :height) :ignore-touched true}]}
+             {:add-container? true}))
 
           :else file)]
 

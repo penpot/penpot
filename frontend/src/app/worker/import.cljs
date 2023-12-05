@@ -401,10 +401,10 @@
              ;; parallel upload until we resolve resource usage issues
              ;; on backend.
              (rx/mapcat
-               (fn [node]
-                 (->> (resolve-media context file-id node)
-                      (rx/map (fn [result]
-                                [node result])))))
+              (fn [node]
+                (->> (resolve-media context file-id node)
+                     (rx/map (fn [result]
+                               [node result])))))
              (rx/reduce conj {}))]
 
     (->> pre-process-images
@@ -424,7 +424,7 @@
                                (cip/find-node :g)
                                (cip/find-node :penpot:shape))
         old-id             (cip/get-id node)
-        component-id             (uuid (get-in shape [:attrs :penpot:component-id] ""))
+        component-id       (resolve (uuid (get-in shape [:attrs :penpot:component-id] "")))
         id                 (resolve old-id)
         path               (get-in node [:attrs :penpot:path] "")
         type               (cip/get-type content)
