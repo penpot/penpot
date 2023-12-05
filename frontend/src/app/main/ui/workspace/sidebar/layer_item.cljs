@@ -53,6 +53,7 @@
 
         selected?         (contains? selected id)
         highlighted?      (contains? highlighted id)
+
         container?        (or (cfh/frame-shape? item)
                               (cfh/group-shape? item))
         absolute?         (ctl/layout-absolute? item)
@@ -229,6 +230,7 @@
               :id id
               :class (stl/css-case
                       :layer-row true
+                      :highlight highlighted?
                       :component (some? (:component-id item))
                       :masked (:masked-group item)
                       :selected selected?
@@ -329,6 +331,7 @@
             (when-let [item (get objects id)]
               [:& layer-item
                {:item item
+                :highlighted highlighted
                 :selected selected
                 :index index
                 :objects objects

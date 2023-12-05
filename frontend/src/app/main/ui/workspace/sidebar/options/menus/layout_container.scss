@@ -224,7 +224,7 @@
   .track-info-dir-icon {
     border-radius: $br-8 0 0 $br-8;
     background-color: var(--input-background-color);
-    padding-left: $s-12;
+    padding: 0 $s-8;
 
     svg {
       @extend .button-icon;

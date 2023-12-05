@@ -311,11 +311,13 @@
     (update [_ state]
       (let [objects (wsh/lookup-page-objects state)
             shape (get objects (first ids))
-            highlighted (when hover?
-                          (->> (if (= type :row)
-                                 (ctl/shapes-by-row shape index)
-                                 (ctl/shapes-by-column shape index))
-                               (set)))]
+
+            highlighted
+            (when hover?
+              (->> (if (= type :row)
+                     (ctl/shapes-by-row shape index)
+                     (ctl/shapes-by-column shape index))
+                   (set)))]
         (cond-> state
           hover?
           (update-in [:workspace-grid-edition (first ids) :hover-track] (fnil conj #{}) [type index])

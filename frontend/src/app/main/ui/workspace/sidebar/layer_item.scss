@@ -139,6 +139,7 @@
       }
     }
   }
+  &.highlight,
   &:hover {
     --context-hover-color: var(--layer-row-foreground-color-hover);
     --context-hover-opacity: $op-10;
@@ -238,12 +239,14 @@
     .element-children {
       background-color: transparent;
       color: var(--layer-row-foreground-color-selected);
-      &:hover {
-        background-color: var(--layer-row-background-color-selected);
-      }
     }
+    &.highlight,
     &:hover {
       background-color: var(--layer-row-background-color-selected);
+
+      .element-children {
+        background-color: var(--layer-row-background-color-selected);
+      }
     }
   }
   &.type-comp {
@@ -295,6 +298,7 @@
           }
         }
       }
+      &.highlight,
       &:hover {
         .element-list-body {
           .button-content {
@@ -376,6 +380,7 @@
           }
         }
       }
+      &.highlight,
       &:hover {
         .element-list-body {
           .button-content {
@@ -404,6 +409,7 @@
         }
       }
     }
+    &.highlight,
     &:hover {
       .element-list-body {
         .button-content {
@@ -437,6 +443,8 @@
 }
 .parent-selected .layer-row {
   background-color: var(--layer-child-row-background-color);
+
+  &.highlight,
   &:hover {
     background-color: var(--layer-row-background-color-hover);
     &.hidden {
@@ -478,6 +486,7 @@
     .element-children :global(.layer-row) {
       background-color: transparent;
       color: var(--layer-row-foreground-color-hover);
+      &.highlight,
       &:hover {
         background-color: var(--layer-row-background-color-hover);
       }
