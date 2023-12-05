@@ -174,6 +174,7 @@
 (defn adapt-objects-for-shape
   [objects object-id]
   (let [object   (get objects object-id)
+        _ (println "adapt-objects-for-shape" (get objects object-id))
         object   (cond->> object
                    (cfh/root? object)
                    (adapt-root-frame objects))
@@ -403,9 +404,10 @@
                      (:id component))
         objects    (adapt-objects-for-shape (:objects component)
                      root-id)
-        _ (println "objects" objects)
+        _ (println "(:objects component)" (:objects component))
         root-shape (get objects root-id)
         ;; TODO root-shape es nil?
+        _ (println "root-shape" root-shape)
         selrect    (:selrect root-shape)
 
         main-instance-id   (:main-instance-id component)

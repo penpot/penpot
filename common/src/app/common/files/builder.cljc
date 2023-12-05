@@ -67,13 +67,15 @@
 
 (defn- lookup-objects
   ([file]
+   (println "def lookup-objects" (:current-component-id file) (dm/get-in file [:data :components  (:current-component-id file) :objects]))
    (if (and
          (some? (:current-component-id file))
-         (not (contains? (:features file) "components/v2")))
+         #_(not (contains? (:features file) "components/v2")))
      (dm/get-in file [:data :components  (:current-component-id file) :objects])
      (dm/get-in file [:data :pages-index (:current-page-id file) :objects]))))
 
 (defn lookup-shape [file shape-id]
+  (println "lookup-shape" shape-id)
   (-> (lookup-objects file)
       (get shape-id)))
 
@@ -178,9 +180,13 @@
   (let [obj (-> (cts/setup-shape (assoc data :type :frame))
                 (check-name file :frame)
                 ;; TODO, v2?
-                (assoc :component-id (or (:shape-ref data) (:id data)))
+                #_(assoc :component-id (or (:shape-ref data) (:id data)))
                 )]
-    (println "add-artboard" (:name data) (:id data) (:shape-ref data))
+    (println "add-artboard" (:name data) (:id data) (:shape-ref data) (:id obj))
+    ;; (println "data" data)
+    ;; (println "(:component-root data)" (:component-root data))
+    ;; (println "(:component-id data)" (:component-id data))
+    
     ;; (println "obj" obj)
     (-> file
         (commit-shape obj)
@@ -510,6 +516,7 @@
                    grc/empty-rect)
          name               (:name data)
          path               (:path data)
+         component-id       (:component-id data)
          main-instance-id   (:main-instance-id data)
          main-instance-page (:main-instance-page data)
          attrs (-> data
@@ -520,6 +527,7 @@
                    (assoc :height (:height selrect))
                    (assoc :selrect selrect)
                    (dissoc :path)
+                   (dissoc :component-id)
                    (dissoc :main-instance-id)
                    (dissoc :main-instance-page)
                    (dissoc :main-instance-x)
@@ -527,17 +535,24 @@
 
          ;; TODO: en :workspace-data :components ... aparece un :objects
          obj   (-> (cts/setup-shape attrs)
-                   (check-name file root-type))]
+                   (check-name file root-type))
+         
+         ;; TODO: V2 los ids de componente no tienen porqué coincidir
+         kk (:id data) #_(:id data)
+         
+        ;;  _ (println "kk" kk)
+         ]
 
-     (println "::::::::::(:id obj)" name (:id obj))
-     (println "::::::::::shapes" obj)
+      (println "::::::::::(:id obj)" name (:id obj) (:id data))
+    ;;  (println "::::::::::shapes" obj)
+     (println "start-component  id" kk "main-instance-id" main-instance-id)
      (-> file
          (commit-change
            {:type :add-component
-            :id (:id obj)
+            :id component-id #_(:id obj)
             :name name
             :path path
-            ;; :component-id (:id obj)
+            :component-id component-id
             :main-instance-id main-instance-id
             :main-instance-page main-instance-page
             :shapes [obj]}
@@ -545,7 +560,7 @@
 
          (assoc :last-id (:id obj))
          (update :parent-stack conjv (:id obj))
-         (assoc :current-component-id (:id obj))
+         (assoc :current-component-id component-id #_(:id obj))
          (assoc :current-page-id main-instance-page)
          (assoc :current-frame-id (when (= (:type obj) :frame)
                                     (:id obj)))))))
@@ -556,47 +571,49 @@
         component    (lookup-shape file component-id)
         children     (->> component :shapes (mapv #(lookup-shape file %)))
 
+        _ (println "finish-component " component-id component)
+
         file
         (cond
           (empty? children)
           (commit-change
-           file
-           {:type :del-component
-            :id component-id
-            :skip-undelete? true})
+            file
+            {:type :del-component
+             :id component-id
+             :skip-undelete? true})
 
           (:masked-group component)
           (let [mask (first children)]
             (commit-change
-             file
-             {:type :mod-obj
-              :id component-id
-              :operations
-              [{:type :set :attr :x :val (-> mask :selrect :x) :ignore-touched true}
-               {:type :set :attr :y :val (-> mask :selrect :y) :ignore-touched true}
-               {:type :set :attr :width :val (-> mask :selrect :width) :ignore-touched true}
-               {:type :set :attr :height :val (-> mask :selrect :height) :ignore-touched true}
-               {:type :set :attr :flip-x :val (-> mask :flip-x) :ignore-touched true}
-               {:type :set :attr :flip-y :val (-> mask :flip-y) :ignore-touched true}
-               {:type :set :attr :selrect :val (-> mask :selrect) :ignore-touched true}
-               {:type :set :attr :points :val (-> mask :points) :ignore-touched true}]}
+              file
+              {:type :mod-obj
+               :id component-id
+               :operations
+               [{:type :set :attr :x :val (-> mask :selrect :x) :ignore-touched true}
+                {:type :set :attr :y :val (-> mask :selrect :y) :ignore-touched true}
+                {:type :set :attr :width :val (-> mask :selrect :width) :ignore-touched true}
+                {:type :set :attr :height :val (-> mask :selrect :height) :ignore-touched true}
+                {:type :set :attr :flip-x :val (-> mask :flip-x) :ignore-touched true}
+                {:type :set :attr :flip-y :val (-> mask :flip-y) :ignore-touched true}
+                {:type :set :attr :selrect :val (-> mask :selrect) :ignore-touched true}
+                {:type :set :attr :points :val (-> mask :points) :ignore-touched true}]}
 
-             {:add-container? true}))
+              {:add-container? true}))
 
           (= (:type component) :group)
           (let [component' (gsh/update-group-selrect component children)]
             (commit-change
-             file
-             {:type :mod-obj
-              :id component-id
-              :operations
-              [{:type :set :attr :selrect :val (:selrect component') :ignore-touched true}
-               {:type :set :attr :points  :val (:points component') :ignore-touched true}
-               {:type :set :attr :x      :val (-> component' :selrect :x) :ignore-touched true}
-               {:type :set :attr :y      :val (-> component' :selrect :y) :ignore-touched true}
-               {:type :set :attr :width  :val (-> component' :selrect :width) :ignore-touched true}
-               {:type :set :attr :height :val (-> component' :selrect :height) :ignore-touched true}]}
-             {:add-container? true}))
+              file
+              {:type :mod-obj
+               :id component-id
+               :operations
+               [{:type :set :attr :selrect :val (:selrect component') :ignore-touched true}
+                {:type :set :attr :points  :val (:points component') :ignore-touched true}
+                {:type :set :attr :x      :val (-> component' :selrect :x) :ignore-touched true}
+                {:type :set :attr :y      :val (-> component' :selrect :y) :ignore-touched true}
+                {:type :set :attr :width  :val (-> component' :selrect :width) :ignore-touched true}
+                {:type :set :attr :height :val (-> component' :selrect :height) :ignore-touched true}]}
+              {:add-container? true}))
 
           :else file)]
 

@@ -111,14 +111,17 @@
         resolve
         (fn [id-mapping id]
           (assert (uuid? id) (str id))
-          (get id-mapping id))
+          #_(println "get "id ":"(get id-mapping id))
+          #_(get id-mapping id)
+          id)
 
         set-id
         (fn [id-mapping id]
           (assert (uuid? id) (str id))
-          (cond-> id-mapping
-            (nil? (resolve id-mapping id))
-            (assoc id (uuid/next))))]
+          (let [kk (uuid/next)]
+            (cond-> id-mapping
+              (nil? (resolve id-mapping id))
+              (assoc id kk))))]
 
     (fn [id]
       (when (some? id)
@@ -278,6 +281,9 @@
                                (assoc :id (resolve old-id)))
                              (cond-> (< (:version context 1) 2)
                                (translate-frame type file)))]
+
+        (println "process-import-node" (:id data))
+        
         (try
           (let [file (case type
                        :frame    (fb/add-artboard   file data)
@@ -419,7 +425,18 @@
   (let [resolve            (:resolve context)
         content            (cip/find-node node :g)
         file-id            (:id file)
+        shape              (-> node
+                               (cip/find-node :g)
+                               (cip/find-node :penpot:shape))
+
+        _ (println "111111")
         old-id             (cip/get-id node)
+
+        component-id             (uuid (get-in shape [:attrs :penpot:component-id] ""))
+        _ (println "old-id" (get-in shape [:attrs :penpot:component-id] ""))
+        _ (println "old-id" shape)
+
+        _ (println "---------------------------->import-component node" "old-id" (cip/get-id node) "id" (resolve old-id))
         id                 (resolve old-id)
         path               (get-in node [:attrs :penpot:path] "")
         type               (cip/get-type content)
@@ -428,17 +445,27 @@
         data               (-> (cip/parse-data type content)
                                (assoc :path path)
                                (assoc :id id)
+                               (assoc :component-id component-id)
                                (assoc :main-instance-id main-instance-id)
                                (assoc :main-instance-page main-instance-page))
 
+        _ (println "fb/start-component" (:id data))
         file               (-> file
                                (fb/start-component data type)
                                (assoc :features (into #{} (:features context))))
-        children           (cip/node-seq node)]
+        children           (cip/node-seq node)
+        ;; _ (println ":::::::::::::::::::::::::" )
+        ;; _ (println ":::::::::::::::::::::::::")
+        ;; _ (println ":::::::::::::::::::::::::")
+        ;; _ (println ":::::::::::::::::::::::::" children)
+        ]
     (->> (rx/from children)
          (rx/filter cip/shape?)
          (rx/skip 1)       ;; Skip the outer component and the respective closint tag
          (rx/skip-last 1)  ;; because they are handled in start-component an finish-component
+        ;;  (rx/tap (fn [kk]
+        ;;            (println ":::::" kk)))
+
          (rx/mapcat (partial resolve-media context file-id))
          (rx/reduce (partial process-import-node context) file)
          (rx/map fb/finish-component))))
