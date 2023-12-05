@@ -1375,12 +1375,7 @@
         handle-open-grid-help
         (mf/use-callback
          (fn []
-           (st/emit! (dom/open-new-window cf/grid-help-uri))))
-
-        handle-locate-grid
-        (mf/use-callback
-         (fn []
-           (st/emit! (dwge/locate-board (first ids)))))]
+           (st/emit! (dom/open-new-window cf/grid-help-uri))))]
 
     (if new-css-system
       [:div {:class (stl/css :element-set)}
@@ -1480,11 +1475,7 @@
                                      :set-justify set-justify-grid}]
                [:& justify-grid-row {:is-col? false
                                      :justify-items grid-justify-content-row
-                                     :set-justify set-justify-grid}]
-
-               [:button {:on-click handle-locate-grid
-                         :class (stl/css :locate-button)}
-                i/locate-refactor]]]
+                                     :set-justify set-justify-grid}]]]
              nil)))]
 
       [:div.element-set
