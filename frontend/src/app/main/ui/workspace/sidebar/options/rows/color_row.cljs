@@ -42,7 +42,7 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [index color disable-gradient disable-opacity on-change
+  [{:keys [index color disable-gradient disable-opacity disable-image on-change
            on-reorder on-detach on-open on-close title on-remove
            disable-drag on-focus on-blur select-only select-on-focus]}]
   (let [new-css-system  (mf/use-ctx ctx/new-css-system)
@@ -130,7 +130,7 @@
 
         handle-click-color
         (mf/use-fn
-         (mf/deps disable-gradient disable-opacity on-change on-close on-open)
+         (mf/deps disable-gradient disable-opacity disable-image on-change on-close on-open)
          (fn [color event]
            (let [color (cond
                          multiple-colors?
@@ -149,6 +149,7 @@
                         :y y
                         :disable-gradient disable-gradient
                         :disable-opacity disable-opacity
+                        :disable-image disable-image
                         ;; on-change second parameter means if the source is the color-picker
                         :on-change #(on-change (merge uc/empty-color %) true)
                         :on-close (fn [value opacity id file-id]
