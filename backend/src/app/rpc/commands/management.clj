@@ -19,8 +19,9 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.binfile :as binfile]
+   [app.rpc.commands.files :as files]
    [app.rpc.commands.projects :as proj]
-   [app.rpc.commands.teams :as teams :refer [create-project-role create-project]]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.setup :as-alias setup]
    [app.setup.templates :as tmpl]
@@ -106,22 +107,23 @@
 
           (update-fdata [fdata new-id]
             (-> fdata
-                (blob/decode)
                 (assoc :id new-id)
                 (pmg/migrate-data)
                 (update :pages-index relink-shapes)
                 (update :components relink-shapes)
                 (update :media relink-media)
                 (d/without-nils)
-                (feat.fdata/process-pointers pmap/clone)
-                (blob/encode)))]
+                (feat.fdata/process-pointers pmap/clone)))]
 
     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
-              pmap/*tracked* (pmap/create-tracked)]
+              pmap/*tracked* (pmap/create-tracked)
+              cfeat/*new*    (atom #{})]
       (let [new-id (get index id)
             file   (-> file
                        (assoc :id new-id)
-                       (update :data update-fdata new-id))]
+                       (update :data update-fdata new-id)
+                       (update :features into (deref cfeat/*new*))
+                       (update :features cfeat/migrate-legacy-features))]
         (feat.fdata/persist-pointers! cfg new-id)
         file))))
 
@@ -185,7 +187,11 @@
 
         file    (process-file cfg index file)]
 
-    (db/insert! conn :file file)
+    (db/insert! conn :file
+                (-> file
+                    (update :features #(db/create-array conn "text" %))
+                    (update :data blob/encode)))
+
     (db/insert! conn :file-profile-rel
                 {:file-id (:id file)
                  :profile-id profile-id
@@ -203,16 +209,13 @@
 
 (defn duplicate-file
   [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id] :as params}]
-  (let [file   (db/get-by-id conn :file file-id)
+  (let [;; We don't touch the original file on duplication
+        file   (files/get-file cfg file-id :migrate? false)
         index  {file-id (uuid/next)}
         params (assoc params :index index :file file)]
     (proj/check-edition-permissions! conn profile-id (:project-id file))
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
-
-    ;; FIXME: why we decode the data here?
-    (-> (duplicate-file* cfg params {:reset-shared-flag true})
-        (update :data blob/decode)
-        (update :features db/decode-pgarray #{}))))
+    (duplicate-file* cfg params {:reset-shared-flag true})))
 
 ;; --- COMMAND: Duplicate Project
 
@@ -259,8 +262,8 @@
 
     ;; create the duplicated project and assign the current profile as
     ;; a project owner
-    (create-project conn project)
-    (create-project-role conn profile-id (:id project) :owner)
+    (teams/create-project conn project)
+    (teams/create-project-role conn profile-id (:id project) :owner)
 
     ;; duplicate all files
     (let [index  (reduce #(assoc %1 (:id %2) (uuid/next)) {} files)
@@ -269,7 +272,7 @@
                      (assoc :project-id (:id project))
                      (assoc :index index))]
       (doseq [{:keys [id]} files]
-        (let [file   (db/get-by-id conn :file id)
+        (let [file   (files/get-file cfg id :migrate? false)
               params (assoc params :file file)
               opts   {:reset-shared-flag false}]
           (duplicate-file* cfg params opts))))
