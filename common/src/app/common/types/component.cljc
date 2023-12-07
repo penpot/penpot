@@ -62,6 +62,8 @@
    :constraints-h           :constraints-group
    :constraints-v           :constraints-group
    :fixed-scroll            :constraints-group
+   :bool-type               :bool-group
+   :bool-content            :bool-group
    :exports                 :exports-group
    :grids                   :grids-group
 
