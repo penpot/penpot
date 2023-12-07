@@ -1391,7 +1391,18 @@
            [:div {:class (stl/css :title-actions)}
             [:button {:class (stl/css :remove-layout)
                       :on-click on-remove-layout}
-             i/remove-refactor]]
+             i/remove-refactor]
+
+            (when ^boolean grid-enabled?
+              [:*
+               [:button {:class (stl/css :add-layout)
+                         :on-click handle-show-layout-dropdown}
+                i/menu-refactor]
+
+               [:& dropdown {:show show-layout-dropdown? :on-close handle-close-layout-options}
+                [:div {:class (stl/css :layout-options)}
+                 [:button {:class (stl/css :layout-option) :on-click set-flex} "Flex layout"]
+                 [:button {:class (stl/css :layout-option) :on-click set-grid} "Grid layout"]]]])]
 
            [:div {:class (stl/css :title-actions)}
             (if ^boolean grid-enabled?
