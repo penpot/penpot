@@ -15,7 +15,6 @@
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-fills shape-strokes]]
-   [app.main.ui.shapes.grid-layout-viewer :refer [grid-layout-viewer]]
    [app.util.debug :as dbg]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -165,7 +164,6 @@
     [props]
     (let [shape         (unchecked-get props "shape")
           childs        (unchecked-get props "childs")
-          is-component? (mf/use-ctx muc/is-component?)
           childs        (cond-> childs
                           (ctl/any-layout? shape)
                           (cfh/sort-layout-children-z-index))]
@@ -175,9 +173,5 @@
         (for [item childs]
           (let [id (dm/get-prop item :id)]
             (when (some? id)
-              [:& shape-wrapper {:key (dm/str id) :shape item}])))]
-
-       (when (and ^boolean is-component?
-                  ^boolean (empty? childs))
-         [:& grid-layout-viewer {:shape shape :childs childs}])])))
+              [:& shape-wrapper {:key (dm/str id) :shape item}])))]])))
 

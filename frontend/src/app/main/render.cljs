@@ -26,6 +26,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [app.config :as cfg]
    [app.main.fonts :as fonts]
    [app.main.ui.context :as muc]
@@ -34,6 +35,7 @@
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.export :as export]
    [app.main.ui.shapes.frame :as frame]
+   [app.main.ui.shapes.grid-layout-viewer :refer [grid-layout-viewer]]
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.path :as path]
@@ -304,11 +306,22 @@
             :fill "none"}
       [:& shape-wrapper {:shape frame}]]]))
 
+(mf/defc empty-grids
+  {::mf/wrap-props false}
+  [{:keys [root-shape-id objects]}]
+  (let [empty-grids
+        (->> (cons root-shape-id (cfh/get-children-ids objects root-shape-id))
+             (filter #(ctl/grid-layout? objects %))
+             (map #(get objects %))
+             (filter #(empty? (:shapes %))))]
+    (for [grid empty-grids]
+      [:& grid-layout-viewer {:shape grid :objects objects}])))
+
 ;; Component for rendering a thumbnail of a single componenent. Mainly
 ;; used to render thumbnails on assets panel.
 (mf/defc component-svg
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
-  [{:keys [objects root-shape zoom] :or {zoom 1} :as props}]
+  [{:keys [objects root-shape show-grids? zoom] :or {zoom 1} :as props}]
   (when root-shape
   (let [root-shape-id (:id root-shape)
         include-metadata (mf/use-ctx export/include-metadata-ctx)
@@ -350,9 +363,59 @@
            :xmlns:penpot (when include-metadata "https://penpot.app/xmlns")
            :fill "none"}
 
-     [:> shape-container {:shape root-shape'}
-      [:& (mf/provider muc/is-component?) {:value true}
-       [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]])))
+     [:*
+      [:> shape-container {:shape root-shape'}
+       [:& (mf/provider muc/is-component?) {:value true}
+        [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]
+
+      (when show-grids?
+        [:& empty-grids {:root-shape-id root-shape-id :objects objects}])]])))
+
+(mf/defc component-svg-thumbnail
+  {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
+  [{:keys [thumbnail-uri on-error show-grids?
+           objects root-shape zoom] :or {zoom 1} :as props}]
+
+  (when root-shape
+    (let [root-shape-id (:id root-shape)
+
+          vector
+          (mf/use-memo
+           (mf/deps (:x root-shape) (:y root-shape))
+           (fn []
+             (-> (gpt/point (:x root-shape) (:y root-shape))
+                 (gpt/negate))))
+
+          objects
+          (mf/use-memo
+           (mf/deps vector objects root-shape-id)
+           (fn []
+             (let [children-ids (cons root-shape-id (cfh/get-children-ids objects root-shape-id))
+                   update-fn    #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
+               (reduce update-fn objects children-ids))))
+
+          root-shape' (get objects root-shape-id)
+
+          width       (:width root-shape' 0)
+          height      (:height root-shape' 0)
+          width-zoom  (* (:width root-shape') zoom)
+          height-zoom (* (:height root-shape') zoom)
+          vbox        (format-viewbox {:width width :height height})]
+
+      [:svg {:view-box vbox
+             :width (ust/format-precision width-zoom viewbox-decimal-precision)
+             :height (ust/format-precision height-zoom viewbox-decimal-precision)
+             :version "1.1"
+             :xmlns "http://www.w3.org/2000/svg"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             :fill "none"}
+       [:foreignObject {:x 0 :y 0 :width width :height height }
+        [:img {:src thumbnail-uri
+               :on-error on-error
+               :loading "lazy"
+               :decoding "async"}]]
+       (when show-grids?
+         [:& empty-grids {:root-shape-id root-shape-id :objects objects}])])))
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
