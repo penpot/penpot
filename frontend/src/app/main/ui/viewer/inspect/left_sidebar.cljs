@@ -46,7 +46,7 @@
                         (make-collapsed-iref id))
 
         expanded? (not (mf/deref collapsed-iref))
-        absolute? (ctl/layout-absolute? item)
+        absolute? (ctl/item-absolute? item)
         toggle-collapse
         (fn [event]
           (dom/stop-propagation event)

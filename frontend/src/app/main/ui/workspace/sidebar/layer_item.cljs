@@ -56,7 +56,7 @@
 
         container?        (or (cfh/frame-shape? item)
                               (cfh/group-shape? item))
-        absolute?         (ctl/layout-absolute? item)
+        absolute?         (ctl/item-absolute? item)
 
         components-v2     (mf/use-ctx ctx/components-v2)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)

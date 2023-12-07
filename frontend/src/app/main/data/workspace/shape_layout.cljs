@@ -361,7 +361,7 @@
         all-children (->> parent
                           :shapes
                           (map (d/getf objects))
-                          (remove ctl/layout-absolute?))]
+                          (remove ctl/position-absolute?))]
 
     (cond-> shape
       ;; If the parent is hug width and the direction column

@@ -133,7 +133,7 @@ body {
                [:height height]]
 
         (or (not (ctl/any-layout-immediate-child? objects shape))
-            (not (ctl/layout-absolute? shape)))
+            (not (ctl/position-absolute? shape)))
         (conj [:position "relative"])))))
 
 (defn shape->wrapper-child-css-properties

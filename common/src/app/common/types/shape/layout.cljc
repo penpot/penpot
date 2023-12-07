@@ -491,11 +491,18 @@
 (defn align-self-stretch? [{:keys [layout-item-align-self]}]
   (= :stretch layout-item-align-self))
 
-(defn layout-absolute?
+(defn item-absolute?
   ([objects id]
-   (layout-absolute? (get objects id)))
+   (item-absolute? (get objects id)))
   ([shape]
    (true? (:layout-item-absolute shape))))
+
+(defn position-absolute?
+  ([objects id]
+   (position-absolute? (get objects id)))
+  ([shape]
+   (or (item-absolute? shape)
+       (:hidden shape))))
 
 (defn layout-z-index
   ([objects id]
@@ -509,11 +516,11 @@
        (auto-width? objects frame-id)
        (or (and (col? objects frame-id)
                 (->> children-ids
-                     (remove (partial layout-absolute? objects))
+                     (remove (partial position-absolute? objects))
                      (every? (partial fill-width? objects))))
            (and (row? objects frame-id)
                 (->> children-ids
-                     (remove (partial layout-absolute? objects))
+                     (remove (partial position-absolute? objects))
                      (some (partial fill-width? objects)))))))
 
 (defn change-v-sizing?
@@ -1169,7 +1176,7 @@
                   (update :shapes #(d/removev children %))
                   (assign-cells))
 
-        children (->> children (remove #(layout-absolute? objects %)))]
+        children (->> children (remove #(position-absolute? objects %)))]
 
     (-> frame
         (update :shapes d/concat-vec children)
