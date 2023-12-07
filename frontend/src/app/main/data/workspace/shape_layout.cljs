@@ -285,7 +285,7 @@
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn reorder-layout-track
-  [ids type from-index to-index]
+  [ids type from-index to-index move-content?]
   (assert (#{:row :column} type))
 
   (ptk/reify ::reorder-layout-track
@@ -297,8 +297,8 @@
                 ids
                 (fn [shape]
                   (case type
-                    :row    (ctl/reorder-grid-row shape from-index to-index)
-                    :column (ctl/reorder-grid-column shape from-index to-index))))
+                    :row    (ctl/reorder-grid-row shape from-index to-index move-content?)
+                    :column (ctl/reorder-grid-column shape from-index to-index move-content?))))
                (ptk/data-event :layout/update ids)
                (dwu/commit-undo-transaction undo-id))))))
 

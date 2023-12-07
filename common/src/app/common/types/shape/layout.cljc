@@ -705,8 +705,9 @@
         (update :layout-grid-cells update-cells)
         (assign-cells))))
 
-(defn- reorder-grid-track
-  [prop parent from-index to-index]
+(defn- reorder-grid-tracks
+  "Swap the positions of the tracks info"
+  [parent prop from-index to-index]
   (-> parent
       (update
        prop
@@ -720,13 +721,70 @@
                 (d/insert-at-index (inc to-index) [[nil tr]])
                 (d/vec-without-nils))))))))
 
+(defn- swap-track-content
+  "Swap the shapes contained in the given tracks moves as necessary the others."
+  [parent prop from-track to-track]
+  (let [remap-tracks
+        (cond
+          (> from-track to-track)
+          (into {from-track to-track}
+                (map #(vector % (inc %)))
+                (range to-track from-track))
+          (< from-track to-track)
+          (into {from-track to-track}
+                (map #(vector % (dec %)))
+                (range (inc from-track) (inc to-track))))]
+    (-> parent
+        (update
+         :layout-grid-cells
+         update-vals
+         (fn [cell] (update cell prop #(get remap-tracks % %)))))))
+
+(declare resize-cell-area)
+(declare cells-by-column)
+(declare cells-by-row)
+
+(defn- reorder-grid-track
+  [parent from-index to-index move-content? cells-by tracks-props prop prop-span]
+  (let [from-track (inc from-index)
+        to-track   (if (< to-index from-index)
+                     (+ to-index 2)
+                     (inc to-index))
+        move-content?
+        (and move-content? (not= from-track to-track))
+
+        parent
+        (if move-content?
+          (->> (concat (cells-by parent (dec from-track))
+                       (cells-by parent (dec to-track)))
+               (reduce (fn [parent cell]
+                         (cond-> parent
+                           (and (> (get cell prop-span) 1)
+                                (or (> to-track from-track) (not (= to-track (get cell prop))))
+                                (or (< to-track from-track) (not (= to-track (+ (get cell prop) (dec (get cell prop-span)))))))
+                           (resize-cell-area
+                            (:row cell)
+                            (:column cell)
+                            (:row cell)
+                            (:column cell)
+                            (if (= prop :row) 1 (:row-span cell))
+                            (if (= prop :column) 1 (:column-span cell)))))
+                       parent))
+          parent)
+
+        parent
+        (reorder-grid-tracks parent tracks-props from-index to-index)]
+    (cond-> parent
+      move-content?
+      (swap-track-content prop from-track to-track))))
+
 (defn reorder-grid-column
-  [parent from-index to-index]
-  (reorder-grid-track :layout-grid-columns parent from-index to-index))
+  [parent from-index to-index move-content?]
+  (reorder-grid-track parent from-index to-index move-content? cells-by-column :layout-grid-columns :column :column-span))
 
 (defn reorder-grid-row
-  [parent from-index to-index]
-  (reorder-grid-track :layout-grid-rows parent from-index to-index))
+  [parent from-index to-index move-content?]
+  (reorder-grid-track parent from-index to-index move-content? cells-by-row :layout-grid-rows :row :row-span))
 
 (defn cells-seq
   [{:keys [layout-grid-cells layout-grid-dir]} & {:keys [sort?] :or {sort? false}}]
@@ -992,9 +1050,8 @@
 (defn resize-cell-area
   "Increases/decreases the cell size"
   [parent row column new-row new-column new-row-span new-column-span]
-
-  (if (and (>= new-row 0)
-           (>= new-column 0)
+  (if (and (>= new-row 1)
+           (>= new-column 1)
            (>= new-row-span 1)
            (>= new-column-span 1))
     (let [prev-cell (cell-by-row-column parent row column)

@@ -24,10 +24,12 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -951,9 +953,9 @@
 (defn manage-values [{:keys [value type]}]
   (case type
     :auto "auto"
-    :percent (dm/str value "%")
-    :flex (dm/str value "fr")
-    :fixed (dm/str value "px")
+    :percent (fmt/format-percent value)
+    :flex    (fmt/format-frs value)
+    :fixed   (fmt/format-pixels value)
     value))
 
 (mf/defc grid-track-info
@@ -963,8 +965,8 @@
         drop-track
         (mf/use-fn
          (mf/deps type reorder-track index)
-         (fn [drop-position data]
-           (reorder-track type (:index data) (if (= :top drop-position) (dec index) index))))
+         (fn [drop-position data event]
+           (reorder-track type (:index data) (if (= :top drop-position) (dec index) index) (kbd/mod? event))))
 
         pointer-enter
         (mf/use-fn
@@ -1688,8 +1690,8 @@
         reorder-track
         (mf/use-fn
          (mf/deps ids)
-         (fn [type from-index to-index]
-           (st/emit! (dwsl/reorder-layout-track ids type from-index to-index))))
+         (fn [type from-index to-index move-content?]
+           (st/emit! (dwsl/reorder-layout-track ids type from-index to-index move-content?))))
 
         hover-track
         (mf/use-fn

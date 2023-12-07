@@ -21,6 +21,15 @@
        (let [percent-val (mth/precision (* value 100) precision)]
          (dm/str percent-val "%"))))))
 
+(defn format-frs
+  ([value]
+   (format-frs value nil))
+  ([value {:keys [precision] :or {precision 2}}]
+   (let [value (if (string? value) (d/parse-double value) value)]
+     (when (d/num? value)
+       (let [value (mth/precision value precision)]
+         (dm/str value "fr"))))))
+
 (defn format-number
   ([value]
    (format-number value nil))
