@@ -19,8 +19,8 @@
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as feat.fdata]
    [app.media :as media]
-   [app.rpc.commands.files :as files]
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
@@ -271,9 +271,9 @@
                             " limit 1;")
                   rows (db/exec! conn [sql file-id cursor])]
               [(some-> rows peek :created-at)
-               (mapcat (comp files/get-all-pointer-ids blob/decode :data) rows)]))]
+               (mapcat (comp feat.fdata/get-used-pointer-ids blob/decode :data) rows)]))]
 
-    (let [used (into (files/get-all-pointer-ids data)
+    (let [used (into (feat.fdata/get-used-pointer-ids data)
                      (d/iteration get-pointers-chunk
                                   :vf second
                                   :kf first
@@ -290,10 +290,10 @@
 
 (defn- process-file
   [{:keys [::db/conn] :as cfg} {:keys [id data revn modified-at features] :as file}]
-  (l/dbg :hint "processing file" :id id :modified-at modified-at)
+  (l/dbg :hint "processing file" :file-id (str id) :modified-at modified-at)
 
-  (binding [pmap/*load-fn* (partial files/load-pointer conn id)
-            pmap/*tracked* (atom {})]
+  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
+            pmap/*tracked* (pmap/create-tracked)]
     (let [data (-> (blob/decode data)
                    (assoc :id id)
                    (pmg/migrate-data))]
@@ -311,4 +311,4 @@
                   {:has-media-trimmed true}
                   {:id id})
 
-      (files/persist-pointers! conn id))))
+      (feat.fdata/persist-pointers! cfg id))))

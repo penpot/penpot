@@ -23,6 +23,7 @@
    [app.config :as cfg]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.features.fdata :as feat.fdata]
    [app.main :refer [system]]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-update :as files-update]
@@ -65,10 +66,10 @@
   "Get the migrated data of one file."
   [system id]
   (db/run! system
-           (fn [{:keys [::db/conn]}]
-             (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
-               (-> (files/get-file conn id)
-                   (files/process-pointers deref))))))
+           (fn [system]
+             (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
+               (-> (files/get-file system id)
+                   (update :data feat.fdata/process-pointers deref))))))
 
 (defn validate
   "Validate structure, referencial integrity and semantic coherence of
@@ -125,9 +126,9 @@
   The function receives the decoded and migrated file data."
   [system & {:keys [update-fn id rollback? migrate? inc-revn?]
              :or {rollback? true migrate? true inc-revn? true}}]
-  (letfn [(process-file [conn {:keys [features] :as file}]
-            (binding [pmap/*tracked* (atom {})
-                      pmap/*load-fn* (partial files/load-pointer conn id)
+  (letfn [(process-file [{:keys [::db/conn] :as system} {:keys [features] :as file}]
+            (binding [pmap/*tracked* (pmap/create-tracked)
+                      pmap/*load-fn* (partial feat.fdata/load-pointer system id)
                       cfeat/*wrap-with-pointer-map-fn*
                       (if (contains? features "fdata/pointer-map") pmap/wrap identity)
                       cfeat/*wrap-with-objects-map-fn*
@@ -145,7 +146,7 @@
                             {:id id}))
 
               (when (contains? (:features file) "fdata/pointer-map")
-                (files/persist-pointers! conn id))
+                (feat.fdata/persist-pointers! system id))
 
               (dissoc file :data)))]
 
@@ -153,8 +154,8 @@
                 (fn [{:keys [::db/conn] :as system}]
                   (binding [*conn* conn *system* system]
                     (try
-                      (->> (files/get-file conn id :migrate? migrate?)
-                           (process-file conn))
+                      (->> (files/get-file system id :migrate? migrate?)
+                           (process-file system))
                       (finally
                         (when rollback?
                           (db/rollback! conn)))))))))
@@ -187,17 +188,17 @@
             (println "unexpected exception happened on processing file: " (:id file))
             (strace/print-stack-trace cause))
 
-          (process-file [conn file-id]
-            (let [file (binding [pmap/*load-fn* (partial files/load-pointer conn file-id)]
-                         (-> (files/get-file conn file-id)
-                             (files/process-pointers deref)))
+          (process-file [{:keys [::db/conn] :as system} file-id]
+            (let [file (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system file-id)]
+                         (-> (files/get-file system file-id)
+                             (update :data feat.fdata/process-pointers deref)))
 
                   libs (when with-libraries?
                          (->> (files/get-file-libraries conn file-id)
                               (into [file] (map (fn [{:keys [id]}]
-                                                  (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
-                                                    (-> (files/get-file conn id)
-                                                        (files/process-pointers deref))))))
+                                                  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
+                                                    (-> (files/get-file system id)
+                                                        (update :data feat.fdata/process-pointers deref))))))
                               (d/index-by :id)))]
               (try
                 (if with-libraries?
@@ -211,7 +212,7 @@
                   (try
                     (binding [*conn* conn *system* system]
                       (when (fn? on-init) (on-init))
-                      (run! (partial process-file conn) (get-candidates conn)))
+                      (run! (partial process-file system) (get-candidates conn)))
                     (finally
                       (when (fn? on-end)
                         (ex/ignoring (on-end)))
@@ -252,11 +253,11 @@
             (println! "unexpected exception happened on processing file: " (:id file))
             (strace/print-stack-trace cause))
 
-          (process-file [conn file-id]
+          (process-file [system file-id]
             (try
-              (let [{:keys [features] :as file} (files/get-file conn file-id)]
-                (binding [pmap/*tracked* (atom {})
-                          pmap/*load-fn* (partial files/load-pointer conn file-id)
+              (let [{:keys [features] :as file} (files/get-file system file-id)]
+                (binding [pmap/*tracked* (pmap/create-tracked)
+                          pmap/*load-fn* (partial feat.fdata/load-pointer system file-id)
                           cfeat/*wrap-with-pointer-map-fn*
                           (if (contains? features "fdata/pointer-map") pmap/wrap identity)
                           cfeat/*wrap-with-objects-map-fn*
@@ -265,7 +266,7 @@
                   (on-file file)
 
                   (when (contains? features "fdata/pointer-map")
-                    (files/persist-pointers! conn file-id))))
+                    (feat.fdata/persist-pointers! system file-id))))
 
               (catch Throwable cause
                 ((or on-error on-error*) cause file-id))))
@@ -277,7 +278,7 @@
                             (loop [i 0]
                               (when-let [file-id (sp/take! in)]
                                 (println! "=> worker: index:" index "| loop:" i "| file:" (str file-id) "|" (px/get-name))
-                                (process-file conn file-id)
+                                (process-file system file-id)
                                 (recur (inc i)))))
 
                           (when rollback?
