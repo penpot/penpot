@@ -29,7 +29,7 @@
 
 (defn- get-view-only-bundle
   [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id ::perms] :as params}]
-  (let [file    (files/get-file conn file-id)
+  (let [file    (files/get-file cfg file-id)
 
         project (db/get conn :project
                         {:id (:project-id file)}

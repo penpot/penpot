@@ -21,8 +21,8 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.features.components-v2 :as features.components-v2]
-   [app.features.fdata :as features.fdata]
+   [app.features.components-v2 :as feat.compv2]
+   [app.features.fdata :as feat.fdata]
    [app.http.sse :as sse]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
@@ -305,25 +305,21 @@
 
 (defn- get-files
   [cfg ids]
-  (letfn [(get-files* [{:keys [::db/conn]}]
-            (let [sql (str "SELECT id FROM file "
-                           " WHERE id = ANY(?) ")
-                  ids (db/create-array conn "uuid" ids)]
-              (->> (db/exec! conn [sql ids])
-                   (into [] (map :id))
-                   (not-empty))))]
-
-    (db/run! cfg get-files*)))
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (let [sql (str "SELECT id FROM file "
+                                " WHERE id = ANY(?) ")
+                       ids (db/create-array conn "uuid" ids)]
+                   (->> (db/exec! conn [sql ids])
+                        (into [] (map :id))
+                        (not-empty))))))
 
 (defn- get-file
   [cfg file-id]
-  (letfn [(get-file* [{:keys [::db/conn]}]
-            (binding [pmap/*load-fn* (partial files/load-pointer conn file-id)]
-              (some-> (db/get* conn :file {:id file-id} {::db/remove-deleted? false})
-                      (files/decode-row)
-                      (files/process-pointers deref))))]
-
-    (db/run! cfg get-file*)))
+  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                 (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+                   (some-> (db/get* conn :file {:id file-id} {::db/remove-deleted? false})
+                           (files/decode-row)
+                           (update :data feat.fdata/process-pointers deref))))))
 
 (defn- get-file-media
   [{:keys [::db/pool]} {:keys [data id] :as file}]
@@ -666,9 +662,9 @@
         (doseq [[feature file-id] (-> *state* deref :pending-to-migrate)]
           (case feature
             "components/v2"
-            (features.components-v2/migrate-file! options file-id
-                                                  :validate? validate?
-                                                  :throw-on-validate? true)
+            (feat.compv2/migrate-file! options file-id
+                                       :validate? validate?
+                                       :throw-on-validate? true)
 
             "fdata/shape-data-type"
             nil
@@ -702,11 +698,11 @@
   (cond-> file
     (and (contains? cfeat/*current* "fdata/objects-map")
          (not (contains? cfeat/*previous* "fdata/objects-map")))
-    (features.fdata/enable-objects-map)
+    (feat.fdata/enable-objects-map)
 
     (and (contains? cfeat/*current* "fdata/pointer-map")
          (not (contains? cfeat/*previous* "fdata/pointer-map")))
-    (features.fdata/enable-pointer-map)))
+    (feat.fdata/enable-pointer-map)))
 
 (defn- get-remaped-thumbnails
   [thumbnails file-id]
@@ -717,7 +713,7 @@
         thumbnails))
 
 (defmethod read-section :v1/files
-  [{:keys [::db/conn ::input ::project-id ::enabled-features ::timestamp ::overwrite?]}]
+  [{:keys [::db/conn ::input ::project-id ::enabled-features ::timestamp ::overwrite?] :as system}]
 
   (doseq [expected-file-id (-> *state* deref :files)]
     (let [file       (read-obj! input)
@@ -773,7 +769,6 @@
                 cfeat/*previous* (:features file)
                 pmap/*tracked* (atom {})]
 
-
         (let [params (-> file
                          (assoc :id file-id')
                          (assoc :features features)
@@ -821,7 +816,7 @@
             (create-or-update-file! conn params)
             (db/insert! conn :file params))
 
-          (files/persist-pointers! conn file-id')
+          (feat.fdata/persist-pointers! system file-id')
 
           (when overwrite?
             (db/delete! conn :file-thumbnail {:file-id file-id'}))
