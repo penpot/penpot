@@ -253,8 +253,9 @@
         single?   (= (count shapes) 1)
         do-create-artboard-from-selection #(st/emit! (dwsh/create-artboard-from-selection))
 
-        has-frame? (->> shapes (d/seek cfh/frame-shape?))
-        has-group? (->> shapes (d/seek cfh/group-shape?))
+        ;; components can't be ungrouped
+        has-frame? (->> shapes (d/seek #(and (cfh/frame-shape? %) (not (ctk/instance-head? %)))))
+        has-group? (->> shapes (d/seek #(and (cfh/group-shape? %) (not (ctk/instance-head? %)))))
         has-bool? (->> shapes (d/seek cfh/bool-shape?))
         has-mask? (->> shapes (d/seek :masked-group))
 
