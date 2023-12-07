@@ -14,7 +14,7 @@
    [app.common.files.changes-builder :as fcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.libraries-helpers :as cflh]
-   [app.common.files.migrations :as pmg]
+   [app.common.files.migrations :as fmg]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.files.validate :as cfv]
    [app.common.geom.point :as gpt]
@@ -32,6 +32,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.http.sse :as sse]
    [app.media :as media]
    [app.rpc.commands.files :as files]
@@ -40,7 +41,6 @@
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.blob :as blob]
-   [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
@@ -703,7 +703,6 @@
     (try
       (->> (d/zip media-group grid)
            (map (fn [[mobj position]]
-                  (l/trc :hint "submit graphic processing" :file-id (str (:id fdata)) :id (str (:id mobj)))
                   (sse/tap {:type :migration-progress
                             :section :graphics
                             :name (:name mobj)})
@@ -761,7 +760,7 @@
                    (create-media-grid fdata page-id (:id frame) grid assets)
                    (gpt/add position (gpt/point 0 (+ height (* 2 grid-gap) frame-gap))))))))))
 
-(defn- migrate-file-data
+(defn- migrate-fdata
   [fdata libs]
   (let [migrated? (dm/get-in fdata [:options :components-v2])]
     (if migrated?
@@ -770,53 +769,58 @@
             fdata (migrate-graphics fdata)]
         (update fdata :options assoc :components-v2 true)))))
 
+(defn- process-fdata
+  [fdata id]
+  (-> fdata
+      (assoc :id id)
+      (fdata/process-pointers deref)
+      (fmg/migrate-data)))
+
 (defn- process-file
-  [{:keys [id] :as file} & {:keys [validate? throw-on-validate?]}]
-  (let [conn (::db/conn *system*)]
-    (binding [pmap/*tracked* (atom {})
-              pmap/*load-fn* (partial files/load-pointer conn id)
-              cfeat/*wrap-with-pointer-map-fn*
-              (if (contains? (:features file) "fdata/pointer-map") pmap/wrap identity)
-              cfeat/*wrap-with-objects-map-fn*
-              (if (contains? (:features file) "fdata/objectd-map") omap/wrap identity)]
+  [{:keys [::db/conn] :as system} id & {:keys [validate? throw-on-validate?]}]
+  (binding [pmap/*tracked* (pmap/create-tracked)
+            pmap/*load-fn* (partial fdata/load-pointer *system* id)]
 
-      (let [file (-> file
-                     (update :data blob/decode)
-                     (update :data assoc :id id)
-                     (pmg/migrate-file))
+    (let [file  (binding [cfeat/*new* (atom #{})]
+                  (-> (files/get-file system id :migrate? false)
+                      (update :data process-fdata id)
+                      (update :features into (deref cfeat/*new*))
+                      (update :features cfeat/migrate-legacy-features)))
 
-            libs (->> (files/get-file-libraries conn id)
-                      (into [file] (map (fn [{:keys [id]}]
-                                          (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
-                                            (-> (db/get conn :file {:id id})
-                                                (files/decode-row)
-                                                (files/process-pointers deref) ; ensure all pointers resolved
-                                                (pmg/migrate-file))))))
-                      (d/index-by :id))
+          libs  (->> (files/get-file-libraries conn id)
+                     (into [file] (map (fn [{:keys [id]}]
+                                         (binding [pmap/*load-fn* (partial fdata/load-pointer system id)]
+                                           (-> (files/get-file system id :migrate? false)
+                                               (update :data process-fdata id))))))
+                     (d/index-by :id))
 
-            file (-> file
-                     (update :data migrate-file-data libs)
-                     (update :features conj "components/v2"))]
+          pmap? (contains? (:features file) "fdata/pointer-map")
 
-        (when (contains? (:features file) "fdata/pointer-map")
-          (files/persist-pointers! conn id))
+          file  (-> file
+                    (update :data migrate-fdata libs)
+                    (update :features conj "components/v2")
+                    (cond-> pmap? (fdata/enable-pointer-map)))
+          ]
 
-        (db/update! conn :file
-                    {:data (blob/encode (:data file))
-                     :features (db/create-array conn "text" (:features file))
-                     :revn (:revn file)}
-                    {:id (:id file)})
+      (when validate?
+        (if throw-on-validate?
+          (cfv/validate-file! file libs)
+          (doseq [error (cfv/validate-file file libs)]
+            (l/wrn :hint "migrate:file:validation-error"
+                   :file-id (str (:id file))
+                   :file-name (:name file)
+                   :error error))))
 
-        (when validate?
-          (if throw-on-validate?
-            (cfv/validate-file! file libs)
-            (doseq [error (cfv/validate-file file libs)]
-              (l/wrn :hint "migrate:file:validation-error"
-                     :file-id (str (:id file))
-                     :file-name (:name file)
-                     :error error))))
+      (db/update! conn :file
+                  {:data (blob/encode (:data file))
+                   :features (db/create-array conn "text" (:features file))
+                   :revn (:revn file)}
+                  {:id (:id file)})
 
-        (dissoc file :data)))))
+      (when pmap?
+        (fdata/persist-pointers! system id))
+
+      (dissoc file :data))))
 
 (defn migrate-file!
   [system file-id & {:keys [validate? throw-on-validate?]}]
@@ -830,13 +834,12 @@
 
         (let [system (update system ::sto/storage media/configure-assets-storage)]
           (db/tx-run! system
-                      (fn [{:keys [::db/conn] :as system}]
+                      (fn [system]
                         (binding [*system* system]
                           (fsnap/take-file-snapshot! system {:file-id file-id :label "migration/components-v2"})
-                          (-> (db/get conn :file {:id file-id})
-                              (update :features db/decode-pgarray #{})
-                              (process-file :validate? validate?
-                                            :throw-on-validate? throw-on-validate?))))))
+                          (process-file system file-id
+                                        :validate? validate?
+                                        :throw-on-validate? throw-on-validate?)))))
 
         (finally
           (let [elapsed    (tpoint)
