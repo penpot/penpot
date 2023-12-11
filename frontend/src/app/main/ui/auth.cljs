@@ -64,25 +64,28 @@
        (when show-illustration?
          [:div {:class (stl/css :login-illustration)}
           i/login-illustration])
+
        [:section {:class (stl/css :auth-content)}
-        (case section
-          :auth-register
-          [:& register-page {:params params}]
+        [:*
+         [:a {:href "#/" :class (stl/css :logo-btn)}i/logo]
+         (case section
+           :auth-register
+           [:& register-page {:params params}]
 
-          :auth-register-validate
-          [:& register-validate-page {:params params}]
+           :auth-register-validate
+           [:& register-validate-page {:params params}]
 
-          :auth-register-success
-          [:& register-success-page {:params params}]
+           :auth-register-success
+           [:& register-success-page {:params params}]
 
-          :auth-login
-          [:& login-page {:params params}]
+           :auth-login
+           [:& login-page {:params params}]
 
-          :auth-recovery-request
-          [:& recovery-request-page]
+           :auth-recovery-request
+           [:& recovery-request-page]
 
-          :auth-recovery
-          [:& recovery-page {:params params}])
+           :auth-recovery
+           [:& recovery-page {:params params}])]
 
         (when (contains? #{:auth-login :auth-register} section)
           [:& terms-login])]]
