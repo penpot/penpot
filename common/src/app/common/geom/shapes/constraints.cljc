@@ -299,7 +299,7 @@
           ignore-constraints
           :scale
 
-          (and (ctl/any-layout? parent) (not (ctl/layout-absolute? child)))
+          (and (ctl/any-layout? parent) (not (ctl/position-absolute? child)))
           :left
 
           :else
@@ -310,7 +310,7 @@
           ignore-constraints
           :scale
 
-          (and (ctl/any-layout? parent) (not (ctl/layout-absolute? child)))
+          (and (ctl/any-layout? parent) (not (ctl/position-absolute? child)))
           :top
 
           :else
@@ -335,13 +335,14 @@
                                    child-bounds (gtr/transform-bounds child-bounds modifiers)
                                    parent-bounds transformed-parent-bounds))
 
-            transformed-child-bounds (if reset-modifiers?
-                                       child-bounds
-                                       (gtr/transform-bounds child-bounds modifiers))]
+            transformed-child-bounds
+            (if reset-modifiers?
+              child-bounds
+              (gtr/transform-bounds child-bounds modifiers))]
 
         ;; If the parent is a layout we don't need to calculate its constraints. Finish
         ;; after normalize the children (to keep proper proportions)
-        (if (ctl/any-layout? parent)
+        (if (and (ctl/any-layout? parent) (not (ctl/position-absolute? child)))
           modifiers
           (let [child-points-before  (gpo/parent-coords-bounds child-bounds parent-bounds)
                 child-points-after   (gpo/parent-coords-bounds transformed-child-bounds transformed-parent-bounds)

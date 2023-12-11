@@ -31,7 +31,7 @@
   [_ shape objects]
   (cond
     (or (and (ctl/any-layout-immediate-child? objects shape)
-             (not (ctl/layout-absolute? shape))
+             (not (ctl/position-absolute? shape))
              (or (cfh/group-like-shape? shape)
                  (cfh/frame-shape? shape)
                  (cgc/svg-markup? shape)))
@@ -39,7 +39,7 @@
     :relative
 
     (and (ctl/any-layout-immediate-child? objects shape)
-         (not (ctl/layout-absolute? shape)))
+         (not (ctl/position-absolute? shape)))
     nil
 
     :else
@@ -50,7 +50,7 @@
 
   (when (and (not (cfh/root-frame? shape))
              (or (not (ctl/any-layout-immediate-child? objects shape))
-                 (ctl/layout-absolute? shape)))
+                 (ctl/position-absolute? shape)))
 
     (let [parent (get objects (:parent-id shape))
 
@@ -291,7 +291,7 @@
 (defn get-grid-coord
   [shape objects prop span-prop]
   (when (and (ctl/grid-layout-immediate-child? objects shape)
-             (not (ctl/layout-absolute? shape)))
+             (not (ctl/position-absolute? shape)))
     (let [parent (get objects (:parent-id shape))
           cell (ctl/get-cell-by-shape-id parent (:id shape))]
       (when (and
@@ -314,7 +314,7 @@
 (defmethod get-value :grid-area
   [_ shape objects]
   (when (and (ctl/grid-layout-immediate-child? objects shape)
-             (not (ctl/layout-absolute? shape)))
+             (not (ctl/position-absolute? shape)))
     (let [parent (get objects (:parent-id shape))
           cell (ctl/get-cell-by-shape-id parent (:id shape))]
       (when (and (= (:position cell) :area) (d/not-empty? (:area-name cell)))

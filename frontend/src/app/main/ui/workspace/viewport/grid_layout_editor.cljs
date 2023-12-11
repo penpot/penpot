@@ -664,6 +664,7 @@
            (let [target (-> event dom/get-target)
                  value  (-> target dom/get-input-value str/upper)
                  value-int (d/parse-integer value)
+                 value-int (when value-int (max 0 value-int))
 
                  [track-type value]
                  (cond

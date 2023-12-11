@@ -93,7 +93,7 @@
         selection-parents     (mf/deref selection-parents-ref)
 
         flex-child?       (->> selection-parents (some ctl/flex-layout?))
-        absolute?         (ctl/layout-absolute? shape)
+        absolute?         (ctl/item-absolute? shape)
         flex-container?   (ctl/flex-layout? shape)
         flex-auto-width?  (ctl/auto-width? shape)
         flex-fill-width?  (ctl/fill-width? shape)

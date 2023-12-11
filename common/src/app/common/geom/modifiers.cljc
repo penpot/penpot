@@ -82,7 +82,6 @@
           children
           (->> children
                (keep (d/getf objects))
-               (remove :hidden)
                (remove gco/invalid-geometry?)
                (map (partial apply-modifiers bounds)))
 
@@ -169,13 +168,13 @@
          children-modifiers
          (if (or flex-layout? grid-layout?)
            (->> (:shapes parent)
-                (filter #(ctl/layout-absolute? objects %)))
+                (filter #(ctl/position-absolute? objects %)))
            (:shapes parent))
 
          children-layout
          (when (or flex-layout? grid-layout?)
            (->> (:shapes parent)
-                (remove #(ctl/layout-absolute? objects %))))]
+                (remove #(ctl/position-absolute? objects %))))]
 
      (cond-> modif-tree
        (and has-modifiers? parent? (not root?))
@@ -222,7 +221,7 @@
                 (ctm/resize (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))
 
         children (->> (cfh/get-immediate-children objects parent-id)
-                      (remove :hidden)
+                      (remove ctl/position-absolute?)
                       (remove gco/invalid-geometry?))
 
         content-bounds

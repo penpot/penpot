@@ -15,7 +15,6 @@
    [app.common.geom.shapes.grid-layout :as gsg]
    [app.common.geom.shapes.points :as gpo]
    [app.common.types.shape.layout :as ctl]
-   [app.main.refs :as refs]
    [rumext.v2 :as mf]))
 
 (mf/defc grid-cell-area-label
@@ -85,9 +84,8 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
-        objects (mf/deref refs/workspace-page-objects)
+        objects (unchecked-get props "objects")
         bounds (d/lazy-map (keys objects) #(gsh/shape->points (get objects %)))
-
         children
         (->> (cfh/get-immediate-children objects (:id shape))
              (remove :hidden)

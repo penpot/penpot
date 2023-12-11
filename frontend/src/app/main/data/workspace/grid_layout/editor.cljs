@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.grid-layout.editor
   (:require
    [app.common.geom.rect :as grc]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.state-helpers :as wsh]
    [potok.core :as ptk]))
 
@@ -84,3 +85,18 @@
                         (-> local
                             (update :vbox merge (select-keys srect [:x :y :x1 :x2 :y1 :y2])))))))))))
 
+(defn select-track-cells
+  [grid-id type index]
+  (ptk/reify ::select-track-cells
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects (wsh/lookup-page-objects state)
+            parent  (get objects grid-id)
+
+            cells
+            (if (= type :column)
+              (ctl/cells-by-column parent index)
+              (ctl/cells-by-row parent index))
+
+            selected (into #{} (map :id) cells)]
+        (assoc-in state [:workspace-grid-edition grid-id :selected] selected)))))

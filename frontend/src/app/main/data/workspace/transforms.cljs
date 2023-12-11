@@ -721,7 +721,7 @@
             selected (wsh/lookup-selected state {:omit-blocked? true})
             selected-shapes (->> selected (map (d/getf objects)))]
         (if (every? #(and (ctl/any-layout-immediate-child? objects %)
-                          (not (ctl/layout-absolute? %)))
+                          (not (ctl/position-absolute? %)))
                     selected-shapes)
           (rx/of (reorder-selected-layout-child direction))
           (rx/of (nudge-selected-shapes direction shift?)))))))
@@ -829,7 +829,7 @@
             moving-shapes
             (->> moving-shapes
                  (remove (fn [shape]
-                           (and (ctl/layout-absolute? shape)
+                           (and (ctl/position-absolute? shape)
                                 (= frame-id (:parent-id shape))))))
 
             frame-component

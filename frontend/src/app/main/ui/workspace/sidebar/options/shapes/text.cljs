@@ -40,7 +40,7 @@
         is-grid-parent? (mf/deref is-grid-parent-ref)
 
         layout-container-values (select-keys shape layout-container-flex-attrs)
-        is-layout-child-absolute? (ctl/layout-absolute? shape)
+        is-layout-child-absolute? (ctl/item-absolute? shape)
 
         ids (hooks/use-equal-memo ids)
         parents-by-ids-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))

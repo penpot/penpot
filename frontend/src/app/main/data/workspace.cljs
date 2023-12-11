@@ -1039,9 +1039,7 @@
               (rx/of (dwe/start-edition-mode id))
 
               (:group :bool :frame)
-              (let [shapes-ids (into (d/ordered-set)
-                                     (remove #(dm/get-in objects [% :hidden]))
-                                     shapes)]
+              (let [shapes-ids (into (d/ordered-set) shapes)]
                 (rx/of (dws/select-shapes shapes-ids)))
 
               :svg-raw

@@ -171,7 +171,7 @@
             (cleanup)
             (rx/push! global-drag-end nil)
             (when (fn? on-drop)
-              (on-drop side drop-data))))
+              (on-drop side drop-data event))))
 
         on-drag-end
         (fn [event]
