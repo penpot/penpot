@@ -421,8 +421,12 @@
          reverse?      (ctl/reverse? shape)
          children      (cond->> children (not reverse?) reverse)
 
+         ignore-child?
+         (fn [[_ child]]
+           (ctl/position-absolute? child))
+
          ;; Don't take into account absolute children
-         children      (->> children (remove (comp ctl/layout-absolute? second)))
+         children      (->> children (remove ignore-child?))
 
          ;; Creates the layout lines information
          layout-lines

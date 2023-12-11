@@ -61,6 +61,6 @@
   [objects shape]
   ;; Layout children with a transform should be wrapped
   (and (ctl/any-layout-immediate-child? objects shape)
-       (not (ctl/layout-absolute? shape))
+       (not (ctl/position-absolute? shape))
        (not (gmt/unit? (:transform shape)))))
 

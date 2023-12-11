@@ -193,7 +193,7 @@
                   (update :shapes #(d/removev ids %))
                   (ctl/assign-cells))
 
-        ids (->> ids (remove #(ctl/layout-absolute? objects %)))
+        ids (->> ids (remove #(ctl/position-absolute? objects %)))
         frame (-> frame
                   (update :shapes d/concat-vec ids)
                   (cond-> (some? cell)

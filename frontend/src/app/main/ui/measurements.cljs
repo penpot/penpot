@@ -16,6 +16,7 @@
    [app.common.geom.shapes.points :as gpo]
    [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -693,8 +694,7 @@
 
         objects                    (wsh/lookup-page-objects @st/state)
         children              (->> (cfh/get-immediate-children objects frame-id)
-                                   (remove :layout-item-absolute)
-                                   (remove :hidden))
+                                   (remove ctl/position-absolute?))
 
         children-to-display (if (or (= :row-reverse saved-dir)
                                     (= :column-reverse saved-dir))

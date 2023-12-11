@@ -424,7 +424,7 @@
 
          children
          (->> children
-              (remove #(ctl/layout-absolute? (second %))))
+              (remove #(ctl/position-absolute? (second %))))
 
          children-map
          (into {}

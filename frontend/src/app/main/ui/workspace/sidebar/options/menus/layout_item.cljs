@@ -378,7 +378,7 @@
         selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)
 
-        is-absolute? (:layout-item-absolute values)
+        is-absolute?          (:layout-item-absolute values)
 
         is-col? (every? ctl/col? selection-parents)
 
@@ -510,7 +510,7 @@
        (when open?
          [:div {:class (stl/css :flex-element-menu)}
           [:div {:class (stl/css :row)}
-           (when is-flex-parent?
+           (when (or is-layout-child? is-absolute?)
              [:div {:class (stl/css :position-options)}
               [:& radio-buttons {:selected (if is-absolute? "absolute" "static")
                                  :on-change on-change-position

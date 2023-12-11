@@ -24,10 +24,12 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -951,20 +953,20 @@
 (defn manage-values [{:keys [value type]}]
   (case type
     :auto "auto"
-    :percent (dm/str value "%")
-    :flex (dm/str value "fr")
-    :fixed (dm/str value "px")
+    :percent (fmt/format-percent value)
+    :flex    (fmt/format-frs value)
+    :fixed   (fmt/format-pixels value)
     value))
 
 (mf/defc grid-track-info
-  [{:keys [is-col? type index column set-column-value set-column-type remove-element reorder-track hover-track]}]
+  [{:keys [is-col? type index column set-column-value set-column-type remove-element reorder-track hover-track on-select-track]}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
 
         drop-track
         (mf/use-fn
          (mf/deps type reorder-track index)
-         (fn [drop-position data]
-           (reorder-track type (:index data) (if (= :top drop-position) (dec index) index))))
+         (fn [drop-position data event]
+           (reorder-track type (:index data) (if (= :top drop-position) (dec index) index) (kbd/mod? event))))
 
         pointer-enter
         (mf/use-fn
@@ -977,6 +979,13 @@
          (mf/deps type hover-track index)
          (fn []
            (hover-track type index false)))
+
+        handle-select-track
+        (mf/use-fn
+         (mf/deps on-select-track type index)
+         (fn []
+           (when on-select-track
+             (on-select-track type index))))
 
         [dprops dref]
         (h/use-sortable
@@ -998,7 +1007,8 @@
              :on-pointer-leave pointer-leave}
 
        [:div {:class (stl/css :track-info-container)}
-        [:div {:class (stl/css :track-info-dir-icon)}
+        [:div {:class (stl/css :track-info-dir-icon)
+               :on-click handle-select-track}
          (if is-col? i/flex-vertical-refactor i/flex-horizontal-refactor)]
 
         [:div {:class (stl/css :track-info-value)}
@@ -1057,7 +1067,8 @@
         i/minus]])))
 
 (mf/defc grid-columns-row
-  [{:keys [is-col? expanded? column-values toggle add-new-element set-column-value set-column-type remove-element reorder-track hover-track] :as props}]
+  [{:keys [is-col? expanded? column-values toggle add-new-element set-column-value set-column-type
+           remove-element reorder-track hover-track on-select-track] :as props}]
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
 
         column-num (count column-values)
@@ -1098,7 +1109,8 @@
                                   :set-column-type set-column-type
                                   :remove-element remove-element
                                   :reorder-track reorder-track
-                                  :hover-track hover-track}])]])]
+                                  :hover-track hover-track
+                                  :on-select-track on-select-track}])]])]
 
       [:div.grid-columns
        [:div.grid-columns-header
@@ -1119,7 +1131,8 @@
                                   :set-column-type set-column-type
                                   :remove-element remove-element
                                   :reorder-track reorder-track
-                                  :hover-track hover-track}])]])])))
+                                  :hover-track hover-track
+                                  :on-select-track on-select-track}])]])])))
 
 ;; LAYOUT COMPONENT
 
@@ -1364,12 +1377,7 @@
         handle-open-grid-help
         (mf/use-callback
          (fn []
-           (st/emit! (dom/open-new-window cf/grid-help-uri))))
-
-        handle-locate-grid
-        (mf/use-callback
-         (fn []
-           (st/emit! (dwge/locate-board (first ids)))))]
+           (st/emit! (dom/open-new-window cf/grid-help-uri))))]
 
     (if new-css-system
       [:div {:class (stl/css :element-set)}
@@ -1383,7 +1391,18 @@
            [:div {:class (stl/css :title-actions)}
             [:button {:class (stl/css :remove-layout)
                       :on-click on-remove-layout}
-             i/remove-refactor]]
+             i/remove-refactor]
+
+            (when ^boolean grid-enabled?
+              [:*
+               [:button {:class (stl/css :add-layout)
+                         :on-click handle-show-layout-dropdown}
+                i/menu-refactor]
+
+               [:& dropdown {:show show-layout-dropdown? :on-close handle-close-layout-options}
+                [:div {:class (stl/css :layout-options)}
+                 [:button {:class (stl/css :layout-option) :on-click set-flex} "Flex layout"]
+                 [:button {:class (stl/css :layout-option) :on-click set-grid} "Grid layout"]]]])]
 
            [:div {:class (stl/css :title-actions)}
             (if ^boolean grid-enabled?
@@ -1469,11 +1488,7 @@
                                      :set-justify set-justify-grid}]
                [:& justify-grid-row {:is-col? false
                                      :justify-items grid-justify-content-row
-                                     :set-justify set-justify-grid}]
-
-               [:button {:on-click handle-locate-grid
-                         :class (stl/css :locate-button)}
-                i/locate-refactor]]]
+                                     :set-justify set-justify-grid}]]]
              nil)))]
 
       [:div.element-set
@@ -1686,14 +1701,20 @@
         reorder-track
         (mf/use-fn
          (mf/deps ids)
-         (fn [type from-index to-index]
-           (st/emit! (dwsl/reorder-layout-track ids type from-index to-index))))
+         (fn [type from-index to-index move-content?]
+           (st/emit! (dwsl/reorder-layout-track ids type from-index to-index move-content?))))
 
         hover-track
         (mf/use-fn
          (mf/deps ids)
          (fn [type index hover?]
            (st/emit! (dwsl/hover-layout-track ids type index hover?))))
+
+        handle-select-track
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [type index]
+           (st/emit! (dwge/select-track-cells (first ids) type index))))
 
         set-column-value
         (mf/use-fn
@@ -1720,7 +1741,7 @@
         handle-locate-grid
         (mf/use-callback
          (fn []
-           (st/emit! (dwge/locate-board (first ids)))))        ]
+           (st/emit! (dwge/locate-board (first ids)))))]
 
     (if new-css-system
       [:div {:class (stl/css :grid-layout-menu)}
@@ -1767,7 +1788,8 @@
                               :set-column-type set-column-type
                               :remove-element remove-element
                               :reorder-track reorder-track
-                              :hover-track hover-track}]
+                              :hover-track hover-track
+                              :on-select-track handle-select-track}]
 
         [:& grid-columns-row {:is-col? false
                               :expanded? @grid-rows-open?
@@ -1778,7 +1800,8 @@
                               :set-column-type set-column-type
                               :remove-element remove-element
                               :reorder-track reorder-track
-                              :hover-track hover-track}]]
+                              :hover-track hover-track
+                              :on-select-track handle-select-track}]]
        [:div {:class (stl/css :row)}
         [:& gap-section {:gap-selected? gap-selected?
                          :on-change set-gap

@@ -10,6 +10,7 @@
    ["highlight.js" :as hljs]
    [app.common.data.macros :as dm]
    [app.main.ui.context :as ctx]
+   [app.util.dom :as dom]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -19,8 +20,10 @@
   (let [new-css-system (mf/use-ctx ctx/new-css-system)
         block-ref (mf/use-ref)
         code (str/trim code)]
-    (mf/with-effect [code type]
+    (mf/with-effect
+      [code type]
       (when-let [node (mf/ref-val block-ref)]
+        (dom/set-data! node "highlighted" nil)
         (hljs/highlightElement node)))
 
     (if new-css-system

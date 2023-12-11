@@ -19,7 +19,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
-   [app.main.render :refer [component-svg]]
+   [app.main.render :refer [component-svg component-svg-thumbnail]]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
@@ -283,18 +283,26 @@
   {::mf/wrap-props false}
   [{:keys [file-id root-shape component container]}]
   (let [retry (mf/use-state 0)
-        thumbnail-uri (get-component-thumbnail-uri file-id component)]
-    (if (some? thumbnail-uri)
-      [:img {:src thumbnail-uri
-             :on-error (fn []
-                         (when (@retry < 3)
-                           (inc retry)))
-             :loading "lazy"
-             :decoding "async"
-             :class (dom/classnames (css :thumbnail) true)}]
-      [:& component-svg {:root-shape root-shape
-                         :objects (:objects container)}])))
+        thumbnail-uri (get-component-thumbnail-uri file-id component)
+        handle-error
+        (mf/use-fn
+         (mf/deps @retry)
+         (fn []
+           (when (@retry < 3)
+             (inc retry))))]
 
+    (if (some? thumbnail-uri)
+      [:& component-svg-thumbnail
+       {:thumbnail-uri thumbnail-uri
+        :on-error handle-error
+        :root-shape root-shape
+        :objects (:objects container)
+        :show-grids? true}]
+
+      [:& component-svg
+       {:root-shape root-shape
+        :objects (:objects container)
+        :show-grids? true}])))
 
 (defn generate-components-menu-entries
   [shapes components-v2]

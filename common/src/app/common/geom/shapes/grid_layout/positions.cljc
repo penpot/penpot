@@ -178,7 +178,7 @@
         position-delta (child-position-delta parent child child-bounds child-width child-height layout-data cell-data)]
 
     (cond-> (ctm/empty)
-      (not (ctl/layout-absolute? child))
+      (not (ctl/position-absolute? child))
       (-> (ctm/add-modifiers fill-modifiers)
           (ctm/move position-delta)))))
 
