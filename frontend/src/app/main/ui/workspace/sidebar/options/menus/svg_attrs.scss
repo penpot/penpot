@@ -12,14 +12,6 @@
   }
   .element-set-content {
     @include flexColumn;
-    .attr-row {
-      display: flex;
-      gap: $s-4;
-      .attr-title {
-        @include tabTitleTipography;
-        border-bottom: $s-1 solid var(--color-foreground-secondary);
-      }
-    }
 
     .attr-content {
       display: flex;
@@ -27,9 +19,10 @@
       .attr-name {
         @include titleTipography;
         @include twoLineTextEllipsis;
-        width: $s-92;
+        width: $s-88;
         margin: auto $s-4;
         margin-right: 0;
+        display: inline-block;
       }
       .attr-input {
         @extend .input-element;
@@ -49,4 +42,21 @@
       }
     }
   }
+}
+
+.attr-nested-content {
+  display: grid;
+  row-gap: $s-4;
+}
+
+.attr-title {
+  @include titleTipography;
+  font-size: $fs-10;
+  text-transform: uppercase;
+  margin-inline-start: $s-4;
+}
+
+.attr-row {
+  display: flex;
+  gap: $s-4;
 }
