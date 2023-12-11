@@ -11,7 +11,7 @@
   background: $db-primary;
   display: grid;
   gap: $s-32;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   height: 100%;
   padding: $s-32;
   width: 100%;
@@ -25,32 +25,48 @@
     display: flex;
     justify-content: center;
   }
+}
 
-  .login-illustration {
-    display: flex;
-    justify-content: center;
-    grid-column: 1 / 3;
+.login-illustration {
+  display: flex;
+  justify-content: center;
+  grid-column: 1 / 4;
+  width: 40vw;
+  justify-self: center;
 
-    svg {
-      width: $s-688;
-      fill: $df-primary;
-      height: auto;
-    }
-
-    @media (max-width: 992px) {
-      display: none;
-    }
+  svg {
+    width: 100%;
+    fill: $df-primary;
+    height: auto;
   }
 
-  .auth-content {
-    align-items: center;
-    display: flex;
-    height: fit-content;
-    justify-content: center;
-    max-width: $s-412;
-    padding-bottom: $s-8;
-    position: relative;
-    width: 100%;
+  @media (max-width: 992px) {
+    display: none;
+  }
+}
+
+.auth-content {
+  grid-column: 4 / 6;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  max-width: $s-412;
+  padding-bottom: $s-8;
+  position: relative;
+  width: 100%;
+}
+
+.logo-btn {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: $s-52;
+  width: $s-120;
+
+  svg {
+    width: $s-120;
+    height: $s-40;
+    fill: $df-primary;
+    stroke: $df-primary;
   }
 }
 
