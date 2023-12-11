@@ -74,7 +74,7 @@
 (def ^:private library-change-types
   #{:add-color :mod-color :del-color
     :add-media :mod-media :del-media
-    :add-component :mod-component :del-component
+    :add-component :mod-component :del-component :restore-component
     :add-typography :mod-typography :del-typography})
 
 (def ^:private file-change-types
