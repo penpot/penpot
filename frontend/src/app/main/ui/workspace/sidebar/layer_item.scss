@@ -12,6 +12,7 @@
   align-items: center;
   width: 100%;
   background-color: var(--layer-row-background-color);
+  border: 2px solid transparent;
 
   &.highlight,
   &:hover {
@@ -42,6 +43,16 @@
   .parent-selected &.highlight,
   .parent-selected &:hover {
     background-color: var(--layer-row-background-color-hover);
+  }
+
+  &.dnd-over-bot {
+    border-bottom: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
+  &.dnd-over-top {
+    border-bottom: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
+  &.dnd-over {
+    border: $s-2 solid var(--layer-row-foreground-color-hover);
   }
 }
 
@@ -164,6 +175,9 @@
     .layer-row.hidden & {
       opacity: $op-7;
     }
+    .layer-row.selected & {
+      stroke: var(--layer-row-foreground-color-selected);
+    }
     .layer-row.type-comp & {
       stroke: var(--layer-row-component-foreground-color);
     }
@@ -171,10 +185,6 @@
     .layer-row:hover & {
       opacity: $op-10;
       stroke: var(--layer-row-foreground-color-hover);
-    }
-
-    .layer-row.selected & {
-      stroke: var(--layer-row-foreground-color-selected);
     }
   }
 

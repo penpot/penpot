@@ -47,7 +47,7 @@
         highlighted    (hooks/use-equal-memo highlighted)
         root           (get objects uuid/zero)
         new-css-system (mf/use-ctx ctx/new-css-system)]
-    [:ul
+    [:div
      {:class (stl/css new-css-system :element-list)}
      [:& hooks/sortable-container {}
       (for [[index id] (reverse (d/enumerate (:shapes root)))]
