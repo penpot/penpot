@@ -40,7 +40,7 @@
 
         _       (-> (cfeat/get-team-enabled-features cf/flags team)
                     (cfeat/check-client-features! (:features params))
-                    (cfeat/check-file-features! (:features file) (:features params)))
+                    (cfeat/check-file-features! (:features file)))
 
         file    (cond-> file
                   (= :share-link (:type perms))
