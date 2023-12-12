@@ -47,8 +47,6 @@
         }
       }
     }
-
-
   }
   .element-set {
     @include flexColumn;
@@ -65,11 +63,14 @@
 
 .interactions-info {
   flex-grow: 1;
+  display: grid;
+
   .trigger-name {
     color: var(--color-foreground-primary);
   }
   .action-summary {
     color: var(--color-foreground-secondary);
+    @include textEllipsis;
   }
 }
 
@@ -215,7 +216,6 @@
         }
       }
     }
-
 
     .remove-btn {
       @extend .button-tertiary;
