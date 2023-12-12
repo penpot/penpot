@@ -335,7 +335,7 @@
     transform: rotate(45deg);
 
     &:hover {
-      fill: var(--warning-color);
+      fill: $da-primary;
     }
   }
 }
@@ -420,7 +420,10 @@
     }
 
     &:hover {
-      background-color: $db-cuaternary;
+      background-color: $db-secondary;
+      span {
+        color: $da-primary;
+      }
     }
 
     &.current {
