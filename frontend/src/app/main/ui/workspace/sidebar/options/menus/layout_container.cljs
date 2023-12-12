@@ -1389,10 +1389,6 @@
                        :class        (stl/css-case :title-spacing-layout (not has-layout?))}
          (if (and (not multiple) (:layout values))
            [:div {:class (stl/css :title-actions)}
-            [:button {:class (stl/css :remove-layout)
-                      :on-click on-remove-layout}
-             i/remove-refactor]
-
             (when ^boolean grid-enabled?
               [:*
                [:button {:class (stl/css :add-layout)
@@ -1402,7 +1398,11 @@
                [:& dropdown {:show show-layout-dropdown? :on-close handle-close-layout-options}
                 [:div {:class (stl/css :layout-options)}
                  [:button {:class (stl/css :layout-option) :on-click set-flex} "Flex layout"]
-                 [:button {:class (stl/css :layout-option) :on-click set-grid} "Grid layout"]]]])]
+                 [:button {:class (stl/css :layout-option) :on-click set-grid} "Grid layout"]]]])
+
+            [:button {:class (stl/css :remove-layout)
+                      :on-click on-remove-layout}
+             i/remove-refactor]]
 
            [:div {:class (stl/css :title-actions)}
             (if ^boolean grid-enabled?
