@@ -91,12 +91,23 @@
        :type type
        :values (select-keys shape measure-attrs)
        :shape shape}]
-     [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
+
+     (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
+       [:& constraints-menu
+        {:ids ids
+         :values (select-keys shape constraint-attrs)}])
+
+     [:& layout-container-menu
+      {:type type
+       :ids [(:id shape)]
+       :values layout-container-values
+       :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
        [:& grid-cell/options
         {:shape (first parents)
          :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
+
      (when is-layout-child?
        [:& layout-item-menu
         {:ids ids
@@ -106,13 +117,6 @@
          :is-flex-parent? is-flex-parent?
          :is-grid-parent? is-grid-parent?
          :shape shape}])
-
-     (when (or (not is-layout-child?) is-layout-child-absolute?)
-       [:& constraints-menu
-        {:ids ids
-         :values (select-keys shape constraint-attrs)}])
-
-
 
      [:& text-menu
       {:ids ids
