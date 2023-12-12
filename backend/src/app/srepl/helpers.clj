@@ -13,7 +13,10 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.changes :as cpc]
    [app.common.files.migrations :as pmg]
+   [app.common.files.repair :as repair]
+   [app.common.files.validate :as validate]
    [app.common.logging :as l]
    [app.common.pprint :refer [pprint]]
    [app.common.spec :as us]
@@ -88,6 +91,56 @@
           (update :data blob/decode)
           (update :data pmg/migrate-data)
           (files/process-pointers deref)))))
+
+(defn validate
+  "Validate structure, referencial integrity and semantic coherence of
+    all contents of a file. Returns a list of errors."
+  [system id]
+  (db/with-atomic [conn (:app.db/pool system)]
+    (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
+      (let [file (files/get-file conn id)
+            libraries (->> (files/get-file-libraries conn id)
+                           (into [file] (map (fn [{:keys [id]}]
+                                               (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
+                                                 (-> (db/get conn :file {:id id})
+                                                     (files/decode-row)
+                                                     (files/process-pointers deref) ; ensure all pointers resolved
+                                                     (pmg/migrate-file))))))
+                           (d/index-by :id))]
+        (validate/validate-file file libraries)))))
+
+(defn repair
+  "Repair the list of errors detected by validation."
+  [system id]
+  (db/with-atomic [conn (:app.db/pool system)]
+    (let [file (files/get-file conn id)]
+      (binding [*conn* conn
+                pmap/*tracked* (atom {})
+                pmap/*load-fn* (partial files/load-pointer conn id)]
+        (let [libraries (->> (files/get-file-libraries conn id)
+                             (into [file] (map (fn [{:keys [id]}]
+                                                 (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
+                                                   (-> (db/get conn :file {:id id})
+                                                       (files/decode-row)
+                                                       (files/process-pointers deref) ; ensure all pointers resolved
+                                                       (pmg/migrate-file))))))
+                             (d/index-by :id))
+              errors    (validate/validate-file file libraries)
+              changes   (-> (repair/repair-file (:data file) libraries errors)
+                            (get :redo-changes))
+              file (-> file
+                       (update :revn inc)
+                       (update :data cpc/process-changes changes)
+                       (update :data blob/encode))]
+
+          (files/persist-pointers! conn id)
+          (db/update! conn :file
+            {:revn (:revn file)
+             :data (:data file)
+             :data-backend nil
+             :modified-at (dt/now)
+             :has-media-trimmed false}
+            {:id (:id file)}))))))
 
 (defn update-file!
   "Apply a function to the data of one file. Optionally save the changes or not.
