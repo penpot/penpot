@@ -114,6 +114,7 @@
             modifiers      (mf/deref modifiers-ref)
 
             hidden?        (true? (:hidden shape))
+            content-visible? (or (not ^boolean thumbnail?) (not ^boolean thumbnail-uri))
 
             tries-ref      (mf/use-ref 0)
             imposter-ref   (mf/use-ref nil)
@@ -157,7 +158,7 @@
            :opacity (when ^boolean hidden? 0)}
 
            ;; When there is no thumbnail, we generate a empty rect.
-          (when (and (not ^boolean thumbnail-uri) (not (mf/ref-val imposter-loaded-ref)))
+          (when (and (not ^boolean content-visible?) (not (mf/ref-val imposter-loaded-ref)))
             [:g.frame-placeholder
              [:rect {:x x
                      :y y
@@ -188,7 +189,7 @@
                      :stroke-width 2}])]
 
           ;; When thumbnail is disabled.
-          (when (or (not ^boolean thumbnail?) (not ^boolean thumbnail-uri))
+          (when ^boolean content-visible?
             [:g.frame-content
              {:id (dm/str "frame-content-" frame-id)
               :ref container-ref}
