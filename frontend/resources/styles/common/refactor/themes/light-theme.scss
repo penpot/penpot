@@ -21,11 +21,15 @@
   --color-accent-primary-muted: var(--purple-30);
   --color-accent-secondary: var(--blue);
   --color-accent-tertiary: var(--strong-purple);
+
+  --overlay-color: rgba(255, 255, 255, 0.4);
   --ok-color: var(--light-ok-color);
   --warning-color: var(--light-warning-color);
   --pending-color: var(--light-pending-color);
   --error-color: var(--light-error-color);
   --canvas-color: var(--color-canvas);
+
+  --radio-button-box-shadow: 0 0 0 1px var(--light-gray-2) inset;
 
   @include meta.load-css("hljs-light-theme");
 }
