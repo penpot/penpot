@@ -47,6 +47,7 @@
         }
       }
     }
+
     .groups {
       @include flexColumn;
       .element-set-options-group {
@@ -188,15 +189,7 @@
             }
           }
 
-          .interactions-info {
-            flex-grow: 1;
-            .trigger-name {
-              color: white;
-            }
-            .action-summary {
-              color: var(--color-foreground-secondary);
-            }
-          }
+
           .remove-btn {
             @extend .button-tertiary;
             height: $s-32;
@@ -221,6 +214,17 @@
     }
   }
 }
+
+.interactions-info {
+  flex-grow: 1;
+  .trigger-name {
+    color: var(--color-foreground-primary);
+  }
+  .action-summary {
+    color: var(--color-foreground-secondary);
+  }
+}
+
 .flow-element {
   @extend .asset-element;
   padding: 0;
