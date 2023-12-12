@@ -66,16 +66,18 @@
     :fill color}])
 
 (defn- calculate-dimensions
-  [objects]
-  (let [bounds (->> (ctst/get-root-objects objects)
-                    (map (partial gsb/get-object-bounds objects))
-                    (grc/join-rects))]
+  [objects aspect-ratio]
+  (let [bounds
+        (->> (ctst/get-root-objects objects)
+             (map (partial gsb/get-object-bounds objects))
+             (grc/join-rects))]
     (-> bounds
         (update :x mth/finite 0)
         (update :y mth/finite 0)
         (update :width mth/finite 100000)
         (update :height mth/finite 100000)
-        (grc/update-rect :position))))
+        (grc/update-rect :position)
+        (grc/fix-aspect-ratio aspect-ratio))))
 
 (declare shape-wrapper-factory)
 
@@ -194,11 +196,11 @@
 
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [data use-thumbnails embed include-metadata] :as props
+  [{:keys [data use-thumbnails embed include-metadata aspect-ratio] :as props
     :or {embed false include-metadata false}}]
   (let [objects (:objects data)
         shapes  (cfh/get-immediate-children objects)
-        dim     (calculate-dimensions objects)
+        dim     (calculate-dimensions objects aspect-ratio)
         vbox    (format-viewbox dim)
         bgcolor (dm/get-in data [:options :background] default-color)
 
@@ -253,11 +255,14 @@
 ;; the viewer and inspector
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects frame zoom use-thumbnails] :or {zoom 1} :as props}]
+  [{:keys [objects frame zoom use-thumbnails aspect-ratio background-color] :or {zoom 1} :as props}]
   (let [frame-id         (:id frame)
+
+        bgcolor (d/nilv background-color default-color)
         include-metadata (mf/use-ctx export/include-metadata-ctx)
 
-        bounds (gsb/get-object-bounds objects frame)
+        bounds (-> (gsb/get-object-bounds objects frame)
+                   (grc/fix-aspect-ratio aspect-ratio))
 
         ;; Bounds without shadows/blur will be the bounds of the thumbnail
         bounds2 (gsb/get-object-bounds objects (dissoc frame :shadow :blur))
@@ -305,6 +310,7 @@
             :xmlns "http://www.w3.org/2000/svg"
             :xmlnsXlink "http://www.w3.org/1999/xlink"
             :xmlns:penpot (when include-metadata "https://penpot.app/xmlns")
+            :style {:background bgcolor}
             :fill "none"}
       [:& shape-wrapper {:shape frame}]]]))
 

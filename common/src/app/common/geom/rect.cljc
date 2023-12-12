@@ -353,3 +353,19 @@
                      (mth/max by1 y1)
                      (mth/min bx2 x2)
                      (mth/min by2 y2)))))
+(defn fix-aspect-ratio
+  [bounds aspect-ratio]
+  (if aspect-ratio
+    (let [width (dm/get-prop bounds :width)
+          height (dm/get-prop bounds :height)
+          target-height (* width aspect-ratio)
+          target-width (* height (/ 1 aspect-ratio))]
+      (cond-> bounds
+        (> target-height height)
+        (-> (assoc :height target-height)
+            (update :y - (/ (- target-height height ) 2)))
+
+        (< target-height height)
+        (-> (assoc :width target-width)
+            (update :x - (/ (- target-width width ) 2)))))
+    bounds))
