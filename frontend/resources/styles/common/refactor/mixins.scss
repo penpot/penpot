@@ -10,10 +10,10 @@
   align-items: center;
 }
 
-@mixin flexColumn {
+@mixin flexColumn($gap: $s-4) {
   display: flex;
   flex-direction: column;
-  gap: $s-4;
+  gap: #{$gap};
 }
 
 @mixin flexRow {
