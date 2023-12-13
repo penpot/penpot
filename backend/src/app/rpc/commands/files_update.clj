@@ -184,7 +184,12 @@
    {:keys [id file features changes changes-with-metadata] :as params}]
   (binding [cfeat/*current*  features
             cfeat/*previous* (:features file)]
-    (let [update-fn (cond-> update-file*
+
+    (let [features  (-> features
+                        (set/difference cfeat/frontend-only-features)
+                        (set/union (:features file)))
+
+          update-fn (cond-> update-file*
                       (contains? features "fdata/pointer-map")
                       (wrap-with-pointer-map-context)
 
@@ -193,11 +198,7 @@
 
           changes   (if changes-with-metadata
                       (->> changes-with-metadata (mapcat :changes) vec)
-                      (vec changes))
-
-          features  (-> features
-                        (set/difference cfeat/frontend-only-features)
-                        (set/union (:features file)))]
+                      (vec changes))]
 
       (when (> (:revn params)
                (:revn file))
