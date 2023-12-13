@@ -948,11 +948,11 @@
                                                   (:id parent-shape)
                                                   (:frame-id parent-shape)))
 
-                               (nil? (:shape-ref original-shape))
-                               (assoc :shape-ref (:id original-shape))
-
                                set-remote-synced?
-                               (assoc :remote-synced true))))
+                               (assoc :remote-synced true)
+
+                               :always
+                               (assoc :shape-ref (:id original-shape)))))
 
         update-original-shape (fn [original-shape _new-shape]
                                 original-shape)
