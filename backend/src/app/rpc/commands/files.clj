@@ -825,7 +825,7 @@
 (defn- set-file-shared
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
   (check-edition-permissions! conn profile-id id)
-  (let [file (db/get-by-id conn id {:columns [:id :name :is-shared]})
+  (let [file (db/get-by-id conn :file id {:columns [:id :name :is-shared]})
         file (cond
                (and (true? (:is-shared file))
                     (false? (:is-shared params)))
