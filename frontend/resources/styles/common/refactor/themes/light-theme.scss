@@ -29,6 +29,7 @@
   --error-color: var(--light-error-color);
   --canvas-color: var(--color-canvas);
 
+  --shadow-color: var(--off-black-30);
   --radio-button-box-shadow: 0 0 0 1px var(--light-gray-2) inset;
 
   @include meta.load-css("hljs-light-theme");

@@ -93,7 +93,9 @@
       cursor: pointer;
     }
     .separator {
-      height: $s-12;
+      margin-top: $s-8;
+      height: $s-4;
+      border-top: 1px solid $db-secondary;
     }
     .shortcut {
       @extend .shortcut;
