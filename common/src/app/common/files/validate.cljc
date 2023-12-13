@@ -486,6 +486,5 @@
   all contents of a file. Returns a list of errors."
   [file libraries]
   (binding [*errors* (volatile! [])]
-    (validate-file-schema! file)
     (validate-file! file libraries)
     (deref *errors*)))
