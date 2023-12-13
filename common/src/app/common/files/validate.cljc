@@ -186,7 +186,7 @@
         (when-not (= (:main-instance-page component) (:id page))
           (let [component-page (ctf/get-component-page (:data file) component)
                 main-component (ctst/get-shape component-page (:main-instance-id component))]
-            ;; We must check if the same component has main instances in different pages. 
+            ;; We must check if the same component has main instances in different pages.
             ;; In that case one of those instances shouldn't be main
             (if (:main-instance main-component)
               (report-error! :component-main
@@ -474,7 +474,14 @@
   [{:keys [data features] :as file} libraries]
   (when (contains? features "components/v2")
     (doseq [page (filter :id (ctpl/pages-seq data))]
-      (validate-shape! uuid/zero file page libraries))
+      (let [orphans (->> page
+                         :objects
+                         vals
+                         (filter #(not (contains? (:objects page) (:parent-id %))))
+                         (map :id))]
+        (validate-shape! uuid/zero file page libraries)
+        (doseq [shape-id orphans]
+          (validate-shape! shape-id file page libraries))))
 
     (doseq [component (vals (:components data))]
       (validate-component! component file)))
