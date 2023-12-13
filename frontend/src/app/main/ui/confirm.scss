@@ -26,11 +26,6 @@
     .modal-content {
       @include titleTipography;
       margin-bottom: $s-24;
-      .modal-msg,
-      .modal-scd-msg,
-      .modal-subtitle {
-        @include titleTipography;
-      }
       .component-list {
         .modal-item-element {
           @include flexRow;
@@ -67,4 +62,11 @@
       }
     }
   }
+}
+
+.modal-scd-msg,
+.modal-subtitle,
+.modal-msg {
+  @include titleTipography;
+  color: var(--modal-text-foreground-color);
 }
