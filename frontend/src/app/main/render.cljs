@@ -417,11 +417,14 @@
              :xmlns "http://www.w3.org/2000/svg"
              :xmlnsXlink "http://www.w3.org/1999/xlink"
              :fill "none"}
-       [:foreignObject {:x 0 :y 0 :width width :height height }
-        [:img {:src thumbnail-uri
-               :on-error on-error
-               :loading "lazy"
-               :decoding "async"}]]
+       [:image {:x 0
+                :y 0
+                :width width
+                :height height
+                :href thumbnail-uri
+                :on-error on-error
+                :loading "lazy"
+                :decoding "async"}]
        (when show-grids?
          [:& empty-grids {:root-shape-id root-shape-id :objects objects}])])))
 
@@ -609,7 +612,7 @@
    (render-frame objects shape object-id nil))
   ([objects shape object-id options]
    (if (some? shape)
-     (let [fonts         (ff/shape->fonts shape objects)
+     (let [fonts          (ff/shape->fonts shape objects)
 
            bounds         (gsb/get-object-bounds objects shape)
 
@@ -623,8 +626,8 @@
 
            viewbox        (str/ffmt "% % % %" x y width height)
 
-           [fixed-width
-            fixed-height] (th/get-relative-size width height)
+           [fixed-width fixed-height] (th/get-relative-size width height)
+           [component-width component-height] (th/get-proportional-size width height 140 140)
 
            data           (with-redefs [cfg/public-uri cfg/rasterizer-uri]
                             (rds/renderToStaticMarkup
@@ -636,7 +639,8 @@
                                               :x x
                                               :y y
                                               :width width
-                                              :height height})))]
+                                              :height height})))
+           component?    (str/ends-with? object-id "/component")]
 
        (->> (fonts/render-font-styles-cached fonts)
             (rx/catch (fn [cause]
@@ -646,9 +650,8 @@
             (rx/map (fn [styles]
                       {:id object-id
                        :data data
-                       :viewbox viewbox
-                       :width fixed-width
-                       :height fixed-height
+                       :width (if component? component-width fixed-width)
+                       :height (if component? component-height fixed-height)
                        :styles styles}))))
 
      (do
