@@ -64,7 +64,7 @@
     height: 100%;
     background-color: var(--color-bullet-background-color);
   }
-  &:hover {
+  &:hover:not(.read-only) {
     border: $s-2 solid var(--color-bullet-border-color-selected);
   }
 }
