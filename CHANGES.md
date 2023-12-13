@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## :rocket: Next
+
+### :boom: Breaking changes & Deprecations
+
+### :sparkles: New features
+
+### :bug: Bugs fixed
+
+### :arrow_up: Deps updates
+
+### :heart: Community contributions by (Thank you!)
+
 ## 1.20.0
 
 ### :boom: Breaking changes & Deprecations
