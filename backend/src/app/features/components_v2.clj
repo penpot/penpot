@@ -776,6 +776,16 @@
       (fdata/process-pointers deref)
       (fmg/migrate-data)))
 
+(defn- validate-file!
+  [file libs throw-on-validate?]
+  (try
+    (cfv/validate-file! file libs)
+    (cfv/validate-file-schema! file)
+    (catch Throwable cause
+      (if throw-on-validate?
+        (throw cause)
+        (l/wrn :hint "migrate:file:validation-error" :cause cause)))))
+
 (defn- process-file
   [{:keys [::db/conn] :as system} id & {:keys [validate? throw-on-validate?]}]
   (binding [pmap/*tracked* (pmap/create-tracked)
@@ -803,13 +813,7 @@
           ]
 
       (when validate?
-        (if throw-on-validate?
-          (cfv/validate-file! file libs)
-          (doseq [error (cfv/validate-file file libs)]
-            (l/wrn :hint "migrate:file:validation-error"
-                   :file-id (str (:id file))
-                   :file-name (:name file)
-                   :error error))))
+        (validate-file! file libs throw-on-validate?))
 
       (db/update! conn :file
                   {:data (blob/encode (:data file))
