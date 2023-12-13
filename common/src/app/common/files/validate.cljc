@@ -393,7 +393,8 @@
                   (check-shape-copy-root-top shape file page libraries)))
 
               (if (ctk/main-instance? shape)
-                (if (= context :not-component)
+                ;; mains can't be nested into mains
+                (if (or (= context :not-component) (= context :main-top))
                   (report-error :nested-main-not-allowed
                                 "Nested main component only allowed inside other component"
                                 shape file page)

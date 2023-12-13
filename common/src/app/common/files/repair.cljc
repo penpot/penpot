@@ -326,7 +326,8 @@
     (log/dbg :hint "repairing shape :nested-main-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
-        (pcb/update-shapes [(:id shape)] repair-shape))))
+        (pcb/update-shapes [(:id shape)] repair-shape)
+        (pcb/change-parent uuid/zero [shape] nil {:component-swap true}))))
 
 (defmethod repair-error :root-copy-not-allowed
   [_ {:keys [shape page-id] :as error} file-data _]

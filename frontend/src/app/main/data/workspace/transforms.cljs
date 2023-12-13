@@ -560,13 +560,14 @@
 
                       (rx/map
                        (fn [[move-vector mod?]]
-                         (let [position       (gpt/add from-position move-vector)
-                               exclude-frames (if mod? exclude-frames exclude-frames-siblings)
-                               target-frame   (ctst/top-nested-frame objects position exclude-frames)
-                               flex-layout?   (ctl/flex-layout? objects target-frame)
-                               grid-layout?   (ctl/grid-layout? objects target-frame)
-                               drop-index     (when flex-layout? (gslf/get-drop-index target-frame objects position))
-                               cell-data      (when (and grid-layout? (not mod?)) (gslg/get-drop-cell target-frame objects position))]
+                         (let [position         (gpt/add from-position move-vector)
+                               exclude-frames   (if mod? exclude-frames exclude-frames-siblings)
+                               target-frame     (ctst/top-nested-frame objects position exclude-frames)
+                               [target-frame _] (ctn/find-valid-parent-and-frame-ids target-frame objects shapes)
+                               flex-layout?     (ctl/flex-layout? objects target-frame)
+                               grid-layout?     (ctl/grid-layout? objects target-frame)
+                               drop-index       (when flex-layout? (gslf/get-drop-index target-frame objects position))
+                               cell-data        (when (and grid-layout? (not mod?)) (gslg/get-drop-cell target-frame objects position))]
                            (array move-vector target-frame drop-index cell-data))))
 
                       (rx/take-until stopper))]
@@ -587,16 +588,12 @@
                               [(assoc move-vector :x 0) :x]
 
                               :else
-                              [move-vector nil])
+                              [move-vector nil])]
 
-                            nesting-loop? (some #(cfh/components-nesting-loop? objects (:id %) target-frame) shapes)
-                            is-component-copy? (ctk/in-component-copy? (get objects target-frame))]
 
-                        (cond-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
-                          (and (not nesting-loop?) (not is-component-copy?))
-                          (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data)
-                          :always
-                          (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
+                        (-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
+                            (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data)
+                            (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
 
               (->> move-stream
                    (rx/with-latest-from ms/mouse-position-alt)

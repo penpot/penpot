@@ -340,12 +340,16 @@
   (ptk/reify ::add-component
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects       (wsh/lookup-page-objects state)
-            selected      (->> (wsh/lookup-selected state)
-                               (cfh/clean-loops objects)
-                               (remove #(ctn/has-any-copy-parent? objects (get objects %)))) ;; We don't want to change the structure of component copies
-            components-v2 (features/active-feature? state "components/v2")]
-        (rx/of (add-component2 selected components-v2))))))
+      (let [objects            (wsh/lookup-page-objects state)
+            selected           (->> (wsh/lookup-selected state)
+                                    (cfh/clean-loops objects))
+            selected-objects   (map #(get objects %) selected)
+            components-v2      (features/active-feature? state "components/v2")
+            ;; We don't want to change the structure of component copies
+            can-make-component (every? true? (map #(ctn/valid-shape-for-component? objects %) selected-objects))]
+
+        (when can-make-component
+          (rx/of (add-component2 selected components-v2)))))))
 
 (defn add-multiple-components
   "Add several new components to current file library, from the currently selected shapes."
@@ -353,19 +357,22 @@
   (ptk/reify ::add-multiple-components
     ptk/WatchEvent
     (watch [_ state _]
-      (let [components-v2    (features/active-feature? state "components/v2")
-            objects       (wsh/lookup-page-objects state)
-            selected      (->> (wsh/lookup-selected state)
-                               (cfh/clean-loops objects)
-                               (remove #(ctn/has-any-copy-parent? objects (get objects %)))) ;; We don't want to change the structure of component copies
-            added-components (map
-                              #(add-component2 [%] components-v2)
-                              selected)
+      (let [components-v2      (features/active-feature? state "components/v2")
+            objects            (wsh/lookup-page-objects state)
+            selected           (->> (wsh/lookup-selected state)
+                                    (cfh/clean-loops objects))
+            selected-objects   (map #(get objects %) selected)
+            ;; We don't want to change the structure of component copies
+            can-make-component (every? true? (map #(ctn/valid-shape-for-component? objects %) selected-objects))
+            added-components   (map
+                                #(add-component2 [%] components-v2)
+                                selected)
             undo-id (js/Symbol)]
-        (rx/concat
-         (rx/of (dwu/start-undo-transaction undo-id))
-         (rx/from added-components)
-         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+        (when can-make-component
+          (rx/concat
+           (rx/of (dwu/start-undo-transaction undo-id))
+           (rx/from added-components)
+           (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn rename-component
   "Rename the component with the given id, in the current file library."
