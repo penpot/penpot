@@ -78,7 +78,7 @@
 
   (let [object-id (or object-id (thc/fmt-object-id file-id page-id frame-id tag))
         tp        (tp/tpoint-ms)
-        objects   (wsh/lookup-page-objects state page-id)
+        objects   (wsh/lookup-objects state file-id page-id)
         shape     (get objects frame-id)]
 
     (->> (render/render-frame objects shape object-id)
@@ -116,11 +116,16 @@
     (ptk/reify ::assoc-thumbnail
       ptk/UpdateEvent
       (update [_ state]
-        (let [prev-uri (dm/get-in state [:workspace-thumbnails object-id])]
+        (let [prev-uri (dm/get-in state [:workspace-thumbnails object-id])
+              current-file-id  (:current-file-id state)]
           (some->> prev-uri (vreset! prev-uri*))
           (l/trc :hint "assoc thumbnail" :object-id object-id :uri uri)
 
-          (update state :workspace-thumbnails assoc object-id uri)))
+          #_(update state :workspace-thumbnails assoc object-id uri)
+          (if (thc/file-id? object-id current-file-id)
+            (update state :workspace-thumbnails assoc object-id uri)
+            (let [file-id (thc/get-file-id object-id)]
+              (update-in state [:workspace-libraries file-id :thumbnails] assoc object-id uri)))))
 
       ptk/EffectEvent
       (effect [_ _ _]
