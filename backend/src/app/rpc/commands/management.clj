@@ -391,7 +391,15 @@
     ;; Check the teams compatibility
     (let [orig-team (teams/get-team conn :profile-id profile-id :team-id (:team-id project))
           dest-team (teams/get-team conn :profile-id profile-id :team-id team-id)]
-      (cfeat/check-teams-compatibility! orig-team dest-team))
+      (cfeat/check-teams-compatibility! orig-team dest-team)
+
+      ;; Check if all pending to move files are compaib
+      (let [features (cfeat/get-team-enabled-features cf/flags dest-team)]
+        (doseq [file (->> (db/query conn :file
+                                    {:project-id project-id}
+                                    {:columns [:features]})
+                          (map files/decode-row))]
+          (cfeat/check-file-features! features (:features file)))))
 
     ;; move project to the destination team
     (db/update! conn :project
