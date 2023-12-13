@@ -706,11 +706,12 @@
         (cfeat/check-client-features! (:features params))
         (cfeat/check-file-features! (:features file) (:features params)))
 
-    {:name             (:name file)
-     :components-count (count (ctkl/components-seq (:data file)))
-     :graphics-count   (count (get-in file [:data :media] []))
-     :colors-count     (count (get-in file [:data :colors] []))
-     :typography-count (count (get-in file [:data :typographies] []))}))
+    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+      {:name             (:name file)
+       :components-count (count (ctkl/components-seq (:data file)))
+       :graphics-count   (count (get-in file [:data :media] []))
+       :colors-count     (count (get-in file [:data :colors] []))
+       :typography-count (count (get-in file [:data :typographies] []))})))
 
 (sv/defmethod ::get-file-summary
   "Retrieve a file summary by its ID. Only authenticated users."
@@ -856,8 +857,10 @@
                     (true? (:is-shared params)))
                (let [file (assoc file :is-shared true)]
                  (db/update! conn :file
-                             {:is-shared false}
-                             {:id id})
+                             {:is-shared true}
+                             {:id id}
+                             ::db/return-keys? false)
+
                  file)
 
                :else
