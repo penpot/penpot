@@ -13,6 +13,7 @@
    [app.common.files.migrations :as pmg]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as feat.fdata]
    [app.http.sse :as sse]
@@ -283,7 +284,7 @@
 ;; --- COMMAND: Move file
 
 (def sql:get-files
-  "select id, project_id from file where id = ANY(?)")
+  "select id, features, project_id from file where id = ANY(?)")
 
 (def sql:move-files
   "update file set project_id = ? where id = ANY(?)")
@@ -307,7 +308,8 @@
   [{:keys [::db/conn] :as cfg} {:keys [profile-id ids project-id] :as params}]
 
   (let [fids    (db/create-array conn "uuid" ids)
-        files   (db/exec! conn [sql:get-files fids])
+        files   (->> (db/exec! conn [sql:get-files fids])
+                     (map files/decode-row))
         source  (into #{} (map :project-id) files)
         pids    (->> (conj source project-id)
                      (db/create-array conn "uuid"))]
@@ -327,7 +329,12 @@
     ;; Check the team compatibility
     (let [orig-team (teams/get-team conn :profile-id profile-id :project-id (first source))
           dest-team (teams/get-team conn :profile-id profile-id :project-id project-id)]
-      (cfeat/check-teams-compatibility! orig-team dest-team))
+      (cfeat/check-teams-compatibility! orig-team dest-team)
+
+      ;; Check if all pending to move files are compaib
+      (let [features (cfeat/get-team-enabled-features cf/flags dest-team)]
+        (doseq [file files]
+          (cfeat/check-file-features! features (:features file)))))
 
     ;; move all files to the project
     (db/exec-one! conn [sql:move-files project-id fids])
