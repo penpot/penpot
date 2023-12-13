@@ -428,7 +428,7 @@
         shape               (first shapes)
         id                  (:id shape)
         shape-name          (:name shape)
-        component           (ctf/resolve-component shape {:id current-file-id :data workspace-data} workspace-libraries)
+        component           (ctf/resolve-component shape {:id current-file-id :data workspace-data} workspace-libraries {:include-deleted? true})
         main-instance?      (if components-v2 (ctk/main-instance? shape) true)
 
         toggle-content
