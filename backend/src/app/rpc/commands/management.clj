@@ -14,12 +14,14 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.features.fdata :as feat.fdata]
+   [app.http.sse :as sse]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.binfile :as binfile]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.projects :as proj]
-   [app.rpc.commands.teams :as teams :refer [create-project-role create-project]]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.setup :as-alias setup]
    [app.setup.templates :as tmpl]
@@ -27,7 +29,9 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [clojure.walk :as walk]
+   [promesa.core :as p]
    [promesa.exec :as px]))
 
 ;; --- COMMAND: Duplicate File
@@ -46,9 +50,8 @@
   {::doc/added "1.16"
    ::webhooks/event? true
    ::sm/params schema:duplicate-file}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (db/with-atomic [conn pool]
-    (duplicate-file conn (assoc params :profile-id profile-id))))
+  [cfg {:keys [::rpc/profile-id] :as params}]
+  (db/tx-run! cfg duplicate-file (assoc params :profile-id profile-id)))
 
 (defn- remap-id
   [item index key]
@@ -57,7 +60,7 @@
     (assoc key (get index (get item key) (get item key)))))
 
 (defn- process-file
-  [conn {:keys [id] :as file} index]
+  [cfg index {:keys [id] :as file}]
   (letfn [(process-form [form]
             (cond-> form
               ;; Relink library items
@@ -100,26 +103,29 @@
                                  (dissoc k))
                              res)))
                        media
-                       media))]
-    (-> file
-        (update :id #(get index %))
-        (update :data
-                (fn [data]
-                  (binding [pmap/*load-fn* (partial files/load-pointer conn id)
-                            pmap/*tracked* (atom {})]
-                    (let [file-id (get index id)
-                          data    (-> data
-                                      (blob/decode)
-                                      (assoc :id file-id)
-                                      (pmg/migrate-data)
-                                      (update :pages-index relink-shapes)
-                                      (update :components relink-shapes)
-                                      (update :media relink-media)
-                                      (d/without-nils)
-                                      (files/process-pointers pmap/clone)
-                                      (blob/encode))]
-                      (files/persist-pointers! conn file-id)
-                      data)))))))
+                       media))
+
+          (update-fdata [fdata new-id]
+            (-> fdata
+                (assoc :id new-id)
+                (pmg/migrate-data)
+                (update :pages-index relink-shapes)
+                (update :components relink-shapes)
+                (update :media relink-media)
+                (d/without-nils)
+                (feat.fdata/process-pointers pmap/clone)))]
+
+    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
+              pmap/*tracked* (pmap/create-tracked)
+              cfeat/*new*    (atom #{})]
+      (let [new-id (get index id)
+            file   (-> file
+                       (assoc :id new-id)
+                       (update :data update-fdata new-id)
+                       (update :features into (deref cfeat/*new*))
+                       (update :features cfeat/migrate-legacy-features))]
+        (feat.fdata/persist-pointers! cfg new-id)
+        file))))
 
 (def sql:get-used-libraries
   "select flr.*
@@ -136,7 +142,7 @@
       and so.deleted_at is null")
 
 (defn duplicate-file*
-  [conn {:keys [profile-id file index project-id name flibs fmeds]} {:keys [reset-shared-flag]}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id file index project-id name flibs fmeds]} {:keys [reset-shared-flag]}]
   (let [flibs    (or flibs (db/exec! conn [sql:get-used-libraries (:id file)]))
         fmeds    (or fmeds (db/exec! conn [sql:get-used-media-objects (:id file)]))
 
@@ -179,9 +185,13 @@
                     (assoc :modified-at now)
                     (assoc :ignore-sync-until ignore))
 
-        file    (process-file conn file index)]
+        file    (process-file cfg index file)]
 
-    (db/insert! conn :file file)
+    (db/insert! conn :file
+                (-> file
+                    (update :features #(db/create-array conn "text" %))
+                    (update :data blob/encode)))
+
     (db/insert! conn :file-profile-rel
                 {:file-id (:id file)
                  :profile-id profile-id
@@ -198,15 +208,14 @@
     file))
 
 (defn duplicate-file
-  [conn {:keys [profile-id file-id] :as params}]
-  (let [file   (db/get-by-id conn :file file-id)
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id] :as params}]
+  (let [;; We don't touch the original file on duplication
+        file   (files/get-file cfg file-id :migrate? false)
         index  {file-id (uuid/next)}
         params (assoc params :index index :file file)]
     (proj/check-edition-permissions! conn profile-id (:project-id file))
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
-    (-> (duplicate-file* conn params {:reset-shared-flag true})
-        (update :data blob/decode)
-        (update :features db/decode-pgarray #{}))))
+    (duplicate-file* cfg params {:reset-shared-flag true})))
 
 ;; --- COMMAND: Duplicate Project
 
@@ -224,12 +233,11 @@
   {::doc/added "1.16"
    ::webhooks/event? true
    ::sm/params schema:duplicate-project}
-  [{:keys [::db/pool] :as cfg} params]
-  (db/with-atomic [conn pool]
-    (duplicate-project conn (assoc params :profile-id (::rpc/profile-id params)))))
+  [cfg {:keys [::rpc/profile-id] :as params}]
+  (db/tx-run! cfg duplicate-project (assoc params :profile-id profile-id)))
 
 (defn duplicate-project
-  [conn {:keys [profile-id project-id name] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id project-id name] :as params}]
 
   ;; Defer all constraints
   (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
@@ -254,8 +262,8 @@
 
     ;; create the duplicated project and assign the current profile as
     ;; a project owner
-    (create-project conn project)
-    (create-project-role conn profile-id (:id project) :owner)
+    (teams/create-project conn project)
+    (teams/create-project-role conn profile-id (:id project) :owner)
 
     ;; duplicate all files
     (let [index  (reduce #(assoc %1 (:id %2) (uuid/next)) {} files)
@@ -264,10 +272,10 @@
                      (assoc :project-id (:id project))
                      (assoc :index index))]
       (doseq [{:keys [id]} files]
-        (let [file   (db/get-by-id conn :file id)
+        (let [file   (files/get-file cfg id :migrate? false)
               params (assoc params :file file)
               opts   {:reset-shared-flag false}]
-          (duplicate-file* conn params opts))))
+          (duplicate-file* cfg params opts))))
 
     ;; return the created project
     project))
@@ -405,29 +413,6 @@
 
 ;; --- COMMAND: Clone Template
 
-(defn- clone-template!
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id template-id project-id]}]
-  (let [template (tmpl/get-template-stream cfg template-id)
-        project  (db/get-by-id conn :project project-id {:columns [:id :team-id]})]
-
-    (when-not template
-      (ex/raise :type :not-found
-                :code :template-not-found
-                :hint "template not found"))
-
-    (teams/check-edition-permissions! conn profile-id (:team-id project))
-
-    (-> cfg
-        ;; FIXME: maybe reuse the conn instead of creating more
-        ;; connections in the import process?
-        (dissoc ::db/conn)
-        (assoc ::binfile/input template)
-        (assoc ::binfile/project-id (:id project))
-        (assoc ::binfile/profile-id profile-id)
-        (assoc ::binfile/ignore-index-errors? true)
-        (assoc ::binfile/migrate? true)
-        (binfile/import!))))
-
 (def ^:private
   schema:clone-template
   (sm/define
@@ -435,15 +420,46 @@
      [:project-id ::sm/uuid]
      [:template-id ::sm/word-string]]))
 
+(declare ^:private clone-template)
+
 (sv/defmethod ::clone-template
   "Clone into the specified project the template by its id."
   {::doc/added "1.16"
+   ::sse/stream? true
    ::webhooks/event? true
    ::sm/params schema:clone-template}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (db/with-atomic [conn pool]
-    (-> (assoc cfg ::db/conn conn)
-        (clone-template! (assoc params :profile-id profile-id)))))
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id template-id] :as params}]
+  (let [project   (db/get-by-id pool :project project-id {:columns [:id :team-id]})
+        _         (teams/check-edition-permissions! pool profile-id (:team-id project))
+        template  (tmpl/get-template-stream cfg template-id)
+        params    (-> cfg
+                      (assoc ::binfile/input template)
+                      (assoc ::binfile/project-id (:id project))
+                      (assoc ::binfile/profile-id profile-id)
+                      (assoc ::binfile/ignore-index-errors? true)
+                      (assoc ::binfile/migrate? true))]
+
+    (when-not template
+      (ex/raise :type :not-found
+                :code :template-not-found
+                :hint "template not found"))
+
+    (sse/response #(clone-template params))))
+
+(defn- clone-template
+  [{:keys [::wrk/executor ::binfile/project-id] :as params}]
+  (db/tx-run! params
+              (fn [{:keys [::db/conn] :as params}]
+                ;; NOTE: the importation process performs some operations that
+                ;; are not very friendly with virtual threads, and for avoid
+                ;; unexpected blocking of other concurrent operations we
+                ;; dispatch that operation to a dedicated executor.
+                (let [result (p/thread-call executor (partial binfile/import! params))]
+                  (db/update! conn :project
+                              {:modified-at (dt/now)}
+                              {:id project-id})
+
+                  (deref result)))))
 
 ;; --- COMMAND: Get list of builtin templates
 

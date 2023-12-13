@@ -7,12 +7,14 @@
 (ns app.rpc.commands.files-create
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as feat.fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
@@ -44,13 +46,20 @@
     :or {is-shared false revn 0 create-page true}
     :as params}]
 
+  (dm/assert!
+   "expected a valid connection"
+   (db/connection? conn))
+
   (let [id       (or id (uuid/next))
 
-        pointers (atom {})
+        pointers (pmap/create-tracked)
+        pmap?    (contains? features "fdata/pointer-map")
+        omap?    (contains? features "fdata/objects-map")
+
         data     (binding [pmap/*tracked* pointers
                            cfeat/*current* features
-                           cfeat/*wrap-with-objects-map-fn* (if (features "fdata/objects-map") omap/wrap identity)
-                           cfeat/*wrap-with-pointer-map-fn* (if (features "fdata/pointer-map") pmap/wrap identity)]
+                           cfeat/*wrap-with-objects-map-fn* (if omap? omap/wrap identity)
+                           cfeat/*wrap-with-pointer-map-fn* (if pmap? pmap/wrap identity)]
                    (if create-page
                      (ctf/make-file-data id)
                      (ctf/make-file-data id nil)))
@@ -72,7 +81,7 @@
                                :deleted-at deleted-at}))]
 
     (binding [pmap/*tracked* pointers]
-      (files/persist-pointers! conn id))
+      (feat.fdata/persist-pointers! cfg id))
 
     (->> (assoc params :file-id id :role :owner)
          (create-file-role! conn))

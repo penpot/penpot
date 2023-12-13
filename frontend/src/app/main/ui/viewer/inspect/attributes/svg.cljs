@@ -58,7 +58,7 @@
   [{:keys [shape]}]
   [:*
    (for [[attr-key attr-value] (:svg-attrs shape)]
-     [:& svg-attr {:attr  attr-key :value attr-value}])]  )
+     [:& svg-attr {:attr  attr-key :value attr-value}])])
 
 
 (mf/defc svg-panel

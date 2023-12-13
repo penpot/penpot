@@ -16,6 +16,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as feat.fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
@@ -100,28 +101,28 @@
 ;; loading all pages into memory for find the frame set for thumbnail.
 
 (defn get-file-data-for-thumbnail
-  [conn {:keys [data id] :as file}]
+  [{:keys [::db/conn] :as cfg} {:keys [data id] :as file}]
   (letfn [;; function responsible on finding the frame marked to be
           ;; used as thumbnail; the returned frame always have
           ;; the :page-id set to the page that it belongs.
 
-          (get-thumbnail-frame [data]
+          (get-thumbnail-frame [file]
             ;; NOTE: this is a hack for avoid perform blocking
             ;; operation inside the for loop, clojure lazy-seq uses
             ;; synchronized blocks that does not plays well with
-            ;; virtual threads, so we need to perform the load
-            ;; operation first. This operation forces all pointer maps
-            ;; load into the memory.
-            (->> (-> data :pages-index vals)
-                 (filter pmap/pointer-map?)
-                 (run! pmap/load!))
-
-            ;; Then proceed to find the frame set for thumbnail
-            (d/seek #(or (:use-for-thumbnail %)
-                         (:use-for-thumbnail? %)) ; NOTE: backward comp (remove on v1.21)
-                    (for [page  (-> data :pages-index vals)
-                          frame (-> page :objects ctt/get-frames)]
-                      (assoc frame :page-id (:id page)))))
+            ;; virtual threads where all rpc methods calls are
+            ;; dispatched, so we need to perform the load operation
+            ;; first. This operation forces all pointer maps load into
+            ;; the memory.
+            ;;
+            ;; FIXME: this is no longer true with clojure>=1.12
+            (let [{:keys [data]} (update file :data feat.fdata/process-pointers pmap/load!)]
+              ;; Then proceed to find the frame set for thumbnail
+              (d/seek #(or (:use-for-thumbnail %)
+                           (:use-for-thumbnail? %)) ; NOTE: backward comp (remove on v1.21)
+                      (for [page  (-> data :pages-index vals)
+                            frame (-> page :objects ctt/get-frames)]
+                        (assoc frame :page-id (:id page))))))
 
           ;; function responsible to filter objects data structure of
           ;; all unneeded shapes if a concrete frame is provided. If no
@@ -165,8 +166,8 @@
 
                 objects)))]
 
-    (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
-      (let [frame     (get-thumbnail-frame data)
+    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+      (let [frame     (get-thumbnail-frame file)
             frame-id  (:id frame)
             page-id   (or (:page-id frame)
                           (-> data :pages first))
@@ -220,7 +221,7 @@
                                                 :profile-id profile-id
                                                 :file-id file-id)
 
-                       file     (files/get-file conn file-id)]
+                       file     (files/get-file cfg file-id)]
 
                    (-> (cfeat/get-team-enabled-features cf/flags team)
                        (cfeat/check-client-features! (:features params))
@@ -228,7 +229,7 @@
 
                    {:file-id file-id
                     :revn (:revn file)
-                    :page (get-file-data-for-thumbnail conn file)}))))
+                    :page (get-file-data-for-thumbnail cfg file)}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS

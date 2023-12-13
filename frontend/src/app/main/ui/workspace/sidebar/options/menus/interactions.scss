@@ -47,167 +47,6 @@
         }
       }
     }
-    .groups {
-      @include flexColumn;
-      .element-set-options-group {
-        &.open {
-          @include flexColumn;
-          .extended-options {
-            @include flexColumn;
-            .property-row {
-              @extend .attr-row;
-              &.big-row {
-                height: 100%;
-              }
-              .interaction-name {
-                @include twoLineTextEllipsis;
-                @include titleTipography;
-                padding-left: $s-4;
-                width: $s-92;
-                margin: auto 0;
-                grid-area: name;
-              }
-              .select-wrapper {
-                display: flex;
-                align-items: center;
-                grid-area: content;
-                .easing-select {
-                  width: $s-156;
-                  padding: 0 $s-8;
-                  .dropdown-upwards {
-                    bottom: $s-36;
-                    width: $s-156;
-                    top: unset;
-                  }
-                }
-              }
-              .input-element-wrapper {
-                @extend .input-element;
-                grid-area: content;
-              }
-              .checkbox-option {
-                @extend .input-checkbox;
-                grid-area: content;
-              }
-              .position-btns-wrapper {
-                grid-area: content;
-                display: grid;
-                grid-template-areas:
-                  "topleft top topright"
-                  "left center right"
-                  "bottomleft bottom bottomright";
-                grid-template-columns: repeat(3, 1fr);
-                grid-template-rows: repeat(3, 1fr);
-                width: $s-84;
-                height: $s-84;
-                border-radius: $br-8;
-                background-color: var(--color-background-tertiary);
-                .direction-btn {
-                  @extend .button-tertiary;
-                  height: $s-28;
-                  width: $s-28;
-                  .rectangle {
-                    height: $s-8;
-                    width: $s-8;
-                    background-color: var(--color-background-quaternary);
-                  }
-                  &:hover {
-                    .rectangle {
-                      background-color: var(--color-accent-primary);
-                    }
-                  }
-                  &.active {
-                    background-color: var(--color-background-quaternary);
-                    .rectangle {
-                      background-color: var(--color-accent-primary);
-                    }
-                  }
-                }
-                .center-btn {
-                  grid-area: center;
-                }
-                .top-left-btn {
-                  grid-area: topleft;
-                }
-                .top-right-btn {
-                  grid-area: topright;
-                }
-                .top-center-btn {
-                  grid-area: top;
-                }
-                .bottom-left-btn {
-                  grid-area: bottomleft;
-                }
-                .bottom-right-btn {
-                  grid-area: bottomright;
-                }
-                .bottom-center-btn {
-                  grid-area: bottom;
-                }
-              }
-              .buttons-wrapper {
-                grid-area: content;
-                .right svg {
-                  transform: rotate(-90deg);
-                }
-                .left svg {
-                  transform: rotate(90deg);
-                }
-                .up svg {
-                  transform: rotate(180deg);
-                }
-              }
-              .inputs-wrapper {
-                grid-area: content;
-                @include flexRow;
-                .radio-btn {
-                  @extend .input-checkbox;
-                }
-              }
-            }
-          }
-        }
-
-        .interactions-summary {
-          @extend .asset-element;
-          height: $s-44;
-          padding: 0;
-          gap: $s-4;
-          .extend-btn {
-            @extend .button-tertiary;
-            height: 100%;
-            width: $s-28;
-            svg {
-              @extend .button-icon;
-            }
-            &.extended {
-              background-color: var(--button-radio-background-color-active);
-              svg {
-                stroke: var(--button-radio-foreground-color-active);
-              }
-            }
-          }
-
-          .interactions-info {
-            flex-grow: 1;
-            .trigger-name {
-              color: white;
-            }
-            .action-summary {
-              color: var(--color-foreground-secondary);
-            }
-          }
-          .remove-btn {
-            @extend .button-tertiary;
-            height: $s-32;
-            width: $s-28;
-            svg {
-              @extend .button-icon-small;
-            }
-          }
-        }
-      }
-    }
   }
   .element-set {
     @include flexColumn;
@@ -221,6 +60,174 @@
     }
   }
 }
+
+.interactions-info {
+  flex-grow: 1;
+  display: grid;
+
+  .trigger-name {
+    color: var(--color-foreground-primary);
+  }
+  .action-summary {
+    color: var(--color-foreground-secondary);
+    @include textEllipsis;
+  }
+}
+
+.groups {
+  @include flexColumn($s-12);
+}
+
+.element-set-options-group {
+  &.open {
+    @include flexColumn;
+    .extended-options {
+      @include flexColumn;
+      .property-row {
+        @extend .attr-row;
+        &.big-row {
+          height: 100%;
+        }
+        .interaction-name {
+          @include twoLineTextEllipsis;
+          @include titleTipography;
+          padding-left: $s-4;
+          width: $s-92;
+          margin: auto 0;
+          grid-area: name;
+        }
+        .select-wrapper {
+          display: flex;
+          align-items: center;
+          grid-area: content;
+          .easing-select {
+            width: $s-156;
+            padding: 0 $s-8;
+            .dropdown-upwards {
+              bottom: $s-36;
+              width: $s-156;
+              top: unset;
+            }
+          }
+        }
+        .input-element-wrapper {
+          @extend .input-element;
+          grid-area: content;
+        }
+        .checkbox-option {
+          @extend .input-checkbox;
+          grid-area: content;
+        }
+        .position-btns-wrapper {
+          grid-area: content;
+          display: grid;
+          grid-template-areas:
+            "topleft top topright"
+            "left center right"
+            "bottomleft bottom bottomright";
+          grid-template-columns: repeat(3, 1fr);
+          grid-template-rows: repeat(3, 1fr);
+          width: $s-84;
+          height: $s-84;
+          border-radius: $br-8;
+          background-color: var(--color-background-tertiary);
+          .direction-btn {
+            @extend .button-tertiary;
+            height: $s-28;
+            width: $s-28;
+            .rectangle {
+              height: $s-8;
+              width: $s-8;
+              background-color: var(--color-background-quaternary);
+            }
+            &:hover {
+              .rectangle {
+                background-color: var(--color-accent-primary);
+              }
+            }
+            &.active {
+              background-color: var(--color-background-quaternary);
+              .rectangle {
+                background-color: var(--color-accent-primary);
+              }
+            }
+          }
+          .center-btn {
+            grid-area: center;
+          }
+          .top-left-btn {
+            grid-area: topleft;
+          }
+          .top-right-btn {
+            grid-area: topright;
+          }
+          .top-center-btn {
+            grid-area: top;
+          }
+          .bottom-left-btn {
+            grid-area: bottomleft;
+          }
+          .bottom-right-btn {
+            grid-area: bottomright;
+          }
+          .bottom-center-btn {
+            grid-area: bottom;
+          }
+        }
+        .buttons-wrapper {
+          grid-area: content;
+          .right svg {
+            transform: rotate(-90deg);
+          }
+          .left svg {
+            transform: rotate(90deg);
+          }
+          .up svg {
+            transform: rotate(180deg);
+          }
+        }
+        .inputs-wrapper {
+          grid-area: content;
+          @include flexRow;
+          .radio-btn {
+            @extend .input-checkbox;
+          }
+        }
+      }
+    }
+  }
+
+  .interactions-summary {
+    @extend .asset-element;
+    height: $s-44;
+    padding: 0;
+    gap: $s-4;
+    .extend-btn {
+      @extend .button-tertiary;
+      height: 100%;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+      }
+      &.extended {
+        background-color: var(--button-radio-background-color-active);
+        svg {
+          stroke: var(--button-radio-foreground-color-active);
+        }
+      }
+    }
+
+    .remove-btn {
+      @extend .button-tertiary;
+      height: $s-32;
+      width: $s-28;
+      svg {
+        @extend .button-icon-small;
+      }
+    }
+  }
+}
+
 .flow-element {
   @extend .asset-element;
   padding: 0;

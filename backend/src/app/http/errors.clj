@@ -232,3 +232,7 @@
   (if (ex/error? cause)
     (handle-error cause request nil)
     (handle-exception cause request nil)))
+
+(defn handle'
+  [cause request]
+  (::rres/body (handle cause request)))

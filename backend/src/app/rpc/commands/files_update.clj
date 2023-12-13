@@ -17,7 +17,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.features.fdata :refer [enable-pointer-map enable-objects-map]]
+   [app.features.fdata :as feat.fdata]
    [app.http.errors :as errors]
    [app.loggers.audit :as audit]
    [app.loggers.webhooks :as webhooks]
@@ -106,12 +106,12 @@
 
 (defn- wrap-with-pointer-map-context
   [f]
-  (fn [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
-    (binding [pmap/*tracked* (atom {})
-              pmap/*load-fn* (partial files/load-pointer conn id)
+  (fn [cfg {:keys [id] :as file}]
+    (binding [pmap/*tracked* (pmap/create-tracked)
+              pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
               cfeat/*wrap-with-pointer-map-fn* pmap/wrap]
       (let [result (f cfg file)]
-        (files/persist-pointers! conn id)
+        (feat.fdata/persist-pointers! cfg id)
         result))))
 
 (defn- wrap-with-objects-map-context
@@ -236,7 +236,7 @@
         ;; to be executed on a separated executor for avoid to do the
         ;; CPU intensive operation on vthread.
 
-        update-fdata-fn (partial update-file-data conn file changes skip-validate)
+        update-fdata-fn (partial update-file-data cfg file changes skip-validate)
         file            (-> (climit/configure cfg :update-file/global)
                             (climit/run! update-fdata-fn executor))]
 
@@ -290,7 +290,7 @@
   file)
 
 (defn- update-file-data
-  [conn file changes skip-validate]
+  [{:keys [::db/conn] :as cfg} file changes skip-validate]
   (let [file (update file :data (fn [data]
                                   (-> data
                                       (blob/decode)
@@ -304,10 +304,10 @@
                         (not skip-validate))
                (->> (files/get-file-libraries conn (:id file))
                     (into [file] (map (fn [{:keys [id]}]
-                                        (binding [pmap/*load-fn* (partial files/load-pointer conn id)
+                                        (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
                                                   pmap/*tracked* nil]
-                                          (-> (files/get-file conn id :migrate? false)
-                                              (files/process-pointers deref) ; ensure all pointers resolved
+                                          (-> (files/get-file cfg id :migrate? false)
+                                              (feat.fdata/process-pointers deref) ; ensure all pointers resolved
                                               (fmg/migrate-file))))))
                     (d/index-by :id)))]
 
@@ -332,11 +332,11 @@
 
         (cond-> (and (contains? cfeat/*current* "fdata/objects-map")
                      (not (contains? cfeat/*previous* "fdata/objects-map")))
-          (enable-objects-map))
+          (feat.fdata/enable-objects-map))
 
         (cond-> (and (contains? cfeat/*current* "fdata/pointer-map")
                      (not (contains? cfeat/*previous* "fdata/pointer-map")))
-          (enable-pointer-map))
+          (feat.fdata/enable-pointer-map))
 
         (update :data blob/encode))))
 

@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-management-test
   (:require
+   [app.common.pprint :as pp]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
@@ -604,9 +605,11 @@
 
     (t/is (nil? (:error out)))
     (let [result (:result out)]
-      (t/is (set? result))
-      (t/is (uuid? (first result)))
-      (t/is (= 1 (count result))))))
+      (t/is (fn? result))
+
+      (let [events (th/consume-sse result)]
+        (t/is (= 8 (count events)))
+        (t/is (= :end (first (last events))))))))
 
 (t/deftest get-list-of-buitin-templates
   (let [prof (th/create-profile* 1 {:is-active true})

@@ -147,8 +147,10 @@
         (mf/use-fn
          (mf/deps template default-project-id)
          (fn []
-           (let [mdata  {:on-success on-template-cloned-success :on-error on-template-cloned-error}
-                 params {:project-id default-project-id :template-id (:id template)}]
+           (let [mdata  {:on-success on-template-cloned-success
+                         :on-error on-template-cloned-error}
+                 params {:project-id default-project-id
+                         :template-id (:id template)}]
              (swap! state #(assoc % :status :importing))
              (st/emit! (with-meta (dd/clone-template (with-meta params mdata))
                          {::ev/origin "get-started-hero-block"})))))]

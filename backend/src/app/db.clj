@@ -249,6 +249,12 @@
                 :code :unable-resolve-connection
                 :hint "expected conn or system map"))))
 
+(defn connection-map?
+  "Check if the provided value is a map like data structure that
+  contains a database connection."
+  [o]
+  (and (map? o) (connection? (::conn o))))
+
 (defn- get-connectable
   [o]
   (cond

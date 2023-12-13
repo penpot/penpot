@@ -15,13 +15,15 @@
    [app.common.files.validate :as fval]
    [app.common.fressian :as fres]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.features.components-v2 :as features.components-v2]
-   [app.features.fdata :as features.fdata]
+   [app.features.components-v2 :as feat.compv2]
+   [app.features.fdata :as feat.fdata]
+   [app.http.sse :as sse]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
@@ -30,7 +32,6 @@
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.helpers :as rph]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.tasks.file-gc]
@@ -38,11 +39,13 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]
    [clojure.walk :as walk]
    [cuerdas.core :as str]
    [datoteka.io :as io]
+   [promesa.core :as p]
    [promesa.util :as pu]
    [ring.response :as rres]
    [yetti.adapter :as yt])
@@ -302,25 +305,21 @@
 
 (defn- get-files
   [cfg ids]
-  (letfn [(get-files* [{:keys [::db/conn]}]
-            (let [sql (str "SELECT id FROM file "
-                           " WHERE id = ANY(?) ")
-                  ids (db/create-array conn "uuid" ids)]
-              (->> (db/exec! conn [sql ids])
-                   (into [] (map :id))
-                   (not-empty))))]
-
-    (db/run! cfg get-files*)))
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (let [sql (str "SELECT id FROM file "
+                                " WHERE id = ANY(?) ")
+                       ids (db/create-array conn "uuid" ids)]
+                   (->> (db/exec! conn [sql ids])
+                        (into [] (map :id))
+                        (not-empty))))))
 
 (defn- get-file
   [cfg file-id]
-  (letfn [(get-file* [{:keys [::db/conn]}]
-            (binding [pmap/*load-fn* (partial files/load-pointer conn file-id)]
-              (some-> (db/get* conn :file {:id file-id} {::db/remove-deleted? false})
-                      (files/decode-row)
-                      (files/process-pointers deref))))]
-
-    (db/run! cfg get-file*)))
+  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                 (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+                   (some-> (db/get* conn :file {:id file-id} {::db/remove-deleted? false})
+                           (files/decode-row)
+                           (update :data feat.fdata/process-pointers deref))))))
 
 (defn- get-file-media
   [{:keys [::db/pool]} {:keys [data id] :as file}]
@@ -642,6 +641,9 @@
             validate? (contains? cf/flags :file-validation)
             features  (cfeat/get-team-enabled-features cf/flags team)]
 
+        (sse/tap {:type :import-progress
+                  :section :read-import})
+
         ;; Process all sections
         (run! (fn [section]
                 (l/dbg :hint "reading section" :section section ::l/sync? true)
@@ -651,6 +653,8 @@
                                   (assoc ::section section)
                                   (assoc ::input input))]
                   (binding [*options* options]
+                    (sse/tap {:type :import-progress
+                              :section section})
                     (read-section options))))
               [:v1/metadata :v1/files :v1/rels :v1/sobjects])
 
@@ -658,9 +662,9 @@
         (doseq [[feature file-id] (-> *state* deref :pending-to-migrate)]
           (case feature
             "components/v2"
-            (features.components-v2/migrate-file! options file-id
-                                                  :validate? validate?
-                                                  :throw-on-validate? true)
+            (feat.compv2/migrate-file! options file-id
+                                       :validate? validate?
+                                       :throw-on-validate? true)
 
             "fdata/shape-data-type"
             nil
@@ -694,11 +698,11 @@
   (cond-> file
     (and (contains? cfeat/*current* "fdata/objects-map")
          (not (contains? cfeat/*previous* "fdata/objects-map")))
-    (features.fdata/enable-objects-map)
+    (feat.fdata/enable-objects-map)
 
     (and (contains? cfeat/*current* "fdata/pointer-map")
          (not (contains? cfeat/*previous* "fdata/pointer-map")))
-    (features.fdata/enable-pointer-map)))
+    (feat.fdata/enable-pointer-map)))
 
 (defn- get-remaped-thumbnails
   [thumbnails file-id]
@@ -709,7 +713,7 @@
         thumbnails))
 
 (defmethod read-section :v1/files
-  [{:keys [::db/conn ::input ::project-id ::enabled-features ::timestamp ::overwrite?]}]
+  [{:keys [::db/conn ::input ::project-id ::enabled-features ::timestamp ::overwrite?] :as system}]
 
   (doseq [expected-file-id (-> *state* deref :files)]
     (let [file       (read-obj! input)
@@ -765,7 +769,6 @@
                 cfeat/*previous* (:features file)
                 pmap/*tracked* (atom {})]
 
-
         (let [params (-> file
                          (assoc :id file-id')
                          (assoc :features features)
@@ -813,7 +816,7 @@
             (create-or-update-file! conn params)
             (db/insert! conn :file params))
 
-          (files/persist-pointers! conn file-id')
+          (feat.fdata/persist-pointers! system file-id')
 
           (when overwrite?
             (db/delete! conn :file-thumbnail {:file-id file-id'}))
@@ -1056,54 +1059,71 @@
 
 ;; --- Command: export-binfile
 
-(s/def ::file-id ::us/uuid)
-(s/def ::include-libraries? ::us/boolean)
-(s/def ::embed-assets? ::us/boolean)
-
-(s/def ::export-binfile
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::include-libraries? ::embed-assets?]))
+(def ^:private
+  schema:export-binfile
+  (sm/define
+    [:map {:title "export-binfile"}
+     [:file-id ::sm/uuid]
+     [:include-libraries? :boolean]
+     [:embed-assets? :boolean]]))
 
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
   {::doc/added "1.15"
-   ::webhooks/event? true}
+   ::webhooks/event? true
+   ::sm/result schema:export-binfile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id include-libraries? embed-assets?] :as params}]
   (files/check-read-permissions! pool profile-id file-id)
-  (let [body (reify rres/StreamableResponseBody
-               (-write-body-to-stream [_ _ output-stream]
-                 (-> cfg
-                     (assoc ::file-ids [file-id])
-                     (assoc ::embed-assets? embed-assets?)
-                     (assoc ::include-libraries? include-libraries?)
-                     (export! output-stream))))]
+  (fn [_]
+    {::rres/status 200
+     ::rres/headers {"content-type" "application/octet-stream"}
+     ::rres/body (reify rres/StreamableResponseBody
+                   (-write-body-to-stream [_ _ output-stream]
+                     (-> cfg
+                         (assoc ::file-ids [file-id])
+                         (assoc ::embed-assets? embed-assets?)
+                         (assoc ::include-libraries? include-libraries?)
+                         (export! output-stream))))}))
 
-    (fn [_]
-      {::rres/status 200
-       ::rres/body body
-       ::rres/headers {"content-type" "application/octet-stream"}})))
 
-(s/def ::file ::media/upload)
-(s/def ::import-binfile
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::project-id ::file]))
+;; --- Command: import-binfile
+
+(def ^:private
+  schema:import-binfile
+  (sm/define
+    [:map {:title "import-binfile"}
+     [:project-id ::sm/uuid]
+     [:file ::media/upload]]))
+
+(declare ^:private import-binfile)
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format."
   {::doc/added "1.15"
-   ::webhooks/event? true}
+   ::webhooks/event? true
+   ::sse/stream? true
+   ::sm/params schema:import-binfile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id file] :as params}]
-  (db/with-atomic [conn pool]
-    (projects/check-read-permissions! conn profile-id project-id)
-    (let [ids (import! (assoc cfg
-                              ::input (:path file)
-                              ::project-id project-id
-                              ::profile-id profile-id
-                              ::ignore-index-errors? true))]
+  (projects/check-read-permissions! pool profile-id project-id)
+  (let [params (-> cfg
+                   (assoc ::input (:path file))
+                   (assoc ::project-id project-id)
+                   (assoc ::profile-id profile-id)
+                   (assoc ::ignore-index-errors? true))]
+    (with-meta
+      (sse/response #(import-binfile params))
+      {::audit/props {:file nil}})))
 
-      (db/update! conn :project
-                  {:modified-at (dt/now)}
-                  {:id project-id})
-
-      (rph/with-meta ids
-        {::audit/props {:file nil :file-ids ids}}))))
+(defn- import-binfile
+  [{:keys [::wrk/executor ::project-id] :as params}]
+  (db/tx-run! params
+              (fn [{:keys [::db/conn] :as params}]
+                ;; NOTE: the importation process performs some operations that
+                ;; are not very friendly with virtual threads, and for avoid
+                ;; unexpected blocking of other concurrent operations we
+                ;; dispatch that operation to a dedicated executor.
+                (let [result (p/thread-call executor (partial import! params))]
+                  (db/update! conn :project
+                              {:modified-at (dt/now)}
+                              {:id project-id})
+                  (deref result)))))

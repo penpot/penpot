@@ -1,6 +1,5 @@
 {:deps {:aliases [:dev]}
  :source-paths ["src" "vendor" "../common"]
- :jvm-opts ["-Xmx512m" "-Xms50m" "-XX:+UseSerialGC"]
 
  :builds
  {:main

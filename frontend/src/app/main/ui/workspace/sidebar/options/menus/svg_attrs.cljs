@@ -46,18 +46,16 @@
            [:button {:class (stl/css :attr-action-btn)
                      :on-click handle-delete}
             i/remove-refactor]]]
-         [:div  {:class (stl/css :attr-row)}
-          [:span  {:class (stl/css :attr-title)}
-           (str (d/name (last attr)))]
-
-          (for [[key value] value]
-            [:& attribute-value {:key key
-                                 :attr (conj attr key)
-                                 :value value
-                                 :on-change on-change
-                                 :on-delete on-delete}])])]
-
-
+          [:div {:class (stl/css :attr-nested-content)}
+              [:div  {:class (stl/css :attr-title)}
+              (str (d/name (last attr)))]
+            (for [[key value] value]
+              [:div {:class (stl/css :attr-row) :key key}
+                [:& attribute-value {:key key
+                                    :attr (conj attr key)
+                                    :value value
+                                    :on-change on-change
+                                    :on-delete on-delete}]])])]
       [:div.element-set-content
        (if (string? value)
          [:div.row-flex.row-flex-removable
@@ -122,13 +120,14 @@
                          :on-collapsed toggle-content
                          :title        (tr "workspace.sidebar.options.svg-attrs.title")
                          :class        (stl/css-case :title-spacing-svg-attrs (not has-attributes?))}]]
-         [:div {:class (stl/css :element-set-content)}
+         (when open?
+          [:div {:class (stl/css :element-set-content)}
           (for [[attr-key attr-value] attrs]
             [:& attribute-value {:key attr-key
                                  :attr [attr-key]
                                  :value attr-value
                                  :on-change handle-change
-                                 :on-delete handle-delete}])]]
+                                 :on-delete handle-delete}])])]
 
         [:div.element-set
          [:div.element-set-title

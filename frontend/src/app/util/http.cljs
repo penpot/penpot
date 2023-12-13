@@ -105,17 +105,22 @@
 
 (defn send!
   [{:keys [response-type] :or {response-type :text} :as params}]
-  (letfn [(on-response [response]
-            (let [body (case response-type
-                         :json (.json ^js response)
-                         :text (.text ^js response)
-                         :blob (.blob ^js response))]
-              (->> (rx/from body)
-                   (rx/map (fn [body]
-                             {::response response
-                              :status    (.-status ^js response)
-                              :headers   (parse-headers (.-headers ^js response))
-                              :body      body})))))]
+  (letfn [(on-response [^js response]
+            (if (= :stream response-type)
+              (rx/of {:status (.-status response)
+                      :headers (parse-headers (.-headers response))
+                      :body (.-body response)
+                      ::response response})
+              (let [body (case response-type
+                           :json   (.json ^js response)
+                           :text   (.text ^js response)
+                           :blob   (.blob ^js response))]
+                (->> (rx/from body)
+                     (rx/map (fn [body]
+                               {::response response
+                                :status    (.-status ^js response)
+                                :headers   (parse-headers (.-headers ^js response))
+                                :body      body}))))))]
     (->> (fetch params)
          (rx/mapcat on-response))))
 

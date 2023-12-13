@@ -7028,6 +7028,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"eventsource-parser@npm:^1.1.1":
+  version: 1.1.1
+  resolution: "eventsource-parser@npm:1.1.1"
+  checksum: 6eae5e8300dc5d4dcd29d09d037a43b9954077fbcc936904065d1abf5ec503f1fa56a942ad4f796b7dcc3bf64224440917ea635ef4a75f5522e9951df4b9aadf
+  languageName: node
+  linkType: hard
+
 "evp_bytestokey@npm:^1.0.0, evp_bytestokey@npm:^1.0.3":
   version: 1.0.3
   resolution: "evp_bytestokey@npm:1.0.3"
@@ -7578,6 +7585,7 @@ __metadata:
     concurrently: "npm:^8.2.2"
     date-fns: "npm:^2.30.0"
     draft-js: "npm:^0.11.7"
+    eventsource-parser: "npm:^1.1.1"
     gettext-parser: "npm:^7.0.1"
     gulp: "npm:4.0.2"
     gulp-cached: "npm:^1.1.1"
@@ -7613,7 +7621,7 @@ __metadata:
     rxjs: "npm:~7.8.1"
     sass: "npm:^1.66.1"
     sax: "npm:^1.2.4"
-    shadow-cljs: "npm:2.25.10"
+    shadow-cljs: "npm:2.26.2"
     source-map-support: "npm:^0.5.21"
     storybook: "npm:^7.5.3"
     tdigest: "npm:^0.1.2"
@@ -12752,9 +12760,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"shadow-cljs@npm:2.25.10":
-  version: 2.25.10
-  resolution: "shadow-cljs@npm:2.25.10"
+"shadow-cljs@npm:2.26.2":
+  version: 2.26.2
+  resolution: "shadow-cljs@npm:2.26.2"
   dependencies:
     node-libs-browser: "npm:^2.2.1"
     readline-sync: "npm:^1.4.7"
@@ -12764,7 +12772,7 @@ __metadata:
     ws: "npm:^7.4.6"
   bin:
     shadow-cljs: cli/runner.js
-  checksum: fc341928abae469b67904dec6ab1c666e7a376c89ac641a64661017ccec57ff7289da5508a79cb1f1c8a623f8468a45b3910268a60176ec70a9621ddd62440fa
+  checksum: d504969ea28bcf3d5fc879c8111cb630a8ae910ea692bbfb0d73097fb336e13e642116db9fcc91524686a6824e71d439ef0df31941eabb6331feb4aa4146e830
   languageName: node
   linkType: hard
 

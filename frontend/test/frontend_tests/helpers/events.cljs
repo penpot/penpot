@@ -23,7 +23,7 @@
 
   (js/console.log "STORE ERROR" (.-stack cause))
   (when-let [data (some-> cause ex-data ::sm/explain)]
-    (pp/pprint (sm/humanize-data data))))
+    (pp/pprint (sm/humanize-explain data))))
 
 (defn prepare-store
   "Create a store with the given initial state. Wait until

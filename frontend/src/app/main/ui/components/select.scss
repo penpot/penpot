@@ -9,7 +9,8 @@
 .custom-select {
   @include titleTipography;
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
   height: $s-32;
   width: 100%;
@@ -20,10 +21,7 @@
   border: $s-1 solid var(--menu-background-color);
   color: var(--menu-foreground-color);
   cursor: pointer;
-  .current-label {
-    width: 100%;
-    flex-grow: 1;
-  }
+
   .current-icon {
     @include flexCenter;
     height: $s-24;
@@ -108,4 +106,8 @@
       stroke: var(--menu-foreground-color-disabled);
     }
   }
+}
+
+.current-label {
+  @include textEllipsis;
 }
