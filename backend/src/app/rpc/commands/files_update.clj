@@ -182,40 +182,39 @@
 (defn update-file
   [{:keys [::db/conn ::mtx/metrics] :as cfg}
    {:keys [id file features changes changes-with-metadata] :as params}]
-  (binding [cfeat/*current*  features
-            cfeat/*previous* (:features file)]
+  (let [features  (-> features
+                      (set/difference cfeat/frontend-only-features)
+                      (set/union (:features file)))
 
-    (let [features  (-> features
-                        (set/difference cfeat/frontend-only-features)
-                        (set/union (:features file)))
+        update-fn (cond-> update-file*
+                    (contains? features "fdata/pointer-map")
+                    (wrap-with-pointer-map-context)
 
-          update-fn (cond-> update-file*
-                      (contains? features "fdata/pointer-map")
-                      (wrap-with-pointer-map-context)
+                    (contains? features "fdata/objects-map")
+                    (wrap-with-objects-map-context))
 
-                      (contains? features "fdata/objects-map")
-                      (wrap-with-objects-map-context))
+        changes   (if changes-with-metadata
+                    (->> changes-with-metadata (mapcat :changes) vec)
+                    (vec changes))]
 
-          changes   (if changes-with-metadata
-                      (->> changes-with-metadata (mapcat :changes) vec)
-                      (vec changes))]
+    (when (> (:revn params)
+             (:revn file))
+      (ex/raise :type :validation
+                :code :revn-conflict
+                :hint "The incoming revision number is greater that stored version."
+                :context {:incoming-revn (:revn params)
+                          :stored-revn (:revn file)}))
 
-      (when (> (:revn params)
-               (:revn file))
-        (ex/raise :type :validation
-                  :code :revn-conflict
-                  :hint "The incoming revision number is greater that stored version."
-                  :context {:incoming-revn (:revn params)
-                            :stored-revn (:revn file)}))
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
-      (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (when (not= features (:features file))
+      (let [features (db/create-array conn "text" features)]
+        (db/update! conn :file
+                    {:features features}
+                    {:id id})))
 
-      (when (not= features (:features file))
-        (let [features (db/create-array conn "text" features)]
-          (db/update! conn :file
-                      {:features features}
-                      {:id id})))
-
+    (binding [cfeat/*current*  features
+              cfeat/*previous* (:features file)]
       (let [file   (assoc file :features features)
             params (-> params
                        (assoc :file file)

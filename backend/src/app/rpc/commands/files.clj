@@ -34,7 +34,6 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.set :as set]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
@@ -227,7 +226,10 @@
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
             pmap/*tracked* (pmap/create-tracked)
             cfeat/*new*    (atom #{})]
-    (let [file (fmg/migrate-file file)]
+    (let [file (-> (fmg/migrate-file file)
+                   (update :features into (deref cfeat/*new*))
+                   (update :features cfeat/migrate-legacy-features))]
+
       ;; NOTE: when file is migrated, we break the rule of no perform
       ;; mutations on get operations and update the file with all
       ;; migrations applied
@@ -235,16 +237,17 @@
       ;; NOTE: the following code will not work on read-only mode, it
       ;; is a known issue; we keep is not implemented until we really
       ;; need this
-      (if (fmg/migrated? file)
-        (let [file     (update file :features cfeat/migrate-legacy-features)
-              features (set/union (deref cfeat/*new*) (:features file))]
-          (db/update! conn :file
-                      {:data (blob/encode (:data file))
-                       :features (db/create-array conn "text" features)}
-                      {:id id})
-          (feat.fdata/persist-pointers! cfg id)
-          (assoc file :features features))
-        file))))
+      (when (fmg/migrated? file)
+        (db/update! conn :file
+                    {:data (blob/encode (:data file))
+                     :features (db/create-array conn "text" (:features file))}
+                    {:id id}
+                    {::db/return-keys? false})
+
+        (when (contains? (:features file) "fdata/pointer-map")
+          (feat.fdata/persist-pointers! cfg id)))
+
+      file)))
 
 (defn get-file
   [{:keys [::db/conn] :as cfg} id & {:keys [project-id migrate?

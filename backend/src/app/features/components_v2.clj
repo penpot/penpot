@@ -769,7 +769,7 @@
             fdata (migrate-graphics fdata)]
         (update fdata :options assoc :components-v2 true)))))
 
-(defn- process-fdata
+(defn- prepare-fdata
   [fdata id]
   (-> fdata
       (assoc :id id)
@@ -788,43 +788,46 @@
 
 (defn- process-file
   [{:keys [::db/conn] :as system} id & {:keys [validate? throw-on-validate?]}]
-  (binding [pmap/*tracked* (pmap/create-tracked)
-            pmap/*load-fn* (partial fdata/load-pointer *system* id)]
+  (let [file  (binding [cfeat/*new* (atom #{})
+                        pmap/*load-fn* (partial fdata/load-pointer system id)]
+                (-> (files/get-file system id :migrate? false)
+                    (update :data prepare-fdata id)
+                    (update :features into (deref cfeat/*new*))
+                    (update :features cfeat/migrate-legacy-features)))
 
-    (let [file  (binding [cfeat/*new* (atom #{})]
-                  (-> (files/get-file system id :migrate? false)
-                      (update :data process-fdata id)
-                      (update :features into (deref cfeat/*new*))
-                      (update :features cfeat/migrate-legacy-features)))
+        libs  (->> (files/get-file-libraries conn id)
+                   (into [file] (map (fn [{:keys [id]}]
+                                       (binding [pmap/*load-fn* (partial fdata/load-pointer system id)]
+                                         (-> (files/get-file system id :migrate? false)
+                                             (update :data prepare-fdata id))))))
+                   (d/index-by :id))
 
-          libs  (->> (files/get-file-libraries conn id)
-                     (into [file] (map (fn [{:keys [id]}]
-                                         (binding [pmap/*load-fn* (partial fdata/load-pointer system id)]
-                                           (-> (files/get-file system id :migrate? false)
-                                               (update :data process-fdata id))))))
-                     (d/index-by :id))
+        file  (-> file
+                  (update :data migrate-fdata libs)
+                  (update :features conj "components/v2"))
 
-          pmap? (contains? (:features file) "fdata/pointer-map")
+        _     (when validate?
+                (validate-file! file libs throw-on-validate?))
 
-          file  (-> file
-                    (update :data migrate-fdata libs)
-                    (update :features conj "components/v2")
-                    (cond-> pmap? (fdata/enable-pointer-map)))
-          ]
+        file (if (contains? (:features file) "fdata/objects-map")
+               (fdata/enable-objects-map file)
+               file)
 
-      (when validate?
-        (validate-file! file libs throw-on-validate?))
+        file (if (contains? (:features file) "fdata/pointer-map")
+               (binding [pmap/*tracked* (pmap/create-tracked)]
+                 (let [file (fdata/enable-pointer-map file)]
+                   (fdata/persist-pointers! system id)
+                   file))
+               file)]
 
-      (db/update! conn :file
-                  {:data (blob/encode (:data file))
-                   :features (db/create-array conn "text" (:features file))
-                   :revn (:revn file)}
-                  {:id (:id file)})
+    (db/update! conn :file
+                {:data (blob/encode (:data file))
+                 :features (db/create-array conn "text" (:features file))
+                 :revn (:revn file)}
+                {:id (:id file)}
+                {::db/return-keys? false})
 
-      (when pmap?
-        (fdata/persist-pointers! system id))
-
-      (dissoc file :data))))
+    (dissoc file :data)))
 
 (defn migrate-file!
   [system file-id & {:keys [validate? throw-on-validate?]}]

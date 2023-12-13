@@ -701,6 +701,25 @@
               (update :object-id #(str/replace-first % #"^(.*?)/" (str file-id "/")))))
         thumbnails))
 
+(defn- process-fdata
+  [fdata id]
+  (-> fdata
+      (dissoc :recent-colors)
+      (assoc :id id)
+      (cond-> (> (:version fdata) cfd/version)
+        (assoc :version cfd/version))
+      ;; FIXME: We're temporarily activating all
+      ;; migrations because a problem in the
+      ;; environments messed up with the version
+      ;; numbers When this problem is fixed delete
+      ;; the following line
+      (assoc :version 22)
+      (pmg/migrate-data)
+      (update :pages-index relink-shapes)
+      (update :components relink-shapes)
+      (update :media relink-media)))
+
+
 (defmethod read-section :v1/files
   [{:keys [::db/conn ::input ::project-id ::enabled-features ::timestamp ::overwrite?] :as system}]
 
@@ -754,58 +773,40 @@
         (l/dbg :hint "update media references" ::l/sync? true)
         (vswap! *state* update :media into (map #(update % :id lookup-index)) media))
 
-      (binding [pmap/*tracked* (pmap/create-tracked)
-                cfeat/*new* (atom #{})]
-        (let [file (-> file
+      (let [file (binding [cfeat/*new* (atom #{})]
+                   (-> file
                        (assoc :id file-id')
                        (assoc :features features)
                        (assoc :project-id project-id)
                        (assoc :created-at timestamp)
                        (assoc :modified-at timestamp)
                        (dissoc :thumbnails)
-                       (update :data (fn [data]
-                                       (-> data
-                                           (dissoc :recent-colors)
-                                           (assoc :id file-id')
-                                           (cond-> (> (:version data) cfd/version)
-                                             (assoc :version cfd/version))
+                       (update :data process-fdata file-id')
+                       (update :features into (deref cfeat/*new*))))
 
-                                           ;; FIXME: We're temporarily activating all
-                                           ;; migrations because a problem in the
-                                           ;; environments messed up with the version
-                                           ;; numbers When this problem is fixed delete
-                                           ;; the following line
-                                           (assoc :version 22)
-                                           (update :pages-index relink-shapes)
-                                           (update :components relink-shapes)
-                                           (update :media relink-media)
-                                           (pmg/migrate-data)
-                                           (d/without-nils)))))
+            _    (when (contains? cf/flags :file-schema-validation)
+                   (fval/validate-file-schema! file))
 
-              ;; Add to file features all possible features added on
-              ;; migration process.
-              file (update file :features into (deref cfeat/*new*))
+            _    (when (contains? cf/flags :soft-file-schema-validation)
+                   (let [result (ex/try! (fval/validate-file-schema! file))]
+                     (when (ex/exception? result)
+                       (l/error :hint "file schema validation error" :cause result))))
 
-              file (if (contains? cf/flags :file-schema-validation)
-                     (fval/validate-file-schema! file)
-                     file)
+            file (if (contains? (:features file) "fdata/objects-map")
+                   (feat.fdata/enable-objects-map file)
+                   file)
 
-              _    (when (contains? cf/flags :soft-file-schema-validation)
-                     (try
-                       (fval/validate-file-schema! file)
-                       (catch Throwable cause
-                         (l/error :hint "file schema validation error" :cause cause))))
+            file (if (contains? (:features file) "fdata/pointer-map")
+                   (binding [pmap/*tracked* (pmap/create-tracked)]
+                     (let [file (feat.fdata/enable-pointer-map file)]
+                       (feat.fdata/persist-pointers! system file-id')
+                       file))
+                   file)
 
-              file (cond-> file
-                     (contains? (:features file) "fdata/objects-map")
-                     (feat.fdata/enable-objects-map)
 
-                     (contains? (:features file) "fdata/pointer-map")
-                     (feat.fdata/enable-pointer-map))
-
-              file (-> file
-                       (update :features #(db/create-array conn "text" %))
-                       (update :data blob/encode))]
+            file (-> file
+                     (update :features #(db/create-array conn "text" %))
+                     (update :data blob/encode))]
 
           (l/dbg :hint "create file" :id (str file-id') ::l/sync? true)
 
@@ -813,12 +814,10 @@
             (create-or-update-file! conn file)
             (db/insert! conn :file file))
 
-          (feat.fdata/persist-pointers! system file-id')
-
           (when overwrite?
             (db/delete! conn :file-thumbnail {:file-id file-id'}))
 
-          file-id')))))
+          file-id'))))
 
 (defmethod read-section :v1/rels
   [{:keys [::db/conn ::input ::timestamp]}]

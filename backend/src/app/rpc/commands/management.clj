@@ -109,23 +109,37 @@
           (update-fdata [fdata new-id]
             (-> fdata
                 (assoc :id new-id)
+                (feat.fdata/process-pointers deref)
                 (pmg/migrate-data)
                 (update :pages-index relink-shapes)
                 (update :components relink-shapes)
                 (update :media relink-media)
-                (d/without-nils)
-                (feat.fdata/process-pointers pmap/clone)))]
+                (d/without-nils)))]
 
     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
               pmap/*tracked* (pmap/create-tracked)
               cfeat/*new*    (atom #{})]
+
       (let [new-id (get index id)
-            file   (-> file
-                       (assoc :id new-id)
-                       (update :data update-fdata new-id)
-                       (update :features into (deref cfeat/*new*))
-                       (update :features cfeat/migrate-legacy-features))]
-        (feat.fdata/persist-pointers! cfg new-id)
+            file   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
+                             cfeat/*new*    (atom #{})]
+                     (-> file
+                         (assoc :id new-id)
+                         (update :data update-fdata new-id)
+                         (update :features into (deref cfeat/*new*))
+                         (update :features cfeat/migrate-legacy-features)))
+
+            file (if (contains? (:features file) "fdata/objects-map")
+                   (feat.fdata/enable-objects-map file)
+                   file)
+
+            file (if (contains? (:features file) "fdata/pointer-map")
+                   (binding [pmap/*tracked* (pmap/create-tracked)]
+                     (let [file (feat.fdata/enable-pointer-map file)]
+                       (feat.fdata/persist-pointers! cfg (:id file))
+                       file))
+                   file)]
+
         file))))
 
 (def sql:get-used-libraries
@@ -191,20 +205,22 @@
     (db/insert! conn :file
                 (-> file
                     (update :features #(db/create-array conn "text" %))
-                    (update :data blob/encode)))
+                    (update :data blob/encode))
+                {::db/return-keys? false})
 
     (db/insert! conn :file-profile-rel
                 {:file-id (:id file)
                  :profile-id profile-id
                  :is-owner true
                  :is-admin true
-                 :can-edit true})
+                 :can-edit true}
+                {::db/return-keys? false})
 
     (doseq [params flibs]
-      (db/insert! conn :file-library-rel params))
+      (db/insert! conn :file-library-rel params ::db/return-keys? false))
 
     (doseq [params fmeds]
-      (db/insert! conn :file-media-object params))
+      (db/insert! conn :file-media-object params ::db/return-keys? false))
 
     file))
 

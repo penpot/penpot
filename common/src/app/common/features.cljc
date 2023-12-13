@@ -51,7 +51,10 @@
     "layout/grid"})
 
 ;; A set of features enabled by default for each file, they are
-;; implicit and are enabled by default and can't be disabled
+;; implicit and are enabled by default and can't be disabled. The
+;; features listed in this set are mainly freatures addedby file
+;; migrations process, so all features referenced in migrations should
+;; be here.
 (def default-enabled-features
   #{"fdata/shape-data-type"})
 
