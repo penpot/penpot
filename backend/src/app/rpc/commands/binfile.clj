@@ -693,17 +693,6 @@
     (vswap! *state* update :index update-index files)
     (vswap! *state* assoc :version version :files files)))
 
-(defn- postprocess-file
-  [file]
-  (cond-> file
-    (and (contains? cfeat/*current* "fdata/objects-map")
-         (not (contains? cfeat/*previous* "fdata/objects-map")))
-    (feat.fdata/enable-objects-map)
-
-    (and (contains? cfeat/*current* "fdata/pointer-map")
-         (not (contains? cfeat/*previous* "fdata/pointer-map")))
-    (feat.fdata/enable-pointer-map)))
-
 (defn- get-remaped-thumbnails
   [thumbnails file-id]
   (mapv (fn [thumbnail]
@@ -765,56 +754,64 @@
         (l/dbg :hint "update media references" ::l/sync? true)
         (vswap! *state* update :media into (map #(update % :id lookup-index)) media))
 
-      (binding [cfeat/*current* features
-                cfeat/*previous* (:features file)
-                pmap/*tracked* (atom {})]
+      (binding [pmap/*tracked* (pmap/create-tracked)
+                cfeat/*new* (atom #{})]
+        (let [file (-> file
+                       (assoc :id file-id')
+                       (assoc :features features)
+                       (assoc :project-id project-id)
+                       (assoc :created-at timestamp)
+                       (assoc :modified-at timestamp)
+                       (dissoc :thumbnails)
+                       (update :data (fn [data]
+                                       (-> data
+                                           (dissoc :recent-colors)
+                                           (assoc :id file-id')
+                                           (cond-> (> (:version data) cfd/version)
+                                             (assoc :version cfd/version))
 
-        (let [params (-> file
-                         (assoc :id file-id')
-                         (assoc :features features)
-                         (assoc :project-id project-id)
-                         (assoc :created-at timestamp)
-                         (assoc :modified-at timestamp)
-                         (dissoc :thumbnails)
-                         (update :data (fn [data]
-                                         (-> data
-                                             (dissoc :recent-colors)
-                                             (assoc :id file-id')
-                                             (cond-> (> (:version data) cfd/version)
-                                               (assoc :version cfd/version))
+                                           ;; FIXME: We're temporarily activating all
+                                           ;; migrations because a problem in the
+                                           ;; environments messed up with the version
+                                           ;; numbers When this problem is fixed delete
+                                           ;; the following line
+                                           (assoc :version 22)
+                                           (update :pages-index relink-shapes)
+                                           (update :components relink-shapes)
+                                           (update :media relink-media)
+                                           (pmg/migrate-data)
+                                           (d/without-nils)))))
 
-                                             ;; FIXME: We're temporarily activating all
-                                             ;; migrations because a problem in the
-                                             ;; environments messed up with the version
-                                             ;; numbers When this problem is fixed delete
-                                             ;; the following line
-                                             (assoc :version 22)
-                                             (update :pages-index relink-shapes)
-                                             (update :components relink-shapes)
-                                             (update :media relink-media)
-                                             (pmg/migrate-data)
-                                             (d/without-nils)))))
+              ;; Add to file features all possible features added on
+              ;; migration process.
+              file (update file :features into (deref cfeat/*new*))
 
-              params (if (contains? cf/flags :file-schema-validation)
-                       (fval/validate-file-schema! params)
-                       params)
+              file (if (contains? cf/flags :file-schema-validation)
+                     (fval/validate-file-schema! file)
+                     file)
 
-              _      (when (contains? cf/flags :soft-file-schema-validation)
-                       (try
-                         (fval/validate-file-schema! params)
-                         (catch Throwable cause
-                           (l/error :hint "file schema validation error" :cause cause))))
+              _    (when (contains? cf/flags :soft-file-schema-validation)
+                     (try
+                       (fval/validate-file-schema! file)
+                       (catch Throwable cause
+                         (l/error :hint "file schema validation error" :cause cause))))
 
-              params (-> params
-                         (postprocess-file)
-                         (update :features #(db/create-array conn "text" %))
-                         (update :data blob/encode))]
+              file (cond-> file
+                     (contains? (:features file) "fdata/objects-map")
+                     (feat.fdata/enable-objects-map)
+
+                     (contains? (:features file) "fdata/pointer-map")
+                     (feat.fdata/enable-pointer-map))
+
+              file (-> file
+                       (update :features #(db/create-array conn "text" %))
+                       (update :data blob/encode))]
 
           (l/dbg :hint "create file" :id (str file-id') ::l/sync? true)
 
           (if overwrite?
-            (create-or-update-file! conn params)
-            (db/insert! conn :file params))
+            (create-or-update-file! conn file)
+            (db/insert! conn :file file))
 
           (feat.fdata/persist-pointers! system file-id')
 
