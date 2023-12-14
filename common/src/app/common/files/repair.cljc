@@ -28,14 +28,14 @@
   (let [repair-shape
         (fn [shape]
           ; Reset geometry to minimal
-          (log/debug :hint "  -> Reset geometry")
+          (log/debug :hint "  -> reset geometry")
           (-> shape
               (assoc :x 0)
               (assoc :y 0)
               (assoc :width 0.01)
               (assoc :height 0.01)
               (cts/setup-rect)))]
-    (log/info :hint "Repairing shape :invalid-geometry" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :invalid-geometry" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -45,10 +45,10 @@
   (let [repair-shape
         (fn [shape]
           ; Set parent to root frame.
-          (log/debug :hint "  -> Set to " :parent-id uuid/zero)
+          (log/debug :hint "  -> set to " :parent-id uuid/zero)
           (assoc shape :parent-id uuid/zero))]
 
-    (log/info :hint "Repairing shape :parent-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :parent-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -58,10 +58,10 @@
   (let [repair-shape
         (fn [parent-shape]
           ; Add shape to parent's children list
-          (log/debug :hint "  -> Add children to" :parent-id (:id parent-shape))
+          (log/debug :hint "  -> add children to" :parent-id (:id parent-shape))
           (update parent-shape :shapes conj (:id shape)))]
 
-    (log/info :hint "Repairing shape :child-not-in-parent" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :child-not-in-parent" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:parent-id shape)] repair-shape))))
@@ -70,17 +70,17 @@
   [_ {:keys [shape page-id args] :as error} file-data _]
   (let [repair-shape
         (fn [parent-shape]
-          (log/debug :hint "  -> Remove child" :child-id (:child-id args))
+          (log/debug :hint "  -> remove child" :child-id (:child-id args))
           (update parent-shape :shapes (fn [shapes]
                                          (d/removev #(= (:child-id args) %) shapes))))]
-    (log/info :hint "Repairing shape :child-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :child-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :invalid-parent
   [_ {:keys [shape page-id args] :as error} file-data _]
-  (log/info :hint "Repairing shape :invalid-parent" :id (:id shape) :name (:name shape) :page-id page-id)
+  (log/dbg :hint "repairing shape :invalid-parent" :id (:id shape) :name (:name shape) :page-id page-id)
   (-> (pcb/empty-changes nil page-id)
       (pcb/with-file-data file-data)
       (pcb/change-parent (:parent-id args) [shape] nil {:component-swap true})))
@@ -93,10 +93,10 @@
           (let [page     (ctpl/get-page file-data page-id)
                 frame    (cfh/get-frame (:objects page) (:parent-id shape))
                 frame-id (or (:id frame) uuid/zero)]
-            (log/debug :hint "  -> Set to " :frame-id frame-id)
+            (log/debug :hint "  -> set to " :frame-id frame-id)
             (assoc shape :frame-id frame-id)))]
 
-    (log/info :hint "Repairing shape :frame-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :frame-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -109,10 +109,10 @@
           (let [page     (ctpl/get-page file-data page-id)
                 frame    (cfh/get-frame (:objects page) (:parent-id shape))
                 frame-id (or (:id frame) uuid/zero)]
-            (log/debug :hint "  -> Set to " :frame-id frame-id)
+            (log/debug :hint "  -> set to " :frame-id frame-id)
             (assoc shape :frame-id frame-id)))]
 
-    (log/info :hint "Repairing shape :invalid-frame" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :invalid-frame" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -122,10 +122,10 @@
   (let [repair-shape
         (fn [shape]
           ; Set the :shape as main instance root
-          (log/debug :hint "  -> Set :main-instance")
+          (log/debug :hint "  -> set :main-instance")
           (assoc shape :main-instance true))]
 
-    (log/info :hint "Repairing shape :component-not-main" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :component-not-main" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -135,13 +135,13 @@
   (let [repair-shape
         (fn [shape]
           ; Set :component-file to local file
-          (log/debug :hint "  -> Set :component-file to local file")
+          (log/debug :hint "  -> set :component-file to local file")
           (assoc shape :component-file (:id file-data)))]
           ; There is no solution that may recover it with confidence
           ;; (log/warn :hint "  -> CANNOT REPAIR THIS AUTOMATICALLY.")
           ;; shape)]
 
-    (log/info :hint "Repairing shape :component-main-external" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :component-main-external" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -154,13 +154,13 @@
         repair-shape
         (fn [shape]
           ; Detach the shape and convert it to non instance.
-          (log/debug :hint "  -> Detach shape" :shape-id (:id shape))
+          (log/debug :hint "  -> detach shape" :shape-id (:id shape))
           (ctk/detach-shape shape))]
           ; There is no solution that may recover it with confidence
           ;; (log/warn :hint "  -> CANNOT REPAIR THIS AUTOMATICALLY.")
           ;; shape)]
 
-    (log/info :hint "Repairing shape :component-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :component-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes shape-ids repair-shape))))
@@ -172,15 +172,15 @@
         repair-component
         (fn [component]
           ; Assign main instance in the component to current shape
-          (log/debug :hint "  -> Assign main-instance-id" :component-id (:id component))
+          (log/debug :hint "  -> assign main-instance-id" :component-id (:id component))
           (assoc component :main-instance-id (:id shape)))
 
         detach-shape
         (fn [shape]
-          (log/debug :hint "  -> Detach shape" :shape-id (:id shape))
+          (log/debug :hint "  -> detach shape" :shape-id (:id shape))
           (ctk/detach-shape shape))]
 
-    (log/info :hint "Repairing shape :invalid-main-instance-id" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :invalid-main-instance-id" :id (:id shape) :name (:name shape) :page-id page-id)
     (if (and (some? component) (not (:deleted component)))
       (-> (pcb/empty-changes nil page-id)
           (pcb/with-library-data file-data)
@@ -195,9 +195,9 @@
   (let [repair-component
         (fn [component]
           ; Assign main instance in the component to current shape
-          (log/debug :hint "  -> Assign main-instance-page" :component-id (:id component))
+          (log/debug :hint "  -> assign main-instance-page" :component-id (:id component))
           (assoc component :main-instance-page page-id))]
-    (log/info :hint "Repairing shape :invalid-main-instance-page" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :invalid-main-instance-page" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-library-data file-data)
         (pcb/update-component (:component-id shape) repair-component))))
@@ -210,7 +210,7 @@
           (log/warn :hint "  -> CANNOT REPAIR THIS AUTOMATICALLY.")
           shape)]
 
-    (log/info :hint "Repairing shape :invalid-main-instance" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :invalid-main-instance" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -220,10 +220,10 @@
   (let [repair-shape
         (fn [shape]
           ; Unset the :shape as main instance root
-          (log/debug :hint "  -> Unset :main-instance")
+          (log/debug :hint "  -> unset :main-instance")
           (dissoc shape :main-instance))]
 
-    (log/info :hint "Repairing shape :component-main" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :component-main" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -233,10 +233,10 @@
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a top copy root.
-          (log/debug :hint "  -> Set :component-root")
+          (log/debug :hint "  -> set :component-root")
           (assoc shape :component-root true))]
 
-    (log/info :hint "Repairing shape :should-be-component-root" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :should-be-component-root" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -246,10 +246,10 @@
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a nested copy root.
-          (log/debug :hint "  -> Unset :component-root")
+          (log/debug :hint "  -> unset :component-root")
           (dissoc shape :component-root))]
 
-    (log/info :hint "Repairing shape :should-not-be-component-root" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :should-not-be-component-root" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -268,17 +268,17 @@
 
         reassign-shape
         (fn [shape]
-          (log/debug :hint "  -> Reassign shape-ref to" :shape-ref (:id matching-shape))
+          (log/debug :hint "  -> reassign shape-ref to" :shape-ref (:id matching-shape))
           (assoc shape :shape-ref (:id matching-shape)))
 
         detach-shape
         (fn [shape]
-          (log/debug :hint "  -> Detach shape" :shape-id (:id shape))
+          (log/debug :hint "  -> detach shape" :shape-id (:id shape))
           (ctk/detach-shape shape))]
 
     ; If the shape still refers to the remote component, try to find the corresponding near one
     ; and link to it. If not, detach the shape.
-    (log/info :hint "Repairing shape :ref-shape-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :ref-shape-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
     (if (some? matching-shape)
       (-> (pcb/empty-changes nil page-id)
           (pcb/with-file-data file-data)
@@ -294,10 +294,10 @@
   (let [repair-shape
         (fn [shape]
           ; Remove shape-ref
-          (log/debug :hint "  -> Unset :shape-ref")
+          (log/debug :hint "  -> unset :shape-ref")
           (dissoc shape :shape-ref))]
 
-    (log/info :hint "Repairing shape :shape-ref-in-main" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :shape-ref-in-main" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -307,10 +307,10 @@
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a nested main head.
-          (log/debug :hint "  -> Unset :component-root")
+          (log/debug :hint "  -> unset :component-root")
           (dissoc shape :component-root))]
 
-    (log/info :hint "Repairing shape :root-main-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :root-main-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -320,10 +320,10 @@
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a top main head.
-          (log/debug :hint "  -> Set :component-root")
+          (log/debug :hint "  -> set :component-root")
           (assoc shape :component-root true))]
 
-    (log/info :hint "Repairing shape :nested-main-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :nested-main-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -333,10 +333,10 @@
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a nested copy head.
-          (log/debug :hint "  -> Unset :component-root")
+          (log/debug :hint "  -> unset :component-root")
           (dissoc shape :component-root))]
 
-    (log/info :hint "Repairing shape :root-copy-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :root-copy-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -346,10 +346,10 @@
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a top copy root.
-          (log/debug :hint "  -> Set :component-root")
+          (log/debug :hint "  -> set :component-root")
           (assoc shape :component-root true))]
 
-    (log/info :hint "Repairing shape :nested-copy-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :nested-copy-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -359,10 +359,10 @@
   (let [repair-shape
         (fn [shape]
           ; Detach the shape and convert it to non instance.
-          (log/debug :hint "  -> Detach shape" :shape-id (:id shape))
+          (log/debug :hint "  -> detach shape" :shape-id (:id shape))
           (ctk/detach-shape shape))]
 
-    (log/info :hint "Repairing shape :not-head-main-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :not-head-main-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -372,10 +372,10 @@
   (let [repair-shape
         (fn [shape]
           ; Detach the shape and convert it to non instance.
-          (log/debug :hint "  -> Detach shape" :shape-id (:id shape))
+          (log/debug :hint "  -> detach shape" :shape-id (:id shape))
           (ctk/detach-shape shape))]
 
-    (log/info :hint "Repairing shape :not-head-copy-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :not-head-copy-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -388,7 +388,7 @@
           (log/warn :hint "  -> CANNOT REPAIR THIS AUTOMATICALLY.")
           shape)]
 
-    (log/info :hint "Repairing shape :not-component-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :not-component-not-allowed" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -398,14 +398,14 @@
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a frame.
-          (log/debug :hint "  -> Set :type :frame")
+          (log/debug :hint "  -> set :type :frame")
           (assoc shape :type :frame
                        :fills []
                        :hide-in-viewer true
                        :rx 0
                        :ry 0))]
 
-    (log/info :hint "Repairing shape :instance-head-not-frame" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/dbg :hint "repairing shape :instance-head-not-frame" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
@@ -417,13 +417,13 @@
           ; Remove the objects key, or set it to {} if the component is deleted
           (if (:deleted component)
             (do
-              (log/debug :hint "  -> Set :objects {}")
+              (log/debug :hint "  -> set :objects {}")
               (assoc component :objects {}))
             (do
-              (log/debug :hint "  -> Remove :objects")
+              (log/debug :hint "  -> remove :objects")
               (dissoc component :objects))))]
 
-    (log/info :hint "Repairing component :component-nil-objects-not-allowed" :id (:id shape) :name (:name shape))
+    (log/dbg :hint "repairing component :component-nil-objects-not-allowed" :id (:id shape) :name (:name shape))
     (-> (pcb/empty-changes nil)
         (pcb/with-library-data file-data)
         (pcb/update-component (:id shape) repair-component))))
@@ -434,13 +434,15 @@
   file)
 
 (defn repair-file
-  [file-data libraries errors]
-  (log/info :hint "Repairing file" :id (:id file-data) :error-count (count errors))
-  (reduce (fn [changes error]
-            (pcb/concat-changes changes
-                                (repair-error (:code error)
-                                              error
-                                              file-data
-                                              libraries)))
-          (pcb/empty-changes nil)
-          errors))
+  [{:keys [data id] :as file} libraries errors]
+  (log/dbg :hint "repairing file" :id (str id) :errors (count errors))
+  (let [{:keys [redo-changes]}
+        (reduce (fn [changes error]
+                  (pcb/concat-changes changes
+                                      (repair-error (:code error)
+                                                    error
+                                                    data
+                                                    libraries)))
+                (pcb/empty-changes nil)
+                errors)]
+    redo-changes))

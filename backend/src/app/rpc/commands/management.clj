@@ -13,6 +13,7 @@
    [app.common.files.migrations :as pmg]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as feat.fdata]
    [app.http.sse :as sse]
@@ -108,23 +109,37 @@
           (update-fdata [fdata new-id]
             (-> fdata
                 (assoc :id new-id)
+                (feat.fdata/process-pointers deref)
                 (pmg/migrate-data)
                 (update :pages-index relink-shapes)
                 (update :components relink-shapes)
                 (update :media relink-media)
-                (d/without-nils)
-                (feat.fdata/process-pointers pmap/clone)))]
+                (d/without-nils)))]
 
     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
               pmap/*tracked* (pmap/create-tracked)
               cfeat/*new*    (atom #{})]
+
       (let [new-id (get index id)
-            file   (-> file
-                       (assoc :id new-id)
-                       (update :data update-fdata new-id)
-                       (update :features into (deref cfeat/*new*))
-                       (update :features cfeat/migrate-legacy-features))]
-        (feat.fdata/persist-pointers! cfg new-id)
+            file   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
+                             cfeat/*new*    (atom #{})]
+                     (-> file
+                         (assoc :id new-id)
+                         (update :data update-fdata new-id)
+                         (update :features into (deref cfeat/*new*))
+                         (update :features cfeat/migrate-legacy-features)))
+
+            file (if (contains? (:features file) "fdata/objects-map")
+                   (feat.fdata/enable-objects-map file)
+                   file)
+
+            file (if (contains? (:features file) "fdata/pointer-map")
+                   (binding [pmap/*tracked* (pmap/create-tracked)]
+                     (let [file (feat.fdata/enable-pointer-map file)]
+                       (feat.fdata/persist-pointers! cfg (:id file))
+                       file))
+                   file)]
+
         file))))
 
 (def sql:get-used-libraries
@@ -190,20 +205,22 @@
     (db/insert! conn :file
                 (-> file
                     (update :features #(db/create-array conn "text" %))
-                    (update :data blob/encode)))
+                    (update :data blob/encode))
+                {::db/return-keys? false})
 
     (db/insert! conn :file-profile-rel
                 {:file-id (:id file)
                  :profile-id profile-id
                  :is-owner true
                  :is-admin true
-                 :can-edit true})
+                 :can-edit true}
+                {::db/return-keys? false})
 
     (doseq [params flibs]
-      (db/insert! conn :file-library-rel params))
+      (db/insert! conn :file-library-rel params ::db/return-keys? false))
 
     (doseq [params fmeds]
-      (db/insert! conn :file-media-object params))
+      (db/insert! conn :file-media-object params ::db/return-keys? false))
 
     file))
 
@@ -283,7 +300,7 @@
 ;; --- COMMAND: Move file
 
 (def sql:get-files
-  "select id, project_id from file where id = ANY(?)")
+  "select id, features, project_id from file where id = ANY(?)")
 
 (def sql:move-files
   "update file set project_id = ? where id = ANY(?)")
@@ -307,7 +324,8 @@
   [{:keys [::db/conn] :as cfg} {:keys [profile-id ids project-id] :as params}]
 
   (let [fids    (db/create-array conn "uuid" ids)
-        files   (db/exec! conn [sql:get-files fids])
+        files   (->> (db/exec! conn [sql:get-files fids])
+                     (map files/decode-row))
         source  (into #{} (map :project-id) files)
         pids    (->> (conj source project-id)
                      (db/create-array conn "uuid"))]
@@ -327,7 +345,12 @@
     ;; Check the team compatibility
     (let [orig-team (teams/get-team conn :profile-id profile-id :project-id (first source))
           dest-team (teams/get-team conn :profile-id profile-id :project-id project-id)]
-      (cfeat/check-teams-compatibility! orig-team dest-team))
+      (cfeat/check-teams-compatibility! orig-team dest-team)
+
+      ;; Check if all pending to move files are compaib
+      (let [features (cfeat/get-team-enabled-features cf/flags dest-team)]
+        (doseq [file files]
+          (cfeat/check-file-features! features (:features file)))))
 
     ;; move all files to the project
     (db/exec-one! conn [sql:move-files project-id fids])
@@ -384,7 +407,15 @@
     ;; Check the teams compatibility
     (let [orig-team (teams/get-team conn :profile-id profile-id :team-id (:team-id project))
           dest-team (teams/get-team conn :profile-id profile-id :team-id team-id)]
-      (cfeat/check-teams-compatibility! orig-team dest-team))
+      (cfeat/check-teams-compatibility! orig-team dest-team)
+
+      ;; Check if all pending to move files are compaib
+      (let [features (cfeat/get-team-enabled-features cf/flags dest-team)]
+        (doseq [file (->> (db/query conn :file
+                                    {:project-id project-id}
+                                    {:columns [:features]})
+                          (map files/decode-row))]
+          (cfeat/check-file-features! features (:features file)))))
 
     ;; move project to the destination team
     (db/update! conn :project

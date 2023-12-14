@@ -385,7 +385,7 @@
          libraries (get @st/state :workspace-libraries)]
 
      (try
-       (->> (if shape-id
+       (->> (if-let [shape-id (some-> shape-id parse-uuid)]
               (let [page (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])]
                 (cfv/validate-shape (uuid shape-id) file page libraries))
               (cfv/validate-file file libraries))
@@ -404,36 +404,39 @@
       (errors/print-error! cause))))
 
 (defn ^:export repair
-  []
-  (let [file      (assoc (get @st/state :workspace-file)
-                         :data (get @st/state :workspace-data))
-        libraries (get @st/state :workspace-libraries)
-        errors    (cfv/validate-file file libraries)]
+  [reload?]
+  (st/emit!
+   (ptk/reify ::repair-current-file
+     ptk/EffectEvent
+     (effect [_ state _]
+       (let [features (features/get-team-enabled-features state)
+             sid      (:session-id state)
 
-    (l/dbg :hint "repair current file" :errors (count errors))
+             file     (get state :workspace-file)
+             fdata    (get state :workspace-data)
 
-    (st/emit!
-     (ptk/reify ::repair-current-file
-       ptk/WatchEvent
-       (watch [_ state _]
-         (let [features  (features/get-team-enabled-features state)
-               sid       (:session-id state)
-               file      (get state :workspace-file)
-               file-data (get state :workspace-data)
-               libraries (get state :workspace-libraries)
+             file     (assoc file :data fdata)
+             libs     (get state :workspace-libraries)
 
-               changes   (-> (cfr/repair-file file-data libraries errors)
-                             (get :redo-changes))
+             errors   (cfv/validate-file file libs)
+             _        (l/dbg :hint "repair current file" :errors (count errors))
 
-               params    {:id (:id file)
-                          :revn (:revn file)
-                          :session-id sid
-                          :changes changes
-                          :features features
-                          :skip-validate true}]
+             changes  (cfr/repair-file file libs errors)
 
-           (->> (rp/cmd! :update-file params)
-                (rx/tap #(dom/reload-current-window)))))))))
+             params    {:id (:id file)
+                        :revn (:revn file)
+                        :session-id sid
+                        :changes changes
+                        :features features
+                        :skip-validate true}]
+
+
+         (->> (rp/cmd! :update-file params)
+              (rx/subs (fn [_]
+                         (when reload?
+                           (dom/reload-current-window)))
+                       (fn [cause]
+                         (errors/print-error! cause)))))))))
 
 (defn ^:export fix-orphan-shapes
   []

@@ -105,7 +105,7 @@
                                                                (pmg/migrate-file))))))
                                      (d/index-by :id))
                         errors  (validate/validate-file file libs)
-                        changes (-> (repair/repair-file (:data file) libs errors) :redo-changes)
+                        changes (repair/repair-file file libs errors)
 
                         file    (-> file
                                     (update :revn inc)
