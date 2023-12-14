@@ -44,7 +44,7 @@
   (ptk/reify ::initialize
     ptk/WatchEvent
     (watch [_ state stream]
-      (l/trace :hint "event:initialize" :fn "watch")
+      (l/trace :hint "initialize" :fn "watch")
       (let [sid (:session-id state)
             uri (prepare-uri {:session-id sid})
             ws  (ws/create uri)]
