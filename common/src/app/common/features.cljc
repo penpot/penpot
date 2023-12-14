@@ -51,7 +51,10 @@
     "layout/grid"})
 
 ;; A set of features enabled by default for each file, they are
-;; implicit and are enabled by default and can't be disabled
+;; implicit and are enabled by default and can't be disabled. The
+;; features listed in this set are mainly freatures addedby file
+;; migrations process, so all features referenced in migrations should
+;; be here.
 (def default-enabled-features
   #{"fdata/shape-data-type"})
 
@@ -190,7 +193,11 @@
   ([enabled-features file-features]
    (check-file-features! enabled-features file-features #{}))
   ([enabled-features file-features client-features]
-   (let [file-features (into #{} xf-remove-ephimeral file-features)]
+   (let [file-features   (into #{} xf-remove-ephimeral file-features)
+         ;; We should ignore all features that does not match with the
+         ;; `no-migration-features` set because we can't enable them
+         ;; as-is, because they probably need migrations
+         client-features (set/intersection client-features no-migration-features)]
      (let [not-supported (-> enabled-features
                              (set/union client-features)
                              (set/difference file-features)
@@ -208,15 +215,11 @@
 
      (check-supported-features! file-features)
 
-     (let [;; We should ignore all features that does not match with
-           ;; the `no-migration-features` set because we can't enable
-           ;; them as-is, because they probably need migrations
-           client-features (set/intersection client-features no-migration-features)
-           not-supported   (-> file-features
-                               (set/difference enabled-features)
-                               (set/difference client-features)
-                               (set/difference backend-only-features)
-                               (set/difference frontend-only-features))]
+     (let [not-supported (-> file-features
+                             (set/difference enabled-features)
+                             (set/difference client-features)
+                             (set/difference backend-only-features)
+                             (set/difference frontend-only-features))]
 
        (when (seq not-supported)
          (ex/raise :type :restriction

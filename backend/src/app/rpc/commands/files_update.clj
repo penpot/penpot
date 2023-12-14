@@ -182,39 +182,39 @@
 (defn update-file
   [{:keys [::db/conn ::mtx/metrics] :as cfg}
    {:keys [id file features changes changes-with-metadata] :as params}]
-  (binding [cfeat/*current*  features
-            cfeat/*previous* (:features file)]
-    (let [update-fn (cond-> update-file*
-                      (contains? features "fdata/pointer-map")
-                      (wrap-with-pointer-map-context)
+  (let [features  (-> features
+                      (set/difference cfeat/frontend-only-features)
+                      (set/union (:features file)))
 
-                      (contains? features "fdata/objects-map")
-                      (wrap-with-objects-map-context))
+        update-fn (cond-> update-file*
+                    (contains? features "fdata/pointer-map")
+                    (wrap-with-pointer-map-context)
 
-          changes   (if changes-with-metadata
-                      (->> changes-with-metadata (mapcat :changes) vec)
-                      (vec changes))
+                    (contains? features "fdata/objects-map")
+                    (wrap-with-objects-map-context))
 
-          features  (-> features
-                        (set/difference cfeat/frontend-only-features)
-                        (set/union (:features file)))]
+        changes   (if changes-with-metadata
+                    (->> changes-with-metadata (mapcat :changes) vec)
+                    (vec changes))]
 
-      (when (> (:revn params)
-               (:revn file))
-        (ex/raise :type :validation
-                  :code :revn-conflict
-                  :hint "The incoming revision number is greater that stored version."
-                  :context {:incoming-revn (:revn params)
-                            :stored-revn (:revn file)}))
+    (when (> (:revn params)
+             (:revn file))
+      (ex/raise :type :validation
+                :code :revn-conflict
+                :hint "The incoming revision number is greater that stored version."
+                :context {:incoming-revn (:revn params)
+                          :stored-revn (:revn file)}))
 
-      (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
-      (when (not= features (:features file))
-        (let [features (db/create-array conn "text" features)]
-          (db/update! conn :file
-                      {:features features}
-                      {:id id})))
+    (when (not= features (:features file))
+      (let [features (db/create-array conn "text" features)]
+        (db/update! conn :file
+                    {:features features}
+                    {:id id})))
 
+    (binding [cfeat/*current*  features
+              cfeat/*previous* (:features file)]
       (let [file   (assoc file :features features)
             params (-> params
                        (assoc :file file)
@@ -276,9 +276,7 @@
   (try
     (val/validate-file-schema! file)
     (catch Throwable cause
-      (l/error :hint "file schema validation error" :cause cause)))
-
-  file)
+      (l/error :hint "file schema validation error" :cause cause))))
 
 (defn- soft-validate-file!
   [file libs]
@@ -286,8 +284,7 @@
     (val/validate-file! file libs)
     (catch Throwable cause
       (l/error :hint "file validation error"
-               :cause cause)))
-  file)
+               :cause cause))))
 
 (defn- update-file-data
   [{:keys [::db/conn] :as cfg} file changes skip-validate]
@@ -300,7 +297,8 @@
 
         ;; WARNING: this ruins performance; maybe we need to find
         ;; some other way to do general validation
-        libs (when (and (contains? cf/flags :file-validation)
+        libs (when (and (or (contains? cf/flags :file-validation)
+                            (contains? cf/flags :soft-file-validation))
                         (not skip-validate))
                (->> (files/get-file-libraries conn (:id file))
                     (into [file] (map (fn [{:keys [id]}]
@@ -309,37 +307,37 @@
                                           (-> (files/get-file cfg id :migrate? false)
                                               (feat.fdata/process-pointers deref) ; ensure all pointers resolved
                                               (fmg/migrate-file))))))
-                    (d/index-by :id)))]
+                    (d/index-by :id)))
 
-    (-> (files/check-version! file)
-        (update :revn inc)
-        (update :data cpc/process-changes changes)
+        file (-> (files/check-version! file)
+                 (update :revn inc)
+                 (update :data cpc/process-changes changes))]
 
-        ;; If `libs` is defined, then full validation is performed
-        (cond-> (contains? cf/flags :soft-file-validation)
-          (soft-validate-file! libs))
+    (when (contains? cf/flags :soft-file-validation)
+      (soft-validate-file! file libs))
 
-        (cond-> (contains? cf/flags :soft-file-schema-validation)
-          (soft-validate-file-schema!))
+    (when (contains? cf/flags :soft-file-schema-validation)
+      (soft-validate-file-schema! file))
 
-        (cond-> (and (contains? cf/flags :file-validation)
-                     (not skip-validate))
-          (val/validate-file! libs))
+    (when (and (contains? cf/flags :file-validation)
+               (not skip-validate))
+      (val/validate-file! file libs))
 
-        (cond-> (and (contains? cf/flags :file-schema-validation)
-                     (not skip-validate))
-          (val/validate-file-schema!))
+    (when (and (contains? cf/flags :file-schema-validation)
+               (not skip-validate))
+      (val/validate-file-schema! file))
 
-        (cond-> (and (contains? cfeat/*current* "fdata/objects-map")
-                     (not (contains? cfeat/*previous* "fdata/objects-map")))
-          (feat.fdata/enable-objects-map))
+    (cond-> file
+      (and (contains? cfeat/*current* "fdata/objects-map")
+           (not (contains? cfeat/*previous* "fdata/objects-map")))
+      (feat.fdata/enable-objects-map)
 
-        (cond-> (and (contains? cfeat/*current* "fdata/pointer-map")
-                     (not (contains? cfeat/*previous* "fdata/pointer-map")))
-          (feat.fdata/enable-pointer-map))
+      (and (contains? cfeat/*current* "fdata/pointer-map")
+           (not (contains? cfeat/*previous* "fdata/pointer-map")))
+      (feat.fdata/enable-pointer-map)
 
-        (update :data blob/encode))))
-
+      :always
+      (update :data blob/encode))))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."
