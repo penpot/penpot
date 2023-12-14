@@ -13,6 +13,7 @@
    [app.common.spec :as us]
    [app.common.thumbnails :as thc]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -354,6 +355,7 @@
                                  (not is-dangling?)
                                  (or (not components-v2)
                                      (and (not main-instance?)
+                                          (not (ctn/has-any-copy-parent? objects shape))
                                           (cfh/component-touched? objects (:id shape)))))
 
 
