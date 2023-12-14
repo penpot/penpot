@@ -474,7 +474,14 @@
   [{:keys [data features] :as file} libraries]
   (when (contains? features "components/v2")
     (doseq [page (filter :id (ctpl/pages-seq data))]
-      (validate-shape! uuid/zero file page libraries))
+      (let [orphans (->> page
+                         :objects
+                         vals
+                         (filter #(not (contains? (:objects page) (:parent-id %))))
+                         (map :id))]
+        (validate-shape! uuid/zero file page libraries)
+        (doseq [shape-id orphans]
+          (validate-shape! shape-id file page libraries))))
 
     (doseq [component (vals (:components data))]
       (validate-component! component file)))
