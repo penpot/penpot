@@ -979,7 +979,11 @@
                            (:id parent-shape)
                            (get component-page :objects)
                            update-new-shape
-                           update-original-shape)
+                           update-original-shape
+                           nil
+                           false
+                           nil
+                           (:objects container))
 
         add-obj-change (fn [changes shape']
                          (update changes :redo-changes conj

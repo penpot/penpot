@@ -354,21 +354,24 @@
   the order of the children of each parent."
 
   ([object parent-id objects]
-   (clone-object object parent-id objects (fn [object _] object) (fn [object _] object) nil false nil))
+   (clone-object object parent-id objects (fn [object _] object) (fn [object _] object) nil false nil objects))
 
   ([object parent-id objects update-new-object]
-   (clone-object object parent-id objects update-new-object (fn [object _] object) nil false nil))
+   (clone-object object parent-id objects update-new-object (fn [object _] object) nil false nil objects))
 
   ([object parent-id objects update-new-object update-original-object]
-   (clone-object object parent-id objects update-new-object update-original-object nil false nil))
+   (clone-object object parent-id objects update-new-object update-original-object nil false nil objects))
 
   ([object parent-id objects update-new-object update-original-object force-id]
-   (clone-object object parent-id objects update-new-object update-original-object force-id false nil))
+   (clone-object object parent-id objects update-new-object update-original-object force-id false nil objects))
 
   ([object parent-id objects update-new-object update-original-object force-id keep-ids?]
-   (clone-object object parent-id objects update-new-object update-original-object force-id keep-ids? nil))
+   (clone-object object parent-id objects update-new-object update-original-object force-id keep-ids? nil objects))
 
   ([object parent-id objects update-new-object update-original-object force-id keep-ids? frame-id]
+   (clone-object object parent-id objects update-new-object update-original-object force-id keep-ids? frame-id objects))
+
+  ([object parent-id objects update-new-object update-original-object force-id keep-ids? frame-id dest-objects]
    (let [new-id (cond
                   (some? force-id) force-id
                   keep-ids? (:id object)
@@ -378,11 +381,11 @@
          ;; or the parent's frame-id otherwise. Only for the first cloned shapes. In recursive calls
          ;; this is not needed.
          frame-id (cond
-                    (and (nil? frame-id) (cfh/frame-shape? objects parent-id))
+                    (and (nil? frame-id) (cfh/frame-shape? dest-objects parent-id))
                     parent-id
 
                     (nil? frame-id)
-                    (dm/get-in objects [parent-id :frame-id])
+                    (dm/get-in dest-objects [parent-id :frame-id] uuid/zero)
 
                     :else
                     frame-id)]
