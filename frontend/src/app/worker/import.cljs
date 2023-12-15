@@ -726,16 +726,13 @@
                               (log/error :hint "unexpected error on import process"
                                          :project-id project-id
                                          ::log/sync? true)
-
-                              (when (map? cause)
+                              (let [edata (if (map? cause) cause (ex-data cause))]
                                 (println "Error data:")
-                                (pp/pprint (dissoc cause :explain) {:level 2 :length 10}))
+                                (pp/pprint (dissoc edata :explain) {:level 2 :length 10})
 
-                              (when (string? (:explain cause))
-                                (js/console.log (:explain cause)))
+                                (when (string? (:explain edata))
+                                  (js/console.log (:explain edata)))
 
-                              (rx/of {:status :import-error
-                                      :file-id (:file-id data)
-                                      :error (:hint cause)
-                                      :error-data cause}))))))))))
+                                (rx/of {:status :import-error
+                                        :file-id (:file-id data)})))))))))))
 

@@ -81,6 +81,7 @@
     (cond
       (or (= code :spec-validation)
           (= code :params-validation)
+          (= code :schema-validation)
           (= code :data-validation))
       (let [explain (ex/explain data)]
         {::rres/status 400
