@@ -65,7 +65,6 @@
                (d/seek :is-default)
                (:id)))
 
-
         on-resize
         (mf/use-fn
          (fn [_]
@@ -256,7 +255,7 @@
                :section section
                :search-term search-term
                :team team}])])]]
-      
+
       [:& (mf/provider ctx/current-team-id) {:value team-id}
        [:& (mf/provider ctx/current-project-id) {:value project-id}
         ;; NOTE: dashboard events and other related functions assumes
