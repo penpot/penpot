@@ -369,7 +369,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn update-shape-flags
-  [ids {:keys [blocked hidden] :as flags}]
+  [ids {:keys [blocked hidden transformed] :as flags}]
   (dm/assert!
    "expected valid coll of uuids"
    (every? uuid? ids))
@@ -385,14 +385,15 @@
             (fn [obj]
               (cond-> obj
                 (boolean? blocked) (assoc :blocked blocked)
-                (boolean? hidden) (assoc :hidden hidden)))
+                (boolean? hidden) (assoc :hidden hidden)
+                (boolean? transformed) (assoc :transformed transformed)))
             objects (wsh/lookup-page-objects state)
             ;; We have change only the hidden behaviour, to hide only the
             ;; selected shape, block behaviour remains the same.
             ids     (if (boolean? blocked)
                       (into ids (->> ids (mapcat #(cfh/get-children-ids objects %))))
                       ids)]
-        (rx/of (dch/update-shapes ids update-fn {:attrs #{:blocked :hidden}}))))))
+        (rx/of (dch/update-shapes ids update-fn {:attrs #{:blocked :hidden :transformed}}))))))
 
 (defn toggle-visibility-selected
   []
