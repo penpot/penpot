@@ -28,6 +28,7 @@
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.snap :as snap]
@@ -239,6 +240,26 @@
                 (rx/take-until stopper))
            (rx/of (dwm/apply-modifiers)
                   (finish-transform))))))))
+
+(defn trigger-bounding-box-cloaking
+  "Trigger the bounding box cloaking (with default timer of 1sec)
+
+  Used to hide bounding-box of shape after changes in sidebar->measures."
+  [ids]
+  (dm/assert!
+   "expected valid coll of uuids"
+   (every? uuid? ids))
+
+  (ptk/reify ::trigger-bounding-box-cloaking
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (rx/concat
+       (rx/of (dwsh/update-shape-flags ids {:transforming true}))
+       (->> (rx/timer 1000)
+            (rx/map (fn []
+                      (dwsh/update-shape-flags ids {:transforming false})))
+            (rx/take-until
+             (rx/filter (ptk/type? ::trigger-bounding-box-cloaking) stream)))))))
 
 (defn update-dimensions
   "Change size of shapes, from the sideber options form.
