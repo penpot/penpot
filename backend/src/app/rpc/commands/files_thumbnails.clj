@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
+   [app.common.files.migrations :as fmg]
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.thumbnails :as thc]
@@ -105,24 +106,12 @@
   (letfn [;; function responsible on finding the frame marked to be
           ;; used as thumbnail; the returned frame always have
           ;; the :page-id set to the page that it belongs.
-
-          (get-thumbnail-frame [file]
-            ;; NOTE: this is a hack for avoid perform blocking
-            ;; operation inside the for loop, clojure lazy-seq uses
-            ;; synchronized blocks that does not plays well with
-            ;; virtual threads where all rpc methods calls are
-            ;; dispatched, so we need to perform the load operation
-            ;; first. This operation forces all pointer maps load into
-            ;; the memory.
-            ;;
-            ;; FIXME: this is no longer true with clojure>=1.12
-            (let [{:keys [data]} (update file :data feat.fdata/process-pointers pmap/load!)]
-              ;; Then proceed to find the frame set for thumbnail
-              (d/seek #(or (:use-for-thumbnail %)
-                           (:use-for-thumbnail? %)) ; NOTE: backward comp (remove on v1.21)
-                      (for [page  (-> data :pages-index vals)
-                            frame (-> page :objects ctt/get-frames)]
-                        (assoc frame :page-id (:id page))))))
+          (get-thumbnail-frame [{:keys [data]}]
+            (d/seek #(or (:use-for-thumbnail %)
+                         (:use-for-thumbnail? %)) ; NOTE: backward comp (remove on v1.21)
+                    (for [page  (-> data :pages-index vals)
+                          frame (-> page :objects ctt/get-frames)]
+                      (assoc frame :page-id (:id page)))))
 
           ;; function responsible to filter objects data structure of
           ;; all unneeded shapes if a concrete frame is provided. If no
@@ -166,30 +155,29 @@
 
                 objects)))]
 
-    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-      (let [frame     (get-thumbnail-frame file)
-            frame-id  (:id frame)
-            page-id   (or (:page-id frame)
-                          (-> data :pages first))
+    (let [frame     (get-thumbnail-frame file)
+          frame-id  (:id frame)
+          page-id   (or (:page-id frame)
+                        (-> data :pages first))
 
-            page      (dm/get-in data [:pages-index page-id])
-            page      (cond-> page (pmap/pointer-map? page) deref)
-            frame-ids (if (some? frame) (list frame-id) (map :id (ctt/get-frames (:objects page))))
+          page      (dm/get-in data [:pages-index page-id])
+          page      (cond-> page (pmap/pointer-map? page) deref)
+          frame-ids (if (some? frame) (list frame-id) (map :id (ctt/get-frames (:objects page))))
 
-            obj-ids   (map #(thc/fmt-object-id (:id file) page-id % "frame") frame-ids)
-            thumbs    (get-object-thumbnails conn id obj-ids)]
+          obj-ids   (map #(thc/fmt-object-id (:id file) page-id % "frame") frame-ids)
+          thumbs    (get-object-thumbnails conn id obj-ids)]
 
-        (cond-> page
-          ;; If we have frame, we need to specify it on the page level
-          ;; and remove the all other unrelated objects.
-          (some? frame-id)
-          (-> (assoc :thumbnail-frame-id frame-id)
-              (update :objects filter-objects frame-id))
+      (cond-> page
+        ;; If we have frame, we need to specify it on the page level
+        ;; and remove the all other unrelated objects.
+        (some? frame-id)
+        (-> (assoc :thumbnail-frame-id frame-id)
+            (update :objects filter-objects frame-id))
 
-          ;; Assoc the available thumbnails and prune not visible shapes
-          ;; for avoid transfer unnecessary data.
-          :always
-          (update :objects assoc-thumbnails page-id thumbs))))))
+        ;; Assoc the available thumbnails and prune not visible shapes
+        ;; for avoid transfer unnecessary data.
+        :always
+        (update :objects assoc-thumbnails page-id thumbs)))))
 
 (def ^:private
   schema:get-file-data-for-thumbnail
@@ -221,7 +209,10 @@
                                                 :profile-id profile-id
                                                 :file-id file-id)
 
-                       file     (files/get-file cfg file-id)]
+                       file     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+                                  (-> (files/get-file cfg file-id :migrate? false)
+                                      (update :data feat.fdata/process-pointers deref)
+                                      (fmg/migrate-file)))]
 
                    (-> (cfeat/get-team-enabled-features cf/flags team)
                        (cfeat/check-client-features! (:features params))
