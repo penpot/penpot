@@ -11,7 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.defaults :as cfd]
-   [app.common.files.migrations :as pmg]
+   [app.common.files.migrations :as fmg]
    [app.common.files.validate :as fval]
    [app.common.fressian :as fres]
    [app.common.logging :as l]
@@ -701,23 +701,28 @@
               (update :object-id #(str/replace-first % #"^(.*?)/" (str file-id "/")))))
         thumbnails))
 
-(defn- process-fdata
-  [fdata id]
-  (-> fdata
-      (dissoc :recent-colors)
-      (assoc :id id)
-      (cond-> (> (:version fdata) cfd/version)
-        (assoc :version cfd/version))
-      ;; FIXME: We're temporarily activating all
-      ;; migrations because a problem in the
-      ;; environments messed up with the version
-      ;; numbers When this problem is fixed delete
-      ;; the following line
-      (assoc :version 22)
-      (pmg/migrate-data)
-      (update :pages-index relink-shapes)
-      (update :components relink-shapes)
-      (update :media relink-media)))
+(defn- process-file
+  [{:keys [id] :as file}]
+  (-> file
+      (update :data (fn [fdata]
+                      (-> fdata
+                          (assoc :id id)
+                          (dissoc :recent-colors)
+                          (cond-> (> (:version fdata) cfd/version)
+                            (assoc :version cfd/version))
+                          ;; FIXME: We're temporarily activating all
+                          ;; migrations because a problem in the
+                          ;; environments messed up with the version
+                          ;; numbers When this problem is fixed delete
+                          ;; the following line
+                          (cond-> (> (:version fdata) 22)
+                            (assoc :version 22)))))
+      (fmg/migrate-file)
+      (update :data (fn [fdata]
+                      (-> fdata
+                          (update :pages-index relink-shapes)
+                          (update :components relink-shapes)
+                          (update :media relink-media))))))
 
 
 (defmethod read-section :v1/files
@@ -730,19 +735,7 @@
           file-id    (:id file)
           file-id'   (lookup-index file-id)
 
-          thumbnails (:thumbnails file)
-          file       (update file :features cfeat/migrate-legacy-features)
-
-          features   (-> enabled-features
-                         (set/difference cfeat/frontend-only-features)
-                         (set/union (cfeat/check-supported-features! (:features file))))]
-
-      ;; All features that are enabled and requires explicit migration
-      ;; are added to the state for a posterior migration step
-      (doseq [feature (-> enabled-features
-                          (set/difference cfeat/no-migration-features)
-                          (set/difference (:features file)))]
-        (vswap! *state* update :pending-to-migrate (fnil conj []) [feature file-id']))
+          thumbnails (:thumbnails file)]
 
       (when (not= file-id expected-file-id)
         (ex/raise :type :validation
@@ -773,16 +766,28 @@
         (l/dbg :hint "update media references" ::l/sync? true)
         (vswap! *state* update :media into (map #(update % :id lookup-index)) media))
 
-      (let [file (binding [cfeat/*new* (atom #{})]
-                   (-> file
-                       (assoc :id file-id')
-                       (assoc :features features)
-                       (assoc :project-id project-id)
-                       (assoc :created-at timestamp)
-                       (assoc :modified-at timestamp)
-                       (dissoc :thumbnails)
-                       (update :data process-fdata file-id')
-                       (update :features into (deref cfeat/*new*))))
+      (let [file (-> file
+                     (assoc :id file-id')
+                     (process-file))
+
+            ;; All features that are enabled and requires explicit migration are
+            ;; added to the state for a posterior migration step.
+            _    (doseq [feature (-> enabled-features
+                                     (set/difference cfeat/no-migration-features)
+                                     (set/difference (:features file)))]
+                   (vswap! *state* update :pending-to-migrate (fnil conj []) [feature file-id']))
+
+            file (-> file
+                     (assoc :project-id project-id)
+                     (assoc :created-at timestamp)
+                     (assoc :modified-at timestamp)
+                     (dissoc :thumbnails)
+                     (update :features
+                             (fn [features]
+                               (let [features (cfeat/check-supported-features! features)]
+                                 (-> enabled-features
+                                     (set/difference cfeat/frontend-only-features)
+                                     (set/union features))))))
 
             _    (when (contains? cf/flags :file-schema-validation)
                    (fval/validate-file-schema! file))
@@ -802,7 +807,6 @@
                        (feat.fdata/persist-pointers! system file-id')
                        file))
                    file)
-
 
             file (-> file
                      (update :features #(db/create-array conn "text" %))
