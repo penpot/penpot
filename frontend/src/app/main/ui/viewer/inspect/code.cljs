@@ -261,7 +261,10 @@
                           :collapsabled-icon true
                           :rotated collapsed-css?)}
            i/arrow-refactor]]
-         [:span {:class (stl/css :code-lang)} "CSS"]
+
+         [:& select {:default-value style-type
+                     :class (stl/css :code-lang-select)
+                     :options [{:label "CSS" :value "css"}]}]
 
          [:div {:class (stl/css :action-btns)}
           [:button {:class (stl/css :expand-button)

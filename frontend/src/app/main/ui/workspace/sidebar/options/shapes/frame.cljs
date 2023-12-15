@@ -62,11 +62,18 @@
                         :values measure-values
                         :type type
                         :shape shape}]
+
      [:& component-menu {:shapes [shape]}]
-     (when (or (not is-layout-child?) is-layout-child-absolute?)
+
+     (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
-     [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
+
+     [:& layout-container-menu
+      {:type type
+       :ids [(:id shape)]
+       :values layout-container-values
+       :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
        [:& grid-cell/options

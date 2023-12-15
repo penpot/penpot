@@ -61,7 +61,7 @@
                          (rx/map (fn [styles]
                                    (assoc result
                                           :styles styles
-                                          :width 250))))))
+                                          :width 252))))))
        (rx/mapcat thr/render)
        (rx/mapcat (partial persist-thumbnail file-id revn))))
 

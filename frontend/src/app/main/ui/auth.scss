@@ -15,6 +15,7 @@
   height: 100%;
   padding: $s-32;
   width: 100%;
+  overflow: auto;
 
   &.no-illustration {
     display: flex;

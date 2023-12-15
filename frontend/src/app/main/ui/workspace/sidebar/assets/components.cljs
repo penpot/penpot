@@ -95,7 +95,7 @@
 
         on-component-click
         (mf/use-fn
-         (mf/deps component-id)
+         (mf/deps component-id on-asset-click)
          (fn [event]
            (dom/stop-propagation event)
            (on-asset-click component-id unselect-all event)))
@@ -141,7 +141,7 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps component-id)
+         (mf/deps on-context-menu component-id)
          (partial on-context-menu component-id))]
 
     (if ^boolean new-css-system
@@ -449,6 +449,7 @@
         toggle-list-style        (mf/use-ctx cmm/assets-toggle-list-style)
 
         selected                 (:components selected)
+
         selected-full            (into #{} (filter #(contains? selected (:id %))) components)
         multi-components?        (> (count selected) 1)
         multi-assets?            (or (seq (:graphics selected))
@@ -519,6 +520,7 @@
         (mf/use-fn
          (mf/deps selected on-clear-selection read-only?)
          (fn [component-id event]
+           (dom/stop-propagation event)
            (dom/prevent-default event)
            (let [pos (dom/get-client-position event)]
 

@@ -9,8 +9,6 @@
 .component-group {
   .drop-space {
     height: $s-12;
-    border-radius: $br-8;
-    background-color: var(--color-foreground-secondary);
   }
   .asset-grid {
     display: grid;
@@ -22,7 +20,7 @@
       @include flexCenter;
       position: relative;
       padding: $s-8;
-      border: $s-2 solid transparent;
+      border: $s-4 solid transparent;
       border-radius: $br-8;
       background-color: var(--color-foreground-secondary);
       overflow: hidden;
@@ -100,7 +98,7 @@
       }
 
       &.selected {
-        border: $s-1 solid var(--assets-item-border-color);
+        border: $s-4 solid var(--assets-item-border-color);
       }
     }
     .grid-placeholder {

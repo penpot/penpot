@@ -831,9 +831,15 @@
   (ptk/reify ::set-file-thumbnail
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (d/update-in-when [:dashboard-files file-id] assoc :thumbnail-uri thumbnail-uri)
-          (d/update-in-when [:dashboard-recent-files file-id] assoc :thumbnail-uri thumbnail-uri)))))
+      (letfn [(update-search-files [files]
+                (->> files
+                     (mapv #(cond-> %
+                              (= file-id (:id %))
+                              (assoc :thumbnail-uri thumbnail-uri)))))]
+        (-> state
+            (d/update-in-when [:dashboard-files file-id] assoc :thumbnail-uri thumbnail-uri)
+            (d/update-in-when [:dashboard-recent-files file-id] assoc :thumbnail-uri thumbnail-uri)
+            (d/update-when :dashboard-search-result update-search-files))))))
 
 ;; --- EVENT: create-file
 

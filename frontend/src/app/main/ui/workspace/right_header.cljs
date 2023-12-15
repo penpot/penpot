@@ -203,6 +203,8 @@
 
      [:& persistence-state-widget]
 
+     [:div {:class (stl/css :separator)}]
+
 
      [:div {:class (stl/css :zoom-section)}
       [:& zoom-widget-workspace

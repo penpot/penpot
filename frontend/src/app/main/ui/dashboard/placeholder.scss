@@ -65,7 +65,7 @@
     text-transform: uppercase;
     border: $s-2 solid transparent;
     width: var(--th-width, #{g.$thumbnail-default-width});
-    height: calc(var(--th-width, #{g.$thumbnail-default-width}) * #{g.$thumbnail-aspect-ration});
+    height: var(--th-height, #{g.$thumbnail-default-height});
 
     svg {
       width: $s-32;

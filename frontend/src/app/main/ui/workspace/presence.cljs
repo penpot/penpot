@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.config :as cfg]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
@@ -49,15 +50,13 @@
 
     (if new-css-system
       [:*
-       (when (and (< 2 num-users) open?)
+       (when (and (> num-users 2) open?)
          [:button
           {:id "users-close"
            :class (stl/css :active-users-opened)
            :on-click close-users-widget
            :on-blur close-users-widget}
           [:ul {:class (stl/css :active-users-list)}
-           (when (< 2 num-users)
-             [:li [:span {:class (stl/css :users-num)} num-users]])
            (for [session user-ids]
              [:& session-widget
               {:session session
@@ -69,7 +68,7 @@
                  :on-click open-users-widget}
 
         [:ul {:class (stl/css :active-users-list)}
-         (when (< 2 num-users) [:span {:class (stl/css :users-num)} num-users])
+         (when (> num-users 2) [:span {:class (stl/css :users-num)} (dm/str "+" (- num-users 2))])
          (for [[index session] (d/enumerate first-users)]
            [:& session-widget
             {:session session

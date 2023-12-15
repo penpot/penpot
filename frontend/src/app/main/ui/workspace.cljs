@@ -61,7 +61,8 @@
 (mf/defc workspace-content
   {::mf/wrap-props false}
   [{:keys [file layout page-id wglobal]}]
-  (let [selected (mf/deref refs/selected-shapes)
+  (let [palete-size (mf/use-state nil)
+        selected (mf/deref refs/selected-shapes)
 
         {:keys [vport] :as wlocal} (mf/deref refs/workspace-local)
         {:keys [options-mode]} wglobal
@@ -78,11 +79,17 @@
            (when (and vport (not= size vport))
              (st/emit! (dw/update-viewport-size resize-type size)))))
 
+        on-resize-palette
+        (mf/use-fn
+         (fn [size]
+           (reset! palete-size size)))
+
         node-ref (use-resize-observer on-resize)]
     [:*
      (if new-css-system
        (when (not hide-ui?)
-         [:& palette {:layout layout}])
+         [:& palette {:layout layout
+                      :on-change-palette-size on-resize-palette}])
        [:*
         (when (and colorpalette? (not hide-ui?))
           [:& colorpalette])
@@ -107,7 +114,10 @@
                      :wlocal wlocal
                      :wglobal wglobal
                      :selected selected
-                     :layout layout}]]]
+                     :layout layout
+                     :palete-size
+                     (when (and (or colorpalette? textpalette?) (not hide-ui?))
+                       @palete-size)}]]]
 
      (when-not hide-ui?
        [:*

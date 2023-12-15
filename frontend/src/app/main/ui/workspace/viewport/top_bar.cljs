@@ -35,9 +35,7 @@
          [:& i18n/tr-html {:tag-name "span"
                            :label "workspace.top-bar.read-only"}]]
         [:button {:class (stl/css :done-btn)
-                  :on-click handle-close-view-mode} (tr "workspace.top-bar.read-only.done")]
-        [:button {:class (stl/css :close-btn)
-                  :on-click handle-close-view-mode} i/close-refactor]]]
+                  :on-click handle-close-view-mode} (tr "workspace.top-bar.read-only.done")]]]
 
       ;; OLD
       [:div.viewport-actions

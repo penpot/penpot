@@ -11,13 +11,16 @@
   align-items: center;
   min-width: $s-256;
   padding: $s-8;
-  gap: $s-2;
+  gap: $s-8;
   background-color: var(--panel-background-color);
   .users-section {
     position: relative;
     min-width: $s-32;
     max-width: $s-72;
     padding: $s-4 $s-6;
+  }
+  .separator {
+    flex: 1;
   }
   .zoom-section {
     .zoom-widget {
@@ -27,6 +30,7 @@
       justify-content: center;
       height: $s-28;
       max-width: $s-48;
+      width: $s-48;
       border-radius: $br-8;
       .label {
         @include titleTipography;

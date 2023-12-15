@@ -157,6 +157,8 @@
 .btn-primary {
   @extend .button-primary;
   text-transform: uppercase;
+  font-size: $fs-14;
+  font-weight: $fw400;
 }
 
 .btn-secondary {

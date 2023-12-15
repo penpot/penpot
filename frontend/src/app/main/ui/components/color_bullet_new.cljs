@@ -17,11 +17,13 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [{:keys [color on-click mini? area]}]
-  (let [on-click (mf/use-fn
-                  (mf/deps color on-click)
-                  (fn [event]
-                    (when (fn? on-click)
-                      (^function on-click color event))))]
+  (let [read-only? (nil? on-click)
+        on-click
+        (mf/use-fn
+         (mf/deps color on-click)
+         (fn [event]
+           (when (fn? on-click)
+             (^function on-click color event))))]
 
     (if (uc/multiple? color)
       [:div {:on-click on-click :class (stl/css :color-bullet :multiple)}]
@@ -39,7 +41,9 @@
                   :is-not-library-color (nil? id)
                   :is-gradient (some? gradient)
                   :is-transparent (and opacity (> 1 opacity))
-                  :grid-area area)
+                  :grid-area area
+                  :read-only read-only?)
+          :data-readonly (str read-only?)
           :on-click on-click}
 
          (cond

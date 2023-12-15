@@ -359,8 +359,14 @@
      (when-not (empty? components)
        [:& component-menu {:shapes components}])
 
-     [:& layout-container-menu {:type type :ids layout-container-ids :values layout-container-values :multiple true}]
+     (when-not (or (empty? constraint-ids) ^boolean is-layout-child?)
+       [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
+     [:& layout-container-menu
+      {:type type
+       :ids layout-container-ids
+       :values layout-container-values
+       :multiple true}]
 
      (when (or is-layout-child? has-flex-layout-container?)
        [:& layout-item-menu
@@ -371,9 +377,6 @@
          :is-flex-parent? is-flex-parent?
          :is-grid-parent? is-grid-parent?
          :values layout-item-values}])
-
-     (when-not (or (empty? constraint-ids) is-layout-child?)
-       [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? text-ids)
        [:& ot/text-menu {:type type :ids text-ids :values text-values}])

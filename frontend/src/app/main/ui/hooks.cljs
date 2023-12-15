@@ -367,13 +367,17 @@
          limit    (mth/max 1 limit)
 
          th-size (when width
-                   (- (/ (- width 32 (* (dec limit) 24)) limit) 12))]
+                   (mth/floor (- (/ (- width 32 (* (dec limit) 24)) limit) 12)))
+
+         ;; Need an even value
+         th-size (if (odd? (int th-size)) (- th-size 1) th-size)]
 
      (mf/with-effect
        [th-size]
        (when th-size
          (let [node (mf/ref-val rowref)]
-           (.setProperty (.-style node) "--th-width" (str th-size "px")))))
+           (.setProperty (.-style node) "--th-width" (str th-size "px"))
+           (.setProperty (.-style node) "--th-height" (str (mth/ceil (* th-size (/ 2 3))) "px")))))
 
      (mf/with-effect []
        (let [node (mf/ref-val rowref)
