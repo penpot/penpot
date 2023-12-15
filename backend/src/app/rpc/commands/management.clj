@@ -106,41 +106,34 @@
                        media
                        media))
 
-          (update-fdata [fdata new-id]
-            (-> fdata
-                (assoc :id new-id)
-                (feat.fdata/process-pointers deref)
-                (pmg/migrate-data)
-                (update :pages-index relink-shapes)
-                (update :components relink-shapes)
-                (update :media relink-media)
-                (d/without-nils)))]
+          (process-file [{:keys [id] :as file}]
+            (-> file
+                (update :data assoc :id id)
+                (update :data feat.fdata/process-pointers deref)
+                (pmg/migrate-file)
+                (update :data (fn [data]
+                                (-> data
+                                    (update :pages-index relink-shapes)
+                                    (update :components relink-shapes)
+                                    (update :media relink-media)
+                                    (d/without-nils))))))]
 
-    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
-              pmap/*tracked* (pmap/create-tracked)
-              cfeat/*new*    (atom #{})]
+    (let [new-id (get index id)
+          file   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+                   (-> (assoc file :id new-id)
+                       (process-file)))
 
-      (let [new-id (get index id)
-            file   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
-                             cfeat/*new*    (atom #{})]
-                     (-> file
-                         (assoc :id new-id)
-                         (update :data update-fdata new-id)
-                         (update :features into (deref cfeat/*new*))
-                         (update :features cfeat/migrate-legacy-features)))
+          file (if (contains? (:features file) "fdata/objects-map")
+                 (feat.fdata/enable-objects-map file)
+                 file)
 
-            file (if (contains? (:features file) "fdata/objects-map")
-                   (feat.fdata/enable-objects-map file)
-                   file)
-
-            file (if (contains? (:features file) "fdata/pointer-map")
-                   (binding [pmap/*tracked* (pmap/create-tracked)]
-                     (let [file (feat.fdata/enable-pointer-map file)]
-                       (feat.fdata/persist-pointers! cfg (:id file))
-                       file))
-                   file)]
-
-        file))))
+          file (if (contains? (:features file) "fdata/pointer-map")
+                 (binding [pmap/*tracked* (pmap/create-tracked)]
+                   (let [file (feat.fdata/enable-pointer-map file)]
+                     (feat.fdata/persist-pointers! cfg (:id file))
+                     file))
+                 file)]
+      file)))
 
 (def sql:get-used-libraries
   "select flr.*

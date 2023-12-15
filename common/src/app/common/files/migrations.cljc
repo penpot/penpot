@@ -42,18 +42,21 @@
        (reduce migrate-fn data (range (:version data 0) to-version))))))
 
 (defn migrate-file
-  [{:keys [id data] :as file}]
-  (let [data (assoc data :id id)]
-    (-> file
-        (assoc ::orig-version (:version data))
-        (assoc :data (migrate-data data)))))
+  [{:keys [id data features] :as file}]
+  (binding [cfeat/*new* (atom #{})]
+    (let [file (-> file
+                   (update :data assoc :id id)
+                   (update :data migrate-data)
+                   (update :features (fnil into #{}) (deref cfeat/*new*))
+                   (update :features cfeat/migrate-legacy-features))]
+      (if (or (not= (:version data) (:version (:data file)))
+              (not= features (:features file)))
+        (vary-meta file assoc ::migrated true)
+        file))))
 
 (defn migrated?
-  [{:keys [data] :as file}]
-  (or (::migrated file)
-      (let [version (:version data)]
-        (> version
-           (::orig-version file version)))))
+  [file]
+  (true? (-> file meta ::migrated)))
 
 ;; Default handler, noop
 (defmethod migrate :default [data] data)
