@@ -224,11 +224,8 @@
 (defn- migrate-file
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
-            pmap/*tracked* (pmap/create-tracked)
-            cfeat/*new*    (atom #{})]
-    (let [file (-> (fmg/migrate-file file)
-                   (update :features into (deref cfeat/*new*))
-                   (update :features cfeat/migrate-legacy-features))]
+            pmap/*tracked* (pmap/create-tracked)]
+    (let [file (fmg/migrate-file file)]
 
       ;; NOTE: when file is migrated, we break the rule of no perform
       ;; mutations on get operations and update the file with all
