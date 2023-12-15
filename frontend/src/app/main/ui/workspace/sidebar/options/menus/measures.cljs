@@ -214,6 +214,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
+           (st/emit! (udw/trigger-bounding-box-cloacing ids))
            (st/emit! (udw/update-dimensions ids attr value))))
 
         on-proportion-lock-change
@@ -236,6 +237,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
+           (st/emit! (udw/trigger-bounding-box-cloacing ids))
            (doall (map #(do-position-change %1 %2 value attr) shapes frames))))
 
         ;; ROTATION
@@ -244,6 +246,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value]
+           (st/emit! (udw/trigger-bounding-box-cloacing ids))
            (st/emit! (udw/increase-rotation ids value))))
 
         ;; RADIUS

@@ -278,8 +278,9 @@
 
         selrect (:selrect shape)
         transform (gsh/transform-str shape)]
-
-    (when (not (#{:move :rotate} current-transform))
+    
+    (when (and (not (:transformed shape))
+               (not (#{:move :rotate} current-transform)))
       [:g.controls {:pointer-events (if disable-handlers "none" "visible")}
        ;; Selection rect
        [:& selection-rect {:rect selrect
@@ -310,7 +311,8 @@
                      (mod 360))]
 
     (when (and (not (#{:move :rotate} current-transform))
-               (not workspace-read-only?))
+               (not workspace-read-only?)
+               (not (:transformed shape)))
       [:g.controls {:pointer-events (if disable-handlers "none" "visible")}
        ;; Handlers
        (for [{:keys [type position props]} (handlers-for-selection selrect shape zoom)]
