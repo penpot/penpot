@@ -25,11 +25,6 @@
     .modal-content {
       @include titleTipography;
       margin-bottom: $s-24;
-      .modal-msg,
-      .modal-scd-msg,
-      .modal-subtitle {
-        @include titleTipography;
-      }
       .export-option {
         @extend .input-checkbox;
         width: 100%;
@@ -66,6 +61,14 @@
       }
     }
   }
+}
+
+.modal-scd-msg,
+.modal-subtitle,
+.modal-msg {
+  @include titleTipography;
+  color: var(--modal-text-foreground-color);
+  line-height: 1.5;
 }
 
 .file-entry {

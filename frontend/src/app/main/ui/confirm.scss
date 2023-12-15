@@ -69,4 +69,5 @@
 .modal-msg {
   @include titleTipography;
   color: var(--modal-text-foreground-color);
+  line-height: 1.5;
 }
