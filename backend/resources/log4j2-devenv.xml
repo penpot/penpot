@@ -30,7 +30,6 @@
     <Logger name="app.redis" level="info" />
     <Logger name="app.rpc.rlimit" level="info" />
     <Logger name="app.rpc.climit" level="info" />
-    <Logger name="app.rpc.mutations.files" level="info" />
     <Logger name="app.common.files.migrations" level="info" />
 
     <Logger name="app.loggers" level="debug" additivity="false">
