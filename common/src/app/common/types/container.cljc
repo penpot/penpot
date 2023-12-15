@@ -255,7 +255,11 @@
                                   (dissoc :component-root)))
 
         [new-root-shape new-shapes updated-shapes]
-        (ctst/clone-object shape nil objects update-new-shape update-original-shape)
+        (ctst/clone-shape shape
+                          nil
+                          objects
+                          :update-new-shape update-new-shape
+                          :update-original-shape update-original-shape)
 
         ;; If frame-id points to a shape inside the component, remap it to the
         ;; corresponding new frame shape. If not, set it to nil.
@@ -339,15 +343,14 @@
                (dissoc :component-root))))
 
          [new-shape new-shapes _]
-         (ctst/clone-object component-shape
-                            frame-id
-                            (if components-v2 (:objects component-page) (:objects component))
-                            update-new-shape
-                            (fn [object _] object)
-                            force-id
-                            keep-ids?
-                            frame-id)
-
+         (ctst/clone-shape component-shape
+                           frame-id
+                           (if components-v2 (:objects component-page) (:objects component))
+                           :update-new-shape update-new-shape
+                           :force-id force-id
+                           :keep-ids? keep-ids?
+                           :frame-id frame-id
+                           :dest-objects (:objects container))
 
          ;; Fix empty parent-id and remap all grid cells to the new ids.
          remap-ids
