@@ -191,14 +191,14 @@
         ;; Temporary remove the children when moving them
         frame (-> frame
                   (update :shapes #(d/removev ids %))
-                  (ctl/assign-cells))
+                  (ctl/assign-cells objects))
 
         ids (->> ids (remove #(ctl/position-absolute? objects %)))
         frame (-> frame
                   (update :shapes d/concat-vec ids)
                   (cond-> (some? cell)
                     (ctl/push-into-cell ids row column))
-                  (ctl/assign-cells))]
+                  (ctl/assign-cells objects))]
 
     (-> modifiers
         (ctm/change-property :layout-grid-rows (:layout-grid-rows frame))

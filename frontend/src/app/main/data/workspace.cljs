@@ -872,10 +872,10 @@
           (pcb/update-shapes [parent-id] #(ctl/add-children-to-index % ids objects to-index)))
 
         (pcb/update-shapes parents
-                           (fn [parent]
+                           (fn [parent objects]
                              (cond-> parent
                                (ctl/grid-layout? parent)
-                               (ctl/assign-cells))))
+                               (ctl/assign-cells objects))))
 
         (pcb/reorder-grid-children parents)
 

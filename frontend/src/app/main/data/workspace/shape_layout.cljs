@@ -79,16 +79,13 @@
             (-> shape
                 (merge initial-layout-data)
 
-                ;; (cond-> (= type :grid) (-> ctl/assign-cells ctl/reorder-grid-children))
                 ;; If the original shape is not a frame we set clip content and show-viewer to false
                 (cond-> (not from-frame?)
                   (assoc :show-content true :hide-in-viewer true)))
 
             params (calculate-params objects (cfh/get-immediate-children objects (:id shape)) shape)]
-
         (cond-> (merge shape params)
-          (= type :grid) (-> ctl/assign-cells ctl/reorder-grid-children)))
-      )))
+          (= type :grid) (-> (ctl/assign-cells objects) ctl/reorder-grid-children))))))
 
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
@@ -277,10 +274,10 @@
         (rx/of (dwu/start-undo-transaction undo-id)
                (dwc/update-shapes
                 ids
-                (fn [shape]
+                (fn [shape objects]
                   (case type
-                    :row    (ctl/remove-grid-row shape index)
-                    :column (ctl/remove-grid-column shape index))))
+                    :row    (ctl/remove-grid-row shape index objects)
+                    :column (ctl/remove-grid-column shape index objects))))
                (ptk/data-event :layout/update ids)
                (dwu/commit-undo-transaction undo-id))))))
 
@@ -435,11 +432,11 @@
                (dwc/update-shapes children-ids (partial fix-child-sizing objects changes))
                (dwc/update-shapes
                 parent-ids
-                (fn [parent]
+                (fn [parent objects]
                   (-> parent
                       (fix-parent-sizing objects (set ids) changes)
                       (cond-> (ctl/grid-layout? parent)
-                        (ctl/assign-cells)))))
+                        (ctl/assign-cells objects)))))
                (ptk/data-event :layout/update ids)
                (dwu/commit-undo-transaction undo-id))))))
 
@@ -475,10 +472,9 @@
       (let [undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
-
          (dwc/update-shapes
           [layout-id]
-          (fn [shape]
+          (fn [shape objects]
             (case mode
               :auto
               ;; change the manual cells and move to auto
@@ -492,7 +488,7 @@
                               (> (:column-span cell) 1))
                           (-> (d/update-in-when [:layout-grid-cells cell-id] assoc :shapes [] :position :auto)
                               (ctl/resize-cell-area (:row cell) (:column cell) (:row cell) (:column cell) 1 1)
-                              (ctl/assign-cells)))))
+                              (ctl/assign-cells objects)))))
                     shape))
 
               :manual
@@ -503,7 +499,7 @@
                         (cond-> shape
                           (contains? #{:area :auto} (:position cell))
                           (-> (d/assoc-in-when [:layout-grid-cells cell-id :position] :manual)
-                              (ctl/assign-cells)))))
+                              (ctl/assign-cells objects)))))
                     shape))
 
               :area
@@ -522,7 +518,7 @@
                          first-column
                          (inc (- last-row first-row))
                          (inc (- last-column first-column)))
-                        (ctl/assign-cells))]
+                        (ctl/assign-cells objects))]
 
                 (-> shape
                     (d/update-in-when [:layout-grid-cells (:id target-cell)] assoc :position :area))))))
@@ -535,8 +531,9 @@
 
   (ptk/reify ::update-grid-cell-position
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [undo-id (js/Symbol)]
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dwc/update-shapes
@@ -550,6 +547,6 @@
                   (ctl/resize-cell-area (:row prev-data) (:column prev-data)
                                         (:row new-data) (:column new-data)
                                         (:row-span new-data) (:column-span new-data))
-                  (ctl/assign-cells)))))
+                  (ctl/assign-cells objects)))))
          (ptk/data-event :layout/update [layout-id])
          (dwu/commit-undo-transaction undo-id))))))

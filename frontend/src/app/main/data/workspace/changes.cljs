@@ -70,7 +70,7 @@
              update-layout-ids
              (->> ids
                   (map (d/getf objects))
-                  (filter #(some update-layout-attr? (pcb/changed-attrs % update-fn {:attrs attrs})))
+                  (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs})))
                   (map :id))
 
              changes   (reduce
