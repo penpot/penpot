@@ -106,9 +106,8 @@
                                       (:typography-count summary))]
                          (modal/show
                           {:type :confirm
-                           :message ""
                            :title (tr "modals.add-shared-confirm.message" (:name summary))
-                           :hint (if (zero? count) (tr "modals.add-shared-confirm-empty.hint") (tr "modals.add-shared-confirm.hint"))
+                           :message (if (zero? count) (tr "modals.add-shared-confirm-empty.hint") (tr "modals.add-shared-confirm.hint"))
                            :cancel-label (if (zero? count) (tr "labels.cancel") :omit)
                            :accept-label (tr "modals.add-shared-confirm.accept")
                            :accept-style :primary
