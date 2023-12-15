@@ -250,11 +250,13 @@
       file)))
 
 (defn get-file
-  [{:keys [::db/conn] :as cfg} id & {:keys [project-id migrate?
+  [{:keys [::db/conn] :as cfg} id & {:keys [project-id
+                                            migrate?
                                             include-deleted?
                                             lock-for-update?]
                                      :or {include-deleted? false
-                                          lock-for-update? false}}]
+                                          lock-for-update? false
+                                          migrate? true}}]
   (dm/assert!
    "expected cfg with valid connection"
    (db/connection-map? cfg))
