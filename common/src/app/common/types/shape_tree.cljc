@@ -342,94 +342,89 @@
   [frame]
   (not (mth/almost-zero? (:rotation frame 0))))
 
-(defn clone-object
-  "Gets a copy of the object and all its children, with new ids and with
+(defn clone-shape
+  "Gets a copy of the shape and all its children, with new ids and with
   the parent-children links correctly set. Admits functions to make
-  more transformations to the cloned objects and the original ones.
+  more transformations to the cloned shapes and the original ones.
 
-  Returns the cloned object, the list of all new objects (including
-  the cloned one), and possibly a list of original objects modified.
+  Returns the cloned shape, the list of all new shapes (including
+  the cloned one), and possibly a list of original shapes modified.
 
-  The list of objects are returned in tree traversal order, respecting
+  The list of shapes are returned in tree traversal order, respecting
   the order of the children of each parent."
-
-  ([object parent-id objects]
-   (clone-object object parent-id objects (fn [object _] object) (fn [object _] object) nil false nil objects))
-
-  ([object parent-id objects update-new-object]
-   (clone-object object parent-id objects update-new-object (fn [object _] object) nil false nil objects))
-
-  ([object parent-id objects update-new-object update-original-object]
-   (clone-object object parent-id objects update-new-object update-original-object nil false nil objects))
-
-  ([object parent-id objects update-new-object update-original-object force-id]
-   (clone-object object parent-id objects update-new-object update-original-object force-id false nil objects))
-
-  ([object parent-id objects update-new-object update-original-object force-id keep-ids?]
-   (clone-object object parent-id objects update-new-object update-original-object force-id keep-ids? nil objects))
-
-  ([object parent-id objects update-new-object update-original-object force-id keep-ids? frame-id]
-   (clone-object object parent-id objects update-new-object update-original-object force-id keep-ids? frame-id objects))
-
-  ([object parent-id objects update-new-object update-original-object force-id keep-ids? frame-id dest-objects]
-   (let [new-id (cond
-                  (some? force-id) force-id
-                  keep-ids? (:id object)
-                  :else (uuid/next))
+  [shape parent-id objects & {:keys [update-new-shape update-original-shape force-id keep-ids? frame-id dest-objects]
+                              :or {update-new-shape (fn [shape _] shape)
+                                   update-original-shape (fn [shape _] shape)
+                                   force-id nil
+                                   keep-ids? false
+                                   frame-id nil
+                                   dest-objects objects}}]
+  (let [new-id (cond
+                 (some? force-id) force-id
+                 keep-ids? (:id shape)
+                 :else (uuid/next))
 
          ;; Assign the correct frame-id for the given parent. It's the parent-id (if parent is frame)
          ;; or the parent's frame-id otherwise. Only for the first cloned shapes. In recursive calls
          ;; this is not needed.
-         frame-id (cond
-                    (and (nil? frame-id) (cfh/frame-shape? dest-objects parent-id))
-                    parent-id
+        frame-id (cond
+                   (and (nil? frame-id) (cfh/frame-shape? dest-objects parent-id))
+                   parent-id
 
-                    (nil? frame-id)
-                    (dm/get-in dest-objects [parent-id :frame-id] uuid/zero)
+                   (nil? frame-id)
+                   (dm/get-in dest-objects [parent-id :frame-id] uuid/zero)
 
-                    :else
-                    frame-id)]
+                   :else
+                   frame-id)]
 
-     (loop [child-ids (seq (:shapes object))
-            new-direct-children []
-            new-children []
-            updated-children []]
+    (loop [child-ids (seq (:shapes shape))
+           new-direct-children []
+           new-children []
+           updated-children []]
 
-       (if (empty? child-ids)
-         (let [new-object (cond-> object
-                            :always
-                            (assoc :id new-id
-                                   :parent-id parent-id
-                                   :frame-id frame-id)
+      (if (empty? child-ids)
+        (let [new-shape (cond-> shape
+                          :always
+                          (assoc :id new-id
+                                 :parent-id parent-id
+                                 :frame-id frame-id)
 
-                            (some? (:shapes object))
-                            (assoc :shapes (mapv :id new-direct-children)))
+                          (some? (:shapes shape))
+                          (assoc :shapes (mapv :id new-direct-children)))
 
-               new-object  (update-new-object new-object object)
-               new-objects (into [new-object] new-children)
+              new-shape  (update-new-shape new-shape shape)
+              new-shapes (into [new-shape] new-children)
 
-               updated-object  (update-original-object object new-object)
-               updated-objects (if (identical? object updated-object)
-                                 updated-children
-                                 (into [updated-object] updated-children))]
+              updated-shape  (update-original-shape shape new-shape)
+              updated-shapes (if (identical? shape updated-shape)
+                               updated-children
+                               (into [updated-shape] updated-children))]
 
-           [new-object new-objects updated-objects])
+          [new-shape new-shapes updated-shapes])
 
-         (let [child-id       (first child-ids)
-               child          (get objects child-id)
-               _              (dm/assert! (some? child))
-               frame-id-child (if (cfh/frame-shape? object)
-                                new-id
-                                frame-id)
+        (let [child-id       (first child-ids)
+              child          (get objects child-id)
+              _              (dm/assert! (some? child))
+              frame-id-child (if (cfh/frame-shape? shape)
+                               new-id
+                               frame-id)
 
-               [new-child new-child-objects updated-child-objects]
-               (clone-object child new-id objects update-new-object update-original-object nil keep-ids? frame-id-child)]
+              [new-child new-child-shapes updated-child-shapes]
+              (clone-shape child
+                           new-id
+                           objects
+                           :update-new-shape update-new-shape
+                           :update-original-shape update-original-shape
+                           :force-id nil
+                           :keep-ids? keep-ids?
+                           :frame-id frame-id-child
+                           :dest-objects dest-objects)]
 
-           (recur
-            (next child-ids)
-            (into new-direct-children [new-child])
-            (into new-children new-child-objects)
-            (into updated-children updated-child-objects))))))))
+          (recur
+           (next child-ids)
+           (into new-direct-children [new-child])
+           (into new-children new-child-shapes)
+           (into updated-children updated-child-shapes)))))))
 
 (defn generate-shape-grid
   "Generate a sequence of positions that lays out the list of
