@@ -24,6 +24,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
@@ -31,10 +32,12 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.snap :as snap]
+   [app.main.store :as st]
    [app.main.streams :as ms]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.mouse :as mse]
+   [app.util.timers :as ts]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -238,6 +241,29 @@
                 (rx/take-until stopper))
            (rx/of (dwm/apply-modifiers)
                   (finish-transform))))))))
+
+(defn schedule-bounding-box-reveal [ids]
+  (dm/assert!
+   "expected valid coll of uuids"
+   (every? uuid? ids))
+  (ptk/reify ::schedule-bounding-box-reveal
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [task (ts/schedule 1000 #(st/emit! (dwsh/update-shape-flags ids {:transformed false})))]
+        (assoc state :bounding-box-cloac-timer task)))))
+
+(defn trigger-bounding-box-cloacing [ids]
+  (dm/assert!
+   "expected valid coll of uuids"
+   (every? uuid? ids))
+  (ptk/reify ::trigger-bounding-box-cloacing
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [task (:bounding-box-cloac-timer state)]
+        (when task
+          (d/close! task))
+        (rx/of (schedule-bounding-box-reveal ids)
+               (dwsh/update-shape-flags ids {:transformed true}))))))
 
 (defn update-dimensions
   "Change size of shapes, from the sideber options form.
