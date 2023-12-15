@@ -722,7 +722,8 @@
                       (-> fdata
                           (update :pages-index relink-shapes)
                           (update :components relink-shapes)
-                          (update :media relink-media))))))
+                          (update :media relink-media)
+                          (d/without-nils))))))
 
 
 (defmethod read-section :v1/files
