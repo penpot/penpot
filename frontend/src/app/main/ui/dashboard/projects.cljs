@@ -15,6 +15,7 @@
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
+   [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -138,10 +139,10 @@
 
         on-template-cloned-error
         (mf/use-fn
-         (fn []
-           (swap! state #(assoc % :status :waiting))
-           (st/emit!
-            (msg/error (tr "dashboard.libraries-and-templates.import-error")))))
+         (fn [cause]
+           (swap! state assoc :status :error)
+           (errors/print-error! cause)
+           (st/emit! (msg/error (tr "dashboard.libraries-and-templates.import-error")))))
 
         download-tutorial
         (mf/use-fn

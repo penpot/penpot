@@ -351,17 +351,15 @@
 
         on-template-cloned-success
         (fn []
-          (swap! state
-                 (fn [state]
-                   (-> state
-                       (assoc :status :importing :importing-templates 0))))
+          (swap! state assoc :status :importing :importing-templates 0)
           (st/emit! (dd/fetch-recent-files)))
 
         on-template-cloned-error
         (fn [cause]
-          (errors/print-cause! "Template Clone Error" cause)
-          (st/emit! (modal/hide)
-                    (msg/error (tr "dashboard.libraries-and-templates.import-error"))))
+          (swap! state assoc :status :error :importing-templates 0)
+          (errors/print-error! cause)
+          (rx/of (modal/hide)
+                 (msg/error (tr "dashboard.libraries-and-templates.import-error"))))
 
         continue-files
         (fn []
