@@ -32,11 +32,11 @@
 
 (defn get-team-enabled-features
   [state]
-  (let [runtime-features (set/intersection (:features/runtime state #{})
-                                           cfeat/no-migration-features)]
-    (-> global-enabled-features
-        (set/union runtime-features)
-        (set/union (:features/team state #{})))))
+  (-> global-enabled-features
+      (set/union (:features/runtime state #{}))
+      (set/intersection cfeat/no-migration-features)
+      (set/union cfeat/default-enabled-features)
+      (set/union (:features/team state #{}))))
 
 (def features-ref
   (l/derived get-team-enabled-features st/state =))
@@ -99,7 +99,7 @@
      ptk/UpdateEvent
      (update [_ state]
        (let [runtime-features (get state :features/runtime #{})
-             team-features    (into cfeat/default-enabled-features
+             team-features    (into #{}
                                     cfeat/xf-supported-features
                                     team-features)]
          (-> state
