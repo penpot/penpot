@@ -1,26 +1,34 @@
-(ns app.util.gl)
+(ns app.util.gl
+  (:require [app.common.data.macros :as dm]))
 
 ;;
 ;; Shaders
 ;;
+(defn get-shader-type
+  [gl type]
+  (cond
+    (= type (.-VERTEX_SHADER gl)) "vertex shader"
+    (= type (.-FRAGMENT_SHADER gl)) "fragment shader"
+    :else "unknown shader type"))
+
 (defn create-shader
   "Creates a shader of the given type with the given source"
   [gl type source]
   (let [shader (.createShader gl type)]
     (.shaderSource gl shader source)
     (.compileShader gl shader)
-    (when-not (.getShaderParameter gl shader (.COMPILE_STATUS gl))
-      (throw (js/Error. (.getShaderInfoLog gl shader))))))
+    (when-not (.getShaderParameter gl shader (.-COMPILE_STATUS gl))
+      (throw (js/Error. (dm/str (get-shader-type gl type) " " (.getShaderInfoLog gl shader)))))))
 
 (defn create-vertex-shader
   "Creates a vertex shader with the given source"
   [gl source]
-  (create-shader gl (.VERTEX_SHADER gl) source))
+  (create-shader gl (.-VERTEX_SHADER gl) source))
 
 (defn create-fragment-shader
   "Creates a fragment shader with the given source"
   [gl source]
-  (create-shader gl (.FRAGMENT_SHADER gl) source))
+  (create-shader gl (.-FRAGMENT_SHADER gl) source))
 
 ;;
 ;; Programs
@@ -32,7 +40,7 @@
     (.attachShader gl program vertex-shader)
     (.attachShader gl program fragment-shader)
     (.linkProgram gl program)
-    (when-not (.getProgramParameter gl program (.LINK_STATUS gl))
+    (when-not (.getProgramParameter gl program (.-LINK_STATUS gl))
       (throw (js/Error. (.getProgramInfoLog gl program))))
     program))
 
@@ -48,16 +56,16 @@
   [parameter get-active-name get-location-name]
   (fn [gl program]
     (let [count (.getProgramParameter gl program parameter)
-          get-active (dm/get gl get-active-name)
-          get-location (dm/get gl get-location-name)]
+          get-active (dm/get-prop gl get-active-name)
+          get-location (dm/get-prop gl get-location-name)]
        (into {} (for [index (range count)]
-                  (let [info         (.get-active gl program index)
+                  (let [info         (get-active gl program index)
                         name         (.-name info)
-                        location     (.get-location gl program name)]
+                        location     (get-location gl program name)]
                     [name #js {:name name :info info :location location}]))))))
 
-(def get-program-uniforms (get-program-active-factory (.ACTIVE_UNIFORMS js/WebGLRenderingContext) "getActiveUniform" "getUniformLocation"))
-(def get-program-attributes (get-program-active-factory (.ACTIVE_ATTRIBUTES js/WebGLRenderingContext) "getActiveAttrib" "getAttribLocation"))
+(def get-program-uniforms (get-program-active-factory (.-ACTIVE_UNIFORMS js/WebGLRenderingContext) "getActiveUniform" "getUniformLocation"))
+(def get-program-attributes (get-program-active-factory (.-ACTIVE_ATTRIBUTES js/WebGLRenderingContext) "getActiveAttrib" "getAttribLocation"))
 
 (defn get-program-actives
   "Returns a map of uniform names to uniform locations for the given program"
