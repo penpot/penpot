@@ -221,14 +221,16 @@
            :select-on-focus select-on-focus
            :on-blur on-blur}]]
 
-        [:div {:class (stl/css :select-wrapper)}
+        [:div {:class (stl/css :select-wrapper)
+               :data-test "stroke.alignment"}
          [:& select
           {:default-value stroke-alignment
            :options stroke-alignment-options
            :on-change on-alignment-change}]]
 
         (when-not disable-stroke-style
-          [:div {:class (stl/css :select-wrapper)}
+          [:div {:class (stl/css :select-wrapper)
+                 :data-test "stroke.style"}
            [:& select
             {:default-value stroke-style
              :options stroke-style-options
