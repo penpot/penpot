@@ -1,11 +1,13 @@
 (ns app.main.ui.workspace.viewport.gl
   (:require-macros [app.main.style :as stl])
-  (:require fragment-shader)
+  (:require-macros [app.util.gl.macros :refer [slurp]])
   (:require
    [app.common.math :as math]
    [rumext.v2 :as mf]))
 
 (def CANVAS_CONTEXT_ID "webgl2")
+
+(def default-shader (slurp "src/app/util/gl/shaders/default.v.glsl"))
 
 (defn resize-canvas-to
   [canvas width height]
@@ -38,6 +40,7 @@
   {::mf/wrap-props false}
   [props]
   (js/console.log props)
+  (js/console.log "default-shader" default-shader)
   (let [objects    (unchecked-get props "objects")
         canvas-ref (mf/use-ref nil)
         gl-ref     (mf/use-ref nil)]
