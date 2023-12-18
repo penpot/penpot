@@ -351,7 +351,8 @@
 
      ;; IT's MAGIC!
      [gl/canvas {:objects base-objects
-                 :active-frames @active-frames}]
+                 :active-frames @active-frames
+                 :vbox vbox}]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"

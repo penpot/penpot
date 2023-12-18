@@ -40,7 +40,7 @@
     (.set programs "default" default-program)))
 
 (defn render-gl
-  [gl objects]
+  [gl objects vbox]
   (.clearColor gl 0.0 0.0 0.0 0.0)
   (.clear gl (.-COLOR_BUFFER_BIT gl))
 
@@ -64,8 +64,11 @@
   (js/console.log props)
   (js/console.log "default-shaders" default-vertex-shader default-fragment-shader)
   (let [objects    (unchecked-get props "objects")
+        vbox       (unchecked-get props "vbox")
         canvas-ref (mf/use-ref nil)
         gl-ref     (mf/use-ref nil)]
+    
+    (println "---------------> vbox" (:x vbox) (:width vbox) (:y vbox) (:height vbox))
 
     (mf/with-effect [canvas-ref]
       (let [canvas (mf/ref-val canvas-ref)]
@@ -74,7 +77,7 @@
             (mf/set-ref-val! gl-ref gl)
             (resize-canvas canvas)
             (prepare-gl gl)
-            (render-gl gl objects)
+            (render-gl gl objects vbox)
             (js/console.log "gl" gl)))))
 
     [:canvas {:class (stl/css :canvas)
