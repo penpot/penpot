@@ -350,7 +350,8 @@
                                :active-frames @active-frames}]]]]
 
      ;; IT's MAGIC!
-     [gl/canvas {:objects base-objects}]
+     [gl/canvas {:objects base-objects
+                 :active-frames @active-frames}]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
