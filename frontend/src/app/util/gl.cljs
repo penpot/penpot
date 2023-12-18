@@ -18,7 +18,8 @@
     (.shaderSource gl shader source)
     (.compileShader gl shader)
     (when-not (.getShaderParameter gl shader (.-COMPILE_STATUS gl))
-      (throw (js/Error. (dm/str (get-shader-type gl type) " " (.getShaderInfoLog gl shader)))))))
+      (throw (js/Error. (dm/str (get-shader-type gl type) " " (.getShaderInfoLog gl shader)))))
+    shader))
 
 (defn create-vertex-shader
   "Creates a vertex shader with the given source"

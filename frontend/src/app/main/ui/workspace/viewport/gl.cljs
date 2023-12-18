@@ -12,6 +12,11 @@
 (def default-vertex-shader (slurp "src/app/util/gl/shaders/default.v.glsl"))
 (def default-fragment-shader (slurp "src/app/util/gl/shaders/default.f.glsl"))
 
+#_(def shaders (js/Map.))
+(def programs (js/Map.))
+#_(def textures (js/Map.))
+#_(def framebuffers (js/Map.))
+
 (defn resize-canvas-to
   [canvas width height]
   (let [resized-width (not= (.-width canvas) width)
@@ -31,19 +36,26 @@
 
 (defn prepare-gl
   [gl]
-  (let [default-program (gl/create-program-from-sources gl default-vertex-shader default-fragment-shader)]))
+  (let [default-program (gl/create-program-from-sources gl default-vertex-shader default-fragment-shader)]
+    (.set programs "default" default-program)))
 
 (defn render-gl
   [gl objects]
-  (.clearColor gl 1.0 0.0 1.0 1.0)
+  (.clearColor gl 0.0 0.0 0.0 0.0)
   (.clear gl (.-COLOR_BUFFER_BIT gl))
 
   (.viewport gl 0 0 (.-width (.-canvas gl)) (.-height (.-canvas gl)))
 
-  (for [object objects]
+  (.useProgram gl (.get programs "default"))
+  (.uniform2f gl (.getUniformLocation gl (.get programs "default") "u_screenSize") (.-width (.-canvas gl)) (.-height (.-canvas gl)))
 
-
-    (.drawArrays gl (.TRIANGLES gl) 0 4)))
+  (println "objects vals" (vals objects))
+  (doseq [[_ object] objects]
+    (do
+      (.uniform4f gl (.getUniformLocation gl (.get programs "default") "u_color") 1.0 0.0 0.0 1.0)
+      (.uniform2f gl (.getUniformLocation gl (.get programs "default") "u_size") (:width object) (:height object))
+      (.uniform2f gl (.getUniformLocation gl (.get programs "default") "u_position") (:x object) (:y object))
+      (.drawArrays gl (.-TRIANGLE_STRIP gl) 0 4))))
 
 (mf/defc canvas
   "A canvas element with a WebGL context."
