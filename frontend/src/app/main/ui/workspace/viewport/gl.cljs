@@ -60,27 +60,29 @@
 
 (defn render-gl
   [gl objects vbox]
-  (.clearColor gl 1.0 0.0 1.0 0.5)
+  (.clearColor gl 1.0 0.0 1.0 0)
   (.clear gl (.-COLOR_BUFFER_BIT gl))
 
   (.viewport gl 0 0 (.-width (.-canvas gl)) (.-height (.-canvas gl)))
 
   (.useProgram gl (.get programs "default"))
-  (println "---------------> vbox" (:x vbox) (:width vbox) (:y vbox) (:height vbox))
   (.uniform4f gl (.getUniformLocation gl (.get programs "default") "u_vbox") (:x vbox) (:y vbox) (:width vbox) (:height vbox))
+
+  (.enable gl (.-BLEND gl))
+  (.blendFunc gl (.-SRC_ALPHA gl) (.-ONE_MINUS_SRC_ALPHA gl))
 
   (doseq [[_ object] objects]
     (let [selrect    (:selrect object)
           x (:x selrect)
           y (:y selrect)
           width (:width selrect)
-          height (:height selrect )
-          fill (first (:fills object))]
-      (js/console.log "fill" fill)
-      (.uniform4fv gl (.getUniformLocation gl (.get programs "default") "u_color") (parse-color (:fill-color fill) (:fill-opacity fill)))
-      (.uniform2f gl (.getUniformLocation gl (.get programs "default") "u_size") width height)
-      (.uniform2f gl (.getUniformLocation gl (.get programs "default") "u_position") x y)
-      (.drawArrays gl (.-TRIANGLE_STRIP gl) 0 4))))
+          height (:height selrect)]
+      (doseq [fill (reverse (:fills object))]
+        (do
+          (.uniform4fv gl (.getUniformLocation gl (.get programs "default") "u_color") (parse-color (:fill-color fill) (:fill-opacity fill)))
+          (.uniform2f gl (.getUniformLocation gl (.get programs "default") "u_size") width height)
+          (.uniform2f gl (.getUniformLocation gl (.get programs "default") "u_position") x y)
+          (.drawArrays gl (.-TRIANGLE_STRIP gl) 0 4))))))
 
 (mf/defc canvas
   "A canvas element with a WebGL context."
@@ -108,3 +110,6 @@
     [:canvas {:class (stl/css :canvas)
               :ref canvas-ref}]))
 
+;; TODO 
+;; - blend modes
+;; - strokes
