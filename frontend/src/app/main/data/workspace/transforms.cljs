@@ -244,7 +244,7 @@
 
 (defn schedule-bounding-box-reveal
   "Schedule and event to set `shape` `:transformed` flag to `false` in 1 sec.
-   Used to hide bounding-box of shape after changes in sidebar->measures."
+   Used to reveal bounding-box of shape after hiding it in `trigger-bounding-box-cloacing`"
   [ids]
   (dm/assert!
    "expected valid coll of uuids"
@@ -257,7 +257,8 @@
 
 (defn trigger-bounding-box-cloacing
   "Set shapes `:transformed` flag to `true`.
-   Sets bounding-box-cloac-timer to full 1 sec (reset it, if it already exists)."
+   Sets bounding-box-cloac-timer to full 1 sec (reset it, if it already exists).
+   Used to hide bounding-box of shape after changes in sidebar->measures."
   [ids]
   (dm/assert!
    "expected valid coll of uuids"
