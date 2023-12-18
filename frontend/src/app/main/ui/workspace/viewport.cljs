@@ -28,6 +28,7 @@
    [app.main.ui.workspace.viewport.debug :as wvd]
    [app.main.ui.workspace.viewport.drawarea :as drawarea]
    [app.main.ui.workspace.viewport.frame-grid :as frame-grid]
+   [app.main.ui.workspace.viewport.gl :as gl]
    [app.main.ui.workspace.viewport.gradients :as gradients]
    [app.main.ui.workspace.viewport.grid-layout-editor :as grid-layout]
    [app.main.ui.workspace.viewport.guides :as guides]
@@ -130,6 +131,8 @@
         ;; REFS
         [viewport-ref
          on-viewport-ref] (create-viewport-ref)
+
+        canvas-ref        (mf/use-ref nil)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -345,6 +348,9 @@
         [:& shapes/root-shape {:key page-id
                                :objects base-objects
                                :active-frames @active-frames}]]]]
+
+     ;; IT's MAGIC!
+     [gl/canvas {:objects base-objects}]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
