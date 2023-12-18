@@ -242,7 +242,10 @@
            (rx/of (dwm/apply-modifiers)
                   (finish-transform))))))))
 
-(defn schedule-bounding-box-reveal [ids]
+(defn schedule-bounding-box-reveal
+  "Schedule and event to set `shape` `:transformed` flag to `false` in 1 sec.
+   Used to hide bounding-box of shape after changes in sidebar->measures."
+  [ids]
   (dm/assert!
    "expected valid coll of uuids"
    (every? uuid? ids))
@@ -252,7 +255,10 @@
       (let [task (ts/schedule 1000 #(st/emit! (dwsh/update-shape-flags ids {:transformed false})))]
         (assoc state :bounding-box-cloac-timer task)))))
 
-(defn trigger-bounding-box-cloacing [ids]
+(defn trigger-bounding-box-cloacing
+  "Set shapes `:transformed` flag to `true`.
+   Sets bounding-box-cloac-timer to full 1 sec (reset it, if it already exists)."
+  [ids]
   (dm/assert!
    "expected valid coll of uuids"
    (every? uuid? ids))
