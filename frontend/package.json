@@ -76,6 +76,7 @@
     "vite": "^5.0.2"
   },
   "dependencies": {
+    "canvaskit-wasm": "^0.39.1",
     "date-fns": "^2.30.0",
     "draft-js": "^0.11.7",
     "eventsource-parser": "^1.1.1",

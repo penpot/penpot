@@ -39,6 +39,7 @@
    [app.main.ui.workspace.viewport.rules :as rules]
    [app.main.ui.workspace.viewport.scroll-bars :as scroll-bars]
    [app.main.ui.workspace.viewport.selection :as selection]
+   [app.main.ui.workspace.viewport.sk :as sk]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
    [app.main.ui.workspace.viewport.top-bar :as top-bar]
@@ -346,6 +347,11 @@
                                :objects base-objects
                                :active-frames @active-frames}]]]]
 
+     ;; IT's MAGIC!
+     [sk/canvas {:objects base-objects
+                 :active-frames @active-frames
+                 :vbox vbox}]
+
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
        :xmlnsXlink "http://www.w3.org/1999/xlink"
@@ -616,14 +622,14 @@
             :objects base-objects
             :modifiers modifiers
             :shape (or (get base-objects edition)
-                       (get base-objects @hover-top-frame-id))
+                     (get base-objects @hover-top-frame-id))
             :view-only (not show-grid-editor?)}])
 
         (for [frame (ctt/get-frames objects)]
           (when (and (ctl/grid-layout? frame)
-                     (empty? (:shapes frame))
-                     (not= edition (:id frame))
-                     (not= @hover-top-frame-id (:id frame)))
+                  (empty? (:shapes frame))
+                  (not= edition (:id frame))
+                  (not= @hover-top-frame-id (:id frame)))
             [:& grid-layout/editor
              {:zoom zoom
               :objects base-objects
