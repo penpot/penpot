@@ -79,6 +79,7 @@
     "date-fns": "^2.30.0",
     "draft-js": "^0.11.7",
     "eventsource-parser": "^1.1.1",
+    "gl-matrix": "^3.4.3",
     "highlight.js": "^11.8.0",
     "js-beautify": "^1.14.9",
     "jszip": "^3.10.1",

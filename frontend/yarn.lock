@@ -7587,6 +7587,7 @@ __metadata:
     draft-js: "npm:^0.11.7"
     eventsource-parser: "npm:^1.1.1"
     gettext-parser: "npm:^7.0.1"
+    gl-matrix: "npm:^3.4.3"
     gulp: "npm:4.0.2"
     gulp-cached: "npm:^1.1.1"
     gulp-concat: "npm:^2.6.1"
@@ -7888,6 +7889,13 @@ __metadata:
   version: 1.5.0
   resolution: "github-slugger@npm:1.5.0"
   checksum: 116f99732925f939cbfd6f2e57db1aa7e111a460db0d103e3b3f2fce6909d44311663d4542350706cad806345b9892358cc3b153674f88eeae77f43380b3bfca
+  languageName: node
+  linkType: hard
+
+"gl-matrix@npm:^3.4.3":
+  version: 3.4.3
+  resolution: "gl-matrix@npm:3.4.3"
+  checksum: c8ee6e2ce2d089b4ba4ae13ec9d4cb99bf2abe5f68f0cb08d94bbd8bafbec13aacc7230b86539ce5ca01b79226ea8c3194f971f5ca0c81838bc5e4e619dc398e
   languageName: node
   linkType: hard
 

@@ -261,7 +261,13 @@
                    (:y (first selected-shapes))
                    (:y selected-frame))
 
-        rule-area-size (/ rules/rule-area-size zoom)]
+        rule-area-size (/ rules/rule-area-size zoom)
+
+        ;; Aquí podemos configurar como queremos que sea el renderizado:
+        ;; - "gl" Utilizando sólo WebGL2
+        ;; - "svg" Utilizando sólo SVG
+        ;; - "both" Utilizando ambos
+        renderer "both"]
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -305,54 +311,56 @@
 
       [:& top-bar/top-bar]]
 
-     [:svg.render-shapes
-      {:id "render"
-       :xmlns "http://www.w3.org/2000/svg"
-       :xmlnsXlink "http://www.w3.org/1999/xlink"
-       :xmlns:penpot "https://penpot.app/xmlns"
-       :preserveAspectRatio "xMidYMid meet"
-       :key (str "render" page-id)
-       :width (:width vport 0)
-       :height (:height vport 0)
-       :view-box (utils/format-viewbox vbox)
-       :style {:background-color background
-               :pointer-events "none"}
-       :fill "none"}
+     (when (or (= renderer "svg") (= renderer "both"))
+       [:svg.render-shapes
+        {:id "render"
+         :xmlns "http://www.w3.org/2000/svg"
+         :xmlnsXlink "http://www.w3.org/1999/xlink"
+         :xmlns:penpot "https://penpot.app/xmlns"
+         :preserveAspectRatio "xMidYMid meet"
+         :key (str "render" page-id)
+         :width (:width vport 0)
+         :height (:height vport 0)
+         :view-box (utils/format-viewbox vbox)
+         :style {:background-color background
+                 :pointer-events "none"}
+         :fill "none"}
 
-      [:defs
-       [:linearGradient {:id "frame-placeholder-gradient"}
-        [:animateTransform
-         {:attributeName "gradientTransform"
-          :type "translate"
-          :from "-1 0"
-          :to "1 0"
-          :dur "2s"
-          :repeatCount "indefinite"}]
-        [:stop {:offset "0%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]
-        [:stop {:offset "50%" :stop-color (str "color-mix(in srgb-linear, " background " 80%, #777)") :stop-opacity 1}]
-        [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
+        [:defs
+         [:linearGradient {:id "frame-placeholder-gradient"}
+          [:animateTransform
+           {:attributeName "gradientTransform"
+            :type "translate"
+            :from "-1 0"
+            :to "1 0"
+            :dur "2s"
+            :repeatCount "indefinite"}]
+          [:stop {:offset "0%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]
+          [:stop {:offset "50%" :stop-color (str "color-mix(in srgb-linear, " background " 80%, #777)") :stop-opacity 1}]
+          [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
 
-      (when (dbg/enabled? :show-export-metadata)
-        [:& use/export-page {:options options}])
+        (when (dbg/enabled? :show-export-metadata)
+          [:& use/export-page {:options options}])
 
-      ;; We need a "real" background shape so layer transforms work properly in firefox
-      [:rect {:width (:width vbox 0)
-              :height (:height vbox 0)
-              :x (:x vbox 0)
-              :y (:y vbox 0)
-              :fill background}]
+             ;; We need a "real" background shape so layer transforms work properly in firefox
+        [:rect {:width (:width vbox 0)
+                :height (:height vbox 0)
+                :x (:x vbox 0)
+                :y (:y vbox 0)
+                :fill background}]
 
-      [:& (mf/provider ctx/current-vbox) {:value vbox'}
-       [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
-         ;; Render root shape
-        [:& shapes/root-shape {:key page-id
-                               :objects base-objects
-                               :active-frames @active-frames}]]]]
+        [:& (mf/provider ctx/current-vbox) {:value vbox'}
+         [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
+                ;; Render root shape
+          [:& shapes/root-shape {:key page-id
+                                 :objects base-objects
+                                 :active-frames @active-frames}]]]])
 
      ;; IT's MAGIC!
-     [gl/canvas {:objects base-objects
-                 :active-frames @active-frames
-                 :vbox vbox}]
+     (when (or (= renderer "gl") (= renderer "both"))
+       [gl/canvas {:objects base-objects
+                   :active-frames @active-frames
+                   :vbox vbox}])
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
