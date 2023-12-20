@@ -30,7 +30,8 @@
           (println "init vbox" vbox)
           (-> (.initialize impl/CanvasKit "skia-canvas" vbox)
               (.then (fn [k]
-                       (reset! canvas-kit k)))))))
+                       (reset! canvas-kit k)
+                       #_(.clear ^js k)))))))
 
     [:canvas {:id "skia-canvas"
               :class (stl/css :canvas)

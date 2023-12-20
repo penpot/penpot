@@ -16,6 +16,15 @@ class CanvasKit {
     this.vbox = vbox;
   }
 
+
+clear() {
+  const surface = this.CanvasKit.MakeCanvasSurface(this.canvasId)
+  function draw(canvas) {
+    canvas.clear(CanvasKit.TRANSPARENT);
+  }
+  surface.drawOnce(draw);  
+}
+
   paintRect(shape) {
     const surface = this.CanvasKit.MakeCanvasSurface(this.canvasId)
     
@@ -29,6 +38,7 @@ class CanvasKit {
           paint.setStyle(self.CanvasKit.PaintStyle.Fill);
           const color = self.CanvasKit.parseColorString(fill["fill-color"]);
           const opacity = fill["fill-opacity"]
+          console.log("color", fill["fill-color"], fill["fill-opacity"])
           color[3] = opacity
           paint.setColor(color);
           const rr = self.CanvasKit.RRectXY(self.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height), 0, 0);        
@@ -178,16 +188,3 @@ export function path(CanvasKit, canvasId, x, y, content, kk1, kk2, kk3) {
 
 // }
 
-
-
-
-export function clear(CanvasKit, canvasId) {
-  surface = CanvasKit.MakeCanvasSurface(canvasId)
-
-  function draw(canvas) {
-    // canvas.clear(CanvasKit.WHITE);
-    canvas.translate(400, 400);
-
-  }
-  surface.drawOnce(draw);  
-}
