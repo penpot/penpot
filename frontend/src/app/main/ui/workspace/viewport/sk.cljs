@@ -19,15 +19,15 @@
     
     (mf/with-effect [objects]
       (when @canvas-kit
-        (do
-          (doseq [[_ object] objects]
-            (.paintRect ^js @canvas-kit (clj->js object))))))
+        (doseq [[_ object] objects]
+          (.paintRect ^js @canvas-kit (clj->js object)))))
 
     (mf/with-effect [canvas-ref]
       (let [canvas (mf/ref-val canvas-ref)]
         (when (some? canvas)
           (set! (.-width canvas) (.-clientWidth canvas))
           (set! (.-height canvas) (.-clientHeight canvas))
+          (println "init vbox" vbox)
           (-> (.initialize impl/CanvasKit "skia-canvas" vbox)
               (.then (fn [k]
                        (reset! canvas-kit k)))))))

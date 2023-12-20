@@ -19,28 +19,27 @@ class CanvasKit {
   paintRect(shape) {
     const surface = this.CanvasKit.MakeCanvasSurface(this.canvasId)
     
-    // Drawing fills
-    if (shape.fills) {
-      for (const fill of shape.fills) {
-        const paint = new this.CanvasKit.Paint();
-        paint.setStyle(this.CanvasKit.PaintStyle.Fill);
-        const color = this.CanvasKit.parseColorString(fill["fill-color"]);
-        const opacity = fill["fill-opacity"]
-        color[3] = opacity
-        paint.setColor(color);
-        const rr = this.CanvasKit.RRectXY(this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height), 0, 0);        
-        const self = this;
-
-        function draw(canvas) {
-          canvas.translate(- self.vbox.x, - self.vbox.y);
+    const self = this;
+    function draw(canvas) {
+      canvas.translate(- self.vbox.x, - self.vbox.y);
+      const paint = new self.CanvasKit.Paint();
+      // Drawing fills
+      if (shape.fills) {
+        for (const fill of shape.fills.reverse()) {          
+          paint.setStyle(self.CanvasKit.PaintStyle.Fill);
+          const color = self.CanvasKit.parseColorString(fill["fill-color"]);
+          const opacity = fill["fill-opacity"]
+          color[3] = opacity
+          paint.setColor(color);
+          const rr = self.CanvasKit.RRectXY(self.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height), 0, 0);        
           canvas.drawRRect(rr, paint);
-          paint.delete();
         }
-
-        surface.drawOnce(draw);  
       }
+      paint.delete();
     }
-  
+
+    surface.drawOnce(draw);  
+
     // // Drawing another border
     // const paint2 = new this.CanvasKit.Paint();
     // paint2.setColor(this.CanvasKit.Color4f(0.9, 0, 1.0, 1.0));
