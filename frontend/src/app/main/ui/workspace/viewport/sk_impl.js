@@ -38,13 +38,27 @@ clear() {
           paint.setStyle(self.CanvasKit.PaintStyle.Fill);
           const color = self.CanvasKit.parseColorString(fill["fill-color"]);
           const opacity = fill["fill-opacity"]
-          console.log("color", fill["fill-color"], fill["fill-opacity"])
+          console.log("fill color", fill["fill-color"], fill["fill-opacity"])
           color[3] = opacity
           paint.setColor(color);
           const rr = self.CanvasKit.RRectXY(self.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height), 0, 0);        
           canvas.drawRRect(rr, paint);
         }
       }
+      // Drawing strokes
+      if (shape.strokes) {
+        for (const stroke of shape.strokes.reverse()) {          
+          paint.setStyle(self.CanvasKit.PaintStyle.Stroke);
+          const color = self.CanvasKit.parseColorString(stroke["stroke-color"]);
+          const opacity = stroke["stroke-opacity"]
+          paint.setStrokeWidth(stroke["stroke-width"]);
+          console.log("stroke color", stroke, stroke["stroke-color"], stroke["stroke-opacity"])
+          color[3] = opacity
+          paint.setColor(color);
+          const rr = self.CanvasKit.RRectXY(self.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height), 0, 0);        
+          canvas.drawRRect(rr, paint);
+        }
+      }      
       paint.delete();
     }
 
