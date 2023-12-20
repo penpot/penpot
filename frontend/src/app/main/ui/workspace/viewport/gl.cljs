@@ -3,6 +3,7 @@
    (:require-macros [app.util.gl.macros :refer [slurp]])
    (:require
     ["gl-matrix" :as glm]
+    [app.common.data.macros :as dm]
     [app.common.math :as math]
     [app.util.gl :as gl]
     [cuerdas.core :as str]
@@ -15,6 +16,7 @@
 
 #_(def shaders (js/Map.))
 (def programs (js/Map.))
+(def program-actives (js/Map.))
 #_(def textures (js/Map.))
 #_(def framebuffers (js/Map.))
 
@@ -53,6 +55,25 @@
     :bool    7
     :frame   8))
 
+(defn get-object-border-radius-as-vec4
+  "Returns a vec4 from the object border radius."
+  [object]
+  (let [rx (:rx object)
+        ry (:ry object)
+        r1 (:r1 object)
+        r2 (:r2 object)
+        r3 (:r3 object)
+        r4 (:r4 object)]
+    (cond
+      (or rx ry)
+      #js [(:rx object) (:ry object) (:rx object) (:ry object)]
+
+      (or r1 r2 r3 r4)
+      #js [(:r1 object) (:r2 object) (:r3 object) (:r4 object)]
+
+      :else
+      #js [0.0 0.0 0.0 0.0])))
+
 (defn resize-canvas-to
   "Resize canvas to specific coordinates."
   [canvas width height]
@@ -75,28 +96,34 @@
 (defn prepare-gl
   "Prepares the WebGL context for rendering."
   [gl]
-  (let [default-program (gl/create-program-from-sources gl default-vertex-shader default-fragment-shader)]
-    (.set programs "default" default-program)))
+  (let [default-program (gl/create-program-from-sources gl default-vertex-shader default-fragment-shader)
+        default-program-actives (gl/get-program-actives gl default-program)]
+    (js/console.log default-program-actives)
+    (.set programs "default" default-program)
+    (.set program-actives "default" default-program-actives)))
 
 (defn render-gl
   "Renders the whole document to the canvas."
   [gl objects vbox]
   (let [projection (.create glm/mat3)
-        projection (.projection glm/mat3 projection (:width vbox) (:height vbox))]
+        projection (.projection glm/mat3 projection (:width vbox) (:height vbox))
 
-   (.clearColor gl 1.0 0.0 1.0 0.5)
+        program    (.get programs "default")
+        actives    (.get program-actives "default")]
+
+    (.clearColor gl 1.0 0.0 1.0 0.5)
     (.clear gl (.-COLOR_BUFFER_BIT gl))
 
     (.viewport gl 0 0 (.-width (.-canvas gl)) (.-height (.-canvas gl)))
 
-  ;; Enable alpha blending
+    ;; Enable alpha blending
     (.enable gl (.-BLEND gl))
     (.blendFunc gl (.-SRC_ALPHA gl) (.-ONE_MINUS_SRC_ALPHA gl))
 
-    (.useProgram gl (.get programs "default"))
+    (.useProgram gl program)
     (println "---------------> vbox" (:x vbox) (:width vbox) (:y vbox) (:height vbox))
-    (.uniformMatrix3fv gl (.getUniformLocation gl (.get programs "default") "u_projection") false projection)
-    (.uniform4f gl (.getUniformLocation gl (.get programs "default") "u_vbox") (:x vbox) (:y vbox) (:width vbox) (:height vbox))
+    (.uniformMatrix3fv gl (gl/get-program-uniform-location actives "u_projection") false projection)
+    (.uniform4f gl (gl/get-program-uniform-location actives "u_vbox") (:x vbox) (:y vbox) (:width vbox) (:height vbox))
 
     (doseq [[_ object] objects]
       (let [selrect (:selrect object)
@@ -105,25 +132,25 @@
             width (:width selrect)
             height (:height selrect)
             rotation (:rotation object)
-          ;; Tengo que encontrar la forma de "reordenar la matriz" para que funcione la
-          ;; rotación.
-          ;; transform (:transform object)
-          ;; {a :a b :b c :c d :d e :e f :f} transform
-          ;; matrix #_(js/Float32Array. #js [a c 0 b d 0 0 0 1])
-            matrix (js/Float32Array. #js [1 0 0 0 1 0 0 0 1])
-            fill (first (:fills object))]
-        (js/console.log "fill" fill)
-        (js/console.log "matrix" matrix)
-        (.uniform1i gl (.getUniformLocation gl (.get programs "default") "u_type") (get-object-type-as-int object))
-        (.uniform2f gl (.getUniformLocation gl (.get programs "default") "u_size") width height)
-        (.uniform2f gl (.getUniformLocation gl (.get programs "default") "u_position") x y)
-        (.uniform1f gl (.getUniformLocation gl (.get programs "default") "u_rotation") (/ (* rotation js/Math.PI) 180.0))
-        #_(.uniformMatrix3fv gl (.getUniformLocation gl (.get programs "default") "u_transform") false matrix)
+            border (get-object-border-radius-as-vec4 object)
+            type (get-object-type-as-int object)]
+        (js/console.log border)
+        (.uniform4fv gl (gl/get-program-uniform-location actives "u_border") border)
+        (.uniform1i gl (gl/get-program-uniform-location actives "u_type") type)
+        (.uniform2f gl (gl/get-program-uniform-location actives "u_size") width height)
+        (.uniform2f gl (gl/get-program-uniform-location actives "u_position") x y)
+        (.uniform1f gl (gl/get-program-uniform-location actives "u_rotation") (/ (* rotation js/Math.PI) 180.0))
+        #_(.uniformMatrix3fv gl (gl/get-program-uniform-location actives "u_transform") false matrix)
         ;; NOTA: Esto es sólo aplicable en objetos que poseen fills (los textos no
         ;; poseen fills).
         (doseq [fill (reverse (:fills object))]
           (do
-            (.uniform4fv  gl (.getUniformLocation  gl (.get  programs  "default") "u_color") (parse-color (:fill-color fill) (:fill-opacity fill)))
+            (.uniform4fv  gl (gl/get-program-uniform-location actives "u_color") (parse-color (:fill-color fill) (:fill-opacity fill)))
+            (.drawArrays  gl (.-TRIANGLE_STRIP  gl) 0  4)))
+
+        (doseq [stroke (reverse (:strokes object))]
+          (do
+            (.uniform4fv  gl (gl/get-program-uniform-location actives "u_color") (parse-color (:stroke-color stroke) (:stroke-opacity stroke)))
             (.drawArrays  gl (.-TRIANGLE_STRIP  gl) 0  4)))))))
 
 (mf/defc canvas

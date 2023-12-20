@@ -17,26 +17,45 @@ out vec4 fragColor;
 in vec2 v_texCoord;
 
 uniform int u_type;
+uniform vec2 u_size;
 uniform vec4 u_color;
+uniform vec4 u_border;
+
+bool isRoundedRect(in vec4 border) {
+    return border.x > 0.0 || border.y > 0.0 || border.z > 0.0 || border.w > 0.0;
+}
+
+// Thanks to Iñigo Quilez for this awesome functions.
+// @see https://iquilezles.org/articles/distfunctions2d/
+float sdRoundBox(in vec2 p, in vec2 b, in vec4 r) {
+    r.xy = (p.x > 0.0f) ? r.xy : r.zw;
+    r.x = (p.y > 0.0f) ? r.x : r.y;
+    vec2 q = abs(p) - b + r.x;
+    return min(max(q.x, q.y), 0.0f) + length(max(q, 0.0f)) - r.x;
+}
+
+float sdCircle(in vec2 p, in float r) {
+    return length(p) - r;
+}
 
 void main() {
     // Si es un rect o un frame, simplemente asignamos el color al fragColor.
     if (u_type == type_rect || u_type == type_frame) {
-        fragColor = u_color;
-    // Si es un circulo, comprobamos que el pixel este dentro del circulo, en caso
-    // contrario descartamos el pixel.
-    } else if (u_type == type_circle) {
-        if (length(v_texCoord - 0.5) > 0.5) {
-            discard;
-        }
-        if(length(v_texCoord - 0.5f) > 0.45f) {
-
-            fragColor = vec4(1.0, 0.0, 0.0, 1.0);
-        } else if(length(v_texCoord - 0.5f) > 0.4f) {
-            fragColor = vec4(1.0f, 0.0f, 1.0f, 1.0f);
+        if (isRoundedRect(u_border)) {
+            if (sdRoundBox(v_texCoord - 0.5, vec2(0.5), u_border / u_size.x) > 0.0) {
+                discard;
+            }
+            fragColor = u_color;
         } else {
             fragColor = u_color;
         }
+    // Si es un circulo, comprobamos que el pixel este dentro del circulo, en caso
+    // contrario descartamos el pixel.
+    } else if (u_type == type_circle) {
+        if (sdCircle(v_texCoord - 0.5, 0.5) > 0.0) {
+            discard;
+        }
+        fragColor = u_color;
     // Para cualquier otro elemento no soportado pintamos una especie de rejilla
     // raruna.
     } else {

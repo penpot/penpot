@@ -57,13 +57,15 @@
   [parameter get-active-name get-location-name]
   (fn [gl program]
     (let [count (.getProgramParameter gl program parameter)
-          get-active (dm/get-prop gl get-active-name)
-          get-location (dm/get-prop gl get-location-name)]
-       (into {} (for [index (range count)]
-                  (let [info         (get-active gl program index)
-                        name         (.-name info)
-                        location     (get-location gl program name)]
-                    [name #js {:name name :info info :location location}]))))))
+          get-active (unchecked-get gl get-active-name)
+          get-location (unchecked-get gl get-location-name)
+          actives #js {}]
+      (doseq [index (range 0 count)]
+        (let [info         (.apply get-active gl #js [program index])
+              name         (.-name info)
+              location     (.apply get-location gl #js [program name])]
+          (.defineProperty js/Object actives name #js {:value #js {:name name :info info :location location} :enumerable true :writable false :configurable false})))
+      actives)))
 
 (def get-program-uniforms (get-program-active-factory (.-ACTIVE_UNIFORMS js/WebGLRenderingContext) "getActiveUniform" "getUniformLocation"))
 (def get-program-attributes (get-program-active-factory (.-ACTIVE_ATTRIBUTES js/WebGLRenderingContext) "getActiveAttrib" "getAttribLocation"))
@@ -74,6 +76,13 @@
   (let [uniforms (get-program-uniforms gl program)
         attributes (get-program-attributes gl program)]
     #js { :uniforms uniforms :attributes attributes }))
+
+(defn get-program-uniform-location
+  "Returns the location of the given uniform in the given program"
+  [actives name]
+  (let [uniforms (unchecked-get actives "uniforms")
+        uniform (unchecked-get uniforms name)]
+    (unchecked-get uniform "location")))
 
 ;;
 ;; Buffers
@@ -90,9 +99,19 @@
 ;; Framebuffers
 ;;
 (defn create-framebuffer
-  [gl]
+  [gl attachments]
   (let [framebuffer (.createFramebuffer gl)]
     (.bindFramebuffer gl framebuffer)
+    (doseq [[attachment attachment-info] attachments]
+      (let [attachment-type (unchecked-get attachment-info "type")
+            attachment-data (unchecked-get attachment-info "data")]
+        (cond
+          (= attachment-type "texture")
+          (.framebufferTexture2D gl (.-FRAMEBUFFER gl) attachment (.-TEXTURE_2D gl) attachment-data 0)
+          (= attachment-type "renderbuffer")
+          (.framebufferRenderbuffer gl (.-FRAMEBUFFER gl) attachment (.-RENDERBUFFER gl) attachment-data)
+          :else
+          (throw (js/Error. (dm/str "Unknown attachment type: " attachment-type))))))
     (.bindFramebuffer gl nil)
     framebuffer))
 
