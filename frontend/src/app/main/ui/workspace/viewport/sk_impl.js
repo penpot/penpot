@@ -331,17 +331,23 @@ class CanvasKit {
     canvas.rotate(object.rotation, object.x + object.width / 2, object.y + object.height / 2);
     switch (object.type) {
       case "frame":
-        return this.drawFrame(canvas, object);
+        this.drawFrame(canvas, object);
+        break;
       case "rect":
-        return this.drawRect(canvas, object);
+        this.drawRect(canvas, object);
+        break;
       case "circle":
-        return this.drawCircle(canvas, object);
+        this.drawCircle(canvas, object);
+        break;
       case "path":
-        return this.drawPath(canvas, object);
+        this.drawPath(canvas, object);
+        break;
       case "text":
-        return this.drawText(canvas, object);
+        this.drawText(canvas, object);
+        break;
       case "group":
-        return this.drawGroup(canvas, object);
+        this.drawGroup(canvas, object);
+        break;
     }
     canvas.restore();
   }
