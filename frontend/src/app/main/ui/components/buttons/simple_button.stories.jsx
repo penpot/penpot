@@ -1,31 +1,30 @@
 import * as React from "react";
 
-import ds from "@target/design-system";
-
-const { SimpleButton, StoryWrapper, icons } = ds;
+import Components from "@target/components";
+import Icons from "@target/icons";
 
 export default {
   title: 'Buttons/Simple Button',
-  component: SimpleButton,
+  component: Components.SimpleButton,
 };
 
 export const Default = {
   render: () => (
-    <StoryWrapper>
-      <SimpleButton>
+    <Components.StoryWrapper>
+      <Components.SimpleButton>
         Simple Button
-      </SimpleButton>
-    </StoryWrapper>
+      </Components.SimpleButton>
+    </Components.StoryWrapper>
   ),
 };
 
 export const WithIcon = {
   render: () => (
-    <StoryWrapper>
-      <SimpleButton>
-        {icons.IconAddRefactor}
+    <Components.StoryWrapper>
+      <Components.SimpleButton>
+        {Icons.AddRefactor}
         Simple Button
-      </SimpleButton>
-    </StoryWrapper>
+      </Components.SimpleButton>
+    </Components.StoryWrapper>
   ),
 }
