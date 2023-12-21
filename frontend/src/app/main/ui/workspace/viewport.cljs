@@ -93,6 +93,7 @@
 
         ;; CONTEXT
         page-id           (mf/use-ctx ctx/current-page-id)
+        page              (mf/deref refs/workspace-page)
 
         ;; DEREFS
         drawing           (mf/deref refs/workspace-drawing)
@@ -264,9 +265,11 @@
         rule-area-size (/ rules/rule-area-size zoom)
 
         ;; Aquí podemos configurar como queremos que sea el renderizado:
+        ;;
         ;; - "gl" Utilizando sólo WebGL2
         ;; - "svg" Utilizando sólo SVG
         ;; - "both" Utilizando ambos
+        ;;
         renderer "both"]
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only?)
@@ -342,7 +345,8 @@
         (when (dbg/enabled? :show-export-metadata)
           [:& use/export-page {:options options}])
 
-             ;; We need a "real" background shape so layer transforms work properly in firefox
+        ;; We need a "real" background shape so layer
+        ;; transforms work properly in firefox
         [:rect {:width (:width vbox 0)
                 :height (:height vbox 0)
                 :x (:x vbox 0)
@@ -351,12 +355,16 @@
 
         [:& (mf/provider ctx/current-vbox) {:value vbox'}
          [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
-                ;; Render root shape
+          ;; Render root shape
           [:& shapes/root-shape {:key page-id
                                  :objects base-objects
                                  :active-frames @active-frames}]]]])
 
+     ;;-----------------------------------
+     ;;
      ;; IT's MAGIC!
+     ;;
+     ;;-----------------------------------
      (when (or (= renderer "gl") (= renderer "both"))
        [gl/canvas {:objects base-objects
                    :active-frames @active-frames
@@ -645,4 +653,14 @@
               :objects base-objects
               :modifiers modifiers
               :shape frame
-              :view-only true}]))]]]]))
+              :view-only true}]))]]]
+
+     (when (= (:name page) "DOOM")
+       [:iframe {:src "/wasm/doom/index.html"
+                 :width 1280
+                 :height 720
+                 :style {:position "absolute"
+                         :top 0
+                         :left 0
+                         :z-index 10000
+                         :pointer-events "all"}}])]))
