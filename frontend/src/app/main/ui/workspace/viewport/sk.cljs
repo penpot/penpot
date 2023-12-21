@@ -5,6 +5,10 @@
    ["./sk_impl.js" :as impl]
    [rumext.v2 :as mf]))
 
+(defn get-objects-as-iterable
+  [objects]
+  (.values js/Object (clj->js objects)))
+
 (mf/defc canvas
   {::mf/wrap-props false}
   [props]
@@ -12,18 +16,24 @@
         vbox       (unchecked-get props "vbox")
         canvas-ref (mf/use-ref nil)
         canvas-kit (mf/use-state nil)]
-    
+
     (mf/with-effect [vbox]
-      (when @canvas-kit
-        (.setVbox ^js @canvas-kit vbox)))
-    
+      (let [k @canvas-kit
+            objects (get-objects-as-iterable objects)]
+        (when (some? k)
+          (.setVbox ^js k vbox)
+          (.draw k objects))))
+
     (mf/with-effect [objects]
-      (when @canvas-kit
-        (doseq [[_ object] objects]
-          (.paintRect ^js @canvas-kit (clj->js object)))))
+      (js/console.log "whatever")
+      (let [k @canvas-kit
+            objects (get-objects-as-iterable objects)]
+        (when (some? k)
+          (.draw k objects))))
 
     (mf/with-effect [canvas-ref vbox]
-      (let [canvas (mf/ref-val canvas-ref)]
+      (let [canvas (mf/ref-val canvas-ref)
+            objects (get-objects-as-iterable objects)]
         (when (and (some? canvas) (some? vbox))
           (set! (.-width canvas) (.-clientWidth canvas))
           (set! (.-height canvas) (.-clientHeight canvas))
@@ -32,9 +42,7 @@
               (.then (fn [k]
                        (reset! canvas-kit k)
                        (println "init complete")
-                       (doseq [[_ object] objects]
-                         (.paintRect ^js k (clj->js object)))
-                       #_(.clear ^js k)))))))
+                       (.draw k objects)))))))
 
     [:canvas {:id "skia-canvas"
               :class (stl/css :canvas)
