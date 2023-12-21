@@ -32,6 +32,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
+   [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.mouse :as mse]
@@ -109,7 +110,7 @@
   "Enter mouse resize mode, until mouse button is released."
   [handler ids shape]
   (letfn [(resize
-           [shape initial layout [point lock? center? point-snap]]
+            [shape initial layout [point lock? center? point-snap]]
             (let [{:keys [width height]} (:selrect shape)
                   {:keys [rotation]} shape
 
@@ -333,10 +334,9 @@
                 angle))]
         (rx/concat
          (->> ms/mouse-position
-              (rx/with-latest vector ms/mouse-position-mod)
-              (rx/with-latest vector ms/mouse-position-shift)
+              (rx/with-latest-from ms/mouse-position-mod ms/mouse-position-shift)
               (rx/map
-               (fn [[[pos mod?] shift?]]
+               (fn [[pos mod? shift?]]
                  (let [delta-angle (calculate-angle pos mod? shift?)]
                    (dwm/set-rotation-modifiers delta-angle shapes group-center))))
               (rx/take-until stoper))
@@ -354,8 +354,8 @@
             objects (wsh/lookup-page-objects state page-id)
             shapes  (->> ids (map #(get objects %)))]
         (rx/concat
-          (rx/of (dwm/set-delta-rotation-modifiers rotation shapes))
-          (rx/of (dwm/apply-modifiers)))))))
+         (rx/of (dwm/set-delta-rotation-modifiers rotation shapes))
+         (rx/of (dwm/apply-modifiers)))))))
 
 
 ;; -- Move ----------------------------------------------------------
@@ -395,7 +395,7 @@
                 (rx/map #(gpt/length %))
                 (rx/filter #(> % (/ 10 zoom)))
                 (rx/take 1)
-                (rx/with-latest vector ms/mouse-position-alt)
+                (rx/with-latest-from ms/mouse-position-alt)
                 (rx/mapcat
                  (fn [[_ alt?]]
                    (rx/concat
@@ -480,22 +480,23 @@
                          ;; We send the nil first so the stream is not waiting for the first value
                          (rx/of nil)
                          (->> position
+                              ;; FIXME: performance throttle
                               (rx/throttle 20)
                               (rx/switch-map
                                (fn [pos]
                                  (->> (snap/closest-snap-move page-id shapes objects layout zoom focus pos)
-                                      (rx/map #(vector pos %)))))))]
+                                      (rx/map #(array pos %)))))))]
          (if (empty? shapes)
            (rx/of (finish-transform))
            (let [move-stream
                  (->> position
                       ;; We ask for the snap position but we continue even if the result is not available
-                      (rx/with-latest vector snap-delta)
+                      (rx/with-latest-from snap-delta)
 
                       ;; We try to use the previous snap so we don't have to wait for the result of the new
                       (rx/map snap/correct-snap-point)
 
-                      (rx/with-latest vector ms/mouse-position-mod)
+                      (rx/with-latest-from ms/mouse-position-mod)
 
                       (rx/map
                        (fn [[move-vector mod?]]
@@ -506,16 +507,16 @@
                                grid-layout?   (ctl/grid-layout? objects target-frame)
                                drop-index     (when flex-layout? (gslf/get-drop-index target-frame objects position))
                                cell-data      (when (and grid-layout? (not mod?)) (gslg/get-drop-cell target-frame objects position))]
-                           [move-vector target-frame drop-index cell-data])))
+                           (array move-vector target-frame drop-index cell-data))))
 
                       (rx/take-until stopper))]
 
              (rx/merge
               ;; Temporary modifiers stream
               (->> move-stream
-                   (rx/with-latest-from ms/mouse-position-shift)
+                   (rx/with-latest-from array/conj ms/mouse-position-shift)
                    (rx/map
-                    (fn [[[move-vector target-frame drop-index cell-data] shift?]]
+                    (fn [[move-vector target-frame drop-index cell-data shift?]]
                       (let [x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
                             [move-vector snap-ignore-axis]
                             (cond
@@ -538,15 +539,15 @@
                           (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
 
               (->> move-stream
-                      (rx/with-latest-from ms/mouse-position-alt)
-                      (rx/filter (fn [[_ alt?]] alt?))
-                      (rx/take 1)
-                      (rx/mapcat
-                        (fn [[_ alt?]]
-                          (if (and (not duplicate-move-started?) alt?)
-                            (rx/of (start-move-duplicate from-position)
-                                   (dws/duplicate-selected false true))
-                          (rx/empty)))))
+                   (rx/with-latest-from array/conj ms/mouse-position-alt)
+                   (rx/filter (fn [[_ alt?]] alt?))
+                   (rx/take 1)
+                   (rx/mapcat
+                    (fn [[_ alt?]]
+                      (if (and (not duplicate-move-started?) alt?)
+                        (rx/of (start-move-duplicate from-position)
+                               (dws/duplicate-selected false true))
+                        (rx/empty)))))
 
               (->> move-stream
                    (rx/map (comp set-ghost-displacement first)))
@@ -743,7 +744,7 @@
 
             cpos       (gpt/point (:x bbox) (:y bbox))
             pos        (gpt/point (or (:x position) (:x bbox))
-                               (or (:y position) (:y bbox)))
+                                  (or (:y position) (:y bbox)))
 
             delta      (gpt/subtract pos cpos)
 
