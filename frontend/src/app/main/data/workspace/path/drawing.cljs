@@ -46,7 +46,8 @@
             command (helpers/next-node shape position last-point prev-handler)]
         (assoc-in state [:workspace-local :edit-path id :preview] command)))))
 
-(defn add-node [{:keys [x y shift?]}]
+(defn add-node
+  [{:keys [x y shift?]}]
   (ptk/reify ::add-node
     ptk/UpdateEvent
     (update [_ state]
@@ -135,7 +136,7 @@
                            (first handlers))
 
             drag-events-stream
-            (->> (streams/position-stream)
+            (->> (streams/position-stream state)
                  (rx/map #(drag-handler position idx prefix %))
                  (rx/take-until
                   (rx/merge
@@ -164,7 +165,7 @@
 (defn start-path-from-point [position]
   (ptk/reify ::start-path-from-point
     ptk/WatchEvent
-    (watch [_ _ stream]
+    (watch [_ state stream]
       (let [stoper (rx/merge
                     (->> stream
                          (rx/filter mse/mouse-event?)
@@ -172,7 +173,7 @@
                     (->> stream
                          (rx/filter helpers/end-path-event?)))
 
-            drag-events (->> (streams/position-stream)
+            drag-events (->> (streams/position-stream state)
                              (rx/map #(drag-handler %))
                              (rx/take-until stoper))]
         (rx/concat
@@ -190,7 +191,12 @@
        (rx/merge-map #(rx/empty))))
 
 (defn make-drag-stream
-  [stream down-event]
+  [state stream down-event]
+
+  (dm/assert!
+   "should be a pointer"
+   (gpt/point? down-event))
+
   (let [stoper (rx/merge
                 (->> stream
                      (rx/filter mse/mouse-event?)
@@ -198,7 +204,7 @@
                 (->> stream
                      (rx/filter helpers/end-path-event?)))
 
-        drag-events (->> (streams/position-stream)
+        drag-events (->> (streams/position-stream state)
                          (rx/map #(drag-handler %))
                          (rx/take-until stoper))]
     (rx/concat
@@ -217,7 +223,7 @@
         (assoc-in state [:workspace-local :edit-path id :edit-mode] :draw)))
 
     ptk/WatchEvent
-    (watch [_ _ stream]
+    (watch [_ state stream]
       (let [mouse-down      (->> stream
                                  (rx/filter mse/mouse-event?)
                                  (rx/filter mse/mouse-down-event?))
@@ -226,7 +232,7 @@
 
             ;; Mouse move preview
             mousemove-events
-            (->> (streams/position-stream)
+            (->> (streams/position-stream state)
                  (rx/take-until end-path-events)
                  (rx/map #(preview-next-point %)))
 
@@ -234,12 +240,13 @@
             mousedown-events
             (->> mouse-down
                  (rx/take-until end-path-events)
-                 (rx/with-latest merge (streams/position-stream))
-
+                 ;; We just ignore the mouse event and stream down the
+                 ;; last position event
+                 (rx/with-latest-from #(-> %2) (streams/position-stream state))
                  ;; We change to the stream that emits the first event
                  (rx/switch-map
                   #(rx/race (make-node-events-stream stream)
-                            (make-drag-stream stream %))))]
+                            (make-drag-stream state stream %))))]
 
         (rx/concat
          (rx/of (undo/start-path-undo))
