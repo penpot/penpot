@@ -11,8 +11,8 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.util.websocket :as ws]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (l/set-level! :error)
 

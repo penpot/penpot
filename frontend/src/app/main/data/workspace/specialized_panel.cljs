@@ -9,8 +9,8 @@
    [app.common.data :as d]
    [app.main.data.workspace.common :as-alias dwc]
    [app.main.data.workspace.state-helpers :as wsh]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn interrupt? [e] (or (= e :interrupt) (= e ::interrupt)))
 

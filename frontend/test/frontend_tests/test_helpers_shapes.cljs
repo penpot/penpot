@@ -7,12 +7,12 @@
    [app.test-helpers.events :as the]
    [app.test-helpers.libraries :as thl]
    [app.test-helpers.pages :as thp]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.pprint :refer [pprint]]
    [cljs.test :as t :include-macros true]
    [clojure.stacktrace :as stk]
    [linked.core :as lks]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})

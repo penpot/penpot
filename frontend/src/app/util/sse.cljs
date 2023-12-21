@@ -7,7 +7,7 @@
 (ns app.util.sse
   (:require
    ["eventsource-parser/stream" :as sse]
-   [beicon.core :as rx]))
+   [beicon.v2.core :as rx]))
 
 (defn create-stream
   [^js/ReadableStream stream]

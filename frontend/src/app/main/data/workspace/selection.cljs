@@ -36,10 +36,11 @@
    [app.main.streams :as ms]
    [app.main.worker :as uw]
    [app.util.mouse :as mse]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]
    [clojure.set :as set]
    [linked.set :as lks]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (defn interrupt?
   [e]
@@ -111,8 +112,8 @@
 
           (->> selrect-stream
                (rx/buffer-time 100)
-               (rx/map #(last %))
-               (rx/dedupe)
+               (rx/map last)
+               (rx/pipe (rxo/distinct-contiguous))
                (rx/map #(select-shapes-by-current-selrect preserve? ignore-groups?))))
 
          (->> (rx/of (update-selrect nil))

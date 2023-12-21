@@ -14,9 +14,9 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.router :as rt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
@@ -112,7 +112,7 @@
       ;; some race conditions that causes unexpected redirects on
       ;; invitations workflows (and probably other cases).
       (->> (rp/cmd! :get-profile)
-           (rx/subs (fn [{:keys [id] :as profile}]
+           (rx/subs! (fn [{:keys [id] :as profile}]
                       (cond
                         (= id uuid/zero)
                         (st/emit! (rt/nav :auth-login))

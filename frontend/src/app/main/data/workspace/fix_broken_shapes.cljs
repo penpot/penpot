@@ -7,8 +7,8 @@
 (ns app.main.data.workspace.fix-broken-shapes
   (:require
    [app.main.data.workspace.changes :as dch]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn- generate-broken-link-changes
   [attr {:keys [objects id] :as container}]

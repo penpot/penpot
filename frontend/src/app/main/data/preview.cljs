@@ -16,10 +16,10 @@
    [app.main.refs :as refs]
    [app.util.code-gen :as cg]
    [app.util.timers :as ts]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (def style-type "css")
 (def markup-type "html")
@@ -80,7 +80,7 @@
              (rx/merge-map fonts/fetch-font-css)
              (rx/reduce conj [])
              (rx/map #(str/join "\n" %))
-             (rx/subs
+             (rx/subs!
               (fn [fontfaces-css]
                 (let [style-code
                       (dm/str

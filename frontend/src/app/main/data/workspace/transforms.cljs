@@ -35,8 +35,8 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.mouse :as mse]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 ;; -- Helpers --------------------------------------------------------
 

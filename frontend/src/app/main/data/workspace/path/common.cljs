@@ -8,7 +8,7 @@
   (:require
    [app.common.schema :as sm]
    [app.main.data.workspace.path.state :as st]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (def valid-commands
   #{:move-to

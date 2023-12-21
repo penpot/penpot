@@ -15,7 +15,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.util.i18n :as i18n :refer [tr]]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (defn on-error

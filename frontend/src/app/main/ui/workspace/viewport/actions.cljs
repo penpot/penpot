@@ -30,7 +30,7 @@
    [app.util.object :as obj]
    [app.util.timers :as timers]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 

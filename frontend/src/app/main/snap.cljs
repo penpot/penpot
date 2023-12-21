@@ -19,7 +19,7 @@
    [app.main.refs :as refs]
    [app.main.worker :as uw]
    [app.util.range-tree :as rt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]))
 
 (def ^:const snap-accuracy 10)

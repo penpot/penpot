@@ -10,7 +10,7 @@
    [app.common.files.helpers :as cfh]
    [app.main.fonts :as fonts]
    [app.util.object :as obj]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -28,7 +28,7 @@
              (->> (rx/from fonts)
                   (rx/merge-map fonts/fetch-font-css)
                   (rx/reduce conj [])
-                  (rx/subs
+                  (rx/subs!
                    (fn [result]
                      (let [css (str/join "\n" result)]
                        (when-not (= (mf/ref-val fonts-css-ref) css)

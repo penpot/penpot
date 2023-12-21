@@ -9,8 +9,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (declare hide)
 (declare show)

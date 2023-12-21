@@ -12,8 +12,8 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.util.time :as dt]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (def discard-transaction-time-millis (* 20 1000))
 

@@ -15,7 +15,7 @@
    [app.util.globals :as globals]
    [app.util.time :as dt]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
@@ -58,7 +58,7 @@
     :or {mode :cors
          headers {}
          credentials "same-origin"}}]
-  (rx/Observable.create
+  (rx/create
    (fn [subscriber]
      (let [controller    (js/AbortController.)
            signal        (.-signal ^js controller)
@@ -172,7 +172,7 @@
   (p/create
    (fn [resolve reject]
      (->> (rx/take 1 observable)
-          (rx/subs resolve reject)))))
+          (rx/subs! resolve reject)))))
 
 (defn fetch-data-uri
   ([uri]

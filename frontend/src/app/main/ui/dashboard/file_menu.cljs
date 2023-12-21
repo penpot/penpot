@@ -18,8 +18,8 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [beicon.core :as rx]
-   [potok.core :as ptk]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn get-project-name
@@ -195,7 +195,7 @@
        (when show?
          (->> (rp/cmd! :get-all-projects)
               (rx/map group-by-team)
-              (rx/subs #(when (mf/ref-val mounted-ref)
+              (rx/subs! #(when (mf/ref-val mounted-ref)
                           (reset! teams %)))))))
 
     (when current-team

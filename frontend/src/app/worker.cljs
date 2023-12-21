@@ -17,7 +17,7 @@
    [app.worker.selection]
    [app.worker.snaps]
    [app.worker.thumbnails]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [promesa.core :as p]))
 
 (log/setup! {:app :info})
@@ -130,7 +130,7 @@
          ;; 1ms debounce, after 1ms without messages will process the buffer
          (rx/debounce 1)
 
-         (rx/subs (fn [[messages dropped last]]
+         (rx/subs! (fn [[messages dropped last]]
                     ;; Send back the dropped messages replies
                     (doseq [msg dropped]
                       (drop-message msg))

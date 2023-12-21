@@ -15,9 +15,9 @@
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (defonce drag-threshold 5)
 

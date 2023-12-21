@@ -48,7 +48,7 @@
    [app.util.strings :as ust]
    [app.util.thumbnails :as th]
    [app.util.timers :as ts]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -550,7 +550,7 @@
                     (mapcat get-image-data))]
     (->> (rx/from images)
          (rx/map #(cfg/resolve-file-media %))
-         (rx/flat-map http/fetch-data-uri))))
+         (rx/merge-map http/fetch-data-uri))))
 
 (defn populate-fonts-cache [objects]
   (let [texts (->> objects
@@ -561,10 +561,10 @@
     (->> (rx/from texts)
          (rx/map fonts/get-content-fonts)
          (rx/reduce set/union #{})
-         (rx/flat-map identity)
-         (rx/flat-map fonts/fetch-font-css)
-         (rx/flat-map fonts/extract-fontface-urls)
-         (rx/flat-map http/fetch-data-uri))))
+         (rx/merge-map identity)
+         (rx/merge-map fonts/fetch-font-css)
+         (rx/merge-map fonts/extract-fontface-urls)
+         (rx/merge-map http/fetch-data-uri))))
 
 (defn render-page
   [data]

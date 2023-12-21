@@ -8,7 +8,7 @@
   (:require
    [app.common.files.helpers :as cfh]
    [app.common.uuid :as uuid]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 ;; --- Shape attrs (Layers Sidebar)
 

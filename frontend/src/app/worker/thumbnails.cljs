@@ -15,7 +15,7 @@
    [app.main.render :as render]
    [app.util.http :as http]
    [app.worker.impl :as impl]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 

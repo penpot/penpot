@@ -17,7 +17,7 @@
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.mouse :as mse]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -157,7 +157,7 @@
                        (rx/filter mse/pointer-event?)
                        (rx/filter #(= :viewport (mse/get-pointer-source %)))
                        (rx/map mse/get-pointer-position)
-                       (rx/subs
+                       (rx/subs!
                         (fn [pt]
                           (case @moving-point
                             :from-p  (when on-change-start (on-change-start pt))

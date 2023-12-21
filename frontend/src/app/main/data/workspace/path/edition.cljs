@@ -28,8 +28,8 @@
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
    [app.util.path.tools :as upt]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn modify-handler [id index prefix dx dy match-opposite?]
   (ptk/reify ::modify-handler

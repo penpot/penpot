@@ -20,9 +20,9 @@
    [app.util.mouse :as mse]
    [app.util.object :as obj]
    [app.util.time :as dt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (declare process-message)
 (declare handle-presence)

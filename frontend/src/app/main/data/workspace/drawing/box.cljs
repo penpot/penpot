@@ -25,8 +25,8 @@
    [app.main.snap :as snap]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn adjust-ratio
   [point initial]

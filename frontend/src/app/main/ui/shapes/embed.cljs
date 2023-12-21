@@ -8,7 +8,7 @@
   (:require
    [app.main.ui.hooks :as hooks]
    [app.util.http :as http]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (def context (mf/create-context false))
@@ -37,7 +37,7 @@
                       (rx/filter some?)
                       (url-mapping)
                       (rx/reduce conj {})
-                      (rx/subs (fn [data]
+                      (rx/subs! (fn [data]
                                  (when-not (= data (mf/ref-val uri-data))
                                    (mf/set-ref-val! uri-data data)
                                    (reset! state inc)))))]

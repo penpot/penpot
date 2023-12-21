@@ -22,7 +22,7 @@
    [app.main.ui.messages :as msgs]
    [app.util.i18n :refer [tr tr-html]]
    [app.util.router :as rt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
@@ -109,7 +109,7 @@
              (->> (rp/cmd! :prepare-register-profile cdata)
                   (rx/map #(merge % params))
                   (rx/finalize #(reset! submitted? false))
-                  (rx/subs
+                  (rx/subs!
                    on-success
                    (partial handle-prepare-register-error form))))))]
 
@@ -303,7 +303,7 @@
            (let [params (:clean-data @form)]
              (->> (rp/cmd! :register-profile params)
                   (rx/finalize #(reset! submitted? false))
-                  (rx/subs on-success
+                  (rx/subs! on-success
                            (partial handle-register-error form))))))]
 
     (if new-css-system
@@ -375,7 +375,7 @@
         [:div {:class (stl/css :link-entry :go-back)}
          [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {} {}))}
           (tr "labels.go-back")]]]]
-      
+
       ;; OLD
       [:div.form-container
        [:h1 {:data-test "register-title"} (tr "auth.register-title")]

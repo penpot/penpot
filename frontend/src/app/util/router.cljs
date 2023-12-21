@@ -12,9 +12,9 @@
    [app.util.browser-history :as bhistory]
    [app.util.dom :as dom]
    [app.util.timers :as ts]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [goog.events :as e]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [reitit.core :as r]))
 
 ;; --- Router API
@@ -159,4 +159,4 @@
                                (bhistory/disable! history)
                                (e/unlistenByKey key)))))
               (rx/take-until stoper)
-              (rx/subs #(on-change router %)))))))
+              (rx/subs! #(on-change router %)))))))

@@ -7,7 +7,7 @@
 (ns app.util.timers
   (:require
    [app.common.data :as d]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [promesa.core :as p]))
 
 (defn schedule
