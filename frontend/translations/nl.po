@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-04 11:47+0000\n"
-"Last-Translator: Sebastiaan Pasma <sebastiaan@enkodo.nl>\n"
-"Language-Team: Dutch "
-"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
+"PO-Revision-Date: 2023-12-22 16:12+0000\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
+">\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.1-dev\n"
+"X-Generator: Weblate 5.4-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -23,11 +23,11 @@ msgstr ""
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
-msgstr "Bevestig wachtwoord"
+msgstr "Wachtwoord bevestigen"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-account"
-msgstr "Maak een demo-account aan"
+msgstr "Demo-account aanmaken"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-profile"
@@ -37,7 +37,7 @@ msgstr "Wil je het gewoon proberen?"
 msgid "auth.demo-warning"
 msgstr ""
 "Dit is een DEMO-service, GEBRUIK DIT NIET voor echt werk, de projecten "
-"zullen regelmatig worden gewist."
+"worden regelmatig gewist."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
@@ -85,7 +85,7 @@ msgstr "OpenID"
 
 #: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "auth.name.not-all-space"
-msgstr "De naam moet een ander teken dan een spatie bevatten."
+msgstr "De naam mag geen spatie bevatten."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "auth.name.too-long"
@@ -105,11 +105,12 @@ msgstr "Wachtwoord succesvol gewijzigd"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
-msgstr "Profiel is niet geverifieerd, verifieer het profiel voordat je verder gaat."
+msgstr ""
+"Profiel is niet geverifieerd. Verifieer het profiel voordat je verder gaat."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
-msgstr "Wachtwoordherstel-link verzonden naar je inbox."
+msgstr "Wachtwoordherstel-link is per e-mail naar je verzonden."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
@@ -125,7 +126,7 @@ msgstr "Minimaal 8 tekens"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-not-empty"
-msgstr "Het wachtwoord moet een ander teken dan een spatie bevatten."
+msgstr "Het wachtwoord mag geen spatie bevatten."
 
 msgid "auth.privacy-policy"
 msgstr "Privacybeleid"
@@ -144,7 +145,7 @@ msgstr "Wachtwoord vergeten?"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.recovery-submit"
-msgstr "Wijzig je wachtwoord"
+msgstr "Wachtwoord wijzigen"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.register"
@@ -198,7 +199,7 @@ msgid "common.share-link.current-tag"
 msgstr "(huidig)"
 
 msgid "common.share-link.destroy-link"
-msgstr "Vernietig link"
+msgstr "Link verwijderen"
 
 msgid "common.share-link.get-link"
 msgstr "Link ophalen"
@@ -283,11 +284,11 @@ msgstr "Rondleiding door de interface"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.copied-success"
-msgstr "Token gekopieërd"
+msgstr "Token gekopieerd"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.create"
-msgstr "Genereer nieuw token"
+msgstr "Nieuw token aanmaken"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.create.success"
@@ -295,7 +296,7 @@ msgstr "Toegangstoken is succesvol aangemaakt."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Klik op de knop \"Genereer nieuw token\" om er een te genereren."
+msgstr "Klik op de knop \"Nieuw token aanmaken\" om er een aan te maken."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
@@ -350,7 +351,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-expire"
-msgstr "De token zal verlopen op %s"
+msgstr "De token verloopt op %s"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-not-expire"
@@ -370,7 +371,7 @@ msgstr "(kopie)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "Nieuw team maken"
+msgstr "Nieuw team aanmaken"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
@@ -378,21 +379,21 @@ msgstr "Jouw Penpot"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.delete-team"
-msgstr "Verwijder team"
+msgstr "Team verwijderen"
 
 msgid "dashboard.download-binary-file"
-msgstr "Download Penpot-bestand (.penpot)"
+msgstr "Penpot-bestand downloaden (.penpot)"
 
 msgid "dashboard.download-standard-file"
-msgstr "Download standaardbestand (.svg + .json)"
+msgstr "Standaardbestand downloaden (.svg + .json)"
 
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
-msgstr "Dupliceer"
+msgstr "Dupliceren"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
-msgstr "Dupliceer %s bestanden"
+msgstr "%s bestanden dupliceren"
 
 #: src/app/main/ui/dashboard/grid.cljs
 #, markdown
@@ -403,7 +404,7 @@ msgstr ""
 "sjablonen] (https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
-msgstr "Download %s Penpot-bestanden (.penpot)"
+msgstr "%s Penpot-bestanden downloaden (.penpot)"
 
 msgid "dashboard.export-frames"
 msgstr "Borden exporteren als PDF"
@@ -413,7 +414,7 @@ msgid "dashboard.export-frames.title"
 msgstr "Exporteren als PDF"
 
 msgid "dashboard.export-multi"
-msgstr "Exporteer %s Penpot-bestanden"
+msgstr "%s Penpot-bestanden exporteren"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-multiple.selected"
@@ -592,7 +593,7 @@ msgstr "Bibliotheken"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.loading-files"
-msgstr "Je bestanden aan het laden …"
+msgstr "Je bestanden worden geladen …"
 
 msgid "dashboard.loading-fonts"
 msgstr "Je lettertypes worden geladen …"
@@ -808,7 +809,7 @@ msgstr "Je naam"
 
 #: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
-msgstr "Je Penpot"
+msgstr "Jouw Penpot"
 
 #: src/app/main/ui/alert.cljs
 msgid "ds.alert-ok"
@@ -884,7 +885,7 @@ msgstr "Het e-mailadres «%s» is gemeld als spam of permanent teruggestuurd."
 msgid "errors.feature-mismatch"
 msgstr ""
 "Het lijkt erop dat je een bestand opent waarin de functie '%s' is "
-"ingeschakeld, maar je penpot-frontend ondersteunt dit niet of heeft het "
+"ingeschakeld, maar jouw penpot-frontend ondersteunt dit niet of heeft het "
 "uitgeschakeld."
 
 #: src/app/main/errors.cljs
@@ -1019,7 +1020,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-title"
-msgstr "Penpot-community"
+msgstr "Penpot-gemeenschap"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
@@ -1272,7 +1273,7 @@ msgstr "Informatie"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
-msgstr "Snelkoppelingen"
+msgstr "Sneltoetsen"
 
 msgid "labels.accept"
 msgstr "Accepteren"
@@ -1324,7 +1325,7 @@ msgstr "Commentaar"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.community"
-msgstr "Community"
+msgstr "Gemeenschap"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
@@ -1738,11 +1739,11 @@ msgstr "Verander e-mailadres"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.title"
-msgstr "Verander je e-mailadres"
+msgstr "Je e-mailadres wijzigen"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.create-access-token.copy-token"
-msgstr "Kopieër token"
+msgstr "Token kopiëren"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.create-access-token.expiration-date.label"
@@ -1799,7 +1800,7 @@ msgstr "Ja, verwijder mijn account"
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.info"
 msgstr ""
-"Door je account te verwijderen, verlies je al je huidige projecten en "
+"Als je je account verwijdert, verlies je al je huidige projecten en "
 "archieven."
 
 #: src/app/main/ui/settings/delete_account.cljs
@@ -2179,7 +2180,7 @@ msgid "onboarding-v2.before-start.desc2.title"
 msgstr "Gebruikershandleiding"
 
 msgid "onboarding-v2.before-start.desc3"
-msgstr "Je kunt onze tutorials en de tutorials van onze community bekijken."
+msgstr "Je kunt onze tutorials en die van onze gemeenschap bekijken."
 
 msgid "onboarding-v2.before-start.desc3.title"
 msgstr "Video-tutorials"
@@ -2217,7 +2218,7 @@ msgstr ""
 "zijn heden en toekomst met de hele gemeenschap en het kernteam van Penpot."
 
 msgid "onboarding-v2.welcome.desc2.title"
-msgstr "Deelnemen aan de Penpotgemeenschap"
+msgstr "Deelnemen aan de Penpot-gemeenschap"
 
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
@@ -2554,7 +2555,7 @@ msgid "shortcuts.add-node"
 msgstr "Knooppunt toevoegen"
 
 msgid "shortcuts.align-bottom"
-msgstr "Beneden uitlijnen"
+msgstr "Onderaan uitlijnen"
 
 msgid "shortcuts.align-center"
 msgstr "Centreren"
@@ -2572,7 +2573,7 @@ msgid "shortcuts.align-right"
 msgstr "Rechts uitlijnen"
 
 msgid "shortcuts.align-top"
-msgstr "Boven uitlijnen"
+msgstr "Bovenaan uitlijnen"
 
 msgid "shortcuts.align-vcenter"
 msgstr "Verticaal centreren"
@@ -2581,7 +2582,7 @@ msgid "shortcuts.artboard-selection"
 msgstr "Maak bord van selectie"
 
 msgid "shortcuts.bold"
-msgstr "Schakel vet in"
+msgstr "Vet in/uitschakelen"
 
 msgid "shortcuts.bool-difference"
 msgstr "Aftrekken (Booleaans verschil)"
@@ -2596,28 +2597,28 @@ msgid "shortcuts.bool-union"
 msgstr "Verenigen"
 
 msgid "shortcuts.bring-back"
-msgstr "Stuur naar de achtergrond"
+msgstr "Naar de achtergrond"
 
 msgid "shortcuts.bring-backward"
-msgstr "Stuur naar achteren"
+msgstr "Naar achteren"
 
 msgid "shortcuts.bring-forward"
-msgstr "Stuur naar voren"
+msgstr "Naar voren"
 
 msgid "shortcuts.bring-front"
-msgstr "Stuur naar de voorgrond"
+msgstr "Naar de voorgrond"
 
 msgid "shortcuts.clear-undo"
-msgstr "Ongedaan maken terugdraaien"
+msgstr "Ongedaan maken wissen"
 
 msgid "shortcuts.copy"
-msgstr "Kopieëren"
+msgstr "Kopiëren"
 
 msgid "shortcuts.create-component"
 msgstr "Component aanmaken"
 
 msgid "shortcuts.create-new-project"
-msgstr "Nieuw project maken"
+msgstr "Nieuw project aanmaken"
 
 msgid "shortcuts.cut"
 msgstr "Knippen"
@@ -2674,10 +2675,10 @@ msgid "shortcuts.flip-vertical"
 msgstr "Verticaal spiegelen"
 
 msgid "shortcuts.font-size-dec"
-msgstr "Verklein de lettergrootte"
+msgstr "Lettergrootte verkleinen"
 
 msgid "shortcuts.font-size-inc"
-msgstr "Vergroot de lettergrootte"
+msgstr "Lettergrootte vergroten"
 
 msgid "shortcuts.go-to-drafts"
 msgstr "Ga naar concepten"
@@ -2689,10 +2690,10 @@ msgid "shortcuts.go-to-search"
 msgstr "Zoeken"
 
 msgid "shortcuts.group"
-msgstr "Groep"
+msgstr "Groeperen"
 
 msgid "shortcuts.h-distribute"
-msgstr "Verdeel horizontaal"
+msgstr "Horizontaal verdelen"
 
 msgid "shortcuts.hide-ui"
 msgstr "Toon/verberg UI"
@@ -2704,16 +2705,16 @@ msgid "shortcuts.insert-image"
 msgstr "Afbeelding invoegen"
 
 msgid "shortcuts.italic"
-msgstr "Schakel cursief in/uit"
+msgstr "Cursief in/uitschakelen"
 
 msgid "shortcuts.join-nodes"
 msgstr "Sluit knooppunten aan"
 
 msgid "shortcuts.letter-spacing-dec"
-msgstr "Verklein de letterafstand"
+msgstr "Letterafstand verkleinen"
 
 msgid "shortcuts.letter-spacing-inc"
-msgstr "Vergroot de letterafstand"
+msgstr "Letterafstand vergroten"
 
 msgid "shortcuts.line-height-dec"
 msgstr "Verklein lijnhoogte"
@@ -2722,7 +2723,7 @@ msgid "shortcuts.line-height-inc"
 msgstr "Vergroot lijnhoogte"
 
 msgid "shortcuts.line-through"
-msgstr "Schakel doorstreept in/uit"
+msgstr "Doorstrepen in/uitschakelen"
 
 msgid "shortcuts.make-corner"
 msgstr "Maak hoek"
@@ -2731,13 +2732,13 @@ msgid "shortcuts.make-curve"
 msgstr "Maak curve"
 
 msgid "shortcuts.mask"
-msgstr "Masker"
+msgstr "Maskeren"
 
 msgid "shortcuts.merge-nodes"
 msgstr "Knooppunten samenvoegen"
 
 msgid "shortcuts.move"
-msgstr "Verplaats"
+msgstr "Verplaatsen"
 
 msgid "shortcuts.move-fast-down"
 msgstr "Snel naar beneden verplaatsen"
@@ -2821,7 +2822,7 @@ msgid "shortcuts.open-viewer"
 msgstr "Ga naar de kijkersinteracties-sectie"
 
 msgid "shortcuts.open-workspace"
-msgstr "Ga naar workspace"
+msgstr "Ga naar werkruimte"
 
 msgid "shortcuts.or"
 msgstr " of "
@@ -2857,7 +2858,7 @@ msgid "shortcuts.separate-nodes"
 msgstr "Losse knooppunten"
 
 msgid "shortcuts.show-pixel-grid"
-msgstr "Toon/verberg pixelraster"
+msgstr "Pixelraster tonen/verbergen"
 
 msgid "shortcuts.show-shortcuts"
 msgstr "Toon/verberg snelkoppelingen"
@@ -2894,13 +2895,13 @@ msgstr "Stel miniaturen in"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs
 msgid "shortcuts.title"
-msgstr "Toetsenbord sneltoetsen"
+msgstr "Sneltoetsen"
 
 msgid "shortcuts.toggle-alignment"
 msgstr "Schakel dynamisch uitlijnen in/uit"
 
 msgid "shortcuts.toggle-assets"
-msgstr "Schakel assets in/uit"
+msgstr "Assets in/uitschakelen"
 
 msgid "shortcuts.toggle-colorpalette"
 msgstr "Schakel kleurpalet in/uit"
@@ -2912,7 +2913,7 @@ msgid "shortcuts.toggle-fullscreen"
 msgstr "Schakel Volledig scherm in/uit"
 
 msgid "shortcuts.toggle-grid"
-msgstr "Toon/verberg raster"
+msgstr "Raster tonen/verbergen"
 
 msgid "shortcuts.toggle-history"
 msgstr "Schakel historie in/uit"
@@ -2921,13 +2922,13 @@ msgid "shortcuts.toggle-layers"
 msgstr "Schakel lagen in/uit"
 
 msgid "shortcuts.toggle-layout-flex"
-msgstr "Flex layout toevoegen/verwijderen"
+msgstr "Flex-layout toevoegen/verwijderen"
 
 msgid "shortcuts.toggle-lock"
-msgstr "Geselecteerde vergrendelen"
+msgstr "Vergrendelen/ontgrendelen"
 
 msgid "shortcuts.toggle-lock-size"
-msgstr "Vergrendel proporties"
+msgstr "Proporties vergrendelen"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Toon/verberg linialen"
@@ -2945,10 +2946,10 @@ msgid "shortcuts.toggle-textpalette"
 msgstr "Schakel tekstpalet in/uit"
 
 msgid "shortcuts.toggle-visibility"
-msgstr "Schakel zichtbaarheid"
+msgstr "Tonen/verbergen"
 
 msgid "shortcuts.toggle-zoom-style"
-msgstr "Schakel zoomstijl"
+msgstr "Zoomstijl wisselen"
 
 msgid "shortcuts.underline"
 msgstr "Schakel onderstreept"
@@ -2957,7 +2958,7 @@ msgid "shortcuts.undo"
 msgstr "Ongedaan maken"
 
 msgid "shortcuts.ungroup"
-msgstr "Degroeperen"
+msgstr "Groep opheffen"
 
 msgid "shortcuts.unmask"
 msgstr "Masker verwijderen"
@@ -2972,7 +2973,7 @@ msgid "shortcuts.zoom-lense-increase"
 msgstr "Zoomlens vergroten"
 
 msgid "shortcuts.zoom-selected"
-msgstr "Zoomen naar geslecteerde"
+msgstr "Zoomen naar selectie"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "team.webhooks.max-length"
@@ -3088,7 +3089,7 @@ msgstr "Interacties (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
-msgstr "Link kopieëren"
+msgstr "Link kopiëren"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
@@ -3372,7 +3373,7 @@ msgstr "Voorkeuren"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.view"
-msgstr "Bekijk"
+msgstr "Beeld"
 
 msgid "workspace.header.menu.redo"
 msgstr "Opnieuw doen"
@@ -3391,10 +3392,10 @@ msgstr "Toon raster"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
-msgstr "Toon kleurpalen"
+msgstr "Kleurpalet tonen"
 
 msgid "workspace.header.menu.show-pixel-grid"
-msgstr "Toon pixelraster"
+msgstr "Pixelraster tonen"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-rules"
@@ -3402,7 +3403,7 @@ msgstr "Toon linialen"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
-msgstr "Toon lettertype-palet"
+msgstr "Lettertype-palet tonen"
 
 msgid "workspace.header.menu.undo"
 msgstr "Ongedaan maken"
@@ -3429,7 +3430,7 @@ msgstr "Niet-opgeslagen wijzigingen"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.viewer"
-msgstr "Kijkmodus (%s)"
+msgstr "Weergavemodus (%s)"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom"
@@ -4319,7 +4320,7 @@ msgstr "Selectie schaduwen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.show-fill-on-export"
-msgstr "Meenemen in exports"
+msgstr "In exports tonen"
 
 msgid "workspace.options.show-in-viewer"
 msgstr "Bekijk in Weergavemodus"
@@ -4554,7 +4555,7 @@ msgstr "Naar achteren verplaatsen"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.copy"
-msgstr "Kopieëren"
+msgstr "Kopiëren"
 
 msgid "workspace.shape.menu.create-annotation"
 msgstr "Aantekening maken"
@@ -4647,7 +4648,7 @@ msgstr "Kruispunt"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.lock"
-msgstr "Vergrendel"
+msgstr "Vergrendelen"
 
 #: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.mask"
@@ -4681,7 +4682,7 @@ msgstr "Toon"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-in-assets"
-msgstr "Bekijk in assets-paneel"
+msgstr "In assets-paneel tonen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
@@ -4787,7 +4788,7 @@ msgstr "Curve (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.ellipse"
-msgstr "Ovaal (%s)"
+msgstr "Ellips (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.frame"
@@ -4811,7 +4812,7 @@ msgstr "Rechthoek (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.shortcuts"
-msgstr "Snelkoppelingen (%s)"
+msgstr "Sneltoetsen (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
@@ -4954,3 +4955,39 @@ msgstr "Bewerken"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+msgid "workspace.options.component.copy"
+msgstr "Kopiëren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Rechthoek"
+
+msgid "workspace.options.component.main"
+msgstr "Hoofd"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Ruit"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Ontkoppelen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Driehoek"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "Pijl"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Je bibliotheek is leeg. Eenmaal toegevoegd als Gedeelde Bibliotheek, zijn de "
+"assets die je aanmaakt beschikbaar voor gebruik in de rest van je bestanden. "
+"Weet je zeker dat je dit wilt publiceren??"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Cirkel"
