@@ -20,8 +20,8 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [app.main.worker :as uw]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)

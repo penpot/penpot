@@ -20,7 +20,7 @@
    [app.main.ui.onboarding.templates]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as tm]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; --- ONBOARDING LIGHTBOX

@@ -4018,6 +4018,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/node@npm:^20.10.5":
+  version: 20.10.5
+  resolution: "@types/node@npm:20.10.5"
+  dependencies:
+    undici-types: "npm:~5.26.4"
+  checksum: be30609aae0bfe492097815f166ccc07f465220cb604647fa4e5ec05a1d16c012a41b82b5f11ecfe2485cbb479d4d20384b95b809ca0bcff6d94d5bbafa645bb
+  languageName: node
+  linkType: hard
+
 "@types/normalize-package-data@npm:^2.4.0":
   version: 2.4.4
   resolution: "@types/normalize-package-data@npm:2.4.4"
@@ -7580,6 +7589,7 @@ __metadata:
     "@storybook/react": "npm:^7.5.3"
     "@storybook/react-vite": "npm:^7.5.3"
     "@storybook/testing-library": "npm:^0.2.2"
+    "@types/node": "npm:^20.10.5"
     animate.css: "npm:^4.1.1"
     autoprefixer: "npm:^10.4.15"
     concurrently: "npm:^8.2.2"
@@ -7618,13 +7628,14 @@ __metadata:
     react-dom: "npm:^18.2.0"
     react-virtualized: "npm:^9.22.3"
     rimraf: "npm:^5.0.1"
-    rxjs: "npm:~7.8.1"
+    rxjs: "npm:8.0.0-alpha.13"
     sass: "npm:^1.66.1"
     sax: "npm:^1.2.4"
     shadow-cljs: "npm:2.26.2"
     source-map-support: "npm:^0.5.21"
     storybook: "npm:^7.5.3"
     tdigest: "npm:^0.1.2"
+    typescript: "npm:^5.3.3"
     ua-parser-js: "npm:^1.0.32"
     vite: "npm:^5.0.2"
     xregexp: "npm:^5.1.1"
@@ -12516,7 +12527,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rxjs@npm:^7.8.1, rxjs@npm:~7.8.1":
+"rxjs@npm:8.0.0-alpha.13":
+  version: 8.0.0-alpha.13
+  resolution: "rxjs@npm:8.0.0-alpha.13"
+  peerDependencies:
+    "@types/node": ^20.6.3
+    typescript: ^5.2.2
+  checksum: d3d8a395e7b92158d621d686b819aa5be480f5c17155f695506b9a70a32af886962d23d4040a1d1611d815abe0ba0fd4929b3687da75a62a03a1e90e5b616464
+  languageName: node
+  linkType: hard
+
+"rxjs@npm:^7.8.1":
   version: 7.8.1
   resolution: "rxjs@npm:7.8.1"
   dependencies:
@@ -13919,6 +13940,26 @@ __metadata:
   version: 0.0.6
   resolution: "typedarray@npm:0.0.6"
   checksum: 6005cb31df50eef8b1f3c780eb71a17925f3038a100d82f9406ac2ad1de5eb59f8e6decbdc145b3a1f8e5836e17b0c0002fb698b9fe2516b8f9f9ff602d36412
+  languageName: node
+  linkType: hard
+
+"typescript@npm:^5.3.3":
+  version: 5.3.3
+  resolution: "typescript@npm:5.3.3"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: e33cef99d82573624fc0f854a2980322714986bc35b9cb4d1ce736ed182aeab78e2cb32b385efa493b2a976ef52c53e20d6c6918312353a91850e2b76f1ea44f
+  languageName: node
+  linkType: hard
+
+"typescript@patch:typescript@npm%3A^5.3.3#optional!builtin<compat/typescript>":
+  version: 5.3.3
+  resolution: "typescript@patch:typescript@npm%3A5.3.3#optional!builtin<compat/typescript>::version=5.3.3&hash=e012d7"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 1d0a5f4ce496c42caa9a30e659c467c5686eae15d54b027ee7866744952547f1be1262f2d40de911618c242b510029d51d43ff605dba8fb740ec85ca2d3f9500
   languageName: node
   linkType: hard
 

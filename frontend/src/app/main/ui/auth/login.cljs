@@ -25,7 +25,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
    [app.util.router :as rt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
@@ -40,7 +40,7 @@
   [event provider params]
   (dom/prevent-default event)
   (->> (rp/cmd! :login-with-oidc (assoc params :provider provider))
-       (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
+       (rx/subs! (fn [{:keys [redirect-uri] :as rsp}]
                   (if redirect-uri
                     (.replace js/location redirect-uri)
                     (log/error :hint "unexpected response from OIDC method"
@@ -60,7 +60,7 @@
   (dom/stop-propagation event)
   (let [{:keys [on-error]} (meta params)]
     (->> (rp/cmd! :login-with-ldap params)
-         (rx/subs (fn [profile]
+         (rx/subs! (fn [profile]
                     (if-let [token (:invitation-token profile)]
                       (st/emit! (rt/nav :auth-verify-token {} {:token token}))
                       (st/emit! (du/login-from-token {:profile profile}))))

@@ -31,7 +31,7 @@
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [cuerdas.core :as str]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; --- Header menu and submenus

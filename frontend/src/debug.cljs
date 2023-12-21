@@ -34,10 +34,10 @@
    [app.util.http :as http]
    [app.util.object :as obj]
    [app.util.timers :as timers]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.pprint :refer [pprint]]
    [cuerdas.core :as str]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [promesa.core :as p]))
 
 (l/set-level! :debug)
@@ -289,7 +289,7 @@
          (rx/filter ptk/event?)
          (rx/filter (fn [s] (and (dbg/enabled? :events)
                                  (not (debug-exclude-events (ptk/type s))))))
-         (rx/subs #(println "[stream]: " (ptk/repr-event %))))))
+         (rx/subs! #(println "[stream]: " (ptk/repr-event %))))))
 
 (defn ^:export apply-changes
   "Takes a Transit JSON changes"
@@ -432,7 +432,7 @@
 
 
          (->> (rp/cmd! :update-file params)
-              (rx/subs (fn [_]
+              (rx/subs! (fn [_]
                          (when reload?
                            (dom/reload-current-window)))
                        (fn [cause]
@@ -463,7 +463,7 @@
                       :query {:file-id file-id}})
          (rx/map http/conditional-decode-transit)
          (rx/mapcat rp/handle-response)
-         (rx/subs (fn [result]
+         (rx/subs! (fn [result]
                     (let [result (map (fn [row]
                                         (update row :id str))
                                       result)]
@@ -481,7 +481,7 @@
                       :body (http/transit-data {:file-id file-id :label label})})
          (rx/map http/conditional-decode-transit)
          (rx/mapcat rp/handle-response)
-         (rx/subs (fn [{:keys [id]}]
+         (rx/subs! (fn [{:keys [id]}]
                     (println "Snapshot saved:" (str id)))
                   (fn [cause]
                     (js/console.log "EE:" cause))))))
@@ -496,7 +496,7 @@
                         :body (http/transit-data {:file-id file-id :id id})})
            (rx/map http/conditional-decode-transit)
            (rx/mapcat rp/handle-response)
-           (rx/subs (fn [_]
+           (rx/subs! (fn [_]
                       (println "Snapshot restored " id)
                       #_(.reload js/location))
                     (fn [cause]

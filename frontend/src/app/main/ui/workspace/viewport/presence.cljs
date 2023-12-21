@@ -9,7 +9,7 @@
    [app.main.refs :as refs]
    [app.util.time :as dt]
    [app.util.timers :as ts]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 

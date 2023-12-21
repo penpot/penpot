@@ -22,8 +22,8 @@
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
    [app.util.router :as rt]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (declare handle-interrupt)
 (declare handle-comment-layer-click)

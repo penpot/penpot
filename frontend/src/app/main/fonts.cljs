@@ -17,7 +17,7 @@
    [app.util.globals :as globals]
    [app.util.http :as http]
    [app.util.object :as obj]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [lambdaisland.uri :as u]
@@ -144,7 +144,7 @@
       (->> (fetch-gfont-css url)
            (rx/map process-gfont-css)
            (rx/tap #(on-loaded id))
-           (rx/subs (partial add-font-css! id)))
+           (rx/subs! (partial add-font-css! id)))
       nil)))
 
 ;; --- LOADER: CUSTOM

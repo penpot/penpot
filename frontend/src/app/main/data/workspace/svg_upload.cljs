@@ -19,9 +19,9 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (defn extract-name [href]
   (let [query-idx (str/last-index-of href "?")

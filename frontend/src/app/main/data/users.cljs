@@ -21,8 +21,8 @@
    [app.util.i18n :as i18n]
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 ;; --- SCHEMAS
 
@@ -434,7 +434,7 @@
              (rx/map di/validate-file)
              (rx/map prepare)
              (rx/mapcat #(rp/cmd! :update-profile-photo %))
-             (rx/do on-success)
+             (rx/tap on-success)
              (rx/map (constantly (fetch-profile)))
              (rx/catch on-error))))))
 

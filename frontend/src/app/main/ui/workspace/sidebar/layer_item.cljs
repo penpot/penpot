@@ -28,7 +28,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.timers :as ts]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 

@@ -12,9 +12,9 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.test :as t]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 ;; ---- Helpers to manage global events
 
@@ -26,48 +26,48 @@
     (pp/pprint (sm/humanize-explain data))))
 
 (defn prepare-store
-  "Create a store with the given initial state. Wait until
-   a :the/end event occurs, and then call the function with
-   the final state at this point."
- [state done completed-cb]
- (let [store (ptk/store {:state state :on-error on-error})
-       stream (ptk/input-stream store)
-       stream (->> stream
-                   (rx/take-until (rx/filter #(= :the/end %) stream))
-                   (rx/last)
-                   (rx/do (fn []
-                            (completed-cb @store)))
-                   (rx/subs (fn [_] (done))
-                            (fn [cause]
-                              (js/console.log "[error]:" cause))
-                            (fn [_]
-                              (js/console.log "[complete]"))))]
-   store))
+  "Create a store with the given initial state. Wait until a :the/end
+  event occurs, and then call the function with the final state at
+  this point."
+  [state done completed-cb]
+  (let [store (ptk/store {:state state :on-error on-error})
+        stream (ptk/input-stream store)
+        stream (->> stream
+                    (rx/take-until (rx/filter #(= :the/end %) stream))
+                    (rx/last)
+                    (rx/tap (fn []
+                              (completed-cb @store)))
+                    (rx/subs! (fn [_] (done))
+                              (fn [cause]
+                                (js/console.log "[error]:" cause))
+                              (fn [_]
+                                (js/console.log "[complete]"))))]
+    store))
 
 ;; Remove definitely when we ensure that the above method works
 ;; well in more advanced tests.
 #_(defn do-update
-  "Execute an update event and returns the new state."
-  [event state]
-  (ptk/update event state))
+    "Execute an update event and returns the new state."
+    [event state]
+    (ptk/update event state))
 
 #_(defn do-watch
-  "Execute a watch event and return an observable, that
+    "Execute a watch event and return an observable, that
    emits once a list with all new events."
-  [event state]
-  (->> (ptk/watch event state nil)
-       (rx/reduce conj [])))
+    [event state]
+    (->> (ptk/watch event state nil)
+         (rx/reduce conj [])))
 
 #_(defn do-watch-update
-  "Execute a watch event and return an observable, that
+    "Execute a watch event and return an observable, that
   emits once the new state, after all new events applied
   in sequence (considering they are all update events)."
-  [event state]
-  (->> (do-watch event state)
-       (rx/map (fn [new-events]
-                 (reduce
-                   (fn [new-state new-event]
-                     (do-update new-event new-state))
-                   state
-                   new-events)))))
+    [event state]
+    (->> (do-watch event state)
+         (rx/map (fn [new-events]
+                   (reduce
+                    (fn [new-state new-event]
+                      (do-update new-event new-state))
+                    state
+                    new-events)))))
 

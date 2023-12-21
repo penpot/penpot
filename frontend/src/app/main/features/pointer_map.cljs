@@ -9,7 +9,7 @@
   (:require
    [app.common.transit :as t]
    [app.main.repo :as rp]
-   [beicon.core :as rx]))
+   [beicon.v2.core :as rx]))
 
 (defn resolve-file
   [{:keys [id data] :as file}]

@@ -15,7 +15,7 @@
  :hooks
  {:analyze-call
   {app.common.data.macros/export hooks.export/export
-   potok.core/reify hooks.export/potok-reify
+   potok.v2.core/reify hooks.export/potok-reify
    app.util.services/defmethod hooks.export/service-defmethod
    app.common.record/defrecord hooks.export/penpot-defrecord
    app.db/with-atomic hooks.export/penpot-with-atomic

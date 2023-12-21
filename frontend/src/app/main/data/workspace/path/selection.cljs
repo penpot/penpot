@@ -14,8 +14,8 @@
    [app.main.data.workspace.path.state :as st]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn path-pointer-enter [position]
   (ptk/reify ::path-pointer-enter

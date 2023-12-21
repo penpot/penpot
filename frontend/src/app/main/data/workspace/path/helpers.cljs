@@ -15,7 +15,7 @@
    [app.common.svg.path.subpath :as ups]
    [app.main.data.workspace.path.common :as common]
    [app.util.mouse :as mse]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (defn end-path-event?
   [event]

@@ -18,9 +18,9 @@
    [app.main.store :as st]
    [app.util.router :as rt]
    [app.util.time :as dt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (log/set-level! :info)
 

@@ -20,7 +20,7 @@
    [app.util.webapi :as wapi]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
 (def ^:const current-version 2)
@@ -139,7 +139,7 @@
 
    (->> (rx/from (vals media))
         (rx/map #(assoc % :file-id file-id))
-        (rx/flat-map
+        (rx/merge-map
          (fn [media]
            (let [file-path (str/concat file-id "/media/" (:id media) (cm/mtype->extension (:mtype media)))]
              (->> (http/send!
@@ -345,44 +345,44 @@
 
         render-stream
         (->> files-stream
-             (rx/flat-map vals)
-             (rx/flat-map process-pages)
+             (rx/merge-map vals)
+             (rx/merge-map process-pages)
              (rx/observe-on :async)
-             (rx/flat-map get-page-data)
+             (rx/merge-map get-page-data)
              (rx/share))
 
         colors-stream
         (->> files-stream
-             (rx/flat-map vals)
+             (rx/merge-map vals)
              (rx/map #(vector (:id %) (get-in % [:data :colors])))
              (rx/filter #(d/not-empty? (second %)))
              (rx/map parse-library-color))
 
         typographies-stream
         (->> files-stream
-             (rx/flat-map vals)
+             (rx/merge-map vals)
              (rx/map #(vector (:id %) (get-in % [:data :typographies])))
              (rx/filter #(d/not-empty? (second %)))
              (rx/map parse-library-typographies))
 
         media-stream
         (->> files-stream
-             (rx/flat-map vals)
+             (rx/merge-map vals)
              (rx/map #(vector (:id %) (get-in % [:data :media])))
              (rx/filter #(d/not-empty? (second %)))
-             (rx/flat-map parse-library-media))
+             (rx/merge-map parse-library-media))
 
         components-stream
         (->> files-stream
-             (rx/flat-map vals)
+             (rx/merge-map vals)
              (rx/filter #(d/not-empty? (ctkl/components-seq (:data %))))
-             (rx/flat-map parse-library-components))
+             (rx/merge-map parse-library-components))
 
         deleted-components-stream
         (->> files-stream
-             (rx/flat-map vals)
+             (rx/merge-map vals)
              (rx/filter #(d/not-empty? (get-in % [:data :deleted-components])))
-             (rx/flat-map parse-deleted-components))
+             (rx/merge-map parse-deleted-components))
 
         pages-stream
         (->> render-stream
@@ -405,7 +405,7 @@
            typographies-stream)
           (rx/reduce conj [])
           (rx/with-latest-from files-stream)
-          (rx/flat-map (fn [[data files]]
+          (rx/merge-map (fn [[data files]]
                          (->> (uz/compress-files data)
                               (rx/map #(vector (get files file-id) %)))))))))
 

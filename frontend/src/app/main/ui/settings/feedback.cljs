@@ -17,7 +17,7 @@
    [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
@@ -60,7 +60,7 @@
            (reset! loading true)
            (let [data (:clean-data @form)]
              (->> (rp/cmd! :send-user-feedback data)
-                  (rx/subs on-succes on-error)))))]
+                  (rx/subs! on-succes on-error)))))]
 
     (if new-css-system
       [:& fm/form {:class (stl/css :feedback-form)

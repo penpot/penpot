@@ -20,7 +20,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -75,7 +75,7 @@
          (mf/deps team installed-fonts)
          (fn [blobs]
            (->> (df/process-upload blobs (:id team))
-                (rx/subs (fn [result]
+                (rx/subs! (fn [result]
                            (swap! fonts df/merge-and-group-fonts installed-fonts result))
                          (fn [error]
                            (js/console.error "error" error))))))
@@ -87,7 +87,7 @@
            (swap! uploading conj (:id item))
            (->> (rp/cmd! :create-font-variant item)
                 (rx/delay-at-least 2000)
-                (rx/subs (fn [font]
+                (rx/subs! (fn [font]
                            (swap! fonts dissoc (:id item))
                            (swap! uploading disj (:id item))
                            (st/emit! (df/add-font font)))

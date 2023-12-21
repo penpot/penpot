@@ -33,10 +33,10 @@
    [app.util.object :as obj]
    [app.util.router :as rt]
    [app.util.timers :as ts]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [goog.functions :as f]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc sidebar-project

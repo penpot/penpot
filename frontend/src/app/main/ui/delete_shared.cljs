@@ -16,7 +16,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as k]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [goog.events :as events]
    [rumext.v2 :as mf]))
 
@@ -85,7 +85,7 @@
            (rx/mapcat identity)
            (rx/map (juxt :id :name))
            (rx/reduce conj [])
-           (rx/subs #(reset! references* %))))
+           (rx/subs! #(reset! references* %))))
 
     (mf/with-effect [accept-fn]
       (letfn [(on-keydown [event]

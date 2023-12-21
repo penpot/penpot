@@ -32,7 +32,8 @@
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]
    [goog.events :as events]
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
@@ -112,7 +113,7 @@
                                 ^boolean (kbd/underscore? kevent)
                                 ^boolean (kbd/equals? kevent)
                                 ^boolean (kbd/plus? kevent))))
-               (rx/dedupe)))
+               (rx/pipe (rxo/distinct-contiguous))))
 
         kbd-shift-s
         (mf/with-memo []
@@ -120,7 +121,7 @@
                (rx/filter kbd/shift-key?)
                (rx/filter (complement kbd/editing-event?))
                (rx/map kbd/key-down-event?)
-               (rx/dedupe)))
+               (rx/pipe (rxo/distinct-contiguous))))
 
         kbd-z-s
         (mf/with-memo []
@@ -128,7 +129,7 @@
                (rx/filter kbd/z?)
                (rx/filter (complement kbd/editing-event?))
                (rx/map kbd/key-down-event?)
-               (rx/dedupe)))]
+               (rx/pipe (rxo/distinct-contiguous))))]
 
     (hooks/use-stream ms/keyboard-alt (partial reset! alt*))
     (hooks/use-stream ms/keyboard-space (partial reset! space*))

@@ -27,7 +27,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))

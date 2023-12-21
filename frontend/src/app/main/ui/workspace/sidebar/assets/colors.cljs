@@ -30,7 +30,7 @@
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc color-item

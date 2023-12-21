@@ -12,7 +12,7 @@
    [app.main.ui.icons :as i]
    [app.util.timers :as timers]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (mf/defc copy-button [{:keys [data on-copied children class]}]

@@ -24,8 +24,8 @@
    [app.util.time :as tp]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (l/set-level! :info)
 
@@ -246,7 +246,7 @@
                        (rx/filter dch/commit-changes?)
                        (rx/observe-on :async)
                        (rx/with-latest-from workspace-data-s)
-                       (rx/flat-map (partial extract-frame-changes page-id))
+                       (rx/merge-map (partial extract-frame-changes page-id))
                        (rx/tap #(l/trc :hint "inconming change" :origin "local" :frame-id (dm/str %))))
 
                   ;; NOTIFICATIONS CHANGES
@@ -254,7 +254,7 @@
                        (rx/filter (ptk/type? ::wnt/handle-file-change))
                        (rx/observe-on :async)
                        (rx/with-latest-from workspace-data-s)
-                       (rx/flat-map (partial extract-frame-changes page-id))
+                       (rx/merge-map (partial extract-frame-changes page-id))
                        (rx/tap #(l/trc :hint "inconming change" :origin "notifications" :frame-id (dm/str %))))
 
                   ;; PERSISTENCE CHANGES

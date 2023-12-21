@@ -30,9 +30,9 @@
    [app.util.time :as dt]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (log/set-level! :warn)
 
@@ -419,7 +419,7 @@
              (rx/map di/validate-file)
              (rx/map prepare)
              (rx/mapcat #(rp/cmd! :update-team-photo %))
-             (rx/do on-success)
+             (rx/tap on-success)
              (rx/map du/fetch-teams)
              (rx/catch on-error))))))
 

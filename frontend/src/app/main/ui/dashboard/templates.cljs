@@ -23,7 +23,7 @@
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [okulary.core :as l]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def builtin-templates

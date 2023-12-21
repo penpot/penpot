@@ -12,9 +12,9 @@
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.state :as st]
    [app.main.store :as store]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (defn undo-event?
   [event]

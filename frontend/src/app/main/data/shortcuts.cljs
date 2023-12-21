@@ -13,7 +13,7 @@
    [app.common.schema :as sm]
    [app.config :as cf]
    [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (log/set-level! :warn)
 

@@ -12,7 +12,7 @@
    [app.config :as cf]
    [app.util.http :as http]
    [app.util.sse :as sse]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
 (defn handle-response

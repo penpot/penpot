@@ -17,7 +17,7 @@
    [frontend-tests.helpers.events :as the]
    [frontend-tests.helpers.libraries :as thl]
    [frontend-tests.helpers.pages :as thp]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})

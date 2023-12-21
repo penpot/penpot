@@ -33,7 +33,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def drag-data* (atom {:local? false}))

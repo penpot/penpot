@@ -11,7 +11,7 @@
    [app.config :as cfg]
    [app.util.dom :as dom]
    [app.util.storage :refer [storage]]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (defonce theme (get @storage ::theme cfg/default-theme))

@@ -9,9 +9,10 @@
    [app.common.logging :as log]
    [app.util.object :as obj]
    [app.util.timers :as tm]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]
    [okulary.core :as l]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (log/set-level! :info)
 
@@ -65,7 +66,7 @@
           (->> stream
                (rx/filter (ptk/type? :app.main.data.workspace.changes/commit-changes))
                (rx/map #(-> % deref :hint-origin str))
-               (rx/dedupe))
+               (rx/pipe (rxo/distinct-contiguous)))
           (->> stream
                (rx/map ptk/type)
                (rx/filter #(contains? allowed %))
@@ -75,7 +76,7 @@
                       (> (count buffer) 20)
                       (pop)))
                   #queue [])
-         (rx/subs #(reset! buffer (vec %))))
+         (rx/subs! #(reset! buffer (vec %))))
     buffer))
 
 (defn emit!

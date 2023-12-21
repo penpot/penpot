@@ -17,7 +17,7 @@
    [app.util.http :as http]
    [app.util.object :as obj]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
 (log/set-level! :info)
@@ -229,7 +229,7 @@
         (when (and (some? payload)
                    (= scope "penpot/rasterizer"))
           (->> (render payload)
-               (rx/subs (partial send-success! id)
+               (rx/subs! (partial send-success! id)
                         (partial send-failure! id))))))))
 
 (defn- listen

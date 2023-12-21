@@ -35,7 +35,7 @@
    [app.util.keyboard :as kbd]
    [app.util.time :as dt]
    [app.util.timers :as ts]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -75,7 +75,7 @@
     (mf/with-effect [file-id revn visible? thumbnail-uri]
       (when (and visible? (not thumbnail-uri))
         (->> (ask-for-thumbnail file-id revn)
-             (rx/subs (fn [url]
+             (rx/subs! (fn [url]
                         (st/emit! (dd/set-file-thumbnail file-id url)))
                       (fn [cause]
                         (log/error :hint "unable to render thumbnail"

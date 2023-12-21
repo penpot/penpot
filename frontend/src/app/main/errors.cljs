@@ -20,7 +20,7 @@
    [app.util.storage :refer [storage]]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (defn- print-data!
   [data]

@@ -12,11 +12,11 @@
    [app.common.logging :as log]
    [app.config :as cf]
    [app.main.store :as st]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (log/set-level! :trace)

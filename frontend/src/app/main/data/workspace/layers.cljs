@@ -11,9 +11,9 @@
    [app.common.math :as mth]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 ;; -- Opacity ----------------------------------------------------------
 

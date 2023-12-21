@@ -46,7 +46,7 @@
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.util.debug :as dbg]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 ;; --- Viewport

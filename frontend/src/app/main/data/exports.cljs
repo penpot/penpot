@@ -15,8 +15,8 @@
    [app.util.dom :as dom]
    [app.util.time :as dt]
    [app.util.websocket :as ws]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (def default-timeout 5000)
 

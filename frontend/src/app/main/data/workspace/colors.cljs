@@ -23,8 +23,8 @@
    [app.main.data.workspace.undo :as dwu]
    [app.util.color :as uc]
    [app.util.storage :refer [storage]]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 ;; A set of keys that are used for shared state identifiers
 (def ^:const colorpicker-selected-broadcast-key ::colorpicker-selected)
@@ -353,7 +353,7 @@
            ;; Stream that updates the stroke/width and stops if `esc` pressed
            (->> sub
                 (rx/take-until stop?)
-                (rx/flat-map update-events))
+                (rx/merge-map update-events))
 
            ;; Hide the modal if the stop event is emitted
            (->> stop?

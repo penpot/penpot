@@ -11,7 +11,7 @@
    [app.main.data.messages :as dm]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]))
 

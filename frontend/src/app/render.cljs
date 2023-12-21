@@ -21,11 +21,11 @@
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.globals :as glob]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [garden.core :refer [css]]
    [okulary.core :as l]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (log/setup! {:app :info})

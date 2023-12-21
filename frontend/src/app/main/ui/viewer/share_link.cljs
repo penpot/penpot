@@ -24,7 +24,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.webapi :as wapi]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (log/set-level! :warn)
