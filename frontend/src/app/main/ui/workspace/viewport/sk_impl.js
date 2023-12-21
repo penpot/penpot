@@ -127,7 +127,12 @@ class CanvasKit {
     if (shape.blur) {
       blur = this.CanvasKit.ImageFilter.MakeBlur(shape.blur.value, shape.blur.value, this.CanvasKit.TileMode.Decal, null);
       if (!shape.shadow) {
+        const blurRect = this.CanvasKit.RRectXY(
+          this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
+          rx,
+          ry)
         paint.setImageFilter(blur)
+        canvas.drawRRect(blurRect, paint)
       }
     }
     if (shape.shadow) {
