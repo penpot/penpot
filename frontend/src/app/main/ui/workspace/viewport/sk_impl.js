@@ -125,22 +125,31 @@ class CanvasKit {
     }
     let blur = null
     if (shape.blur) {
+      const paintBlur = new this.CanvasKit.Paint();
       blur = this.CanvasKit.ImageFilter.MakeBlur(shape.blur.value, shape.blur.value, this.CanvasKit.TileMode.Decal, null);
       if (!shape.shadow) {
         const blurRect = this.CanvasKit.RRectXY(
           this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
           rx,
           ry)
-        paint.setImageFilter(blur)
-        canvas.drawRRect(blurRect, paint)
+        paintBlur.setImageFilter(blur)
+        canvas.drawRRect(blurRect, paintBlur)
+        paintBlur.delete()
       }
     }
-    if (shape.shadow) {
+    if (shape.shadow && (shape.shadow.length > 0)) {
+      const paintShadow = new this.CanvasKit.Paint();
       const [first] = shape.shadow
       const color = this.CanvasKit.parseColorString(first.color.color)
       color[3] = first.color.opacity
-      const shadow = this.CanvasKit.ImageFilter.MakeDropShadow(first['offset-x'], first['offset-y'], first.blur, first.blur, color, blur);
-      paint.setImageFilter(shadow)
+      const shadow = this.CanvasKit.ImageFilter.MakeDropShadowOnly(first['offset-x'], first['offset-y'], first.blur, first.blur, color, blur);
+      const shadowRect = this.CanvasKit.RRectXY(
+        this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
+        rx,
+        ry)
+      paintShadow.setImageFilter(shadow)
+      canvas.drawRRect(shadowRect, paintShadow)
+      paintShadow.delete()
     }
     paint.delete();
   }
@@ -185,17 +194,31 @@ class CanvasKit {
     }
     let blur = null
     if (shape.blur) {
+      const paintBlur = new this.CanvasKit.Paint();
       blur = this.CanvasKit.ImageFilter.MakeBlur(shape.blur.value, shape.blur.value, this.CanvasKit.TileMode.Decal, null);
       if (!shape.shadow) {
-        paint.setImageFilter(blur)
+        const blurRect = this.CanvasKit.RRectXY(
+          this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
+          0,
+          0)        
+        paintBlur.setImageFilter(blur)
+        canvas.drawOval(blurRect, paintBlur)
+        paintBlur.delete()
       }
     }
-    if (shape.shadow) {
+    if (shape.shadow && (shape.shadow.length > 0)) {
+      const paintShadow = new this.CanvasKit.Paint();
       const [first] = shape.shadow
       const color = this.CanvasKit.parseColorString(first.color.color)
       color[3] = first.color.opacity
-      const shadow = this.CanvasKit.ImageFilter.MakeDropShadow(first['offset-x'], first['offset-y'], first.blur, first.blur, color, blur);
-      paint.setImageFilter(shadow)
+      const shadow = this.CanvasKit.ImageFilter.MakeDropShadowOnly(first['offset-x'], first['offset-y'], first.blur, first.blur, color, blur);
+      const shadowRect = this.CanvasKit.RRectXY(
+        this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
+        0,
+        0)       
+      paintShadow.setImageFilter(shadow)
+      canvas.drawOval(shadowRect, paintShadow)
+      paintShadow.delete()
     }
     paint.delete();
   }
