@@ -93,6 +93,7 @@
 
         ;; CONTEXT
         page-id           (mf/use-ctx ctx/current-page-id)
+        page              (mf/deref refs/workspace-page)
 
         ;; DEREFS
         drawing           (mf/deref refs/workspace-drawing)
@@ -304,48 +305,48 @@
       [:& top-bar/top-bar]]
 
      #_[:svg.render-shapes
-      {:id "render"
-       :xmlns "http://www.w3.org/2000/svg"
-       :xmlnsXlink "http://www.w3.org/1999/xlink"
-       :xmlns:penpot "https://penpot.app/xmlns"
-       :preserveAspectRatio "xMidYMid meet"
-       :key (str "render" page-id)
-       :width (:width vport 0)
-       :height (:height vport 0)
-       :view-box (utils/format-viewbox vbox)
-       :style {:background-color background
-               :pointer-events "none"}
-       :fill "none"}
+        {:id "render"
+         :xmlns "http://www.w3.org/2000/svg"
+         :xmlnsXlink "http://www.w3.org/1999/xlink"
+         :xmlns:penpot "https://penpot.app/xmlns"
+         :preserveAspectRatio "xMidYMid meet"
+         :key (str "render" page-id)
+         :width (:width vport 0)
+         :height (:height vport 0)
+         :view-box (utils/format-viewbox vbox)
+         :style {:background-color background
+                 :pointer-events "none"}
+         :fill "none"}
 
-      [:defs
-       [:linearGradient {:id "frame-placeholder-gradient"}
-        [:animateTransform
-         {:attributeName "gradientTransform"
-          :type "translate"
-          :from "-1 0"
-          :to "1 0"
-          :dur "2s"
-          :repeatCount "indefinite"}]
-        [:stop {:offset "0%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]
-        [:stop {:offset "50%" :stop-color (str "color-mix(in srgb-linear, " background " 80%, #777)") :stop-opacity 1}]
-        [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
+        [:defs
+         [:linearGradient {:id "frame-placeholder-gradient"}
+          [:animateTransform
+           {:attributeName "gradientTransform"
+            :type "translate"
+            :from "-1 0"
+            :to "1 0"
+            :dur "2s"
+            :repeatCount "indefinite"}]
+          [:stop {:offset "0%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]
+          [:stop {:offset "50%" :stop-color (str "color-mix(in srgb-linear, " background " 80%, #777)") :stop-opacity 1}]
+          [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
 
-      (when (dbg/enabled? :show-export-metadata)
-        [:& use/export-page {:options options}])
+        (when (dbg/enabled? :show-export-metadata)
+          [:& use/export-page {:options options}])
 
       ;; We need a "real" background shape so layer transforms work properly in firefox
-      [:rect {:width (:width vbox 0)
-              :height (:height vbox 0)
-              :x (:x vbox 0)
-              :y (:y vbox 0)
-              :fill background}]
+        [:rect {:width (:width vbox 0)
+                :height (:height vbox 0)
+                :x (:x vbox 0)
+                :y (:y vbox 0)
+                :fill background}]
 
-      [:& (mf/provider ctx/current-vbox) {:value vbox'}
-       [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
+        [:& (mf/provider ctx/current-vbox) {:value vbox'}
+         [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
          ;; Render root shape
-        [:& shapes/root-shape {:key page-id
-                               :objects base-objects
-                               :active-frames @active-frames}]]]]
+          [:& shapes/root-shape {:key page-id
+                                 :objects base-objects
+                                 :active-frames @active-frames}]]]]
 
      ;; IT's MAGIC!
      [sk/canvas {:objects base-objects
@@ -622,17 +623,23 @@
             :objects base-objects
             :modifiers modifiers
             :shape (or (get base-objects edition)
-                     (get base-objects @hover-top-frame-id))
+                       (get base-objects @hover-top-frame-id))
             :view-only (not show-grid-editor?)}])
 
         (for [frame (ctt/get-frames objects)]
           (when (and (ctl/grid-layout? frame)
-                  (empty? (:shapes frame))
-                  (not= edition (:id frame))
-                  (not= @hover-top-frame-id (:id frame)))
+                     (empty? (:shapes frame))
+                     (not= edition (:id frame))
+                     (not= @hover-top-frame-id (:id frame)))
             [:& grid-layout/editor
              {:zoom zoom
               :objects base-objects
               :modifiers modifiers
               :shape frame
-              :view-only true}]))]]]]))
+              :view-only true}]))]]]
+
+     (when (= (:name page) "DOOM")
+       [:iframe {:src "/wasm/doom/index.html"
+                 :width 1280
+                 :height 720
+                 :style {:position "absolute" :top 0 :left 0 :z-index 10000 :pointer-events "all"}}])]))
