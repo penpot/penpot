@@ -62,6 +62,7 @@
     "gulp-sass": "^5.1.0",
     "gulp-sourcemaps": "^3.0.0",
     "gulp-svg-sprite": "^2.0.3",
+    "jsdom": "^23.0.1",
     "map-stream": "0.0.7",
     "marked": "^7.0.5",
     "mkdirp": "^3.0.1",
@@ -74,8 +75,10 @@
     "rimraf": "^5.0.5",
     "sass": "^1.69.5",
     "shadow-cljs": "2.26.2",
+    "storybook": "^7.6.6",
     "typescript": "^5.3.3",
-    "vite": "^5.0.10"
+    "vite": "^5.0.10",
+    "vitest": "^1.1.0"
   },
   "dependencies": {
     "date-fns": "^2.30.0",
