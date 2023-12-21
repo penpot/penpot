@@ -284,11 +284,14 @@ class CanvasKit {
         for (const paragraphText of child.children) {
           if (paragraphText.text === '') continue;
           for (const fill of paragraphText.fills) {
+            const color = this.CanvasKit.parseColorString(fill["fill-color"]);
+            color[3] = fill["fill-opacity"];
+            const decoration = this.getTextDecorationFromString(paragraphText["text-decoration"]);
             const paragraphStyle = new this.CanvasKit.ParagraphStyle({
               textDirection,
               textStyle: {
-                color: this.CanvasKit.parseColorString(fill["fill-color"]),
-                decoration: this.getTextDecorationFromString(paragraphText["text-decoration"]),
+                color,
+                decoration,
                 fontFamilies: [paragraphText["font-family"]],
                 fontSize: parseInt(paragraphText["font-size"], 10),
                 /*
@@ -352,6 +355,9 @@ class CanvasKit {
         break;
       case "group":
         this.drawGroup(canvas, object);
+        break;
+      default:
+        console.warn("Unknown object type", object.type);
         break;
     }
     canvas.restore();
