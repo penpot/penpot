@@ -85,6 +85,8 @@ class CanvasKit {
   drawRect(canvas, shape) {
     const paint = new this.CanvasKit.Paint();
     paint.setBlendMode(this.getBlendModeFromObject(shape));
+    const rx = shape['rx'] || shape['r1'] || 0;
+    const ry = shape['ry'] || shape['r1'] || 0;
     // Drawing fills
     if (shape.fills) {
       for (const fill of shape.fills.reverse()) {
@@ -96,8 +98,8 @@ class CanvasKit {
         paint.setColor(color);
         const rr = this.CanvasKit.RRectXY(
           this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
-          0,
-          0,
+          rx,
+          ry,
         );
         canvas.drawRRect(rr, paint);
       }
@@ -115,11 +117,25 @@ class CanvasKit {
         paint.setColor(color);
         const rr = this.CanvasKit.RRectXY(
           this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
-          0,
-          0,
+          rx,
+          ry,
         );
         canvas.drawRRect(rr, paint);
       }
+    }
+    let blur = null
+    if (shape.blur) {
+      blur = this.CanvasKit.ImageFilter.MakeBlur(shape.blur.value, shape.blur.value, this.CanvasKit.TileMode.Decal, null);
+      if (!shape.shadow) {
+        paint.setImageFilter(blur)
+      }
+    }
+    if (shape.shadow) {
+      const [first] = shape.shadow
+      const color = this.CanvasKit.parseColorString(first.color.color)
+      color[3] = first.color.opacity
+      const shadow = this.CanvasKit.ImageFilter.MakeDropShadow(first['offset-x'], first['offset-y'], first.blur, first.blur, color, blur);
+      paint.setImageFilter(shadow)
     }
     paint.delete();
   }
@@ -161,6 +177,20 @@ class CanvasKit {
         );
         canvas.drawOval(rr, paint);
       }
+    }
+    let blur = null
+    if (shape.blur) {
+      blur = this.CanvasKit.ImageFilter.MakeBlur(shape.blur.value, shape.blur.value, this.CanvasKit.TileMode.Decal, null);
+      if (!shape.shadow) {
+        paint.setImageFilter(blur)
+      }
+    }
+    if (shape.shadow) {
+      const [first] = shape.shadow
+      const color = this.CanvasKit.parseColorString(first.color.color)
+      color[3] = first.color.opacity
+      const shadow = this.CanvasKit.ImageFilter.MakeDropShadow(first['offset-x'], first['offset-y'], first.blur, first.blur, color, blur);
+      paint.setImageFilter(shadow)
     }
     paint.delete();
   }
@@ -233,11 +263,19 @@ class CanvasKit {
   }
 
   drawTextRun(canvas, shape, textRun) {
+    if (!textRun.children) {
+      console.warn('textRun.children is undefined', textRun)
+      return;
+    }
     for (const child of textRun.children) {
       if (child.type === 'paragraph') {
         const textDirection = this.getTextDirectionFromString(child["text-direction"]);
         const textAlign = this.getTextAlignFromString(child["text-align"]);
         console.log("text-align", textAlign);
+        if (!child.children) {
+          console.warn('child.children is undefined', child)
+          continue
+        }
         for (const paragraphText of child.children) {
           if (paragraphText.text === '') continue;
           for (const fill of paragraphText.fills) {
@@ -277,23 +315,11 @@ class CanvasKit {
 
   drawText(canvas, shape) {
     console.log('drawText', shape)
-    this.drawTextRun(canvas, shape, shape.content)
-    /*
-    const font = new this.CanvasKit.Font(null, 200);
-    const paint = new this.CanvasKit.Paint();
-    paint.setAntiAlias(true);
-    paint.setColor(this.CanvasKit.Color4f(0.9, 0, 1.0, 1.0));
-    // paint.setBlendMode(this.getBlendModeFromObject(shape));
-    canvas.drawText("this picture has a round rect", 88, 58, paint, font);
-    paint.delete();
-    font.delete();
-    */
-
-    /*
-    for (const positionData of shape['position-data']) {
-      this.drawTextRun(canvas, shape, positionData)
+    if (!shape.content) {
+      console.warn('drawText: shape.content is undefined', shape);
+      return;
     }
-    */
+    this.drawTextRun(canvas, shape, shape.content);
   }
 
   drawGroup(canvas, object) {
@@ -301,9 +327,8 @@ class CanvasKit {
   }
 
   drawObject(canvas, object) {
-    console.log(canvas, object);
-    console.log(canvas.save());
-    canvas.rotate(object.rotation, object.x + object.width / 2, object.y + object.height / 2)
+    canvas.save();
+    canvas.rotate(object.rotation, object.x + object.width / 2, object.y + object.height / 2);
     switch (object.type) {
       case "frame":
         return this.drawFrame(canvas, object);
@@ -318,7 +343,7 @@ class CanvasKit {
       case "group":
         return this.drawGroup(canvas, object);
     }
-    canvas.restore(4)
+    canvas.restore();
   }
 
   onDraw(canvas) {
@@ -360,8 +385,8 @@ class CanvasKit {
           paint.setColor(color);
           const rr = self.CanvasKit.RRectXY(
             self.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
-            0,
-            0,
+            rx,
+            ry,
           );
           canvas.drawRRect(rr, paint);
         }
@@ -376,10 +401,11 @@ class CanvasKit {
           paint.setStrokeWidth(strokeWidth);
           color[3] = opacity;
           paint.setColor(color);
+
           const rr = self.CanvasKit.RRectXY(
             self.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
-            0,
-            0,
+            rx,
+            ry,
           );
           canvas.drawRRect(rr, paint);
 
