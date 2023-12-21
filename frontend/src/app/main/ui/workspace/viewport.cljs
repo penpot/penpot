@@ -303,7 +303,7 @@
 
       [:& top-bar/top-bar]]
 
-     [:svg.render-shapes
+     #_[:svg.render-shapes
       {:id "render"
        :xmlns "http://www.w3.org/2000/svg"
        :xmlnsXlink "http://www.w3.org/1999/xlink"

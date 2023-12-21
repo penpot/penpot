@@ -17,20 +17,23 @@ class CanvasKit {
   }
 
 
-clear() {
-  const surface = this.CanvasKit.MakeCanvasSurface(this.canvasId)
-  function draw(canvas) {
-    canvas.clear(CanvasKit.TRANSPARENT);
+  clear() {
+    const surface = this.CanvasKit.MakeCanvasSurface(this.canvasId)
+    function draw(canvas) {
+      canvas.clear(CanvasKit.TRANSPARENT);
+    }
+    surface.drawOnce(draw);  
   }
-  surface.drawOnce(draw);  
-}
 
   paintRect(shape) {
     const surface = this.CanvasKit.MakeCanvasSurface(this.canvasId)
     
     const self = this;
     function draw(canvas) {
-      canvas.translate(- self.vbox.x, - self.vbox.y);
+      if (self.vbox) {
+        canvas.translate(- self.vbox.x, - self.vbox.y);
+      }
+      
       const paint = new self.CanvasKit.Paint();
       // Drawing fills
       if (shape.fills) {
@@ -51,12 +54,18 @@ clear() {
           paint.setStyle(self.CanvasKit.PaintStyle.Stroke);
           const color = self.CanvasKit.parseColorString(stroke["stroke-color"]);
           const opacity = stroke["stroke-opacity"]
-          paint.setStrokeWidth(stroke["stroke-width"]);
-          console.log("stroke color", stroke, stroke["stroke-color"], stroke["stroke-opacity"])
+          const strokeWidth = stroke["stroke-width"];
+          paint.setStrokeWidth(strokeWidth);
+          console.log("stroke", stroke, stroke["stroke-color"], stroke["stroke-opacity"], strokeWidth)
           color[3] = opacity
           paint.setColor(color);
           const rr = self.CanvasKit.RRectXY(self.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height), 0, 0);        
           canvas.drawRRect(rr, paint);
+
+          // Inner stroke?
+          // const rr2 = self.CanvasKit.RRectXY(self.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height), 0, 0);        
+          // canvas.clipRRect(rr2, self.CanvasKit.ClipOp.Intersect, true);
+
         }
       }      
       paint.delete();

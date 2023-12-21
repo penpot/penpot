@@ -22,15 +22,18 @@
         (doseq [[_ object] objects]
           (.paintRect ^js @canvas-kit (clj->js object)))))
 
-    (mf/with-effect [canvas-ref]
+    (mf/with-effect [canvas-ref vbox]
       (let [canvas (mf/ref-val canvas-ref)]
-        (when (some? canvas)
+        (when (and (some? canvas) (some? vbox))
           (set! (.-width canvas) (.-clientWidth canvas))
           (set! (.-height canvas) (.-clientHeight canvas))
           (println "init vbox" vbox)
           (-> (.initialize impl/CanvasKit "skia-canvas" vbox)
               (.then (fn [k]
                        (reset! canvas-kit k)
+                       (println "init complete")
+                       (doseq [[_ object] objects]
+                         (.paintRect ^js k (clj->js object)))
                        #_(.clear ^js k)))))))
 
     [:canvas {:id "skia-canvas"
