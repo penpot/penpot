@@ -52,14 +52,25 @@
      :anon-fn-naming-policy :off
      :source-map-detail-level :all}}}
 
+  ;; FIXME: maybe rename to :components ? (there are nothing storybook
+  ;; related, is just an ESM export of components that will be used
+  ;; initially on storybook but not limited to storybook)
   :storybook
   {:target :esm
    :output-dir "target/storybook/"
-   :modules
-   {:design-system {:exports {default app.main.ui.components.design-system/default} }}
+   :js-options {:js-provider :import}
 
-   :js-options
-   {:js-provider :import}
+   :modules
+   {:base
+    {:entries []}
+
+    :icons
+    {:exports {default app.main.ui.icons/default}
+     :depends-on #{:base}}
+
+    :components
+    {:exports {:default app.main.ui.components/default}
+     :depends-on #{:base}}}
 
    :compiler-options
    {:output-feature-set :es2020
@@ -106,7 +117,7 @@
 
   :test
   {:target :node-test
-   :output-to "target/tests.js"
+   :output-to "target/tests.cjs"
    :output-dir "target/test/"
    :ns-regexp "^frontend-tests.*-test$"
    :autorun true

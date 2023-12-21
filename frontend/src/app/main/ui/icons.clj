@@ -5,7 +5,10 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.icons
-  (:require [rumext.v2]))
+  (:require
+   [clojure.core :as c]
+   [cuerdas.core :as str]
+   [rumext.v2]))
 
 (defmacro icon-xref
   [id]
@@ -15,3 +18,12 @@
       [:svg {:width 500 :height 500 :class ~class}
        [:use {:href ~href}]])))
 
+(defmacro collect-icons
+  []
+  (let [ns-info (:ns &env)]
+    `(cljs.core/js-obj
+      ~@(->> (:defs ns-info)
+             (map val)
+             (filter (fn [entry] (-> entry :meta :icon)))
+             (mapcat (fn [{:keys [name] :as entry}]
+                       [(-> name c/name str/camel str/capital) name]))))))
