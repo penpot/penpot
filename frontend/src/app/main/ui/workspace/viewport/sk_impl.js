@@ -85,25 +85,27 @@ class CanvasKit {
   drawRect(canvas, shape) {
     let blur = null
     const paint = new this.CanvasKit.Paint();
+    paint.setAntiAlias(true);
     paint.setBlendMode(this.getBlendModeFromObject(shape));
     const rx = shape['rx'] || shape['r1'] || 0;
     const ry = shape['ry'] || shape['r1'] || 0;
     if (shape.blur) {
-      const paintBlur = new this.CanvasKit.Paint();
+      blur = this.CanvasKit.ImageFilter.MakeBlur(shape.blur.value, shape.blur.value, this.CanvasKit.TileMode.Decal, null);
     }
-    if (shape.shadow && (shape.shadow.length > 0)) {
-      const paintShadow = new this.CanvasKit.Paint();
-      const [first] = shape.shadow
-      const color = this.CanvasKit.parseColorString(first.color.color)
-      color[3] = first.color.opacity
-      const shadow = this.CanvasKit.ImageFilter.MakeDropShadowOnly(first['offset-x'], first['offset-y'], first.blur, first.blur, color, blur);
-      const shadowRect = this.CanvasKit.RRectXY(
-        this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
-        rx,
-        ry)
-      paintShadow.setImageFilter(shadow)
-      canvas.drawRRect(shadowRect, paintShadow)
-      paintShadow.delete()
+    if (shape.shadow) {
+      for (const shadow of shape.shadow.reverse()) {
+        const paintShadow = new this.CanvasKit.Paint();
+        const color = this.CanvasKit.parseColorString(shadow.color.color)
+        color[3] = shadow.color.opacity
+        const shadowFilter = this.CanvasKit.ImageFilter.MakeDropShadowOnly(shadow['offset-x'], shadow['offset-y'], shadow.blur, shadow.blur, color, blur);
+        const shadowRect = this.CanvasKit.RRectXY(
+          this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
+          rx,
+          ry)
+        paintShadow.setImageFilter(shadowFilter)
+        canvas.drawRRect(shadowRect, paintShadow)
+        paintShadow.delete()
+      }
     } 
     // Drawing fills
     if (shape.fills) {
@@ -162,21 +164,22 @@ class CanvasKit {
     paint.setAntiAlias(true);
     paint.setBlendMode(this.getBlendModeFromObject(shape));
     if (shape.blur) {
-      const paintBlur = new this.CanvasKit.Paint();
+      blur = this.CanvasKit.ImageFilter.MakeBlur(shape.blur.value, shape.blur.value, this.CanvasKit.TileMode.Decal, null);
     }
-    if (shape.shadow && (shape.shadow.length > 0)) {
-      const paintShadow = new this.CanvasKit.Paint();
-      const [first] = shape.shadow
-      const color = this.CanvasKit.parseColorString(first.color.color)
-      color[3] = first.color.opacity
-      const shadow = this.CanvasKit.ImageFilter.MakeDropShadowOnly(first['offset-x'], first['offset-y'], first.blur, first.blur, color, blur);
-      const shadowRect = this.CanvasKit.RRectXY(
-        this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
-        0,
-        0)       
-      paintShadow.setImageFilter(shadow)
-      canvas.drawOval(shadowRect, paintShadow)
-      paintShadow.delete()
+    if (shape.shadow) {
+      for (const shadow of shape.shadow.reverse()) {
+        const paintShadow = new this.CanvasKit.Paint();
+        const color = this.CanvasKit.parseColorString(shadow.color.color)
+        color[3] = shadow.color.opacity
+        const shadowFilter = this.CanvasKit.ImageFilter.MakeDropShadowOnly(shadow['offset-x'], shadow['offset-y'], shadow.blur, shadow.blur, color, blur);
+        const shadowRect = this.CanvasKit.RRectXY(
+          this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
+          0,
+          0)
+        paintShadow.setImageFilter(shadowFilter)
+        canvas.drawOval(shadowRect, paintShadow)
+        paintShadow.delete()
+      }
     }
     // Drawing fills
     if (shape.fills) {
@@ -214,7 +217,6 @@ class CanvasKit {
     }
     if (shape.blur) {
       const paintBlur = new this.CanvasKit.Paint();
-      blur = this.CanvasKit.ImageFilter.MakeBlur(shape.blur.value, shape.blur.value, this.CanvasKit.TileMode.Decal, null);
       if (!shape.shadow) {
         const blurRect = this.CanvasKit.RRectXY(
           this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
