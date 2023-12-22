@@ -2,10 +2,14 @@
 
 set -ex
 
-CURRENT_VERSION=$1;
-BUILD_DATE=$(date -R);
-CURRENT_HASH=${CURRENT_HASH:-$(git rev-parse --short HEAD)};
-EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS;
+export CURRENT_VERSION=$1;
+export BUILD_DATE=$(date -R);
+export CURRENT_HASH=${CURRENT_HASH:-$(git rev-parse --short HEAD)};
+export EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS;
+
+# Some cljs reacts on this environment variable for define more
+# performant code on macros (example: rumext)
+export NODE_ENV=production;
 
 yarn install || exit 1;
 yarn run build:clean || exit 1;

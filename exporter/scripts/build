@@ -2,7 +2,7 @@
 
 set -ex
 
-CURRENT_VERSION=$1;
+export CURRENT_VERSION=$1;
 
 yarn install
 rm -rf target
