@@ -711,7 +711,7 @@ export function arcToBeziers(x1, y1, x2, y2, fa, fs, rx, ry, phi) {
 // commands.
 function simplifyPathData(pdata) {
   var result = [];
-  var lastType = null;
+  var lastCommand = null;
 
   var lastControlX = null;
   var lastControlY = null;
@@ -724,8 +724,9 @@ function simplifyPathData(pdata) {
 
   for (let i=0; i<pdata.length; i++) {
     const segment = pdata[i];
+    const currentCommand = segment.command;
 
-    switch(segment.command) {
+    switch(currentCommand) {
     case "M":
       var x = segment.params[0];
       var y = segment.params[1];
@@ -787,7 +788,7 @@ function simplifyPathData(pdata) {
 
       var cx1, cy1;
 
-      if (lastType === "C" || lastType === "S") {
+      if (lastCommand === "C" || lastCommand === "S") {
         cx1 = currentX + (currentX - lastControlX);
         cy1 = currentY + (currentY - lastControlY);
       } else {
@@ -813,7 +814,7 @@ function simplifyPathData(pdata) {
 
       var x1, y1;
 
-      if (lastType === "Q" || lastType === "T") {
+      if (lastCommand === "Q" || lastCommand === "T") {
         x1 = currentX + (currentX - lastControlX);
         y1 = currentY + (currentY - lastControlY);
       } else {
@@ -891,7 +892,7 @@ function simplifyPathData(pdata) {
       break;
     }
 
-    lastCommand = segment.command;
+    lastCommand = currentCommand;
   }
 
   return result;
