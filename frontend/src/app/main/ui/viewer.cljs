@@ -38,6 +38,7 @@
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
    [app.util.webapi :as wapi]
    [cuerdas.core :as str]
    [goog.events :as events]
@@ -334,11 +335,10 @@
                               :page page
                               :zoom zoom}])]])))
 
-(mf/defc viewer
-  [{:keys [params data]}]
-
-  (let [{:keys [page-id share-id section index interactions-mode]} params
-        {:keys [file users project permissions]} data
+(mf/defc viewer-content
+  {::mf/wrap-props false}
+  [{:keys [data page-id share-id section index interactions-mode] :as props}]
+  (let [{:keys [file users project permissions]} data
 
         new-css-system (mf/use-ctx ctx/new-css-system)
 
@@ -747,26 +747,23 @@
                 :section section
                 :index index}]]))]]])))
 
-;; --- Component: Viewer Page
+;; --- Component: Viewer
 
-(mf/defc viewer-page
-  [{:keys [file-id] :as props}]
-
-  (mf/with-effect [file-id]
-    (st/emit! (dv/initialize props))
-    (fn []
-      (st/emit! (dv/finalize props))))
+(mf/defc viewer
+  {::mf/wrap-props false}
+  [{:keys [file-id share-id page-id] :as props}]
+  (mf/with-effect [file-id page-id share-id]
+    (let [params {:file-id file-id
+                  :page-id page-id
+                  :share-id share-id}]
+      (st/emit! (dv/initialize params))
+      (fn []
+        (st/emit! (dv/finalize params)))))
 
   (if-let [data (mf/deref refs/viewer-data)]
-    (let [key (str (get-in data [:file :id]))]
-      [:& viewer {:params props :data data :key key}])
+    (let [props (obj/merge props #js {:data data :key (dm/str file-id)})]
+      [:> viewer-content props])
 
     [:div.loader-content.viewer-loader
      i/loader-pencil]))
 
-(mf/defc breaking-change-notice
-  []
-  [:> static/static-header {}
-   [:div.image i/unchain]
-   [:div.main-message (tr "viewer.breaking-change.message")]
-   [:div.desc-message (tr "viewer.breaking-change.description")]])

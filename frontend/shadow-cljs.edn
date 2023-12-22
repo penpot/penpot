@@ -12,14 +12,46 @@
               :watch-dir "resources/public"
               :reload-strategy :full}
    :build-options {:manifest-name "manifest.json"}
-
+   :module-loader true
    :modules
-   {:shared {:entries []}
+   {:shared
+    {:entries []}
 
     :main
     {:entries [app.main]
      :depends-on #{:shared}
      :init-fn app.main/init}
+
+    :util-highlight
+    {:entries [app.util.code-highlight]
+     :depends-on #{:main}}
+
+    :main-auth
+    {:entries [app.main.ui.auth
+               app.main.ui.auth.verify-token]
+     :depends-on #{:main}}
+
+    :main-viewer
+    {:entries [app.main.ui.viewer]
+     :depends-on #{:main :main-auth}}
+
+    :main-onboarding
+    {:entries [app.main.ui.onboarding
+               app.main.ui.onboarding.questions
+               app.main.ui.releases]
+     :depends-on #{:main}}
+
+    :main-workspace
+    {:entries [app.main.ui.workspace]
+     :depends-on #{:main}}
+
+    :main-dashboard
+    {:entries [app.main.ui.dashboard]
+     :depends-on #{:main}}
+
+    :main-settings
+    {:entries [app.main.ui.settings]
+     :depends-on #{:main}}
 
     :render
     {:entries [app.render]

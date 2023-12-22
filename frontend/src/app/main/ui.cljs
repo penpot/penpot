@@ -10,25 +10,44 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.auth :refer [auth]]
-   [app.main.ui.auth.verify-token :refer [verify-token]]
    [app.main.ui.context :as ctx]
    [app.main.ui.cursors :as c]
-   [app.main.ui.dashboard :refer [dashboard]]
    [app.main.ui.debug.components-preview :as cm]
    [app.main.ui.frame-preview :as frame-preview]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
-   [app.main.ui.onboarding]
-   [app.main.ui.onboarding.questions]
-   [app.main.ui.releases]
-   [app.main.ui.settings :as settings]
    [app.main.ui.static :as static]
-   [app.main.ui.viewer :as viewer]
-   [app.main.ui.workspace :as workspace]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [rumext.v2 :as mf]))
+
+(def auth-page
+  (mf/lazy-component app.main.ui.auth/auth))
+
+(def verify-token-page
+  (mf/lazy-component app.main.ui.auth.verify-token/verify-token))
+
+(def viewer-page
+  (mf/lazy-component app.main.ui.viewer/viewer))
+
+(def dashboard-page
+  (mf/lazy-component app.main.ui.dashboard/dashboard))
+
+(def settings-page
+  (mf/lazy-component app.main.ui.settings/settings))
+
+(def workspace-page
+  (mf/lazy-component app.main.ui.workspace/workspace))
+
+(def questions-modal
+  (mf/lazy-component app.main.ui.onboarding.questions/questions))
+
+(def onboarding-modal
+  (mf/lazy-component app.main.ui.onboarding/onboarding-modal))
+
+(def release-modal
+  (mf/lazy-component app.main.ui.releases/release-notes-modal))
 
 (mf/defc on-main-error
   [{:keys [error] :as props}]
@@ -50,17 +69,17 @@
         :auth-register-success
         :auth-recovery-request
         :auth-recovery)
-       [:& auth {:route route}]
+       [:? [:& auth-page {:route route}]]
 
        :auth-verify-token
-       [:& verify-token {:route route}]
+       [:? [:& verify-token-page {:route route}]]
 
        (:settings-profile
         :settings-password
         :settings-options
         :settings-feedback
         :settings-access-tokens)
-       [:& settings/settings {:route route}]
+       [:? [:& settings-page {:route route}]]
 
        :debug-icons-preview
        (when *assert*
@@ -69,11 +88,6 @@
           [:& c/debug-preview]
           [:h1 "Icons"]
           [:& i/debug-icons-preview]])
-
-       :debug-components-preview
-       [:div.debug-preview
-        [:h1 "Components preview"]
-        [:& cm/components-preview]]
 
        (:dashboard-search
         :dashboard-projects
@@ -85,8 +99,7 @@
         :dashboard-team-invitations
         :dashboard-team-webhooks
         :dashboard-team-settings)
-
-       [:*
+       [:?
         #_[:& app.main.ui.releases/release-notes-modal {:version "1.19"}]
         #_[:& app.main.ui.onboarding/onboarding-templates-modal]
         #_[:& app.main.ui.onboarding/onboarding-modal]
@@ -96,53 +109,68 @@
             (and (contains? cf/flags :onboarding-questions)
                  (not (:onboarding-questions-answered props false))
                  (not (:onboarding-viewed props false)))
-            [:& app.main.ui.onboarding.questions/questions]
+            [:& questions-modal]
 
             (and (not (:onboarding-viewed props))
                  (contains? cf/flags :onboarding))
-            [:& app.main.ui.onboarding/onboarding-modal {}]
+            [:& onboarding-modal {}]
 
             (and (contains? cf/flags :onboarding)
                  (:onboarding-viewed props)
                  (not= (:release-notes-viewed props) (:main cf/version))
                  (not= "0.0" (:main cf/version)))
-            [:& app.main.ui.releases/release-notes-modal {:version (:main cf/version)}]))
+            [:& release-modal {:version (:main cf/version)}]))
 
         (when profile
-          [:& dashboard {:route route :profile profile}])]
+          [:& dashboard-page {:route route :profile profile}])]
 
        :viewer
        (let [{:keys [query-params path-params]} route
              {:keys [index share-id section page-id interactions-mode frame-id]
               :or {section :interactions interactions-mode :show-on-click}} query-params
              {:keys [file-id]} path-params]
-         (if (:token query-params)
-           [:& viewer/breaking-change-notice]
-           [:& viewer/viewer-page {:page-id page-id
-                                   :file-id file-id
-                                   :section section
-                                   :index index
-                                   :share-id share-id
-                                   :interactions-mode (keyword interactions-mode)
-                                   :interactions-show? (case (keyword interactions-mode)
-                                                         :hide false
-                                                         :show true
-                                                         :show-on-click false)
-                                   :frame-id frame-id}]))
+         [:? {}
+          (if (:token query-params)
+            [:> static/static-header {}
+             [:div.image i/unchain]
+             [:div.main-message (tr "viewer.breaking-change.message")]
+             [:div.desc-message (tr "viewer.breaking-change.description")]]
+
+
+            [:& viewer-page
+             {:page-id page-id
+              :file-id file-id
+              :section section
+              :index index
+              :share-id share-id
+              :interactions-mode (keyword interactions-mode)
+              :interactions-show? (case (keyword interactions-mode)
+                                    :hide false
+                                    :show true
+                                    :show-on-click false)
+              :frame-id frame-id}])])
 
        :workspace
        (let [project-id (some-> params :path :project-id uuid)
              file-id    (some-> params :path :file-id uuid)
              page-id    (some-> params :query :page-id uuid)
              layout     (some-> params :query :layout keyword)]
-         [:& workspace/workspace {:project-id project-id
-                                  :file-id file-id
-                                  :page-id page-id
-                                  :layout-name layout
-                                  :key file-id}])
+         [:? {}
+          [:& workspace-page {:project-id project-id
+                              :file-id file-id
+                              :page-id page-id
+                              :layout-name layout
+                              :key file-id}]])
+
+
+       :debug-components-preview
+       [:div.debug-preview
+        [:h1 "Components preview"]
+        [:& cm/components-preview]]
 
        :frame-preview
        [:& frame-preview/frame-preview]
+
        nil)]]))
 
 (mf/defc app
