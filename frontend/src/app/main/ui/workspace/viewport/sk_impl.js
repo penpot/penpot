@@ -110,18 +110,32 @@ class CanvasKit {
     // Drawing fills
     if (shape.fills) {
       for (const fill of shape.fills.reverse()) {
-        paint.setStyle(this.CanvasKit.PaintStyle.Fill);
-        const color = this.CanvasKit.parseColorString(fill["fill-color"]);
-        const opacity = fill["fill-opacity"];
-        console.log("fill color", fill["fill-color"], fill["fill-opacity"]);
-        color[3] = opacity;
-        paint.setColor(color);
-        const rr = this.CanvasKit.RRectXY(
-          this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
-          rx,
-          ry,
-        );
-        canvas.drawRRect(rr, paint);
+        if (fill["fill-color"]) {
+          paint.setStyle(this.CanvasKit.PaintStyle.Fill);
+          const color = this.CanvasKit.parseColorString(fill["fill-color"]);
+          const opacity = fill["fill-opacity"];
+          color[3] = opacity;
+          paint.setColor(color);
+          const rr = this.CanvasKit.RRectXY(
+            this.CanvasKit.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
+            rx,
+            ry,
+          );
+          canvas.drawRRect(rr, paint);
+        }
+        else if (fill["fill-image"]) {
+          let realPromise = fetch("/assets/by-file-media-id/" + fill["fill-image"].id)
+          .then((response) => response.blob())
+          .then((blob) => createImageBitmap(blob))
+          .then((bitmap) => this.CanvasKit.MakeImageFromCanvasImageSource(bitmap))
+          .then((img) => {
+            const self = this;
+            const s = this.CanvasKit.MakeCanvasSurface(self.canvasId);
+            s.drawOnce((c) => {
+              c.drawImage(img, shape.x, shape.y, null)
+            });
+          });
+        }
       }
     }
     // Drawing strokes
