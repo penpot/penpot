@@ -10,6 +10,7 @@
    [app.main.data.exports :as de]
    [app.main.data.preview :as dp]
    [app.main.data.shortcuts :as ds]
+   [app.main.data.users :as du]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.common :as dwc]
@@ -552,7 +553,7 @@
    ;; THEME
    :toggle-light-dark    {:tooltip (ds/meta (ds/alt "Q"))
                           :command (ds/c-mod "alt+q")
-                          :fn #(st/emit! (dw/toggle-theme))}})
+                          :fn #(st/emit! (du/toggle-theme))}})
 
 (def opacity-shortcuts
   (into {} (->>

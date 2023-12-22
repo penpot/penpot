@@ -313,6 +313,25 @@
                  (rx/of (profile-fetched data)))))
              (rx/catch on-error))))))
 
+;; --- Toggle Theme
+
+(defn toggle-theme
+  []
+  (ptk/reify ::toggle-theme
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:profile :theme]
+                 (fn [theme]
+                   (cond
+                     (= theme "default")
+                     "light"
+
+                     :else
+                     "default"))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (rx/of (update-profile (:profile state))))))
 
 
 ;; --- Request Email Change
