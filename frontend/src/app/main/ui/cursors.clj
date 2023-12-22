@@ -7,6 +7,7 @@
 (ns app.main.ui.cursors
   (:require
    [app.common.uri :as u]
+   [clojure.core :as c]
    [clojure.java.io :as io]
    [cuerdas.core :as str]))
 
@@ -71,6 +72,20 @@
 (defmacro cursor-fn
   "Creates a dynamic cursor that can be rotated in runtime"
   [id initial]
-  (let [cursor (encode-svg-cursor id "{{rotation}}" default-hotspot-x default-hotspot-y default-height)]
+  (let [[cp1 cp2] (-> (encode-svg-cursor id "$$$"
+                                         default-hotspot-x
+                                         default-hotspot-y
+                                         default-height)
+                      (str/split #"\$\$\$"))]
     `(fn [rot#]
-       (str/replace ~cursor "{{rotation}}" (+ ~initial rot#)))))
+       (str/concat ~cp1 (+ ~initial rot#) ~cp2))))
+
+(defmacro collect-cursors
+  []
+  (let [ns-info (:ns &env)]
+    `(cljs.core/js-obj
+      ~@(->> (:defs ns-info)
+             (map val)
+             (filter (fn [entry] (-> entry :meta :cursor)))
+             (mapcat (fn [{:keys [name] :as entry}]
+                       [(-> name c/name str/camel str/capital) name]))))))
