@@ -7,7 +7,6 @@
 (ns app.main.ui.viewer.inspect.code
   (:require-macros [app.main.style :as stl])
   (:require
-   ["js-beautify" :as beautify]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -26,6 +25,7 @@
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
    [app.main.ui.shapes.text.fontfaces :refer [shapes->fonts]]
+   [app.util.code-beautify :as cb]
    [app.util.code-gen :as cg]
    [app.util.dom :as dom]
    [app.util.http :as http]
@@ -50,15 +50,6 @@
   %s
   </body>
 </html>")
-
-(defn format-code [code type]
-  (cond-> code
-    (= type "svg")
-    (-> (str/replace "<defs></defs>" "")
-        (str/replace "><" ">\n<"))
-
-    (or (= type "svg") (= type "html"))
-    (beautify/html #js {"indent_size" 2})))
 
 (defn get-flex-elements [page-id shapes from]
   (let [ids (mapv :id shapes)
@@ -151,14 +142,14 @@
            (dm/str
             fontfaces-css "\n"
             (-> (cg/generate-style-code objects style-type all-children)
-                (format-code style-type)))))
+                (cb/format-code style-type)))))
 
         markup-code
         (mf/use-memo
          (mf/deps markup-type shapes images-data)
          (fn []
            (-> (cg/generate-markup-code objects markup-type shapes)
-               (format-code markup-type))))
+               (cb/format-code markup-type))))
 
         on-markup-copied
         (mf/use-callback
