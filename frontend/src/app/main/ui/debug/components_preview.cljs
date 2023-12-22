@@ -6,17 +6,18 @@
 
 (ns app.main.ui.debug.components-preview
   (:require-macros [app.main.style :as stl])
-  (:require [app.common.data :as d]
-            [app.main.data.users :as du]
-            [app.main.refs :as refs]
-            [app.main.store :as st]
-            [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-            [app.main.ui.components.search-bar :refer [search-bar]]
-            [app.main.ui.components.tab-container :refer [tab-container tab-element]]
-            [app.main.ui.components.title-bar :refer [title-bar]]
-            [app.main.ui.icons :as i]
-            [app.util.dom :as dom]
-            [rumext.v2 :as mf]))
+  (:require
+   [app.common.data :as d]
+   [app.main.data.users :as du]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.components.search-bar :refer [search-bar]]
+   [app.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
+   [rumext.v2 :as mf]))
 
 (mf/defc component-wrapper
   {::mf/wrap-props false}
