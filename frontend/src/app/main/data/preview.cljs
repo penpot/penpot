@@ -6,7 +6,6 @@
 
 (ns app.main.data.preview
   (:require
-   ["js-beautify" :as beautify]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -14,6 +13,7 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
+   [app.util.code-beautify :as cb]
    [app.util.code-gen :as cg]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
@@ -37,15 +37,6 @@
   %s
   </body>
 </html>")
-
-(defn format-code [code type]
-  (cond-> code
-    (= type "svg")
-    (-> (str/replace "<defs></defs>" "")
-        (str/replace "><" ">\n<"))
-
-    (or (= type "svg") (= type "html"))
-    (beautify/html #js {"indent_size" 2})))
 
 (defn update-preview-window
   [preview code width height]
@@ -86,11 +77,11 @@
                       (dm/str
                        fontfaces-css "\n"
                        (-> (cg/generate-style-code objects style-type all-children)
-                           (format-code style-type)))
+                           (cb/format-code style-type)))
 
                       markup-code
                       (-> (cg/generate-markup-code objects markup-type [shape])
-                          (format-code markup-type))]
+                          (cb/format-code markup-type))]
 
                   (update-preview-window
                    preview
