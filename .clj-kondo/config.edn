@@ -4,7 +4,6 @@
   promesa.core/-> clojure.core/->
   promesa.exec.csp/go-loop clojure.core/loop
   rumext.v2/defc clojure.core/defn
-  rumext.v2/fnc clojure.core/fn
   promesa.util/with-open clojure.core/with-open
   app.common.data/export clojure.core/def
   app.common.data.macros/get-in clojure.core/get-in
@@ -15,11 +14,13 @@
  :hooks
  {:analyze-call
   {app.common.data.macros/export hooks.export/export
-   potok.v2.core/reify hooks.export/potok-reify
    app.util.services/defmethod hooks.export/service-defmethod
    app.common.record/defrecord hooks.export/penpot-defrecord
    app.db/with-atomic hooks.export/penpot-with-atomic
+   potok.v2.core/reify hooks.export/potok-reify
    rumext.v2/fnc hooks.export/rumext-fnc
+   rumext.v2/lazy-component hooks.export/rumext-lazycomponent
+   shadow.lazy/loadable hooks.export/rumext-lazycomponent
    }}
 
  :output
