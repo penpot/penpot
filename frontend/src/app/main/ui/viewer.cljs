@@ -5,7 +5,6 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.viewer
-  (:import goog.events.EventType)
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
@@ -25,7 +24,6 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
-   [app.main.ui.static :as static]
    [app.main.ui.viewer.comments :refer [comments-layer comments-sidebar]]
    [app.main.ui.viewer.header :as header]
    [app.main.ui.viewer.inspect :as inspect]
@@ -485,8 +483,8 @@
 
     (mf/with-effect []
       (let [events
-            [(events/listen globals/window EventType.CLICK on-click)
-             (events/listen (mf/ref-val viewer-section-ref) EventType.WHEEL on-wheel #js {"passive" false})]]
+            [(events/listen globals/window "click" on-click)
+             (events/listen (mf/ref-val viewer-section-ref) "wheel" on-wheel #js {"passive" false})]]
 
         (doseq [event dom/fullscreen-events]
           (.addEventListener globals/document event on-exit-fullscreen false))
