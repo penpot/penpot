@@ -11,6 +11,7 @@
    [app.common.uri :as u]
    [app.common.version :as v]
    [app.util.avatars :as avatars]
+   [app.util.extends]
    [app.util.globals :refer [global location]]
    [app.util.navigator :as nav]
    [app.util.object :as obj]
