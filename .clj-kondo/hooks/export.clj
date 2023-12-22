@@ -37,6 +37,9 @@
                           (api/token-node rsym)
                           (api/vector-node [])]
                          other))]
+
+      ;; (prn (api/sexpr result))
+
       {:node result})))
 
 (defn penpot-with-atomic
@@ -68,6 +71,17 @@
                   (into [(api/token-node 'fn)
                          params]
                         (cons mdata body)))]
+      {:node result})))
+
+
+(defn rumext-lazycomponent
+  [{:keys [node]}]
+  (let [[cname mdata params & body] (rest (:children node))
+        [params body] (if (api/vector-node? mdata)
+                        [mdata (cons params body)]
+                        [params body])]
+    (let [result (api/list-node [(api/token-node 'constantly) nil])]
+      ;; (prn (api/sexpr result))
       {:node result})))
 
 
