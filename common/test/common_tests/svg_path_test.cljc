@@ -142,6 +142,143 @@
         (doseq [[k v] (:params item1)]
           (t/is (mth/close? v (get-in item2 [:params k]) 0.000000001)))))))
 
+
+(t/deftest parse-test-4
+  (let [data    (str "m480 839-41-37c-70.512-64.747-128.807-120.601-174.884-167.561C218.039 587.48 181.333 "
+                     "545.5 154 508.5S107.5 438 96.5 408 80 347.667 80 317c0-60.103 20.167-110.296 "
+                     "60.5-150.577C180.833 126.141 230.667 106 290 106c38 0 73.167 9 105.5 27s60.5 44 84.5 "
+                     "78c28-36 57.667-62.5 89-79.5S634 106 670 106c59.333 0 109.167 20.141 149.5 60.423C859.833 "
+                     "206.704 880 256.897 880 317c0 30.667-5.5 61-16.5 91s-30.167 63.5-57.5 100.5-64.039 "
+                     "78.98-110.116 125.939C649.807 681.399 591.512 737.253 521 802l-41 37Zm0-79c67.491-61.997 "
+                     "123.03-115.163 166.618-159.498C690.206 556.167 724.833 517.333 750.5 484s43.667-63.045 "
+                     "54-89.135c10.333-26.091 15.5-51.997 15.5-77.72 0-44.097-14-80.312-42-108.645S714.075 166 "
+                     "670.225 166c-34.349 0-66.141 10.5-95.375 31.5C545.617 218.5 522 248 504 286h-49c-17.333"
+                     "-37.333-40.617-66.667-69.85-88-29.234-21.333-61.026-32-95.375-32C245.925 166 210 180.167 "
+                     "182 208.5s-42 64.605-42 108.816c0 25.789 5.167 51.851 15.5 78.184s28.333 56.333 54 90S270 "
+                     "558 314 602s99.333 96.667 166 158Zm0-297Z")
+
+        expect  [{:command :move-to, :params {:x 480.0, :y 839.0}}
+                 {:command :line-to, :params {:x 439.0, :y 802.0}}
+                 {:command :curve-to, :params {:c1x 368.488, :c1y 737.253, :c2x 310.193, :c2y 681.399, :x 264.116, :y 634.439}}
+                 {:command :curve-to, :params {:c1x 218.039, :c1y 587.48, :c2x 181.333, :c2y 545.5, :x 154.0, :y 508.5}}
+                 {:command :curve-to, :params {:c1x 126.667, :c1y 471.5, :c2x 107.5, :c2y 438.0, :x 96.5, :y 408.0}}
+                 {:command :curve-to, :params {:c1x 85.5, :c1y 378.0, :c2x 80.0, :c2y 347.667, :x 80.0, :y 317.0}}
+                 {:command :curve-to, :params {:c1x 80.0, :c1y 256.897, :c2x 100.167, :c2y 206.704, :x 140.5, :y 166.423}}
+                 {:command :curve-to, :params {:c1x 180.833, :c1y 126.141, :c2x 230.667, :c2y 106.0, :x 290.0, :y 106.0}}
+                 {:command :curve-to, :params {:c1x 328.0, :c1y 106.0, :c2x 363.16700000000003, :c2y 115.0, :x 395.5, :y 133.0}}
+                 {:command :curve-to, :params {:c1x 427.83299999999997, :c1y 151.0, :c2x 456.0, :c2y 177.0, :x 480.0, :y 211.0}}
+                 {:command :curve-to, :params {:c1x 508.0, :c1y 175.0, :c2x 537.667, :c2y 148.5, :x 569.0, :y 131.5}}
+                 {:command :curve-to, :params {:c1x 600.333, :c1y 114.5, :c2x 634.0, :c2y 106.0, :x 670.0, :y 106.0}}
+                 {:command :curve-to, :params {:c1x 729.333, :c1y 106.0, :c2x 779.167, :c2y 126.14099999999999, :x 819.5, :y 166.423}}
+                 {:command :curve-to, :params {:c1x 859.833, :c1y 206.704, :c2x 880.0, :c2y 256.897, :x 880.0, :y 317.0}}
+                 {:command :curve-to, :params {:c1x 880.0, :c1y 347.66700000000003, :c2x 874.5, :c2y 378.0, :x 863.5, :y 408.0}}
+                 {:command :curve-to, :params {:c1x 852.5, :c1y 438.0, :c2x 833.333, :c2y 471.5, :x 806.0, :y 508.5}}
+                 {:command :curve-to, :params {:c1x 778.667, :c1y 545.5, :c2x 741.961, :c2y 587.48, :x 695.884, :y 634.439}}
+                 {:command :curve-to, :params {:c1x 649.807, :c1y 681.399, :c2x 591.512, :c2y 737.253, :x 521.0, :y 802.0}}
+                 {:command :line-to, :params {:x 480.0, :y 839.0}}
+                 {:command :close-path, :params {}}
+                 {:command :move-to, :params {:x 480.0, :y 760.0}}
+                 {:command :curve-to, :params {:c1x 547.491, :c1y 698.003, :c2x 603.03, :c2y 644.837, :x 646.6179999999999, :y 600.502}}
+                 {:command :curve-to, :params {:c1x 690.206, :c1y 556.167, :c2x 724.833, :c2y 517.333, :x 750.5, :y 484.0}}
+                 {:command :curve-to, :params {:c1x 776.167, :c1y 450.66700000000003, :c2x 794.167, :c2y 420.955, :x 804.5, :y 394.865}}
+                 {:command :curve-to, :params {:c1x 814.833, :c1y 368.774, :c2x 820.0, :c2y 342.868, :x 820.0, :y 317.145}}
+                 {:command :curve-to, :params {:c1x 820.0, :c1y 273.048, :c2x 806.0, :c2y 236.83299999999997, :x 778.0, :y 208.5}}
+                 {:command :curve-to, :params {:c1x 750.0, :c1y 180.16700000000003, :c2x 714.075, :c2y 166.0, :x 670.225, :y 166.0}}
+                 {:command :curve-to, :params {:c1x 635.876, :c1y 166.0, :c2x 604.0840000000001, :c2y 176.5, :x 574.85, :y 197.5}}
+                 {:command :curve-to, :params {:c1x 545.617, :c1y 218.5, :c2x 522.0, :c2y 248.0, :x 504.0, :y 286.0}}
+                 {:command :line-to, :params {:x 455.0, :y 286.0}}
+                 {:command :curve-to, :params {:c1x 437.66700000000003, :c1y 248.667, :c2x 414.383, :c2y 219.333, :x 385.15, :y 198.0}}
+                 {:command :curve-to, :params {:c1x 355.916, :c1y 176.667, :c2x 324.12399999999997, :c2y 166.0, :x 289.775, :y 166.0}}
+                 {:command :curve-to, :params {:c1x 245.925, :c1y 166.0, :c2x 210.0, :c2y 180.167, :x 182.0, :y 208.5}}
+                 {:command :curve-to, :params {:c1x 154.0, :c1y 236.833, :c2x 140.0, :c2y 273.105, :x 140.0, :y 317.31600000000003}}
+                 {:command :curve-to, :params {:c1x 140.0, :c1y 343.105, :c2x 145.167, :c2y 369.16700000000003, :x 155.5, :y 395.5}}
+                 {:command :curve-to,
+                  :params {:c1x 165.833, :c1y 421.83299999999997, :c2x 183.833, :c2y 451.83299999999997, :x 209.5, :y 485.5}}
+                 {:command :curve-to, :params {:c1x 235.167, :c1y 519.167, :c2x 270.0, :c2y 558.0, :x 314.0, :y 602.0}}
+                 {:command :curve-to, :params {:c1x 358.0, :c1y 646.0, :c2x 413.33299999999997, :c2y 698.667, :x 480.0, :y 760.0}}
+                 {:command :close-path, :params {}}
+                 {:command :move-to, :params {:x 480.0, :y 463.0}}
+                 {:command :close-path, :params {}}]
+
+        result1 (->> (svg.path/parse data)
+                     (mapv (fn [entry]
+                             (update entry :params #(into (sorted-map) %)))))
+        result2 (->> (svg.path.legacy/parse data)
+                     (mapv (fn [entry]
+                            (update entry :params #(into (sorted-map) %)))))]
+
+    (t/is (= 41
+             (count result1)
+             (count result2)))
+
+    ;; (pp/pprint result1 {:length 50})
+
+    (dotimes [i (count result1)]
+      (let [item1 (nth result1 i)
+            item2 (nth result2 i)
+            item3 (nth expect i)]
+
+        (t/is (= (:command item1)
+                 (:command item2)
+                 (:command item3)))
+
+        (doseq [[k v] (:params item1)]
+          (t/is (mth/close? v (get-in item2 [:params k]) 0.000000001))
+          (t/is (mth/close? v (get-in item3 [:params k]) 0.000000001))
+          )))))
+
+(t/deftest parse-test-5
+  (let [data    (str "M363 826"
+                     "q11-56 54-93"
+                     "t101-37"
+                     "h176"
+                     "q22-35 34-75.179 12-40.178 12-84.821 0-125.357-87.321-212.679"
+                     "Q565.357 236 440 236"
+                     "t-212.679 87.321"
+                     "Q140 410.643 140 536"
+                     "q0 105 63 184.5T363 826Zm157 190"
+                     "q-58 0-102"
+                     "-36.5T363 888q-122-26-202.5-124T80 536q0-150 105-255t255-105"
+                     "q150 0 255 105t105 "
+                     "255q0 43-9.5 83.5T763 696q66 0 111.5 47T920 856q0 66-47 113t-113 47H520Zm-80"
+                     "-485Zm200 325ZM520 956h240q42 0 71-29t29-71q0-42-29-71t-71-29H520q-42 0-71 29t"
+                     "-29 71q0 42 29 71t71 29Zm-.175-70Q507 886 498.5 877.325"
+                     "q-8.5-8.676-8.5-21.5 0"
+                     "-12.825 8.675-21.325 8.676-8.5 21.5-8.5 12.825 0 21.325 8.675 8.5 8.676 8.5 "
+                     "21.5 0 12.825-8.675 21.325-8.676 8.5-21.5 8.5Zm120 0Q627 886 618.5 877.325q-8.5"
+                     "-8.676-8.5-21.5 0-12.825 8.675-21.325 8.676-8.5 21.5-8.5 12.825 0 21.325 8.675 "
+                     "8.5 8.676 8.5 21.5 0 12.825-8.675 21.325-8.676 8.5-21.5 8.5Zm120 0Q747 886 "
+                     "738.5 877.325q-8.5-8.676-8.5-21.5 0-12.825 8.675-21.325 8.676-8.5 21.5-8.5 "
+                     "12.825 0 21.325 8.675 8.5 8.676 8.5 21.5 0 12.825-8.675 21.325-8.676 8.5-21.5 "
+                     "8.5Z"
+                     )
+
+        result1 (->> (svg.path/parse data)
+                     (mapv (fn [entry]
+                             (update entry :params #(into (sorted-map) %)))))
+        result2 (->> (svg.path.legacy/parse data)
+                     (mapv (fn [entry]
+                            (update entry :params #(into (sorted-map) %)))))]
+
+    (t/is (= 76
+             (count result1)
+             (count result2)))
+
+    ;; (pp/pprint result1 {:length 100})
+    ;; (pp/pprint result2 {:length 50})
+
+    (dotimes [i (count result1)]
+      (let [item1 (nth result1 i)
+            item2 (nth result2 i)
+            ]
+
+        (t/is (= (:command item1)
+                 (:command item2)))
+
+        (doseq [[k v] (:params item1)]
+          (t/is (mth/close? v (get-in item2 [:params k]) 0.000000001))
+          )))))
+
 (t/deftest arc-to-bezier-1
   (let [expected1 [-1.6697754290362354e-13
                    -5.258016244624741e-13

@@ -636,8 +636,9 @@ public class Parser {
 
     for (int i=0; i<pdata.size(); i++) {
       Segment segment = pdata.get(i);
+      var currentCommand = segment.command;
 
-      switch(segment.command) {
+      switch(currentCommand) {
       case 'M':
         x = segment.params[0];
         y = segment.params[1];
@@ -803,7 +804,7 @@ public class Parser {
         break;
       }
 
-      lastCommand = segment.command;
+      lastCommand = currentCommand;
     }
 
     return result;
