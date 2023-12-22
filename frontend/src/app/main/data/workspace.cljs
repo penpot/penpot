@@ -633,26 +633,6 @@
       (let [nudge (get-in state [:profile :props :nudge])]
         (rx/of (du/update-profile-props {:nudge nudge}))))))
 
-(defn toggle-theme
-  []
-  (ptk/reify ::toggle-theme
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in
-       state
-       [:profile :theme]
-       (fn [theme]
-         (cond
-           (= theme "default")
-           "light"
-
-           :else
-           "default"))))
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (rx/of (du/update-profile (:profile state))))))
-
 ;; --- Set element options mode
 
 (dm/export layout/set-options-mode)
