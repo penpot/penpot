@@ -182,10 +182,10 @@
              (-> changes
                  (pcb/update-shapes
                   [(:parent-id first-shape)]
-                  (fn [shape]
+                  (fn [shape objects]
                     (-> shape
                         (ctl/push-into-cell [(:id first-shape)] row column)
-                        (ctl/assign-cells))))
+                        (ctl/assign-cells objects))))
                  (pcb/reorder-grid-children [(:parent-id first-shape)])))
            changes)
 

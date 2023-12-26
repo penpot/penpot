@@ -196,13 +196,13 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
-
         x (unchecked-get props "x")
         y (unchecked-get props "y")
         width (unchecked-get props "width")
         height (unchecked-get props "height")
         handler (unchecked-get props "handler")
 
+        objects (mf/deref refs/workspace-page-objects)
         {cell-id :id} (unchecked-get props "cell")
         {:keys [row column row-span column-span]} (get-in shape [:layout-grid-cells cell-id])
 
@@ -237,7 +237,7 @@
 
                  shape
                  (-> (ctl/resize-cell-area shape row column new-row new-column new-row-span new-column-span)
-                     (ctl/assign-cells))
+                     (ctl/assign-cells objects))
 
                  modifiers
                  (-> (ctm/empty)

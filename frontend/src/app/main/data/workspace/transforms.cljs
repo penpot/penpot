@@ -629,7 +629,7 @@
                 (-> changes
                     (pcb/update-shapes [(:id parent)] (fn [shape] (-> shape
                                                                       (assoc :layout-grid-cells layout-grid-cells)
-                                                                      (ctl/assign-cells))))
+                                                                      (ctl/assign-cells objects))))
                     (pcb/reorder-grid-children [(:id parent)]))))
 
             changes

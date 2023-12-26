@@ -498,7 +498,8 @@
            changes (-> (pcb/add-object changes new-obj {:ignore-touched (and duplicating-component? child?)})
                        (pcb/amend-last-change #(assoc % :old-id (:id obj)))
                        (cond-> (ctl/grid-layout? objects (:parent-id obj))
-                         (-> (pcb/update-shapes [(:parent-id obj)] (fn [shape] (-> shape ctl/assign-cells ctl/check-deassigned-cells)))
+                         (-> (pcb/update-shapes [(:parent-id obj)] ctl/assign-cells)
+                             (pcb/update-shapes [(:parent-id obj)] ctl/check-deassigned-cells)
                              (pcb/reorder-grid-children [(:parent-id obj)]))))
 
            changes (cond-> changes
