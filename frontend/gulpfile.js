@@ -1,29 +1,34 @@
-const fs = require("fs");
-const l = require("lodash");
-const path = require("path");
+import fs from "fs";
+import l from "lodash";
+import path from "path"
 
-const gulp = require("gulp");
-const gulpConcat = require("gulp-concat");
-const gulpGzip = require("gulp-gzip");
-const gulpMustache = require("gulp-mustache");
-const gulpPostcss = require("gulp-postcss");
-const gulpRename = require("gulp-rename");
-const gulpSass = require("gulp-sass")(require("sass"));
-const svgSprite = require("gulp-svg-sprite");
-const rename = require("gulp-rename");
+import gulp from "gulp";
+import gulpConcat from "gulp-concat";
+import gulpGzip from "gulp-gzip";
+import gulpMustache from "gulp-mustache";
+import gulpPostcss from "gulp-postcss";
+import gulpRename from "gulp-rename";
 
-const autoprefixer = require("autoprefixer");
-const modules = require("postcss-modules");
+import * as sass from 'sass';
+import gsass from 'gulp-sass';
+const gulpSass = gsass(sass);
 
-const clean = require("postcss-clean");
-const { mkdirp } = require("mkdirp");
-const { rimraf } = require("rimraf");
-const sass = require("sass");
-const gettext = require("gettext-parser");
-const marked = require("marked");
-const cache = require("gulp-cached");
+import svgSprite from "gulp-svg-sprite";
+import rename from "gulp-rename";
 
-const mapStream = require("map-stream");
+import autoprefixer from "autoprefixer";
+import modules from "postcss-modules";
+
+import clean from "postcss-clean";
+import { mkdirp } from "mkdirp";
+import { rimraf } from "rimraf";
+
+import gettext from "gettext-parser";
+import * as marked from "marked";
+import cache from "gulp-cached";
+
+import mapStream from "map-stream";
+
 const paths = {};
 paths.resources = "./resources/";
 paths.output = "./resources/public/";
