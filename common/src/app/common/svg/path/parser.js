@@ -1,3 +1,11 @@
+/**
+ * Performance focused pure javascript implementation of the
+ * SVG path parser.
+ *
+ * @author KALEIDOS INC
+ * @license MPL-2.0 <https://www.mozilla.org/en-US/MPL/2.0/>
+ */
+
 import cljs from "goog:cljs.core";
 
 const MOVE_TO = cljs.keyword("move-to");
@@ -674,7 +682,13 @@ export function arcToBeziers(x1, y1, x2, y2, fa, fs, rx, ry, phi) {
   let x1p = (cosPhi * (x1 - x2)) / 2 + (sinPhi * (y1 - y2)) / 2;
   let y1p = (-sinPhi * (x1 - x2)) / 2 + (cosPhi * (y1 - y2)) / 2;
 
-  if (x1p === 0 || y1p === 0 || rx === 0 || ry === 0) {
+  if (x1p === 0 && y1p === 0) {
+    // we're asked to draw line to itself
+    return [];
+  }
+
+  if (rx === 0 || ry === 0) {
+      // one of the radii is zero
     return [];
   }
 
@@ -877,6 +891,7 @@ function simplifyPathData(pdata) {
         currentX = x;
         currentY = y;
       } else if (currentX !== x || currentY !== y) {
+
         var segments = arcToBeziers(currentX, currentY, x, y, fa, fs, rx, ry, phi);
         result.push(...segments);
 

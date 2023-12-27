@@ -1,3 +1,11 @@
+/**
+ * Performance focused pure java implementation of the
+ * SVG path parser.
+ *
+ * @author KALEIDOS INC
+ * @license MPL-2.0 <https://www.mozilla.org/en-US/MPL/2.0/>
+ */
+
 package app.common.svg.path;
 
 import java.util.Arrays;
@@ -61,9 +69,11 @@ public class Parser {
         command = MOVE_TO;
         params = new Object[] {K_X, this.params[0], K_Y, this.params[1]};
         break;
+
       case 'Z':
         command = CLOSE_PATH;
         break;
+
       case 'L':
         command = LINE_TO;
         params = new Object[] {K_X, this.params[0], K_Y, this.params[1]};
@@ -781,16 +791,6 @@ public class Parser {
         var segments = arcToBeziers(currentX, currentY, x, y, fa, fs, rx, ry, phi);
         result.addAll(segments);
 
-
-        // if (rx == 0 || ry == 0) {
-        //   segment.command = 'C';
-        //   segment.params = new double[] {currentX, currentY, x, y, x, y};
-        //   result.add(segment);
-        // } else if (currentX != x || currentY != y) {
-        //   var segments = arcToBeziers(currentX, currentY, x, y, fa, fs, rx, ry, phi);
-        //   result.addAll(segments);
-        // }
-        
         currentX = x;
         currentY = y;
 
@@ -871,7 +871,6 @@ public class Parser {
   }
 
   private static void processCurve(double[] curve, double cx, double cy, double rx, double ry, double sinPhi, double cosPhi) {
-
     double x0 = curve[0] * rx;
     double y0 = curve[1] * ry;
     double x1 = curve[2] * rx;
@@ -911,7 +910,13 @@ public class Parser {
     double x1p = ((cosPhi * (x1 - x2)) / 2) + ((sinPhi * (y1 - y2)) / 2);
     double y1p = ((-sinPhi * (x1 - x2)) / 2) + ((cosPhi * (y1 - y2)) / 2);
 
-    if (x1p == 0 || y1p == 0 || rx == 0 || ry == 0) {
+    if (x1p == 0 && y1p == 0) {
+      // we're asked to draw line to itself
+      return new ArrayList<>();
+    }
+
+    if (rx == 0 || ry == 0) {
+      // one of the radii is zero
       return new ArrayList<>();
     }
 
