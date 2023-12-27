@@ -2011,12 +2011,6 @@ msgstr "Przewodnik współtworzenia"
 msgid "onboarding-v2.welcome.title"
 msgstr "Witamy w Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Utwórz zespół później"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Nazwa twojego zespołu"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Po nazwaniu swojego zespołu będziesz mógł zapraszać osoby do dołączenia."
 
@@ -2030,12 +2024,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Pamiętaj, aby uwzględnić wszystkich. Deweloperzy, projektanci, "
 "managerowie... różnorodność się sumuje :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Utwórz zespół i zaproś później"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Utwórz zespół i wyślij zaproszenia"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Zaproś z rolą:"

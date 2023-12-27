@@ -2281,12 +2281,6 @@ msgstr "Guide du contributeur"
 msgid "onboarding-v2.welcome.title"
 msgstr "Bienvenu sur Penpot !"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Créer une équipe plus tard"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Le nom de votre équipe"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr ""
 "Après avoir nommé votre équipe, vous pourrez inviter des personnes à la "
@@ -2302,12 +2296,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "N'oubliez pas d'inclure tout le monde. Développeurs, concepteurs, "
 "gestionnaires... la diversité fait la force :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Créer une équipe et inviter plus tard"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Créer une équipe et envoyer des invitations"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Inviter avec le rôle :"
@@ -4542,13 +4530,6 @@ msgstr "Essayer Penpot avant de l'utiliser en local"
 msgid "questions.work-in-concept-ideas"
 msgstr "Travailler sur des idées de concept"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Pour réessayer, vous pouvez recharger ce fichier. Si le problème persiste, "
-"nous vous suggérons de consulter la liste et envisager de supprimer les "
-"graphiques endommagés."
-
 #: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.empty-palette"
 msgstr "Il n'y a pas encore de styles de couleur dans votre bibliothèque"
@@ -4656,10 +4637,6 @@ msgstr "Activer/désactiver la superposition"
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Flèche triangle"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Cette mise à jour n'aura lieu qu'une fois."
-
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-slide"
 msgstr "Glissement"
@@ -4748,10 +4725,6 @@ msgstr ""
 "... wireframes, parcours et flux utilisateurs, arborescence de navigation, "
 "etc."
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Certains graphiques n'ont pas pu être actualisés."
-
 msgid "workspace.header.menu.disable-scale-content"
 msgstr "Désactiver l'échelle proportionnelle"
 
@@ -4838,20 +4811,12 @@ msgstr "C'est parti !"
 msgid "workspace.shape.menu.remove-flex"
 msgstr "Retirer flex layout"
 
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Conversion de %s/%s"
-
 msgid "workspace.sidebar.layers.components"
 msgstr "Composants"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease"
 msgstr "Ease"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Mise à jour de %s..."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 msgid "settings.detach"
@@ -5040,12 +5005,6 @@ msgstr "Flèche"
 
 msgid "workspace.options.search-font"
 msgstr "Rechercher une police"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Les graphiques de la bibliothèque sont désormais des composants, ce qui les "
-"rendra beaucoup plus puissants."
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.role"

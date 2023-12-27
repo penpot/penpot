@@ -1815,12 +1815,6 @@ msgstr "Руководство по участию в проекте"
 msgid "onboarding-v2.welcome.title"
 msgstr "Добро пожаловать в Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Создать команду позже"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Название вашей команды"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr ""
 "После добавления названия команды, вы сможете пригласить людей "
@@ -1836,12 +1830,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Никого не забудьте. Разработчики, дизайнеры, менеджеры... разнообразие "
 "развивает :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Создать команду и пригласить позже"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Создать команду и отправить приглашения"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Создать команду"

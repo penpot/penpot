@@ -1828,9 +1828,6 @@ msgstr "Guia d'ús"
 msgid "onboarding-v2.welcome.title"
 msgstr "Us donem la benvinguda a Penpot!"
 
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Nom de l'equip"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Quan poseu un nom a l'equip, podreu convidar persones a unir-s'hi."
 
@@ -1839,12 +1836,6 @@ msgstr "Introduïu el nom de l'equip"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Convida membres"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Crea l'equip ara i convida membres en un altre moment"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Crea l'equip i envia les invitacions"
 
 msgid "onboarding.newsletter.accept"
 msgstr "Sí, subscriu-m'hi"

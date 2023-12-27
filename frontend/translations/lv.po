@@ -2261,12 +2261,6 @@ msgstr "Dalības rokasgrāmata"
 msgid "onboarding-v2.welcome.title"
 msgstr "Laipni lūdzam Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Izveidot komandu vēlāk"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Jūsu komandas nosaukums"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr ""
 "Pēc savas komandas nosaukšanas jūs varēsiet uzaicināt cilvēkus tai "
@@ -2282,12 +2276,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Neaizmirstiet iekļaut visus. Izstrādātāji, dizaineri, menedžeri... viedokļu "
 "dažādībā ir spēks :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Izveidot komandu un uzaicināt vēlāk"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Izveidot komandu un sūtīt uzaicinājumus"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Uzaicināt ar lomu:"

@@ -1974,12 +1974,6 @@ msgstr "贡献指南"
 msgid "onboarding-v2.welcome.title"
 msgstr "欢迎来到Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "稍后创建团队"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "团队名称"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "命名团队后，您将能够邀请他人加入。"
 
@@ -1991,12 +1985,6 @@ msgstr "邀请成员"
 
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr "记得将开发人员、设计师、经理……等各类人员都加进来:)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "创建团队并稍后邀请"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "创建团队并发送邀请"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "邀请角色:"

@@ -2250,12 +2250,6 @@ msgstr "Panduan berkontribusi"
 msgid "onboarding-v2.welcome.title"
 msgstr "Selamat datang di Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Buat sebuah tim nanti"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Nama tim Anda"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr ""
 "Setelah memberi nama tim, Anda akan dapat mengundang orang-orang untuk "
@@ -2271,12 +2265,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Pastikan untuk menyertakan semuanya. Pengembang, pendesain, pengelola... "
 "keragaman bertambah :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Buat tim dan undang nanti"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Buat tim dang kirim undangan"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Undang dengan peran:"

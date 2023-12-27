@@ -2066,12 +2066,6 @@ msgstr "Laguntzeko gida"
 msgid "onboarding-v2.welcome.title"
 msgstr "Ongi etorri Penpotera!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Sortu taldea beranduago"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Zure taldearen izena"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Taldeari izena eman ostean, pertsona gehiago gonbidatu ditzakezu."
 
@@ -2085,12 +2079,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Ez ahaztu garapeneko, diseinuko, kudeaketako... pertsonak sartzea, "
 "dibertsitatea ona da :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Sortu taldea eta ondoren gonbidatu"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Sortu taldea eta bidali gonbidapenak"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Gonbidatu rol honekin:"

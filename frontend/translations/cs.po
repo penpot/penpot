@@ -2071,12 +2071,6 @@ msgstr "Průvodce přispíváním"
 msgid "onboarding-v2.welcome.title"
 msgstr "Vítejte v Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Vytvořte tým později"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Název vašeho týmu"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Po pojmenování svého týmu budete moci pozvat lidi, aby se přidali."
 
@@ -2090,12 +2084,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Nezapomeňte zahrnout všechny. Vývojáře, designéry, manažéry... rozmanitost "
 "se počítá :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Vytvořte tým a pozvěte později"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Vytvořte tým a odešlete pozvánky"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Pozvat s rolí:"

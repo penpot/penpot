@@ -2283,12 +2283,6 @@ msgstr "Leitfaden für Mitwirkende"
 msgid "onboarding-v2.welcome.title"
 msgstr "Willkommen bei Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Team später erstellen"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Ihr Teamname"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Nach der Bennenung Ihres Teams, können Sie andere Personen einladen."
 
@@ -2302,12 +2296,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Denken Sie daran, alle einzubeziehen. Entwickler, Designer, Manager... die "
 "Vielfalt macht's :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Team erstellen und später einladen"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Team erstellen und Einladungen versenden"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Einladen mit der Rolle:"

@@ -2180,12 +2180,6 @@ msgstr "מדריך למתנדבים"
 msgid "onboarding-v2.welcome.title"
 msgstr "ברוך בואך ל־Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "ליצירת צוות מאוחר יותר"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "שם הצוות שלך"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "לאחר מתן שם לצוות שלך, יתאפשר לך להזמין אנשים להצטרף."
 
@@ -2197,12 +2191,6 @@ msgstr "הזמנת חברים"
 
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr "רצוי לזכור לכלול את כולם. מפתחים, מעצבים, מנהלים… גיוון מעשיר :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "יצירת צוות והזמנה בהמשך"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "יצירת צוות ושליחת הזמנות"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "הזמנה עם התפקיד:"

@@ -2286,12 +2286,6 @@ msgstr "Ghid de contribuție"
 msgid "onboarding-v2.welcome.title"
 msgstr "Bun venit la Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Creați o echipă mai târziu"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Numele echipei tale"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "După ce îți denumești echipa, vei putea invita oameni să se alăture."
 
@@ -2305,12 +2299,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Nu uitați să includeți pe toată lumea. Dezvoltatori, designeri, manageri... "
 "diversitatea se adaugă :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Creați o echipă și invitați mai târziu"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Creați o echipă și trimiteți invitații"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Invitați cu rolul:"

@@ -1887,12 +1887,6 @@ msgstr "Vodič za doprinos"
 msgid "onboarding-v2.welcome.title"
 msgstr "Dobrodošli u Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Stvori tim kasnije"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Ime tvojeg tima"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Nakon što imenuješ svoj tim, moći ćeš pozvati ljude da se pridruže."
 
@@ -1906,12 +1900,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Ne zaboravi uključiti sve. Programere, dizajnere, menadžere... raznolikost "
 "se isplati :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Stvori tim i pozovi kasnije"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Stvori tim i pošalji pozivnice"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Pozovi s ulogom:"

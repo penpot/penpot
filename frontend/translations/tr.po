@@ -2039,12 +2039,6 @@ msgstr "Katkıda bulunma kılavuzu"
 msgid "onboarding-v2.welcome.title"
 msgstr "Penpot'a hoş geldiniz!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Daha sonra bir takım oluştur"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Takımınızın adı"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Takımınızı adlandırdıktan sonra, insanları katılmaya davet edebileceksiniz."
 
@@ -2058,12 +2052,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Herkesi dahil etmeyi unutmayın. Geliştiriciler, tasarımcılar, "
 "yöneticiler... çeşitlilik iyidir :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Takım oluştur ve daha sonra davet et"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Takım oluştur ve davet gönder"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Rol ile davet et:"
