@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.line :as gl]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.grid-layout.layout-data :as ld]
@@ -182,18 +183,6 @@
       (-> (ctm/add-modifiers fill-modifiers)
           (ctm/move position-delta)))))
 
-
-(defn line-value
-  [[{px :x py :y} {vx :x vy :y}] {:keys [x y]}]
-  (let [a vy
-        b (- vx)
-        c (+ (* (- vy) px) (* vx py))]
-    (+ (* a x) (* b y) c)))
-
-(defn is-inside-lines?
-  [line-1 line-2 pos]
-  (< (* (line-value line-1 pos) (line-value line-2 pos)) 0))
-
 (defn get-position-grid-coord
   [{:keys [layout-bounds row-tracks column-tracks]} position]
 
@@ -206,7 +195,7 @@
             (fn is-inside-track? [{:keys [start-p size] :as track}]
               (let [unit-v    (vfn 1)
                     end-p     (gpt/add start-p (ofn size))]
-                (is-inside-lines? [start-p unit-v] [end-p unit-v]  position)))))
+                (gl/is-inside-lines? [start-p unit-v] [end-p unit-v]  position)))))
 
         make-min-distance-track
         (fn [type]
@@ -214,8 +203,8 @@
             (fn [[selected selected-dist] [cur-idx {:keys [start-p size] :as track}]]
               (let [unit-v    (vfn 1)
                     end-p     (gpt/add start-p (ofn size))
-                    dist-1    (mth/abs (line-value [start-p unit-v] position))
-                    dist-2    (mth/abs (line-value [end-p unit-v] position))]
+                    dist-1    (mth/abs (gl/line-value [start-p unit-v] position))
+                    dist-2    (mth/abs (gl/line-value [end-p unit-v] position))]
 
                 (if (or (< dist-1 selected-dist) (< dist-2 selected-dist))
                   [[cur-idx track] (min dist-1 dist-2)]
