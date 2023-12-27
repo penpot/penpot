@@ -229,6 +229,7 @@
             :svg-viewbox selrect
             :svg-attrs attrs
             :svg-transform transform
+            :strokes []
             :fills []})
           (gsh/translate-to-frame origin)))))
 
@@ -355,9 +356,9 @@
            (assoc :svg-attrs props))))))
 
 (defn setup-fill
- [shape]
-  (let [color-attr (str/trim (dm/get-in shape [:svg-attrs :fill]))
-        color-attr (if (= color-attr "currentColor") clr/black color-attr)
+  [shape]
+  (let [color-attr  (str/trim (dm/get-in shape [:svg-attrs :fill]))
+        color-attr  (if (= color-attr "currentColor") clr/black color-attr)
         color-style (str/trim (dm/get-in shape [:svg-attrs :style :fill]))
         color-style (if (= color-style "currentColor") clr/black color-style)]
     (cond-> shape
@@ -384,6 +385,7 @@
           (update :svg-attrs dissoc :fillOpacity)
           (assoc-in [:fills 0 :fill-opacity] (-> (dm/get-in shape [:svg-attrs :style :fillOpacity])
                                                  (d/parse-double 1)))))))
+
 (defn- setup-stroke
   [shape]
   (let [attrs   (get shape :svg-attrs)
@@ -422,7 +424,8 @@
                                          (dissoc :stroke)
                                          (dissoc :strokeLinecap)
                                          (dissoc :strokeWidth)
-                                         (dissoc :strokeOpacity)))))]
+                                         (dissoc :strokeOpacity))))
+                    (d/without-nils))]
 
     (cond-> (assoc shape :svg-attrs attrs)
       (some? color)
@@ -434,7 +437,7 @@
       (and (some? color) (some? width))
       (assoc-in [:strokes 0 :stroke-width] width)
 
-      (and (some? linecap) (= (:type shape) :path)
+      (and (some? linecap) (cfh/path-shape? shape)
            (or (= linecap :round) (= linecap :square)))
       (assoc :stroke-cap-start linecap
              :stroke-cap-end linecap)
@@ -463,9 +466,6 @@
     (dm/get-in shape [:svg-attrs :style :mixBlendMode])
     (-> (update-in [:svg-attrs :style] dissoc :mixBlendMode)
         (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :style :mixBlendMode]) assert-valid-blend-mode)))))
-
-
-
 
 (defn tag->name
   "Given a tag returns its layer name"
