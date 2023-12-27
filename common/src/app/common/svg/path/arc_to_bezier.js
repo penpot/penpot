@@ -2,7 +2,8 @@
  * Arc to Bezier curves transformer
  *
  * Is a modified and google closure compatible version of the a2c
- * functions by https://github.com/fontello/svgpath
+ * functions by https://github.com/fontello/svgpath used as reference
+ * implementation for tests
  *
  * @author KALEIDOS INC
  * @license MIT License <https://opensource.org/licenses/MIT>
@@ -10,11 +11,11 @@
 
 "use strict";
 
-goog.provide("common_tests.arc_to_bezier");
+goog.provide("app.common.svg.path.arc_to_bezier");
 
 // https://raw.githubusercontent.com/fontello/svgpath/master/lib/a2c.js
 goog.scope(function() {
-  const self = common_tests.arc_to_bezier;
+  const self = app.common.svg.path.arc_to_bezier;
 
   var TAU = Math.PI * 2;
 
@@ -123,7 +124,7 @@ goog.scope(function() {
     return [ x1, y1, x1 - y1*alpha, y1 + x1*alpha, x2 + y2*alpha, y2 - x2*alpha, x2, y2 ];
   }
 
-  function a2c(x1, y1, x2, y2, fa, fs, rx, ry, phi) {
+  function calculate_beziers(x1, y1, x2, y2, fa, fs, rx, ry, phi) {
     var sin_phi = Math.sin(phi * TAU / 360);
     var cos_phi = Math.cos(phi * TAU / 360);
 
@@ -131,6 +132,8 @@ goog.scope(function() {
     //
     var x1p =  cos_phi*(x1-x2)/2 + sin_phi*(y1-y2)/2;
     var y1p = -sin_phi*(x1-x2)/2 + cos_phi*(y1-y2)/2;
+
+    // console.log("L", x1p, y1p)
 
     if (x1p === 0 && y1p === 0) {
       // we're asked to draw line to itself
@@ -204,5 +207,5 @@ goog.scope(function() {
     });
   }
 
-  self.a2c = a2c;
+  self.calculateBeziers = calculate_beziers;
 });

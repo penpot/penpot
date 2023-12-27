@@ -10,9 +10,9 @@
    [app.common.pprint :as pp]
    [app.common.math :as mth]
    [app.common.svg.path :as svg.path]
-   [app.common.svg.path.legacy :as svg.path.legacy]
+   [app.common.svg.path.legacy-parser2 :as svg.path.legacy2]
    [clojure.test :as t]
-   #?(:cljs [common-tests.arc-to-bezier :as impl])))
+   #?(:cljs [app.common.svg.path.legacy-parser2 :as svg.path.legacy1])))
 
 (t/deftest parse-test-1
   (let [data (str "m -994.563 4564.1423 149.3086 -52.8821 30.1828 "
@@ -23,13 +23,24 @@
         result1 (->> (svg.path/parse data)
                      (mapv (fn [entry]
                              (update entry :params #(into (sorted-map) %)))))
-        result2 (->> (svg.path.legacy/parse data)
+        result2 (->> (svg.path.legacy2/parse data)
                      (mapv (fn [entry]
-                            (update entry :params #(into (sorted-map) %)))))]
+                            (update entry :params #(into (sorted-map) %)))))
+
+        result3 #?(:cljs (->> (svg.path.legacy1/parse data)
+                              (mapv (fn [entry]
+                                      (update entry :params #(into (sorted-map) %)))))
+                   :clj nil)]
 
     (t/is (= 15
              (count result1)
              (count result2)))
+
+
+    #?(:cljs
+       (t/is (= 15
+                (count result1)
+                (count result3))))
 
     (dotimes [i (count result1)]
       (let [item1 (nth result1 i)
@@ -39,6 +50,14 @@
                  (:command item2)))
         (t/is (= (:params item1)
                  (:params item2)))
+
+        #?(:cljs
+           (let [item3 (nth result3 i)]
+             (t/is (= (:command item1)
+                      (:command item3)))
+             (t/is (= (:params item1)
+                      (:params item3)))))
+
 
         #_(println "------------------------")
         #_(pp/pprint (dissoc item1 :relative))
@@ -92,7 +111,7 @@
         result1 (->> (svg.path/parse data)
                      (mapv (fn [entry]
                              (update entry :params #(into (sorted-map) %)))))
-        result2 (->> (svg.path.legacy/parse data)
+        result2 (->> (svg.path.legacy2/parse data)
                      (mapv (fn [entry]
                             (update entry :params #(into (sorted-map) %)))))]
 
@@ -107,7 +126,6 @@
 
         (t/is (= (:command item1)
                  (:command item2)))
-
 
         ;; (println "================" (:command item1))
         ;; (pp/pprint (:params item1))
@@ -124,7 +142,7 @@
         result1 (->> (svg.path/parse data)
                      (mapv (fn [entry]
                              (update entry :params #(into (sorted-map) %)))))
-        result2 (->> (svg.path.legacy/parse data)
+        result2 (->> (svg.path.legacy2/parse data)
                      (mapv (fn [entry]
                             (update entry :params #(into (sorted-map) %)))))]
 
@@ -203,7 +221,7 @@
         result1 (->> (svg.path/parse data)
                      (mapv (fn [entry]
                              (update entry :params #(into (sorted-map) %)))))
-        result2 (->> (svg.path.legacy/parse data)
+        result2 (->> (svg.path.legacy2/parse data)
                      (mapv (fn [entry]
                             (update entry :params #(into (sorted-map) %)))))]
 
@@ -256,7 +274,7 @@
         result1 (->> (svg.path/parse data)
                      (mapv (fn [entry]
                              (update entry :params #(into (sorted-map) %)))))
-        result2 (->> (svg.path.legacy/parse data)
+        result2 (->> (svg.path.legacy2/parse data)
                      (mapv (fn [entry]
                             (update entry :params #(into (sorted-map) %)))))]
 
@@ -278,6 +296,61 @@
         (doseq [[k v] (:params item1)]
           (t/is (mth/close? v (get-in item2 [:params k]) 0.000000001))
           )))))
+
+(t/deftest parse-test-6
+  (let [data    (str "M3.078 3.548v16.9a.5.5 0 0 0 1 0v-16.9a.5.5 0 0 0-1 0ZM18.422 11.5"
+                     "H7.582a2.5 2.5 0 0 1-2.5-2.5V6.565a2.5 2.5 0 0 1 2.5-2.5"
+                     "h10.84a2.5 2.5 0 0 1 2.5 2.5V9a2.5 2.5 0 0 1-2.5 2.5Z"
+                     "M7.582 5.065a1.5 1.5 0 0 0-1.5 1.5V9a1.5 1.5 0 0 0 1.5 1.5"
+                     "h10.84a1.5 1.5 0 0 0 1.5-1.5V6.565a1.5 1.5 0 0 0-1.5-1.5Z"
+                     "M13.451 19.938H7.582a2.5 2.5 0 0 1-2.5-2.5V15"
+                     "a2.5 2.5 0 0 1 2.5-2.5h5.869a2.5 2.5 0 0 1 2.5 2.5v2.436"
+                     "a2.5 2.5 0 0 1-2.5 2.502ZM7.582 13.5a1.5 1.5 0 0 0-1.5 1.5v2.436"
+                     "a1.5 1.5 0 0 0 1.5 1.5h5.869a1.5 1.5 0 0 0 1.5-1.5V15"
+                     "a1.5 1.5 0 0 0-1.5-1.5Z")
+
+        result1 (->> (svg.path/parse data)
+                     (mapv (fn [entry]
+                             (update entry :params #(into (sorted-map) %)))))
+        result2 (->> (svg.path.legacy2/parse data)
+                     (mapv (fn [entry]
+                            (update entry :params #(into (sorted-map) %)))))]
+
+    (t/is (= 47
+             (count result1)
+             (count result2)))
+
+    ;; (pp/pprint result1 {:length 100})
+    ;; (pp/pprint result2 {:length 50})
+
+    (dotimes [i (count result1)]
+      (let [item1 (nth result1 i)
+            item2 (nth result2 i)
+            ]
+
+        (t/is (= (:command item1)
+                 (:command item2)))
+
+        (doseq [[k v] (:params item1)]
+          (t/is (mth/close? v (get-in item2 [:params k]) 0.000000001))
+          )))
+
+    #?(:cljs
+       (let [result3 (svg.path.legacy1/parse data)]
+         (t/is (= 47
+                  (count result1)
+                  (count result3)))
+
+         (dotimes [i (count result1)]
+           (let [item1 (nth result1 i)
+                 item3 (nth result2 i)]
+
+             (t/is (= (:command item1)
+                            (:command item3)))
+
+             (t/is (= (:params item1)
+                      (:params item3)))))))))
+
 
 (t/deftest arc-to-bezier-1
   (let [expected1 [-1.6697754290362354e-13
@@ -316,7 +389,7 @@
                           (nth expected2 (+ i 2))
                           0.0000000001))))
 
-    (let [[result1 result2 :as total] (svg.path.legacy/arc->beziers* 0 0 30 50 0 0 1 162.55 162.45)]
+    (let [[result1 result2 :as total] (svg.path.legacy2/arc->beziers* 0 0 30 50 0 0 1 162.55 162.45)]
       (t/is (= (count total) 2))
 
       (dotimes [i (count result1)]
@@ -327,7 +400,96 @@
       (dotimes [i (count result2)]
         (t/is (mth/close? (nth result2 i)
                           (nth expected2 i)
-                          0.000000000001))))))
+                          0.000000000001))))
+
+    #?(:cljs
+       (let [[result1 result2 :as total] (svg.path.legacy1/arc->beziers* 0 0 30 50 0 0 1 162.55 162.45)]
+         (t/is (= (count total) 2))
+
+         (dotimes [i (count result1)]
+           (t/is (mth/close? (nth result1 i)
+                             (nth expected1 i)
+                             0.000000000001)))
+
+         (dotimes [i (count result2)]
+           (t/is (mth/close? (nth result2 i)
+                             (nth expected2 i)
+                             0.000000000001)))))
+
+    ))
+
+(t/deftest arc-to-bezier-2
+  (let [expected1 [3.0779999999999994,
+                   20.448,
+                   3.0780000082296834,
+                   20.724142369096132,
+                   3.3018576309038683,
+                   20.94799998509884,
+                   3.5779999999999994,
+                   20.94799998509884]
+
+        expected2 [3.5779999999999994,
+                   20.94799998509884,
+                   3.854142369096131,
+                   20.94799998509884,
+                   4.077999991770315,
+                   20.724142369096132,
+                   4.077999999999999,
+                   20.448]]
+
+    (let [[result1 result2 :as total] (->> (svg.path/arc->beziers 3.078 20.448 4.077999999999999 20.448 0 0 0.5 0.5 0)
+                                           (mapv (fn [segment]
+                                                   (vec (.-params segment)))))]
+      (t/is (= (count total) 2))
+      ;; (println "================" 11111111)
+      ;; (pp/pprint expected1 {:width 50})
+      ;; (println "------------")
+      ;; (pp/pprint result1 {:width 50})
+
+      (dotimes [i (count result1)]
+        (t/is (mth/close? (nth result1 i)
+                          (nth expected1 (+ i 2))
+                          0.0000000001)))
+
+      (dotimes [i (count result2)]
+        (t/is (mth/close? (nth result2 i)
+                          (nth expected2 (+ i 2))
+                          0.0000000001))))
+
+    (let [[result1 result2 :as total] (svg.path.legacy2/arc->beziers* 3.078 20.448 4.077999999999999 20.448 0 0 0.5 0.5 0)]
+      (t/is (= (count total) 2))
+
+      ;; (println "================" 11111111)
+      ;; (pp/pprint expected1 {:width 50})
+      ;; (println "------------")
+      ;; (pp/pprint (vec result1) {:width 50})
+
+      (dotimes [i (count result1)]
+        (t/is (mth/close? (nth result1 i)
+                          (nth expected1 i)
+                          0.000000000001)))
+
+      (dotimes [i (count result2)]
+        (t/is (mth/close? (nth result2 i)
+                          (nth expected2 i)
+                          0.000000000001))))
+
+    #?(:cljs
+       (let [[result1 result2 :as total] (svg.path.legacy1/arc->beziers* 3.078 20.448 4.077999999999999 20.448 0 0 0.5 0.5 0)]
+         (t/is (= (count total) 2))
+
+         (dotimes [i (count result1)]
+           (t/is (mth/close? (nth result1 i)
+                             (nth expected1 i)
+                             0.000000000001)))
+
+         (dotimes [i (count result2)]
+           (t/is (mth/close? (nth result2 i)
+                             (nth expected2 i)
+                             0.000000000001)))))
+
+    ))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -357,14 +519,14 @@
                     "59.9137 -301.293 -1.0595 -51.375 25.7186 -261.0492 -7.706 ")
         pattern [[:x :number] [:y :number]]]
 
-    (t/is (= expected (svg.path.legacy/extract-params cmdstr pattern)))))
+    (t/is (= expected (svg.path.legacy2/extract-params cmdstr pattern)))))
 
 (t/deftest extract-params-legacy-2
   (let [expected [{:x -994.563, :y 4564.1423 :r 0}]
         cmdstr (str "m -994.563 4564.1423 0")
         pattern [[:x :number] [:y :number] [:r :flag]]]
 
-    (t/is (= expected (svg.path.legacy/extract-params cmdstr pattern)))))
+    (t/is (= expected (svg.path.legacy2/extract-params cmdstr pattern)))))
 
 (t/deftest extract-params-legacy-3
   (let [cmdstr   (str "a1.42 1.42 0 00-1.415-1.416 1.42 1.42 0 00-1.416 1.416 "
@@ -382,7 +544,7 @@
                   [:sweep-flag :flag]
                   [:x :number]
                   [:y :number]]
-        result  (svg.path.legacy/extract-params cmdstr pattern)]
+        result  (svg.path.legacy2/extract-params cmdstr pattern)]
 
     (t/is (= (nth result 0)
              (nth expected 0)))
