@@ -327,6 +327,20 @@
       [pad-top pad-right pad-top pad-right]
       [pad-top pad-right pad-bottom pad-left])))
 
+(defn h-padding
+  [{:keys [layout-padding-type layout-padding]}]
+  (let [{pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding]
+    (if (= :simple layout-padding-type)
+      (+ pad-right pad-right)
+      (+ pad-right pad-left))))
+
+(defn v-padding
+  [{:keys [layout-padding-type layout-padding]}]
+  (let [{pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding]
+    (if (= :simple layout-padding-type)
+      (+ pad-top pad-top)
+      (+ pad-top pad-bottom))))
+
 (defn child-min-width
   [child]
   (if (and (fill-width? child)
