@@ -9,6 +9,7 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.files :refer [resolve-public-uri]]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -37,12 +38,15 @@
    )
    select distinct
           f.id,
+          f.revn,
           f.project_id,
           f.created_at,
           f.modified_at,
           f.name,
-          f.is_shared
+          f.is_shared,
+          ft.media_id
      from file as f
+     left join file_thumbnail as ft on (ft.file_id = f.id and ft.revn = f.revn)
     inner join projects as pr on (f.project_id = pr.id)
     where f.name ilike ('%' || ? || '%')
       and (f.deleted_at is null or f.deleted_at > now())
@@ -50,10 +54,16 @@
 
 (defn search-files
   [conn profile-id team-id search-term]
-  (db/exec! conn [sql:search-files
-                  profile-id team-id
-                  profile-id team-id
-                  search-term]))
+  (->> (db/exec! conn [sql:search-files
+                       profile-id team-id
+                       profile-id team-id
+                       search-term])
+       (mapv (fn [row]
+               (if-let [media-id (:media-id row)]
+                 (-> row
+                     (dissoc :media-id)
+                     (assoc :thumbnail-uri (resolve-public-uri media-id)))
+                 (dissoc row :media-id))))))
 
 (s/def ::team-id ::us/uuid)
 (s/def ::search-files ::us/string)

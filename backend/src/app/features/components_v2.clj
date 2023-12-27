@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.features :as cfeat]
    [app.common.files.changes :as cp]
    [app.common.files.changes-builder :as fcb]
    [app.common.files.helpers :as cfh]
@@ -769,12 +768,13 @@
             fdata (migrate-graphics fdata)]
         (update fdata :options assoc :components-v2 true)))))
 
-(defn- prepare-fdata
-  [fdata id]
-  (-> fdata
-      (assoc :id id)
-      (fdata/process-pointers deref)
-      (fmg/migrate-data)))
+(defn- get-file
+  [system id]
+  (binding [pmap/*load-fn* (partial fdata/load-pointer system id)]
+    (-> (files/get-file system id :migrate? false)
+        (update :data assoc :id id)
+        (update :data fdata/process-pointers deref)
+        (fmg/migrate-file))))
 
 (defn- validate-file!
   [file libs throw-on-validate?]
@@ -788,18 +788,10 @@
 
 (defn- process-file
   [{:keys [::db/conn] :as system} id & {:keys [validate? throw-on-validate?]}]
-  (let [file  (binding [cfeat/*new* (atom #{})
-                        pmap/*load-fn* (partial fdata/load-pointer system id)]
-                (-> (files/get-file system id :migrate? false)
-                    (update :data prepare-fdata id)
-                    (update :features into (deref cfeat/*new*))
-                    (update :features cfeat/migrate-legacy-features)))
+  (let [file  (get-file system id)
 
         libs  (->> (files/get-file-libraries conn id)
-                   (into [file] (map (fn [{:keys [id]}]
-                                       (binding [pmap/*load-fn* (partial fdata/load-pointer system id)]
-                                         (-> (files/get-file system id :migrate? false)
-                                             (update :data prepare-fdata id))))))
+                   (into [file] (comp (map :id) (map (partial get-file system))))
                    (d/index-by :id))
 
         file  (-> file

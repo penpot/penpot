@@ -7,7 +7,7 @@
 @import "refactor/common-refactor.scss";
 
 $thumbnail-default-width: $s-252; // Default width
-$thumbnail-aspect-ration: #{2 / 3}; // Ratio 2:3
+$thumbnail-default-height: $s-168; // Default width
 
 .dashboard-grid {
   font-size: $fs-14;
@@ -44,10 +44,12 @@ $thumbnail-aspect-ration: #{2 / 3}; // Ratio 2:3
   }
 
   .grid-item-th {
-    border-radius: $br-4;
+    border-radius: $br-8;
     text-align: initial;
     width: var(--th-width, #{$thumbnail-default-width});
-    height: calc(var(--th-width, #{$thumbnail-default-width}) * #{$thumbnail-aspect-ration});
+    height: var(--th-height, #{$thumbnail-default-height});
+    background-size: cover;
+    overflow: hidden;
 
     img {
       object-fit: contain;
@@ -59,7 +61,7 @@ $thumbnail-aspect-ration: #{2 / 3}; // Ratio 2:3
     outline: $br-4 solid $da-primary;
     text-align: initial;
     width: calc(var(--th-width) + $s-12);
-    height: calc(var(--th-width, #{$thumbnail-default-width}) * #{$thumbnail-aspect-ration});
+    height: var(--th-height, #{$thumbnail-default-height});
   }
 
   &.overlay {
@@ -131,10 +133,10 @@ $thumbnail-aspect-ration: #{2 / 3}; // Ratio 2:3
   .item-badge {
     background-color: $da-primary;
     border: none;
-    border-radius: $br-4;
+    border-radius: $br-6;
     position: absolute;
-    top: $s-8;
-    right: $s-8;
+    top: $s-12;
+    right: $s-12;
     height: $s-32;
     width: $s-32;
     display: flex;
@@ -258,17 +260,10 @@ $thumbnail-aspect-ration: #{2 / 3}; // Ratio 2:3
 .grid-item-th {
   border-radius: $br-4;
   cursor: pointer;
-
-  background-position: center;
-  background-size: auto 80%;
-  background-repeat: no-repeat;
-
   height: 100%;
   overflow: hidden;
   position: relative;
   width: 100%;
-
-  background-color: var(--canvas-color);
   display: flex;
   justify-content: center;
   flex-direction: row;
@@ -283,8 +278,9 @@ $thumbnail-aspect-ration: #{2 / 3}; // Ratio 2:3
     width: 100%;
   }
 
-  svg#loader-pencil {
-    fill: $db-cuaternary;
+  :global(svg#loader-pencil) {
+    stroke: $db-cuaternary;
+    width: calc(var(--th-width, #{$thumbnail-default-width}) * 0.25);
   }
 }
 

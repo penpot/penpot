@@ -19,10 +19,11 @@
    [app.util.globals :refer [global]]
    [app.util.mouse :as mse]
    [app.util.object :as obj]
+   [app.util.rxops :as rxs]
    [app.util.time :as dt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (declare process-message)
 (declare handle-presence)
@@ -82,7 +83,7 @@
                              ;; position changes.
                              (->> stream
                                   (rx/filter mse/pointer-event?)
-                                  (rx/sample 50)
+                                  (rx/pipe (rxs/throttle 100))
                                   (rx/map #(handle-pointer-send file-id (:pt %)))))
 
                             (rx/take-until stoper))]

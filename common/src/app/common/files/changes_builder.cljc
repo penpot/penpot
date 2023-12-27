@@ -358,13 +358,13 @@
 
 (defn changed-attrs
   "Returns the list of attributes that will change when `update-fn` is applied"
-  [object update-fn {:keys [attrs]}]
+  [object objects update-fn {:keys [attrs]}]
   (let [changed?
         (fn [old new attr]
           (let [old-val (get old attr)
                 new-val (get new attr)]
             (not= old-val new-val)))
-        new-obj (update-fn object)]
+        new-obj (update-fn object objects)]
     (when-not (= object new-obj)
       (let [attrs (or attrs (d/concat-set (keys object) (keys new-obj)))]
         (filter (partial changed? object new-obj) attrs)))))
@@ -412,7 +412,7 @@
          update-shape
          (fn [changes id]
            (let [old-obj (get objects id)
-                 new-obj (update-fn old-obj)]
+                 new-obj (update-fn old-obj objects)]
              (if (= old-obj new-obj)
                changes
                (let [[rops uops] (-> (or attrs (d/concat-set (keys old-obj) (keys new-obj)))

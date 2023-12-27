@@ -31,10 +31,10 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ref:workspace-persistence
@@ -393,12 +393,12 @@
                                             :num-files 1}))
 
            (->> (rx/of file)
-                (rx/flat-map
+                (rx/merge-map
                  (fn [file]
                    (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
                         (rx/map #(assoc file :has-libraries? %)))))
                 (rx/reduce conj [])
-                (rx/subs
+                (rx/subs!
                  (fn [files]
                    (modal/show!
                     {:type :export

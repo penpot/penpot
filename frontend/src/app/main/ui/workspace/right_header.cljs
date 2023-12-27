@@ -126,14 +126,14 @@
         (tr "workspace.header.zoom-fit-all")
         [:span {:class (stl/css :shortcuts)}
          (for [sc (scd/split-sc (sc/get-tooltip :fit-all))]
-           [:span {:class (dom/classnames (stl/css :shortcut-key) true)
+           [:span {:class (stl/css :shortcut-key)
                    :key (str "zoom-fit-" sc)} sc])]]
        [:li {:class (stl/css :zoom-option)
              :on-click on-zoom-selected}
         (tr "workspace.header.zoom-selected")
         [:span {:class (stl/css :shortcuts)}
          (for [sc (scd/split-sc (sc/get-tooltip :zoom-selected))]
-           [:span {:class (dom/classnames (stl/css :shortcut-key) true)
+           [:span {:class (stl/css :shortcut-key)
                    :key (str "zoom-selected-" sc)} sc])]]]]]))
 
 ;; --- Header Component
@@ -202,6 +202,8 @@
       [:& active-sessions]]
 
      [:& persistence-state-widget]
+
+     [:div {:class (stl/css :separator)}]
 
 
      [:div {:class (stl/css :zoom-section)}

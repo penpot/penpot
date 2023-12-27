@@ -9,7 +9,7 @@
    [app.common.geom.rect :as grc]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.state-helpers :as wsh]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (defn hover-grid-cell
   [grid-id cell-id add-to-set]

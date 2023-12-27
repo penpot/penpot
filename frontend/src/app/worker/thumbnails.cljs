@@ -7,6 +7,7 @@
 (ns app.worker.thumbnails
   (:require
    ["react-dom/server" :as rds]
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -14,7 +15,7 @@
    [app.main.render :as render]
    [app.util.http :as http]
    [app.worker.impl :as impl]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -62,16 +63,27 @@
     (binding [fonts/loaded-hints (l/atom #{})]
       (let [objects  (:objects page)
             frame    (some->> page :thumbnail-frame-id (get objects))
+            background-color (dm/get-in page [:options :background])
             element  (if frame
-                       (mf/element render/frame-svg #js {:objects objects :frame frame :use-thumbnails true})
-                       (mf/element render/page-svg #js {:data page :use-thumbnails true :embed true}))
+                       (mf/element render/frame-svg #js
+                                   {:objects objects
+                                    :frame frame
+                                    :use-thumbnails true
+                                    :background-color background-color
+                                    :aspect-ratio (/ 2 3)})
+
+                       (mf/element render/page-svg #js
+                                   {:data page
+                                    :use-thumbnails true
+                                    :embed true
+                                    :aspect-ratio (/ 2 3)}))
             data     (rds/renderToStaticMarkup element)]
         {:data data
          :fonts @fonts/loaded-hints
          :file-id file-id
          :revn revn}))
     (catch :default cause
-      (js/console.error "unexpected erorr on rendering thumbnail" cause)
+      (js/console.error "unexpected error on rendering thumbnail" cause)
       nil)))
 
 (defmethod impl/handler :thumbnails/generate-for-file

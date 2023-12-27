@@ -74,7 +74,15 @@
      [:& layer-menu {:type type :ids layer-ids :values layer-values}]
      [:& measures-menu {:type type :ids measure-ids :values measure-values :shape shape}]
      [:& component-menu {:shapes [shape]}] ;;remove this in components-v2
-     [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
+
+     (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
+       [:& constraints-menu {:ids constraint-ids :values constraint-values}])
+
+     [:& layout-container-menu
+      {:type type
+       :ids [(:id shape)]
+       :values layout-container-values
+       :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
        [:& grid-cell/options
@@ -90,9 +98,6 @@
          :is-flex-parent? is-flex-parent?
          :is-grid-parent? is-grid-parent?
          :values layout-item-values}])
-
-     (when (or (not is-layout-child?) is-layout-child-absolute?)
-       [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? fill-ids)
        [:& fill-menu {:type type :ids fill-ids :values fill-values}])

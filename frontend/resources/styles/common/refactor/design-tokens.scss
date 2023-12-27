@@ -179,7 +179,7 @@
   --menu-shortcut-foreground-color: var(--color-foreground-secondary);
   --menu-shortcut-foreground-color-selected: var(--color-foreground-primary);
   --menu-shortcut-foreground-color-hover: var(--color-foreground-primary);
-  --menu-shadow-color: var(--color-background-subtle);
+  --menu-shadow-color: var(--shadow-color);
   --menu-background-color-disabled: var(--color-background-primary);
   --menu-foreground-color-disabled: var(--color-foreground-secondary);
   --menu-border-color-disabled: var(--color-background-quaternary);
@@ -297,4 +297,13 @@
   --tag-background-color: var(--color-accent-primary);
 
   --link-foreground-color: var(--color-accent-primary);
+
+  // VIEWER
+  --viewer-background-color: var(--color-background-secondary);
+  --viewer-paginator-background-color: var(--color-background-tertiary);
+  --viewer-controls-background-color: var(--color-background-primary);
+  --viewer-inspect-border-color: var(--color-background-tertiary);
+  --viewer-thumbnails-control-foreground-color: var(--color-foreground-secondary);
+  --viewer-thumbnail-border-color: var(--color-accent-primary);
+  --viewer-thumbnail-background-color-selected: var(--color-accent-primary-muted);
 }

@@ -11,7 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.util.object :as obj]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
@@ -247,7 +247,7 @@
                   (fn [blob]
                     (->> (read-file-as-data-url blob)
                          (rx/catch (fn [err] (reject err)))
-                         (rx/subs (fn [result] (resolve result)))))))
+                         (rx/subs! (fn [result] (resolve result)))))))
 
        (catch :default e (reject e))))))
 

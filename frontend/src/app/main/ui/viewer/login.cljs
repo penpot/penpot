@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.viewer.login
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.logging :as log]
    [app.main.data.modal :as modal]
@@ -13,6 +14,7 @@
    [app.main.ui.auth.login :refer [login-methods]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
    [app.main.ui.auth.register :refer [register-methods register-validate-form register-success-page]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -25,15 +27,31 @@
   {::mf/register modal/components
    ::mf/register-as :login-register}
   [_]
-  (let [uri (. (. js/document -location) -href)
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)
+        uri (. (. js/document -location) -href)
         user-email (mf/use-state "")
         register-token (mf/use-state "")
-        current-section (mf/use-state :login)
-        set-current-section (mf/use-fn #(reset! current-section %))
+
+        current-section* (mf/use-state :login)
+        current-section (deref current-section*)
+
+        set-current-section
+        (mf/use-fn #(reset! current-section* %))
+
+        set-section
+        (mf/use-fn
+         (fn [event]
+           (let [section (-> (dom/get-current-target event)
+                             (dom/get-data "value")
+                             (keyword))]
+             (set-current-section section))))
+
+        go-back-to-login (mf/use-fn #(set-current-section :login))
+
         main-section (or
-                      (= @current-section :login)
-                      (= @current-section :register)
-                      (= @current-section :register-validate))
+                      (= current-section :login)
+                      (= current-section :register)
+                      (= current-section :register-validate))
         close
         (fn [event]
           (dom/prevent-default event)
@@ -49,57 +67,118 @@
         (fn [data]
           (reset! register-token (:token data))
           (set-current-section :register-validate))]
+
     (mf/with-effect []
       (swap! storage assoc :redirect-url uri))
-    [:div.modal-overlay
-     [:div.modal-container.login-register
-      [:div.title
-       [:div.modal-close-button {:on-click close :title (tr "labels.close")}
-        i/close]
-       (when main-section
-         [:h2 (tr "labels.continue-with-penpot")])]
 
-      [:div.modal-bottom.auth-content
+    (if new-css-system
+      [:div {:class (stl/css :modal-overlay)}
+       [:div {:class (stl/css :modal-container)}
+        [:div {:class (stl/css :modal-header)}
+         [:h2 {:class (stl/css :modal-title)} (tr "labels.continue-with-penpot")]
+         [:button {:class (stl/css :modal-close-btn)
+                   :title (tr "labels.close")
+                   :on-click close} i/close-refactor]]
 
-       (case @current-section
-         :login
-         [:div.generic-form.login-form
-          [:div.form-container
-           [:& login-methods {:on-success-callback success-login}]
-           [:div.links
-            [:div.link-entry
-             [:a {:on-click #(set-current-section :recovery-request)}
-              (tr "auth.forgot-password")]]
-            [:div.link-entry
-             [:span (tr "auth.register") " "]
-             [:a {:on-click #(set-current-section :register)}
-              (tr "auth.register-submit")]]]]]
+        [:div  {:class (stl/css :modal-content)}
 
-         :register
-         [:div.form-container
-          [:& register-methods {:on-success-callback success-register}]
-          [:div.links
-           [:div.link-entry
-            [:span (tr "auth.already-have-account") " "]
-            [:a {:on-click #(set-current-section :login)}
-             (tr "auth.login-here")]]]]
+         (case current-section
+           :login
+           [:div {:class (stl/css :form-container)}
+            [:& login-methods {:on-success-callback success-login :origin :viewer}]
+            [:div {:class (stl/css :links)}
+             [:div {:class (stl/css :link-entry)}
+              [:a {:on-click set-section
+                   :data-value :recovery-request}
+               (tr "auth.forgot-password")]]
+             [:div {:class (stl/css :link-entry)}
+              [:span (tr "auth.register") " "]
+              [:a {:on-click set-section
+                   :data-value :register}
+               (tr "auth.register-submit")]]]]
 
-         :register-validate
-         [:div.form-container
-          [:& register-validate-form {:params {:token @register-token}
+           :register
+           [:div {:class (stl/css :form-container)}
+            [:& register-methods {:on-success-callback success-register}]
+            [:div {:class (stl/css :links)}
+             [:div {:class (stl/css :link-entry)}
+              [:span (tr "auth.already-have-account") " "]
+              [:a {:on-click set-section
+                   :data-value :login}
+               (tr "auth.login-here")]]]]
+
+           :register-validate
+           [:div {:class (stl/css :form-container)}
+            [:& register-validate-form {:params {:token @register-token}
+                                        :on-success-callback success-email-sent}]
+            [:div {:class (stl/css :links)}
+             [:div {:class (stl/css :link-entry)}
+              [:a {:on-click set-section
+                   :data-value :register}
+               (tr "labels.go-back")]]]]
+
+           :recovery-request
+           [:& recovery-request-page {:go-back-callback go-back-to-login
                                       :on-success-callback success-email-sent}]
-          [:div.links
-           [:div.link-entry
-            [:a {:on-click #(set-current-section :register)}
-             (tr "labels.go-back")]]]]
+           :email-sent
+           [:div {:class (stl/css :form-container)}
+            [:& register-success-page {:params {:email @user-email}}]])
 
-         :recovery-request
-         [:& recovery-request-page {:go-back-callback #(set-current-section :login)
-                                    :on-success-callback success-email-sent}]
-         :email-sent
-         [:div.form-container
-          [:& register-success-page {:params {:email @user-email}}]])]
+         (when main-section
+           [:div {:class (stl/css :links)}
+            [:& terms-login]])]]]
 
-      (when main-section
-        [:div.modal-footer.links
-         [:& terms-login]])]]))
+
+      ;;OLD
+      [:div.modal-overlay
+       [:div.modal-container.login-register
+        [:div.title
+         [:div.modal-close-button {:on-click close :title (tr "labels.close")}
+          i/close]
+         (when main-section
+           [:h2 (tr "labels.continue-with-penpot")])]
+
+        [:div.modal-bottom.auth-content
+
+         (case current-section
+           :login
+           [:div.generic-form.login-form
+            [:div.form-container
+             [:& login-methods {:on-success-callback success-login}]
+             [:div.links
+              [:div.link-entry
+               [:a {:on-click #(set-current-section :recovery-request)}
+                (tr "auth.forgot-password")]]
+              [:div.link-entry
+               [:span (tr "auth.register") " "]
+               [:a {:on-click #(set-current-section :register)}
+                (tr "auth.register-submit")]]]]]
+
+           :register
+           [:div.form-container
+            [:& register-methods {:on-success-callback success-register}]
+            [:div.links
+             [:div.link-entry
+              [:span (tr "auth.already-have-account") " "]
+              [:a {:on-click #(set-current-section :login)}
+               (tr "auth.login-here")]]]]
+
+           :register-validate
+           [:div.form-container
+            [:& register-validate-form {:params {:token @register-token}
+                                        :on-success-callback success-email-sent}]
+            [:div.links
+             [:div.link-entry
+              [:a {:on-click #(set-current-section :register)}
+               (tr "labels.go-back")]]]]
+
+           :recovery-request
+           [:& recovery-request-page {:go-back-callback #(set-current-section :login)
+                                      :on-success-callback success-email-sent}]
+           :email-sent
+           [:div.form-container
+            [:& register-success-page {:params {:email @user-email}}]])]
+
+        (when main-section
+          [:div.modal-footer.links
+           [:& terms-login]])]])))

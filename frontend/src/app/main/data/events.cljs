@@ -17,9 +17,10 @@
    [app.util.object :as obj]
    [app.util.storage :refer [storage]]
    [app.util.time :as dt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]
    [lambdaisland.uri :as u]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (l/set-level! :info)
 
@@ -238,7 +239,7 @@
               profile (->> (rx/from-atom storage {:emit-current-value? true})
                            (rx/map :profile)
                            (rx/map :id)
-                           (rx/dedupe))]
+                           (rx/pipe (rxo/distinct-contiguous)))]
 
           (l/debug :hint "event instrumentation initialized")
 
@@ -259,12 +260,12 @@
                                              (l/debug :hint "events chunk persisted" :total (count chunk))))
                                    (rx/map (constantly chunk))))))
                (rx/take-until stoper)
-               (rx/subs (fn [chunk]
-                          (swap! buffer remove-from-buffer (count chunk)))
-                        (fn [cause]
-                          (l/error :hint "unexpected error on audit persistence" :cause cause))
-                        (fn []
-                          (l/debug :hint "audit persistence terminated"))))
+               (rx/subs! (fn [chunk]
+                           (swap! buffer remove-from-buffer (count chunk)))
+                         (fn [cause]
+                           (l/error :hint "unexpected error on audit persistence" :cause cause))
+                         (fn []
+                           (l/debug :hint "audit persistence terminated"))))
 
           (->> stream
                (rx/with-latest-from profile)
@@ -290,10 +291,10 @@
 
                (rx/switch-map #(rx/timer (inst-ms session-timeout)))
                (rx/take-until stoper)
-               (rx/subs (fn [_]
-                          (l/debug :hint "session reinitialized")
-                          (reset! session nil))
-                        (fn [cause]
-                          (l/error :hint "error on event batching stream" :cause cause))
-                        (fn []
-                          (l/debug :hitn "events batching stream terminated")))))))))
+               (rx/subs! (fn [_]
+                           (l/debug :hint "session reinitialized")
+                           (reset! session nil))
+                         (fn [cause]
+                           (l/error :hint "error on event batching stream" :cause cause))
+                         (fn []
+                           (l/debug :hitn "events batching stream terminated")))))))))

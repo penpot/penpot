@@ -50,11 +50,21 @@
      [:& layer-menu {:ids ids
                      :type type
                      :values layer-values}]
+
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values
                         :shape shape}]
-     [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
+
+     (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
+       [:& constraints-menu {:ids ids
+                             :values constraint-values}])
+
+     [:& layout-container-menu
+      {:type type
+       :ids [(:id shape)]
+       :values layout-container-values
+       :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
        [:& grid-cell/options
@@ -70,10 +80,6 @@
          :is-flex-parent? is-flex-parent?
          :is-grid-parent? is-grid-parent?
          :shape shape}])
-
-     (when (or (not is-layout-child?) is-layout-child-absolute?)
-       [:& constraints-menu {:ids ids
-                             :values constraint-values}])
 
      [:& fill-menu {:ids ids
                     :type type

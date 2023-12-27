@@ -676,7 +676,7 @@
       [id cell])))
 
 (defn remove-grid-column
-  [parent index]
+  [parent index objects]
 
   (let [track-num (inc index)
 
@@ -692,10 +692,10 @@
     (-> parent
         (update :layout-grid-columns d/remove-at-index index)
         (update :layout-grid-cells update-cells)
-        (assign-cells))))
+        (assign-cells objects))))
 
 (defn remove-grid-row
-  [parent index]
+  [parent index objects]
   (let [track-num (inc index)
 
         decrease-track-num (make-decrease-track-num :row :row-span track-num)
@@ -710,7 +710,7 @@
     (-> parent
         (update :layout-grid-rows d/remove-at-index index)
         (update :layout-grid-cells update-cells)
-        (assign-cells))))
+        (assign-cells objects))))
 
 (defn- reorder-grid-tracks
   "Swap the positions of the tracks info"
@@ -781,6 +781,7 @@
 
         parent
         (reorder-grid-tracks parent tracks-props from-index to-index)]
+
     (cond-> parent
       move-content?
       (swap-track-content prop from-track to-track))))
@@ -828,14 +829,24 @@
 
 (defn check-deassigned-cells
   "Clean the cells whith shapes that are no longer in the layout"
-  [parent]
+  [parent objects]
 
-  (let [child? (set (:shapes parent))
-        cells (update-vals
-               (:layout-grid-cells parent)
-               (fn [cell] (update cell :shapes #(filterv child? %))))]
+  (let [child-set (set (:shapes parent))
 
-    (assoc parent :layout-grid-cells cells)))
+        assigned?
+        (fn [id]
+          (and (contains? child-set id)
+               (not (position-absolute? objects id))))
+
+        cells
+        (update-vals
+         (:layout-grid-cells parent)
+         (fn [cell]
+           (-> cell
+               (update :shapes #(filterv assigned? %)))))]
+
+    (-> parent
+        (assoc :layout-grid-cells cells))))
 
 (defn overlapping-cells
   "Find overlapping cells"
@@ -902,12 +913,12 @@
 ;;  - Shape duplication
 ;;  - (maybe) create group/frames. This case will assigna a cell that had one of its children
 (defn assign-cells
-  [parent]
+  [parent objects]
   (let [;; TODO: Remove this, shouldn't be happening
         ;;overlaps (overlapping-cells parent)
         ;;_ (when (not (empty? overlaps))
         ;;    (.warn js/console "OVERLAPS" overlaps))
-        parent (cond-> (check-deassigned-cells parent)
+        parent (cond-> (check-deassigned-cells parent objects)
                  #_(d/not-empty? overlaps)
                  #_(fix-overlaps overlaps))
 
@@ -915,7 +926,9 @@
         (into #{} (mapcat (comp :shapes second)) (:layout-grid-cells parent))
 
         no-cell-shapes
-        (->> (:shapes parent) (remove shape-has-cell?))
+        (->> (:shapes parent)
+             (remove shape-has-cell?)
+             (remove (partial position-absolute? objects)))
 
         parent (position-auto-shapes parent)]
 
@@ -1174,7 +1187,7 @@
   (let [;; Temporary remove the children when moving them
         frame (-> frame
                   (update :shapes #(d/removev children %))
-                  (assign-cells))
+                  (assign-cells objects))
 
         children (->> children (remove #(position-absolute? objects %)))]
 
@@ -1182,7 +1195,7 @@
         (update :shapes d/concat-vec children)
         (cond-> (some? cell)
           (push-into-cell children row column))
-        (assign-cells))))
+        (assign-cells objects))))
 
 (defn add-children-to-index
   [parent ids objects to-index]

@@ -18,7 +18,7 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [goog.events :as events]
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
@@ -144,7 +144,7 @@
                             (assoc result
                                    :styles styles)))
                   (rx/mapcat thr/render-node)
-                  (rx/subs (fn [image-bitmap]
+                  (rx/subs! (fn [image-bitmap]
                              (.drawImage canvas-context image-bitmap 0 0)
                              (let [width (unchecked-get canvas "width")
                                    height (unchecked-get canvas "height")
@@ -168,7 +168,7 @@
      (fn []
        (let [sub (->> update-str
                       (rx/debounce 10)
-                      (rx/subs handle-draw-picker-canvas))]
+                      (rx/subs! handle-draw-picker-canvas))]
          #(rx/dispose! sub))))
 
     (mf/use-effect

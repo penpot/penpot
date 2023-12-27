@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "sass:color" as color;
+@use "sass:color";
 
 :root {
   // DARK
@@ -31,10 +31,12 @@
   --light-gray-1: #fff;
   --light-gray-2: #e8eaee;
   --light-gray-2-30: rgba(232, 234, 238, 0.3);
+  --light-gray-2-80: rgba(232, 234, 238, 0.8);
   --light-gray-3: #f3f4f6;
   --light-gray-4: #eef0f2;
   --black: #000;
   --off-black: #495e74;
+  --off-black-30: #{color.change(#495e74, $alpha: 0.3)};
   --purple: #6911d4;
   --purple-30: rgba(105, 17, 212, 0.2);
   --blue: #1345aa;

@@ -12,7 +12,7 @@
 @include font-face("worksans", "WorkSans-Bold", bold);
 
 // Space mono
-@include font-face("spacemono", "SpaceMono-Regular", normal);
+@include font-face("robotomono", "RobotoMono-Regular", normal);
 
 :global(:root) {
   --s-4: 0.25rem;

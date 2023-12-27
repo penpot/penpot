@@ -273,11 +273,14 @@
   [file-id component]
   (let [page-id   (:main-instance-page component)
         root-id   (:main-instance-id component)
-        object-id (thc/fmt-object-id file-id page-id root-id "component")]
-    (if (= file-id (:id @refs/workspace-file))
+        object-id (thc/fmt-object-id file-id page-id root-id "component")
+        current-file? (= file-id (:id @refs/workspace-file))]
+
+    (if current-file?
       (mf/deref (refs/workspace-thumbnail-by-id object-id))
-      (let [thumbnails (dm/get-in @refs/workspace-libraries [file-id :thumbnails (dm/str object-id)])]
-        thumbnails))))
+      (let [libraries  @refs/workspace-libraries
+            thumbnail (dm/get-in libraries [file-id :thumbnails object-id])]
+        thumbnail))))
 
 (mf/defc component-item-thumbnail
   "Component that renders the thumbnail image or the original SVG."

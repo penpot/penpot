@@ -33,7 +33,6 @@
 
   .project {
     align-items: center;
-    background: $df-primary;
     border-radius: $br-4;
     display: flex;
     flex-direction: row;
@@ -87,8 +86,8 @@
       cursor: pointer;
       font-size: $fs-16;
       line-height: 0.8;
-      font-weight: $fw700;
-      color: $db-secondary;
+      font-weight: $fw400;
+      color: $df-primary;
       margin-right: $s-4;
       margin-right: $s-12;
     }
@@ -98,7 +97,7 @@
       font-size: $fs-14;
       line-height: 1.15;
       font-weight: $fw400;
-      color: $db-primary;
+      color: $df-secondary;
       @media (max-width: 760px) {
         display: none;
       }
@@ -109,6 +108,9 @@
       opacity: 1;
       margin-left: $s-32;
 
+      svg {
+        fill: $df-primary;
+      }
       .btn-small {
         height: $s-32;
         margin: 0 $s-8;
@@ -139,7 +141,7 @@
 
       &.active {
         svg {
-          fill: $db-tertiary;
+          fill: $da-primary;
         }
       }
     }
@@ -184,28 +186,6 @@
       svg {
         fill: $da-tertiary;
       }
-    }
-  }
-}
-
-.dashboard-project-row .project {
-  background-color: transparent;
-
-  h2 {
-    color: $df-primary;
-    font-weight: 400;
-  }
-  span,
-  .info,
-  .recent-files-row-title-info {
-    color: $df-secondary;
-  }
-  .project-actions {
-    svg {
-      fill: $df-primary;
-    }
-    .pin-icon svg {
-      fill: $df-secondary;
     }
   }
 }

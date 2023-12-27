@@ -24,8 +24,8 @@
    [app.util.time :as tp]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (l/set-level! :info)
 
@@ -78,7 +78,7 @@
 
   (let [object-id (or object-id (thc/fmt-object-id file-id page-id frame-id tag))
         tp        (tp/tpoint-ms)
-        objects   (wsh/lookup-page-objects state page-id)
+        objects   (wsh/lookup-objects state file-id page-id)
         shape     (get objects frame-id)]
 
     (->> (render/render-frame objects shape object-id)
@@ -116,11 +116,16 @@
     (ptk/reify ::assoc-thumbnail
       ptk/UpdateEvent
       (update [_ state]
-        (let [prev-uri (dm/get-in state [:workspace-thumbnails object-id])]
+        (let [prev-uri (dm/get-in state [:workspace-thumbnails object-id])
+              current-file-id  (:current-file-id state)]
           (some->> prev-uri (vreset! prev-uri*))
           (l/trc :hint "assoc thumbnail" :object-id object-id :uri uri)
 
-          (update state :workspace-thumbnails assoc object-id uri)))
+          #_(update state :workspace-thumbnails assoc object-id uri)
+          (if (thc/file-id? object-id current-file-id)
+            (update state :workspace-thumbnails assoc object-id uri)
+            (let [file-id (thc/get-file-id object-id)]
+              (update-in state [:workspace-libraries file-id :thumbnails] assoc object-id uri)))))
 
       ptk/EffectEvent
       (effect [_ _ _]
@@ -246,7 +251,7 @@
                        (rx/filter dch/commit-changes?)
                        (rx/observe-on :async)
                        (rx/with-latest-from workspace-data-s)
-                       (rx/flat-map (partial extract-frame-changes page-id))
+                       (rx/merge-map (partial extract-frame-changes page-id))
                        (rx/tap #(l/trc :hint "inconming change" :origin "local" :frame-id (dm/str %))))
 
                   ;; NOTIFICATIONS CHANGES
@@ -254,7 +259,7 @@
                        (rx/filter (ptk/type? ::wnt/handle-file-change))
                        (rx/observe-on :async)
                        (rx/with-latest-from workspace-data-s)
-                       (rx/flat-map (partial extract-frame-changes page-id))
+                       (rx/merge-map (partial extract-frame-changes page-id))
                        (rx/tap #(l/trc :hint "inconming change" :origin "notifications" :frame-id (dm/str %))))
 
                   ;; PERSISTENCE CHANGES

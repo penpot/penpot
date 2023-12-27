@@ -14,8 +14,8 @@
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.drawing.curve :as curve]
    [app.main.data.workspace.path :as path]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (declare start-drawing)
 (declare handle-drawing)

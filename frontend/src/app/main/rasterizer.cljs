@@ -18,7 +18,7 @@
    [app.config :as cf]
    [app.util.dom :as dom]
    [app.util.http :as http]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
 (defonce ready? false)
@@ -123,18 +123,18 @@
                      (log/err :hint "rasterizer iframe blocked by adblocker" :origin origin :cause cause)
                      (rx/of false)))
 
-         (rx/subs (fn [allowed?]
-                    (if allowed?
-                      (do
-                        (dom/append-child! js/document.body iframe)
-                        (set! instance iframe))
+         (rx/subs! (fn [allowed?]
+                     (if allowed?
+                       (do
+                         (dom/append-child! js/document.body iframe)
+                         (set! instance iframe))
 
-                      (let [new-origin (dm/str (assoc cf/public-uri :path "/rasterizer.html"))]
-                        (log/warn :hint "fallback to main domain" :origin new-origin)
+                       (let [new-origin (dm/str (assoc cf/public-uri :path "/rasterizer.html"))]
+                         (log/warn :hint "fallback to main domain" :origin new-origin)
 
-                        (dom/set-attribute! iframe "src" new-origin)
-                        (dom/append-child! js/document.body iframe)
+                         (dom/set-attribute! iframe "src" new-origin)
+                         (dom/append-child! js/document.body iframe)
 
-                        (set! origin new-origin)
-                        (set! cf/rasterizer-uri cf/public-uri)
-                        (set! instance iframe))))))))
+                         (set! origin new-origin)
+                         (set! cf/rasterizer-uri cf/public-uri)
+                         (set! instance iframe))))))))

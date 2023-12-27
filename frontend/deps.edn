@@ -6,10 +6,17 @@
   org.clojure/clojure {:mvn/version "1.11.1"}
   binaryage/devtools {:mvn/version "RELEASE"}
   metosin/reitit-core {:mvn/version "0.5.18"}
-
-  funcool/beicon {:mvn/version "2021.07.05-1"}
   funcool/okulary {:mvn/version "2022.04.11-16"}
-  funcool/potok {:mvn/version "2022.12.16-71"}
+
+  funcool/potok2
+  {:git/tag "v2.0"
+   :git/sha "2bb377b"
+   :git/url "https://github.com/funcool/potok.git"}
+
+  funcool/beicon2
+  {:git/tag "v2.0"
+   :git/sha "e7135e0"
+   :git/url "https://github.com/funcool/beicon.git"}
 
   funcool/rumext
   {:git/tag "v2.7"

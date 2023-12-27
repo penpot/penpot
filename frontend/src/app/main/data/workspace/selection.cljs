@@ -36,10 +36,11 @@
    [app.main.streams :as ms]
    [app.main.worker :as uw]
    [app.util.mouse :as mse]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]
    [clojure.set :as set]
    [linked.set :as lks]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (defn interrupt?
   [e]
@@ -111,8 +112,8 @@
 
           (->> selrect-stream
                (rx/buffer-time 100)
-               (rx/map #(last %))
-               (rx/dedupe)
+               (rx/map last)
+               (rx/pipe (rxo/distinct-contiguous))
                (rx/map #(select-shapes-by-current-selrect preserve? ignore-groups?))))
 
          (->> (rx/of (update-selrect nil))
@@ -498,7 +499,8 @@
            changes (-> (pcb/add-object changes new-obj {:ignore-touched (and duplicating-component? child?)})
                        (pcb/amend-last-change #(assoc % :old-id (:id obj)))
                        (cond-> (ctl/grid-layout? objects (:parent-id obj))
-                         (-> (pcb/update-shapes [(:parent-id obj)] (fn [shape] (-> shape ctl/assign-cells ctl/check-deassigned-cells)))
+                         (-> (pcb/update-shapes [(:parent-id obj)] ctl/assign-cells)
+                             (pcb/update-shapes [(:parent-id obj)] ctl/check-deassigned-cells)
                              (pcb/reorder-grid-children [(:parent-id obj)]))))
 
            changes (cond-> changes

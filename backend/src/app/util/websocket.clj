@@ -103,7 +103,7 @@
 
     {:on-open
      (fn on-open [channel]
-       (l/trace :fn "on-open" :conn-id id :channel channel)
+       (l/dbg :fn "on-open" :conn-id (str id))
        (let [options (-> options
                          (assoc ::channel channel)
                          (on-connect))
@@ -114,10 +114,10 @@
 
      :on-close
      (fn on-close [_channel code reason]
-       (l/info :fn "on-ws-terminate"
-               :conn-id id
-               :code code
-               :reason reason)
+       (l/dbg :fn "on-close"
+              :conn-id (str id)
+              :code code
+              :reason reason)
        (sp/close! close-ch))
 
      :on-error
@@ -132,18 +132,19 @@
 
      :on-pong
      (fn on-pong [_channel data]
-       (l/trace :fn "on-pong" :data data)
        (sp/put! hbeat-ch data))}))
 
 (defn- handle-ping!
   [{:keys [::id ::beats ::channel] :as wsp} beat-id]
-  (l/trace :hint "send ping" :beat beat-id :conn-id id)
+  (l/trc :hint "send ping" :beat beat-id :conn-id (str id))
   (rws/ping channel (encode-beat beat-id))
   (let [issued (swap! beats conj (long beat-id))]
     (not (>= (count issued) max-missed-heartbeats))))
 
 (defn- start-io-loop!
-  [{:keys [::id ::close-ch ::input-ch ::output-ch ::heartbeat-ch ::channel ::handler ::beats ::on-rcv-message ::on-snd-message] :as wsp}]
+  [{:keys [::id ::close-ch ::input-ch ::output-ch ::heartbeat-ch
+           ::channel ::handler ::beats ::on-rcv-message ::on-snd-message]
+    :as wsp}]
   (try
     (handler wsp {:type :open})
     (loop [i 0]
@@ -154,14 +155,16 @@
             (identical? p ping-ch)
             (if (handle-ping! wsp i)
               (recur (inc i))
-              (rws/close channel 8802 "missing to many pings"))
+              (do
+                (l/trc :hint "closing" :reason "missing to many pings")
+                (rws/close channel 8802 "missing to many pings")))
 
             (or (identical? p close-ch) (nil? msg))
             (do :nothing)
 
             (identical? p heartbeat-ch)
             (let [beat (decode-beat msg)]
-              ;; (l/trace :hint "pong" :beat beat :conn-id id)
+              (l/trc :hint "pong received" :beat beat :conn-id (str id))
               (swap! beats disj beat)
               (recur i))
 
@@ -179,7 +182,6 @@
             (identical? p output-ch)
             (let [message (on-snd-message msg)
                   message (t/encode-str message {:type :json-verbose})]
-              ;; (l/trace :hint "writing message to output" :message msg)
               (rws/send channel message)
               (recur i))))))
 
@@ -188,12 +190,12 @@
     (catch java.io.IOException _)
 
     (catch InterruptedException _cause
-      (l/debug :hint "websocket thread interrumpted" :conn-id id))
+      (l/dbg :hint "websocket thread interrumpted" :conn-id id))
 
     (catch Throwable cause
-      (l/error :hint "unhandled exception on websocket thread"
-               :conn-id id
-               :cause cause))
+      (l/err :hint "unhandled exception on websocket thread"
+             :conn-id id
+             :cause cause))
     (finally
       (try
         (handler wsp {:type :close})
@@ -212,4 +214,4 @@
         (catch Throwable cause
           (throw cause)))
 
-      (l/trace :hint "websocket thread terminated" :conn-id id))))
+      (l/trc :hint "websocket thread terminated" :conn-id id))))

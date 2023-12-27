@@ -26,7 +26,7 @@
    [app.util.webapi :as wapi]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [tubax.core :as tubax]))
 
@@ -147,7 +147,7 @@
         libraries (->> context :libraries (mapv resolve))]
     (->> (rx/from libraries)
          (rx/map #(hash-map :file-id file-id :library-id %))
-         (rx/flat-map (partial rp/cmd! :link-file-to-library)))))
+         (rx/merge-map (partial rp/cmd! :link-file-to-library)))))
 
 (defn send-changes
   "Creates batches of changes to be sent to the backend"
@@ -197,7 +197,7 @@
            :content blob
            :is-local true}))
        (rx/tap #(progress! context :upload-media name))
-       (rx/flat-map #(rp/cmd! :upload-file-media-object %))))
+       (rx/merge-map #(rp/cmd! :upload-file-media-object %))))
 
 (defn resolve-text-content [node context]
   (let [resolve (:resolve context)]
@@ -408,7 +408,7 @@
              (rx/reduce conj {}))]
 
     (->> pre-process-images
-         (rx/flat-map
+         (rx/merge-map
           (fn  [pre-proc]
             (->> (rx/from nodes)
                  (rx/filter cip/shape?)
@@ -510,7 +510,7 @@
                             (assoc :id (resolve id)))]
               (fb/add-library-color file color)))]
       (->> (get-file context :colors)
-           (rx/flat-map (comp d/kebab-keys cip/string->uuid))
+           (rx/merge-map (comp d/kebab-keys cip/string->uuid))
            (rx/reduce add-color file)))
 
     (rx/of file)))
@@ -520,7 +520,7 @@
   (if (:has-typographies context)
     (let [resolve (:resolve context)]
       (->> (get-file context :typographies)
-           (rx/flat-map (comp d/kebab-keys cip/string->uuid))
+           (rx/merge-map (comp d/kebab-keys cip/string->uuid))
            (rx/map (fn [[id typography]]
                      (-> typography
                          (d/kebab-keys)
@@ -534,7 +534,7 @@
   (if (:has-media context)
     (let [resolve (:resolve context)]
       (->> (get-file context :media-list)
-           (rx/flat-map (comp d/kebab-keys cip/string->uuid))
+           (rx/merge-map (comp d/kebab-keys cip/string->uuid))
            (rx/mapcat
             (fn [[id media]]
               (let [media (assoc media :id (resolve id))]
@@ -562,7 +562,7 @@
                              (filter #(= :symbol (:tag %)))))]
 
       (->> (get-file context :components)
-           (rx/flat-map split-components)
+           (rx/merge-map split-components)
            (rx/concat-reduce (partial import-component context) file)))
     (rx/of file)))
 
@@ -574,7 +574,7 @@
                              (filter #(= :symbol (:tag %)))))]
 
       (->> (get-file context :deleted-components)
-           (rx/flat-map split-components)
+           (rx/merge-map split-components)
            (rx/concat-reduce (partial import-deleted-component context) file)))
     (rx/of file)))
 
@@ -585,18 +585,18 @@
         context (assoc context :progress progress-str)]
     [progress-str
      (->> (rx/of file)
-          (rx/flat-map (partial process-pages context))
+          (rx/merge-map (partial process-pages context))
           (rx/tap #(progress! context :process-colors))
-          (rx/flat-map (partial process-library-colors context))
+          (rx/merge-map (partial process-library-colors context))
           (rx/tap #(progress! context :process-typographies))
-          (rx/flat-map (partial process-library-typographies context))
+          (rx/merge-map (partial process-library-typographies context))
           (rx/tap #(progress! context :process-media))
-          (rx/flat-map (partial process-library-media context))
+          (rx/merge-map (partial process-library-media context))
           (rx/tap #(progress! context :process-components))
-          (rx/flat-map (partial process-library-components context))
+          (rx/merge-map (partial process-library-components context))
           (rx/tap #(progress! context :process-deleted-components))
-          (rx/flat-map (partial process-deleted-components context))
-          (rx/flat-map (partial send-changes context))
+          (rx/merge-map (partial process-deleted-components context))
+          (rx/merge-map (partial send-changes context))
           (rx/tap #(rx/end! progress-str)))]))
 
 (defn create-files
@@ -606,13 +606,13 @@
     (rx/concat
      (->> (rx/from files)
           (rx/map #(merge context %))
-          (rx/flat-map (fn [context]
+          (rx/merge-map (fn [context]
                          (->> (create-file context features)
                               (rx/map #(vector % (first (get data (:file-id context)))))))))
 
      (->> (rx/from files)
           (rx/map #(merge context %))
-          (rx/flat-map link-file-libraries)
+          (rx/merge-map link-file-libraries)
           (rx/ignore)))))
 
 (defn parse-mtype [ba]
@@ -627,7 +627,7 @@
   [{:keys [files]}]
 
   (->> (rx/from files)
-       (rx/flat-map
+       (rx/merge-map
         (fn [file]
           (let [st (->> (http/send!
                          {:uri (:uri file)
@@ -642,8 +642,8 @@
             (->> (rx/merge
                   (->> st
                        (rx/filter (fn [data] (= "application/zip" (:type data))))
-                       (rx/flat-map #(zip/loadAsync (:body %)))
-                       (rx/flat-map #(get-file {:zip %} :manifest))
+                       (rx/merge-map #(zip/loadAsync (:body %)))
+                       (rx/merge-map #(get-file {:zip %} :manifest))
                        (rx/map (comp d/kebab-keys cip/string->uuid))
                        (rx/map #(hash-map :uri (:uri file) :data % :type "application/zip")))
                   (->> st
@@ -677,7 +677,7 @@
 
     (rx/merge
      (->> (create-files context zip-files)
-          (rx/flat-map
+          (rx/merge-map
            (fn [[file data]]
              (->> (uz/load-from-url (:uri data))
                   (rx/map #(-> context (assoc :zip %) (merge data)))
@@ -703,7 +703,7 @@
                                       :error-data (ex-data cause)})))))))
 
      (->> (rx/from binary-files)
-          (rx/flat-map
+          (rx/merge-map
            (fn [data]
              (->> (http/send!
                    {:uri (:uri data)
@@ -726,16 +726,13 @@
                               (log/error :hint "unexpected error on import process"
                                          :project-id project-id
                                          ::log/sync? true)
-
-                              (when (map? cause)
+                              (let [edata (if (map? cause) cause (ex-data cause))]
                                 (println "Error data:")
-                                (pp/pprint (dissoc cause :explain) {:level 2 :length 10}))
+                                (pp/pprint (dissoc edata :explain) {:level 2 :length 10})
 
-                              (when (string? (:explain cause))
-                                (js/console.log (:explain cause)))
+                                (when (string? (:explain edata))
+                                  (js/console.log (:explain edata)))
 
-                              (rx/of {:status :import-error
-                                      :file-id (:file-id data)
-                                      :error (:hint cause)
-                                      :error-data cause}))))))))))
+                                (rx/of {:status :import-error
+                                        :file-id (:file-id data)})))))))))))
 

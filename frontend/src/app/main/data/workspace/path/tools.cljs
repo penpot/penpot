@@ -14,8 +14,8 @@
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.util.path.tools :as upt]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn process-path-tool
   "Generic function that executes path transformations with the content and selected nodes"

@@ -34,6 +34,17 @@
   ([state page-id]
    (dm/get-in state [:viewer :pages page-id :objects])))
 
+(defn lookup-library-objects
+  [state file-id page-id]
+  (dm/get-in state [:workspace-libraries file-id :data :pages-index page-id :objects]))
+
+(defn lookup-objects
+  [state file-id page-id]
+  (let [current-file? (= file-id (:current-file-id state))]
+    (if ^boolean current-file?
+      (lookup-page-objects state page-id)
+      (lookup-library-objects state file-id page-id))))
+
 (defn lookup-page-options
   ([state]
    (lookup-page-options state (:current-page-id state)))

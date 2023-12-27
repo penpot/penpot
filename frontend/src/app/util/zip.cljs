@@ -9,7 +9,7 @@
   (:require
    ["jszip" :as zip]
    [app.util.http :as http]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [promesa.core :as p]))
 
 (defn compress-files
@@ -29,7 +29,7 @@
          :response-type :blob
          :method :get})
        (rx/map :body)
-       (rx/flat-map zip/loadAsync)))
+       (rx/merge-map zip/loadAsync)))
 
 (defn- process-file
   [entry path type]
@@ -65,4 +65,4 @@
     (.forEach zip get-file)
 
     (->> (rx/from (p/all @promises))
-         (rx/flat-map identity))))
+         (rx/merge-map identity))))

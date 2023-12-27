@@ -30,9 +30,9 @@
    [app.util.time :as dt]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (log/set-level! :warn)
 
@@ -419,7 +419,7 @@
              (rx/map di/validate-file)
              (rx/map prepare)
              (rx/mapcat #(rp/cmd! :update-team-photo %))
-             (rx/do on-success)
+             (rx/tap on-success)
              (rx/map du/fetch-teams)
              (rx/catch on-error))))))
 
@@ -831,9 +831,15 @@
   (ptk/reify ::set-file-thumbnail
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (d/update-in-when [:dashboard-files file-id] assoc :thumbnail-uri thumbnail-uri)
-          (d/update-in-when [:dashboard-recent-files file-id] assoc :thumbnail-uri thumbnail-uri)))))
+      (letfn [(update-search-files [files]
+                (->> files
+                     (mapv #(cond-> %
+                              (= file-id (:id %))
+                              (assoc :thumbnail-uri thumbnail-uri)))))]
+        (-> state
+            (d/update-in-when [:dashboard-files file-id] assoc :thumbnail-uri thumbnail-uri)
+            (d/update-in-when [:dashboard-recent-files file-id] assoc :thumbnail-uri thumbnail-uri)
+            (d/update-when :dashboard-search-result update-search-files))))))
 
 ;; --- EVENT: create-file
 

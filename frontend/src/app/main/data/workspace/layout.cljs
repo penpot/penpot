@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.util.storage :refer [storage]]
    [clojure.set :as set]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (def valid-flags
   #{:sitemap

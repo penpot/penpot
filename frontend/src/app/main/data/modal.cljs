@@ -10,7 +10,7 @@
    [app.common.uuid :as uuid]
    [app.main.store :as st]
    [cljs.core :as c]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (defonce components (atom {}))
 

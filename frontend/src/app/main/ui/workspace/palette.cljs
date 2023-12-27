@@ -46,7 +46,7 @@
          "paddingRight" "calc(var(--s-4) * 70)"}))
 
 (mf/defc palette
-  [{:keys [layout]}]
+  [{:keys [layout on-change-palette-size]}]
   (let [color-palette?       (:colorpalette layout)
         text-palette?        (:textpalette layout)
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
@@ -57,10 +57,11 @@
         on-select            (mf/use-fn #(reset! selected %))
         rulers?              (mf/deref refs/rules?)
         {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move parent-ref size]}
-        (r/use-resize-hook :palette 72 54 80 :y true :bottom)
+        (r/use-resize-hook :palette 72 54 80 :y true :bottom on-change-palette-size)
 
         vport (mf/deref viewport)
         vport-width (:width vport)
+
         on-resize
         (mf/use-callback
          (fn [_]
@@ -98,10 +99,11 @@
 
         any-palette? (or color-palette? text-palette?)
 
-        size-classname (cond
-                         (<= size 64) (css :small-palette)
-                         (<= size 72) (css :mid-palette)
-                         (<= size 80) (css :big-palette))]
+        size-classname
+        (cond
+          (<= size 64) (css :small-palette)
+          (<= size 72) (css :mid-palette)
+          (<= size 80) (css :big-palette))]
 
     (mf/with-effect []
       (let [key1 (events/listen js/window "resize" on-resize)]

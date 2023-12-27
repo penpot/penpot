@@ -12,7 +12,8 @@
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [app.util.mouse :as mse]
-   [beicon.core :as rx]))
+   [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]))
 
 ;; --- User Events
 
@@ -33,23 +34,23 @@
         ob  (->> pointer
                  (rx/filter #(= :viewport (mse/get-pointer-source %)))
                  (rx/map mse/get-pointer-position))]
-    (rx/subscribe-with ob sub)
+    (rx/sub! ob sub)
     sub))
 
 (defonce mouse-position-ctrl
   (let [sub (rx/behavior-subject nil)
         ob  (->> pointer
                  (rx/map mse/get-pointer-ctrl-mod)
-                 (rx/dedupe))]
-    (rx/subscribe-with ob sub)
+                 (rx/pipe (rxo/distinct-contiguous)))]
+    (rx/sub! ob sub)
     sub))
 
 (defonce mouse-position-meta
   (let [sub (rx/behavior-subject nil)
         ob  (->> pointer
                  (rx/map mse/get-pointer-meta-mod)
-                 (rx/dedupe))]
-    (rx/subscribe-with ob sub)
+                 (rx/pipe (rxo/distinct-contiguous)))]
+    (rx/sub! ob sub)
     sub))
 
 (defonce mouse-position-mod
@@ -61,16 +62,16 @@
   (let [sub (rx/behavior-subject nil)
         ob  (->> pointer
                  (rx/map mse/get-pointer-shift-mod)
-                 (rx/dedupe))]
-    (rx/subscribe-with ob sub)
+                 (rx/pipe (rxo/distinct-contiguous)))]
+    (rx/sub! ob sub)
     sub))
 
 (defonce mouse-position-alt
   (let [sub (rx/behavior-subject nil)
         ob  (->> pointer
                  (rx/map mse/get-pointer-alt-mod)
-                 (rx/dedupe))]
-    (rx/subscribe-with ob sub)
+                 (rx/pipe (rxo/distinct-contiguous)))]
+    (rx/sub! ob sub)
     sub))
 
 (defonce ^:private window-blur
@@ -93,8 +94,8 @@
                  ;; registering the key pressed but on blurring the
                  ;; window (unfocus) the key down is never arrived.
                  (rx/merge window-blur)
-                 (rx/dedupe))]
-    (rx/subscribe-with ob sub)
+                 (rx/pipe (rxo/distinct-contiguous)))]
+    (rx/sub! ob sub)
     sub))
 
 (defonce keyboard-ctrl
@@ -107,8 +108,8 @@
                  ;; registering the key pressed but on blurring the
                  ;; window (unfocus) the key down is never arrived.
                  (rx/merge window-blur)
-                 (rx/dedupe))]
-    (rx/subscribe-with ob sub)
+                 (rx/pipe (rxo/distinct-contiguous)))]
+    (rx/sub! ob sub)
     sub))
 
 (defonce keyboard-meta
@@ -121,8 +122,8 @@
                  ;; registering the key pressed but on blurring the
                  ;; window (unfocus) the key down is never arrived.
                  (rx/merge window-blur)
-                 (rx/dedupe))]
-    (rx/subscribe-with ob sub)
+                 (rx/pipe (rxo/distinct-contiguous)))]
+    (rx/sub! ob sub)
     sub))
 
 (defonce keyboard-mod
@@ -136,6 +137,6 @@
                  (rx/filter kbd/space?)
                  (rx/filter (complement kbd/editing-event?))
                  (rx/map kbd/key-down-event?)
-                 (rx/dedupe))]
-    (rx/subscribe-with ob sub)
+                 (rx/pipe (rxo/distinct-contiguous)))]
+    (rx/sub! ob sub)
     sub))

@@ -18,7 +18,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as ts]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (defmulti handle-token (fn [token] (:iss token)))
@@ -69,7 +69,7 @@
     (mf/with-effect []
       (dom/set-html-title (tr "title.default"))
       (->> (rp/cmd! :verify-token {:token token})
-           (rx/subs
+           (rx/subs!
             (fn [tdata]
               (handle-token tdata))
             (fn [{:keys [type code] :as error}]

@@ -28,7 +28,7 @@
 
 (mf/defc viewport-scrollbars
   {::mf/wrap [mf/memo]}
-  [{:keys [objects zoom vbox]}]
+  [{:keys [objects zoom vbox bottom-padding]}]
 
   (let [v-scrolling?              (mf/use-state false)
         h-scrolling?              (mf/use-state false)
@@ -56,6 +56,11 @@
                                         (cfh/get-immediate-children)
                                         (gsh/shapes->rect)))
 
+        ;; Padding for bottom palette
+        vbox                     (cond-> vbox
+                                   (some? bottom-padding)
+                                   (update :height - (/ bottom-padding zoom)))
+
         inv-zoom                 (/ 1 zoom)
         vbox-height              (- (:height vbox) (* inv-zoom scroll-height))
         vbox-width               (- (:width vbox) (* inv-zoom scroll-width))
@@ -65,6 +70,7 @@
                                      (max 0)
                                      (* vbox-height)
                                      (/ (:height base-objects-rect)))
+
         ;; left space hidden because of the scroll
         left-offset              (-> (- vbox-x (:x base-objects-rect))
                                      (max 0)

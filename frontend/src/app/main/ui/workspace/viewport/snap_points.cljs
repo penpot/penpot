@@ -13,7 +13,7 @@
    [app.common.geom.snap :as sp]
    [app.common.types.shape.layout :as ctl]
    [app.main.snap :as snap]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (def ^:private line-color "var(--color-snap)")
@@ -56,12 +56,12 @@
         frame-id  (snap/snap-frame-id shapes)]
 
     (->> (rx/of bounds)
-         (rx/flat-map
+         (rx/merge-map
           (fn [bounds]
             (->> (sp/rect->snap-points bounds)
                  (map #(vector frame-id %)))))
 
-         (rx/flat-map
+         (rx/merge-map
           (fn [[frame-id point]]
             (->> (snap/get-snap-points page-id frame-id remove-snap? zoom point coord)
                  (rx/map #(mapcat second %))
@@ -124,7 +124,7 @@
                        (fn [result]
                          (apply d/concat-vec (seq result))))
 
-                      (rx/subs
+                      (rx/subs!
                        (fn [data]
                          (let [rs (filter (fn [[_ snaps _]] (> (count snaps) 0)) data)]
                            (reset! state rs)))))]

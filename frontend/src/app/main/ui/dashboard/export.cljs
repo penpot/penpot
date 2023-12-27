@@ -16,7 +16,7 @@
    [app.main.worker :as uw]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (def ^:const options [:all :merge :detach])
@@ -101,8 +101,9 @@
                   :features features
                   :export-type selected
                   :files files})
-                (rx/delay-emit 1000)
-                (rx/subs
+                (rx/mapcat #(->> (rx/of %)
+                                 (rx/delay 1000)))
+                (rx/subs!
                  (fn [msg]
                    (cond
                      (= :error (:type msg))

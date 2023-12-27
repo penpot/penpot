@@ -21,7 +21,7 @@
    [app.util.router :as rt]
    [app.util.timers :as tm]
    [cljs.spec.alpha :as s]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (s/def ::name ::us/not-empty-string)

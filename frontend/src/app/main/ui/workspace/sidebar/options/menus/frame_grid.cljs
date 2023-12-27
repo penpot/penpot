@@ -180,108 +180,109 @@
                    :on-click on-remove}
           i/remove-refactor]]]
 
-       [:& advanced-options {:class (stl/css :grid-advanced-options)
-                             :visible? open?
-                             :on-close toggle-advanced-options}
-        ;; square
-        (when (= :square type)
-          [:div {:class (stl/css :square-row)}
-           [:div {:class (stl/css :advanced-row)}
-            [:& color-row {:color (:color params)
-                           :title (tr "workspace.options.grid.params.color")
-                           :disable-gradient true
-                           :disable-image true
-                           :on-change handle-change-color
-                           :on-detach handle-detach-color}]
-            [:button {:class (stl/css-case :show-more-options true
-                                           :selected show-more-options?)
-                      :on-click toggle-more-options}
-             i/menu-refactor]]
-           (when show-more-options?
-             [:div {:class (stl/css :second-row)}
-              [:button {:class (stl/css-case :btn-options true
-                                             :disabled is-default)
-                        :disabled is-default
-                        :on-click handle-use-default}
-               [:span (tr "workspace.options.grid.params.use-default")]]
-              [:button {:class (stl/css-case :btn-options true
-                                             :disabled is-default)
-                        :disabled is-default
-                        :on-click handle-set-as-default}
-               [:span (tr "workspace.options.grid.params.set-default")]]])])
+       (when (:display grid)
+         [:& advanced-options {:class (stl/css :grid-advanced-options)
+                               :visible? open?
+                               :on-close toggle-advanced-options}
+          ;; square
+          (when (= :square type)
+            [:div {:class (stl/css :square-row)}
+             [:div {:class (stl/css :advanced-row)}
+              [:& color-row {:color (:color params)
+                             :title (tr "workspace.options.grid.params.color")
+                             :disable-gradient true
+                             :disable-image true
+                             :on-change handle-change-color
+                             :on-detach handle-detach-color}]
+              [:button {:class (stl/css-case :show-more-options true
+                                             :selected show-more-options?)
+                        :on-click toggle-more-options}
+               i/menu-refactor]]
+             (when show-more-options?
+               [:div {:class (stl/css :second-row)}
+                [:button {:class (stl/css-case :btn-options true
+                                               :disabled is-default)
+                          :disabled is-default
+                          :on-click handle-use-default}
+                 [:span (tr "workspace.options.grid.params.use-default")]]
+                [:button {:class (stl/css-case :btn-options true
+                                               :disabled is-default)
+                          :disabled is-default
+                          :on-click handle-set-as-default}
+                 [:span (tr "workspace.options.grid.params.set-default")]]])])
 
-        (when (or (= :column type) (= :row type))
-          [:div {:class (stl/css :column-row)}
-           [:div {:class (stl/css :advanced-row)}
-            [:div {:class (stl/css :orientation-select-wrapper)}
-             [:& select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
-                         :default-value (:type params)
-                         :class (stl/css :orientation-select)
-                         :options [{:value :stretch :label (tr "workspace.options.grid.params.type.stretch")}
-                                   {:value :left :label (if (= type :row)
-                                                          (tr "workspace.options.grid.params.type.top")
-                                                          (tr "workspace.options.grid.params.type.left"))}
-                                   {:value :center :label (tr "workspace.options.grid.params.type.center")}
-                                   {:value :right :label (if (= type :row)
-                                                           (tr "workspace.options.grid.params.type.bottom")
-                                                           (tr "workspace.options.grid.params.type.right"))}]
-                         :on-change (handle-change :params :type)}]]
+          (when (or (= :column type) (= :row type))
+            [:div {:class (stl/css :column-row)}
+             [:div {:class (stl/css :advanced-row)}
+              [:div {:class (stl/css :orientation-select-wrapper)}
+               [:& select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+                           :default-value (:type params)
+                           :class (stl/css :orientation-select)
+                           :options [{:value :stretch :label (tr "workspace.options.grid.params.type.stretch")}
+                                     {:value :left :label (if (= type :row)
+                                                            (tr "workspace.options.grid.params.type.top")
+                                                            (tr "workspace.options.grid.params.type.left"))}
+                                     {:value :center :label (tr "workspace.options.grid.params.type.center")}
+                                     {:value :right :label (if (= type :row)
+                                                             (tr "workspace.options.grid.params.type.bottom")
+                                                             (tr "workspace.options.grid.params.type.right"))}]
+                           :on-change (handle-change :params :type)}]]
 
-            [:div {:class (stl/css :color-wrapper)}
-             [:& color-row {:color (:color params)
-                            :title (tr "workspace.options.grid.params.color")
-                            :disable-gradient true
-                            :disable-image true
-                            :on-change handle-change-color
-                            :on-detach handle-detach-color}]]]
+              [:div {:class (stl/css :color-wrapper)}
+               [:& color-row {:color (:color params)
+                              :title (tr "workspace.options.grid.params.color")
+                              :disable-gradient true
+                              :disable-image true
+                              :on-change handle-change-color
+                              :on-detach handle-detach-color}]]]
 
-           [:div {:class (stl/css :advanced-row)}
-            [:div {:class (stl/css :height)
-                   :title (if (= :row type)
-                            (tr "workspace.options.grid.params.height")
-                            (tr "workspace.options.grid.params.width"))}
-             [:span {:class (stl/css :icon-text)}
-              (if (= :row type)
-                "H"
-                "W")]
-             [:> numeric-input* {:placeholder "Auto"
-                                 :on-change handle-change-item-length
-                                 :nillable true
-                                 :className (stl/css :numeric-input)
-                                 :value (or (:item-length params) "")}]]
+             [:div {:class (stl/css :advanced-row)}
+              [:div {:class (stl/css :height)
+                     :title (if (= :row type)
+                              (tr "workspace.options.grid.params.height")
+                              (tr "workspace.options.grid.params.width"))}
+               [:span {:class (stl/css :icon-text)}
+                (if (= :row type)
+                  "H"
+                  "W")]
+               [:> numeric-input* {:placeholder "Auto"
+                                   :on-change handle-change-item-length
+                                   :nillable true
+                                   :className (stl/css :numeric-input)
+                                   :value (or (:item-length params) "")}]]
 
-            [:div {:class (stl/css :gutter)
-                   :title (tr "workspace.options.grid.params.gutter")}
-             [:span {:class (stl/css-case :icon true
-                                          :rotated (= type :row))} i/gap-horizontal-refactor]
-             [:> numeric-input* {:placeholder "0"
-                                 :on-change (handle-change :params :gutter)
-                                 :nillable true
-                                 :className (stl/css :numeric-input)
-                                 :value (or (:gutter params) 0)}]]
+              [:div {:class (stl/css :gutter)
+                     :title (tr "workspace.options.grid.params.gutter")}
+               [:span {:class (stl/css-case :icon true
+                                            :rotated (= type :row))} i/gap-horizontal-refactor]
+               [:> numeric-input* {:placeholder "0"
+                                   :on-change (handle-change :params :gutter)
+                                   :nillable true
+                                   :className (stl/css :numeric-input)
+                                   :value (or (:gutter params) 0)}]]
 
-            [:div {:class (stl/css :margin)
-                   :title (tr "workspace.options.grid.params.margin")}
-             [:span {:class (stl/css-case :icon true
-                                          :rotated (= type :column))} i/grid-margin-refactor]
-             [:> numeric-input* {:placeholder "0"
-                                 :on-change (handle-change :params :margin)
-                                 :nillable true
-                                 :className (stl/css :numeric-input)
-                                 :value (or (:margin params) 0)}]]
+              [:div {:class (stl/css :margin)
+                     :title (tr "workspace.options.grid.params.margin")}
+               [:span {:class (stl/css-case :icon true
+                                            :rotated (= type :column))} i/grid-margin-refactor]
+               [:> numeric-input* {:placeholder "0"
+                                   :on-change (handle-change :params :margin)
+                                   :nillable true
+                                   :className (stl/css :numeric-input)
+                                   :value (or (:margin params) 0)}]]
 
-            [:button {:class (stl/css-case :show-more-options true
-                                           :selected show-more-options?)
-                      :on-click toggle-more-options}
-             i/menu-refactor]
-            (when show-more-options?
-              [:div {:class (stl/css :more-options)}
-               [:button {:disabled is-default
-                         :class (stl/css :option-btn)
-                         :on-click handle-use-default} (tr "workspace.options.grid.params.use-default")]
-               [:button {:disabled is-default
-                         :class (stl/css :option-btn)
-                         :on-click handle-set-as-default} (tr "workspace.options.grid.params.set-default")]])]])]]
+              [:button {:class (stl/css-case :show-more-options true
+                                             :selected show-more-options?)
+                        :on-click toggle-more-options}
+               i/menu-refactor]
+              (when show-more-options?
+                [:div {:class (stl/css :more-options)}
+                 [:button {:disabled is-default
+                           :class (stl/css :option-btn)
+                           :on-click handle-use-default} (tr "workspace.options.grid.params.use-default")]
+                 [:button {:disabled is-default
+                           :class (stl/css :option-btn)
+                           :on-click handle-set-as-default} (tr "workspace.options.grid.params.set-default")]])]])])]
 
       [:div.grid-option
        [:div.grid-option-main {:style {:display (when open? "none")}}

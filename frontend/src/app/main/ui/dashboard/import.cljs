@@ -25,9 +25,9 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (log/set-level! :debug)
@@ -319,9 +319,9 @@
            (->> (uw/ask-many!
                  {:cmd :analyze-import
                   :files files})
-                (rx/delay-emit emit-delay)
+                (rx/mapcat #(rx/delay emit-delay (rx/of %)))
                 (rx/filter some?)
-                (rx/subs
+                (rx/subs!
                  (fn [{:keys [uri data error type] :as msg}]
                    (if (some? error)
                      (swap! state update :files set-analyze-error uri)
@@ -337,7 +337,7 @@
                   :project-id project-id
                   :files files
                   :features @features/features-ref})
-                (rx/subs
+                (rx/subs!
                  (fn [{:keys [file-id status message errors] :as msg}]
                    (swap! state update :files update-status file-id status message errors))))))
 
@@ -351,17 +351,15 @@
 
         on-template-cloned-success
         (fn []
-          (swap! state
-                 (fn [state]
-                   (-> state
-                       (assoc :status :importing :importing-templates 0))))
+          (swap! state assoc :status :importing :importing-templates 0)
           (st/emit! (dd/fetch-recent-files)))
 
         on-template-cloned-error
         (fn [cause]
-          (errors/print-cause! "Template Clone Error" cause)
-          (st/emit! (modal/hide)
-                    (msg/error (tr "dashboard.libraries-and-templates.import-error"))))
+          (swap! state assoc :status :error :importing-templates 0)
+          (errors/print-error! cause)
+          (rx/of (modal/hide)
+                 (msg/error (tr "dashboard.libraries-and-templates.import-error"))))
 
         continue-files
         (fn []

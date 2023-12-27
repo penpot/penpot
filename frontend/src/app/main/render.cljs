@@ -48,7 +48,7 @@
    [app.util.strings :as ust]
    [app.util.thumbnails :as th]
    [app.util.timers :as ts]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -66,16 +66,18 @@
     :fill color}])
 
 (defn- calculate-dimensions
-  [objects]
-  (let [bounds (->> (ctst/get-root-objects objects)
-                    (map (partial gsb/get-object-bounds objects))
-                    (grc/join-rects))]
+  [objects aspect-ratio]
+  (let [bounds
+        (->> (ctst/get-root-objects objects)
+             (map (partial gsb/get-object-bounds objects))
+             (grc/join-rects))]
     (-> bounds
         (update :x mth/finite 0)
         (update :y mth/finite 0)
         (update :width mth/finite 100000)
         (update :height mth/finite 100000)
-        (grc/update-rect :position))))
+        (grc/update-rect :position)
+        (grc/fix-aspect-ratio aspect-ratio))))
 
 (declare shape-wrapper-factory)
 
@@ -194,11 +196,11 @@
 
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [data use-thumbnails embed include-metadata] :as props
+  [{:keys [data use-thumbnails embed include-metadata aspect-ratio] :as props
     :or {embed false include-metadata false}}]
   (let [objects (:objects data)
         shapes  (cfh/get-immediate-children objects)
-        dim     (calculate-dimensions objects)
+        dim     (calculate-dimensions objects aspect-ratio)
         vbox    (format-viewbox dim)
         bgcolor (dm/get-in data [:options :background] default-color)
 
@@ -253,11 +255,14 @@
 ;; the viewer and inspector
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects frame zoom use-thumbnails] :or {zoom 1} :as props}]
+  [{:keys [objects frame zoom use-thumbnails aspect-ratio background-color] :or {zoom 1} :as props}]
   (let [frame-id         (:id frame)
+
+        bgcolor (d/nilv background-color default-color)
         include-metadata (mf/use-ctx export/include-metadata-ctx)
 
-        bounds (gsb/get-object-bounds objects frame)
+        bounds (-> (gsb/get-object-bounds objects frame)
+                   (grc/fix-aspect-ratio aspect-ratio))
 
         ;; Bounds without shadows/blur will be the bounds of the thumbnail
         bounds2 (gsb/get-object-bounds objects (dissoc frame :shadow :blur))
@@ -305,6 +310,7 @@
             :xmlns "http://www.w3.org/2000/svg"
             :xmlnsXlink "http://www.w3.org/1999/xlink"
             :xmlns:penpot (when include-metadata "https://penpot.app/xmlns")
+            :style {:background bgcolor}
             :fill "none"}
       [:& shape-wrapper {:shape frame}]]]))
 
@@ -411,11 +417,14 @@
              :xmlns "http://www.w3.org/2000/svg"
              :xmlnsXlink "http://www.w3.org/1999/xlink"
              :fill "none"}
-       [:foreignObject {:x 0 :y 0 :width width :height height }
-        [:img {:src thumbnail-uri
-               :on-error on-error
-               :loading "lazy"
-               :decoding "async"}]]
+       [:image {:x 0
+                :y 0
+                :width width
+                :height height
+                :href thumbnail-uri
+                :on-error on-error
+                :loading "lazy"
+                :decoding "async"}]
        (when show-grids?
          [:& empty-grids {:root-shape-id root-shape-id :objects objects}])])))
 
@@ -544,7 +553,7 @@
                     (mapcat get-image-data))]
     (->> (rx/from images)
          (rx/map #(cfg/resolve-file-media %))
-         (rx/flat-map http/fetch-data-uri))))
+         (rx/merge-map http/fetch-data-uri))))
 
 (defn populate-fonts-cache [objects]
   (let [texts (->> objects
@@ -555,10 +564,10 @@
     (->> (rx/from texts)
          (rx/map fonts/get-content-fonts)
          (rx/reduce set/union #{})
-         (rx/flat-map identity)
-         (rx/flat-map fonts/fetch-font-css)
-         (rx/flat-map fonts/extract-fontface-urls)
-         (rx/flat-map http/fetch-data-uri))))
+         (rx/merge-map identity)
+         (rx/merge-map fonts/fetch-font-css)
+         (rx/merge-map fonts/extract-fontface-urls)
+         (rx/merge-map http/fetch-data-uri))))
 
 (defn render-page
   [data]
@@ -603,7 +612,7 @@
    (render-frame objects shape object-id nil))
   ([objects shape object-id options]
    (if (some? shape)
-     (let [fonts         (ff/shape->fonts shape objects)
+     (let [fonts          (ff/shape->fonts shape objects)
 
            bounds         (gsb/get-object-bounds objects shape)
 
@@ -617,8 +626,8 @@
 
            viewbox        (str/ffmt "% % % %" x y width height)
 
-           [fixed-width
-            fixed-height] (th/get-relative-size width height)
+           [fixed-width fixed-height] (th/get-relative-size width height)
+           [component-width component-height] (th/get-proportional-size width height 140 140)
 
            data           (with-redefs [cfg/public-uri cfg/rasterizer-uri]
                             (rds/renderToStaticMarkup
@@ -630,7 +639,8 @@
                                               :x x
                                               :y y
                                               :width width
-                                              :height height})))]
+                                              :height height})))
+           component?    (str/ends-with? object-id "/component")]
 
        (->> (fonts/render-font-styles-cached fonts)
             (rx/catch (fn [cause]
@@ -640,9 +650,8 @@
             (rx/map (fn [styles]
                       {:id object-id
                        :data data
-                       :viewbox viewbox
-                       :width fixed-width
-                       :height fixed-height
+                       :width (if component? component-width fixed-width)
+                       :height (if component? component-height fixed-height)
                        :styles styles}))))
 
      (do

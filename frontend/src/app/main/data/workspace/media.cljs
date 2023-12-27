@@ -30,9 +30,9 @@
    [app.main.store :as st]
    [app.util.http :as http]
    [app.util.i18n :refer [tr]]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [promesa.core :as p]
    [tubax.core :as tubax]))
 
@@ -122,13 +122,13 @@
      (->> (rx/from uris)
           (rx/filter (comp not svg-url?))
           (rx/mapcat upload)
-          (rx/do on-image))
+          (rx/tap on-image))
 
      (->> (rx/from uris)
           (rx/filter svg-url?)
           (rx/merge-map (partial fetch-svg name))
           (rx/merge-map svg->clj)
-          (rx/do on-svg)))))
+          (rx/tap on-svg)))))
 
 (defn- process-blobs
   [{:keys [file-id local? name blobs force-media on-image on-svg]}]
@@ -154,14 +154,14 @@
           (rx/filter (comp not svg-blob?))
           (rx/map prepare-blob)
           (rx/mapcat #(rp/cmd! :upload-file-media-object %))
-          (rx/do on-image))
+          (rx/tap on-image))
 
      (->> (rx/from blobs)
           (rx/map dmm/validate-file)
           (rx/filter svg-blob?)
           (rx/merge-map extract-content)
           (rx/merge-map svg->clj)
-          (rx/do on-svg)))))
+          (rx/tap on-svg)))))
 
 (defn handle-media-error [error on-error]
   (if (ex/ex-info? error)
@@ -278,7 +278,7 @@
              (rx/map dmm/validate-file)
              (rx/map prepare)
              (rx/mapcat #(rp/cmd! :upload-file-media-object %))
-             (rx/do on-upload-success)
+             (rx/tap on-upload-success)
              (rx/catch handle-media-error))))))
 
 ;; --- Upload File Media objects
@@ -423,7 +423,7 @@
                            :timeout nil
                            :tag :media-loading}))
          (->> (rp/cmd! :clone-file-media-object params)
-              (rx/do on-success)
+              (rx/tap on-success)
               (rx/catch on-error)
               (rx/finalize #(st/emit! (msg/hide-tag :media-loading)))))))))
 

@@ -30,9 +30,9 @@
    [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def embed-images? true)
@@ -224,7 +224,7 @@
      #(->> (rx/from fonts)
            (rx/merge-map fonts/fetch-font-css)
            (rx/reduce conj [])
-           (rx/subs
+           (rx/subs!
             (fn [result]
               (let [css (str/join "\n" result)]
                 (reset! fontfaces-css* css))))))
@@ -237,7 +237,7 @@
               (->> (http/fetch-data-uri uri true)
                    (rx/catch (fn [_] (rx/of (hash-map uri uri)))))))
            (rx/reduce conj {})
-           (rx/subs
+           (rx/subs!
             (fn [result]
               (reset! images-data* result)))))
 
@@ -261,7 +261,10 @@
                           :collapsabled-icon true
                           :rotated collapsed-css?)}
            i/arrow-refactor]]
-         [:span {:class (stl/css :code-lang)} "CSS"]
+
+         [:& select {:default-value style-type
+                     :class (stl/css :code-lang-select)
+                     :options [{:label "CSS" :value "css"}]}]
 
          [:div {:class (stl/css :action-btns)}
           [:button {:class (stl/css :expand-button)

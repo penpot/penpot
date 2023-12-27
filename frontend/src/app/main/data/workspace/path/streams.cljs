@@ -15,9 +15,9 @@
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (defonce drag-threshold 5)
 
@@ -115,7 +115,6 @@
 
 (defn move-handler-stream
   [start-point node handler opposite points]
-
   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
         ranges (snap/create-ranges points)
         d-pos (/ snap/snap-path-accuracy zoom)
@@ -145,16 +144,20 @@
                 (let [snap (snap/get-snap-delta [handler] ranges d-pos)]
                   (merge position (gpt/add position snap)))))
             position))]
+
     (->> ms/mouse-position
          (rx/map to-pixel-snap)
-         (rx/with-latest merge (->> ms/mouse-position-shift (rx/map #(hash-map :shift? %))))
-         (rx/with-latest merge (->> ms/mouse-position-alt (rx/map #(hash-map :alt? %))))
+         (rx/with-latest-from
+           (fn [position shift? alt?]
+             (assoc position :shift? shift? :alt? alt?))
+           ms/mouse-position-shift
+           ms/mouse-position-alt)
          (rx/with-latest-from (snap-toggled-stream))
          (rx/map check-path-snap))))
 
 (defn position-stream
-  []
-  (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
+  [state]
+  (let [zoom (get-in state [:workspace-local :zoom] 1)
         d-pos (/ snap/snap-path-accuracy zoom)
         get-content #(pst/get-path % :content)
 
@@ -169,12 +172,14 @@
 
     (->> ms/mouse-position
          (rx/map to-pixel-snap)
-         (rx/with-latest vector ranges-stream)
-         (rx/with-latest-from (snap-toggled-stream))
-         (rx/map (fn [[[position ranges] snap-toggled]]
+         (rx/with-latest-from ranges-stream (snap-toggled-stream))
+         (rx/map (fn [[position ranges snap-toggled]]
                    (if snap-toggled
                      (let [snap (snap/get-snap-delta [position] ranges d-pos)]
                        (gpt/add position snap))
                      position)))
-         (rx/with-latest merge (->> ms/mouse-position-shift (rx/map #(hash-map :shift? %))))
-         (rx/with-latest merge (->> ms/mouse-position-alt (rx/map #(hash-map :alt? %)))))))
+         (rx/with-latest-from
+           (fn [position shift? alt?]
+             (assoc position :shift? shift? :alt? alt?))
+           ms/mouse-position-shift
+           ms/mouse-position-alt))))

@@ -1673,6 +1673,9 @@ msgstr "Configuración"
 msgid "labels.share-prototype"
 msgstr "Compartir prototipo"
 
+msgid "labels.share"
+msgstr "Compartir"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
 msgstr "Bibliotecas"

@@ -7,6 +7,12 @@
 @import "refactor/common-refactor.scss";
 
 .element-options {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  padding-bottom: $s-16;
+
   .attributes-block {
     .download-button {
       @extend .button-secondary;
@@ -17,45 +23,66 @@
     }
   }
   .code-block {
+    @include codeTypography;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
     padding: 0 $s-4 $s-8 0;
-    .code-row-lang {
-      display: flex;
-      justify-content: space-between;
-      gap: $s-4;
-      width: 100%;
-      .code-lang {
-        @include tabTitleTipography;
-        display: flex;
-        align-items: center;
-      }
-      .action-btns {
-        display: flex;
-        gap: $s-4;
-        flex: 1;
-        justify-content: end;
-        .expand-button {
-          @extend .button-tertiary;
-          height: $s-32;
-          width: $s-28;
-          svg {
-            @extend .button-icon;
-            stroke: var(--icon-foreground);
-          }
-        }
-      }
 
-      .code-lang-select {
-        @include tabTitleTipography;
-        width: $s-92;
-        border: $s-1 solid transparent;
-        background-color: transparent;
-        color: var(--menu-foreground-color-disabled);
-      }
+    pre {
+      border-radius: $br-8;
+      padding: $s-16;
+      max-height: var(--code-height);
+      overflow: auto;
+      height: 100%;
     }
 
-    .code-row-display {
-      margin-bottom: $s-8;
+    // Overrides background setted in the theme
+    :global(.hljs) {
+      background: $db-tertiary;
     }
+  }
+  .code-row-lang {
+    display: flex;
+    justify-content: space-between;
+    gap: $s-4;
+    width: 100%;
+  }
+  .code-lang {
+    @include tabTitleTipography;
+    display: flex;
+    align-items: center;
+  }
+  .action-btns {
+    display: flex;
+    gap: $s-4;
+    flex: 1;
+    justify-content: end;
+    .expand-button {
+      @extend .button-tertiary;
+      height: $s-32;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+        stroke: var(--icon-foreground);
+      }
+    }
+  }
+  .code-lang-select {
+    @include tabTitleTipography;
+    width: $s-72;
+    border: $s-1 solid transparent;
+    background-color: transparent;
+    color: var(--menu-foreground-color-disabled);
+  }
+  .code-row-display {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: $s-8;
   }
 }
 

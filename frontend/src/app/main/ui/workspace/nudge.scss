@@ -28,9 +28,6 @@
       gap: $s-24;
       @include titleTipography;
       margin-bottom: $s-24;
-      .modal-msg {
-        @include titleTipography;
-      }
       .input-wrapper {
         @extend .input-with-label;
         label {
@@ -39,4 +36,10 @@
       }
     }
   }
+}
+
+.modal-msg {
+  @include titleTipography;
+  color: var(--modal-text-foreground-color);
+  line-height: 1.5;
 }

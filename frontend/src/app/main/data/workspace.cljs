@@ -78,10 +78,10 @@
    [app.util.router :as rt]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (def default-workspace-local {:zoom 1})
 
@@ -444,7 +444,7 @@
             uris  (into #{} xform (wsh/lookup-page-objects state page-id))]
 
         (->> (rx/from uris)
-             (rx/subs #(http/fetch-data-uri % false)))))))
+             (rx/subs! #(http/fetch-data-uri % false)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Page CRUD
@@ -872,10 +872,10 @@
           (pcb/update-shapes [parent-id] #(ctl/add-children-to-index % ids objects to-index)))
 
         (pcb/update-shapes parents
-                           (fn [parent]
+                           (fn [parent objects]
                              (cond-> parent
                                (ctl/grid-layout? parent)
-                               (ctl/assign-cells))))
+                               (ctl/assign-cells objects))))
 
         (pcb/reorder-grid-children parents)
 

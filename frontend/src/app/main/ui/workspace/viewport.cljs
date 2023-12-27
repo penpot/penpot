@@ -46,7 +46,7 @@
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.util.debug :as dbg]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 ;; --- Viewport
@@ -69,7 +69,7 @@
    selected))
 
 (mf/defc viewport
-  [{:keys [selected wglobal wlocal layout file] :as props}]
+  [{:keys [selected wglobal wlocal layout file palete-size] :as props}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
         {:keys [edit-path
@@ -535,7 +535,8 @@
        [:& scroll-bars/viewport-scrollbars
         {:objects base-objects
          :zoom zoom
-         :vbox vbox}]
+         :vbox vbox
+         :bottom-padding (when palete-size (+ palete-size 8))}]
 
        (when-not hide-ui?
          [:& rules/rules

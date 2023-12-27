@@ -15,7 +15,7 @@
    [app.main.refs :as refs]
    [app.main.snap :as ams]
    [app.main.ui.formats :as fmt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -256,7 +256,7 @@
                      ;; know it is a static value and will not go to
                      ;; change
                      (rx/switch-map (partial query-worker page-id coord))
-                     (rx/subs (fn [[lt-shapes gt-shapes]]
+                     (rx/subs! (fn [[lt-shapes gt-shapes]]
                                 (reset! lt-shapes* lt-shapes)
                                 (reset! gt-shapes* gt-shapes))))]
         ;; On unmount dispose

@@ -45,9 +45,9 @@
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
@@ -754,6 +754,18 @@
                 (dch/commit-changes (assoc nonlocal-changes
                                            :file-id file-id)))))))))))
 
+(defn- update-component-thumbnail-sync
+  [state component-id file-id tag]
+  (let [current-file-id (:current-file-id state)
+        current-file?   (= current-file-id file-id)
+        data            (if current-file?
+                          (get state :workspace-data)
+                          (get-in state [:workspace-libraries file-id :data]))
+        component       (ctkl/get-component data component-id)
+        page-id         (:main-instance-page component)
+        root-id         (:main-instance-id component)]
+    (dwt/request-thumbnail file-id page-id root-id tag)))
+
 (defn update-component-sync
   ([shape-id file-id] (update-component-sync shape-id file-id nil))
   ([shape-id file-id undo-group]
@@ -761,14 +773,18 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [current-file-id (:current-file-id state)
+             current-file?   (= current-file-id file-id)
              page            (wsh/lookup-page state)
              shape           (ctn/get-shape page shape-id)
+             component-id    (:component-id shape)
              undo-id         (js/Symbol)]
          (rx/of
           (dwu/start-undo-transaction undo-id)
           (update-component shape-id undo-group)
           (sync-file current-file-id file-id :components (:component-id shape) undo-group)
-          (when (not= current-file-id file-id)
+          (update-component-thumbnail-sync state component-id file-id "frame")
+          (update-component-thumbnail-sync state component-id file-id "component")
+          (when (not current-file?)
             (sync-file file-id file-id :components (:component-id shape) undo-group))
           (dwu/commit-undo-transaction undo-id)))))))
 
@@ -795,7 +811,8 @@
   (ptk/reify ::update-component-thumbnail
     ptk/WatchEvent
     (watch [_ state _]
-      (let [data            (get state :workspace-data)
+      (rx/of (update-component-thumbnail-sync state component-id file-id "component"))
+      #_(let [data            (get state :workspace-data)
             component       (ctkl/get-component data component-id)
             page-id         (:main-instance-page component)
             root-id         (:main-instance-id component)]

@@ -89,10 +89,7 @@
     .no-selection {
       @include titleTipography;
       margin-bottom: $s-24;
-      .modal-msg,
-      .modal-scd-msg,
-      .modal-hint,
-      .modal-subtitle {
+      .modal-hint {
         @include titleTipography;
         color: var(--modal-text-foreground-color);
       }
@@ -164,7 +161,7 @@
               height: $s-24;
               width: $s-24;
               padding: 0;
-              .checkbox-icon2 {
+              .checkobox-tick {
                 @extend .checkbox-icon;
               }
             }
@@ -222,4 +219,12 @@
       }
     }
   }
+}
+
+.modal-scd-msg,
+.modal-subtitle,
+.modal-msg {
+  @include titleTipography;
+  color: var(--modal-text-foreground-color);
+  line-height: 1.5;
 }

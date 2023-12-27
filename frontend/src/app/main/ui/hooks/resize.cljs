@@ -24,62 +24,72 @@
   (set! last-resize-type type))
 
 (defn use-resize-hook
-  [key initial min-val max-val axis negate? resize-type]
+  ([key initial min-val max-val axis negate? resize-type]
+   (use-resize-hook key initial min-val max-val axis negate? resize-type nil))
 
-  (let [current-file-id (mf/use-ctx ctx/current-file-id)
-        size-state (mf/use-state (or (get-in @storage [::saved-resize current-file-id key]) initial))
-        parent-ref (mf/use-ref nil)
+  ([key initial min-val max-val axis negate? resize-type on-change-size]
+   (let [current-file-id (mf/use-ctx ctx/current-file-id)
+         size-state (mf/use-state (or (get-in @storage [::saved-resize current-file-id key]) initial))
+         parent-ref (mf/use-ref nil)
 
-        dragging-ref (mf/use-ref false)
-        start-size-ref (mf/use-ref nil)
-        start-ref (mf/use-ref nil)
+         dragging-ref (mf/use-ref false)
+         start-size-ref (mf/use-ref nil)
+         start-ref (mf/use-ref nil)
 
-        on-pointer-down
-        (mf/use-callback
-         (mf/deps @size-state)
-         (fn [event]
-           (dom/capture-pointer event)
-           (mf/set-ref-val! start-size-ref @size-state)
-           (mf/set-ref-val! dragging-ref true)
-           (mf/set-ref-val! start-ref (dom/get-client-position event))
-           (set! last-resize-type resize-type)))
+         on-pointer-down
+         (mf/use-callback
+          (mf/deps @size-state)
+          (fn [event]
+            (dom/capture-pointer event)
+            (mf/set-ref-val! start-size-ref @size-state)
+            (mf/set-ref-val! dragging-ref true)
+            (mf/set-ref-val! start-ref (dom/get-client-position event))
+            (set! last-resize-type resize-type)))
 
-        on-lost-pointer-capture
-        (mf/use-callback
-         (fn [event]
-           (dom/release-pointer event)
-           (mf/set-ref-val! start-size-ref nil)
-           (mf/set-ref-val! dragging-ref false)
-           (mf/set-ref-val! start-ref nil)
-           (set! last-resize-type nil)))
+         on-lost-pointer-capture
+         (mf/use-callback
+          (fn [event]
+            (dom/release-pointer event)
+            (mf/set-ref-val! start-size-ref nil)
+            (mf/set-ref-val! dragging-ref false)
+            (mf/set-ref-val! start-ref nil)
+            (set! last-resize-type nil)))
 
-        on-pointer-move
-        (mf/use-callback
-         (mf/deps min-val max-val negate?)
-         (fn [event]
-           (when (mf/ref-val dragging-ref)
-             (let [start (mf/ref-val start-ref)
-                   pos (dom/get-client-position event)
-                   delta (-> (gpt/to-vec start pos)
-                             (cond-> negate? gpt/negate)
-                             (get axis))
-                   start-size (mf/ref-val start-size-ref)
-                   new-size (-> (+ start-size delta) (max min-val) (min max-val))]
-               (reset! size-state new-size)
-               (swap! storage assoc-in [::saved-resize current-file-id key] new-size)))))
+         on-pointer-move
+         (mf/use-callback
+          (mf/deps min-val max-val negate?)
+          (fn [event]
+            (when (mf/ref-val dragging-ref)
+              (let [start (mf/ref-val start-ref)
+                    pos (dom/get-client-position event)
+                    delta (-> (gpt/to-vec start pos)
+                              (cond-> negate? gpt/negate)
+                              (get axis))
+                    start-size (mf/ref-val start-size-ref)
+                    new-size (-> (+ start-size delta) (max min-val) (min max-val))]
+                (reset! size-state new-size)
+                (swap! storage assoc-in [::saved-resize current-file-id key] new-size)
+                (when on-change-size (on-change-size new-size))))))
 
-        set-size
-        (mf/use-callback
-         (fn [new-size]
-           (let [new-size (mth/clamp new-size min-val max-val)]
-             (reset! size-state new-size)
-             (swap! storage assoc-in [::saved-resize current-file-id key] new-size))))]
-    {:on-pointer-down on-pointer-down
-     :on-lost-pointer-capture on-lost-pointer-capture
-     :on-pointer-move on-pointer-move
-     :parent-ref parent-ref
-     :set-size set-size
-     :size @size-state}))
+         set-size
+         (mf/use-callback
+          (mf/deps on-change-size)
+          (fn [new-size]
+            (let [new-size (mth/clamp new-size min-val max-val)]
+              (reset! size-state new-size)
+              (swap! storage assoc-in [::saved-resize current-file-id key] new-size)
+              (when on-change-size (on-change-size new-size)))))]
+
+     (mf/use-effect
+      (fn []
+        (when on-change-size (on-change-size @size-state))))
+
+     {:on-pointer-down on-pointer-down
+      :on-lost-pointer-capture on-lost-pointer-capture
+      :on-pointer-move on-pointer-move
+      :parent-ref parent-ref
+      :set-size set-size
+      :size @size-state})))
 
 (defn use-resize-observer
   [callback]
