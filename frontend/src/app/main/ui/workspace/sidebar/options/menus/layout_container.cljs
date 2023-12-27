@@ -966,7 +966,7 @@
         (mf/use-fn
          (mf/deps type reorder-track index)
          (fn [drop-position data event]
-           (reorder-track type (:index data) (if (= :top drop-position) (dec index) index) (kbd/mod? event))))
+           (reorder-track type (:index data) (if (= :top drop-position) (dec index) index) (not (kbd/mod? event)))))
 
         pointer-enter
         (mf/use-fn
