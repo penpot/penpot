@@ -590,7 +590,8 @@
 (declare assign-cells)
 
 (def default-track-value
-  {:type :auto})
+  {:type :flex
+   :value 1})
 
 (def grid-cell-defaults
   {:row-span 1
