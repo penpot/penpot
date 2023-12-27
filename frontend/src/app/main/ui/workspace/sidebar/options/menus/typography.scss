@@ -245,8 +245,9 @@
 }
 
 .text-options {
-  position: relative;
   @include flexColumn;
+  position: relative;
+  margin-bottom: $s-8;
   .font-option {
     @include titleTipography;
     @extend .asset-element;

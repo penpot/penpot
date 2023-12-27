@@ -509,17 +509,17 @@
                                                    :title-spacing-empty (not has-content?))}]]
        (when open?
          [:div {:class (stl/css :flex-element-menu)}
-          [:div {:class (stl/css :row)}
-           (when (or is-layout-child? is-absolute?)
-             [:div {:class (stl/css :position-options)}
-              [:& radio-buttons {:selected (if is-absolute? "absolute" "static")
-                                 :on-change on-change-position
-                                 :name "layout-style"
-                                 :wide true}
-               [:& radio-button {:value "static"
-                                 :id :static-position}]
-               [:& radio-button {:value "absolute"
-                                 :id :absolute-position}]]])
+          (when (or is-layout-child? is-absolute?)
+            [:div {:class (stl/css :row)}
+           [:div {:class (stl/css :position-options)}
+            [:& radio-buttons {:selected (if is-absolute? "absolute" "static")
+                               :on-change on-change-position
+                               :name "layout-style"
+                               :wide true}
+             [:& radio-button {:value "static"
+                               :id :static-position}]
+             [:& radio-button {:value "absolute"
+                               :id :absolute-position}]]]
 
            (when is-absolute?
              [:div {:class (stl/css :z-index-wrapper)
@@ -533,7 +533,7 @@
                 :on-focus #(dom/select-target %)
                 :on-change #(on-change-z-index %)
                 :nillable true
-                :value (:layout-item-z-index values)}]])]
+                :value (:layout-item-z-index values)}]])])
 
           [:div {:class (stl/css :row)}
            [:& element-behaviour {:fill? is-layout-child?
@@ -556,73 +556,75 @@
                                  :change-margin-style change-margin-style
                                  :on-margin-change on-margin-change}]])
 
-          [:div {:class (stl/css :row)}
-           [:div {:class (stl/css :advanced-options)}
-            (when (= (:layout-item-h-sizing values) :fill)
-              [:div {:class (stl/css :horizontal-fill)}
-               [:div {:class (stl/css :layout-item-min-w)
-                      :title (tr "workspace.options.layout-item.layout-item-min-w")}
+          (when (or (= (:layout-item-h-sizing values) :fill)
+                    (= (:layout-item-v-sizing values) :fill))
+            [:div {:class (stl/css :row)}
+             [:div {:class (stl/css :advanced-options)}
+              (when (= (:layout-item-h-sizing values) :fill)
+                [:div {:class (stl/css :horizontal-fill)}
+                 [:div {:class (stl/css :layout-item-min-w)
+                        :title (tr "workspace.options.layout-item.layout-item-min-w")}
 
-                [:span {:class (stl/css :icon-text)}
-                 "MIN W"]
-                [:> numeric-input*
-                 {:className (stl/css :numeric-input)
-                  :no-validate true
-                  :min 0
-                  :data-wrap true
-                  :placeholder "--"
-                  :on-focus #(dom/select-target %)
-                  :on-change (partial on-size-change :layout-item-min-w)
-                  :value (get values :layout-item-min-w)
-                  :nillable true}]]
+                  [:span {:class (stl/css :icon-text)}
+                   "MIN W"]
+                  [:> numeric-input*
+                   {:className (stl/css :numeric-input)
+                    :no-validate true
+                    :min 0
+                    :data-wrap true
+                    :placeholder "--"
+                    :on-focus #(dom/select-target %)
+                    :on-change (partial on-size-change :layout-item-min-w)
+                    :value (get values :layout-item-min-w)
+                    :nillable true}]]
 
-               [:div {:class (stl/css :layout-item-max-w)
-                      :title (tr "workspace.options.layout-item.layout-item-max-w")}
-                [:span {:class (stl/css :icon-text)}
-                 "MAX W"]
-                [:> numeric-input*
-                 {:className (stl/css :numeric-input)
-                  :no-validate true
-                  :min 0
-                  :data-wrap true
-                  :placeholder "--"
-                  :on-focus #(dom/select-target %)
-                  :on-change (partial on-size-change :layout-item-max-w)
-                  :value (get values :layout-item-max-w)
-                  :nillable true}]]])
-            (when (= (:layout-item-v-sizing values) :fill)
-              [:div {:class (stl/css :vertical-fill)}
-               [:div {:class (stl/css :layout-item-min-h)
-                      :title (tr "workspace.options.layout-item.layout-item-min-h")}
+                 [:div {:class (stl/css :layout-item-max-w)
+                        :title (tr "workspace.options.layout-item.layout-item-max-w")}
+                  [:span {:class (stl/css :icon-text)}
+                   "MAX W"]
+                  [:> numeric-input*
+                   {:className (stl/css :numeric-input)
+                    :no-validate true
+                    :min 0
+                    :data-wrap true
+                    :placeholder "--"
+                    :on-focus #(dom/select-target %)
+                    :on-change (partial on-size-change :layout-item-max-w)
+                    :value (get values :layout-item-max-w)
+                    :nillable true}]]])
+              (when (= (:layout-item-v-sizing values) :fill)
+                [:div {:class (stl/css :vertical-fill)}
+                 [:div {:class (stl/css :layout-item-min-h)
+                        :title (tr "workspace.options.layout-item.layout-item-min-h")}
 
-                [:span {:class (stl/css :icon-text)}
-                 "MIN H"]
-                [:> numeric-input*
-                 {:className (stl/css :numeric-input)
-                  :no-validate true
-                  :min 0
-                  :data-wrap true
-                  :placeholder "--"
-                  :on-focus #(dom/select-target %)
-                  :on-change (partial on-size-change :layout-item-min-h)
-                  :value (get values :layout-item-min-h)
-                  :nillable true}]]
+                  [:span {:class (stl/css :icon-text)}
+                   "MIN H"]
+                  [:> numeric-input*
+                   {:className (stl/css :numeric-input)
+                    :no-validate true
+                    :min 0
+                    :data-wrap true
+                    :placeholder "--"
+                    :on-focus #(dom/select-target %)
+                    :on-change (partial on-size-change :layout-item-min-h)
+                    :value (get values :layout-item-min-h)
+                    :nillable true}]]
 
-               [:div {:class (stl/css :layout-item-max-h)
-                      :title (tr "workspace.options.layout-item.layout-item-max-h")}
+                 [:div {:class (stl/css :layout-item-max-h)
+                        :title (tr "workspace.options.layout-item.layout-item-max-h")}
 
-                [:span {:class (stl/css :icon-text)}
-                 "MAX H"]
-                [:> numeric-input*
-                 {:className (stl/css :numeric-input)
-                  :no-validate true
-                  :min 0
-                  :data-wrap true
-                  :placeholder "--"
-                  :on-focus #(dom/select-target %)
-                  :on-change (partial on-size-change :layout-item-max-h)
-                  :value (get values :layout-item-max-h)
-                  :nillable true}]]])]]])]
+                  [:span {:class (stl/css :icon-text)}
+                   "MAX H"]
+                  [:> numeric-input*
+                   {:className (stl/css :numeric-input)
+                    :no-validate true
+                    :min 0
+                    :data-wrap true
+                    :placeholder "--"
+                    :on-focus #(dom/select-target %)
+                    :on-change (partial on-size-change :layout-item-max-h)
+                    :value (get values :layout-item-max-h)
+                    :nillable true}]]])]])])]
 
 
       [:div.element-set

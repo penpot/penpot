@@ -132,7 +132,7 @@
     "#faa6b7" ; salmon
     "#f9b489" ; orange
     "#fdcd79" ; soft-orange
-    "#dee563" ; yellow
+    "#dee563" ; yellow -> default presence color
     "#b1e96f" ; yellow-green
     })
 

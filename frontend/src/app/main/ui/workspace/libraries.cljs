@@ -289,7 +289,7 @@
                       :type "button"
                       :data-library-id (dm/str id)
                       :on-click unlink-library}
-             i/delete-refactor]])]]
+             i/detach-refactor]])]]
 
        [:div {:class (stl/css :section)}
         [:& title-bar {:collapsable? false

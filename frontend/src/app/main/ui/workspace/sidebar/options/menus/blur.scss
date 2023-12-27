@@ -7,9 +7,11 @@
 @import "refactor/common-refactor.scss";
 
 .element-set {
+  margin: 0;
   .element-title {
     .title-spacing-blur {
-      padding-left: $s-12;
+      padding-left: $s-2;
+      margin: 0;
     }
     .add-blur {
       @extend .button-tertiary;
@@ -22,7 +24,7 @@
   }
   .element-set-content {
     @include flexColumn;
-    margin-bottom: $s-4;
+    margin-bottom: $s-8;
     .first-row {
       @include flexRow;
       width: 100%;

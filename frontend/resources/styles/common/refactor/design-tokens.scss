@@ -14,6 +14,7 @@
   --scrollbar-background-color: var(--color-foreground-secondary);
   --panel-background-color: var(--color-background-primary);
   --panel-title-background-color: var(--color-background-secondary);
+  --presence-color: var(--default-presence-color);
 
   // BUTTONS
   --button-foreground-hover: var(--color-accent-primary);
@@ -297,6 +298,9 @@
   --tag-background-color: var(--color-accent-primary);
 
   --link-foreground-color: var(--color-accent-primary);
+
+  --resize-area-background-color: var(--color-background-primary);
+  --resize-area-border-color: var(--color-background-quaternary);
 
   // VIEWER
   --viewer-background-color: var(--color-background-secondary);

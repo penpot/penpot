@@ -6,8 +6,10 @@
 
 @import "refactor/common-refactor.scss";
 .element-set {
+  margin: 0;
   .element-content {
     @include flexColumn;
+    margin-bottom: $s-8;
     .component-wrapper {
       display: flex;
       margin: 0 $s-4 0 $s-8;

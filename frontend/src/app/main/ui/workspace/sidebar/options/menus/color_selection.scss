@@ -7,9 +7,11 @@
 @import "refactor/common-refactor.scss";
 
 .element-set {
+  margin: 0;
   .element-title {
     .title-spacing-selected-colors {
-      padding-left: $s-12;
+      padding-left: $s-2;
+      margin: 0;
     }
     .add-fill {
       @extend .button-tertiary;
@@ -22,6 +24,7 @@
   }
   .element-content {
     @include flexColumn;
+    margin-bottom: $s-8;
     .selected-color-group {
       @include flexColumn;
       .more-colors-btn {

@@ -22,7 +22,7 @@
       padding: $s-8;
       border: $s-4 solid transparent;
       border-radius: $br-8;
-      background-color: var(--color-foreground-secondary);
+      background-color: var(--assets-component-background-color);
       overflow: hidden;
       cursor: pointer;
       img {
@@ -44,7 +44,6 @@
         bottom: 0;
         width: 100%;
         padding: $s-2;
-
         &.editing {
           display: flex;
           align-items: center;

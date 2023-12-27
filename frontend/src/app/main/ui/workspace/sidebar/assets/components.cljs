@@ -163,10 +163,7 @@
        (when (and (some? root-shape)
                   (some? container))
          [:*
-          [:& cmm/component-item-thumbnail {:file-id file-id
-                                        :root-shape root-shape
-                                        :component component
-                                        :container container}]
+
           (let [renaming? (= renaming (:id component))]
             [:*
              [:& editable-label
@@ -183,7 +180,11 @@
                :on-cancel cancel-rename}]
 
              (when ^boolean dragging?
-               [:div {:class (dom/classnames (css :dragging) true)}])])])]
+               [:div {:class (dom/classnames (css :dragging) true)}])])
+          [:& cmm/component-item-thumbnail {:file-id file-id
+                                            :root-shape root-shape
+                                            :component component
+                                            :container container}]])]
 
       [:div {:ref item-ref
              :class (dom/classnames

@@ -173,26 +173,23 @@
         nil))
     (if new-css-system
       [:div  {:class (stl/css :flow-element)}
-       [:button {:class (stl/css :start-flow-btn)
-                 :on-click start-flow}
-        [:span {:class (stl/css :button-icon)}
-         i/play-refactor]]
+       [:span {:class (stl/css :flow-info)}
+        [:span {:class (stl/css :flow-name-wrapper)}
+         [:button {:class (stl/css :start-flow-btn)
+                   :on-click start-flow}
+          [:span {:class (stl/css :button-icon)}
+           i/play-refactor]]
+         [:span {:class (stl/css :flow-input-wrapper)}
+          [:input
+           {:class (stl/css :flow-input)
+            :type "text"
+            :ref name-ref
+            :on-blur accept-edit
+            :on-key-down on-key-down
+            :default-value (:name flow "")}]]]]
 
-       (if @editing?
-         [:input
-          {:class (stl/css :input-text)
-           :type "text"
-           :ref name-ref
-           :on-blur accept-edit
-           :on-key-down on-key-down
-           :auto-focus true
-           :default-value (:name flow "")}]
-         [:span
-          {:class (stl/css :flow-name-label)
-           :on-double-click rename-flow}
-          (:name flow)])
-       [:div {:class (stl/css :remove-flow-btn)
-              :on-click remove-flow}
+       [:button {:class (stl/css :remove-flow-btn)
+                 :on-click remove-flow}
         i/remove-refactor]]
 
       [:div.flow-element
