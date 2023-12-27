@@ -562,13 +562,6 @@
 (mf/defc shape-custom-strokes
   {::mf/wrap-props false}
   [props]
-  (let [children  (unchecked-get props "children")
-        shape     (unchecked-get props "shape")
-        position  (unchecked-get props "position")
-        render-id (unchecked-get props "render-id")
-        props     #js {:shape shape
-                       :position position
-                       :render-id render-id}]
-    [:*
-     [:> shape-fills props children]
-     [:> shape-strokes props children]]))
+  [:*
+   [:> shape-fills props]
+   [:> shape-strokes props]])
