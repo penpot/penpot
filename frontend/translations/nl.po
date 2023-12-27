@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-12-26 13:11+0000\n"
+"PO-Revision-Date: 2023-12-27 10:56+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -97,7 +97,7 @@ msgstr "Typ een nieuw wachtwoord"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
-msgstr "De hersteltoken is ongeldig."
+msgstr "De herstelbewijsstuk is ongeldig."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.password-changed-successfully"
@@ -284,27 +284,28 @@ msgstr "Rondleiding door de interface"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.copied-success"
-msgstr "Token gekopieerd"
+msgstr "Toegangsbewijs gekopieerd"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.create"
-msgstr "Nieuw token aanmaken"
+msgstr "Nieuw toegangsbewijs aanmaken"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.create.success"
-msgstr "Toegangstoken is succesvol aangemaakt."
+msgstr "Toegangsbewijs is succesvol aangemaakt."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Klik op de knop \"Nieuw token aanmaken\" om er een aan te maken."
+msgstr ""
+"Klik op de knop \"Nieuw toegangsbewijs aanmaken\" om er een aan te maken."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
-msgstr "Je hebt nog geen tokens."
+msgstr "Je hebt nog geen toegangsbewijzen."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.errors-required-name"
-msgstr "Naam is verplicht"
+msgstr "De naam is verplicht"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -340,22 +341,22 @@ msgstr "Geen verloopdatum"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.personal"
-msgstr "Persoonlijke toegangstokens"
+msgstr "Persoonlijke toegangsbewijzen"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
-"Persoonlijke toegangstokens functioneren als alternatief voor ons "
-"login/wachtwoord-authenticatiesysteem en kunnen worden gebruikt om een "
-"applicatie toegang te geven tot de interne Penpot API"
+"Persoonlijke toegangsbewijzen functioneren als alternatief voor ons login/"
+"wachtwoord-authenticatiesysteem en kunnen worden gebruikt om een applicatie "
+"toegang te geven tot de interne Penpot API"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-expire"
-msgstr "De token verloopt op %s"
+msgstr "Het toegangsbewijs verloopt op %s"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "De token heeft geen verloopdatum"
+msgstr "Het toegangsbewijs heeft geen verloopdatum"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -973,7 +974,7 @@ msgstr "Er is een onverwachte fout opgetreden."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
-msgstr "Onbekende token"
+msgstr "Onbekend bewijsstuk"
 
 msgid "errors.webhooks.connection"
 msgstr "Verbindingsfout, URL niet bereikbaar"
@@ -1280,7 +1281,7 @@ msgstr "Accepteren"
 
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.access-tokens"
-msgstr "Toegangstokens"
+msgstr "Toegangsbewijzen"
 
 msgid "labels.active"
 msgstr "Actief"
@@ -1743,7 +1744,7 @@ msgstr "Je e-mailadres wijzigen"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.create-access-token.copy-token"
-msgstr "Token kopiëren"
+msgstr "Toegangsbewijs kopiëren"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.create-access-token.expiration-date.label"
@@ -1755,15 +1756,15 @@ msgstr "Naam"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.create-access-token.name.placeholder"
-msgstr "De naam helpt je om te onthouden waar de token voor is"
+msgstr "De naam helpt je te onthouden waar het toegangsbewijs voor is"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.create-access-token.submit-label"
-msgstr "Token aanmaken"
+msgstr "Toegangsbewijs aanmaken"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.create-access-token.title"
-msgstr "Toegangstoken genereren"
+msgstr "Toegangsbewijs genereren"
 
 msgid "modals.create-webhook.submit-label"
 msgstr "Webhook aanmaken"
@@ -1779,15 +1780,15 @@ msgstr "https://voorbeeld.nl/postreceive"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.delete-acces-token.accept"
-msgstr "Token verwijderen"
+msgstr "Toegangsbewijs verwijderen"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.delete-acces-token.message"
-msgstr "Weet je zeker dat je deze token wilt verwijderen?"
+msgstr "Weet je zeker dat je dit toegangsbewijs wilt verwijderen?"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.delete-acces-token.title"
-msgstr "Token verwijderen"
+msgstr "Toegangsbewijs verwijderen"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -3013,7 +3014,7 @@ msgstr "Penpot - Ontwerpvrijheid voor teams"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "title.settings.access-tokens"
-msgstr "Profiel - Toegangstokens"
+msgstr "Profiel - Toegangsbewijzen"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "title.settings.feedback"
