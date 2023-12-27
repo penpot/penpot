@@ -539,7 +539,7 @@
                           (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
 
               (->> move-stream
-                   (rx/with-latest-from array/conj ms/mouse-position-alt)
+                   (rx/with-latest-from ms/mouse-position-alt)
                    (rx/filter (fn [[_ alt?]] alt?))
                    (rx/take 1)
                    (rx/mapcat
