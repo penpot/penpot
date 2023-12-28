@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.config :as cfg]
    [app.main.refs :as refs]
-   [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.timers :as tm]
    [rumext.v2 :as mf]))
@@ -32,8 +31,7 @@
 (mf/defc active-sessions
   {::mf/wrap [mf/memo]}
   []
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        users          (mf/deref refs/users)
+  (let [users          (mf/deref refs/users)
         presence       (mf/deref refs/workspace-presence)
         user-ids       (vals presence)
         num-users      (count user-ids)
@@ -48,39 +46,30 @@
             #(dom/focus! (dom/get-element "users-close")))))
         close-users-widget (mf/use-fn #(reset! open* false))]
 
-    (if new-css-system
-      [:*
-       (when (and (> num-users 2) open?)
-         [:button
-          {:id "users-close"
-           :class (stl/css :active-users-opened)
-           :on-click close-users-widget
-           :on-blur close-users-widget}
-          [:ul {:class (stl/css :active-users-list)}
-           (for [session user-ids]
-             [:& session-widget
-              {:session session
-               :index 0
-               :profile (get users (:profile-id session))
-               :key (:id session)}])]])
-
-       [:button {:class (stl/css-case :active-users true)
-                 :on-click open-users-widget}
-
+    [:*
+     (when (and (> num-users 2) open?)
+       [:button {:id "users-close"
+                 :class (stl/css :active-users-opened)
+                 :on-click close-users-widget
+                 :on-blur close-users-widget}
         [:ul {:class (stl/css :active-users-list)}
-         (when (> num-users 2) [:span {:class (stl/css :users-num)} (dm/str "+" (- num-users 2))])
-         (for [[index session] (d/enumerate first-users)]
+         (for [session user-ids]
            [:& session-widget
             {:session session
-             :index index
+             :index 0
              :profile (get users (:profile-id session))
-             :key (:id session)}])]]]
+             :key (:id session)}])]])
 
-      [:ul.active-users
-       (for [session (vals presence)]
+     [:button {:class (stl/css-case :active-users true)
+               :on-click open-users-widget}
+
+      [:ul {:class (stl/css :active-users-list)}
+       (when (> num-users 2) [:span {:class (stl/css :users-num)} (dm/str "+" (- num-users 2))])
+       (for [[index session] (d/enumerate first-users)]
          [:& session-widget
           {:session session
+           :index index
            :profile (get users (:profile-id session))
-           :key (:id session)}])])))
+           :key (:id session)}])]]]))
 
 

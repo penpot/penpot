@@ -319,7 +319,8 @@
 
      (when-not ^boolean read-only?
        [:*
-        [:> dropdown-menu-item* {:class (stl/css :submenu-item)         :on-click    toggle-color-palette
+        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                 :on-click    toggle-color-palette
                                  :on-key-down (fn [event]
                                                 (when (kbd/enter? event)
                                                   (toggle-color-palette event)))
@@ -332,7 +333,8 @@
           (for [sc (scd/split-sc (sc/get-tooltip :toggle-colorpalette))]
             [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
-        [:> dropdown-menu-item* {:class (stl/css :submenu-item)         :on-click    toggle-text-palette
+        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                 :on-click    toggle-text-palette
                                  :on-key-down (fn [event]
                                                 (when (kbd/enter? event)
                                                   (toggle-text-palette event)))
