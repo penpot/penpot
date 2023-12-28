@@ -89,6 +89,7 @@
            (reset! editing-text* false)
            (when on-blur
              (on-blur event))))
+
         parse-color
         (mf/use-fn
          (fn [color]
@@ -161,7 +162,6 @@
                (on-open (merge uc/empty-color color)))
 
              (modal/show! :colorpicker props))))
-
 
         prev-color (h/use-previous color)
 

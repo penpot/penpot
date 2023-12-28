@@ -16,7 +16,7 @@
 
   .tab-spacing {
     margin-right: $s-12;
-    margin-bottom: $s-16;
+    margin-bottom: $s-8;
   }
 
   .content-class {
@@ -31,6 +31,6 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    gap: $s-16;
+    gap: $s-8;
   }
 }

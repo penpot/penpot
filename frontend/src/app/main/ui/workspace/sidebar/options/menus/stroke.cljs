@@ -219,7 +219,8 @@
          [:button {:class (stl/css :add-stroke)
                    :on-click on-add-stroke} i/add-refactor]]]
        (when open?
-         [:div {:class (stl/css :element-content)}
+         [:div {:class (stl/css-case :element-content true
+                                     :empty-content (not has-strokes?))}
           (cond
             (= :multiple strokes)
             [:div {:class (stl/css :element-set-options-group)}

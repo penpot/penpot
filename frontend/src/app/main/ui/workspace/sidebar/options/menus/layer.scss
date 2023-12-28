@@ -7,6 +7,7 @@
 @import "refactor/common-refactor.scss";
 
 .element-set {
+  margin-bottom: $s-8;
   .element-set-content {
     display: flex;
     height: $s-32;

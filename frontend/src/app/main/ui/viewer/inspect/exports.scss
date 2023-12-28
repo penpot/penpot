@@ -8,10 +8,12 @@
 
 .element-set {
   padding-bottom: $s-16;
-
+  margin: 0;
   .element-title {
+    margin: 0;
     .title-spacing-export-viewer {
       @extend .attr-title;
+      margin: 0;
     }
     .add-export {
       @extend .button-tertiary;

@@ -230,27 +230,90 @@
 }
 
 .flow-element {
-  @extend .asset-element;
-  padding: 0;
-  gap: $s-4;
-  .start-flow-btn {
-    @extend .button-tertiary;
+  @include flexRow;
+  .flow-info {
+    display: flex;
+    align-items: center;
+    gap: $s-2;
+    border-radius: $s-8;
+    background-color: var(--input-details-color);
     height: $s-32;
-    width: $s-28;
-    svg {
-      @extend .button-icon;
+    width: 100%;
+    flex-grow: 1;
+    .flow-name-wrapper {
+      @include titleTipography;
+      @include focusInput;
+      display: flex;
+      align-items: center;
+      gap: $s-4;
+      flex-grow: 1;
+      height: $s-32;
+      width: 100%;
+      border-radius: $br-8;
+      padding: 0;
+      margin-right: 0;
+      background-color: var(--input-background-color);
+      border: $s-1 solid var(--input-background-color);
+      color: var(--input-foreground-color);
+      .start-flow-btn {
+        @include buttonStyle;
+        height: $s-32;
+        width: $s-28;
+        padding: 0 $s-2 0 $s-8;
+        border-radius: $br-8 0 0 $br-8;
+        background-color: transparent;
+        svg {
+          @extend .button-icon;
+          stroke: var(--icon-foreground);
+          &:hover {
+            stroke: var(--input-foreground-color-active);
+          }
+        }
+      }
+      .flow-input {
+        @extend .input-base;
+        background-color: transparent;
+        height: $s-28;
+      }
+      .flow-input-wrapper {
+        @include titleTipography;
+        display: flex;
+        align-items: center;
+        height: $s-28;
+        padding: 0;
+        width: 100%;
+        margin: 0;
+        flex-grow: 1;
+        background-color: transparent;
+        color: var(--input-foreground-color);
+        border-radius: $br-8;
+      }
+      &:hover {
+        background-color: var(--input-background-color-hover);
+        border: $s-1 solid var(--input-background-color-hover);
+        &:active {
+          background-color: var(--input-background-color-active);
+          .flow-input-wrapper {
+            background-color: var(--input-background-color-active);
+          }
+        }
+      }
+      &:focus,
+      &:focus-within {
+        background-color: var(--input-background-color-active);
+      }
+
+      &.editing {
+        background-color: var(--input-background-color-active);
+      }
     }
   }
-  .input-text {
-    @extend .input-base;
-  }
-  .flow-name-label {
-    flex-grow: 1;
-  }
+
   .remove-flow-btn {
     @extend .button-tertiary;
     height: $s-32;
     width: $s-28;
+    min-width: $s-28;
     svg {
       @extend .button-icon;
     }

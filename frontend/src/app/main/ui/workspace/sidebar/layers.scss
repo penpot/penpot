@@ -18,10 +18,8 @@
     justify-content: space-between;
     height: $s-32;
     min-height: $s-32;
-    margin-top: $s-2;
-    margin-bottom: $s-4;
+    margin: $s-4 0 $s-4 $s-8;
     padding-right: $s-8;
-    margin-left: $s-8;
     .page-name {
       @include tabTitleTipography;
       padding: 0 $s-12;
@@ -30,7 +28,7 @@
     .icon-search {
       @extend .button-tertiary;
       height: $s-32;
-      width: calc($s-24 + $s-4);
+      width: $s-28;
       border-radius: $br-8;
       margin-right: $s-8;
       padding: 0;
@@ -48,7 +46,7 @@
         height: $s-32;
         width: $s-32;
         margin: 0;
-        border: 1px solid var(--color-background-tertiary);
+        border: $s-1 solid var(--color-background-tertiary);
         border-radius: $br-8 $br-2 $br-2 $br-8;
         background-color: var(--color-background-tertiary);
         svg {
@@ -57,7 +55,7 @@
           stroke: var(--icon-foreground);
         }
         &:focus {
-          border: 1px solid var(--input-border-color-focus);
+          border: $s-1 solid var(--input-border-color-focus);
           outline: 0;
           background-color: var(--input-background-color-active);
           color: var(--input-foreground-color-active);
@@ -66,7 +64,7 @@
           }
         }
         &:hover {
-          border: 1px solid var(--input-background-color-hover);
+          border: $s-1 solid var(--input-background-color-hover);
           background-color: var(--input-background-color-hover);
           svg {
             background-color: var(--input-background-color-hover);
@@ -122,7 +120,7 @@
           @include titleTipography;
           height: $s-20;
           padding: $s-4 $s-6;
-          border: 1px solid var(--tag-background-color);
+          border: $s-1 solid var(--tag-background-color);
           border-radius: $br-6;
           color: var(--tag-background-color);
         }
@@ -235,7 +233,7 @@
     }
   }
   .tool-window-content {
-    --calculated-height: calc(128px + var(--height, 200px));
+    --calculated-height: calc($s-128 + var(--height, $s-200));
     display: flex;
     flex-direction: column;
     height: calc(100vh - var(--calculated-height));

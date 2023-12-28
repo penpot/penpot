@@ -7,9 +7,11 @@
 @import "refactor/common-refactor.scss";
 
 .element-set {
+  margin: 0;
   .element-title {
     .title-spacing-shadow {
-      padding-left: $s-12;
+      margin: 0;
+      padding-left: $s-2;
     }
     .add-shadow {
       @extend .button-tertiary;
@@ -21,6 +23,7 @@
     }
   }
   .element-set-content {
+    margin-top: $s-4;
     @include flexColumn;
     .multiple-shadows {
       @include flexRow;

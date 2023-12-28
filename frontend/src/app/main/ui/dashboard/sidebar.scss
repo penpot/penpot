@@ -220,6 +220,7 @@
       .team-icon {
         &.new-team {
           background-color: $da-primary;
+          color: $db-primary;
           svg {
             fill: $db-secondary;
           }

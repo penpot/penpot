@@ -7,9 +7,12 @@
 @import "refactor/common-refactor.scss";
 
 .element-set {
+  margin: 0;
   .element-title {
+    margin: 0;
     .title-spacing-stroke {
-      padding-left: $s-12;
+      padding-left: $s-2;
+      margin: 0;
     }
     .add-stroke {
       @extend .button-tertiary;
@@ -25,6 +28,7 @@
     display: flex;
     flex-direction: column;
     gap: $s-12;
+    margin: $s-4 0 $s-8 0;
     .element-set-options-group {
       @include flexRow;
       .group-label {
@@ -38,6 +42,9 @@
           @extend .button-icon;
         }
       }
+    }
+    &.empty-content {
+      margin: 0;
     }
   }
 }
