@@ -9,7 +9,7 @@
 .palette-menu {
   position: absolute;
   left: auto;
-  bottom: $s-0;
+  bottom: var(--height);
   max-width: $s-480;
   padding: $s-4;
   margin: 0 0 $s-4 0;
@@ -52,8 +52,8 @@
           margin-left: $s-4;
           @include flexCenter;
           svg {
-            @include flexCenter;
             @extend .button-icon-small;
+            @include flexCenter;
             stroke: var(--icon-foreground);
           }
         }
