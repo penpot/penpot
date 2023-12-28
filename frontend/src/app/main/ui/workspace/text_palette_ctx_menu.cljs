@@ -5,13 +5,12 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.text-palette-ctx-menu
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [app.main.refs :as refs]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
-   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -22,35 +21,35 @@
         shared-libs   (mf/deref refs/workspace-libraries)]
     [:& dropdown {:show show-menu?
                   :on-close close-menu}
-     [:ul {:class (dom/classnames (css :workspace-context-menu) true)}
+     [:ul {:class (stl/css :workspace-context-menu) }
       (for [[idx cur-library] (map-indexed vector (vals shared-libs))]
         (let [typographies (-> cur-library (get-in [:data :typographies]) vals)]
           [:li
-           {:class (dom/classnames (css :palette-library) true
-                                   (css :selected) (= selected (:id cur-library)))
+           {:class (stl/css-case :palette-library true
+                                 :selected (= selected (:id cur-library)))
             :key (str "library-" idx)
             :on-click #(on-select-palette cur-library)}
            [:div
-            {:class (dom/classnames (css :library-name) true)}
-            [:span {:class (css :lib-name)}
+            {:class (stl/css :library-name)}
+            [:span {:class (stl/css :lib-name)}
              (dm/str (:name cur-library))]
-            [:span {:class (css :lib-num)}
+            [:span {:class (stl/css :lib-num)}
              (dm/str "(" (count typographies) ")")]]
 
            (when (= selected (:id cur-library))
-             [:span {:class (dom/classnames (css :icon-wrapper) true)}
+             [:span {:class (stl/css :icon-wrapper)}
               i/tick-refactor])]))
 
       [:li
-       {:class (dom/classnames (css :file-library) true
-                               (css :selected) (= selected :file))
+       {:class (stl/css-case :file-library true
+                             :selected (= selected :file))
         :on-click #(on-select-palette :file)}
 
-       [:div {:class (dom/classnames (css :library-name) true)}
-        [:span {:class (css :lib-name)}
+       [:div {:class (stl/css :library-name)}
+        [:span {:class (stl/css :lib-name)}
          (tr "workspace.libraries.colors.file-library")]
-        [:span {:class (css :lib-num)}
+        [:span {:class (stl/css :lib-num)}
          (dm/str "(" (count file-typographies) ")")]]
        (when (= selected :file)
-         [:span {:class (dom/classnames (css :icon-wrapper) true)}
+         [:span {:class (stl/css :icon-wrapper)}
           i/tick-refactor])]]]))

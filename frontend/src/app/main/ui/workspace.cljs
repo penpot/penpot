@@ -20,7 +20,6 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.hooks.resize :refer [use-resize-observer]]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.colorpalette :refer [colorpalette]]
    [app.main.ui.workspace.colorpicker]
    [app.main.ui.workspace.context-menu :refer [context-menu]]
    [app.main.ui.workspace.coordinates :as coordinates]
@@ -31,7 +30,6 @@
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
-   [app.main.ui.workspace.textpalette :refer [textpalette]]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -69,7 +67,6 @@
         colorpalette?  (:colorpalette layout)
         textpalette?   (:textpalette layout)
         hide-ui?       (:hide-ui layout)
-        new-css-system (mf/use-ctx ctx/new-css-system)
 
         on-resize
         (mf/use-fn
@@ -85,16 +82,9 @@
 
         node-ref (use-resize-observer on-resize)]
     [:*
-     (if new-css-system
-       (when (not hide-ui?)
-         [:& palette {:layout layout
-                      :on-change-palette-size on-resize-palette}])
-       [:*
-        (when (and colorpalette? (not hide-ui?))
-          [:& colorpalette])
-
-        (when (and textpalette? (not hide-ui?))
-          [:& textpalette])])
+     (when (not hide-ui?)
+       [:& palette {:layout layout
+                    :on-change-palette-size on-resize-palette}])
 
      [:section.workspace-content
       {:key (dm/str "workspace-" page-id)

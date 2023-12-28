@@ -9,7 +9,7 @@
 .workspace-context-menu {
   position: absolute;
   left: auto;
-  bottom: $s-0;
+  bottom: var(--height);
   max-width: $s-480;
   padding: $s-4;
   margin: 0 0 $s-4 0;
