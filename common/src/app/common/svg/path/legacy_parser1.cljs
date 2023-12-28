@@ -4,83 +4,59 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.svg.path.legacy
-  "The first svg path parser implementation in pure clojure, used as reference impl
-  and for tests."
+(ns app.common.svg.path.legacy-parser1
+  "The first SVG Path parser implementation.
+
+  Written in a mix of CLJS and JS code and used in production until
+  1.19, used mainly for tests."
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as upg]
-   [app.common.math :as mth]
    [app.common.svg :as csvg]
+   [app.common.svg.path.arc-to-bezier :as a2b]
    [app.common.svg.path.command :as upc]
    [cuerdas.core :as str]))
 
-
 (def commands-regex #"(?i)[mzlhvcsqta][^mzlhvcsqta]*")
-(def regex #"[+-]?(\d+(\.\d+)?|\.\d+)(e[+-]?\d+)?")
 
-(defn extract-params
-  [data pattern]
-  (loop [result  []
-         ptt-idx 0
+;; Matches numbers for path values allows values like... -.01, 10, +12.22
+;; 0 and 1 are special because can refer to flags
+(def num-regex #"[+-]?(\d+(\.\d+)?|\.\d+)(e[+-]?\d+)?")
+
+(def flag-regex #"[01]")
+
+(defn extract-params [cmd-str extract-commands]
+  (loop [result []
+         extract-idx 0
          current {}
-         entries (re-seq regex data)
-         match   (ffirst entries)]
+         remain (-> cmd-str (subs 1) (str/trim))]
 
-    (if match
-      (let [[attr-name attr-type] (nth pattern ptt-idx)
-            ptt-idx (inc ptt-idx)
-            ptt-cnt (count pattern)
+    (let [[param type] (nth extract-commands extract-idx)
+          regex (case type
+                  :flag     flag-regex
+                  #_:number num-regex)
+          match (re-find regex remain)]
 
-            value   (if (= attr-type :flag)
-                      (if (= 1 (count match))
-                        (d/parse-integer match)
-                        (d/parse-integer (subs match 0 1)))
-                      (-> match csvg/fix-dot-number d/parse-double))
-
-            current (assoc current attr-name value)
-
-            result  (if (>= ptt-idx ptt-cnt)
-                      (conj result current)
-                      result)
-
-            current (if (>= ptt-idx ptt-cnt)
-                      {}
-                      current)
-
-            match   (if (and (= attr-type :flag)
-                             (> (count match) 1))
-                      (subs match 1)
-                      nil)
-
-            entries (if match
-                      entries
-                      (rest entries))
-
-            match   (if match
-                      match
-                      (ffirst entries))
-
-            ptt-idx (if (>= ptt-idx ptt-cnt)
-                      0
-                      ptt-idx)]
-
-        (recur result
-               ptt-idx
-               current
-               entries
-               match))
-
-      (if (seq current)
-        (conj result current)
-        result))))
+      (if match
+        (let [value (-> match first csvg/fix-dot-number d/read-string)
+              remain (str/replace-first remain regex "")
+              current (assoc current param value)
+              extract-idx (inc extract-idx)
+              [result current extract-idx]
+              (if (>=  extract-idx (count extract-commands))
+                [(conj result current) {} 0]
+                [result current extract-idx])]
+          (recur result
+                 extract-idx
+                 current
+                 remain))
+        (cond-> result
+          (seq current) (conj current))))))
 
 ;; Path specification
 ;; https://www.w3.org/TR/SVG11/paths.html
-(defmulti parse-command
-  (fn [cmd]
-    (str/upper (subs cmd 0 1))))
+(defmulti parse-command (comp str/upper first))
 
 (defmethod parse-command "M" [cmd]
   (let [relative (str/starts-with? cmd "m")
@@ -153,8 +129,8 @@
   (let [relative (str/starts-with? cmd "q")
         param-list (extract-params cmd [[:cx :number]
                                         [:cy :number]
-                                        [:x  :number]
-                                        [:y  :number]])]
+                                        [:x   :number]
+                                        [:y   :number]])]
     (for [params param-list]
       {:command :quadratic-bezier-curve-to
        :relative relative
@@ -170,7 +146,7 @@
        :params params})))
 
 (defmethod parse-command "A" [cmd]
-  (let [relative   (str/starts-with? cmd "a")
+  (let [relative (str/starts-with? cmd "a")
         param-list (extract-params cmd [[:rx :number]
                                         [:ry :number]
                                         [:x-axis-rotation :number]
@@ -206,129 +182,11 @@
      :c2x (:x cp2)
      :c2y (:y cp2)}))
 
-(defn unit-vector-angle
-  [ux uy vx vy]
-  (let [sign (if (> 0 (- (* ux vy) (* uy vx))) -1.0 1.0)
-        dot  (+ (* ux vx) (* uy vy))
-        dot  (cond
-               (> dot 1.0)   1.0
-               (< dot -1.0) -1.0
-               :else         dot)]
-    (* sign (mth/acos dot))))
-
-(defn- get-arc-center [x1 y1 x2 y2 fa fs rx ry sin-phi cos-phi]
-  (let [x1p      (+ (* cos-phi (/ (- x1 x2) 2)) (* sin-phi (/ (- y1 y2) 2)))
-        y1p      (+ (* (- sin-phi) (/ (- x1 x2) 2)) (* cos-phi (/ (- y1 y2) 2)))
-
-
-        rx-sq    (* rx rx)
-        ry-sq    (* ry ry)
-        x1p-sq   (* x1p x1p)
-        y1p-sq   (* y1p y1p)
-        radicant (- (* rx-sq ry-sq)
-                    (* rx-sq y1p-sq)
-                    (* ry-sq x1p-sq))
-
-
-
-        radicant (if (< radicant 0) 0 radicant)
-        radicant (/ radicant (+ (* rx-sq y1p-sq) (* ry-sq x1p-sq)))
-
-        radicant (* (mth/sqrt radicant) (if (= fa fs) -1 1))
-
-        cxp      (* radicant (/ rx ry) y1p)
-        cyp      (* radicant (/ (- ry) rx) x1p)
-        cx       (+ (- (* cos-phi cxp)
-                       (* sin-phi cyp))
-                    (/ (+ x1 x2) 2))
-        cy       (+ (* sin-phi cxp)
-                    (* cos-phi cyp)
-                    (/ (+ y1 y2) 2))
-
-        v1x      (/ (- x1p cxp) rx)
-        v1y      (/ (- y1p cyp) ry)
-        v2x      (/ (- (- x1p) cxp) rx)
-        v2y      (/ (- (- y1p) cyp) ry)
-        theta1   (unit-vector-angle 1 0 v1x v1y)
-
-        dtheta (unit-vector-angle v1x v1y v2x v2y)
-        dtheta (if (and (= fs 0) (> dtheta 0)) (- dtheta (* mth/PI 2)) dtheta)
-        dtheta (if (and (= fs 1) (< dtheta 0)) (+ dtheta (* mth/PI 2)) dtheta)
-        ]
-
-    [cx cy theta1 dtheta]))
-
-(defn approximate-unit-arc
-  [theta1 dtheta]
-  ;; (js/console.log "LEGACY approximate-unit-arc" theta1 dtheta)
-  (let [alpha (* (/ 4 3) (mth/tan (/ dtheta 4)))
-        x1 (mth/cos theta1)
-        y1 (mth/sin theta1)
-        x2 (mth/cos (+ theta1 dtheta))
-        y2 (mth/sin (+ theta1 dtheta))]
-    [x1 y1 (- x1 (* y1 alpha)) (+ y1 (* x1 alpha)) (+ x2 (* y2 alpha)) (- y2 (* x2 alpha)) x2 y2]))
-
-(defn- process-curve
-  [curve cc rx ry sin-phi cos-phi]
-  (reduce (fn [curve i]
-            (let [x  (nth curve i)
-                  y  (nth curve (inc i))
-                  x  (* x rx)
-                  y  (* y ry)
-                  xp (- (* cos-phi x) (* sin-phi y))
-                  yp (+ (* sin-phi x) (* cos-phi y))]
-              (-> curve
-                  (assoc i (+ xp (nth cc 0)))
-                  (assoc (inc i) (+ yp (nth cc 1))))))
-          curve
-          (range 0 (count curve) 2)))
-
 (defn arc->beziers*
-  [x1 y1 x2 y2 fa fs rx ry phi]
-  (let [tau      (* mth/PI 2)
-        phi-tau  (/ (* phi tau) 360)
+  [from-x from-y x y large-arc-flag sweep-flag rx ry x-axis-rotation]
+  (a2b/calculateBeziers from-x from-y x y large-arc-flag sweep-flag rx ry x-axis-rotation))
 
-        sin-phi  (mth/sin phi-tau)
-        cos-phi  (mth/cos phi-tau)
-
-        x1p      (+ (/ (* cos-phi (- x1 x2)) 2)
-                    (/ (* sin-phi (- y1 y2)) 2))
-        y1p      (+ (/ (* (- sin-phi) (- x1 x2)) 2)
-                    (/ (* cos-phi (- y1 y2)) 2))]
-
-    (if (or (zero? x1p)
-            (zero? y1p)
-            (zero? rx)
-            (zero? ry))
-      []
-      (let [
-            rx       (mth/abs rx)
-            ry       (mth/abs ry)
-            lambda   (+ (/ (* x1p x1p) (* rx rx))
-                        (/ (* y1p y1p) (* ry ry)))
-            rx       (if (> lambda 1) (* rx (mth/sqrt lambda)) rx)
-            ry       (if (> lambda 1) (* ry (mth/sqrt lambda)) ry)
-
-            cc       (get-arc-center x1 y1 x2 y2 fa fs rx ry sin-phi cos-phi)
-            theta1   (nth cc 2)
-            dtheta   (nth cc 3)
-            segments (mth/max (mth/ceil (/ (mth/abs dtheta) (/ tau 4))) 1)
-            dtheta   (/ dtheta segments)]
-
-        (loop [i 0.0
-               t (double theta1)
-               r []]
-          (if (< i segments)
-            (let [curve (approximate-unit-arc t dtheta)
-                  curve (process-curve curve cc rx ry sin-phi cos-phi)]
-              (recur (inc i)
-                     (+ t dtheta)
-                     (conj r curve)))
-            r))))))
-
-
-(defn arc->beziers
-  [from-p {:keys [params] :as command}]
+(defn arc->beziers [from-p command]
   (let [to-command
         (fn [[_ _ c1x c1y c2x c2y x y]]
           {:command :curve-to
@@ -338,19 +196,9 @@
                     :x   x   :y   y}})
 
         {from-x :x from-y :y} from-p
-
-        x               (get params :x 0.0)
-        y               (get params :y 0.0)
-        rx              (get params :rx 0.0)
-        ry              (get params :ry 0.0)
-        x-axis-rotation (get params :x-axis-rotation 0)
-        large-arc-flag  (get params :large-arc-flag 0)
-        sweep-flag      (get params :sweep-flag 0)
-
-        result          (arc->beziers* from-x from-y x y large-arc-flag sweep-flag rx ry x-axis-rotation)]
-
+        {:keys [rx ry x-axis-rotation large-arc-flag sweep-flag x y]} (:params command)
+        result (arc->beziers* from-x from-y x y large-arc-flag sweep-flag rx ry x-axis-rotation)]
     (mapv to-command result)))
-
 
 (defn simplify-commands
   "Removes some commands and convert relative to absolute coordinates"
@@ -362,6 +210,7 @@
         ;; prev-qc    : previous command control point for quadratic curves
         (fn [[result prev-pos prev-start prev-cc prev-qc] [command _prev]]
           (let [command (assoc command :prev-pos prev-pos)
+
                 command
                 (cond-> command
                   (:relative command)
@@ -384,7 +233,6 @@
 
                         (= :line-to-vertical (:command command))
                         (d/update-in-when [:params :value] + (:y prev-pos)))))
-
 
                 params (:params command)
                 orig-command command
@@ -448,7 +296,6 @@
 
                 next-start (if (= :move-to (:command command)) next-pos prev-start)]
 
-
             [result next-pos next-start next-cc next-qc]))
 
         start (first commands)
@@ -462,19 +309,17 @@
          (reduce simplify-command [[start] start-pos start-pos start-pos start-pos])
          (first))))
 
-
-(defn parse
-  [path-str]
+(defn parse [path-str]
   (if (empty? path-str)
     path-str
-    (let [commands (re-seq commands-regex path-str)]
-      (->> (mapcat parse-command commands)
-           (simplify-commands)
-           (map (fn [segment]
-                  ;; (prn "LEGACY:" segment)
-                  segment))))))
-
-
-
-
+    (let [clean-path-str
+          (-> path-str
+              (str/trim)
+              ;; Change "commas" for spaces
+              (str/replace #"," " ")
+              ;; Remove all consecutive spaces
+              (str/replace #"\s+" " "))
+          commands (re-seq commands-regex clean-path-str)]
+      (-> (mapcat parse-command commands)
+          (simplify-commands)))))
 

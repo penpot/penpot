@@ -17,7 +17,7 @@
 
 (def no-repeat-padding 1.05)
 
-(mf/defc fills*
+(mf/defc internal-fills
   {::mf/wrap-props false}
   [props]
   (let [shape      (unchecked-get props "shape")
@@ -120,7 +120,6 @@
 (mf/defc fills
   {::mf/wrap-props false}
   [props]
-
   (let [shape     (unchecked-get props "shape")
         type      (dm/get-prop shape :type)
         image     (:fill-image shape)
@@ -132,4 +131,4 @@
               (> (count fills) 1)
               (some :fill-color-gradient fills)
               (some :fill-image fills))
-      [:> fills* props])))
+      [:> internal-fills props])))

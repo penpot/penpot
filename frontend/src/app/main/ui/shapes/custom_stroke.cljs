@@ -21,6 +21,9 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+;; FIXME: this clearly should be renamed to something different, this
+;; namespace has also fill related code
+
 (mf/defc inner-stroke-clip-path
   {::mf/wrap-props false}
   [{:keys [shape render-id index]}]
@@ -449,10 +452,8 @@
         (obj/unset! style "fillOpacity")
         (obj/set! props "fill" (dm/fmt "url(#fill-%-%)" position render-id)))
 
-      (and ^boolean (or (obj/contains? svg-styles "fill")
-                        (obj/contains? svg-styles "fillOpacity"))
+      (and ^boolean (some? svg-styles)
            ^boolean (obj/contains? svg-styles "fill"))
-
       (let [fill    (obj/get svg-styles "fill")
             opacity (obj/get svg-styles "fillOpacity")]
         (when (some? fill)
@@ -460,8 +461,7 @@
         (when (some? opacity)
           (obj/set! style "fillOpacity" opacity)))
 
-      (and ^boolean (or (obj/contains? svg-attrs "fill")
-                        (obj/contains? svg-attrs "fillOpacity"))
+      (and ^boolean (some? svg-attrs)
            ^boolean (empty? shape-fills))
       (let [fill    (obj/get svg-attrs "fill")
             opacity (obj/get svg-attrs "fillOpacity")]
@@ -562,13 +562,6 @@
 (mf/defc shape-custom-strokes
   {::mf/wrap-props false}
   [props]
-  (let [children  (unchecked-get props "children")
-        shape     (unchecked-get props "shape")
-        position  (unchecked-get props "position")
-        render-id (unchecked-get props "render-id")
-        props     #js {:shape shape
-                       :position position
-                       :render-id render-id}]
-    [:*
-     [:> shape-fills props children]
-     [:> shape-strokes props children]]))
+  [:*
+   [:> shape-fills props]
+   [:> shape-strokes props]])
