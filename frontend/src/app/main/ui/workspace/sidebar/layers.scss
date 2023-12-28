@@ -12,238 +12,249 @@
   flex-direction: column;
   overflow: auto;
   box-sizing: border-box;
-  .tool-window-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: $s-32;
-    min-height: $s-32;
-    margin: $s-4 0 $s-4 $s-8;
-    padding-right: $s-8;
-    .page-name {
-      @include tabTitleTipography;
-      padding: 0 $s-12;
-      color: var(--title-foreground-color);
+}
+
+.tool-window-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $s-32;
+  min-height: $s-32;
+  margin: $s-4 0 $s-4 $s-8;
+  padding-right: $s-8;
+
+  &.search {
+    padding: 0 $s-8 0 $s-12;
+    gap: $s-4;
+    .filter-button {
+      @include flexCenter;
+      @include buttonStyle;
+      height: $s-32;
+      width: $s-32;
+      margin: 0;
+      border: $s-1 solid var(--color-background-tertiary);
+      border-radius: $br-8 $br-2 $br-2 $br-8;
+      background-color: var(--color-background-tertiary);
+      svg {
+        height: $s-16;
+        width: $s-16;
+        stroke: var(--icon-foreground);
+      }
+      &:focus {
+        border: $s-1 solid var(--input-border-color-focus);
+        outline: 0;
+        background-color: var(--input-background-color-active);
+        color: var(--input-foreground-color-active);
+        svg {
+          background-color: var(--input-background-color-active);
+        }
+      }
+      &:hover {
+        border: $s-1 solid var(--input-background-color-hover);
+        background-color: var(--input-background-color-hover);
+        svg {
+          background-color: var(--input-background-color-hover);
+          stroke: var(--button-foreground-hover);
+        }
+      }
     }
-    .icon-search {
+    .close-search {
       @extend .button-tertiary;
       height: $s-32;
       width: $s-28;
-      border-radius: $br-8;
-      margin-right: $s-8;
+      min-width: $s-28;
       padding: 0;
+      border-radius: $br-8;
       svg {
-        @extend .button-icon;
+        @extend .button-icon-small;
         stroke: var(--icon-foreground);
       }
     }
-    &.search {
-      padding: 0 $s-8 0 $s-12;
-      gap: $s-4;
-      .filter-button {
-        @include flexCenter;
-        @include buttonStyle;
-        height: $s-32;
-        width: $s-32;
-        margin: 0;
-        border: $s-1 solid var(--color-background-tertiary);
-        border-radius: $br-8 $br-2 $br-2 $br-8;
-        background-color: var(--color-background-tertiary);
-        svg {
-          height: $s-16;
-          width: $s-16;
-          stroke: var(--icon-foreground);
-        }
-        &:focus {
-          border: $s-1 solid var(--input-border-color-focus);
-          outline: 0;
-          background-color: var(--input-background-color-active);
-          color: var(--input-foreground-color-active);
-          svg {
-            background-color: var(--input-background-color-active);
-          }
-        }
-        &:hover {
-          border: $s-1 solid var(--input-background-color-hover);
-          background-color: var(--input-background-color-hover);
-          svg {
-            background-color: var(--input-background-color-hover);
-            stroke: var(--button-foreground-hover);
-          }
-        }
-      }
-      .close-search {
-        @extend .button-tertiary;
-        height: $s-32;
-        width: $s-28;
-        min-width: $s-28;
-        padding: 0;
-        border-radius: $br-8;
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--icon-foreground);
-        }
-      }
-    }
-    .focus-title {
-      @include buttonStyle;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      width: 100%;
-      padding: 0;
-      .back-button-icon {
-        @include flexCenter;
-        height: $s-32;
-        width: $s-24;
-        padding: 0 $s-4 0 $s-8;
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--icon-foreground);
-          transform: rotate(180deg);
-        }
-      }
-      .focus-name {
-        @include titleTipography;
-        display: flex;
-        align-items: center;
-        height: 100%;
-        padding-left: $s-4;
-        color: var(--title-foreground-color);
-      }
-      .focus-mode-tag-wrapper {
-        @include flexCenter;
-        height: 100%;
-        margin-right: $s-12;
-
-        .focus-mode-tag {
-          @include flexCenter;
-          @include titleTipography;
-          height: $s-20;
-          padding: $s-4 $s-6;
-          border: $s-1 solid var(--tag-background-color);
-          border-radius: $br-6;
-          color: var(--tag-background-color);
-        }
-      }
-    }
   }
-  .active-filters {
-    @include flexRow;
-    flex-wrap: wrap;
-    margin: 0 $s-12;
-    .layer-filter {
-      @extend .button-tag;
-      @include buttonStyle;
-      gap: $s-6;
-      height: $s-24;
-      margin: $s-2 0;
-      border-radius: $br-6;
-      background-color: var(--pill-background-color);
-      cursor: pointer;
-      .layer-filter-icon,
-      .layer-filter-close {
-        @extend .button-icon-small;
-        stroke: var(--pill-foreground-color);
-        svg {
-          height: $s-12;
-          width: $s-12;
-        }
-      }
-      .layer-filter-name {
-        @include flexCenter;
-        @include titleTipography;
-        color: var(--pill-foreground-color);
-      }
-    }
-  }
+}
 
-  .filters-container {
-    @extend .menu-dropdown;
-    top: $s-44;
-    left: $s-12;
-    width: $s-192;
-    .filter-menu-item {
-      @include titleTipography;
+.page-name {
+  @include tabTitleTipography;
+  padding: 0 $s-12;
+  color: var(--title-foreground-color);
+}
+
+.icon-search {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  border-radius: $br-8;
+  margin-right: $s-8;
+  padding: 0;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.focus-title {
+  @include buttonStyle;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  width: 100%;
+  padding: 0;
+}
+
+.back-button-icon {
+  @include flexCenter;
+  height: $s-32;
+  width: $s-24;
+  padding: 0 $s-4 0 $s-8;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+    transform: rotate(180deg);
+  }
+}
+
+.focus-name {
+  @include titleTipography;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-left: $s-4;
+  color: var(--title-foreground-color);
+}
+
+.focus-mode-tag-wrapper {
+  @include flexCenter;
+  height: 100%;
+  margin-right: $s-12;
+}
+
+.focus-mode-tag {
+  @include flexCenter;
+  @include titleTipography;
+  height: $s-20;
+  padding: $s-4 $s-6;
+  border: $s-1 solid var(--tag-background-color);
+  border-radius: $br-6;
+  color: var(--tag-background-color);
+}
+
+.active-filters {
+  @include flexRow;
+  flex-wrap: wrap;
+  margin: 0 $s-12;
+}
+
+.layer-filter {
+  @extend .button-tag;
+  gap: $s-6;
+  height: $s-24;
+  margin: $s-2 0;
+  border-radius: $br-6;
+  background-color: var(--pill-background-color);
+  cursor: pointer;
+}
+
+.layer-filter-icon,
+.layer-filter-close {
+  @extend .button-icon-small;
+  stroke: var(--pill-foreground-color);
+  svg {
+    height: $s-12;
+    width: $s-12;
+  }
+}
+
+.layer-filter-name {
+  @include flexCenter;
+  @include titleTipography;
+  color: var(--pill-foreground-color);
+}
+
+.filters-container {
+  @extend .menu-dropdown;
+  top: $s-44;
+  left: $s-12;
+  width: $s-192;
+  .filter-menu-item {
+    @include titleTipography;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: $s-6;
+    border-radius: $br-8;
+
+    .filter-menu-item-name-wrapper {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      padding: $s-6;
-      border-radius: $br-8;
-
-      .filter-menu-item-name-wrapper {
-        display: flex;
-        align-items: center;
-        gap: $s-8;
-        .filter-menu-item-icon {
-          svg {
-            @extend .button-icon-small;
-            stroke: var(--menu-foreground-color);
-          }
-        }
-        .filter-menu-item-name {
-          padding-top: $s-2;
-          color: var(--menu-foreground-color);
-        }
-      }
-      .filter-menu-item-tick {
+      gap: $s-8;
+      .filter-menu-item-icon {
         svg {
           @extend .button-icon-small;
           stroke: var(--menu-foreground-color);
         }
       }
+      .filter-menu-item-name {
+        padding-top: $s-2;
+        color: var(--menu-foreground-color);
+      }
+    }
+    .filter-menu-item-tick {
+      svg {
+        @extend .button-icon-small;
+        stroke: var(--menu-foreground-color);
+      }
+    }
 
-      &.selected {
-        background-color: var(--menu-background-color-selected);
-        .filter-menu-item-name-wrapper {
-          .filter-menu-item-icon {
-            svg {
-              stroke: var(--menu-foreground-color);
-            }
-          }
-          .filter-menu-item-name {
-            color: var(--menu-foreground-color);
-          }
-        }
-        .filter-menu-item-tick {
+    &.selected {
+      background-color: var(--menu-background-color-selected);
+      .filter-menu-item-name-wrapper {
+        .filter-menu-item-icon {
           svg {
             stroke: var(--menu-foreground-color);
           }
         }
-      }
-
-      &:hover {
-        background-color: var(--menu-background-color-hover);
-        .filter-menu-item-name-wrapper {
-          .filter-menu-item-icon {
-            svg {
-              stroke: var(--menu-foreground-color-hover);
-            }
-          }
-          .filter-menu-item-name {
-            color: var(--menu-foreground-color-hover);
-          }
+        .filter-menu-item-name {
+          color: var(--menu-foreground-color);
         }
-        .filter-menu-item-tick {
+      }
+      .filter-menu-item-tick {
+        svg {
+          stroke: var(--menu-foreground-color);
+        }
+      }
+    }
+
+    &:hover {
+      background-color: var(--menu-background-color-hover);
+      .filter-menu-item-name-wrapper {
+        .filter-menu-item-icon {
           svg {
             stroke: var(--menu-foreground-color-hover);
           }
         }
+        .filter-menu-item-name {
+          color: var(--menu-foreground-color-hover);
+        }
+      }
+      .filter-menu-item-tick {
+        svg {
+          stroke: var(--menu-foreground-color-hover);
+        }
       }
     }
   }
-  .tool-window-content {
-    --calculated-height: calc($s-128 + var(--height, $s-200));
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - var(--calculated-height));
+}
+
+.tool-window-content {
+  --calculated-height: calc($s-128 + var(--height, $s-200));
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--calculated-height));
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: overlay;
+  scrollbar-gutter: stable;
+  .element-list {
     width: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-gutter: stable;
-    overflow-y: overlay;
-    .element-list {
-      width: 100%;
-    }
   }
 }
