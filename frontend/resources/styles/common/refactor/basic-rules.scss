@@ -403,7 +403,6 @@
   min-width: $s-16;
   min-height: $s-16;
   border-radius: $br-6;
-
   background-color: var(--input-checkbox-inactive-background-color);
   border-radius: $br-4;
   box-shadow: inset 0 0 0px 2px rgb(255 255 255 / 20%);
@@ -451,6 +450,7 @@
     align-items: center;
     gap: $s-6;
     cursor: pointer;
+    color: var(--input-checkbox-text-foreground-color);
     span {
       @extend .checkbox-icon;
     }

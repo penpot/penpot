@@ -35,7 +35,7 @@
   margin: 0;
   padding-left: $s-6;
   border-radius: $br-8;
-  border: 1px solid var(--input-border-color-focus);
+  border: $s-1 solid var(--input-border-color-focus);
   color: var(--layer-row-foreground-color);
 }
 .element-name-touched {

@@ -129,18 +129,25 @@
           align-items: center;
           gap: $s-2;
           cursor: pointer;
+          color: var(--input-checkbox-text-foreground-color);
           .check-mark {
             @include flexCenter;
             width: $s-16;
             height: $s-16;
             border-radius: $br-6;
-            background-color: var(--input-background-color);
+            background-color: var(--input-checkbox-inactive-background-color);
             &.checked {
-              background-color: var(--input-border-color-active);
+              background-color: var(--input-checkbox-active-background-color);
               svg {
                 @extend .button-icon-small;
                 stroke: var(--input-details-color);
               }
+            }
+            &:hover {
+              border-color: var(--input-checkbox-border-color-hover);
+            }
+            &:focus {
+              border-color: var(--input-checkbox-border-color-focus);
             }
           }
         }
