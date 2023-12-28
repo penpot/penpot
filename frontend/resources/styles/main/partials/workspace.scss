@@ -57,10 +57,6 @@ $height-palette-max: 80px;
     }
   }
 
-  .workspace-loader {
-    grid-area: viewport;
-  }
-
   .workspace-content {
     grid-area: viewport;
   }
@@ -156,15 +152,15 @@ $height-palette-max: 80px;
   }
 }
 
-.workspace-loader {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+// .workspace-loader {
+//   display: flex;
+//   justify-content: center;
+//   align-items: center;
 
-  svg {
-    fill: $color-gray-50;
-  }
-}
+//   svg {
+//     fill: $color-gray-50;
+//   }
+// }
 
 .workspace-content {
   background-color: $color-canvas;

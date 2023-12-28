@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.messages :as msg]
@@ -24,7 +24,6 @@
    [app.main.ui.workspace.colorpicker]
    [app.main.ui.workspace.context-menu :refer [context-menu]]
    [app.main.ui.workspace.coordinates :as coordinates]
-   [app.main.ui.workspace.header :refer [header]]
    [app.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.nudge]
@@ -135,10 +134,8 @@
 
 (mf/defc workspace-loader
   []
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
-    [:div {:class (if new-css-system (css :workspace-loader)
-                      (dom/classnames :workspace-loader true))}
-     i/loader-pencil]))
+  [:div {:class (stl/css :workspace-loader)}
+   i/loader-pencil])
 
 (mf/defc workspace-page
   {::mf/wrap-props false}
@@ -216,33 +213,14 @@
         [:& (mf/provider ctx/components-v2) {:value components-v2?}
          [:& (mf/provider ctx/new-css-system) {:value new-css-system}
           [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
-           (if new-css-system
-             [:section#workspace-refactor {:class (css :workspace)
-                                           :style {:background-color background-color
-                                                   :touch-action "none"}}
-              [:& context-menu]
+           [:section#workspace-refactor {:class (stl/css :workspace)
+                                         :style {:background-color background-color
+                                                 :touch-action "none"}}
+            [:& context-menu]
 
-              (if ^boolean file-ready?
-                [:& workspace-page {:page-id page-id
-                                    :file file
-                                    :wglobal wglobal
-                                    :layout layout}]
-                [:& workspace-loader])]
-
-
-             [:section#workspace {:style {:background-color background-color
-                                          :touch-action "none"}}
-              (when (not (:hide-ui layout))
-                [:& header {:file file
-                            :page-id page-id
-                            :project project
-                            :layout layout}])
-
-              [:& context-menu]
-
-              (if ^boolean file-ready?
-                [:& workspace-page {:page-id page-id
-                                    :file file
-                                    :wglobal wglobal
-                                    :layout layout}]
-                [:& workspace-loader])])]]]]]]]))
+            (if ^boolean file-ready?
+              [:& workspace-page {:page-id page-id
+                                  :file file
+                                  :wglobal wglobal
+                                  :layout layout}]
+              [:& workspace-loader])]]]]]]]]))

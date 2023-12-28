@@ -283,11 +283,11 @@
 }
 
 .zoom-option {
-  @extend .menu-item;
+  @extend .menu-item-base;
   .shortcuts {
-    @extend .shortcut;
+    @extend .shortcut-base;
     .shortcut-key {
-      @extend .shortcut-key;
+      @extend .shortcut-key-base;
     }
   }
   &:hover {

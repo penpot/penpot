@@ -613,13 +613,13 @@
   }
 }
 
-.shortcut {
+.shortcut-base {
   @include flexCenter;
   gap: $s-2;
   color: var(--menu-shortcut-foreground-color);
 }
 
-.shortcut-key {
+.shortcut-key-base {
   @include titleTipography;
   @include flexCenter;
   height: $s-20;
@@ -787,7 +787,7 @@
   background-color: var(--menu-background-color);
 }
 
-.menu-item {
+.menu-item-base {
   @include titleTipography;
   display: flex;
   align-items: center;
