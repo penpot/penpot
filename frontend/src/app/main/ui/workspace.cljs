@@ -23,13 +23,13 @@
    [app.main.ui.workspace.colorpicker]
    [app.main.ui.workspace.context-menu :refer [context-menu]]
    [app.main.ui.workspace.coordinates :as coordinates]
-   [app.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.nudge]
    [app.main.ui.workspace.palette :refer [palette]]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
+   [app.main.ui.workspace.top-toolbar :refer [top-toolbar]]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -110,7 +110,7 @@
 
      (when-not hide-ui?
        [:*
-        [:& left-toolbar {:layout layout}]
+        [:& top-toolbar {:layout layout}]
         (if (:collapse-left-sidebar layout)
           [:& collapsed-button]
           [:& left-sidebar {:layout layout
