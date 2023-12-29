@@ -10,121 +10,129 @@
   position: relative;
   height: 100%;
   overflow: hidden;
+}
 
-  .libraries-button {
-    @include tabTitleTipography;
-    @extend .button-secondary;
-    gap: $s-2;
-    height: $s-32;
-    width: 100%;
-    border-radius: $s-8;
-    margin-bottom: $s-4;
-    .libraries-icon {
-      @include flexCenter;
-      width: $s-24;
-      height: 100%;
-      svg {
-        @include flexCenter;
-        @extend .button-icon;
-        stroke: var(--icon-foreground);
-      }
-    }
-    &:hover {
-      background-color: var(--button-secondary-background-color-hover);
-      color: var(--button-secondary-foreground-color-hover);
-      border: $s-1 solid var(--button-secondary-border-color-hover);
-      svg {
-        stroke: var(--button-secondary-foreground-color-hover);
-      }
-    }
-    &:focus {
-      background-color: var(--button-secondary-background-color-focus);
-      color: var(--button-secondary-foreground-color-focus);
-      border: $s-1 solid var(--button-secondary-border-color-focus);
-      svg {
-        stroke: var(--button-secondary-foreground-color-focus);
-      }
-    }
-  }
-  .section-button {
+.libraries-button {
+  @include tabTitleTipography;
+  @extend .button-secondary;
+  gap: $s-2;
+  height: $s-32;
+  width: 100%;
+  border-radius: $s-8;
+  margin-bottom: $s-4;
+  .libraries-icon {
     @include flexCenter;
-    @include buttonStyle;
-    height: $s-32;
-    width: $s-32;
-    margin: 0;
-    border: 1px solid var(--color-background-tertiary);
-    border-radius: $br-8 $br-2 $br-2 $br-8;
-    background-color: var(--color-background-tertiary);
+    width: $s-24;
+    height: 100%;
     svg {
-      height: $s-16;
-      width: $s-16;
+      @include flexCenter;
+      @extend .button-icon;
       stroke: var(--icon-foreground);
     }
-    &:focus {
-      border: 1px solid var(--input-border-color-focus);
-      outline: 0;
+  }
+  &:hover {
+    background-color: var(--button-secondary-background-color-hover);
+    color: var(--button-secondary-foreground-color-hover);
+    border: $s-1 solid var(--button-secondary-border-color-hover);
+    svg {
+      stroke: var(--button-secondary-foreground-color-hover);
+    }
+  }
+  &:focus {
+    background-color: var(--button-secondary-background-color-focus);
+    color: var(--button-secondary-foreground-color-focus);
+    border: $s-1 solid var(--button-secondary-border-color-focus);
+    svg {
+      stroke: var(--button-secondary-foreground-color-focus);
+    }
+  }
+}
+
+.section-button {
+  @include flexCenter;
+  @include buttonStyle;
+  height: $s-32;
+  width: $s-32;
+  margin: 0;
+  border: 1px solid var(--color-background-tertiary);
+  border-radius: $br-8 $br-2 $br-2 $br-8;
+  background-color: var(--color-background-tertiary);
+  svg {
+    height: $s-16;
+    width: $s-16;
+    stroke: var(--icon-foreground);
+  }
+  &:focus {
+    border: 1px solid var(--input-border-color-focus);
+    outline: 0;
+    background-color: var(--input-background-color-active);
+    color: var(--input-foreground-color-active);
+    svg {
       background-color: var(--input-background-color-active);
-      color: var(--input-foreground-color-active);
-      svg {
-        background-color: var(--input-background-color-active);
-      }
     }
-    &:hover {
-      border: 1px solid var(--input-background-color-hover);
+  }
+  &:hover {
+    border: 1px solid var(--input-background-color-hover);
+    background-color: var(--input-background-color-hover);
+    svg {
       background-color: var(--input-background-color-hover);
-      svg {
-        background-color: var(--input-background-color-hover);
-        stroke: var(--button-foreground-hover);
-      }
+      stroke: var(--button-foreground-hover);
     }
   }
-  .sections-container {
-    @include menuShadow;
-    @include flexColumn;
-    position: absolute;
-    top: $s-84;
-    left: $s-12;
-    width: $s-192;
-    padding: $s-4;
-    border-radius: $br-8;
-    background-color: var(--menu-background-color);
-    z-index: $z-index-2;
-    .section-item {
-      @include titleTipography;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      padding: $s-6;
-      border-radius: $br-8;
-      .section-btn {
-        @include buttonStyle;
-      }
-    }
-  }
-  .libraries-wrapper {
-    overflow-x: hidden;
-    overflow-y: auto;
-    scrollbar-gutter: stable;
-    display: flex;
-    flex-direction: column;
-    padding-left: $s-8;
-    height: calc(100vh - $s-180);
-  }
-  .assets-header {
-    padding: $s-8 $s-12 $s-12 $s-12;
-    .search-wrapper {
-      display: flex;
-      gap: $s-4;
-      .sort-button {
-        @extend .button-secondary;
-        width: $s-32;
-        border-radius: $br-8;
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--icon-foreground);
-        }
-      }
-    }
+}
+
+.sections-container {
+  @include menuShadow;
+  @include flexColumn;
+  position: absolute;
+  top: $s-84;
+  left: $s-12;
+  width: $s-192;
+  padding: $s-4;
+  border-radius: $br-8;
+  background-color: var(--menu-background-color);
+  z-index: $z-index-2;
+}
+
+.section-item {
+  @include titleTipography;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: $s-6;
+  border-radius: $br-8;
+}
+
+.section-btn {
+  @include buttonStyle;
+}
+
+.libraries-wrapper {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  padding-left: $s-8;
+  height: calc(100vh - $s-180);
+}
+
+.assets-header {
+  padding: $s-8 $s-12 $s-12 $s-12;
+}
+
+.search-wrapper {
+  display: flex;
+  gap: $s-4;
+}
+
+.sort-button {
+  @extend .button-secondary;
+  width: $s-32;
+  border-radius: $br-8;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
   }
 }

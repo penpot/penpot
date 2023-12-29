@@ -46,7 +46,6 @@
         dragging?      (deref dragging*)
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
-        new-css-system (mf/use-ctx ctx/new-css-system)
         editing?       (= editing-id (:id typography))
         renaming?      (= renaming-id (:id typography))
 
@@ -100,52 +99,29 @@
          (mf/deps typography apply-typography on-asset-click)
          (partial on-asset-click typography-id apply-typography))]
 
-    (if ^boolean new-css-system
-      [:div {:class (stl/css :typography-item)
-             :ref item-ref
-             :draggable (and (not read-only?) (not open?))
-             :on-drag-start on-typography-drag-start
-             :on-drag-enter on-drag-enter
-             :on-drag-leave on-drag-leave
-             :on-drag-over dom/prevent-default
-             :on-drop on-drop}
+    [:div {:class (stl/css :typography-item)
+           :ref item-ref
+           :draggable (and (not read-only?) (not open?))
+           :on-drag-start on-typography-drag-start
+           :on-drag-enter on-drag-enter
+           :on-drag-leave on-drag-leave
+           :on-drag-over dom/prevent-default
+           :on-drop on-drop}
 
-       [:& typography-entry
-        {:typography typography
-         :local? local?
-         :on-context-menu on-context-menu
-         :on-change handle-change
-         :selected? (contains? selected typography-id)
-         :on-click on-asset-click
-         :editing? editing?
-         :renaming? renaming?
-         :focus-name? rename?
-         :external-open* open*
-         :file-id file-id}]
-       (when ^boolean dragging?
-         [:div {:class (stl/css :dragging)}])]
-
-      [:div.typography-container {:ref item-ref
-                                  :draggable (and (not read-only?) (not open?))
-                                  :on-drag-start on-typography-drag-start
-                                  :on-drag-enter on-drag-enter
-                                  :on-drag-leave on-drag-leave
-                                  :on-drag-over dom/prevent-default
-                                  :on-drop on-drop}
-       [:& typography-entry
-        {:typography typography
-         :local? local?
-         :on-context-menu on-context-menu
-         :on-change handle-change
-         :selected? (contains? selected typography-id)
-         :on-click on-asset-click
-         :editing? editing?
-         :focus-name? rename?
-         :external-open* open*
-         :file-id file-id}]
-
-       (when ^boolean dragging?
-         [:div.dragging])])))
+     [:& typography-entry
+      {:typography typography
+       :local? local?
+       :on-context-menu on-context-menu
+       :on-change handle-change
+       :selected? (contains? selected typography-id)
+       :on-click on-asset-click
+       :editing? editing?
+       :renaming? renaming?
+       :focus-name? rename?
+       :external-open* open*
+       :file-id file-id}]
+     (when ^boolean dragging?
+       [:div {:class (stl/css :dragging)}])]))
 
 (mf/defc typographies-group
   {::mf/wrap-props false}
@@ -155,7 +131,6 @@
   (let [group-open?   (get open-groups prefix true)
         dragging*      (mf/use-state false)
         dragging?      (deref dragging*)
-        new-css-system (mf/use-ctx ctx/new-css-system)
         selected-paths (mf/with-memo [selected-full]
                          (into #{}
                                (comp (map :path) (d/nilv ""))
@@ -183,134 +158,72 @@
          (fn [event]
            (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full move-typography)))]
 
-    (if ^boolean new-css-system
-      [:div {:class (stl/css :typographies-group)
-             :on-drag-enter on-drag-enter
-             :on-drag-leave on-drag-leave
-             :on-drag-over dom/prevent-default
-             :on-drop on-drop}
-       [:& grp/asset-group-title {:file-id file-id
-                                  :section :typographies
-                                  :path prefix
-                                  :group-open? group-open?
-                                  :on-rename on-rename-group
-                                  :on-ungroup on-ungroup}]
+    [:div {:class (stl/css :typographies-group)
+           :on-drag-enter on-drag-enter
+           :on-drag-leave on-drag-leave
+           :on-drag-over dom/prevent-default
+           :on-drop on-drop}
+     [:& grp/asset-group-title {:file-id file-id
+                                :section :typographies
+                                :path prefix
+                                :group-open? group-open?
+                                :on-rename on-rename-group
+                                :on-ungroup on-ungroup}]
 
-       (when group-open?
-         [:*
-          (let [typographies (get groups "" [])]
-            [:div {:class (stl/css :assets-list)
-                   :on-drag-enter on-drag-enter
-                   :on-drag-leave on-drag-leave
-                   :on-drag-over dom/prevent-default
-                   :on-drop on-drop}
+     (when group-open?
+       [:*
+        (let [typographies (get groups "" [])]
+          [:div {:class (stl/css :assets-list)
+                 :on-drag-enter on-drag-enter
+                 :on-drag-leave on-drag-leave
+                 :on-drag-over dom/prevent-default
+                 :on-drop on-drop}
 
-             (when ^boolean dragging?
-               [:div {:class  (stl/css :grid-placeholder)} "\u00A0"])
+           (when ^boolean dragging?
+             [:div {:class  (stl/css :grid-placeholder)} "\u00A0"])
 
-             (when (and
-                    (empty? typographies)
-                    (some? groups))
-               [:div  {:class (stl/css :drop-space)}])
-             (for [{:keys [id] :as typography} typographies]
-               [:& typography-item {:typography typography
-                                    :key (dm/str "typography-" id)
-                                    :file-id file-id
+           (when (and
+                  (empty? typographies)
+                  (some? groups))
+             [:div  {:class (stl/css :drop-space)}])
+           (for [{:keys [id] :as typography} typographies]
+             [:& typography-item {:typography typography
+                                  :key (dm/str "typography-" id)
+                                  :file-id file-id
+                                  :local? local?
+                                  :handle-change handle-change
+                                  :selected selected
+                                  :apply-typography apply-typography
+                                  :editing-id editing-id
+                                  :renaming-id renaming-id
+                                  :rename? (= (:rename-typography local-data) id)
+                                  :on-asset-click on-asset-click
+                                  :on-context-menu on-context-menu
+                                  :selected-full selected-full
+                                  :selected-paths selected-paths
+                                  :move-typography move-typography}])])
+
+        (for [[path-item content] groups]
+          (when-not (empty? path-item)
+            [:& typographies-group {:file-id file-id
+                                    :prefix (cfh/merge-path-item prefix path-item)
+                                    :key (dm/str "group-" path-item)
+                                    :groups content
+                                    :open-groups open-groups
+                                    :force-open? force-open?
+                                    :file file
                                     :local? local?
-                                    :handle-change handle-change
                                     :selected selected
-                                    :apply-typography apply-typography
                                     :editing-id editing-id
                                     :renaming-id renaming-id
-                                    :rename? (= (:rename-typography local-data) id)
+                                    :local-data local-data
                                     :on-asset-click on-asset-click
-                                    :on-context-menu on-context-menu
-                                    :selected-full selected-full
-                                    :selected-paths selected-paths
-                                    :move-typography move-typography}])])
-
-          (for [[path-item content] groups]
-            (when-not (empty? path-item)
-              [:& typographies-group {:file-id file-id
-                                      :prefix (cfh/merge-path-item prefix path-item)
-                                      :key (dm/str "group-" path-item)
-                                      :groups content
-                                      :open-groups open-groups
-                                      :force-open? force-open?
-                                      :file file
-                                      :local? local?
-                                      :selected selected
-                                      :editing-id editing-id
-                                      :renaming-id renaming-id
-                                      :local-data local-data
-                                      :on-asset-click on-asset-click
-                                      :handle-change handle-change
-                                      :apply-typography apply-typography
-                                      :on-rename-group on-rename-group
-                                      :on-ungroup on-ungroup
-                                      :on-context-menu on-context-menu
-                                      :selected-full selected-full}]))])]
-      [:div {:on-drag-enter on-drag-enter
-             :on-drag-leave on-drag-leave
-             :on-drag-over dom/prevent-default
-             :on-drop on-drop}
-       [:& grp/asset-group-title {:file-id file-id
-                                  :section :typographies
-                                  :path prefix
-                                  :group-open? group-open?
-                                  :on-rename on-rename-group
-                                  :on-ungroup on-ungroup}]
-       (when group-open?
-         [:*
-          (let [typographies (get groups "" [])]
-            [:div.asset-list {:on-drag-enter on-drag-enter
-                              :on-drag-leave on-drag-leave
-                              :on-drag-over dom/prevent-default
-                              :on-drop on-drop}
-
-             (when ^boolean dragging?
-               [:div.grid-placeholder "\u00A0"])
-
-             (when (and
-                    (empty? typographies)
-                    (some? groups))
-               [:div.drop-space])
-             (for [{:keys [id] :as typography} typographies]
-               [:& typography-item {:typography typography
-                                    :key (dm/str "typography-" id)
-                                    :file-id file-id
-                                    :local? local?
                                     :handle-change handle-change
-                                    :selected selected
                                     :apply-typography apply-typography
-                                    :editing-id editing-id
-                                    :rename? (= (:rename-typography local-data) id)
-                                    :on-asset-click on-asset-click
+                                    :on-rename-group on-rename-group
+                                    :on-ungroup on-ungroup
                                     :on-context-menu on-context-menu
-                                    :selected-full selected-full
-                                    :selected-paths selected-paths
-                                    :move-typography move-typography}])])
-
-          (for [[path-item content] groups]
-            (when-not (empty? path-item)
-              [:& typographies-group {:file-id file-id
-                                      :prefix (cfh/merge-path-item prefix path-item)
-                                      :key (dm/str "group-" path-item)
-                                      :groups content
-                                      :open-groups open-groups
-                                      :force-open? force-open?
-                                      :file file
-                                      :local? local?
-                                      :selected selected
-                                      :editing-id editing-id
-                                      :local-data local-data
-                                      :on-asset-click on-asset-click
-                                      :handle-change handle-change
-                                      :apply-typography apply-typography
-                                      :on-rename-group on-rename-group
-                                      :on-ungroup on-ungroup
-                                      :on-context-menu on-context-menu
-                                      :selected-full selected-full}]))])])))
+                                    :selected-full selected-full}]))])]))
 
 (mf/defc typographies-section
   {::mf/wrap-props false}
@@ -320,7 +233,6 @@
         local-data     (mf/deref lens:typography-section-state)
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
-        new-css-system (mf/use-ctx ctx/new-css-system)
         menu-state     (mf/use-state cmm/initial-context-menu-state)
         typographies   (mf/with-memo [typographies]
                          (mapv dwl/extract-path-if-missing typographies))
@@ -465,10 +377,7 @@
                          (dwl/sync-file file-id file-id :typographies (:id @state))
                          (dwu/commit-undo-transaction undo-id))))))
 
-        editing-id (if new-css-system
-                     (:edit-typography local-data)
-                     (or (:rename-typography local-data)
-                         (:edit-typography local-data)))
+        editing-id (:edit-typography local-data)
 
         renaming-id (:rename-typography local-data)
 
@@ -478,10 +387,8 @@
          (partial on-asset-click groups))]
 
     (mf/use-effect
-     (mf/deps local-data new-css-system)
+     (mf/deps local-data )
      (fn []
-       (when (and (not new-css-system)(:rename-typography local-data))
-         (st/emit! #(update % :workspace-global dissoc :rename-typography)))
        (when (:edit-typography local-data)
          (st/emit! #(update % :workspace-global dissoc :edit-typography)))))
 
@@ -491,19 +398,12 @@
                            :section :typographies
                            :assets-count (count typographies)
                            :open? open?}
-     (if ^boolean new-css-system
-       (when local?
-         [:& cmm/asset-section-block {:role :title-button}
-          (when-not read-only?
-            [:button {:class (stl/css :assets-btn)
-                      :on-click add-typography}
-             i/add-refactor])])
-
-       (when local?
-         [:& cmm/asset-section-block {:role :title-button}
-          (when-not read-only?
-            [:div.assets-button {:on-click add-typography}
-             i/plus])]))
+     (when local?
+       [:& cmm/asset-section-block {:role :title-button}
+        (when-not read-only?
+          [:button {:class (stl/css :assets-btn)
+                    :on-click add-typography}
+           i/add-refactor])])
 
      [:& cmm/asset-section-block {:role :content}
       [:& typographies-group {:file-id file-id
@@ -530,38 +430,28 @@
         [:& cmm/assets-context-menu
          {:on-close on-close-menu
           :state @menu-state
-          :options (if new-css-system
-                     [(when-not (or multi-typographies? multi-assets?)
-                        {:option-name    (tr "workspace.assets.rename")
-                         :id             "assets-rename-typography"
-                         :option-handler handle-rename-typography-clicked})
-
-                      (when-not (or multi-typographies? multi-assets?)
-                        {:option-name    (tr "workspace.assets.edit")
-                         :id             "assets-edit-typography"
-                         :option-handler handle-edit-typography-clicked})
-
-                      {:option-name    (tr "workspace.assets.delete")
-                       :id             "assets-delete-typography"
-                       :option-handler handle-delete-typography}
-
-                      (when-not multi-assets?
-                        {:option-name    (tr "workspace.assets.group")
-                         :id             "assets-group-typography"
-                         :option-handler on-group})]
-
-                     [(when-not (or multi-typographies? multi-assets?)
-                        [(tr "workspace.assets.rename") handle-rename-typography-clicked])
-                      (when-not (or multi-typographies? multi-assets?)
-                        [(tr "workspace.assets.edit") handle-edit-typography-clicked])
-                      [(tr "workspace.assets.delete") handle-delete-typography]
-                      (when-not multi-assets?
-                        [(tr "workspace.assets.group") on-group])])}]
-
-        (when new-css-system
-          [:& cmm/assets-context-menu
-           {:on-close on-close-menu
-            :state @menu-state
-            :options [{:option-name   "show info"
+          :options [(when-not (or multi-typographies? multi-assets?)
+                      {:option-name    (tr "workspace.assets.rename")
                        :id             "assets-rename-typography"
-                       :option-handler handle-edit-typography-clicked}]}]))]]]))
+                       :option-handler handle-rename-typography-clicked})
+
+                    (when-not (or multi-typographies? multi-assets?)
+                      {:option-name    (tr "workspace.assets.edit")
+                       :id             "assets-edit-typography"
+                       :option-handler handle-edit-typography-clicked})
+
+                    {:option-name    (tr "workspace.assets.delete")
+                     :id             "assets-delete-typography"
+                     :option-handler handle-delete-typography}
+
+                    (when-not multi-assets?
+                      {:option-name    (tr "workspace.assets.group")
+                       :id             "assets-group-typography"
+                       :option-handler on-group})]}]
+
+        [:& cmm/assets-context-menu
+         {:on-close on-close-menu
+          :state @menu-state
+          :options [{:option-name   "show info"
+                     :id             "assets-rename-typography"
+                     :option-handler handle-edit-typography-clicked}]}])]]]))

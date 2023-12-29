@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.assets.file-library
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -40,62 +40,41 @@
 
 (mf/defc file-library-title
   {::mf/wrap-props false}
-  [{:keys [open? local? shared? project-id file-id page-id file-name]}]
+  [{:keys [open? local? project-id file-id page-id file-name]}]
   (let [router     (mf/deref refs/router)
         url        (rt/resolve router :workspace
                                {:project-id project-id
                                 :file-id file-id}
                                {:page-id page-id})
-        new-css-system (mf/use-ctx ctx/new-css-system)
         toggle-open
         (mf/use-fn
          (mf/deps file-id open?)
          (fn []
            (st/emit! (dw/set-assets-section-open file-id :library (not open?)))))]
-    (if ^boolean new-css-system
-      [:div  {:class (dom/classnames (css :library-title) true)}
-       [:& title-bar {:collapsable? true
-                      :collapsed?   (not open?)
-                      :clickable-all? true
-                      :on-collapsed  toggle-open
-                      :title        (if local?
-                                      (mf/html [:div {:class (dom/classnames (css :special-title) true)} (tr "workspace.assets.local-library")])
+    [:div  {:class (stl/css :library-title)}
+     [:& title-bar {:collapsable?   true
+                    :collapsed?     (not open?)
+                    :clickable-all? true
+                    :on-collapsed   toggle-open
+                    :title          (if local?
+                                      (mf/html [:div {:class (stl/css :special-title)}
+                                                (tr "workspace.assets.local-library")])
+                                      ;; Do we need to add shared info here?
 
-                                      (mf/html [:div {:class (dom/classnames (css :special-title) true)} file-name]))}
-        (when-not local?
-          [:span.tool-link.tooltip.tooltip-left {:alt "Open library file"}
-           [:a {:class (dom/classnames (css :file-link) true)
-                :href (str "#" url)
-                :target "_blank"
-                :on-click dom/stop-propagation}
-            i/open-link-refactor]])]]
-
-      [:div.tool-window-bar.library-bar
-       {:on-click toggle-open}
-       [:div.collapse-library
-        {:class (dom/classnames :open open?)}
-        i/arrow-slide]
-
-       (if local?
-         [:*
-          [:span.library-title (tr "workspace.assets.local-library")]
-          (when shared?
-            [:span.shared-library {:alt (tr "workspace.assets.shared-library") :title (tr "workspace.assets.shared-library")}
-              i/library]
-            )]
-         [:*
-          [:span.library-title {:title file-name} file-name]
-          [:span.tool-link {:alt (tr "workspace.assets.open-library") :title (tr "workspace.assets.open-library")}
-           [:a {:href (str "#" url)
-                :target "_blank"
-                :on-click dom/stop-propagation}
-            i/chain]]])])))
+                                      (mf/html [:div {:class (stl/css :special-title)}
+                                                file-name]))}
+      (when-not local?
+        [:span.tool-link.tooltip.tooltip-left {:alt "Open library file"}
+         [:a {:class (dom/classnames  true)
+              :href (str "#" url)
+              :target "_blank"
+              :on-click dom/stop-propagation}
+          i/open-link-refactor]])]]))
 
 (mf/defc file-library-content
   {::mf/wrap-props false}
   [{:keys [file local? open-status-ref on-clear-selection]}]
   (let [components-v2      (mf/use-ctx ctx/components-v2)
-        new-css-system     (mf/use-ctx ctx/new-css-system)
         open-status        (mf/deref open-status-ref)
 
         file-id            (:id file)
@@ -110,9 +89,6 @@
 
         reverse-sort?      (= :desc filters-ordering)
         listing-thumbs?    (= :thumbs filters-list-style)
-
-        toggle-ordering    (mf/use-ctx cmm/assets-toggle-ordering)
-        toggle-list-style  (mf/use-ctx cmm/assets-toggle-list-style)
 
         library-ref        (mf/with-memo [file-id]
                              (create-file-library-ref file-id))
@@ -155,10 +131,6 @@
                                  (l/derived lens:selected)))
 
         selected           (mf/deref selected-lens)
-        selected-count     (+ (count (get selected :components))
-                              (count (get selected :graphics))
-                              (count (get selected :colors))
-                              (count (get selected :typographies)))
 
         has-term?                (not ^boolean (str/empty? filters-term))
         force-open-components?   (when ^boolean has-term? (> 60 (count components)))
@@ -246,166 +218,80 @@
 
              (st/emit! (dwu/commit-undo-transaction undo-id)))))]
 
-    (if ^boolean new-css-system
-      [:div {:class (dom/classnames (css :library-content) true)}
-       (when ^boolean show-components?
-         [:& components-section
-          {:file-id file-id
-           :local? local?
-           :components components
-           :listing-thumbs? listing-thumbs?
-           :open? (or ^boolean force-open-components?
-                      ^boolean (get open-status :components false))
-           :force-open? force-open-components?
-           :open-status-ref open-status-ref
-           :reverse-sort? reverse-sort?
-           :selected selected
-           :on-asset-click on-component-click
-           :on-assets-delete on-assets-delete
-           :on-clear-selection on-clear-selection}])
+    [:div {:class (stl/css :library-content)}
+     (when ^boolean show-components?
+       [:& components-section
+        {:file-id file-id
+         :local? local?
+         :components components
+         :listing-thumbs? listing-thumbs?
+         :open? (or ^boolean force-open-components?
+                    ^boolean (get open-status :components false))
+         :force-open? force-open-components?
+         :open-status-ref open-status-ref
+         :reverse-sort? reverse-sort?
+         :selected selected
+         :on-asset-click on-component-click
+         :on-assets-delete on-assets-delete
+         :on-clear-selection on-clear-selection}])
 
-       (when ^boolean show-graphics?
-         [:& graphics-section
-          {:file-id file-id
-           :project-id project-id
-           :local? local?
-           :objects media
-           :listing-thumbs? listing-thumbs?
-           :open? (or ^boolean force-open-graphics?
-                      ^boolean (get open-status :graphics false))
-           :force-open? force-open-graphics?
-           :open-status-ref open-status-ref
-           :reverse-sort? reverse-sort?
-           :selected selected
-           :on-asset-click on-graphics-click
-           :on-assets-delete on-assets-delete
-           :on-clear-selection on-clear-selection}])
+     (when ^boolean show-graphics?
+       [:& graphics-section
+        {:file-id file-id
+         :project-id project-id
+         :local? local?
+         :objects media
+         :listing-thumbs? listing-thumbs?
+         :open? (or ^boolean force-open-graphics?
+                    ^boolean (get open-status :graphics false))
+         :force-open? force-open-graphics?
+         :open-status-ref open-status-ref
+         :reverse-sort? reverse-sort?
+         :selected selected
+         :on-asset-click on-graphics-click
+         :on-assets-delete on-assets-delete
+         :on-clear-selection on-clear-selection}])
 
-       (when ^boolean show-colors?
-         [:& colors-section
-          {:file-id file-id
-           :local? local?
-           :colors colors
-           :open? (or ^boolean force-open-colors?
-                      ^boolean (get open-status :colors false))
-           :force-open? force-open-colors?
-           :open-status-ref open-status-ref
-           :reverse-sort? reverse-sort?
-           :selected selected
-           :on-asset-click on-colors-click
-           :on-assets-delete on-assets-delete
-           :on-clear-selection on-clear-selection}])
+     (when ^boolean show-colors?
+       [:& colors-section
+        {:file-id file-id
+         :local? local?
+         :colors colors
+         :open? (or ^boolean force-open-colors?
+                    ^boolean (get open-status :colors false))
+         :force-open? force-open-colors?
+         :open-status-ref open-status-ref
+         :reverse-sort? reverse-sort?
+         :selected selected
+         :on-asset-click on-colors-click
+         :on-assets-delete on-assets-delete
+         :on-clear-selection on-clear-selection}])
 
-       (when ^boolean show-typography?
-         [:& typographies-section
-          {:file file
-           :file-id (:id file)
-           :local? local?
-           :typographies typographies
-           :open? (or ^boolean force-open-typographies?
-                      ^boolean (get open-status :typographies false))
-           :force-open? force-open-typographies?
-           :open-status-ref open-status-ref
-           :reverse-sort? reverse-sort?
-           :selected selected
-           :on-asset-click on-typography-click
-           :on-assets-delete on-assets-delete
-           :on-clear-selection on-clear-selection}])
+     (when ^boolean show-typography?
+       [:& typographies-section
+        {:file file
+         :file-id (:id file)
+         :local? local?
+         :typographies typographies
+         :open? (or ^boolean force-open-typographies?
+                    ^boolean (get open-status :typographies false))
+         :force-open? force-open-typographies?
+         :open-status-ref open-status-ref
+         :reverse-sort? reverse-sort?
+         :selected selected
+         :on-asset-click on-typography-click
+         :on-assets-delete on-assets-delete
+         :on-clear-selection on-clear-selection}])
 
-       (when (and (not ^boolean show-components?)
-                  (not ^boolean show-graphics?)
-                  (not ^boolean show-colors?)
-                  (not ^boolean show-typography?))
-         [:div  {:class (css :asset-title)}
-           [:span {:class (css :no-found-icon)}
-            i/search-refactor]
-           [:span {:class (css :no-found-text)}
-            (tr "workspace.assets.not-found")]])]
-      [:div.tool-window-content
-       [:div.listing-options
-        (when (> selected-count 0)
-          [:span.selected-count
-           (tr "workspace.assets.selected-count" (i18n/c selected-count))])
-        [:div.listing-option-btn.first {:on-click toggle-ordering}
-         (if reverse-sort?
-           i/sort-ascending
-           i/sort-descending)]
-        [:div.listing-option-btn {:on-click toggle-list-style}
-         (if listing-thumbs?
-           i/listing-enum
-           i/listing-thumbs)]]
-
-       (when ^boolean show-components?
-         [:& components-section
-          {:file-id file-id
-           :local? local?
-           :components components
-           :listing-thumbs? listing-thumbs?
-           :open? (or ^boolean force-open-components?
-                      ^boolean (get open-status :components false))
-           :force-open? force-open-components?
-           :open-status-ref open-status-ref
-           :reverse-sort? reverse-sort?
-           :selected selected
-           :on-asset-click on-component-click
-           :on-assets-delete on-assets-delete
-           :on-clear-selection on-clear-selection}])
-
-       (when ^boolean show-graphics?
-         [:& graphics-section
-          {:file-id file-id
-           :project-id project-id
-           :local? local?
-           :objects media
-           :listing-thumbs? listing-thumbs?
-           :open? (or ^boolean force-open-graphics?
-                      ^boolean (get open-status :graphics false))
-           :force-open? force-open-graphics?
-           :open-status-ref open-status-ref
-           :reverse-sort? reverse-sort?
-           :selected selected
-           :on-asset-click on-graphics-click
-           :on-assets-delete on-assets-delete
-           :on-clear-selection on-clear-selection}])
-
-       (when ^boolean show-colors?
-         [:& colors-section
-          {:file-id file-id
-           :local? local?
-           :colors colors
-           :open? (or ^boolean force-open-colors?
-                      ^boolean (get open-status :colors false))
-           :force-open? force-open-colors?
-           :open-status-ref open-status-ref
-           :reverse-sort? reverse-sort?
-           :selected selected
-           :on-asset-click on-colors-click
-           :on-assets-delete on-assets-delete
-           :on-clear-selection on-clear-selection}])
-
-       (when ^boolean show-typography?
-         [:& typographies-section
-          {:file file
-           :file-id (:id file)
-           :local? local?
-           :typographies typographies
-           :open? (or ^boolean force-open-typographies?
-                      ^boolean (get open-status :typographies false))
-           :force-open? force-open-typographies?
-           :open-status-ref open-status-ref
-           :reverse-sort? reverse-sort?
-           :selected selected
-           :on-asset-click on-typography-click
-           :on-assets-delete on-assets-delete
-           :on-clear-selection on-clear-selection}])
-
-       (when (and (not ^boolean show-components?)
-                  (not ^boolean show-graphics?)
-                  (not ^boolean show-colors?)
-                  (not ^boolean show-typography?))
-         [:div.asset-section
-          [:div.asset-title
-           (tr "workspace.assets.not-found")]])])))
+     (when (and (not ^boolean show-components?)
+                (not ^boolean show-graphics?)
+                (not ^boolean show-colors?)
+                (not ^boolean show-typography?))
+       [:div  {:class (stl/css :asset-title)}
+        [:span {:class (stl/css :no-found-icon)}
+         i/search-refactor]
+        [:span {:class (stl/css :no-found-text)}
+         (tr "workspace.assets.not-found")]])]))
 
 
 (mf/defc file-library
@@ -416,7 +302,6 @@
         shared?         (:is-shared file)
         project-id      (:project-id file)
         page-id         (dm/get-in file [:data :pages 0])
-        new-css-system  (mf/use-ctx ctx/new-css-system)
 
         open-status-ref (mf/with-memo [file-id]
                           (-> (l/key file-id)
@@ -429,8 +314,7 @@
          (mf/deps file-id)
          (fn []
            (st/emit! (dw/unselect-all-assets file-id))))]
-    [:div {:class (dom/classnames (css :tool-window) new-css-system
-                                  :tool-window (not new-css-system))
+    [:div {:class (stl/css :tool-window)
            :on-context-menu dom/prevent-default
            :on-click unselect-all}
      [:& file-library-title

@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.assets.colors
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -18,7 +18,6 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.color-bullet :as bc]
    [app.main.ui.components.color-bullet-new :as cb]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
@@ -59,7 +58,6 @@
 
         menu-state  (mf/use-state cmm/initial-context-menu-state)
         read-only?  (mf/use-ctx ctx/workspace-read-only?)
-        new-css-system (mf/use-ctx ctx/new-css-system)
 
         default-name (cond
                        (:gradient color) (uc/gradient-type->string (dm/get-in color [:gradient :type]))
@@ -193,113 +191,67 @@
           (dom/select-text! input)
           nil)))
 
-    (if ^boolean new-css-system
-      [:div {:class (dom/classnames (css :asset-list-item) true
-                                    (css :selected) (contains? selected (:id color))
-                                    (css :editing) editing?)
-             :style #js {"--bullet-size" "16px"}
-             :on-context-menu on-context-menu
-             :on-click (when-not editing? on-click)
-             :ref item-ref
-             :draggable (and (not read-only?) (not editing?))
-             :on-drag-start on-color-drag-start
-             :on-drag-enter on-drag-enter
-             :on-drag-leave on-drag-leave
-             :on-drag-over dom/prevent-default
-             :on-drop on-drop}
+    [:div {:class (stl/css-case :asset-list-item true
+                                :selected (contains? selected (:id color))
+                                :editing editing?)
+           :style #js {"--bullet-size" "16px"}
+           :on-context-menu on-context-menu
+           :on-click (when-not editing? on-click)
+           :ref item-ref
+           :draggable (and (not read-only?) (not editing?))
+           :on-drag-start on-color-drag-start
+           :on-drag-enter on-drag-enter
+           :on-drag-leave on-drag-leave
+           :on-drag-over dom/prevent-default
+           :on-drop on-drop}
 
-       [:div {:class (dom/classnames (css :bullet-block) true)}
-        [:& cb/color-bullet {:color color
-                             :mini? true}]]
+     [:div {:class (stl/css :bullet-block)}
+      [:& cb/color-bullet {:color color
+                           :mini? true}]]
 
-       (if ^boolean editing?
-         [:input
-          {:type "text"
-           :class (dom/classnames (css :element-name) true)
-           :ref input-ref
-           :on-blur input-blur
-           :on-key-down input-key-down
-           :auto-focus true
-           :default-value (cfh/merge-path-item (:path color) (:name color))}]
+     (if ^boolean editing?
+       [:input
+        {:type "text"
+         :class (stl/css :element-name)
+         :ref input-ref
+         :on-blur input-blur
+         :on-key-down input-key-down
+         :auto-focus true
+         :default-value (cfh/merge-path-item (:path color) (:name color))}]
 
-         [:div {:title (:name color)
-                :class (dom/classnames (css :name-block) true)
-                :on-double-click rename-color-clicked}
+       [:div {:title (:name color)
+              :class (stl/css :name-block)
+              :on-double-click rename-color-clicked}
 
-          (if (= (:name color) default-name)
-            [:span  {:class (dom/classnames (css :default-name-only) true)} default-name]
-            [:*
-             [:span  {:class (dom/classnames (css :name) true)} (:name color)]
-             [:span  {:class (dom/classnames (css :default-name) true)} default-name]])])
+        (if (= (:name color) default-name)
+          [:span  {:class (stl/css :default-name-only)} default-name]
+          [:*
+           [:span  {:class (stl/css :name)} (:name color)]
+           [:span  {:class (stl/css :default-name)} default-name]])])
 
-       (when local?
-         [:& cmm/assets-context-menu
-          {:on-close on-close-menu
-           :state @menu-state
-           :options [(when-not (or multi-colors? multi-assets?)
-                       {:option-name    (tr "workspace.assets.rename")
-                        :id             "assets-rename-color"
-                        :option-handler rename-color-clicked})
-                     (when-not (or multi-colors? multi-assets?)
-                       {:option-name    (tr "workspace.assets.edit")
-                        :id             "assets-edit-color"
-                        :option-handler edit-color-clicked})
+     (when local?
+       [:& cmm/assets-context-menu
+        {:on-close on-close-menu
+         :state @menu-state
+         :options [(when-not (or multi-colors? multi-assets?)
+                     {:option-name    (tr "workspace.assets.rename")
+                      :id             "assets-rename-color"
+                      :option-handler rename-color-clicked})
+                   (when-not (or multi-colors? multi-assets?)
+                     {:option-name    (tr "workspace.assets.edit")
+                      :id             "assets-edit-color"
+                      :option-handler edit-color-clicked})
 
-                     {:option-name    (tr "workspace.assets.delete")
-                      :id             "assets-delete-color"
-                      :option-handler delete-color}
-                     (when-not multi-assets?
-                       {:option-name   (tr "workspace.assets.group")
-                        :id             "assets-group-color"
-                        :option-handler (on-group (:id color))})]}])
+                   {:option-name    (tr "workspace.assets.delete")
+                    :id             "assets-delete-color"
+                    :option-handler delete-color}
+                   (when-not multi-assets?
+                     {:option-name   (tr "workspace.assets.group")
+                      :id             "assets-group-color"
+                      :option-handler (on-group (:id color))})]}])
 
-       (when ^boolean dragging?
-         [:div {:class (dom/classnames (css :dragging) true)}])]
-
-      [:div.asset-list-item
-       {:class-name (dom/classnames
-                     :selected (contains? selected (:id color)))
-        :on-context-menu on-context-menu
-        :on-click (when-not editing? on-click)
-        :ref item-ref
-        :draggable (and (not read-only?) (not editing?))
-        :on-drag-start on-color-drag-start
-        :on-drag-enter on-drag-enter
-        :on-drag-leave on-drag-leave
-        :on-drag-over dom/prevent-default
-        :on-drop on-drop}
-
-       [:& bc/color-bullet {:color color}]
-
-       (if ^boolean editing?
-         [:input.element-name
-          {:type "text"
-           :ref input-ref
-           :on-blur input-blur
-           :on-key-down input-key-down
-           :auto-focus true
-           :default-value (cfh/merge-path-item (:path color) (:name color))}]
-
-         [:div.name-block {:title (:name color)
-                           :on-double-click rename-color-clicked}
-          (:name color)
-          (when-not (= (:name color) default-name)
-            [:span default-name])])
-
-       (when local?
-         [:& cmm/assets-context-menu
-          {:on-close on-close-menu
-           :state @menu-state
-           :options [(when-not (or multi-colors? multi-assets?)
-                       [(tr "workspace.assets.rename") rename-color-clicked])
-                     (when-not (or multi-colors? multi-assets?)
-                       [(tr "workspace.assets.edit") edit-color-clicked])
-                     [(tr "workspace.assets.delete") delete-color]
-                     (when-not multi-assets?
-                       [(tr "workspace.assets.group") (on-group (:id color))])]}])
-
-       (when ^boolean dragging?
-         [:div.dragging])])))
+     (when ^boolean dragging?
+       [:div {:class (stl/css :dragging)}])]))
 
 (mf/defc colors-group
   [{:keys [file-id prefix groups open-groups force-open? local? selected
@@ -308,7 +260,6 @@
            selected-full]}]
   (let [group-open?    (or ^boolean force-open?
                            ^boolean (get open-groups prefix (if (= prefix "") true false)))
-        new-css-system (mf/use-ctx ctx/new-css-system)
         dragging*      (mf/use-state false)
         dragging?      (deref dragging*)
 
@@ -338,136 +289,71 @@
          (fn [event]
            (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full move-color)))]
 
-    (if ^boolean new-css-system
-      [:div {:class (dom/classnames (css :colors-group) true)
-             :on-drag-enter on-drag-enter
-             :on-drag-leave on-drag-leave
-             :on-drag-over dom/prevent-default
-             :on-drop on-drop}
-       [:& grp/asset-group-title {:file-id file-id
-                                  :section :colors
-                                  :path prefix
-                                  :group-open? group-open?
-                                  :on-rename on-rename-group
-                                  :on-ungroup on-ungroup}]
-       (when group-open?
-         [:*
-          (let [colors (get groups "" [])]
-            [:div {:class (dom/classnames (css :asset-list) true)
-                   :on-drag-enter on-drag-enter
-                   :on-drag-leave on-drag-leave
-                   :on-drag-over dom/prevent-default
-                   :on-drop on-drop}
+    [:div {:class (stl/css :colors-group)
+           :on-drag-enter on-drag-enter
+           :on-drag-leave on-drag-leave
+           :on-drag-over dom/prevent-default
+           :on-drop on-drop}
+     [:& grp/asset-group-title {:file-id file-id
+                                :section :colors
+                                :path prefix
+                                :group-open? group-open?
+                                :on-rename on-rename-group
+                                :on-ungroup on-ungroup}]
+     (when group-open?
+       [:*
+        (let [colors (get groups "" [])]
+          [:div {:class (stl/css :asset-list)
+                 :on-drag-enter on-drag-enter
+                 :on-drag-leave on-drag-leave
+                 :on-drag-over dom/prevent-default
+                 :on-drop on-drop}
 
-             (when ^boolean dragging?
-               [:div {:class (dom/classnames (css :grid-placeholder) true)}
-                "\u00A0"])
+           (when ^boolean dragging?
+             [:div {:class (stl/css :grid-placeholder)}
+              "\u00A0"])
 
-             (when (and (empty? colors)
-                        (some? groups))
-               [:div {:class (dom/classnames (css :drop-space) true)}])
+           (when (and (empty? colors)
+                      (some? groups))
+             [:div {:class (stl/css :drop-space)}])
 
-             (for [color colors]
-               [:& color-item {:key (dm/str (:id color))
-                               :color color
-                               :file-id file-id
-                               :local? local?
-                               :selected selected
-                               :multi-colors? multi-colors?
-                               :multi-assets? multi-assets?
-                               :on-asset-click on-asset-click
-                               :on-assets-delete on-assets-delete
-                               :on-clear-selection on-clear-selection
-                               :on-group on-group
-                               :colors colors
-                               :selected-full selected-full
-                               :selected-paths selected-paths
-                               :move-color move-color}])])
+           (for [color colors]
+             [:& color-item {:key (dm/str (:id color))
+                             :color color
+                             :file-id file-id
+                             :local? local?
+                             :selected selected
+                             :multi-colors? multi-colors?
+                             :multi-assets? multi-assets?
+                             :on-asset-click on-asset-click
+                             :on-assets-delete on-assets-delete
+                             :on-clear-selection on-clear-selection
+                             :on-group on-group
+                             :colors colors
+                             :selected-full selected-full
+                             :selected-paths selected-paths
+                             :move-color move-color}])])
 
-          (for [[path-item content] groups]
-            (when-not (empty? path-item)
-              [:& colors-group {:file-id file-id
-                                :prefix (cfh/merge-path-item prefix path-item)
-                                :key (dm/str "group-" path-item)
-                                :groups content
-                                :open-groups open-groups
-                                :force-open? force-open?
-                                :local? local?
-                                :selected selected
-                                :multi-colors? multi-colors?
-                                :multi-assets? multi-assets?
-                                :on-asset-click on-asset-click
-                                :on-assets-delete on-assets-delete
-                                :on-clear-selection on-clear-selection
-                                :on-group on-group
-                                :on-rename-group on-rename-group
-                                :on-ungroup on-ungroup
-                                :colors colors
-                                :selected-full selected-full}]))])]
-
-
-      [:div {:on-drag-enter on-drag-enter
-             :on-drag-leave on-drag-leave
-             :on-drag-over dom/prevent-default
-             :on-drop on-drop}
-       [:& grp/asset-group-title {:file-id file-id
-                                  :section :colors
-                                  :path prefix
-                                  :group-open? group-open?
-                                  :on-rename on-rename-group
-                                  :on-ungroup on-ungroup}]
-       (when group-open?
-         [:*
-          (let [colors (get groups "" [])]
-            [:div.asset-list {:on-drag-enter on-drag-enter
-                              :on-drag-leave on-drag-leave
-                              :on-drag-over dom/prevent-default
-                              :on-drop on-drop}
-
-             (when ^boolean dragging?
-               [:div.grid-placeholder "\u00A0"])
-
-             (when (and (empty? colors)
-                        (some? groups))
-               [:div.drop-space])
-
-             (for [color colors]
-               [:& color-item {:key (dm/str (:id color))
-                               :color color
-                               :file-id file-id
-                               :local? local?
-                               :selected selected
-                               :multi-colors? multi-colors?
-                               :multi-assets? multi-assets?
-                               :on-asset-click on-asset-click
-                               :on-assets-delete on-assets-delete
-                               :on-clear-selection on-clear-selection
-                               :on-group on-group
-                               :colors colors
-                               :selected-full selected-full
-                               :selected-paths selected-paths
-                               :move-color move-color}])])
-
-          (for [[path-item content] groups]
-            (when-not (empty? path-item)
-              [:& colors-group {:file-id file-id
-                                :prefix (cfh/merge-path-item prefix path-item)
-                                :key (dm/str "group-" path-item)
-                                :groups content
-                                :open-groups open-groups
-                                :force-open? force-open?
-                                :local? local?
-                                :selected selected
-                                :multi-colors? multi-colors?
-                                :multi-assets? multi-assets?
-                                :on-asset-click on-asset-click
-                                :on-assets-delete on-assets-delete
-                                :on-clear-selection on-clear-selection
-                                :on-group on-group
-                                :on-rename-group on-rename-group
-                                :on-ungroup on-ungroup
-                                :colors colors
-                                :selected-full selected-full}]))])])))
+        (for [[path-item content] groups]
+          (when-not (empty? path-item)
+            [:& colors-group {:file-id file-id
+                              :prefix (cfh/merge-path-item prefix path-item)
+                              :key (dm/str "group-" path-item)
+                              :groups content
+                              :open-groups open-groups
+                              :force-open? force-open?
+                              :local? local?
+                              :selected selected
+                              :multi-colors? multi-colors?
+                              :multi-assets? multi-assets?
+                              :on-asset-click on-asset-click
+                              :on-assets-delete on-assets-delete
+                              :on-clear-selection on-clear-selection
+                              :on-group on-group
+                              :on-rename-group on-rename-group
+                              :on-ungroup on-ungroup
+                              :colors colors
+                              :selected-full selected-full}]))])]))
 
 (mf/defc colors-section
   [{:keys [file-id local? colors open? force-open? open-status-ref selected reverse-sort?
@@ -491,7 +377,6 @@
                           (grp/group-assets colors reverse-sort?))
 
         read-only?      (mf/use-ctx ctx/workspace-read-only?)
-        new-css-system  (mf/use-ctx ctx/new-css-system)
         add-color
         (mf/use-fn
          (fn [value _]
@@ -589,19 +474,12 @@
                            :section :colors
                            :assets-count (count colors)
                            :open? open?}
-     (if ^boolean new-css-system
-       (when local?
-         [:& cmm/asset-section-block {:role :title-button}
-          (when-not read-only?
-            [:button {:class (dom/classnames (css :assets-btn) true)
-                      :on-click add-color-clicked}
-             i/add-refactor])])
-
-       (when local?
-         [:& cmm/asset-section-block {:role :title-button}
-          (when-not read-only?
-            [:div.assets-button {:on-click add-color-clicked}
-             i/plus])]))
+     (when local?
+       [:& cmm/asset-section-block {:role :title-button}
+        (when-not read-only?
+          [:button {:class (stl/css :assets-btn)
+                    :on-click add-color-clicked}
+           i/add-refactor])])
 
 
      [:& cmm/asset-section-block {:role :content}
