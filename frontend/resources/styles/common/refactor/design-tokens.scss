@@ -314,3 +314,7 @@
   --viewer-thumbnail-border-color: var(--color-accent-primary);
   --viewer-thumbnail-background-color-selected: var(--color-accent-primary-muted);
 }
+
+#app {
+  background-color: var(--app-background);
+}
