@@ -309,23 +309,21 @@
                                ::quotes/project-id project-id
                                ::quotes/file-id file-id}))
 
-                  (rtry/with-retry {::rtry/when rtry/conflict-exception?
-                                    ::rtry/max-retries 3
-                                    ::rtry/label "create-comment-thread"
-                                    ::db/conn conn}
-                    (create-comment-thread conn
-                                           {:created-at request-at
-                                            :profile-id profile-id
-                                            :file-id file-id
-                                            :page-id page-id
-                                            :page-name page-name
-                                            :position position
-                                            :content content
-                                            :frame-id frame-id}))))))
 
+                  (-> cfg
+                      (assoc ::rtry/when rtry/conflict-exception?)
+                      (assoc ::rtry/label "create-comment-thread")
+                      (rtry/invoke create-comment-thread {:created-at request-at
+                                                          :profile-id profile-id
+                                                          :file-id file-id
+                                                          :page-id page-id
+                                                          :page-name page-name
+                                                          :position position
+                                                          :content content
+                                                          :frame-id frame-id}))))))
 
 (defn- create-comment-thread
-  [conn {:keys [profile-id file-id page-id page-name created-at position content frame-id]}]
+  [{:keys [::db/conn]} {:keys [profile-id file-id page-id page-name created-at position content frame-id]}]
   (let [;; NOTE: we take the next seq number from a separate query because the whole
         ;; operation can be retried on conflict, and in this case the new seq shold be
         ;; retrieved from the database.

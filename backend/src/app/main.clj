@@ -34,6 +34,8 @@
    [app.srepl :as-alias srepl]
    [app.storage :as-alias sto]
    [app.storage.fs :as-alias sto.fs]
+   [app.storage.gc-deleted :as-alias sto.gc-deleted]
+   [app.storage.gc-touched :as-alias sto.gc-touched]
    [app.storage.s3 :as-alias sto.s3]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
@@ -202,11 +204,11 @@
    :app.storage.tmp/cleaner
    {::wrk/executor (ig/ref ::wrk/executor)}
 
-   ::sto/gc-deleted-task
+   ::sto.gc-deleted/handler
    {::db/pool      (ig/ref ::db/pool)
     ::sto/storage  (ig/ref ::sto/storage)}
 
-   ::sto/gc-touched-task
+   ::sto.gc-touched/handler
    {::db/pool (ig/ref ::db/pool)}
 
    ::http.client/client
@@ -337,12 +339,13 @@
     ::wrk/tasks
     {:sendmail           (ig/ref ::email/handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
+     :orphan-teams-gc    (ig/ref :app.tasks.orphan-teams-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
-     :storage-gc-deleted (ig/ref ::sto/gc-deleted-task)
-     :storage-gc-touched (ig/ref ::sto/gc-touched-task)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
+     :storage-gc-deleted (ig/ref ::sto.gc-deleted/handler)
+     :storage-gc-touched (ig/ref ::sto.gc-touched/handler)
      :session-gc         (ig/ref ::session.tasks/gc)
      :audit-log-archive  (ig/ref ::audit.tasks/archive)
      :audit-log-gc       (ig/ref ::audit.tasks/gc)
@@ -372,6 +375,9 @@
    :app.tasks.objects-gc/handler
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)}
+
+   :app.tasks.orphan-teams-gc/handler
+   {::db/pool     (ig/ref ::db/pool)}
 
    :app.tasks.file-gc/handler
    {::db/pool     (ig/ref ::db/pool)
@@ -457,6 +463,9 @@
 
      {:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :objects-gc}
+
+     {:cron #app/cron "0 0 0 * * ?" ;; daily
+      :task :orphan-teams-gc}
 
      {:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :storage-gc-deleted}

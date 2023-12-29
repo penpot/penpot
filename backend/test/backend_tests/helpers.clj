@@ -175,12 +175,11 @@
                  " WHERE table_schema = 'public' "
                  "   AND table_name != 'migrations';")]
     (db/with-atomic [conn *pool*]
+      (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
+      (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
       (let [result (->> (db/exec! conn [sql])
                         (map :table-name)
-                        (remove #(= "task" %)))
-            sql    (str "TRUNCATE "
-                        (apply str (interpose ", " result))
-                        " CASCADE;")]
+                        (remove #(= "task" %)))]
         (doseq [table result]
           (db/exec! conn [(str "delete from " table ";")]))))
 
@@ -433,11 +432,11 @@
        (us/pretty-explain data))
 
       (= :params-validation (:code data))
-      (app.common.pprint/pprint
+      (println
        (sm/humanize-explain (::sm/explain data)))
 
       (= :data-validation (:code data))
-      (app.common.pprint/pprint
+      (println
        (sm/humanize-explain (::sm/explain data)))
 
       (= :service-error (:type data))
@@ -511,6 +510,10 @@
 (defn db-exec!
   [sql]
   (db/exec! *pool* sql))
+
+(defn db-exec-one!
+  [sql]
+  (db/exec-one! *pool* sql))
 
 (defn db-delete!
   [& params]

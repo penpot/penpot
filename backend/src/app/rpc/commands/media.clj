@@ -23,6 +23,7 @@
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.services :as sv]
+   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -152,6 +153,12 @@
         image  (sto/put-object! storage (::image result))
         thumb  (when-let [params (::thumb result)]
                  (sto/put-object! storage params))]
+
+    (db/update! conn :file
+                {:modified-at (dt/now)
+                 :has-media-trimmed false}
+                {:id file-id}
+                {::db/return-keys? false})
 
     (db/exec-one! conn [sql:create-file-media-object
                         (or id (uuid/next))
