@@ -419,67 +419,11 @@
 
 (defn- build-fill-element
   [shape child position render-id]
-  (let [shape-fills  (get shape :fills)
-        shape-shadow (get shape :shadow)
-        shape-blur   (get shape :blur)
-
-        type         (obj/get child "type")
+  (let [type         (obj/get child "type")
         props        (-> (obj/get child "props")
                          (obj/clone))
-        style        (-> (obj/get props "style")
-                         (obj/clone))
-
-        url-fill?    (or ^boolean (some? (:fill-image shape))
-                         ^boolean (cfh/image-shape? shape)
-                         ^boolean (> (count shape-fills) 1)
-                         ^boolean (some? (some :fill-color-gradient shape-fills))
-                         ^boolean (some? (some :fill-image shape-fills)))
-
-        props        (if (cfh/frame-shape? shape)
-                       props
-                       (if (or (some? (->> shape-shadow (remove :hidden) seq))
-                               (and (some? shape-blur) (not ^boolean (:hidden shape-blur))))
-                         (obj/set! props "filter" (dm/fmt "url(#filter-%)" render-id))
-                         props))
-
-        svg-attrs    (attrs/get-svg-props shape render-id)
-        svg-styles   (obj/get svg-attrs "style")]
-
-    (cond
-      ^boolean url-fill?
-      (do
-        (obj/unset! style "fill")
-        (obj/unset! style "fillOpacity")
-        (obj/set! props "fill" (dm/fmt "url(#fill-%-%)" position render-id)))
-
-      (and ^boolean (some? svg-styles)
-           ^boolean (obj/contains? svg-styles "fill"))
-      (let [fill    (obj/get svg-styles "fill")
-            opacity (obj/get svg-styles "fillOpacity")]
-        (when (some? fill)
-          (obj/set! style "fill" fill))
-        (when (some? opacity)
-          (obj/set! style "fillOpacity" opacity)))
-
-      (and ^boolean (some? svg-attrs)
-           ^boolean (empty? shape-fills))
-      (let [fill    (obj/get svg-attrs "fill")
-            opacity (obj/get svg-attrs "fillOpacity")]
-        (when (some? fill)
-          (obj/set! style "fill" fill))
-        (when (some? opacity)
-          (obj/set! style "fillOpacity" opacity)))
-
-      ^boolean (d/not-empty? shape-fills)
-      (let [fill (nth shape-fills 0)]
-        (obj/merge! style (attrs/get-fill-style fill render-id 0 (dm/get-prop shape :type))))
-
-      (and ^boolean (cfh/path-shape? shape)
-           ^boolean (empty? shape-fills))
-      (obj/set! style "fill" "none"))
-
-    (let [props (obj/set! props "style" style)]
-      (mf/html [:> type props]))))
+        props        (attrs/add-fill-props! props shape position render-id)]
+    (mf/html [:> type props])))
 
 (defn- build-stroke-element
   [child value position render-id]
@@ -490,11 +434,11 @@
                   (obj/clone)
                   (obj/set! "fill" "none")
                   (obj/set! "fillOpacity" "none")
-                  (obj/merge! (attrs/get-stroke-style value position render-id)))
+                  (attrs/add-stroke! value render-id position))
 
-        style     (if (:stroke-image value)
-                    (obj/set! style "stroke" (dm/fmt "url(#stroke-fill-%-%)" render-id position))
-                    style)
+        style (if (:stroke-image value)
+                (obj/set! style "stroke" (dm/fmt "url(#stroke-fill-%-%)" render-id position))
+                style)
 
         props (-> (obj/clone props)
                   (obj/unset! "fill")
@@ -537,22 +481,28 @@
         shape-shadow  (get shape :shadow)
         shape-strokes (get shape :strokes)
 
-        props         #js {:id stroke-id :className "strokes"}
+        style         (-> (obj/get props "style")
+                          (obj/clone)
+                          (attrs/add-layer-styles! shape))
+
+        props        #js {:id stroke-id
+                          :className "strokes"
+                          :style style}
+
         props         (if ^boolean (cfh/frame-shape? shape)
                         props
-                        (cond
+                        (cond-> props
                           (and (some? shape-blur)
-                               (not ^boolean (:hidden shape-blur)))
-                          (obj/set! props "filter" (dm/fmt "url(#filter-blur-%)" render-id))
+                            (not ^boolean (:hidden shape-blur)))
+                          (obj/set! "filter" (dm/fmt "url(#filter-blur-%)" render-id))
 
                           (and (empty? shape-fills)
-                               (some? (->> shape-shadow (remove :hidden) seq)))
-                          (obj/set! props "filter" (dm/fmt "url(#filter-%)" render-id))))]
-
+                            (some? (->> shape-shadow (remove :hidden) seq)))
+                          (obj/set! "filter" (dm/fmt "url(#filter-%)" render-id))))]
 
     (when (d/not-empty? shape-strokes)
       [:> :g props
-       (for [[index value] (-> (d/enumerate shape-strokes) reverse)]
+       (for [[index value] (reverse (d/enumerate shape-strokes))]
          [:& shape-custom-stroke {:shape shape
                                   :stroke value
                                   :index index

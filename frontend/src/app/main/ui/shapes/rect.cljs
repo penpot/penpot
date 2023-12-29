@@ -8,7 +8,6 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [app.util.object :as obj]
@@ -25,10 +24,10 @@
         h     (dm/get-prop shape :height)
 
         t     (gsh/transform-str shape)
-        rid   (mf/use-ctx muc/render-id)
 
-        props (mf/with-memo [shape rid]
-                (-> (attrs/get-style-props shape rid)
+        props (mf/with-memo [shape]
+                (-> #js {}
+                    (attrs/add-border-props! shape)
                     (obj/merge! #js {:x x :y y :transform t :width w :height h})))
 
         path? (some? (.-d props))]

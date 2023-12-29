@@ -51,7 +51,7 @@
             (d/nilv (ex/ignoring (upf/format-path content)) "")))
 
         border-attrs
-        (attrs/get-border-radius shape)
+        (attrs/get-border-props shape)
 
         outline-type
         (case type

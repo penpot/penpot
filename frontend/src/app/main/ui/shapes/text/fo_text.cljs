@@ -191,7 +191,7 @@
       :transform transform
       :width  (if (#{:auto-width} grow-type) 100000 width)
       :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
-      :style  (attrs/add-layer-props! #js {} shape)
+      :style  (attrs/get-layer-styles shape)
       :ref ref}
      ;; We use a class here because react has a bug that won't use the appropriate selector for
      ;; `background-clip`
