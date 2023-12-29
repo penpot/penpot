@@ -329,14 +329,14 @@
 
 (defn h-padding
   [{:keys [layout-padding-type layout-padding]}]
-  (let [{pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding]
+  (let [{pad-right :p2 pad-left :p4} layout-padding]
     (if (= :simple layout-padding-type)
       (+ pad-right pad-right)
       (+ pad-right pad-left))))
 
 (defn v-padding
   [{:keys [layout-padding-type layout-padding]}]
-  (let [{pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding]
+  (let [{pad-top :p1 pad-bottom :p3} layout-padding]
     (if (= :simple layout-padding-type)
       (+ pad-top pad-top)
       (+ pad-top pad-bottom))))
@@ -615,53 +615,201 @@
    :justify-self :auto
    :shapes []})
 
+(declare resize-cell-area)
+(declare cells-by-column)
+(declare cells-by-row)
+
+(defn remove-cell-areas
+  "Remove the areas in the given `index` before and after the index"
+  [parent prop index]
+  (let [prop-span (if (= prop :column) :row-span :column-span)
+        cells (if (= prop :column) (cells-by-column parent index) (cells-by-row parent index))]
+    (->> cells
+         (filter #(> (get % prop-span) 1))
+         (reduce
+          (fn [parent cell]
+            (let [changed-cells
+                  (cond
+                    ;; New track at the beginning
+                    (= (get cell prop) (inc index))
+                    [(assoc cell prop-span 1)
+                     (assoc cell :id (uuid/next) :shapes [] prop (inc (get cell prop)) prop-span (dec (get cell prop-span)))]
+
+                    ;; New track at the middle
+                    (< (get cell prop) (inc index) (+ (get cell prop) (dec (get cell prop-span))))
+                    [(assoc cell prop-span (- (inc index) (get cell prop)))
+                     (assoc cell :id (uuid/next) :shapes [] prop (inc index) prop-span 1)
+                     (assoc cell :id (uuid/next) :shapes [] prop (+ index 2) prop-span (- (+ (get cell prop) (dec (get cell prop-span))) (inc index)))]
+
+                    ;; New track at the end
+                    (= (+ (get cell prop) (dec (get cell prop-span))) (inc index))
+                    [(assoc cell prop-span (- (inc index) (get cell prop)))
+                     (assoc cell :id (uuid/next) :shapes [] prop (inc index) prop-span 1)])]
+
+              (->> changed-cells
+                   (reduce #(update %1 :layout-grid-cells assoc (:id %2) %2) parent))))
+          parent))))
+
+(defn remove-cell-areas-after
+  "Remove the areas in the given `index` but only after the index."
+  [parent prop index]
+  (let [prop-span (if (= prop :column) :column-span :row-span)
+        cells (if (= type :column) (cells-by-column parent index) (cells-by-row parent index))]
+    (->> cells
+         (filter #(> (get % prop-span) 1))
+         (reduce
+          (fn [parent cell]
+            (let [changed-cells
+                  (cond
+                    ;; New track at the beginning
+                    (= (get cell prop) (inc index))
+                    [(assoc cell prop-span 1)
+                     (assoc cell :id (uuid/next) :shapes [] prop (inc (get cell prop)) prop-span (dec (get cell prop-span)))]
+
+                    ;; New track at the middle
+                    (< (get cell prop) (inc index) (+ (get cell prop) (dec (get cell prop-span))))
+                    [(assoc cell prop-span (- (+ index 2) (get cell prop)))
+                     (assoc cell :id (uuid/next) :shapes [] prop (+ index 2) prop-span (- (+ (get cell prop) (dec (get cell prop-span))) (inc index)))])]
+              (->> changed-cells
+                   (reduce #(update %1 :layout-grid-cells assoc (:id %2) %2) parent))))
+          parent))))
+
 ;; Adding a track creates the cells. We should check the shapes that are not tracked (with default values) and assign to the correct tracked values
+
+(defn add-grid-track
+  ([type parent value]
+   (add-grid-track type parent value nil))
+  ([type parent value index]
+   (dm/assert!
+    "expected a valid grid definition for `value`"
+    (check-grid-track! value))
+
+   (let [[tracks-prop tracks-prop-other prop prop-other prop-span prop-span-other]
+         (if (= type :column)
+           [:layout-grid-columns :layout-grid-rows    :column :row    :column-span :row-span]
+           [:layout-grid-rows    :layout-grid-columns :row    :column :row-span    :column-span])
+
+         new-index (d/nilv index (count (get parent tracks-prop)))
+         new-track-num (inc new-index)
+
+         ;; Increase the values for the existing cells
+         layout-grid-cells
+         (-> (:layout-grid-cells parent)
+             (update-vals
+              (fn [cell]
+                (cond-> cell
+                  (>= (get cell prop) new-track-num)
+                  (update prop inc)
+
+                  (and (< (get cell prop) new-track-num)
+                       (> (get cell prop-span) 1)
+                       (>= (+ (get cell prop) (dec (get cell prop-span))) new-track-num))
+                  (update prop-span inc)))))
+
+         ;; Search for the cells already created
+         exist-cells?
+         (into #{}
+               (comp (filter
+                      (fn [cell]
+                        (and (>= new-track-num (get cell prop))
+                             (< new-track-num (+ (get cell prop) (get cell prop-span))))))
+                     (mapcat #(range (get % prop-other) (+ (get % prop-other) (get % prop-span-other)))))
+               (vals layout-grid-cells))
+
+         ;; Create the new cells as necesary
+         layout-grid-cells
+         (->> (d/enumerate (get parent tracks-prop-other))
+              (remove (fn [[idx _]] (exist-cells? (inc idx))))
+              (reduce
+               (fn [result [idx _]]
+                 (let [id (uuid/next)]
+                   (assoc result id
+                          (merge {:id id
+                                  prop-other (inc idx)
+                                  prop new-track-num}
+                                 grid-cell-defaults))))
+               layout-grid-cells))]
+
+     (-> parent
+         (update tracks-prop d/add-at-index new-index value)
+         (assoc :layout-grid-cells layout-grid-cells)))))
+
 (defn add-grid-column
-  [parent value]
-  (dm/assert!
-   "expected a valid grid definition for `value`"
-   (check-grid-track! value))
-
-  (let [rows (:layout-grid-rows parent)
-        new-col-num (inc (count (:layout-grid-columns parent)))
-
-        layout-grid-cells
-        (->> (d/enumerate rows)
-             (reduce (fn [result [row-idx _]]
-                       (let [id (uuid/next)]
-                         (assoc result id
-                                (merge {:id id
-                                        :row (inc row-idx)
-                                        :column new-col-num}
-                                       grid-cell-defaults))))
-                     (:layout-grid-cells parent)))]
-    (-> parent
-        (update :layout-grid-columns (fnil conj []) value)
-        (assoc :layout-grid-cells layout-grid-cells))))
+  ([parent value]
+   (add-grid-column parent value nil))
+  ([parent value index]
+   (add-grid-track :column parent value index)))
 
 (defn add-grid-row
-  [parent value]
-  (dm/assert!
-   "expected a valid grid definition for `value`"
-   (check-grid-track! value))
+  ([parent value]
+   (add-grid-row parent value nil))
+  ([parent value index]
+   (add-grid-track :row parent value index)))
 
-  (let [cols (:layout-grid-columns parent)
-        new-row-num (inc (count (:layout-grid-rows parent)))
+(defn- duplicate-cells
+  [shape prop from-index to-index ids-map]
 
-        layout-grid-cells
-        (->> (d/enumerate cols)
-             (reduce (fn [result [col-idx _]]
-                       (let [id (uuid/next)]
-                         (assoc result id
-                                (merge {:id id
-                                        :column (inc col-idx)
-                                        :row new-row-num}
-                                       grid-cell-defaults))))
-                     (:layout-grid-cells parent)))]
-    (-> parent
-        (update :layout-grid-rows (fnil conj []) value)
-        (assoc :layout-grid-cells layout-grid-cells))))
+  (let [[prop-span prop-other prop-other-span]
+        (if (= prop :column)
+          [:column-span :row :row-span]
+          [:row-span :column :column-span])
 
+        from-cells
+        (if (= prop :column)
+          (cells-by-column shape from-index)
+          (cells-by-row shape from-index))
+
+        to-cells
+        (if (= prop :column)
+          (cells-by-column shape to-index)
+          (cells-by-row shape to-index))
+
+        to-cells-idx (d/index-by prop-other to-cells)
+
+        ;; This loop will go throught the original cells and copy their data to the target cell
+        ;; After this some cells could have no correspondence and should be removed
+        [shape matched]
+        (loop [from-cells (seq from-cells)
+               matched    #{}
+               result     shape]
+          (if-let [cell (first from-cells)]
+            (let [match-cell
+                  (-> (get to-cells-idx (get cell prop-other))
+                      (d/patch-object (select-keys cell [prop-other-span :position :align-self :justify-self]))
+                      (cond-> (= (get cell prop-span) 1)
+                        (assoc :shapes (mapv ids-map (:shapes cell)))))]
+              (recur (rest from-cells)
+                     (conj matched (:id match-cell))
+                     (assoc-in result [:layout-grid-cells (:id match-cell)] match-cell)))
+
+            [result matched]))
+
+        ;; Remove cells that haven't been matched
+        shape
+        (->> to-cells
+             (remove (fn [{:keys [id]}] (contains? matched id)))
+             (reduce (fn [shape cell]
+                       (update shape :layout-grid-cells dissoc (:id cell)))
+                     shape))]
+
+    shape))
+
+
+(defn duplicate-row
+  [shape index ids-map]
+  (let [value (dm/get-in shape [:layout-grid-rows index])]
+    (-> shape
+        (remove-cell-areas-after :row index)
+        (add-grid-row value (inc index))
+        (duplicate-cells :row index (inc index) ids-map))))
+
+(defn duplicate-column
+  [shape index ids-map]
+  (let [value (dm/get-in shape [:layout-grid-columns index])]
+    (-> shape
+        (remove-cell-areas-after :column index)
+        (add-grid-column value (inc index))
+        (duplicate-cells :column index (inc index) ids-map))))
 
 (defn make-remove-cell
   [attr span-attr track-num]
@@ -762,12 +910,9 @@
          update-vals
          (fn [cell] (update cell prop #(get remap-tracks % %)))))))
 
-(declare resize-cell-area)
-(declare cells-by-column)
-(declare cells-by-row)
 
 (defn- reorder-grid-track
-  [parent from-index to-index move-content? cells-by tracks-props prop prop-span]
+  [parent from-index to-index move-content? tracks-props prop]
   (let [from-track (inc from-index)
         to-track   (if (< to-index from-index)
                      (+ to-index 2)
@@ -776,23 +921,10 @@
         (and move-content? (not= from-track to-track))
 
         parent
-        (if move-content?
-          (->> (concat (cells-by parent (dec from-track))
-                       (cells-by parent (dec to-track)))
-               (reduce (fn [parent cell]
-                         (cond-> parent
-                           (and (> (get cell prop-span) 1)
-                                (or (> to-track from-track) (not (= to-track (get cell prop))))
-                                (or (< to-track from-track) (not (= to-track (+ (get cell prop) (dec (get cell prop-span)))))))
-                           (resize-cell-area
-                            (:row cell)
-                            (:column cell)
-                            (:row cell)
-                            (:column cell)
-                            (if (= prop :row) 1 (:row-span cell))
-                            (if (= prop :column) 1 (:column-span cell)))))
-                       parent))
-          parent)
+        (cond-> parent
+          move-content?
+          (-> (remove-cell-areas prop (dec from-track))
+              (remove-cell-areas prop (dec to-track))))
 
         parent
         (reorder-grid-tracks parent tracks-props from-index to-index)]
@@ -803,11 +935,11 @@
 
 (defn reorder-grid-column
   [parent from-index to-index move-content?]
-  (reorder-grid-track parent from-index to-index move-content? cells-by-column :layout-grid-columns :column :column-span))
+  (reorder-grid-track parent from-index to-index move-content? :layout-grid-columns :column))
 
 (defn reorder-grid-row
   [parent from-index to-index move-content?]
-  (reorder-grid-track parent from-index to-index move-content? cells-by-row :layout-grid-rows :row :row-span))
+  (reorder-grid-track parent from-index to-index move-content? :layout-grid-rows :row))
 
 (defn cells-seq
   [{:keys [layout-grid-cells layout-grid-dir]} & {:keys [sort?] :or {sort? false}}]
@@ -1239,30 +1371,42 @@
     (assoc parent :shapes (into [] (reverse new-shapes)))))
 
 (defn cells-by-row
-  [parent index]
-  (->> (:layout-grid-cells parent)
-       (filter (fn [[_ {:keys [row row-span]}]]
-                 (and (>= (inc index) row)
-                      (< (inc index) (+ row row-span)))))
-       (map second)))
+  ([parent index]
+   (cells-by-row parent index true))
+  ([parent index check-span?]
+   (->> (:layout-grid-cells parent)
+        (filter (fn [[_ {:keys [row row-span]}]]
+                  (if check-span?
+                    (and (>= (inc index) row)
+                         (< (inc index) (+ row row-span)))
+                    (= (inc index) row))))
+        (map second))))
 
 (defn cells-by-column
-  [parent index]
-  (->> (:layout-grid-cells parent)
-       (filter (fn [[_ {:keys [column column-span]}]]
-                 (and (>= (inc index) column)
-                      (< (inc index) (+ column column-span)))))
-       (map second)))
+  ([parent index]
+   (cells-by-column parent index true))
+  ([parent index check-span?]
+   (->> (:layout-grid-cells parent)
+        (filter (fn [[_ {:keys [column column-span]}]]
+                  (if check-span?
+                    (and (>= (inc index) column)
+                         (< (inc index) (+ column column-span)))
+                    (= (inc index) column))))
+        (map second))))
 
 (defn shapes-by-row
-  [parent index]
-  (->> (cells-by-row parent index)
-       (mapcat :shapes)))
+  ([parent index]
+   (shapes-by-row parent index true))
+  ([parent index check-span?]
+   (->> (cells-by-row parent index check-span?)
+        (mapcat :shapes))))
 
 (defn shapes-by-column
-  [parent index]
-  (->> (cells-by-column parent index)
-       (mapcat :shapes)))
+  ([parent index]
+   (shapes-by-column parent index true))
+  ([parent index check-span?]
+   (->> (cells-by-column parent index check-span?)
+        (mapcat :shapes))))
 
 (defn cells-coordinates
   "Given a group of cells returns the coordinates that define"

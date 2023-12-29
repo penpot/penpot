@@ -9,7 +9,9 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes.flex-layout :as flex]
    [app.common.geom.shapes.grid-layout :as grid]
    [app.common.types.component :as ctc]
@@ -247,27 +249,29 @@
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn add-layout-track
-  [ids type value]
-  (assert (#{:row :column} type))
-  (ptk/reify ::add-layout-column
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [undo-id (js/Symbol)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dwc/update-shapes
-                ids
-                (fn [shape]
-                  (case type
-                    :row    (ctl/add-grid-row shape value)
-                    :column (ctl/add-grid-column shape value))))
-               (ptk/data-event :layout/update ids)
-               (dwu/commit-undo-transaction undo-id))))))
+  ([ids type value]
+   (add-layout-track ids type value nil))
+  ([ids type value index]
+   (assert (#{:row :column} type))
+   (ptk/reify ::add-layout-track
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (let [undo-id (js/Symbol)]
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dwc/update-shapes
+                 ids
+                 (fn [shape]
+                   (case type
+                     :row    (ctl/add-grid-row shape value index)
+                     :column (ctl/add-grid-column shape value index))))
+                (ptk/data-event :layout/update ids)
+                (dwu/commit-undo-transaction undo-id)))))))
 
 (defn remove-layout-track
   [ids type index]
   (assert (#{:row :column} type))
 
-  (ptk/reify ::remove-layout-column
+  (ptk/reify ::remove-layout-track
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
@@ -278,6 +282,59 @@
                   (case type
                     :row    (ctl/remove-grid-row shape index objects)
                     :column (ctl/remove-grid-column shape index objects))))
+               (ptk/data-event :layout/update ids)
+               (dwu/commit-undo-transaction undo-id))))))
+
+(defn duplicate-layout-track
+  [ids type index]
+  (assert (#{:row :column} type))
+
+  (ptk/reify ::duplicate-layout-track
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-id      (:current-file-id state)
+            page         (wsh/lookup-page state)
+            objects      (:objects page)
+            libraries    (wsh/get-libraries state)
+            library-data (wsh/get-file state file-id)
+            shape-id     (first ids)
+            base-shape   (get objects shape-id)
+
+            shapes-by-track
+            (if (= type :column)
+              (ctl/shapes-by-column base-shape index false)
+              (ctl/shapes-by-row base-shape index false))
+
+            ;; Change to set in order to use auxiliary functions
+            selected (set shapes-by-track)
+
+            changes
+            (->> (dwse/prepare-duplicate-changes objects page selected (gpt/point 0 0) it libraries library-data file-id)
+                 (dwse/duplicate-changes-update-indices objects selected))
+
+            ;; Creates a map with shape-id => duplicated-shape-id
+            ids-map
+            (->> changes
+                 :redo-changes
+                 (filter #(= (:type %) :add-obj))
+                 (filter #(selected (:old-id %)))
+                 (map #(vector (:old-id %) (get-in % [:obj :id])))
+                 (into {}))
+
+            changes
+            (-> changes
+                (pcb/update-shapes
+                 ids
+                 (fn [shape]
+                   ;; The duplication could have altered the grid so we restore the values, we'll calculate the good ones now
+                   (let [shape (merge shape (select-keys base-shape [:layout-grid-cells :layout-grid-columns :layout-grid-rows]))]
+                     (case type
+                       :row    (ctl/duplicate-row shape index ids-map)
+                       :column (ctl/duplicate-column shape index ids-map))))))
+
+            undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/commit-changes changes)
                (ptk/data-event :layout/update ids)
                (dwu/commit-undo-transaction undo-id))))))
 

@@ -517,6 +517,13 @@
   (->> (apply c/iteration args)
        (concat-all)))
 
+(defn add-at-index
+  "Insert an element in a vector at an arbitrary index"
+  [coll index element]
+  (assert (vector? coll))
+  (let [[before after] (split-at index coll)]
+    (concat-vec [] before [element] after)))
+
 (defn insert-at-index
   "Insert a list of elements at the given index of a previous list.
   Replace all existing elems."

@@ -337,9 +337,18 @@
         (mf/use-callback
          (mf/deps (:id shape) (:id cell) selected?)
          (fn [event]
-           (if (and (kbd/shift? event) selected?)
-             (st/emit! (dwge/remove-selection (:id shape) (:id cell)))
-             (st/emit! (dwge/select-grid-cell (:id shape) (:id cell) (kbd/shift? event)) ))))]
+           (when (or (dom/left-mouse? event) (not selected?))
+             (if (and (kbd/shift? event) selected?)
+               (st/emit! (dwge/remove-selection (:id shape) (:id cell)))
+               (st/emit! (dwge/select-grid-cell (:id shape) (:id cell) (kbd/shift? event)))))))
+
+        handle-context-menu
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (let [position (dom/get-client-position event)]
+             (st/emit! (dw/show-grid-cell-context-menu {:position position :grid-id (:id shape)})))))]
 
     [:g.cell-editor
      [:rect
@@ -352,6 +361,7 @@
        :width cell-width
        :height cell-height
 
+       :on-context-menu handle-context-menu
        :on-pointer-enter handle-pointer-enter
        :on-pointer-leave handle-pointer-leave
        :on-pointer-down handle-pointer-down}]
@@ -746,12 +756,6 @@
          (fn []
            (st/emit! (dwsl/hover-layout-track [(:id shape)] type index false))))
 
-        handle-remove-track
-        (mf/use-callback
-         (mf/deps (:id shape) type index)
-         (fn []
-           (st/emit! (dwsl/remove-layout-track [(:id shape)] type index))))
-
         track-list-prop (if (= type :column) :column-tracks :row-tracks)
         [text-x text-y text-width text-height]
         (if (= type :column)
@@ -775,6 +779,19 @@
          (mf/deps on-move-reorder-track type index)
          (fn [_ position]
            (on-move-reorder-track type index position)))
+
+        handle-show-track-menu
+        (mf/use-callback
+         (fn [event]
+           (dom/stop-propagation event)
+           (dom/prevent-default event)
+           (let [position (cond-> (dom/get-client-position event)
+                            (= type :column) (update :y + 40)
+                            (= type :row)    (update :x + 30))]
+             (st/emit! (dw/show-track-context-menu {:position position
+                                                    :grid-id (:id shape)
+                                                    :type type
+                                                    :index index})))))
 
         trackwidth (* text-width zoom)
         medium?    (and (>= trackwidth small-size-limit) (< trackwidth medium-size-limit))
@@ -811,6 +828,7 @@
       (when (not small?)
         [:foreignObject {:x text-x :y text-y :width text-width :height text-height}
          [:div {:class (stl/css :grid-editor-wrapper)
+                :on-context-menu handle-show-track-menu
                 :on-pointer-down handle-pointer-down
                 :on-lost-pointer-capture handle-lost-pointer-capture
                 :on-pointer-move handle-pointer-move}
@@ -825,7 +843,7 @@
             :on-blur handle-blur-track-input}]
           (when (and hovering? (not medium?) (not small?))
             [:button {:class (stl/css :grid-editor-button)
-                      :on-click handle-remove-track} i/delete-refactor])]])]
+                      :on-click handle-show-track-menu} i/menu-refactor])]])]
 
      [:g {:transform (when (= type :row) (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p)))}
       [:& track-marker
@@ -952,7 +970,7 @@
         handle-start-reorder-track
         (mf/use-callback
          (mf/deps layout-data)
-         (fn [type from-idx]
+         (fn [type _from-idx]
            ;; Initialize target-tracks
            (let [line-vec (if (= type :column) (vv 1) (hv 1))
 
@@ -979,7 +997,7 @@
 
         handle-move-reorder-track
         (mf/use-callback
-         (fn [type from-idx position]
+         (fn [_type _from-idx position]
            (let [index
                  (->> (mf/ref-val target-tracks*)
                       (d/seek (fn [[[p1 p2 v] _]]
@@ -991,7 +1009,7 @@
         handle-end-reorder-track
         (mf/use-callback
          (mf/deps base-shape @drop-track-target*)
-         (fn [type from-index position move-content?]
+         (fn [type from-index _position move-content?]
            (when-let [to-index @drop-track-target*]
              (let [ids [(:id base-shape)]]
                (cond

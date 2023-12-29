@@ -14,6 +14,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
@@ -549,6 +550,64 @@
                        :shortcut (sc/get-tooltip :toggle-focus-mode)
                        :on-click do-toggle-focus-mode}])]))
 
+(mf/defc grid-track-context-menu
+  [{:keys [mdata] :as props}]
+  (let [{:keys [type index grid-id]} mdata
+        do-delete-track
+        (mf/use-callback
+         (mf/deps grid-id type index)
+         (fn []
+           (st/emit! (dwsl/remove-layout-track [grid-id] type index))))
+
+        do-add-track-before
+        (mf/use-callback
+         (mf/deps grid-id type index)
+         (fn []
+           (st/emit! (dwsl/add-layout-track [grid-id] type ctl/default-track-value index))))
+
+        do-add-track-after
+        (mf/use-callback
+         (mf/deps grid-id type index)
+         (fn []
+           (st/emit! (dwsl/add-layout-track [grid-id] type ctl/default-track-value (inc index)))))
+
+        do-duplicate-track
+        (mf/use-callback
+         (mf/deps grid-id type index)
+         (fn []
+           (st/emit! (dwsl/duplicate-layout-track [grid-id] type index))))]
+    
+    (if (= type :column)
+      [:*
+       [:& menu-entry {:title "Duplicate column" :on-click do-duplicate-track}]
+       [:& menu-entry {:title "Add 1 column to the left" :on-click do-add-track-before}]
+       [:& menu-entry {:title "Add 1 column to the right" :on-click do-add-track-after}]
+       [:& menu-entry {:title "Delete column" :on-click do-delete-track}]]
+
+      [:*
+       [:& menu-entry {:title "Duplicate row" :on-click do-duplicate-track}]
+       [:& menu-entry {:title "Add 1 row above" :on-click do-add-track-before}]
+       [:& menu-entry {:title "Add 1 row bellow" :on-click do-add-track-after}]
+       [:& menu-entry {:title "Delete row" :on-click do-delete-track}]])))
+
+(mf/defc grid-cells-context-menu
+  [{:keys [mdata] :as props}]
+  (let [{:keys [grid-id cells]} mdata
+
+        do-merge-cells
+        (mf/use-callback
+         (mf/deps grid-id cells)
+         (fn []))
+
+        do-create-board
+        (mf/use-callback
+         (mf/deps grid-id cells)
+         (fn []))]
+    [:*
+     [:& menu-entry {:title "Merge cells" :on-click do-merge-cells}]
+     [:& menu-entry {:title "Create board" :on-click do-create-board}]]))
+
+
 (mf/defc context-menu
   []
   (let [mdata          (mf/deref menu-ref)
@@ -583,6 +642,8 @@
       (case (:kind mdata)
         :shape [:& shape-context-menu {:mdata mdata}]
         :page [:& page-item-context-menu {:mdata mdata}]
+        :grid-track [:& grid-track-context-menu {:mdata mdata}]
+        :grid-cells [:& grid-cells-context-menu {:mdata mdata}]
         [:& viewport-context-menu {:mdata mdata}])]]))
 
 
