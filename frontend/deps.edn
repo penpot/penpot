@@ -19,8 +19,8 @@
    :git/url "https://github.com/funcool/beicon.git"}
 
   funcool/rumext
-  {:git/tag "v2.8"
-   :git/sha "f8a0d9a"
+  {:git/tag "v2.8.1"
+   :git/sha "168738b"
    :git/url "https://github.com/funcool/rumext.git"}
 
   instaparse/instaparse {:mvn/version "1.4.12"}
