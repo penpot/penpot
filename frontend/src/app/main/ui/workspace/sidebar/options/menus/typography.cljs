@@ -194,7 +194,7 @@
                          :placeholder (tr "workspace.options.search-font")}]
          (when (and recent-fonts show-recent)
            [*
-            [:p {:class :title} (tr "workspace.options.recent-fonts")]
+            [:p {:class (stl/css :title)} (tr "workspace.options.recent-fonts")]
             (for [[idx font] (d/enumerate recent-fonts)]
               [:& font-item {:key (dm/str "font-" idx)
                              :font font
