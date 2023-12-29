@@ -79,6 +79,8 @@
     :compiler-options
     {:fn-invoke-direct true
      :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :advanced]
+     :output-wrapper true
+     :rename-prefix-namespace "PENPOT"
      :source-map true
      :elide-asserts true
      :anon-fn-naming-policy :off
