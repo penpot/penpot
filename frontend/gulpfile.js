@@ -146,8 +146,8 @@ function readLocales() {
 
 function readManifest() {
   try {
-    const path = __dirname + "/resources/public/js/manifest.json";
-    const content = JSON.parse(fs.readFileSync(path, { encoding: "utf8" }));
+    const manifestPath = path.resolve("resources/public/js/manifest.json");
+    const content = JSON.parse(fs.readFileSync(manifestPath, { encoding: "utf8" }));
 
     const index = {
       config: "js/config.js?ts=" + Date.now(),
@@ -160,7 +160,7 @@ function readManifest() {
 
     return index;
   } catch (e) {
-    console.error("Error on reading manifest, using default.");
+    console.error("Error on reading manifest, using default.", e);
     return {
       config: "js/config.js",
       polyfills: "js/polyfills.js",
