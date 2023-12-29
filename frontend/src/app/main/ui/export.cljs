@@ -15,7 +15,6 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.shapes :refer [shape-wrapper]]
    [app.util.dom :as dom]
@@ -86,11 +85,13 @@
              [:span {:class (stl/css :checkbox-wrapper)}
               (cond
                 all-checked? [:span {:class (stl/css-case :checkobox-tick true
-                                                          :global/checked true)} i/tick-refactor]
+                                                          :global/checked true)}
+                              i/tick-refactor]
                 all-unchecked? [:span {:class (stl/css-case :checkobox-tick true
                                                             :global/uncheked true)}]
                 :else [:span {:class (stl/css-case :checkobox-tick true
-                                                   :global/intermediate true)} i/remove-refactor])]]
+                                                   :global/intermediate true)}
+                       i/remove-refactor])]]
             [:div {:class (stl/css :selection-title)}
              (tr "dashboard.export-multiple.selected"
                  (c (count enabled-exports))
@@ -108,7 +109,8 @@
                    [:span {:class (stl/css :checkbox-wrapper)}
                     (if (:enabled export)
                       [:span {:class (stl/css-case :checkobox-tick true
-                                                   :global/checked true)} i/tick-refactor]
+                                                   :global/checked true)}
+                       i/tick-refactor]
                       [:span {:class (stl/css-case :checkobox-tick true
                                                    :global/uncheked true)}])]
 
@@ -128,7 +130,8 @@
 
                        [:& shape-wrapper {:shape shape}]])]
 
-                   [:div {:class (stl/css :selection-name)} (cond-> (:name shape) suffix (str suffix))]
+                   [:div {:class (stl/css :selection-name)}
+                    (cond-> (:name shape) suffix (str suffix))]
                    (when (:scale export)
                      [:div {:class (stl/css :selection-scale)}
                       (dm/str (ust/format-precision (* width (:scale export)) 2) "px"
@@ -143,8 +146,7 @@
        (when (> (count all-exports) 0)
          [:div {:class (stl/css :modal-footer)}
           [:div {:class (stl/css :action-buttons)}
-           [:input
-            {:class (stl/css :cancel-button)
+           [:input {:class (stl/css :cancel-button)
              :type "button"
              :value (tr "labels.cancel")
              :on-click cancel-fn}]
@@ -160,7 +162,8 @@
 
 (mf/defc shapes-no-selection []
   [:div {:class (stl/css :no-selection)}
-   [:p {:class (stl/css :modal-msg)} (tr "dashboard.export-shapes.no-elements")]
+   [:p {:class (stl/css :modal-msg)}
+    (tr "dashboard.export-shapes.no-elements")]
    [:p {:class (stl/css :modal-scd-msg)} (tr "dashboard.export-shapes.how-to")]
    [:a {:target "_blank"
         :class (stl/css :modal-link)
@@ -191,8 +194,7 @@
 (mf/defc export-progress-widget
   {::mf/wrap [mf/memo]}
   []
-  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
-        state           (mf/deref refs/export)
+  (let [state           (mf/deref refs/export)
         error?          (:error state)
         healthy?        (:healthy? state)
         detail-visible? (:detail-visible state)
@@ -207,15 +209,10 @@
         pwidth (if error?
                  280
                  (/ (* progress 280) total))
-        color  (if new-css-system
-                 (cond
-                   error?         clr/new-danger
-                   healthy?       clr/new-primary
-                   (not healthy?) clr/new-warning)
-                 (cond
-                 error?         clr/danger
-                 healthy?       clr/primary
-                 (not healthy?) clr/warning))
+        color  (cond
+                 error?         clr/new-danger
+                 healthy?       clr/new-primary
+                 (not healthy?) clr/new-warning)
         title  (cond
                  error?          (tr "workspace.options.exporting-object-error")
                  complete?       (tr "workspace.options.exporting-complete")
@@ -228,7 +225,7 @@
         toggle-detail-visibility
         (mf/use-fn #(st/emit! (de/toggle-detail-visibililty)))]
 
-    [*
+    [:*
      (when widget-visible?
        [:div {:class (stl/css :export-progress-widget)
               :on-click toggle-detail-visibility}
@@ -250,7 +247,6 @@
                    :transform "rotate(-90 16,16)"
                    :style {:transition "stroke-dashoffset 1s ease-in-out"}}]]])
 
-
      (when detail-visible?
        [:div {:class (stl/css :export-progress-modal-overlay)}
         [:div {:class (stl/css :export-progress-modal-container)}
@@ -260,14 +256,19 @@
             title]
            (if error?
              [:button {:class (stl/css :retry-btn)
-                       :on-click retry-last-export} (tr "workspace.options.retry")]
-             [:p {:class (stl/css :progress)} (dm/str progress " / " total)])]
+                       :on-click retry-last-export}
+              (tr "workspace.options.retry")]
+
+             [:p {:class (stl/css :progress)}
+              (dm/str progress " / " total)])]
 
           [:button {:class (stl/css :modal-close-button)
-                    :on-click toggle-detail-visibility} i/close-refactor]]
+                    :on-click toggle-detail-visibility}
+           i/close-refactor]]
 
          [:svg {:class (stl/css :progress-bar)
-                :height 5 :width 280}
+                :height 5
+                :width 280}
           [:g
            [:path {:d "M0 0 L280 0"
                    :stroke clr/black

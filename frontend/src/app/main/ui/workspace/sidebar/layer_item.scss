@@ -38,11 +38,13 @@
 
   .parent-selected & {
     background-color: var(--layer-child-row-background-color);
+    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-child-row-background-color);
   }
 
   .parent-selected &.highlight,
   .parent-selected &:hover {
     background-color: var(--layer-row-background-color-hover);
+    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-row-background-color-hover);
   }
 
   &.dnd-over-bot {
@@ -60,6 +62,7 @@
   .layer-row.highlight &,
   .layer-row:hover & {
     background-color: var(--layer-row-background-color-selected);
+    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-row-background-color-selected);
   }
   .layer-row.type-comp & {
     color: var(--layer-row-component-foreground-color);
@@ -105,6 +108,7 @@
   @include buttonStyle;
   position: relative;
   justify-self: flex-end;
+  width: $s-16;
   height: 100%;
   width: $s-24;
   padding: 0 $s-8 0 $s-4;
@@ -137,23 +141,23 @@
 .absolute {
   position: absolute;
   background-color: var(--layer-row-foreground-color);
-  height: $s-12;
-  width: $s-12;
-  border-radius: $br-2;
   opacity: $op-4;
+  width: $s-12;
+  height: $s-12;
+  border-radius: $br-2;
 
-  .layer-row.hidden {
+  .layer-row.hidden & {
     opacity: $op-1;
   }
-  .layer-row.type-comp {
+  .layer-row.type-comp & {
     background-color: var(--layer-row-component-foreground-color);
   }
-  .layer-row.highlight,
-  .layer-row:hover {
+  .layer-row.highlight &,
+  .layer-row:hover & {
     opacity: $op-4;
     background-color: var(--layer-row-foreground-color-hover);
   }
-  .layer-row.selected {
+  .layer-row.selected & {
     background-color: var(--layer-row-foreground-color-selected);
   }
 }
@@ -171,23 +175,23 @@
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
 
-    .layer-row.hidden {
+    .layer-row.hidden & {
       opacity: $op-7;
     }
-    .layer-row.selected {
+    .layer-row.selected & {
       stroke: var(--layer-row-foreground-color-selected);
     }
-    .layer-row.type-comp {
+    .layer-row.type-comp & {
       stroke: var(--layer-row-component-foreground-color);
     }
-    .layer-row.highlight,
-    .layer-row:hover {
+    .layer-row.highlight &,
+    .layer-row:hover & {
       opacity: $op-10;
       stroke: var(--layer-row-foreground-color-hover);
     }
   }
 
-  .layer-row.selected {
+  .layer-row.selected & {
     background-color: var(--layer-row-background-color-selected);
   }
   &.inverse svg {
@@ -208,15 +212,15 @@
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
 
-    .layer-row.hidden {
+    .layer-row.hidden & {
       opacity: $op-7;
     }
-    .type-comp {
+    .type-comp & {
       stroke: var(--layer-row-component-foreground-color);
     }
   }
 
-  .element-actions.selected {
+  .element-actions.selected & {
     display: flex;
     opacity: $op-0;
 
@@ -225,16 +229,15 @@
     }
   }
 
-  .layer-row.highlight,
-  .layer-row:hover {
+  .layer-row.highlight &,
+  .layer-row:hover & {
     display: flex;
     svg {
       opacity: $op-10;
       stroke: var(--layer-row-foreground-color-hover);
     }
   }
-
-  .layer-row.selected {
+  .layer-row.selected & {
     display: flex;
     svg {
       stroke: var(--layer-row-foreground-color-selected);
@@ -253,7 +256,6 @@
   height: $s-16;
   min-width: calc(var(--depth) * var(--layer-indentation-size));
 }
-
 .filtered {
   min-width: $s-12;
 }

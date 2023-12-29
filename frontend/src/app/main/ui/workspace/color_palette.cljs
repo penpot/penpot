@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.color-palette
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.workspace.colors :as mdc]
@@ -15,7 +15,6 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.color :as uc]
-   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
@@ -26,9 +25,9 @@
   [{:keys [color size]}]
   (letfn [(select-color [event]
             (st/emit! (mdc/apply-color-from-palette color (kbd/alt? event))))]
-    [:div {:class (dom/classnames (css :color-cell) true
-                                  (css :is-not-library-color) (nil? (:id color))
-                                  (css :no-text) (<= size 64))
+    [:div {:class (stl/css-case  :color-cell true
+                                  :is-not-library-color (nil? (:id color))
+                                  :no-text (<= size 64))
            :title (uc/get-color-name color)
            :on-click select-color}
      [:& cb/color-bullet {:color color}]
@@ -102,32 +101,32 @@
       (when (not= 0 (:offset @state))
         (swap! state assoc :offset 0)))
 
-    [:div {:class (dom/classnames (css :color-palette) true
-                                  (css :no-text) (< size 64))
+    [:div {:class (stl/css-case :color-palette true
+                                :no-text (< size 64))
            :style #js {"--bullet-size" (dm/str bullet-size "px")}}
 
      (when show-arrows?
-       [:button {:class (dom/classnames (css :left-arrow) true)
+       [:button {:class (stl/css :left-arrow)
                  :disabled (= offset 0)
                  :on-click on-left-arrow-click} i/arrow-refactor])
-     [:div {:class  (dom/classnames (css :color-palette-content) true)
+     [:div {:class  (stl/css :color-palette-content)
             :ref container
             :on-wheel on-scroll}
       (if (empty? current-colors)
-        [:div {:class  (dom/classnames (css :color-palette-empty) true)
+        [:div {:class  (stl/css :color-palette-empty)
                :style {:position "absolute"
                        :left "50%"
                        :top "50%"
                        :transform "translate(-50%, -50%)"}}
          (tr "workspace.libraries.colors.empty-palette")]
-        [:div {:class  (dom/classnames (css :color-palette-inside) true)
+        [:div {:class  (stl/css :color-palette-inside)
                :style {:position "relative"
                        :max-width (str width "px")
                        :right (str (* offset-step offset) "px")}}
          (for [[idx item] (map-indexed vector current-colors)]
            [:& palette-item {:color item :key idx :size size}])])]
      (when show-arrows?
-       [:button {:class (dom/classnames (css :right-arrow) true)
+       [:button {:class (stl/css :right-arrow)
                  :disabled (= offset max-offset)
                  :on-click on-right-arrow-click} i/arrow-refactor])]))
 
