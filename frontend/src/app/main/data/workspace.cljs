@@ -1490,11 +1490,34 @@
            (rx/of (show-context-menu
                    (-> params (assoc :kind :page :selected (:id page))))))))
 
+(defn show-track-context-menu
+  [{:keys [grid-id type index] :as params}]
+  (ptk/reify ::show-track-context-menu
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (show-context-menu
+              (-> params (assoc :kind :grid-track
+                                :grid-id grid-id
+                                :type type
+                                :index index)))))))
+
+(defn show-grid-cell-context-menu
+  [{:keys [grid-id] :as params}]
+  (ptk/reify ::show-grid-cell-context-menu
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [cells (get-in state [:workspace-grid-edition grid-id :selected])]
+        (rx/of (show-context-menu
+                (-> params (assoc :kind :grid-cells
+                                  :grid-id grid-id
+                                  :cells cells))))))))
 (def hide-context-menu
   (ptk/reify ::hide-context-menu
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-local :context-menu] nil))))
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
