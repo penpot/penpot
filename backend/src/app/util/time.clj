@@ -209,9 +209,16 @@
   ([v] (.format DateTimeFormatter/ISO_INSTANT ^Instant v))
   ([v fmt]
    (case fmt
-     :iso (.format DateTimeFormatter/ISO_INSTANT ^Instant v)
-     :rfc1123 (.format DateTimeFormatter/RFC_1123_DATE_TIME
-                       ^ZonedDateTime (instant->zoned-date-time v)))))
+     :iso
+     (.format DateTimeFormatter/ISO_INSTANT ^Instant v)
+
+     :iso-local-time
+     (.format DateTimeFormatter/ISO_LOCAL_TIME
+              ^ZonedDateTime (instant->zoned-date-time v))
+
+     :rfc1123
+     (.format DateTimeFormatter/RFC_1123_DATE_TIME
+              ^ZonedDateTime (instant->zoned-date-time v)))))
 
 (defmethod print-method Instant
   [mv ^java.io.Writer writer]

@@ -23,6 +23,7 @@
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files-snapshot :as fsnap]
+   [app.rpc.commands.management :as mgmt]
    [app.rpc.commands.profile :as profile]
    [app.srepl.cli :as cli]
    [app.srepl.helpers :as h]
@@ -332,3 +333,13 @@
          (filter some?)
          (into #{})
          (run! send))))
+
+
+(defn duplicate-team
+  [system team-id & {:keys [name]}]
+  (let [team-id (if (string? team-id) (parse-uuid team-id) team-id)
+        name    (or name (fn [prev-name]
+                           (str/ffmt "Cloned: % (%)" prev-name (dt/format-instant (dt/now)))))]
+    (db/tx-run! system (fn [cfg]
+                         (db/exec-one! cfg ["SET CONSTRAINTS ALL DEFERRED"])
+                         (mgmt/duplicate-team cfg :team-id team-id :name name)))))
