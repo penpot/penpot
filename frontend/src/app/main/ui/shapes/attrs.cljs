@@ -124,7 +124,7 @@
                  (not= :inner alignment)
                  (not= :outer alignment)
                  (not= :dotted style))
-            (obj/set! attrs "strokeLinecap" caps-start)
+            (obj/set! attrs "strokeLinecap" (name caps-start))
 
             (= :dotted style)
             (obj/set! attrs "strokeLinecap" "round"))
