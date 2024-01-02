@@ -5057,3 +5057,37 @@ msgstr "Choose image"
 
 msgid "workspace.options.guides.title"
 msgstr "Guides"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Duplicate column"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Add 1 column to the left"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Add 1 column to the right"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Delete column"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Duplicate row"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Add 1 row above"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Add 1 row bellow"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Delete row"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Merge cells"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Create area"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Create board"
+

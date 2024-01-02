@@ -1227,6 +1227,7 @@
           target-cell
           (-> prev-cell
               (assoc
+               :position :manual
                :row new-row
                :column new-column
                :row-span new-row-span
@@ -1459,7 +1460,6 @@
 
 (defn valid-area-cells?
   [cells]
-
   (let [{:keys [first-row last-row first-column last-column cell-coords]} (cells-coordinates cells)]
     (every?
      #(contains? cell-coords %)

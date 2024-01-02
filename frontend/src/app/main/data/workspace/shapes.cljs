@@ -41,12 +41,11 @@
      (watch [it state _]
        (let [page-id  (:current-page-id state)
              objects  (wsh/lookup-page-objects state page-id)
-             selected (wsh/lookup-selected state)
 
              [shape changes]
              (-> (pcb/empty-changes it page-id)
                  (pcb/with-objects objects)
-                 (cfsh/prepare-add-shape shape objects selected))
+                 (cfsh/prepare-add-shape shape objects))
 
              changes (cond-> changes
                        (cfh/text-shape? shape)

@@ -5146,3 +5146,37 @@ msgstr "Elegir imagen"
 
 msgid "workspace.options.guides.title"
 msgstr "Guías"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Duplicar columna"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Añadir 1 columna a la izquierda"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Añadir 1 columna a la derecha"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Borrar columna"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Duplicar fila"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Añadir 1 fila encima"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Añadir 1 fila debajo"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Borrar fila"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Fusionar celdas"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Crear area"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Crear tablero"
+

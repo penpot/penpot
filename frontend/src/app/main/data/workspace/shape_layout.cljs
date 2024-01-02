@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.flex-layout :as flex]
    [app.common.geom.shapes.grid-layout :as grid]
@@ -583,6 +584,37 @@
          (ptk/data-event :layout/update [layout-id])
          (dwu/commit-undo-transaction undo-id))))))
 
+(defn merge-cells
+  [layout-id ids]
+
+  (ptk/reify ::merge-cells
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dwc/update-shapes
+          [layout-id]
+          (fn [shape objects]
+            (let [cells (->> ids (map #(get-in shape [:layout-grid-cells %])))
+
+                  {:keys [first-row first-column last-row last-column]}
+                  (ctl/cells-coordinates cells)
+
+                  target-cell
+                  (ctl/get-cell-by-position shape first-row first-column)]
+              (-> shape
+                  (ctl/resize-cell-area
+                   (:row target-cell) (:column target-cell)
+                   first-row
+                   first-column
+                   (inc (- last-row first-row))
+                   (inc (- last-column first-column)))
+                  (ctl/assign-cells objects)))))
+         (dwge/clean-selection layout-id)
+         (ptk/data-event :layout/update [layout-id])
+         (dwu/commit-undo-transaction undo-id))))))
+
 (defn update-grid-cell-position
   [layout-id cell-id props]
 
@@ -605,5 +637,60 @@
                                         (:row new-data) (:column new-data)
                                         (:row-span new-data) (:column-span new-data))
                   (ctl/assign-cells objects)))))
+         (ptk/data-event :layout/update [layout-id])
+         (dwu/commit-undo-transaction undo-id))))))
+
+
+(defn create-cell-board
+  [layout-id cell-ids]
+  (ptk/reify ::create-cell-board
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id (:current-page-id state)
+            objects (wsh/lookup-page-objects state)
+            frame-id (uuid/next)
+
+            undo-id (js/Symbol)
+
+            shape (get objects layout-id)
+            cells      (->> cell-ids (map #(get-in shape [:layout-grid-cells %])))
+            selected   (into #{} (mapcat :shapes) cells)
+
+            {:keys [first-row first-column last-row last-column]} (ctl/cells-coordinates cells)
+
+            target-cell (ctl/get-cell-by-position shape first-row first-column)
+
+            [_ changes]
+            (-> (pcb/empty-changes it page-id)
+                (pcb/with-objects objects)
+                (cond-> (d/not-empty? selected)
+                  (cfsh/prepare-create-artboard-from-selection
+                   frame-id layout-id objects selected 0 nil true (:id target-cell)))
+
+                (cond-> (empty? (seq selected))
+                  (cfsh/prepare-create-empty-artboard
+                   frame-id layout-id objects 0 nil true (:id target-cell))))
+
+            changes
+            (-> changes
+                (pcb/update-shapes
+                 [frame-id]
+                 (fn [shape]
+                   (-> shape
+                       (assoc :layout-item-h-sizing :fill)
+                       (assoc :layout-item-v-sizing :fill))))
+                (pcb/update-shapes
+                 [layout-id]
+                 (fn [shape]
+                   (let [new-row-span (inc (- last-row first-row))
+                         new-col-span (inc (- last-column first-column))]
+                     (-> shape
+                         (ctl/resize-cell-area
+                          (:row target-cell) (:column target-cell)
+                          first-row first-column new-row-span new-col-span))))))]
+
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dwc/commit-changes changes)
          (ptk/data-event :layout/update [layout-id])
          (dwu/commit-undo-transaction undo-id))))))

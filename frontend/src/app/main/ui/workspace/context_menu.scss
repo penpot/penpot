@@ -110,3 +110,10 @@
     }
   }
 }
+
+.icon-menu-item[disabled],
+.context-menu-item[disabled]
+{
+  pointer-events: none;
+  opacity: 0.6;
+}
