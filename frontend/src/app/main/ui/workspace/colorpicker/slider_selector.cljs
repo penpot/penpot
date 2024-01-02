@@ -9,15 +9,13 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
-   [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
 (mf/defc slider-selector
   [{:keys [value class min-value max-value vertical? reverse? on-change on-start-drag on-finish-drag type]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        min-value (or min-value 0)
+  (let [min-value (or min-value 0)
         max-value (or max-value 1)
         dragging? (mf/use-state false)
 
@@ -53,49 +51,27 @@
                   value (+ min-value (* unit-value (- max-value min-value)))]
               (on-change value))))]
 
-    (if new-css-system
-      [:div {:class (stl/css-case :opacity-wrapper (= type :opacity))}
-       [:div {:class (dm/str class (stl/css-case :vertical vertical?
-                                                :slider-selector true
-                                                :hue (= type :hue)
-                                                :opacity (= type :opacity)
-                                                :value (= type :value)))
-             :on-pointer-down handle-start-drag
-             :on-pointer-up handle-stop-drag
-             :on-lost-pointer-capture handle-stop-drag
-             :on-click calculate-pos
-             :on-pointer-move #(when @dragging? (calculate-pos %))}
-       (let [value-percent (* (/ (- value min-value)
-                                 (- max-value min-value)) 100)
+    [:div {:class (stl/css-case :opacity-wrapper (= type :opacity))}
+     [:div {:class (dm/str class (stl/css-case :vertical vertical?
+                                               :slider-selector true
+                                               :hue (= type :hue)
+                                               :opacity (= type :opacity)
+                                               :value (= type :value)))
+            :on-pointer-down handle-start-drag
+            :on-pointer-up handle-stop-drag
+            :on-lost-pointer-capture handle-stop-drag
+            :on-click calculate-pos
+            :on-pointer-move #(when @dragging? (calculate-pos %))}
+      (let [value-percent (* (/ (- value min-value)
+                                (- max-value min-value)) 100)
 
-             value-percent (if reverse?
-                             (mth/abs (- value-percent 100))
-                             value-percent)
-             value-percent-str (str value-percent "%")
+            value-percent (if reverse?
+                            (mth/abs (- value-percent 100))
+                            value-percent)
+            value-percent-str (str value-percent "%")
 
-             style-common #js {:pointerEvents "none"}
-             style-horizontal (obj/merge! #js {:left value-percent-str} style-common)
-             style-vertical   (obj/merge! #js {:bottom value-percent-str} style-common)]
-         [:div {:class (stl/css :handler)
-                :style (if vertical? style-vertical style-horizontal)}])]]
-
-      [:div.slider-selector
-       {:class (str (if vertical? "vertical " "") class)
-        :on-pointer-down handle-start-drag
-        :on-pointer-up handle-stop-drag
-        :on-lost-pointer-capture handle-stop-drag
-        :on-click calculate-pos
-        :on-pointer-move #(when @dragging? (calculate-pos %))}
-
-       (let [value-percent (* (/ (- value min-value)
-                                 (- max-value min-value)) 100)
-
-             value-percent (if reverse?
-                             (mth/abs (- value-percent 100))
-                             value-percent)
-             value-percent-str (str value-percent "%")
-
-             style-common #js {:pointerEvents "none"}
-             style-horizontal (obj/merge! #js {:left value-percent-str} style-common)
-             style-vertical   (obj/merge! #js {:bottom value-percent-str} style-common)]
-         [:div.handler {:style (if vertical? style-vertical style-horizontal)}])])))
+            style-common #js {:pointerEvents "none"}
+            style-horizontal (obj/merge! #js {:left value-percent-str} style-common)
+            style-vertical   (obj/merge! #js {:bottom value-percent-str} style-common)]
+        [:div {:class (stl/css :handler)
+               :style (if vertical? style-vertical style-horizontal)}])]]))
