@@ -333,6 +333,8 @@
   ([id parent-id]
    (create-artboard-from-selection id parent-id nil))
   ([id parent-id index]
+   (create-artboard-from-selection id parent-id index nil))
+  ([id parent-id index name]
    (ptk/reify ::create-artboard-from-selection
      ptk/WatchEvent
      (watch [it state _]
@@ -351,7 +353,7 @@
                                                           objects
                                                           selected
                                                           index
-                                                          nil
+                                                          name
                                                           false)
 
              undo-id  (js/Symbol)]

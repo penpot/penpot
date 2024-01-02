@@ -167,7 +167,7 @@
                  group-index  (cfh/get-index-replacement selected objects)]
              (rx/of
               (dwse/select-shapes ordered-ids)
-              (dws/create-artboard-from-selection new-shape-id parent-id group-index)
+              (dws/create-artboard-from-selection new-shape-id parent-id group-index (:name (first selected-shapes)))
               (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
               (create-layout-from-id new-shape-id type false)
               (dwc/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
