@@ -19,95 +19,97 @@
   border-radius: $br-8;
   background-color: var(--menu-background-color);
   z-index: $z-index-3;
-  .separator {
-    height: $s-12;
-  }
-  .context-menu-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: $s-28;
-    width: 100%;
-    padding: $s-6;
-    border-radius: $br-8;
-    cursor: pointer;
+}
 
-    .title {
+.separator {
+  height: $s-12;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $s-28;
+  width: 100%;
+  padding: $s-6;
+  border-radius: $br-8;
+  cursor: pointer;
+
+  .title {
+    @include titleTipography;
+    color: var(--menu-foreground-color);
+  }
+  .shortcut {
+    @include flexCenter;
+    gap: $s-2;
+    color: var(--menu-shortcut-foreground-color);
+    .shortcut-key {
       @include titleTipography;
-      color: var(--menu-foreground-color);
+      @include flexCenter;
+      height: $s-20;
+      padding: $s-2 $s-6;
+      border-radius: $br-6;
+      background-color: var(--menu-shortcut-background-color);
+    }
+  }
+
+  .submenu-icon {
+    position: absolute;
+    right: $s-16;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--menu-foreground-color);
+    }
+  }
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+    .title {
+      color: var(--menu-foreground-color-hover);
     }
     .shortcut {
-      @include flexCenter;
-      gap: $s-2;
-      color: var(--menu-shortcut-foreground-color);
-      .shortcut-key {
-        @include titleTipography;
-        @include flexCenter;
-        height: $s-20;
-        padding: $s-2 $s-6;
-        border-radius: $br-6;
-        background-color: var(--menu-shortcut-background-color);
-      }
+      color: var(--menu-shortcut-foreground-color-hover);
     }
+  }
+  &:focus {
+    border: 1px solid var(--menu-border-color-focus);
+    background-color: var(--menu-background-color-focus);
+  }
+}
 
-    .submenu-icon {
-      position: absolute;
-      right: $s-16;
-      svg {
-        @extend .button-icon-small;
-        stroke: var(--menu-foreground-color);
-      }
-    }
-    &:hover {
-      background-color: var(--menu-background-color-hover);
-      .title {
-        color: var(--menu-foreground-color-hover);
-      }
-      .shortcut {
-        color: var(--menu-shortcut-foreground-color-hover);
-      }
-    }
-    &:focus {
-      border: 1px solid var(--menu-border-color-focus);
-      background-color: var(--menu-background-color-focus);
+.icon-menu-item {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  height: $s-28;
+  padding: $s-6;
+  border-radius: $br-8;
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+
+  span.title {
+    margin-left: $s-6;
+  }
+
+  .selected-icon {
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--menu-foreground-color);
     }
   }
 
-  .icon-menu-item {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    height: $s-28;
-    padding: $s-6;
-    border-radius: $br-8;
-    &:hover {
-      background-color: var(--menu-background-color-hover);
+  .shape-icon {
+    margin-left: $s-2;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--menu-foreground-color);
     }
+  }
 
-    span.title {
-      margin-left: $s-6;
-    }
-
-    .selected-icon {
-      svg {
-        @extend .button-icon-small;
-        stroke: var(--menu-foreground-color);
-      }
-    }
-
-    .shape-icon {
-      margin-left: $s-2;
-      svg {
-        @extend .button-icon-small;
-        stroke: var(--menu-foreground-color);
-      }
-    }
-
-    .icon-wrapper {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      margin: 0;
-    }
+  .icon-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 0;
   }
 }
 

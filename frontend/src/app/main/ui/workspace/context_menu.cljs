@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.context-menu
   "A workspace specific context menu (mouse right click)."
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -31,7 +31,6 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.shape-icon-refactor :as sic]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
@@ -52,7 +51,6 @@
   [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave on-unmount children selected? icon disabled] :as props}]
   (let [submenu-ref (mf/use-ref nil)
         hovering? (mf/use-ref false)
-        new-css-system (mf/use-ctx ctx/new-css-system)
         on-pointer-enter
         (mf/use-callback
          (fn []
@@ -86,71 +84,44 @@
      (constantly on-unmount))
 
     (if icon
-      [:li {:class (if new-css-system
-                     (dom/classnames (css :icon-menu-item) true)
-                     (dom/classnames :icon-menu-item true))
+      [:li {:class (stl/css :icon-menu-item)
             :disabled disabled
             :ref set-dom-node
             :on-click on-click
             :on-pointer-enter on-pointer-enter
             :on-pointer-leave on-pointer-leave}
        [:span
-        {:class (if new-css-system
-                  (dom/classnames (css :icon-wrapper) true)
-                  (dom/classnames :icon-wrapper true))}
-        (if selected? [:span {:class (if new-css-system
-                                       (dom/classnames (css :selected-icon) true)
-                                       (dom/classnames :selected-icon true))}
-                       (if new-css-system
-                         i/tick-refactor
-                         i/tick)]
-            [:span {:class (if new-css-system
-                             (dom/classnames (css :selected-icon) true)
-                             (dom/classnames :selected-icon true))}])
-        [:span {:class (if new-css-system
-                         (dom/classnames (css :shape-icon) true)
-                         (dom/classnames :shape-icon true))} icon]]
-       [:span {:class (if new-css-system
-                        (dom/classnames (css :title) true)
-                        (dom/classnames :title true))} title]]
-      [:li {:class (dom/classnames (css :context-menu-item) new-css-system)
+        {:class (stl/css :icon-wrapper)}
+        (if selected? [:span {:class (stl/css :selected-icon)}
+                       i/tick-refactor]
+            [:span {:class (stl/css :selected-icon)}])
+        [:span {:class (stl/css :shape-icon)} icon]]
+       [:span {:class (stl/css :title)} title]]
+      [:li {:class (stl/css :context-menu-item)
             :disabled disabled
             :ref set-dom-node
             :on-click on-click
             :on-pointer-enter on-pointer-enter
             :on-pointer-leave on-pointer-leave}
-       [:span {:class (if new-css-system
-                        (dom/classnames (css :title) true)
-                        (dom/classnames :title true))} title]
+       [:span {:class (stl/css :title)} title]
        (when shortcut
-         [:span   {:class (if new-css-system
-                            (dom/classnames (css :shortcut) true)
-                            (dom/classnames :shortcut true))}
-          (if new-css-system
-            (for [sc (scd/split-sc shortcut)]
-              [:span {:class (dom/classnames (css :shortcut-key) true)} sc])
-            (or shortcut ""))])
+         [:span   {:class (stl/css :shortcut)}
+          (for [sc (scd/split-sc shortcut)]
+            [:span {:class (stl/css :shortcut-key)} sc])])
 
        (when (> (count children) 1)
-         (if new-css-system
-           [:span {:class (dom/classnames (css :submenu-icon) true)} i/arrow-refactor]
-           [:span.submenu-icon i/arrow-slide]))
+         [:span {:class (stl/css :submenu-icon)} i/arrow-refactor])
 
        (when (> (count children) 1)
-         [:ul
-          {:class (if new-css-system
-                    (dom/classnames (css :workspace-context-submenu) true)
-                    (dom/classnames :workspace-context-menu true))
-           :ref submenu-ref
-           :style {:display "none" :left 250}
-           :on-context-menu prevent-default}
+         [:ul {:class (stl/css :workspace-context-submenu)
+               :ref submenu-ref
+               :style {:display "none" :left 250}
+               :on-context-menu prevent-default}
           children])])))
+
 (mf/defc menu-separator
   []
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
-    [:li {:class (if new-css-system
-                 (dom/classnames (css :separator) true)
-                 (dom/classnames :separator true))}]))
+  [:li {:class (stl/css :separator)}])
 
 (mf/defc context-menu-edit
   [_]
@@ -482,8 +453,8 @@
     [:*
      [:& menu-separator]
      [:& menu-entry {:title (tr "workspace.shape.menu.delete")
-                    :shortcut (sc/get-tooltip :delete)
-                    :on-click do-delete}]]))
+                     :shortcut (sc/get-tooltip :delete)
+                     :on-click do-delete}]]))
 
 (mf/defc shape-context-menu
   {::mf/wrap [mf/memo]}
@@ -632,8 +603,7 @@
   (let [mdata          (mf/deref menu-ref)
         top            (- (get-in mdata [:position :y]) 20)
         left           (get-in mdata [:position :x])
-        dropdown-ref   (mf/use-ref)
-        new-css-system (mf/use-ctx ctx/new-css-system)]
+        dropdown-ref   (mf/use-ref)]
 
     (mf/use-effect
      (mf/deps mdata)
@@ -651,9 +621,7 @@
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dw/hide-context-menu)}
      [:ul
-      {:class (if new-css-system
-                (dom/classnames (css :workspace-context-menu) true)
-                (dom/classnames :workspace-context-menu true))
+      {:class (stl/css :workspace-context-menu)
        :ref dropdown-ref
        :style {:top top :left left}
        :on-context-menu prevent-default}

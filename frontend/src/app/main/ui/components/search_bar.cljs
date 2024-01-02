@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.components.search-bar
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -45,16 +45,16 @@
                  node   (dom/get-target event)]
              (when ^boolean enter? (dom/blur! node))
              (when ^boolean esc? (dom/blur! node)))))]
-    [:span {:class (dom/classnames (css :search-box) true
-                                   (css :has-children) (some? children))}
+    [:span {:class (stl/css-case :search-box true
+                                   :has-children (some? children))}
      children
-     [:div {:class (dom/classnames (css :search-input-wrapper) true)}
+     [:div {:class (stl/css :search-input-wrapper)}
       icon
       [:input {:on-change handle-change
                :value value
                :placeholder placeholder
                :on-key-down handle-key-down}]
       (when (not= "" value)
-        [:button {:class (dom/classnames (css :clear) true)
+        [:button {:class (stl/css :clear)
                   :on-click handle-clear}
          i/delete-text-refactor])]]))
