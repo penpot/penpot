@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-11 12:01+0000\n"
+"PO-Revision-Date: 2023-12-29 21:08+0000\n"
 "Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.1-dev\n"
+"X-Generator: Weblate 5.4-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -282,23 +282,23 @@ msgstr "Passo a passo na interface"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.copied-success"
-msgstr "Token copiada"
+msgstr "Token copiado"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.create"
-msgstr "Gerar nova token"
+msgstr "Gerar novo token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.create.success"
-msgstr "Token de acesso criada com sucesso."
+msgstr "Token de acesso criado com sucesso."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Clica no botão \"Gerar nova token\" para gerar uma."
+msgstr "Clica no botão \"Gerar novo token\" para gerar um."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
-msgstr "Ainda não tens nenhuma token."
+msgstr "Ainda não tens nenhum token."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.errors-required-name"
@@ -343,17 +343,17 @@ msgstr "Tokens de acesso pessoais"
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
-"As tokens de acesso pessoais funcionam como uma alternativa ao nosso "
-"sistema de autenticação de login/palavra-passe e podem ser usadas para "
-"permitir que uma aplicação tenha acesso à API interna do Penpot"
+"Os tokens de acesso pessoais funcionam como uma alternativa ao nosso sistema "
+"de autenticação de login/palavra-passe e podem ser usados para permitir que "
+"uma aplicação tenha acesso à API interna do Penpot"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-expire"
-msgstr "A token irá expirar a %s"
+msgstr "O token irá expirar a %s"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "A token não tem data de expiração"
+msgstr "O token não tem data de expiração"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -876,7 +876,7 @@ msgstr "O e-mail «%s» foi denunciado como spam ou devolvido permanentemente."
 msgid "errors.feature-mismatch"
 msgstr ""
 "Parece que estás a abrir um ficheiro que tem a funcionalidade '%s' ativada, "
-"mas o frontend do teu Penpot não a suporta, ou está desativada."
+"mas a versão do teu Penpot não a suporta, ou está desativada."
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-not-supported"
@@ -1478,7 +1478,7 @@ msgstr "Iniciar sessão ou registar"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
-msgstr "Sair"
+msgstr "Terminar sessão"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
@@ -1760,7 +1760,7 @@ msgstr "Nome"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.create-access-token.name.placeholder"
-msgstr "O nome pode ajudar a sugerir para que a token serve"
+msgstr "O nome pode ajudar a sugerir para que o token serve"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.create-access-token.submit-label"
@@ -1788,7 +1788,7 @@ msgstr "Apagar token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.delete-acces-token.message"
-msgstr "Tens a certeza que queres apagar esta token?"
+msgstr "Tens a certeza que queres apagar este token?"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.delete-acces-token.title"
@@ -5117,3 +5117,117 @@ msgid "dashboard.success-duplicate-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "O teu ficheiro foi duplicado com sucesso"
 msgstr[1] "Os teus ficheiros foram duplicados com sucesso"
+
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Continuar criação de equipa"
+
+msgid "workspace.options.guides.title"
+msgstr "Guias"
+
+msgid "media.choose-image"
+msgstr "Escolher imagem"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Ao criar uma nova conta, concordas com os nossos [termos de serviço](%s) e ["
+"política de privacidade](%s)."
+
+msgid "workspace.options.component.swap.empty"
+msgstr "Ainda não existem recursos nesta biblioteca"
+
+msgid "media.solid"
+msgstr "Sólido"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Feito"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Criar equipa e convidar"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Feito"
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Continuar sem equipa"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Sem atribuição"
+
+msgid "errors.validation"
+msgstr "Erro de validação"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Sair"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "O ficheiro tem um número de versão incompatível"
+
+msgid "workspace.options.component.swap"
+msgstr "Trocar de componente"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Criar equipa sem convidar"
+
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Parece que existem discrepâncias entre as funcionalidades ativadas e as "
+"funcionalidades do ficheiro que estás a tentar abrir. Será necessário "
+"aplicar migrações para '%s' antes de poder abrir o ficheiro."
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Criar equipa"
+
+msgid "media.linear"
+msgstr "Linear"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Fluxo"
+
+msgid "labels.search"
+msgstr "Pesquisar"
+
+msgid "media.image"
+msgstr "Imagem"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Poderás criar uma equipa mais tarde."
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Criar equipa e enviar convites"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Localizar"
+
+msgid "media.gradient"
+msgstr "Gradiente"
+
+msgid "labels.share"
+msgstr "Partilhar"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Editar grelha"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Começar sem equipa"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Poderás enviar convites mais tarde"
+
+msgid "media.radial"
+msgstr "Radial"
+
+msgid "errors.paste-data-validation"
+msgstr "Dados inválidos na área de transferência"
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Funcionalidade incompatível '%s' detetada"
+
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "**Modo de inspeção** (Somente leitura)"
