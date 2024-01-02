@@ -125,7 +125,7 @@
                          [parent-id]
                          (fn [parent]
                            (assoc-in parent [:layout-grid-cells (:id target-cell) :shapes] [(:id group)]))))
-                      (pcb/update-shapes grid-parents ctl/assign-cells)
+                      (pcb/update-shapes grid-parents ctl/assign-cells {:with-objects? true})
                       (pcb/remove-objects ids-to-delete))]
 
     [group changes]))
@@ -216,7 +216,7 @@
 
                 (cond-> changes
                   (ctl/grid-layout? objects (:parent-id shape))
-                  (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells))))
+                  (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells {:with-objects? true}))))
 
             selected (->> (wsh/lookup-selected state)
                           (remove #(ctn/has-any-copy-parent? objects (get objects %)))

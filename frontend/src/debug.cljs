@@ -21,7 +21,7 @@
    [app.main.data.preview :as dp]
    [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.changes :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.path.shortcuts]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shortcuts]
@@ -297,7 +297,7 @@
 
   (let [file-id (:current-file-id @st/state)
         changes (t/decode-str changes*)]
-    (st/emit! (dwc/commit-changes {:redo-changes changes
+    (st/emit! (dch/commit-changes {:redo-changes changes
                                    :undo-changes []
                                    :save-undo? true
                                    :file-id file-id}))))

@@ -855,7 +855,8 @@
                            (fn [parent objects]
                              (cond-> parent
                                (ctl/grid-layout? parent)
-                               (ctl/assign-cells objects))))
+                               (ctl/assign-cells objects)))
+                           {:with-objects? true})
 
         (pcb/reorder-grid-children parents)
 

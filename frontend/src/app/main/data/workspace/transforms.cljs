@@ -628,9 +628,13 @@
                                        (ctl/swap-shapes id (:id next-cell)))))
                                  parent))]
                 (-> changes
-                    (pcb/update-shapes [(:id parent)] (fn [shape] (-> shape
-                                                                      (assoc :layout-grid-cells layout-grid-cells)
-                                                                      (ctl/assign-cells objects))))
+                    (pcb/update-shapes
+                     [(:id parent)]
+                     (fn [shape]
+                       (-> shape
+                           (assoc :layout-grid-cells layout-grid-cells)
+                           ;; We want the previous objects value
+                           (ctl/assign-cells objects))))
                     (pcb/reorder-grid-children [(:id parent)]))))
 
             changes
