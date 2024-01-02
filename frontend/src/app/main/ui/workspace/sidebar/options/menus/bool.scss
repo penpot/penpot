@@ -11,33 +11,36 @@
   gap: $s-4;
   height: $s-32;
   margin: 0 calc(-1 * $s-2);
-  .bool-group {
-    display: flex;
-    align-items: center;
-    .flatten {
-      @extend .button-tertiary;
-      height: $s-28;
-      width: $s-28;
-      border-radius: $br-8;
-      svg {
-        @extend .button-icon;
-        stroke: var(--icon-foreground);
-      }
-      &.disabled {
-        cursor: default;
-        svg {
-          stroke: var(--button-background-color-disabled);
-        }
-        &:hover {
-          background-color: var(--panel-background-color);
-          svg {
-            stroke: var(--button-background-color-disabled);
-          }
-        }
-      }
+}
+
+.bool-group {
+  display: flex;
+  align-items: center;
+}
+
+.flatten {
+  @extend .button-tertiary;
+  height: $s-28;
+  width: $s-28;
+  border-radius: $br-8;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+  &.disabled {
+    cursor: default;
+    svg {
+      stroke: var(--button-background-color-disabled);
     }
-    .boolean-radio-btn {
-      background-color: transparent;
+    &:hover {
+      background-color: var(--panel-background-color);
+      svg {
+        stroke: var(--button-background-color-disabled);
+      }
     }
   }
+}
+
+.boolean-radio-btn {
+  background-color: transparent;
 }

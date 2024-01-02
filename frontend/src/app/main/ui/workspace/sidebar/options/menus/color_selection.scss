@@ -8,30 +8,33 @@
 
 .element-set {
   margin: 0;
-  .element-title {
-    .title-spacing-selected-colors {
-      padding-left: $s-2;
-      margin: 0;
-    }
-    .add-fill {
-      @extend .button-tertiary;
-      height: $s-32;
-      width: $s-28;
-      svg {
-        @extend .button-icon;
-      }
-    }
+}
+
+.title-spacing-selected-colors {
+  padding-left: $s-2;
+  margin: 0;
+}
+
+.add-fill {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
   }
-  .element-content {
-    @include flexColumn;
-    margin-bottom: $s-8;
-    .selected-color-group {
-      @include flexColumn;
-      .more-colors-btn {
-        @extend .button-secondary;
-        @include tabTitleTipography;
-        height: $s-32;
-      }
-    }
-  }
+}
+
+.element-content {
+  @include flexColumn;
+  margin-bottom: $s-8;
+}
+
+.selected-color-group {
+  @include flexColumn;
+}
+
+.more-colors-btn {
+  @extend .button-secondary;
+  @include tabTitleTipography;
+  height: $s-32;
 }

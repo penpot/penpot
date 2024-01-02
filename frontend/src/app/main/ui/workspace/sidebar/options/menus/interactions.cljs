@@ -22,7 +22,6 @@
    [app.main.ui.components.radio-buttons :refer [radio-buttons radio-button]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -45,15 +44,6 @@
   [interaction]
   (get (event-type-names) (:event-type interaction) "--"))
 
-(defn- action-type-names
-  []
-  {:navigate (tr "workspace.options.interaction-navigate-to")
-   :open-overlay (tr "workspace.options.interaction-open-overlay")
-   :toggle-overlay (tr "workspace.options.interaction-toggle-overlay")
-   :close-overlay (tr "workspace.options.interaction-close-overlay")
-   :prev-screen (tr "workspace.options.interaction-prev-screen")
-   :open-url (tr "workspace.options.interaction-open-url")})
-
 (defn- action-summary
   [interaction destination]
   (case (:action-type interaction)
@@ -68,34 +58,6 @@
     :prev-screen (tr "workspace.options.interaction-prev-screen")
     :open-url (tr "workspace.options.interaction-open-url")
     "--"))
-
-(defn- overlay-pos-type-names
-  []
-  {:manual (tr "workspace.options.interaction-pos-manual")
-   :center (tr "workspace.options.interaction-pos-center")
-   :top-left (tr "workspace.options.interaction-pos-top-left")
-   :top-right (tr "workspace.options.interaction-pos-top-right")
-   :top-center (tr "workspace.options.interaction-pos-top-center")
-   :bottom-left (tr "workspace.options.interaction-pos-bottom-left")
-   :bottom-right (tr "workspace.options.interaction-pos-bottom-right")
-   :bottom-center (tr "workspace.options.interaction-pos-bottom-center")})
-
-(defn- animation-type-names
-  [interaction]
-  (cond->
-      {:dissolve (tr "workspace.options.interaction-animation-dissolve")
-       :slide (tr "workspace.options.interaction-animation-slide")}
-
-    (ctsi/allow-push? (:action-type interaction))
-    (assoc :push (tr "workspace.options.interaction-animation-push"))))
-
-(defn- easing-names
-  []
-  {:linear (tr "workspace.options.interaction-easing-linear")
-   :ease (tr "workspace.options.interaction-easing-ease")
-   :ease-in (tr "workspace.options.interaction-easing-ease-in")
-   :ease-out (tr "workspace.options.interaction-easing-ease-out")
-   :ease-in-out (tr "workspace.options.interaction-easing-ease-in-out")})
 
 (defn- get-frames-options
   [frames shape]
@@ -115,8 +77,7 @@
 
 (mf/defc flow-item
   [{:keys [flow]}]
-  (let [new-css-system   (mf/use-ctx ctx/new-css-system)
-        editing?         (mf/use-state false)
+  (let [editing?         (mf/use-state false)
         flow-for-rename  (mf/deref flow-for-rename-ref)
         name-ref         (mf/use-ref)
 
@@ -144,10 +105,10 @@
          (mf/deps flow)
          #(st/emit! (dw/select-shape (:starting-frame flow))))
 
-        rename-flow
-        (mf/use-fn
-         (mf/deps flow)
-         #(st/emit! (dwi/start-rename-flow (:id flow))))
+        ;; rename-flow
+        ;; (mf/use-fn
+        ;;  (mf/deps flow)
+        ;;  #(st/emit! (dwi/start-rename-flow (:id flow))))
 
         remove-flow
         (mf/use-fn
@@ -171,95 +132,59 @@
         (let [name-input (mf/ref-val name-ref)]
           (dom/select-text! name-input))
         nil))
-    (if new-css-system
-      [:div  {:class (stl/css :flow-element)}
-       [:span {:class (stl/css :flow-info)}
-        [:span {:class (stl/css :flow-name-wrapper)}
-         [:button {:class (stl/css :start-flow-btn)
-                   :on-click start-flow}
-          [:span {:class (stl/css :button-icon)}
-           i/play-refactor]]
-         [:span {:class (stl/css :flow-input-wrapper)}
-          [:input
-           {:class (stl/css :flow-input)
-            :type "text"
-            :ref name-ref
-            :on-blur accept-edit
-            :on-key-down on-key-down
-            :default-value (:name flow "")}]]]]
 
-       [:button {:class (stl/css :remove-flow-btn)
-                 :on-click remove-flow}
-        i/remove-refactor]]
+    [:div  {:class (stl/css :flow-element)}
+     [:span {:class (stl/css :flow-info)}
+      [:span {:class (stl/css :flow-name-wrapper)}
+       [:button {:class (stl/css :start-flow-btn)
+                 :on-click start-flow}
+        [:span {:class (stl/css :button-icon)}
+         i/play-refactor]]
+       [:span {:class (stl/css :flow-input-wrapper)}
+        [:input
+         {:class (stl/css :flow-input)
+          :type "text"
+          :ref name-ref
+          :on-blur accept-edit
+          :on-key-down on-key-down
+          :default-value (:name flow "")}]]]]
 
-      [:div.flow-element
-       [:div.flow-button {:on-click start-flow} i/play]
-       (if @editing?
-         [:input.element-name
-          {:type "text"
-           :ref name-ref
-           :on-blur accept-edit
-           :on-key-down on-key-down
-           :auto-focus true
-           :default-value (:name flow "")}]
-         [:span.element-label.flow-name
-          {:on-double-click rename-flow}
-          (:name flow)])
-       [:div.add-page {:on-click remove-flow} i/minus]])))
+     [:button {:class (stl/css :remove-flow-btn)
+               :on-click remove-flow}
+      i/remove-refactor]]))
 
 (mf/defc page-flows
   [{:keys [flows]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
-    (if new-css-system
-      (when (seq flows)
-        [:div {:class (stl/css :interaction-options)}
-         [:& title-bar {:collapsable? false
-                        :title        (tr "workspace.options.flows.flow-starts")
-                        :class        (stl/css :title-spacing-layout-flow)}]
-         (for [flow flows]
-           [:& flow-item {:flow flow :key (str (:id flow))}])])
-
-      (when (seq flows)
-        [:div.element-set.interactions-options
-         [:div.element-set-title
-          [:span (tr "workspace.options.flows.flow-starts")]]
-         (for [flow flows]
-           [:& flow-item {:flow flow :key (str (:id flow))}])]))))
+  (when (seq flows)
+    [:div {:class (stl/css :interaction-options)}
+     [:& title-bar {:collapsable? false
+                    :title        (tr "workspace.options.flows.flow-starts")
+                    :class        (stl/css :title-spacing-layout-flow)}]
+     (for [flow flows]
+       [:& flow-item {:flow flow :key (str (:id flow))}])]))
 
 (mf/defc shape-flows
   [{:keys [flows shape]}]
   (when (= (:type shape) :frame)
-    (let [new-css-system (mf/use-ctx ctx/new-css-system)
-          flow           (ctp/get-frame-flow flows (:id shape))
+    (let [flow           (ctp/get-frame-flow flows (:id shape))
           add-flow (mf/use-fn #(st/emit! (dwi/add-flow-selected-frame)))]
-      (if new-css-system
-        [:div {:class (stl/css :element-set)}
-         [:& title-bar {:collapsable? false
-                        :title        (tr "workspace.options.flows.flow")
-                        :class        (stl/css :title-spacing-layout-flow)}
-          (when (nil? flow)
-            [:button {:class (stl/css :add-flow-btn)
-                      :title (tr  "workspace.options.flows.add-flow-start")
-                      :on-click add-flow}
-             i/add-refactor])]
 
-         (when flow
-           [:& flow-item {:flow flow :key (str (:id flow))}])]
+      [:div {:class (stl/css :element-set)}
+       [:& title-bar {:collapsable? false
+                      :title        (tr "workspace.options.flows.flow")
+                      :class        (stl/css :title-spacing-layout-flow)}
+        (when (nil? flow)
+          [:button {:class (stl/css :add-flow-btn)
+                    :title (tr  "workspace.options.flows.add-flow-start")
+                    :on-click add-flow}
+           i/add-refactor])]
 
-        [:div.element-set.interactions-options
-         [:div.element-set-title
-          [:span (tr "workspace.options.flows.flow-start")]]
-         (if (nil? flow)
-           [:div.flow-element
-            [:span.element-label (tr "workspace.options.flows.add-flow-start")]
-            [:div.add-page {:on-click add-flow}
-             i/plus]]
-           [:& flow-item {:flow flow :key (str (:id flow))}])]))))
+       (when flow
+         [:& flow-item {:flow flow :key (str (:id flow))}])])))
 
 (mf/defc interaction-entry
   [{:keys [index shape interaction update-interaction remove-interaction]}]
-  (let [new-css-system       (mf/use-ctx ctx/new-css-system)
-        objects              (deref refs/workspace-page-objects)
+  (let [objects              (deref refs/workspace-page-objects)
         destination          (get objects (:destination interaction))
 
         frames               (mf/with-memo [objects] (ctt/get-viewer-frames objects {:all-frames? true}))
@@ -286,18 +211,14 @@
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-           (let [value (if new-css-system
-                         (keyword event)
-                         (-> event dom/get-target dom/get-value d/read-string))]
+           (let [value (keyword event)]
              (update-interaction index #(ctsi/set-event-type % value shape)))))
 
         change-action-type
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-           (let [value (if new-css-system
-                         (keyword event)
-                         (-> event dom/get-target dom/get-value d/read-string))]
+           (let [value (keyword event)]
              (update-interaction index #(ctsi/set-action-type % value)))))
 
         change-delay
@@ -310,9 +231,7 @@
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-           (let [value (if new-css-system
-                         event
-                         (-> event dom/get-target dom/get-value))
+           (let [value event
                  value (when (not= value "") (uuid/uuid value))]
              (update-interaction index #(ctsi/set-destination % value)))))
 
@@ -320,12 +239,7 @@
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-           (let [value (if new-css-system
-                         (uuid/uuid event)
-                         (-> event
-                             dom/get-target
-                             dom/get-value
-                             uuid/uuid))]
+           (let [value (uuid/uuid event)]
              (update-interaction index #(ctsi/set-position-relative-to % value)))))
 
         change-preserve-scroll
@@ -357,11 +271,8 @@
         change-overlay-pos-type
         (mf/use-fn
          (mf/deps shape)
-         (fn [event]
-           (let [shape-id (:id shape)
-                 value (if new-css-system
-                         event
-                         (-> event dom/get-target dom/get-value d/read-string))]
+         (fn [value]
+           (let [shape-id (:id shape)]
              (update-interaction index #(ctsi/set-overlay-pos-type % value shape objects))
              (when (= value :manual)
                (update-interaction index #(ctsi/set-position-relative-to % shape-id))))))
@@ -393,11 +304,9 @@
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-           (let [value (if new-css-system
-                         (if (= "" event)
-                           nil
-                           (keyword event))
-                         (-> event dom/get-target dom/get-value d/read-string))]
+           (let [value (if (= "" event)
+                         nil
+                         (keyword event))]
              (update-interaction index #(ctsi/set-animation-type % value)))))
 
         change-duration
@@ -408,30 +317,21 @@
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-          (let [value (if new-css-system
-                        (keyword event)
-                        (-> event dom/get-target dom/get-value d/read-string))]
+          (let [value (keyword event)]
             (update-interaction index #(ctsi/set-easing % value)))))
 
         change-way
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-          (let [value (if new-css-system
-                        (keyword event)
-                        (-> event dom/get-target dom/get-value d/read-string))]
+          (let [value (keyword event)]
             (update-interaction index #(ctsi/set-way % value)))))
 
         change-direction
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-          (let [value (if new-css-system
-                        (keyword event)
-                        (-> event
-                          dom/get-target
-                          (dom/get-data "value")
-                          keyword))]
+          (let [value (keyword event)]
             (update-interaction index #(ctsi/set-direction % value)))))
 
         change-offset-effect
@@ -502,565 +402,293 @@
                         {:icon  :easing-ease-in-out-refactor :value :ease-in-out :label (tr "workspace.options.interaction-easing-ease-in-out")}]]
 
 
-    (if new-css-system
-      [:div {:class (stl/css-case  :element-set-options-group true
-                                   :open extended-open?)}
-      ; Summary
-       [:div {:class (stl/css :interactions-summary)}
-        [:div {:class (stl/css-case :extend-btn true
-                                    :extended extended-open?)
-               :on-click toggle-extended}
-         i/menu-refactor]
+    [:div {:class (stl/css-case  :element-set-options-group true
+                                 :open extended-open?)}
+          ; Summary
+     [:div {:class (stl/css :interactions-summary)}
+      [:div {:class (stl/css-case :extend-btn true
+                                  :extended extended-open?)
+             :on-click toggle-extended}
+       i/menu-refactor]
 
-        [:div {:class (stl/css :interactions-info)
-               :on-click toggle-extended}
-         [:div {:class (stl/css :trigger-name)} (event-type-name interaction)]
-         [:div {:class (stl/css :action-summary)} (action-summary interaction destination)]]
-        [:button {:class (stl/css :remove-btn)
-                  :data-value index
-                  :on-click #(remove-interaction index)}
-         i/remove-refactor]]
+      [:div {:class (stl/css :interactions-info)
+             :on-click toggle-extended}
+       [:div {:class (stl/css :trigger-name)} (event-type-name interaction)]
+       [:div {:class (stl/css :action-summary)} (action-summary interaction destination)]]
+      [:button {:class (stl/css :remove-btn)
+                :data-value index
+                :on-click #(remove-interaction index)}
+       i/remove-refactor]]
 
-       (when extended-open?
-         [:div {:class (stl/css :extended-options)}
-          ;; Trigger select
+     (when extended-open?
+       [:div {:class (stl/css :extended-options)}
+              ;; Trigger select
+        [:div {:class (stl/css :property-row)}
+         [:span {:class (stl/css :interaction-name)}
+          (tr "workspace.options.interaction-trigger")]
+         [:div {:class (stl/css :select-wrapper)}
+          [:& select {:class (stl/css :interaction-type-select)
+                      :default-value (:event-type interaction)
+                      :options event-type-options
+                      :on-change change-event-type}]]]
+
+             ;; Delay
+        (when (ctsi/has-delay interaction)
           [:div {:class (stl/css :property-row)}
            [:span {:class (stl/css :interaction-name)}
-            (tr "workspace.options.interaction-trigger")]
-           [:div {:class (stl/css :select-wrapper)}
-            [:& select {:class (stl/css :interaction-type-select)
-                        :default-value (:event-type interaction)
-                        :options event-type-options
-                        :on-change change-event-type}]]]
+            (tr "workspace.options.interaction-delay")]
+           [:div {:class (stl/css :input-element-wrapper)
+                  :title (tr "workspace.options.interaction-ms")}
+            [:span.after (tr "workspace.options.interaction-ms")]
+            [:> numeric-input* {:ref ext-delay-ref
+                                :className (stl/css :numeric-input)
+                                :on-change change-delay
+                                :value (:delay interaction)
+                                :title (tr "workspace.options.interaction-ms")}]]])
 
-         ;; Delay
-          (when (ctsi/has-delay interaction)
-            [:div {:class (stl/css :property-row)}
-             [:span {:class (stl/css :interaction-name)}
-              (tr "workspace.options.interaction-delay")]
-             [:div {:class (stl/css :input-element-wrapper)
-                    :title (tr "workspace.options.interaction-ms")}
-              [:span.after (tr "workspace.options.interaction-ms")]
-              [:> numeric-input* {:ref ext-delay-ref
-                                  :className (stl/css :numeric-input)
-                                  :on-change change-delay
-                                  :value (:delay interaction)
-                                  :title (tr "workspace.options.interaction-ms")}]]])
+              ;; Action select
+        [:div {:class (stl/css :property-row)}
+         [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-action")]
+         [:div {:class (stl/css :select-wrapper)}
+          [:& select {:class (stl/css :interaction-type-select)
+                      :default-value (:action-type interaction)
+                      :options action-type-options
+                      :on-change change-action-type}]]]
 
-          ;; Action select
+              ;; Destination
+        (when (ctsi/has-destination interaction)
           [:div {:class (stl/css :property-row)}
-           [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-action")]
+           [:span  {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-destination")]
            [:div {:class (stl/css :select-wrapper)}
             [:& select {:class (stl/css :interaction-type-select)
-                        :default-value (:action-type interaction)
-                        :options action-type-options
-                        :on-change change-action-type}]]]
+                        :default-value (str (:destination interaction))
+                        :options destination-options
+                        :on-change change-destination}]]])
 
-          ;; Destination
-          (when (ctsi/has-destination interaction)
-            [:div {:class (stl/css :property-row)}
-             [:span  {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-destination")]
-             [:div {:class (stl/css :select-wrapper)}
-              [:& select {:class (stl/css :interaction-type-select)
-                          :default-value (str (:destination interaction))
-                          :options destination-options
-                          :on-change change-destination}]]])
+              ;; Preserve scroll
+        (when (ctsi/has-preserve-scroll interaction)
+          [:div {:class (stl/css :property-row)}
+           [:div {:class (stl/css :checkbox-option)}
+            [:label {:for (str "preserve-" index)
+                     :class (stl/css-case  :global/checked preserve-scroll?)}
+             [:span {:class (stl/css-case :global/checked preserve-scroll?)}
+              (when preserve-scroll?
+                i/status-tick-refactor)]
+             (tr "workspace.options.interaction-preserve-scroll")
+             [:input {:type "checkbox"
+                      :id (str "preserve-" index)
+                      :checked preserve-scroll?
+                      :on-change change-preserve-scroll}]]]])
 
-          ;; Preserve scroll
-          (when (ctsi/has-preserve-scroll interaction)
-            [:div {:class (stl/css :property-row)}
-             [:div {:class (stl/css :checkbox-option)}
-              [:label {:for (str "preserve-" index)
-                       :class (stl/css-case  :global/checked preserve-scroll?)}
-               [:span {:class (stl/css-case :global/checked preserve-scroll?)}
-                (when preserve-scroll?
-                  i/status-tick-refactor)]
-               (tr "workspace.options.interaction-preserve-scroll")
-               [:input {:type "checkbox"
-                        :id (str "preserve-" index)
-                        :checked preserve-scroll?
-                        :on-change change-preserve-scroll}]]]])
+              ;; URL
+        (when (ctsi/has-url interaction)
+          [:div {:class (stl/css :property-row)}
+           [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-url")]
+           [:div {:class (stl/css :input-element-wrapper)}
+            [:input {:class (stl/css :input-text)
+                     :type "url"
+                     :placeholder "http://example.com"
+                     :default-value (str (:url interaction))
+                     :on-blur change-url}]]])
 
-          ;; URL
-          (when (ctsi/has-url interaction)
-            [:div {:class (stl/css :property-row)}
-             [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-url")]
-             [:div {:class (stl/css :input-element-wrapper)}
-              [:input {:class (stl/css :input-text)
-                       :type "url"
-                       :placeholder "http://example.com"
-                       :default-value (str (:url interaction))
-                       :on-blur change-url}]]])
+        (when (ctsi/has-overlay-opts interaction)
+          [:*
+                 ;; Overlay position relative-to (select)
+           [:div {:class (stl/css :property-row)}
+            [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-relative-to")]
+            [:div {:class (stl/css :select-wrapper)}
+             [:& select {:class (stl/css :interaction-type-select)
+                         :default-value  (str (:position-relative-to interaction))
+                         :options relative-to-opts
+                         :on-change change-position-relative-to}]]]
 
-          (when (ctsi/has-overlay-opts interaction)
-            [:*
-             ;; Overlay position relative-to (select)
-             [:div {:class (stl/css :property-row)}
-              [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-relative-to")]
-              [:div {:class (stl/css :select-wrapper)}
-               [:& select {:class (stl/css :interaction-type-select)
-                           :default-value  (str (:position-relative-to interaction))
-                           :options relative-to-opts
-                           :on-change change-position-relative-to}]]]
+                 ;; Overlay position (select)
+           [:div {:class (stl/css :property-row)}
+            [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-position")]
+            [:div {:class (stl/css :select-wrapper)}
+             [:& select {:class (stl/css :interaction-type-select)
+                         :default-value (:overlay-pos-type interaction)
+                         :options overlay-position-opts
+                         :on-change change-overlay-pos-type}]]]
 
-             ;; Overlay position (select)
-             [:div {:class (stl/css :property-row)}
-              [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-position")]
-              [:div {:class (stl/css :select-wrapper)}
-               [:& select {:class (stl/css :interaction-type-select)
-                           :default-value (:overlay-pos-type interaction)
-                           :options overlay-position-opts
-                           :on-change change-overlay-pos-type}]]]
+                 ;; Overlay position (buttons)
+           [:div {:class (stl/css-case :property-row true
+                                       :big-row true)}
+            [:div {:class (stl/css :position-btns-wrapper)}
+             [:button {:class (stl/css-case :direction-btn true
+                                            :center-btn true
+                                            :active (= overlay-pos-type :center))
+                       :data-value :center
+                       :on-click toggle-overlay-pos-type}
+              [:span {:class (stl/css :rectangle)}]]
+             [:button {:class (stl/css-case :direction-btn true
+                                            :top-left-btn true
+                                            :active (= overlay-pos-type :top-left))
+                       :data-value :top-left
+                       :on-click toggle-overlay-pos-type}
+              [:span {:class (stl/css :rectangle)}]]
+             [:button {:class (stl/css-case :direction-btn true
+                                            :top-right-btn true
+                                            :active (= overlay-pos-type :top-right))
+                       :data-value :top-right
+                       :on-click toggle-overlay-pos-type}
+              [:span {:class (stl/css :rectangle)}]]
 
-             ;; Overlay position (buttons)
-             [:div {:class (stl/css-case :property-row true
-                                         :big-row true)}
-              [:div {:class (stl/css :position-btns-wrapper)}
-               [:button {:class (stl/css-case :direction-btn true
-                                              :center-btn true
-                                              :active (= overlay-pos-type :center))
-                         :data-value :center
-                         :on-click toggle-overlay-pos-type}
-                [:span {:class (stl/css :rectangle)}]]
-               [:button {:class (stl/css-case :direction-btn true
-                                              :top-left-btn true
-                                              :active (= overlay-pos-type :top-left))
-                         :data-value :top-left
-                         :on-click toggle-overlay-pos-type}
-                [:span {:class (stl/css :rectangle)}]]
-               [:button {:class (stl/css-case :direction-btn true
-                                              :top-right-btn true
-                                              :active (= overlay-pos-type :top-right))
-                         :data-value :top-right
-                         :on-click toggle-overlay-pos-type}
-                [:span {:class (stl/css :rectangle)}]]
+             [:button {:class (stl/css-case :direction-btn true
+                                            :top-center-btn true
+                                            :active (= overlay-pos-type :top-center))
+                       :data-value :top-center
+                       :on-click toggle-overlay-pos-type}
+              [:span {:class (stl/css :rectangle)}]]
+             [:button {:class (stl/css-case :direction-btn true
+                                            :bottom-left-btn true
+                                            :active (= overlay-pos-type :bottom-left))
+                       :data-value :bottom-left
+                       :on-click toggle-overlay-pos-type}
+              [:span {:class (stl/css :rectangle)}]]
+             [:button {:class (stl/css-case :direction-btn true
+                                            :bottom-left-btn true
+                                            :active (= overlay-pos-type :bottom-left))
+                       :data-value :bottom-left
+                       :on-click toggle-overlay-pos-type}
+              [:span {:class (stl/css :rectangle)}]]
 
-               [:button {:class (stl/css-case :direction-btn true
-                                              :top-center-btn true
-                                              :active (= overlay-pos-type :top-center))
-                         :data-value :top-center
-                         :on-click toggle-overlay-pos-type}
-                [:span {:class (stl/css :rectangle)}]]
-               [:button {:class (stl/css-case :direction-btn true
-                                              :bottom-left-btn true
-                                              :active (= overlay-pos-type :bottom-left))
-                         :data-value :bottom-left
-                         :on-click toggle-overlay-pos-type}
-                [:span {:class (stl/css :rectangle)}]]
-               [:button {:class (stl/css-case :direction-btn true
-                                              :bottom-left-btn true
-                                              :active (= overlay-pos-type :bottom-left))
-                         :data-value :bottom-left
-                         :on-click toggle-overlay-pos-type}
-                [:span {:class (stl/css :rectangle)}]]
+             [:button {:class (stl/css-case :direction-btn true
+                                            :bottom-left-btn true
+                                            :active (= overlay-pos-type :bottom-left))
+                       :data-value :bottom-left
+                       :on-click toggle-overlay-pos-type}
+              [:span {:class (stl/css :rectangle)}]]
+             [:button {:class (stl/css-case :direction-btn true
+                                            :bottom-right-btn true
+                                            :active (= overlay-pos-type :bottom-right))
+                       :data-value :bottom-right
+                       :on-click toggle-overlay-pos-type}
+              [:span {:class (stl/css :rectangle)}]]
+             [:button {:class (stl/css-case :direction-btn true
+                                            :bottom-center-btn true
+                                            :active (= overlay-pos-type :bottom-center))
+                       :data-value :bottom-center
+                       :on-click toggle-overlay-pos-type}
+              [:span {:class (stl/css :rectangle)}]]]]
 
-               [:button {:class (stl/css-case :direction-btn true
-                                              :bottom-left-btn true
-                                              :active (= overlay-pos-type :bottom-left))
-                         :data-value :bottom-left
-                         :on-click toggle-overlay-pos-type}
-                [:span {:class (stl/css :rectangle)}]]
-               [:button {:class (stl/css-case :direction-btn true
-                                              :bottom-right-btn true
-                                              :active (= overlay-pos-type :bottom-right))
-                         :data-value :bottom-right
-                         :on-click toggle-overlay-pos-type}
-                [:span {:class (stl/css :rectangle)}]]
-               [:button {:class (stl/css-case :direction-btn true
-                                              :bottom-center-btn true
-                                              :active (= overlay-pos-type :bottom-center))
-                         :data-value :bottom-center
-                         :on-click toggle-overlay-pos-type}
-                [:span {:class (stl/css :rectangle)}]]]]
-
-             ;; Overlay click outside
-             [:div {:class (stl/css :property-row)}
-              [:div {:class (stl/css :checkbox-option)}
-               [:label {:for (str "close-" index)
-                        :class (stl/css-case  :global/checked close-click-outside?)}
-                [:span {:class (stl/css-case :global/checked close-click-outside?)}
-                 (when close-click-outside?
-                   i/status-tick-refactor)]
-                (tr "workspace.options.interaction-close-outside")
-                [:input {:type "checkbox"
-                         :id (str "close-" index)
-                         :checked close-click-outside?
-                         :on-change change-close-click-outside}]]]]
-
-            ;; Overlay background
-             [:div {:class (stl/css :property-row)}
-              [:div {:class (stl/css :checkbox-option)}
-               [:label {:for (str "background-" index)
-                        :class (stl/css-case  :global/checked background-overlay?)}
-                [:span {:class (stl/css-case :global/checked background-overlay?)}
-                 (when background-overlay?
-                   i/status-tick-refactor)]
-                (tr "workspace.options.interaction-background")
-                [:input {:type "checkbox"
-                         :id (str "background-" index)
-                         :checked background-overlay?
-                         :on-change change-background-overlay}]]]]])
-
-          (when (ctsi/has-animation? interaction)
-            [:*
-             ;; Animation select
-             [:div {:class (stl/css :property-row)}
-              [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-animation")]
-              [:div {:class (stl/css :select-wrapper)}
-               [:& select {:class (stl/css :animation-select)
-                           :default-value (or (-> interaction :animation :animation-type) "")
-                           :options animation-opts
-                           :on-change change-animation-type}]]]
-
-             ;; Direction
-             (when (ctsi/has-way? interaction)
-               [:div {:class (stl/css :property-row)}
-                [:div {:class (stl/css :inputs-wrapper)}
-
-                 [:& radio-buttons {:selected (d/name way)
-                                    :on-change change-way
-                                    :name "animation-way"}
-                  [:& radio-button {:value "in"
-                                    :id "animation-way-in"}]
-                  [:& radio-button {:id "animation-way-out"
-                                    :value "out"}]]]])
-
-             ;; Direction
-             (when (ctsi/has-direction? interaction)
-               [:div {:class (stl/css :property-row)}
-                [:div {:class (stl/css :buttons-wrapper)}
-                 [:& radio-buttons {:selected (d/name direction)
-                                    :on-change change-direction
-                                    :name "animation-direction"}
-                  [:& radio-button {:icon i/column-refactor
-                                    :icon-class (stl/css :right)
-                                    :value "right"
-                                    :id "animation-right"}]
-                  [:& radio-button {:icon i/column-refactor
-                                    :icon-class (stl/css :left)
-                                    :id "animation-left"
-                                    :value "left"}]
-                  [:& radio-button {:icon i/column-refactor
-                                    :icon-class (stl/css :down)
-                                    :id "animation-down"
-                                    :value "down"}]
-                  [:& radio-button {:icon i/column-refactor
-                                    :icon-class (stl/css :up)
-                                    :id "animation-up"
-                                    :value "up"}]]]])
-
-             ;; Duration
-             (when (ctsi/has-duration? interaction)
-               [:div {:class (stl/css :property-row)}
-                [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-duration")]
-                [:div {:class (stl/css :input-element-wrapper)
-                       :title (tr "workspace.options.interaction-ms")}
-                 [:span.after (tr "workspace.options.interaction-ms")]
-                 [:> numeric-input* {:ref ext-duration-ref
-                                     :on-change change-duration
-                                     :value (-> interaction :animation :duration)
-                                     :title (tr "workspace.options.interaction-ms")}]]])
-
-             ;; Easing
-             (when (ctsi/has-easing? interaction)
-               [:div {:class (stl/css :property-row)}
-                [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-easing")]
-                [:div {:class (stl/css :select-wrapper)}
-                 [:& select {:class (stl/css :easing-select)
-                             :dropdown-class (stl/css :dropdown-upwards)
-                             :default-value (-> interaction :animation :easing)
-                             :options easing-options
-                             :on-change change-easing}]]])
-
-             ;; Offset effect
-             (when (ctsi/has-offset-effect? interaction)
-               [:div {:class (stl/css :property-row)}
-                [:div {:class (stl/css :checkbox-option)}
-                 [:label {:for (str "offset-effect-" index)
-                          :class (stl/css-case  :global/checked (-> interaction :animation :offset-effect))}
-                  [:span {:class (stl/css-case :global/checked (-> interaction :animation :offset-effect))}
-                   (when (-> interaction :animation :offset-effect)
-                     i/status-tick-refactor)]
-                  (tr "workspace.options.interaction-offset-effect")
-                  [:input {:type "checkbox"
-                           :id (str "offset-effect-" index)
-                           :checked (-> interaction :animation :offset-effect)
-                           :on-change change-offset-effect}]]]])])])]
-
-
-      [:div.element-set-options-group {:class (dom/classnames
-                                               :open extended-open?)}
-       ; Summary
-       [:div.element-set-actions-button {:on-click toggle-extended}
-        i/actions]
-       [:div.interactions-summary {:on-click toggle-extended}
-        [:div.trigger-name (event-type-name interaction)]
-        [:div.action-summary (action-summary interaction destination)]]
-       [:div.element-set-actions {:on-click #(remove-interaction index)}
-        [:div.element-set-actions-button i/minus]]
-
-       (when extended-open?
-         [:div.element-set-content
-
-          ;; Trigger select
-          [:div.interactions-element.separator
-           [:span.element-set-subtitle.wide (tr "workspace.options.interaction-trigger")]
-           [:select.input-select
-            {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
-             :value (str (:event-type interaction))
-             :on-change change-event-type}
-            (for [[value name] (event-type-names)]
-              (when-not (and (= value :after-delay)
-                             (not= (:type shape) :frame))
-                [:option {:key (dm/str value)
-                          :value (dm/str value)} name]))]]
-
-          ;; Delay
-          (when (ctsi/has-delay interaction)
-            [:div.interactions-element
-             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-delay")]
-             [:div.input-element {:title (tr "workspace.options.interaction-ms")}
-              [:> numeric-input* {:ref ext-delay-ref
-                                  :on-change change-delay
-                                  :value (:delay interaction)
-                                  :title (tr "workspace.options.interaction-ms")}]
-              [:span.after (tr "workspace.options.interaction-ms")]]])
-
-          ;; Action select
-          [:div.interactions-element.separator
-           [:span.element-set-subtitle.wide (tr "workspace.options.interaction-action")]
-           [:select.input-select
-            {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
-             :value (str (:action-type interaction))
-             :on-change change-action-type}
-            (for [[value name] (action-type-names)]
-              [:option {:key (dm/str "action-" value)
-                        :value (str value)} name])]]
-
-          ;; Destination
-          (when (ctsi/has-destination interaction)
-            [:div.interactions-element
-             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-destination")]
-             [:select.input-select
-              {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
-               :value (str (:destination interaction))
-               :on-change change-destination}
-              (if (= (:action-type interaction) :close-overlay)
-                [:option {:value ""} (tr "workspace.options.interaction-self")]
-                [:option {:value ""} (tr "workspace.options.interaction-none")])
-              (for [frame frames]
-                (when (and (not= (:id frame) (:id shape)) ; A frame cannot navigate to itself
-                           (not= (:id frame) (:frame-id shape))) ; nor a shape to its container frame
-                  [:option {:key (dm/str "destination-" (:id frame))
-                            :value (str (:id frame))} (:name frame)]))]])
-
-          ;; Preserve scroll
-          (when (ctsi/has-preserve-scroll interaction)
-            [:div.interactions-element
-             [:div.input-checkbox
+                 ;; Overlay click outside
+           [:div {:class (stl/css :property-row)}
+            [:div {:class (stl/css :checkbox-option)}
+             [:label {:for (str "close-" index)
+                      :class (stl/css-case  :global/checked close-click-outside?)}
+              [:span {:class (stl/css-case :global/checked close-click-outside?)}
+               (when close-click-outside?
+                 i/status-tick-refactor)]
+              (tr "workspace.options.interaction-close-outside")
               [:input {:type "checkbox"
-                       :id (str "preserve-" index)
-                       :checked preserve-scroll?
-                       :on-change change-preserve-scroll}]
-              [:label {:for (str "preserve-" index)}
-               (tr "workspace.options.interaction-preserve-scroll")]]])
+                       :id (str "close-" index)
+                       :checked close-click-outside?
+                       :on-change change-close-click-outside}]]]]
 
-          ;; URL
-          (when (ctsi/has-url interaction)
-            [:div.interactions-element
-             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-url")]
-             [:input.input-text {:type "url"
-                                 :placeholder "http://example.com"
-                                 :default-value (str (:url interaction))
-                                 :on-blur change-url}]])
+                ;; Overlay background
+           [:div {:class (stl/css :property-row)}
+            [:div {:class (stl/css :checkbox-option)}
+             [:label {:for (str "background-" index)
+                      :class (stl/css-case  :global/checked background-overlay?)}
+              [:span {:class (stl/css-case :global/checked background-overlay?)}
+               (when background-overlay?
+                 i/status-tick-refactor)]
+              (tr "workspace.options.interaction-background")
+              [:input {:type "checkbox"
+                       :id (str "background-" index)
+                       :checked background-overlay?
+                       :on-change change-background-overlay}]]]]])
 
-          (when (ctsi/has-overlay-opts interaction)
-            [:*
-             ;; Overlay position relative-to (select)
-             [:div.interactions-element
-              [:span.element-set-subtitle.wide (tr "workspace.options.interaction-relative-to")]
-              [:select.input-select
-               {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
-                :value (str (:position-relative-to interaction))
-                :on-change change-position-relative-to}
-               (when (not= (:overlay-pos-type interaction) :manual)
-                 [:*
-                  [:option {:value ""} (tr "workspace.options.interaction-auto")]
-                  (for [frame shape-parents]
-                    [:option {:key (dm/str "position-relative-to-" (:id frame))
-                              :value (str (:id frame))} (:name frame)])])
-               [:option {:key (dm/str "position-relative-to-" (:id shape))
-                         :value (str (:id shape))} (:name shape) " (" (tr "workspace.options.interaction-self") ")"]]]
+        (when (ctsi/has-animation? interaction)
+          [:*
+                 ;; Animation select
+           [:div {:class (stl/css :property-row)}
+            [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-animation")]
+            [:div {:class (stl/css :select-wrapper)}
+             [:& select {:class (stl/css :animation-select)
+                         :default-value (or (-> interaction :animation :animation-type) "")
+                         :options animation-opts
+                         :on-change change-animation-type}]]]
 
-             ;; Overlay position (select)
-             [:div.interactions-element
-              [:span.element-set-subtitle.wide (tr "workspace.options.interaction-position")]
-              [:select.input-select
-               {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
-                :value (str (:overlay-pos-type interaction))
-                :on-change change-overlay-pos-type}
-               (for [[value name] (overlay-pos-type-names)]
-                 [:option {:value (str value)} name])]]
+                 ;; Direction
+           (when (ctsi/has-way? interaction)
+             [:div {:class (stl/css :property-row)}
+              [:div {:class (stl/css :inputs-wrapper)}
 
-             ;; Overlay position (buttons)
-             [:div.interactions-element.interactions-pos-buttons
-              [:div.element-set-actions-button
-               {:class (dom/classnames :active (= overlay-pos-type :center))
-                :data-value :center
-                :on-click toggle-overlay-pos-type}
-               i/position-center]
-              [:div.element-set-actions-button
-               {:class (dom/classnames :active (= overlay-pos-type :top-left))
-                :data-value :top-left
-                :on-click toggle-overlay-pos-type}
-               i/position-top-left]
-              [:div.element-set-actions-button
-               {:class (dom/classnames :active (= overlay-pos-type :top-right))
-                :data-value :top-right
-                :on-click toggle-overlay-pos-type}
-               i/position-top-right]
-              [:div.element-set-actions-button
-               {:class (dom/classnames :active (= overlay-pos-type :top-center))
-                :data-value :top-center
-                :on-click toggle-overlay-pos-type}
-               i/position-top-center]
-              [:div.element-set-actions-button
-               {:class (dom/classnames :active (= overlay-pos-type :bottom-left))
-                :data-value :bottom-center
-                :on-click toggle-overlay-pos-type}
-               i/position-bottom-left]
-              [:div.element-set-actions-button
-               {:class (dom/classnames :active (= overlay-pos-type :bottom-right))
-                :data-value :bottom-right
-                :on-click toggle-overlay-pos-type}
-               i/position-bottom-right]
-              [:div.element-set-actions-button
-               {:class (dom/classnames :active (= overlay-pos-type :bottom-center))
-                :data-value :bottom-center
-                :on-click toggle-overlay-pos-type}
-               i/position-bottom-center]]
+               [:& radio-buttons {:selected (d/name way)
+                                  :on-change change-way
+                                  :name "animation-way"}
+                [:& radio-button {:value "in"
+                                  :id "animation-way-in"}]
+                [:& radio-button {:id "animation-way-out"
+                                  :value "out"}]]]])
 
-             ;; Overlay click outside
-             [:div.interactions-element
-              [:div.input-checkbox
-               [:input {:type "checkbox"
-                        :id (str "close-" index)
-                        :checked close-click-outside?
-                        :on-change change-close-click-outside}]
-               [:label {:for (str "close-" index)}
-                (tr "workspace.options.interaction-close-outside")]]]
+                 ;; Direction
+           (when (ctsi/has-direction? interaction)
+             [:div {:class (stl/css :property-row)}
+              [:div {:class (stl/css :buttons-wrapper)}
+               [:& radio-buttons {:selected (d/name direction)
+                                  :on-change change-direction
+                                  :name "animation-direction"}
+                [:& radio-button {:icon i/column-refactor
+                                  :icon-class (stl/css :right)
+                                  :value "right"
+                                  :id "animation-right"}]
+                [:& radio-button {:icon i/column-refactor
+                                  :icon-class (stl/css :left)
+                                  :id "animation-left"
+                                  :value "left"}]
+                [:& radio-button {:icon i/column-refactor
+                                  :icon-class (stl/css :down)
+                                  :id "animation-down"
+                                  :value "down"}]
+                [:& radio-button {:icon i/column-refactor
+                                  :icon-class (stl/css :up)
+                                  :id "animation-up"
+                                  :value "up"}]]]])
 
-             ;; Overlay background
-             [:div.interactions-element
-              [:div.input-checkbox
-               [:input {:type "checkbox"
-                        :id (str "background-" index)
-                        :checked background-overlay?
-                        :on-change change-background-overlay}]
-               [:label {:for (str "background-" index)}
-                (tr "workspace.options.interaction-background")]]]])
+                 ;; Duration
+           (when (ctsi/has-duration? interaction)
+             [:div {:class (stl/css :property-row)}
+              [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-duration")]
+              [:div {:class (stl/css :input-element-wrapper)
+                     :title (tr "workspace.options.interaction-ms")}
+               [:span.after (tr "workspace.options.interaction-ms")]
+               [:> numeric-input* {:ref ext-duration-ref
+                                   :on-change change-duration
+                                   :value (-> interaction :animation :duration)
+                                   :title (tr "workspace.options.interaction-ms")}]]])
 
-          (when (ctsi/has-animation? interaction)
-            [:*
-             ;; Animation select
-             [:div.interactions-element.separator
-              [:span.element-set-subtitle.wide (tr "workspace.options.interaction-animation")]
-              [:select.input-select
-               {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
-                :value (str (-> interaction :animation :animation-type))
-                :on-change change-animation-type}
-               [:option {:value ""} (tr "workspace.options.interaction-animation-none")]
-               (for [[value name] (animation-type-names interaction)]
-                 [:option {:value (str value)} name])]]
+                 ;; Easing
+           (when (ctsi/has-easing? interaction)
+             [:div {:class (stl/css :property-row)}
+              [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-easing")]
+              [:div {:class (stl/css :select-wrapper)}
+               [:& select {:class (stl/css :easing-select)
+                           :dropdown-class (stl/css :dropdown-upwards)
+                           :default-value (-> interaction :animation :easing)
+                           :options easing-options
+                           :on-change change-easing}]]])
 
-             ;; Direction
-             (when (ctsi/has-way? interaction)
-               [:div.interactions-element.interactions-way-buttons
-                [:div.input-radio
-                 [:input {:type "radio"
-                          :id "way-in"
-                          :checked (= :in way)
-                          :name "animation-way"
-                          :value ":in"
-                          :on-change change-way}]
-                 [:label {:for "way-in"} (tr "workspace.options.interaction-in")]]
-                [:div.input-radio
-                 [:input {:type "radio"
-                          :id "way-out"
-                          :checked (= :out way)
-                          :name "animation-way"
-                          :value ":out"
-                          :on-change change-way}]
-                 [:label {:for "way-out"} (tr "workspace.options.interaction-out")]]])
-
-             ;; Direction
-             (when (ctsi/has-direction? interaction)
-               [:div.interactions-element.interactions-direction-buttons
-                [:div.element-set-actions-button
-                 {:class (dom/classnames :active (= direction :right))
-                  :data-value :right
-                  :on-click change-direction}
-                 i/animate-right]
-                [:div.element-set-actions-button
-                 {:class (dom/classnames :active (= direction :down))
-                  :data-value :up
-                  :on-click change-direction}
-                 i/animate-down]
-                [:div.element-set-actions-button
-                 {:class (dom/classnames :active (= direction :left))
-                  :data-value :left
-                  :on-click change-direction}
-                 i/animate-left]
-                [:div.element-set-actions-button
-                 {:class (dom/classnames :active (= direction :up))
-                  :data-value :down
-                  :on-click change-direction}
-                 i/animate-up]])
-
-             ;; Duration
-             (when (ctsi/has-duration? interaction)
-               [:div.interactions-element
-                [:span.element-set-subtitle.wide (tr "workspace.options.interaction-duration")]
-                [:div.input-element {:title (tr "workspace.options.interaction-ms")}
-                 [:> numeric-input* {:ref ext-duration-ref
-                                     :on-change change-duration
-                                     :value (-> interaction :animation :duration)
-                                     :title (tr "workspace.options.interaction-ms")}]
-                 [:span.after (tr "workspace.options.interaction-ms")]]])
-
-             ;; Easing
-             (when (ctsi/has-easing? interaction)
-               [:div.interactions-element
-                [:span.element-set-subtitle.wide (tr "workspace.options.interaction-easing")]
-                [:select.input-select
-                 {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
-                  :value (str (-> interaction :animation :easing))
-                  :on-change change-easing}
-                 (for [[value name] (easing-names)]
-                   [:option {:value (str value)} name])]
-                [:div.interactions-easing-icon
-                 (case (-> interaction :animation :easing)
-                   :linear i/easing-linear
-                   :ease i/easing-ease
-                   :ease-in i/easing-ease-in
-                   :ease-out i/easing-ease-out
-                   :ease-in-out i/easing-ease-in-out)]])
-
-             ;; Offset effect
-             (when (ctsi/has-offset-effect? interaction)
-               [:div.interactions-element
-                [:div.input-checkbox
-                 [:input {:type "checkbox"
-                          :id (str "offset-effect-" index)
-                          :checked (-> interaction :animation :offset-effect)
-                          :on-change change-offset-effect}]
-                 [:label {:for (str "offset-effect-" index)}
-                  (tr "workspace.options.interaction-offset-effect")]]])])])])))
+                 ;; Offset effect
+           (when (ctsi/has-offset-effect? interaction)
+             [:div {:class (stl/css :property-row)}
+              [:div {:class (stl/css :checkbox-option)}
+               [:label {:for (str "offset-effect-" index)
+                        :class (stl/css-case  :global/checked (-> interaction :animation :offset-effect))}
+                [:span {:class (stl/css-case :global/checked (-> interaction :animation :offset-effect))}
+                 (when (-> interaction :animation :offset-effect)
+                   i/status-tick-refactor)]
+                (tr "workspace.options.interaction-offset-effect")
+                [:input {:type "checkbox"
+                         :id (str "offset-effect-" index)
+                         :checked (-> interaction :animation :offset-effect)
+                         :on-change change-offset-effect}]]]])])])]))
 
 (mf/defc interactions-menu
   [{:keys [shape] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        interactions   (get shape :interactions [])
+  (let [interactions   (get shape :interactions [])
 
         options (mf/deref refs/workspace-page-options)
         flows   (:flows options)
@@ -1076,76 +704,43 @@
         update-interaction
         (fn [index update-fn]
           (st/emit! (dwi/update-interaction shape index update-fn)))]
-    (if new-css-system
-      [:div {:class (stl/css :interactions-content)}
-       (if shape
-         [:& shape-flows {:flows flows
-                          :shape shape}]
-         [:& page-flows {:flows flows}])
-       [:div {:class (stl/css :interaction-options)}
-        (when (and shape (not (cfh/unframed-shape? shape)))
-          [:div {:class (stl/css :element-title)}
-           [:& title-bar {:collapsable? false
-                          :title        (tr "workspace.options.interactions")
-                          :class        (stl/css :title-spacing-layout-interactions)}
+    [:div {:class (stl/css :interactions-content)}
+     (if shape
+       [:& shape-flows {:flows flows
+                        :shape shape}]
+       [:& page-flows {:flows flows}])
+     [:div {:class (stl/css :interaction-options)}
+      (when (and shape (not (cfh/unframed-shape? shape)))
+        [:div {:class (stl/css :element-title)}
+         [:& title-bar {:collapsable? false
+                        :title        (tr "workspace.options.interactions")
+                        :class        (stl/css :title-spacing-layout-interactions)}
 
-            [:button {:class (stl/css :add-interaction-btn)
-                      :on-click add-interaction}
-             i/add-refactor]]])
-        [:div {:class (stl/css :help-content)}
-         (when (= (count interactions) 0)
-           [:*
-            (when (and shape (not (cfh/unframed-shape? shape)))
-              [:div {:class (stl/css :help-group)}
-               [:div {:class (stl/css :interactions-help-icon)} i/add-refactor]
-               [:div {:class (stl/css :interactions-help)}
-                (tr "workspace.options.add-interaction")]])
+          [:button {:class (stl/css :add-interaction-btn)
+                    :on-click add-interaction}
+           i/add-refactor]]])
+      [:div {:class (stl/css :help-content)}
+       (when (= (count interactions) 0)
+         [:*
+          (when (and shape (not (cfh/unframed-shape? shape)))
             [:div {:class (stl/css :help-group)}
-             [:div {:class (stl/css :interactions-help-icon)} i/interaction-refactor]
+             [:div {:class (stl/css :interactions-help-icon)} i/add-refactor]
              [:div {:class (stl/css :interactions-help)}
-              (tr "workspace.options.select-a-shape")]]
-            [:div {:class (stl/css :help-group)}
-             [:div {:class (stl/css :interactions-help-icon)} i/play-refactor]
-             [:div {:class (stl/css :interactions-help)}
-              (tr "workspace.options.use-play-button")]]])]
-        [:div {:class (stl/css :groups)}
-         (for [[index interaction] (d/enumerate interactions)]
-           [:& interaction-entry {:key (dm/str (:id shape) "-" index)
-                                  :index index
-                                  :shape shape
-                                  :interaction interaction
-                                  :update-interaction update-interaction
-                                  :remove-interaction remove-interaction}])]]]
-
-      [:*
-       (if shape
-         [:& shape-flows {:flows flows
-                          :shape shape}]
-         [:& page-flows {:flows flows}])
-
-       [:div.element-set.interactions-options
-        (when (and shape (not (cfh/unframed-shape? shape)))
-          [:div.element-set-title
-           [:span (tr "workspace.options.interactions")]
-           [:div.add-page {:on-click add-interaction}
-            i/plus]])
-        [:div.element-set-content
-         (when (= (count interactions) 0)
-           [:*
-            (when (and shape (not (cfh/unframed-shape? shape)))
-              [:*
-               [:div.interactions-help-icon i/plus]
-               [:div.interactions-help.separator (tr "workspace.options.add-interaction")]])
-            [:div.interactions-help-icon i/interaction]
-            [:div.interactions-help (tr "workspace.options.select-a-shape")]
-            [:div.interactions-help-icon i/play]
-            [:div.interactions-help (tr "workspace.options.use-play-button")]])]
-        [:div.groups
-         (for [[index interaction] (d/enumerate interactions)]
-           [:& interaction-entry {:key (dm/str (:id shape) "-" index)
-                                  :index index
-                                  :shape shape
-                                  :interaction interaction
-                                  :update-interaction update-interaction
-                                  :remove-interaction remove-interaction}])]]])))
+              (tr "workspace.options.add-interaction")]])
+          [:div {:class (stl/css :help-group)}
+           [:div {:class (stl/css :interactions-help-icon)} i/interaction-refactor]
+           [:div {:class (stl/css :interactions-help)}
+            (tr "workspace.options.select-a-shape")]]
+          [:div {:class (stl/css :help-group)}
+           [:div {:class (stl/css :interactions-help-icon)} i/play-refactor]
+           [:div {:class (stl/css :interactions-help)}
+            (tr "workspace.options.use-play-button")]]])]
+      [:div {:class (stl/css :groups)}
+       (for [[index interaction] (d/enumerate interactions)]
+         [:& interaction-entry {:key (dm/str (:id shape) "-" index)
+                                :index index
+                                :shape shape
+                                :interaction interaction
+                                :update-interaction update-interaction
+                                :remove-interaction remove-interaction}])]]]))
 

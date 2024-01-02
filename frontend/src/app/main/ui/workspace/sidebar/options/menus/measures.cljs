@@ -21,7 +21,6 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -75,8 +74,7 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [{:keys [ids ids-with-children values type all-types shape]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        options (if (= type :multiple)
+  (let [options (if (= type :multiple)
                   (reduce #(union %1 %2) (map #(get type->options %) all-types))
                   (get type->options type))
 
@@ -193,16 +191,7 @@
                             :else
                             :vert))
 
-        on-orientation-clicked
-        (mf/use-fn
-         (mf/deps ids)
-         (fn [event]
-           (let [orientation (-> (dom/get-current-target event)
-                                 (dom/get-data "value")
-                                 (keyword))]
-             (st/emit! (udw/change-orientation ids orientation)))))
-
-        on-orientation-change-refactor
+        on-orientation-change
         (mf/use-fn
          (mf/deps ids)
          (fn [orientation]
@@ -348,30 +337,29 @@
          ;; restore focus to the newly created numeric-input
          (let [radius-input (mf/ref-val radius-input-ref)]
            (dom/focus! radius-input)))))
-    (if new-css-system
-      [:div {:class (stl/css :element-set)}
-       (when (and (options :presets)
-                  (or (nil? all-types) (= (count all-types) 1)))
-         [:div {:class (stl/css :presets)}
-          [:div {:class (stl/css-case  :presets-wrapper true
-                                       :opened show-presets-dropdown?)
-                 :on-click open-presets}
-           [:span {:class (stl/css :select-name)}(tr "workspace.options.size-presets")]
-           [:span {:class (stl/css :collapsed-icon)} i/arrow-refactor]
+    [:div {:class (stl/css :element-set)}
+     (when (and (options :presets)
+                (or (nil? all-types) (= (count all-types) 1)))
+       [:div {:class (stl/css :presets)}
+        [:div {:class (stl/css-case  :presets-wrapper true
+                                     :opened show-presets-dropdown?)
+               :on-click open-presets}
+         [:span {:class (stl/css :select-name)} (tr "workspace.options.size-presets")]
+         [:span {:class (stl/css :collapsed-icon)} i/arrow-refactor]
 
-           [:& dropdown {:show show-presets-dropdown?
-                         :on-close close-presets}
-            [:ul {:class (stl/css :custom-select-dropdown)}
-             (for [size-preset size-presets]
-               (if-not (:width size-preset)
+         [:& dropdown {:show show-presets-dropdown?
+                       :on-close close-presets}
+          [:ul {:class (stl/css :custom-select-dropdown)}
+           (for [size-preset size-presets]
+             (if-not (:width size-preset)
+               [:li {:key (:name size-preset)
+                     :class (stl/css-case :dropdown-element true
+                                          :disabled true)}
+                [:span {:class (stl/css :preset-name)} (:name size-preset)]]
+
+               (let [preset-match (and (= (:width size-preset) (d/parse-integer (:width values) 0))
+                                       (= (:height size-preset) (d/parse-integer (:height values) 0)))]
                  [:li {:key (:name size-preset)
-                       :class (stl/css-case :dropdown-element true
-                                            :disabled true)}
-                  [:span {:class (stl/css :preset-name)} (:name size-preset)]]
-
-                 (let [preset-match (and (= (:width size-preset) (d/parse-integer (:width values) 0))
-                                         (= (:height size-preset) (d/parse-integer (:height values) 0)))]
-                   [:li {:key (:name size-preset)
                        :class (stl/css-case :dropdown-element true
                                             :match preset-match)
                        :data-width (:width size-preset)
@@ -383,366 +371,189 @@
                   (when preset-match
                     [:span {:class (stl/css :check-icon)} i/tick-refactor])])))]]]
 
-          [:& radio-buttons {:selected (or (d/name orientation) "")
-                             :on-change on-orientation-change-refactor
-                             :name "frame-otientation"}
-           [:& radio-button {:icon i/size-vertical-refactor
-                             :value "vert"
-                             :id "size-vertical"}]
-           [:& radio-button {:icon i/size-horizontal-refactor
-                             :value "horiz"
-                             :id "size-horizontal"}]]])
-       (when (options :size)
-         [:div {:class (stl/css :size)}
-          [:div {:class (stl/css-case :width true
-                                      :disabled disabled-width-sizing?)
-                 :title (tr "workspace.options.width")}
-           [:span {:class (stl/css :icon-text)} "W"]
-           [:> numeric-input* {:min 0.01
-                               :no-validate true
-                               :placeholder "--"
-                               :on-change on-width-change
-                               :disabled disabled-width-sizing?
-                               :className (stl/css :numeric-input)
-                               :value (:width values)}]]
-          [:div {:class (stl/css-case :height true
-                                      :disabled disabled-height-sizing?)
-                 :title (tr "workspace.options.height")}
-           [:span {:class (stl/css :icon-text)} "H"]
-           [:> numeric-input* {:min 0.01
-                               :no-validate true
-                               :placeholder "--"
-                               :on-change on-height-change
-                               :disabled disabled-height-sizing?
-                               :className (stl/css :numeric-input)
-                               :value (:height values)}]]
-          [:button {:class (stl/css-case
-                            :lock-size-btn true
-                            :selected (true? proportion-lock)
-                            :disabled (= proportion-lock :multiple))
-                    :on-click on-proportion-lock-change}
-           (if proportion-lock
-             i/lock-refactor
-             i/unlock-refactor)]])
-       (when (options :position)
-         [:div {:class (stl/css :position)}
-          [:div {:class (stl/css-case :x-position true
-                                      :disabled disabled-position-x?)
-                 :title (tr "workspace.options.x")}
-           [:span {:class (stl/css :icon-text)} "X"]
-           [:> numeric-input* {:no-validate true
-                               :placeholder "--"
-                               :on-change on-pos-x-change
-                               :disabled disabled-position-x?
-                               :className (stl/css :numeric-input)
-                               :value (:x values)}]]
+        [:& radio-buttons {:selected (or (d/name orientation) "")
+                           :on-change on-orientation-change
+                           :name "frame-otientation"}
+         [:& radio-button {:icon i/size-vertical-refactor
+                           :value "vert"
+                           :id "size-vertical"}]
+         [:& radio-button {:icon i/size-horizontal-refactor
+                           :value "horiz"
+                           :id "size-horizontal"}]]])
+     (when (options :size)
+       [:div {:class (stl/css :size)}
+        [:div {:class (stl/css-case :width true
+                                    :disabled disabled-width-sizing?)
+               :title (tr "workspace.options.width")}
+         [:span {:class (stl/css :icon-text)} "W"]
+         [:> numeric-input* {:min 0.01
+                             :no-validate true
+                             :placeholder "--"
+                             :on-change on-width-change
+                             :disabled disabled-width-sizing?
+                             :className (stl/css :numeric-input)
+                             :value (:width values)}]]
+        [:div {:class (stl/css-case :height true
+                                    :disabled disabled-height-sizing?)
+               :title (tr "workspace.options.height")}
+         [:span {:class (stl/css :icon-text)} "H"]
+         [:> numeric-input* {:min 0.01
+                             :no-validate true
+                             :placeholder "--"
+                             :on-change on-height-change
+                             :disabled disabled-height-sizing?
+                             :className (stl/css :numeric-input)
+                             :value (:height values)}]]
+        [:button {:class (stl/css-case
+                          :lock-size-btn true
+                          :selected (true? proportion-lock)
+                          :disabled (= proportion-lock :multiple))
+                  :on-click on-proportion-lock-change}
+         (if proportion-lock
+           i/lock-refactor
+           i/unlock-refactor)]])
+     (when (options :position)
+       [:div {:class (stl/css :position)}
+        [:div {:class (stl/css-case :x-position true
+                                    :disabled disabled-position-x?)
+               :title (tr "workspace.options.x")}
+         [:span {:class (stl/css :icon-text)} "X"]
+         [:> numeric-input* {:no-validate true
+                             :placeholder "--"
+                             :on-change on-pos-x-change
+                             :disabled disabled-position-x?
+                             :className (stl/css :numeric-input)
+                             :value (:x values)}]]
 
-          [:div {:class (stl/css-case :y-position true
-                                      :disabled disabled-position-y?)
-                 :title (tr "workspace.options.y")}
-           [:span {:class (stl/css :icon-text)} "Y"]
-           [:> numeric-input* {:no-validate true
-                               :placeholder "--"
-                               :disabled disabled-position-y?
-                               :on-change on-pos-y-change
-                               :className (stl/css :numeric-input)
-                               :value (:y values)}]]])
-       (when (or (options :rotation) (options :radius))
-         [:div {:class (stl/css :rotation-radius)}
+        [:div {:class (stl/css-case :y-position true
+                                    :disabled disabled-position-y?)
+               :title (tr "workspace.options.y")}
+         [:span {:class (stl/css :icon-text)} "Y"]
+         [:> numeric-input* {:no-validate true
+                             :placeholder "--"
+                             :disabled disabled-position-y?
+                             :on-change on-pos-y-change
+                             :className (stl/css :numeric-input)
+                             :value (:y values)}]]])
+     (when (or (options :rotation) (options :radius))
+       [:div {:class (stl/css :rotation-radius)}
 
-          (when (options :rotation)
-            [:div {:class (stl/css :rotation)
-                   :title (tr "workspace.options.rotation")}
-             [:span {:class (stl/css :icon)}  i/rotation-refactor]
-             [:> numeric-input*
-              {:no-validate true
-               :min 0
-               :max 359
-               :data-wrap true
-               :placeholder "--"
-               :on-change on-rotation-change
-               :className (stl/css :numeric-input)
-               :value (:rotation values)}]])
+        (when (options :rotation)
+          [:div {:class (stl/css :rotation)
+                 :title (tr "workspace.options.rotation")}
+           [:span {:class (stl/css :icon)}  i/rotation-refactor]
+           [:> numeric-input*
+            {:no-validate true
+             :min 0
+             :max 359
+             :data-wrap true
+             :placeholder "--"
+             :on-change on-rotation-change
+             :className (stl/css :numeric-input)
+             :value (:rotation values)}]])
 
-          (when (options :radius)
-            [:div {:class (stl/css :radius)}
-             [:div {:class (stl/css :radius-inputs)}
-              (cond
-                (= radius-mode :radius-1)
-                [:div {:class (stl/css :radius-1)
-                       :title (tr "workspace.options.radius")}
-                 [:span {:class (stl/css :icon)}  i/corner-radius-refactor]
-                 [:> numeric-input*
-                  {:placeholder "Mixed"
-                   :ref radius-input-ref
-                   :min 0
-                   :on-change on-radius-1-change
-                   :className (stl/css :numeric-input)
-                   :value (:rx values)}]]
-
-                @radius-multi?
-                [:div {:class (stl/css :radius-1)
-                       :title (tr "workspace.options.radius")}
-                 [:span {:class (stl/css :icon)}  i/corner-radius-refactor]
-                 [:input.input-text
-                  {:type "number"
-                   :placeholder "Mixed"
-                   :min 0
-                   :on-change on-radius-multi-change
-                   :className (stl/css :numeric-input)
-                   :value (if all-equal? (:rx values) nil)}]]
-
-
-                (= radius-mode :radius-4)
-                [:div {:class (stl/css :radius-4)}
-                 [:div {:class (stl/css :small-input)
-                        :title (tr "workspace.options.radius-top-left")}
-                  [:> numeric-input*
-                   {:placeholder "--"
-                    :min 0
-                    :on-change on-radius-r1-change
-                    :className (stl/css :numeric-input)
-                    :value (:r1 values)}]]
-
-                 [:div {:class (stl/css :small-input)
-                        :title (tr "workspace.options.radius-top-right")}
-                  [:> numeric-input*
-                   {:placeholder "--"
-                    :min 0
-                    :on-change on-radius-r2-change
-                    :className (stl/css :numeric-input)
-                    :value (:r2 values)}]]
-
-                 [:div {:class (stl/css :small-input)
-                        :title (tr "workspace.options.radius-bottom-left")}
-                  [:> numeric-input*
-                   {:placeholder "--"
-                    :min 0
-                    :on-change on-radius-r4-change
-                    :className (stl/css :numeric-input)
-                    :value (:r4 values)}]]
-
-                 [:div {:class (stl/css :small-input)
-                        :title (tr "workspace.options.radius-bottom-right")}
-                  [:> numeric-input*
-                   {:placeholder "--"
-                    :min 0
-                    :on-change on-radius-r3-change
-                    :className (stl/css :numeric-input)
-                    :value (:r3 values)}]]
-                 ])]
-             [:button {:class (stl/css-case :radius-mode true
-                                            :selected (= radius-mode :radius-4))
-                       :title (if(= radius-mode :radius-4)
-                               (tr "workspace.options.radius.all-corners")
-                               (tr "workspace.options.radius.single-corners"))
-                       :on-click toggle-radius-mode}
-              i/corner-radius-refactor]])])
-       (when (or (options :clip-content) (options :show-in-viewer))
-         [:div {:class (stl/css :clip-show)}
-          (when (options :clip-content)
-            [:div {:class (stl/css :clip-content)}
-             [:input {:type "checkbox"
-                      :id "clip-content"
-                      :ref clip-content-ref
-                      :class (stl/css :clip-content-input)
-                      :checked (not (:show-content values))
-                      :on-change on-change-clip-content}]
-
-             [:label {:for "clip-content"
-                      :title (tr "workspace.options.clip-content")
-                      :class (stl/css-case  :clip-content-label true
-                                            :selected (not (:show-content values)))}
-              [:span {:class (stl/css :icon)}
-               i/clip-content-refactor]
-              ]])
-          (when (options :show-in-viewer)
-            [:div {:class (stl/css :clip-content)}
-             [:input {:type "checkbox"
-                      :id "show-in-viewer"
-                      :ref show-in-viewer-ref
-                      :class (stl/css :clip-content-input)
-                      :checked (not (:hide-in-viewer values))
-                      :on-change on-change-show-in-viewer}]
-
-             [:label {:for "show-in-viewer"
-                      :title (tr "workspace.options.show-in-viewer")
-                      :class (stl/css-case  :clip-content-label true
-                                            :selected (not (:hide-in-viewer values)))}
-              [:span {:class (stl/css :icon)}
-               i/play-refactor]]])])]
-
-      [:*
-       [:div.element-set
-        [:div.element-set-content
-
-         ;; FRAME PRESETS
-         (when (and (options :presets)
-                    (or (nil? all-types) (= (count all-types) 1))) ;; Don't show presets if multi selected
-           [:div.row-flex                                          ;; some frames and some non frames
-            [:div.presets.custom-select.flex-grow {:class (when show-presets-dropdown? "opened")
-                                                   :on-click open-presets}
-             [:span (tr "workspace.options.size-presets")]
-             [:span.dropdown-button i/arrow-down]
-             [:& dropdown {:show show-presets-dropdown?
-                           :on-close close-presets}
-              [:ul.custom-select-dropdown
-               (for [size-preset size-presets]
-                 (if-not (:width size-preset)
-                   [:li.dropdown-label {:key (:name size-preset)}
-                    [:span (:name size-preset)]]
-                   [:li {:key (:name size-preset)
-                         :data-width (:width size-preset)
-                         :data-height (:height size-preset)
-                         :on-click on-preset-selected}
-                    (:name size-preset)
-                    [:span (:width size-preset) " x " (:height size-preset)]]))]]]
-            [:span.orientation-icon {:data-value :vert
-                                     :on-click on-orientation-clicked} i/size-vert]
-            [:span.orientation-icon {:data-value :horiz
-                                     :on-click on-orientation-clicked} i/size-horiz]])
-
-             ;; WIDTH & HEIGHT
-         (when (options :size)
-           [:div.row-flex
-            [:span.element-set-subtitle (tr "workspace.options.size")]
-            [:div.input-element.width {:title (tr "workspace.options.width")}
-             [:> numeric-input* {:min 0.01
-                                 :no-validate true
-                                 :placeholder "--"
-                                 :on-change on-width-change
-                                 :disabled disabled-width-sizing?
-                                 :value (:width values)}]]
-
-            [:div.input-element.height {:title (tr "workspace.options.height")}
-             [:> numeric-input* {:min 0.01
-                                 :no-validate true
-                                 :placeholder "--"
-                                 :on-change on-height-change
-                                 :disabled disabled-height-sizing?
-                                 :value (:height values)}]]
-
-            [:div.lock-size {:class (dom/classnames
-                                     :selected (true? proportion-lock)
-                                     :disabled (= proportion-lock :multiple))
-                             :on-click on-proportion-lock-change}
-             (if proportion-lock
-               i/lock
-               i/unlock)]])
-
-             ;; POSITION
-         (when (options :position)
-           [:div.row-flex
-            [:span.element-set-subtitle (tr "workspace.options.position")]
-            [:div.input-element.Xaxis {:title (tr "workspace.options.x")}
-             [:> numeric-input* {:no-validate true
-                                 :placeholder "--"
-                                 :on-change on-pos-x-change
-                                 :disabled disabled-position-x?
-                                 :value (:x values)}]]
-            [:div.input-element.Yaxis {:title (tr "workspace.options.y")}
-             [:> numeric-input* {:no-validate true
-                                 :placeholder "--"
-                                 :disabled disabled-position-y?
-                                 :on-change on-pos-y-change
-                                 :value (:y values)}]]])
-
-             ;; ROTATION
-         (when (options :rotation)
-           [:div.row-flex
-            [:span.element-set-subtitle (tr "workspace.options.rotation")]
-            [:div.input-element.degrees {:title (tr "workspace.options.rotation")}
-             [:> numeric-input*
-              {:no-validate true
-               :min 0
-               :max 359
-               :data-wrap true
-               :placeholder "--"
-               :on-change on-rotation-change
-               :value (:rotation values)}]]])
-
-             ;; RADIUS
-         (when (options :radius)
-           [:div.row-flex
-            [:div.radius-options
-             [:div.radius-icon.tooltip.tooltip-bottom
-              {:class (dom/classnames
-                       :selected (or (= radius-mode :radius-1) @radius-multi?))
-               :alt (tr "workspace.options.radius.all-corners")
-               :on-click on-switch-to-radius-1}
-              i/radius-1]
-             [:div.radius-icon.tooltip.tooltip-bottom
-              {:class (dom/classnames
-                       :selected (and (= radius-mode :radius-4) (not @radius-multi?)))
-               :alt (tr "workspace.options.radius.single-corners")
-               :on-click on-switch-to-radius-4}
-              i/radius-4]]
-
+        (when (options :radius)
+          [:div {:class (stl/css :radius)}
+           [:div {:class (stl/css :radius-inputs)}
             (cond
               (= radius-mode :radius-1)
-              [:div.input-element.mini {:title (tr "workspace.options.radius")}
+              [:div {:class (stl/css :radius-1)
+                     :title (tr "workspace.options.radius")}
+               [:span {:class (stl/css :icon)}  i/corner-radius-refactor]
                [:> numeric-input*
-                {:placeholder "--"
+                {:placeholder "Mixed"
                  :ref radius-input-ref
                  :min 0
                  :on-change on-radius-1-change
+                 :className (stl/css :numeric-input)
                  :value (:rx values)}]]
 
               @radius-multi?
-              [:div.input-element.mini {:title (tr "workspace.options.radius")}
+              [:div {:class (stl/css :radius-1)
+                     :title (tr "workspace.options.radius")}
+               [:span {:class (stl/css :icon)}  i/corner-radius-refactor]
                [:input.input-text
                 {:type "number"
-                 :placeholder "--"
+                 :placeholder "Mixed"
                  :min 0
                  :on-change on-radius-multi-change
-                 :value ""}]]
+                 :className (stl/css :numeric-input)
+                 :value (if all-equal? (:rx values) nil)}]]
+
 
               (= radius-mode :radius-4)
-              [:*
-               [:div.input-element.mini {:title (tr "workspace.options.radius-top-left")}
+              [:div {:class (stl/css :radius-4)}
+               [:div {:class (stl/css :small-input)
+                      :title (tr "workspace.options.radius-top-left")}
                 [:> numeric-input*
                  {:placeholder "--"
                   :min 0
                   :on-change on-radius-r1-change
+                  :className (stl/css :numeric-input)
                   :value (:r1 values)}]]
 
-               [:div.input-element.mini {:title (tr "workspace.options.radius-top-right")}
+               [:div {:class (stl/css :small-input)
+                      :title (tr "workspace.options.radius-top-right")}
                 [:> numeric-input*
                  {:placeholder "--"
                   :min 0
                   :on-change on-radius-r2-change
+                  :className (stl/css :numeric-input)
                   :value (:r2 values)}]]
 
-               [:div.input-element.mini {:title (tr "workspace.options.radius-bottom-right")}
-                [:> numeric-input*
-                 {:placeholder "--"
-                  :min 0
-                  :on-change on-radius-r3-change
-                  :value (:r3 values)}]]
-
-               [:div.input-element.mini {:title (tr "workspace.options.radius-bottom-left")}
+               [:div {:class (stl/css :small-input)
+                      :title (tr "workspace.options.radius-bottom-left")}
                 [:> numeric-input*
                  {:placeholder "--"
                   :min 0
                   :on-change on-radius-r4-change
-                  :value (:r4 values)}]]])])
-         (when (options :clip-content)
-           [:div.input-checkbox
-            [:input {:type "checkbox"
-                     :id "clip-content"
-                     :ref clip-content-ref
-                     :checked (not (:show-content values))
-                     :on-change on-change-clip-content}]
+                  :className (stl/css :numeric-input)
+                  :value (:r4 values)}]]
 
-            [:label {:for "clip-content"}
-             (tr "workspace.options.clip-content")]])
-         (when (options :show-in-viewer)
-           [:div.input-checkbox
-            [:input {:type "checkbox"
-                     :id "show-in-viewer"
-                     :ref show-in-viewer-ref
-                     :checked (not (:hide-in-viewer values))
-                     :on-change on-change-show-in-viewer}]
+               [:div {:class (stl/css :small-input)
+                      :title (tr "workspace.options.radius-bottom-right")}
+                [:> numeric-input*
+                 {:placeholder "--"
+                  :min 0
+                  :on-change on-radius-r3-change
+                  :className (stl/css :numeric-input)
+                  :value (:r3 values)}]]])]
+           [:button {:class (stl/css-case :radius-mode true
+                                          :selected (= radius-mode :radius-4))
+                     :title (if (= radius-mode :radius-4)
+                              (tr "workspace.options.radius.all-corners")
+                              (tr "workspace.options.radius.single-corners"))
+                     :on-click toggle-radius-mode}
+            i/corner-radius-refactor]])])
+     (when (or (options :clip-content) (options :show-in-viewer))
+       [:div {:class (stl/css :clip-show)}
+        (when (options :clip-content)
+          [:div {:class (stl/css :clip-content)}
+           [:input {:type "checkbox"
+                    :id "clip-content"
+                    :ref clip-content-ref
+                    :class (stl/css :clip-content-input)
+                    :checked (not (:show-content values))
+                    :on-change on-change-clip-content}]
 
-            [:label {:for "show-in-viewer"}
-             (tr "workspace.options.show-in-viewer")]])]]])))
+           [:label {:for "clip-content"
+                    :title (tr "workspace.options.clip-content")
+                    :class (stl/css-case  :clip-content-label true
+                                          :selected (not (:show-content values)))}
+            [:span {:class (stl/css :icon)}
+             i/clip-content-refactor]]])
+        (when (options :show-in-viewer)
+          [:div {:class (stl/css :clip-content)}
+           [:input {:type "checkbox"
+                    :id "show-in-viewer"
+                    :ref show-in-viewer-ref
+                    :class (stl/css :clip-content-input)
+                    :checked (not (:hide-in-viewer values))
+                    :on-change on-change-show-in-viewer}]
+
+           [:label {:for "show-in-viewer"
+                    :title (tr "workspace.options.show-in-viewer")
+                    :class (stl/css-case  :clip-content-label true
+                                          :selected (not (:hide-in-viewer values)))}
+            [:span {:class (stl/css :icon)}
+             i/play-refactor]]])])]))
