@@ -532,26 +532,8 @@
            (and (row? objects frame-id)
                 (every? (partial fill-height? objects) children-ids)))))
 
-(defn remove-layout-container-data
-  [shape]
-  (dissoc shape
-          :layout
-          :layout-flex-dir
-          :layout-gap
-          :layout-gap-type
-          :layout-wrap-type
-          :layout-padding-type
-          :layout-padding
-          :layout-align-content
-          :layout-justify-content
-          :layout-align-items
-          :layout-justify-items
-          :layout-grid-dir
-          :layout-grid-columns
-          :layout-grid-rows))
-
 (defn remove-layout-item-data
-  [shape]
+  [shape _objects]
   (dissoc shape
           :layout-item-margin
           :layout-item-margin-type
