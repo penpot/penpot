@@ -1506,10 +1506,13 @@
   (ptk/reify ::show-grid-cell-context-menu
     ptk/WatchEvent
     (watch [_ state _]
-      (let [cells (get-in state [:workspace-grid-edition grid-id :selected])]
+      (let [objects (wsh/lookup-page-objects state)
+            grid (get objects grid-id)
+            cells (->> (get-in state [:workspace-grid-edition grid-id :selected])
+                       (map #(get-in grid [:layout-grid-cells %])))]
         (rx/of (show-context-menu
                 (-> params (assoc :kind :grid-cells
-                                  :grid-id grid-id
+                                  :grid grid
                                   :cells cells))))))))
 (def hide-context-menu
   (ptk/reify ::hide-context-menu

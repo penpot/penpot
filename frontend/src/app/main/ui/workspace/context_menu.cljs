@@ -49,7 +49,7 @@
   (dom/stop-propagation event))
 
 (mf/defc menu-entry
-  [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave on-unmount children selected? icon] :as props}]
+  [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave on-unmount children selected? icon disabled] :as props}]
   (let [submenu-ref (mf/use-ref nil)
         hovering? (mf/use-ref false)
         new-css-system (mf/use-ctx ctx/new-css-system)
@@ -89,6 +89,7 @@
       [:li {:class (if new-css-system
                      (dom/classnames (css :icon-menu-item) true)
                      (dom/classnames :icon-menu-item true))
+            :disabled disabled
             :ref set-dom-node
             :on-click on-click
             :on-pointer-enter on-pointer-enter
@@ -113,6 +114,7 @@
                         (dom/classnames (css :title) true)
                         (dom/classnames :title true))} title]]
       [:li {:class (dom/classnames (css :context-menu-item) new-css-system)
+            :disabled disabled
             :ref set-dom-node
             :on-click on-click
             :on-pointer-enter on-pointer-enter
@@ -579,33 +581,50 @@
     
     (if (= type :column)
       [:*
-       [:& menu-entry {:title "Duplicate column" :on-click do-duplicate-track}]
-       [:& menu-entry {:title "Add 1 column to the left" :on-click do-add-track-before}]
-       [:& menu-entry {:title "Add 1 column to the right" :on-click do-add-track-after}]
-       [:& menu-entry {:title "Delete column" :on-click do-delete-track}]]
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.duplicate") :on-click do-duplicate-track}]
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.add-before") :on-click do-add-track-before}]
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.add-after") :on-click do-add-track-after}]
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.delete") :on-click do-delete-track}]]
 
       [:*
-       [:& menu-entry {:title "Duplicate row" :on-click do-duplicate-track}]
-       [:& menu-entry {:title "Add 1 row above" :on-click do-add-track-before}]
-       [:& menu-entry {:title "Add 1 row bellow" :on-click do-add-track-after}]
-       [:& menu-entry {:title "Delete row" :on-click do-delete-track}]])))
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.duplicate") :on-click do-duplicate-track}]
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.add-before") :on-click do-add-track-before}]
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.add-after") :on-click do-add-track-after}]
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.delete") :on-click do-delete-track}]])))
 
 (mf/defc grid-cells-context-menu
   [{:keys [mdata] :as props}]
-  (let [{:keys [grid-id cells]} mdata
+  (let [{:keys [grid cells]} mdata
+
+        single? (= (count cells) 1)
+        can-merge?
+        (mf/use-memo
+         (mf/deps cells)
+         #(ctl/valid-area-cells? cells))
 
         do-merge-cells
         (mf/use-callback
-         (mf/deps grid-id cells)
-         (fn []))
+         (mf/deps grid cells)
+         (fn []
+           (st/emit! (dwsl/merge-cells (:id grid) (map :id cells)))))
 
         do-create-board
         (mf/use-callback
-         (mf/deps grid-id cells)
-         (fn []))]
+         (mf/deps grid cells)
+         (fn []
+           (st/emit! (dwsl/create-cell-board (:id grid) (map :id cells)))))]
     [:*
-     [:& menu-entry {:title "Merge cells" :on-click do-merge-cells}]
-     [:& menu-entry {:title "Create board" :on-click do-create-board}]]))
+     (when (not single?)
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-cells.merge")
+                       :on-click do-merge-cells
+                       :disabled (not can-merge?)}])
+
+     (when single?
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-cells.area")
+                       :on-click do-merge-cells}])
+
+     [:& menu-entry {:title (tr "workspace.context-menu.grid-cells.create-board")
+                     :on-click do-create-board}]]))
 
 
 (mf/defc context-menu
