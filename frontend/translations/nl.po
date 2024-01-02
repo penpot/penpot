@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-12-27 10:56+0000\n"
+"PO-Revision-Date: 2023-12-29 21:08+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -186,7 +186,7 @@ msgstr "Gebruiksvoorwaarden"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr ""
-"Bij het aanmaken van een nieuw account ga je akkoord met onze "
+"Met het aanmaken van een nieuw account ga je akkoord met onze "
 "gebruiksvoorwaarden en ons privacybeleid."
 
 #: src/app/main/ui/auth/register.cljs
@@ -462,7 +462,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "%s standaardbestanden downloaden (.svg + .json)"
 
 msgid "dashboard.export.detail"
-msgstr "* Kan componenten, afbeeldingen, kleuren en/of typografieën bevatten."
+msgstr "* Kan componenten, afbeeldingen, kleuren en/of typografie bevatten."
 
 msgid "dashboard.export.explain"
 msgstr ""
@@ -572,7 +572,7 @@ msgid "dashboard.import.progress.process-page"
 msgstr "Pagina aan het verwerkten: %s"
 
 msgid "dashboard.import.progress.process-typographies"
-msgstr "Typografieën aan het verwerken"
+msgstr "Typografie verwerken"
 
 msgid "dashboard.import.progress.upload-data"
 msgstr "Gegevens uploaden naar server (%s/%s)"
@@ -915,7 +915,7 @@ msgstr "Het e-mailadres «%s» is gemeld als spam of permanent teruggestuurd."
 msgid "errors.feature-mismatch"
 msgstr ""
 "Het lijkt erop dat je een bestand opent waarin de functie '%s' is "
-"ingeschakeld, maar jouw Penpot-frontend ondersteunt dit niet of heeft het "
+"ingeschakeld, maar jouw Penpot- versie ondersteunt dit niet of heeft het "
 "uitgeschakeld."
 
 #: src/app/main/errors.cljs
@@ -2528,7 +2528,9 @@ msgstr "Probeer uit voordat je Penpot on-premise gebruikt"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr "… draadmodellen, gebruikers journeys en -stromen, navigatiebomen, etc."
+msgstr ""
+"… draadmodellen, gebruikers journeys en stroomdiagrammen, navigatiebomen, "
+"etc."
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.work-in-concept-ideas"
@@ -3300,7 +3302,7 @@ msgstr "Gedeelde bibliotheek"
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
-msgstr "Typografieën"
+msgstr "Typografie"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.font-id"
@@ -3628,15 +3630,15 @@ msgstr "GEDEELDE BIBLIOTHEKEN"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography"
-msgstr "Meerdere typografieën"
+msgstr "Meervoudige typografie"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography-tooltip"
-msgstr "Alle typografieën ontkoppelen"
+msgstr "Alle typografie ontkoppelen"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.typography"
-msgstr "%s typografieën"
+msgstr "%s typografie"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.update"
@@ -3777,15 +3779,15 @@ msgstr "Vullen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.add-flow-start"
-msgstr "Flow-startpunt toevoegen"
+msgstr "Stroomdiagram-startpunt toevoegen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow-start"
-msgstr "Flow-startpunt"
+msgstr "Stroomdiagram-startpunt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow-starts"
-msgstr "Flow-startpunten"
+msgstr "Stroomdiagram-startpunten"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.auto"
@@ -4672,7 +4674,7 @@ msgstr "Verwijderen"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.delete-flow-start"
-msgstr "Flow-start verwijderen"
+msgstr "Stroomdiagram-start verwijderen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,
@@ -4713,7 +4715,7 @@ msgstr "Verticaal spiegelen"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flow-start"
-msgstr "Flow-start"
+msgstr "Stroomdiagram-start"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.forward"
@@ -4927,7 +4929,7 @@ msgstr "Tekst (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text-palette"
-msgstr "Typografieën (%s)"
+msgstr "Typografie (%s)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"
@@ -4985,7 +4987,7 @@ msgid "workspace.undo.entry.multiple.text"
 msgstr "teksten"
 
 msgid "workspace.undo.entry.multiple.typography"
-msgstr "typografie assets"
+msgstr "typografie-assets"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.new"
@@ -5098,3 +5100,117 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.circle-marker-short"
 msgstr "Cirkel"
+
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Doorgaan met team aanmaken"
+
+msgid "workspace.options.guides.title"
+msgstr "Hulplijnen"
+
+msgid "media.choose-image"
+msgstr "Afbeelding kiezen"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Met het aanmaken van een nieuw account ga je akkoord met onze "
+"[servicevoorwaarden] (%s) en [privacybeleid] (%s)."
+
+msgid "workspace.options.component.swap.empty"
+msgstr "Er zijn nog geen assets in deze bibliotheek"
+
+msgid "media.solid"
+msgstr "Solide"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Klaar"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Team aanmaken & uitnodigen"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Klaar"
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Doorgaan zonder team"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Uitschakelen"
+
+msgid "errors.validation"
+msgstr "Validatiefout"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Sluiten"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "Bestand heeft een incompatibel versienummer"
+
+msgid "workspace.options.component.swap"
+msgstr "Component uitwisselen"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Team aanmaken zonder uitnodigingen"
+
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Het lijkt erop dat er een discrepantie bestaat tussen de ingeschakelde "
+"functies en de functies van het bestand dat je probeert te openen. Er moeten "
+"migraties voor '%s' worden toegepast voordat het bestand kan worden geopend."
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Team aanmaken"
+
+msgid "media.linear"
+msgstr "Lineair"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Stroomdiagram"
+
+msgid "labels.search"
+msgstr "Zoeken"
+
+msgid "media.image"
+msgstr "Afbeelding"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Je kunt later een team samenstellen."
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Team aanmaken en uitnodigingen versturen"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Lokaliseren"
+
+msgid "media.gradient"
+msgstr "Verloop"
+
+msgid "labels.share"
+msgstr "Delen"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Raster bewerken"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Zonder team beginnen"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Je kunt later uitnodigen"
+
+msgid "media.radial"
+msgstr "Radiaal"
+
+msgid "errors.paste-data-validation"
+msgstr "Ongeldige gegevens op klembord"
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Incompatibele functie '%s' gedetecteerd"
+
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "** Inspectiemodus ** (alleen bekijken)"
