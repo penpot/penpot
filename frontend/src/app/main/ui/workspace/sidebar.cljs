@@ -158,7 +158,6 @@
    ::mf/wrap [mf/memo]}
   [{:keys [layout section file page-id ] :as props}]
   (let [drawing-tool     (:tool (mf/deref refs/workspace-drawing))
-        new-css-system   (mf/use-ctx ctx/new-css-system)
 
         is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
@@ -195,10 +194,7 @@
             (obj/set! "on-change-section" handle-change-section)
             (obj/set! "on-expand" handle-expand))]
 
-    [:aside {:class (stl/css-case new-css-system
-                                  :global/settings-bar (not new-css-system)
-                                  :global/settings-bar-right (not new-css-system)
-                                  :right-settings-bar true
+    [:aside {:class (stl/css-case :right-settings-bar true
                                   :not-expand (not can-be-expanded?)
                                   :expanded (> size 276))
 
@@ -206,14 +202,13 @@
              :data-size size
              :style #js {"--width" (when can-be-expanded? (dm/str size "px"))}}
      (when can-be-expanded?
-       [:div {:class (stl/css new-css-system :resize-area)
+       [:div {:class (stl/css :resize-area)
               :on-pointer-down on-pointer-down
               :on-lost-pointer-capture on-lost-pointer-capture
               :on-pointer-move on-pointer-move}])
-     (when new-css-system
-       [:& right-header {:file file :layout layout :page-id page-id}])
+     [:& right-header {:file file :layout layout :page-id page-id}]
 
-     [:div {:class (stl/css new-css-system :settings-bar-inside)}
+     [:div {:class (stl/css :settings-bar-inside)}
       (cond
         (true? is-comments?)
         [:& comments-sidebar]

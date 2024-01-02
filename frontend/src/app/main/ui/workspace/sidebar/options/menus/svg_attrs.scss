@@ -8,41 +8,49 @@
 
 .element-set {
   margin: 0;
-  .title-spacing-svg-attrs {
-    padding-left: $s-2;
-    margin: 0;
-  }
-  .element-set-content {
-    @include flexColumn;
-    margin: $s-4 0 0 0;
-    .attr-content {
-      display: flex;
-      gap: $s-4;
-      .attr-name {
-        @include titleTipography;
-        @include twoLineTextEllipsis;
-        width: $s-88;
-        margin: auto $s-4;
-        margin-right: 0;
-        display: inline-block;
-      }
-      .attr-input {
-        @extend .input-element;
-        width: $s-124;
-      }
-      .attr-actions {
-        display: flex;
-        gap: $s-4;
-        .attr-action-btn {
-          @extend .button-tertiary;
-          width: $s-28;
-          height: $s-32;
-          svg {
-            @extend .button-icon;
-          }
-        }
-      }
-    }
+}
+
+.title-spacing-svg-attrs {
+  padding-left: $s-2;
+  margin: 0;
+}
+
+.element-set-content {
+  @include flexColumn;
+  margin: $s-4 0 0 0;
+}
+
+.attr-content {
+  display: flex;
+  gap: $s-4;
+}
+
+.attr-name {
+  @include titleTipography;
+  @include twoLineTextEllipsis;
+  width: $s-88;
+  margin: auto $s-4;
+  margin-right: 0;
+  display: inline-block;
+  color: var(--title-foreground-color);
+}
+
+.attr-input {
+  @extend .input-element;
+  width: $s-124;
+}
+
+.attr-actions {
+  display: flex;
+  gap: $s-4;
+}
+
+.attr-action-btn {
+  @extend .button-tertiary;
+  width: $s-28;
+  height: $s-32;
+  svg {
+    @extend .button-icon;
   }
 }
 

@@ -13,24 +13,24 @@
   width: 100%;
   height: 100%;
   padding-left: $s-12;
+}
 
-  .tab-spacing {
-    margin-right: $s-12;
-    margin-bottom: $s-8;
-  }
+.tab-spacing {
+  margin-right: $s-12;
+  margin-bottom: $s-8;
+}
 
-  .content-class {
-    overflow-y: auto;
-    overflow-x: hidden;
-    height: calc(100vh - $s-96);
-    scrollbar-gutter: stable;
-  }
+.content-class {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100vh - $s-96);
+  scrollbar-gutter: stable;
+}
 
-  .element-options {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: $s-8;
-  }
+.element-options {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
 }

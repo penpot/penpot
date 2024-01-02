@@ -11,16 +11,13 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (mf/defc attribute-value [{:keys [attr value on-change on-delete] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        handle-change
+  (let [handle-change
         (mf/use-fn
          (mf/deps attr on-change)
          (fn [event]
@@ -33,56 +30,31 @@
            (on-delete attr)))
 
         label (->> attr last d/name)]
-    (if new-css-system
-      [:*
-       (if (string? value)
-         [:div {:class (stl/css :attr-content)}
-          [:span {:class (stl/css :attr-name)} label]
-          [:div  {:class (stl/css :attr-input)}
-           [:input {:value value
-                    :class "input-text"
-                    :on-change handle-change}]]
-          [:div  {:class (stl/css :attr-actions)}
-           [:button {:class (stl/css :attr-action-btn)
-                     :on-click handle-delete}
-            i/remove-refactor]]]
-          [:div {:class (stl/css :attr-nested-content)}
-              [:div  {:class (stl/css :attr-title)}
-              (str (d/name (last attr)))]
-            (for [[key value] value]
-              [:div {:class (stl/css :attr-row) :key key}
-                [:& attribute-value {:key key
-                                    :attr (conj attr key)
-                                    :value value
-                                    :on-change on-change
-                                    :on-delete on-delete}]])])]
-      [:div.element-set-content
-       (if (string? value)
-         [:div.row-flex.row-flex-removable
-          [:& input-row {:label label
-                         :type :text
-                         :class "large"
-                         :value (str value)
-                         :on-change handle-change}]
-          [:div.element-set-actions
-           [:div.element-set-actions-button {:on-click handle-delete}
-            i/minus]]]
-
-         [:*
-          [:div.element-set-title
-           {:style {:border-bottom "1px solid #444" :margin-bottom "0.5rem"}}
-           [:span (str (d/name (last attr)))]]
-
-          (for [[key value] value]
-            [:& attribute-value {:key key
-                                 :attr (conj attr key)
-                                 :value value
-                                 :on-change on-change
-                                 :on-delete on-delete}])])])))
+    [:*
+     (if (string? value)
+       [:div {:class (stl/css :attr-content)}
+        [:span {:class (stl/css :attr-name)} label]
+        [:div  {:class (stl/css :attr-input)}
+         [:input {:value value
+                  :class "input-text"
+                  :on-change handle-change}]]
+        [:div  {:class (stl/css :attr-actions)}
+         [:button {:class (stl/css :attr-action-btn)
+                   :on-click handle-delete}
+          i/remove-refactor]]]
+       [:div {:class (stl/css :attr-nested-content)}
+        [:div  {:class (stl/css :attr-title)}
+         (str (d/name (last attr)))]
+        (for [[key value] value]
+          [:div {:class (stl/css :attr-row) :key key}
+           [:& attribute-value {:key key
+                                :attr (conj attr key)
+                                :value value
+                                :on-change on-change
+                                :on-delete on-delete}]])])]))
 
 (mf/defc svg-attrs-menu [{:keys [ids values]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        state*          (mf/use-state true)
+  (let [state*          (mf/use-state true)
         open?           (deref state*)
         attrs           (:svg-attrs values)
         has-attributes? (or (= :multiple attrs) (some? (seq attrs)))
@@ -112,30 +84,18 @@
              (st/emit! (dch/update-shapes ids update-fn)))))]
 
     (when-not (empty? attrs)
-      (if new-css-system
-        [:div {:class (stl/css :element-set)}
-         [:div {:class (stl/css :element-set-title)}
-          [:& title-bar {:collapsable? has-attributes?
-                         :collapsed?   (not open?)
-                         :on-collapsed toggle-content
-                         :title        (tr "workspace.sidebar.options.svg-attrs.title")
-                         :class        (stl/css-case :title-spacing-svg-attrs (not has-attributes?))}]]
-         (when open?
-          [:div {:class (stl/css :element-set-content)}
+      [:div {:class (stl/css :element-set)}
+       [:div {:class (stl/css :element-set-title)}
+        [:& title-bar {:collapsable? has-attributes?
+                       :collapsed?   (not open?)
+                       :on-collapsed toggle-content
+                       :title        (tr "workspace.sidebar.options.svg-attrs.title")
+                       :class        (stl/css-case :title-spacing-svg-attrs (not has-attributes?))}]]
+       (when open?
+         [:div {:class (stl/css :element-set-content)}
           (for [[attr-key attr-value] attrs]
             [:& attribute-value {:key attr-key
                                  :attr [attr-key]
                                  :value attr-value
                                  :on-change handle-change
-                                 :on-delete handle-delete}])])]
-
-        [:div.element-set
-         [:div.element-set-title
-          [:span (tr "workspace.sidebar.options.svg-attrs.title")]]
-
-         (for [[attr-key attr-value] attrs]
-           [:& attribute-value {:key attr-key
-                                :attr [attr-key]
-                                :value attr-value
-                                :on-change handle-change
-                                :on-delete handle-delete}])]))))
+                                 :on-delete handle-delete}])])])))
