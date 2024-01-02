@@ -11,18 +11,21 @@
   padding: $s-4;
   grid-row-gap: $s-8;
   margin-bottom: $s-8;
-  .hsva-row {
-    display: flex;
-    align-items: center;
-    .hsva-selector-label {
-      @include tabTitleTipography;
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      width: $s-32;
-    }
-    .hsva-bar {
-      width: $s-228;
-    }
-  }
+}
+
+.hsva-row {
+  display: flex;
+  align-items: center;
+}
+
+.hsva-selector-label {
+  @include tabTitleTipography;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: $s-32;
+}
+
+.hsva-bar {
+  width: $s-228;
 }
