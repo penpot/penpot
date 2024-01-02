@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.history
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.main.data.events :as ev]
@@ -13,9 +13,7 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
-   [app.util.dom :as dom]
    [app.util.i18n :refer [t] :as i18n]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -277,103 +275,57 @@
 
 (mf/defc history-entry-details [{:keys [entry]}]
   (let [{entries :items} (mf/deref workspace-undo)
-        new-css-system (mf/use-ctx ctx/new-css-system)
         objects (mf/deref refs/workspace-page-objects)]
 
-   (if new-css-system
-    [:div {:class (css :history-entry-detail)}
-     (case (:operation entry)
-       :new
-       (:name (get-object (:detail entry) entries objects))
+   [:div {:class (stl/css :history-entry-detail)}
+    (case (:operation entry)
+      :new
+      (:name (get-object (:detail entry) entries objects))
 
-       :delete
-       [:ul {:class (css :ul.history-entry-details-list)}
-        (for [id (:detail entry)]
-          (let [shape-name (:name (get-object id entries objects))]
-            [:li {:key id} shape-name]))]
-
-
-       :modify
-       [:ul {:class (css :ul.history-entry-details-list)}
-        (for [[id attributes] (:detail entry)]
-          (let [shape-name (:name (get-object id entries objects))]
-            [:li {:key id}
-             [:div shape-name]
-             [:div (str/join ", " attributes)]]))]
-
-       nil)]
-
-     [:div.history-entry-detail
-      (case (:operation entry)
-       :new
-       (:name (get-object (:detail entry) entries objects))
-
-       :delete
-       [:ul.history-entry-details-list
-        (for [id (:detail entry)]
-          (let [shape-name (:name (get-object id entries objects))]
-            [:li {:key id} shape-name]))]
+      :delete
+      [:ul {:class (stl/css :history-entry-details-list)}
+       (for [id (:detail entry)]
+         (let [shape-name (:name (get-object id entries objects))]
+           [:li {:key id} shape-name]))]
 
 
-       :modify
-       [:ul.history-entry-details-list
-        (for [[id attributes] (:detail entry)]
-          (let [shape-name (:name (get-object id entries objects))]
-            [:li {:key id}
-             [:div shape-name]
-             [:div (str/join ", " attributes)]]))]
+      :modify
+      [:ul {:class (stl/css :history-entry-details-list)}
+       (for [[id attributes] (:detail entry)]
+         (let [shape-name (:name (get-object id entries objects))]
+           [:li {:key id}
+            [:div shape-name]
+            [:div (str/join ", " attributes)]]))]
 
-       nil)]
-       )))
+      nil)]))
 
 (mf/defc history-entry [{:keys [locale entry idx-entry disabled? current?]}]
   (let [hover?         (mf/use-state false)
-        new-css-system (mf/use-ctx ctx/new-css-system)
         show-detail?   (mf/use-state false)]
-    (if new-css-system
-      [:div {:class (dom/classnames (css :history-entry) true
-                                    (css :disabled) disabled?
-                                    (css :current) current?
-                                    (css :hover) @hover?
-                                    (css :show-detail) @show-detail?)
-             :on-pointer-enter #(reset! hover? true)
-             :on-pointer-leave #(reset! hover? false)
-             :on-click #(st/emit! (dwc/undo-to-index idx-entry))}
-       [:div {:class (dom/classnames (css :history-entry-summary) true)}
-        [:div {:class (dom/classnames (css :history-entry-summary-icon) true)} (entry->icon-refactor entry)]
-        [:div {:class (dom/classnames (css :history-entry-summary-text) true)}  (entry->message locale entry)]
-        (when (:detail entry)
-          [:div {:class (dom/classnames (css :history-entry-summary-button) true
-                                        (css :button-opened) @show-detail?)
-                 :on-click #(when (:detail entry)
-                              (swap! show-detail? not))}
-           i/arrow-refactor])]
+    [:div {:class (stl/css-case :history-entry true
+                                :disabled disabled?
+                                :current current?
+                                :hover @hover?
+                                :show-detail @show-detail?)
+           :on-pointer-enter #(reset! hover? true)
+           :on-pointer-leave #(reset! hover? false)
+           :on-click #(st/emit! (dwc/undo-to-index idx-entry))}
+     [:div {:class (stl/css :history-entry-summary)}
+      [:div {:class (stl/css :history-entry-summary-icon)}
+       (entry->icon-refactor entry)]
+      [:div {:class (stl/css :history-entry-summary-text)}  (entry->message locale entry)]
+      (when (:detail entry)
+        [:div {:class (stl/css-case :history-entry-summary-button true
+                                    :button-opened @show-detail?)
+               :on-click #(when (:detail entry)
+                            (swap! show-detail? not))}
+         i/arrow-refactor])]
 
-       (when @show-detail?
-         [:& history-entry-details {:entry entry}])]
-
-      [:div.history-entry {:class (dom/classnames
-                                   :disabled disabled?
-                                   :current current?
-                                   :hover @hover?
-                                   :show-detail @show-detail?)
-                           :on-pointer-enter #(reset! hover? true)
-                           :on-pointer-leave #(reset! hover? false)
-                           :on-click #(st/emit! (dwc/undo-to-index idx-entry))}
-       [:div.history-entry-summary
-        [:div.history-entry-summary-icon (entry->icon entry)]
-        [:div.history-entry-summary-text  (entry->message locale entry)]
-        (when (:detail entry)
-          [:div.history-entry-summary-button {:on-click #(when (:detail entry)
-                                                           (swap! show-detail? not))}
-           i/arrow-slide])]
-
-       (when show-detail?
-         [:& history-entry-details {:entry entry}])])))
+     (when @show-detail?
+       [:& history-entry-details {:entry entry}])]))
 
 (mf/defc history-toolbox []
   (let [locale (mf/deref i18n/locale)
-        new-css-system (mf/use-ctx ctx/new-css-system)
         objects (mf/deref refs/workspace-page-objects)
         {:keys [items index]} (mf/deref workspace-undo)
         entries (parse-entries items objects)
@@ -381,40 +333,24 @@
         (mf/use-fn
          #(st/emit! (-> (dw/toggle-layout-flag :document-history)
                         (vary-meta assoc ::ev/origin "history-toolbox"))))]
-    (if new-css-system
-      [:div {:class (css :history-toolbox)}
-       [:div {:class (css :history-toolbox-title)}
-        [:span (t locale "workspace.undo.title")]
-        [:div {:class (css :close-button)
-               :on-click toggle-history}
-         i/close-refactor]]
-       (if (empty? entries)
-         [:div {:class (css :history-entry-empty)}
-          [:div {:class (css :history-entry-empty-icon)} i/history-refactor]
-          [:div {:class (css :history-entry-empty-msg)} (t locale "workspace.undo.empty")]]
-         [:ul {:class (css :history-entries)}
-          (for [[idx-entry entry] (->> entries (map-indexed vector) reverse)] #_[i (range 0 10)]
-               [:& history-entry {:key (str "entry-" idx-entry)
-                                  :locale locale
-                                  :entry entry
-                                  :idx-entry idx-entry
-                                  :current? (= idx-entry index)
-                                  :disabled? (> idx-entry index)}])])]
-
-      [:div.history-toolbox
-       [:div.history-toolbox-title (t locale "workspace.undo.title")]
-       (if (empty? entries)
-         [:div.history-entry-empty
-          [:div.history-entry-empty-icon i/recent]
-          [:div.history-entry-empty-msg (t locale "workspace.undo.empty")]]
-         [:ul.history-entries
-          (for [[idx-entry entry] (->> entries (map-indexed vector) reverse)] #_[i (range 0 10)]
-               [:& history-entry {:key (str "entry-" idx-entry)
-                                  :locale locale
-                                  :entry entry
-                                  :idx-entry idx-entry
-                                  :current? (= idx-entry index)
-                                  :disabled? (> idx-entry index)}])])])))
+    [:div {:class (stl/css :history-toolbox)}
+     [:div {:class (stl/css :history-toolbox-title)}
+      [:span (t locale "workspace.undo.title")]
+      [:div {:class (stl/css :close-button)
+             :on-click toggle-history}
+       i/close-refactor]]
+     (if (empty? entries)
+       [:div {:class (stl/css :history-entry-empty)}
+        [:div {:class (stl/css :history-entry-empty-icon)} i/history-refactor]
+        [:div {:class (stl/css :history-entry-empty-msg)} (t locale "workspace.undo.empty")]]
+       [:ul {:class (stl/css :history-entries)}
+        (for [[idx-entry entry] (->> entries (map-indexed vector) reverse)] #_[i (range 0 10)]
+             [:& history-entry {:key (str "entry-" idx-entry)
+                                :locale locale
+                                :entry entry
+                                :idx-entry idx-entry
+                                :current? (= idx-entry index)
+                                :disabled? (> idx-entry index)}])])]))
 
 
 
