@@ -51,8 +51,8 @@
 
 (defn update-shapes
   ([ids update-fn] (update-shapes ids update-fn nil))
-  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-remote? ignore-touched undo-group]
-                   :or {reg-objects? false save-undo? true stack-undo? false ignore-remote? false ignore-touched false}}]
+  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-remote? ignore-touched undo-group with-objects?]
+                   :or {reg-objects? false save-undo? true stack-undo? false ignore-remote? false ignore-touched false with-objects? false}}]
 
    (dm/assert!
     "expected a valid coll of uuid's"
@@ -70,14 +70,15 @@
              update-layout-ids
              (->> ids
                   (map (d/getf objects))
-                  (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs})))
+                  (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs :with-objects? with-objects?})))
                   (map :id))
 
              changes   (reduce
                         (fn [changes id]
                           (let [opts {:attrs attrs
                                       :ignore-geometry? (get ignore-tree id)
-                                      :ignore-touched ignore-touched}]
+                                      :ignore-touched ignore-touched
+                                      :with-objects? with-objects?}]
                             (pcb/update-shapes changes [id] update-fn (d/without-nils opts))))
                         (-> (pcb/empty-changes it page-id)
                             (pcb/set-save-undo? save-undo?)

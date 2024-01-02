@@ -358,13 +358,15 @@
 
 (defn changed-attrs
   "Returns the list of attributes that will change when `update-fn` is applied"
-  [object objects update-fn {:keys [attrs]}]
+  [object objects update-fn {:keys [attrs with-objects?]}]
   (let [changed?
         (fn [old new attr]
           (let [old-val (get old attr)
                 new-val (get new attr)]
             (not= old-val new-val)))
-        new-obj (update-fn object objects)]
+        new-obj (if with-objects?
+                  (update-fn object objects)
+                  (update-fn object))]
     (when-not (= object new-obj)
       (let [attrs (or attrs (d/concat-set (keys object) (keys new-obj)))]
         (filter (partial changed? object new-obj) attrs)))))
@@ -375,8 +377,8 @@
   ([changes ids update-fn]
    (update-shapes changes ids update-fn nil))
 
-  ([changes ids update-fn {:keys [attrs ignore-geometry? ignore-touched]
-                           :or {ignore-geometry? false ignore-touched false}}]
+  ([changes ids update-fn {:keys [attrs ignore-geometry? ignore-touched with-objects?]
+                           :or {ignore-geometry? false ignore-touched false with-objects? false}}]
    (assert-container-id! changes)
    (assert-objects! changes)
    (let [page-id      (::page-id (meta changes))
@@ -412,7 +414,7 @@
          update-shape
          (fn [changes id]
            (let [old-obj (get objects id)
-                 new-obj (update-fn old-obj objects)]
+                 new-obj (if with-objects? (update-fn old-obj objects) (update-fn old-obj))]
              (if (= old-obj new-obj)
                changes
                (let [[rops uops] (-> (or attrs (d/concat-set (keys old-obj) (keys new-obj)))

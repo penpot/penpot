@@ -185,7 +185,8 @@
                   (fn [shape objects]
                     (-> shape
                         (ctl/push-into-cell [(:id first-shape)] row column)
-                        (ctl/assign-cells objects))))
+                        (ctl/assign-cells objects)))
+                  {:with-objects? true})
                  (pcb/reorder-grid-children [(:parent-id first-shape)])))
            changes)
 

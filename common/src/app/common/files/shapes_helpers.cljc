@@ -34,7 +34,7 @@
                     (cond-> (some? cell)
                       (pcb/update-shapes [(:parent-id shape)] #(ctl/push-into-cell % [id] row column)))
                     (cond-> (ctl/grid-layout? objects (:parent-id shape))
-                      (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells)))]
+                      (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells {:with-objects? true})))]
     [shape changes]))
 
 (defn prepare-move-shapes-into-frame
@@ -50,7 +50,7 @@
           (pcb/update-shapes ordered-indexes #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true)))
           (pcb/change-parent frame-id to-move-shapes 0)
           (cond-> (ctl/grid-layout? objects frame-id)
-            (pcb/update-shapes [frame-id] ctl/assign-cells))
+            (pcb/update-shapes [frame-id] ctl/assign-cells {:with-objects? true}))
           (pcb/reorder-grid-children [frame-id]))
       changes)))
 
@@ -113,7 +113,7 @@
                             (assoc :layout-grid-cells (:layout-grid-cells base-parent))
                             (assoc-in [:layout-grid-cells target-cell-id :shapes] [id])
                             (assoc :position :auto)))))
-                   (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells)
+                   (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells {:with-objects? true})
                    (pcb/reorder-grid-children [(:parent-id shape)])))]
 
          [shape changes])))))
@@ -163,7 +163,7 @@
                        (assoc :layout-grid-cells (:layout-grid-cells base-parent))
                        (assoc-in [:layout-grid-cells target-cell-id :shapes] [frame-id])
                        (assoc :position :auto)))))
-              (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells)
+              (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells {:with-objects? true})
               (pcb/reorder-grid-children [(:parent-id shape)])))]
 
     [shape changes]))
