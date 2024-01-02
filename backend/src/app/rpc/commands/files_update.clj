@@ -250,7 +250,8 @@
                  :features (db/create-array conn "text" (:features file))
                  :data (when (take-snapshot? file)
                          (:data file))
-                 :changes (blob/encode changes)})
+                 :changes (blob/encode changes)}
+                {::db/return-keys false})
 
     (db/update! conn :file
                 {:revn (:revn file)

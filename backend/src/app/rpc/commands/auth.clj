@@ -133,7 +133,8 @@
 
           (update-password [conn profile-id]
             (let [pwd (profile/derive-password cfg password)]
-              (db/update! conn :profile {:password pwd} {:id profile-id})))]
+              (db/update! conn :profile {:password pwd} {:id profile-id})
+              nil))]
 
     (db/with-atomic [conn pool]
       (->> (validate-token token)
@@ -303,7 +304,8 @@
     (-> (db/update! conn :profile
                     {:default-team-id (:id team)
                      :default-project-id  (:default-project-id team)}
-                    {:id id})
+                    {:id id}
+                    {::db/return-keys true})
         (profile/decode-row))))
 
 

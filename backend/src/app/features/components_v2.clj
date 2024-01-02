@@ -816,8 +816,7 @@
                 {:data (blob/encode (:data file))
                  :features (db/create-array conn "text" (:features file))
                  :revn (:revn file)}
-                {:id (:id file)}
-                {::db/return-keys? false})
+                {:id (:id file)})
 
     (dissoc file :data)))
 
@@ -900,7 +899,9 @@
                                                (conj "styles/v2"))]
                               (db/update! conn :team
                                           {:features (db/create-array conn "text" features)}
-                                          {:id team-id})))))))
+                                          {:id team-id})
+
+                              nil))))))
         (finally
           (some-> *semaphore* ps/release!)
           (let [elapsed (tpoint)]

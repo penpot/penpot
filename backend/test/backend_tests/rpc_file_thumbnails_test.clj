@@ -140,7 +140,7 @@
         (t/is (= 0 (:freeze res))))
 
       ;; check that storage object is still exists but is marked as deleted
-      (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted? false})]
+      (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted false})]
         (t/is (some? (:deleted-at row))))
 
       ;; Run the storage gc deleted task, it should permanently delete
@@ -152,7 +152,7 @@
       (t/is (some? (sto/get-object storage (:media-id row2))))
 
       ;; check that storage object is still exists but is marked as deleted
-      (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted? false})]
+      (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted false})]
         (t/is (nil? row))))))
 
 (t/deftest create-file-thumbnail
@@ -240,7 +240,7 @@
       (t/is (nil? (sto/get-object storage (:media-id row1))))
       (t/is (some? (sto/get-object storage (:media-id row2))))
 
-      (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted? false})]
+      (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted false})]
         (t/is (some? (:deleted-at row))))
 
       ;; Run the storage gc deleted task, it should permanently delete
@@ -320,6 +320,3 @@
 
       (let [result (:result out)]
         (t/is (contains? result "test-key-2"))))))
-
-
-

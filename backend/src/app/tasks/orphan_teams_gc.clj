@@ -54,7 +54,6 @@
                  (l/trc :hint "mark orphan team for deletion" :id (str team-id))
                  (db/update! conn :team
                              {:deleted-at (dt/now)}
-                             {:id team-id}
-                             {::db/return-keys? false})
+                             {:id team-id})
                  (inc total))
                0)))

@@ -65,9 +65,8 @@
           (let [res (db/update! conn :profile
                                 params
                                 {:email email
-                                 :deleted-at nil}
-                                {::db/return-keys? false})]
-            (pos? (:next.jdbc/update-count res))))))))
+                                 :deleted-at nil})]
+            (pos? (db/get-update-count res))))))))
 
 (defmethod exec-command :delete-profile
   [{:keys [email soft]}]
@@ -82,12 +81,10 @@
       (let [res (if soft
                   (db/update! conn :profile
                               {:deleted-at (dt/now)}
-                              {:email email :deleted-at nil}
-                              {::db/return-keys? false})
+                              {:email email :deleted-at nil})
                   (db/delete! conn :profile
-                              {:email email}
-                              {::db/return-keys? false}))]
-        (pos? (:next.jdbc/update-count res))))))
+                              {:email email}))]
+        (pos? (db/get-update-count res))))))
 
 (defmethod exec-command :search-profile
   [{:keys [email]}]

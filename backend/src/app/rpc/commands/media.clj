@@ -157,8 +157,7 @@
     (db/update! conn :file
                 {:modified-at (dt/now)
                  :has-media-trimmed false}
-                {:id file-id}
-                {::db/return-keys? false})
+                {:id file-id})
 
     (db/exec-one! conn [sql:create-file-media-object
                         (or id (uuid/next))
