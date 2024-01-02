@@ -229,7 +229,7 @@
         show-rules?              (and (contains? layout :rules) (not hide-ui?))
 
 
-        disabled-guides?         (or drawing-tool transform)
+        disabled-guides?         (or drawing-tool transform drawing-path? node-editing?)
 
         one-selected-shape?      (= (count selected-shapes) 1)
 

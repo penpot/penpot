@@ -35,6 +35,7 @@
       }
       .layer-title {
         @include titleTipography;
+        color: $df-primary;
       }
     }
   }
