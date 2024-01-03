@@ -1,6 +1,6 @@
 import fs from "fs";
 import l from "lodash";
-import path from "path"
+import path from "path";
 
 import gulp from "gulp";
 import gulpConcat from "gulp-concat";
@@ -9,8 +9,8 @@ import gulpMustache from "gulp-mustache";
 import gulpPostcss from "gulp-postcss";
 import gulpRename from "gulp-rename";
 
-import * as sass from 'sass';
-import gsass from 'gulp-sass';
+import * as sass from "sass";
+import gsass from "gulp-sass";
 const gulpSass = gsass(sass);
 
 import svgSprite from "gulp-svg-sprite";
@@ -204,6 +204,7 @@ function templatePipeline(options) {
       manifest: manifest,
       translations: JSON.stringify(locales),
       themes: JSON.stringify(themes),
+      isDebug: process.env.NODE_ENV !== "production",
     });
 
     return gulp.src(input).pipe(tmpl).pipe(gulpRename(name)).pipe(gulp.dest(output)).pipe(touch());
@@ -231,16 +232,16 @@ gulp.task("scss:modules", function () {
         modules({
           getJSON: function (cssFileName, json, outputFileName) {
             // We do nothing because we don't want the generated JSON files
-		      },
+          },
           // Calculates the whole css-module selector name.
           // Should be the same as the one in the file `/src/app/main/style.clj`
           generateScopedName: function (selector, filename, css) {
             const dir = path.dirname(filename);
             const name = path.basename(filename, ".css");
             const parts = dir.split("/");
-            const rootIdx = parts.findIndex(s => s === ROOT_NAME);
+            const rootIdx = parts.findIndex((s) => s === ROOT_NAME);
             return parts.slice(rootIdx + 1).join("_") + "_" + name + "__" + selector;
-		      },
+          },
         }),
         autoprefixer(),
       ]),
@@ -249,13 +250,15 @@ gulp.task("scss:modules", function () {
 });
 
 gulp.task("scss:main", function () {
+  const sources = [`${paths.resources}styles/main-default.scss`, `${paths.resources}styles/debug.scss`];
+
   return gulp
-    .src(paths.resources + "styles/main-default.scss")
-    .pipe(gulpSass.sync({
-      includePaths: [
-        "./node_modules/animate.css"
-      ]
-    }))
+    .src(sources)
+    .pipe(
+      gulpSass.sync({
+        includePaths: ["./node_modules/animate.css"],
+      }),
+    )
     .pipe(gulpPostcss([autoprefixer]))
     .pipe(gulp.dest(paths.output + "css/"));
 });
