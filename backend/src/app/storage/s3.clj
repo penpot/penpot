@@ -39,6 +39,7 @@
    software.amazon.awssdk.core.async.AsyncRequestBody
    software.amazon.awssdk.core.async.AsyncResponseTransformer
    software.amazon.awssdk.core.client.config.ClientAsyncConfiguration
+   software.amazon.awssdk.core.client.config.SdkAdvancedAsyncClientOption
    software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
    software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup
    software.amazon.awssdk.regions.Region
@@ -169,32 +170,34 @@
 
 (defn- build-s3-client
   [{:keys [::region ::endpoint ::io-threads]}]
-  (let [aconfig (-> (ClientAsyncConfiguration/builder)
-                    (.build))
+  (let [executor (px/resolve-executor :virtual)
+        aconfig  (-> (ClientAsyncConfiguration/builder)
+                     (.advancedOption SdkAdvancedAsyncClientOption/FUTURE_COMPLETION_EXECUTOR executor)
+                     (.build))
 
-        sconfig (-> (S3Configuration/builder)
-                    (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
-                    (.build))
+        sconfig  (-> (S3Configuration/builder)
+                     (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
+                     (.build))
 
-        thr-num (or io-threads (min 16 (px/get-available-processors)))
-        hclient (-> (NettyNioAsyncHttpClient/builder)
-                    (.eventLoopGroupBuilder (-> (SdkEventLoopGroup/builder)
-                                                (.numberOfThreads (int thr-num))))
-                    (.connectionAcquisitionTimeout default-timeout)
-                    (.connectionTimeout default-timeout)
-                    (.readTimeout default-timeout)
-                    (.writeTimeout default-timeout)
-                    (.build))
+        thr-num  (or io-threads (min 16 (px/get-available-processors)))
+        hclient  (-> (NettyNioAsyncHttpClient/builder)
+                     (.eventLoopGroupBuilder (-> (SdkEventLoopGroup/builder)
+                                                 (.numberOfThreads (int thr-num))))
+                     (.connectionAcquisitionTimeout default-timeout)
+                     (.connectionTimeout default-timeout)
+                     (.readTimeout default-timeout)
+                     (.writeTimeout default-timeout)
+                     (.build))
 
-        client  (let [builder (S3AsyncClient/builder)
-                      builder (.serviceConfiguration ^S3AsyncClientBuilder builder ^S3Configuration sconfig)
-                      builder (.asyncConfiguration ^S3AsyncClientBuilder builder ^ClientAsyncConfiguration aconfig)
-                      builder (.httpClient ^S3AsyncClientBuilder builder ^NettyNioAsyncHttpClient hclient)
-                      builder (.region ^S3AsyncClientBuilder builder (lookup-region region))
-                      builder (cond-> ^S3AsyncClientBuilder builder
-                                (some? endpoint)
-                                (.endpointOverride (URI. endpoint)))]
-                  (.build ^S3AsyncClientBuilder builder))]
+        client   (let [builder (S3AsyncClient/builder)
+                       builder (.serviceConfiguration ^S3AsyncClientBuilder builder ^S3Configuration sconfig)
+                       builder (.asyncConfiguration ^S3AsyncClientBuilder builder ^ClientAsyncConfiguration aconfig)
+                       builder (.httpClient ^S3AsyncClientBuilder builder ^NettyNioAsyncHttpClient hclient)
+                       builder (.region ^S3AsyncClientBuilder builder (lookup-region region))
+                       builder (cond-> ^S3AsyncClientBuilder builder
+                                 (some? endpoint)
+                                 (.endpointOverride (URI. endpoint)))]
+                   (.build ^S3AsyncClientBuilder builder))]
 
     (reify
       clojure.lang.IDeref
