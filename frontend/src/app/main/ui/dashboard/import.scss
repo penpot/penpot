@@ -8,69 +8,72 @@
 
 .modal-overlay {
   @extend .modal-overlay-base;
+}
 
-  .modal-container {
-    @extend .modal-container-base;
-    border: $s-1 solid var(--modal-border-color);
-    .modal-header {
-      margin-bottom: $s-24;
-      .modal-title {
-        @include tabTitleTipography;
-        color: var(--modal-title-foreground-color);
-      }
-      .modal-close-btn {
-        @extend .modal-close-btn-base;
-      }
+.modal-container {
+  @extend .modal-container-base;
+  border: $s-1 solid var(--modal-border-color);
+}
+
+.modal-header {
+  margin-bottom: $s-24;
+}
+
+.modal-title {
+  @include tabTitleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-content {
+  @include titleTipography;
+  margin-bottom: $s-24;
+}
+
+.feedback-banner {
+  @include flexRow;
+  height: $s-32;
+  width: 100%;
+  margin-bottom: $s-24;
+  border-radius: $br-8;
+  background-color: var(--alert-background-color-ok);
+  color: var(--alert-foreground-color-ok);
+
+  .icon {
+    @include flexCenter;
+    height: $s-24;
+    width: $s-24;
+    svg {
+      @extend .button-icon;
+      stroke: var(--alert-foreground-color-ok);
     }
-
-    .modal-content {
-      @include titleTipography;
-      margin-bottom: $s-24;
-      .feedback-banner {
-        @include flexRow;
-        height: $s-32;
-        width: 100%;
-        margin-bottom: $s-24;
-        border-radius: $br-8;
-        background-color: var(--alert-background-color-ok);
-        color: var(--alert-foreground-color-ok);
-
-        .icon {
-          @include flexCenter;
-          height: $s-24;
-          width: $s-24;
-          svg {
-            @extend .button-icon;
-            stroke: var(--alert-foreground-color-ok);
-          }
-        }
-        .message {
-          @include titleTipography;
-        }
-        &.warning {
-          background-color: var(--alert-background-color-warning);
-          color: var(--alert-foreground-color-warning);
-          .icon svg {
-            stroke: var(--alert-foreground-color-warning);
-          }
-        }
-      }
+  }
+  .message {
+    @include titleTipography;
+  }
+  &.warning {
+    background-color: var(--alert-background-color-warning);
+    color: var(--alert-foreground-color-warning);
+    .icon svg {
+      stroke: var(--alert-foreground-color-warning);
     }
+  }
+}
 
-    .modal-footer {
-      .action-buttons {
-        @extend .modal-action-btns;
-        .cancel-button {
-          @extend .modal-cancel-btn;
-        }
-        .accept-btn {
-          @extend .modal-accept-btn;
-          &.danger {
-            @extend .modal-danger-btn;
-          }
-        }
-      }
-    }
+.action-buttons {
+  @extend .modal-action-btns;
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
+.accept-btn {
+  @extend .modal-accept-btn;
+  &.danger {
+    @extend .modal-danger-btn;
   }
 }
 
@@ -122,6 +125,7 @@
   .error-message,
   .progress-message {
     height: $s-32;
+    color: var(--modal-text-foreground-color);
   }
 
   .linked-libraries {

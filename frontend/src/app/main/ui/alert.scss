@@ -11,39 +11,45 @@
   &.transparent {
     background-color: transparent;
   }
-  .modal-container {
-    @extend .modal-container-base;
-    .modal-header {
-      margin-bottom: $s-24;
-      .modal-title {
-        @include tabTitleTipography;
-        color: var(--modal-title-foreground-color);
-      }
-      .modal-close-btn {
-        @extend .modal-close-btn-base;
-      }
-    }
-    .modal-content {
-      @include titleTipography;
-      margin-bottom: $s-24;
-      .modal-hint {
-        @include titleTipography;
-      }
-    }
-    .modal-footer {
-      .action-buttons {
-        @extend .modal-action-btns;
-        .cancel-button {
-          @extend .modal-cancel-btn;
-        }
-        .accept-btn {
-          @extend .modal-accept-btn;
-          &.danger {
-            @extend .modal-danger-btn;
-          }
-        }
-      }
-    }
+}
+.modal-container {
+  @extend .modal-container-base;
+}
+
+.modal-header {
+  margin-bottom: $s-24;
+}
+
+.modal-title {
+  @include tabTitleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-content {
+  @include titleTipography;
+  margin-bottom: $s-24;
+}
+
+.modal-hint {
+  @include titleTipography;
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
+
+.accept-btn {
+  @extend .modal-accept-btn;
+  &.danger {
+    @extend .modal-danger-btn;
   }
 }
 
