@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -19,9 +18,8 @@
 (mf/defc tab-element
   {::mf/wrap-props false}
   [props]
-  (let [children (unchecked-get props "children")
-        new-css-system (mf/use-ctx ctx/new-css-system)]
-    [:div {:class (stl/css new-css-system :tab-element)}
+  (let [children (unchecked-get props "children")]
+    [:div {:class (stl/css :tab-element)}
      children]))
 
 (mf/defc tab-container

@@ -137,7 +137,7 @@
                         :disabled @created?
                         :name :expiration-date}]
          (when @created?
-           [:span.token-created-info
+           [:span {:class (stl/css :token-created-info)}
             (if (:expires-at created)
               (tr "dashboard.access-tokens.token-will-expire" (dt/format-date-locale (:expires-at created) {:locale locale}))
               (tr "dashboard.access-tokens.token-will-not-expire"))])]

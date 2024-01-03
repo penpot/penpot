@@ -25,7 +25,6 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as hooks]
@@ -54,28 +53,16 @@
 (mf/defc grid-edition-actions
   {::mf/wrap-props false}
   [{:keys [shape]}]
-  (let [new-css-system  (mf/use-ctx ctx/new-css-system)]
-    (if new-css-system
-      [:div {:class (stl/css :grid-actions)}
-       [:div {:class (stl/css :grid-actions-container)}
-        [:div {:class (stl/css :grid-actions-title)}
-         (tr "workspace.layout_grid.editor.title")  " " [:span {:stl/css :board-name} (:name shape)]]
-        [:button {:class (stl/css :locate-btn)
-                  :on-click #(st/emit! (dwge/locate-board (:id shape)))}
-         (tr "workspace.layout_grid.editor.top-bar.locate")]
-        [:button {:class (stl/css :done-btn)
-                  :on-click #(st/emit! dw/clear-edition-mode)}
-         (tr "workspace.layout_grid.editor.top-bar.done")]]]
-
-      [:div.viewport-actions
-       [:div.viewport-actions-container
-        [:div.viewport-actions-title
-         (tr "workspace.layout_grid.editor.title")  " " [:span.grid-edit-board-name (:name shape)]]
-        [:button.btn-secondary {:on-click #(st/emit! (dwge/locate-board (:id shape)))}
-         (tr "workspace.layout_grid.editor.top-bar.locate")]
-        [:button.btn-primary {:on-click #(st/emit! dw/clear-edition-mode)}
-         (tr "workspace.layout_grid.editor.top-bar.done")]
-        [:button.btn-icon-basic {:on-click #(st/emit! dw/clear-edition-mode)} i/close]]])))
+  [:div {:class (stl/css :grid-actions)}
+   [:div {:class (stl/css :grid-actions-container)}
+    [:div {:class (stl/css :grid-actions-title)}
+     (tr "workspace.layout_grid.editor.title")  " " [:span {:stl/css :board-name} (:name shape)]]
+    [:button {:class (stl/css :locate-btn)
+              :on-click #(st/emit! (dwge/locate-board (:id shape)))}
+     (tr "workspace.layout_grid.editor.top-bar.locate")]
+    [:button {:class (stl/css :done-btn)
+              :on-click #(st/emit! dw/clear-edition-mode)}
+     (tr "workspace.layout_grid.editor.top-bar.done")]]])
 
 (mf/defc grid-editor-frame
   {::mf/wrap-props false}

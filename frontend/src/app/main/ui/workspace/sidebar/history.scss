@@ -115,7 +115,7 @@
   .history-entry-detail {
     display: block;
     padding-top: $s-16;
-
+    color: var(--modal-text-foreground-color);
     .history-entry-details-list {
       margin: 0;
     }
