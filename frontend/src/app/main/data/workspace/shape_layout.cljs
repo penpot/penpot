@@ -24,7 +24,7 @@
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dwse]
-   [app.main.data.workspace.shapes :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [beicon.v2.core :as rx]
@@ -170,18 +170,18 @@
                  group-index  (cfh/get-index-replacement selected objects)]
              (rx/of
               (dwse/select-shapes ordered-ids)
-              (dws/create-artboard-from-selection new-shape-id parent-id group-index (:name (first selected-shapes)))
+              (dwsh/create-artboard-from-selection new-shape-id parent-id group-index (:name (first selected-shapes)))
               (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
               (create-layout-from-id new-shape-id type false)
               (dch/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
               (dch/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))
-              (dws/delete-shapes page-id selected)
+              (dwsh/delete-shapes page-id selected)
               (ptk/data-event :layout/update [new-shape-id])
               (dwu/commit-undo-transaction undo-id)))
 
            ;; Create Layout from selection
            (rx/of
-            (dws/create-artboard-from-selection new-shape-id)
+            (dwsh/create-artboard-from-selection new-shape-id)
             (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
             (create-layout-from-id new-shape-id type false)
             (dch/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
@@ -269,23 +269,38 @@
                 (dwu/commit-undo-transaction undo-id)))))))
 
 (defn remove-layout-track
-  [ids type index]
+  [ids type index & {:keys [with-shapes?] :or {with-shapes? false}}]
   (assert (#{:row :column} type))
 
   (ptk/reify ::remove-layout-track
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [undo-id (js/Symbol)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/update-shapes
-                ids
-                (fn [shape objects]
-                  (case type
-                    :row    (ctl/remove-grid-row shape index objects)
-                    :column (ctl/remove-grid-column shape index objects)))
-                {:with-objects? true})
-               (ptk/data-event :layout/update ids)
-               (dwu/commit-undo-transaction undo-id))))))
+        (let [objects (wsh/lookup-page-objects state)
+
+              shapes-to-delete
+              (when with-shapes?
+                (->> ids
+                     (mapcat
+                      (fn [id]
+                        (let [shape (get objects id)]
+                          (if (= type :column)
+                            (ctl/shapes-by-column shape index)
+                            (ctl/shapes-by-row shape index)))))
+                     (into #{})))]
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 (if shapes-to-delete
+                   (dwsh/delete-shapes shapes-to-delete)
+                   (rx/empty))
+                 (dch/update-shapes
+                  ids
+                  (fn [shape objects]
+                    (case type
+                      :row    (ctl/remove-grid-row shape index objects)
+                      :column (ctl/remove-grid-column shape index objects)))
+                  {:with-objects? true})
+                 (ptk/data-event :layout/update ids)
+                 (dwu/commit-undo-transaction undo-id)))))))
 
 (defn duplicate-layout-track
   [ids type index]

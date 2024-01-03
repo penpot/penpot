@@ -548,20 +548,28 @@
         (mf/use-callback
          (mf/deps grid-id type index)
          (fn []
-           (st/emit! (dwsl/duplicate-layout-track [grid-id] type index))))]
+           (st/emit! (dwsl/duplicate-layout-track [grid-id] type index))))
+
+        do-delete-track-shapes
+        (mf/use-callback
+         (mf/deps grid-id type index)
+         (fn []
+           (st/emit! (dwsl/remove-layout-track [grid-id] type index {:with-shapes? true}))))]
     
     (if (= type :column)
       [:*
        [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.duplicate") :on-click do-duplicate-track}]
        [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.add-before") :on-click do-add-track-before}]
        [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.add-after") :on-click do-add-track-after}]
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.delete") :on-click do-delete-track}]]
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.delete") :on-click do-delete-track}]
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.delete-shapes") :on-click do-delete-track-shapes}]]
 
       [:*
        [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.duplicate") :on-click do-duplicate-track}]
        [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.add-before") :on-click do-add-track-before}]
        [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.add-after") :on-click do-add-track-after}]
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.delete") :on-click do-delete-track}]])))
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.delete") :on-click do-delete-track}]
+       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.delete-shapes") :on-click do-delete-track-shapes}]])))
 
 (mf/defc grid-cells-context-menu
   [{:keys [mdata] :as props}]

@@ -923,8 +923,8 @@
         parent
         (cond-> parent
           move-content?
-          (-> (remove-cell-areas prop (dec from-track))
-              (remove-cell-areas-after prop (- to-track 2))))
+          (-> (remove-cell-areas prop from-index)
+              (remove-cell-areas-after prop to-index)))
 
         parent
         (reorder-grid-tracks parent tracks-props from-index to-index)]
