@@ -54,7 +54,9 @@
                         :hint "the current account does not have password")
               (let [result (profile/verify-password cfg password (:password profile))]
                 (when (:update result)
-                  (l/trace :hint "updating profile password" :id (:id profile) :email (:email profile))
+                  (l/trc :hint "updating profile password"
+                         :id (str (:id profile))
+                         :email (:email profile))
                   (profile/update-profile-password! conn (assoc profile :password password)))
                 (:valid result))))
 

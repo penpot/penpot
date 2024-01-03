@@ -341,6 +341,25 @@
   (-> (get-connectable ds)
       (jdbc/plan sql sql/default-opts)))
 
+(defn cursor
+  "Return a lazy seq of rows using server side cursors"
+  [conn query & {:keys [chunk-size] :or {chunk-size 25}}]
+  (let [cname  (str (gensym "cursor_"))
+        fquery [(str "FETCH " chunk-size " FROM " cname)]]
+
+    ;; declare cursor
+    (exec-one! conn
+               (if (vector? query)
+                 (into [(str "DECLARE " cname " CURSOR FOR " (nth query 0))]
+                       (rest query))
+                 [(str "DECLARE " cname " CURSOR FOR " query)]))
+
+    ;; return a lazy seq
+    ((fn fetch-more []
+       (lazy-seq
+        (when-let [chunk (seq (exec! conn fquery))]
+          (concat chunk (fetch-more))))))))
+
 (defn get-by-id
   [ds table id & {:as opts}]
   (get ds table {:id id} opts))
