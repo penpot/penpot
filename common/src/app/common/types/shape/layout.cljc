@@ -1397,6 +1397,23 @@
                   (< (inc index) (+ column column-span)))
              (= (inc index) column)))))))
 
+(defn cells-in-area
+  [parent first-row last-row first-column last-column]
+  (->> (:layout-grid-cells parent)
+       (vals)
+       (filter
+        (fn [{:keys [row column row-span column-span] :as cell}]
+          (and
+           (or (<= row first-row (+ row row-span -1))
+               (<= row last-row (+ row row-span -1))
+               (<= first-row row last-row)
+               (<= first-row (+ row row-span -1) last-row))
+
+           (or (<= column first-column (+ column column-span -1))
+               (<= column last-column (+ column column-span -1))
+               (<= first-column column last-column)
+               (<= first-column (+ column column-span -1) last-column)))))))
+
 (defn shapes-by-row
   ([parent index]
    (shapes-by-row parent index true))

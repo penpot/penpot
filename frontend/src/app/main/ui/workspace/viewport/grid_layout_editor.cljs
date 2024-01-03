@@ -337,10 +337,19 @@
         (mf/use-callback
          (mf/deps (:id shape) (:id cell) selected?)
          (fn [event]
-           (when (or (dom/left-mouse? event) (not selected?))
-             (if (and (kbd/shift? event) selected?)
+           (when (dom/left-mouse? event)
+             (cond
+               (and selected? (or (kbd/mod? event) (kbd/shift? event)))
                (st/emit! (dwge/remove-selection (:id shape) (:id cell)))
-               (st/emit! (dwge/select-grid-cell (:id shape) (:id cell) (kbd/shift? event)))))))
+
+               (and (not selected?) (kbd/mod? event))
+               (st/emit! (dwge/add-to-selection (:id shape) (:id cell)))
+
+               (and (not selected?) (kbd/shift? event))
+               (st/emit! (dwge/add-to-selection (:id shape) (:id cell) true))
+
+               :else
+               (st/emit! (dwge/set-selection (:id shape) (:id cell)))))))
 
         handle-context-menu
         (mf/use-callback

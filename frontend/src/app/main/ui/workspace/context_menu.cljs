@@ -576,6 +576,7 @@
   (let [{:keys [grid cells]} mdata
 
         single? (= (count cells) 1)
+
         can-merge?
         (mf/use-memo
          (mf/deps cells)
@@ -603,7 +604,8 @@
                        :on-click do-merge-cells}])
 
      [:& menu-entry {:title (tr "workspace.context-menu.grid-cells.create-board")
-                     :on-click do-create-board}]]))
+                     :on-click do-create-board
+                     :disabled (and (not single?) (not can-merge?))}]]))
 
 
 (mf/defc context-menu
