@@ -60,7 +60,7 @@
 
 .history-entry-empty-msg {
   @include titleTipography;
-  color: var(--title-foreground-secondary);
+  color: var(--empty-message-foreground-color);
 }
 
 .history-entries {

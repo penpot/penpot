@@ -148,23 +148,6 @@
 
 (defn entry->icon [{:keys [type]}]
   (case type
-    :page i/file-html
-    :shape i/layers
-    :rect i/box
-    :circle i/circle
-    :text i/text
-    :path i/curve
-    :frame i/artboard
-    :group i/folder
-    :color i/palette
-    :typography i/titlecase
-    :component i/component
-    :media i/image
-    :image i/image
-    i/layers))
-
-(defn entry->icon-refactor [{:keys [type]}]
-  (case type
     :page i/document-refactor
     :shape i/svg-refactor
     :rect i/rectangle-refactor
@@ -310,9 +293,10 @@
            :on-pointer-enter #(reset! hover? true)
            :on-pointer-leave #(reset! hover? false)
            :on-click #(st/emit! (dwc/undo-to-index idx-entry))}
+
      [:div {:class (stl/css :history-entry-summary)}
       [:div {:class (stl/css :history-entry-summary-icon)}
-       (entry->icon-refactor entry)]
+       (entry->icon entry)]
       [:div {:class (stl/css :history-entry-summary-text)}  (entry->message locale entry)]
       (when (:detail entry)
         [:div {:class (stl/css-case :history-entry-summary-button true

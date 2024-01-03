@@ -90,12 +90,12 @@
       {:key (dm/str "workspace-" page-id)
        :ref node-ref}
 
-      [:section.workspace-viewport
+      [:section {:class (stl/css :workspace-viewport)}
        (when (dbg/enabled? :coordinates)
          [:& coordinates/coordinates {:colorpalette? colorpalette?}])
 
        (when (dbg/enabled? :history-overlay)
-         [:div.history-debug-overlay
+         [:div {:class (stl/css :history-debug-overlay)}
           [:button {:on-click #(st/emit! dw/reinitialize-undo)} "CLEAR"]
           [:& history-toolbox]])
 
