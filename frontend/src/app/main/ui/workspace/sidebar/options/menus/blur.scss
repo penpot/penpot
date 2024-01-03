@@ -75,7 +75,6 @@
     .action-btn {
       @extend .button-tertiary;
       box-sizing: border-box;
-      border: $s-1 solid var(--button-tertiary-background-color-rest);
       height: $s-32;
       width: $s-28;
       svg {
