@@ -9,9 +9,6 @@
    #?(:cljs ["./svg/optimizer.js" :as svgo])
    #?(:clj  [clojure.xml :as xml]
       :cljs [tubax.core :as tubax])
-   #?(:clj [integrant.core :as ig])
-   #?(:clj [app.common.jsrt :as jsrt])
-   #?(:clj [app.common.logging :as l])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
@@ -1053,21 +1050,6 @@
                          :height (d/parse-integer (:height attrs) 0)})))]
     (reduce-nodes redfn [] svg-data )))
 
-#?(:cljs
-   (defn optimize
-     ([input] (optimize input nil))
-     ([input options]
-      (svgo/optimize input (clj->js options))))
-   :clj
-   (defn optimize
-     [pool data]
-     (dm/assert! "expected a valid pool" (jsrt/pool? pool))
-     (dm/assert! "expect data to be a string" (string? data))
-     (jsrt/run! pool
-                (fn [context]
-                  (jsrt/set! context "svgData" data)
-                  (jsrt/eval! context "penpotSvgo.optimize(svgData, {})")))))
-
 #?(:clj
    (defn- secure-parser-factory
      [^InputStream input ^XMLHandler handler]
@@ -1091,15 +1073,9 @@
              (dm/with-open [istream (IOUtils/toInputStream text "UTF-8")]
                (xml/parse istream secure-parser-factory)))))
 
-#?(:clj
-   (defmethod ig/init-key ::optimizer
-     [_ _]
-     (l/info :hint "initializing svg optimizer pool")
-     (let [init (jsrt/resource->source "app/common/svg/optimizer.js")]
-       (jsrt/pool :init init))))
-
-#?(:clj
-   (defmethod ig/halt-key! ::optimizer
-     [_ pool]
-     (l/info :hint "stopping svg optimizer pool")
-     (.close ^java.lang.AutoCloseable pool)))
+;; FIXME pass correct plugin set
+#?(:cljs
+   (defn optimize
+     ([input] (optimize input nil))
+     ([input options]
+      (svgo/optimize input (clj->js options)))))

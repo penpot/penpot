@@ -10,7 +10,6 @@
    [app.auth.oidc :as-alias oidc]
    [app.auth.oidc.providers :as-alias oidc.providers]
    [app.common.logging :as l]
-   [app.common.svg :as csvg]
    [app.config :as cf]
    [app.db :as-alias db]
    [app.email :as-alias email]
@@ -37,6 +36,7 @@
    [app.storage.gc-deleted :as-alias sto.gc-deleted]
    [app.storage.gc-touched :as-alias sto.gc-touched]
    [app.storage.s3 :as-alias sto.s3]
+   [app.svgo :as-alias svgo]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [cider.nrepl :refer [cider-nrepl-handler]]
@@ -316,7 +316,7 @@
     ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::mbus/msgbus        (ig/ref ::mbus/msgbus)
     ::rds/redis          (ig/ref ::rds/redis)
-    ::csvg/optimizer     (ig/ref ::csvg/optimizer)
+    ::svgo/optimizer     (ig/ref ::svgo/optimizer)
 
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
@@ -409,8 +409,9 @@
     ;; module requires the migrations to run before initialize.
     ::migrations (ig/ref :app.migrations/migrations)}
 
-   ::csvg/optimizer
-   {}
+   ::svgo/optimizer
+   {::wrk/executor   (ig/ref ::wrk/executor)
+    ::svgo/max-procs (cf/get :svgo-max-procs)}
 
    ::audit.tasks/archive
    {::props              (ig/ref ::setup/props)
