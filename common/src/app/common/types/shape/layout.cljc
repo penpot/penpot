@@ -622,7 +622,7 @@
 (defn remove-cell-areas
   "Remove the areas in the given `index` before and after the index"
   [parent prop index]
-  (let [prop-span (if (= prop :column) :row-span :column-span)
+  (let [prop-span (if (= prop :column) :column-span :row-span)
         cells (if (= prop :column) (cells-by-column parent index) (cells-by-row parent index))]
     (->> cells
          (filter #(> (get % prop-span) 1))
@@ -654,7 +654,7 @@
   "Remove the areas in the given `index` but only after the index."
   [parent prop index]
   (let [prop-span (if (= prop :column) :column-span :row-span)
-        cells (if (= type :column) (cells-by-column parent index) (cells-by-row parent index))]
+        cells (if (= prop :column) (cells-by-column parent index) (cells-by-row parent index))]
     (->> cells
          (filter #(> (get % prop-span) 1))
          (reduce
@@ -923,8 +923,8 @@
         parent
         (cond-> parent
           move-content?
-          (-> (remove-cell-areas prop (dec from-track))
-              (remove-cell-areas prop (dec to-track))))
+          (-> (remove-cell-areas prop from-index)
+              (remove-cell-areas-after prop to-index)))
 
         parent
         (reorder-grid-tracks parent tracks-props from-index to-index)]
@@ -1376,24 +1376,43 @@
    (cells-by-row parent index true))
   ([parent index check-span?]
    (->> (:layout-grid-cells parent)
-        (filter (fn [[_ {:keys [row row-span]}]]
-                  (if check-span?
-                    (and (>= (inc index) row)
-                         (< (inc index) (+ row row-span)))
-                    (= (inc index) row))))
-        (map second))))
+        (vals)
+        (filter
+         (fn [{:keys [row row-span]}]
+           (if check-span?
+             (and (>= (inc index) row)
+                  (< (inc index) (+ row row-span)))
+             (= (inc index) row)))))))
 
 (defn cells-by-column
   ([parent index]
    (cells-by-column parent index true))
   ([parent index check-span?]
    (->> (:layout-grid-cells parent)
-        (filter (fn [[_ {:keys [column column-span]}]]
-                  (if check-span?
-                    (and (>= (inc index) column)
-                         (< (inc index) (+ column column-span)))
-                    (= (inc index) column))))
-        (map second))))
+        (vals)
+        (filter
+         (fn [{:keys [column column-span] :as cell}]
+           (if check-span?
+             (and (>= (inc index) column)
+                  (< (inc index) (+ column column-span)))
+             (= (inc index) column)))))))
+
+(defn cells-in-area
+  [parent first-row last-row first-column last-column]
+  (->> (:layout-grid-cells parent)
+       (vals)
+       (filter
+        (fn [{:keys [row column row-span column-span] :as cell}]
+          (and
+           (or (<= row first-row (+ row row-span -1))
+               (<= row last-row (+ row row-span -1))
+               (<= first-row row last-row)
+               (<= first-row (+ row row-span -1) last-row))
+
+           (or (<= column first-column (+ column column-span -1))
+               (<= column last-column (+ column column-span -1))
+               (<= first-column column last-column)
+               (<= first-column (+ column column-span -1) last-column)))))))
 
 (defn shapes-by-row
   ([parent index]
