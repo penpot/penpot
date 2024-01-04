@@ -83,7 +83,7 @@
                                   (into [file] (map (fn [{:keys [id]}]
                                                       (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
                                                         (-> (files/get-file system id :migrate? false)
-                                                            (feat.fdata/process-pointers deref)
+                                                            (update :data feat.fdata/process-pointers deref)
                                                             (pmg/migrate-file))))))
                                   (d/index-by :id))]
                     (validate/validate-file file libs))))))
@@ -101,7 +101,7 @@
                                      (into [file] (map (fn [{:keys [id]}]
                                                          (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
                                                            (-> (files/get-file system id :migrate? false)
-                                                               (feat.fdata/process-pointers deref)
+                                                               (update :data feat.fdata/process-pointers deref)
                                                                (pmg/migrate-file))))))
                                      (d/index-by :id))
                         errors  (validate/validate-file file libs)
