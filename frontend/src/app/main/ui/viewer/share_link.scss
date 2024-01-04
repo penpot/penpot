@@ -46,10 +46,12 @@
 .hint-wrapper {
   @include flexRow;
 }
+
 .hint {
   flex-grow: 1;
   color: var(--modal-text-foreground-color);
 }
+
 .custon-input-wrapper {
   @include flexRow;
   border-radius: $br-8;

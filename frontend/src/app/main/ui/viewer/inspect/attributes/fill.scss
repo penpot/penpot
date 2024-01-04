@@ -8,7 +8,8 @@
 
 .attributes-block {
   @include flexColumn;
-  .title-spacing-fill {
-    @extend .attr-title;
-  }
+}
+
+.title-spacing-fill {
+  @extend .attr-title;
 }

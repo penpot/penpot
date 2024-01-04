@@ -8,14 +8,16 @@
 
 .attributes-block {
   @include flexColumn;
-  .title-spacing-layout-element {
-    @extend .attr-title;
-  }
+}
+
+.title-spacing-layout-element {
+  @extend .attr-title;
 }
 
 .layout-element-row {
   @extend .attr-row;
-  .button-children {
-    @extend .copy-button-children;
-  }
+}
+
+.button-children {
+  @extend .copy-button-children;
 }

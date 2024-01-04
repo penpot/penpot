@@ -8,41 +8,46 @@
 
 .attributes-block {
   @include flexColumn;
-  .title-spacing-text {
-    @extend .attr-title;
-  }
 }
+
+.title-spacing-text {
+  @extend .attr-title;
+}
+
 .attributes-content {
   @include flexColumn;
-  .text-row {
-    @extend .attr-row;
-    :global(.attr-value) {
-      align-items: center;
-    }
-    .button-children {
-      @extend .copy-button-children;
-    }
-  }
-  .attributes-content-row {
-    width: $s-252;
-    max-width: $s-252;
-    min-height: calc($s-2 + $s-32);
-    border-radius: $br-8;
-    border: $s-1 solid var(--menu-border-color-disabled);
-    margin-top: $s-4;
-    .content {
-      @include titleTipography;
-      width: 100%;
-      padding: 0;
-      color: var(--color-foreground-secondary);
-    }
+}
 
-    &:hover {
-      border: $s-1 solid var(--color-background-tertiary);
-      background-color: var(--menu-background-color);
-      .content {
-        color: var(--menu-foreground-color-hover);
-      }
+.text-row {
+  @extend .attr-row;
+  :global(.attr-value) {
+    align-items: center;
+  }
+}
+
+.button-children {
+  @extend .copy-button-children;
+}
+
+.attributes-content-row {
+  width: $s-252;
+  max-width: $s-252;
+  min-height: calc($s-2 + $s-32);
+  border-radius: $br-8;
+  border: $s-1 solid var(--menu-border-color-disabled);
+  margin-top: $s-4;
+  .content {
+    @include titleTipography;
+    width: 100%;
+    padding: 0;
+    color: var(--color-foreground-secondary);
+  }
+
+  &:hover {
+    border: $s-1 solid var(--color-background-tertiary);
+    background-color: var(--menu-background-color);
+    .content {
+      color: var(--menu-foreground-color-hover);
     }
   }
 }
