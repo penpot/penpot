@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.debug
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.main.data.workspace :as dw]
@@ -24,26 +25,27 @@
            (dbg/toggle! option)
            (js* "app.main.reinit()")))
 
-        on-close
+        handle-close
         (mf/use-fn
          (fn []
            (st/emit! (dw/remove-layout-flag :debug-panel))))]
-    [:div.debug-panel
-     [:div.debug-panel-header
-      [:div.debug-panel-close-button
-       {:on-click on-close} i/close]
-      [:div.debug-panel-title "Debugging tools"]]
 
-     [:div.debug-panel-inner
+    [:div {:class (stl/css :debug-panel)}
+     [:div {:class (stl/css :panel-title)}
+      [:span "Debugging tools"]
+      [:div {:class (stl/css :close-button) :on-click handle-close}
+       i/close-refactor]]
+
+     [:div {:class (stl/css :debug-panel-inner)}
       (for [option (sort-by d/name dbg/options)]
-        [:div.debug-option {:key (d/name option)
-                            :on-click #(on-toggle-enabled % option)}
+        [:div {:class (stl/css :checkbox-wrapper)}
+         [:span {:class (stl/css-case :checkbox-icon true :global/checked (dbg/enabled? option))
+                 :on-click #(on-toggle-enabled % option)}
+          (when (dbg/enabled? option) i/status-tick-refactor)]
+
          [:input {:type "checkbox"
                   :id (d/name option)
+                  :key (d/name option)
                   :on-change #(on-toggle-enabled % option)
                   :checked (dbg/enabled? option)}]
-         [:div.field.check
-          (if (dbg/enabled? option)
-            [:span.checked i/checkbox-checked]
-            [:span.unchecked i/checkbox-unchecked])]
          [:label {:for (d/name option)} (d/name option)]])]]))
