@@ -306,7 +306,7 @@
                                         (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
                                                   pmap/*tracked* nil]
                                           (-> (files/get-file cfg id :migrate? false)
-                                              (feat.fdata/process-pointers deref) ; ensure all pointers resolved
+                                              (update :data feat.fdata/process-pointers deref) ; ensure all pointers resolved
                                               (fmg/migrate-file))))))
                     (d/index-by :id)))
 
