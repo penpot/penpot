@@ -343,9 +343,11 @@
                              :on-change toggle-list-style
                              :name "swap-listing-style"}
            [:& radio-button {:icon i/view-as-list-refactor
+                             :icon-class (stl/css :radio-button)
                              :value "list"
                              :id "swap-opt-list"}]
            [:& radio-button {:icon i/flex-grid-refactor
+                             :icon-class (stl/css :radio-button)
                              :value "grid"
                              :id "swap-opt-grid"}]]]
 
@@ -376,7 +378,8 @@
                     root-shape (ctf/get-component-root data item)
                     loop?      (or (contains? parent-components (:main-instance-id item))
                                    (contains? parent-components (:id item)))]
-                [:& component-swap-item {:item item
+                [:& component-swap-item {:key (:id item)
+                                         :item item
                                          :loop loop?
                                          :shapes shapes
                                          :file-id current-library-id
