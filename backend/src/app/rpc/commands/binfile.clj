@@ -593,6 +593,7 @@
 (declare lookup-index)
 (declare update-index)
 (declare relink-media)
+(declare relink-colors)
 (declare relink-shapes)
 
 (defmulti read-import ::version)
@@ -723,6 +724,7 @@
                           (update :pages-index relink-shapes)
                           (update :components relink-shapes)
                           (update :media relink-media)
+                          (update :colors relink-colors)
                           (d/without-nils))))))
 
 
@@ -996,6 +998,17 @@
                    res)))
              media
              media))
+
+(defn- relink-colors
+  "A function responsible of process the :colors attr of file data and
+  remap the old ids with the new ones."
+  [colors]
+  (reduce-kv (fn [res k v]
+               (if (:image v)
+                 (update-in res [k :image :id] lookup-index)
+                 res))
+    colors
+    colors))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HIGH LEVEL API
