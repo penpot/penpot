@@ -628,23 +628,36 @@
          (filter #(> (get % prop-span) 1))
          (reduce
           (fn [parent cell]
-            (let [changed-cells
+            (let [area? (= :area (:position cell))
+                  changed-cells
                   (cond
                     ;; New track at the beginning
                     (= (get cell prop) (inc index))
                     [(assoc cell prop-span 1)
-                     (assoc cell :id (uuid/next) :shapes [] prop (inc (get cell prop)) prop-span (dec (get cell prop-span)))]
+                     (-> cell
+                         (assoc :id (uuid/next) :shapes [] prop (inc (get cell prop)) prop-span (dec (get cell prop-span)))
+                         (dissoc :area-name)
+                         (cond-> area? (assoc :position :manual)))]
 
                     ;; New track at the middle
                     (< (get cell prop) (inc index) (+ (get cell prop) (dec (get cell prop-span))))
                     [(assoc cell prop-span (- (inc index) (get cell prop)))
-                     (assoc cell :id (uuid/next) :shapes [] prop (inc index) prop-span 1)
-                     (assoc cell :id (uuid/next) :shapes [] prop (+ index 2) prop-span (- (+ (get cell prop) (dec (get cell prop-span))) (inc index)))]
+                     (-> cell
+                         (assoc :id (uuid/next) :shapes [] prop (inc index) prop-span 1)
+                         (dissoc :area-name)
+                         (cond-> area? (assoc :position :manual)))
+                     (-> cell
+                         (assoc :id (uuid/next) :shapes [] prop (+ index 2) prop-span (- (+ (get cell prop) (dec (get cell prop-span))) (inc index)))
+                         (dissoc :area-name)
+                         (cond-> area? (assoc :position :manual)))]
 
                     ;; New track at the end
                     (= (+ (get cell prop) (dec (get cell prop-span))) (inc index))
                     [(assoc cell prop-span (- (inc index) (get cell prop)))
-                     (assoc cell :id (uuid/next) :shapes [] prop (inc index) prop-span 1)])]
+                     (-> cell
+                         (assoc :id (uuid/next) :shapes [] prop (inc index) prop-span 1)
+                         (dissoc :area-name)
+                         (cond-> area? (assoc :position :manual)))])]
 
               (->> changed-cells
                    (reduce #(update %1 :layout-grid-cells assoc (:id %2) %2) parent))))
@@ -659,17 +672,24 @@
          (filter #(> (get % prop-span) 1))
          (reduce
           (fn [parent cell]
-            (let [changed-cells
+            (let [area? (= :area (:position cell))
+                  changed-cells
                   (cond
                     ;; New track at the beginning
                     (= (get cell prop) (inc index))
                     [(assoc cell prop-span 1)
-                     (assoc cell :id (uuid/next) :shapes [] prop (inc (get cell prop)) prop-span (dec (get cell prop-span)))]
+                     (-> cell
+                         (assoc :id (uuid/next) :shapes [] prop (inc (get cell prop)) prop-span (dec (get cell prop-span)))
+                         (dissoc :area-name)
+                         (cond-> area? (assoc :position :manual)))]
 
                     ;; New track at the middle
                     (< (get cell prop) (inc index) (+ (get cell prop) (dec (get cell prop-span))))
                     [(assoc cell prop-span (- (+ index 2) (get cell prop)))
-                     (assoc cell :id (uuid/next) :shapes [] prop (+ index 2) prop-span (- (+ (get cell prop) (dec (get cell prop-span))) (inc index)))])]
+                     (-> cell
+                         (assoc :id (uuid/next) :shapes [] prop (+ index 2) prop-span (- (+ (get cell prop) (dec (get cell prop-span))) (inc index)))
+                         (dissoc :area-name)
+                         (cond-> area? (assoc :position :manual)))])]
               (->> changed-cells
                    (reduce #(update %1 :layout-grid-cells assoc (:id %2) %2) parent))))
           parent))))
@@ -776,6 +796,8 @@
             (let [match-cell
                   (-> (get to-cells-idx (get cell prop-other))
                       (d/patch-object (select-keys cell [prop-other-span :position :align-self :justify-self]))
+                      (cond-> (= :area (:position cell))
+                        (assoc :position :manual))
                       (cond-> (= (get cell prop-span) 1)
                         (assoc :shapes (mapv ids-map (:shapes cell)))))]
               (recur (rest from-cells)
@@ -796,20 +818,22 @@
 
 
 (defn duplicate-row
-  [shape index ids-map]
+  [shape objects index ids-map]
   (let [value (dm/get-in shape [:layout-grid-rows index])]
     (-> shape
         (remove-cell-areas-after :row index)
         (add-grid-row value (inc index))
-        (duplicate-cells :row index (inc index) ids-map))))
+        (duplicate-cells :row index (inc index) ids-map)
+        (assign-cells objects))))
 
 (defn duplicate-column
-  [shape index ids-map]
+  [shape objects index ids-map]
   (let [value (dm/get-in shape [:layout-grid-columns index])]
     (-> shape
         (remove-cell-areas-after :column index)
         (add-grid-column value (inc index))
-        (duplicate-cells :column index (inc index) ids-map))))
+        (duplicate-cells :column index (inc index) ids-map)
+        (assign-cells objects))))
 
 (defn make-remove-cell
   [attr span-attr track-num]
@@ -1024,6 +1048,41 @@
           parent
           overlaps))
 
+(defn reassign-positions
+  "Propagate the manual positioning to the following cells"
+  [parent]
+  (->> (cells-seq parent :sort? true)
+       (reduce
+        (fn [[parent auto?] cell]
+          
+          (let [[cell auto?]
+                (cond
+                  (and (empty? (:shapes cell))
+                       (= :manual (:position cell))
+                       (= (:row-span cell) 1)
+                       (= (:column-span cell) 1))
+                  [(assoc cell :position :auto) false]
+
+                  (and (or (not= (:row-span cell) 1)
+                           (not= (:column-span cell) 1))
+                       (= :auto (:position cell)))
+                  [(assoc cell :position :manual) false]
+                  
+                  (empty? (:shapes cell))
+                  [cell false]
+
+                  (and (not auto?) (= :auto (:position cell)))
+                  [(assoc cell :position :manual) false]
+
+                  (= :manual (:position cell))
+                  [cell false]
+
+                  :else
+                  [cell auto?])]
+            [(assoc-in parent [:layout-grid-cells (:id cell)] cell) auto?]))
+        [parent true])
+       (first)))
+
 (defn position-auto-shapes
   [parent]
   ;; Iterate through the cells. While auto and contains shape no changes.
@@ -1050,6 +1109,14 @@
                      (rest shapes)))))]
     parent))
 
+(defn assign-cell-positions
+  [parent objects]
+  (prn ">>>>assign-cell-positions" (:name parent))
+  (-> parent
+      (check-deassigned-cells objects)
+      (reassign-positions)
+      (position-auto-shapes)))
+
 ;; Assign cells takes the children and move them into the allotted cells. If there are not enough cells it creates
 ;; not-tracked rows/columns and put the shapes there
 ;;   Non-tracked tracks need to be deleted when they are empty and there are no more shapes unallocated
@@ -1061,13 +1128,10 @@
 ;;  - (maybe) create group/frames. This case will assigna a cell that had one of its children
 (defn assign-cells
   [parent objects]
-  (let [;; TODO: Remove this, shouldn't be happening
-        ;;overlaps (overlapping-cells parent)
-        ;;_ (when (not (empty? overlaps))
-        ;;    (.warn js/console "OVERLAPS" overlaps))
-        parent (cond-> (check-deassigned-cells parent objects)
-                 #_(d/not-empty? overlaps)
-                 #_(fix-overlaps overlaps))
+  (prn ">assign-cells")
+  (let [
+
+        parent (assign-cell-positions parent objects)
 
         shape-has-cell?
         (into #{} (mapcat (comp :shapes second)) (:layout-grid-cells parent))
@@ -1075,9 +1139,7 @@
         no-cell-shapes
         (->> (:shapes parent)
              (remove shape-has-cell?)
-             (remove (partial position-absolute? objects)))
-
-        parent (position-auto-shapes parent)]
+             (remove (partial position-absolute? objects)))]
 
     (if (empty? no-cell-shapes)
       ;; All shapes are within a cell. No need to assign
@@ -1415,13 +1477,16 @@
                (<= first-column (+ column column-span -1) last-column)))))))
 
 (defn shapes-by-row
+  "Find all the shapes for a given row"
   ([parent index]
    (shapes-by-row parent index true))
+  ;; check-span? if false will only see if there is a coincidence in file&row
   ([parent index check-span?]
    (->> (cells-by-row parent index check-span?)
         (mapcat :shapes))))
 
 (defn shapes-by-column
+  "Find all the shapes for a given column"
   ([parent index]
    (shapes-by-column parent index true))
   ([parent index check-span?]
@@ -1487,7 +1552,7 @@
        [r c]))))
 
 (defn remap-grid-cells
-  "Remaps the shapes inside the cells"
+  "Remaps the shapes ids inside the cells"
   [shape ids-map]
   (let [do-remap-cells
         (fn [cell]

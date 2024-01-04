@@ -50,8 +50,8 @@
           (pcb/update-shapes ordered-indexes #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true)))
           (pcb/change-parent frame-id to-move-shapes 0)
           (cond-> (ctl/grid-layout? objects frame-id)
-            (pcb/update-shapes [frame-id] ctl/assign-cells {:with-objects? true}))
-          (pcb/reorder-grid-children [frame-id]))
+            (-> (pcb/update-shapes [frame-id] ctl/assign-cells {:with-objects? true})
+                (pcb/reorder-grid-children [frame-id]))))
       changes)))
 
 (defn prepare-create-artboard-from-selection

@@ -342,12 +342,13 @@
             (-> changes
                 (pcb/update-shapes
                  ids
-                 (fn [shape]
+                 (fn [shape objects]
                    ;; The duplication could have altered the grid so we restore the values, we'll calculate the good ones now
                    (let [shape (merge shape (select-keys base-shape [:layout-grid-cells :layout-grid-columns :layout-grid-rows]))]
                      (case type
-                       :row    (ctl/duplicate-row shape index ids-map)
-                       :column (ctl/duplicate-column shape index ids-map))))))
+                       :row    (ctl/duplicate-row shape objects index ids-map)
+                       :column (ctl/duplicate-column shape objects index ids-map))))
+                 {:with-objects? true}))
 
             undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)

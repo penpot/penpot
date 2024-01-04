@@ -15,6 +15,7 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -87,6 +88,8 @@
                             (cond-> undo-group
                               (pcb/set-undo-group undo-group)))
                         ids)
+             grid-ids (->> ids (filter (partial ctl/grid-layout? objects)))
+             changes (pcb/update-shapes changes grid-ids ctl/assign-cell-positions {:with-objects? true})
              changes (pcb/reorder-grid-children changes ids)
              changes (add-undo-group changes state)]
          (rx/concat

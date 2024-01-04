@@ -30,6 +30,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
+   [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -347,6 +348,29 @@
              (st/emit! (dw/show-grid-cell-context-menu {:position position :grid-id (:id shape)})))))]
 
     [:g.cell-editor
+     ;; DEBUG OVERLAY
+     (when (dbg/enabled? :grid-cells)
+       [:g.debug-cell {:pointer-events "none"
+                       :transform (dm/str (gmt/transform-in cell-center (:transform shape)))}
+
+        [:rect
+         {:x (:x cell-origin)
+          :y (:y cell-origin)
+          :width cell-width
+          :height cell-height
+          :fill (cond
+                  (= (:position cell) :auto) "green"
+                  (= (:position cell) :manual) "red"
+                  (= (:position cell) :area) "yellow"
+                  :else "black")
+          :fill-opacity 0.2}]
+
+        (when (seq (:shapes cell))
+          [:circle
+           {:cx (+ (:x cell-origin) cell-width (- (/ 7 zoom)))
+            :cy (+ (:y cell-origin) (/ 7 zoom))
+            :r (/ 5 zoom)
+            :fill "red"}])])
      [:rect
       {:transform (dm/str (gmt/transform-in cell-center (:transform shape)))
        :class (dom/classnames (stl/css :grid-cell-outline) true
